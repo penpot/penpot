@@ -149,15 +149,8 @@
      ["/feedback" {:middleware [(:middleware session)]
                    :post feedback}]
 
-     ["/oauth"
-      ["/google" {:post (get-in oauth [:google :handler])}]
-      ["/google/callback" {:get (get-in oauth [:google :callback-handler])}]
-
-      ["/gitlab" {:post (get-in oauth [:gitlab :handler])}]
-      ["/gitlab/callback" {:get (get-in oauth [:gitlab :callback-handler])}]
-
-      ["/github" {:post (get-in oauth [:github :handler])}]
-      ["/github/callback" {:get (get-in oauth [:github :callback-handler])}]]
+     ["/auth/oauth/:provider" {:post (:handler oauth)}]
+     ["/auth/oauth/:provider/callback" {:get (:callback-handler oauth)}]
 
      ["/rpc" {:middleware [(:middleware session)
                            middleware/activity-logger]}

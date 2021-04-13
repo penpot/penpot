@@ -86,13 +86,12 @@
     :ws      {"/ws/notifications" (ig/ref :app.notifications/handler)}}
 
    :app.http/router
-   {
-    :rpc         (ig/ref :app.rpc/rpc)
+   {:rpc         (ig/ref :app.rpc/rpc)
     :session     (ig/ref :app.http.session/session)
     :tokens      (ig/ref :app.tokens/tokens)
     :public-uri  (cf/get :public-uri)
     :metrics     (ig/ref :app.metrics/metrics)
-    :oauth       (ig/ref :app.http.oauth/all)
+    :oauth       (ig/ref :app.http.oauth/handlers)
     :assets      (ig/ref :app.http.assets/handlers)
     :storage     (ig/ref :app.storage/storage)
     :sns-webhook (ig/ref :app.http.awsns/handler)
@@ -109,35 +108,11 @@
    :app.http.feedback/handler
    {:pool (ig/ref :app.db/pool)}
 
-   :app.http.oauth/all
-   {:google (ig/ref :app.http.oauth/google)
-    :gitlab (ig/ref :app.http.oauth/gitlab)
-    :github (ig/ref :app.http.oauth/github)}
-
-   :app.http.oauth/google
+   :app.http.oauth/handlers
    {:rpc           (ig/ref :app.rpc/rpc)
     :session       (ig/ref :app.http.session/session)
     :tokens        (ig/ref :app.tokens/tokens)
-    :public-uri    (cf/get :public-uri)
-    :client-id     (cf/get :google-client-id)
-    :client-secret (cf/get :google-client-secret)}
-
-   :app.http.oauth/github
-   {:rpc           (ig/ref :app.rpc/rpc)
-    :session       (ig/ref :app.http.session/session)
-    :tokens        (ig/ref :app.tokens/tokens)
-    :public-uri    (cf/get :public-uri)
-    :client-id     (cf/get :github-client-id)
-    :client-secret (cf/get :github-client-secret)}
-
-   :app.http.oauth/gitlab
-   {:rpc           (ig/ref :app.rpc/rpc)
-    :session       (ig/ref :app.http.session/session)
-    :tokens        (ig/ref :app.tokens/tokens)
-    :public-uri    (cf/get :public-uri)
-    :base-uri      (cf/get :gitlab-base-uri)
-    :client-id     (cf/get :gitlab-client-id)
-    :client-secret (cf/get :gitlab-client-secret)}
+    :public-uri    (cf/get :public-uri)}
 
    ;; RLimit definition for password hashing
    :app.rlimits/password

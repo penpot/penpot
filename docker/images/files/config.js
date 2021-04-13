@@ -6,5 +6,6 @@
 //var penpotGoogleClientID = "<google-client-id-here>";
 //var penpotGitlabClientID = "<gitlab-client-id-here>";
 //var penpotGithubClientID = "<github-client-id-here>";
+//var penpotOIDCClientID = "<oidc-client-id-here>";
 //var penpotLoginWithLDAP = <true|false>;
 //var penpotRegistrationEnabled = <true|false>;

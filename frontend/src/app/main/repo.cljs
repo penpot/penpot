@@ -6,6 +6,7 @@
 
 (ns app.main.repo
   (:require
+   [app.common.data :as d]
    [beicon.core :as rx]
    [lambdaisland.uri :as u]
    [cuerdas.core :as str]
@@ -84,23 +85,10 @@
   ([id] (mutation id {}))
   ([id params] (mutation id params)))
 
-(defmethod mutation :login-with-google
-  [id params]
-  (let [uri (u/join base-uri "api/oauth/google")]
-    (->> (http/send! {:method :post :uri uri :query params})
-         (rx/map http/conditional-decode-transit)
-         (rx/mapcat handle-response))))
-
-(defmethod mutation :login-with-gitlab
-  [id params]
-  (let [uri (u/join base-uri "api/oauth/gitlab")]
-    (->> (http/send! {:method :post :uri uri :query params})
-         (rx/map http/conditional-decode-transit)
-         (rx/mapcat handle-response))))
-
-(defmethod mutation :login-with-github
-  [id params]
-  (let [uri (u/join base-uri "api/oauth/github")]
+(defmethod mutation :login-with-oauth
+  [id {:keys [provider] :as params}]
+  (let [uri    (u/join base-uri "api/auth/oauth/" (d/name provider))
+        params (dissoc params :provider)]
     (->> (http/send! {:method :post :uri uri :query params})
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))

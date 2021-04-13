@@ -105,6 +105,12 @@
 (s/def ::gitlab-client-secret ::us/string)
 (s/def ::google-client-id ::us/string)
 (s/def ::google-client-secret ::us/string)
+(s/def ::oidc-client-id ::us/string)
+(s/def ::oidc-client-secret ::us/string)
+(s/def ::oidc-base-uri ::us/string)
+(s/def ::oidc-token-uri ::us/string)
+(s/def ::oidc-auth-uri ::us/string)
+(s/def ::oidc-user-uri ::us/string)
 (s/def ::host ::us/string)
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-session-cookie-name ::us/string)
@@ -178,6 +184,12 @@
                    ::gitlab-client-secret
                    ::google-client-id
                    ::google-client-secret
+                   ::oidc-client-id
+                   ::oidc-client-secret
+                   ::oidc-base-uri
+                   ::oidc-token-uri
+                   ::oidc-auth-uri
+                   ::oidc-user-uri
                    ::host
                    ::http-server-port
                    ::http-session-idle-max-age

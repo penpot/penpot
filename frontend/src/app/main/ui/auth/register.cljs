@@ -137,7 +137,6 @@
    [:div.notification-text-email (:email params "")]
    [:div.notification-text (tr "auth.check-your-email")]])
 
-
 (mf/defc register-page
   [{:keys [params] :as props}]
   [:div.form-container
@@ -161,24 +160,9 @@
        [:span (tr "auth.create-demo-profile") " "]
        [:a {:on-click #(st/emit! da/create-demo-profile)
             :tab-index "5"}
-        (tr "auth.create-demo-account")]])]
+        (tr "auth.create-demo-account")]])
 
-   (when cfg/google-client-id
-     [:a.btn-ocean.btn-large.btn-google-auth
-      {:on-click #(login/login-with-google % params)}
-      "Login with Google"])
+    [:& login/login-buttons {:params params}]]])
 
-   (when cfg/gitlab-client-id
-     [:a.btn-ocean.btn-large.btn-gitlab-auth
-      {:on-click #(login/login-with-gitlab % params)}
-      [:img.logo
-       {:src "/images/icons/brand-gitlab.svg"}]
-      (tr "auth.login-with-gitlab-submit")])
 
-   (when cfg/github-client-id
-     [:a.btn-ocean.btn-large.btn-github-auth
-      {:on-click #(login/login-with-github % params)}
-      [:img.logo
-       {:src "/images/icons/brand-github.svg"}]
-      (tr "auth.login-with-github-submit")])])
 
