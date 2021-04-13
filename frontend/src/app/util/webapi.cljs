@@ -90,9 +90,7 @@
   (let [target (.-target ^js event)]
     (when (and (not (.-isContentEditable target)) ;; ignore when pasting into
                (not= (.-tagName target) "INPUT")) ;; an editable control
-      (-> ^js event
-          (.getBrowserEvent)
-          (.-clipboardData)))))
+      (.. ^js event getBrowserEvent -clipboardData))))
 
 (defn extract-text
   [clipboard-data]
