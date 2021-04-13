@@ -12,7 +12,7 @@
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [clojure.xml :as xml]
-   [integrant.core :as ig])
+   [cuerdas.core :as str])
   (:import
    javax.xml.XMLConstants
    javax.xml.parsers.SAXParserFactory
@@ -21,7 +21,7 @@
 (defn- secure-parser-factory
   [s ch]
   (.. (doto (SAXParserFactory/newInstance)
-        (.setFeature javax.xml.XMLConstants/FEATURE_SECURE_PROCESSING true)
+        (.setFeature XMLConstants/FEATURE_SECURE_PROCESSING true)
         (.setFeature "http://apache.org/xml/features/disallow-doctype-decl" true))
       (newSAXParser)
       (parse s ch)))
@@ -38,11 +38,21 @@
                 :code :invalid-svg-file
                 :cause e))))
 
+(declare pre-process)
+
 (s/def ::data ::us/string)
 (s/def ::parsed-svg (s/keys :req-un [::data]))
 
 (sv/defmethod ::parsed-svg
   [_ {:keys [data] :as params}]
-  (parse data))
+  (->> data pre-process parse))
 
+;; --- PROCESSORS
 
+(defn strip-doctype
+  [data]
+  (cond-> data
+    (str/includes? data "<!DOCTYPE")
+    (str/replace #"<\!DOCTYPE[^>]+>" "")))
+
+(def pre-process strip-doctype)
