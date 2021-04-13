@@ -35,17 +35,20 @@
                        :x dx :y dy :c2x dx :c2y dy))))))
 
 (defn modify-handler [id index prefix dx dy match-opposite?]
-  (ptk/reify ::modify-point
+  (ptk/reify ::modify-handler
     ptk/UpdateEvent
     (update [_ state]
       (let [content (get-in state (st/get-path state :content))
             [cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
             [ocx ocy] (if (= prefix :c1) [:c2x :c2y] [:c1x :c1y])
+            point (gpt/point (+ (get-in content [index :params cx]) dx)
+                             (+ (get-in content [index :params cy]) dy))
             opposite-index (ugp/opposite-index content index prefix)]
         (cond-> state
           :always
-          (update-in [:workspace-local :edit-path id :content-modifiers index] assoc
-                     cx dx cy dy)
+          (-> (update-in [:workspace-local :edit-path id :content-modifiers index] assoc
+                         cx dx cy dy)
+              (assoc-in [:workspace-local :edit-path id :moving-handler] point))
 
           (and match-opposite? opposite-index)
           (update-in [:workspace-local :edit-path id :content-modifiers opposite-index] assoc
@@ -63,7 +66,7 @@
             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
 
         (rx/of (dwc/commit-changes rch uch {:commit-local? true})
-               (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers)))))))
+               (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler)))))))
 
 (defn move-selected-path-point [from-point to-point]
   (letfn [(modify-content-point [content {dx :x dy :y} modifiers point]
@@ -101,7 +104,9 @@
               modifiers (->> points
                              (reduce modifiers-reducer {}))]
 
-          (assoc-in state [:workspace-local :edit-path id :content-modifiers] modifiers))))))
+          (-> state
+              (assoc-in [:workspace-local :edit-path id :moving-nodes] true)
+              (assoc-in [:workspace-local :edit-path id :content-modifiers] modifiers)))))))
 
 (defn start-move-path-point
   [position shift?]
@@ -120,11 +125,6 @@
 
             mouse-drag-stream
             (rx/concat
-             ;; If we're dragging a selected item we don't change the selection
-             (if selected?
-               (rx/empty)
-               (rx/of (selection/select-node position shift?)))
-
              ;; This stream checks the consecutive mouse positions to do the draging
              (->> points
                   (streams/move-points-stream start-position selected-points)

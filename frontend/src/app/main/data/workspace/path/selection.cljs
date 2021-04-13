@@ -28,15 +28,6 @@
       (let [id (st/get-path-id state)]
         (update-in state [:workspace-local :edit-path id :hover-points] disj position)))))
 
-(defn select-handler [index type]
-  (ptk/reify ::select-handler
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])]
-        (-> state
-            (update-in [:workspace-local :edit-path id :selected-handlers] (fnil conj #{}) [index type]))))))
-
-
 (defn path-handler-enter [index prefix]
   (ptk/reify ::path-handler-enter
     ptk/UpdateEvent
@@ -115,7 +106,6 @@
     (update [_ state]
       (let [id (st/get-path-id state)]
         (-> state
-            (assoc-in [:workspace-local :edit-path id :selected-handlers] #{})
             (assoc-in [:workspace-local :edit-path id :selected-points] #{}))))))
 
 (defn update-area-selection

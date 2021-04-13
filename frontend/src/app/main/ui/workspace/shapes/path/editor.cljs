@@ -19,6 +19,7 @@
    [app.util.dom :as dom]
    [app.util.geom.path :as ugp]
    [app.util.keyboard :as kbd]
+   [clojure.set :refer [map-invert]]
    [goog.events :as events]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
@@ -42,7 +43,10 @@
           (let [shift? (kbd/shift? event)]
             (cond
               (= edit-mode :move)
-              (st/emit! (drp/start-move-path-point position shift?))
+              ;; If we're dragging a selected item we don't change the selection
+              (do (when (not selected?)
+                    (st/emit! (drp/select-node position shift?)))
+                  (st/emit! (drp/start-move-path-point position shift?)))
 
               (and (= edit-mode :draw) start-path?)
               (st/emit! (drp/start-path-from-point position))
@@ -84,14 +88,6 @@
           (fn [event]
             (st/emit! (drp/path-handler-leave index prefix)))
 
-          on-click
-          (fn [event]
-            (dom/stop-propagation event)
-            (dom/prevent-default event)
-            (cond
-              (= edit-mode :move)
-              (drp/select-handler index prefix)))
-
           on-mouse-down
           (fn [event]
             (dom/stop-propagation event)
@@ -123,7 +119,6 @@
        [:circle {:cx x
                  :cy y
                  :r (/ 10 zoom)
-                 :on-click on-click
                  :on-mouse-down on-mouse-down
                  :on-mouse-enter on-enter
                  :on-mouse-leave on-leave
@@ -145,7 +140,7 @@
                    :preview? true
                    :zoom zoom}]])
 
-(mf/defc snap-points [{:keys [selected points zoom]}]
+(mf/defc path-snap [{:keys [selected points zoom]}]
   (let [ranges (mf/use-memo (mf/deps selected points) #(snap/create-ranges points selected))
         snap-matches (snap/get-snap-delta-match selected ranges (/ 1 zoom))
         matches (d/concat [] (second (:x snap-matches)) (second (:y snap-matches)))]
@@ -172,18 +167,40 @@
                 preview
                 content-modifiers
                 last-point
-                selected-handlers
                 selected-points
+                moving-nodes
+                moving-handler
                 hover-handlers
                 hover-points]
          :as edit-path} (mf/deref edit-path-ref)
 
-        {base-content :content} shape
+        selected-points (or selected-points #{})
+
+        base-content (:content shape)
+        base-points (mf/use-memo (mf/deps base-content) #(->> base-content ugp/content->points))
+
         content (ugp/apply-content-modifiers base-content content-modifiers)
-        points (mf/use-memo (mf/deps content) #(->> content ugp/content->points (into #{})))
+        content-points (mf/use-memo (mf/deps content) #(->> content ugp/content->points))
+
+        point->base (->> (map hash-map content-points base-points) (reduce merge))
+        base->point (map-invert point->base)
+
+        points (into #{} content-points)
+
         last-command (last content)
         last-p (->> content last ugp/command->point)
         handlers (ugp/content->handlers content)
+
+        [snap-selected snap-points]
+        (cond
+          (some? drag-handler) [#{drag-handler} points]
+          (some? preview) [#{(ugp/command->point preview)} points]
+          (some? moving-handler) [#{moving-handler} points]
+          :else
+          [(->> selected-points (map base->point) (into #{}))
+           (->> points (remove selected-points) (into #{}))])
+
+        show-snap? (or (some? drag-handler) (some? preview) (some? moving-handler) moving-nodes)
 
         handle-double-click-outside
         (fn [event]
@@ -199,13 +216,14 @@
 
     [:g.path-editor {:ref editor-ref}
      (when (and preview (not drag-handler))
-       [:*
-        [:& snap-points {:selected #{(ugp/command->point preview)}
-                         :points points
-                         :zoom zoom}]
+       [:& path-preview {:command preview
+                         :from last-p
+                         :zoom zoom}])
 
-        [:& path-preview {:command preview
-                          :from last-p
+     (when drag-handler
+       [:g.drag-handler {:pointer-events "none"}
+        [:& path-handler {:point last-p
+                          :handler drag-handler
                           :zoom zoom}]])
 
      (when @hover-point
@@ -214,10 +232,11 @@
                         :zoom zoom}]])
 
      (for [position points]
-       (let [point-selected? (contains? selected-points position)
-             point-hover? (contains? hover-points position)
-             last-p? (= last-point position)
+       (let [point-selected? (contains? selected-points (get point->base position))
+             point-hover? (contains? hover-points (get point->base position))
+             last-p? (= last-point (get point->base position))
              start-p? (not (some? last-point))]
+
          [:g.path-node
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
            (for [[index prefix] (get handlers position)]
@@ -225,7 +244,6 @@
                    x (get-in command [:params (d/prefix-keyword prefix :x)])
                    y (get-in command [:params (d/prefix-keyword prefix :y)])
                    handler-position (gpt/point x y)
-                   handler-selected? (contains? selected-handlers [index prefix])
                    handler-hover? (contains? hover-handlers [index prefix])]
                (when (not= position handler-position)
                  [:& path-handler {:point position
@@ -233,7 +251,6 @@
                                    :index index
                                    :prefix prefix
                                    :zoom zoom
-                                   :selected? handler-selected?
                                    :hover? handler-hover?
                                    :edit-mode edit-mode}])))]
           [:& path-point {:position position
@@ -250,9 +267,9 @@
                           :handler prev-handler
                           :zoom zoom}]])
 
-     (when drag-handler
-       [:g.drag-handler {:pointer-events "none"}
-        [:& path-handler {:point last-p
-                          :handler drag-handler
-                          :zoom zoom}]])]))
+     (when show-snap?
+       [:g.path-snap {:pointer-events "none"}
+        [:& path-snap {:selected snap-selected
+                         :points snap-points
+                         :zoom zoom}]])]))
 

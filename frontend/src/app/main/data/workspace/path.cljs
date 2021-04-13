@@ -24,8 +24,8 @@
 (d/export edition/start-path-edit)
 
 ;; Selection
-(d/export selection/select-handler)
 (d/export selection/handle-selection)
+(d/export selection/select-node)
 (d/export selection/path-handler-enter)
 (d/export selection/path-handler-leave)
 (d/export selection/path-pointer-enter)

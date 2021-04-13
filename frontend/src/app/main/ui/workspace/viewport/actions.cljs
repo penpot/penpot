@@ -59,7 +59,7 @@
            (when (and (not= edition id) text-editing?)
              (st/emit! dw/clear-edition-mode))
 
-           (when (and (or (not edition) (not= edition id))
+           (when (and (not text-editing?)
                       (not blocked)
                       (not hidden)
                       (not (#{:comments :path} drawing-tool))

@@ -20,6 +20,7 @@
    [clojure.set :as set]))
 
 (defonce ^:private snap-accuracy 5)
+(defonce ^:private snap-path-accuracy 10)
 (defonce ^:private snap-distance-accuracy 10)
 
 (defn- remove-from-snap-points
@@ -272,9 +273,8 @@
             (->> (rt/range-query (get ranges coord) (- pval precision) (+ pval precision))
                  ;; We save the distance to the point and add the matching point to the points
                  (mapv (fn [[value points]]
-                         [(mth/abs (- value pval))
+                         [(- value pval)
                           (->> points (mapv #(vector point %)))])))))]
-
     {:x (query-coord point :x)
      :y (query-coord point :y)}))
 
@@ -301,7 +301,7 @@
   [default matches]
   (let [get-min
         (fn [[cur-val :as current] [other-val :as other]]
-          (if (< cur-val other-val)
+          (if (< (mth/abs cur-val) (mth/abs other-val))
             current
             other))
         
