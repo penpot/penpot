@@ -9,14 +9,15 @@
 
 (ns app.main.ui.measurements
   (:require
-   [rumext.alpha :as mf]
+   [app.common.data :as d]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.common.uuid :as uuid]
+   [app.main.store :as st]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [app.common.data :as d]
-   [app.common.math :as mth]
-   [app.common.geom.shapes :as gsh]
-   [app.common.geom.point :as gpt]
-   [app.main.store :as st]))
+   [rumext.alpha :as mf]))
 
 ;; ------------------------------------------------
 ;; CONSTANTS
@@ -247,7 +248,7 @@
        [:& size-display {:selrect selected-selrect :zoom zoom}]
 
        (if (or (not hover-shape) (not hover-selected-shape?))
-         (when frame
+         (when (and frame (not= uuid/zero (:id frame)))
            [:g.hover-shapes
             [:& distance-display {:from (:selrect frame)
                                   :to selected-selrect
