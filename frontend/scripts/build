@@ -3,7 +3,7 @@
 set -ex
 
 CURRENT_VERSION=$1;
-CURRENT_HASH=$(git rev-parse --short HEAD);
+CURRENT_HASH=${CURRENT_HASH:-$(git rev-parse --short HEAD)};
 EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS;
 
 yarn install || exit 1;
