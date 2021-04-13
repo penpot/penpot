@@ -265,19 +265,18 @@
 
 (mf/defc viewer-page
   [{:keys [file-id page-id index token section] :as props}]
-
-  (mf/use-effect
-   (mf/deps file-id page-id token)
-   (st/emitf (dv/initialize props)))
-
   (let [data  (mf/deref refs/viewer-data)
         state (mf/deref refs/viewer-local)]
 
     (mf/use-effect
+     (mf/deps file-id page-id token)
+     (fn []
+       (st/emit! (dv/initialize props))))
+
+    (mf/use-effect
       (mf/deps (:file data))
-      #(when (:file data)
-         (dom/set-html-title (tr "title.viewer"
-                                 (get-in data [:file :name])))))
+      #(when-let [name (get-in data [:file :name])]
+         (dom/set-html-title (tr "title.viewer" name))))
 
     (when (and data state)
       [:& viewer-content

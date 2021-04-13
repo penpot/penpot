@@ -32,6 +32,9 @@
 (def profile
   (l/derived :profile st/state))
 
+(def teams
+  (l/derived :teams st/state))
+
 (def exception
   (l/derived :exception st/state))
 
