@@ -31,11 +31,11 @@
      (into [] (impl-simplify/simplify points tolerance true)))))
 
 ;;
-(def commands-regex #"(?i)[a-z][^a-z]*")
+(def commands-regex #"(?i)[mzlhvcsqta][^mzlhvcsqta]*")
 
 ;; Matches numbers for path values allows values like... -.01, 10, +12.22
 ;; 0 and 1 are special because can refer to flags
-(def num-regex #"[+-]?(\d+(\.\d+)?|\.\d+)")
+(def num-regex #"[+-]?(\d+(\.\d+)?|\.\d+)(e[+-]?\d+)?")
 
 (def flag-regex #"[01]")
 
@@ -373,14 +373,15 @@
                     (reduce simplify-command [[start] start-pos start-pos start-pos start-pos])
                     (first))))
 
-(defn path->content [string]
-  (let [clean-string (-> string
-                         (str/trim)
-                         ;; Change "commas" for spaces
-                         (str/replace #"," " ")
-                         ;; Remove all consecutive spaces
-                         (str/replace #"\s+" " "))
-        commands (re-seq commands-regex clean-string)]
+(defn path->content [path-str]
+  (let [clean-path-str
+        (-> path-str
+            (str/trim)
+            ;; Change "commas" for spaces
+            (str/replace #"," " ")
+            ;; Remove all consecutive spaces
+            (str/replace #"\s+" " "))
+        commands (re-seq commands-regex clean-path-str)]
     (-> (mapcat parse-command commands)
         (simplify-commands))))
 
