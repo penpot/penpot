@@ -128,7 +128,6 @@
       (-> (db/exec-one! conn [sql profile-id file-id id])
           (decode-row)))))
 
-
 ;; --- Query: Comments
 
 (declare retrieve-comments)

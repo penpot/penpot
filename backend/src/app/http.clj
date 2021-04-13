@@ -119,7 +119,7 @@
   (s/keys :req-un [::rpc ::session ::mtx/metrics ::oauth ::storage ::assets ::feedback]))
 
 (defmethod ig/init-key ::router
-  [_ {:keys [session rpc oauth metrics svgparse assets feedback] :as cfg}]
+  [_ {:keys [session rpc oauth metrics assets feedback] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
     ["/assets" {:middleware [[middleware/format-response-body]
@@ -146,7 +146,6 @@
                           [middleware/errors errors/handle]
                           [middleware/cookies]]}
 
-     ["/svg/parse" {:post svgparse}]
      ["/feedback" {:middleware [(:middleware session)]
                    :post feedback}]
 
@@ -162,5 +161,6 @@
 
      ["/rpc" {:middleware [(:middleware session)
                            middleware/activity-logger]}
-      ["/query/:type" {:get (:query-handler rpc)}]
+      ["/query/:type" {:get (:query-handler rpc)
+                       :post (:query-handler rpc)}]
       ["/mutation/:type" {:post (:mutation-handler rpc)}]]]]))

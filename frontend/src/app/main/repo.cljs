@@ -121,13 +121,11 @@
                     :response-type :blob})
        (rx/mapcat handle-response)))
 
-(defmethod query :parse-svg
-  [id {:keys [data] :as params}]
+(defmethod query :parsed-svg
+  [id params]
   (->> (http/send! {:method :post
-                    :uri (u/join base-uri "api/svg/parse")
-                    :headers {"content-type" "image/svg+xml"}
-                    :body data
-                    :response-type :text})
+                    :uri (u/join base-uri "api/rpc/query/" (name id))
+                    :body (http/transit-data params)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
 
