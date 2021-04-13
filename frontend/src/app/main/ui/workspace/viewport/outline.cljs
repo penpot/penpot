@@ -65,9 +65,9 @@
    ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "zoom"]))]}
   [props]
   (let [shapes (obj/get props "shapes")
-        zoom (obj/get props "zoom")
-        color (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
-                "#31EFB8" "#00E0FF")]
+        zoom   (obj/get props "zoom")
+        color  (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
+                 "#31EFB8" "#00E0FF")]
     (for [shape shapes]
       [:& outline {:key (str "outline-" (:id shape))
                    :shape (gsh/transform-shape shape)
@@ -94,7 +94,8 @@
         shapes (->> outlines-ids
                     (filter #(not= edition %))
                     (map #(get objects %))
-                    (filterv show-outline?))]
+                    (filterv show-outline?)
+                    (filter some?))]
 
     [:g.outlines {:display (when (some? transform) "none")}
      [:& shape-outlines-render {:shapes shapes

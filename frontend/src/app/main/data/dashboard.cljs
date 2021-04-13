@@ -65,8 +65,6 @@
 ;; Data Fetching
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- Fetch Team
-
 (defn fetch-team
   [{:keys [id] :as params}]
   (letfn [(fetched [team state]
@@ -117,7 +115,7 @@
 (defn fetch-bundle
   [{:keys [id] :as params}]
   (us/assert ::us/uuid id)
-  (ptk/reify ::fetch-team
+  (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ state stream]
       (let [profile (:profile state)]

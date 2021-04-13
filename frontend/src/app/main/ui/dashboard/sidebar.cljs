@@ -202,7 +202,7 @@
 (mf/defc teams-selector-dropdown
   [{:keys [team profile locale] :as props}]
   (let [show-dropdown? (mf/use-state false)
-        teams          (mf/use-state [])
+        teams          (mf/deref refs/teams)
 
         on-create-clicked
         (mf/use-callback
@@ -214,12 +214,6 @@
             (da/set-current-team! team-id)
             (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))]
 
-    (mf/use-layout-effect
-     (mf/deps (:id team))
-     (fn []
-       (->> (rp/query! :teams)
-            (rx/subs #(reset! teams %)))))
-
     [:ul.dropdown.teams-dropdown
      [:li.title (t locale "dashboard.switch-team")]
      [:hr]
@@ -227,7 +221,7 @@
       [:span.team-icon i/logo-icon]
       [:span.team-text (t locale "dashboard.your-penpot")]]
 
-     (for [team (remove :is-default @teams)]
+     (for [team (remove :is-default (vals teams))]
        [:* {:key (:id team)}
         [:li.team-name {:on-click (partial team-selected (:id team))}
          [:span.team-icon

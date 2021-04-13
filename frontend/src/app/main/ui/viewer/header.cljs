@@ -185,12 +185,12 @@
         total      (count frames)
         locale     (mf/deref i18n/locale)
         profile    (mf/deref refs/profile)
-        anonymous? (= uuid/zero (:id profile))
+        teams      (mf/deref refs/teams)
 
         team-id    (get-in data [:project :team-id])
 
-        has-permission? (and (not anonymous?)
-                             (contains? (:teams profile) team-id))
+        has-permission? (and (not= uuid/zero (:id profile))
+                             (contains? teams team-id))
 
         project-id (get-in data [:project :id])
         file-id    (get-in data [:file :id])

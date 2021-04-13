@@ -71,6 +71,7 @@
       (swap! storage assoc ::locale lang)
       (reset! locale lang))
     (do
+      (swap! storage dissoc ::locale)
       (reset! locale (autodetect)))))
 
 (defn reset-locale

@@ -9,6 +9,7 @@
    [app.config :as cf]
    [app.common.data :as d]
    [app.common.spec :as us]
+   [app.common.uuid :as uuid]
    [app.main.data.media :as di]
    [app.main.data.messages :as dm]
    [app.main.repo :as rp]
@@ -44,19 +45,29 @@
                    ::lang
                    ::theme]))
 
-;; --- Profile Fetched
+(defn fetch-teams
+  []
+  (letfn [(on-fetched [state data]
+            (let [teams (d/index-by :id data)]
+              (assoc state :teams teams)))]
+    (ptk/reify ::fetch-teams
+      ptk/WatchEvent
+      (watch [_ state s]
+        (->> (rp/query! :teams)
+             (rx/map (fn [data] #(on-fetched % data))))))))
 
 (defn profile-fetched
   [{:keys [fullname id] :as data}]
   (us/verify ::profile data)
   (ptk/reify ::profile-fetched
+    IDeref
+    (-deref [_] data)
+
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc :profile-id id)
-          (assoc :profile data)
-          ;; Safeguard if the profile is loaded after teams
-          (assoc-in [:profile :teams] (get-in state [:profile :teams]))))
+          (assoc :profile data)))
 
     ptk/EffectEvent
     (effect [_ state stream]
@@ -70,11 +81,30 @@
 
 (defn fetch-profile
   []
-  (reify
+  (ptk/reify ::fetch-profile
     ptk/WatchEvent
-    (watch [_ state s]
+    (watch [_ state stream]
       (->> (rp/query! :profile)
            (rx/map profile-fetched)))))
+
+(defn fetch-profile-and-teams
+  "Event used mainly on application bootstrap; it fetches the profile
+  and if and only if the fetched profile corresponds to an
+  authenticated user; proceed to fetch teams."
+  []
+  (ptk/reify ::fetch-profile-and-teams
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/merge
+       (rx/of (fetch-profile))
+       (->> stream
+            (rx/filter (ptk/type? ::profile-fetched))
+            (rx/take 1)
+            (rx/map deref)
+            (rx/mapcat (fn [profile]
+                         (if (= uuid/zero (:id profile))
+                           (rx/empty)
+                           (rx/of (fetch-teams))))))))))
 
 ;; --- Update Profile
 
@@ -201,24 +231,3 @@
       (watch [_ state stream]
         (->> (rp/query :team-users {:team-id team-id})
              (rx/map #(partial fetched %)))))))
-
-(defn user-teams-fetched [data]
-  (ptk/reify ::user-teams-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [teams (->> data
-                       (group-by :id)
-                       (d/mapm #(first %2)))]
-        (assoc-in state [:profile :teams] teams)))))
-
-(defn fetch-user-teams []
-  (ptk/reify ::fetch-user-teams
-    ptk/WatchEvent
-    (watch [_ state s]
-      (->> (rp/query! :teams)
-           (rx/map user-teams-fetched)
-           (rx/catch (fn [error]
-                       (if (= (:type error) :not-found)
-                         (rx/of (rt/nav :auth-login))
-                         (rx/empty))))))))
-

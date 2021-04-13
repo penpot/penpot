@@ -85,7 +85,11 @@
         zoom              (d/check-num zoom 1)
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
-        selected-shapes   (->> selected (mapv #(get objects %)))
+
+        selected-shapes   (into []
+                                (comp (map #(get objects %))
+                                      (filter some?))
+                                selected)
         selected-frames   (into #{} (map :frame-id) selected-shapes)
 
         ;; Only when we have all the selected shapes in one frame
@@ -289,7 +293,7 @@
           {:page-id page-id}])
 
        [:& widgets/viewport-actions]
-       
+
        (when show-prototypes?
          [:& interactions/interactions
           {:selected selected}])
