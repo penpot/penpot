@@ -79,20 +79,20 @@
 
 (defn init-ui
   []
-  (st/emit! (rt/initialize-router ui/routes)
-            (rt/initialize-history on-navigate))
-
-  (st/emit! (udu/fetch-profile)
-            (udu/fetch-user-teams))
   (mf/mount (mf/element ui/app) (dom/get-element "app"))
-  (mf/mount (mf/element modal) (dom/get-element "modal")))
+  (mf/mount (mf/element modal)  (dom/get-element "modal")))
 
 (defn ^:export init
   []
   (i18n/init! cfg/translations)
   (theme/init! cfg/themes)
   (st/init)
-  (init-ui))
+  (init-ui)
+
+  (st/emit! (rt/initialize-router ui/routes)
+            (rt/initialize-history on-navigate)
+            (udu/fetch-profile)
+            (udu/fetch-user-teams)))
 
 (defn reinit
   []
