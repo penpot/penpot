@@ -800,7 +800,8 @@
                       (gsh/setup-selrect))]
         (rx/of (add-shape shape))))))
 
-(defn image-uploaded [image x y]
+(defn image-uploaded
+  [image {:keys [x y]}]
   (ptk/reify ::image-uploaded
     ptk/WatchEvent
     (watch [_ state stream]

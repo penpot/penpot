@@ -389,8 +389,8 @@
 
 (defn on-image-uploaded []
  (mf/use-callback
-  (fn [image {:keys [x y]}]
-    (st/emit! (dw/image-uploaded image x y)))))
+  (fn [image position]
+    (st/emit! (dw/image-uploaded image position)))))
 
 (defn on-drop [file viewport-ref zoom]
   (let [on-image-uploaded (on-image-uploaded)]
@@ -427,21 +427,23 @@
            (dnd/has-type? event "text/uri-list")
            (let [data  (dnd/get-data event "text/uri-list")
                  lines (str/lines data)
-                 urls  (filter #(and (not (str/blank? %))
+                 uris  (filter #(and (not (str/blank? %))
                                      (not (str/starts-with? % "#")))
                                lines)
                  params {:file-id (:id file)
-                         :uris urls}]
-             (st/emit! (dw/upload-media-workspace params viewport-coord)))
+                         :position viewport-coord
+                         :uris uris}]
+             (st/emit! (dw/upload-media-workspace params)))
 
            ;; Will trigger when the user drags an SVG asset from the assets panel
            (and (dnd/has-type? event "text/asset-id") (= asset-type "image/svg+xml"))
            (let [path (cfg/resolve-file-media {:id asset-id})
                  params {:file-id (:id file)
+                         :position viewport-coord
                          :uris [path]
                          :name asset-name
                          :mtype asset-type}]
-             (st/emit! (dw/upload-media-workspace params viewport-coord)))
+             (st/emit! (dw/upload-media-workspace params)))
 
            ;; Will trigger when the user drags an image from the assets SVG
            (dnd/has-type? event "text/asset-id")
@@ -458,8 +460,9 @@
            :else
            (let [files  (dnd/get-files event)
                  params {:file-id (:id file)
-                         :data (seq files)}]
-             (st/emit! (dw/upload-media-workspace params viewport-coord)))))))))
+                         :position viewport-coord
+                         :blobs (seq files)}]
+             (st/emit! (dw/upload-media-workspace params)))))))))
 
 (defn on-paste [disable-paste in-viewport?]
  (mf/use-callback

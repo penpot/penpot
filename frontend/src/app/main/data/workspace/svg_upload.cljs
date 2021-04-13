@@ -211,7 +211,7 @@
 
 (defn create-rect-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
-        transform (->> svg-transform 
+        transform (->> svg-transform
                        (gmt/transform-in (gpt/point svg-data)))
 
         rect (->> (select-keys attrs [:x :y :width :height])
@@ -239,7 +239,7 @@
 
 (defn create-circle-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
-        transform (->> svg-transform 
+        transform (->> svg-transform
                        (gmt/transform-in (gpt/point svg-data)))
 
         circle (->> (select-keys attrs [:r :ry :rx :cx :cy])
@@ -273,7 +273,7 @@
 
 (defn create-image-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
-        transform (->> svg-transform 
+        transform (->> svg-transform
                        (gmt/transform-in (gpt/point svg-data)))
 
         image-url (:xlink:href attrs)
@@ -327,7 +327,7 @@
                              (update :attrs usvg/add-transform disp-matrix)
                              (assoc :content [use-data]))]
         (parse-svg-element frame-id svg-data element-data unames))
-      
+
       ;; SVG graphic elements
       ;; :circle :ellipse :image :line :path :polygon :polyline :rect :text :use
       (let [shape (-> (case tag
@@ -381,42 +381,42 @@
 
 (declare create-svg-shapes)
 
-(defn svg-uploaded [svg-data file-id x y]
+(defn svg-uploaded
+  [svg-data file-id position]
   (ptk/reify ::svg-uploaded
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [images-to-upload (-> svg-data (usvg/collect-images))
+      ;; Once the SVG is uploaded, we need to extract all the bitmap
+      ;; images and upload them separatelly, then proceed to create
+      ;; all shapes.
+      (->> (rx/from (usvg/collect-images svg-data))
+           (rx/map (fn [uri]
+                     (d/merge
+                      {:file-id file-id
+                       :is-local true
+                       :url uri}
 
-            prepare-uri
-            (fn [uri]
-              (merge
-               {:file-id file-id
-                :is-local true
-                :url uri}
+                      (if (str/starts-with? uri "data:")
+                        {:name "image"
+                         :content (uu/data-uri->blob uri)}
+                        {:name (uu/uri-name uri)}))))
+           (rx/mapcat (fn [uri-data]
+                        (->> (rp/mutation! (if (contains? uri-data :content)
+                                             :upload-file-media-object
+                                             :create-file-media-object-from-url) uri-data)
+                             (rx/map #(vector (:url uri-data) %)))))
+           (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})
+           (rx/map #(create-svg-shapes (assoc svg-data :image-data %) position))))))
 
-               (if (str/starts-with? uri "data:")
-                 {:name "image"
-                  :content (uu/data-uri->blob uri)}
-                 {:name (uu/uri-name uri)})))]
-
-        (->> (rx/from images-to-upload)
-             (rx/map prepare-uri)
-             (rx/mapcat (fn [uri-data]
-                          (->> (rp/mutation! (if (contains? uri-data :content)
-                                               :upload-file-media-object
-                                               :create-file-media-object-from-url) uri-data)
-                               (rx/map #(vector (:url uri-data) %)))))
-             (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})
-             (rx/map #(create-svg-shapes (assoc svg-data :image-data %) x y)))))))
-
-(defn create-svg-shapes [svg-data x y]
+(defn create-svg-shapes
+  [svg-data {:keys [x y] :as position}]
   (ptk/reify ::create-svg-shapes
     ptk/WatchEvent
     (watch [_ state stream]
       (try
         (let [page-id (:current-page-id state)
               objects (dwc/lookup-page-objects state page-id)
-              frame-id (cp/frame-id-by-position objects {:x x :y y})
+              frame-id (cp/frame-id-by-position objects position)
               selected (get-in state [:workspace-local :selected])
 
               [vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
