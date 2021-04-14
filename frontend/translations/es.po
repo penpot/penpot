@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-04-14 08:47+0000\n"
-"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -981,7 +981,8 @@ msgstr "Enviando..."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.desc-message"
-msgstr "Estamos en una operación de mantenimiento programado de nuestros sistemas."
+msgstr ""
+"Estamos en una operación de mantenimiento programado de nuestros sistemas."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.main-message"
@@ -1047,7 +1048,8 @@ msgstr "Verificar el nuevo correo"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
-msgstr "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
+msgstr ""
+"Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -2156,7 +2158,8 @@ msgstr "Alineación vertical"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
-msgstr "Usa el botón de play de la cabecera para arrancar la vista de prototipo."
+msgstr ""
+"Usa el botón de play de la cabecera para arrancar la vista de prototipo."
 
 msgid "workspace.path.actions.add-node"
 msgstr "Añadir nodo (%s)"
