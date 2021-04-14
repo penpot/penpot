@@ -776,6 +776,10 @@ msgstr "Confirmar contraseña"
 msgid "labels.content"
 msgstr "Contenido"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Crear"
+
 #: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "Crea un nuevo equipo"
@@ -1418,6 +1422,22 @@ msgstr "Biblioteca del archivo"
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
 msgstr "Gráficos"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group"
+msgstr "Agrupar"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group"
+msgstr "Crear un grupo"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group-name"
+msgstr "Nombre del grupo"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group-hint"
+msgstr "Tus elementos se renombrarán automáticamente a \"nombre grupo / nombre elemento\""
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.libraries"
