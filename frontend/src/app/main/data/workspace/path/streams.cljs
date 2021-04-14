@@ -55,7 +55,7 @@
     (* (mth/floor (/ num k)) k)))
 
 (defn move-points-stream
-  [start-point selected-points points]
+  [snap-toggled start-point selected-points points]
 
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
         ranges (snap/create-ranges points selected-points)
@@ -63,15 +63,17 @@
 
         check-path-snap
         (fn [position]
-          (let [delta (gpt/subtract position start-point)
-                moved-points (->> selected-points (mapv #(gpt/add % delta)))
-                snap (snap/get-snap-delta moved-points ranges d-pos)]
-            (gpt/add position snap)))]
+          (if snap-toggled
+            (let [delta (gpt/subtract position start-point)
+                  moved-points (->> selected-points (mapv #(gpt/add % delta)))
+                  snap (snap/get-snap-delta moved-points ranges d-pos)]
+              (gpt/add position snap))
+            position))]
     (->> ms/mouse-position
          (rx/map check-path-snap))))
 
 (defn move-handler-stream
-  [start-point handler points]
+  [snap-toggled start-point handler points]
 
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
         ranges (snap/create-ranges points)
@@ -79,15 +81,17 @@
 
         check-path-snap
         (fn [position]
-          (let [delta (gpt/subtract position start-point)
-                handler-position (gpt/add handler delta)
-                snap (snap/get-snap-delta [handler-position] ranges d-pos)]
-            (gpt/add position snap)))]
+          (if snap-toggled
+            (let [delta (gpt/subtract position start-point)
+                  handler-position (gpt/add handler delta)
+                  snap (snap/get-snap-delta [handler-position] ranges d-pos)]
+              (gpt/add position snap))
+            position))]
     (->> ms/mouse-position
          (rx/map check-path-snap))))
 
 (defn position-stream
-  [points]
+  [snap-toggled points]
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
         ;; ranges (snap/create-ranges points)
         d-pos (/ snap/snap-path-accuracy zoom)
@@ -105,8 +109,10 @@
     (->> ms/mouse-position
          (rx/with-latest vector ranges-stream)
          (rx/map (fn [[position ranges]]
-                   (let [snap (snap/get-snap-delta [position] ranges d-pos)]
-                     (gpt/add position snap))))
+                   (if snap-toggled
+                     (let [snap (snap/get-snap-delta [position] ranges d-pos)]
+                       (gpt/add position snap))
+                     position)))
 
          (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
          (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %)))))))

@@ -171,7 +171,8 @@
                 moving-nodes
                 moving-handler
                 hover-handlers
-                hover-points]
+                hover-points
+                snap-toggled]
          :as edit-path} (mf/deref edit-path-ref)
 
         selected-points (or selected-points #{})
@@ -200,7 +201,7 @@
           [(->> selected-points (map base->point) (into #{}))
            (->> points (remove selected-points) (into #{}))])
 
-        show-snap? (or (some? drag-handler) (some? preview) (some? moving-handler) moving-nodes)
+        show-snap? (and snap-toggled (or (some? drag-handler) (some? preview) (some? moving-handler) moving-nodes))
 
         handle-double-click-outside
         (fn [event]

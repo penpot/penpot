@@ -118,6 +118,7 @@
             zoom (get-in state [:workspace-local :zoom])
             id (get-in state [:workspace-local :edition])
             selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+            snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
             selected? (contains? selected-points position)
 
             content (get-in state (st/get-path state :content))
@@ -127,7 +128,7 @@
             (rx/concat
              ;; This stream checks the consecutive mouse positions to do the draging
              (->> points
-                  (streams/move-points-stream start-position selected-points)
+                  (streams/move-points-stream snap-toggled start-position selected-points)
                   (rx/take-until stopper)
                   (rx/map #(move-selected-path-point start-position %)))
              (rx/of (apply-content-modifiers)))
@@ -162,11 +163,12 @@
             handler (-> content (get index) (ugp/get-handler prefix))
 
             current-distance (when opposite-handler (gpt/distance (ugp/opposite-handler point handler) opposite-handler))
-            match-opposite? (and opposite-handler (mth/almost-zero? current-distance))]
+            match-opposite? (and opposite-handler (mth/almost-zero? current-distance))
+            snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])]
 
         (streams/drag-stream
          (rx/concat
-          (->> (streams/move-handler-stream start-point handler points)
+          (->> (streams/move-handler-stream snap-toggled start-point handler points)
                (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
                (rx/map
                 (fn [{:keys [x y alt? shift?]}]

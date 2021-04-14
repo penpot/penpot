@@ -131,10 +131,11 @@
                                         (ms/mouse-up? %))))
 
             content (get-in state (st/get-path state :content))
+            snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
             points (ugp/content->points content)
             
             drag-events-stream
-            (->> (streams/position-stream points)
+            (->> (streams/position-stream snap-toggled points)
                  (rx/take-until stop-stream)
                  (rx/map #(drag-handler %)))]
 
@@ -166,7 +167,10 @@
             content (get-in state (st/get-path state :content))
             points (ugp/content->points content)
 
-            drag-events (->> (streams/position-stream points)
+            id (st/get-path-id state)
+            snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
+
+            drag-events (->> (streams/position-stream snap-toggled points)
                              (rx/take-until mouse-up)
                              (rx/map #(drag-handler %)))]
 
@@ -186,10 +190,11 @@
        (rx/merge-map #(rx/empty))))
 
 (defn make-drag-stream
-  [stream down-event zoom points]
+  [stream snap-toggled zoom points down-event]
   (let [mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                 (ms/mouse-up? %))))
-        drag-events (->> (streams/position-stream points)
+
+        drag-events (->> (streams/position-stream snap-toggled points)
                          (rx/take-until mouse-up)
                          (rx/map #(drag-handler %)))]
 
@@ -219,9 +224,12 @@
             content (get-in state (st/get-path state :content))
             points (ugp/content->points content)
 
+            id (st/get-path-id state)
+            snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
+
             ;; Mouse move preview
             mousemove-events
-            (->> (streams/position-stream points)
+            (->> (streams/position-stream snap-toggled points)
                  (rx/take-until end-path-events)
                  (rx/map #(preview-next-point %)))
 
@@ -229,12 +237,12 @@
             mousedown-events
             (->> mouse-down
                  (rx/take-until end-path-events)
-                 (rx/with-latest merge (streams/position-stream points))
+                 (rx/with-latest merge (streams/position-stream snap-toggled points))
 
                  ;; We change to the stream that emits the first event
                  (rx/switch-map
                   #(rx/race (make-node-events-stream stream)
-                            (make-drag-stream stream % zoom points))))]
+                            (make-drag-stream stream snap-toggled zoom points %))))]
 
         (rx/concat
          (rx/of (common/init-path))
