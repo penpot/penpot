@@ -7,6 +7,7 @@
 - Add integration with gitpod.io (an online IDE) [#807](https://github.com/penpot/penpot/pull/807)
 - Allow to group assets (components and graphics) [Taiga #1289](https://tree.taiga.io/project/penpot/us/1289)
 - Internal: refactor of http client, replace internal xhr usage with more modern Fetch API.
+- New features for paths: snap points on edition, add/remove nodes, merge/join/split nodes. [Taiga #907](https://tree.taiga.io/project/penpot/us/907)
 
 
 ### :bug: Bugs fixed

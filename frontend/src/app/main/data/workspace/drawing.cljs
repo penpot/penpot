@@ -14,8 +14,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.path :as path]
    [app.main.data.workspace.drawing.common :as common]
-   [app.main.data.workspace.drawing.path :as path]
    [app.main.data.workspace.drawing.curve :as curve]
    [app.main.data.workspace.drawing.box :as box]))
 

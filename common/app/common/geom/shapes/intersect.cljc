@@ -285,6 +285,11 @@
              (or (not path?)   (overlaps-path? shape rect))
              (or (not circle?) (overlaps-ellipse? shape rect))))))
 
+(defn has-point-rect?
+  [rect point]
+  (let [lines (gpr/rect->lines rect)]
+    (is-point-inside-evenodd? point lines)))
+
 (defn has-point?
   "Check if the shape contains a point"
   [shape point]

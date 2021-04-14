@@ -19,6 +19,12 @@
    (gpt/point (+ x width) (+ y height))
    (gpt/point x (+ y height))])
 
+(defn rect->lines [{:keys [x y width height]}]
+  [[(gpt/point x y) (gpt/point (+ x width) y)]
+   [(gpt/point (+ x width) y) (gpt/point (+ x width) (+ y height))]
+   [(gpt/point (+ x width) (+ y height)) (gpt/point x (+ y height))]
+   [(gpt/point x (+ y height)) (gpt/point x y)]])
+
 (defn points->rect
   [points]
   (let [minx (transduce gco/map-x-xf min ##Inf points)

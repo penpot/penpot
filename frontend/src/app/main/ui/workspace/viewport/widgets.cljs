@@ -14,7 +14,7 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.workspace.shapes.path.actions :refer [path-actions]]
+   [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))

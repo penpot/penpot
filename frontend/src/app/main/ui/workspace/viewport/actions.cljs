@@ -15,6 +15,7 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.workspace.viewport.utils :as utils]
+   [app.main.data.workspace.path :as dwdp]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.keyboard :as kbd]
@@ -44,7 +45,9 @@
              middle-click? (= 2 (.-which event))
 
              frame? (= :frame type)
-             selected? (contains? selected id)]
+             selected? (contains? selected id)
+
+             drawing-path? (= :draw (get-in edit-path [edition :edit-mode]))]
 
          (when middle-click?
            (dom/prevent-default bevent)
@@ -56,14 +59,18 @@
            (when (and (not= edition id) text-editing?)
              (st/emit! dw/clear-edition-mode))
 
-           (when (and (or (not edition) (not= edition id)) (not blocked) (not hidden) (not (#{:comments :path} drawing-tool)))
+           (when (and (not text-editing?)
+                      (not blocked)
+                      (not hidden)
+                      (not (#{:comments :path} drawing-tool))
+                      (not drawing-path?))
              (cond
                drawing-tool
                (st/emit! (dd/start-drawing drawing-tool))
 
                (and edit-path (contains? edit-path edition))
-               ;; Handle node select-drawing. NOP at the moment
-               nil
+               ;; Handle path node area selection
+               (st/emit! (dwdp/handle-selection shift?))
 
                (or (not id) (and frame? (not selected?)))
                (st/emit! (dw/handle-selection shift?))
@@ -142,9 +149,9 @@
            (st/emit! (dw/select-shape (:id @hover)))))))))
 
 (defn on-double-click
-  [hover hover-ids drawing-path? objects]
+  [hover hover-ids drawing-path? objects edition]
   (mf/use-callback
-   (mf/deps @hover @hover-ids drawing-path?)
+   (mf/deps @hover @hover-ids drawing-path? edition)
    (fn [event]
      (dom/stop-propagation event)
      (let [ctrl? (kbd/ctrl? event)
@@ -170,7 +177,7 @@
                  (reset! hover-ids (into [] (rest @hover-ids)))
                  (st/emit! (dw/select-shape (:id selected))))
 
-               (or text? path?)
+               (and (not= id edition) (or text? path?))
                (st/emit! (dw/select-shape id)
                          (dw/start-editing-selected))
 

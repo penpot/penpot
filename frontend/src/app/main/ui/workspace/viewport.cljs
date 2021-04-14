@@ -101,7 +101,7 @@
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool)
         on-context-menu   (actions/on-context-menu hover)
-        on-double-click   (actions/on-double-click hover hover-ids drawing-path? objects)
+        on-double-click   (actions/on-double-click hover hover-ids drawing-path? objects edition)
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file viewport-ref zoom)
@@ -170,7 +170,8 @@
        :width (:width vport 0)
        :height (:height vport 0)
        :view-box (utils/format-viewbox vbox)
-       :style {:background-color (get options :background "#E8E9EA")}}
+       :style {:background-color (get options :background "#E8E9EA")
+               :pointer-events "none"}}
 
       [:& (mf/provider muc/embed-ctx) {:value true}
        ;; Render root shape
@@ -286,7 +287,6 @@
          [:& widgets/cursor-tooltip
           {:zoom zoom
            :tooltip tooltip}])
-
 
        (when show-presence?
          [:& presence/active-cursors

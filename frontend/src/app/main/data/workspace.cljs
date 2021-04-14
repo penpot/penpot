@@ -24,7 +24,7 @@
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
-   [app.main.data.workspace.drawing.path :as dwdp]
+   [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]

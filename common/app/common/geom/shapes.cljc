@@ -253,3 +253,4 @@
 ;; Intersection
 (d/export gin/overlaps?)
 (d/export gin/has-point?)
+(d/export gin/has-point-rect?)
