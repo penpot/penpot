@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-04-14 08:55+0000\n"
-"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
