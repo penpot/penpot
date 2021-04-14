@@ -12,7 +12,7 @@
     "defaults"
   ],
   "scripts": {
-    "collect-locales": "clojure -M:dev locales.clj collect src/app/main/ resources/locales.json"
+    "validate-translations": "node ./scripts/validate-translations.js"
   },
   "devDependencies": {
     "autoprefixer": "^10.2.4",

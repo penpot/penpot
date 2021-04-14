@@ -1403,6 +1403,16 @@ msgstr "Colores"
 msgid "workspace.assets.components"
 msgstr "Componentes"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group"
+msgstr "Crear un grupo"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group-hint"
+msgstr ""
+"Tus elementos se renombrarán automáticamente a \"nombre grupo / nombre "
+"elemento\""
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.delete"
 msgstr "Borrar"
@@ -1428,16 +1438,8 @@ msgid "workspace.assets.group"
 msgstr "Agrupar"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.create-group"
-msgstr "Crear un grupo"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.group-name"
 msgstr "Nombre del grupo"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.create-group-hint"
-msgstr "Tus elementos se renombrarán automáticamente a \"nombre grupo / nombre elemento\""
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.libraries"
