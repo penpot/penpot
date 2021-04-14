@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-14 07:53+0000\n"
-"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
+"PO-Revision-Date: 2021-04-14 08:47+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -2491,3 +2491,7 @@ msgid "auth.check-your-email"
 msgstr ""
 "Comprueba tu email y haz click en el link de verificación para comenzar a "
 "usar Penpot."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Hemos enviado un email de verificación a"
