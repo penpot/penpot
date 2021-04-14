@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-14 08:58+0000\n"
-"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
+"PO-Revision-Date: 2021-04-14 13:44+0000\n"
+"Last-Translator: Andrés Moya <andres.moya@kaleidos.net>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -2490,6 +2490,7 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.check-your-email"
 msgstr ""
 "Comprueba tu email y haz click en el link de verificación para comenzar a "
