@@ -44,9 +44,7 @@
             (cond
               (= edit-mode :move)
               ;; If we're dragging a selected item we don't change the selection
-              (do (when (not selected?)
-                    (st/emit! (drp/select-node position shift?)))
-                  (st/emit! (drp/start-move-path-point position shift?)))
+              (st/emit! (drp/start-move-path-point position shift?))
 
               (and (= edit-mode :draw) start-path?)
               (st/emit! (drp/start-path-from-point position))

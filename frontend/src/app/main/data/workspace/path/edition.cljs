@@ -62,10 +62,18 @@
             page-id (:current-page-id state)
             shape (get-in state (st/get-path state))
             content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
-            new-content (ugp/apply-content-modifiers (:content shape) content-modifiers)
+
+            content (:content shape)
+            new-content (ugp/apply-content-modifiers content content-modifiers)
+
+            old-points (->> content ugp/content->points)
+            new-points (->> new-content ugp/content->points)
+            point-change (->> (map hash-map old-points new-points) (reduce merge))
+
             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
 
         (rx/of (dwc/commit-changes rch uch {:commit-local? true})
+               (selection/update-selection point-change)
                (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler)))))))
 
 (defn move-selected-path-point [from-point to-point]
@@ -108,36 +116,44 @@
               (assoc-in [:workspace-local :edit-path id :moving-nodes] true)
               (assoc-in [:workspace-local :edit-path id :content-modifiers] modifiers)))))))
 
+(declare drag-selected-points)
+
 (defn start-move-path-point
   [position shift?]
   (ptk/reify ::start-move-path-point
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [start-position @ms/mouse-position
-            stopper (->> stream (rx/filter ms/mouse-up?))
+      (let [id (get-in state [:workspace-local :edition])
+            selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+            selected? (contains? selected-points position)]
+        (streams/drag-stream
+         (rx/of
+          (when-not selected? (selection/select-node position shift? "drag"))
+          (drag-selected-points @ms/mouse-position))
+         (rx/of (selection/select-node position shift? "click")))))))
+
+(defn drag-selected-points
+  [start-position]
+  (ptk/reify ::drag-selected-points
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stopper (->> stream (rx/filter ms/mouse-up?))
             zoom (get-in state [:workspace-local :zoom])
             id (get-in state [:workspace-local :edition])
-            selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
-            selected? (contains? selected-points position)
+
+            selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
 
             content (get-in state (st/get-path state :content))
-            points (ugp/content->points content)
+            points (ugp/content->points content)]
 
-            mouse-drag-stream
-            (rx/concat
-             ;; This stream checks the consecutive mouse positions to do the draging
-             (->> points
-                  (streams/move-points-stream snap-toggled start-position selected-points)
-                  (rx/take-until stopper)
-                  (rx/map #(move-selected-path-point start-position %)))
-             (rx/of (apply-content-modifiers)))
-
-            ;; When there is not drag we select the node
-            mouse-click-stream
-            (rx/of (selection/select-node position shift?))]
-
-        (streams/drag-stream mouse-drag-stream mouse-click-stream)))))
+        (rx/concat
+         ;; This stream checks the consecutive mouse positions to do the draging
+         (->> points
+              (streams/move-points-stream snap-toggled start-position selected-points)
+              (rx/take-until stopper)
+              (rx/map #(move-selected-path-point start-position %)))
+         (rx/of (apply-content-modifiers)))))))
 
 (defn start-move-handler
   [index prefix]

@@ -49,9 +49,11 @@
       (let [selrect (get-in state [:workspace-local :selrect])
             id (get-in state [:workspace-local :edition])
             content (get-in state (st/get-path state :content))
-            selected-point? (fn [point]
-                              (gsh/has-point-rect? selrect point))
-            positions (into #{}
+            selected-point? #(gsh/has-point-rect? selrect %)
+
+            selected-points (get-in state [:workspace-local :edit-path id :selected-points])
+
+            positions (into (if shift? selected-points #{})
                             (comp (map (comp gpt/point :params))
                                   (filter selected-point?))
                             content)]
@@ -59,14 +61,24 @@
           (some? id)
           (assoc-in [:workspace-local :edit-path id :selected-points] positions))))))
 
-(defn select-node [position shift?]
+(defn select-node [position shift? kk]
   (ptk/reify ::select-node
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])]
+      (let [id (get-in state [:workspace-local :edition])
+            selected-points (or (get-in state [:workspace-local :edit-path id :selected-points]) #{})
+            selected-points (cond
+                              (and shift? (contains? selected-points position))
+                              (disj selected-points position)
+
+                              shift?
+                              (conj selected-points position)
+
+                              :else
+                              #{position})]
         (cond-> state
           (some? id)
-          (assoc-in [:workspace-local :edit-path id :selected-points] #{position}))))))
+          (assoc-in [:workspace-local :edit-path id :selected-points] selected-points))))))
 
 (defn deselect-node [position shift?]
   (ptk/reify ::deselect-node
@@ -142,3 +154,14 @@
 
            (rx/of (select-node-area shift?)
                   (clear-area-selection))))))))
+
+(defn update-selection
+  [point-change]
+  (ptk/reify ::update-selection
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (st/get-path-id state)
+            selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+            selected-points (into #{} (map point-change) selected-points)]
+        (-> state
+            (assoc-in [:workspace-local :edit-path id :selected-points] selected-points))))))
