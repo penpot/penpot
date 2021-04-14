@@ -237,18 +237,19 @@
             (when-not (empty? attrs)
               (st/emit! (dwt/update-text-attrs {:id id :attrs attrs})))))
 
-        typography (cond
-                     (and (:typography-ref-id values)
-                          (not= (:typography-ref-id values) :multiple)
-                          (not= (:typography-ref-file values) file-id))
-                     (-> shared-libs
-                         (get-in [(:typography-ref-file values) :data :typographies (:typography-ref-id values)])
-                         (assoc :file-id (:typography-ref-file values)))
+        typography
+        (cond
+          (and (:typography-ref-id values)
+               (not= (:typography-ref-id values) :multiple)
+               (not= (:typography-ref-file values) file-id))
+          (-> shared-libs
+              (get-in [(:typography-ref-file values) :data :typographies (:typography-ref-id values)])
+              (assoc :file-id (:typography-ref-file values)))
 
-                     (and (:typography-ref-id values)
-                          (not= (:typography-ref-id values) :multiple)
-                          (= (:typography-ref-file values) file-id))
-                     (get typographies (:typography-ref-id values)))
+          (and (:typography-ref-id values)
+               (not= (:typography-ref-id values) :multiple)
+               (= (:typography-ref-file values) file-id))
+          (get typographies (:typography-ref-id values)))
 
         on-convert-to-typography
         (mf/use-callback

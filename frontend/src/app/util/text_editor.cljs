@@ -7,14 +7,15 @@
 (ns app.util.text-editor
   "Draft related abstraction functions."
   (:require
-   ["draft-js" :as draft]
    ["./text_editor_impl.js" :as impl]
+   ["draft-js" :as draft]
    [app.common.attrs :as attrs]
-   [app.common.text :as txt]
    [app.common.data :as d]
-   [app.util.transit :as t]
+   [app.common.text :as txt]
+   [app.common.uuid :as uuid]
    [app.util.array :as arr]
    [app.util.object :as obj]
+   [app.util.transit :as t]
    [clojure.walk :as walk]
    [cuerdas.core :as str]))
 
@@ -23,6 +24,7 @@
 (defn encode-style-value
   [v]
   (cond
+    (uuid? v)    (str "u:" v)
     (string? v)  (str "s:" v)
     (number? v)  (str "n:" v)
     (keyword? v) (str "k:" (name v))
@@ -38,6 +40,7 @@
       "n:" (js/Number (subs v 2))
       "k:" (keyword (subs v 2))
       "m:" (t/decode (subs v 2))
+      "u:" (uuid/uuid (subs v 2))
       "z:" nil
       "o:" (subs v 2)
       v)))

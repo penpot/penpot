@@ -27,6 +27,18 @@
 - zzkt [#814](https://github.com/penpot/penpot/pull/814)
 
 
+## 1.4.1-alpha
+
+### :bug: Bugs fixed
+
+- Fix typography unlinking.
+- Fix incorrect measures on shapes outside artboard.
+- Fix issues on svg parsing related to numbers with exponents.
+- Fix some race conditions on removing shape from workspace.
+- Fix incorrect state management of user lang selection.
+- Fix email validation usability issue on team invitation lightbox.
+
+
 ## 1.4.0-alpha
 
 ### :sparkles: New features

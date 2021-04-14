@@ -106,12 +106,18 @@ export function applyInlineStyle(state, styles) {
   let content = null;
 
   for (let style of styles) {
-    const [p, k, _] = style.split("$$$");
+    console.log("applyInlineStyle", style);
+
+    const [p, k, v] = style.split("$$$");
     const prefix = [p, k, ""].join("$$$");
 
     content = state.getCurrentContent();
     content = removeInlineStylePrefix(content, selection, prefix);
-    content = Modifier.applyInlineStyle(content, selection, style);
+
+    if (v !== "z:null") {
+      content = Modifier.applyInlineStyle(content, selection, style);
+    }
+
     state = EditorState.push(state, content, "change-inline-style");
   }
 
