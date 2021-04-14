@@ -24,7 +24,7 @@
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
-(mf/defc path-point [{:keys [position zoom edit-mode hover? selected? preview? start-path? last-p?]}]
+(mf/defc path-point [{:keys [position zoom edit-mode hover? selected? preview? start-path? last-p? new-point?]}]
   (let [{:keys [x y]} position
 
         on-enter
@@ -39,6 +39,9 @@
         (fn [event]
           (dom/stop-propagation event)
           (dom/prevent-default event)
+
+          (when (and new-point? (some? (meta position)))
+            (st/emit! (drp/create-node-at-position (meta position))))
 
           (let [shift? (kbd/shift? event)]
             (cond
@@ -190,6 +193,8 @@
         last-p (->> content last ugp/command->point)
         handlers (ugp/content->handlers content)
 
+        start-p? (not (some? last-point))
+
         [snap-selected snap-points]
         (cond
           (some? drag-handler) [#{drag-handler} points]
@@ -199,7 +204,9 @@
           [(->> selected-points (map base->point) (into #{}))
            (->> points (remove selected-points) (into #{}))])
 
-        show-snap? (and snap-toggled (or (some? drag-handler) (some? preview) (some? moving-handler) moving-nodes))
+        show-snap? (and snap-toggled
+                        (empty? hover-points)
+                        (or (some? drag-handler) (some? preview) (some? moving-handler) moving-nodes))
 
         handle-double-click-outside
         (fn [event]
@@ -212,6 +219,13 @@
        (let [keys [(events/listen (dom/get-root) EventType.DBLCLICK handle-double-click-outside)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
+
+    (hooks/use-stream
+     ms/mouse-position
+     (mf/deps shape zoom)
+     (fn [position]
+       (when-let [point (gshp/path-closest-point shape position)]
+         (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
      (when (and preview (not drag-handler))
@@ -228,13 +242,15 @@
      (when @hover-point
        [:g.hover-point
         [:& path-point {:position @hover-point
+                        :edit-mode edit-mode
+                        :new-point? true
+                        :start-path? start-p?
                         :zoom zoom}]])
 
      (for [position points]
        (let [point-selected? (contains? selected-points (get point->base position))
              point-hover? (contains? hover-points (get point->base position))
-             last-p? (= last-point (get point->base position))
-             start-p? (not (some? last-point))]
+             last-p? (= last-point (get point->base position))]
 
          [:g.path-node
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}

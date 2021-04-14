@@ -234,3 +234,15 @@
     (update [_ state]
       (let [id (get-in state [:workspace-local :edition])]
         (update state :workspace-local dissoc :edit-path id)))))
+
+(defn create-node-at-position
+  [{:keys [from-p to-p t]}]
+  (ptk/reify ::create-node-at-position
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (st/get-path-id state)]
+        (update-in state (st/get-path state :content) ugp/split-segments #{from-p to-p} t)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (changes/save-path-content)))))

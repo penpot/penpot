@@ -58,23 +58,23 @@
       ;; We schedule the event so it fires after `initialize-page` event
       (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
 
-(defn setup-cursor [cursor alt? panning drawing-tool drawing-path?]
+(defn setup-cursor [cursor alt? panning drawing-tool drawing-path? path-editing?]
   (mf/use-effect
-   (mf/deps @cursor @alt? panning drawing-tool drawing-path?)
+   (mf/deps @cursor @alt? panning drawing-tool drawing-path? path-editing?)
    (fn []
      (let [new-cursor
            (cond
-             panning                     (utils/get-cursor :hand)
-             (= drawing-tool :comments)  (utils/get-cursor :comments)
-             (= drawing-tool :frame)     (utils/get-cursor :create-artboard)
-             (= drawing-tool :rect)      (utils/get-cursor :create-rectangle)
-             (= drawing-tool :circle)    (utils/get-cursor :create-ellipse)
+             panning                         (utils/get-cursor :hand)
+             (= drawing-tool :comments)      (utils/get-cursor :comments)
+             (= drawing-tool :frame)         (utils/get-cursor :create-artboard)
+             (= drawing-tool :rect)          (utils/get-cursor :create-rectangle)
+             (= drawing-tool :circle)        (utils/get-cursor :create-ellipse)
              (or (= drawing-tool :path)
-                 drawing-path?)          (utils/get-cursor :pen)
-             (= drawing-tool :curve)     (utils/get-cursor :pencil)
-             drawing-tool                (utils/get-cursor :create-shape)
-             @alt?                       (utils/get-cursor :duplicate)
-             :else                       (utils/get-cursor :pointer-inner))]
+                 drawing-path?)              (utils/get-cursor :pen)
+             (= drawing-tool :curve)         (utils/get-cursor :pencil)
+             drawing-tool                    (utils/get-cursor :create-shape)
+             (and @alt? (not path-editing?)) (utils/get-cursor :duplicate)
+             :else                           (utils/get-cursor :pointer-inner))]
 
        (when (not= @cursor new-cursor)
          (reset! cursor new-cursor))))))
