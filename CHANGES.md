@@ -13,8 +13,9 @@
 
 ### :bug: Bugs fixed
 
-- Fixes problem with pan and space [#811](https://github.com/penpot/penpot/issues/811)
-- Fixes issue when parsing exponential numbers in paths
+- Fix problem with pan and space [#811](https://github.com/penpot/penpot/issues/811)
+- Fix issue when parsing exponential numbers in paths
+- Remove legacy system user and team [#843](https://github.com/penpot/penpot/issues/843)
 
 ### :arrow_up: Deps updates
 

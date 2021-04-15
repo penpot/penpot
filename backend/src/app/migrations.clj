@@ -163,6 +163,9 @@
 
    {:name "0051-mod-file-library-rel-table"
     :fn (mg/resource "app/migrations/sql/0051-mod-file-library-rel-table.sql")}
+
+   {:name "0052-del-legacy-user-and-team"
+    :fn (mg/resource "app/migrations/sql/0052-del-legacy-user-and-team.sql")}
    ])
 
 
