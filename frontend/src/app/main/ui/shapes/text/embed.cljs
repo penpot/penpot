@@ -8,6 +8,7 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.shapes.text.embed
+  (:refer-clojure :exclude [memoize])
   (:require
    [app.common.data :as d]
    [app.common.text :as txt]
@@ -36,7 +37,7 @@
   [node]
   (let [current-font (if (not (nil? (:font-id node)))
                        #{(select-keys node [:font-id :font-variant-id])}
-                       #{})
+                       #{(select-keys txt/default-text-attrs [:font-id :font-variant-id])})
         children-font (map get-node-fonts (:children node))]
     (reduce set/union (conj children-font current-font))))
 
@@ -74,21 +75,31 @@
             replace-text (fn [text [url data]] (str/replace text url data))]
       (reduce replace-text css url-to-data))))
 
+;; NOTE: we can't move this to generic hooks namespace because that
+;; namespace imports some code incompatible with webworkers and this
+;; font embbeding should be able run on browser and webworker
+;; contexts.
+(defn- memoize
+  [val]
+  (let [ref (mf/use-ref #js {})]
+    (when-not (= (mf/ref-val ref) val)
+      (mf/set-ref-val! ref val))
+    (mf/ref-val ref)))
+
 (mf/defc embed-fontfaces-style
-  {::mf/wrap-props false}
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
   [props]
   (let [node  (obj/get props "node")
+        fonts (-> node get-node-fonts memoize)
         style (mf/use-state nil)]
-    (mf/use-effect
-     (mf/deps node)
-     (fn []
-       (let [font-to-embed (get-node-fonts node)
-             font-to-embed (if (empty? font-to-embed) #{txt/default-text-attrs} font-to-embed)
-             embeded       (map embed-font font-to-embed)]
-         (-> (p/all embeded)
-             (p/then (fn [result]
-                       (reset! style (str/join "\n" result))))))))
 
+    (mf/use-effect
+     (mf/deps fonts)
+     (fn []
+       (-> (p/all (map embed-font fonts))
+           (p/then (fn [result]
+                     (reset! style (str/join "\n" result)))))))
 
     (when (some? @style)
       [:style @style])))
