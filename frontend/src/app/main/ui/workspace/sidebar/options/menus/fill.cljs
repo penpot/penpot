@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.fill
   (:require
    [app.common.pages :as cp]
-   [app.main.data.colors :as dc]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]

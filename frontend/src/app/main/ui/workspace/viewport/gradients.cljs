@@ -21,7 +21,7 @@
    [app.main.streams :as ms]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.colors :as dc]))
+   [app.main.data.workspace.colors :as dc]))
 
 (def gradient-line-stroke-width 2)
 (def gradient-line-stroke-color "white")

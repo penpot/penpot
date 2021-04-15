@@ -6,7 +6,7 @@
 
 (ns app.main.data.shortcuts
   (:require
-   [app.main.data.colors :as mdc]
+   [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.store :as st]
    [app.util.dom :as dom]

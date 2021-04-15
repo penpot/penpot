@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.shortcuts
   (:require
    [app.config :as cfg]
-   [app.main.data.colors :as mdc]
+   [app.main.data.workspace.colors :as mdc]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]

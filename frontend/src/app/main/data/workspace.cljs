@@ -20,7 +20,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.constants :as c]
-   [app.main.data.colors :as mdc]
+   [app.main.data.workspace.colors :as mdc]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
