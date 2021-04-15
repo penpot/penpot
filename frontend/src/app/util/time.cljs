@@ -9,6 +9,7 @@
    [cuerdas.core :as str]
    ["luxon" :as lxn]
    ["date-fns/formatDistanceToNowStrict" :default dateFnsFormatDistanceToNowStrict]
+   ["date-fns/locale/el" :default dateFnsLocalesEl]
    ["date-fns/locale/fr" :default dateFnsLocalesFr]
    ["date-fns/locale/ca" :default dateFnsLocalesCa]
    ["date-fns/locale/en-US" :default dateFnsLocalesEnUs]
@@ -202,6 +203,7 @@
        :tr dateFnsLocalesTr
        :es dateFnsLocalesEs
        :ca dateFnsLocalesCa
+       :el dateFnsLocalesEl
        :ru dateFnsLocalesRu
        :zh_cn dateFnsLocalesZhCn})
 
