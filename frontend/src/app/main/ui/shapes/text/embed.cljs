@@ -89,17 +89,16 @@
     (with-cache {:key uris :max-age (dt/duration {:hours 4})}
       (->> (rx/from (seq uris))
            (rx/mapcat (fn [uri]
-                        (http/send! {:method :get
-                                     :uri uri
-                                     :response-type :blob})))
-           (rx/map :body)))))
+                        (->> (http/send! {:method :get :uri uri :response-type :blob})
+                             (rx/map :body)
+                             (rx/mapcat wapi/read-file-as-data-url)
+                             (rx/map #(vector uri %)))))
+           (rx/reduce conj [])))))
 
 (defn get-font-data
   "Parses the CSS and retrieves the font data as DataURI."
   [^string css]
   (->> (fetch-font-data css)
-       (rx/mapcat wapi/read-file-as-data-url)
-       (rx/reduce conj [])
        (http/as-promise)))
 
 (defn embed-font

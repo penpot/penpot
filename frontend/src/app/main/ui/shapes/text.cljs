@@ -38,7 +38,7 @@
      {:style style
       :xmlns "http://www.w3.org/1999/xhtml"}
      (when embed?
-       [ste/embed-fontfaces-style {:node node}])
+       [:& ste/embed-fontfaces-style {:node node}])
      children]))
 
 (mf/defc render-paragraph-set
