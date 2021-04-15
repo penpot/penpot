@@ -10,6 +10,7 @@
    [cognitect.transit :as t]
    [linked.core :as lk]
    [linked.set :as lks]
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
    [app.util.time :as dt]))
@@ -67,6 +68,22 @@
 (def ordered-set-read-handler
   (t/read-handler #(into (lk/set) %)))
 
+(def date-read-handler
+  (t/read-handler (fn [value] (-> value (js/parseInt 10) (dt/datetime)))))
+
+(def duration-read-handler
+  (t/read-handler (fn [value] (dt/duration value))))
+
+(def date-write-handler
+  (t/write-handler
+   (constantly "m")
+   (fn [v] (str (inst-ms v)))))
+
+(def duration-write-handler
+  (t/write-handler
+   (constantly "duration")
+   (fn [v] (inst-ms v))))
+
 ;; --- Transit Handlers
 
 (def ^:privare +read-handlers+
@@ -75,11 +92,15 @@
    "ordered-set" ordered-set-read-handler
    "jsonblob"    blob-read-handler
    "matrix"      matrix-read-handler
+   "m"           date-read-handler
+   "duration"    duration-read-handler
    "point"       point-read-handler})
 
 (def ^:privare +write-handlers+
   {gmt/Matrix    matrix-write-handler
    Blob          blob-write-handler
+   dt/DateTime   date-write-handler
+   dt/Duration   duration-write-handler
    lks/LinkedSet ordered-set-write-handler
    gpt/Point     point-write-handler})
 
