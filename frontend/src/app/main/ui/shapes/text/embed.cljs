@@ -11,6 +11,7 @@
    [app.common.text :as txt]
    [app.main.fonts :as fonts]
    [app.util.http :as http]
+   [app.util.time :as dt]
    [app.util.webapi :as wapi]
    [app.util.object :as obj]
    [clojure.set :as set]
@@ -18,6 +19,23 @@
    [promesa.core :as p]
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
+
+
+(defonce cache (atom {}))
+
+(defn with-cache
+  [{:keys [key max-age]} observable]
+  (let [entry (get @cache key)
+        age   (when entry
+                (dt/diff (dt/now)
+                         (:created-at entry)))]
+    (if (and (some? entry)
+             (< age max-age))
+      (rx/of (:data entry))
+      (->> observable
+           (rx/tap (fn [data]
+                     (let [entry {:created-at (dt/now) :data data}]
+                       (swap! cache assoc key entry))))))))
 
 (def font-face-template "
 /* latin */
@@ -63,20 +81,26 @@
               (->> (rx/take 1 observable)
                    (rx/subs resolve reject)))))
 
-(defn get-font-data
+(defn fetch-font-data
   "Parses the CSS and retrieves the font data as DataURI."
   [^string css]
   (let [uris (->> (re-seq #"url\(([^)]+)\)" css)
-                  (map second))]
-    (->> (rx/from (seq uris))
-         (rx/mapcat (fn [uri]
-                      (http/send! {:method :get
-                                   :uri uri
-                                   :response-type :blob})))
-         (rx/map :body)
-         (rx/mapcat wapi/read-file-as-data-url)
-         (rx/reduce conj [])
-         (http/as-promise))))
+                  (mapv second))]
+    (with-cache {:key uris :max-age (dt/duration {:hours 4})}
+      (->> (rx/from (seq uris))
+           (rx/mapcat (fn [uri]
+                        (http/send! {:method :get
+                                     :uri uri
+                                     :response-type :blob})))
+           (rx/map :body)))))
+
+(defn get-font-data
+  "Parses the CSS and retrieves the font data as DataURI."
+  [^string css]
+  (->> (fetch-font-data css)
+       (rx/mapcat wapi/read-file-as-data-url)
+       (rx/reduce conj [])
+       (http/as-promise)))
 
 (defn embed-font
   "Given a font-id and font-variant-id, retrieves the CSS for it and
