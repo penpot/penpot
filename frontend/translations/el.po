@@ -383,7 +383,7 @@ msgstr "Είσαι σίγουρος;"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "ds.updated-at"
-msgstr "Ενημερώθηκε:% s"
+msgstr "Ενημερώθηκε: %s"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
@@ -715,7 +715,7 @@ msgstr "Εικόνα"
 
 #: src/app/main/ui/handoff/right_sidebar.cljs
 msgid "handoff.tabs.code.selected.multiple"
-msgstr "% S Επιλεγμένα"
+msgstr "%s Επιλεγμένα"
 
 msgid "handoff.tabs.code.selected.path"
 msgstr "Σχέδιο"
@@ -734,7 +734,7 @@ msgid "handoff.tabs.info"
 msgstr "Πληροφορίες"
 
 msgid "history.alert-message"
-msgstr "Βλέπετε την έκδοση% s"
+msgstr "Βλέπετε την έκδοση %s"
 
 msgid "labels.accept"
 msgstr "Αποδέχομαι"
@@ -885,13 +885,13 @@ msgstr "Ωχ"
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
 msgstr[0] "1 αρχείο"
-msgstr[1] "% s αρχεία"
+msgstr[1] "%s αρχεία"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-projects"
 msgid_plural "labels.num-of-projects"
 msgstr[0] "1 έργο"
-msgstr[1] "% s έργα"
+msgstr[1] "%s έργα"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.old-password"
@@ -1140,7 +1140,7 @@ msgstr "Προσκαλέστε να συμμετάσχετε στην ομάδα
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
-msgstr "Είστε ο ιδιοκτήτης του% s"
+msgstr "Είστε ο ιδιοκτήτης του %s"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint2"
@@ -1230,7 +1230,7 @@ msgstr "Το προφίλ αποθηκεύτηκε με επιτυχία!"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "notifications.validation-email-sent"
-msgstr "Το email επαλήθευσης εστάλη στο% s. Ελέγξτε το email σας!"
+msgstr "Το email επαλήθευσης εστάλη στο %s. Ελέγξτε το email σας!"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
@@ -1509,7 +1509,7 @@ msgstr "Μη αποθηκευμένες αλλαγές"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.viewer"
-msgstr "Λειτουργία προβολής (% s)"
+msgstr "Λειτουργία προβολής (%s)"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -1517,7 +1517,7 @@ msgstr "Προσθήκη"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.colors"
-msgstr "% s χρώματα"
+msgstr "%s χρώματα"
 
 #: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.big-thumbnails"
@@ -1541,7 +1541,7 @@ msgstr "Μικρές μικρογραφίες"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.components"
-msgstr "% s στοιχεία"
+msgstr "%s στοιχεία"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.file-library"
@@ -1549,7 +1549,7 @@ msgstr "Βιβλιοθήκη αρχείων"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.graphics"
-msgstr "% s γραφικά"
+msgstr "%s γραφικά"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.in-this-file"
@@ -1569,7 +1569,7 @@ msgstr "Δεν υπάρχουν κοινόχρηστες βιβλιοθήκες 
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-matches-for"
-msgstr "Δεν βρίσκεται «% s»"
+msgstr "Δεν βρίσκεται «%s»"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-shared-libraries-available"
@@ -1593,7 +1593,7 @@ msgstr "Αποσύνδεση όλων των τυπογραφιών"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.typography"
-msgstr "% s τυπογραφίες"
+msgstr "%s τυπογραφίες"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
@@ -2168,11 +2168,11 @@ msgstr "23 / 5000 Resultados de traducción Ενημέρωση κύριου στ
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
-msgstr "Ιστορικό (% s)"
+msgstr "Ιστορικό (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.layers"
-msgstr "στρώσεις (% s)"
+msgstr "στρώσεις (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
@@ -2188,15 +2188,15 @@ msgstr "Χάρτης ιστοτόπου"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.assets"
-msgstr "Στοιχεία (% s)"
+msgstr "Στοιχεία (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"
-msgstr "Παλέτα χρωμάτων (% s)"
+msgstr "Παλέτα χρωμάτων (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.comments"
-msgstr "Σχόλια (% s)"
+msgstr "Σχόλια (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.curve"
@@ -2236,7 +2236,7 @@ msgstr "Δεν υπάρχουν μέχρι στιγμής αλλαγές στο 
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.delete"
-msgstr "Διαγράφηκε% s"
+msgstr "Διαγράφηκε %s"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.modify"
@@ -2244,7 +2244,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.move"
-msgstr "Τροποποιήθηκε% s"
+msgstr "Τροποποιήθηκε %s"
 
 msgid "workspace.undo.entry.multiple.circle"
 msgstr "κύκλους"
@@ -2339,7 +2339,7 @@ msgstr "τυπογραφικό στοιχείο"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.unknown"
-msgstr "Λειτουργία άνω του% s"
+msgstr "Λειτουργία άνω του %s"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.title"

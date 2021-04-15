@@ -23,7 +23,7 @@
    {:label "Deutsch (community)" :value "de"}
    {:label "Русский (community)" :value "ru"}
    {:label "Türkçe (community)" :value "tr"}
-   {:label "Ελληνική γλώσσα (community)" :value "gr"}
+   {:label "Ελληνική γλώσσα (community)" :value "el"}
    {:label "简体中文 (community)" :value "zh_cn"}])
 
 (defn- parse-locale
