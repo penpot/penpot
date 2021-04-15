@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
    [app.common.uuid :as uuid]
-   [app.main.data.colors :as dwc]
+   [app.main.data.workspace.colors :as dwc]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]

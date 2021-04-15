@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.data.colors
+(ns app.main.data.workspace.colors
   (:require
    [app.common.data :as d]
    [app.common.pages :as cp]
@@ -38,8 +38,7 @@
   (ptk/reify ::rename-color
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/mutation! :rename-color {:id color-id
-                                        :name name})
+      (->> (rp/mutation! :rename-color {:id color-id :name name})
            (rx/map (partial rename-color-result file-id))))))
 
 (defn rename-color-result
@@ -101,8 +100,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-local dissoc :picked-color-select)
-          (update :workspace-local dissoc :picked-shift?)
+          (update :workspace-local dissoc :picked-color-select :picked-shift?)
           (assoc-in [:workspace-local :picking-color?] false)))))
 
 (defn pick-color
@@ -123,75 +121,68 @@
           (assoc-in [:workspace-local :picked-shift?] shift?)))))
 
 (defn change-fill
-  ([ids color]
-   (ptk/reify ::change-fill
-     ptk/WatchEvent
-     (watch [_ state s]
-       (let [pid (:current-page-id state)
-             objects (get-in state [:workspace-data :pages-index pid :objects])
-             not-frame (fn [shape-id] (not= (get-in objects [shape-id :type]) :frame))
-             is-text? #(= :text (:type (get objects %)))
-             text-ids (filter is-text? ids)
-             shape-ids (filter (comp not is-text?) ids)
+  [ids color]
+  (ptk/reify ::change-fill
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [page-id   (:current-page-id state)
+            objects   (dwc/lookup-page-objects state page-id)
 
-             attrs (cond-> {}
-                     (contains? color :color)
-                     (assoc :fill-color (:color color))
+            is-text?  #(= :text (:type (get objects %)))
+            text-ids  (filter is-text? ids)
+            shape-ids (filter (comp not is-text?) ids)
 
-                     (contains? color :id)
-                     (assoc :fill-color-ref-id (:id color))
+            attrs (cond-> {}
+                    (contains? color :color)
+                    (assoc :fill-color (:color color))
 
-                     (contains? color :file-id)
-                     (assoc :fill-color-ref-file (:file-id color))
+                    (contains? color :id)
+                    (assoc :fill-color-ref-id (:id color))
 
-                     (contains? color :gradient)
-                     (assoc :fill-color-gradient (:gradient color))
+                    (contains? color :file-id)
+                    (assoc :fill-color-ref-file (:file-id color))
 
-                     (contains? color :opacity)
-                     (assoc :fill-opacity (:opacity color)))
+                    (contains? color :gradient)
+                    (assoc :fill-color-gradient (:gradient color))
 
-             update-fn (fn [shape] (merge shape attrs))
-             editors (get-in state [:workspace-local :editors])
-             reduce-fn (fn [state id]
-                         (update-in state [:workspace-data :pages-index pid :objects id]  update-fn))]
+                    (contains? color :opacity)
+                    (assoc :fill-opacity (:opacity color)))]
 
-         (rx/from (conj
-                   (map #(dwt/update-text-attrs {:id % :editor (get editors %) :attrs attrs}) text-ids)
-                   (dwc/update-shapes shape-ids update-fn))))))))
+        (rx/concat
+         (rx/from (map #(dwt/update-text-attrs {:id % :attrs attrs}) text-ids))
+         (rx/of (dwc/update-shapes shape-ids (fn [shape] (d/merge shape attrs)))))))))
 
 (defn change-stroke
   [ids color]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ state s]
-      (let [pid (:current-page-id state)
-            objects (get-in state [:workspace-data :pages-index pid :objects])
-            not-frame (fn [shape-id] (not= (get-in objects [shape-id :type]) :frame))
+      (let [page-id (:current-page-id state)
+            objects (dwc/lookup-page-objects state page-id)
 
-            color-attrs (cond-> {}
-                          (contains? color :color)
-                          (assoc :stroke-color (:color color))
+            attrs   (cond-> {}
+                      (contains? color :color)
+                      (assoc :stroke-color (:color color))
 
-                          (contains? color :id)
-                          (assoc :stroke-color-ref-id (:id color))
+                      (contains? color :id)
+                      (assoc :stroke-color-ref-id (:id color))
 
-                          (contains? color :file-id)
-                          (assoc :stroke-color-ref-file (:file-id color))
+                      (contains? color :file-id)
+                      (assoc :stroke-color-ref-file (:file-id color))
 
-                          (contains? color :gradient)
-                          (assoc :stroke-color-gradient (:gradient color))
+                      (contains? color :gradient)
+                      (assoc :stroke-color-gradient (:gradient color))
 
-                          (contains? color :opacity)
-                          (assoc :stroke-opacity (:opacity color)))
+                      (contains? color :opacity)
+                      (assoc :stroke-opacity (:opacity color)))]
 
-            update-fn (fn [shape]
-                        (-> shape
-                            (merge color-attrs)
-                            (cond-> (= (:stroke-style s) :none)
-                              (assoc :stroke-style :solid
-                                     :stroke-width 1
-                                     :stroke-opacity 1))))]
-        (rx/of (dwc/update-shapes ids update-fn))))))
+            (rx/of (dwc/update-shapes ids (fn [shape]
+                                            (cond-> (d/merge shape attrs)
+                                              (= (:stroke-style shape) :none)
+                                              (assoc :stroke-style :solid
+                                                     :stroke-width 1
+                                                     :stroke-opacity 1)))))))))
+
 
 (defn picker-for-selected-shape
   []
@@ -199,15 +190,15 @@
     (ptk/reify ::picker-for-selected-shape
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [ids (get-in state [:workspace-local :selected])
-              stop? (->> stream
-                         (rx/filter (ptk/type? ::stop-picker)))
+        (let [ids   (get-in state [:workspace-local :selected])
+              stop? (rx/filter (ptk/type? ::stop-picker) stream)
 
-              update-events (fn [[color shift?]]
-                              (rx/of  (if shift?
-                                        (change-stroke ids color)
-                                        (change-fill ids color))
-                                      (stop-picker)))]
+              update-events
+              (fn [[color shift?]]
+                (rx/of (if shift?
+                         (change-stroke ids color)
+                         (change-fill ids color))
+                       (stop-picker)))]
           (rx/merge
            ;; Stream that updates the stroke/width and stops if `esc` pressed
            (->> sub

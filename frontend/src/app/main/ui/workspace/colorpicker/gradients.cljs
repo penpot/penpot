@@ -18,7 +18,7 @@
    [app.main.store :as st]
    [app.main.refs :as refs]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.colors :as dc]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.modal :as modal]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]))

@@ -7,7 +7,7 @@
 (ns app.main.data.viewer.shortcuts
   (:require
    [app.config :as cfg]
-   [app.main.data.colors :as mdc]
+   [app.main.data.workspace.colors :as mdc]
    [app.main.data.shortcuts :as ds]
    [app.main.data.shortcuts :refer [c-mod]]
    [app.main.data.viewer :as dv]

@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.colorpalette
   (:require
    [app.common.math :as mth]
-   [app.main.data.colors :as mdc]
+   [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]

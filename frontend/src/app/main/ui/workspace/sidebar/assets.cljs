@@ -15,7 +15,7 @@
    [app.common.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
-   [app.main.data.colors :as dc]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]

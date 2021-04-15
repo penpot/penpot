@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.math :as math]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.colors :as dc]
+   [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
