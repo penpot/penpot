@@ -106,8 +106,6 @@ export function applyInlineStyle(state, styles) {
   let content = null;
 
   for (let style of styles) {
-    console.log("applyInlineStyle", style);
-
     const [p, k, v] = style.split("$$$");
     const prefix = [p, k, ""].join("$$$");
 
