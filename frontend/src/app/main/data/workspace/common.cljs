@@ -72,7 +72,7 @@
                                commit-local? false}
                           :as opts}]
    (us/verify ::cp/changes changes)
-   ;; (us/verify ::cp/changes undo-changes)
+   (us/verify ::cp/changes undo-changes)
    (log/debug :msg "commit-changes"
               :js/changes changes
               :js/undo-changes undo-changes)

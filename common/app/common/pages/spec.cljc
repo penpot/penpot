@@ -16,7 +16,7 @@
 (s/def ::frame-id uuid?)
 (s/def ::id uuid?)
 (s/def ::name string?)
-(s/def ::path string?)
+(s/def ::path (s/nilable string?))
 (s/def ::page-id uuid?)
 (s/def ::parent-id uuid?)
 (s/def ::string string?)
