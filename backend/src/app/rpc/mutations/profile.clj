@@ -6,6 +6,7 @@
 
 (ns app.rpc.mutations.profile
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -303,15 +304,34 @@
 
 (defn login-or-register
   [{:keys [conn] :as cfg} {:keys [email backend] :as params}]
-  (letfn [(create-profile [conn {:keys [fullname email]}]
+  (letfn [(info->props [info]
+            (dissoc info :name :fullname :email :backend))
+
+          (info->lang [{:keys [locale] :as info}]
+            (when (and (string? locale)
+                       (not (str/blank? locale)))
+              locale))
+
+          (create-profile [conn {:keys [email] :as info}]
             (db/insert! conn :profile
                         {:id (uuid/next)
-                         :fullname fullname
+                         :fullname (:fullname info)
                          :email (str/lower email)
+                         :lang (info->lang info)
                          :auth-backend backend
                          :is-active true
                          :password "!"
+                         :props (db/tjson (info->props info))
                          :is-demo false}))
+
+          (update-profile [conn info profile]
+            (let [props (d/merge (:props profile)
+                                 (info->props info))]
+              (db/update! conn :profile
+                          {:props (db/tjson props)
+                           :modified-at (dt/now)}
+                          {:id (:id profile)})
+              (assoc profile :props props)))
 
           (register-profile [conn params]
             (let [profile (->> (create-profile conn params)
@@ -321,7 +341,9 @@
 
     (let [profile (profile/retrieve-profile-data-by-email conn email)
           profile (if profile
-                    (profile/populate-additional-data conn profile)
+                    (->> profile
+                         (update-profile conn params)
+                         (profile/populate-additional-data conn))
                     (register-profile conn params))]
       (profile/strip-private-attrs profile))))
 
@@ -345,7 +367,6 @@
   (db/with-atomic [conn pool]
     (update-profile conn params)
     nil))
-
 
 ;; --- Mutation: Update Password
 

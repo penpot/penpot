@@ -111,6 +111,9 @@
 (s/def ::oidc-token-uri ::us/string)
 (s/def ::oidc-auth-uri ::us/string)
 (s/def ::oidc-user-uri ::us/string)
+(s/def ::oidc-scopes ::us/set-of-str)
+(s/def ::oidc-roles ::us/set-of-str)
+(s/def ::oidc-roles-attr ::us/keyword)
 (s/def ::host ::us/string)
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-session-cookie-name ::us/string)
@@ -190,6 +193,9 @@
                    ::oidc-token-uri
                    ::oidc-auth-uri
                    ::oidc-user-uri
+                   ::oidc-scopes
+                   ::oidc-roles-attr
+                   ::oidc-roles
                    ::host
                    ::http-server-port
                    ::http-session-idle-max-age

@@ -133,6 +133,20 @@
               ::s/invalid))]
   (s/def ::email (s/conformer cfn str)))
 
+
+;; --- SPEC: set-of-str
+(letfn [(conformer [s]
+          (cond
+            (string? s) (into #{} (str/split s #"\s*,\s*"))
+            (set? s)    (if (every? string? s)
+                          s
+                          ::s/invalid)
+            :else       ::s/invalid))
+
+        (unformer [s]
+          (str/join "," s))]
+  (s/def ::set-of-str (s/conformer conformer unformer)))
+
 ;; --- Macros
 
 (defn spec-assert*

@@ -13,7 +13,9 @@
    [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.data.json :as json]
+   [clojure.set :as set]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]))
 
@@ -32,9 +34,7 @@
 (defn register-profile
   [{:keys [rpc] :as cfg} info]
   (let [method-fn (get-in rpc [:methods :mutation :login-or-register])
-        profile   (method-fn {:email (:email info)
-                              :backend (:backend info)
-                              :fullname (:fullname info)})]
+        profile   (method-fn info)]
     (cond-> profile
       (some? (:invitation-token info))
       (assoc :invitation-token (:invitation-token info)))))
@@ -60,7 +60,7 @@
                 :redirect_uri (build-redirect-uri cfg)
                 :response_type "code"
                 :state state
-                :scope (:scope provider)}
+                :scope (str/join " " (:scopes provider []))}
         query  (u/map->query-string params)]
     (-> (u/uri (:auth-uri provider))
         (assoc :query query)
@@ -98,10 +98,10 @@
           res (http/send! req)]
 
       (when (= 200 (:status res))
-        (let [data (json/read-str (:body res))]
-          {:email (get data "email")
-           :backend (:name provider)
-           :fullname (get data "name")})))
+        (let [{:keys [name] :as data} (json/read-str (:body res) :key-fn keyword)]
+          (-> data
+              (assoc :backend (:name provider))
+              (assoc :fullname name)))))
 
     (catch Exception e
       (l/error :hint "unexpected exception on retrieve-user-info"
@@ -109,7 +109,7 @@
       nil)))
 
 (defn retrieve-info
-  [{:keys [tokens] :as cfg} request]
+  [{:keys [tokens provider] :as cfg} request]
   (let [state  (get-in request [:params :state])
         state  (tokens :verify {:token state :iss :oauth})
         info   (some->> (get-in request [:params :code])
@@ -118,6 +118,23 @@
     (when-not info
       (ex/raise :type :internal
                 :code :unable-to-auth))
+
+    ;; If the provider is OIDC, we can proceed to check
+    ;; roles if they are defined.
+    (when (and (= "oidc" (:name provider))
+               (seq (:roles provider)))
+      (let [provider-roles (into #{} (:roles provider))
+            profile-roles  (let [attr  (cf/get :oidc-roles-attr :roles)
+                                 roles (get info attr)]
+                             (cond
+                               (string? roles) (into #{} (str/words roles))
+                               (vector? roles) (into #{} roles)
+                               :else #{}))]
+        ;; check if profile has a configured set of roles
+        (when-not (set/subset? provider-roles profile-roles)
+          (ex/raise :type :internal
+                    :code :unable-to-auth
+                    :hint "not enought permissions"))))
 
     (cond-> info
       (some? (:invitation-token state))
@@ -198,7 +215,10 @@
               :token-uri     (cf/get :oidc-token-uri)
               :auth-uri      (cf/get :oidc-auth-uri)
               :user-uri      (cf/get :oidc-user-uri)
-              :scope         "openid profile email name"
+              :scopes        (into #{"openid" "profile" "email" "name"}
+                                   (cf/get :oidc-scopes #{}))
+              :roles-attr    (cf/get :oidc-roles-attr)
+              :roles         (cf/get :oidc-roles)
               :name          "oidc"}]
     (if (and (string? (:base-uri opts))
              (string? (:client-id opts))
@@ -218,10 +238,9 @@
   [cfg]
   (let [opts {:client-id     (cf/get :google-client-id)
               :client-secret (cf/get :google-client-secret)
-              :scope         (str "email profile "
-                                  "https://www.googleapis.com/auth/userinfo.email "
-                                  "https://www.googleapis.com/auth/userinfo.profile "
-                                  "openid")
+              :scopes        #{"email" "profile" "openid"
+                               "https://www.googleapis.com/auth/userinfo.email"
+                               "https://www.googleapis.com/auth/userinfo.profile"}
               :auth-uri      "https://accounts.google.com/o/oauth2/v2/auth"
               :token-uri     "https://oauth2.googleapis.com/token"
               :user-uri      "https://openidconnect.googleapis.com/v1/userinfo"
@@ -237,7 +256,8 @@
   [cfg]
   (let [opts {:client-id     (cf/get :github-client-id)
               :client-secret (cf/get :github-client-secret)
-              :scope         "user:email"
+              :scopes        #{"read:user"
+                               "user:email"}
               :auth-uri      "https://github.com/login/oauth/authorize"
               :token-uri     "https://github.com/login/oauth/access_token"
               :user-uri      "https://api.github.com/user"
@@ -256,7 +276,7 @@
         opts {:base-uri      base
               :client-id     (cf/get :gitlab-client-id)
               :client-secret (cf/get :gitlab-client-secret)
-              :scope         "read_user"
+              :scopes        #{"read_user"}
               :auth-uri      (str base "/oauth/authorize")
               :token-uri     (str base "/oauth/token")
               :user-uri      (str base "/api/v4/user")

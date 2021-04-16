@@ -29,8 +29,7 @@
 
 (defn- parse-locale
   [locale]
-  (let [locale (-> (.-language globals/navigator)
-                   (str/lower)
+  (let [locale (-> (str/lower locale)
                    (str/replace "-" "_"))]
     (cond-> [locale]
       (str/includes? locale "_")
@@ -66,11 +65,17 @@
   (set! translations data))
 
 (defn set-locale!
-  [lang]
-  (if lang
-    (do
-      (swap! storage assoc ::locale lang)
-      (reset! locale lang))
+  [lname]
+  (if lname
+    (let [supported (into #{} (map :value supported-locales))
+          lname     (loop [locales (seq (parse-locale lname))]
+                      (if-let [locale (first locales)]
+                        (if (contains? supported locale)
+                          locale
+                          (recur (rest locales)))
+                        cfg/default-language))]
+      (swap! storage assoc ::locale lname)
+      (reset! locale lname))
     (do
       (swap! storage dissoc ::locale)
       (reset! locale (autodetect)))))
