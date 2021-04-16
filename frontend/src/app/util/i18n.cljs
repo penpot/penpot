@@ -8,6 +8,7 @@
   "A i18n foundation."
   (:require
    [app.config :as cfg]
+   [app.util.globals :as globals]
    [app.util.storage :refer [storage]]
    [app.util.transit :as t]
    [beicon.core :as rx]
@@ -28,7 +29,7 @@
 
 (defn- parse-locale
   [locale]
-  (let [locale (-> (.-language js/navigator)
+  (let [locale (-> (.-language globals/navigator)
                    (str/lower)
                    (str/replace "-" "_"))]
     (cond-> [locale]
@@ -37,7 +38,7 @@
 
 (def ^:private browser-locales
   (delay
-    (-> (.-language js/navigator)
+    (-> (.-language globals/navigator)
         (parse-locale))))
 
 (defn- autodetect

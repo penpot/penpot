@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.config :as cfg]
+   [app.util.globals :as globals]
    [app.util.object :as obj]
    [app.util.transit :as t]
    [beicon.core :as rx]
@@ -22,7 +23,7 @@
   (-get-body-data [_]))
 
 (extend-protocol IBodyData
-  js/FormData
+  globals/FormData
   (-get-body-data [it] it)
   (-update-headers [it headers]
     (dissoc headers "content-type" "Content-Type"))
