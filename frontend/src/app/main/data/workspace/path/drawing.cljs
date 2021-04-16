@@ -18,6 +18,7 @@
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.tools :as tools]
+   [app.main.data.workspace.path.undo :as undo]
    [app.main.streams :as ms]
    [app.util.geom.path :as ugp]
    [beicon.core :as rx]
@@ -245,6 +246,7 @@
                             (make-drag-stream stream snap-toggled zoom points %))))]
 
         (rx/concat
+         (rx/of (undo/start-path-undo))
          (rx/of (common/init-path))
          (rx/merge mousemove-events
                    mousedown-events)

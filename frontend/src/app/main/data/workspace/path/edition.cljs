@@ -17,6 +17,7 @@
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.drawing :as drawing]
+   [app.main.data.workspace.path.undo :as undo]
    [app.main.streams :as ms]
    [app.util.geom.path :as ugp]
    [beicon.core :as rx]
@@ -221,6 +222,7 @@
     (watch [_ state stream]
       (let [mode (get-in state [:workspace-local :edit-path id :edit-mode])]
         (rx/concat
+         (rx/of (undo/start-path-undo))
          (rx/of (drawing/change-edit-mode mode))
          (->> stream
               (rx/take-until (->> stream (rx/filter (ptk/type? ::start-path-edit))))

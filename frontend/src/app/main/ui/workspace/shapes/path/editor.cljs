@@ -205,8 +205,10 @@
            (->> points (remove selected-points) (into #{}))])
 
         show-snap? (and snap-toggled
-                        (empty? hover-points)
-                        (or (some? drag-handler) (some? preview) (some? moving-handler) moving-nodes))
+                        (or (some? drag-handler)
+                            (some? preview)
+                            (some? moving-handler)
+                            moving-nodes))
 
         handle-double-click-outside
         (fn [event]
