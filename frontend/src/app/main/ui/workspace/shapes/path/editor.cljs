@@ -17,7 +17,9 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]
-   [app.util.geom.path :as ugp]
+   [app.util.path.geom :as upg]
+   [app.util.path.commands :as upc]
+   [app.util.path.format :as upf]
    [app.util.keyboard :as kbd]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
@@ -133,10 +135,10 @@
                      :stroke pc/black-color
                      :stroke-width (/ 1 zoom)
                      :stroke-dasharray (/ 4 zoom)}
-             :d (ugp/content->path [{:command :move-to
-                                     :params {:x (:x from)
-                                              :y (:y from)}}
-                                    command])}])
+             :d (upf/format-path [{:command :move-to
+                                   :params {:x (:x from)
+                                            :y (:y from)}}
+                                  command])}])
    [:& path-point {:position (:params command)
                    :preview? true
                    :zoom zoom}]])
@@ -179,10 +181,10 @@
         selected-points (or selected-points #{})
 
         base-content (:content shape)
-        base-points (mf/use-memo (mf/deps base-content) #(->> base-content ugp/content->points))
+        base-points (mf/use-memo (mf/deps base-content) #(->> base-content upg/content->points))
 
-        content (ugp/apply-content-modifiers base-content content-modifiers)
-        content-points (mf/use-memo (mf/deps content) #(->> content ugp/content->points))
+        content (upc/apply-content-modifiers base-content content-modifiers)
+        content-points (mf/use-memo (mf/deps content) #(->> content upg/content->points))
 
         point->base (->> (map hash-map content-points base-points) (reduce merge))
         base->point (map-invert point->base)
@@ -190,15 +192,15 @@
         points (into #{} content-points)
 
         last-command (last content)
-        last-p (->> content last ugp/command->point)
-        handlers (ugp/content->handlers content)
+        last-p (->> content last upc/command->point)
+        handlers (upc/content->handlers content)
 
         start-p? (not (some? last-point))
 
         [snap-selected snap-points]
         (cond
           (some? drag-handler) [#{drag-handler} points]
-          (some? preview) [#{(ugp/command->point preview)} points]
+          (some? preview) [#{(upc/command->point preview)} points]
           (some? moving-handler) [#{moving-handler} points]
           :else
           [(->> selected-points (map base->point) (into #{}))

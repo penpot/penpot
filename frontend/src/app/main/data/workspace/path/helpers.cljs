@@ -14,7 +14,7 @@
    [app.main.data.workspace.path.state :refer [get-path]]
    [app.main.data.workspace.path.common :as common]
    [app.main.streams :as ms]
-   [app.util.geom.path :as ugp]
+   [app.util.path.commands :as upc]
    [potok.core :as ptk]))
 
 ;; CONSTANTS
@@ -94,7 +94,7 @@
       add-line?   {:command :line-to
                    :params position}
       add-curve?  {:command :curve-to
-                   :params (ugp/make-curve-params position prev-handler)}
+                   :params (upc/make-curve-params position prev-handler)}
       :else       {:command :move-to
                    :params position})))
 
@@ -110,7 +110,7 @@
   [content index prefix match-opposite? dx dy]
   (let [[cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
         [ocx ocy] (if (= prefix :c1) [:c2x :c2y] [:c1x :c1y])
-        opposite-index (ugp/opposite-index content index prefix)]
+        opposite-index (upc/opposite-index content index prefix)]
 
     (cond-> {}
       :always

@@ -9,7 +9,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.main.refs :as refs]
-   [app.util.geom.path :as ugp]
+   [app.util.path.format :as upf]
    [app.util.object :as obj]
    [clojure.set :as set]
    [rumext.alpha :as mf]
@@ -27,7 +27,7 @@
         path-data
         (mf/use-memo
          (mf/deps shape)
-         #(when path? (ugp/content->path (:content shape))))
+         #(when path? (upf/format-path (:content shape))))
 
         {:keys [id x y width height]} shape
 

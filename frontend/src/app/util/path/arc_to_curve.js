@@ -10,11 +10,11 @@
 
 "use strict";
 
-goog.provide("app.util.a2c");
+goog.provide("app.util.path.arc_to_curve");
 
 // https://raw.githubusercontent.com/fontello/svgpath/master/lib/a2c.js
 goog.scope(function() {
-    const self = app.util.a2c;
+    const self = app.util.path.arc_to_curve;
 
     var TAU = Math.PI * 2;
 

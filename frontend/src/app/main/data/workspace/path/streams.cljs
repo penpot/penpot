@@ -16,7 +16,7 @@
    [app.common.math :as mth]
    [app.main.snap :as snap]
    [okulary.core :as l]
-   [app.util.geom.path :as ugp]))
+   [app.util.path.geom :as upg]))
 
 (defonce drag-threshold 5)
 
@@ -103,7 +103,7 @@
 
         ranges-stream
         (->> content-stream
-             (rx/map ugp/content->points)
+             (rx/map upg/content->points)
              (rx/map snap/create-ranges))]
 
     (->> ms/mouse-position

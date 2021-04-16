@@ -10,7 +10,7 @@
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.state :as st]
-   [app.util.geom.path :as ugp]
+   [app.util.path.tools :as upt]
    [app.common.geom.point :as gpt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -32,27 +32,27 @@
 (defn make-corner []
   (process-path-tool
    (fn [content points]
-     (reduce ugp/make-corner-point content points))))
+     (reduce upt/make-corner-point content points))))
 
 (defn make-curve []
   (process-path-tool
    (fn [content points]
-     (reduce ugp/make-curve-point content points))))
+     (reduce upt/make-curve-point content points))))
 
 (defn add-node []
-  (process-path-tool (fn [content points] (ugp/split-segments content points 0.5))))
+  (process-path-tool (fn [content points] (upt/split-segments content points 0.5))))
 
 (defn remove-node []
-  (process-path-tool ugp/remove-nodes))
+  (process-path-tool upt/remove-nodes))
 
 (defn merge-nodes []
-  (process-path-tool ugp/merge-nodes))
+  (process-path-tool upt/merge-nodes))
 
 (defn join-nodes []
-  (process-path-tool ugp/join-nodes))
+  (process-path-tool upt/join-nodes))
 
 (defn separate-nodes []
-  (process-path-tool ugp/separate-nodes))
+  (process-path-tool upt/separate-nodes))
 
 (defn toggle-snap []
   (ptk/reify ::toggle-snap

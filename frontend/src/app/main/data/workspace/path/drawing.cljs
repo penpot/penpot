@@ -20,7 +20,8 @@
    [app.main.data.workspace.path.tools :as tools]
    [app.main.data.workspace.path.undo :as undo]
    [app.main.streams :as ms]
-   [app.util.geom.path :as ugp]
+   [app.util.path.commands :as upc]
+   [app.util.path.geom :as upg]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -67,7 +68,7 @@
 
             make-curve
             (fn [command]
-              (let [params (ugp/make-curve-params
+              (let [params (upc/make-curve-params
                             (get-in content [index :params])
                             (get-in content [(dec index) :params]))]
                 (-> command
@@ -85,7 +86,7 @@
             shape (get-in state (st/get-path state))
             content (:content shape)
             index (dec (count content))
-            node-position (ugp/command->point (nth content index))
+            node-position (upc/command->point (nth content index))
             handler-position (cond-> (gpt/point x y)
                                shift? (helpers/position-fixed-angle node-position))
             {dx :x dy :y} (gpt/subtract handler-position node-position)
@@ -104,7 +105,7 @@
             modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
             handler (get-in state [:workspace-local :edit-path id :drag-handler])]
         (-> state
-            (update-in (st/get-path state :content) ugp/apply-content-modifiers modifiers)
+            (update-in (st/get-path state :content) upc/apply-content-modifiers modifiers)
             (update-in [:workspace-local :edit-path id] dissoc :drag-handler)
             (update-in [:workspace-local :edit-path id] dissoc :content-modifiers)
             (assoc-in  [:workspace-local :edit-path id :prev-handler] handler)
@@ -133,7 +134,7 @@
 
             content (get-in state (st/get-path state :content))
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
-            points (ugp/content->points content)
+            points (upg/content->points content)
             
             drag-events-stream
             (->> (streams/position-stream snap-toggled points)
@@ -166,7 +167,7 @@
             mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                     (ms/mouse-up? %))))
             content (get-in state (st/get-path state :content))
-            points (ugp/content->points content)
+            points (upg/content->points content)
 
             id (st/get-path-id state)
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
@@ -223,7 +224,7 @@
             end-path-events (->> stream (rx/filter helpers/end-path-event?))
 
             content (get-in state (st/get-path state :content))
-            points (ugp/content->points content)
+            points (upg/content->points content)
 
             id (st/get-path-id state)
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])

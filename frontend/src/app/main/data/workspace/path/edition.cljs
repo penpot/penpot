@@ -19,7 +19,9 @@
    [app.main.data.workspace.path.drawing :as drawing]
    [app.main.data.workspace.path.undo :as undo]
    [app.main.streams :as ms]
-   [app.util.geom.path :as ugp]
+   [app.util.path.commands :as upc]
+   [app.util.path.geom :as upg]
+   [app.util.path.tools :as upt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -44,7 +46,7 @@
             [ocx ocy] (if (= prefix :c1) [:c2x :c2y] [:c1x :c1y])
             point (gpt/point (+ (get-in content [index :params cx]) dx)
                              (+ (get-in content [index :params cy]) dy))
-            opposite-index (ugp/opposite-index content index prefix)]
+            opposite-index (upc/opposite-index content index prefix)]
         (cond-> state
           :always
           (-> (update-in [:workspace-local :edit-path id :content-modifiers index] assoc
@@ -65,10 +67,10 @@
             content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
 
             content (:content shape)
-            new-content (ugp/apply-content-modifiers content content-modifiers)
+            new-content (upc/apply-content-modifiers content content-modifiers)
 
-            old-points (->> content ugp/content->points)
-            new-points (->> new-content ugp/content->points)
+            old-points (->> content upg/content->points)
+            new-points (->> new-content upg/content->points)
             point-change (->> (map hash-map old-points new-points) (reduce merge))
 
             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
@@ -79,8 +81,8 @@
 
 (defn move-selected-path-point [from-point to-point]
   (letfn [(modify-content-point [content {dx :x dy :y} modifiers point]
-            (let [point-indices (ugp/point-indices content point) ;; [indices]
-                  handler-indices (ugp/handler-indices content point) ;; [[index prefix]]
+            (let [point-indices (upc/point-indices content point) ;; [indices]
+                  handler-indices (upc/handler-indices content point) ;; [[index prefix]]
 
                   modify-point
                   (fn [modifiers index]
@@ -146,7 +148,7 @@
             selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
 
             content (get-in state (st/get-path state :content))
-            points (ugp/content->points content)]
+            points (upg/content->points content)]
 
         (rx/concat
          ;; This stream checks the consecutive mouse positions to do the draging
@@ -170,16 +172,16 @@
             start-delta-y (get-in modifiers [index cy] 0)
 
             content (get-in state (st/get-path state :content))
-            points (ugp/content->points content)
+            points (upg/content->points content)
 
-            opposite-index   (ugp/opposite-index content index prefix)
+            opposite-index   (upc/opposite-index content index prefix)
             opposite-prefix  (if (= prefix :c1) :c2 :c1)
-            opposite-handler (-> content (get opposite-index) (ugp/get-handler opposite-prefix))
+            opposite-handler (-> content (get opposite-index) (upc/get-handler opposite-prefix))
 
-            point (-> content (get (if (= prefix :c1) (dec index) index)) (ugp/command->point))
-            handler (-> content (get index) (ugp/get-handler prefix))
+            point (-> content (get (if (= prefix :c1) (dec index) index)) (upc/command->point))
+            handler (-> content (get index) (upc/get-handler prefix))
 
-            current-distance (when opposite-handler (gpt/distance (ugp/opposite-handler point handler) opposite-handler))
+            current-distance (when opposite-handler (gpt/distance (upg/opposite-handler point handler) opposite-handler))
             match-opposite? (and opposite-handler (mth/almost-zero? current-distance))
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])]
 
@@ -243,7 +245,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [id (st/get-path-id state)]
-        (update-in state (st/get-path state :content) ugp/split-segments #{from-p to-p} t)))
+        (update-in state (st/get-path state :content) upt/split-segments #{from-p to-p} t)))
 
     ptk/WatchEvent
     (watch [_ state stream]

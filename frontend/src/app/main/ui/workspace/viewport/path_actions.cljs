@@ -12,12 +12,11 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.shapes.path.common :as pc]
-   [app.util.geom.path :as ugp]
+   [app.util.path.tools :as upt]
    [rumext.alpha :as mf]))
 
 (defn check-enabled [content selected-points]
-  (let [segments (ugp/get-segments content selected-points)
-
+  (let [segments (upt/get-segments content selected-points)
         points-selected? (not (empty? selected-points))
         segments-selected? (not (empty? segments))]
     {:make-corner points-selected?

@@ -12,7 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
    [app.main.streams :as ms]
-   [app.util.geom.path :as path]
+   [app.util.path.simplify-curve :as ups]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.common :as dwc]
    [app.common.pages :as cp]))
@@ -67,7 +67,7 @@
    state [:workspace-drawing :object]
    (fn [shape]
      (-> shape
-         (update :segments #(path/simplify % simplify-tolerance))
+         (update :segments #(ups/simplify % simplify-tolerance))
          (curve-to-path)))))
 
 (defn handle-drawing-curve []
@@ -85,3 +85,4 @@
          (rx/of (setup-frame-curve)
                 finish-drawing-curve
                 common/handle-finish-drawing))))))
+

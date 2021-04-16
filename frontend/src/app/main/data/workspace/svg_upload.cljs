@@ -16,7 +16,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.repo :as rp]
    [app.util.color :as uc]
-   [app.util.geom.path :as ugp]
+   [app.util.path.parser :as upp]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
    [app.util.uri :as uu]
@@ -163,7 +163,7 @@
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (not (empty? (:d attrs)) ))
     (let [svg-transform (usvg/parse-transform (:transform attrs))
-          path-content (ugp/path->content (:d attrs))
+          path-content (upp/parse-path (:d attrs))
           content (cond-> path-content
                     svg-transform
                     (gsh/transform-content svg-transform))

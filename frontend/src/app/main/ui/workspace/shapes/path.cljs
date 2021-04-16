@@ -13,7 +13,7 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]
-   [app.util.geom.path :as ugp]
+   [app.util.path.commands :as upc]
    [rumext.alpha :as mf]))
 
 (mf/defc path-wrapper
@@ -24,7 +24,7 @@
         content-modifiers (mf/deref content-modifiers-ref)
         editing-id (mf/deref refs/selected-edition)
         editing? (= editing-id (:id shape))
-        shape (update shape :content ugp/apply-content-modifiers content-modifiers)]
+        shape (update shape :content upc/apply-content-modifiers content-modifiers)]
 
     [:> shape-container {:shape shape
                          :pointer-events (when editing? "none")}
