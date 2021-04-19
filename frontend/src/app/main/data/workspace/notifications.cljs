@@ -7,21 +7,22 @@
 (ns app.main.data.workspace.notifications
   (:require
    [app.common.data :as d]
+   [app.common.uri :as u]
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.persistence :as dwp]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.util.avatars :as avatars]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [app.util.websockets :as ws]
-   [app.util.i18n :as i18n :refer [tr]]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
@@ -39,14 +40,24 @@
 (s/def ::message
   (s/keys :req-un [::type]))
 
+(defn prepare-uri
+  [params]
+  (let [base (-> (u/join cf/public-uri "ws/notifications")
+                 (assoc :query (u/map->query-string params)))]
+    (cond-> base
+      (= "https" (:scheme base))
+      (assoc :scheme "wss")
+
+      (= "http" (:scheme base))
+      (assoc :scheme "ws"))))
+
 (defn initialize
   [file-id]
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
       (let [sid (:session-id state)
-            uri (ws/uri "/ws/notifications" {:file-id file-id
-                                             :session-id sid})]
+            uri (prepare-uri {:file-id file-id :session-id sid})]
         (assoc-in state [:ws file-id] (ws/open uri))))
 
     ptk/WatchEvent

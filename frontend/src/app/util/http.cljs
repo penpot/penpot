@@ -8,13 +8,13 @@
   "A http client with rx streams interface."
   (:require
    [app.common.data :as d]
+   [app.common.uri :as u]
    [app.config :as cfg]
    [app.util.globals :as globals]
    [app.util.object :as obj]
    [app.util.transit :as t]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [lambdaisland.uri :as u]
    [promesa.core :as p]))
 
 (defprotocol IBodyData

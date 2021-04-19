@@ -7,13 +7,13 @@
 (ns app.main.repo
   (:require
    [app.common.data :as d]
+   [app.common.uri :as u]
    [app.config :as cfg]
    [app.util.http :as http]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [beicon.core :as rx]
-   [cuerdas.core :as str]
-   [lambdaisland.uri :as u]))
+   [cuerdas.core :as str]))
 
 (defn- handle-response
   [{:keys [status body] :as response}]
@@ -43,7 +43,7 @@
                :status status
                :data body})))
 
-(def ^:private base-uri (u/uri cfg/public-uri))
+(def ^:private base-uri cfg/public-uri)
 
 (defn- send-query!
   "A simple helper for send and receive transit data on the penpot
@@ -125,7 +125,7 @@
 (defmethod mutation ::multipart-upload
   [id params]
   (->> (http/send! {:method :post
-                    :uri  (u/join base-uri "/api/rpc/mutation/" (name id))
+                    :uri  (u/join base-uri "api/rpc/mutation/" (name id))
                     :body (http/form-data params)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))

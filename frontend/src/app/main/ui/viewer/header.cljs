@@ -67,11 +67,11 @@
                            :viewer
                            (:path-params route)
                            {:token token :index "0"})
-        link   (str cfg/public-uri "/#" link)
+        link   (assoc cfg/public-uri :fragment link)
 
         copy-link
         (fn [event]
-          (wapi/write-to-clipboard link)
+          (wapi/write-to-clipboard (str link))
           (st/emit! (dm/show {:type :info
                               :content "Link copied successfuly!"
                               :timeout 3000})))]
@@ -89,7 +89,7 @@
        [:div.share-link-input
         (if (string? token)
           [:*
-            [:span.link link]
+            [:span.link (str link)]
             [:span.link-button {:on-click copy-link}
              (t locale "viewer.header.share.copy-link")]]
           [:span.link-placeholder (t locale "viewer.header.share.placeholder")])]

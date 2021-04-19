@@ -68,23 +68,23 @@ function readManifest() {
     const content = JSON.parse(fs.readFileSync(path, {encoding: "utf8"}));
 
     const index = {
-      "config": "/js/config.js?ts=" + Date.now(),
+      "config": "js/config.js?ts=" + Date.now(),
       "polyfills": "js/polyfills.js?ts=" + Date.now(),
     };
 
     for (let item of content) {
-      index[item.name] = "/js/" + item["output-name"];
+      index[item.name] = "js/" + item["output-name"];
     };
 
     return index;
   } catch (e) {
     console.error("Error on reading manifest, using default.");
     return {
-      "config": "/js/config.js",
+      "config": "js/config.js",
       "polyfills": "js/polyfills.js",
-      "main": "/js/main.js",
-      "shared": "/js/shared.js",
-      "worker": "/js/worker.js"
+      "main": "js/main.js",
+      "shared": "js/shared.js",
+      "worker": "js/worker.js"
     };
   }
 }

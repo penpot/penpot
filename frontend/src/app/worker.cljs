@@ -19,8 +19,7 @@
    [app.worker.snaps]
    [app.util.object :as obj]
    [app.util.transit :as t]
-   [app.util.worker :as w])
-  (:import goog.Uri))
+   [app.util.worker :as w]))
 
 ;; --- Messages Handling
 
@@ -119,7 +118,7 @@
          (rx/debounce 1)
 
          (rx/subs (fn [[messages dropped last]]
-                    ;; Send back the dropped messages replies 
+                    ;; Send back the dropped messages replies
                     (doseq [msg dropped]
                       (drop-message msg))
 

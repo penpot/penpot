@@ -28,7 +28,6 @@
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [lambdaisland.uri :as uri]
    [rumext.alpha :as mf]))
 
 ;; --- Grid Item Thumbnail
