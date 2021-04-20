@@ -21,6 +21,8 @@
   lambdaisland/uri {:mvn/version "1.4.54"
                     :exclusions [org.clojure/data.json]}
 
+  instaparse/instaparse {:mvn/version "1.4.10"}
+
   }
  :aliases
  {:dev
