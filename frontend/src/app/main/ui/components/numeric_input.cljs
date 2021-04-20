@@ -47,21 +47,16 @@
                   new-value (-> (dom/get-value input-node)
                                 (sm/expr-eval value))]
               (when (num? new-value)
-                (cond-> new-value
-                  true
-                  (math/round)
+                (-> new-value
+                    (math/round)
+                    (cljs.core/max us/min-safe-int)
+                    (cljs.core/min us/max-safe-int)
+                    (cond->
+                      (num? min-val)
+                      (cljs.core/max min-val)
 
-                  true
-                  (cljs.core/max us/min-safe-int)
-
-                  true
-                  (cljs.core/min us/max-safe-int)
-
-                  (num? min-val)
-                  (cljs.core/max min-val)
-
-                  (num? max-val)
-                  (cljs.core/min max-val))))))
+                      (num? max-val)
+                      (cljs.core/min max-val)))))))
 
         update-input
         (mf/use-callback
