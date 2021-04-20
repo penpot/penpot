@@ -4,10 +4,10 @@
   "jcenter" {:url "https://jcenter.bintray.com/"}}
  :deps
  {org.clojure/clojure {:mvn/version "1.10.3"}
-  org.clojure/clojurescript {:mvn/version "1.10.773"}
-  org.clojure/data.json {:mvn/version "1.1.0"}
+  org.clojure/data.json {:mvn/version "2.2.1"}
   org.clojure/core.async {:mvn/version "1.3.610"}
   org.clojure/tools.cli {:mvn/version "1.0.206"}
+  org.clojure/clojurescript {:mvn/version "1.10.844"}
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "1.1.0"}
@@ -20,7 +20,7 @@
   org.zeromq/jeromq {:mvn/version "0.5.2"}
 
   com.taoensso/nippy {:mvn/version "3.1.1"}
-  com.github.luben/zstd-jni {:mvn/version "1.4.9-1"}
+  com.github.luben/zstd-jni {:mvn/version "1.4.9-5"}
 
   ;; NOTE: don't upgrade to latest version, breaking change is
   ;; introduced on 0.10.0 that suffixes counters with _total if they
@@ -36,10 +36,10 @@
   expound/expound {:mvn/version "0.8.9"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
 
-  io.lettuce/lettuce-core {:mvn/version "6.0.2.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "6.1.1.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.2"}
 
-  info.sunng/ring-jetty9-adapter {:mvn/version "0.15.0"}
+  info.sunng/ring-jetty9-adapter {:mvn/version "0.15.1"}
   com.github.seancorfield/next.jdbc {:mvn/version "1.1.646"}
   metosin/reitit-ring {:mvn/version "0.5.12"}
   metosin/jsonista {:mvn/version "0.3.1"}
@@ -64,12 +64,12 @@
   org.im4java/im4java {:mvn/version "1.4.0"}
   org.lz4/lz4-java {:mvn/version "1.7.1"}
   commons-io/commons-io {:mvn/version "2.8.0"}
-  com.sun.mail/jakarta.mail {:mvn/version "2.0.0"}
+  com.sun.mail/jakarta.mail {:mvn/version "2.0.1"}
 
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
   integrant/integrant {:mvn/version "0.8.0"}
 
-  software.amazon.awssdk/s3 {:mvn/version "2.16.19"}
+  software.amazon.awssdk/s3 {:mvn/version "2.16.44"}
 
   ;; exception printing
   io.aviso/pretty {:mvn/version "0.1.37"}
@@ -96,7 +96,7 @@
    :main-opts ["-m" "kaocha.runner"]}
 
   :outdated
-  {:extra-deps {com.github.liquidz/antq {:mvn/version "0.12.0"}}
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
    :main-opts ["-m" "antq.core"]}
 
   :jmx-remote

@@ -5,6 +5,7 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.uri
+  (:refer-clojure :exclude [uri?])
   (:require
    [app.common.data :as d]
    [lambdaisland.uri :as u]
@@ -12,7 +13,12 @@
 
 (d/export u/uri)
 (d/export u/join)
+(d/export u/query-encode)
 (d/export un/percent-encode)
+
+(defn uri?
+  [o]
+  (instance? lambdaisland.uri.URI o))
 
 (defn query-string->map
   [s]

@@ -8,13 +8,13 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.storage.impl :as impl]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
-   [integrant.core :as ig]
-   [lambdaisland.uri :as u])
+   [integrant.core :as ig])
   (:import
    java.io.InputStream
    java.io.OutputStream
@@ -40,7 +40,7 @@
              :uri (u/uri (str "file://" dir))))))
 
 (s/def ::type ::us/keyword)
-(s/def ::uri #(instance? lambdaisland.uri.URI %))
+(s/def ::uri u/uri?)
 (s/def ::backend
   (s/keys :req-un [::type ::directory ::uri]))
 

@@ -10,12 +10,12 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.storage.impl :as impl]
    [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig]
-   [lambdaisland.uri :as u])
+   [integrant.core :as ig])
   (:import
    java.time.Duration
    java.util.Collection

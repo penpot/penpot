@@ -9,13 +9,13 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.storage :as sto]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig]
-   [lambdaisland.uri :as u]))
+   [integrant.core :as ig]))
 
 (def ^:private cache-max-age
   (dt/duration {:hours 24}))

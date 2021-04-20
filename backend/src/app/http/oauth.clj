@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.util.http :as http]
    [app.util.logging :as l]
@@ -16,8 +17,7 @@
    [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [integrant.core :as ig]
-   [lambdaisland.uri :as u]))
+   [integrant.core :as ig]))
 
 (defn redirect-response
   [uri]
