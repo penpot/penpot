@@ -1,6 +1,6 @@
 {:paths ["src" "vendor" "resources" "../common"]
  :deps
- {org.clojure/clojurescript {:mvn/version "1.10.773"}
+ {org.clojure/clojurescript {:mvn/version "1.10.844"}
   org.clojure/clojure {:mvn/version "1.10.3"}
   com.cognitect/transit-cljs {:mvn/version "0.8.264"}
 
@@ -30,22 +30,21 @@
    :extra-deps
    {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
     com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-    org.clojure/tools.namespace {:mvn/version "0.3.1"}
+    org.clojure/tools.namespace {:mvn/version "1.1.0"}
     hashp/hashp {:mvn/version "RELEASE"}
 
-    metosin/jsonista {:mvn/version "0.2.5"}
+    metosin/jsonista {:mvn/version "0.3.1"}
     funcool/datoteka {:mvn/version "1.2.0"}
     binaryage/devtools {:mvn/version "RELEASE"}
-
-    thheller/shadow-cljs {:mvn/version "2.11.20"}
+    thheller/shadow-cljs {:mvn/version "2.12.5"}
 
     ;; i18n parsing
-    carocad/parcera {:mvn/version "0.11.0"}
-    org.antlr/antlr4-runtime {:mvn/version "4.7"}}}
+    carocad/parcera {:mvn/version "0.11.6"}
+    org.antlr/antlr4-runtime {:mvn/version "4.9.2"}}}
 
   :outdated
-  {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
-   :main-opts ["-m" "depot.outdated.main"]}
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "antq.core"]}
 
   :repl
   {:main-opts  ["-m" "rebel-readline.main"]}
