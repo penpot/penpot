@@ -41,6 +41,10 @@
     (let [result (sm/expr-eval "*10" 20)]
       (t/is (= result 200))))
 
+  (t/testing "Evaluate a negative number (not relative substraction)"
+    (let [result (sm/expr-eval "-10" 20)]
+      (t/is (= result -10))))
+
   (t/testing "Evaluate a relative complex operation"
     (let [result (sm/expr-eval "+(10*2 - 5)" 20)]
       (t/is (= result 35))))
@@ -63,16 +67,19 @@
       (t/is (= result1 result2 12.5))))
 
   (t/testing "Evaluate a relative operation with decimals"
-    (let [result (sm/expr-eval "*.5" 20)]
-      (t/is (= result 10))))
+    (let [result1 (sm/expr-eval "*.5" 20)
+          result2 (sm/expr-eval "*,5" 20)]
+      (t/is (= result1 result2 10))))
 
   (t/testing "Evaluate a percentual operation with decimals"
-    (let [result (sm/expr-eval "+10.5%" 20)]
-      (t/is (= result 22.1))))
+    (let [result1 (sm/expr-eval "+10.5%" 20)
+          result2 (sm/expr-eval "+10,5%" 20)]
+      (t/is (= result1 result2 22.1))))
 
   (t/testing "Evaluate a complex operation with decimals"
-    (let [result (sm/expr-eval "(20.333 + 10%) * (1 / 3)" 20)]
-      (t/is (cm/close? result 7.44433333))))
+    (let [result1 (sm/expr-eval "(20.333 + 10%) * (1 / 3)" 20)
+          result2 (sm/expr-eval "(20,333 + 10%) * (1 / 3)" 20)]
+      (t/is (cm/close? result1 result2 7.44433333))))
 
   )
 

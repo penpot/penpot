@@ -38,8 +38,8 @@
               second-value (interpret (second args) init-value)]
           (case operator
             "+" (+ init-value second-value)
-            "-" (- init-value second-value)
-            "*" (* init-value second-value)
+            "-" (- 0 second-value)          ;; Note that there is ambiguity, so we don't allow
+            "*" (* init-value second-value) ;; relative substraction, it's only a negative number
             "/" (/ init-value second-value)))
         (let [value (interpret (first args) init-value)]
           (loop [value     value
