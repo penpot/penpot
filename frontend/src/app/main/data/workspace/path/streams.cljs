@@ -88,7 +88,9 @@
               (gpt/add position snap))
             position))]
     (->> ms/mouse-position
-         (rx/map check-path-snap))))
+         (rx/map check-path-snap)
+         (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
+         (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %)))))))
 
 (defn position-stream
   [snap-toggled points]

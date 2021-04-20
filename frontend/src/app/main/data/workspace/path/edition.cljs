@@ -25,37 +25,23 @@
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(defn modify-point [index prefix dx dy]
-  (ptk/reify ::modify-point
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])
-            [cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])]
-        (-> state
-            (update-in [:workspace-local :edit-path id :content-modifiers (inc index)] assoc
-                       :c1x dx :c1y dy)
-            (update-in [:workspace-local :edit-path id :content-modifiers index] assoc
-                       :x dx :y dy :c2x dx :c2y dy))))))
-
 (defn modify-handler [id index prefix dx dy match-opposite?]
   (ptk/reify ::modify-handler
     ptk/UpdateEvent
     (update [_ state]
+
       (let [content (get-in state (st/get-path state :content))
+
+            modifiers (helpers/move-handler-modifiers content index prefix false match-opposite? dx dy)
             [cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
-            [ocx ocy] (if (= prefix :c1) [:c2x :c2y] [:c1x :c1y])
             point (gpt/point (+ (get-in content [index :params cx]) dx)
                              (+ (get-in content [index :params cy]) dy))
-            opposite-index (upc/opposite-index content index prefix)]
-        (cond-> state
-          :always
-          (-> (update-in [:workspace-local :edit-path id :content-modifiers index] assoc
-                         cx dx cy dy)
-              (assoc-in [:workspace-local :edit-path id :moving-handler] point))
 
-          (and match-opposite? opposite-index)
-          (update-in [:workspace-local :edit-path id :content-modifiers opposite-index] assoc
-                     ocx (- dx) ocy (- dy)))))))
+            ]
+
+        (-> state
+            (update-in [:workspace-local :edit-path id :content-modifiers] merge modifiers)
+            (assoc-in [:workspace-local :edit-path id :moving-handler] point))))))
 
 (defn apply-content-modifiers []
   (ptk/reify ::apply-content-modifiers
@@ -174,15 +160,9 @@
             content (get-in state (st/get-path state :content))
             points (upg/content->points content)
 
-            opposite-index   (upc/opposite-index content index prefix)
-            opposite-prefix  (if (= prefix :c1) :c2 :c1)
-            opposite-handler (-> content (get opposite-index) (upc/get-handler opposite-prefix))
-
             point (-> content (get (if (= prefix :c1) (dec index) index)) (upc/command->point))
             handler (-> content (get index) (upc/get-handler prefix))
 
-            current-distance (when opposite-handler (gpt/distance (upg/opposite-handler point handler) opposite-handler))
-            match-opposite? (and opposite-handler (mth/almost-zero? current-distance))
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])]
 
         (streams/drag-stream
@@ -199,7 +179,7 @@
                      prefix
                      (+ start-delta-x (- (:x pos) (:x start-point)))
                      (+ start-delta-y (- (:y pos) (:y start-point)))
-                     (and (not alt?) match-opposite?))))))
+                     (not alt?))))))
           (rx/concat (rx/of (apply-content-modifiers)))))))))
 
 (declare stop-path-edit)

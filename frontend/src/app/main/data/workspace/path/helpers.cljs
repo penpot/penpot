@@ -106,15 +106,88 @@
         (update :content (fnil conj []) command)
         (update-selrect))))
 
+(defn prefix->coords [prefix]
+  (case prefix
+    :c1 [:c1x :c1y]
+    :c2 [:c2x :c2y]
+    nil))
+
+(defn handler->point [content index prefix]
+  (when (and (some? index)
+             (some? prefix)
+             (contains? content index))
+    (let [[cx cy :as coords] (prefix->coords prefix)]
+      (if (= :curve-to (get-in content [index :command]))
+        (gpt/point (get-in content [index :params cx])
+                   (get-in content [index :params cy]))
+
+        (gpt/point (get-in content [index :params :x])
+                   (get-in content [index :params :y]))))))
+
+(defn handler->node [content index prefix]
+  (if (= prefix :c1)
+    (upc/command->point (get content (dec index)))
+    (upc/command->point (get content index))))
+
+(defn angle-points [common p1 p2]
+  (mth/abs
+   (gpt/angle-with-other
+    (gpt/to-vec common p1)
+    (gpt/to-vec common p2))))
+
+(defn calculate-opposite-delta [node handler opposite match-angle? match-distance? dx dy]
+  (when (and (some? handler) (some? opposite))
+    (let [;; To match the angle, the angle should be matching (angle between points 180deg)
+          angle-handlers (angle-points node handler opposite)
+
+          match-angle? (and match-angle? (<= (mth/abs (- 180 angle-handlers) ) 0.1))
+
+          ;; To match distance the distance should be matching
+          match-distance? (and match-distance? (mth/almost-zero? (- (gpt/distance node handler)
+                                                                    (gpt/distance node opposite))))
+
+          new-handler (-> handler (update :x + dx) (update :y + dy))
+
+          v1 (gpt/to-vec node handler)
+          v2 (gpt/to-vec node new-handler)
+
+          delta-angle (gpt/angle-with-other v1 v2)
+          delta-sign (if (> (* (:y v1) (:x v2)) (* (:x v1) (:y v2))) -1 1)
+
+          distance-scale (/ (gpt/distance node handler)
+                            (gpt/distance node new-handler))
+
+          new-opposite (cond-> opposite
+                         match-angle?
+                         (gpt/rotate node (* delta-sign delta-angle))
+
+                         match-distance?
+                         (gpt/scale-from node distance-scale))]
+      [(- (:x new-opposite) (:x opposite))
+       (- (:y new-opposite) (:y opposite))])))
+
 (defn move-handler-modifiers
-  [content index prefix match-opposite? dx dy]
-  (let [[cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
-        [ocx ocy] (if (= prefix :c1) [:c2x :c2y] [:c1x :c1y])
-        opposite-index (upc/opposite-index content index prefix)]
+  [content index prefix match-distance? match-angle? dx dy]
 
-    (cond-> {}
-      :always
-      (update index assoc cx dx cy dy)
+  (let [[cx cy] (prefix->coords prefix)
+        [op-idx op-prefix] (upc/opposite-index content index prefix)
 
-      (and match-opposite? opposite-index)
-      (update opposite-index assoc ocx (- dx) ocy (- dy)))))
+        node (handler->node content index prefix)
+        handler (handler->point content index prefix)
+        opposite (handler->point content op-idx op-prefix)
+
+        [ocx ocy] (prefix->coords op-prefix)
+        [odx ody] (calculate-opposite-delta node handler opposite match-angle? match-distance? dx dy)
+
+        hnv (if (some? handler)
+              (gpt/to-vec node (-> handler (update :x + dx) (update :y + dy)))
+              (gpt/point dx dy))]
+
+    (-> {}
+        (update index assoc cx dx cy dy)
+
+        (cond-> (and (some? op-idx) (not= opposite node))
+          (update op-idx assoc ocx odx ocy ody)
+
+          (and (some? op-idx) (= opposite node) match-distance? match-angle?)
+          (update op-idx assoc ocx (- (:x hnv)) ocy (- (:y hnv)))))))

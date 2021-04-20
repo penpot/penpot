@@ -53,22 +53,43 @@
     :c2x (:x h2)
     :c2y (:y h2)}))
 
-(defn make-curve-to [to h1 h2]
+(defn update-curve-to
+  [command h1 h2]
+  (-> command
+      (assoc :command :curve-to)
+      (assoc-in [:params :c1x] (:x h1))
+      (assoc-in [:params :c1y] (:y h1))
+      (assoc-in [:params :c2x] (:x h2))
+      (assoc-in [:params :c2y] (:y h2))))
+
+(defn make-curve-to
+  [to h1 h2]
   {:command :curve-to
    :relative false
    :params (make-curve-params to h1 h2)})
 
-(defn apply-content-modifiers [content modifiers]
+(defn update-handler
+  [command prefix point]
+  (let [[cox coy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])]
+    (-> command
+        (assoc-in [:params cox] (:x point))
+        (assoc-in [:params coy] (:y point)))))
+
+(defn apply-content-modifiers
+  "Apply to content a map with point translations"
+  [content modifiers]
   (letfn [(apply-to-index [content [index params]]
             (if (contains? content index)
               (cond-> content
                 (and
                  (or (:c1x params) (:c1y params) (:c2x params) (:c2y params))
-                 (= :line-to (get-in content [index :params :command])))
+                 (= :line-to (get-in content [index :command])))
+
                 (-> (assoc-in [index :command] :curve-to)
-                    (assoc-in [index :params] :curve-to) (make-curve-params
-                                                          (get-in content [index :params])
-                                                          (get-in content [(dec index) :params])))
+                    (assoc-in [index :params]
+                              (make-curve-params
+                               (get-in content [index :params])
+                               (get-in content [(dec index) :params]))))
 
                 (:x params) (update-in [index :params :x] + (:x params))
                 (:y params) (update-in [index :params :y] + (:y params))
@@ -117,6 +138,7 @@
        (mapv (fn [[index _]] index))))
 
 (defn handler-indices
+  "Return an index where the key is the positions and the values the handlers"
   [content point]
   (->> (d/with-prev content)
        (d/enumerate)
@@ -132,16 +154,24 @@
 (defn opposite-index
   "Calculate sthe opposite index given a prefix and an index"
   [content index prefix]
+
   (let [point (if (= prefix :c2)
                 (command->point (nth content index))
                 (command->point (nth content (dec index))))
 
-        handlers (-> (content->handlers content)
-                     (get point))
+        point->handlers (content->handlers content)
 
-        opposite-prefix (if (= prefix :c1) :c2 :c1)]
-    (when (<= (count handlers) 2)
+        handlers (->> point
+                      (point->handlers )
+                      (filter (fn [[ci cp]] (and (not= index ci) (not= prefix cp)) )))]
+
+    (when (= (count handlers) 1)
       (->> handlers
-           (d/seek (fn [[index prefix]] (= prefix opposite-prefix)))
-           (first)))))
+           first))))
 
+
+(defn get-commands
+  "Returns the commands involving a point with its indices"
+  [content point]
+  (->> (d/enumerate content)
+       (filterv (fn [[idx cmd]] (= (command->point cmd) point)))))

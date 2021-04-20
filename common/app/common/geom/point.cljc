@@ -213,12 +213,12 @@
   (let [v-length (length v)]
     (divide v (point v-length v-length))))
 
-(defn project [v1 v2]
+(defn project
+  "V1 perpendicular projection on vector V2"
+  [v1 v2]
   (let [v2-unit (unit v2)
-        scalar-projection (dot v1 (unit v2))]
-    (multiply
-     v2-unit
-     (point scalar-projection scalar-projection))))
+        scalar-proj (dot v1 v2-unit)]
+    (scale v2-unit scalar-proj)))
 
 (defn center-points
   "Centroid of a group of points"
@@ -264,7 +264,34 @@
               (scale v))]
     (add p1 v)))
 
+
+(defn rotate
+  "Rotates the point around center with an angle"
+  [{px :x py :y} {cx :x cy :y} angle]
+  (let [angle (mth/radians angle)
+
+        x (+ (* (mth/cos angle) (- px cx))
+             (* (mth/sin angle) (- py cy) -1)
+             cx)
+
+        y (+ (* (mth/sin angle) (- px cx))
+             (* (mth/cos angle) (- py cy))
+             cy)]
+    (point x y)))
+
+
+(defn scale-from
+  "Moves a point in the vector that creates with center with a scale
+  value"
+  [point center value]
+  (add point
+       (-> (to-vec center point)
+           (unit)
+           (scale value))))
+
+
 ;; --- Debug
 
 (defmethod pp/simple-dispatch Point [obj] (pr obj))
+
 
