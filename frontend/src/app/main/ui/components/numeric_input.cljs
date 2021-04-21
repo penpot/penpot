@@ -18,15 +18,18 @@
 (mf/defc numeric-input
   {::mf/wrap-props false
    ::mf/forward-ref true}
-  [props ref]
+  [props external-ref]
   (let [value-str   (obj/get props "value")
         min-val-str (obj/get props "min")
         max-val-str (obj/get props "max")
         wrap-value? (obj/get props "data-wrap")
         on-change   (obj/get props "onChange")
 
+        ;; We need a ref pointing to the input dom element, but the user
+        ;; of this component may provide one (that is forwarded here).
+        ;; So we use the external ref if provided, and the local one if not.
         local-ref (mf/use-ref)
-        ref (or ref local-ref)
+        ref (or external-ref local-ref)
 
         value (d/parse-integer value-str)
 

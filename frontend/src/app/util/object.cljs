@@ -22,6 +22,10 @@
    (let [result (get obj k)]
      (if (undefined? result) default result))))
 
+(defn get-keys
+  [obj]
+  (js/Object.keys ^js obj))
+
 (defn get-in
   [obj keys]
   (loop [key (first keys)

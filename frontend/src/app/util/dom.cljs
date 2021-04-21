@@ -108,6 +108,15 @@
   [node]
   (.-valid (.-validity node)))
 
+(defn set-validity!
+  "Manually set the validity status of a node that
+  is a form input. If the state is an empty string,
+  the input will be valid. If not, the string will
+  be set as the error message."
+  [node status]
+  (.setCustomValidity node status)
+  (.reportValidity node))
+
 (defn clean-value!
   [node]
   (set! (.-value node) ""))
