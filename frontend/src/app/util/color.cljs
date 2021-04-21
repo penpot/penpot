@@ -9,6 +9,7 @@
   (:require
    [cuerdas.core :as str]
    [app.common.math :as math]
+   [app.util.object :as obj]
    [goog.color :as gcolor]))
 
 (defn rgb->str
@@ -80,6 +81,34 @@
   [hsv]
   (hex->hsl (hsv->hex hsv)))
 
+(defn expand-hex
+  [v]
+  (cond
+    (re-matches #"^[0-9A-Fa-f]$" v)
+    (str v v v v v v)
+
+    (re-matches #"^[0-9A-Fa-f]{2}$" v)
+    (str v v v)
+
+    (re-matches #"^[0-9A-Fa-f]{3}$" v)
+    (let [a (nth v 0)
+          b (nth v 1)
+          c (nth v 2)]
+      (str a a b b c c))
+
+    :default
+    v))
+
+(defn prepend-hash
+  [color]
+  (gcolor/prependHashIfNecessaryHelper color))
+
+(defn remove-hash
+  [color]
+  (if (str/starts-with? color "#")
+    (subs color 1)
+    color))
+
 (defn gradient->css [{:keys [type stops]}]
   (let [parse-stop
         (fn [{:keys [offset color opacity]}]
@@ -121,6 +150,9 @@
 (defn parse-color [^string color-str]
   (let [result (gcolor/parse color-str)]
     (str (.-hex ^js result))))
+
+(def color-names
+  (obj/get-keys ^js gcolor/names))
 
 (def empty-color
   (into {} (map #(vector % nil)) [:color :id :file-id :gradient :opacity]))

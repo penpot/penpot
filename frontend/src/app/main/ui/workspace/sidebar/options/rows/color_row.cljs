@@ -21,6 +21,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.context :as ctx]
    [app.main.ui.components.color-bullet :as cb]
+   [app.main.ui.components.color-input :refer [color-input]]
    [app.main.ui.components.numeric-input :refer [numeric-input]]))
 
 (defn color-picker-callback
@@ -37,13 +38,6 @@
                  :data color}]
       (handle-open)
       (modal/show! :colorpicker props))))
-
-
-(defn remove-hash [value]
-  (if (or (nil? value) (= value :multiple)) "" (subs value 1)))
-
-(defn append-hash [value]
-  (str "#" value))
 
 (defn opacity->string [opacity]
   (if (= opacity :multiple)
@@ -92,13 +86,9 @@
         handle-close (fn [value opacity id file-id]
                        (when on-close (on-close value opacity id file-id)))
 
-        handle-value-change (fn [event]
-                              (let [target (dom/get-target event)]
-                                (when (dom/valid? target)
-                                  (-> target
-                                      dom/get-value
-                                      append-hash
-                                      change-value))))
+        handle-value-change (fn [new-value]
+                              (-> new-value
+                                  change-value))
 
         handle-opacity-change (fn [value]
                                 (change-opacity (/ value 100)))
@@ -155,13 +145,12 @@
        :else
        [:*
         [:div.color-info
-         [:input {:value (if (uc/multiple? color)
-                           ""
-                           (-> color :color remove-hash))
-                  :pattern "^[0-9a-fA-F]{0,6}$"
-                  :placeholder (tr "settings.multiple")
-                  :on-click select-all
-                  :on-change handle-value-change}]]
+         [:> color-input {:value (if (uc/multiple? color)
+                                   ""
+                                   (-> color :color uc/remove-hash))
+                          :placeholder (tr "settings.multiple")
+                          :on-click select-all
+                          :on-change handle-value-change}]]
 
         (when (and (not disable-opacity)
                    (not (:gradient color)))

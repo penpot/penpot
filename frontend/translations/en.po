@@ -443,6 +443,10 @@ msgstr "Something wrong has happened."
 msgid "errors.google-auth-not-enabled"
 msgstr "Authentication with google disabled on backend"
 
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Invalid color"
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "LDAP authentication is disabled."

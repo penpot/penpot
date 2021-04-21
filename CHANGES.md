@@ -5,7 +5,8 @@
 ### :sparkles: New features
 
 - Add integration with gitpod.io (an online IDE) [#807](https://github.com/penpot/penpot/pull/807)
-- Allow basic math operations in inputs [1383](https://tree.taiga.io/project/penpot/us/1383)
+- Allow basic math operations in inputs [Taiga 1383](https://tree.taiga.io/project/penpot/us/1383)
+- Autocomplete color names in hex inputs [Taiga 1596](https://tree.taiga.io/project/penpot/us/1596)
 - Allow to group assets (components and graphics) [Taiga #1289](https://tree.taiga.io/project/penpot/us/1289)
 - Internal: refactor of http client, replace internal xhr usage with more modern Fetch API.
 - New features for paths: snap points on edition, add/remove nodes, merge/join/split nodes. [Taiga #907](https://tree.taiga.io/project/penpot/us/907)

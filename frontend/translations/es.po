@@ -428,6 +428,10 @@ msgstr "Ha ocurrido algún error."
 msgid "errors.google-auth-not-enabled"
 msgstr "Autenticación con google esta dehabilitada en el servidor"
 
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Color inválido"
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "La autheticacion via LDAP esta deshabilitada."
@@ -2488,14 +2492,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-#: src/app/main/ui/auth/register.cljs
-#, fuzzy
-msgid "auth.check-your-email"
-msgstr ""
-"Comprueba tu email y haz click en el link de verificación para comenzar a "
-"usar Penpot."
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.verification-email-sent"
-msgstr "Hemos enviado un email de verificación a"
