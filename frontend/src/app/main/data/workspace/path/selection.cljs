@@ -50,7 +50,6 @@
             id (get-in state [:workspace-local :edition])
             content (get-in state (st/get-path state :content))
             selected-point? #(gsh/has-point-rect? selrect %)
-
             selected-points (get-in state [:workspace-local :edit-path id :selected-points])
 
             positions (into (if shift? selected-points #{})

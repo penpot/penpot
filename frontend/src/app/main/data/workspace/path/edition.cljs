@@ -224,9 +224,12 @@
   (ptk/reify ::create-node-at-position
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (st/get-path-id state)]
-        (update-in state (st/get-path state :content) upt/split-segments #{from-p to-p} t)))
+      (let [id (st/get-path-id state)
+            old-content (get-in state (st/get-path state :content))]
+        (-> state
+            (assoc-in [:workspace-local :edit-path id :old-content] old-content)
+            (update-in (st/get-path state :content) upt/split-segments #{from-p to-p} t))))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (changes/save-path-content)))))
+      (rx/of (changes/save-path-content {:preserve-move-to true})))))

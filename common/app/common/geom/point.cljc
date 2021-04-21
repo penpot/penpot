@@ -38,7 +38,7 @@
   ([v]
    (cond
      (point? v)
-     v
+     (Point. (:x v) (:y v))
 
      (number? v)
      (point v v)

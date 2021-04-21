@@ -136,8 +136,9 @@
             handlers (-> (upc/content->handlers content)
                          (get position))
 
-            [idx prefix] (when (= (count handlers) 1) (first handlers))
-            
+            [idx prefix] (when (= (count handlers) 1)
+                           (first handlers))
+
             drag-events-stream
             (->> (streams/position-stream snap-toggled points)
                  (rx/take-until stop-stream)

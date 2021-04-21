@@ -44,25 +44,30 @@
               :shapes [shape-id]}]]
     [rch uch]))
 
-(defn save-path-content []
-  (ptk/reify ::save-path-content
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [content (get-in state (st/get-path state :content))
-            content (if (= (-> content last :command) :move-to)
-                      (into [] (take (dec (count content)) content))
-                      content)]
-        (assoc-in state (st/get-path state :content) content)))
+(defn save-path-content
+  ([]
+   (save-path-content {}))
 
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [id (get-in state [:workspace-local :edition])
-            old-content (get-in state [:workspace-local :edit-path id :old-content])]
-        (if (some? old-content)
-          (let [shape (get-in state (st/get-path state))
-                page-id (:current-page-id state)
-                [rch uch] (generate-path-changes page-id shape old-content (:content shape))]
-            (rx/of (dwc/commit-changes rch uch {:commit-local? true})))
-          (rx/empty))))))
+  ([{:keys [preserve-move-to] :or {preserve-move-to false}}]
+   (ptk/reify ::save-path-content
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [content (get-in state (st/get-path state :content))
+             content (if (and (not preserve-move-to)
+                              (= (-> content last :command) :move-to))
+                       (into [] (take (dec (count content)) content))
+                       content)]
+         (assoc-in state (st/get-path state :content) content)))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [id (get-in state [:workspace-local :edition])
+             old-content (get-in state [:workspace-local :edit-path id :old-content])]
+         (if (some? old-content)
+           (let [shape (get-in state (st/get-path state))
+                 page-id (:current-page-id state)
+                 [rch uch] (generate-path-changes page-id shape old-content (:content shape))]
+             (rx/of (dwc/commit-changes rch uch {:commit-local? true})))
+           (rx/empty)))))))
 
 

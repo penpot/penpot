@@ -10,6 +10,7 @@
    [app.common.data.undo-stack :as u]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.path.state :as st]
+   [app.main.data.workspace.path.changes :as changes]
    [app.main.store :as store]
    [beicon.core :as rx]
    [okulary.core :as l]
@@ -26,20 +27,26 @@
 (defn- make-entry [state]
   (let [id (st/get-path-id state)]
     {:content (get-in state (st/get-path state :content))
+     :selrect (get-in state (st/get-path state :selrect))
+     :points  (get-in state (st/get-path state :points))
      :preview (get-in state [:workspace-local :edit-path id :preview])
      :last-point (get-in state [:workspace-local :edit-path id :last-point])
      :prev-handler (get-in state [:workspace-local :edit-path id :prev-handler])}))
 
-(defn- load-entry [state {:keys [content preview last-point prev-handler]}]
-  (let [id (st/get-path-id state)]
+(defn- load-entry [state {:keys [content selrect points preview last-point prev-handler]}]
+  (let [id (st/get-path-id state)
+        old-content (get-in state (st/get-path state :content))]
     (-> state
         (d/assoc-in-when (st/get-path state :content) content)
+        (d/assoc-in-when (st/get-path state :selrect) selrect)
+        (d/assoc-in-when (st/get-path state :points) points)
         (d/update-in-when
          [:workspace-local :edit-path id]
          assoc
          :preview preview
          :last-point last-point
-         :prev-handler prev-handler))))
+         :prev-handler prev-handler
+         :old-content old-content))))
 
 (defn undo []
   (ptk/reify ::undo
@@ -54,7 +61,11 @@
           (-> (load-entry entry)
               (d/assoc-in-when
                [:workspace-local :edit-path id :undo-stack]
-               undo-stack)))))))
+               undo-stack)))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (changes/save-path-content)))))
 
 (defn redo []
   (ptk/reify ::redo
@@ -68,7 +79,11 @@
             (load-entry entry)
             (d/assoc-in-when
              [:workspace-local :edit-path id :undo-stack]
-             undo-stack))))))
+             undo-stack))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (changes/save-path-content)))))
 
 (defn add-undo-entry []
   (ptk/reify ::add-undo-entry

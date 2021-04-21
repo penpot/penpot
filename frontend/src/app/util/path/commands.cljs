@@ -165,9 +165,14 @@
                       (point->handlers )
                       (filter (fn [[ci cp]] (and (not= index ci) (not= prefix cp)) )))]
 
-    (when (= (count handlers) 1)
-      (->> handlers
-           first))))
+    (cond
+      (= (count handlers) 1)
+      (->> handlers first)
+
+      (and (= :c1 prefix) (= (count content) index))
+      [(dec index) :c2]
+
+      :else nil)))
 
 
 (defn get-commands

@@ -87,7 +87,8 @@
 (defn next-node
   "Calculates the next-node to be inserted."
   [shape position prev-point prev-handler]
-  (let [last-command (-> shape :content last :command)
+  (let [position (select-keys position [:x :y])
+        last-command (-> shape :content last :command)
         add-line?   (and prev-point (not prev-handler) (not= last-command :close-path))
         add-curve?  (and prev-point prev-handler (not= last-command :close-path))]
     (cond
