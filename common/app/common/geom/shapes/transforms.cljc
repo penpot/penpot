@@ -161,7 +161,7 @@
         v2 (gpt/to-vec center p2)
 
         rot-angle (gpt/angle-with-other v1 v2)
-        rot-sign (if (> (* (:y v1) (:x v2)) (* (:x v1) (:y v2))) -1 1)]
+        rot-sign (gpt/angle-sign v1 v2)]
     (* rot-sign rot-angle)))
 
 (defn- calculate-dimensions

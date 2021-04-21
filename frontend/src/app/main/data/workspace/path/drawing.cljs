@@ -73,7 +73,7 @@
              prefix (or prefix :c1)
              position (or position (upc/command->point (nth content (dec index))))
 
-             old-handler (helpers/handler->point content index prefix)
+             old-handler (upc/handler->point content index prefix)
 
              handler-position (cond-> (gpt/point x y)
                                 shift? (helpers/position-fixed-angle position))

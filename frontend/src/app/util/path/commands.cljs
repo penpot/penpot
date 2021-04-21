@@ -180,3 +180,27 @@
   [content point]
   (->> (d/enumerate content)
        (filterv (fn [[idx cmd]] (= (command->point cmd) point)))))
+
+
+(defn prefix->coords [prefix]
+  (case prefix
+    :c1 [:c1x :c1y]
+    :c2 [:c2x :c2y]
+    nil))
+
+(defn handler->point [content index prefix]
+  (when (and (some? index)
+             (some? prefix)
+             (contains? content index))
+    (let [[cx cy :as coords] (prefix->coords prefix)]
+      (if (= :curve-to (get-in content [index :command]))
+        (gpt/point (get-in content [index :params cx])
+                   (get-in content [index :params cy]))
+
+        (gpt/point (get-in content [index :params :x])
+                   (get-in content [index :params :y]))))))
+
+(defn handler->node [content index prefix]
+  (if (= prefix :c1)
+    (command->point (get content (dec index)))
+    (command->point (get content index))))

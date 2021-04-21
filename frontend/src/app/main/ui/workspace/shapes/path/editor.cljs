@@ -80,7 +80,7 @@
                                  (= edit-mode :move) cur/pointer-node)
                        :fill "transparent"}}]]))
 
-(mf/defc path-handler [{:keys [index prefix point handler zoom selected? hover? edit-mode]}]
+(mf/defc path-handler [{:keys [index prefix point handler zoom selected? hover? edit-mode snap-angle?]}]
   (when (and point handler)
     (let [{:keys [x y]} handler
           on-enter
@@ -108,6 +108,16 @@
          :y2 y
          :style {:stroke (if hover? pc/black-color pc/gray-color)
                  :stroke-width (/ 1 zoom)}}]
+
+       (when snap-angle?
+         [:line
+          {:x1 (:x point)
+           :y1 (:y point)
+           :x2 x
+           :y2 y
+           :style {:stroke pc/secondary-color
+                   :stroke-width (/ 1 zoom)}}])
+
        [:rect
         {:x (- x (/ 3 zoom))
          :y (- y (/ 3 zoom))
@@ -156,6 +166,18 @@
                :y2 (:y to)
                :style {:stroke pc/secondary-color
                        :stroke-width (/ 1 zoom)}}])]))
+
+(defn matching-handler? [content node handlers]
+  (when (= 2 (count handlers))
+    (let [[[i1 p1] [i2 p2]] handlers
+          p1 (upc/handler->point content i1 p1)
+          p2 (upc/handler->point content i2 p2)
+
+          v1 (gpt/to-vec node p1)
+          v2 (gpt/to-vec node p2)
+
+          angle (gpt/angle-with-other v1 v2)]
+      (<= (- 180 angle) 0.1))))
 
 (mf/defc path-editor
   [{:keys [shape zoom]}]
@@ -258,20 +280,24 @@
 
          [:g.path-node
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
-           (for [[index prefix] (get handlers position)]
-             (let [command (get content index)
-                   x (get-in command [:params (d/prefix-keyword prefix :x)])
-                   y (get-in command [:params (d/prefix-keyword prefix :y)])
-                   handler-position (gpt/point x y)
-                   handler-hover? (contains? hover-handlers [index prefix])]
-               (when (not= position handler-position)
-                 [:& path-handler {:point position
-                                   :handler handler-position
-                                   :index index
-                                   :prefix prefix
-                                   :zoom zoom
-                                   :hover? handler-hover?
-                                   :edit-mode edit-mode}])))]
+           (let [pos-handlers (get handlers position)]
+             (for [[index prefix] pos-handlers]
+               (let [command (get content index)
+                     x (get-in command [:params (d/prefix-keyword prefix :x)])
+                     y (get-in command [:params (d/prefix-keyword prefix :y)])
+                     handler-position (gpt/point x y)
+                     handler-hover? (contains? hover-handlers [index prefix])
+                     moving-handler? (= handler-position moving-handler)
+                     matching-handler? (matching-handler? content position pos-handlers)]
+                 (when (not= position handler-position)
+                   [:& path-handler {:point position
+                                     :handler handler-position
+                                     :index index
+                                     :prefix prefix
+                                     :zoom zoom
+                                     :hover? handler-hover?
+                                     :snap-angle? (and moving-handler? matching-handler?)
+                                     :edit-mode edit-mode}]))))]
           [:& path-point {:position position
                           :zoom zoom
                           :edit-mode edit-mode
@@ -289,6 +315,6 @@
      (when show-snap?
        [:g.path-snap {:pointer-events "none"}
         [:& path-snap {:selected snap-selected
-                         :points snap-points
-                         :zoom zoom}]])]))
+                       :points snap-points
+                       :zoom zoom}]])]))
 

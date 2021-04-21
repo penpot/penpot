@@ -107,29 +107,6 @@
         (update :content (fnil conj []) command)
         (update-selrect))))
 
-(defn prefix->coords [prefix]
-  (case prefix
-    :c1 [:c1x :c1y]
-    :c2 [:c2x :c2y]
-    nil))
-
-(defn handler->point [content index prefix]
-  (when (and (some? index)
-             (some? prefix)
-             (contains? content index))
-    (let [[cx cy :as coords] (prefix->coords prefix)]
-      (if (= :curve-to (get-in content [index :command]))
-        (gpt/point (get-in content [index :params cx])
-                   (get-in content [index :params cy]))
-
-        (gpt/point (get-in content [index :params :x])
-                   (get-in content [index :params :y]))))))
-
-(defn handler->node [content index prefix]
-  (if (= prefix :c1)
-    (upc/command->point (get content (dec index)))
-    (upc/command->point (get content index))))
-
 (defn angle-points [common p1 p2]
   (mth/abs
    (gpt/angle-with-other
@@ -153,7 +130,7 @@
           v2 (gpt/to-vec node new-handler)
 
           delta-angle (gpt/angle-with-other v1 v2)
-          delta-sign (if (> (* (:y v1) (:x v2)) (* (:x v1) (:y v2))) -1 1)
+          delta-sign (gpt/angle-sign v1 v2)
 
           distance-scale (/ (gpt/distance node handler)
                             (gpt/distance node new-handler))
@@ -170,14 +147,14 @@
 (defn move-handler-modifiers
   [content index prefix match-distance? match-angle? dx dy]
 
-  (let [[cx cy] (prefix->coords prefix)
+  (let [[cx cy] (upc/prefix->coords prefix)
         [op-idx op-prefix] (upc/opposite-index content index prefix)
 
-        node (handler->node content index prefix)
-        handler (handler->point content index prefix)
-        opposite (handler->point content op-idx op-prefix)
+        node (upc/handler->node content index prefix)
+        handler (upc/handler->point content index prefix)
+        opposite (upc/handler->point content op-idx op-prefix)
 
-        [ocx ocy] (prefix->coords op-prefix)
+        [ocx ocy] (upc/prefix->coords op-prefix)
         [odx ody] (calculate-opposite-delta node handler opposite match-angle? match-distance? dx dy)
 
         hnv (if (some? handler)

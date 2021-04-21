@@ -163,11 +163,14 @@
             point (-> content (get (if (= prefix :c1) (dec index) index)) (upc/command->point))
             handler (-> content (get index) (upc/get-handler prefix))
 
+            [op-idx op-prefix] (upc/opposite-index content index prefix)
+            opposite (upc/handler->point content op-idx op-prefix)
+
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])]
 
         (streams/drag-stream
          (rx/concat
-          (->> (streams/move-handler-stream snap-toggled start-point handler points)
+          (->> (streams/move-handler-stream snap-toggled start-point point handler opposite points)
                (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
                (rx/map
                 (fn [{:keys [x y alt? shift?]}]

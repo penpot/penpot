@@ -162,6 +162,8 @@
                   (mth/precision 6))]
         (if (mth/nan? d) 0 d)))))
 
+(defn angle-sign [v1 v2]
+  (if (> (* (:y v1) (:x v2)) (* (:x v1) (:y v2))) -1 1))
 
 (defn update-angle
   "Update the angle of the point."
