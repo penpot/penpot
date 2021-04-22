@@ -1477,6 +1477,12 @@ msgid "workspace.assets.search"
 msgstr "Buscar recursos"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s elemento seleccionado"
+msgstr[1] "%s elementos seleccionados"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.shared"
 msgstr "COMPARTIDA"
 

@@ -149,7 +149,7 @@
 ;; ---- Components box ----
 
 (mf/defc components-box
-  [{:keys [file-id local? components listing-thumbs? open?] :as props}]
+  [{:keys [file-id local? components listing-thumbs? open? change-selected] :as props}]
   (let [state (mf/use-state {:menu-open false
                              :renaming nil
                              :top nil
@@ -236,10 +236,7 @@
                          (toggle-select selected component-id)
 
                          (kbd/shift? event)
-                         (extend-select selected component-id groups)
-
-                         :default
-                         (replace-select selected component-id)))))))
+                         (extend-select selected component-id groups)))))))
 
         create-group
         (mf/use-callback
@@ -278,6 +275,10 @@
            (dnd/set-data! event "penpot/component" {:file-id file-id
                                                     :component component})
            (dnd/set-allowed-effect! event "move")))]
+
+    (mf/use-effect
+      (mf/deps [change-selected selected])
+      #(change-selected (count selected)))
 
     [:div.asset-section {:on-click unselect-all}
      [:div.asset-title {:class (when (not open?) "closed")}
@@ -351,7 +352,7 @@
 ;; ---- Graphics box ----
 
 (mf/defc graphics-box
-  [{:keys [file-id local? objects listing-thumbs? open?] :as props}]
+  [{:keys [file-id local? objects listing-thumbs? open? change-selected] :as props}]
   (let [input-ref  (mf/use-ref nil)
         state      (mf/use-state {:menu-open false
                                   :renaming nil
@@ -441,10 +442,7 @@
                          (toggle-select selected object-id)
 
                          (kbd/shift? event)
-                         (extend-select selected object-id groups)
-
-                         :default
-                         (replace-select selected object-id)))))))
+                         (extend-select selected object-id groups)))))))
 
         create-group
         (mf/use-callback
@@ -484,6 +482,10 @@
            (dnd/set-data! event "text/asset-name" name)
            (dnd/set-data! event "text/asset-type" mtype)
            (dnd/set-allowed-effect! event "move")))]
+
+    (mf/use-effect
+      (mf/deps [change-selected selected])
+      #(change-selected (count selected)))
 
     [:div.asset-section {:on-click unselect-all}
      [:div.asset-title {:class (when (not open?) "closed")}
@@ -563,7 +565,7 @@
 ;; ---- Colors box ----
 
 (mf/defc color-item
-  [{:keys [color local? file-id locale] :as props}]
+  [{:keys [color local? file-id selected on-select locale] :as props}]
   (let [rename?   (= (:color-for-rename @refs/workspace-local) (:id color))
         id        (:id color)
         input-ref (mf/use-ref)
@@ -579,6 +581,8 @@
 
         click-color
         (fn [event]
+          (when on-select
+            ((on-select (:id color)) event))
           (let [ids (get-in @st/state [:workspace-local :selected])]
             (if (kbd/shift? event)
               (st/emit! (dc/change-stroke ids color))
@@ -595,7 +599,12 @@
 
         delete-color
         (fn []
-          (st/emit! (dwl/delete-color color)))
+          (if (empty? selected)
+            (st/emit! (dwl/delete-color color))
+            (do
+              (st/emit! (dwc/start-undo-transaction))
+              (apply st/emit! (map #(dwl/delete-color {:id %}) selected))
+              (st/emit! (dwc/commit-undo-transaction)))))
 
         rename-color-clicked
         (fn [event]
@@ -647,9 +656,12 @@
            (dom/select-text! input))
          nil))
 
-    [:div.asset-list-item {:on-context-menu on-context-menu}
-     [:& bc/color-bullet {:color color
-                          :on-click click-color}]
+    [:div.asset-list-item {:class-name (dom/classnames
+                                         :selected (contains? selected (:id color)))
+                           :on-context-menu on-context-menu
+                           :on-click (when-not (:editing @state)
+                                       click-color)}
+     [:& bc/color-bullet {:color color}]
 
      (if (:editing @state)
        [:input.element-name
@@ -660,9 +672,7 @@
          :auto-focus true
          :default-value (:name color "")}]
 
-       [:div.name-block
-        {:on-double-click rename-color-clicked
-         :on-click click-color}
+       [:div.name-block {:on-double-click rename-color-clicked}
         (:name color)
         (when-not (= (:name color) default-name)
           [:span default-name])])
@@ -673,13 +683,19 @@
           :on-close #(swap! state assoc :menu-open false)
           :top (:top @state)
           :left (:left @state)
-          :options [[(t locale "workspace.assets.rename") rename-color-clicked]
-                    [(t locale "workspace.assets.edit") edit-color-clicked]
+          :options [(when (<= (count selected) 1)
+                      [(t locale "workspace.assets.rename") rename-color-clicked])
+                    (when (<= (count selected) 1)
+                      [(t locale "workspace.assets.edit") edit-color-clicked])
                     [(t locale "workspace.assets.delete") delete-color]]}])]))
 
 (mf/defc colors-box
-  [{:keys [file-id local? colors locale open?] :as props}]
-  (let [add-color
+  [{:keys [file-id local? colors locale open? change-selected] :as props}]
+  (let [state (mf/use-state {:selected empty-selection})
+
+        selected      (:selected @state)
+
+        add-color
         (mf/use-callback
          (mf/deps file-id)
          (fn [value opacity]
@@ -696,8 +712,33 @@
                          :on-accept add-color
                          :data {:color "#406280"
                                 :opacity 1}
-                         :position :right})))]
-    [:div.asset-section
+                         :position :right})))
+
+        unselect-all
+        (mf/use-callback
+          (fn [event]
+            (swap! state assoc :selected empty-selection)))
+
+        on-select
+        (mf/use-callback
+          (mf/deps state)
+          (fn [color-id]
+            (fn [event]
+              (dom/stop-propagation event)
+              (swap! state update :selected
+                     (fn [selected]
+                       (cond
+                         (kbd/ctrl? event)
+                         (toggle-select selected color-id)
+
+                         (kbd/shift? event)
+                         (extend-select selected color-id {"" colors})))))))]
+
+    (mf/use-effect
+      (mf/deps [change-selected selected])
+      #(change-selected (count selected)))
+
+    [:div.asset-section {:on-click unselect-all}
      [:div.asset-title {:class (when (not open?) "closed")}
       [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :colors (not open?)))}
        i/arrow-slide (t locale "workspace.assets.colors")]
@@ -715,21 +756,24 @@
                             :color color
                             :file-id file-id
                             :local? local?
+                            :selected selected
+                            :on-select on-select
                             :locale locale}]))])]))
 
 
 ;; ---- Typography box ----
 
 (mf/defc typography-box
-  [{:keys [file file-id local? typographies locale open?] :as props}]
+  [{:keys [file file-id local? typographies locale open? change-selected] :as props}]
 
   (let [state (mf/use-state {:detail-open? false
                              :menu-open? false
                              :top nil
-                             :left nil})
+                             :left nil
+                             :selected empty-selection})
 
-        selected (mf/deref refs/selected-shapes)
-        local (deref refs/workspace-local)
+        local    (deref refs/workspace-local)
+        selected (:selected @state)
 
         add-typography
         (mf/use-callback
@@ -744,13 +788,25 @@
            (st/emit! (dwl/update-typography (merge typography changes) file-id))))
 
         handle-typography-selection
-        (fn [typography]
-          (let [attrs (merge
-                       {:typography-ref-file file-id
-                        :typography-ref-id (:id typography)}
-                       (d/without-keys typography [:id :name]))]
+        (fn [typography event]
+          (dom/stop-propagation event)
+
+          (swap! state update :selected
+                 (fn [selected]
+                   (cond
+                     (kbd/ctrl? event)
+                     (toggle-select selected (:id typography))
+
+                     (kbd/shift? event)
+                     (extend-select selected (:id typography) {"" typographies}))))
+
+          (let [ids (get-in @st/state [:workspace-local :selected])
+                attrs (merge
+                        {:typography-ref-file file-id
+                         :typography-ref-id (:id typography)}
+                        (d/without-keys typography [:id :name]))]
             (run! #(st/emit! (dwt/update-text-attrs {:id % :editor (get-in local [:editors %]) :attrs attrs}))
-                  selected)))
+                  ids)))
 
         on-context-menu
         (fn [id event]
@@ -765,6 +821,11 @@
                      :top top
                      :left left
                      :id id))))
+
+        unselect-all
+        (mf/use-callback
+          (fn [event]
+            (swap! state assoc :selected empty-selection)))
 
         closed-typography-edit
         (mf/use-callback
@@ -781,7 +842,12 @@
 
         handle-delete-typography
         (fn []
-          (st/emit! (dwl/delete-typography (:id @state))))
+          (if (empty? selected)
+            (st/emit! (dwl/delete-typography (:id @state)))
+            (do
+              (st/emit! (dwc/start-undo-transaction))
+              (apply st/emit! (map #(dwl/delete-typography %) selected))
+              (st/emit! (dwc/commit-undo-transaction)))))
 
         editting-id (or (:rename-typography local) (:edit-typography local))]
 
@@ -793,7 +859,11 @@
        (when (:edit-typography local)
          (st/emit! #(update % :workspace-local dissoc :edit-typography)))))
 
-    [:div.asset-section
+    (mf/use-effect
+      (mf/deps [change-selected selected])
+      #(change-selected (count selected)))
+
+    [:div.asset-section {:on-click unselect-all}
      [:div.asset-title {:class (when (not open?) "closed")}
       [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :typographies (not open?)))}
        i/arrow-slide (t locale "workspace.assets.typography")]
@@ -807,8 +877,10 @@
        :on-close #(swap! state assoc :menu-open? false)
        :top (:top @state)
        :left (:left @state)
-       :options [[(t locale "workspace.assets.rename") handle-rename-typography-clicked]
-                 [(t locale "workspace.assets.edit") handle-edit-typography-clicked]
+       :options [(when (<= (count selected) 1)
+                   [(t locale "workspace.assets.rename") handle-rename-typography-clicked])
+                 (when (<= (count selected) 1)
+                   [(t locale "workspace.assets.edit") handle-edit-typography-clicked])
                  [(t locale "workspace.assets.delete") handle-delete-typography]]}]
      (when open?
        [:div.asset-list
@@ -820,7 +892,8 @@
             :read-only? (not local?)
             :on-context-menu #(on-context-menu (:id typography) %)
             :on-change #(handle-change typography %)
-            :on-select #(handle-typography-selection typography)
+            :selected? (contains? selected (:id typography))
+            :on-select #(handle-typography-selection typography %)
             :editting? (= editting-id (:id typography))
             :focus-name? (= (:rename-typography local) (:id typography))}])])]))
 
@@ -893,8 +966,15 @@
 
         reverse-sort?   (mf/use-state false)
         listing-thumbs? (mf/use-state true)
+        selected-count  (mf/use-state {:components 0
+                                       :graphics 0
+                                       :colors 0
+                                       :typographies 0})
 
         toggle-open     (st/emitf (dwl/set-assets-box-open (:id file) :library (not open?)))
+
+        change-selected-count (fn [asset-type cnt]
+                                (swap! selected-count assoc asset-type cnt))
 
         url             (rt/resolve router :workspace
                                     {:project-id (:project-id file)
@@ -923,7 +1003,7 @@
           (fn [event]
             (swap! listing-thumbs? not)))]
 
-    [:div.tool-window
+    [:div.tool-window {:on-context-menu #(dom/prevent-default %)}
      [:div.tool-window-bar.library-bar
       {:on-click toggle-open}
       [:div.collapse-library
@@ -962,32 +1042,46 @@
                                          (str/empty? (:term filters))))]
          [:div.tool-window-content
           [:div.listing-options
-           [:div.listing-option-btn {:on-click toggle-sort}
+           [:span.selected-count
+            (let [selected-count @selected-count
+                  total (+ (:components selected-count)
+                           (:graphics selected-count)
+                           (:colors selected-count)
+                           (:typographies selected-count))]
+              (when (> total 0)
+                (tr "workspace.assets.selected-count" (i18n/c total))))]
+           [:div.listing-option-btn.first {:on-click toggle-sort}
             (if @reverse-sort?
               i/sort-descending
               i/sort-ascending)]
            [:div.listing-option-btn {:on-click toggle-listing}
             (if @listing-thumbs?
-              i/listing-thumbs
+              i/listing-enum
               i/listing-thumbs)]]
           (when show-components?
             [:& components-box {:file-id (:id file)
                                 :local? local?
                                 :components components
                                 :listing-thumbs? listing-thumbs?
+                                :change-selected (partial change-selected-count
+                                                          :components)
                                 :open? (open-box? :components)}])
           (when show-graphics?
             [:& graphics-box {:file-id (:id file)
                               :local? local?
                               :objects media
                               :listing-thumbs? listing-thumbs?
+                              :change-selected (partial change-selected-count
+                                                        :graphics)
                               :open? (open-box? :graphics)}])
           (when show-colors?
             [:& colors-box {:file-id (:id file)
                             :local? local?
                             :locale locale
                             :colors colors
-                            :open? (open-box? :colors)}])
+                            :open? (open-box? :colors)
+                            :change-selected (partial change-selected-count
+                                                      :colors)}])
 
           (when show-typography?
             [:& typography-box {:file file
@@ -995,7 +1089,9 @@
                                 :local? local?
                                 :locale locale
                                 :typographies typographies
-                                :open? (open-box? :typographies)}])
+                                :open? (open-box? :typographies)
+                                :change-selected (partial change-selected-count
+                                                          :typographies)}])
 
           (when (and (not show-components?) (not show-graphics?) (not show-colors?))
             [:div.asset-section

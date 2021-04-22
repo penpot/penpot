@@ -121,13 +121,21 @@
   .listing-options {
     background-color: $color-gray-60;
     display: flex;
-    justify-content: flex-end;
     align-items: center;
     padding: $medium $small 0 $small;
+
+    .selected-count {
+      color: $color-primary;
+      font-size: $fs11;
+    }
 
     .listing-option-btn {
       cursor: pointer;
       margin-left: $small;
+
+      &.first {
+        margin-left: auto;
+      }
 
       svg {
         fill: $color-gray-20;
@@ -370,7 +378,9 @@
     .asset-list-item {
       display: flex;
       align-items: center;
-      margin-top: $small;
+      border: 1px solid transparent;
+      margin-top: $x-small;
+      padding: 2px;
       font-size: $fs12;
       color: $color-white;
       cursor: pointer;
@@ -379,6 +389,10 @@
         margin-left: $x-small;
         color: $color-gray-30;
         text-transform: uppercase;
+      }
+
+      &.selected {
+        border: 1px solid $color-primary;
       }
     }
 
