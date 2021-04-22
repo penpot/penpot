@@ -143,6 +143,7 @@
     (hooks/setup-keyboard alt? ctrl?)
     (hooks/setup-hover-shapes page-id move-stream selected objects transform selected ctrl? hover hover-ids)
     (hooks/setup-viewport-modifiers modifiers selected objects render-ref)
+    (hooks/setup-shortcuts path-editing? drawing-path?)
 
     [:div.viewport
      [:div.viewport-overlays

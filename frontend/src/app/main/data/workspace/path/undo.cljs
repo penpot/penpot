@@ -48,8 +48,8 @@
          :prev-handler prev-handler
          :old-content old-content))))
 
-(defn undo []
-  (ptk/reify ::undo
+(defn undo-path []
+  (ptk/reify ::undo-path
     ptk/UpdateEvent
     (update [_ state]
       (let [id (st/get-path-id state)
@@ -65,10 +65,10 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (changes/save-path-content)))))
+      (rx/of (changes/save-path-content {:preserve-move-to true})))))
 
-(defn redo []
-  (ptk/reify ::redo
+(defn redo-path []
+  (ptk/reify ::redo-path
     ptk/UpdateEvent
     (update [_ state]
       (let [id (st/get-path-id state)
@@ -84,6 +84,23 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/of (changes/save-path-content)))))
+
+(defn merge-head
+  "Joins the head with the previous undo in one. This is done so when the user changes a
+  node handlers after adding it the undo merges both in one operation only"
+  []
+  (ptk/reify ::add-undo-entry
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (st/get-path-id state)
+            entry (make-entry state)
+            stack (get-in state [:workspace-local :edit-path id :undo-stack])
+            head (u/peek stack)
+            stack (-> stack (u/undo) (u/fixup head))]
+        (-> state
+            (d/assoc-in-when
+             [:workspace-local :edit-path id :undo-stack]
+             stack))))))
 
 (defn add-undo-entry []
   (ptk/reify ::add-undo-entry
@@ -136,20 +153,10 @@
                                         (rx/filter stop-undo?)
                                         (rx/take 1))]
               (rx/concat
-               (->> (rx/merge
-                     (->> (rx/from-atom path-content-ref {:emit-current-value? true})
-                          (rx/filter (comp not nil?))
-                          (rx/map #(add-undo-entry)))
-
-                     (->> stream
-                          (rx/filter undo-event?)
-                          (rx/map #(undo)))
-
-                     (->> stream
-                          (rx/filter redo-event?)
-                          (rx/map #(redo))))
-
-                    (rx/take-until stop-undo-stream))
+               (->> (rx/from-atom path-content-ref {:emit-current-value? true})
+                    (rx/take-until stop-undo-stream)
+                    (rx/filter (comp not nil?))
+                    (rx/map #(add-undo-entry)))
 
                (rx/of (end-path-undo))))))))))
 

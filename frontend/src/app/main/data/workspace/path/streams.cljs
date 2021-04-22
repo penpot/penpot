@@ -72,6 +72,14 @@
     (->> ms/mouse-position
          (rx/map check-path-snap))))
 
+(defn get-angle [node handler opposite]
+  (when (and (some? node) (some? handler) (some? opposite))
+    (let [v1 (gpt/to-vec node opposite)
+          v2 (gpt/to-vec node handler)
+          rot-angle (gpt/angle-with-other v1 v2)
+          rot-sign (gpt/angle-sign v1 v2)]
+      [rot-angle rot-sign])))
+
 (defn move-handler-stream
   [snap-toggled start-point node handler opposite points]
 
@@ -79,8 +87,7 @@
         ranges (snap/create-ranges points)
         d-pos (/ snap/snap-path-accuracy zoom)
 
-        initial-angle (gpt/angle-with-other (gpt/to-vec node handler)
-                                            (gpt/to-vec node opposite))
+        [initial-angle] (get-angle node handler opposite)
 
         check-path-snap
         (fn [position]
@@ -88,14 +95,11 @@
             (let [delta (gpt/subtract position start-point)
                   handler (gpt/add handler delta)
 
-                  v1 (gpt/to-vec node opposite)
-                  v2 (gpt/to-vec node handler)
-
-                  rot-angle (gpt/angle-with-other v1 v2)
-                  rot-sign (gpt/angle-sign v1 v2)
+                  [rot-angle rot-sign] (get-angle node handler opposite)
 
                   snap-opposite-angle?
-                  (and (or (:alt? position) (> (- 180 initial-angle) 0.1))
+                  (and (some? rot-angle)
+                       (or (:alt? position) (> (- 180 initial-angle) 0.1))
                        (<= (- 180 rot-angle) 5))]
 
               (cond

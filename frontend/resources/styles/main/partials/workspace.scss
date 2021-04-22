@@ -305,10 +305,9 @@
     }
 
     &.is-disabled {
-      opacity: 0.3;
-
-      &:hover svg {
-        fill: initial;
+      cursor: initial;
+      svg {
+        fill: $color-gray-20;
       }
     }
 

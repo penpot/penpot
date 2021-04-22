@@ -113,7 +113,8 @@
       (let [id (st/get-path-id state)
             handler (get-in state [:workspace-local :edit-path id :prev-handler])]
         ;; Update the preview because can be outdated after the dragging
-        (rx/of (preview-next-point handler))))))
+        (rx/of (preview-next-point handler)
+               (undo/merge-head))))))
 
 (declare close-path-drag-end)
 

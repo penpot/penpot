@@ -9,7 +9,10 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.path.shortcuts :as psc]
+   [app.main.data.workspace.shortcuts :as wsc]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.hooks :as hooks]
@@ -148,3 +151,15 @@
         (if modifiers
           (utils/update-transform render-node roots modifiers)
           (utils/remove-transform render-node roots))))))
+
+(defn setup-shortcuts [path-editing? drawing-path?]
+  (mf/use-effect
+   (mf/deps path-editing? drawing-path?)
+   (fn []
+     (cond
+       (or drawing-path? path-editing?)
+       (dsc/bind-shortcuts psc/shortcuts)
+
+       :else
+       (dsc/bind-shortcuts wsc/shortcuts))
+     dsc/remove-shortcuts)))
