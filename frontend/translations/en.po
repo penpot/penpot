@@ -1502,6 +1502,12 @@ msgid "workspace.assets.search"
 msgstr "Search assets"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s items selected"
+msgstr[1] "%s items selected"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.shared"
 msgstr "SHARED"
 
