@@ -14,7 +14,7 @@
    [app.main.data.workspace.path.state :refer [get-path]]
    [app.main.data.workspace.path.common :as common]
    [app.main.streams :as ms]
-   [app.util.geom.path :as ugp]
+   [app.util.path.commands :as upc]
    [potok.core :as ptk]))
 
 ;; CONSTANTS
@@ -87,14 +87,15 @@
 (defn next-node
   "Calculates the next-node to be inserted."
   [shape position prev-point prev-handler]
-  (let [last-command (-> shape :content last :command)
+  (let [position (select-keys position [:x :y])
+        last-command (-> shape :content last :command)
         add-line?   (and prev-point (not prev-handler) (not= last-command :close-path))
         add-curve?  (and prev-point prev-handler (not= last-command :close-path))]
     (cond
       add-line?   {:command :line-to
                    :params position}
       add-curve?  {:command :curve-to
-                   :params (ugp/make-curve-params position prev-handler)}
+                   :params (upc/make-curve-params position prev-handler)}
       :else       {:command :move-to
                    :params position})))
 
@@ -106,15 +107,65 @@
         (update :content (fnil conj []) command)
         (update-selrect))))
 
+(defn angle-points [common p1 p2]
+  (mth/abs
+   (gpt/angle-with-other
+    (gpt/to-vec common p1)
+    (gpt/to-vec common p2))))
+
+(defn calculate-opposite-delta [node handler opposite match-angle? match-distance? dx dy]
+  (when (and (some? handler) (some? opposite))
+    (let [;; To match the angle, the angle should be matching (angle between points 180deg)
+          angle-handlers (angle-points node handler opposite)
+
+          match-angle? (and match-angle? (<= (mth/abs (- 180 angle-handlers) ) 0.1))
+
+          ;; To match distance the distance should be matching
+          match-distance? (and match-distance? (mth/almost-zero? (- (gpt/distance node handler)
+                                                                    (gpt/distance node opposite))))
+
+          new-handler (-> handler (update :x + dx) (update :y + dy))
+
+          v1 (gpt/to-vec node handler)
+          v2 (gpt/to-vec node new-handler)
+
+          delta-angle (gpt/angle-with-other v1 v2)
+          delta-sign (gpt/angle-sign v1 v2)
+
+          distance-scale (/ (gpt/distance node handler)
+                            (gpt/distance node new-handler))
+
+          new-opposite (cond-> opposite
+                         match-angle?
+                         (gpt/rotate node (* delta-sign delta-angle))
+
+                         match-distance?
+                         (gpt/scale-from node distance-scale))]
+      [(- (:x new-opposite) (:x opposite))
+       (- (:y new-opposite) (:y opposite))])))
+
 (defn move-handler-modifiers
-  [content index prefix match-opposite? dx dy]
-  (let [[cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
-        [ocx ocy] (if (= prefix :c1) [:c2x :c2y] [:c1x :c1y])
-        opposite-index (ugp/opposite-index content index prefix)]
+  [content index prefix match-distance? match-angle? dx dy]
 
-    (cond-> {}
-      :always
-      (update index assoc cx dx cy dy)
+  (let [[cx cy] (upc/prefix->coords prefix)
+        [op-idx op-prefix] (upc/opposite-index content index prefix)
 
-      (and match-opposite? opposite-index)
-      (update opposite-index assoc ocx (- dx) ocy (- dy)))))
+        node (upc/handler->node content index prefix)
+        handler (upc/handler->point content index prefix)
+        opposite (upc/handler->point content op-idx op-prefix)
+
+        [ocx ocy] (upc/prefix->coords op-prefix)
+        [odx ody] (calculate-opposite-delta node handler opposite match-angle? match-distance? dx dy)
+
+        hnv (if (some? handler)
+              (gpt/to-vec node (-> handler (update :x + dx) (update :y + dy)))
+              (gpt/point dx dy))]
+
+    (-> {}
+        (update index assoc cx dx cy dy)
+
+        (cond-> (and (some? op-idx) (not= opposite node))
+          (update op-idx assoc ocx odx ocy ody)
+
+          (and (some? op-idx) (= opposite node) match-distance? match-angle?)
+          (update op-idx assoc ocx (- (:x hnv)) ocy (- (:y hnv)))))))

@@ -356,13 +356,15 @@
           (>= index 0) (accumulate-undo-entry (get-in state [:workspace-undo :items index]))
           (>= index 0) (update-in [:workspace-undo :index] dec))))))
 
+;; If these functions change modules review /src/app/main/data/workspace/path/undo.cljs
 (def undo
   (ptk/reify ::undo
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [edition (get-in state [:workspace-local :edition])]
+      (let [edition (get-in state [:workspace-local :edition])
+            drawing (get state :workspace-drawing)]
         ;; Editors handle their own undo's
-        (when-not (some? edition)
+        (when-not (or (some? edition) (not-empty drawing))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
@@ -375,8 +377,9 @@
   (ptk/reify ::redo
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [edition (get-in state [:workspace-local :edition])]
-        (when-not (some? edition)
+      (let [edition (get-in state [:workspace-local :edition])
+            drawing (get state :workspace-drawing)]
+        (when-not (or (some? edition) (not-empty drawing))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
@@ -543,6 +546,7 @@
              (rx/take 1)
              (rx/map (constantly clear-edition-mode)))))))
 
+;; If these event change modules review /src/app/main/data/workspace/path/undo.cljs
 (def clear-edition-mode
   (ptk/reify ::clear-edition-mode
     ptk/UpdateEvent

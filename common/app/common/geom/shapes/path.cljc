@@ -233,7 +233,9 @@
     (loop [t1 0
            t2 1]
       (if (<= (mth/abs (- t1 t2)) path-closest-point-accuracy)
-        (curve-values start end h1 h2 t1)
+        (-> (curve-values start end h1 h2 t1)
+            ;; store the segment info
+            (with-meta {:t t1 :from-p start :to-p end}))
 
         (let [ht  (+ t1 (/ (- t2 t1) 2))
               ht1 (+ t1 (/ (- t2 t1) 4))
@@ -260,21 +262,18 @@
   "Point on line"
   [position from-p to-p]
 
-  (let [{v1x :x v1y :y} from-p
-        {v2x :x v2y :y} to-p
-        {px :x py :y} position
-
-        e1 (gpt/point (- v2x v1x) (- v2y v1y))
-        e2 (gpt/point (- px v1x) (- py v1y))
+  (let [e1 (gpt/to-vec from-p to-p )
+        e2 (gpt/to-vec from-p position)
 
         len2 (+ (mth/sq (:x e1)) (mth/sq (:y e1)))
-        val-dp (/ (gpt/dot e1 e2) len2)]
+        t (/ (gpt/dot e1 e2) len2)]
 
-    (if (and (>= val-dp 0)
-             (<= val-dp 1)
-             (not (mth/almost-zero? len2)))
-      (gpt/point (+ v1x (* val-dp (:x e1))) 
-                 (+ v1y (* val-dp (:y e1))))
+    (if (and (>= t 0) (<= t 1) (not (mth/almost-zero? len2)))
+      (-> (gpt/add from-p (gpt/scale e1 t))
+          (with-meta {:t t
+                      :from-p from-p
+                      :to-p to-p}))
+
       ;; There is no perpendicular projection in the line so the closest
       ;; point will be one of the extremes
       (if (<= (gpt/distance position from-p) (gpt/distance position to-p))
@@ -286,20 +285,20 @@
   [shape position]
 
   (let [point+distance (fn [[cur-cmd prev-cmd]]
-                         (let [point
+                         (let [from-p (command->point prev-cmd)
+                               to-p   (command->point cur-cmd)
+                               h1 (gpt/point (get-in cur-cmd [:params :c1x])
+                                             (get-in cur-cmd [:params :c1y]))
+                               h2 (gpt/point (get-in cur-cmd [:params :c2x])
+                                             (get-in cur-cmd [:params :c2y]))
+                               point
                                (case (:command cur-cmd)
-                                 :line-to (line-closest-point
-                                           position
-                                           (command->point prev-cmd)
-                                           (command->point cur-cmd))
-                                 :curve-to (curve-closest-point
-                                            position
-                                            (command->point prev-cmd)
-                                            (command->point cur-cmd)
-                                            (gpt/point (get-in cur-cmd [:params :c1x])
-                                                       (get-in cur-cmd [:params :c1y]))
-                                            (gpt/point (get-in cur-cmd [:params :c2x])
-                                                       (get-in cur-cmd [:params :c2y])))
+                                 :line-to
+                                 (line-closest-point position from-p to-p)
+
+                                 :curve-to
+                                 (curve-closest-point position from-p to-p h1 h2)
+
                                  nil)]
                            (when point
                              [point (gpt/distance point position)])))

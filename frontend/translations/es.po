@@ -2153,6 +2153,36 @@ msgstr "Alineación vertical"
 msgid "workspace.options.use-play-button"
 msgstr "Usa el botón de play de la cabecera para arrancar la vista de prototipo."
 
+msgid "workspace.path.actions.add-node"
+msgstr "Añadir nodo (%s)"
+
+msgid "workspace.path.actions.delete-node"
+msgstr "Borrar nodos (%s)"
+
+msgid "workspace.path.actions.draw-nodes"
+msgstr "Dibujar nodos (%s)"
+
+msgid "workspace.path.actions.join-nodes"
+msgstr "Unir nodos (%s)"
+
+msgid "workspace.path.actions.make-corner"
+msgstr "Convertir en esquina (%s)"
+
+msgid "workspace.path.actions.make-curve"
+msgstr "Convertir en curva (%s)"
+
+msgid "workspace.path.actions.merge-nodes"
+msgstr "Fusionar nodos (%s)"
+
+msgid "workspace.path.actions.move-nodes"
+msgstr "Mover nodes (%s)"
+
+msgid "workspace.path.actions.separate-nodes"
+msgstr "Separar nodos (%s)"
+
+msgid "workspace.path.actions.snap-nodes"
+msgstr "Alinear nodos (%s)"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
 msgstr "Enviar al fondo"

@@ -17,14 +17,16 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]
-   [app.util.geom.path :as ugp]
+   [app.util.path.geom :as upg]
+   [app.util.path.commands :as upc]
+   [app.util.path.format :as upf]
    [app.util.keyboard :as kbd]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
-(mf/defc path-point [{:keys [position zoom edit-mode hover? selected? preview? start-path? last-p?]}]
+(mf/defc path-point [{:keys [position zoom edit-mode hover? selected? preview? start-path? last-p? new-point?]}]
   (let [{:keys [x y]} position
 
         on-enter
@@ -39,6 +41,9 @@
         (fn [event]
           (dom/stop-propagation event)
           (dom/prevent-default event)
+
+          (when (and new-point? (some? (meta position)))
+            (st/emit! (drp/create-node-at-position (meta position))))
 
           (let [shift? (kbd/shift? event)]
             (cond
@@ -75,7 +80,7 @@
                                  (= edit-mode :move) cur/pointer-node)
                        :fill "transparent"}}]]))
 
-(mf/defc path-handler [{:keys [index prefix point handler zoom selected? hover? edit-mode]}]
+(mf/defc path-handler [{:keys [index prefix point handler zoom selected? hover? edit-mode snap-angle?]}]
   (when (and point handler)
     (let [{:keys [x y]} handler
           on-enter
@@ -103,6 +108,16 @@
          :y2 y
          :style {:stroke (if hover? pc/black-color pc/gray-color)
                  :stroke-width (/ 1 zoom)}}]
+
+       (when snap-angle?
+         [:line
+          {:x1 (:x point)
+           :y1 (:y point)
+           :x2 x
+           :y2 y
+           :style {:stroke pc/secondary-color
+                   :stroke-width (/ 1 zoom)}}])
+
        [:rect
         {:x (- x (/ 3 zoom))
          :y (- y (/ 3 zoom))
@@ -130,10 +145,10 @@
                      :stroke pc/black-color
                      :stroke-width (/ 1 zoom)
                      :stroke-dasharray (/ 4 zoom)}
-             :d (ugp/content->path [{:command :move-to
-                                     :params {:x (:x from)
-                                              :y (:y from)}}
-                                    command])}])
+             :d (upf/format-path [{:command :move-to
+                                   :params {:x (:x from)
+                                            :y (:y from)}}
+                                  command])}])
    [:& path-point {:position (:params command)
                    :preview? true
                    :zoom zoom}]])
@@ -151,6 +166,18 @@
                :y2 (:y to)
                :style {:stroke pc/secondary-color
                        :stroke-width (/ 1 zoom)}}])]))
+
+(defn matching-handler? [content node handlers]
+  (when (= 2 (count handlers))
+    (let [[[i1 p1] [i2 p2]] handlers
+          p1 (upc/handler->point content i1 p1)
+          p2 (upc/handler->point content i2 p2)
+
+          v1 (gpt/to-vec node p1)
+          v2 (gpt/to-vec node p2)
+
+          angle (gpt/angle-with-other v1 v2)]
+      (<= (- 180 angle) 0.1))))
 
 (mf/defc path-editor
   [{:keys [shape zoom]}]
@@ -176,10 +203,10 @@
         selected-points (or selected-points #{})
 
         base-content (:content shape)
-        base-points (mf/use-memo (mf/deps base-content) #(->> base-content ugp/content->points))
+        base-points (mf/use-memo (mf/deps base-content) #(->> base-content upg/content->points))
 
-        content (ugp/apply-content-modifiers base-content content-modifiers)
-        content-points (mf/use-memo (mf/deps content) #(->> content ugp/content->points))
+        content (upc/apply-content-modifiers base-content content-modifiers)
+        content-points (mf/use-memo (mf/deps content) #(->> content upg/content->points))
 
         point->base (->> (map hash-map content-points base-points) (reduce merge))
         base->point (map-invert point->base)
@@ -187,19 +214,25 @@
         points (into #{} content-points)
 
         last-command (last content)
-        last-p (->> content last ugp/command->point)
-        handlers (ugp/content->handlers content)
+        last-p (->> content last upc/command->point)
+        handlers (upc/content->handlers content)
+
+        start-p? (not (some? last-point))
 
         [snap-selected snap-points]
         (cond
           (some? drag-handler) [#{drag-handler} points]
-          (some? preview) [#{(ugp/command->point preview)} points]
+          (some? preview) [#{(upc/command->point preview)} points]
           (some? moving-handler) [#{moving-handler} points]
           :else
           [(->> selected-points (map base->point) (into #{}))
            (->> points (remove selected-points) (into #{}))])
 
-        show-snap? (and snap-toggled (or (some? drag-handler) (some? preview) (some? moving-handler) moving-nodes))
+        show-snap? (and snap-toggled
+                        (or (some? drag-handler)
+                            (some? preview)
+                            (some? moving-handler)
+                            moving-nodes))
 
         handle-double-click-outside
         (fn [event]
@@ -212,6 +245,13 @@
        (let [keys [(events/listen (dom/get-root) EventType.DBLCLICK handle-double-click-outside)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
+
+    (hooks/use-stream
+     ms/mouse-position
+     (mf/deps shape zoom)
+     (fn [position]
+       (when-let [point (gshp/path-closest-point shape position)]
+         (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
      (when (and preview (not drag-handler))
@@ -228,30 +268,36 @@
      (when @hover-point
        [:g.hover-point
         [:& path-point {:position @hover-point
+                        :edit-mode edit-mode
+                        :new-point? true
+                        :start-path? start-p?
                         :zoom zoom}]])
 
      (for [position points]
        (let [point-selected? (contains? selected-points (get point->base position))
              point-hover? (contains? hover-points (get point->base position))
-             last-p? (= last-point (get point->base position))
-             start-p? (not (some? last-point))]
+             last-p? (= last-point (get point->base position))]
 
          [:g.path-node
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
-           (for [[index prefix] (get handlers position)]
-             (let [command (get content index)
-                   x (get-in command [:params (d/prefix-keyword prefix :x)])
-                   y (get-in command [:params (d/prefix-keyword prefix :y)])
-                   handler-position (gpt/point x y)
-                   handler-hover? (contains? hover-handlers [index prefix])]
-               (when (not= position handler-position)
-                 [:& path-handler {:point position
-                                   :handler handler-position
-                                   :index index
-                                   :prefix prefix
-                                   :zoom zoom
-                                   :hover? handler-hover?
-                                   :edit-mode edit-mode}])))]
+           (let [pos-handlers (get handlers position)]
+             (for [[index prefix] pos-handlers]
+               (let [command (get content index)
+                     x (get-in command [:params (d/prefix-keyword prefix :x)])
+                     y (get-in command [:params (d/prefix-keyword prefix :y)])
+                     handler-position (gpt/point x y)
+                     handler-hover? (contains? hover-handlers [index prefix])
+                     moving-handler? (= handler-position moving-handler)
+                     matching-handler? (matching-handler? content position pos-handlers)]
+                 (when (not= position handler-position)
+                   [:& path-handler {:point position
+                                     :handler handler-position
+                                     :index index
+                                     :prefix prefix
+                                     :zoom zoom
+                                     :hover? handler-hover?
+                                     :snap-angle? (and moving-handler? matching-handler?)
+                                     :edit-mode edit-mode}]))))]
           [:& path-point {:position position
                           :zoom zoom
                           :edit-mode edit-mode
@@ -269,6 +315,6 @@
      (when show-snap?
        [:g.path-snap {:pointer-events "none"}
         [:& path-snap {:selected snap-selected
-                         :points snap-points
-                         :zoom zoom}]])]))
+                       :points snap-points
+                       :zoom zoom}]])]))
 

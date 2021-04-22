@@ -8,16 +8,17 @@
   (:require
    [app.main.data.workspace.path :as drp]
    [app.main.data.workspace.path.helpers :as wph]
+   [app.main.data.workspace.path.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.shapes.path.common :as pc]
-   [app.util.geom.path :as ugp]
+   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.path.tools :as upt]
    [rumext.alpha :as mf]))
 
 (defn check-enabled [content selected-points]
-  (let [segments (ugp/get-segments content selected-points)
-
+  (let [segments (upt/get-segments content selected-points)
         points-selected? (not (empty? selected-points))
         segments-selected? (not (empty? segments))]
     {:make-corner points-selected?
@@ -107,65 +108,75 @@
      [:div.viewport-actions-group
 
       ;; Draw Mode
-      [:div.viewport-actions-entry
+      [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when (= edit-mode :draw) "is-toggled")
+        :alt (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
         :on-click on-select-draw-mode}
        i/pen]
 
       ;; Edit mode
-      [:div.viewport-actions-entry
+      [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when (= edit-mode :move) "is-toggled")
+        :alt (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
         :on-click on-select-edit-mode}
        i/pointer-inner]]
      
      [:div.viewport-actions-group
       ;; Add Node
-      [:div.viewport-actions-entry
+      [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when-not (:add-node enabled-buttons) "is-disabled")
+        :alt (tr "workspace.path.actions.add-node" (sc/get-tooltip :add-node))
         :on-click on-add-node}
        i/nodes-add]
 
       ;; Remove node
-      [:div.viewport-actions-entry
+      [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when-not (:remove-node enabled-buttons) "is-disabled")
+        :alt (tr "workspace.path.actions.delete-node" (sc/get-tooltip :delete-node))
         :on-click on-remove-node}
        i/nodes-remove]]
 
      [:div.viewport-actions-group
       ;; Merge Nodes
-      [:div.viewport-actions-entry
+      [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when-not (:merge-nodes enabled-buttons) "is-disabled")
+        :alt (tr "workspace.path.actions.merge-nodes" (sc/get-tooltip :merge-nodes))
         :on-click on-merge-nodes}
        i/nodes-merge]
 
       ;; Join Nodes
-      [:div.viewport-actions-entry
+      [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when-not (:join-nodes enabled-buttons) "is-disabled")
+        :alt (tr "workspace.path.actions.join-nodes" (sc/get-tooltip :join-nodes))
         :on-click on-join-nodes}
        i/nodes-join]
 
       ;; Separate Nodes
-      [:div.viewport-actions-entry
+      [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when-not (:separate-nodes enabled-buttons) "is-disabled")
+        :alt (tr "workspace.path.actions.separate-nodes" (sc/get-tooltip :separate-nodes))
         :on-click on-separate-nodes}
        i/nodes-separate]]
 
      ;; Make Corner
      [:div.viewport-actions-group
-      [:div.viewport-actions-entry
+      [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when-not (:make-corner enabled-buttons) "is-disabled")
+        :alt (tr "workspace.path.actions.make-corner" (sc/get-tooltip :make-corner))
         :on-click on-make-corner}
        i/nodes-corner]
 
       ;; Make Curve
-      [:div.viewport-actions-entry
+      [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when-not (:make-curve enabled-buttons) "is-disabled")
+        :alt (tr "workspace.path.actions.make-curve" (sc/get-tooltip :make-curve))
         :on-click on-make-curve}
        i/nodes-curve]]
 
      ;; Toggle snap
      [:div.viewport-actions-group
-      [:div.viewport-actions-entry
+      [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when snap-toggled "is-toggled")
+        :alt (tr "workspace.path.actions.snap-nodes" (sc/get-tooltip :snap-nodes))
         :on-click on-toggle-snap}
        i/nodes-snap]]]))

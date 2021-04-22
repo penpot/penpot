@@ -98,6 +98,7 @@
         drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
         text-editing?     (and edition (= :text (get-in objects [edition :type])))
+        path-editing?     (and edition (= :path (get-in objects [edition :type])))
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool)
         on-context-menu   (actions/on-context-menu hover)
@@ -132,15 +133,17 @@
         show-snap-distance?      (and (contains? layout :dynamic-alignment) (= transform :move) (not (empty? selected)))
         show-snap-points?        (and (contains? layout :dynamic-alignment) (or drawing-obj transform))
         show-selrect?            (and selrect (empty? drawing))
+        show-measures?           (and (not transform) (not path-editing?) show-distances?)
         ]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
     (hooks/setup-viewport-size viewport-ref)
-    (hooks/setup-cursor cursor alt? panning drawing-tool drawing-path?)
+    (hooks/setup-cursor cursor alt? panning drawing-tool drawing-path? path-editing?)
     (hooks/setup-resize layout viewport-ref)
     (hooks/setup-keyboard alt? ctrl?)
     (hooks/setup-hover-shapes page-id move-stream selected objects transform selected ctrl? hover hover-ids)
     (hooks/setup-viewport-modifiers modifiers selected objects render-ref)
+    (hooks/setup-shortcuts path-editing? drawing-path?)
 
     [:div.viewport
      [:div.viewport-overlays
@@ -224,7 +227,7 @@
            :disable-handlers (or drawing-tool edition)
            :on-move-selected on-move-selected}])
 
-       (when (and (not transform) show-distances?)
+       (when show-measures?
          [:& msr/measurement
           {:bounds vbox
            :selected-shapes selected-shapes

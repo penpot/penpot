@@ -10,7 +10,8 @@
    [app.main.data.workspace.path.drawing :as drawing]
    [app.main.data.workspace.path.edition :as edition]
    [app.main.data.workspace.path.selection :as selection]
-   [app.main.data.workspace.path.tools :as tools]))
+   [app.main.data.workspace.path.tools :as tools]
+   [app.main.data.workspace.path.undo :as undo]))
 
 ;; Drawing
 (d/export drawing/handle-new-shape)
@@ -22,6 +23,7 @@
 (d/export edition/start-move-handler)
 (d/export edition/start-move-path-point)
 (d/export edition/start-path-edit)
+(d/export edition/create-node-at-position)
 
 ;; Selection
 (d/export selection/handle-selection)
@@ -41,3 +43,7 @@
 (d/export tools/separate-nodes)
 (d/export tools/toggle-snap)
 
+;; Undo/redo
+(d/export undo/undo-path)
+(d/export undo/redo-path)
+(d/export undo/merge-head)

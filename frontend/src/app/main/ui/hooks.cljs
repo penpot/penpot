@@ -7,9 +7,8 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   ["mousetrap" :as mousetrap]
    [app.common.spec :as us]
-   [app.main.data.shortcuts :refer [bind-shortcuts]]
+   [app.main.data.shortcuts :as dsc]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.dom.dnd :as dnd]
@@ -39,16 +38,8 @@
   [shortcuts]
   (mf/use-effect
    (fn []
-     (bind-shortcuts
-      shortcuts
-      mousetrap/bind
-      (fn [key cb]
-        (fn [event]
-          (log/debug :msg (str "Shortcut" key))
-          (.preventDefault event)
-          (cb event))))
-     (fn [] (mousetrap/reset))))
-  nil)
+     (dsc/bind-shortcuts shortcuts)
+     (fn [] (dsc/remove-shortcuts)))))
 
 (defn invisible-image
   []

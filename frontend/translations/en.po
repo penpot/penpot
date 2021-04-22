@@ -1,11 +1,25 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+#, fuzzy
 msgid ""
 msgstr ""
-"Language: en\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"PO-Revision-Date: 2021-04-22 13:43+0200\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# ~ msgid ""
+# ~ msgstr ""
+# ~ "Language: en\n"
+# ~ "MIME-Version: 1.0\n"
+# ~ "Content-Type: text/plain; charset=utf-8\n"
+# ~ "Content-Transfer-Encoding: 8bit\n"
+# ~ "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
 msgstr "Already have an account?"
@@ -2168,6 +2182,36 @@ msgstr "Vertical align"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
 msgstr "Use the play button at the header to run the prototype view."
+
+msgid "workspace.path.actions.add-node"
+msgstr "Add node (%s)"
+
+msgid "workspace.path.actions.delete-node"
+msgstr "Delete node (%s)"
+
+msgid "workspace.path.actions.draw-nodes"
+msgstr "Draw nodes (%s)"
+
+msgid "workspace.path.actions.join-nodes"
+msgstr "Join nodes (%s)"
+
+msgid "workspace.path.actions.make-corner"
+msgstr "To corner (%s)"
+
+msgid "workspace.path.actions.make-curve"
+msgstr "To curve (%s)"
+
+msgid "workspace.path.actions.merge-nodes"
+msgstr "Merge nodes (%s)"
+
+msgid "workspace.path.actions.move-nodes"
+msgstr "Move nodes (%s)"
+
+msgid "workspace.path.actions.separate-nodes"
+msgstr "Separate nodes (%s)"
+
+msgid "workspace.path.actions.snap-nodes"
+msgstr "Snap nodes (%s)"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"

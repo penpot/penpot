@@ -18,8 +18,10 @@
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.tools :as tools]
+   [app.main.data.workspace.path.undo :as undo]
    [app.main.streams :as ms]
-   [app.util.geom.path :as ugp]
+   [app.util.path.commands :as upc]
+   [app.util.path.geom :as upg]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -56,54 +58,51 @@
               (update-in (st/get-path state) helpers/append-node position last-point prev-handler))
           state)))))
 
-(defn start-drag-handler []
-  (ptk/reify ::start-drag-handler
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [content (get-in state (st/get-path state :content))
-            index (dec (count content))
-            command (get-in state (st/get-path state :content index :command))
+(defn drag-handler
+  ([{:keys [x y alt? shift?] :as position}]
+   (drag-handler nil nil :c1 position))
 
-            make-curve
-            (fn [command]
-              (let [params (ugp/make-curve-params
-                            (get-in content [index :params])
-                            (get-in content [(dec index) :params]))]
-                (-> command
-                    (assoc :command :curve-to :params params))))]
+  ([position index prefix {:keys [x y alt? shift?]}]
+   (ptk/reify ::drag-handler
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [id (st/get-path-id state)
+             content (get-in state (st/get-path state :content))
 
-        (cond-> state
-          (= command :line-to)
-          (update-in (st/get-path state :content index) make-curve))))))
+             index (or index (count content))
+             prefix (or prefix :c1)
+             position (or position (upc/command->point (nth content (dec index))))
 
-(defn drag-handler [{:keys [x y alt? shift?]}]
-  (ptk/reify ::drag-handler
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [id (st/get-path-id state)
-            shape (get-in state (st/get-path state))
-            content (:content shape)
-            index (dec (count content))
-            node-position (ugp/command->point (nth content index))
-            handler-position (cond-> (gpt/point x y)
-                               shift? (helpers/position-fixed-angle node-position))
-            {dx :x dy :y} (gpt/subtract handler-position node-position)
-            match-opposite? (not alt?)
-            modifiers (helpers/move-handler-modifiers content (inc index) :c1 match-opposite? dx dy)]
-        (-> state
-            (update-in [:workspace-local :edit-path id :content-modifiers] merge modifiers)
-            (assoc-in [:workspace-local :edit-path id :prev-handler] handler-position)
-            (assoc-in [:workspace-local :edit-path id :drag-handler] handler-position))))))
+             old-handler (upc/handler->point content index prefix)
+
+             handler-position (cond-> (gpt/point x y)
+                                shift? (helpers/position-fixed-angle position))
+
+             {dx :x dy :y} (if (some? old-handler)
+                             (gpt/add (gpt/to-vec old-handler position)
+                                      (gpt/to-vec position handler-position))
+                             (gpt/to-vec position handler-position))
+
+             match-opposite? (not alt?)
+
+             modifiers (helpers/move-handler-modifiers content index prefix match-opposite? match-opposite? dx dy)]
+         (-> state
+             (update-in [:workspace-local :edit-path id :content-modifiers] merge modifiers)
+             (assoc-in [:workspace-local :edit-path id :drag-handler] handler-position)))))))
 
 (defn finish-drag []
   (ptk/reify ::finish-drag
     ptk/UpdateEvent
     (update [_ state]
       (let [id (st/get-path-id state)
+
             modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
+            content (-> (get-in state (st/get-path state :content))
+                        (upc/apply-content-modifiers modifiers))
+
             handler (get-in state [:workspace-local :edit-path id :drag-handler])]
         (-> state
-            (update-in (st/get-path state :content) ugp/apply-content-modifiers modifiers)
+            (assoc-in (st/get-path state :content) content)
             (update-in [:workspace-local :edit-path id] dissoc :drag-handler)
             (update-in [:workspace-local :edit-path id] dissoc :content-modifiers)
             (assoc-in  [:workspace-local :edit-path id :prev-handler] handler)
@@ -114,7 +113,8 @@
       (let [id (st/get-path-id state)
             handler (get-in state [:workspace-local :edit-path id :prev-handler])]
         ;; Update the preview because can be outdated after the dragging
-        (rx/of (preview-next-point handler))))))
+        (rx/of (preview-next-point handler)
+               (undo/merge-head))))))
 
 (declare close-path-drag-end)
 
@@ -132,18 +132,23 @@
 
             content (get-in state (st/get-path state :content))
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
-            points (ugp/content->points content)
-            
+            points (upg/content->points content)
+
+            handlers (-> (upc/content->handlers content)
+                         (get position))
+
+            [idx prefix] (when (= (count handlers) 1)
+                           (first handlers))
+
             drag-events-stream
             (->> (streams/position-stream snap-toggled points)
                  (rx/take-until stop-stream)
-                 (rx/map #(drag-handler %)))]
+                 (rx/map #(drag-handler position idx prefix %)))]
 
         (rx/concat
          (rx/of (add-node position))
          (streams/drag-stream
           (rx/concat
-           (rx/of (start-drag-handler))
            drag-events-stream
            (rx/of (finish-drag))
            (rx/of (close-path-drag-end))))
@@ -165,7 +170,7 @@
             mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                     (ms/mouse-up? %))))
             content (get-in state (st/get-path state :content))
-            points (ugp/content->points content)
+            points (upg/content->points content)
 
             id (st/get-path-id state)
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
@@ -178,7 +183,6 @@
          (rx/of (add-node position))
          (streams/drag-stream
           (rx/concat
-           (rx/of (start-drag-handler))
            drag-events
            (rx/of (finish-drag)))))))))
 
@@ -202,7 +206,6 @@
      (rx/of (add-node down-event))
      (streams/drag-stream
       (rx/concat
-       (rx/of (start-drag-handler))
        drag-events
        (rx/of (finish-drag)))))))
 
@@ -222,7 +225,7 @@
             end-path-events (->> stream (rx/filter helpers/end-path-event?))
 
             content (get-in state (st/get-path state :content))
-            points (ugp/content->points content)
+            points (upg/content->points content)
 
             id (st/get-path-id state)
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
@@ -245,6 +248,7 @@
                             (make-drag-stream stream snap-toggled zoom points %))))]
 
         (rx/concat
+         (rx/of (undo/start-path-undo))
          (rx/of (common/init-path))
          (rx/merge mousemove-events
                    mousedown-events)

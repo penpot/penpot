@@ -11,10 +11,10 @@
 
 "use strict";
 
-goog.provide("app.util.geom.path_impl_simplify");
+goog.provide("app.util.path.path_impl_simplify");
 
 goog.scope(function() {
-  const self = app.util.geom.path_impl_simplify;
+  const self = app.util.path.path_impl_simplify;
 
   // square distance between 2 points
   function getSqDist(p1, p2) {
