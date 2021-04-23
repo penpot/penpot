@@ -36,7 +36,7 @@ function readLocales() {
   const result = {};
 
   for (let lang of langs) {
-    const content = fs.readFileSync(`./translations/${lang}.po`);
+    const content = fs.readFileSync(`./translations/${lang}.po`, {encoding:"utf-8"});
 
     lang = lang.toLowerCase();
 
