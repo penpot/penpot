@@ -29,6 +29,7 @@
 - Fix issue when parsing exponential numbers in paths
 - Remove legacy system user and team [#843](https://github.com/penpot/penpot/issues/843)
 - Fix problem with zoom an selection rect [#845](https://github.com/penpot/penpot/issues/845)
+- Fix problem displaying team statistics [#859](https://github.com/penpot/penpot/issues/859)
 
 ### :arrow_up: Deps updates
 
