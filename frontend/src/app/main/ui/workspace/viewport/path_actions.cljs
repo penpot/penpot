@@ -19,6 +19,7 @@
 
 (defn check-enabled [content selected-points]
   (let [segments (upt/get-segments content selected-points)
+        num-points (count selected-points)
         points-selected? (not (empty? selected-points))
         segments-selected? (not (empty? segments))]
     {:make-corner points-selected?
@@ -26,7 +27,7 @@
      :add-node segments-selected?
      :remove-node points-selected?
      :merge-nodes segments-selected?
-     :join-nodes points-selected?
+     :join-nodes (and points-selected? (>= num-points 2))
      :separate-nodes segments-selected?}))
 
 (mf/defc path-actions [{:keys [shape]}]

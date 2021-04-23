@@ -26,7 +26,7 @@
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
-(mf/defc path-point [{:keys [position zoom edit-mode hover? selected? preview? start-path? last-p? new-point?]}]
+(mf/defc path-point [{:keys [position zoom edit-mode hover? selected? preview? start-path? last-p? new-point? curve?]}]
   (let [{:keys [x y]} position
 
         on-enter
@@ -45,8 +45,15 @@
           (when (and new-point? (some? (meta position)))
             (st/emit! (drp/create-node-at-position (meta position))))
 
-          (let [shift? (kbd/shift? event)]
+          (let [shift? (kbd/shift? event)
+                ctrl? (kbd/ctrl? event)]
             (cond
+              (and (= edit-mode :move) ctrl? (not curve?))
+              (st/emit! (drp/make-curve position))
+
+              (and (= edit-mode :move) ctrl? curve?)
+              (st/emit! (drp/make-corner position))
+
               (= edit-mode :move)
               ;; If we're dragging a selected item we don't change the selection
               (st/emit! (drp/start-move-path-point position shift?))
@@ -274,37 +281,42 @@
                         :zoom zoom}]])
 
      (for [position points]
-       (let [point-selected? (contains? selected-points (get point->base position))
+       (let [show-handler?
+             (fn [[index prefix]]
+               (let [handler-position (upc/handler->point content index prefix)]
+                 (not= position handler-position)))
+
+             pos-handlers (get handlers position)
+             point-selected? (contains? selected-points (get point->base position))
              point-hover? (contains? hover-points (get point->base position))
-             last-p? (= last-point (get point->base position))]
+             last-p? (= last-point (get point->base position))
+
+             pos-handlers (->> pos-handlers (filter show-handler?))
+             curve? (not (empty? pos-handlers))]
 
          [:g.path-node
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
-           (let [pos-handlers (get handlers position)]
-             (for [[index prefix] pos-handlers]
-               (let [command (get content index)
-                     x (get-in command [:params (d/prefix-keyword prefix :x)])
-                     y (get-in command [:params (d/prefix-keyword prefix :y)])
-                     handler-position (gpt/point x y)
-                     handler-hover? (contains? hover-handlers [index prefix])
-                     moving-handler? (= handler-position moving-handler)
-                     matching-handler? (matching-handler? content position pos-handlers)]
-                 (when (not= position handler-position)
-                   [:& path-handler {:point position
-                                     :handler handler-position
-                                     :index index
-                                     :prefix prefix
-                                     :zoom zoom
-                                     :hover? handler-hover?
-                                     :snap-angle? (and moving-handler? matching-handler?)
-                                     :edit-mode edit-mode}]))))]
+           (for [[index prefix] pos-handlers]
+             (let [handler-position (upc/handler->point content index prefix)
+                   handler-hover? (contains? hover-handlers [index prefix])
+                   moving-handler? (= handler-position moving-handler)
+                   matching-handler? (matching-handler? content position pos-handlers)]
+               [:& path-handler {:point position
+                                 :handler handler-position
+                                 :index index
+                                 :prefix prefix
+                                 :zoom zoom
+                                 :hover? handler-hover?
+                                 :snap-angle? (and moving-handler? matching-handler?)
+                                 :edit-mode edit-mode}]))]
           [:& path-point {:position position
                           :zoom zoom
                           :edit-mode edit-mode
                           :selected? point-selected?
                           :hover? point-hover?
                           :last-p? last-p?
-                          :start-path? start-p?}]]))
+                          :start-path? start-p?
+                          :curve? curve?}]]))
 
      (when prev-handler
        [:g.prev-handler {:pointer-events "none"}

@@ -40,8 +40,8 @@
                     :command "p"
                     :fn #(st/emit! (drp/change-edit-mode :draw))}
 
-   :add-node       {:tooltip (ds/meta "+")
-                    :command (ds/c-mod "+")
+   :add-node       {:tooltip "+"
+                    :command "+"
                     :fn #(st/emit! (drp/add-node))}
 
    :delete-node    {:tooltip (ds/supr)
@@ -52,20 +52,20 @@
                     :command (ds/c-mod "j")
                     :fn #(st/emit! (drp/merge-nodes))}
 
-   :join-nodes     {:tooltip (ds/meta-shift "J")
-                    :command (ds/c-mod "shift+j")
+   :join-nodes     {:tooltip "J"
+                    :command "j"
                     :fn #(st/emit! (drp/join-nodes))}
 
-   :separate-nodes {:tooltip (ds/meta "K")
-                    :command (ds/c-mod "k")
+   :separate-nodes {:tooltip "K"
+                    :command "k"
                     :fn #(st/emit! (drp/separate-nodes))}
 
-   :make-corner    {:tooltip (ds/meta "B")
-                    :command (ds/c-mod "b")
+   :make-corner    {:tooltip "B"
+                    :command "b"
                     :fn #(st/emit! (drp/make-corner))}
 
-   :make-curve     {:tooltip (ds/meta-shift "B")
-                    :command (ds/c-mod "shift+b")
+   :make-curve     {:tooltip (ds/meta "B")
+                    :command (ds/c-mod "b")
                     :fn #(st/emit! (drp/make-curve))}
 
    :snap-nodes     {:tooltip (ds/meta "'")

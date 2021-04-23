@@ -7,13 +7,9 @@
 (ns app.util.path.format
   (:require
    [app.common.data :as d]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as gshp]
-   [app.util.svg :as usvg]
+   [app.util.path.commands :as upc]
    [cuerdas.core :as str]
-   [clojure.set :as set]
-   [app.common.math :as mth]
-   ))
+   [app.util.path.subpaths :as ups]))
 
 (defn command->param-list [command]
   (let [params (:params command)]
@@ -69,6 +65,20 @@
 
 
 (defn format-path [content]
-  (->> content
-       (mapv command->string)
-       (str/join "")))
+  (with-out-str
+    (loop [last-move nil
+           current (first content)
+           content (rest content)]
+
+      (when (some? current)
+        (let [point (upc/command->point current)
+              current-move? (= :move-to (:command current))
+              last-move (if current-move? point last-move)]
+          (print (command->string current))
+
+          (when (and (not current-move?) (= last-move point))
+            (print "Z"))
+
+          (recur last-move
+                 (first content)
+                 (rest content)))))))
