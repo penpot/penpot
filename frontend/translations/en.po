@@ -1068,7 +1068,9 @@ msgstr "Verify new email"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
-msgstr "We'll send you an email to your current email “%s” to verify your identity."
+msgstr ""
+"We'll send you an email to your current email “%s” to verify your "
+"identity."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1092,7 +1094,9 @@ msgstr "Yes, delete my account"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.info"
-msgstr "By removing your account you’ll lose all your current projects and archives."
+msgstr ""
+"By removing your account you’ll lose all your current projects and "
+"archives."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.title"
