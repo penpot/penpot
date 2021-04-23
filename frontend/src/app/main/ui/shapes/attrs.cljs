@@ -121,10 +121,7 @@
 (defn add-layer-props [attrs shape]
   (cond-> attrs
     (:opacity shape)
-    (obj/set! "opacity" (:opacity shape))
-
-    (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
-    (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
+    (obj/set! "opacity" (:opacity shape))))
 
 (defn extract-svg-attrs
   [render-id svg-defs svg-attrs]
