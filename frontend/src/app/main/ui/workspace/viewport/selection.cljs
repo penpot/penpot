@@ -255,7 +255,6 @@
                            :zoom zoom
                            :color color
                            :on-move-selected on-move-selected}]
-       [:& outline {:shape shape :color color}]
 
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect shape zoom)]
