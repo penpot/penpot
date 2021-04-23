@@ -86,20 +86,22 @@
                 (apply-value new-value)
                 (update-input value)))))
 
-        list-id (str "colors-" (uuid/next))
+        ;; list-id (str "colors-" (uuid/next))
 
         props (-> props
                   (obj/without ["value" "onChange"])
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
-                  (obj/set! "list" list-id)
+                  ;; (obj/set! "list" list-id)
                   (obj/set! "defaultValue" value)
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur))]
 
     [:*
      [:> :input props]
-     [:datalist {:id list-id}
-      (for [color-name uc/color-names]
-        [:option color-name])]]))
+     ;; FIXME: this causes some weird interactions because of using apply-value
+     ;; [:datalist {:id list-id}
+     ;;  (for [color-name uc/color-names]
+     ;;    [:option color-name])]
+     ]))
 
