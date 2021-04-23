@@ -11,33 +11,46 @@
    [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.state :as st]
    [app.util.path.tools :as upt]
+   [app.util.path.subpaths :as ups]
    [app.common.geom.point :as gpt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
 (defn process-path-tool
   "Generic function that executes path transformations with the content and selected nodes"
-  [tool-fn]
-  (ptk/reify ::process-path-tool
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [id (st/get-path-id state)
-            page-id (:current-page-id state)
-            shape (get-in state (st/get-path state))
-            selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
-            new-content (tool-fn (:content shape) selected-points)
-            [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
-        (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))))
+  ([tool-fn]
+   (process-path-tool nil tool-fn))
+  ([points tool-fn]
+   (ptk/reify ::process-path-tool
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [id (st/get-path-id state)
+             page-id (:current-page-id state)
+             shape (get-in state (st/get-path state))
+             selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+             points (or points selected-points)
+             new-content (-> (tool-fn (:content shape) points)
+                             (ups/close-subpaths))
+             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
+         (rx/of (dwc/commit-changes rch uch {:commit-local? true})))))))
 
-(defn make-corner []
-  (process-path-tool
-   (fn [content points]
-     (reduce upt/make-corner-point content points))))
+(defn make-corner
+  ([]
+   (make-corner nil))
+  ([point]
+   (process-path-tool
+    #{point}
+    (fn [content points]
+      (reduce upt/make-corner-point content points)))))
 
-(defn make-curve []
-  (process-path-tool
-   (fn [content points]
-     (reduce upt/make-curve-point content points))))
+(defn make-curve
+  ([]
+   (make-curve nil))
+  ([point]
+   (process-path-tool
+    #{point}
+    (fn [content points]
+      (reduce upt/make-curve-point content points)))))
 
 (defn add-node []
   (process-path-tool (fn [content points] (upt/split-segments content points 0.5))))

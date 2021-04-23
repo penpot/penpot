@@ -103,9 +103,7 @@
 (defn close-subpaths
   "Searches a path for posible supaths that can create closed loops and merge them"
   [content]
-
   (let [subpaths (get-subpaths content)
-
         closed-subpaths
         (loop [result []
                current (first subpaths)

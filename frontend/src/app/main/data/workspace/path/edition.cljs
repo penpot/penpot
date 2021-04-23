@@ -22,6 +22,7 @@
    [app.util.path.commands :as upc]
    [app.util.path.geom :as upg]
    [app.util.path.tools :as upt]
+   [app.util.path.subpaths :as ups]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -35,9 +36,7 @@
             modifiers (helpers/move-handler-modifiers content index prefix false match-opposite? dx dy)
             [cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
             point (gpt/point (+ (get-in content [index :params cx]) dx)
-                             (+ (get-in content [index :params cy]) dy))
-
-            ]
+                             (+ (get-in content [index :params cy]) dy))]
 
         (-> state
             (update-in [:workspace-local :edit-path id :content-modifiers] merge modifiers)
@@ -192,8 +191,8 @@
   (ptk/reify ::start-path-edit
     ptk/UpdateEvent
     (update [_ state]
-      (let [edit-path (get-in state [:workspace-local :edit-path id])]
-
+      (let [edit-path (get-in state [:workspace-local :edit-path id])
+            state (update-in state (st/get-path state :content) ups/close-subpaths)]
         (cond-> state
           (or (not edit-path) (= :draw (:edit-mode edit-path)))
           (assoc-in [:workspace-local :edit-path id] {:edit-mode :move

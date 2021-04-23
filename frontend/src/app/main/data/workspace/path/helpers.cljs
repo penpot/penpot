@@ -11,10 +11,11 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.main.data.workspace.path.state :refer [get-path]]
    [app.main.data.workspace.path.common :as common]
+   [app.main.data.workspace.path.state :refer [get-path]]
    [app.main.streams :as ms]
    [app.util.path.commands :as upc]
+   [app.util.path.subpaths :as ups]
    [potok.core :as ptk]))
 
 ;; CONSTANTS
@@ -105,6 +106,7 @@
   (let [command (next-node shape position prev-point prev-handler)]
     (-> shape
         (update :content (fnil conj []) command)
+        (update :content ups/close-subpaths)
         (update-selrect))))
 
 (defn angle-points [common p1 p2]

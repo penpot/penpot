@@ -65,22 +65,20 @@
 
 
 (defn format-path [content]
-  (let [content (ups/close-subpaths content)]
-    (loop [result ""
-           last-move nil
+  (with-out-str
+    (loop [last-move nil
            current (first content)
            content (rest content)]
 
-      (if (some? current)
+      (when (some? current)
         (let [point (upc/command->point current)
               current-move? (= :move-to (:command current))
-              result (str result (command->string current))
-              result (if (and (not current-move?) (= last-move point))
-                       (str result "Z")
-                       result)
               last-move (if current-move? point last-move)]
-          (recur result
-                 last-move
+          (print (command->string current))
+
+          (when (and (not current-move?) (= last-move point))
+            (print "Z"))
+
+          (recur last-move
                  (first content)
-                 (rest content)))
-        result))))
+                 (rest content)))))))
