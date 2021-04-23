@@ -164,7 +164,7 @@
 
         on-duplicate
         (mf/use-callback
-         (mf/deps state)
+         (mf/deps @state)
          (fn []
            (if (empty? selected)
              (st/emit! (dwl/duplicate-component {:id (:component-id @state)}))
@@ -175,7 +175,7 @@
 
         on-delete
         (mf/use-callback
-         (mf/deps state)
+         (mf/deps @state)
          (fn []
            (if (empty? selected)
              (st/emit! (dwl/delete-component {:id (:component-id @state)}))
@@ -187,20 +187,19 @@
 
         on-rename
         (mf/use-callback
-          (mf/deps state)
+          (mf/deps @state)
           (fn []
             (swap! state assoc :renaming (:component-id @state))))
 
         do-rename
         (mf/use-callback
-          (mf/deps state)
+          (mf/deps @state)
           (fn [new-name]
             (st/emit! (dwl/rename-component (:renaming @state) new-name))
             (swap! state assoc :renaming nil)))
 
         cancel-rename
         (mf/use-callback
-          (mf/deps state)
           (fn []
             (swap! state assoc :renaming nil)))
 
@@ -225,7 +224,6 @@
 
         on-select
         (mf/use-callback
-          (mf/deps state)
           (fn [component-id]
             (fn [event]
               (dom/stop-propagation event)
@@ -382,7 +380,7 @@
 
         on-delete
         (mf/use-callback
-         (mf/deps state)
+         (mf/deps @state)
          (fn []
            (if (empty? selected)
              (st/emit! (dwl/delete-media {:id (:object-id @state)}))
@@ -393,19 +391,18 @@
 
         on-rename
         (mf/use-callback
-          (mf/deps state)
+          (mf/deps @state)
           (fn []
             (swap! state assoc :renaming (:object-id @state))))
 
         cancel-rename
         (mf/use-callback
-          (mf/deps state)
           (fn []
             (swap! state assoc :renaming nil)))
 
         do-rename
         (mf/use-callback
-          (mf/deps state)
+          (mf/deps @state)
           (fn [new-name]
             (st/emit! (dwl/rename-media (:renaming @state) new-name))
             (swap! state assoc :renaming nil)))
@@ -431,7 +428,6 @@
 
         on-select
         (mf/use-callback
-          (mf/deps state)
           (fn [object-id]
             (fn [event]
               (dom/stop-propagation event)
@@ -721,7 +717,6 @@
 
         on-select
         (mf/use-callback
-          (mf/deps state)
           (fn [color-id]
             (fn [event]
               (dom/stop-propagation event)
