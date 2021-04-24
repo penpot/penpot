@@ -84,8 +84,7 @@
 
 (def public-uri
   (let [uri (u/uri (or (obj/get global "penpotPublicURI")
-                       (str (.-origin ^js location)
-                            (.-pathname ^js location))))]
+                       (.-origin ^js location)))]
     ;; Ensure that the path always ends with "/"; this ensures that
     ;; all path join operations works as expected.
     (cond-> uri
