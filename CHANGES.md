@@ -3,6 +3,15 @@
 ## :rocket: Next
 
 ### :sparkles: New features
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :boom: Breaking changes
+### :heart: Community contributions by (Thank you!)
+
+
+## 1.5.0-alpha
+
+### :sparkles: New features
 
 - Add integration with gitpod.io (an online IDE) [#807](https://github.com/penpot/penpot/pull/807)
 - Allow basic math operations in inputs [Taiga 1383](https://tree.taiga.io/project/penpot/us/1383)
