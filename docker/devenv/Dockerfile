@@ -3,10 +3,10 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v14.16.0 \
+ENV NODE_VERSION=v14.16.1 \
     CLOJURE_VERSION=1.10.3.822 \
-    CLJKONDO_VERSION=2021.03.31 \
-    BABASHKA_VERSION=0.3.2 \
+    CLJKONDO_VERSION=2021.04.23 \
+    BABASHKA_VERSION=0.3.5 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -50,6 +50,9 @@ RUN set -ex; \
         nginx \
         jq \
         redis-tools \
+        woff-tools \
+        woff2 \
+        fontforge \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
@@ -95,7 +98,7 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    curl -LfsSo /tmp/openjdk.tar.gz https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16%2B36/OpenJDK16-jdk_x64_linux_hotspot_16_36.tar.gz; \
+    curl -LfsSo /tmp/openjdk.tar.gz https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9/OpenJDK16U-jdk_x64_linux_hotspot_16.0.1_9.tar.gz; \
     mkdir -p /usr/lib/jvm/openjdk16; \
     cd /usr/lib/jvm/openjdk16; \
     tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
