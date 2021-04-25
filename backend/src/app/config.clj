@@ -116,7 +116,6 @@
 (s/def ::oidc-roles-attr ::us/keyword)
 (s/def ::host ::us/string)
 (s/def ::http-server-port ::us/integer)
-(s/def ::http-session-cookie-name ::us/string)
 (s/def ::http-session-idle-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-size ::us/integer)

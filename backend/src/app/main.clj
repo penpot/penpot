@@ -60,8 +60,8 @@
     :storage  (ig/ref :app.storage/storage)}
 
    :app.http.session/session
-   {:pool        (ig/ref :app.db/pool)
-    :cookie-name (cf/get :http-session-cookie-name)}
+   {:pool   (ig/ref :app.db/pool)
+    :tokens (ig/ref :app.tokens/tokens)}
 
    :app.http.session/gc-task
    {:pool        (ig/ref :app.db/pool)
