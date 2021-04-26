@@ -15,8 +15,6 @@
    [app.util.logging :as l]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [buddy.core.codecs :as bc]
-   [buddy.core.nonce :as bn]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))

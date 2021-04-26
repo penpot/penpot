@@ -135,11 +135,11 @@
   "Returns true if email's domain is in the given whitelist or if given
   whitelist is an empty string."
   [whitelist email]
-  (if (str/blank? whitelist)
+  (if (str/empty-or-nil? whitelist)
     true
     (let [domains (str/split whitelist #",\s*")
-          email-domain (second (str/split email #"@"))]
-      (contains? (set domains) email-domain))))
+          domain  (second (str/split email #"@" 2))]
+      (contains? (set domains) domain))))
 
 (def ^:private sql:profile-existence
   "select exists (select * from profile
