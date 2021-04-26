@@ -31,6 +31,7 @@
 - Fix problem with zoom an selection rect [#845](https://github.com/penpot/penpot/issues/845)
 - Fix problem displaying team statistics [#859](https://github.com/penpot/penpot/issues/859)
 - Fix problems with text editor selection [Taiga #1546](https://tree.taiga.io/project/penpot/issue/1546)
+- Fix problem when opening the context menu in dashboard at the bottom [#856](https://github.com/penpot/penpot/issues/856)
 
 ### :arrow_up: Deps updates
 
