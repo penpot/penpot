@@ -16,4 +16,4 @@ if [ -f ./environ ]; then
    source ./environ
 fi
 
-exec $JAVA_CMD $JVM_OPTS -classpath $(cat classpath) -Dlog4j2.configurationFile=./log4j2.xml clojure.main -m app.cli.manage "\$@"
+exec $JAVA_CMD $JVM_OPTS -classpath $(cat classpath) -Dlog4j2.configurationFile=./log4j2.xml clojure.main -m app.cli.manage "$@"
