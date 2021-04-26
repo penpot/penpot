@@ -5,8 +5,6 @@
 
  :source-paths ["src", "vendor", "resources", "../common"]
 
- :dev-http {8888 "classpath:public"}
-
  :dependencies
  [[binaryage/devtools "RELEASE"]
 
