@@ -14,6 +14,7 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
+   [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -241,6 +242,8 @@
    ::mf/register-as ::leave-and-reassign}
   [{:keys [members profile team accept]}]
   (let [form    (fm/use-form :spec ::leave-modal-form :initial {})
+        not-current-user? (fn [{:keys [id]}] (not= id (:id profile)))
+        members (->> members (filterv not-current-user?))
         options (into [{:value "" :label (tr "modals.leave-and-reassign.select-memeber-to-promote")}]
                       (map #(hash-map :label (:name %) :value (str (:id %))) members))
 
@@ -264,11 +267,14 @@
 
       [:div.modal-content.generic-form
        [:p (tr "modals.leave-and-reassign.hint1" (:name team))]
-       [:p (tr "modals.leave-and-reassign.hint2")]
 
-       [:& fm/form {:form form}
-        [:& fm/select {:name :member-id
-                       :options options}]]]
+       (if (empty? members)
+         [:p (tr "modals.leave-and-reassign.forbiden")]
+         [:*
+          [:p (tr "modals.leave-and-reassign.hint2")]
+          [:& fm/form {:form form}
+           [:& fm/select {:name :member-id
+                          :options options}]]])]
 
       [:div.modal-footer
        [:div.action-buttons
@@ -279,7 +285,7 @@
 
         [:input.accept-button
          {:type "button"
-          :class (when-not (:valid @form) "btn-disabled")
+          :class (if (:valid @form) "primary" "btn-disabled")
           :disabled (not (:valid @form))
           :value (tr "modals.leave-and-reassign.promote-and-leave")
           :on-click on-accept}]]]]]))
@@ -314,7 +320,9 @@
          (fn []
            (let [team-id (:default-team-id profile)]
              (da/set-current-team! team-id)
-             (st/emit! (rt/nav :dashboard-projects {:team-id team-id})))))
+             (st/emit! (modal/hide)
+                       (du/fetch-teams)
+                       (rt/nav :dashboard-projects {:team-id team-id})))))
 
         leave-fn
         (mf/use-callback
