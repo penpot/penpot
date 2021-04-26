@@ -71,7 +71,9 @@
           [:div.icon.pin-icon
            {:class (when (:is-pinned project) "active")
             :on-click toggle-pin}
-           i/pin]]))
+           (if (:is-pinned project)
+             i/pin-fill
+             i/pin)]]))
      [:a.btn-secondary.btn-small {:on-click on-create-clicked}
       (tr "dashboard.new-file")]]))
 

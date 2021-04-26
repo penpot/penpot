@@ -97,6 +97,7 @@
 (def picker-hsv (icon-xref :picker-hsv))
 (def picker-ramp (icon-xref :picker-ramp))
 (def pin (icon-xref :pin))
+(def pin-fill (icon-xref :pin-fill))
 (def play (icon-xref :play))
 (def plus (icon-xref :plus))
 (def pointer-inner (icon-xref :pointer-inner))

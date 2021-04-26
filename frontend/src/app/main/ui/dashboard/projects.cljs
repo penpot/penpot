@@ -120,7 +120,9 @@
         [:span.pin-icon
          {:class (when (:is-pinned project) "active")
           :on-click toggle-pin}
-         i/pin])
+         (if (:is-pinned project)
+           i/pin-fill
+           i/pin)])
       (if (:edition? @local)
         [:& inline-edition {:content (:name project)
                             :on-end on-edit}]
