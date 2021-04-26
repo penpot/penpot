@@ -35,6 +35,7 @@
 - Fix problem when opening the context menu in dashboard at the bottom [#856](https://github.com/penpot/penpot/issues/856)
 - Fix visual problem with group invite [Taiga #1290](https://tree.taiga.io/project/penpot/issue/1290)
 - Fix issues with promote owner panel [Taiga #763](https://tree.taiga.io/project/penpot/issue/763)
+- Allow use library colors when defining gradients [Taiga #1614](https://tree.taiga.io/project/penpot/issue/1614)
 
 ### :arrow_up: Deps updates
 
