@@ -57,7 +57,8 @@ jobs:
             yarn install
             npx shadow-cljs compile tests
           environment:
-            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
+            JAVA_HOME: /usr/lib/jvm/openjdk16
+            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin:/usr/lib/jvm/openjdk16/bin
 
       - save_cache:
          paths:

@@ -24,6 +24,7 @@
 (d/export edition/start-move-path-point)
 (d/export edition/start-path-edit)
 (d/export edition/create-node-at-position)
+(d/export edition/move-selected)
 
 ;; Selection
 (d/export selection/handle-selection)
