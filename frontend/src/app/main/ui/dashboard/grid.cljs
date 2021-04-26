@@ -200,7 +200,7 @@
        (when selected?
          [:& file-menu {:files selected-file-objs
                         :show? (:menu-open @local)
-                        :left (:x (:menu-pos @local))
+                        :left (+ 24 (:x (:menu-pos @local)))
                         :top (:y (:menu-pos @local))
                         :navigate? navigate?
                         :on-edit on-edit
