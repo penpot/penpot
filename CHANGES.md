@@ -30,6 +30,7 @@
 - Remove legacy system user and team [#843](https://github.com/penpot/penpot/issues/843)
 - Fix problem with zoom an selection rect [#845](https://github.com/penpot/penpot/issues/845)
 - Fix problem displaying team statistics [#859](https://github.com/penpot/penpot/issues/859)
+- Fix problems with text editor selection [Taiga #1546](https://tree.taiga.io/project/penpot/issue/1546)
 
 ### :arrow_up: Deps updates
 

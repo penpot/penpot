@@ -163,10 +163,18 @@
    ::mf/wrap-props false
    ::mf/forward-ref true}
   [props ref]
-  (let [{:keys [id x y width height grow-type] :as shape} (obj/get props "shape")]
-    [:foreignObject {:transform (gsh/transform-matrix shape)
-                     :x x :y y
-                     :width  (if (#{:auto-width} grow-type) 100000 width)
-                     :height (if (#{:auto-height :auto-width} grow-type) 100000 height)}
+  (let [{:keys [id x y width height grow-type] :as shape} (obj/get props "shape")
+        clip-id (str "clip-" id)]
+    [:g.text-editor {:clip-path (str "url(#" clip-id ")")}
+     [:defs
+      ;; This clippath will cut the huge foreign object we use to calculate the automatic resize
+      [:clipPath {:id clip-id}
+       [:rect {:x x :y y
+               :width (+ width 8) :height (+ height 8)
+               :transform (gsh/transform-matrix shape)}]]]
+     [:foreignObject {:transform (gsh/transform-matrix shape)
+                      :x x :y y
+                      :width  (if (#{:auto-width} grow-type) 100000 width)
+                      :height (if (#{:auto-height :auto-width} grow-type) 100000 height)}
 
-     [:& text-shape-edit-html {:shape shape :key (str id)}]]))
+      [:& text-shape-edit-html {:shape shape :key (str id)}]]]))
