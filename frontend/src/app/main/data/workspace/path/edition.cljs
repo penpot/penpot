@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.helpers :as helpers]
@@ -60,7 +60,7 @@
 
             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
 
-        (rx/of (dwc/commit-changes rch uch {:commit-local? true})
+        (rx/of (dch/commit-changes rch uch {:commit-local? true})
                (selection/update-selection point-change)
                (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler)))))))
 

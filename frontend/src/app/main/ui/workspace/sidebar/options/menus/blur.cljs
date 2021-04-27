@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
@@ -32,7 +33,7 @@
         has-value? (not (nil? blur))
         multiple? (= blur :multiple)
 
-        change! (fn [update-fn] (st/emit! (dwc/update-shapes ids update-fn)))
+        change! (fn [update-fn] (st/emit! (dch/update-shapes ids update-fn)))
 
         handle-add
         (fn []

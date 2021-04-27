@@ -13,6 +13,7 @@
    [app.main.data.modal :as md]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.changes :as dch]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -150,7 +151,7 @@
 
         (rx/concat
          (rx/from (map #(dwt/update-text-attrs {:id % :attrs attrs}) text-ids))
-         (rx/of (dwc/update-shapes shape-ids (fn [shape] (d/merge shape attrs)))))))))
+         (rx/of (dch/update-shapes shape-ids (fn [shape] (d/merge shape attrs)))))))))
 
 (defn change-stroke
   [ids color]
@@ -176,7 +177,7 @@
                       (contains? color :opacity)
                       (assoc :stroke-opacity (:opacity color)))]
 
-            (rx/of (dwc/update-shapes ids (fn [shape]
+            (rx/of (dch/update-shapes ids (fn [shape]
                                             (cond-> (d/merge shape attrs)
                                               (= (:stroke-style shape) :none)
                                               (assoc :stroke-style :solid

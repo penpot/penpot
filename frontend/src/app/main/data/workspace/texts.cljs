@@ -15,6 +15,8 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.fonts :as fonts]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
@@ -77,8 +79,8 @@
              (when (and (not= content (:content shape))
                         (some? (:current-page-id state)))
                (rx/of
-                (dwc/update-shapes [id] #(assoc % :content content))
-                (dwc/commit-undo-transaction)))))
+                (dch/update-shapes [id] #(assoc % :content content))
+                (dwu/commit-undo-transaction)))))
           (rx/of (dws/deselect-shape id)
                  (dwc/delete-shapes [id])))))))
 
@@ -141,7 +143,7 @@
             shape-ids (cond (= (:type shape) :text)  [id]
                             (= (:type shape) :group) (cp/get-children id objects))]
 
-        (rx/of (dwc/update-shapes shape-ids update-fn))))))
+        (rx/of (dch/update-shapes shape-ids update-fn))))))
 
 (defn update-paragraph-attrs
   [{:keys [id attrs]}]
@@ -169,7 +171,7 @@
                 shape-ids (cond (= (:type shape) :text)  [id]
                                 (= (:type shape) :group) (cp/get-children id objects))]
 
-            (rx/of (dwc/update-shapes shape-ids update-fn))))))))
+            (rx/of (dch/update-shapes shape-ids update-fn))))))))
 
 (defn update-text-attrs
   [{:keys [id attrs]}]
@@ -187,7 +189,7 @@
               update-fn #(update-shape % txt/is-text-node? attrs/merge attrs)
               shape-ids (cond (= (:type shape) :text)  [id]
                               (= (:type shape) :group) (cp/get-children id objects))]
-          (rx/of (dwc/update-shapes shape-ids update-fn)))))))
+          (rx/of (dch/update-shapes shape-ids update-fn)))))))
 
 ;; --- RESIZE UTILS
 

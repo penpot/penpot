@@ -10,7 +10,7 @@
    [potok.core :as ptk]
    [app.common.data :as d]
    [app.common.spec :as us]
-   [app.main.data.workspace.common :as dwc]))
+   [app.main.data.workspace.changes :as dch]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid
@@ -48,7 +48,7 @@
             grid    {:type :square
                      :params params
                      :display true}]
-        (rx/of (dwc/update-shapes [frame-id]
+        (rx/of (dch/update-shapes [frame-id]
                                   (fn [obj] (update obj :grids (fnil #(conj % grid) [])))))))))
 
 
@@ -57,14 +57,14 @@
   (ptk/reify ::set-frame-grid
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwc/update-shapes [frame-id] (fn [o] (update o :grids (fnil #(d/remove-at-index % index) []))))))))
+      (rx/of (dch/update-shapes [frame-id] (fn [o] (update o :grids (fnil #(d/remove-at-index % index) []))))))))
 
 (defn set-frame-grid
   [frame-id index data]
   (ptk/reify ::set-frame-grid
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwc/update-shapes [frame-id] #(assoc-in % [:grids index] data))))))
+      (rx/of (dch/update-shapes [frame-id] #(assoc-in % [:grids index] data))))))
 
 (defn set-default-grid
   [type params]
@@ -73,7 +73,7 @@
     (watch [_ state stream]
       (let [pid (:current-page-id state)
             prev-value (get-in state [:workspace-data :pages-index pid :options :saved-grids type])]
-        (rx/of (dwc/commit-changes [{:type :set-option
+        (rx/of (dch/commit-changes [{:type :set-option
                                      :page-id pid
                                      :option [:saved-grids type]
                                      :value params}]

@@ -7,7 +7,6 @@
 (ns app.main.data.workspace
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.geom.align :as gal]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -19,37 +18,31 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
-   [app.main.constants :as c]
-   [app.main.data.workspace.colors :as mdc]
    [app.main.data.messages :as dm]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
-   [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]
+   [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.svg-upload :as svg]
+   [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
-   [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.worker :as uw]
-   [app.util.dom :as dom]
    [app.util.http :as http]
-   [app.util.i18n :refer [tr] :as i18n]
+   [app.util.i18n :as i18n]
    [app.util.logging :as log]
-   [app.util.object :as obj]
    [app.util.router :as rt]
-   [app.util.timers :as ts]
    [app.util.transit :as t]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   [goog.string.path :as path]
    [potok.core :as ptk]))
 
 ;; (log/set-level! :trace)
@@ -269,7 +262,7 @@
                      :name name}
             uchange {:type :del-page
                      :id id}]
-        (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchange] [uchange] {:commit-local? true}))))))
 
 (defn duplicate-page [page-id]
   (ptk/reify ::duplicate-page
@@ -287,7 +280,7 @@
                      :page page}
             uchange {:type :del-page
                      :id id}]
-        (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchange] [uchange] {:commit-local? true}))))))
 
 (s/def ::rename-page
   (s/keys :req-un [::id ::name]))
@@ -306,7 +299,7 @@
             uchg {:type :mod-page
                   :id id
                   :name (:name page)}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (declare purge-page)
 (declare go-to-file)
@@ -323,7 +316,7 @@
                   :id id}
             uchg {:type :add-page
                   :page page}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
                (when (= id (:current-page-id state))
                  go-to-file))))))
 
@@ -604,7 +597,7 @@
   (ptk/reify ::update-shape
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwc/update-shapes [id] #(merge % attrs))))))
+      (rx/of (dch/update-shapes [id] #(merge % attrs))))))
 
 (defn start-rename-shape
   [id]
@@ -712,7 +705,7 @@
                                 :index (cp/position-on-parent id objects)}))
                             selected)]
         ;; TODO: maybe missing the :reg-objects event?
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 
 ;; --- Change Shape Order (D&D Ordering)
@@ -986,7 +979,7 @@
                                                          shapes-to-detach
                                                          shapes-to-reroot
                                                          shapes-to-deroot)]
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                (dwc/expand-collapse parent-id))))))
 
 (defn relocate-selected-shapes
@@ -1039,7 +1032,7 @@
             uchg {:type :mov-page
                   :id id
                   :index cidx}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 ;; --- Shape / Selection Alignment and Distribution
 
@@ -1141,7 +1134,7 @@
                   (assoc shape :proportion-lock false)
                   (-> (assoc shape :proportion-lock true)
                       (gpr/assign-proportions))))]
-        (rx/of (dwc/update-shapes [id] assign-proportions))))))
+        (rx/of (dch/update-shapes [id] assign-proportions))))))
 
 ;; --- Update Shape Position
 
@@ -1183,7 +1176,7 @@
                 (cond-> obj
                   (boolean? blocked) (assoc :blocked blocked)
                   (boolean? hidden) (assoc :hidden hidden)))]
-        (rx/of (dwc/update-shapes-recursive [id] update-fn))))))
+        (rx/of (dch/update-shapes-recursive [id] update-fn))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1410,7 +1403,7 @@
         (catch :default e
           (let [data (ex-data e)]
             (if (:not-implemented data)
-              (rx/of (dm/warn (tr "errors.clipboard-not-implemented")))
+              (rx/of (dm/warn (i18n/tr "errors.clipboard-not-implemented")))
               (js/console.error "ERROR" e))))))))
 
 (defn paste-from-event
@@ -1582,7 +1575,7 @@
                                  (map #(get-in % [:obj :id]))
                                  (into (d/ordered-set)))]
 
-              (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+              (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                      (dwc/select-shapes selected))))]
     (ptk/reify ::paste-shape
       ptk/WatchEvent
@@ -1629,10 +1622,10 @@
                     :height height
                     :grow-type (if (> (count text) 100) :auto-height :auto-width)
                     :content (as-content text)})]
-        (rx/of (dwc/start-undo-transaction)
+        (rx/of (dwu/start-undo-transaction)
                (dws/deselect-all)
                (dwc/add-shape shape)
-               (dwc/commit-undo-transaction))))))
+               (dwu/commit-undo-transaction))))))
 
 (defn- paste-svg
   [text]
@@ -1743,7 +1736,7 @@
       (let [page-id (get state :current-page-id)
             options (dwc/lookup-page-options state page-id)
             previus-color  (:background options)]
-        (rx/of (dwc/commit-changes
+        (rx/of (dch/commit-changes
                 [{:type :set-option
                   :page-id page-id
                   :option :background

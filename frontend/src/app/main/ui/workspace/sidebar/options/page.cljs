@@ -13,6 +13,7 @@
    [app.main.store :as st]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.util.i18n :as i18n :refer [t]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]))
 
@@ -31,12 +32,12 @@
         on-open
         (mf/use-callback
          (mf/deps page-id)
-         #(st/emit! (dwc/start-undo-transaction)))
+         #(st/emit! (dwu/start-undo-transaction)))
 
         on-close
         (mf/use-callback
          (mf/deps page-id)
-         #(st/emit! (dwc/commit-undo-transaction)))]
+         #(st/emit! (dwu/commit-undo-transaction)))]
 
     [:div.element-set
      [:div.element-set-title (t locale "workspace.options.canvas-background")]

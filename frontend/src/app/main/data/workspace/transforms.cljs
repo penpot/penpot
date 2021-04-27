@@ -14,7 +14,9 @@
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -140,7 +142,7 @@
                                    (filter #(= :text (:type %)))
                                    (map :id))]
           (rx/concat
-           (rx/of (dwc/update-shapes text-shapes-ids #(assoc % :grow-type :fixed)))
+           (rx/of (dch/update-shapes text-shapes-ids #(assoc % :grow-type :fixed)))
            (->> ms/mouse-position
                 (rx/with-latest vector ms/mouse-position-shift)
                 (rx/map normalize-proportion-lock)
@@ -259,9 +261,9 @@
                               :shapes [(:id shape)]})))]
 
         (when-not (empty? rch)
-          (rx/of dwc/pop-undo-into-transaction
-                 (dwc/commit-changes rch uch {:commit-local? true})
-                 (dwc/commit-undo-transaction)
+          (rx/of dwu/pop-undo-into-transaction
+                 (dch/commit-changes rch uch {:commit-local? true})
+                 (dwu/commit-undo-transaction)
                  (dwc/expand-collapse frame-id)))))))
 
 (defn start-move

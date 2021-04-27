@@ -19,6 +19,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.exports :as exports]
@@ -142,9 +143,9 @@
            (if (empty? selected-components)
              (st/emit! (dwl/duplicate-component {:id (:component-id @state)}))
              (do
-               (st/emit! (dwc/start-undo-transaction))
+               (st/emit! (dwu/start-undo-transaction))
                (apply st/emit! (map #(dwl/duplicate-component {:id %}) selected-components))
-               (st/emit! (dwc/commit-undo-transaction))))))
+               (st/emit! (dwu/commit-undo-transaction))))))
 
         on-delete
         (mf/use-callback
@@ -195,7 +196,7 @@
           (mf/deps components selected-components on-clear-selection)
           (fn [name]
             (on-clear-selection)
-            (st/emit! (dwc/start-undo-transaction))
+            (st/emit! (dwu/start-undo-transaction))
             (apply st/emit!
                    (->> components
                         (filter #(contains? selected-components (:id %)))
@@ -203,7 +204,7 @@
                                 (:id %)
                                 (str name " / "
                                     (cp/merge-path-item (:path %) (:name %)))))))
-            (st/emit! (dwc/commit-undo-transaction))))
+            (st/emit! (dwu/commit-undo-transaction))))
 
         on-fold-group
         (mf/use-callback
@@ -383,7 +384,7 @@
           (mf/deps objects selected-objects on-clear-selection)
           (fn [name]
             (on-clear-selection)
-            (st/emit! (dwc/start-undo-transaction))
+            (st/emit! (dwu/start-undo-transaction))
             (apply st/emit!
                    (->> objects
                         (filter #(contains? selected-objects (:id %)))
@@ -391,7 +392,7 @@
                                 (:id %)
                                 (str name " / "
                                     (cp/merge-path-item (:path %) (:name %)))))))
-            (st/emit! (dwc/commit-undo-transaction))))
+            (st/emit! (dwu/commit-undo-transaction))))
 
         on-fold-group
         (mf/use-callback
@@ -975,7 +976,7 @@
           (mf/deps @selected-assets)
           (fn []
             (do
-              (st/emit! (dwc/start-undo-transaction))
+              (st/emit! (dwu/start-undo-transaction))
               (apply st/emit! (map #(dwl/delete-component {:id %})
                                    (:components @selected-assets)))
               (apply st/emit! (map #(dwl/delete-media {:id %})
@@ -984,7 +985,7 @@
                                    (:colors @selected-assets)))
               (apply st/emit! (map #(dwl/delete-typography %)
                                    (:typographies @selected-assets)))
-              (st/emit! (dwc/commit-undo-transaction)))))]
+              (st/emit! (dwu/commit-undo-transaction)))))]
 
     [:div.tool-window {:on-context-menu #(dom/prevent-default %)
                        :on-click unselect-all}

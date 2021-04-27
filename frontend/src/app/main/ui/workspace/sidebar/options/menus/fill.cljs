@@ -9,6 +9,7 @@
    [app.common.pages :as cp]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -78,13 +79,13 @@
         (mf/use-callback
           (mf/deps ids)
           (fn [value opacity id file-id]
-            (st/emit! (dwc/start-undo-transaction))))
+            (st/emit! (dwu/start-undo-transaction))))
 
         on-close-picker
         (mf/use-callback
           (mf/deps ids)
           (fn [value opacity id file-id]
-            (st/emit! (dwc/commit-undo-transaction))))]
+            (st/emit! (dwu/commit-undo-transaction))))]
 
     (if show?
       [:div.element-set
