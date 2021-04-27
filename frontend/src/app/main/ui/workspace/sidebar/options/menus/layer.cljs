@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
@@ -34,7 +35,7 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [prop value]
-           (st/emit! (dwc/update-shapes ids #(assoc % prop value)))))
+           (st/emit! (dch/update-shapes ids #(assoc % prop value)))))
 
         handle-change-blend-mode
         (mf/use-callback

@@ -10,6 +10,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwtxt]
@@ -123,7 +124,7 @@
 
    :clear-undo         {:tooltip (ds/meta "Q")
                         :command (ds/c-mod "q")
-                        :fn #(st/emit! dwc/reinitialize-undo)}
+                        :fn #(st/emit! dwu/reinitialize-undo)}
 
    :draw-frame         {:tooltip "A"
                         :command "a"

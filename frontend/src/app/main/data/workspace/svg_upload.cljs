@@ -14,6 +14,7 @@
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.repo :as rp]
    [app.util.color :as uc]
    [app.util.path.parser :as upp]
@@ -462,7 +463,7 @@
 
               rchanges (conj rchanges reg-objects-action)]
 
-          (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+          (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                  (dwc/select-shapes (d/ordered-set root-id))))
 
         (catch :default e

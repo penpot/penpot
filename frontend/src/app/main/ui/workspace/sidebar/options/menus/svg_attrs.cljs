@@ -9,6 +9,7 @@
    [cuerdas.core :as str]
    [app.common.data :as d]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
    [app.util.dom :as dom]
@@ -61,7 +62,7 @@
          (fn [attr value]
            (let [update-fn
                  (fn [shape] (assoc-in shape (concat [:svg-attrs] attr) value))]
-             (st/emit! (dwc/update-shapes ids update-fn)))))
+             (st/emit! (dch/update-shapes ids update-fn)))))
 
         handle-delete
         (mf/use-callback
@@ -76,7 +77,7 @@
                                  (empty? (get-in shape [:svg-attrs :style]))
                                  (update :svg-attrs dissoc :style))]
                      shape))]
-             (st/emit! (dwc/update-shapes ids update-fn)))))
+             (st/emit! (dch/update-shapes ids update-fn)))))
 
         ]
 

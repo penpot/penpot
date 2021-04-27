@@ -14,6 +14,7 @@
    [app.common.geom.shapes :as geom]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.common.pages :as cp]
    [app.main.repo :as rp]
@@ -90,7 +91,7 @@
               uchg {:type :del-color
                     :id id}]
           (rx/of #(assoc-in % [:workspace-local :color-for-rename] id)
-                 (dwc/commit-changes [rchg] [uchg] {:commit-local? true})))))))
+                 (dch/commit-changes [rchg] [uchg] {:commit-local? true})))))))
 
 (defn add-recent-color
   [color]
@@ -100,7 +101,7 @@
     (watch [_ state s]
       (let [rchg {:type :add-recent-color
                   :color color}]
-        (rx/of (dwc/commit-changes [rchg] [] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [] {:commit-local? true}))))))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
@@ -120,7 +121,7 @@
                   :color color}
             uchg {:type :mod-color
                   :color prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
                (sync-file (:current-file-id state) file-id))))))
 
 (defn delete-color
@@ -134,7 +135,7 @@
                   :id id}
             uchg {:type :add-color
                   :color prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (defn add-media
   [{:keys [id] :as media}]
@@ -147,7 +148,7 @@
                   :object obj}
             uchg {:type :del-media
                   :id id}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (defn rename-media
   [id new-name]
@@ -169,7 +170,7 @@
                                 :name (:name object)
                                 :path (:path object)}}]]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn delete-media
   [{:keys [id] :as params}]
@@ -182,7 +183,7 @@
                   :id id}
             uchg {:type :add-media
                   :object prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (defn add-typography
   ([typography] (add-typography typography true))
@@ -196,7 +197,7 @@
                      :typography typography}
                uchg {:type :del-typography
                      :id (:id typography)}]
-           (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
+           (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
                   #(cond-> %
                      edit?
                      (assoc-in [:workspace-local :rename-typography] (:id typography))))))))))
@@ -213,7 +214,7 @@
                   :typography typography}
             uchg {:type :mod-typography
                   :typography prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
                (sync-file (:current-file-id state) file-id))))))
 
 (defn delete-typography
@@ -227,7 +228,7 @@
                   :id id}
             uchg {:type :add-typography
                   :typography prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (def add-component
   "Add a new component to current file library, from the currently selected shapes."
@@ -242,7 +243,7 @@
         (let [[group rchanges uchanges]
               (dwlh/generate-add-component selected objects page-id file-id)]
           (when-not (empty? rchanges)
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (defn rename-component
@@ -273,7 +274,7 @@
                        :path (:path component)
                        :objects objects}]]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
@@ -301,7 +302,7 @@
             uchanges [{:type :del-component
                        :id (:id new-shape)}]]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
@@ -321,7 +322,7 @@
                        :path (:path component)
                        :shapes (vals (:objects component))}]]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn instantiate-component
   "Create a new shape in the current page, from the component with the given id
@@ -398,7 +399,7 @@
                              :ignore-touched true})
                           new-shapes)]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                (dwc/select-shapes (d/ordered-set (:id new-shape))))))))
 
 (defn detach-component
@@ -461,7 +462,7 @@
                                            :val (:touched obj)}]})
                           shapes)]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn nav-to-component-file
   [file-id]
@@ -514,7 +515,7 @@
                                                                   rchanges
                                                                   local-library))
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn update-component
   "Modify the component linked to the shape with the given id, in the
@@ -569,11 +570,11 @@
                                   file))
 
         (rx/of (when (seq local-rchanges)
-                 (dwc/commit-changes local-rchanges local-uchanges
+                 (dch/commit-changes local-rchanges local-uchanges
                                      {:commit-local? true
                                       :file-id (:id local-library)}))
                (when (seq rchanges)
-                 (dwc/commit-changes rchanges uchanges
+                 (dch/commit-changes rchanges uchanges
                                      {:commit-local? true
                                       :file-id file-id})))))))
 
@@ -623,7 +624,7 @@
         (rx/concat
           (rx/of (dm/hide-tag :sync-dialog))
           (when rchanges
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true
                                                           :file-id file-id})))
           (when (not= file-id library-id)
             ;; When we have just updated the library file, give some time for the
@@ -666,7 +667,7 @@
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
                                                                           rchanges
                                                                           file))
-          (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true
+          (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true
                                                         :file-id file-id})))))))
 
 (def ignore-sync

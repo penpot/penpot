@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.common.text :as txt]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
@@ -159,7 +160,7 @@
         grow-type (->> values :grow-type)
         handle-change-grow
         (fn [event grow-type]
-          (st/emit! (dwc/update-shapes ids #(assoc % :grow-type grow-type))))]
+          (st/emit! (dch/update-shapes ids #(assoc % :grow-type grow-type))))]
 
     [:div.align-icons
      [:span.tooltip.tooltip-bottom

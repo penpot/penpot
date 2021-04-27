@@ -17,6 +17,7 @@
    [app.main.data.media :as di]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.svg-upload :as svg]
@@ -51,7 +52,7 @@
       (let [stoper   (rx/filter #(= ::finalize %) stream)
             forcer   (rx/filter #(= ::force-persist %) stream)
             notifier (->> stream
-                          (rx/filter (ptk/type? ::dwc/commit-changes))
+                          (rx/filter dch/commit-changes?)
                           (rx/debounce 2000)
                           (rx/merge stoper forcer))
 
@@ -79,7 +80,7 @@
               (st/emit! (update-persistence-status {:status :saved})))]
         (->> (rx/merge
                (->> stream
-                    (rx/filter (ptk/type? ::dwc/commit-changes))
+                    (rx/filter dch/commit-changes?)
                     (rx/map deref)
                     (rx/filter local-file?)
                     (rx/tap on-dirty)
@@ -91,7 +92,7 @@
                     (rx/tap on-saving)
                     (rx/take-until (rx/delay 100 stoper)))
                (->> stream
-                    (rx/filter (ptk/type? ::dwc/commit-changes))
+                    (rx/filter dch/commit-changes?)
                     (rx/map deref)
                     (rx/filter library-file?)
                     (rx/filter (complement #(empty? (:changes %))))

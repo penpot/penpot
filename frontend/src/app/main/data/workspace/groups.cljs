@@ -4,6 +4,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -106,7 +107,7 @@
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group rchanges uchanges] (prepare-create-group page-id shapes "Group-" false)]
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (def ungroup-selected
@@ -122,7 +123,7 @@
                    (= (:type group) :group))
           (let [[rchanges uchanges]
                 (prepare-remove-group page-id group objects)]
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))))
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))))
 
 (def mask-group
   (ptk/reify ::mask-group
@@ -176,7 +177,7 @@
                                 :page-id page-id
                                 :shapes [(:id group)]})]
 
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (def unmask-group
@@ -209,7 +210,7 @@
                            :page-id page-id
                            :shapes [(:id group)]}]]
 
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 

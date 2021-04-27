@@ -10,6 +10,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
@@ -83,10 +84,10 @@
                            ;; We defer the execution so the mouse event won't close the editor
                            (timers/schedule #(st/emit! (dw/start-editing-selected))))
         do-update-component (st/emitf
-                              (dwc/start-undo-transaction)
+                              (dwu/start-undo-transaction)
                               (dwl/update-component id)
                               (dwl/sync-file current-file-id (:component-file shape))
-                              (dwc/commit-undo-transaction))
+                              (dwu/commit-undo-transaction))
         confirm-update-remote-component (st/emitf
                                           (dwl/update-component id)
                                           (dwl/sync-file current-file-id

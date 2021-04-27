@@ -18,6 +18,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.modal :as md]
    [app.main.streams :as ms]
    [app.main.worker :as uw]))
@@ -395,7 +396,7 @@
                           (map #(get-in % [:obj :id]))
                           (into (d/ordered-set)))]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                (select-shapes selected))))))
 
 (defn change-hover-state

@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.streams :as ms]
    [app.main.worker :as uw]))
 
@@ -54,7 +55,7 @@
              ;; Add & select the created shape to the workspace
              (rx/concat
               (if (= :text (:type shape))
-                (rx/of (dwc/start-undo-transaction))
+                (rx/of (dwu/start-undo-transaction))
                 (rx/empty))
 
               (rx/of (dwc/add-shape shape))
