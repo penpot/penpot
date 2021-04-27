@@ -454,35 +454,13 @@
   (ptk/reify ::apply-modifiers
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id  (:current-page-id state)
-
-            objects0 (get-in state [:workspace-file :data :pages-index page-id :objects])
-            objects1 (get-in state [:workspace-data :pages-index page-id :objects])
-
-            ;; ID's + Children ID's
-            ids-with-children (d/concat [] (mapcat #(cp/get-children % objects1) ids) ids)
-
-            ;; For each shape applies the modifiers by transforming the objects
-            update-shape #(update %1 %2 gsh/transform-shape)
-            objects2 (reduce update-shape objects1 ids-with-children)
-
-            regchg   {:type :reg-objects
-                      :page-id page-id
-                      :shapes (vec ids)}
-
-            ;; we need to generate redo chages from current
-            ;; state (with current temporal values) to new state but
-            ;; the undo should be calculated from clear current
-            ;; state (without temporal values in it, for this reason
-            ;; we have 3 different objects references).
-
-            rchanges (conj (dwc/generate-changes page-id objects1 objects2) regchg)
-            uchanges (conj (dwc/generate-changes page-id objects2 objects0) regchg)]
-
-        (rx/of (dwc/start-undo-transaction)
-               (dwc/commit-changes rchanges uchanges {:commit-local? true})
+      (let [objects (dwc/lookup-page-objects state)
+            children-ids (->> ids (mapcat #(cp/get-children % objects)))
+            ids-with-children (d/concat [] children-ids ids)]
+        (rx/of (dwu/start-undo-transaction)
+               (dch/update-shapes ids-with-children gsh/transform-shape {:reg-objects? true})
                (clear-local-transform)
-               (dwc/commit-undo-transaction))))))
+               (dwu/commit-undo-transaction))))))
 
 ;; --- Update Dimensions
 

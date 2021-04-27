@@ -1050,30 +1050,13 @@
             selected (get-in state [:workspace-local :selected])
             moved    (if (= 1 (count selected))
                        (align-object-to-frame objects (first selected) axis)
-                       (align-objects-list objects selected axis))]
-        (loop [moved    (seq moved)
-               rchanges []
-               uchanges []]
-          (if (nil? moved)
-            (do
-              ;; (println "================ rchanges")
-              ;; (cljs.pprint/pprint rchanges)
-              ;; (println "================ uchanges")
-              ;; (cljs.pprint/pprint uchanges)
-              (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
-            (let [curr (first moved)
-                  prev (get objects (:id curr))
-                  ops1 (dwc/generate-operations prev curr)
-                  ops2 (dwc/generate-operations curr prev true)]
-              (recur (next moved)
-                     (conj rchanges {:type :mod-obj
-                                     :page-id page-id
-                                     :operations ops1
-                                     :id (:id curr)})
-                     (conj uchanges {:type :mod-obj
-                                     :page-id page-id
-                                     :operations ops2
-                                     :id (:id curr)})))))))))
+                       (align-objects-list objects selected axis))
+
+            moved-objects (->> moved (group-by :id))
+            ids (keys moved-objects)
+            update-fn (fn [shape] (first (get moved-objects (:id shape))))]
+
+        (rx/of (dch/update-shapes ids update-fn {:reg-objects? true}))))))
 
 (defn align-object-to-frame
   [objects object-id axis]
@@ -1097,30 +1080,12 @@
             objects  (dwc/lookup-page-objects state page-id)
             selected (get-in state [:workspace-local :selected])
             moved    (-> (map #(get objects %) selected)
-                         (gal/distribute-space axis objects))]
-        (loop [moved    (seq moved)
-               rchanges []
-               uchanges []]
-          (if (nil? moved)
-            (do
-              ;; (println "================ rchanges")
-              ;; (cljs.pprint/pprint rchanges)
-              ;; (println "================ uchanges")
-              ;; (cljs.pprint/pprint uchanges)
-              (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
-            (let [curr (first moved)
-                  prev (get objects (:id curr))
-                  ops1 (dwc/generate-operations prev curr)
-                  ops2 (dwc/generate-operations curr prev true)]
-              (recur (next moved)
-                     (conj rchanges {:type :mod-obj
-                                     :page-id page-id
-                                     :operations ops1
-                                     :id (:id curr)})
-                     (conj uchanges {:type :mod-obj
-                                     :page-id page-id
-                                     :operations ops2
-                                     :id (:id curr)})))))))))
+                         (gal/distribute-space axis objects))
+
+            moved-objects (->> moved (group-by :id))
+            ids (keys moved-objects)
+            update-fn (fn [shape] (first (get moved-objects (:id shape))))]
+        (rx/of (dch/update-shapes ids update-fn {:reg-objects? true}))))))
 
 ;; --- Shape Proportions
 
