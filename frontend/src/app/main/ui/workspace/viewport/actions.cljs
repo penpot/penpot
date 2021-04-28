@@ -24,8 +24,7 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.alpha :as mf])
-  (:import goog.events.WheelEvent
-           goog.events.KeyCodes))
+  (:import goog.events.WheelEvent))
 
 (defn on-mouse-down
   [{:keys [id blocked hidden type]} drawing-tool text-editing? edition edit-path selected]
@@ -263,8 +262,7 @@
  (mf/use-callback
   (fn [event]
     (let [bevent  (.getBrowserEvent ^js event)
-          key     (.-keyCode ^js event)
-          key     (.normalizeKeyCode KeyCodes key)
+          key     (.-key ^js event)
           ctrl?   (kbd/ctrl? event)
           shift?  (kbd/shift? event)
           alt?    (kbd/alt? event)
@@ -284,8 +282,7 @@
 (defn on-key-up []
  (mf/use-callback
   (fn [event]
-    (let [key    (.-keyCode event)
-          key    (.normalizeKeyCode KeyCodes key)
+    (let [key    (.-key event)
           ctrl?  (kbd/ctrl? event)
           shift? (kbd/shift? event)
           alt?   (kbd/alt? event)

@@ -24,8 +24,7 @@
    [app.common.math :as mth]
    [app.util.router :as rt]
    [app.main.data.viewer :as vd])
-  (:import goog.events.EventType
-           goog.events.KeyCodes))
+  (:import goog.events.EventType))
 
 (mf/defc thumbnails-content
   [{:keys [children expanded? total] :as props}]

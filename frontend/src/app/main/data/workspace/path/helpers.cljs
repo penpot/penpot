@@ -18,9 +18,6 @@
    [app.util.path.subpaths :as ups]
    [potok.core :as ptk]))
 
-;; CONSTANTS
-(defonce enter-keycode 13)
-
 (defn end-path-event? [{:keys [type shift] :as event}]
   (or (= (ptk/type event) ::common/finish-path)
       (= (ptk/type event) :esc-pressed)
