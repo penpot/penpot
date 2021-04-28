@@ -14,6 +14,49 @@
    [app.common.math :as mth]
    [app.common.data :as d]))
 
+;; --- Relative Movement
+
+(defn move-selrect [selrect {dx :x dy :y}]
+  (-> selrect
+      (d/update-when :x + dx)
+      (d/update-when :y + dy)
+      (d/update-when :x1 + dx)
+      (d/update-when :y1 + dy)
+      (d/update-when :x2 + dx)
+      (d/update-when :y2 + dy)))
+
+(defn move-points [points move-vec]
+  (->> points
+       (mapv #(gpt/add % move-vec))))
+
+(defn move
+  "Move the shape relativelly to its current
+  position applying the provided delta."
+  [shape {dx :x dy :y}]
+  (let [dx (d/check-num dx)
+        dy (d/check-num dy)
+        move-vec (gpt/point dx dy)]
+
+    (-> shape
+        (update :selrect move-selrect move-vec)
+        (update :points move-points move-vec)
+        (d/update-when :x + dx)
+        (d/update-when :y + dy)
+        (cond-> (= :path (:type shape))
+          (update :content gpa/move-content move-vec)))))
+
+;; --- Absolute Movement
+
+(declare absolute-move-rect)
+
+(defn absolute-move
+  "Move the shape to the exactly specified position."
+  [shape {:keys [x y]}]
+  (let [dx (- (d/check-num x) (-> shape :selrect :x))
+        dy (- (d/check-num y) (-> shape :selrect :y))]
+    (move shape (gpt/point dx dy))))
+
+
 (defn- modif-rotation [shape]
   (let [cur-rotation (d/check-num (:rotation shape))
         delta-angle  (d/check-num (get-in shape [:modifiers :rotation]))]
@@ -272,12 +315,27 @@
       (and rx (< rx 0)) (update :flip-x not)
       (and ry (< ry 0)) (update :flip-y not))))
 
-(defn transform-shape [shape]
-  (let [center (gco/center-shape shape)]
-    (if (and (:modifiers shape) center)
-      (let [transform (modifiers->transform center (:modifiers shape))]
+(defn apply-displacement [shape]
+  (let [modifiers (:modifiers shape)]
+    (if (contains? modifiers :displacement)
+      (let [mov-vec (-> (gpt/point 0 0)
+                        (gpt/transform (:displacement modifiers)))
+            shape (move shape mov-vec)
+            modifiers (dissoc modifiers :displacement)]
         (-> shape
-            (set-flip (:modifiers shape))
+            (assoc :modifiers modifiers)
+            (cond-> (empty? modifiers)
+              (dissoc :modifiers))))
+      shape)))
+
+(defn transform-shape [shape]
+  (let [shape (apply-displacement shape)
+        center (gco/center-shape shape)
+        modifiers (:modifiers shape)]
+    (if (and modifiers center)
+      (let [transform (modifiers->transform center modifiers)]
+        (-> shape
+            (set-flip modifiers)
             (apply-transform transform)
             (dissoc :modifiers)))
       shape)))
