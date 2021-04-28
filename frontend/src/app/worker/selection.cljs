@@ -41,8 +41,8 @@
     nil))
 
 (defmethod impl/handler :selection/query
-  [{:keys [page-id rect frame-id include-frames? include-groups? disabled-masks] :or {include-groups? true
-                                                                                      disabled-masks #{}} :as message}]
+  [{:keys [page-id rect frame-id include-frames? include-groups? disabled-masks reverse?]
+    :or {include-groups? true disabled-masks #{} reverse? false} :as message}]
   (when-let [index (get @state page-id)]
     (let [result (-> (qdt/search index (clj->js rect))
                      (es6-iterator-seq))
@@ -76,11 +76,13 @@
                       (filter (comp overlaps? :frame))
                       (filter (comp overlaps-masks? :masks))
                       (filter overlaps?))
-                result)]
+                result)
+
+          keyfn (if reverse? (comp - :z) :z)]
 
       (into (d/ordered-set)
             (->> matching-shapes
-                 (sort-by (comp - :z))
+                 (sort-by keyfn)
                  (map :id))))))
 
 (defn create-mask-index

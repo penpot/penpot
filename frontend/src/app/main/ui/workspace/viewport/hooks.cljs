@@ -100,7 +100,8 @@
               {:cmd :selection/query
                :page-id page-id
                :rect rect
-               :include-frames? true}))))
+               :include-frames? true
+               :reverse? true})))) ;; we want the topmost shape to be selected first
 
         ;; We use ref so we don't recreate the stream on a change
         transform-ref (mf/use-ref nil)
