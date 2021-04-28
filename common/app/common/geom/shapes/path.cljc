@@ -139,6 +139,23 @@
         (update :width #(if (mth/almost-zero? %) 1 %))
         (update :height #(if (mth/almost-zero? %) 1 %)))))
 
+(defn move-content [content move-vec]
+  (let [set-tr (fn [params px py]
+                 (let [tr-point (-> (gpt/point (get params px) (get params py))
+                                    (gpt/add move-vec))]
+                   (assoc params
+                          px (:x tr-point)
+                          py (:y tr-point))))
+
+        transform-params
+        (fn [{:keys [x c1x c2x] :as params}]
+          (cond-> params
+            (not (nil? x))   (set-tr :x :y)
+            (not (nil? c1x)) (set-tr :c1x :c1y)
+            (not (nil? c2x)) (set-tr :c2x :c2y)))]
+
+    (mapv #(update % :params transform-params) content)))
+
 (defn transform-content [content transform]
   (let [set-tr (fn [params px py]
                  (let [tr-point (-> (gpt/point (get params px) (get params py))
