@@ -102,6 +102,13 @@
                 :index index
                 :name (:name page)})]
 
+    (mf/use-effect
+      (mf/deps selected?)
+      (fn []
+        (when selected?
+          (let [node (mf/ref-val dref)]
+            (.scrollIntoViewIfNeeded ^js node)))))
+
     (mf/use-layout-effect
      (mf/deps (:edition @local))
      (fn []
