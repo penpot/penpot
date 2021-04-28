@@ -83,7 +83,7 @@
 
 (defn- append-undo
   [entry]
-  (us/verify ::undo-entry entry)
+  (us/assert ::undo-entry entry)
   (ptk/reify ::append-undo
     ptk/UpdateEvent
     (update [_ state]

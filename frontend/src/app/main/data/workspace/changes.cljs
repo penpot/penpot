@@ -68,15 +68,18 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [page-id (:current-page-id state)
-             objects (get-in state [:workspace-data :pages-index page-id :objects])]
+             objects (get-in state [:workspace-data :pages-index page-id :objects])
+             reg-objects {:type :reg-objects :page-id page-id :shapes (vec ids)}]
          (loop [ids (seq ids)
                 rch []
                 uch []]
            (if (nil? ids)
-             (rx/of (commit-changes
-                     (cond-> rch reg-objects? (conj {:type :reg-objects :page-id page-id :shapes (vec ids)}))
-                     (cond-> uch reg-objects? (conj {:type :reg-objects :page-id page-id :shapes (vec ids)}))
-                     {:commit-local? true}))
+             (rx/of (let [has-rch? (not (empty? rch))
+                          has-uch? (not (empty? uch))
+                          rch (cond-> rch (and has-rch? reg-objects?) (conj reg-objects))
+                          uch (cond-> uch (and has-rch? reg-objects?) (conj reg-objects))]
+                      (when (and has-rch? has-uch?)
+                        (commit-changes rch uch {:commit-local? true}))))
 
              (let [id   (first ids)
                    obj1 (get objects id)
@@ -161,8 +164,8 @@
                           :or {save-undo? true
                                commit-local? false}
                           :as opts}]
-   (us/verify ::cp/changes changes)
-   (us/verify ::cp/changes undo-changes)
+   (us/assert ::cp/changes changes)
+   (us/assert ::cp/changes undo-changes)
    (log/debug :msg "commit-changes"
               :js/changes changes
               :js/undo-changes undo-changes)
@@ -183,7 +186,7 @@
                          [:workspace-data]
                          [:workspace-libraries file-id :data])]
            (try
-             (us/verify ::spec/changes changes)
+             (us/assert ::spec/changes changes)
              (let [state (update-in state path1 cp/process-changes changes false)]
                (cond-> state
                  commit-local? (update-in path2 cp/process-changes changes false)))
