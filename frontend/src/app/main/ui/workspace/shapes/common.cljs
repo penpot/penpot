@@ -12,7 +12,8 @@
 (defn generic-wrapper-factory
   [component]
   (mf/fnc generic-wrapper
-    {::mf/wrap-props false}
+    {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
+     ::mf/wrap-props false}
     [props]
     (let [shape (unchecked-get props "shape")]
       [:> shape-container {:shape shape}

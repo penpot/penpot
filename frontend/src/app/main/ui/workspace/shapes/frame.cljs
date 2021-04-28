@@ -28,6 +28,28 @@
                             (contains? (:selected local) id)))]
     (l/derived check-moving refs/workspace-local)))
 
+(defn check-props
+  ([props] (check-props props =))
+  ([props eqfn?]
+   (fn [np op]
+     (every? #(eqfn? (unchecked-get np %)
+                     (unchecked-get op %))
+             props))))
+
+(defn check-frame-props
+  "Checks for changes in the props of a frame"
+  [new-props old-props]
+  (let [new-shape (unchecked-get new-props "shape")
+        old-shape (unchecked-get old-props "shape")
+
+        new-objects (unchecked-get new-props "objects")
+        old-objects (unchecked-get old-props "objects")
+
+        new-children (->> new-shape :shapes (mapv #(get new-objects %)))
+        old-children (->> old-shape :shapes (mapv #(get old-objects %)))]
+    (and (= new-shape old-shape)
+         (= new-children old-children))))
+
 ;; This custom deffered don't deffer rendering when ghost rendering is
 ;; used.
 (defn custom-deferred
@@ -48,7 +70,7 @@
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-wrapper
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "objects"])) custom-deferred]
+      {::mf/wrap [#(mf/memo' % check-frame-props) custom-deferred]
        ::mf/wrap-props false}
       [props]
       (let [shape       (unchecked-get props "shape")
