@@ -34,6 +34,7 @@
 - Fix problem displaying team statistics [#859](https://github.com/penpot/penpot/issues/859)
 - Fix problems with text editor selection [Taiga #1546](https://tree.taiga.io/project/penpot/issue/1546)
 - Fix problem when opening the context menu in dashboard at the bottom [#856](https://github.com/penpot/penpot/issues/856)
+- Fix problem when clicking an interactive group in view mode [#863](https://github.com/penpot/penpot/issues/863)
 - Fix visibility of pages in sitemap when changing page [Taiga #1618](https://tree.taiga.io/project/penpot/issue/1618)
 - Fix visual problem with group invite [Taiga #1290](https://tree.taiga.io/project/penpot/issue/1290)
 - Fix issues with promote owner panel [Taiga #763](https://tree.taiga.io/project/penpot/issue/763)
