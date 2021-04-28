@@ -65,15 +65,15 @@
                         :frame frame
                         :childs childs
                         :is-child-selected? true}]
-         (when (and (:interactions shape) show-interactions?)
+         (when (:interactions shape)
            [:rect {:x (- x 1)
                    :y (- y 1)
                    :width (+ width 2)
                    :height (+ height 2)
                    :fill "#31EFB8"
                    :stroke "#31EFB8"
-                   :stroke-width 1
-                   :fill-opacity 0.2}])]
+                   :stroke-width (if show-interactions? 1 0)
+                   :fill-opacity (if show-interactions? 0.2 0)}])]
 
         ;; Don't wrap svg elements inside a <g> otherwise some can break
         [:& component {:shape shape
