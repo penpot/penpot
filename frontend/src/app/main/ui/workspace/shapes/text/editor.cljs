@@ -18,6 +18,7 @@
    [app.main.ui.cursors :as cur]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [cuerdas.core :as str]
@@ -25,8 +26,7 @@
    [okulary.core :as l]
    [rumext.alpha :as mf])
   (:import
-   goog.events.EventType
-   goog.events.KeyCodes))
+   goog.events.EventType))
 
 ;; --- Text Editor Rendering
 
@@ -84,7 +84,7 @@
         on-key-up
         (fn [event]
           (dom/stop-propagation event)
-          (when (= (.-keyCode event) 27) ; ESC
+          (when (kbd/esc? event)
             (do
               (st/emit! :interrupt)
               (st/emit! dw/clear-edition-mode))))
