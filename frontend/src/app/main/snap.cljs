@@ -94,8 +94,8 @@
   [page-id frame-id points filter-shapes zoom]
   (let [snap-x (search-snap page-id frame-id points :x filter-shapes zoom)
         snap-y (search-snap page-id frame-id points :y filter-shapes zoom)]
-    ;; snap-x is the second parameter because is the "source" to combine
-    (rx/combine-latest snap->vector snap-y snap-x)))
+    (rx/combine-latest snap-x snap-y)))
+
 
 (defn sr-distance [coord sr1 sr2]
   (let [c1 (if (= coord :x) :x1 :y1)
@@ -174,8 +174,7 @@
     (if (mth/finite? min-snap) [0 min-snap] nil)))
 
 (defn search-snap-distance [selrect coord shapes-lt shapes-gt zoom]
-  (->> shapes-lt
-       (rx/combine-latest vector shapes-gt)
+  (->> (rx/combine-latest shapes-lt shapes-gt)
        (rx/map (fn [[shapes-lt shapes-gt]]
                  (calculate-snap coord selrect shapes-lt shapes-gt zoom)))))
 
@@ -203,7 +202,7 @@
                              (d/mapm #(select-shapes-area page-id shapes objects %2)))
                   snap-x (search-snap-distance selrect :x (:left areas) (:right areas) zoom)
                   snap-y (search-snap-distance selrect :y (:top areas) (:bottom areas) zoom)]
-              (rx/combine-latest snap->vector snap-y snap-x)))))))
+              (rx/combine-latest snap-x snap-y)))))))
 
 (defn closest-snap-point
   [page-id shapes layout zoom point]

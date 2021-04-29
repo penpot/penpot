@@ -14,7 +14,7 @@
   [danlentz/clj-uuid "0.1.9"]
   [frankiesardo/linked "1.3.0"]
 
-  [funcool/beicon "2021.04.12-1"]
+  [funcool/beicon "2021.04.27-2"]
   [funcool/cuerdas "2020.03.26-3"]
   [funcool/okulary "2020.04.14-0"]
   [funcool/potok "3.2.0"]
