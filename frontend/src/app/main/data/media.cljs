@@ -51,7 +51,7 @@
     (ex/raise :type :validation
               :code :media-too-large
               :hint (str/fmt "media size is large than 5mb (size: %s)" (.-size file))))
-  (when-not (contains? cm/valid-media-types (.-type file))
+  (when-not (contains? cm/valid-image-types (.-type file))
     (ex/raise :type :validation
               :code :media-type-not-allowed
               :hint (str/fmt "media type %s is not supported" (.-type file))))

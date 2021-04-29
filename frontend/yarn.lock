@@ -3120,6 +3120,11 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
+marked@^2.0.3:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/marked/-/marked-2.0.3.tgz#3551c4958c4da36897bda2a16812ef1399c8d6b0"
+  integrity sha512-5otztIIcJfPc2qGTN8cVtOJEjNJZ0jwa46INMagrYfk0EvqtRuEHLsEe0LrFS0/q+ZRKT0+kXK7P2T1AN5lWRA==
+
 matchdep@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/matchdep/-/matchdep-2.0.0.tgz#c6f34834a0d8dbc3b37c27ee8bbcb27c7775582e"
@@ -3643,6 +3648,14 @@ one-time@^1.0.0:
   integrity sha512-5DXOiRKwuSEcQ/l0kGCF6Q3jcADFv5tSmRaJck/OqkVFcOzutB134KRSfF0xDrL39MNnqxbHBbUUcjZIhTgb2g==
   dependencies:
     fn.name "1.x.x"
+
+opentype.js@^1.3.3:
+  version "1.3.3"
+  resolved "https://registry.yarnpkg.com/opentype.js/-/opentype.js-1.3.3.tgz#65b8645b090a1ad444065b784d442fa19d1061f6"
+  integrity sha512-/qIY/+WnKGlPIIPhbeNjynfD2PO15G9lA/xqlX2bDH+4lc3Xz5GCQ68mqxj3DdUv6AJqCeaPvuAoH8mVL0zcuA==
+  dependencies:
+    string.prototype.codepointat "^0.2.1"
+    tiny-inflate "^1.0.3"
 
 ordered-read-streams@^1.0.0:
   version "1.0.1"
@@ -4364,9 +4377,9 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
     inherits "^2.0.1"
 
 rxjs@~7.0.0-beta.12:
-  version "7.0.0-rc.1"
-  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-7.0.0-rc.1.tgz#11f368e740e2b3cfe805891be127d07391673654"
-  integrity sha512-FVFOeT+eGdbcPe+uH+cWnEElrU4LiDMrlstNSUpI3MPErICLtVoUCbKrF+n+8DYemHDe7wPqYtuNEYTM3ur3xw==
+  version "7.0.0-rc.2"
+  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-7.0.0-rc.2.tgz#bd5b18ff9b60ca28ea4b3a824419035007064fdf"
+  integrity sha512-81+TFxK8hUK3tmJ9TPon07bgun2ASgZ8OXumUuWSAnktSAzTvubw4NCJTr0Tc0lO9IfTThi5z3GDVlmjY3n5ug==
   dependencies:
     tslib "~2.1.0"
 
@@ -4480,7 +4493,7 @@ shadow-cljs-jar@1.3.2:
   resolved "https://registry.yarnpkg.com/shadow-cljs-jar/-/shadow-cljs-jar-1.3.2.tgz#97273afe1747b6a2311917c1c88d9e243c81957b"
   integrity sha512-XmeffAZHv8z7451kzeq9oKh8fh278Ak+UIOGGrapyqrFBB773xN8vMQ3O7J7TYLnb9BUwcqadKkmgaq7q6fhZg==
 
-shadow-cljs@^2.11.20:
+shadow-cljs@2.12.5:
   version "2.12.5"
   resolved "https://registry.yarnpkg.com/shadow-cljs/-/shadow-cljs-2.12.5.tgz#d3cf29fc1f1e02dd875939549419979e0feadbf4"
   integrity sha512-o3xo3coRgnlkI/iI55ccHjj6AU3F1+ovk3hhK86e3P2JGGOpNTAwsGNxUpMC5JAwS9Nz0v6sSk73hWjEOnm6fQ==
@@ -4796,6 +4809,11 @@ string-width@^3.0.0, string-width@^3.1.0:
     is-fullwidth-code-point "^2.0.0"
     strip-ansi "^5.1.0"
 
+string.prototype.codepointat@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/string.prototype.codepointat/-/string.prototype.codepointat-0.2.1.tgz#004ad44c8afc727527b108cd462b4d971cd469bc"
+  integrity sha512-2cBVCj6I4IOvEnjgO/hWqXjqBGsY+zwPmHl12Srk9IXSZ56Jwwmy+66XO5Iut/oQVR7t5ihYdLB0GMa4alEUcg==
+
 string.prototype.trimend@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/string.prototype.trimend/-/string.prototype.trimend-1.0.4.tgz#e75ae90c2942c63504686c18b287b4a0b1a45f80"
@@ -5020,6 +5038,11 @@ timers-ext@^0.1.7:
   dependencies:
     es5-ext "~0.10.46"
     next-tick "1"
+
+tiny-inflate@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/tiny-inflate/-/tiny-inflate-1.0.3.tgz#122715494913a1805166aaf7c93467933eea26c4"
+  integrity sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==
 
 to-absolute-glob@^2.0.0:
   version "2.0.2"

@@ -28,7 +28,7 @@
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.i18n :as i18n :refer [t tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.router :as rt]
@@ -47,10 +47,11 @@
         selected-project (:selected-project dstate)
         edit-id          (:project-for-edit dstate)
 
-        local   (mf/use-state {:menu-open false
-                               :menu-pos nil
-                               :edition? (= (:id item) edit-id)
-                               :dragging? false})
+        local            (mf/use-state
+                          {:menu-open false
+                           :menu-pos nil
+                           :edition? (= (:id item) edit-id)
+                           :dragging? false})
 
         on-click
         (mf/use-callback
@@ -60,11 +61,13 @@
                                                :project-id (:id item)}))))
 
         on-menu-click
-        (mf/use-callback (fn [event]
-                           (let [position (dom/get-client-position event)]
-                             (dom/prevent-default event)
-                             (swap! local assoc :menu-open true
-                                                :menu-pos position))))
+        (mf/use-callback
+         (fn [event]
+           (let [position (dom/get-client-position event)]
+             (dom/prevent-default event)
+             (swap! local assoc
+                    :menu-open true
+                    :menu-pos position))))
 
         on-menu-close
         (mf/use-callback #(swap! local assoc :menu-open false))
@@ -139,7 +142,7 @@
                        :on-menu-close on-menu-close}]]))
 
 (mf/defc sidebar-search
-  [{:keys [search-term team-id locale] :as props}]
+  [{:keys [search-term team-id] :as props}]
   (let [search-term (or search-term "")
         focused?    (mf/use-state false)
         emit!       (mf/use-memo #(f/debounce st/emit! 500))
@@ -183,7 +186,7 @@
       {:key :images-search-box
        :id "search-input"
        :type "text"
-       :placeholder (t locale "dashboard.search-placeholder")
+       :placeholder (tr "dashboard.search-placeholder")
        :default-value search-term
        :auto-complete "off"
        :on-focus on-search-focus
@@ -201,7 +204,7 @@
         i/search])]))
 
 (mf/defc teams-selector-dropdown
-  [{:keys [team profile locale] :as props}]
+  [{:keys [team profile] :as props}]
   (let [show-dropdown? (mf/use-state false)
         teams          (mf/deref refs/teams)
 
@@ -216,11 +219,11 @@
             (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))]
 
     [:ul.dropdown.teams-dropdown
-     [:li.title (t locale "dashboard.switch-team")]
+     [:li.title (tr "dashboard.switch-team")]
      [:hr]
      [:li.team-name {:on-click (partial team-selected (:default-team-id profile))}
       [:span.team-icon i/logo-icon]
-      [:span.team-text (t locale "dashboard.your-penpot")]]
+      [:span.team-text (tr "dashboard.your-penpot")]]
 
      (for [team (remove :is-default (vals teams))]
        [:* {:key (:id team)}
@@ -231,7 +234,7 @@
 
      [:hr]
      [:li.action {:on-click on-create-clicked}
-      (t locale "dashboard.create-new-team")]]))
+      (tr "dashboard.create-new-team")]]))
 
 (s/def ::member-id ::us/uuid)
 (s/def ::leave-modal-form
@@ -292,7 +295,7 @@
 
 
 (mf/defc team-options-dropdown
-  [{:keys [team locale profile] :as props}]
+  [{:keys [team profile] :as props}]
   (let [members (mf/use-state [])
 
         go-members
@@ -341,9 +344,9 @@
          (mf/deps team)
          (st/emitf (modal/show
                     {:type :confirm
-                     :title (t locale "modals.leave-confirm.title")
-                     :message (t locale "modals.leave-confirm.message")
-                     :accept-label (t locale "modals.leave-confirm.accept")
+                     :title (tr "modals.leave-confirm.title")
+                     :message (tr "modals.leave-confirm.message")
+                     :accept-label (tr "modals.leave-confirm.accept")
                      :on-accept leave-fn})))
 
         on-leave-as-owner-clicked
@@ -366,9 +369,9 @@
          (mf/deps team)
          (st/emitf (modal/show
                     {:type :confirm
-                     :title (t locale "modals.delete-team-confirm.title")
-                     :message (t locale "modals.delete-team-confirm.message")
-                     :accept-label (t locale "modals.delete-team-confirm.accept")
+                     :title (tr "modals.delete-team-confirm.title")
+                     :message (tr "modals.delete-team-confirm.message")
+                     :accept-label (tr "modals.delete-team-confirm.accept")
                      :on-accept delete-fn})))]
 
     (mf/use-layout-effect
@@ -378,25 +381,25 @@
             (rx/subs #(reset! members %)))))
 
     [:ul.dropdown.options-dropdown
-     [:li {:on-click go-members} (t locale "labels.members")]
-     [:li {:on-click go-settings} (t locale "labels.settings")]
+     [:li {:on-click go-members} (tr "labels.members")]
+     [:li {:on-click go-settings} (tr "labels.settings")]
      [:hr]
-     [:li {:on-click on-rename-clicked} (t locale "labels.rename")]
+     [:li {:on-click on-rename-clicked} (tr "labels.rename")]
 
      (cond
        (:is-owner team)
-       [:li {:on-click on-leave-as-owner-clicked} (t locale "dashboard.leave-team")]
+       [:li {:on-click on-leave-as-owner-clicked} (tr "dashboard.leave-team")]
 
        (> (count @members) 1)
-       [:li {:on-click on-leave-clicked}  (t locale "dashboard.leave-team")])
+       [:li {:on-click on-leave-clicked}  (tr "dashboard.leave-team")])
 
 
      (when (:is-owner team)
-       [:li {:on-click on-delete-clicked} (t locale "dashboard.delete-team")])]))
+       [:li {:on-click on-delete-clicked} (tr "dashboard.delete-team")])]))
 
 
 (mf/defc sidebar-team-switch
-  [{:keys [team profile locale] :as props}]
+  [{:keys [team profile] :as props}]
   (let [show-dropdown? (mf/use-state false)
 
         show-team-opts-ddwn? (mf/use-state false)
@@ -408,7 +411,7 @@
        (if (:is-default team)
          [:div.team-name
           [:span.team-icon i/logo-icon]
-          [:span.team-text (t locale "dashboard.default-team-name")]]
+          [:span.team-text (tr "dashboard.default-team-name")]]
          [:div.team-name
           [:span.team-icon
            [:img {:src (cfg/resolve-team-photo-url team)}]]
@@ -425,23 +428,22 @@
      [:& dropdown {:show @show-teams-ddwn?
                    :on-close #(reset! show-teams-ddwn? false)}
       [:& teams-selector-dropdown {:team team
-                                   :profile profile
-                                   :locale locale}]]
+                                   :profile profile}]]
 
      [:& dropdown {:show @show-team-opts-ddwn?
                    :on-close #(reset! show-team-opts-ddwn? false)}
       [:& team-options-dropdown {:team team
-                                 :profile profile
-                                 :locale locale}]]]))
+                                 :profile profile}]]]))
 
 (mf/defc sidebar-content
-  [{:keys [locale projects profile section team project search-term] :as props}]
+  [{:keys [projects profile section team project search-term] :as props}]
   (let [default-project-id
         (->> (vals projects)
              (d/seek :is-default)
              (:id))
 
         projects?   (= section :dashboard-projects)
+        fonts?      (= section :dashboard-fonts)
         libs?       (= section :dashboard-libraries)
         drafts?     (and (= section :dashboard-files)
                          (= (:id project) default-project-id))
@@ -450,6 +452,11 @@
         (mf/use-callback
          (mf/deps team)
          (st/emitf (rt/nav :dashboard-projects {:team-id (:id team)})))
+
+        go-fonts
+        (mf/use-callback
+         (mf/deps team)
+         (st/emitf (rt/nav :dashboard-fonts {:team-id (:id team)})))
 
         go-drafts
         (mf/use-callback
@@ -469,29 +476,36 @@
              (filter :is-pinned))]
 
     [:div.sidebar-content
-     [:& sidebar-team-switch {:team team :profile profile :locale locale}]
+     [:& sidebar-team-switch {:team team :profile profile}]
      [:hr]
      [:& sidebar-search {:search-term search-term
-                         :team-id (:id team)
-                         :locale locale}]
+                         :team-id (:id team)}]
      [:div.sidebar-content-section
       [:ul.sidebar-nav.no-overflow
        [:li.recent-projects
         {:on-click go-projects
          :class-name (when projects? "current")}
-        [:span.element-title (t locale "labels.projects")]]
+        [:span.element-title (tr "labels.projects")]]
 
        [:li {:on-click go-drafts
              :class-name (when drafts? "current")}
-        [:span.element-title (t locale "labels.drafts")]]
+        [:span.element-title (tr "labels.drafts")]]
 
 
        [:li {:on-click go-libs
              :class-name (when libs? "current")}
-        [:span.element-title (t locale "labels.shared-libraries")]]]]
+        [:span.element-title (tr "labels.shared-libraries")]]]]
 
      [:hr]
 
+     [:div.sidebar-content-section
+      [:ul.sidebar-nav.no-overflow
+       [:li.recent-projects
+        {:on-click go-fonts
+         :class-name (when fonts? "current")}
+        [:span.element-title (tr "labels.fonts")]]]]
+
+     [:hr]
      [:div.sidebar-content-section
       (if (seq pinned-projects)
         [:ul.sidebar-nav
@@ -504,11 +518,11 @@
              :selected? (= (:id item) (:id project))}])]
         [:div.sidebar-empty-placeholder
          [:span.icon i/pin]
-         [:span.text (t locale "dashboard.no-projects-placeholder")]])]]))
+         [:span.text (tr "dashboard.no-projects-placeholder")]])]]))
 
 
 (mf/defc profile-section
-  [{:keys [profile locale team] :as props}]
+  [{:keys [profile team] :as props}]
   (let [show  (mf/use-state false)
         photo (cfg/resolve-profile-photo-url profile)
 
@@ -530,18 +544,18 @@
       [:ul.dropdown
        [:li {:on-click (partial on-click :settings-profile)}
         [:span.icon i/user]
-        [:span.text (t locale "labels.profile")]]
+        [:span.text (tr "labels.profile")]]
        [:li {:on-click (partial on-click :settings-password)}
         [:span.icon i/lock]
-        [:span.text (t locale "labels.password")]]
+        [:span.text (tr "labels.password")]]
        [:li {:on-click (partial on-click (da/logout))}
         [:span.icon i/exit]
-        [:span.text (t locale "labels.logout")]]
+        [:span.text (tr "labels.logout")]]
 
        (when cfg/feedback-enabled
          [:li.feedback {:on-click (partial on-click :settings-feedback)}
           [:span.icon i/msg-info]
-          [:span.text (t locale "labels.give-feedback")]
+          [:span.text (tr "labels.give-feedback")]
           [:span.primary-badge "ALPHA"]])]]]
 
      (when (and team profile)
@@ -552,15 +566,11 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [locale  (mf/deref i18n/locale)
-        team    (obj/get props "team")
-        profile (obj/get props "profile")
-        props   (-> (obj/clone props)
-                    (obj/set! "locale" locale))]
+  (let [team    (obj/get props "team")
+        profile (obj/get props "profile")]
     [:div.dashboard-sidebar
      [:div.sidebar-inside
       [:> sidebar-content props]
       [:& profile-section
        {:profile profile
-        :team team
-        :locale locale}]]]))
+        :team team}]]]))

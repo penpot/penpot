@@ -116,7 +116,6 @@
         snap-lines (->> (into (process-snap-lines @state :x)
                               (process-snap-lines @state :y))
                         (into #{}))]
-
     (mf/use-effect
      (fn []
        (let [sub (->> subject

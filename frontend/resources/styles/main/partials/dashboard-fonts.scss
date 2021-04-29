@@ -1,0 +1,167 @@
+.dashboard-fonts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .dashboard-installed-fonts {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    margin-top: $big;
+    flex-direction: column;
+
+    h3 {
+      font-size: $fs14;
+      color: $color-gray-30;
+      margin: $x-small;
+    }
+
+    .font-item {
+      color: $color-black;
+    }
+  }
+
+  .installed-fonts-header {
+    color: $color-gray-40;
+    display: flex;
+    height: 40px;
+    font-size: $fs12;
+    background-color: $color-white;
+    align-items: center;
+    padding: 0px $big;
+
+    > div {
+      width: 30%;
+    }
+
+    .search-input {
+      display: flex;
+      flex-grow: 1;
+      justify-content: flex-end;
+
+      input {
+        font-size: $fs12;
+        border: 1px solid $color-gray-30;
+        border-radius: $br-small;
+        width: 130px;
+        padding: $x-small;
+        margin: 0px;
+      }
+    }
+  }
+
+  .fonts-group {
+    margin-top: $big;
+  }
+
+  .font-item {
+    color: $color-gray-40;
+    font-size: $fs14;
+    background-color: $color-white;
+    display: flex;
+    min-width: 1000px;
+    width: 100%;
+    height: 97px;
+    align-items: center;
+    padding: $big;
+
+    &:not(:first-child) {
+      border-top: 1px solid $color-gray-10;
+    }
+
+    input {
+      border: 1px solid $color-gray-30;
+      border-radius: $br-small;
+      margin: 0px;
+      padding: $small;
+      font-size: $fs12;
+    }
+
+    > div {
+      width: 30%;
+    }
+
+    .variant {
+      font-size: $fs14;
+    }
+
+    .filenames {
+      display: flex;
+      flex-direction: column;
+      font-size: $fs12;
+    }
+
+    .options {
+      display: flex;
+      justify-content: flex-end;
+
+      .icon {
+        width: $big;
+        cursor: pointer;
+        display: flex;
+        margin-left: 10px;
+        justify-content: center;
+        align-items: center;
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        &.close {
+          svg {
+            transform: rotate(45deg);
+          }
+        }
+
+      }
+    }
+  }
+
+
+  .dashboard-fonts-upload {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+
+    .upload-button {
+      width: 100px;
+    }
+  }
+
+  .dashboard-fonts-hero {
+    font-size: $fs14;
+
+    padding: $x-big;
+    background-color: $color-white;
+    margin-top: $x-big;
+    display: flex;
+    justify-content: space-between;
+
+    .banner {
+      background-color: unset;
+
+        display: flex;
+
+      .icon {
+        display: flex;
+        align-items: center;
+        padding-left: 0px;
+        padding-right: 10px;
+        svg {
+          fill: $color-info;
+        }
+      }
+    }
+
+    .desc {
+      h2 {
+        margin-bottom: $medium;
+        color: $color-black;
+      }
+      width: 80%;
+      color: $color-gray-40;
+    }
+  }
+}

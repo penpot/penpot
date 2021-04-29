@@ -5,7 +5,7 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.media
-  "Media postprocessing."
+  "Media & Font postprocessing."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -13,20 +13,29 @@
    [app.common.spec :as us]
    [app.rlimits :as rlm]
    [app.rpc.queries.svg :as svg]
+   [clojure.java.io :as io]
+   [clojure.java.shell :as sh]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs])
   (:import
    java.io.ByteArrayInputStream
+   java.io.OutputStream
+   org.apache.commons.io.IOUtils
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation
    org.im4java.core.Info))
 
-;; --- Generic specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Utility functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::image-content-type cm/valid-image-types)
+(s/def ::font-content-type cm/valid-font-types)
 
 (s/def :internal.http.upload/filename ::us/string)
 (s/def :internal.http.upload/size ::us/integer)
-(s/def :internal.http.upload/content-type cm/valid-media-types)
+(s/def :internal.http.upload/content-type ::us/string)
 (s/def :internal.http.upload/tempfile any?)
 
 (s/def ::upload
@@ -35,8 +44,44 @@
                    :internal.http.upload/tempfile
                    :internal.http.upload/content-type]))
 
+(defn validate-media-type
+  ([mtype] (validate-media-type mtype cm/valid-image-types))
+  ([mtype allowed]
+   (when-not (contains? allowed mtype)
+     (ex/raise :type :validation
+               :code :media-type-not-allowed
+               :hint "Seems like you are uploading an invalid media object"))))
 
+
+(defmulti process :cmd)
+(defmulti process-error class)
+
+(defmethod process :default
+  [{:keys [cmd] :as params}]
+  (ex/raise :type :internal
+            :code :not-implemented
+            :hint (str/fmt "No impl found for process cmd: %s" cmd)))
+
+(defmethod process-error :default
+  [error]
+  (ex/raise :type :internal :cause error))
+
+(defn run
+  [{:keys [rlimits] :as cfg} {:keys [rlimit] :or {rlimit :image} :as params}]
+  (us/assert map? rlimits)
+  (let [rlimit (get rlimits rlimit)]
+    (when-not rlimit
+      (ex/raise :type :internal
+                :code :rlimit-not-configured
+                :hint ":image rlimit not configured"))
+    (try
+      (rlm/execute rlimit (process params))
+      (catch Throwable e
+        (process-error e)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; --- Thumbnails Generation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::cmd keyword?)
 
@@ -76,8 +121,6 @@
              :mtype  (cm/format->mtype format)
              :size   (alength ^bytes thumbnail-data)
              :data   (ByteArrayInputStream. thumbnail-data)))))
-
-(defmulti process :cmd)
 
 (defmethod process :generic-thumbnail
   [{:keys [quality width height] :as params}]
@@ -161,33 +204,63 @@
          :height (.getPageHeight instance)
          :mtype  mtype}))))
 
-(defmethod process :default
-  [{:keys [cmd] :as params}]
-  (ex/raise :type :internal
-            :code :not-implemented
-            :hint (str "No impl found for process cmd:" cmd)))
+(defmethod process-error org.im4java.core.InfoException
+  [error]
+  (ex/raise :type :validation
+            :code :invalid-image
+            :cause error))
 
-(defn run
-  [{:keys [rlimits]} params]
-  (us/assert map? rlimits)
-  (let [rlimit (get rlimits :image)]
-    (when-not rlimit
-      (ex/raise :type :internal
-                :code :rlimit-not-configured
-                :hint ":image rlimit not configured"))
-    (try
-      (rlm/execute rlimit (process params))
-      (catch org.im4java.core.InfoException e
-        (ex/raise :type :validation
-                  :code :invalid-image
-                  :cause e)))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Fonts Generation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- Utility functions
+(def all-fotmats #{"font/woff2", "font/woff", "font/otf", "font/ttf"})
 
-(defn validate-media-type
-  ([mtype] (validate-media-type mtype cm/valid-media-types))
-  ([mtype allowed]
-   (when-not (contains? allowed mtype)
-     (ex/raise :type :validation
-               :code :media-type-not-allowed
-               :hint "Seems like you are uploading an invalid media object"))))
+(defmethod process :generate-fonts
+  [{:keys [input] :as params}]
+  (letfn [(ttf->otf [data]
+            (let [input-file  (fs/create-tempfile :prefix "penpot")
+                  output-file (fs/path (str input-file ".otf"))
+                  _           (with-open [out (io/output-stream input-file)]
+                                (IOUtils/writeChunked ^bytes data ^OutputStream out)
+                                (.flush ^OutputStream out))
+                  res         (sh/sh "fontforge" "-lang=ff" "-c"
+                                     (str/fmt "Open('%s'); Generate('%s')"
+                                              (str input-file)
+                                              (str output-file)))]
+              (when (zero? (:exit res))
+                (fs/slurp-bytes output-file))))
+
+
+          (ttf-or-otf->woff [data]
+            (let [input-file  (fs/create-tempfile :prefix "penpot" :suffix "")
+                  output-file (fs/path (str input-file ".woff"))
+                  _           (with-open [out (io/output-stream input-file)]
+                                (IOUtils/writeChunked ^bytes data ^OutputStream out)
+                                (.flush ^OutputStream out))
+                  res         (sh/sh "sfnt2woff" (str input-file))]
+              (when (zero? (:exit res))
+                (fs/slurp-bytes output-file))))
+
+          (ttf-or-otf->woff2 [data]
+            (let [input-file  (fs/create-tempfile :prefix "penpot" :suffix "")
+                  output-file (fs/path (str input-file ".woff2"))
+                  _           (with-open [out (io/output-stream input-file)]
+                                (IOUtils/writeChunked ^bytes data ^OutputStream out)
+                                (.flush ^OutputStream out))
+                  res         (sh/sh "woff2_compress" (str input-file))]
+              (when (zero? (:exit res))
+                (fs/slurp-bytes output-file))))]
+
+    (let [current (into #{} (keys input))]
+      (if (contains? current "font/ttf")
+        (-> input
+            (assoc "font/otf" (ttf->otf (get input "font/ttf")))
+            (assoc "font/woff" (ttf-or-otf->woff (get input "font/ttf")))
+            (assoc "font/woff2" (ttf-or-otf->woff2 (get input "font/ttf"))))
+
+        (-> input
+            ;; TODO: pending to implement
+            ;; (assoc "font/ttf" (otf->ttf (get input "font/ttf")))
+            (assoc "font/woff" (ttf-or-otf->woff (get input "font/otf")))
+            (assoc "font/woff2" (ttf-or-otf->woff2 (get input "font/otf"))))))))

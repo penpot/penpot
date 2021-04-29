@@ -261,6 +261,19 @@
       (recur (reduce-kv assoc! res (first maps))
              (next maps)))))
 
+(defn distinct-xf
+  [f]
+  (fn [rf]
+    (let [seen (volatile! #{})]
+      (fn
+        ([] (rf))
+        ([result] (rf result))
+        ([result input]
+         (let [input* (f input)]
+           (if (contains? @seen input*)
+             result
+             (do (vswap! seen conj input*)
+                 (rf result input)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion

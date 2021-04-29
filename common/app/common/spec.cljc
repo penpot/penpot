@@ -6,7 +6,7 @@
 
 (ns app.common.spec
   "Data manipulation and query helper functions."
-  (:refer-clojure :exclude [assert])
+  (:refer-clojure :exclude [assert bytes?])
   #?(:cljs (:require-macros [app.common.spec :refer [assert]]))
   (:require
    #?(:clj  [clojure.spec.alpha :as s]
@@ -107,6 +107,20 @@
 (s/def ::fn fn?)
 (s/def ::point gpt/point?)
 (s/def ::id ::uuid)
+
+(defn bytes?
+  "Test if a first parameter is a byte
+  array or not."
+  [x]
+  (if (nil? x)
+    false
+    #?(:clj (= (Class/forName "[B")
+               (.getClass ^Object x))
+       :cljs (or (instance? js/Uint8Array x)
+                 (instance? js/ArrayBuffer x)))))
+
+(s/def ::bytes bytes?)
+
 
 (s/def ::safe-integer
   #(and

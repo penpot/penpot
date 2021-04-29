@@ -43,6 +43,9 @@
 (def dashboard-local
   (l/derived :dashboard-local st/state))
 
+(def dashboard-fonts
+  (l/derived :dashboard-fonts st/state))
+
 (def dashboard-selected-project
   (l/derived (fn [state]
                (get-in state [:dashboard-local :selected-project]))

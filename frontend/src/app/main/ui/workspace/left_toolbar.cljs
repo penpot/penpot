@@ -50,7 +50,7 @@
         [:*
          i/image
          [:& file-uploader {:input-id "image-upload"
-                            :accept cm/str-media-types
+                            :accept cm/str-image-types
                             :multi true
                             :input-ref ref
                             :on-selected on-files-selected}]]]))
