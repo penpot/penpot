@@ -19,7 +19,7 @@
    [beicon.core :as rx]
    [clojure.set :as set]))
 
-(defonce ^:private snap-accuracy 5)
+(defonce ^:private snap-accuracy 10)
 (defonce ^:private snap-path-accuracy 10)
 (defonce ^:private snap-distance-accuracy 10)
 
@@ -84,7 +84,7 @@
          (rx/map (remove-from-snap-points filter-shapes))
          (rx/map (get-min-distance-snap points coord)))))
 
-(defn snap->vector [[from-x to-x] [from-y to-y]]
+(defn snap->vector [[[from-x to-x] [from-y to-y]]]
   (when (or from-x to-x from-y to-y)
     (let [from (gpt/point (or from-x 0) (or from-y 0))
           to   (gpt/point (or to-x 0)   (or to-y 0))]
@@ -94,8 +94,9 @@
   [page-id frame-id points filter-shapes zoom]
   (let [snap-x (search-snap page-id frame-id points :x filter-shapes zoom)
         snap-y (search-snap page-id frame-id points :y filter-shapes zoom)]
-    ;; snap-x is the second parameter because is the "source" to combine
-    (rx/combine-latest snap->vector snap-y snap-x)))
+    (->> (rx/combine-latest snap-x snap-y)
+         (rx/map snap->vector))))
+
 
 (defn sr-distance [coord sr1 sr2]
   (let [c1 (if (= coord :x) :x1 :y1)
@@ -174,8 +175,7 @@
     (if (mth/finite? min-snap) [0 min-snap] nil)))
 
 (defn search-snap-distance [selrect coord shapes-lt shapes-gt zoom]
-  (->> shapes-lt
-       (rx/combine-latest vector shapes-gt)
+  (->> (rx/combine-latest shapes-lt shapes-gt)
        (rx/map (fn [[shapes-lt shapes-gt]]
                  (calculate-snap coord selrect shapes-lt shapes-gt zoom)))))
 
@@ -203,7 +203,8 @@
                              (d/mapm #(select-shapes-area page-id shapes objects %2)))
                   snap-x (search-snap-distance selrect :x (:left areas) (:right areas) zoom)
                   snap-y (search-snap-distance selrect :y (:top areas) (:bottom areas) zoom)]
-              (rx/combine-latest snap->vector snap-y snap-x)))))))
+              (rx/combine-latest snap-x snap-y))))
+         (rx/map snap->vector))))
 
 (defn closest-snap-point
   [page-id shapes layout zoom point]
@@ -331,3 +332,18 @@
       (update :y first)
       (gpt/point)))
 
+
+(defn correct-snap-point
+  "Snaps a position given an old snap to a different position. We use this to provide a temporal
+  snap while the new is being processed."
+  [[position [snap-pos snap-delta]]]
+  (let [dx (if (not= 0 (:x snap-delta))
+             (- (+ (:x snap-pos) (:x snap-delta)) (:x position))
+             0)
+        dy (if (not= 0 (:y snap-delta))
+             (- (+ (:y snap-pos) (:y snap-delta)) (:y position))
+             0)]
+
+    (cond-> position
+      (<= (mth/abs dx) snap-accuracy) (update :x + dx)
+      (<= (mth/abs dy) snap-accuracy) (update :y + dy))))
