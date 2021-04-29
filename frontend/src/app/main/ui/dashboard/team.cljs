@@ -303,7 +303,7 @@
                                 (if (:is-default team)
                                   (tr "dashboard.your-penpot")
                                   (:name team))))
-        (st/emitf (dd/fetch-team-members team)
+        (st/emit! (dd/fetch-team-members team)
                   (dd/fetch-team-stats team))))
 
     [:*

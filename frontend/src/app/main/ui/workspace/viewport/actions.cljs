@@ -24,13 +24,12 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.alpha :as mf])
-  (:import goog.events.WheelEvent
-           goog.events.KeyCodes))
+  (:import goog.events.WheelEvent))
 
 (defn on-mouse-down
-  [{:keys [id blocked hidden type]} drawing-tool text-editing? edition edit-path selected]
+  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing? path-editing? drawing-path? create-comment?]
   (mf/use-callback
-   (mf/deps id blocked hidden type drawing-tool text-editing? edition edit-path selected)
+   (mf/deps id blocked hidden type selected edition drawing-tool text-editing? path-editing? drawing-path? create-comment?)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
                (dom/class? (dom/get-target bevent) "viewport-selrect"))
@@ -45,9 +44,7 @@
              middle-click? (= 2 (.-which event))
 
              frame? (= :frame type)
-             selected? (contains? selected id)
-
-             drawing-path? (= :draw (get-in edit-path [edition :edit-mode]))]
+             selected? (contains? selected id)]
 
          (when middle-click?
            (dom/prevent-default bevent)
@@ -62,13 +59,13 @@
            (when (and (not text-editing?)
                       (not blocked)
                       (not hidden)
-                      (not (#{:comments :path} drawing-tool))
+                      (not create-comment?)
                       (not drawing-path?))
              (cond
                drawing-tool
                (st/emit! (dd/start-drawing drawing-tool))
 
-               (and edit-path (contains? edit-path edition))
+               path-editing?
                ;; Handle path node area selection
                (st/emit! (dwdp/handle-selection shift?))
 
@@ -263,8 +260,7 @@
  (mf/use-callback
   (fn [event]
     (let [bevent  (.getBrowserEvent ^js event)
-          key     (.-keyCode ^js event)
-          key     (.normalizeKeyCode KeyCodes key)
+          key     (.-key ^js event)
           ctrl?   (kbd/ctrl? event)
           shift?  (kbd/shift? event)
           alt?    (kbd/alt? event)
@@ -284,8 +280,7 @@
 (defn on-key-up []
  (mf/use-callback
   (fn [event]
-    (let [key    (.-keyCode event)
-          key    (.normalizeKeyCode KeyCodes key)
+    (let [key    (.-key event)
           ctrl?  (kbd/ctrl? event)
           shift? (kbd/shift? event)
           alt?   (kbd/alt? event)

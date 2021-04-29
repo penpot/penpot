@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.path.tools
   (:require
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.state :as st]
@@ -32,7 +32,7 @@
              new-content (-> (tool-fn (:content shape) points)
                              (ups/close-subpaths))
              [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
-         (rx/of (dwc/commit-changes rch uch {:commit-local? true})))))))
+         (rx/of (dch/commit-changes rch uch {:commit-local? true})))))))
 
 (defn make-corner
   ([]

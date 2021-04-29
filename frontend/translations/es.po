@@ -1184,6 +1184,11 @@ msgstr "Enviar invitacion"
 msgid "modals.invite-member.title"
 msgstr "Invitar a unirse al equipo"
 
+msgid "modals.leave-and-reassign.forbiden"
+msgstr ""
+"No puede abandonar el equipo si no hay otro miembro al que promocionar a "
+"dueño. Quizás quiere borrar el equipo."
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr "Eres %s dueño."

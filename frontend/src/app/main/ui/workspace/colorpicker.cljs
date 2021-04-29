@@ -164,8 +164,12 @@
 
         on-select-library-color
         (fn [color]
-          (reset! state (data->state color))
-          (on-change color))
+          (let [editing-stop (:editing-stop @state)
+                is-gradient? (some? (:gradient color))]
+            (if (and (some? editing-stop) (not is-gradient?))
+              (handle-change-color (color->components (:color color) (:opacity color)))
+              (do (reset! state (data->state color))
+                  (on-change color)))))
 
         on-add-library-color
         (fn [color]

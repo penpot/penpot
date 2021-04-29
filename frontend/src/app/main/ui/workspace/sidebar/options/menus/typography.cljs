@@ -207,7 +207,7 @@
 
 
 (mf/defc typography-entry
-  [{:keys [typography read-only? selected? on-select on-change on-detach on-context-menu editting? focus-name? file]}]
+  [{:keys [typography read-only? selected? on-click on-change on-detach on-context-menu editting? focus-name? file]}]
   (let [locale (mf/deref i18n/locale)
         open? (mf/use-state editting?)
         hover-detach (mf/use-state false)
@@ -241,8 +241,8 @@
      [:div.element-set-options-group.typography-entry
       {:class (when selected? "selected")}
       [:div.typography-selection-wrapper
-       {:class (when on-select "is-selectable")
-        :on-click on-select
+       {:class (when on-click "is-selectable")
+        :on-click on-click
         :on-context-menu on-context-menu}
        [:div.typography-sample
         {:style {:font-family (:font-family typography)

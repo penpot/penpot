@@ -46,7 +46,7 @@
         (mf/use-callback
          (mf/deps top (:offset @local))
          (fn [node]
-           (when (and node (not fixed?))
+           (when (some? node)
              (let [{node-height :height}   (dom/get-bounding-rect node)
                    {window-height :height} (dom/get-window-size)
                    target-offset (if (> (+ top node-height) window-height)

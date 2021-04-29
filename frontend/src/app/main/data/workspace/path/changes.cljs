@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.path.changes
   (:require
    [app.common.spec :as us]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.spec :as spec]
    [app.main.data.workspace.path.state :as st]
@@ -67,7 +67,7 @@
            (let [shape (get-in state (st/get-path state))
                  page-id (:current-page-id state)
                  [rch uch] (generate-path-changes page-id shape old-content (:content shape))]
-             (rx/of (dwc/commit-changes rch uch {:commit-local? true})))
+             (rx/of (dch/commit-changes rch uch {:commit-local? true})))
            (rx/empty)))))))
 
 

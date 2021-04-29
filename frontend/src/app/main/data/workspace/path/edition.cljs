@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.helpers :as helpers]
@@ -60,49 +60,65 @@
 
             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
 
-        (rx/of (dwc/commit-changes rch uch {:commit-local? true})
+        (rx/of (dch/commit-changes rch uch {:commit-local? true})
                (selection/update-selection point-change)
                (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler)))))))
 
+(defn modify-content-point
+  [content {dx :x dy :y} modifiers point]
+  (let [point-indices (upc/point-indices content point) ;; [indices]
+        handler-indices (upc/handler-indices content point) ;; [[index prefix]]
+
+        modify-point
+        (fn [modifiers index]
+          (-> modifiers
+              (update index assoc :x dx :y dy)))
+
+        modify-handler
+        (fn [modifiers [index prefix]]
+          (let [cx (d/prefix-keyword prefix :x)
+                cy (d/prefix-keyword prefix :y)]
+            (-> modifiers
+                (update index assoc cx dx cy dy))))]
+
+    (as-> modifiers $
+      (reduce modify-point   $ point-indices)
+      (reduce modify-handler $ handler-indices))))
+
+(defn set-move-modifier
+  [points move-modifier]
+  (ptk/reify ::set-modifiers
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (st/get-path-id state)
+            content (get-in state (st/get-path state :content))
+            modifiers-reducer (partial modify-content-point content move-modifier)
+            content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers] {})
+            content-modifiers (->> points
+                                   (reduce modifiers-reducer content-modifiers))]
+
+        (-> state
+            (assoc-in [:workspace-local :edit-path id :content-modifiers] content-modifiers))))))
+
 (defn move-selected-path-point [from-point to-point]
-  (letfn [(modify-content-point [content {dx :x dy :y} modifiers point]
-            (let [point-indices (upc/point-indices content point) ;; [indices]
-                  handler-indices (upc/handler-indices content point) ;; [[index prefix]]
+  (ptk/reify ::move-point
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (st/get-path-id state)
+            content (get-in state (st/get-path state :content))
+            delta (gpt/subtract to-point from-point)
 
-                  modify-point
-                  (fn [modifiers index]
-                    (-> modifiers
-                        (update index assoc :x dx :y dy)))
+            modifiers-reducer (partial modify-content-point content delta)
 
-                  modify-handler
-                  (fn [modifiers [index prefix]]
-                    (let [cx (d/prefix-keyword prefix :x)
-                          cy (d/prefix-keyword prefix :y)]
-                      (-> modifiers
-                          (update index assoc cx dx cy dy))))]
+            points (get-in state [:workspace-local :edit-path id :selected-points] #{})
 
-              (as-> modifiers $
-                (reduce modify-point   $ point-indices)
-                (reduce modify-handler $ handler-indices))))]
+            modifiers (get-in state [:workspace-local :edit-path id :content-modifiers] {})
+            modifiers (->> points
+                           (reduce modifiers-reducer modifiers))]
 
-    (ptk/reify ::move-point
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [id (st/get-path-id state)
-              content (get-in state (st/get-path state :content))
-              delta (gpt/subtract to-point from-point)
-
-              modifiers-reducer (partial modify-content-point content delta)
-
-              points (get-in state [:workspace-local :edit-path id :selected-points] #{})
-
-              modifiers (get-in state [:workspace-local :edit-path id :content-modifiers] {})
-              modifiers (->> points
-                             (reduce modifiers-reducer {}))]
-
-          (-> state
-              (assoc-in [:workspace-local :edit-path id :moving-nodes] true)
-              (assoc-in [:workspace-local :edit-path id :content-modifiers] modifiers)))))))
+        (-> state
+            (assoc-in [:workspace-local :edit-path id :moving-nodes] true)
+            (assoc-in [:workspace-local :edit-path id :content-modifiers] modifiers))))))
 
 (declare drag-selected-points)
 
@@ -126,7 +142,6 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper (->> stream (rx/filter ms/mouse-up?))
-            zoom (get-in state [:workspace-local :zoom])
             id (get-in state [:workspace-local :edition])
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
 
@@ -142,6 +157,73 @@
               (rx/take-until stopper)
               (rx/map #(move-selected-path-point start-position %)))
          (rx/of (apply-content-modifiers)))))))
+
+(defn- get-displacement
+  "Retrieve the correct displacement delta point for the
+  provided direction speed and distances thresholds."
+  [direction]
+  (case direction
+    :up (gpt/point 0 (- 1))
+    :down (gpt/point 0 1)
+    :left (gpt/point (- 1) 0)
+    :right (gpt/point 1 0)))
+
+(defn finish-move-selected []
+  (ptk/reify ::move-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (get-in state [:workspace-local :edition])]
+        (-> state
+            (update-in [:workspace-local :edit-path id] dissoc :current-move))))))
+
+(defn move-selected
+  [direction shift?]
+
+  (let [same-event (js/Symbol "same-event")]
+    (ptk/reify ::move-selected
+      IDeref
+      (-deref [_] direction)
+
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [id (get-in state [:workspace-local :edition])
+              current-move (get-in state [:workspace-local :edit-path id :current-move])]
+          (if (nil? current-move)
+            (-> state
+                (assoc-in [:workspace-local :edit-path id :moving-nodes] true)
+                (assoc-in [:workspace-local :edit-path id :current-move] same-event))
+            state)))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [id (get-in state [:workspace-local :edition])
+              current-move (get-in state [:workspace-local :edit-path id :current-move])]
+          (if (= same-event current-move)
+            (let [points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+
+                  move-events (->> stream
+                                   (rx/filter (ptk/type? ::move-selected))
+                                   (rx/filter #(= direction (deref %))))
+
+                  stopper (->> move-events (rx/debounce 100) (rx/take 1))
+
+                  scale (if shift? (gpt/point 10) (gpt/point 1))
+
+                  mov-vec (gpt/multiply (get-displacement direction) scale)]
+
+              (rx/concat
+               (rx/merge
+                (->> move-events
+                     (rx/take-until stopper)
+                     (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
+                     (rx/map #(set-move-modifier points %)))
+
+                ;; First event is not read by the stream so we need to send it again
+                (rx/of (move-selected direction shift?)))
+
+               (rx/of (apply-content-modifiers)
+                      (finish-move-selected))))
+            (rx/empty)))))))
 
 (defn start-move-handler
   [index prefix]

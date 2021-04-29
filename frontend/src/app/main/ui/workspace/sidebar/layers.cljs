@@ -285,27 +285,30 @@
                :objects objects
                :key id}])))]]))
 
+(defn- strip-obj-data [obj]
+  (select-keys obj [:id
+                    :name
+                    :blocked
+                    :hidden
+                    :shapes
+                    :type
+                    :content
+                    :parent-id
+                    :component-id
+                    :component-file
+                    :shape-ref
+                    :touched
+                    :metadata
+                    :masked-group?]))
+
 (defn- strip-objects
   [objects]
-  (let [strip-data #(select-keys % [:id
-                                    :name
-                                    :blocked
-                                    :hidden
-                                    :shapes
-                                    :type
-                                    :content
-                                    :parent-id
-                                    :component-id
-                                    :component-file
-                                    :shape-ref
-                                    :touched
-                                    :metadata
-                                    :masked-group?])]
-    (persistent!
-     (reduce-kv (fn [res id obj]
-                  (assoc! res id (strip-data obj)))
-                (transient {})
-                objects))))
+  (persistent!
+   (->> objects
+        (reduce-kv
+         (fn [res id obj]
+           (assoc! res id (strip-obj-data obj)))
+         (transient {})))))
 
 (mf/defc layers-tree-wrapper
   {::mf/wrap-props false

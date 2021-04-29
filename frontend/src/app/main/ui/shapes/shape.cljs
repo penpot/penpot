@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.shape
   (:require
+   [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.filters :as filters]
@@ -23,7 +24,10 @@
         render-id      (mf/use-memo #(str (uuid/next)))
         filter-id      (str "filter_" render-id)
         styles         (-> (obj/new)
-                           (obj/set! "pointerEvents" pointer-events))
+                           (obj/set! "pointerEvents" pointer-events)
+
+                           (cond-> (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
+                             (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
 
         {:keys [x y width height type]} shape
         frame? (= :frame type)

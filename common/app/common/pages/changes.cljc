@@ -31,7 +31,7 @@
    ;; When verify? false we spec the schema validation. Currently used to make just
    ;; 1 validation even if the changes are applied twice
    (when verify?
-     (us/verify ::spec/changes items))
+     (us/assert ::spec/changes items))
 
    (let [pages (into #{} (map :page-id) items)
          result (->> items

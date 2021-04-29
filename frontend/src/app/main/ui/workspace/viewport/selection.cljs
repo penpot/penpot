@@ -19,7 +19,6 @@
    [app.main.streams :as ms]
    [app.main.ui.cursors :as cur]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.workspace.viewport.outline :refer [outline]]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [app.util.data :as d]
    [app.util.debug :refer [debug?]]
@@ -255,7 +254,6 @@
                            :zoom zoom
                            :color color
                            :on-move-selected on-move-selected}]
-       [:& outline {:shape shape :color color}]
 
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect shape zoom)]

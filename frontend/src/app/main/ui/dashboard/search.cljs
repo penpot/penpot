@@ -31,9 +31,10 @@
                               (if (:is-default team)
                                 (t locale "dashboard.your-penpot")
                                 (:name team))))
-       (st/emit! (dd/search-files {:team-id (:id team)
-                                   :search-term search-term})
-                 (dd/clear-selected-files))))
+       (when search-term
+         (st/emit! (dd/search-files {:team-id (:id team)
+                                     :search-term search-term})
+                   (dd/clear-selected-files)))))
 
     [:*
      [:header.dashboard-header

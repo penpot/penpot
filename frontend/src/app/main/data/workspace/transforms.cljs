@@ -14,7 +14,9 @@
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -140,7 +142,7 @@
                                    (filter #(= :text (:type %)))
                                    (map :id))]
           (rx/concat
-           (rx/of (dwc/update-shapes text-shapes-ids #(assoc % :grow-type :fixed)))
+           (rx/of (dch/update-shapes text-shapes-ids #(assoc % :grow-type :fixed)))
            (->> ms/mouse-position
                 (rx/with-latest vector ms/mouse-position-shift)
                 (rx/map normalize-proportion-lock)
@@ -259,9 +261,9 @@
                               :shapes [(:id shape)]})))]
 
         (when-not (empty? rch)
-          (rx/of dwc/pop-undo-into-transaction
-                 (dwc/commit-changes rch uch {:commit-local? true})
-                 (dwc/commit-undo-transaction)
+          (rx/of dwu/pop-undo-into-transaction
+                 (dch/commit-changes rch uch {:commit-local? true})
+                 (dwu/commit-undo-transaction)
                  (dwc/expand-collapse frame-id)))))))
 
 (defn start-move
@@ -452,35 +454,13 @@
   (ptk/reify ::apply-modifiers
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id  (:current-page-id state)
-
-            objects0 (get-in state [:workspace-file :data :pages-index page-id :objects])
-            objects1 (get-in state [:workspace-data :pages-index page-id :objects])
-
-            ;; ID's + Children ID's
-            ids-with-children (d/concat [] (mapcat #(cp/get-children % objects1) ids) ids)
-
-            ;; For each shape applies the modifiers by transforming the objects
-            update-shape #(update %1 %2 gsh/transform-shape)
-            objects2 (reduce update-shape objects1 ids-with-children)
-
-            regchg   {:type :reg-objects
-                      :page-id page-id
-                      :shapes (vec ids)}
-
-            ;; we need to generate redo chages from current
-            ;; state (with current temporal values) to new state but
-            ;; the undo should be calculated from clear current
-            ;; state (without temporal values in it, for this reason
-            ;; we have 3 different objects references).
-
-            rchanges (conj (dwc/generate-changes page-id objects1 objects2) regchg)
-            uchanges (conj (dwc/generate-changes page-id objects2 objects0) regchg)]
-
-        (rx/of (dwc/start-undo-transaction)
-               (dwc/commit-changes rchanges uchanges {:commit-local? true})
+      (let [objects (dwc/lookup-page-objects state)
+            children-ids (->> ids (mapcat #(cp/get-children % objects)))
+            ids-with-children (d/concat [] children-ids ids)]
+        (rx/of (dwu/start-undo-transaction)
+               (dch/update-shapes ids-with-children gsh/transform-shape {:reg-objects? true})
                (clear-local-transform)
-               (dwc/commit-undo-transaction))))))
+               (dwu/commit-undo-transaction))))))
 
 ;; --- Update Dimensions
 

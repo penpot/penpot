@@ -28,6 +28,17 @@
 - Fix problem with pan and space [#811](https://github.com/penpot/penpot/issues/811)
 - Fix issue when parsing exponential numbers in paths
 - Remove legacy system user and team [#843](https://github.com/penpot/penpot/issues/843)
+- Fix ordering of copy pasted objects [Taiga #1618](https://tree.taiga.io/project/penpot/issue/1617)
+- Fix problems with blending modes [#837](https://github.com/penpot/penpot/issues/837)
+- Fix problem with zoom an selection rect [#845](https://github.com/penpot/penpot/issues/845)
+- Fix problem displaying team statistics [#859](https://github.com/penpot/penpot/issues/859)
+- Fix problems with text editor selection [Taiga #1546](https://tree.taiga.io/project/penpot/issue/1546)
+- Fix problem when opening the context menu in dashboard at the bottom [#856](https://github.com/penpot/penpot/issues/856)
+- Fix problem when clicking an interactive group in view mode [#863](https://github.com/penpot/penpot/issues/863)
+- Fix visibility of pages in sitemap when changing page [Taiga #1618](https://tree.taiga.io/project/penpot/issue/1618)
+- Fix visual problem with group invite [Taiga #1290](https://tree.taiga.io/project/penpot/issue/1290)
+- Fix issues with promote owner panel [Taiga #763](https://tree.taiga.io/project/penpot/issue/763)
+- Allow use library colors when defining gradients [Taiga #1614](https://tree.taiga.io/project/penpot/issue/1614)
 
 ### :arrow_up: Deps updates
 

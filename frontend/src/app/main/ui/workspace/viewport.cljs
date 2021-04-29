@@ -95,10 +95,12 @@
         ;; Only when we have all the selected shapes in one frame
         selected-frame    (when (= (count selected-frames) 1) (get objects (first selected-frames)))
 
+
+        create-comment?   (= :comments drawing-tool)
         drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
-        text-editing?     (and edition (= :text (get-in objects [edition :type])))
         path-editing?     (and edition (= :path (get-in objects [edition :type])))
+        text-editing?     (and edition (= :text (get-in objects [edition :type])))
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool)
         on-context-menu   (actions/on-context-menu hover)
@@ -106,7 +108,7 @@
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file viewport-ref zoom)
-        on-mouse-down     (actions/on-mouse-down @hover drawing-tool text-editing? edition edit-path selected)
+        on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? path-editing? drawing-path? create-comment?)
         on-mouse-up       (actions/on-mouse-up disable-paste)
         on-pointer-down   (actions/on-pointer-down)
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)

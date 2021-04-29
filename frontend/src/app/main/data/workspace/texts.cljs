@@ -15,6 +15,8 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.fonts :as fonts]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
@@ -77,8 +79,8 @@
              (when (and (not= content (:content shape))
                         (some? (:current-page-id state)))
                (rx/of
-                (dwc/update-shapes [id] #(assoc % :content content))
-                (dwc/commit-undo-transaction)))))
+                (dch/update-shapes [id] #(assoc % :content content))
+                (dwu/commit-undo-transaction)))))
           (rx/of (dws/deselect-shape id)
                  (dwc/delete-shapes [id])))))))
 
@@ -141,7 +143,7 @@
             shape-ids (cond (= (:type shape) :text)  [id]
                             (= (:type shape) :group) (cp/get-children id objects))]
 
-        (rx/of (dwc/update-shapes shape-ids update-fn))))))
+        (rx/of (dch/update-shapes shape-ids update-fn))))))
 
 (defn update-paragraph-attrs
   [{:keys [id attrs]}]
@@ -169,7 +171,7 @@
                 shape-ids (cond (= (:type shape) :text)  [id]
                                 (= (:type shape) :group) (cp/get-children id objects))]
 
-            (rx/of (dwc/update-shapes shape-ids update-fn))))))))
+            (rx/of (dch/update-shapes shape-ids update-fn))))))))
 
 (defn update-text-attrs
   [{:keys [id attrs]}]
@@ -187,7 +189,7 @@
               update-fn #(update-shape % txt/is-text-node? attrs/merge attrs)
               shape-ids (cond (= (:type shape) :text)  [id]
                               (= (:type shape) :group) (cp/get-children id objects))]
-          (rx/of (dwc/update-shapes shape-ids update-fn)))))))
+          (rx/of (dch/update-shapes shape-ids update-fn)))))))
 
 ;; --- RESIZE UTILS
 
@@ -218,58 +220,41 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-
-            objects0 (get-in state [:workspace-file :data :pages-index page-id :objects])
-            objects1 (get-in state [:workspace-data :pages-index page-id :objects])]
-        (if-not (every? #(contains? objects1(first %)) changes)
+            objects (get-in state [:workspace-data :pages-index page-id :objects])]
+        (if-not (every? #(contains? objects(first %)) changes)
           (rx/empty)
-          (let [change-text-shape
-                (fn [objects [id [new-width new-height]]]
-                  (when (contains? objects id)
-                    (let [shape (get objects id)
-                          {:keys [selrect grow-type overflow-text]} (gsh/transform-shape shape)
-                          {shape-width :width shape-height :height} selrect
 
-                          modifier-width (gsh/resize-modifiers shape :width new-width)
-                          modifier-height (gsh/resize-modifiers shape :height new-height)
+          (let [changes-map (->> changes (into {}))
+                ids (keys changes-map)
+                update-fn
+                (fn [shape]
+                  (let [[new-width new-height] (get changes-map (:id shape))
+                        {:keys [selrect grow-type overflow-text]} (gsh/transform-shape shape)
+                        {shape-width :width shape-height :height} selrect
 
-                          shape (cond-> shape
-                                  (and overflow-text (not= :fixed grow-type))
-                                  (assoc :overflow-text false)
+                        modifier-width (gsh/resize-modifiers shape :width new-width)
+                        modifier-height (gsh/resize-modifiers shape :height new-height)]
 
-                                  (and (= :fixed grow-type) (not overflow-text) (> new-height shape-height))
-                                  (assoc :overflow-text true)
+                    (cond-> shape
+                      (and overflow-text (not= :fixed grow-type))
+                      (assoc :overflow-text false)
 
-                                  (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
-                                  (assoc :overflow-text false)
+                      (and (= :fixed grow-type) (not overflow-text) (> new-height shape-height))
+                      (assoc :overflow-text true)
 
-                                  (and (not-changed? shape-width new-width) (= grow-type :auto-width))
-                                  (-> (assoc :modifiers modifier-width)
-                                      (gsh/transform-shape))
+                      (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
+                      (assoc :overflow-text false)
 
-                                  (and (not-changed? shape-height new-height)
-                                       (or (= grow-type :auto-height) (= grow-type :auto-width)))
-                                  (-> (assoc :modifiers modifier-height)
-                                      (gsh/transform-shape)))]
-                      (assoc objects id shape))))
+                      (and (not-changed? shape-width new-width) (= grow-type :auto-width))
+                      (-> (assoc :modifiers modifier-width)
+                          (gsh/transform-shape))
 
-                undo-transaction (get-in state [:workspace-undo :transaction])
-                objects2 (->> changes (reduce change-text-shape objects1))
+                      (and (not-changed? shape-height new-height)
+                           (or (= grow-type :auto-height) (= grow-type :auto-width)))
+                      (-> (assoc :modifiers modifier-height)
+                          (gsh/transform-shape)))))]
 
-                regchg   {:type :reg-objects
-                          :page-id page-id
-                          :shapes (vec (keys changes))}
-
-                rchanges (dwc/generate-changes page-id objects1 objects2)
-                uchanges (dwc/generate-changes page-id objects2 objects0)]
-
-            (if (seq rchanges)
-              (rx/concat
-               (when-not undo-transaction
-                 (rx/of (dwc/start-undo-transaction)))
-               (rx/of (dwc/commit-changes (conj rchanges regchg) (conj uchanges regchg) {:commit-local? true}))
-               (when-not undo-transaction
-                 (rx/of (dwc/discard-undo-transaction)))))))))))
+            (rx/of (dch/update-shapes ids update-fn {:reg-objects? true}))))))))
 
 ;; When a resize-event arrives we start "buffering" for a time
 ;; after that time we invoke `resize-text-batch` with all the changes
