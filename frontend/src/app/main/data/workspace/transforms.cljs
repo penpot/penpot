@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.transforms
   "Events related with shapes transformations"
   (:require
+   [app.common.math :as mth]
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -70,8 +71,11 @@
                 :bottom-left [ex sy])]
     (gpt/point x y)))
 
-(defn finish-transform [state]
-  (update state :workspace-local dissoc :transform))
+(defn finish-transform []
+  (ptk/reify ::finish-transform
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :transform))))
 
 ;; -- RESIZE
 (defn start-resize
@@ -152,7 +156,7 @@
                 (rx/mapcat (partial resize shape initial-position resizing-shapes))
                 (rx/take-until stoper))
            (rx/of (apply-modifiers ids)
-                  finish-transform)))))))
+                  (finish-transform))))))))
 
 
 (defn start-rotate
@@ -190,7 +194,7 @@
                           (set-rotation delta-angle shapes group-center))))
               (rx/take-until stoper))
          (rx/of (apply-modifiers (map :id shapes))
-                finish-transform))))))
+                (finish-transform)))))))
 
 ;; -- MOVE
 
@@ -291,19 +295,23 @@
                            (rx/map #(gpt/to-vec from-position %)))
 
              snap-delta (->> position
-                             (rx/switch-map #(snap/closest-snap-move page-id shapes objects layout zoom %)))]
+                             (rx/throttle 20)
+                             (rx/switch-map
+                              (fn [pos]
+                                (->> (snap/closest-snap-move page-id shapes objects layout zoom pos)
+                                     (rx/map #(vector pos %))))))]
          (if (empty? shapes)
            (rx/empty)
            (rx/concat
-            (->> snap-delta
-                 (rx/with-latest vector position)
-                 (rx/map (fn [[delta pos]] (-> (gpt/add pos delta) (gpt/round 0))))
+            (->> position
+                 (rx/with-latest vector snap-delta)
+                 (rx/map snap/correct-snap-point)
                  (rx/map start-local-displacement))
 
             (rx/of (set-modifiers ids)
                    (apply-modifiers ids)
                    (calculate-frame-for-move ids)
-                   finish-transform))))))))
+                   (finish-transform)))))))))
 
 (defn- get-displacement-with-grid
   "Retrieve the correct displacement delta point for the
@@ -372,7 +380,7 @@
 
              (rx/of (set-modifiers selected)
                     (apply-modifiers selected)
-                    finish-transform)))
+                    (finish-transform))))
             (rx/empty))))))
 
 

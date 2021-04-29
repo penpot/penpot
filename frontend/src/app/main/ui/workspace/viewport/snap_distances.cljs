@@ -233,9 +233,8 @@
                                       (rx/map #(set/difference % selected))
                                       (rx/map #(->> % (map (partial get @refs/workspace-page-objects)))))
                                  (rx/of nil))))]
-
-            (->> (query-side lt-side)
-                 (rx/combine-latest vector (query-side gt-side)))))
+            (rx/combine-latest (query-side lt-side)
+                               (query-side gt-side))))
 
         [lt-shapes gt-shapes] @to-measure
 
