@@ -120,6 +120,7 @@
                      'app.rpc.queries.profile
                      'app.rpc.queries.recent-files
                      'app.rpc.queries.viewer
+                     'app.rpc.queries.fonts
                      'app.rpc.queries.svg)
          (map (partial process-method cfg))
          (into {}))))
@@ -143,6 +144,7 @@
                      'app.rpc.mutations.teams
                      'app.rpc.mutations.management
                      'app.rpc.mutations.ldap
+                     'app.rpc.mutations.fonts
                      'app.rpc.mutations.verify-token)
          (map (partial process-method cfg))
          (into {}))))

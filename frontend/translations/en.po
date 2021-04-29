@@ -1,25 +1,68 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Free Software Foundation, Inc.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-# 
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2021-04-22 13:43+0200\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2021-04-14 13:44+0000\n"
+"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
+"Language-Team: Spanish "
+"<https://hosted.weblate.org/projects/penpot/frontend/en/>\n"
+"Language: es\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.6-dev\n"
 
-# ~ msgid ""
-# ~ msgstr ""
-# ~ "Language: en\n"
-# ~ "MIME-Version: 1.0\n"
-# ~ "Content-Type: text/plain; charset=utf-8\n"
-# ~ "Content-Transfer-Encoding: 8bit\n"
-# ~ "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Fonts - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Font Providers - %s - Penpot"
+
+msgid "labels.upload"
+msgstr "Upload"
+
+msgid "labels.uploading"
+msgstr "Uploading..."
+
+msgid "modals.delete-font.title"
+msgstr "Deleting font"
+
+msgid "modals.delete-font.message"
+msgstr "Are you sure you want to delete this font? It will not load if is used in a file."
+
+msgid "labels.fonts"
+msgstr "Fonts"
+
+msgid "labels.installed-fonts"
+msgstr "Installed fonts"
+
+msgid "labels.font-family"
+msgstr "Font Family"
+
+msgid "labels.font-variant"
+msgstr "Style"
+
+msgid "labels.custom-fonts"
+msgstr "Custom fonts"
+
+msgid "labels.search-font"
+msgstr "Search font"
+
+msgid "labels.font-providers"
+msgstr "Font providers"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Upload custom fonts"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr "Any web font you upload here will be added to the font family list available at the text properties of the files of this team. Fonts with the same font family name will be grouped as a **single font family**. You can upload fonts with the following formats: **TTF, OTF and WOFF** (only one will be needed)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr "You should only upload fonts you own or have license to use in Penpot. Find out more in the Content rights section of [Penpot's Terms of Service](https://penpot.app/terms.html). You also might want to read about [font licensing](2)."
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
 msgstr "Already have an account?"

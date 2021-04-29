@@ -122,10 +122,15 @@
    :app.rlimits/image
    (cf/get :rlimits-image)
 
+   ;; RLimit definition for font processing
+   :app.rlimits/font
+   (cf/get :rlimits-font 2)
+
    ;; A collection of rlimits as hash-map.
    :app.rlimits/all
    {:password (ig/ref :app.rlimits/password)
-    :image    (ig/ref :app.rlimits/image)}
+    :image    (ig/ref :app.rlimits/image)
+    :font     (ig/ref :app.rlimits/font)}
 
    :app.rpc/rpc
    {:pool       (ig/ref :app.db/pool)

@@ -284,7 +284,7 @@
   ([matches other]
    (let [merge-coord
          (fn [matches other]
-           
+
            (let [matches (into {} matches)
                  other (into {} other)
                  keys (set/union (keys matches) (keys other))]
@@ -305,7 +305,7 @@
           (if (< (mth/abs cur-val) (mth/abs other-val))
             current
             other))
-        
+
         min-match-coord
         (fn [matches]
           (if (and (seq matches) (not (empty? matches)))

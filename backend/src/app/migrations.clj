@@ -166,6 +166,9 @@
 
    {:name "0052-del-legacy-user-and-team"
     :fn (mg/resource "app/migrations/sql/0052-del-legacy-user-and-team.sql")}
+
+   {:name "0053-add-team-font-variant-table"
+    :fn (mg/resource "app/migrations/sql/0053-add-team-font-variant-table.sql")}
    ])
 
 

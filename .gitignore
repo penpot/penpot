@@ -26,6 +26,7 @@ node_modules
 /frontend/out/
 /frontend/.shadow-cljs
 /frontend/resources/public/*
+/frontend/resources/fonts/experiments
 /exporter/target
 /exporter/.shadow-cljs
 /docker/images/bundle*

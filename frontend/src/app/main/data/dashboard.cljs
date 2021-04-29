@@ -99,8 +99,6 @@
         (->> (rp/query :team-stats {:team-id id})
              (rx/map #(partial fetched %)))))))
 
-;; --- Fetch Projects
-
 (defn fetch-projects
   [{:keys [team-id] :as params}]
   (us/assert ::us/uuid team-id)
@@ -122,8 +120,6 @@
         (rx/merge (ptk/watch (fetch-team params) state stream)
                   (ptk/watch (fetch-projects {:team-id id}) state stream)
                   (ptk/watch (du/fetch-users {:team-id id}) state stream))))))
-
-;; --- Search Files
 
 (s/def :internal.event.search-files/team-id ::us/uuid)
 (s/def :internal.event.search-files/search-term (s/nilable ::us/string))
@@ -149,8 +145,6 @@
         (->> (rp/query :search-files params)
              (rx/map #(partial fetched %)))))))
 
-;; --- Fetch Files
-
 (defn fetch-files
   [{:keys [project-id] :as params}]
   (us/assert ::us/uuid project-id)
@@ -162,8 +156,6 @@
         (->> (rp/query :files params)
              (rx/map #(partial fetched %)))))))
 
-;; --- Fetch Shared Files
-
 (defn fetch-shared-files
   [{:keys [team-id] :as params}]
   (us/assert ::us/uuid team-id)
@@ -174,8 +166,6 @@
       (watch [_ state stream]
         (->> (rp/query :shared-files {:team-id team-id})
              (rx/map #(partial fetched %)))))))
-
-;; --- Fetch recent files
 
 (declare recent-files-fetched)
 

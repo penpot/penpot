@@ -90,6 +90,8 @@
     ["/settings"             :dashboard-team-settings]
     ["/projects"             :dashboard-projects]
     ["/search"               :dashboard-search]
+    ["/fonts"                :dashboard-fonts]
+    ["/fonts/providers"      :dashboard-font-providers]
     ["/libraries"            :dashboard-libraries]
     ["/projects/:project-id" :dashboard-files]]
 
@@ -135,12 +137,11 @@
       :dashboard-projects
       :dashboard-files
       :dashboard-libraries
+      :dashboard-fonts
+      :dashboard-font-providers
       :dashboard-team-members
       :dashboard-team-settings)
-     [:*
-      #_[:div.modal-wrapper
-         [:& app.main.ui.onboarding/release-notes-modal {:version "1.4"}]]
-      [:& dashboard {:route route}]]
+     [:& dashboard {:route route}]
 
      :viewer
      (let [index   (get-in route [:query-params :index])

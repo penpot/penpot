@@ -10,6 +10,7 @@
    [app.config :as cfg]
    [app.util.globals :as globals]
    [app.util.storage :refer [storage]]
+   [app.util.object :as obj]
    [app.util.transit :as t]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -135,6 +136,13 @@
 (defn tr
   ([code] (t @locale code))
   ([code & args] (apply t @locale code args)))
+
+(mf/defc tr-html
+  {::mf/wrap-props false}
+  [props]
+  (let [label    (obj/get props "label")
+        tag-name (obj/get props "tag-name" "p")]
+    [:> tag-name {:dangerouslySetInnerHTML #js {:__html (tr label)}}]))
 
 ;; DEPRECATED
 (defn use-locale

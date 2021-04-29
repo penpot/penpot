@@ -29,6 +29,10 @@
   [file]
   (file-reader #(.readAsText %1 file)))
 
+(defn read-file-as-array-buffer
+  [file]
+  (file-reader #(.readAsArrayBuffer %1 file)))
+
 (defn read-file-as-data-url
   [file]
   (file-reader #(.readAsDataURL ^js %1 file)))

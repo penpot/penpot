@@ -11,6 +11,68 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 4.6-dev\n"
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Fuentes - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Proveedores de fuentes - %s - Penpot"
+
+msgid "labels.upload"
+msgstr "Subir"
+
+msgid "labels.uploading"
+msgstr "Subiendo..."
+
+msgid "modals.delete-font.title"
+msgstr "Eliminando fuente"
+
+msgid "modals.delete-font.message"
+msgstr "Are you sure you want to delete this font? It will not load if is used in a file."
+msgstr "¿Estas seguro que quieres eliminar esta fuente? La fuente dejara de cargar si es usada en algun fichero."
+
+msgid "labels.fonts"
+msgstr "Fuentes"
+
+msgid "labels.installed-fonts"
+msgstr "Fuentes instaladas"
+
+msgid "labels.font-family"
+msgstr "Familia de fuente"
+
+msgid "labels.font-variant"
+msgstr "Estilo"
+
+msgid "labels.custom-fonts"
+msgstr "Fuentes personalizadas"
+
+msgid "labels.search-font"
+msgstr "Buscar fuente"
+
+msgid "labels.font-providers"
+msgstr "Proveedores de fuentes"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Subir fuente"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr "Any web font you upload here will be added to the font family list available at the text properties of the files of this team. Fonts with the same font family name will be grouped as a **single font family**. You can upload fonts with the following formats: **TTF, OTF and WOFF** (only one will be needed)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr "You should only upload fonts you own or have license to use in Penpot. Find out more in the Content rights section of [Penpot's Terms of Service](https://penpot.app/terms.html). You also might want to read about [font licensing](2)."
+
+
+
+
+
+
+
+
+
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
 msgstr "¿Tienes ya una cuenta?"
