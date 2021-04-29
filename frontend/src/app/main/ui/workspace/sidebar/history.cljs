@@ -286,7 +286,7 @@
      [:div.history-toolbox-title (t locale "workspace.undo.title")]
      (if (empty? entries)
        [:div.history-entry-empty
-        [:div.history-entry-empty-icon i/undo-history]
+        [:div.history-entry-empty-icon i/recent]
         [:div.history-entry-empty-msg (t locale "workspace.undo.empty")]]
        [:ul.history-entries
         (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]

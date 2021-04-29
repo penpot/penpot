@@ -127,7 +127,7 @@
         {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
          :class (when (contains? layout :document-history) "selected")
          :on-click (st/emitf (dw/go-to-layout :document-history))}
-        i/undo-history]
+        i/recent]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-palette))
          :class (when (contains? layout :colorpalette) "selected")

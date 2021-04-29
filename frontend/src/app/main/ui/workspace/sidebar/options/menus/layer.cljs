@@ -133,7 +133,7 @@
 
         (cond
           (or (= :multiple (:blocked values)) (not (:blocked values)))
-          [:div.element-set-actions-button {:on-click handle-set-blocked} i/lock-open]
+          [:div.element-set-actions-button {:on-click handle-set-blocked} i/unlock]
           
           :else
           [:div.element-set-actions-button {:on-click handle-set-unblocked} i/lock])]]]]))
