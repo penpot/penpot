@@ -359,3 +359,13 @@
           (and id (= :move mode)) (rx/of (common/finish-path "change-edit-mode"))
           (and id (= :draw mode)) (rx/of (start-draw-mode))
           :else (rx/empty))))))
+
+(defn reset-last-handler
+  []
+  (ptk/reify ::reset-last-handler
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (st/get-path-id state)]
+        (-> state
+            (assoc-in [:workspace-local :edit-path id :prev-handler] nil))))))
+
