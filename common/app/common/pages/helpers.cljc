@@ -160,27 +160,6 @@
     (when parent-id
       (lazy-seq (cons parent-id (get-parents parent-id objects))))))
 
-(defn generate-child-parent-index
-  [objects]
-  (reduce-kv
-   (fn [index id obj]
-     (assoc index id (:parent-id obj)))
-   {} objects))
-
-(defn generate-child-all-parents-index
-  "Creates an index where the key is the shape id and the value is a set
-  with all the parents"
-  ([objects]
-   (generate-child-all-parents-index objects (vals objects)))
-
-  ([objects shapes]
-   (let [shape->parents
-         (fn [shape]
-           (->> (get-parents (:id shape) objects)
-                (into [])))]
-     (->> shapes
-          (map #(vector (:id %) (shape->parents %)))
-          (into {})))))
 
 (defn clean-loops
   "Clean a list of ids from circular references."
@@ -347,40 +326,7 @@
               (reduce red-fn cur-idx (reverse (:shapes object)))))]
     (into {} (rec-index '() uuid/zero))))
 
-(defn calculate-z-index
-  "Given a collection of shapes calculates their z-index. Greater index
-  means is displayed over other shapes with less index."
-  [objects]
 
-  (let [is-frame? (fn [id] (= :frame (get-in objects [id :type])))
-        root-children (get-in objects [uuid/zero :shapes])
-        num-frames (->> root-children (filter is-frame?) count)]
-    (when (seq root-children)
-      (loop [current (peek root-children)
-             pending (pop root-children)
-             current-idx (+ (count objects) num-frames -1)
-             z-index {}]
-
-        (let [children (->> (get-in objects [current :shapes]))
-              children (cond
-                         (and (is-frame? current) (contains? z-index current))
-                         []
-
-                         (and (is-frame? current)
-                              (not (contains? z-index current)))
-                         (into [current] children)
-
-                         :else
-                         children)
-              pending (into (vec pending) children)]
-          (if (empty? pending)
-            (assoc z-index current current-idx)
-
-            (let []
-              (recur (peek pending)
-                     (pop pending)
-                     (dec current-idx)
-                     (assoc z-index current current-idx)))))))))
 
 (defn expand-region-selection
   "Given a selection selects all the shapes between the first and last in

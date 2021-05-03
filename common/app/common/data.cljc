@@ -461,3 +461,9 @@
         kw     (if (keyword? kw) (name kw) kw)]
     (keyword (str prefix kw))))
 
+
+(defn tap
+  "Simpilar to the tap in rxjs but for plain collections"
+  [f coll]
+  (f coll)
+  coll)
