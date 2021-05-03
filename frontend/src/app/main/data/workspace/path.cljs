@@ -18,6 +18,7 @@
 (d/export drawing/start-path-from-point)
 (d/export drawing/close-path-drag-start)
 (d/export drawing/change-edit-mode)
+(d/export drawing/reset-last-handler)
 
 ;; Edition
 (d/export edition/start-move-handler)

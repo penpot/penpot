@@ -40,8 +40,8 @@
                      :command "p"
                      :fn #(st/emit! (drp/change-edit-mode :draw))}
 
-   :add-node        {:tooltip "+"
-                     :command "+"
+   :add-node        {:tooltip (ds/shift "+")
+                     :command "shift++"
                      :fn #(st/emit! (drp/add-node))}
 
    :delete-node     {:tooltip (ds/supr)
@@ -88,7 +88,30 @@
                      :command [(ds/c-mod "shift+z") (ds/c-mod "y")]
                      :fn #(st/emit! (drp/redo-path))}
 
+   ;; ZOOM
+
+   :increase-zoom   {:tooltip "+"
+                     :command "+"
+                     :fn #(st/emit! (dw/increase-zoom nil))}
+
+   :decrease-zoom   {:tooltip "-"
+                     :command "-"
+                     :fn #(st/emit! (dw/decrease-zoom nil))}
+
+   :reset-zoom      {:tooltip (ds/shift "0")
+                     :command "shift+0"
+                     :fn #(st/emit! dw/reset-zoom)}
+
+   :fit-all         {:tooltip (ds/shift "1")
+                     :command "shift+1"
+                     :fn #(st/emit! dw/zoom-to-fit-all)}
+
+   :zoom-selected   {:tooltip (ds/shift "2")
+                     :command "shift+2"
+                     :fn #(st/emit! dw/zoom-to-selected-shape)}
+
    ;; Arrow movement
+
    :move-fast-up    {:tooltip (ds/shift ds/up-arrow)
                      :command "shift+up"
                      :fn #(st/emit! (drp/move-selected :up true))}

@@ -30,12 +30,14 @@
   (let [{:keys [x y]} position
 
         on-enter
-        (fn [event]
-          (st/emit! (drp/path-pointer-enter position)))
+        (mf/use-callback
+         (fn [event]
+           (st/emit! (drp/path-pointer-enter position))))
         
         on-leave
-        (fn [event]
-          (st/emit! (drp/path-pointer-leave position)))
+        (mf/use-callback
+         (fn [event]
+           (st/emit! (drp/path-pointer-leave position))))
 
         on-mouse-down
         (fn [event]
@@ -48,6 +50,9 @@
           (let [shift? (kbd/shift? event)
                 ctrl? (kbd/ctrl? event)]
             (cond
+              last-p?
+              (st/emit! (drp/reset-last-handler))
+
               (and (= edit-mode :move) ctrl? (not curve?))
               (st/emit! (drp/make-curve position))
 
@@ -81,8 +86,7 @@
                :on-mouse-down on-mouse-down
                :on-mouse-enter on-enter
                :on-mouse-leave on-leave
-               :style {:pointer-events (when last-p? "none")
-                       :cursor (cond
+               :style {:cursor (cond
                                  (= edit-mode :draw) cur/pen-node
                                  (= edit-mode :move) cur/pointer-node)
                        :fill "transparent"}}]]))
