@@ -20,41 +20,44 @@
 
 (defonce state (l/atom {}))
 
-(defn- index-object
-  [objects z-index parents-index masks-index index obj]
-  (let [{:keys [x y width height]} (:selrect obj)
-        shape-bound #js {:x x :y y :width width :height height}
+(defn index-shape
+  [objects parents-index masks-index]
+  (fn [index shape]
+    (let [{:keys [x y width height]} (:selrect shape)
+          shape-bound #js {:x x :y y :width width :height height}
 
-        parents (get parents-index (:id obj))
-        masks   (get masks-index (:id obj))
-        z       (get z-index (:id obj))
+          parents (get parents-index (:id shape))
+          masks   (get masks-index (:id shape))
 
-        frame   (when (and (not= :frame (:type obj))
-                           (not= (:frame-id obj) uuid/zero))
-                  (get objects (:frame-id obj)))]
-    (qdt/insert index
-                (:id obj)
-                shape-bound
-                (assoc obj :frame frame :masks masks :parents parents :z z))))
+          frame   (when (and (not= :frame (:type shape))
+                             (not= (:frame-id shape) uuid/zero))
+                    (get objects (:frame-id shape)))]
+      (qdt/insert index
+                  (:id shape)
+                  shape-bound
+                  (assoc shape :frame frame :masks masks :parents parents)))))
 
 (defn- create-index
   [objects]
   (let [shapes        (-> objects (dissoc uuid/zero) (vals))
-        z-index       (cp/calculate-z-index objects)
         parents-index (cp/generate-child-all-parents-index objects)
         masks-index   (cp/create-mask-index objects parents-index)
         bounds        (gsh/selection-rect shapes)
         bounds #js {:x (:x bounds)
                     :y (:y bounds)
                     :width (:width bounds)
-                    :height (:height bounds)}]
+                    :height (:height bounds)}
 
-    (reduce (partial index-object objects z-index parents-index masks-index)
-            (qdt/create bounds)
-            shapes)))
+        index (reduce (index-shape objects parents-index masks-index)
+                      (qdt/create bounds)
+                      shapes)
+
+        z-index (cp/calculate-z-index objects)]
+
+    {:index index :z-index z-index}))
 
 (defn- update-index
-  [index old-objects new-objects]
+  [{index :index z-index :z-index} old-objects new-objects]
 
   (let [changes? (fn [id]
                    (not= (get old-objects id)
@@ -66,18 +69,21 @@
                                      (keys new-objects)))
 
         shapes (->> changed-ids (mapv #(get new-objects %)) (filterv (comp not nil?)))
-        z-index       (cp/calculate-z-index new-objects)
         parents-index (cp/generate-child-all-parents-index new-objects shapes)
         masks-index   (cp/create-mask-index new-objects parents-index)
 
-        new-index (qdt/remove-all index changed-ids)]
+        new-index (qdt/remove-all index changed-ids)
 
-    (reduce (partial index-object new-objects z-index parents-index masks-index)
-            new-index
-            shapes)))
+        index (reduce (index-shape new-objects parents-index masks-index)
+                      new-index
+                      shapes)
+
+        z-index (cp/update-z-index z-index changed-ids old-objects new-objects)]
+
+    {:index index :z-index z-index}))
 
 (defn- query-index
-  [index rect frame-id include-frames? include-groups? disabled-masks reverse?]
+  [{index :index z-index :z-index} rect frame-id include-frames? include-groups? disabled-masks reverse?]
   (let [result (-> (qdt/search index (clj->js rect))
                    (es6-iterator-seq))
 
@@ -102,6 +108,11 @@
                (some (comp not overlaps?))
                not))
 
+        add-z-index
+        (fn [{:keys [id frame-id] :as shape}]
+          (assoc shape :z (+ (get z-index id)
+                             (get z-index frame-id 0))))
+
         ;; Shapes after filters of overlapping and criteria
         matching-shapes
         (into []
@@ -109,7 +120,8 @@
                     (filter match-criteria?)
                     (filter (comp overlaps? :frame))
                     (filter (comp overlaps-masks? :masks))
-                    (filter overlaps?))
+                    (filter overlaps?)
+                    (map add-z-index))
               result)
 
         keyfn (if reverse? (comp - :z) :z)]

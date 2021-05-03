@@ -67,6 +67,7 @@
 
 ;; Indices
 (d/export indices/calculate-z-index)
+(d/export indices/update-z-index)
 (d/export indices/generate-child-all-parents-index)
 (d/export indices/generate-child-parent-index)
 (d/export indices/create-mask-index)

@@ -111,7 +111,7 @@ goog.scope(function() {
     // Tree implementation functions
 
     function isRed(branch) {
-        return branch !== null && branch.color === Color.RED;
+        return branch && branch.color === Color.RED;
     }
 
     // Insert recursively in the tree
