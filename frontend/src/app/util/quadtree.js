@@ -32,12 +32,16 @@
 "use strict";
 
 goog.provide("app.util.quadtree");
+goog.require("cljs.core");
 
 goog.scope(function() {
   const self = app.util.quadtree;
+  const eq = cljs.core._EQ_;
+  const contains = cljs.core.contains_QMARK_;
 
   class Node {
-    constructor(bounds, data) {
+    constructor(id, bounds, data) {
+      this.id = id;
       this.bounds = bounds;
       this.data = data;
     }
@@ -51,8 +55,8 @@ goog.scope(function() {
       this.level = level || 0;
       this.bounds = bounds;
 
-      this.objects    = [];
-      this.indexes      = [];
+      this.objects = [];
+      this.indexes = [];
     }
 
     split() {
@@ -183,14 +187,18 @@ goog.scope(function() {
       this.objects = [];
       this.indexes = [];
     }
+
+    getObjects() {
+      return this.objects;
+    }
   }
 
   self.create = function(rect) {
     return new Quadtree(rect, 10, 4, 0);
   };
 
-  self.insert = function(index, bounds, data) {
-    const node = new Node(bounds, data);
+  self.insert = function(index, id, bounds, data) {
+    const node = new Node(id, bounds, data);
     index.insert(node);
     return index;
   };
@@ -209,5 +217,30 @@ goog.scope(function() {
       }
     }
   };
+
+  self.remove = function(index, id) {
+    const result = self.create(index.bounds);
+
+    for (let node of index.objects) {
+      if (!eq(id, node.id)) {
+        self.insert(result, node.id, node.bounds, node.data);
+      }
+    }
+
+    return result;
+  }
+
+  // FIXME: Inefficient to recreate the index. Needs to be improved
+  self.remove_all = function(index, ids) {
+    const result = self.create(index.bounds);
+
+    for (let node of self.search(index, index.bounds)) {
+      if (!contains(ids, node.id)) {
+        self.insert(result, node.id, node.bounds, node.data);
+      }
+    }
+
+    return result;
+  }
 
 });

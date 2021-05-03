@@ -264,7 +264,7 @@
                               :index (cp/get-index-in-parent objects (:id shape))
                               :shapes [(:id shape)]})))]
 
-        (when-not (empty? rch)
+        (when-not (empty? uch)
           (rx/of dwu/pop-undo-into-transaction
                  (dch/commit-changes rch uch {:commit-local? true})
                  (dwu/commit-undo-transaction)
@@ -294,12 +294,15 @@
                            (rx/take-until stopper)
                            (rx/map #(gpt/to-vec from-position %)))
 
-             snap-delta (->> position
-                             (rx/throttle 20)
-                             (rx/switch-map
-                              (fn [pos]
-                                (->> (snap/closest-snap-move page-id shapes objects layout zoom pos)
-                                     (rx/map #(vector pos %))))))]
+             snap-delta (rx/concat
+                         ;; We send the nil first so the stream is not waiting for the first value
+                         (rx/of nil)
+                         (->> position
+                              (rx/throttle 20)
+                              (rx/switch-map
+                               (fn [pos]
+                                 (->> (snap/closest-snap-move page-id shapes objects layout zoom pos)
+                                      (rx/map #(vector pos %)))))))]
          (if (empty? shapes)
            (rx/empty)
            (rx/concat
