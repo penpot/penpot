@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.main.data.auth :as da]
    [app.main.data.comments :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
@@ -215,7 +214,7 @@
         team-selected
         (mf/use-callback
           (fn [team-id]
-            (da/set-current-team! team-id)
+            (du/set-current-team! team-id)
             (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))]
 
     [:ul.dropdown.teams-dropdown
@@ -322,7 +321,7 @@
          (mf/deps team profile)
          (fn []
            (let [team-id (:default-team-id profile)]
-             (da/set-current-team! team-id)
+             (du/set-current-team! team-id)
              (st/emit! (modal/hide)
                        (du/fetch-teams)
                        (rt/nav :dashboard-projects {:team-id team-id})))))
@@ -548,7 +547,7 @@
        [:li {:on-click (partial on-click :settings-password)}
         [:span.icon i/lock]
         [:span.text (tr "labels.password")]]
-       [:li {:on-click (partial on-click (da/logout))}
+       [:li {:on-click (partial on-click (du/logout))}
         [:span.icon i/exit]
         [:span.text (tr "labels.logout")]]
 

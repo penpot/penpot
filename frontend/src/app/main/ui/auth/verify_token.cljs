@@ -7,7 +7,6 @@
 (ns app.main.ui.auth.verify-token
   (:require
    [app.common.uuid :as uuid]
-   [app.main.data.auth :as da]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
@@ -21,7 +20,6 @@
    [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.storage :refer [cache]]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -33,7 +31,7 @@
   [data]
   (let [msg (tr "dashboard.notifications.email-verified-successfully")]
     (ts/schedule 100 #(st/emit! (dm/success msg)))
-    (st/emit! (da/login-from-token data))))
+    (st/emit! (du/login-from-token data))))
 
 (defmethod handle-token :change-email
   [data]
@@ -44,7 +42,7 @@
 
 (defmethod handle-token :auth
   [tdata]
-  (st/emit! (da/login-from-token tdata)))
+  (st/emit! (du/login-from-token tdata)))
 
 (defmethod handle-token :team-invitation
   [tdata]

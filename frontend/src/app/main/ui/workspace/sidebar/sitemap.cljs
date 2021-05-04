@@ -198,10 +198,12 @@
 
 (mf/defc sitemap
   [{:keys [layout] :as props}]
-  (let [create      (mf/use-callback #(st/emit! dw/create-empty-page))
+  (let [file        (mf/deref refs/workspace-file)
+        create      (mf/use-callback
+                     (mf/deps file)
+                     (st/emitf (dw/create-page {:file-id (:id file)
+                                                :project-id (:project-id file)})))
         show-pages? (mf/use-state true)
-
-        file        (mf/deref refs/workspace-file)
 
         toggle-pages
         (mf/use-callback #(reset! show-pages? not))]

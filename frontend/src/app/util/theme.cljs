@@ -17,7 +17,7 @@
    [app.util.transit :as t]
    [app.util.storage :refer [storage]]))
 
-(defonce theme (get storage ::theme cfg/default-theme))
+(defonce theme (get @storage ::theme cfg/default-theme))
 (defonce theme-sub (rx/subject))
 (defonce themes #js {})
 

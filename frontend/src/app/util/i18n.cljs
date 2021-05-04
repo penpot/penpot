@@ -52,7 +52,7 @@
         cfg/default-language))))
 
 (defonce translations #js {})
-(defonce locale (l/atom (or (get storage ::locale)
+(defonce locale (l/atom (or (get @storage ::locale)
                             (autodetect))))
 
 ;; The traslations `data` is a javascript object and should be treated

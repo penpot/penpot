@@ -7,16 +7,13 @@
 (ns app.main.store
   (:require-macros [app.main.store])
   (:require
-   [beicon.core :as rx]
-   [okulary.core :as l]
-   [potok.core :as ptk]
-   [cuerdas.core :as str]
    [app.common.data :as d]
    [app.common.pages :as cp]
-   [app.common.pages.helpers :as helpers]
-   [app.common.uuid :as uuid]
-   [app.util.storage :refer [storage]]
-   [app.util.debug :refer [debug? debug-exclude-events logjs]]))
+   [app.util.debug :refer [debug? debug-exclude-events logjs]]
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [okulary.core :as l]
+   [potok.core :as ptk]))
 
 (enable-console-print!)
 
@@ -25,12 +22,6 @@
 (defonce loader (l/atom false))
 (defonce state  (ptk/store {:resolve ptk/resolve}))
 (defonce stream (ptk/input-stream state))
-
-(defn ^boolean is-logged?
-  [pdata]
-  (and (some? pdata)
-       (uuid? (:id pdata))
-       (not= uuid/zero (:id pdata))))
 
 (when *assert*
   (defonce debug-subscription
@@ -52,16 +43,6 @@
 (defn emitf
   [& events]
   #(apply ptk/emit! state events))
-
-(def initial-state
-  {:session-id (uuid/next)
-   :profile (:profile storage)})
-
-(defn init
-  "Initialize the state materialization."
-  ([] (init {}))
-  ([props]
-   (emit! #(merge % initial-state props))))
 
 (defn ^:export dump-state []
   (logjs "state" @state))

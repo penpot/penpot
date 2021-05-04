@@ -12,8 +12,9 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
-   [app.main.data.auth :refer [logout]]
+   [app.main.data.users :as du]
    [app.main.data.messages :as dm]
+   [app.main.data.events :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.auth :refer [auth]]
@@ -106,6 +107,7 @@
 (mf/defc main-page
   {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}
   [{:keys [route] :as props}]
+
   [:& (mf/provider ctx/current-route) {:value route}
    (case (get-in route [:data :name])
      (:auth-login
@@ -214,7 +216,7 @@
 ;; all profile data and redirect the user to the login page.
 (defmethod ptk/handle-error :authentication
   [error]
-  (ts/schedule (st/emitf (logout))))
+  (ts/schedule (st/emitf (du/logout))))
 
 ;; Error that happens on an active bussines model validation does not
 ;; passes an validation (example: profile can't leave a team). From
