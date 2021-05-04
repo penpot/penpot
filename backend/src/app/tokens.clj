@@ -51,11 +51,11 @@
     claims))
 
 (s/def ::secret-key ::us/string)
-(s/def ::sprops
+(s/def ::props
   (s/keys :req-un [::secret-key]))
 
 (defmethod ig/pre-init-spec ::tokens [_]
-  (s/keys :req-un [::sprops]))
+  (s/keys :req-un [::props]))
 
 (defn- generate-predefined
   [cfg {:keys [iss profile-id] :as params}]
@@ -71,8 +71,8 @@
               :hint "no predefined token")))
 
 (defmethod ig/init-key ::tokens
-  [_ {:keys [sprops] :as cfg}]
-  (let [secret (derive-tokens-secret (:secret-key sprops))
+  [_ {:keys [props] :as cfg}]
+  (let [secret (derive-tokens-secret (:secret-key props))
         cfg    (assoc cfg ::secret secret)]
     (fn [action params]
       (case action
