@@ -21,7 +21,7 @@
 
 ;; A default cookie name for storing the session. We don't allow
 ;; configure it.
-(def cookie-name "session-id")
+(def cookie-name "auth-token")
 
 ;; --- IMPL
 
@@ -53,11 +53,11 @@
 
 (defn- add-cookies
   [response {:keys [id] :as session}]
-  (assoc response :cookies {"session-id" {:path "/" :http-only true :value id}}))
+  (assoc response :cookies {cookie-name {:path "/" :http-only true :value id}}))
 
 (defn- clear-cookies
   [response]
-  (assoc response :cookies {"session-id" {:value "" :max-age -1}}))
+  (assoc response :cookies {cookie-name {:value "" :max-age -1}}))
 
 (defn- middleware
   [cfg handler]
