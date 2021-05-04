@@ -76,6 +76,7 @@
 (def worker-uri           (obj/get global "penpotWorkerURI" "/js/worker.js"))
 (def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
+(def analytics            (obj/get global "penpotAnalyticsEnabled" false))
 
 (def version              (delay (parse-version global)))
 (def target               (delay (parse-target global)))
