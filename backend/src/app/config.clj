@@ -163,8 +163,6 @@
 (s/def ::storage-s3-bucket ::us/string)
 (s/def ::storage-s3-region ::us/keyword)
 (s/def ::telemetry-enabled ::us/boolean)
-(s/def ::telemetry-server-enabled ::us/boolean)
-(s/def ::telemetry-server-port ::us/integer)
 (s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-with-taiga ::us/boolean)
 (s/def ::tenant ::us/string)
@@ -244,8 +242,6 @@
                    ::storage-s3-bucket
                    ::storage-s3-region
                    ::telemetry-enabled
-                   ::telemetry-server-enabled
-                   ::telemetry-server-port
                    ::telemetry-uri
                    ::telemetry-referer
                    ::telemetry-with-taiga
