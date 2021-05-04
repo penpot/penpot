@@ -73,6 +73,7 @@
     :rules
     :display-grid
     :snap-grid
+    :scale-text
     :dynamic-alignment})
 
 (s/def ::layout-flags (s/coll-of ::layout-flag))

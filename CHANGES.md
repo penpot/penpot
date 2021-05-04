@@ -3,6 +3,9 @@
 ## :rocket: Next
 
 ### :sparkles: New features
+
+- Add option to interactively scale text [Taiga #1527](https://tree.taiga.io/project/penpot/us/1527)
+
 ### :bug: Bugs fixed
 
 - Remove interactions when the destination artboard is deleted [Taiga #1656](https://tree.taiga.io/project/penpot/issue/1656)

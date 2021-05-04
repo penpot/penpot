@@ -6,13 +6,15 @@
 
 (ns app.common.geom.shapes.transforms
   (:require
+   [app.common.attrs :as attrs]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpa]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
-   [app.common.data :as d]))
+   [app.common.data :as d]
+   [app.common.text :as txt]))
 
 ;; --- Relative Movement
 
@@ -328,6 +330,23 @@
               (dissoc :modifiers))))
       shape)))
 
+(defn apply-text-resize
+  [shape orig-shape modifiers]
+  (if (and (= (:type shape) :text)
+           (:resize-scale-text modifiers))
+    (let [merge-attrs (fn [attrs]
+                        (let [font-size (-> (get attrs :font-size 14)
+                                            (d/parse-double)
+                                            (* (-> modifiers :resize-vector :x))
+                                            (str)
+                                            )]
+                          (attrs/merge attrs {:font-size font-size})))]
+      (update shape :content #(txt/transform-nodes
+                                txt/is-text-node?
+                                merge-attrs
+                                %)))
+    shape))
+
 (defn transform-shape [shape]
   (let [shape (apply-displacement shape)
         center (gco/center-shape shape)
@@ -337,6 +356,7 @@
         (-> shape
             (set-flip modifiers)
             (apply-transform transform)
+            (apply-text-resize shape modifiers)
             (dissoc :modifiers)))
       shape)))
 

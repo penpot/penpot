@@ -61,7 +61,11 @@
    :toggle-alignment  {:tooltip (ds/meta "\\")
                        :command (ds/c-mod "\\")
                        :fn #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}
-   
+
+   :toggle-scale-text {:tooltip "K"
+                       :command "k"
+                       :fn #(st/emit! (dw/toggle-layout-flags :scale-text))}
+
    :increase-zoom      {:tooltip "+"
                         :command "+"
                         :fn #(st/emit! (dw/increase-zoom nil))}
