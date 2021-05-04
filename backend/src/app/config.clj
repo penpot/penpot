@@ -87,6 +87,7 @@
    :initial-project-skey "initial-project"
    })
 
+(s/def ::secret-key ::us/string)
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::asserts-enabled ::us/boolean)
 (s/def ::assets-path ::us/string)
@@ -169,7 +170,8 @@
 (s/def ::tenant ::us/string)
 
 (s/def ::config
-  (s/keys :opt-un [::allow-demo-users
+  (s/keys :opt-un [::secret-key
+                   ::allow-demo-users
                    ::asserts-enabled
                    ::database-password
                    ::database-uri
