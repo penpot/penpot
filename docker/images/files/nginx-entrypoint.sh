@@ -97,6 +97,14 @@ update_registration_enabled() {
   fi
 }
 
+update_registration_enabled() {
+  if [ -n "$PENPOT_ANALYTICS_ENABLED" ]; then
+    sed -i \
+      -e "s|^//var penpotAnalyticsEnabled = .*;|var penpotAnalyticsEnabled = $PENPOT_ANALYTICS_ENABLED;|g" \
+      "$1"
+  fi
+}
+
 update_public_uri /var/www/app/js/config.js
 update_demo_warning /var/www/app/js/config.js
 update_allow_demo_users /var/www/app/js/config.js
@@ -106,5 +114,6 @@ update_github_client_id /var/www/app/js/config.js
 update_oidc_client_id /var/www/app/js/config.js
 update_login_with_ldap /var/www/app/js/config.js
 update_registration_enabled /var/www/app/js/config.js
+update_analytics_enabled /var/www/app/js/config.js
 
 exec "$@";
