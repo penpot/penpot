@@ -38,6 +38,7 @@ services:
 
     environment:
       - EXTERNAL_UID=${CURRENT_USER_ID}
+      - PENPOT_SECRET_KEY=super-secret-devenv-key
       # STMP setup
       - PENPOT_SMTP_ENABLED=true
       - PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com
