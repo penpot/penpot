@@ -7,8 +7,8 @@
 (ns app.main.ui.settings.sidebar
   (:require
    [app.config :as cf]
-   [app.main.data.auth :as da]
    [app.main.data.modal :as modal]
+   [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.dashboard.sidebar :refer [profile-section]]
    [app.main.ui.icons :as i]
@@ -26,7 +26,7 @@
         go-dashboard
         (mf/use-callback
          (mf/deps profile)
-         (st/emitf (rt/nav :dashboard-projects {:team-id (da/current-team-id profile)})))
+         (st/emitf (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)})))
 
         go-settings-profile
         (mf/use-callback

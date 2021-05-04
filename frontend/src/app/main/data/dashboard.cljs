@@ -11,6 +11,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
+   [app.main.data.events :as ev]
    [app.main.data.users :as du]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
@@ -242,10 +243,12 @@
     (watch [_ state stream]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error identity}} (meta params)]
+                  on-error rx/throw}} (meta params)]
         (->> (rp/mutation! :create-team {:name name})
              (rx/tap on-success)
-             (rx/catch on-error))))))
+             (rx/catch on-error)
+             (rx/map (fn [team]
+                       (ptk/event ::ev/event {::ev/name "create-team" :id (:id team)}))))))))
 
 (defn update-team
   [{:keys [id name] :as params}]
@@ -316,7 +319,7 @@
     (watch [_ state stream]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error identity}} (meta params)]
+                  on-error rx/throw}} (meta params)]
         (rx/concat
          (when (uuid? reassign-to)
            (->> (rp/mutation! :update-team-member-role {:team-id id
@@ -337,7 +340,7 @@
     (watch [_ state stream]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error identity}} (meta params)]
+                  on-error rx/throw}} (meta params)]
         (->> (rp/mutation! :invite-team-member params)
              (rx/tap on-success)
              (rx/catch on-error))))))
@@ -350,29 +353,38 @@
     (watch [_ state stream]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error identity}} (meta params)]
+                  on-error rx/throw}} (meta params)]
         (->> (rp/mutation! :delete-team {:id id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 
+
+(defn- project-created
+  [{:keys [id team-id] :as project}]
+  (ptk/reify ::project-created
+    IDeref
+    (-deref [_] project)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:projects team-id id] project)
+          (assoc-in [:dashboard-local :project-for-edit] id)))))
+
 (defn create-project
   [{:keys [team-id] :as params}]
   (us/assert ::us/uuid team-id)
-  (letfn [(created [project state]
-            (-> state
-                (assoc-in [:projects team-id (:id project)] project)
-                (assoc-in [:dashboard-local :project-for-edit] (:id project))))]
-    (ptk/reify ::create-project
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [name (name (gensym "New Project "))
-              {:keys [on-success on-error]
-               :or {on-success identity
-                    on-error identity}} (meta params)]
-          (->> (rp/mutation! :create-project {:name name :team-id team-id})
-               (rx/tap on-success)
-               (rx/map #(partial created %))
-               (rx/catch on-error)))))))
+  (ptk/reify ::create-project
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [name (name (gensym "New Project "))
+            {:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/mutation! :create-project {:name name :team-id team-id})
+             (rx/tap on-success)
+             (rx/catch on-error)
+             (rx/map project-created))))))
 
 (defn duplicate-project
   [{:keys [id name] :as params}]
@@ -532,20 +544,23 @@
     (watch [_ state stream]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error identity}} (meta params)
+                  on-error rx/throw}} (meta params)
 
             name   (name (gensym "New File "))
             params (assoc params :name name)]
 
         (->> (rp/mutation! :create-file params)
              (rx/tap on-success)
-             (rx/map file-created)
-             (rx/catch on-error))))))
+             (rx/catch on-error)
+             (rx/map file-created))))))
 
 (defn file-created
   [{:keys [project-id id] :as file}]
   (us/verify ::file file)
   (ptk/reify ::file-created
+    IDeref
+    (-deref [_] file)
+
     ptk/UpdateEvent
     (update [_ state]
       (-> state

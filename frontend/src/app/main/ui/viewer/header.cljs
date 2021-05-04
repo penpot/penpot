@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.comments :as dcm]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
@@ -23,6 +24,7 @@
    [app.util.router :as rt]
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 (mf/defc zoom-widget

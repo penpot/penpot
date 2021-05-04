@@ -249,21 +249,26 @@
 ;; Workspace Page CRUD
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def create-empty-page
-  (ptk/reify ::create-empty-page
-    ptk/WatchEvent
-    (watch [this state stream]
-      (let [id      (uuid/next)
-            pages   (get-in state [:workspace-data :pages-index])
-            unames  (dwc/retrieve-used-names pages)
-            name    (dwc/generate-unique-name unames "Page")
+(defn create-page
+  [{:keys [file-id]}]
+  (let [id (uuid/next)]
+    (ptk/reify ::create-page
+      IDeref
+      (-deref [_]
+        {:id id :file-id file-id})
 
-            rchange {:type :add-page
-                     :id id
-                     :name name}
-            uchange {:type :del-page
-                     :id id}]
-        (rx/of (dch/commit-changes [rchange] [uchange] {:commit-local? true}))))))
+      ptk/WatchEvent
+      (watch [this state stream]
+        (let [pages   (get-in state [:workspace-data :pages-index])
+              unames  (dwc/retrieve-used-names pages)
+              name    (dwc/generate-unique-name unames "Page")
+
+              rchange {:type :add-page
+                       :id id
+                       :name name}
+              uchange {:type :del-page
+                       :id id}]
+          (rx/of (dch/commit-changes [rchange] [uchange] {:commit-local? true})))))))
 
 (defn duplicate-page [page-id]
   (ptk/reify ::duplicate-page

@@ -7,8 +7,8 @@
 (ns app.main.ui.auth.recovery-request
   (:require
    [app.common.spec :as us]
-   [app.main.data.auth :as uda]
    [app.main.data.messages :as dm]
+   [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
@@ -59,7 +59,7 @@
                  params (with-meta cdata
                           {:on-success #(on-success cdata %)
                            :on-error #(on-error cdata %)})]
-             (st/emit! (uda/request-profile-recovery params)))))]
+             (st/emit! (du/request-profile-recovery params)))))]
 
     [:& fm/form {:on-submit on-submit
                  :form form}

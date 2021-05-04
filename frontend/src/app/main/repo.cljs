@@ -15,7 +15,7 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]))
 
-(defn- handle-response
+(defn handle-response
   [{:keys [status body] :as response}]
   (cond
     (= 204 status)
