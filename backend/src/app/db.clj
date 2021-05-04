@@ -333,6 +333,12 @@
       (t/decode-str val)
       val)))
 
+(defn inet
+  [ip-addr]
+  (doto (org.postgresql.util.PGobject.)
+    (.setType "inet")
+    (.setValue (str ip-addr))))
+
 (defn tjson
   "Encode as transit json."
   [data]
