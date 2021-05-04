@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-14 13:44+0000\n"
-"Last-Translator: Andrés Moya <andres.moya@kaleidos.net>\n"
+"PO-Revision-Date: 2021-05-05 09:32+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.6-dev\n"
+"X-Generator: Weblate 4.7-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2490,7 +2490,6 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.check-your-email"
 msgstr ""
 "Comprueba tu email y haz click en el link de verificación para comenzar a "
