@@ -33,7 +33,10 @@
     position: relative;
     text-align: center;
     width: 18%;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    }
 
     .grid-item-th {
       text-align: initial;
