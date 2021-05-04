@@ -27,17 +27,6 @@ ALTER TABLE comment_thread
   ALTER COLUMN participants SET STORAGE external,
   ALTER COLUMN page_name SET STORAGE external;
 
-ALTER TABLE task
-  ALTER COLUMN queue SET STORAGE external,
-  ALTER COLUMN name SET STORAGE external,
-  ALTER COLUMN props SET STORAGE external,
-  ALTER COLUMN status SET STORAGE external,
-  ALTER COLUMN error SET STORAGE external;
-
-ALTER TABLE scheduled_task
-  ALTER COLUMN id SET STORAGE external,
-  ALTER COLUMN cron_expr SET STORAGE external;
-
 ALTER TABLE http_session
   ALTER COLUMN id SET STORAGE external,
   ALTER COLUMN user_agent SET STORAGE external;

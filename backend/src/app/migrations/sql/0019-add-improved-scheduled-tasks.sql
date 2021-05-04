@@ -1,4 +1,4 @@
-DROP TABLE scheduled_task;
+DROP TABLE IF EXISTS scheduled_task;
 
 CREATE TABLE scheduled_task (
   id text PRIMARY KEY,
@@ -22,3 +22,7 @@ CREATE TABLE scheduled_task_history (
 
 CREATE INDEX scheduled_task_history__task_id__idx
     ON scheduled_task_history(task_id);
+
+ALTER TABLE scheduled_task
+  ALTER COLUMN id SET STORAGE external,
+  ALTER COLUMN cron_expr SET STORAGE external;
