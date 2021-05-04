@@ -60,8 +60,8 @@
           ^Object msg)))
 
 (defmacro log
-  [& {:keys [level cause ::logger ::async] :as props}]
-  (let [props      (dissoc props :level :cause ::logger ::async)
+  [& {:keys [level cause ::logger ::async ::raw] :as props}]
+  (let [props      (dissoc props :level :cause ::logger ::async ::raw)
         logger     (or logger (str *ns*))
         logger-sym (gensym "log")
         level-sym  (gensym "log")]
@@ -69,8 +69,12 @@
            ~level-sym  (get-level ~level)]
        (if (enabled? ~logger-sym ~level-sym)
          ~(if async
-            `(send-off logging-agent (fn [_#] (write-log! ~logger-sym ~level-sym ~cause (build-map-message ~props))))
-            `(write-log! ~logger-sym ~level-sym ~cause (build-map-message ~props)))))))
+            `(send-off logging-agent
+                       (fn [_#]
+                         (let [message# (or ~raw (build-map-message ~props))]
+                           (write-log! ~logger-sym ~level-sym ~cause message#))))
+            `(let [message# (or ~raw (build-map-message ~props))]
+               (write-log! ~logger-sym ~level-sym ~cause message#)))))))
 
 (defmacro info
   [& params]
