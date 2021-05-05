@@ -76,6 +76,7 @@
 
     {:status 500
      :body {:type :server-error
+            :code :assertion
             :data (-> edata
                       (assoc :explain (explain-error edata))
                       (dissoc :data))}}))
@@ -103,6 +104,7 @@
                  :cause error)
         {:status 500
          :body {:type :server-error
+                :code :unexpected
                 :hint (ex-message error)
                 :data edata}}))))
 
@@ -132,7 +134,8 @@
 
       :else
       {:status 500
-       :body {:type :server-timeout
+       :body {:type :server-error
+              :code :psql-exception
               :hint (ex-message error)
               :state state}})))
 
