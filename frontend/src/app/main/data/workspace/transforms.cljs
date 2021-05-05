@@ -210,7 +210,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [initial  (deref ms/mouse-position)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             stopper  (rx/filter ms/mouse-up? stream)]
         (->> ms/mouse-position
              (rx/take-until stopper)
@@ -284,7 +284,7 @@
      (watch [_ state stream]
        (let [page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)
-             ids     (if (nil? ids) (get-in state [:workspace-local :selected]) ids)
+             ids     (if (nil? ids) (wsh/lookup-selected state) ids)
              shapes  (mapv #(get objects %) ids)
              stopper (rx/filter ms/mouse-up? stream)
              layout  (get state :workspace-layout)
@@ -361,7 +361,7 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (if (= same-event (get-in state [:workspace-local :current-move-selected]))
-          (let [selected (get-in state [:workspace-local :selected])
+          (let [selected (wsh/lookup-selected state)
                 move-events (->> stream
                                  (rx/filter (ptk/type? ::move-selected))
                                  (rx/filter #(= direction (deref %))))
@@ -519,7 +519,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [objects  (wsh/lookup-page-objects state)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             shapes   (map #(get objects %) selected)
             selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
             origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))]
@@ -536,7 +536,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [objects  (wsh/lookup-page-objects state)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             shapes   (map #(get objects %) selected)
             selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
             origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))]

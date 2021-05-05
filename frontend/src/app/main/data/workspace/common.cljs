@@ -291,7 +291,7 @@
                      (retrieve-used-names)
                      (generate-unique-name (:name attrs)))
 
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
 
             [rchanges uchanges] (add-shape-changes
                                  page-id

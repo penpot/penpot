@@ -6,20 +6,7 @@
 
 (ns app.main.data.workspace.state-helpers
   (:require
-   #_[app.common.data :as d]
-   #_[app.common.geom.proportions :as gpr]
-   #_[app.common.geom.shapes :as gsh]
-   #_[app.common.pages :as cp]
-   #_[app.common.spec :as us]
-   #_[app.common.uuid :as uuid]
-   #_[app.main.data.workspace.changes :as dch]
-   #_[app.main.data.workspace.undo :as dwu]
-   #_[app.main.streams :as ms]
-   #_[app.main.worker :as uw]
-   #_[app.util.logging :as log]
-   #_[beicon.core :as rx]
-   #_[cljs.spec.alpha :as s]
-   #_[potok.core :as ptk]))
+   [app.common.data :as d]))
 
 (defn lookup-page-objects
   ([state]
@@ -37,3 +24,11 @@
   ([state component-id]
    (get-in state [:workspace-data :components component-id :objects])))
 
+(defn lookup-selected
+  [state]
+  (let [selected (get-in state [:workspace-local :selected])
+        objects (lookup-page-objects state)
+        is-present? (fn [id] (contains? objects id))]
+    (into (d/ordered-set)
+          (filter is-present?)
+          selected)))

@@ -35,7 +35,7 @@
 ;; --- Viewport
 
 (mf/defc viewport
-  [{:keys [local layout file] :as props}]
+  [{:keys [local selected layout file] :as props}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
@@ -44,7 +44,6 @@
                 options-mode
                 panning
                 picking-color?
-                selected
                 selrect
                 show-distances?
                 tooltip
@@ -52,7 +51,6 @@
                 vbox
                 vport
                 zoom]} local
-
 
         ;; CONTEXT
         page-id           (mf/use-ctx ctx/current-page-id)

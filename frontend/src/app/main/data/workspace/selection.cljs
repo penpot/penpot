@@ -121,7 +121,7 @@
        (let [page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)
              selection (-> state
-                           (get-in [:workspace-local :selected] #{})
+                           wsh/lookup-selected
                            (conj id))]
          (-> state
              (assoc-in [:workspace-local :selected]
@@ -148,7 +148,7 @@
       (let [page-id      (:current-page-id state)
             objects      (wsh/lookup-page-objects state page-id)
             new-selected (let [selected-objs
-                               (->> (get-in state [:workspace-local :selected])
+                               (->> (wsh/lookup-selected state)
                                     (map #(get objects %)))
 
                                frame-ids
@@ -207,7 +207,7 @@
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             initial-set (if preserve?
                           selected
                           lks/empty-linked-set)
@@ -381,8 +381,7 @@
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             delta    (gpt/point 0 0)
             unames   (dwc/retrieve-used-names objects)
 
