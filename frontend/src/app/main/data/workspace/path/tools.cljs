@@ -39,7 +39,7 @@
    (make-corner nil))
   ([point]
    (process-path-tool
-    #{point}
+    (when point #{point})
     (fn [content points]
       (reduce upt/make-corner-point content points)))))
 
@@ -48,7 +48,7 @@
    (make-curve nil))
   ([point]
    (process-path-tool
-    #{point}
+    (when point #{point})
     (fn [content points]
       (reduce upt/make-curve-point content points)))))
 
