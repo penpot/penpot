@@ -1129,22 +1129,25 @@ input[type=range]:focus::-ms-fill-upper {
   }
 
   &.fixed {
-    position: fixed;
-    top: 0;
-    left: 0px;
-    width: 100%;
+    border-radius: $br-small;
+    box-shadow: 0px 4px 4px rgba(0,0,0,0.2);
     height: 48px;
+    max-width: 1000px;
+    min-width: 500px;
+    position: fixed;
+    padding-left: 16px;
+    top: 16px;
+    right: 16px;
     z-index: 13;
 
     display: flex;
-    justify-content: center;
     align-items: center;
 
     .wrapper {
       display: flex;
       justify-content: center;
       align-items: center;
-      max-width: 60%;
+      padding-right: 64px;
 
       .icon {
         margin-right: $medium;

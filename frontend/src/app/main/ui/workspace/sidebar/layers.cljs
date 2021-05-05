@@ -233,7 +233,7 @@
         (if (:hidden item) i/eye-closed i/eye)]
        [:div.block-element {:class (when (:blocked item) "selected")
                             :on-click toggle-blocking}
-        (if (:blocked item) i/lock i/lock-open)]]
+        (if (:blocked item) i/lock i/unlock)]]
 
       (when (:shapes item)
         [:span.toggle-content
