@@ -21,10 +21,9 @@
 (defn start
   [& args]
   (log/info :msg "initializing")
-  (p/let [browser (bwr/start!)
-          server  (http/start! {:browser browser})]
-    (reset! state {:http server
-                   :browser browser})))
+  (p/do!
+   (bwr/init)
+   (http/init)))
 
 (def main start)
 
@@ -35,8 +34,6 @@
 
   (log/info :msg "stoping")
   (p/do!
-   (when-let [instance (:browser @state)]
-     (bwr/stop! instance))
-   (when-let [instance (:http @state)]
-     (http/stop! instance))
+   (bwr/stop)
+   (http/stop)
    (done)))

@@ -6,9 +6,12 @@
 
 (ns app.browser
   (:require
+   [app.config :as cf]
    [lambdaisland.glogi :as log]
    [promesa.core :as p]
    ["puppeteer-cluster" :as ppc]))
+
+;; --- BROWSER API
 
 (def USER-AGENT
   (str "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -74,24 +77,38 @@
                             :value value
                             :domain domain}))
 
-(defn start!
-  ([] (start! nil))
-  ([{:keys [concurrency concurrency-strategy]
-     :or {concurrency 10
-          concurrency-strategy :incognito}}]
-   (let [ccst (case concurrency-strategy
-                :browser (.-CONCURRENCY_BROWSER ^js ppc/Cluster)
-                :incognito (.-CONCURRENCY_CONTEXT ^js ppc/Cluster)
-                :page (.-CONCURRENCY_PAGE ^js ppc/Cluster))
-         opts #js {:concurrency ccst
-                   :maxConcurrency concurrency
-                   :puppeteerOptions #js {:args #js ["--no-sandbox"]}}]
-     (.launch ^js ppc/Cluster opts))))
+;; --- BROWSER STATE
 
-(defn stop!
-  [instance]
-  (p/do!
-   (.idle ^js instance)
-   (.close ^js instance)
-   (log/info :msg "shutdown headless browser")
-   nil))
+(def instance (atom nil))
+
+(defn- create-browser
+  [concurrency strategy]
+  (let [strategy (case strategy
+                   :browser (.-CONCURRENCY_BROWSER ^js ppc/Cluster)
+                   :incognito (.-CONCURRENCY_CONTEXT ^js ppc/Cluster)
+                   :page (.-CONCURRENCY_PAGE ^js ppc/Cluster))
+        opts #js {:concurrency strategy
+                  :maxConcurrency concurrency
+                  :puppeteerOptions #js {:args #js ["--no-sandbox"]}}]
+    (.launch ^js ppc/Cluster opts)))
+
+
+(defn init
+  []
+  (let [concurrency (cf/get :browser-concurrency)
+        strategy    (cf/get :browser-strategy)]
+    (-> (create-browser concurrency strategy)
+        (p/then #(reset! instance %))
+        (p/catch (fn [error]
+                   (log/error :msg "failed to initialize browser")
+                   (js/console.error error))))))
+
+
+(defn stop
+  []
+  (if-let [instance @instance]
+    (p/do!
+     (.idle ^js instance)
+     (.close ^js instance)
+     (log/info :msg "shutdown headless browser"))
+    (p/resolved nil)))
