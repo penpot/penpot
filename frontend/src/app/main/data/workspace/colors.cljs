@@ -11,9 +11,9 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -127,7 +127,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (let [page-id   (:current-page-id state)
-            objects   (dwc/lookup-page-objects state page-id)
+            objects   (wsh/lookup-page-objects state page-id)
 
             is-text?  #(= :text (:type (get objects %)))
             text-ids  (filter is-text? ids)
@@ -159,7 +159,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
 
             attrs   (cond-> {}
                       (contains? color :color)

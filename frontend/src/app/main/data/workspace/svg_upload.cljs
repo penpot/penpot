@@ -9,16 +9,17 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
    [app.common.geom.proportions :as gpr]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.repo :as rp]
    [app.util.color :as uc]
-   [app.util.path.parser :as upp]
    [app.util.object :as obj]
+   [app.util.path.parser :as upp]
    [app.util.svg :as usvg]
    [app.util.uri :as uu]
    [beicon.core :as rx]
@@ -416,7 +417,7 @@
     (watch [_ state stream]
       (try
         (let [page-id (:current-page-id state)
-              objects (dwc/lookup-page-objects state page-id)
+              objects (wsh/lookup-page-objects state page-id)
               frame-id (cp/frame-id-by-position objects position)
               selected (get-in state [:workspace-local :selected])
 
