@@ -28,12 +28,6 @@
 (s/def ::shape-attrs ::cp/shape-attrs)
 (s/def ::set-of-string (s/every string? :kind set?))
 (s/def ::ordered-set-of-uuid (s/every uuid? :kind d/ordered-set?))
-;; --- Protocols
-
-(declare setup-selection-index)
-(declare update-indices)
-(declare reset-undo)
-(declare append-undo)
 
 
 ;; --- Helpers

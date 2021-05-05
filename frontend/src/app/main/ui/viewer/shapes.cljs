@@ -42,7 +42,8 @@
 
 (mf/defc interaction
   [{:keys [shape interactions show-interactions?]}]
-  (let [{:keys [x y width height]} shape]
+  (let [{:keys [x y width height]} (:selrect shape)
+        frame? (= :frame (:type shape))]
     (when-not (empty? interactions)
       [:rect {:x (- x 1)
               :y (- y 1)
@@ -52,7 +53,8 @@
               :stroke "#31EFB8"
               :stroke-width (if show-interactions? 1 0)
               :fill-opacity (if show-interactions? 0.2 0)
-              :style {:pointer-events "none"}}])))
+              :style {:pointer-events (when frame? "none")}
+              :transform (geom/transform-matrix shape)}])))
 
 (defn generic-wrapper-factory
   "Wrap some svg shape and add interaction controls"

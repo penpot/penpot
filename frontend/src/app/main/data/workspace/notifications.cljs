@@ -7,12 +7,12 @@
 (ns app.main.data.workspace.notifications
   (:require
    [app.common.data :as d]
-   [app.common.uri :as u]
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.config :as cf]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.repo :as rp]
@@ -217,7 +217,7 @@
       (let [changes-by-pages (group-by :page-id changes)
             process-page-changes
             (fn [[page-id changes]]
-              (dwc/update-indices page-id changes))]
+              (dch/update-indices page-id changes))]
 
         (rx/merge
          (rx/of (dwp/shapes-changes-persisted file-id msg))
