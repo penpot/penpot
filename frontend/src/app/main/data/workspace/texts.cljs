@@ -6,16 +6,17 @@
 
 (ns app.main.data.workspace.texts
   (:require
-   [app.common.math :as mth]
    [app.common.attrs :as attrs]
-   [app.common.text :as txt]
-   [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
    [app.common.data :as d]
-   [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.transforms :as dwt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.common.pages :as cp]
+   [app.common.text :as txt]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.fonts :as fonts]
    [app.util.object :as obj]
@@ -23,8 +24,8 @@
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [goog.object :as gobj]
    [cuerdas.core :as str]
+   [goog.object :as gobj]
    [potok.core :as ptk]))
 
 (defn update-editor
@@ -136,7 +137,7 @@
   (ptk/reify ::update-root-attrs
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [objects   (dwc/lookup-page-objects state)
+      (let [objects   (wsh/lookup-page-objects state)
             shape     (get objects id)
 
             update-fn #(update-shape % txt/is-root-node? attrs/merge attrs)
@@ -156,7 +157,7 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (when-not (some? (get-in state [:workspace-editor-state id]))
-          (let [objects   (dwc/lookup-page-objects state)
+          (let [objects   (wsh/lookup-page-objects state)
                 shape     (get objects id)
 
                 merge-fn  (fn [node attrs]
@@ -183,7 +184,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (when-not (some? (get-in state [:workspace-editor-state id]))
-        (let [objects   (dwc/lookup-page-objects state)
+        (let [objects   (wsh/lookup-page-objects state)
               shape     (get objects id)
 
               update-fn #(update-shape % txt/is-text-node? attrs/merge attrs)
@@ -205,7 +206,7 @@
   (ptk/reify ::start-edit-if-selected
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects  (dwc/lookup-page-objects state)
+      (let [objects  (wsh/lookup-page-objects state)
             selected (->> state :workspace-local :selected (map #(get objects %)))]
         (cond-> state
           (and (= 1 (count selected))

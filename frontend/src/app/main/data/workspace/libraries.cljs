@@ -7,24 +7,25 @@
 (ns app.main.data.workspace.libraries
   (:require
    [app.common.data :as d]
-   [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [app.common.pages :as cp]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
-   [app.main.data.messages :as dm]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.common.pages :as cp]
+   [app.common.pages :as cp]
+   [app.common.spec :as us]
+   [app.common.uuid :as uuid]
+   [app.main.data.messages :as dm]
+   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.libraries-helpers :as dwlh]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.util.color :as color]
    [app.util.i18n :refer [tr]]
+   [app.util.logging :as log]
    [app.util.router :as rt]
    [app.util.time :as dt]
-   [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -237,7 +238,7 @@
     (watch [_ state stream]
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
+            objects  (wsh/lookup-page-objects state page-id)
             selected (get-in state [:workspace-local :selected])
             selected (cp/clean-loops objects selected)]
         (let [[group rchanges uchanges]
@@ -343,7 +344,7 @@
             delta     (gpt/subtract position orig-pos)
 
             page-id   (:current-page-id state)
-            objects   (dwc/lookup-page-objects state page-id)
+            objects   (wsh/lookup-page-objects state page-id)
             unames    (atom (dwc/retrieve-used-names objects))
 
             frame-id (cp/frame-id-by-position objects (gpt/add orig-pos delta))
@@ -411,7 +412,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
             shapes (cp/get-object-with-children id objects)
 
             rchanges (map (fn [obj]

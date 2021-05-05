@@ -13,6 +13,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
@@ -37,24 +38,7 @@
 
 ;; --- Helpers
 
-(defn lookup-page-objects
-  ([state]
-   (lookup-page-objects state (:current-page-id state)))
-  ([state page-id]
-   (get-in state [:workspace-data :pages-index page-id :objects])))
-
-(defn lookup-page-options
-  ([state]
-   (lookup-page-options state (:current-page-id state)))
-  ([state page-id]
-   (get-in state [:workspace-data :pages-index page-id :options])))
-
 (defn interrupt? [e] (= e :interrupt))
-
-(defn lookup-component-objects
-  ([state component-id]
-   (get-in state [:workspace-data :components component-id :objects])))
-
 
 ;; --- Selection Index Handling
 
@@ -198,7 +182,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
        (let [page-id (:current-page-id state)
-             objects (lookup-page-objects state page-id)]
+             objects (wsh/lookup-page-objects state page-id)]
          (rx/of (expand-all-parents ids objects))))))
 
 (declare clear-edition-mode)
@@ -209,7 +193,7 @@
   (ptk/reify ::start-edition-mode
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (lookup-page-objects state)]
+      (let [objects (wsh/lookup-page-objects state)]
         ;; Can only edit objects that exist
         (if (contains? objects id)
           (-> state
@@ -219,7 +203,7 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [objects (lookup-page-objects state)]
+      (let [objects (wsh/lookup-page-objects state)]
         (->> stream
              (rx/filter interrupt?)
              (rx/take 1)
@@ -300,7 +284,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects  (lookup-page-objects state page-id)
+            objects  (wsh/lookup-page-objects state page-id)
 
             id (or (:id attrs) (uuid/next))
             name (-> objects
@@ -329,7 +313,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects (lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
             to-move-shapes (->> (cp/select-toplevel-shapes objects {:include-frames? false})
                                 (filterv #(= (:frame-id %) uuid/zero))
                                 (mapv :id)
@@ -361,7 +345,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
-            objects (lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
 
             get-empty-parents
             (fn [parents]
@@ -479,7 +463,7 @@
             x (:x data (- vbc-x (/ width 2)))
             y (:y data (- vbc-y (/ height 2)))
             page-id (:current-page-id state)
-            frame-id (-> (lookup-page-objects state page-id)
+            frame-id (-> (wsh/lookup-page-objects state page-id)
                          (cp/frame-id-by-position {:x frame-x :y frame-y}))
             shape (-> (cp/make-minimal-shape type)
                       (merge data)
