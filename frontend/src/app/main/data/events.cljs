@@ -101,23 +101,23 @@
   [event]
   (let [data  (deref event)
         mdata (meta data)
-        props [:email
-               :auth-backend
-               :fullname
-               :is-muted
-               :default-team-id
-               :default-project-id]]
+        props {:signin-source (::source mdata)
+               :email (:email data)
+               :auth-backend (:auth-backend data)
+               :fullname (:fullname data)
+               :is-muted (:is-muted data)
+               :default-team-id (str (:default-team-id data))
+               :default-project-id (str (:default-project-id data))}]
     {:name "signin"
      :type "identify"
      :profile-id (:id data)
-     :props (-> (select-keys data props)
-                (assoc :signin-source (::source mdata)))}))
+     :props (d/without-nils props)}))
 
 (defmethod process-event :app.main.data.dashboard/project-created
   [event]
   (let [data (deref event)]
     {:type "action"
-     :name "create-page"
+     :name "create-project"
      :props {:id (:id data)
              :team-id (:team-id data)}}))
 
@@ -146,7 +146,7 @@
 
 (defmethod process-event :app.main.data.users/logout
   [event]
-  (event->generic-action event "logout"))
+  (event->generic-action event "signout"))
 
 
 ;; --- MAIN LOOP
@@ -163,21 +163,27 @@
 
 (defn- persist-events
   [events]
-  (let [uri    (u/join cf/public-uri "events")
-        params {:events events}]
-    (->> (http/send! {:uri uri
-                      :method :post
-                      :body (http/transit-data params)})
-         (rx/mapcat rp/handle-response))))
+  (if (seq events)
+    (let [uri    (u/join cf/public-uri "events")
+          params {:events events}]
+      (->> (http/send! {:uri uri
+                        :method :post
+                        :body (http/transit-data params)})
+           (rx/mapcat rp/handle-response)))
+    (rx/of nil)))
 
 (defmethod ptk/resolve ::persistence
   [_ {:keys [buffer] :as params}]
   (ptk/reify ::persistence
     ptk/EffectEvent
     (effect [_ state stream]
-      (let [events (into [] (take max-chunk-size) @buffer)]
-        (when-not (empty? events)
-          (->> (persist-events events)
+      (let [profile-id (:profile-id state)
+            events     (into [] (take max-buffer-size) @buffer)]
+        (prn ::persistence (count events) profile-id)
+        (when (seq events)
+          (->> events
+               (filterv #(= profile-id (:profile-id %)))
+               (persist-events)
                (rx/subs (fn [_]
                           (swap! buffer remove-from-buffer (count events))))))))))
 
@@ -187,9 +193,13 @@
     (ptk/reify ::initialize
       ptk/WatchEvent
       (watch [_ state stream]
-        (->> (rx/from-atom buffer)
-             (rx/filter #(pos? (count %)))
-             (rx/debounce 2000)
+        (->> (rx/merge
+              (->> (rx/from-atom buffer)
+                   (rx/filter #(pos? (count %)))
+                   (rx/debounce 2000))
+              (->> stream
+                   (rx/filter (ptk/type? :app.main.data.users/logout))
+                   (rx/observe-on :async)))
              (rx/map #(ptk/event ::persistence {:buffer buffer}))))
 
       ptk/EffectEvent

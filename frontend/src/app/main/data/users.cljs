@@ -123,12 +123,7 @@
             (rx/mapcat (fn [profile]
                          (if (= uuid/zero (:id profile))
                            (rx/empty)
-                           (rx/of
-                            (fetch-teams)
-                            (ptk/event ::ev/event
-                                       {::ev/type "identify"
-                                        ::ev/name "page-load"}))))))))))
-
+                           (rx/of (fetch-teams))))))))))
 
 ;; --- EVENT: login
 
@@ -145,11 +140,15 @@
                       {::ev/source "login"})]
         (->> (rx/concat
               (rx/of (profile-fetched profile)
-                     (fetch-teams)
-                     (rt/nav' :dashboard-projects {:team-id team-id}))
+                     (fetch-teams))
+
+              (->> (rx/of (rt/nav' :dashboard-projects {:team-id team-id}))
+                   (rx/delay 1000))
+
               (when-not (get-in profile [:props :onboarding-viewed])
                 (->> (rx/of (modal/show {:type :onboarding}))
                      (rx/delay 1000))))
+
              (rx/observe-on :async))))))
 
 (s/def ::login-params
