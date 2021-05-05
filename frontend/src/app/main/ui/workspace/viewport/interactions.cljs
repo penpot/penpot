@@ -181,19 +181,22 @@
         draw-interaction-to (:draw-interaction-to local)
         draw-interaction-to-frame (:draw-interaction-to-frame local)
         first-selected (first selected-shapes)]
-    [:*
+
+    [:g.interactions
+     [:g.non-selected
       (for [shape active-shapes]
         (let [interaction (get-click-interaction shape)
               dest-shape (get objects (:destination interaction))
               selected? (contains? selected (:id shape))]
-          (when-not selected?
+          (when-not (or selected? (not dest-shape))
             [:& interaction-path {:key (:id shape)
                                   :orig-shape shape
                                   :dest-shape dest-shape
                                   :selected selected
                                   :selected? false
-                                  :zoom zoom}])))
+                                  :zoom zoom}])))]
 
+     [:g.selected
       (if (and draw-interaction-to first-selected)
         [:& interaction-path {:key "interactive"
                               :orig-shape first-selected
@@ -216,5 +219,5 @@
                 [:& interaction-handle {:key (:id shape)
                                         :shape shape
                                         :selected selected
-                                        :zoom zoom}])))))]))
+                                        :zoom zoom}])))))]]))
 
