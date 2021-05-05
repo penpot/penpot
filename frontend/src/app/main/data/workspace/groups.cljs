@@ -103,7 +103,7 @@
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             selected (cp/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
@@ -117,7 +117,7 @@
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             group-id (first selected)
             group    (get objects group-id)]
         (when (and (= 1 (count selected))
@@ -132,7 +132,7 @@
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             selected (cp/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
@@ -187,7 +187,7 @@
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])]
+            selected (wsh/lookup-selected state)]
         (when (= (count selected) 1)
           (let [group (get objects (first selected))
 

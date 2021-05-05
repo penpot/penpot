@@ -60,8 +60,10 @@
 (mf/defc workspace-content
   {::mf/wrap-props false}
   [props]
-  (let [local  (mf/deref refs/viewport-data)
-        {:keys [zoom vbox vport options-mode selected]} local
+  (let [selected (mf/deref refs/selected-shapes)
+        local    (mf/deref refs/viewport-data)
+
+        {:keys [zoom vbox vport options-mode]} local
         file   (obj/get props "file")
         layout (obj/get props "layout")]
     [:*
@@ -80,6 +82,7 @@
 
        [:& viewport {:file file
                      :local local
+                     :selected selected
                      :layout layout}]]]
 
      [:& left-toolbar {:layout layout}]

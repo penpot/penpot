@@ -191,7 +191,7 @@
     (ptk/reify ::picker-for-selected-shape
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [ids   (get-in state [:workspace-local :selected])
+        (let [ids   (wsh/lookup-selected state)
               stop? (rx/filter (ptk/type? ::stop-picker) stream)
 
               update-events
@@ -227,7 +227,7 @@
   (ptk/reify ::start-gradient
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (first (get-in state [:workspace-local :selected]))]
+      (let [id (-> state wsh/lookup-selected first)]
         (-> state
             (assoc-in [:workspace-local :current-gradient] gradient)
             (assoc-in [:workspace-local :current-gradient :shape-id] id))))))

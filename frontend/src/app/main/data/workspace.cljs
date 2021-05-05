@@ -573,7 +573,7 @@
   (ptk/reify ::zoom-to-selected-shape
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (get-in state [:workspace-local :selected])]
+      (let [selected (wsh/lookup-selected state)]
         (if (empty? selected)
           state
           (let [page-id (:current-page-id state)
@@ -623,7 +623,7 @@
   (ptk/reify ::update-selected-shapes
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [selected (get-in state [:workspace-local :selected])]
+      (let [selected (wsh/lookup-selected state)]
         (rx/from (map #(update-shape % attrs) selected))))))
 
 ;; --- Shape Movement (using keyboard shorcuts)
@@ -661,7 +661,7 @@
   (ptk/reify ::delete-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [selected (get-in state [:workspace-local :selected])]
+      (let [selected (wsh/lookup-selected state)]
         (rx/of (dwc/delete-shapes selected)
                (dws/deselect-all))))))
 
@@ -677,7 +677,7 @@
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             rchanges (mapv (fn [id]
                              (let [obj (get objects id)
                                    parent (get objects (:parent-id obj))
@@ -988,7 +988,7 @@
   (ptk/reify ::relocate-selected-shapes
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [selected (get-in state [:workspace-local :selected])]
+      (let [selected (wsh/lookup-selected state)]
         (rx/of (relocate-shapes selected parent-id to-index))))))
 
 
@@ -997,7 +997,7 @@
   (ptk/reify ::start-editing-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [selected (get-in state [:workspace-local :selected])]
+      (let [selected (wsh/lookup-selected state)]
         (if-not (= 1 (count selected))
           (rx/empty)
 
@@ -1048,7 +1048,7 @@
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             moved    (if (= 1 (count selected))
                        (align-object-to-frame objects (first selected) axis)
                        (align-objects-list objects selected axis))
@@ -1079,7 +1079,7 @@
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             moved    (-> (map #(get objects %) selected)
                          (gal/distribute-space axis objects))
 
@@ -1232,7 +1232,7 @@
       (let [mdata (cond-> params
                     (some? shape)
                     (assoc :selected
-                           (get-in state [:workspace-local :selected])))]
+                           (wsh/lookup-selected state)))]
         (assoc-in state [:workspace-local :context-menu] mdata)))))
 
 (defn show-shape-context-menu
@@ -1242,7 +1242,7 @@
   (ptk/reify ::show-shape-context-menu
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [selected (get-in state [:workspace-local :selected])]
+      (let [selected (wsh/lookup-selected state)]
         (rx/concat
           (when-not (selected (:id shape))
             (rx/of (dws/select-shape (:id shape))))
@@ -1313,7 +1313,7 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [objects  (wsh/lookup-page-objects state)
-              selected (->> (get-in state [:workspace-local :selected])
+              selected (->> (wsh/lookup-selected state)
                             (cp/clean-loops objects))
               pdata    (reduce (partial collect-object-ids objects) {} selected)
               initial  {:type :copied-shapes
@@ -1412,9 +1412,8 @@
           (js/console.error "Clipboard error:" err))))))
 
 (defn selected-frame? [state]
-  (let [selected (get-in state [:workspace-local :selected])
-        page-id  (:current-page-id state)
-        objects  (wsh/lookup-page-objects state page-id)]
+  (let [selected (wsh/lookup-selected state)
+        objects  (wsh/lookup-page-objects state)]
     (and (and (= 1 (count selected))
               (= :frame (get-in objects [(first selected) :type]))))))
 
@@ -1454,7 +1453,7 @@
             (let [page-objects  (wsh/lookup-page-objects state)
                   selected-objs (map #(get objects %) selected)
                   has-frame? (d/seek #(= (:type %) :frame) selected-objs)
-                  page-selected (get-in state [:workspace-local :selected])
+                  page-selected (wsh/lookup-selected state)
                   wrapper       (gsh/selection-rect selected-objs)
                   orig-pos      (gpt/point (:x1 wrapper) (:y1 wrapper))]
               (cond
@@ -1635,7 +1634,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [initial-pos @ms/mouse-position
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             stopper (rx/filter ms/mouse-up? stream)]
         (when (= 1 (count selected))
           (rx/concat
@@ -1651,7 +1650,7 @@
     (update [_ state]
       (let [page-id (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected-shape-id (-> state (get-in [:workspace-local :selected]) first)
+            selected-shape-id (-> state wsh/lookup-selected first)
             selected-shape (get objects selected-shape-id)
             selected-shape-frame-id (:frame-id selected-shape)
             start-frame (get objects selected-shape-frame-id)
@@ -1676,7 +1675,7 @@
             objects  (wsh/lookup-page-objects state page-id)
             frame    (dwc/get-frame-at-point objects position)
 
-            shape-id (first (get-in state [:workspace-local :selected]))
+            shape-id (-> state wsh/lookup-selected first)
             shape    (get objects shape-id)]
 
         (when-not (= position initial-pos)

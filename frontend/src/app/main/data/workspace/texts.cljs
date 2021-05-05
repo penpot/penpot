@@ -207,7 +207,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [objects  (wsh/lookup-page-objects state)
-            selected (->> state :workspace-local :selected (map #(get objects %)))]
+            selected (->> state wsh/lookup-selected (mapv #(get objects %)))]
         (cond-> state
           (and (= 1 (count selected))
                (= (-> selected first :type) :text))

@@ -239,7 +239,7 @@
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             selected (cp/clean-loops objects selected)]
         (let [[group rchanges uchanges]
               (dwlh/generate-add-component selected objects page-id file-id)]

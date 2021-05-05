@@ -419,7 +419,7 @@
         (let [page-id (:current-page-id state)
               objects (wsh/lookup-page-objects state page-id)
               frame-id (cp/frame-id-by-position objects position)
-              selected (get-in state [:workspace-local :selected])
+              selected (wsh/lookup-selected state)
 
               [vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
               x (- x vb-x (/ vb-width 2))
