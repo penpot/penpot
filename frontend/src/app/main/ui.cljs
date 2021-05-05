@@ -141,7 +141,10 @@
       :dashboard-font-providers
       :dashboard-team-members
       :dashboard-team-settings)
-     [:& dashboard {:route route}]
+     [:*
+      #_[:div.modal-wrapper
+         [:& app.main.ui.onboarding/release-notes-modal {:version "1.5"}]]
+      [:& dashboard {:route route}]]
 
      :viewer
      (let [index   (get-in route [:query-params :index])

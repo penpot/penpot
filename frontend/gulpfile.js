@@ -33,7 +33,7 @@ paths.dist = "./target/dist/";
 // Templates
 
 function readLocales() {
-  const langs = ["ca", "el", "en", "es", "fr", "tr", "ru", "zh_cn"];
+  const langs = ["ca", "de", "el", "en", "es", "fr", "tr", "ru", "zh_cn"];
   const result = {};
 
   for (let lang of langs) {
