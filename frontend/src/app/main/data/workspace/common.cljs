@@ -353,7 +353,6 @@
                                    :shapes [shape-id]})))]
         (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
-
 (defn delete-shapes
   [ids]
   (us/assert (s/coll-of ::us/uuid) ids)
@@ -388,6 +387,12 @@
                     #{}
                     ids)
 
+            interacting-shapes
+            (filter (fn [shape]
+                      (let [interactions (:interactions shape)]
+                        (some ids (map :destination interactions))))
+                    (vals objects))
+
             rchanges
             (d/concat
               (reduce (fn [res id]
@@ -413,7 +418,18 @@
                       :operations [{:type :set
                                     :attr :masked-group?
                                     :val false}])
-                   groups-to-unmask))
+                   groups-to-unmask)
+              (map #(array-map
+                      :type :mod-obj
+                      :page-id page-id
+                      :id (:id %)
+                      :operations [{:type :set
+                                    :attr :interactions
+                                    :val (vec (remove (fn [interaction]
+                                                        (contains? ids (:destination interaction)))
+                                                      (:interactions %)))}])
+                   interacting-shapes))
+
 
             uchanges
             (d/concat
@@ -452,7 +468,15 @@
                       :operations [{:type :set
                                     :attr :masked-group?
                                     :val true}])
-                   groups-to-unmask))]
+                   groups-to-unmask)
+              (map #(array-map
+                      :type :mod-obj
+                      :page-id page-id
+                      :id (:id %)
+                      :operations [{:type :set
+                                    :attr :interactions
+                                    :val (:interactions %)}])
+                   interacting-shapes))]
 
         ;; (println "================ rchanges")
         ;; (cljs.pprint/pprint rchanges)

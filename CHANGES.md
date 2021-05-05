@@ -4,6 +4,9 @@
 
 ### :sparkles: New features
 ### :bug: Bugs fixed
+
+- Remove interactions when the destination artboard is deleted [Taiga #1656](https://tree.taiga.io/project/penpot/issue/1656)
+
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)

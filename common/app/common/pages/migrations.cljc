@@ -163,3 +163,19 @@
     (-> data
         (update :components  #(d/mapm update-container %))
         (update :pages-index #(d/mapm update-container %)))))
+
+
+;; Remove interactions pointing to deleted frames
+(defmethod migrate 7
+  [data]
+  (letfn [(update-object [page _ object]
+            (d/update-when object :interactions
+              (fn [interactions]
+                (filterv #(get-in page [:objects (:destination %)])
+                         interactions))))
+
+          (update-page [_ page]
+            (update page :objects #(d/mapm (partial update-object page) %)))]
+
+    (update data :pages-index #(d/mapm update-page %))))
+
