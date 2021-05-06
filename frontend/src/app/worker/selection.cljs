@@ -155,3 +155,8 @@
   (when-let [index (get @state page-id)]
     (query-index index rect frame-id include-frames? include-groups? disabled-masks reverse?)))
 
+(defmethod impl/handler :selection/query-z-index
+  [{:keys [page-id objects ids]}]
+  (when-let [{z-index :z-index} (get @state page-id)]
+    (->> ids (map #(+ (get z-index %)
+                      (get z-index (get-in objects [% :frame-id])))))))
