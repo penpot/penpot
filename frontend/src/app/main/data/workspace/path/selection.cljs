@@ -51,9 +51,9 @@
             content (get-in state (st/get-path state :content))
             selected-point? #(gsh/has-point-rect? selrect %)
             selected-points (get-in state [:workspace-local :edit-path id :selected-points])
-
             positions (into (if shift? selected-points #{})
-                            (comp (map (comp gpt/point :params))
+                            (comp (filter #(not (= (:command %) :close-path)))
+                                  (map (comp gpt/point :params))
                                   (filter selected-point?))
                             content)]
         (cond-> state
