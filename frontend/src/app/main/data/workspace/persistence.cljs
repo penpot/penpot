@@ -211,8 +211,7 @@
       (if (= file-id (:current-file-id state))
         (-> state
             (update-in [:workspace-file :revn] max revn)
-            (update :workspace-data cp/process-changes changes)
-            (update-in [:workspace-file :data] cp/process-changes changes))
+            (update :workspace-data cp/process-changes changes))
         (-> state
             (update-in [:workspace-libraries file-id :revn] max revn)
             (update-in [:workspace-libraries file-id :data]
