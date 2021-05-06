@@ -85,7 +85,8 @@
                  ;; https://tree.taiga.io/project/uxboxproject/issue/1083
                  ;; {:value "viewer" :label (tr "labels.viewer")}]
 
-        initial (mf/use-memo (mf/deps team) (constantly {:team-id (:id team)}))
+        initial (mf/use-memo (mf/deps team) (constantly {:team-id (:id team)
+                                                         :role "editor"}))
         form    (fm/use-form :spec ::invite-member-form
                              :initial initial)
         on-success
