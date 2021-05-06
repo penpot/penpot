@@ -14,6 +14,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.text.embed :as ste]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
@@ -76,14 +77,22 @@
       (let [shape       (unchecked-get props "shape")
             objects     (unchecked-get props "objects")
             edition     (mf/deref refs/selected-edition)
+            embed-fonts? (mf/use-ctx muc/embed-ctx)
 
             shape       (gsh/transform-shape shape)
             children    (mapv #(get objects %) (:shapes shape))
+            text-childs (->> objects
+                             vals
+                             (filterv #(and (= :text (:type %))
+                                            (= (:id shape) (:frame-id %)))))
+
             ds-modifier (get-in shape [:modifiers :displacement])]
 
         (when (and shape (not (:hidden shape)))
           [:g.frame-wrapper {:display (when (:hidden shape) "none")}
            [:> shape-container {:shape shape}
+            (when embed-fonts?
+              [:& ste/embed-fontfaces-style {:shapes text-childs}])
             [:& frame-shape
              {:shape shape
               :childs children}]]])))))
