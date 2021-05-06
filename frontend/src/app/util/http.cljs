@@ -52,7 +52,7 @@
   {"x-frontend-version" (:full @cfg/version)})
 
 (defn fetch
-  [{:keys [method uri query headers body timeout mode]
+  [{:keys [method uri query headers body timeout mode omit-default-headers]
     :or {timeout 10000 mode :cors headers {}}}]
   (rx/Observable.create
    (fn [subscriber]
@@ -67,9 +67,15 @@
            uri           (cond-> uri
                            (string? uri) (u/uri)
                            (some? query) (assoc :query query))
-           headers       (->> (d/merge headers default-headers)
-                              (-update-headers body))
+
+           headers       (cond-> headers
+                           (not omit-default-headers)
+                           (d/merge default-headers))
+
+           headers       (-update-headers body headers)
+
            body          (-get-body-data body)
+
            params        #js {:method (translate-method method)
                               :headers (clj->js headers)
                               :body body

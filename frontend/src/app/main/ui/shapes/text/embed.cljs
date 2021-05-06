@@ -62,12 +62,14 @@
   "Given a font and the variant-id, retrieves the style CSS for it."
   [{:keys [id backend family variants] :as font} font-variant-id]
   (if (= :google backend)
-    (->> (http/send! {:method :get
-                      :mode :no-cors
-                      :uri (fonts/gfont-url family [{:id font-variant-id}])
-                      :response-type :text})
-         (rx/map :body)
-         (http/as-promise))
+    (let [uri (fonts/gfont-url family [{:id font-variant-id}])]
+      (->> (http/send! {:method :get
+                        :mode :cors
+                        :omit-default-headers true
+                        :uri uri
+                        :response-type :text})
+           (rx/map :body)
+           (http/as-promise)))
     (let [{:keys [name weight style suffix] :as variant} (d/seek #(= (:id %) font-variant-id) variants)
           result (str/fmt font-face-template {:family family
                                               :style style
@@ -89,7 +91,7 @@
     (with-cache {:key uris :max-age (dt/duration {:hours 4})}
       (->> (rx/from (seq uris))
            (rx/mapcat (fn [uri]
-                        (->> (http/send! {:method :get :uri uri :response-type :blob})
+                        (->> (http/send! {:method :get :uri uri :response-type :blob :omit-default-headers true})
                              (rx/map :body)
                              (rx/mapcat wapi/read-file-as-data-url)
                              (rx/map #(vector uri %)))))
@@ -124,9 +126,10 @@
 
 (mf/defc embed-fontfaces-style
   {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
+   ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
   [props]
-  (let [node  (obj/get props "node")
+  (let [shapes  (obj/get props "shapes")
+        node {:children (->> shapes (map :content))}
         fonts (-> node get-node-fonts memoize)
         style (mf/use-state nil)]
 
