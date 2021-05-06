@@ -12,17 +12,18 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
+   [app.main.data.workspace.path.drawing :as drawing]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.selection :as selection]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
-   [app.main.data.workspace.path.drawing :as drawing]
    [app.main.data.workspace.path.undo :as undo]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [app.util.path.commands :as upc]
    [app.util.path.geom :as upg]
-   [app.util.path.tools :as upt]
    [app.util.path.subpaths :as ups]
+   [app.util.path.tools :as upt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -46,7 +47,9 @@
   (ptk/reify ::apply-content-modifiers
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [id (st/get-path-id state)
+      (let [objects (wsh/lookup-page-objects state)
+
+            id (st/get-path-id state)
             page-id (:current-page-id state)
             shape (get-in state (st/get-path state))
             content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
@@ -58,7 +61,7 @@
             new-points (->> new-content upg/content->points)
             point-change (->> (map hash-map old-points new-points) (reduce merge))
 
-            [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
+            [rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
 
         (rx/of (dch/commit-changes rch uch {:commit-local? true})
                (selection/update-selection point-change)

@@ -6,13 +6,14 @@
 
 (ns app.main.data.workspace.path.tools
   (:require
+   [app.common.geom.point :as gpt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.state :as st]
-   [app.util.path.tools :as upt]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.util.path.subpaths :as ups]
-   [app.common.geom.point :as gpt]
+   [app.util.path.tools :as upt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -24,14 +25,15 @@
    (ptk/reify ::process-path-tool
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [id (st/get-path-id state)
+       (let [objects (wsh/lookup-page-objects state)
+             id (st/get-path-id state)
              page-id (:current-page-id state)
              shape (get-in state (st/get-path state))
              selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
              points (or points selected-points)
              new-content (-> (tool-fn (:content shape) points)
                              (ups/close-subpaths))
-             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
+             [rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
          (rx/of (dch/commit-changes rch uch {:commit-local? true})))))))
 
 (defn make-corner
