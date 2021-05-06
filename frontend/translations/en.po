@@ -1,25 +1,16 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Free Software Foundation, Inc.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-# 
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2021-04-22 13:43+0200\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2021-04-14 13:44+0000\n"
+"Last-Translator: Andrés Moya <andres.moya@kaleidos.net>\n"
+"Language-Team: English "
+"<https://hosted.weblate.org/projects/penpot/frontend/en/>\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.6-dev\n"
 
-# ~ msgid ""
-# ~ msgstr ""
-# ~ "Language: en\n"
-# ~ "MIME-Version: 1.0\n"
-# ~ "Content-Type: text/plain; charset=utf-8\n"
-# ~ "Content-Transfer-Encoding: 8bit\n"
-# ~ "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
 msgstr "Already have an account?"
@@ -491,6 +482,10 @@ msgstr "The registration is currently disabled."
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "You must accept our terms of service and privacy policy."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.token-expired"
+msgstr "Token expired"
 
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
@@ -1068,9 +1063,7 @@ msgstr "Verify new email"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
-msgstr ""
-"We'll send you an email to your current email “%s” to verify your "
-"identity."
+msgstr "We'll send you an email to your current email “%s” to verify your identity."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1094,9 +1087,7 @@ msgstr "Yes, delete my account"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.info"
-msgstr ""
-"By removing your account you’ll lose all your current projects and "
-"archives."
+msgstr "By removing your account you’ll lose all your current projects and archives."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.title"
