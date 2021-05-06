@@ -1278,7 +1278,9 @@
             (let [obj (maybe-translate obj objects selected)]
               (if (= type :image)
                 (let [url (cfg/resolve-file-media (:metadata obj))]
-                  (->> (http/send! {:method :get :uri url})
+                  (->> (http/send! {:method :get
+                                    :uri url
+                                    :response-type :blob})
                        (rx/map :body)
                        (rx/mapcat wapi/read-file-as-data-url)
                        (rx/map #(assoc obj ::data %))
