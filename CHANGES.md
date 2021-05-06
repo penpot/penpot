@@ -39,6 +39,7 @@
 - Fix visual problem with group invite [Taiga #1290](https://tree.taiga.io/project/penpot/issue/1290)
 - Fix issues with promote owner panel [Taiga #763](https://tree.taiga.io/project/penpot/issue/763)
 - Allow use library colors when defining gradients [Taiga #1614](https://tree.taiga.io/project/penpot/issue/1614)
+- Fix group selrect not updating after alignment [#895](https://github.com/penpot/penpot/issues/895)
 
 ### :arrow_up: Deps updates
 
