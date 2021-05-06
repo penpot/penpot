@@ -3,9 +3,10 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -101,8 +102,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            objects  (wsh/lookup-page-objects state page-id)
+            selected (wsh/lookup-selected state)
             selected (cp/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
@@ -115,8 +116,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            objects  (wsh/lookup-page-objects state page-id)
+            selected (wsh/lookup-selected state)
             group-id (first selected)
             group    (get objects group-id)]
         (when (and (= 1 (count selected))
@@ -130,8 +131,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            objects  (wsh/lookup-page-objects state page-id)
+            selected (wsh/lookup-selected state)
             selected (cp/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
@@ -185,8 +186,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])]
+            objects  (wsh/lookup-page-objects state page-id)
+            selected (wsh/lookup-selected state)]
         (when (= (count selected) 1)
           (let [group (get objects (first selected))
 

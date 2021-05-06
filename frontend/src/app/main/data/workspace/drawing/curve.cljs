@@ -6,16 +6,16 @@
 
 (ns app.main.data.workspace.drawing.curve
   (:require
-   [beicon.core :as rx]
-   [potok.core :as ptk]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
+   [app.common.pages :as cp]
+   [app.main.data.workspace.drawing.common :as common]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [app.util.path.simplify-curve :as ups]
-   [app.main.data.workspace.drawing.common :as common]
-   [app.main.data.workspace.common :as dwc]
-   [app.common.pages :as cp]))
+   [beicon.core :as rx]
+   [potok.core :as ptk]))
 
 (def simplify-tolerance 0.3)
 
@@ -45,7 +45,7 @@
     ptk/UpdateEvent
     (update [_ state]
 
-      (let [objects (dwc/lookup-page-objects state)
+      (let [objects (wsh/lookup-page-objects state)
             content (get-in state [:workspace-drawing :object :content] [])
             position (get-in content [0 :params] nil)
             frame-id  (cp/frame-id-by-position objects position)]

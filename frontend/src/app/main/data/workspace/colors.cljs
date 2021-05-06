@@ -11,9 +11,9 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -127,7 +127,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (let [page-id   (:current-page-id state)
-            objects   (dwc/lookup-page-objects state page-id)
+            objects   (wsh/lookup-page-objects state page-id)
 
             is-text?  #(= :text (:type (get objects %)))
             text-ids  (filter is-text? ids)
@@ -159,7 +159,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
 
             attrs   (cond-> {}
                       (contains? color :color)
@@ -191,7 +191,7 @@
     (ptk/reify ::picker-for-selected-shape
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [ids   (get-in state [:workspace-local :selected])
+        (let [ids   (wsh/lookup-selected state)
               stop? (rx/filter (ptk/type? ::stop-picker) stream)
 
               update-events
@@ -227,7 +227,7 @@
   (ptk/reify ::start-gradient
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (first (get-in state [:workspace-local :selected]))]
+      (let [id (-> state wsh/lookup-selected first)]
         (-> state
             (assoc-in [:workspace-local :current-gradient] gradient)
             (assoc-in [:workspace-local :current-gradient :shape-id] id))))))

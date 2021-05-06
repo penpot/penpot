@@ -6,10 +6,6 @@
 
 (ns app.main.data.workspace.selection
   (:require
-   [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [potok.core :as ptk]
-   [linked.set :as lks]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
@@ -17,11 +13,16 @@
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.modal :as md]
+   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
-   [app.main.worker :as uw]))
+   [app.main.worker :as uw]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [linked.set :as lks]
+   [potok.core :as ptk]))
 
 (s/def ::set-of-uuid
   (s/every uuid? :kind set?))
@@ -101,7 +102,7 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [page-id (:current-page-id state)
-             objects (dwc/lookup-page-objects state page-id)]
+             objects (wsh/lookup-page-objects state page-id)]
          (rx/of (dwc/expand-all-parents [id] objects)))))))
 
 (defn deselect-shape
@@ -118,9 +119,9 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [page-id (:current-page-id state)
-             objects (dwc/lookup-page-objects state page-id)
+             objects (wsh/lookup-page-objects state page-id)
              selection (-> state
-                           (get-in [:workspace-local :selected] #{})
+                           wsh/lookup-selected
                            (conj id))]
          (-> state
              (assoc-in [:workspace-local :selected]
@@ -136,7 +137,7 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-       (let [objects (dwc/lookup-page-objects state)]
+       (let [objects (wsh/lookup-page-objects state)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
 (defn select-all
@@ -145,9 +146,9 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id      (:current-page-id state)
-            objects      (dwc/lookup-page-objects state page-id)
+            objects      (wsh/lookup-page-objects state page-id)
             new-selected (let [selected-objs
-                               (->> (get-in state [:workspace-local :selected])
+                               (->> (wsh/lookup-selected state)
                                     (map #(get objects %)))
 
                                frame-ids
@@ -205,8 +206,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state)
-            selected (get-in state [:workspace-local :selected])
+            objects (wsh/lookup-page-objects state)
+            selected (wsh/lookup-selected state)
             initial-set (if preserve?
                           selected
                           lks/empty-linked-set)
@@ -229,7 +230,7 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [page-id  (:current-page-id state)
-             objects  (dwc/lookup-page-objects state page-id)
+             objects  (wsh/lookup-page-objects state page-id)
              group    (get objects group-id)
              children (map #(get objects %) (:shapes group))
 
@@ -379,9 +380,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-
-            selected (get-in state [:workspace-local :selected])
+            objects  (wsh/lookup-page-objects state page-id)
+            selected (wsh/lookup-selected state)
             delta    (gpt/point 0 0)
             unames   (dwc/retrieve-used-names objects)
 

@@ -1,18 +1,20 @@
 (ns app.test-components-basic
-  (:require [cljs.test :as t :include-macros true]
-            [cljs.pprint :refer [pprint]]
-            [clojure.stacktrace :as stk]
-            [beicon.core :as rx]
-            [linked.core :as lks]
-            [app.test-helpers.events :as the]
-            [app.test-helpers.pages :as thp]
-            [app.test-helpers.libraries :as thl]
-            [app.common.geom.point :as gpt]
-            [app.common.data :as d]
-            [app.common.pages.helpers :as cph]
-            [app.main.data.workspace :as dw]
-            [app.main.data.workspace.libraries :as dwl]
-            [app.main.data.workspace.libraries-helpers :as dwlh]))
+  (:require
+   [app.common.data :as d]
+   [app.common.geom.point :as gpt]
+   [app.common.pages.helpers :as cph]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.libraries-helpers :as dwlh]
+   [app.main.data.workspace.state-helpers :as wsh]
+   [app.test-helpers.events :as the]
+   [app.test-helpers.libraries :as thl]
+   [app.test-helpers.pages :as thp]
+   [beicon.core :as rx]
+   [cljs.pprint :refer [pprint]]
+   [cljs.test :as t :include-macros true]
+   [clojure.stacktrace :as stk]
+   [linked.core :as lks]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -307,8 +309,8 @@
                                     (gpt/point 100 100)))
              (rx/do
                (fn [new-state]
-                 (let [new-instance-id (-> (get-in new-state
-                                                   [:workspace-local :selected])
+                 (let [new-instance-id (-> new-state
+                                           wsh/lookup-selected
                                            first)
 
                        [[instance2 shape2]

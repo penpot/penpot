@@ -125,8 +125,7 @@
     ["/assets" {:middleware [[middleware/format-response-body]
                              [middleware/errors errors/handle]
                              [middleware/cookies]
-                             (:middleware session)
-                             middleware/activity-logger]}
+                             (:middleware session)]}
      ["/by-id/:id" {:get (:objects-handler assets)}]
      ["/by-file-media-id/:id" {:get (:file-objects-handler assets)}]
      ["/by-file-media-id/:id/thumbnail" {:get (:file-thumbnails-handler assets)}]]
@@ -152,8 +151,7 @@
      ["/auth/oauth/:provider" {:post (:handler oauth)}]
      ["/auth/oauth/:provider/callback" {:get (:callback-handler oauth)}]
 
-     ["/rpc" {:middleware [(:middleware session)
-                           middleware/activity-logger]}
+     ["/rpc" {:middleware [(:middleware session)]}
       ["/query/:type" {:get (:query-handler rpc)
                        :post (:query-handler rpc)}]
       ["/mutation/:type" {:post (:mutation-handler rpc)}]]]]))

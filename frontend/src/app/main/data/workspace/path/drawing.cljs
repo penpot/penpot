@@ -19,6 +19,7 @@
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.tools :as tools]
    [app.main.data.workspace.path.undo :as undo]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [app.util.path.commands :as upc]
    [app.util.path.geom :as upg]
@@ -259,7 +260,7 @@
   (ptk/reify ::setup-frame-path
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (dwc/lookup-page-objects state)
+      (let [objects (wsh/lookup-page-objects state)
             content (get-in state [:workspace-drawing :object :content] [])
             position (get-in content [0 :params] nil)
             frame-id  (cp/frame-id-by-position objects position)]

@@ -21,6 +21,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.exports :as exports]
    [app.main.refs :as refs]
@@ -514,7 +515,7 @@
 
         apply-color
         (fn [color-id event]
-          (let [ids (get-in @st/state [:workspace-local :selected])]
+          (let [ids (wsh/lookup-selected @st/state)]
             (if (kbd/shift? event)
               (st/emit! (dc/change-stroke ids color))
               (st/emit! (dc/change-fill ids color)))))
@@ -713,7 +714,7 @@
 
         apply-typography
         (fn [typography event]
-          (let [ids (get-in @st/state [:workspace-local :selected])
+          (let [ids (wsh/lookup-selected @st/state)
                 attrs (merge
                         {:typography-ref-file file-id
                          :typography-ref-id (:id typography)}

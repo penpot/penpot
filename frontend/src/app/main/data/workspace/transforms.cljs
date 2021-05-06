@@ -7,16 +7,17 @@
 (ns app.main.data.workspace.transforms
   "Events related with shapes transformations"
   (:require
-   [app.common.math :as mth]
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.snap :as snap]
@@ -140,7 +141,7 @@
               layout  (:workspace-layout state)
               page-id (:current-page-id state)
               zoom    (get-in state [:workspace-local :zoom] 1)
-              objects (dwc/lookup-page-objects state page-id)
+              objects (wsh/lookup-page-objects state page-id)
               resizing-shapes (map #(get objects %) ids)
               text-shapes-ids (->> resizing-shapes
                                    (filter #(= :text (:type %)))
@@ -209,7 +210,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [initial  (deref ms/mouse-position)
-            selected (get-in state [:workspace-local :selected])
+            selected (wsh/lookup-selected state)
             stopper  (rx/filter ms/mouse-up? stream)]
         (->> ms/mouse-position
              (rx/take-until stopper)
@@ -242,7 +243,7 @@
     (watch [_ state stream]
       (let [position @ms/mouse-position
             page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
             frame-id (cp/frame-id-by-position objects position)
 
             moving-shapes (->> ids
@@ -282,8 +283,8 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [page-id (:current-page-id state)
-             objects (dwc/lookup-page-objects state page-id)
-             ids     (if (nil? ids) (get-in state [:workspace-local :selected]) ids)
+             objects (wsh/lookup-page-objects state page-id)
+             ids     (if (nil? ids) (wsh/lookup-selected state) ids)
              shapes  (mapv #(get objects %) ids)
              stopper (rx/filter ms/mouse-up? stream)
              layout  (get state :workspace-layout)
@@ -363,7 +364,7 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (if (= same-event (get-in state [:workspace-local :current-move-selected]))
-          (let [selected (get-in state [:workspace-local :selected])
+          (let [selected (wsh/lookup-selected state)
                 move-events (->> stream
                                  (rx/filter (ptk/type? ::move-selected))
                                  (rx/filter #(= direction (deref %))))
@@ -399,7 +400,7 @@
      (update [_ state]
        (let [modifiers (or modifiers (get-in state [:workspace-local :modifiers] {}))
              page-id (:current-page-id state)
-             objects (dwc/lookup-page-objects state page-id)
+             objects (wsh/lookup-page-objects state page-id)
 
              not-frame-id?
              (fn [shape-id]
@@ -451,7 +452,7 @@
     (watch [_ state stream]
 
       (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
             rotate-shape (fn [shape]
                            (let [delta (- rotation (:rotation shape))]
                              (set-rotation delta [shape])))]
@@ -465,7 +466,7 @@
   (ptk/reify ::apply-modifiers
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [objects (dwc/lookup-page-objects state)
+      (let [objects (wsh/lookup-page-objects state)
             children-ids (->> ids (mapcat #(cp/get-children % objects)))
             ids-with-children (d/concat [] children-ids ids)]
         (rx/of (dwu/start-undo-transaction)
@@ -488,7 +489,7 @@
     (update [_ state]
 
       (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
 
             update-children
             (fn [objects ids modifiers]
@@ -512,7 +513,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
             ids (d/concat [] ids (mapcat #(cp/get-children % objects) ids))]
         (rx/of (apply-modifiers ids))))))
 
@@ -520,8 +521,8 @@
   (ptk/reify ::flip-horizontal-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [objects  (dwc/lookup-page-objects state)
-            selected (get-in state [:workspace-local :selected])
+      (let [objects  (wsh/lookup-page-objects state)
+            selected (wsh/lookup-selected state)
             shapes   (map #(get objects %) selected)
             selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
             origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))]
@@ -537,8 +538,8 @@
   (ptk/reify ::flip-vertical-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [objects  (dwc/lookup-page-objects state)
-            selected (get-in state [:workspace-local :selected])
+      (let [objects  (wsh/lookup-page-objects state)
+            selected (wsh/lookup-selected state)
             shapes   (map #(get objects %) selected)
             selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
             origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))]
