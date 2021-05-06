@@ -6,6 +6,7 @@
 
 (ns app.main.ui.onboarding
   (:require
+   [app.config :as cf]
    [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
@@ -38,9 +39,9 @@
    [:div.modal-right
     [:div.modal-title
      [:h2 "Welcome to Penpot!"]]
-    [:span.release "Alpha version 1.0"]
+    [:span.release "Alpha version " (:main @cf/version)]
     [:div.modal-content
-     [:p "We are very happy to introduce you to the very first Alpha 1.0 release."]
+     [:p "We are very happy to introduce you to the very first Alpha release."]
      [:p "Penpot is still at development stage and there will be constant updates. We hope you enjoy the first stable version."]]
     [:div.modal-navigation
      [:button.btn-secondary {:on-click next} "Continue"]]]

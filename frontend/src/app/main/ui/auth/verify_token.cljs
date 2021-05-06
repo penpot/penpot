@@ -72,18 +72,26 @@
             (rx/subs
              (fn [tdata]
                (handle-token tdata))
-             (fn [error]
-               (case (:code error)
-                 :email-already-exists
+             (fn [{:keys [type code] :as error}]
+               (cond
+                 (and (= :validation type)
+                      (= :invalid-token code)
+                      (= :token-expired (:reason error)))
+                 (let [msg (tr "errors.token-expired")]
+                   (ts/schedule 100 #(st/emit! (dm/error msg)))
+                   (st/emit! (rt/nav :auth-login)))
+
+                 (= :email-already-exists code)
                  (let [msg (tr "errors.email-already-exists")]
                    (ts/schedule 100 #(st/emit! (dm/error msg)))
                    (st/emit! (rt/nav :auth-login)))
 
-                 :email-already-validated
+                 (= :email-already-validated code)
                  (let [msg (tr "errors.email-already-validated")]
                    (ts/schedule 100 #(st/emit! (dm/warn msg)))
                    (st/emit! (rt/nav :auth-login)))
 
+                 :else
                  (let [msg (tr "errors.generic")]
                    (ts/schedule 100 #(st/emit! (dm/error msg)))
                    (st/emit! (rt/nav :auth-login)))))))))

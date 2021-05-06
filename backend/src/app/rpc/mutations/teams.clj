@@ -309,7 +309,7 @@
           team     (db/get-by-id conn :team team-id)
           itoken   (tokens :generate
                            {:iss :team-invitation
-                            :exp (dt/in-future "6h")
+                            :exp (dt/in-future "48h")
                             :profile-id (:id profile)
                             :role role
                             :team-id team-id

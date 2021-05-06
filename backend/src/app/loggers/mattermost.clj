@@ -39,8 +39,8 @@
           :opt-un [::uri]))
 
 (defmethod ig/init-key ::reporter
-  [_ {:keys [receiver] :as cfg}]
-  (l/info :msg "intializing mattermost error reporter")
+  [_ {:keys [receiver uri] :as cfg}]
+  (l/info :msg "intializing mattermost error reporter" :uri uri)
   (let [output (a/chan (a/sliding-buffer 128)
                        (filter #(= (:level %) "error")))]
     (receiver :sub output)
@@ -63,6 +63,7 @@
     (let [uri  (:uri cfg)
           text (str "Unhandled exception (@channel):\n"
                     "- detail: " (cfg/get :public-uri) "/dbg/error-by-id/" id "\n"
+                    "- profile-id: `" (:profile-id cdata) "`\n"
                     "- host: `" host "`\n"
                     "- version: `" version "`\n"
                     (when error
