@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.viewport.snap-distances
   (:require
@@ -236,9 +233,8 @@
                                       (rx/map #(set/difference % selected))
                                       (rx/map #(->> % (map (partial get @refs/workspace-page-objects)))))
                                  (rx/of nil))))]
-
-            (->> (query-side lt-side)
-                 (rx/combine-latest vector (query-side gt-side)))))
+            (rx/combine-latest (query-side lt-side)
+                               (query-side gt-side))))
 
         [lt-shapes gt-shapes] @to-measure
 

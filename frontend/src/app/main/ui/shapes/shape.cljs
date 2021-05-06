@@ -2,13 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.shapes.shape
   (:require
+   [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.filters :as filters]
@@ -26,7 +24,10 @@
         render-id      (mf/use-memo #(str (uuid/next)))
         filter-id      (str "filter_" render-id)
         styles         (-> (obj/new)
-                           (obj/set! "pointerEvents" pointer-events))
+                           (obj/set! "pointerEvents" pointer-events)
+
+                           (cond-> (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
+                             (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
 
         {:keys [x y width height type]} shape
         frame? (= :frame type)

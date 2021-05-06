@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.spec
   "Data manipulation and query helper functions."
@@ -135,6 +132,20 @@
                 (do ::s/invalid))
               ::s/invalid))]
   (s/def ::email (s/conformer cfn str)))
+
+
+;; --- SPEC: set-of-str
+(letfn [(conformer [s]
+          (cond
+            (string? s) (into #{} (str/split s #"\s*,\s*"))
+            (set? s)    (if (every? string? s)
+                          s
+                          ::s/invalid)
+            :else       ::s/invalid))
+
+        (unformer [s]
+          (str/join "," s))]
+  (s/def ::set-of-str (s/conformer conformer unformer)))
 
 ;; --- Macros
 

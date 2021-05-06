@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.typography
   (:require
@@ -210,10 +207,9 @@
 
 
 (mf/defc typography-entry
-  [{:keys [typography read-only? on-select on-change on-detach on-context-menu editting? focus-name? file]}]
+  [{:keys [typography read-only? selected? on-click on-change on-detach on-context-menu editting? focus-name? file]}]
   (let [locale (mf/deref i18n/locale)
         open? (mf/use-state editting?)
-        selected (mf/deref refs/selected-shapes)
         hover-detach (mf/use-state false)
         name-input-ref (mf/use-ref nil)
 
@@ -243,9 +239,10 @@
 
     [:*
      [:div.element-set-options-group.typography-entry
+      {:class (when selected? "selected")}
       [:div.typography-selection-wrapper
-       {:class (when on-select "is-selectable")
-        :on-click on-select
+       {:class (when on-click "is-selectable")
+        :on-click on-click
         :on-context-menu on-context-menu}
        [:div.typography-sample
         {:style {:font-family (:font-family typography)

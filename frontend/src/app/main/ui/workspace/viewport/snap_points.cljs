@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.viewport.snap-points
   (:require
@@ -123,10 +120,10 @@
     (mf/use-effect
      (fn []
        (let [sub (->> subject
-                      (rx/switch-map #(rx/combine-latest
-                                       d/concat
-                                       (get-snap :y %)
-                                       (get-snap :x %)))
+                      (rx/switch-map #(rx/combine-latest (get-snap :x %)
+                                                         (get-snap :y %)))
+                      (rx/map (fn [result]
+                                (apply d/concat (seq result))))
                       (rx/subs #(let [rs (filter (fn [[_ snaps _]] (> (count snaps) 0)) %)]
                                   (reset! state rs))))]
 

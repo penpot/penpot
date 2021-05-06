@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.layers
   (:require
@@ -236,7 +233,7 @@
         (if (:hidden item) i/eye-closed i/eye)]
        [:div.block-element {:class (when (:blocked item) "selected")
                             :on-click toggle-blocking}
-        (if (:blocked item) i/lock i/lock-open)]]
+        (if (:blocked item) i/lock i/unlock)]]
 
       (when (:shapes item)
         [:span.toggle-content
@@ -288,27 +285,30 @@
                :objects objects
                :key id}])))]]))
 
+(defn- strip-obj-data [obj]
+  (select-keys obj [:id
+                    :name
+                    :blocked
+                    :hidden
+                    :shapes
+                    :type
+                    :content
+                    :parent-id
+                    :component-id
+                    :component-file
+                    :shape-ref
+                    :touched
+                    :metadata
+                    :masked-group?]))
+
 (defn- strip-objects
   [objects]
-  (let [strip-data #(select-keys % [:id
-                                    :name
-                                    :blocked
-                                    :hidden
-                                    :shapes
-                                    :type
-                                    :content
-                                    :parent-id
-                                    :component-id
-                                    :component-file
-                                    :shape-ref
-                                    :touched
-                                    :metadata
-                                    :masked-group?])]
-    (persistent!
-     (reduce-kv (fn [res id obj]
-                  (assoc! res id (strip-data obj)))
-                (transient {})
-                objects))))
+  (persistent!
+   (->> objects
+        (reduce-kv
+         (fn [res id obj]
+           (assoc! res id (strip-obj-data obj)))
+         (transient {})))))
 
 (mf/defc layers-tree-wrapper
   {::mf/wrap-props false

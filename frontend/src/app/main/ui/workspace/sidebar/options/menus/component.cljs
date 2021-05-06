@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
@@ -19,6 +16,7 @@
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.libraries :as dwl]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.dom :as dom]))
@@ -53,10 +51,10 @@
         do-detach-component (st/emitf (dwl/detach-component id))
         do-reset-component (st/emitf (dwl/reset-component id))
         do-update-component (st/emitf
-                               (dwc/start-undo-transaction)
+                               (dwu/start-undo-transaction)
                                (dwl/update-component id)
                                (dwl/sync-file current-file-id current-file-id)
-                               (dwc/commit-undo-transaction))
+                               (dwu/commit-undo-transaction))
         confirm-update-remote-component (st/emitf
                                           (dwl/update-component id)
                                           (dwl/sync-file current-file-id

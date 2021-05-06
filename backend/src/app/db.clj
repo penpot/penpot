@@ -2,25 +2,23 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.db
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.db.sql :as sql]
    [app.metrics :as mtx]
    [app.util.json :as json]
+   [app.util.logging :as l]
    [app.util.migrations :as mg]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time :as jdbc-dt])
@@ -48,8 +46,8 @@
 
 (declare instrument-jdbc!)
 
+(s/def ::name keyword?)
 (s/def ::uri ::us/not-empty-string)
-(s/def ::name ::us/not-empty-string)
 (s/def ::min-pool-size ::us/integer)
 (s/def ::max-pool-size ::us/integer)
 (s/def ::migrations map?)
@@ -59,14 +57,16 @@
 
 (defmethod ig/init-key ::pool
   [_ {:keys [migrations metrics] :as cfg}]
-  (log/infof "initialize connection pool '%s' with uri '%s'" (:name cfg) (:uri cfg))
+  (l/info :action "initialize connection pool"
+          :name (d/name (:name cfg))
+          :uri (:uri cfg))
   (instrument-jdbc! (:registry metrics))
   (let [pool (create-pool cfg)]
     (when (seq migrations)
       (with-open [conn ^AutoCloseable (open pool)]
         (mg/setup! conn)
-        (doseq [[mname steps] migrations]
-          (mg/migrate! conn {:name (name mname) :steps steps}))))
+        (doseq [[name steps] migrations]
+          (mg/migrate! conn {:name (d/name name) :steps steps}))))
     pool))
 
 (defmethod ig/halt-key! ::pool
@@ -100,7 +100,7 @@
         mtf      (PrometheusMetricsTrackerFactory. (:registry metrics))]
     (doto config
       (.setJdbcUrl (str "jdbc:" dburi))
-      (.setPoolName (:name cfg "default"))
+      (.setPoolName (d/name (:name cfg)))
       (.setAutoCommit true)
       (.setReadOnly false)
       (.setConnectionTimeout 8000)  ;; 8seg

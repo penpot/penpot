@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.history
   (:require
@@ -289,7 +286,7 @@
      [:div.history-toolbox-title (t locale "workspace.undo.title")]
      (if (empty? entries)
        [:div.history-entry-empty
-        [:div.history-entry-empty-icon i/undo-history]
+        [:div.history-entry-empty-icon i/recent]
         [:div.history-entry-empty-msg (t locale "workspace.undo.empty")]]
        [:ul.history-entries
         (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]

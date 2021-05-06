@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.auth.login
   (:require
@@ -32,26 +29,10 @@
 (s/def ::login-form
   (s/keys :req-un [::email ::password]))
 
-(defn- login-with-google
-  [event params]
+(defn- login-with-oauth
+  [event provider params]
   (dom/prevent-default event)
-  (->> (rp/mutation! :login-with-google params)
-       (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
-                  (.replace js/location redirect-uri))
-                (fn [{:keys [type] :as error}]
-                  (st/emit! (dm/error (tr "errors.google-auth-not-enabled")))))))
-
-(defn- login-with-gitlab
-  [event params]
-  (dom/prevent-default event)
-  (->> (rp/mutation! :login-with-gitlab params)
-       (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
-                  (.replace js/location redirect-uri)))))
-
-(defn- login-with-github
-  [event params]
-  (dom/prevent-default event)
-  (->> (rp/mutation! :login-with-github params)
+  (->> (rp/mutation! :login-with-oauth (assoc params :provider provider))
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
                   (.replace js/location redirect-uri)))))
 
@@ -130,6 +111,33 @@
          {:label (tr "auth.login-with-ldap-submit")
           :on-click on-submit-ldap}])]]))
 
+(mf/defc login-buttons
+  [{:keys [params] :as props}]
+  [:div.auth-buttons
+   (when cfg/google-client-id
+     [:a.btn-ocean.btn-large.btn-google-auth
+      {:on-click #(login-with-oauth % :google params)}
+      (tr "auth.login-with-google-submit")])
+
+   (when cfg/gitlab-client-id
+     [:a.btn-ocean.btn-large.btn-gitlab-auth
+      {:on-click #(login-with-oauth % :gitlab params)}
+      [:img.logo
+       {:src "/images/icons/brand-gitlab.svg"}]
+      (tr "auth.login-with-gitlab-submit")])
+
+   (when cfg/github-client-id
+     [:a.btn-ocean.btn-large.btn-github-auth
+      {:on-click #(login-with-oauth % :github params)}
+      [:img.logo
+       {:src "/images/icons/brand-github.svg"}]
+      (tr "auth.login-with-github-submit")])
+
+   (when cfg/oidc-client-id
+     [:a.btn-ocean.btn-large.btn-github-auth
+      {:on-click #(login-with-oauth % :oidc params)}
+      (tr "auth.login-with-oidc-submit")])])
+
 (mf/defc login-page
   [{:keys [params] :as props}]
   [:div.generic-form.login-form
@@ -152,24 +160,7 @@
              :tab-index "6"}
          (tr "auth.register-submit")]])]
 
-    (when cfg/google-client-id
-      [:a.btn-ocean.btn-large.btn-google-auth
-       {:on-click #(login-with-google % params)}
-       "Login with Google"])
-
-    (when cfg/gitlab-client-id
-      [:a.btn-ocean.btn-large.btn-gitlab-auth
-       {:on-click #(login-with-gitlab % params)}
-       [:img.logo
-        {:src "/images/icons/brand-gitlab.svg"}]
-       (tr "auth.login-with-gitlab-submit")])
-
-    (when cfg/github-client-id
-      [:a.btn-ocean.btn-large.btn-github-auth
-       {:on-click #(login-with-github % params)}
-       [:img.logo
-        {:src "/images/icons/brand-github.svg"}]
-       (tr "auth.login-with-github-submit")])
+    [:& login-buttons {:params params}]
 
     (when cfg/allow-demo-users
       [:div.links.demo

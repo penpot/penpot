@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.page
   "Page options menu entries."
@@ -16,6 +13,7 @@
    [app.main.store :as st]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.util.i18n :as i18n :refer [t]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]))
 
@@ -34,12 +32,12 @@
         on-open
         (mf/use-callback
          (mf/deps page-id)
-         #(st/emit! (dwc/start-undo-transaction)))
+         #(st/emit! (dwu/start-undo-transaction)))
 
         on-close
         (mf/use-callback
          (mf/deps page-id)
-         #(st/emit! (dwc/commit-undo-transaction)))]
+         #(st/emit! (dwu/commit-undo-transaction)))]
 
     [:div.element-set
      [:div.element-set-title (t locale "workspace.options.canvas-background")]

@@ -2,44 +2,59 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.viewer.shapes
   "The main container for a frame in viewer mode"
   (:require
-   [rumext.alpha :as mf]
    [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.circle :as circle]
+   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
-   [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
+   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
+   [app.util.dom :as dom]
    [app.util.object :as obj]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
-   [app.main.ui.shapes.shape :refer [shape-container]]))
+   [rumext.alpha :as mf]))
 
 (defn on-mouse-down
-  [event {:keys [interactions] :as shape}]
+  [event interactions]
   (let [interaction (first (filter #(= (:event-type %) :click) interactions))]
     (case (:action-type interaction)
       :navigate
       (let [frame-id (:destination interaction)]
+        (dom/stop-propagation event)
         (st/emit! (dv/go-to-frame frame-id)))
 
       nil)))
+
+(mf/defc interaction
+  [{:keys [shape interactions show-interactions?]}]
+  (let [{:keys [x y width height]} (:selrect shape)
+        frame? (= :frame (:type shape))]
+    (when-not (empty? interactions)
+      [:rect {:x (- x 1)
+              :y (- y 1)
+              :width (+ width 2)
+              :height (+ height 2)
+              :fill "#31EFB8"
+              :stroke "#31EFB8"
+              :stroke-width (if show-interactions? 1 0)
+              :fill-opacity (if show-interactions? 0.2 0)
+              :style {:pointer-events (when frame? "none")}
+              :transform (geom/transform-matrix shape)}])))
 
 (defn generic-wrapper-factory
   "Wrap some svg shape and add interaction controls"
@@ -48,35 +63,37 @@
     {::mf/wrap-props false}
     [props]
     (let [shape (unchecked-get props "shape")
+          objects (unchecked-get props "objects")
           {:keys [x y width height]} (:selrect shape)
+          frame? (= :frame (:type shape))
 
           childs (unchecked-get props "childs")
           frame  (unchecked-get props "frame")
 
+          interactions (->> (:interactions shape)
+                            (filter #(contains? objects (:destination %))))
+
           on-mouse-down (mf/use-callback
-                         (mf/deps shape)
-                         #(on-mouse-down % shape))
+                         (mf/deps interactions)
+                         (fn [event]
+                           (on-mouse-down event interactions)))
 
           svg-element? (and (= :svg-raw (:type shape))
                             (not= :svg (get-in shape [:content :tag])))]
 
       (if-not svg-element?
         [:> shape-container {:shape shape
-                             :on-mouse-down on-mouse-down
-                             :cursor (when (seq (:interactions shape)) "pointer")}
+                             :cursor (when-not (empty? interactions) "pointer")
+                             :on-mouse-down on-mouse-down}
+
          [:& component {:shape shape
                         :frame frame
                         :childs childs
                         :is-child-selected? true}]
-         (when (and (:interactions shape) show-interactions?)
-           [:rect {:x (- x 1)
-                   :y (- y 1)
-                   :width (+ width 2)
-                   :height (+ height 2)
-                   :fill "#31EFB8"
-                   :stroke "#31EFB8"
-                   :stroke-width 1
-                   :fill-opacity 0.2}])]
+
+         [:& interaction {:shape shape
+                          :interactions interactions
+                          :show-interactions? show-interactions?}]]
 
         ;; Don't wrap svg elements inside a <g> otherwise some can break
         [:& component {:shape shape
@@ -130,6 +147,7 @@
             props  (obj/merge! #js {} props
                                #js {:shape shape
                                     :childs childs
+                                    :objects objects
                                     :show-interactions? show-interactions?})]
         [:> frame-wrapper props]))))
 
@@ -144,6 +162,7 @@
             childs (mapv #(get objects %) (:shapes shape))
             props  (obj/merge! #js {} props
                                #js {:childs childs
+                                    :objects objects
                                     :show-interactions? show-interactions?})]
         [:> group-wrapper props]))))
 
@@ -158,6 +177,7 @@
             childs (mapv #(get objects %) (:shapes shape))
             props  (obj/merge! #js {} props
                                #js {:childs childs
+                                    :objects objects
                                     :show-interactions? show-interactions?})]
         [:> svg-raw-wrapper props]))))
 
@@ -182,7 +202,8 @@
         (when (and shape (not (:hidden shape)))
           (let [shape (-> (geom/transform-shape shape)
                           (geom/translate-to-frame frame))
-                opts #js {:shape shape}]
+                opts #js {:shape shape
+                          :objects objects}]
             (case (:type shape)
               :frame   [:g.empty]
               :text    [:> text-wrapper opts]
@@ -190,8 +211,8 @@
               :path    [:> path-wrapper opts]
               :image   [:> image-wrapper opts]
               :circle  [:> circle-wrapper opts]
-              :group   [:> group-container {:shape shape :frame frame}]
-              :svg-raw [:> svg-raw-container {:shape shape :frame frame}])))))))
+              :group   [:> group-container {:shape shape :frame frame :objects objects}]
+              :svg-raw [:> svg-raw-container {:shape shape :frame frame :objects objects}])))))))
 
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}

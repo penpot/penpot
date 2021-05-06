@@ -2,25 +2,24 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.data.workspace.svg-upload
   (:require
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
    [app.common.geom.proportions :as gpr]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.repo :as rp]
    [app.util.color :as uc]
-   [app.util.geom.path :as ugp]
    [app.util.object :as obj]
+   [app.util.path.parser :as upp]
    [app.util.svg :as usvg]
    [app.util.uri :as uu]
    [beicon.core :as rx]
@@ -166,7 +165,7 @@
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (not (empty? (:d attrs)) ))
     (let [svg-transform (usvg/parse-transform (:transform attrs))
-          path-content (ugp/path->content (:d attrs))
+          path-content (upp/parse-path (:d attrs))
           content (cond-> path-content
                     svg-transform
                     (gsh/transform-content svg-transform))
@@ -214,7 +213,7 @@
 
 (defn create-rect-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
-        transform (->> svg-transform 
+        transform (->> svg-transform
                        (gmt/transform-in (gpt/point svg-data)))
 
         rect (->> (select-keys attrs [:x :y :width :height])
@@ -242,7 +241,7 @@
 
 (defn create-circle-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
-        transform (->> svg-transform 
+        transform (->> svg-transform
                        (gmt/transform-in (gpt/point svg-data)))
 
         circle (->> (select-keys attrs [:r :ry :rx :cx :cy])
@@ -276,7 +275,7 @@
 
 (defn create-image-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
-        transform (->> svg-transform 
+        transform (->> svg-transform
                        (gmt/transform-in (gpt/point svg-data)))
 
         image-url (:xlink:href attrs)
@@ -330,7 +329,7 @@
                              (update :attrs usvg/add-transform disp-matrix)
                              (assoc :content [use-data]))]
         (parse-svg-element frame-id svg-data element-data unames))
-      
+
       ;; SVG graphic elements
       ;; :circle :ellipse :image :line :path :polygon :polyline :rect :text :use
       (let [shape (-> (case tag
@@ -384,43 +383,43 @@
 
 (declare create-svg-shapes)
 
-(defn svg-uploaded [svg-data file-id x y]
+(defn svg-uploaded
+  [svg-data file-id position]
   (ptk/reify ::svg-uploaded
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [images-to-upload (-> svg-data (usvg/collect-images))
+      ;; Once the SVG is uploaded, we need to extract all the bitmap
+      ;; images and upload them separatelly, then proceed to create
+      ;; all shapes.
+      (->> (rx/from (usvg/collect-images svg-data))
+           (rx/map (fn [uri]
+                     (d/merge
+                      {:file-id file-id
+                       :is-local true
+                       :url uri}
 
-            prepare-uri
-            (fn [uri]
-              (merge
-               {:file-id file-id
-                :is-local true
-                :url uri}
+                      (if (str/starts-with? uri "data:")
+                        {:name "image"
+                         :content (uu/data-uri->blob uri)}
+                        {:name (uu/uri-name uri)}))))
+           (rx/mapcat (fn [uri-data]
+                        (->> (rp/mutation! (if (contains? uri-data :content)
+                                             :upload-file-media-object
+                                             :create-file-media-object-from-url) uri-data)
+                             (rx/map #(vector (:url uri-data) %)))))
+           (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})
+           (rx/map #(create-svg-shapes (assoc svg-data :image-data %) position))))))
 
-               (if (str/starts-with? uri "data:")
-                 {:name "image"
-                  :content (uu/data-uri->blob uri)}
-                 {:name (uu/uri-name uri)})))]
-
-        (->> (rx/from images-to-upload)
-             (rx/map prepare-uri)
-             (rx/mapcat (fn [uri-data]
-                          (->> (rp/mutation! (if (contains? uri-data :content)
-                                               :upload-file-media-object
-                                               :create-file-media-object-from-url) uri-data)
-                               (rx/map #(vector (:url uri-data) %)))))
-             (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})
-             (rx/map #(create-svg-shapes (assoc svg-data :image-data %) x y)))))))
-
-(defn create-svg-shapes [svg-data x y]
+(defn create-svg-shapes
+  [svg-data {:keys [x y] :as position}]
   (ptk/reify ::create-svg-shapes
     ptk/WatchEvent
     (watch [_ state stream]
       (try
         (let [page-id (:current-page-id state)
-              objects (dwc/lookup-page-objects state page-id)
-              frame-id (cp/frame-id-by-position objects {:x x :y y})
-              selected (get-in state [:workspace-local :selected])
+              objects (wsh/lookup-page-objects state page-id)
+              frame-id (cp/frame-id-by-position objects position)
+              selected (wsh/lookup-selected state)
 
               [vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
               x (- x vb-x (/ vb-width 2))
@@ -465,7 +464,7 @@
 
               rchanges (conj rchanges reg-objects-action)]
 
-          (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+          (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                  (dwc/select-shapes (d/ordered-set root-id))))
 
         (catch :default e

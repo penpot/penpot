@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.dashboard.search
   (:require
@@ -34,9 +31,10 @@
                               (if (:is-default team)
                                 (t locale "dashboard.your-penpot")
                                 (:name team))))
-       (st/emit! (dd/search-files {:team-id (:id team)
-                                   :search-term search-term})
-                 (dd/clear-selected-files))))
+       (when search-term
+         (st/emit! (dd/search-files {:team-id (:id team)
+                                     :search-term search-term})
+                   (dd/clear-selected-files)))))
 
     [:*
      [:header.dashboard-header

@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.viewer.header
   (:require
@@ -70,11 +67,11 @@
                            :viewer
                            (:path-params route)
                            {:token token :index "0"})
-        link   (str cfg/public-uri "/#" link)
+        link   (assoc cfg/public-uri :fragment link)
 
         copy-link
         (fn [event]
-          (wapi/write-to-clipboard link)
+          (wapi/write-to-clipboard (str link))
           (st/emit! (dm/show {:type :info
                               :content "Link copied successfuly!"
                               :timeout 3000})))]
@@ -92,7 +89,7 @@
        [:div.share-link-input
         (if (string? token)
           [:*
-            [:span.link link]
+            [:span.link (str link)]
             [:span.link-button {:on-click copy-link}
              (t locale "viewer.header.share.copy-link")]]
           [:span.link-placeholder (t locale "viewer.header.share.placeholder")])]

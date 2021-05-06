@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.geom.shapes.path
   (:require
@@ -43,6 +40,20 @@
                      (* (coord end)   end-v)))]
 
     (gpt/point (coord-v :x) (coord-v :y))))
+
+(defn curve-split
+  "Splits a curve into two at the given parametric value `t`.
+  Calculates the Casteljau's algorithm intermediate points"
+  [start end h1 h2 t]
+
+  (let [p1 (gpt/line-val start h1 t)
+        p2 (gpt/line-val h1 h2 t)
+        p3 (gpt/line-val h2 end t)
+        p4 (gpt/line-val p1 p2 t)
+        p5 (gpt/line-val p2 p3 t)
+        sp (gpt/line-val p4 p5 t)]
+    [[start sp  p1 p4]
+     [sp    end p5 p3]]))
 
 ;; https://pomax.github.io/bezierinfo/#extremities
 (defn curve-extremities
@@ -127,6 +138,23 @@
     (-> selrect
         (update :width #(if (mth/almost-zero? %) 1 %))
         (update :height #(if (mth/almost-zero? %) 1 %)))))
+
+(defn move-content [content move-vec]
+  (let [set-tr (fn [params px py]
+                 (let [tr-point (-> (gpt/point (get params px) (get params py))
+                                    (gpt/add move-vec))]
+                   (assoc params
+                          px (:x tr-point)
+                          py (:y tr-point))))
+
+        transform-params
+        (fn [{:keys [x c1x c2x] :as params}]
+          (cond-> params
+            (not (nil? x))   (set-tr :x :y)
+            (not (nil? c1x)) (set-tr :c1x :c1y)
+            (not (nil? c2x)) (set-tr :c2x :c2y)))]
+
+    (mapv #(update % :params transform-params) content)))
 
 (defn transform-content [content transform]
   (let [set-tr (fn [params px py]
@@ -214,3 +242,91 @@
                point))
 
       (conj result [prev-point last-start]))))
+
+(defonce path-closest-point-accuracy 0.01)
+(defn curve-closest-point
+  [position start end h1 h2]
+  (let [d (memoize (fn [t] (gpt/distance position (curve-values start end h1 h2 t))))]
+    (loop [t1 0
+           t2 1]
+      (if (<= (mth/abs (- t1 t2)) path-closest-point-accuracy)
+        (-> (curve-values start end h1 h2 t1)
+            ;; store the segment info
+            (with-meta {:t t1 :from-p start :to-p end}))
+
+        (let [ht  (+ t1 (/ (- t2 t1) 2))
+              ht1 (+ t1 (/ (- t2 t1) 4))
+              ht2 (+ t1 (/ (* 3 (- t2 t1)) 4))
+
+              [t1 t2] (cond
+                        (< (d ht1) (d ht2))
+                        [t1 ht]
+
+                        (< (d ht2) (d ht1))
+                        [ht t2]
+
+                        (and (< (d ht) (d t1)) (< (d ht) (d t2)))
+                        [ht1 ht2]
+                        
+                        (< (d t1) (d t2))
+                        [t1 ht]
+
+                        :else
+                        [ht t2])]
+          (recur t1 t2))))))
+
+(defn line-closest-point
+  "Point on line"
+  [position from-p to-p]
+
+  (let [e1 (gpt/to-vec from-p to-p )
+        e2 (gpt/to-vec from-p position)
+
+        len2 (+ (mth/sq (:x e1)) (mth/sq (:y e1)))
+        t (/ (gpt/dot e1 e2) len2)]
+
+    (if (and (>= t 0) (<= t 1) (not (mth/almost-zero? len2)))
+      (-> (gpt/add from-p (gpt/scale e1 t))
+          (with-meta {:t t
+                      :from-p from-p
+                      :to-p to-p}))
+
+      ;; There is no perpendicular projection in the line so the closest
+      ;; point will be one of the extremes
+      (if (<= (gpt/distance position from-p) (gpt/distance position to-p))
+        from-p
+        to-p))))
+
+(defn path-closest-point
+  "Given a path and a position"
+  [shape position]
+
+  (let [point+distance (fn [[cur-cmd prev-cmd]]
+                         (let [from-p (command->point prev-cmd)
+                               to-p   (command->point cur-cmd)
+                               h1 (gpt/point (get-in cur-cmd [:params :c1x])
+                                             (get-in cur-cmd [:params :c1y]))
+                               h2 (gpt/point (get-in cur-cmd [:params :c2x])
+                                             (get-in cur-cmd [:params :c2y]))
+                               point
+                               (case (:command cur-cmd)
+                                 :line-to
+                                 (line-closest-point position from-p to-p)
+
+                                 :curve-to
+                                 (curve-closest-point position from-p to-p h1 h2)
+
+                                 nil)]
+                           (when point
+                             [point (gpt/distance point position)])))
+
+        find-min-point (fn [[min-p min-dist :as acc] [cur-p cur-dist :as cur]]
+                         (if (and (some? acc) (or (not cur) (<= min-dist cur-dist)))
+                           [min-p min-dist]
+                           [cur-p cur-dist]))]
+    
+    (->> (:content shape)
+         (d/with-prev)
+         (map point+distance)
+         (reduce find-min-point)
+         (first))))

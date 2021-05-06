@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.shadow
   (:require
@@ -13,6 +10,8 @@
    [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
@@ -59,7 +58,7 @@
         on-remove-shadow
         (fn [index]
           (fn []
-            (st/emit! (dwc/update-shapes ids #(update % :shadow remove-shadow-by-index index) ))))
+            (st/emit! (dch/update-shapes ids #(update % :shadow remove-shadow-by-index index) ))))
 
         select-text
         (fn [ref] (fn [event] (dom/select-text! (mf/ref-val ref))))
@@ -72,14 +71,14 @@
           ([index attr valid? update-ref]
            (fn [value]
              (when (or (not valid?) (valid? value))
-               (do (st/emit! (dwc/update-shapes ids #(assoc-in % [:shadow index attr] value)))
+               (do (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index attr] value)))
                    (when update-ref (dom/set-value! (mf/ref-val update-ref) value)))))))
 
         update-color
         (fn [index]
           (fn [color opacity]
             (let [color (d/without-keys color [:id :file-id :gradient])]
-              (st/emit! (dwc/update-shapes
+              (st/emit! (dch/update-shapes
                          ids
                          #(-> %
                               (assoc-in [:shadow index :color] color)
@@ -89,7 +88,7 @@
         (fn [index]
           (fn [color opacity]
             (if-not (string? (:color value))
-              (st/emit! (dwc/update-shapes
+              (st/emit! (dch/update-shapes
                           ids
                           #(assoc-in % [:shadow index :color]
                                      (dissoc (:color value) :id :file-id)))))))
@@ -97,7 +96,7 @@
         toggle-visibility
         (fn [index]
           (fn []
-            (st/emit! (dwc/update-shapes ids #(update-in % [:shadow index :hidden] not)))))]
+            (st/emit! (dch/update-shapes ids #(update-in % [:shadow index :hidden] not)))))]
     [:*
      [:div.element-set-options-group 
 
@@ -132,7 +131,7 @@
         {:default-value (str (:style value))
          :on-change (fn [event]
                       (let [value (-> event dom/get-target dom/get-value d/read-string)]
-                        (st/emit! (dwc/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
+                        (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
         [:option {:value ":drop-shadow"} (t locale "workspace.options.shadow-options.drop-shadow")]
         [:option {:value ":inner-shadow"} (t locale "workspace.options.shadow-options.inner-shadow")]]]
 
@@ -184,18 +183,18 @@
                       :disable-gradient true
                       :on-change (update-color index)
                       :on-detach (detach-color index)
-                      :on-open #(st/emit! (dwc/start-undo-transaction))
-                      :on-close #(st/emit! (dwc/commit-undo-transaction))}]]]]))
+                      :on-open #(st/emit! (dwu/start-undo-transaction))
+                      :on-close #(st/emit! (dwu/commit-undo-transaction))}]]]]))
 (mf/defc shadow-menu
   [{:keys [ids type values] :as props}]
   (let [locale (i18n/use-locale)
         on-remove-all-shadows
         (fn [event]
-          (st/emit! (dwc/update-shapes ids #(dissoc % :shadow) )))
+          (st/emit! (dch/update-shapes ids #(dissoc % :shadow) )))
 
         on-add-shadow
         (fn []
-          (st/emit! (dwc/update-shapes ids #(update % :shadow (fnil conj []) (create-shadow)) )))]
+          (st/emit! (dch/update-shapes ids #(update % :shadow (fnil conj []) (create-shadow)) )))]
     [:div.element-set.shadow-options
      [:div.element-set-title
       [:span

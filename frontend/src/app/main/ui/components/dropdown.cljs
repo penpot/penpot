@@ -3,10 +3,10 @@
    [rumext.alpha :as mf]
    [app.common.uuid :as uuid]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [goog.events :as events]
    [goog.object :as gobj])
-  (:import goog.events.EventType
-           goog.events.KeyCodes))
+  (:import goog.events.EventType))
 
 (mf/defc dropdown'
   {::mf/wrap-props false}
@@ -27,7 +27,7 @@
 
         on-keyup
         (fn [event]
-          (when (= (.-keyCode event) 27) ; ESC
+          (when (kbd/esc? event)
             (on-close)))
 
         on-mount

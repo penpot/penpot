@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.components.context-menu
   (:require
@@ -49,7 +46,7 @@
         (mf/use-callback
          (mf/deps top (:offset @local))
          (fn [node]
-           (when (and node (not fixed?))
+           (when (some? node)
              (let [{node-height :height}   (dom/get-bounding-rect node)
                    {window-height :height} (dom/get-window-size)
                    target-offset (if (> (+ top node-height) window-height)

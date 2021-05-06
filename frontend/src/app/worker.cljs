@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.worker
   (:require
@@ -22,8 +19,7 @@
    [app.worker.snaps]
    [app.util.object :as obj]
    [app.util.transit :as t]
-   [app.util.worker :as w])
-  (:import goog.Uri))
+   [app.util.worker :as w]))
 
 ;; --- Messages Handling
 
@@ -122,7 +118,7 @@
          (rx/debounce 1)
 
          (rx/subs (fn [[messages dropped last]]
-                    ;; Send back the dropped messages replies 
+                    ;; Send back the dropped messages replies
                     (doseq [msg dropped]
                       (drop-message msg))
 

@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.util.dom
   (:require
@@ -110,6 +107,15 @@
   properties (required, min/max, pattern...)."
   [node]
   (.-valid (.-validity node)))
+
+(defn set-validity!
+  "Manually set the validity status of a node that
+  is a form input. If the state is an empty string,
+  the input will be valid. If not, the string will
+  be set as the error message."
+  [node status]
+  (.setCustomValidity node status)
+  (.reportValidity node))
 
 (defn clean-value!
   [node]

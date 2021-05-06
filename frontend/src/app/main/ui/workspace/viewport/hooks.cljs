@@ -2,17 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.viewport.hooks
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.path.shortcuts :as psc]
+   [app.main.data.workspace.shortcuts :as wsc]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.hooks :as hooks]
@@ -61,23 +61,23 @@
       ;; We schedule the event so it fires after `initialize-page` event
       (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
 
-(defn setup-cursor [cursor alt? panning drawing-tool drawing-path?]
+(defn setup-cursor [cursor alt? panning drawing-tool drawing-path? path-editing?]
   (mf/use-effect
-   (mf/deps @cursor @alt? panning drawing-tool drawing-path?)
+   (mf/deps @cursor @alt? panning drawing-tool drawing-path? path-editing?)
    (fn []
      (let [new-cursor
            (cond
-             panning                     (utils/get-cursor :hand)
-             (= drawing-tool :comments)  (utils/get-cursor :comments)
-             (= drawing-tool :frame)     (utils/get-cursor :create-artboard)
-             (= drawing-tool :rect)      (utils/get-cursor :create-rectangle)
-             (= drawing-tool :circle)    (utils/get-cursor :create-ellipse)
+             panning                         (utils/get-cursor :hand)
+             (= drawing-tool :comments)      (utils/get-cursor :comments)
+             (= drawing-tool :frame)         (utils/get-cursor :create-artboard)
+             (= drawing-tool :rect)          (utils/get-cursor :create-rectangle)
+             (= drawing-tool :circle)        (utils/get-cursor :create-ellipse)
              (or (= drawing-tool :path)
-                 drawing-path?)          (utils/get-cursor :pen)
-             (= drawing-tool :curve)     (utils/get-cursor :pencil)
-             drawing-tool                (utils/get-cursor :create-shape)
-             @alt?                       (utils/get-cursor :duplicate)
-             :else                       (utils/get-cursor :pointer-inner))]
+                 drawing-path?)              (utils/get-cursor :pen)
+             (= drawing-tool :curve)         (utils/get-cursor :pencil)
+             drawing-tool                    (utils/get-cursor :create-shape)
+             (and @alt? (not path-editing?)) (utils/get-cursor :duplicate)
+             :else                           (utils/get-cursor :pointer-inner))]
 
        (when (not= @cursor new-cursor)
          (reset! cursor new-cursor))))))
@@ -100,7 +100,8 @@
               {:cmd :selection/query
                :page-id page-id
                :rect rect
-               :include-frames? true}))))
+               :include-frames? true
+               :reverse? true})))) ;; we want the topmost shape to be selected first
 
         ;; We use ref so we don't recreate the stream on a change
         transform-ref (mf/use-ref nil)
@@ -151,3 +152,15 @@
         (if modifiers
           (utils/update-transform render-node roots modifiers)
           (utils/remove-transform render-node roots))))))
+
+(defn setup-shortcuts [path-editing? drawing-path?]
+  (mf/use-effect
+   (mf/deps path-editing? drawing-path?)
+   (fn []
+     (cond
+       (or drawing-path? path-editing?)
+       (dsc/bind-shortcuts psc/shortcuts)
+
+       :else
+       (dsc/bind-shortcuts wsc/shortcuts))
+     dsc/remove-shortcuts)))

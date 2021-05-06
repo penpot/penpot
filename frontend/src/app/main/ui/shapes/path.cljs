@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.shapes.path
   (:require
@@ -14,7 +11,7 @@
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
    [app.util.object :as obj]
-   [app.util.geom.path :as ugp]))
+   [app.util.path.format :as upf]))
 
 ;; --- Path Shape
 
@@ -25,7 +22,7 @@
         background? (unchecked-get props "background?")
         {:keys [id x y width height]} (:selrect shape)
         content (:content shape)
-        pdata (mf/use-memo (mf/deps content) #(ugp/content->path content))
+        pdata (mf/use-memo (mf/deps content) #(upf/format-path content))
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!
                    #js {:d pdata}))]

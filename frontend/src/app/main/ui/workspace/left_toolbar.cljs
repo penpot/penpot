@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.left-toolbar
   (:require
@@ -36,14 +33,16 @@
         (mf/use-callback
          (mf/deps file)
          (fn [blobs]
-           (let [params {:file-id (:id file)
-                         :data (seq blobs)}
-                 ;; We don't want to add a ref because that redraws the component
-                 ;; for everychange. Better direct access on the callback
-                 vbox (get-in @st/state [:workspace-local :vbox])
-                 x (mth/round (+ (:x vbox) (/ (:width vbox) 2)))
-                 y (mth/round (+ (:y vbox) (/ (:height vbox) 2)))]
-             (st/emit! (dw/upload-media-workspace params (gpt/point x y))))))]
+           ;; We don't want to add a ref because that redraws the component
+           ;; for everychange. Better direct access on the callback
+           ;; vbox (get-in @st/state [:workspace-local :vbox])
+           (let [vbox   (:vbox @refs/workspace-local)
+                 x      (mth/round (+ (:x vbox) (/ (:width vbox) 2)))
+                 y      (mth/round (+ (:y vbox) (/ (:height vbox) 2)))
+                 params {:file-id (:id file)
+                         :blobs (seq blobs)
+                         :position (gpt/point x y)}]
+             (st/emit! (dw/upload-media-workspace params)))))]
 
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.image")
@@ -128,7 +127,7 @@
         {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
          :class (when (contains? layout :document-history) "selected")
          :on-click (st/emitf (dw/go-to-layout :document-history))}
-        i/undo-history]
+        i/recent]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-palette))
          :class (when (contains? layout :colorpalette) "selected")

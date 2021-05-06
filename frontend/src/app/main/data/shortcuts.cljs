@@ -2,21 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.data.shortcuts
   (:require
-   [app.main.data.colors :as mdc]
-   [app.main.data.workspace.transforms :as dwt]
-   [app.main.store :as st]
-   [app.util.dom :as dom]
-   [potok.core :as ptk]
-   [beicon.core :as rx]
-   [app.config :as cfg])
+   ["mousetrap" :as mousetrap]
+   [app.config :as cfg]
+   [app.util.logging :as log])
   (:refer-clojure :exclude [meta]))
+
+(log/set-level! :warn)
 
 (def mac-command "\u2318")
 (def mac-option  "\u2325")
@@ -49,20 +44,41 @@
   [shortcut]
   (c-mod (a-mod shortcut)))
 
-(defn bind-shortcuts [shortcuts bind-fn cb-fn]
-  (doseq [[key {:keys [command disabled fn type]}] shortcuts]
-    (when-not disabled
-      (if (vector? command)
-        (doseq [cmd (seq command)]
-          (bind-fn cmd (cb-fn key fn) type))
-        (bind-fn command (cb-fn key fn) type)))))
+(defn bind-shortcuts
+  ([shortcuts-config]
+   (bind-shortcuts
+    shortcuts-config
+    mousetrap/bind
+    (fn [key cb]
+      (fn [event]
+        (log/debug :msg (str "Shortcut" key))
+        (.preventDefault event)
+        (cb event)))))
+
+  ([shortcuts-config bind-fn cb-fn]
+   (doseq [[key {:keys [command disabled fn type]}] shortcuts-config]
+     (when-not disabled
+       (if (vector? command)
+         (doseq [cmd (seq command)]
+           (bind-fn cmd (cb-fn key fn) type))
+         (bind-fn command (cb-fn key fn) type))))))
+
+(defn remove-shortcuts
+    []
+    (mousetrap/reset))
 
 (defn meta [key]
-  (str
-   (if (cfg/check-platform? :macos)
-     mac-command
-     "Ctrl+")
-   key))
+  ;; If the key is "+" we need to surround with quotes
+  ;; otherwise will not be very readable
+  (let [key (if (and (not (cfg/check-platform? :macos))
+                     (= key "+"))
+              "\"+\""
+              key)]
+    (str
+     (if (cfg/check-platform? :macos)
+       mac-command
+       "Ctrl+")
+     key)))
 
 (defn shift [key]
   (str

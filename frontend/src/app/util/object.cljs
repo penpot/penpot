@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
@@ -24,6 +21,10 @@
   ([obj k default]
    (let [result (get obj k)]
      (if (undefined? result) default result))))
+
+(defn get-keys
+  [obj]
+  (js/Object.keys ^js obj))
 
 (defn get-in
   [obj keys]

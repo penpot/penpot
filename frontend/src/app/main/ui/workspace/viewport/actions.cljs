@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.viewport.actions
   (:require
@@ -18,6 +15,7 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.workspace.viewport.utils :as utils]
+   [app.main.data.workspace.path :as dwdp]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.keyboard :as kbd]
@@ -26,13 +24,12 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.alpha :as mf])
-  (:import goog.events.WheelEvent
-           goog.events.KeyCodes))
+  (:import goog.events.WheelEvent))
 
 (defn on-mouse-down
-  [{:keys [id blocked hidden type]} drawing-tool text-editing? edition edit-path selected]
+  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing? path-editing? drawing-path? create-comment?]
   (mf/use-callback
-   (mf/deps id blocked hidden type drawing-tool text-editing? edition edit-path selected)
+   (mf/deps id blocked hidden type selected edition drawing-tool text-editing? path-editing? drawing-path? create-comment?)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
                (dom/class? (dom/get-target bevent) "viewport-selrect"))
@@ -59,14 +56,18 @@
            (when (and (not= edition id) text-editing?)
              (st/emit! dw/clear-edition-mode))
 
-           (when (and (or (not edition) (not= edition id)) (not blocked) (not hidden) (not (#{:comments :path} drawing-tool)))
+           (when (and (not text-editing?)
+                      (not blocked)
+                      (not hidden)
+                      (not create-comment?)
+                      (not drawing-path?))
              (cond
                drawing-tool
                (st/emit! (dd/start-drawing drawing-tool))
 
-               (and edit-path (contains? edit-path edition))
-               ;; Handle node select-drawing. NOP at the moment
-               nil
+               path-editing?
+               ;; Handle path node area selection
+               (st/emit! (dwdp/handle-selection shift?))
 
                (or (not id) (and frame? (not selected?)))
                (st/emit! (dw/handle-selection shift?))
@@ -145,9 +146,9 @@
            (st/emit! (dw/select-shape (:id @hover)))))))))
 
 (defn on-double-click
-  [hover hover-ids drawing-path? objects]
+  [hover hover-ids drawing-path? objects edition]
   (mf/use-callback
-   (mf/deps @hover @hover-ids drawing-path?)
+   (mf/deps @hover @hover-ids drawing-path? edition)
    (fn [event]
      (dom/stop-propagation event)
      (let [ctrl? (kbd/ctrl? event)
@@ -173,7 +174,7 @@
                  (reset! hover-ids (into [] (rest @hover-ids)))
                  (st/emit! (dw/select-shape (:id selected))))
 
-               (or text? path?)
+               (and (not= id edition) (or text? path?))
                (st/emit! (dw/select-shape id)
                          (dw/start-editing-selected))
 
@@ -259,8 +260,7 @@
  (mf/use-callback
   (fn [event]
     (let [bevent  (.getBrowserEvent ^js event)
-          key     (.-keyCode ^js event)
-          key     (.normalizeKeyCode KeyCodes key)
+          key     (.-key ^js event)
           ctrl?   (kbd/ctrl? event)
           shift?  (kbd/shift? event)
           alt?    (kbd/alt? event)
@@ -280,8 +280,7 @@
 (defn on-key-up []
  (mf/use-callback
   (fn [event]
-    (let [key    (.-keyCode event)
-          key    (.normalizeKeyCode KeyCodes key)
+    (let [key    (.-key event)
           ctrl?  (kbd/ctrl? event)
           shift? (kbd/shift? event)
           alt?   (kbd/alt? event)
@@ -392,8 +391,8 @@
 
 (defn on-image-uploaded []
  (mf/use-callback
-  (fn [image {:keys [x y]}]
-    (st/emit! (dw/image-uploaded image x y)))))
+  (fn [image position]
+    (st/emit! (dw/image-uploaded image position)))))
 
 (defn on-drop [file viewport-ref zoom]
   (let [on-image-uploaded (on-image-uploaded)]
@@ -430,21 +429,23 @@
            (dnd/has-type? event "text/uri-list")
            (let [data  (dnd/get-data event "text/uri-list")
                  lines (str/lines data)
-                 urls  (filter #(and (not (str/blank? %))
+                 uris  (filter #(and (not (str/blank? %))
                                      (not (str/starts-with? % "#")))
                                lines)
                  params {:file-id (:id file)
-                         :uris urls}]
-             (st/emit! (dw/upload-media-workspace params viewport-coord)))
+                         :position viewport-coord
+                         :uris uris}]
+             (st/emit! (dw/upload-media-workspace params)))
 
            ;; Will trigger when the user drags an SVG asset from the assets panel
            (and (dnd/has-type? event "text/asset-id") (= asset-type "image/svg+xml"))
            (let [path (cfg/resolve-file-media {:id asset-id})
                  params {:file-id (:id file)
+                         :position viewport-coord
                          :uris [path]
                          :name asset-name
                          :mtype asset-type}]
-             (st/emit! (dw/upload-media-workspace params viewport-coord)))
+             (st/emit! (dw/upload-media-workspace params)))
 
            ;; Will trigger when the user drags an image from the assets SVG
            (dnd/has-type? event "text/asset-id")
@@ -461,8 +462,9 @@
            :else
            (let [files  (dnd/get-files event)
                  params {:file-id (:id file)
-                         :data (seq files)}]
-             (st/emit! (dw/upload-media-workspace params viewport-coord)))))))))
+                         :position viewport-coord
+                         :blobs (seq files)}]
+             (st/emit! (dw/upload-media-workspace params)))))))))
 
 (defn on-paste [disable-paste in-viewport?]
  (mf/use-callback

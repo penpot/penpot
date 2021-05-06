@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace
   (:require
@@ -14,7 +11,6 @@
    [app.main.data.history :as udh]
    [app.main.data.messages :as dm]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -24,13 +20,13 @@
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
    [app.main.ui.workspace.colorpicker]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
+   [app.main.ui.workspace.coordinates :as coordinates]
    [app.main.ui.workspace.header :refer [header]]
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.viewport :refer [viewport]]
-   [app.main.ui.workspace.coordinates :as coordinates]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -64,8 +60,10 @@
 (mf/defc workspace-content
   {::mf/wrap-props false}
   [props]
-  (let [local  (mf/deref refs/viewport-data)
-        {:keys [zoom vbox vport options-mode selected]} local
+  (let [selected (mf/deref refs/selected-shapes)
+        local    (mf/deref refs/viewport-data)
+
+        {:keys [zoom vbox vport options-mode]} local
         file   (obj/get props "file")
         layout (obj/get props "layout")]
     [:*
@@ -84,6 +82,7 @@
 
        [:& viewport {:file file
                      :local local
+                     :selected selected
                      :layout layout}]]]
 
      [:& left-toolbar {:layout layout}]
@@ -117,30 +116,29 @@
 (mf/defc workspace
   {::mf/wrap [mf/memo]}
   [{:keys [project-id file-id page-id layout-name] :as props}]
-  (mf/use-effect
-    (mf/deps layout-name)
-    #(st/emit! (dw/initialize-layout layout-name)))
-
-  (mf/use-effect
-   (mf/deps project-id file-id)
-   (fn []
-     (st/emit! (dw/initialize-file project-id file-id))
-     (st/emitf (dw/finalize-file project-id file-id))))
-
-  (mf/use-effect
-    (fn []
-      ;; Close any non-modal dialog that may be still open
-      (st/emitf dm/hide)))
-
-  (hooks/use-shortcuts sc/shortcuts)
 
   (let [file    (mf/deref refs/workspace-file)
         project (mf/deref refs/workspace-project)
         layout  (mf/deref refs/workspace-layout)]
 
     (mf/use-effect
-      (mf/deps file)
-      #(dom/set-html-title (tr "title.workspace" (:name file))))
+     (mf/deps layout-name)
+     #(st/emit! (dw/initialize-layout layout-name)))
+
+    (mf/use-effect
+     (mf/deps project-id file-id)
+     (fn []
+       (st/emit! (dw/initialize-file project-id file-id))
+       (st/emitf (dw/finalize-file project-id file-id))))
+
+    (mf/use-effect
+     (fn []
+       ;; Close any non-modal dialog that may be still open
+       (st/emitf dm/hide)))
+
+    (mf/use-effect
+     (mf/deps file)
+     #(dom/set-html-title (tr "title.workspace" (:name file))))
 
     [:& (mf/provider ctx/current-file-id) {:value (:id file)}
      [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}

@@ -2,28 +2,35 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.util.http
   "A http client with rx streams interface."
-  (:refer-clojure :exclude [get])
   (:require
+   [app.common.data :as d]
+   [app.common.uri :as u]
    [app.config :as cfg]
+   [app.util.globals :as globals]
    [app.util.object :as obj]
    [app.util.transit :as t]
    [beicon.core :as rx]
-   [cljs.core :as c]
-   [clojure.string :as str]
-   [goog.events :as events])
-  (:import
-   [goog.net ErrorCode EventType]
-   [goog.net.XhrIo ResponseType]
-   [goog.net XhrIo]
-   [goog.Uri QueryData]
-   [goog Uri]))
+   [cuerdas.core :as str]
+   [promesa.core :as p]))
+
+(defprotocol IBodyData
+  "A helper for define body data with the appropiate headers."
+  (-update-headers [_ headers])
+  (-get-body-data [_]))
+
+(extend-protocol IBodyData
+  globals/FormData
+  (-get-body-data [it] it)
+  (-update-headers [it headers]
+    (dissoc headers "content-type" "Content-Type"))
+
+  default
+  (-get-body-data [it] it)
+  (-update-headers [it headers] headers))
 
 (defn translate-method
   [method]
@@ -37,70 +44,99 @@
     :delete  "DELETE"
     :trace   "TRACE"))
 
-(defn- normalize-headers
+(defn parse-headers
   [headers]
-  (reduce-kv (fn [acc k v]
-               (assoc acc (str/lower-case k) v))
-             {} (js->clj headers)))
-
-(defn- translate-error-code
-  [code]
-  (condp = code
-    ErrorCode.TIMEOUT    :timeout
-    ErrorCode.EXCEPTION  :exception
-    ErrorCode.HTTP_ERROR :http
-    ErrorCode.ABORT      :abort
-    ErrorCode.OFFLINE    :offline
-    nil))
-
-(defn- translate-response-type
-  [type]
-  (case type
-    :text ResponseType.TEXT
-    :blob ResponseType.BLOB
-    ResponseType.DEFAULT))
-
-(defn- create-uri
-  [uri qs qp]
-  (let [uri (Uri. uri)]
-    (when qs (.setQuery uri qs))
-    (when qp
-      (let [dt (.createFromMap QueryData (clj->js  qp))]
-        (.setQueryData uri dt)))
-    (.toString uri)))
+  (into {} (map vec) (seq (.entries ^js headers))))
 
 (def default-headers
   {"x-frontend-version" (:full @cfg/version)})
 
-(defn- fetch
-  [{:keys [method uri query-string query headers body] :as request}
-   {:keys [timeout credentials? response-type]
-    :or {timeout 0 credentials? false response-type :text}}]
-  (let [uri (create-uri uri query-string query)
-        headers (merge default-headers headers)
-        headers (if headers (clj->js headers) #js {})
-        method (translate-method method)
-        xhr (doto (XhrIo.)
-              (.setResponseType (translate-response-type response-type))
-              (.setWithCredentials credentials?)
-              (.setTimeoutInterval timeout))]
-    (rx/create
-     (fn [sink]
-       (letfn [(on-complete [event]
-                 (let [type (translate-error-code (.getLastErrorCode xhr))
-                       status (.getStatus xhr)]
-                   (if (pos? status)
-                     (sink (rx/end
-                            {:status status
-                             :body (.getResponse xhr)
-                             :headers (normalize-headers (.getResponseHeaders xhr))}))
-                     (sink (rx/end
-                            {:status 0
-                             :error (if (= type :http) :abort type)
-                             ::xhr xhr})))))]
-         (events/listen xhr EventType.COMPLETE on-complete)
-         (.send xhr uri method body headers)
-         #(.abort xhr))))))
+(defn fetch
+  [{:keys [method uri query headers body timeout mode omit-default-headers]
+    :or {timeout 10000 mode :cors headers {}}}]
+  (rx/Observable.create
+   (fn [subscriber]
+     (let [controller    (js/AbortController.)
+           signal        (.-signal ^js controller)
+           unsubscribed? (volatile! false)
+           abortable?    (volatile! true)
+           query         (cond
+                           (string? query) query
+                           (map? query)    (u/map->query-string query)
+                           :else nil)
+           uri           (cond-> uri
+                           (string? uri) (u/uri)
+                           (some? query) (assoc :query query))
+
+           headers       (cond-> headers
+                           (not omit-default-headers)
+                           (d/merge default-headers))
+
+           headers       (-update-headers body headers)
+
+           body          (-get-body-data body)
+
+           params        #js {:method (translate-method method)
+                              :headers (clj->js headers)
+                              :body body
+                              :mode (d/name mode)
+                              :redirect "follow"
+                              :credentials "same-origin"
+                              :referrerPolicy "no-referrer"
+                              :signal signal}]
+       (-> (js/fetch (str uri) params)
+           (p/then (fn [response]
+                     (vreset! abortable? false)
+                     (.next ^js subscriber response)
+                     (.complete ^js subscriber)))
+           (p/catch (fn [err]
+                      (vreset! abortable? false)
+                      (when-not @unsubscribed?
+                        (.error ^js subscriber err)))))
+       (fn []
+         (vreset! unsubscribed? true)
+         (when @abortable?
+           (.abort ^js controller)))))))
+
+(defn send!
+  [{:keys [response-type] :or {response-type :text} :as params}]
+  (letfn [(on-response [response]
+            (let [body (case response-type
+                         :json (.json ^js response)
+                         :text (.text ^js response)
+                         :blob (.blob ^js response))]
+              (->> (rx/from body)
+                   (rx/map (fn [body]
+                             {::response response
+                              :status    (.-status ^js response)
+                              :headers   (parse-headers (.-headers ^js response))
+                              :body      body})))))]
+    (->> (fetch params)
+         (rx/mapcat on-response))))
+
+(defn form-data
+  [data]
+  (letfn [(append [form k v]
+            (if (list? v)
+              (.append form (name k) (first v) (second v))
+              (.append form (name k) v))
+            form)]
+    (reduce-kv append (js/FormData.) data)))
+
+(defn transit-data
+  [data]
+  (reify IBodyData
+    (-get-body-data [_] (t/encode data))
+    (-update-headers [_ headers]
+      (assoc headers "content-type" "application/transit+json"))))
+
+(defn conditional-decode-transit
+  [{:keys [body headers status] :as response}]
+  (let [contentype (get headers "content-type")]
+    (if (and (str/starts-with? contentype "application/transit+json")
+             (pos? (count body)))
+      (assoc response :body (t/decode body))
+      response)))
 
 (defn success?
   [{:keys [status]}]
@@ -114,25 +150,8 @@
   [{:keys [status]}]
   (<= 400 status 499))
 
-(defn send!
-  ([request]
-   (send! request nil))
-  ([request options]
-   (fetch request options)))
-
-(defn fetch-as-data-url
-  [url]
-  (->> (send! {:method :get :uri url} {:response-type :blob})
-       (rx/mapcat (fn [{:keys [body] :as rsp}]
-                    (let [reader (js/FileReader.)]
-                      (rx/create (fn [sink]
-                                   (obj/set! reader "onload" #(sink (reduced (.-result reader))))
-                                   (.readAsDataURL reader body))))))))
-
-
-
-(defn data-url->blob
-  [durl]
-  (->> (send! {:method :get :uri durl} {:response-type :blob})
-       (rx/map :body)
-       (rx/take 1)))
+(defn as-promise
+  [observable]
+  (p/create (fn [resolve reject]
+              (->> (rx/take 1 observable)
+                   (rx/subs resolve reject)))))

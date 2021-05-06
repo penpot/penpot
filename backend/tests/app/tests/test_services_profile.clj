@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.tests.test-services-profile
   (:require
@@ -132,7 +129,7 @@
       (t/is (nil? result)))
 
     ;; Request profile to be deleted
-    (with-mocks [mock {:target 'app.tasks/submit! :return nil}]
+    (with-mocks [mock {:target 'app.worker/submit! :return nil}]
       (let [params {::th/type :delete-profile
                     :profile-id (:id prof)}
             out    (th/mutation! params)]
@@ -140,11 +137,11 @@
 
         ;; check the mock
         (let [mock (deref mock)
-              mock-params (second (:call-args mock))]
+              mock-params (first (:call-args mock))]
           (t/is (:called? mock))
           (t/is (= 1 (:call-count mock)))
-          (t/is (= "delete-profile" (:name mock-params)))
-          (t/is (= (:id prof) (get-in mock-params [:props :profile-id]))))))
+          (t/is (= :delete-profile (:app.worker/task mock-params)))
+          (t/is (= (:id prof) (:profile-id mock-params))))))
 
     ;; query files after profile soft deletion
     (let [params {::th/type :files
@@ -257,8 +254,8 @@
                  :terms-privacy true}
           out   (th/mutation! data)]
       ;; (th/print-result! out)
-      (let [mock          (deref mock)
-            [_ _ params]  (:call-args mock)]
+      (let [mock     (deref mock)
+            [params] (:call-args mock)]
         ;; (clojure.pprint/pprint params)
         (t/is (:called? mock))
         (t/is (= (:email data) (:to params)))

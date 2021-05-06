@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.dashboard.projects
   (:require
@@ -123,7 +120,9 @@
         [:span.pin-icon
          {:class (when (:is-pinned project) "active")
           :on-click toggle-pin}
-         i/pin])
+         (if (:is-pinned project)
+           i/pin-fill
+           i/pin)])
       (if (:edition? @local)
         [:& inline-edition {:content (:name project)
                             :on-end on-edit}]

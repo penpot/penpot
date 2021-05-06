@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.geom.shapes
   (:require
@@ -20,28 +17,6 @@
    [app.common.geom.shapes.intersect :as gin]
    [app.common.spec :as us]))
 
-;; --- Relative Movement
-
-(defn move
-  "Move the shape relativelly to its current
-  position applying the provided delta."
-  [shape {dx :x dy :y}]
-  (let [dx (d/check-num dx)
-        dy (d/check-num dy)]
-    (-> shape
-        (assoc-in [:modifiers :displacement] (gmt/translate-matrix (gpt/point dx dy)))
-        (gtr/transform-shape))))
-
-;; --- Absolute Movement
-
-(declare absolute-move-rect)
-
-(defn absolute-move
-  "Move the shape to the exactly specified position."
-  [shape {:keys [x y]}]
-  (let [dx (- (d/check-num x) (-> shape :selrect :x))
-        dy (- (d/check-num y) (-> shape :selrect :y))]
-    (move shape (gpt/point dx dy))))
 
 ;; --- Resize (Dimensions)
 (defn resize-modifiers
@@ -123,38 +98,8 @@
        (gpr/join-selrects)))
 
 (defn translate-to-frame
-  [{:keys [type x y] :as shape} {:keys [x y]}]
-  (let [move-point
-        (fn [point]
-          (-> point
-              (update :x - x)
-              (update :y - y)))
-
-        move-segment
-        (fn [segment]
-          (-> segment
-              (d/update-in-when [:params :x] - x)
-              (d/update-in-when [:params :y] - y)
-              (d/update-in-when [:params :c1x] - x)
-              (d/update-in-when [:params :c1y] - y)
-              (d/update-in-when [:params :c2x] - x)
-              (d/update-in-when [:params :c2y] - y)))]
-
-    (-> shape
-        (d/update-when :x - x)
-        (d/update-when :y - y)
-        (update-in [:selrect :x] - x)
-        (update-in [:selrect :y] - y)
-        (update-in [:selrect :x1] - x)
-        (update-in [:selrect :y1] - y)
-        (update-in [:selrect :x2] - x)
-        (update-in [:selrect :y2] - y)
-
-        (d/update-when :points #(mapv move-point %))
-
-        (cond-> (= :path type)
-          (d/update-when :content #(mapv move-segment %))))))
-
+  [shape {:keys [x y]}]
+  (gtr/move shape (gpt/negate (gpt/point x y)))  )
 
 ;; --- Helpers
 
@@ -247,6 +192,8 @@
 (d/export gtr/update-group-selrect)
 (d/export gtr/transform-points)
 (d/export gtr/calculate-adjust-matrix)
+(d/export gtr/move)
+(d/export gtr/absolute-move)
 
 ;; PATHS
 (d/export gsp/content->points)
@@ -256,3 +203,4 @@
 ;; Intersection
 (d/export gin/overlaps?)
 (d/export gin/has-point?)
+(d/export gin/has-point-rect?)

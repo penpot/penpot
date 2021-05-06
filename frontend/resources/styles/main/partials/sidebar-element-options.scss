@@ -865,6 +865,10 @@
   &:hover {
     background: #1F1F1F;
   }
+
+  &.selected {
+    border: 1px solid $color-primary;
+  }
 }
 
 .exports-options,
@@ -983,7 +987,7 @@
   display: flex;
 }
 
-.asset-group {
+.asset-section {
     .typography-entry {
         margin: 0.25rem 0;
     }

@@ -2,9 +2,6 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.config
@@ -16,9 +13,18 @@
    [app.util.time :as dt]
    [clojure.core :as c]
    [clojure.java.io :as io]
+   [clojure.pprint :as pprint]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [environ.core :refer [env]]))
+
+(prefer-method print-method
+               clojure.lang.IRecord
+               clojure.lang.IDeref)
+
+(prefer-method pprint/simple-dispatch
+               clojure.lang.IPersistentMap
+               clojure.lang.IDeref)
 
 (def defaults
   {:http-server-port 6060
@@ -99,9 +105,17 @@
 (s/def ::gitlab-client-secret ::us/string)
 (s/def ::google-client-id ::us/string)
 (s/def ::google-client-secret ::us/string)
+(s/def ::oidc-client-id ::us/string)
+(s/def ::oidc-client-secret ::us/string)
+(s/def ::oidc-base-uri ::us/string)
+(s/def ::oidc-token-uri ::us/string)
+(s/def ::oidc-auth-uri ::us/string)
+(s/def ::oidc-user-uri ::us/string)
+(s/def ::oidc-scopes ::us/set-of-str)
+(s/def ::oidc-roles ::us/set-of-str)
+(s/def ::oidc-roles-attr ::us/keyword)
 (s/def ::host ::us/string)
 (s/def ::http-server-port ::us/integer)
-(s/def ::http-session-cookie-name ::us/string)
 (s/def ::http-session-idle-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-size ::us/integer)
@@ -172,6 +186,15 @@
                    ::gitlab-client-secret
                    ::google-client-id
                    ::google-client-secret
+                   ::oidc-client-id
+                   ::oidc-client-secret
+                   ::oidc-base-uri
+                   ::oidc-token-uri
+                   ::oidc-auth-uri
+                   ::oidc-user-uri
+                   ::oidc-scopes
+                   ::oidc-roles-attr
+                   ::oidc-roles
                    ::host
                    ::http-server-port
                    ::http-session-idle-max-age
@@ -222,42 +245,33 @@
                    ::telemetry-server-enabled
                    ::telemetry-server-port
                    ::telemetry-uri
+                   ::telemetry-referer
                    ::telemetry-with-taiga
                    ::tenant]))
 
-(defn- env->config
-  [env]
-  (reduce-kv
-   (fn [acc k v]
-     (cond-> acc
-       (str/starts-with? (name k) "penpot-")
-       (assoc (keyword (subs (name k) 7)) v)
-
-       (str/starts-with? (name k) "app-")
-       (assoc (keyword (subs (name k) 4)) v)))
-   {}
-   env))
+(defn read-env
+  [prefix]
+  (let [prefix (str prefix "-")
+        len    (count prefix)]
+    (reduce-kv
+     (fn [acc k v]
+       (cond-> acc
+         (str/starts-with? (name k) prefix)
+         (assoc (keyword (subs (name k) len)) v)))
+     {}
+     env)))
 
 (defn- read-config
-  [env]
-  (->> (env->config env)
+  []
+  (->> (read-env "penpot")
        (merge defaults)
        (us/conform ::config)))
-
-(defn- read-test-config
-  [env]
-  (merge {:redis-uri "redis://redis/1"
-          :database-uri "postgresql://postgres/penpot_test"
-          :storage-fs-directory "/tmp/app/storage"
-          :migrations-verbose false}
-         (read-config env)))
 
 (def version (v/parse (or (some-> (io/resource "version.txt")
                                   (slurp)
                                   (str/trim))
                           "%version%")))
-(def config (read-config env))
-(def test-config (read-test-config env))
+(def config (atom (read-config)))
 
 (def deletion-delay
   (dt/duration {:days 7}))
@@ -265,6 +279,9 @@
 (defn get
   "A configuration getter. Helps code be more testable."
   ([key]
-   (c/get config key))
+   (c/get @config key))
   ([key default]
-   (c/get config key default)))
+   (c/get @config key default)))
+
+;; Set value for all new threads bindings.
+(alter-var-root #'*assert* (constantly (get :asserts-enabled)))

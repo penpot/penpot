@@ -2,19 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.tasks.tasks-gc
   "A maintenance task that performs a cleanup of already executed tasks
   from the database table."
   (:require
    [app.db :as db]
+   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (declare sql:delete-completed-tasks)
@@ -31,7 +28,7 @@
       (let [interval (db/interval max-age)
             result   (db/exec-one! conn [sql:delete-completed-tasks interval])
             result   (:next.jdbc/update-count result)]
-        (log/debugf "removed %s rows from tasks-completed table" result)
+        (l/debug :action "trim completed tasks table" :removed result)
         result))))
 
 (def ^:private

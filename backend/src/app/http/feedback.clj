@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.http.feedback
   "A general purpose feedback module."
@@ -15,7 +12,7 @@
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.db :as db]
-   [app.emails :as emails]
+   [app.emails :as eml]
    [app.rpc.queries.profile :as profile]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
@@ -62,11 +59,12 @@
   [pool profile params]
   (let [params      (us/conform ::feedback params)
         destination (cfg/get :feedback-destination)]
-    (emails/send! pool emails/feedback
-                  {:to       destination
-                   :profile  profile
-                   :reply-to (:from params)
-                   :email    (:from params)
-                   :subject  (:subject params)
-                   :content  (:content params)})
+    (eml/send! {::eml/conn pool
+                ::eml/factory eml/feedback
+                :to       destination
+                :profile  profile
+                :reply-to (:from params)
+                :email    (:from params)
+                :subject  (:subject params)
+                :content  (:content params)})
     nil))

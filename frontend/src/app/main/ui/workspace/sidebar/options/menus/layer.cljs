@@ -2,16 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.layer
   (:require
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
@@ -37,7 +35,7 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [prop value]
-           (st/emit! (dwc/update-shapes ids #(assoc % prop value)))))
+           (st/emit! (dch/update-shapes ids #(assoc % prop value)))))
 
         handle-change-blend-mode
         (mf/use-callback
@@ -135,7 +133,7 @@
 
         (cond
           (or (= :multiple (:blocked values)) (not (:blocked values)))
-          [:div.element-set-actions-button {:on-click handle-set-blocked} i/lock-open]
+          [:div.element-set-actions-button {:on-click handle-set-blocked} i/unlock]
           
           :else
           [:div.element-set-actions-button {:on-click handle-set-unblocked} i/lock])]]]]))

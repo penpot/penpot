@@ -2,23 +2,20 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.data.workspace.drawing.curve
   (:require
-   [beicon.core :as rx]
-   [potok.core :as ptk]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
-   [app.main.streams :as ms]
-   [app.util.geom.path :as path]
+   [app.common.pages :as cp]
    [app.main.data.workspace.drawing.common :as common]
-   [app.main.data.workspace.common :as dwc]
-   [app.common.pages :as cp]))
+   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.streams :as ms]
+   [app.util.path.simplify-curve :as ups]
+   [beicon.core :as rx]
+   [potok.core :as ptk]))
 
 (def simplify-tolerance 0.3)
 
@@ -48,7 +45,7 @@
     ptk/UpdateEvent
     (update [_ state]
 
-      (let [objects (dwc/lookup-page-objects state)
+      (let [objects (wsh/lookup-page-objects state)
             content (get-in state [:workspace-drawing :object :content] [])
             position (get-in content [0 :params] nil)
             frame-id  (cp/frame-id-by-position objects position)]
@@ -70,7 +67,7 @@
    state [:workspace-drawing :object]
    (fn [shape]
      (-> shape
-         (update :segments #(path/simplify % simplify-tolerance))
+         (update :segments #(ups/simplify % simplify-tolerance))
          (curve-to-path)))))
 
 (defn handle-drawing-curve []
@@ -88,3 +85,4 @@
          (rx/of (setup-frame-curve)
                 finish-drawing-curve
                 common/handle-finish-drawing))))))
+

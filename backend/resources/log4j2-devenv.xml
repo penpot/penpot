@@ -6,7 +6,7 @@
     </Console>
 
     <RollingFile name="main" fileName="logs/main.log" filePattern="logs/main-%i.log">
-      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"/>
       <Policies>
         <SizeBasedTriggeringPolicy size="50M"/>
       </Policies>
@@ -30,6 +30,10 @@
 
     <Logger name="app" level="all" additivity="false">
       <AppenderRef ref="main" level="trace" />
+    </Logger>
+
+    <Logger name="penpot" level="fatal" additivity="false">
+      <AppenderRef ref="main" level="fatal" />
     </Logger>
 
     <Logger name="user" level="trace" additivity="false">

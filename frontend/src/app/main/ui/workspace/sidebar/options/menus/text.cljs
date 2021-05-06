@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.text
   (:require
@@ -13,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.common.text :as txt]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
@@ -162,7 +160,7 @@
         grow-type (->> values :grow-type)
         handle-change-grow
         (fn [event grow-type]
-          (st/emit! (dwc/update-shapes ids #(assoc % :grow-type grow-type))))]
+          (st/emit! (dch/update-shapes ids #(assoc % :grow-type grow-type))))]
 
     [:div.align-icons
      [:span.tooltip.tooltip-bottom

@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.dashboard.grid
   (:require
@@ -31,7 +28,6 @@
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [lambdaisland.uri :as uri]
    [rumext.alpha :as mf]))
 
 ;; --- Grid Item Thumbnail
@@ -204,7 +200,7 @@
        (when selected?
          [:& file-menu {:files selected-file-objs
                         :show? (:menu-open @local)
-                        :left (:x (:menu-pos @local))
+                        :left (+ 24 (:x (:menu-pos @local)))
                         :top (:y (:menu-pos @local))
                         :navigate? navigate?
                         :on-edit on-edit

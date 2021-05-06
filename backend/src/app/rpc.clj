@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.rpc
   (:require
@@ -15,9 +12,9 @@
    [app.db :as db]
    [app.metrics :as mtx]
    [app.rlimits :as rlm]
+   [app.util.logging :as l]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
 
@@ -33,10 +30,15 @@
 (defn- rpc-query-handler
   [methods {:keys [profile-id] :as request}]
   (let [type   (keyword (get-in request [:path-params :type]))
-        data   (assoc (:params request) ::type type)
+
+        data   (d/merge (:params request)
+                        (:body-params request)
+                        (:uploads request))
+
         data   (if profile-id
                  (assoc data :profile-id profile-id)
                  (dissoc data :profile-id))
+
         result ((get methods type default-handler) data)
         mdata  (meta result)]
 
@@ -76,7 +78,8 @@
         (ex/raise :type :internal
                   :code :rlimit-not-configured
                   :hint (str/fmt "%s rlimit not configured" key)))
-      (log/tracef "adding rlimit to '%s' rpc handler" (::sv/name mdata))
+      (l/trace :action "add rlimit"
+               :handler (::sv/name mdata))
       (fn [cfg params]
         (rlm/execute rlinst (f cfg params))))
     f))
@@ -86,7 +89,8 @@
   (let [f     (wrap-with-rlimits cfg f mdata)
         f     (wrap-with-metrics cfg f mdata)
         spec  (or (::sv/spec mdata) (s/spec any?))]
-    (log/tracef "registering '%s' command to rpc service" (::sv/name mdata))
+    (l/trace :action "register"
+             :name (::sv/name mdata))
     (fn [params]
       (when (and (:auth mdata true) (not (uuid? (:profile-id params))))
         (ex/raise :type :authentication
@@ -115,7 +119,8 @@
                      'app.rpc.queries.comments
                      'app.rpc.queries.profile
                      'app.rpc.queries.recent-files
-                     'app.rpc.queries.viewer)
+                     'app.rpc.queries.viewer
+                     'app.rpc.queries.svg)
          (map (partial process-method cfg))
          (into {}))))
 

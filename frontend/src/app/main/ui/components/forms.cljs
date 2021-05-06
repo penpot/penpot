@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.components.forms
   (:require
@@ -26,6 +23,7 @@
   (let [input-type   (get props :type "text")
         input-name   (get props :name)
         more-classes (get props :class)
+        auto-focus?  (get props :auto-focus? false)
 
         form         (or form (mf/use-ctx form-ctx))
 
@@ -87,6 +85,7 @@
                   (dissoc :help-icon :form :trim)
                   (assoc :id (name input-name)
                          :value value
+                         :auto-focus auto-focus?
                          :on-focus on-focus
                          :on-blur on-blur
                          :placeholder label

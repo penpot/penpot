@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.streams
   "User interaction events and streams."
@@ -11,8 +11,8 @@
    [app.main.store :as st]
    [app.main.refs :as refs]
    [app.common.geom.point :as gpt]
-   [app.util.globals :as globals])
-  (:import goog.events.KeyCodes))
+   [app.util.globals :as globals]
+   [app.util.keyboard :as kbd]))
 
 ;; --- User Events
 
@@ -113,8 +113,7 @@
         ob  (->> (rx/merge
                   (->> st/stream
                        (rx/filter keyboard-event?)
-                       (rx/filter #(let [key (:key %)]
-                                     (= key KeyCodes.ALT)))
+                       (rx/filter kbd/altKey?)
                        (rx/map #(= :down (:type %))))
                   ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
                   ;; that makes keyboard-alt stream registring the key pressed but
@@ -130,10 +129,7 @@
         ob  (->> (rx/merge
                   (->> st/stream
                        (rx/filter keyboard-event?)
-                       (rx/filter #(let [key (:key %)]
-                                     (or
-                                      (= key KeyCodes.CTRL)
-                                      (= key KeyCodes.META))))
+                       (rx/filter kbd/ctrlKey?)
                        (rx/map #(= :down (:type %))))
                   ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
                   ;; that makes keyboard-alt stream registring the key pressed but

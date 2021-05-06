@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.tasks.delete-profile
   "Task for permanent deletion of profiles."
@@ -13,8 +10,8 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.util.logging :as l]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (declare delete-profile-data)
@@ -47,7 +44,8 @@
         (if (or (:is-demo profile)
                 (:deleted-at profile))
           (delete-profile-data conn id)
-          (log/warnf "profile '%s' does not match constraints for deletion" id))))))
+          (l/warn :hint "profile does not match constraints for deletion"
+                  :profile-id id))))))
 
 ;; --- IMPL
 
@@ -70,7 +68,8 @@
 
 (defn- delete-profile-data
   [conn profile-id]
-  (log/debugf "proceding to delete all data related to profile '%s'" profile-id)
+  (l/debug :action "delete profile"
+           :profile-id profile-id)
   (delete-teams conn profile-id)
   (delete-profile conn profile-id)
   true)

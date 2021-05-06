@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.viewport.interactions
   "Visually show shape interactions in workspace"
@@ -184,19 +181,22 @@
         draw-interaction-to (:draw-interaction-to local)
         draw-interaction-to-frame (:draw-interaction-to-frame local)
         first-selected (first selected-shapes)]
-    [:*
+
+    [:g.interactions
+     [:g.non-selected
       (for [shape active-shapes]
         (let [interaction (get-click-interaction shape)
               dest-shape (get objects (:destination interaction))
               selected? (contains? selected (:id shape))]
-          (when-not selected?
+          (when-not (or selected? (not dest-shape))
             [:& interaction-path {:key (:id shape)
                                   :orig-shape shape
                                   :dest-shape dest-shape
                                   :selected selected
                                   :selected? false
-                                  :zoom zoom}])))
+                                  :zoom zoom}])))]
 
+     [:g.selected
       (if (and draw-interaction-to first-selected)
         [:& interaction-path {:key "interactive"
                               :orig-shape first-selected
@@ -219,5 +219,5 @@
                 [:& interaction-handle {:key (:id shape)
                                         :shape shape
                                         :selected selected
-                                        :zoom zoom}])))))]))
+                                        :zoom zoom}])))))]]))
 

@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.shapes.path
   (:require
@@ -16,7 +13,7 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]
-   [app.util.geom.path :as ugp]
+   [app.util.path.commands :as upc]
    [rumext.alpha :as mf]))
 
 (mf/defc path-wrapper
@@ -27,7 +24,7 @@
         content-modifiers (mf/deref content-modifiers-ref)
         editing-id (mf/deref refs/selected-edition)
         editing? (= editing-id (:id shape))
-        shape (update shape :content ugp/apply-content-modifiers content-modifiers)]
+        shape (update shape :content upc/apply-content-modifiers content-modifiers)]
 
     [:> shape-container {:shape shape
                          :pointer-events (when editing? "none")}

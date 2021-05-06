@@ -2,16 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.cursors
   (:require
    [clojure.java.io :as io]
    [cuerdas.core :as str]
-   [lambdaisland.uri.normalize :as uri]))
+   [app.common.uri :as u]))
 
 (def cursor-folder "images/cursors")
 
@@ -56,7 +53,7 @@
   [id rotation x y height]
   (let [svg-path  (str cursor-folder "/" (name id) ".svg")
         data      (-> svg-path io/resource slurp parse-svg)
-        data      (uri/percent-encode data)
+        data      (u/percent-encode data)
 
         data (if rotation
                (str/fmt "%3Cg transform='rotate(%s 8,8)'%3E%s%3C/g%3E" rotation data)

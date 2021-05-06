@@ -2,46 +2,28 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.data.workspace.shortcuts
   (:require
-   [app.config :as cfg]
-   [app.main.data.colors :as mdc]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.store :as st]
    [app.util.dom :as dom]
-   [beicon.core :as rx]
    [potok.core :as ptk]))
-
-;; \u2318P
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Shortcuts impl https://github.com/ccampbell/mousetrap
-
-(defn esc-pressed []
-  (ptk/reify :esc-pressed
-    ptk/WatchEvent
-    (watch [_ state stream]
-      ;;  Not interrupt when we're editing a path
-      (let [edition-id (or (get-in state [:workspace-drawing :object :id])
-                           (get-in state [:workspace-local :edition]))
-            path-edit-mode (get-in state [:workspace-local :edit-path edition-id :edit-mode])]
-        (if-not (= :draw path-edit-mode)
-          (rx/of :interrupt (dw/deselect-all true))
-          (rx/empty))))))
+;; Shortcuts format https://github.com/ccampbell/mousetrap
 
 (def shortcuts
   {:toggle-layers     {:tooltip (ds/alt "L")
@@ -142,7 +124,7 @@
 
    :clear-undo         {:tooltip (ds/meta "Q")
                         :command (ds/c-mod "q")
-                        :fn #(st/emit! dwc/reinitialize-undo)}
+                        :fn #(st/emit! dwu/reinitialize-undo)}
 
    :draw-frame         {:tooltip "A"
                         :command "a"
@@ -255,7 +237,7 @@
 
    :escape             {:tooltip (ds/esc)
                         :command "escape"
-                        :fn #(st/emit! (esc-pressed))}
+                        :fn #(st/emit! :interrupt (dw/deselect-all true))}
 
    :start-editing      {:tooltip (ds/enter)
                         :command "enter"

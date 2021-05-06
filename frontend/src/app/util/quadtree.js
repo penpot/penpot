@@ -1,6 +1,6 @@
 /**
- * Copyright © 2012-2020 Timo Hausmann
- * Copyright © 2020 Andrey Antukh
+ * Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
+ * Copyright (c) 2012-2020 Timo Hausmann
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation

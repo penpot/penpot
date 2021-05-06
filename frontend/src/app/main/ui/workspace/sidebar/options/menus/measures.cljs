@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.measures
   (:require
@@ -20,6 +17,7 @@
    [app.common.geom.point :as gpt]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.common.math :as math]
    [app.util.i18n :refer [t] :as i18n]))
@@ -109,7 +107,7 @@
                      (:r1 shape)
                      (-> (assoc :rx 0 :ry 0)
                          (dissoc :r1 :r2 :r3 :r4))))]
-             (st/emit! (dwc/update-shapes ids-with-children radius-update)))))
+             (st/emit! (dch/update-shapes ids-with-children radius-update)))))
 
         on-switch-to-radius-4
         (mf/use-callback
@@ -121,7 +119,7 @@
                      (:rx shape)
                      (-> (assoc :r1 0 :r2 0 :r3 0 :r4 0)
                          (dissoc :rx :ry))))]
-             (st/emit! (dwc/update-shapes ids-with-children radius-update)))))
+             (st/emit! (dch/update-shapes ids-with-children radius-update)))))
 
         on-radius-1-change
         (mf/use-callback
@@ -137,7 +135,7 @@
                      (or (:rx shape) (:r1 shape))
                      (assoc :rx value :ry value)))]
 
-             (st/emit! (dwc/update-shapes ids-with-children radius-update)))))
+             (st/emit! (dch/update-shapes ids-with-children radius-update)))))
 
         on-radius-4-change
         (mf/use-callback
@@ -153,7 +151,7 @@
                      (attr shape)
                      (assoc attr value)))]
 
-             (st/emit! (dwc/update-shapes ids-with-children radius-update)))))
+             (st/emit! (dch/update-shapes ids-with-children radius-update)))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)

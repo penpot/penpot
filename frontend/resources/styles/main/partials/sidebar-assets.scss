@@ -118,41 +118,97 @@
     cursor: pointer;
   }
 
-  .asset-group {
+  .listing-options {
     background-color: $color-gray-60;
-    border-top: 1px solid $color-gray-50;
+    display: flex;
+    align-items: center;
+    padding: $medium $small 0 $small;
+
+    .selected-count {
+      color: $color-primary;
+      font-size: $fs11;
+    }
+
+    .listing-option-btn {
+      cursor: pointer;
+      margin-left: $small;
+
+      &.first {
+        margin-left: auto;
+      }
+
+      svg {
+        fill: $color-gray-20;
+        height: 16px;
+        width: 16px;
+      }
+    }
+  }
+
+  .asset-section {
+    background-color: $color-gray-60;
     padding: $small;
     font-size: $fs12;
     color: $color-gray-20;
     /* TODO: see if this is useful, or is better to leave only
              one scroll bar in the whole sidebar
-             (also see .group-list) */
+             (also see .asset-list) */
     // max-height: 30rem;
     // overflow-y: scroll;
 
-    .group-title {
-        display: flex;
-        cursor: pointer;
+    // First child is the listing options buttons
+    &:not(:nth-child(2)) {
+      border-top: 1px solid $color-gray-50;
+    }
+
+    .asset-title {
+      display: flex;
+      cursor: pointer;
 
       & .num-assets {
         color: $color-gray-30;
       }
 
       & svg {
-          height: 8px;
-          width: 8px;
-          fill: $color-gray-30;
-          margin-right: 4px;
-          transform: rotate(90deg);
+        height: 8px;
+        width: 8px;
+        fill: $color-gray-30;
+        margin-right: 4px;
+        transform: rotate(90deg);
       }
 
       &.closed svg {
-          transform: rotate(0deg);
-          transition: transform 0.3s;
+        transform: rotate(0deg);
+        transition: transform 0.3s;
       }
     }
 
-    .group-button {
+    .group-title {
+      display: flex;
+      cursor: pointer;
+      margin-top: $small;
+      margin-bottom: $x-small;
+      color: $color-white;
+
+      & svg {
+        height: 8px;
+        width: 8px;
+        fill: $color-white;
+        margin-right: 4px;
+        transform: rotate(90deg);
+      }
+
+      &.closed svg {
+        transform: rotate(0deg);
+        transition: transform 0.3s;
+      }
+
+      & .dim {
+        color: $color-gray-40;
+      }
+    }
+
+    .assets-button {
       margin-left: auto;
       cursor: pointer;
 
@@ -167,8 +223,11 @@
       }
     }
 
-    .group-grid {
-      margin-top: $medium;
+    .asset-title + .asset-grid {
+      margin-top: $small;
+    }
+
+    .asset-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
       grid-auto-rows: 6vh;
@@ -192,6 +251,7 @@
     .grid-cell {
       background-color: $color-canvas;
       border-radius: 4px;
+      border: 2px solid transparent;
       overflow: hidden;
       display: flex;
       align-items: center;
@@ -242,29 +302,85 @@
     }
 
     .grid-cell:hover {
-      border: 1px solid $color-primary;
+      border: 2px solid $color-primary;
 
       & .cell-name {
         display: block;
       }
     }
 
+    .grid-cell.selected {
+      border: 2px solid $color-primary;
+    }
+
+    .asset-title + .asset-enum {
+      margin-top: $small;
+    }
+
+    .asset-enum {
+      .enum-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: $small;
+        cursor: pointer;
+
+        & > svg,
+        & > img {
+          background-color: $color-canvas;
+          border-radius: 4px;
+          border: 2px solid transparent;
+          height: 24px;
+          width: 24px;
+          margin-right: $small;
+        }
+
+        .item-name {
+          width: calc(100% - 24px - #{$small});
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          display: block;
+
+          &.editing {
+            display: flex;
+            align-items: center;
+
+            .editable-label-input {
+              height: 24px;
+            }
+
+            .editable-label-close {
+              display: none;
+            }
+          }
+        }
+      }
+
+      .enum-item:hover,
+      .enum-item.selected,
+      {
+        color: $color-primary;
+      }
+    }
+
     /* TODO: see if this is useful, or is better to leave only
              one scroll bar in the whole sidebar
-             (also see .asset-group) */
-    // .group-list {
+             (also see .asset-section) */
+    // .asset-list {
     //   max-height: 30rem;
     //   overflow-y: scroll;
     // }
 
-    .group-list {
+    .asset-list {
       margin-top: $medium;
     }
 
-    .group-list-item {
+    .asset-list-item {
       display: flex;
       align-items: center;
-      margin-top: $small;
+      border: 1px solid transparent;
+      margin-top: $x-small;
+      padding: 2px;
       font-size: $fs12;
       color: $color-white;
       cursor: pointer;
@@ -273,6 +389,10 @@
         margin-left: $x-small;
         color: $color-gray-30;
         text-transform: uppercase;
+      }
+
+      &.selected {
+        border: 1px solid $color-primary;
       }
     }
 

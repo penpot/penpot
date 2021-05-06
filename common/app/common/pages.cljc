@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.pages
   "A common (clj/cljs) functions and specs for pages."
@@ -65,6 +62,10 @@
 (d/export helpers/get-index-in-parent)
 (d/export helpers/calculate-z-index)
 (d/export helpers/generate-child-all-parents-index)
+(d/export helpers/parse-path-name)
+(d/export helpers/merge-path-item)
+(d/export helpers/compact-path)
+(d/export helpers/compact-name)
 
 ;; Process changes
 (d/export changes/process-changes)

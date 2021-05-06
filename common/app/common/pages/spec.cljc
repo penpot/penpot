@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.pages.spec
   (:require
@@ -19,6 +16,7 @@
 (s/def ::frame-id uuid?)
 (s/def ::id uuid?)
 (s/def ::name string?)
+(s/def ::path (s/nilable string?))
 (s/def ::page-id uuid?)
 (s/def ::parent-id uuid?)
 (s/def ::string string?)
@@ -550,7 +548,8 @@
   (s/coll-of ::shape))
 
 (defmethod change-spec :add-component [_]
-  (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]))
+  (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]
+          :opt-un [::path]))
 
 (defmethod change-spec :mod-component [_]
   (s/keys :req-un [::id]

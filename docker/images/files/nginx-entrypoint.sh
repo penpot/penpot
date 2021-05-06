@@ -69,6 +69,14 @@ update_github_client_id() {
   fi
 }
 
+update_oidc_client_id() {
+  if [ -n "$PENPOT_OIDC_CLIENT_ID" ]; then
+    log "Updating Oidc Client Id: $PENPOT_OIDC_CLIENT_ID"
+    sed -i \
+      -e "s|^//var penpotOIDCClientID = \".*\";|var penpotOIDCClientID = \"$PENPOT_OIDC_CLIENT_ID\";|g" \
+      "$1"
+  fi
+}
 
 update_login_with_ldap() {
   if [ -n "$PENPOT_LOGIN_WITH_LDAP" ]; then
@@ -95,6 +103,7 @@ update_allow_demo_users /var/www/app/js/config.js
 update_google_client_id /var/www/app/js/config.js
 update_gitlab_client_id /var/www/app/js/config.js
 update_github_client_id /var/www/app/js/config.js
+update_oidc_client_id /var/www/app/js/config.js
 update_login_with_ldap /var/www/app/js/config.js
 update_registration_enabled /var/www/app/js/config.js
 

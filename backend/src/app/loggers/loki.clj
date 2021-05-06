@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.loggers.loki
   "A Loki integration."
@@ -15,10 +12,10 @@
    [app.util.async :as aa]
    [app.util.http :as http]
    [app.util.json :as json]
+   [app.util.logging :as l]
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (declare handle-event)
@@ -33,13 +30,13 @@
 (defmethod ig/init-key ::reporter
   [_ {:keys [receiver uri] :as cfg}]
   (when uri
-    (log/info "intializing loki reporter")
+    (l/info :msg "intializing loki reporter" :uri uri)
     (let [output (a/chan (a/sliding-buffer 1024))]
       (receiver :sub output)
       (a/go-loop []
         (let [msg (a/<! output)]
           (if (nil? msg)
-            (log/info "stoping error reporting loop")
+            (l/info :msg "stoping error reporting loop")
             (do
               (a/<! (handle-event cfg msg))
               (recur)))))
@@ -75,10 +72,14 @@
       (if (= (:status response) 204)
         true
         (do
-          (log/errorf "error on sending log to loki (try %s)\n%s" i (pr-str response))
+          (l/error :hint "error on sending log to loki"
+                   :try i
+                   :rsp (pr-str response))
           false)))
     (catch Exception e
-      (log/errorf e "error on sending message to loki (try %s)" i)
+      (l/error :hint "error on sending message to loki"
+               :cause e
+               :try i)
       false)))
 
 (defn- handle-event

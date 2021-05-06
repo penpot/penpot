@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.blur
   (:require
@@ -13,6 +10,7 @@
    [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
@@ -35,7 +33,7 @@
         has-value? (not (nil? blur))
         multiple? (= blur :multiple)
 
-        change! (fn [update-fn] (st/emit! (dwc/update-shapes ids update-fn)))
+        change! (fn [update-fn] (st/emit! (dch/update-shapes ids update-fn)))
 
         handle-add
         (fn []

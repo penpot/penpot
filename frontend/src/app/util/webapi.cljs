@@ -2,39 +2,36 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.util.webapi
   "HTML5 web api helpers."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.util.object :as obj]
-   [promesa.core :as p]
+   [app.util.transit :as t]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [app.common.data :as d]
-   [app.util.transit :as t]))
+   [promesa.core :as p]))
+
+(defn- file-reader
+  [f]
+  (rx/create
+   (fn [subs]
+     (let [reader (js/FileReader.)]
+       (obj/set! reader "onload" #(do (rx/push! subs (.-result reader))
+                                      (rx/end! subs)))
+       (f reader)
+       (constantly nil)))))
 
 (defn read-file-as-text
   [file]
-  (rx/create
-   (fn [sink]
-     (let [fr (js/FileReader.)]
-       (aset fr "onload" #(sink (rx/end (.-result fr))))
-       (.readAsText fr file)
-       (constantly nil)))))
+  (file-reader #(.readAsText %1 file)))
 
-(defn read-file-as-dataurl
+(defn read-file-as-data-url
   [file]
-  (rx/create
-   (fn [sick]
-     (let [fr (js/FileReader.)]
-       (aset fr "onload" #(sick (rx/end (.-result fr))))
-       (.readAsDataURL fr file))
-     (constantly nil))))
+  (file-reader #(.readAsDataURL ^js %1 file)))
 
 (defn ^boolean blob?
   [v]

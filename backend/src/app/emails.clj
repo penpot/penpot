@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.emails
   "Main api for send emails."
@@ -14,18 +11,13 @@
    [app.config :as cfg]
    [app.db :as db]
    [app.db.sql :as sql]
-   [app.tasks :as tasks]
    [app.util.emails :as emails]
-   [clojure.spec.alpha :as s]))
+   [app.util.logging :as l]
+   [app.worker :as wrk]
+   [clojure.spec.alpha :as s]
+   [integrant.core :as ig]))
 
-;; --- Defaults
-
-(defn default-context
-  []
-  {:assets-uri (:assets-uri cfg/config)
-   :public-uri (:public-uri cfg/config)})
-
-;; --- Public API
+;; --- PUBLIC API
 
 (defn render
   [email-factory context]
@@ -33,16 +25,19 @@
 
 (defn send!
   "Schedule the email for sending."
-  [conn email-factory context]
-  (us/verify fn? email-factory)
-  (us/verify map? context)
-  (let [email (email-factory context)]
-    (tasks/submit! conn {:name "sendmail"
-                         :delay 0
-                         :max-retries 1
-                         :priority 200
-                         :props email})))
+  [{:keys [::conn ::factory] :as context}]
+  (us/verify fn? factory)
+  (us/verify some? conn)
+  (let [email (factory context)]
+    (wrk/submit! (assoc email
+                        ::wrk/task :sendmail
+                        ::wrk/delay 0
+                        ::wrk/max-retries 1
+                        ::wrk/priority 200
+                        ::wrk/conn conn))))
 
+
+;; --- BOUNCE/COMPLAINS HANDLING
 
 (def sql:profile-complaint-report
   "select (select count(*)
@@ -91,7 +86,7 @@
      (>= (count reports) threshold))))
 
 
-;; --- Emails
+;; --- EMAIL FACTORIES
 
 (s/def ::subject ::us/string)
 (s/def ::content ::us/string)
@@ -101,7 +96,7 @@
 
 (def feedback
   "A profile feedback email."
-  (emails/template-factory ::feedback default-context))
+  (emails/template-factory ::feedback))
 
 (s/def ::name ::us/string)
 (s/def ::register
@@ -109,7 +104,7 @@
 
 (def register
   "A new profile registration welcome email."
-  (emails/template-factory ::register default-context))
+  (emails/template-factory ::register))
 
 (s/def ::token ::us/string)
 (s/def ::password-recovery
@@ -117,7 +112,7 @@
 
 (def password-recovery
   "A password recovery notification email."
-  (emails/template-factory ::password-recovery default-context))
+  (emails/template-factory ::password-recovery))
 
 (s/def ::pending-email ::us/email)
 (s/def ::change-email
@@ -125,7 +120,7 @@
 
 (def change-email
   "Password change confirmation email"
-  (emails/template-factory ::change-email default-context))
+  (emails/template-factory ::change-email))
 
 (s/def :internal.emails.invite-to-team/invited-by ::us/string)
 (s/def :internal.emails.invite-to-team/team ::us/string)
@@ -138,4 +133,50 @@
 
 (def invite-to-team
   "Teams member invitation email."
-  (emails/template-factory ::invite-to-team default-context))
+  (emails/template-factory ::invite-to-team))
+
+
+;; --- SENDMAIL TASK
+
+(declare send-console!)
+
+(s/def ::username ::cfg/smtp-username)
+(s/def ::password ::cfg/smtp-password)
+(s/def ::tls ::cfg/smtp-tls)
+(s/def ::ssl ::cfg/smtp-ssl)
+(s/def ::host ::cfg/smtp-host)
+(s/def ::port ::cfg/smtp-port)
+(s/def ::default-reply-to ::cfg/smtp-default-reply-to)
+(s/def ::default-from ::cfg/smtp-default-from)
+(s/def ::enabled ::cfg/smtp-enabled)
+
+(defmethod ig/pre-init-spec ::sendmail-handler [_]
+  (s/keys :req-un [::enabled]
+          :opt-un [::username
+                   ::password
+                   ::tls
+                   ::ssl
+                   ::host
+                   ::port
+                   ::default-from
+                   ::default-reply-to]))
+
+(defmethod ig/init-key ::sendmail-handler
+  [_ cfg]
+  (fn [{:keys [props] :as task}]
+    (if (:enabled cfg)
+      (emails/send! cfg props)
+      (send-console! cfg props))))
+
+(defn- send-console!
+  [cfg email]
+  (let [baos (java.io.ByteArrayOutputStream.)
+        mesg (emails/smtp-message cfg email)]
+    (.writeTo mesg baos)
+    (let [out (with-out-str
+                (println "email console dump:")
+                (println "******** start email" (:id email) "**********")
+                (println (.toString baos))
+                (println "******** end email "(:id email) "**********"))]
+      (l/info :email out))))
+

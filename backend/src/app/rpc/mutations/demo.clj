@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.rpc.mutations.demo
   "A demo specific mutations."
@@ -16,8 +13,8 @@
    [app.db :as db]
    [app.rpc.mutations.profile :as profile]
    [app.setup.initial-data :as sid]
-   [app.tasks :as tasks]
    [app.util.services :as sv]
+   [app.worker :as wrk]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
    [clojure.spec.alpha :as s]))
@@ -40,7 +37,7 @@
                   :password password
                   :props {:onboarding-viewed true}}]
 
-    (when-not (:allow-demo-users cfg/config)
+    (when-not (cfg/get :allow-demo-users)
       (ex/raise :type :validation
                 :code :demo-users-not-allowed
                 :hint "Demo users are disabled by config."))
@@ -51,9 +48,10 @@
            (sid/load-initial-project! conn))
 
       ;; Schedule deletion of the demo profile
-      (tasks/submit! conn {:name "delete-profile"
-                           :delay cfg/deletion-delay
-                           :props {:profile-id id}})
+      (wrk/submit! {::wrk/task :delete-profile
+                    ::wrk/delay cfg/deletion-delay
+                    ::wrk/conn conn
+                    :profile-id id})
 
       {:email email
        :password password})))

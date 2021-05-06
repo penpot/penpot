@@ -342,8 +342,8 @@
 
     .btn-primary {
       height: 1.5rem;
-      padding: 0 2.5rem;
       font-size: $fs12;
+      width: 100%;
     }
   }
 
@@ -498,7 +498,7 @@
       height: 20px;
       margin: 5px 0 0 0;
       padding: 0 $x-small;
-      width: 64px;
+      width: 84px;
       font-size: $fs13;
 
       &:focus {

@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.tests.test-bounces-handling
   (:require
@@ -20,10 +17,6 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
-
-;; (with-mocks [mock {:target 'app.tasks/submit! :return nil}]
-;; Right now we have many different scenarios what can cause a
-;; bounce/complain report.
 
 (defn- decode-row
   [{:keys [content] :as row}]

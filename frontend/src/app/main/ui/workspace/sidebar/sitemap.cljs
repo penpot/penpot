@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.sitemap
   (:require
@@ -104,6 +101,13 @@
          :data {:id id
                 :index index
                 :name (:name page)})]
+
+    (mf/use-effect
+      (mf/deps selected?)
+      (fn []
+        (when selected?
+          (let [node (mf/ref-val dref)]
+            (.scrollIntoViewIfNeeded ^js node)))))
 
     (mf/use-layout-effect
      (mf/deps (:edition @local))

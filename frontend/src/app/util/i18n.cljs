@@ -2,22 +2,20 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.util.i18n
   "A i18n foundation."
   (:require
+   [app.config :as cfg]
+   [app.util.globals :as globals]
+   [app.util.storage :refer [storage]]
+   [app.util.transit :as t]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [goog.object :as gobj]
    [okulary.core :as l]
-   [rumext.alpha :as mf]
-   [app.config :as cfg]
-   [app.util.storage :refer [storage]]
-   [app.util.transit :as t]))
+   [rumext.alpha :as mf]))
 
 (def supported-locales
   [{:label "English" :value "en"}
@@ -26,12 +24,12 @@
    {:label "Deutsch (community)" :value "de"}
    {:label "Русский (community)" :value "ru"}
    {:label "Türkçe (community)" :value "tr"}
+   {:label "Ελληνική γλώσσα (community)" :value "el"}
    {:label "简体中文 (community)" :value "zh_cn"}])
 
 (defn- parse-locale
   [locale]
-  (let [locale (-> (.-language js/navigator)
-                   (str/lower)
+  (let [locale (-> (str/lower locale)
                    (str/replace "-" "_"))]
     (cond-> [locale]
       (str/includes? locale "_")
@@ -39,7 +37,7 @@
 
 (def ^:private browser-locales
   (delay
-    (-> (.-language js/navigator)
+    (-> (.-language globals/navigator)
         (parse-locale))))
 
 (defn- autodetect
@@ -67,11 +65,17 @@
   (set! translations data))
 
 (defn set-locale!
-  [lang]
-  (if lang
-    (do
-      (swap! storage assoc ::locale lang)
-      (reset! locale lang))
+  [lname]
+  (if lname
+    (let [supported (into #{} (map :value supported-locales))
+          lname     (loop [locales (seq (parse-locale lname))]
+                      (if-let [locale (first locales)]
+                        (if (contains? supported locale)
+                          locale
+                          (recur (rest locales)))
+                        cfg/default-language))]
+      (swap! storage assoc ::locale lname)
+      (reset! locale lname))
     (do
       (swap! storage dissoc ::locale)
       (reset! locale (autodetect)))))

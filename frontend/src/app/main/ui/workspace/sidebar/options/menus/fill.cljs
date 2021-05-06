@@ -2,16 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.fill
   (:require
    [app.common.pages :as cp]
-   [app.main.data.colors :as dc]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -81,13 +79,13 @@
         (mf/use-callback
           (mf/deps ids)
           (fn [value opacity id file-id]
-            (st/emit! (dwc/start-undo-transaction))))
+            (st/emit! (dwu/start-undo-transaction))))
 
         on-close-picker
         (mf/use-callback
           (mf/deps ids)
           (fn [value opacity id file-id]
-            (st/emit! (dwc/commit-undo-transaction))))]
+            (st/emit! (dwu/commit-undo-transaction))))]
 
     (if show?
       [:div.element-set

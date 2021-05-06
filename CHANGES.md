@@ -3,12 +3,56 @@
 ## :rocket: Next
 
 ### :sparkles: New features
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :boom: Breaking changes
+### :heart: Community contributions by (Thank you!)
+
+
+## 1.5.0-alpha
+
+### :sparkles: New features
+
+- Add integration with gitpod.io (an online IDE) [#807](https://github.com/penpot/penpot/pull/807)
+- Allow basic math operations in inputs [Taiga 1383](https://tree.taiga.io/project/penpot/us/1383)
+- Autocomplete color names in hex inputs [Taiga 1596](https://tree.taiga.io/project/penpot/us/1596)
+- Allow to group assets (components and graphics) [Taiga #1289](https://tree.taiga.io/project/penpot/us/1289)
+- Change icon of pinned projects [Taiga 1298](https://tree.taiga.io/project/penpot/us/1298)
+- Internal: refactor of http client, replace internal xhr usage with more modern Fetch API.
+- New features for paths: snap points on edition, add/remove nodes, merge/join/split nodes. [Taiga #907](https://tree.taiga.io/project/penpot/us/907)
+- Add OpenID-Connect support.
+- Reimplement social auth providers on top of the generic openid impl.
 
 ### :bug: Bugs fixed
 
+- Fix problem with pan and space [#811](https://github.com/penpot/penpot/issues/811)
+- Fix issue when parsing exponential numbers in paths
+- Remove legacy system user and team [#843](https://github.com/penpot/penpot/issues/843)
+- Fix ordering of copy pasted objects [Taiga #1618](https://tree.taiga.io/project/penpot/issue/1617)
+- Fix problems with blending modes [#837](https://github.com/penpot/penpot/issues/837)
+- Fix problem with zoom an selection rect [#845](https://github.com/penpot/penpot/issues/845)
+- Fix problem displaying team statistics [#859](https://github.com/penpot/penpot/issues/859)
+- Fix problems with text editor selection [Taiga #1546](https://tree.taiga.io/project/penpot/issue/1546)
+- Fix problem when opening the context menu in dashboard at the bottom [#856](https://github.com/penpot/penpot/issues/856)
+- Fix problem when clicking an interactive group in view mode [#863](https://github.com/penpot/penpot/issues/863)
+- Fix visibility of pages in sitemap when changing page [Taiga #1618](https://tree.taiga.io/project/penpot/issue/1618)
+- Fix visual problem with group invite [Taiga #1290](https://tree.taiga.io/project/penpot/issue/1290)
+- Fix issues with promote owner panel [Taiga #763](https://tree.taiga.io/project/penpot/issue/763)
+- Allow use library colors when defining gradients [Taiga #1614](https://tree.taiga.io/project/penpot/issue/1614)
+- Fix group selrect not updating after alignment [#895](https://github.com/penpot/penpot/issues/895)
+
 ### :arrow_up: Deps updates
 
+### :boom: Breaking changes
+
+- Translations refactor: now penpot uses gettext instead of a custom
+  JSON, and each locale has its own separated file. All translations
+  should be contributed via the weblate.org service.
+
 ### :heart: Community contributions by (Thank you!)
+
+- madmath03 (by [Monogramm](https://github.com/Monogramm)) [#807](https://github.com/penpot/penpot/pull/807)
+- zzkt [#814](https://github.com/penpot/penpot/pull/814)
 
 
 ## 1.4.1-alpha

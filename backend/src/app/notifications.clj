@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.notifications
   "A websocket based notifications mechanism."
@@ -14,12 +11,12 @@
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.async :as aa]
+   [app.util.logging :as l]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]
    [ring.adapter.jetty9 :as jetty]
    [ring.middleware.cookies :refer [wrap-cookies]]
@@ -149,7 +146,7 @@
                                   :out-ch out-ch
                                   :sub-ch sub-ch)]
 
-                (log/tracef "on-connect %s" (:session-id cfg))
+                (l/trace :event "connect" :session (:session-id cfg))
 
                 ;; Forward all messages from out-ch to the websocket
                 ;; connection
@@ -171,20 +168,22 @@
                   ;; close subscription
                   (a/close! sub-ch))))
 
-            (on-error [_conn e]
-              (log/tracef "on-error %s (%s)" (:session-id cfg) (ex-message e))
+            (on-error [_conn _e]
+              (l/trace :event "error" :session (:session-id cfg))
+
               (a/close! out-ch)
               (a/close! rcv-ch))
 
             (on-close [_conn _status _reason]
-              (log/tracef "on-close %s" (:session-id cfg))
+              (l/trace :event "close" :session (:session-id cfg))
+
               (a/close! out-ch)
               (a/close! rcv-ch))
 
             (on-message [_ws message]
               (let [message (t/decode-str message)]
                 (when-not (a/offer! rcv-ch message)
-                  (log/warn "droping ws input message, channe full"))))]
+                  (l/warn :msg "drop messages"))))]
 
       {:on-connect on-connect
        :on-error on-error
@@ -254,12 +253,10 @@
 
 (defmethod handle-message :connect
   [cfg _]
-  ;; (log/debugf "profile '%s' is connected to file '%s'" profile-id file-id)
   (send-presence cfg :connect))
 
 (defmethod handle-message :disconnect
   [cfg _]
-  ;; (log/debugf "profile '%s' is disconnected from '%s'" profile-id file-id)
   (send-presence cfg :disconnect))
 
 (defmethod handle-message :keepalive
@@ -277,5 +274,7 @@
 (defmethod handle-message :default
   [_ws message]
   (a/go
-    (log/warnf "received unexpected message: %s" message)))
+    (l/log :level :warn
+           :msg "received unexpected message"
+           :message message)))
 

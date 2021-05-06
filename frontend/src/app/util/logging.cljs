@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 ;;
 ;; This code is highly inspired on the lambdaisland/glogi library but
 ;; adapted and simplified to our needs. The adapted code shares the
@@ -12,14 +12,10 @@
 (ns app.util.logging
   (:require
    [goog.log :as glog]
-   [goog.debug.Logger :as Logger]
-   [goog.debug.Logger.Level :as Level]
    [goog.debug.Console :as Console]
    [cuerdas.core :as str]
    [goog.object :as gobj])
-  (:import
-   [goog.debug Logger Console LogRecord]
-   [goog.debug.Logger Level])
+  (:import [goog.debug Console])
   (:require-macros [app.util.logging]))
 
 (defn- logger-name
@@ -33,27 +29,23 @@
 
 (defn get-logger
   [n]
-  (if (instance? Logger n)
-    n
-    (glog/getLogger (logger-name n))))
-
-(def root (get-logger :root))
+  (glog/getLogger (logger-name n)))
 
 (def levels
-  {:off     Level/OFF
-   :shout   Level/SHOUT
-   :error   Level/SEVERE
-   :severe  Level/SEVERE
-   :warning Level/WARNING
-   :warn    Level/WARNING
-   :info    Level/INFO
-   :config  Level/CONFIG
-   :debug   Level/FINE
-   :fine    Level/FINE
-   :finer   Level/FINER
-   :trace   Level/FINER
-   :finest  Level/FINEST
-   :all     Level/ALL})
+  {:off     (.-OFF ^js glog/Level)
+   :shout   (.-SHOUT ^js glog/Level)
+   :error   (.-SEVERE ^js  glog/Level)
+   :severe  (.-SEVERE ^js glog/Level)
+   :warning (.-WARNING ^js glog/Level)
+   :warn    (.-WARNING ^js glog/Level)
+   :info    (.-INFO ^js glog/Level)
+   :config  (.-CONFIG ^js glog/Level)
+   :debug   (.-FINE ^js glog/Level)
+   :fine    (.-FINE ^js glog/Level)
+   :finer   (.-FINER ^js glog/Level)
+   :trace   (.-FINER ^js glog/Level)
+   :finest  (.-FINEST ^js glog/Level)
+   :all     (.-ALL ^js glog/Level)})
 
 (def colors
   {:gray3    "#8e908c"
@@ -67,9 +59,9 @@
 
 (defn- get-level-value
   [level]
-  (if (instance? Level level)
-    (.-value ^Level level)
-    (.-value ^Level (get levels level))))
+  (if (instance? glog/Level level)
+    (.-value ^js level)
+    (.-value ^js (get levels level))))
 
 (defn- level->color
   [level]
@@ -92,13 +84,12 @@
     :warn "WRN"
     :warning "WRN"
     :error "ERR"
-    (subs (.-name ^Level (get levels l)) 0 3)))
+    (subs (.-name ^js (get levels l)) 0 3)))
 
 (defn- make-log-record
   [level message name exception]
-  (let [record (LogRecord. level message name)]
-    (when exception
-      (.setException record exception))
+  (let [record (glog/LogRecord. level message name)]
+    (when exception (.setException record exception))
     record))
 
 (defn log
@@ -109,14 +100,14 @@
   ([name lvl message exception]
    (when glog/ENABLED
      (when-let [l (get-logger name)]
-       (.logRecord ^Logger l (make-log-record (get levels lvl) message name exception))))))
+       (glog/publishLogRecord l (make-log-record (get levels lvl) message name exception))))))
 
 (defn set-level*
   "Set the level (a keyword) of the given logger, identified by name."
   [name lvl]
   (assert (contains? levels lvl))
-  (when-let [l (get-logger name)]
-    (.setLevel ^Logger l (get levels lvl))))
+  (some-> (get-logger name)
+          (glog/setLevel (get levels lvl))))
 
 (defn set-levels!
   [lvls]
@@ -124,29 +115,22 @@
           :let [level (if (string? level) (keyword level) level)]]
     (set-level* logger level)))
 
+(defn record->map
+  [^js record]
+  {:seqn (.-sequenceNumber_ record)
+   :time (.-time_ record)
+   :level (keyword (str/lower (.-name (.-level_ record))))
+   :message (.-msg_ record)
+   :logger-name (.-loggerName_ record)
+   :exception (.-exception_ record)})
+
 (defn add-handler!
   ([handler-fn]
-   (add-handler! root handler-fn))
+   (add-handler! :root handler-fn))
   ([logger-or-name handler-fn]
    (when-let [l (get-logger logger-or-name)]
-     (letfn [(handler [^LogRecord record]
-               (handler-fn {:seqn (.-sequenceNumber_ record)
-                            :time (.-time_ record)
-                            :level (keyword (str/lower (.-name (.-level_ record))))
-                            :message (.-msg_ record)
-                            :logger-name (.-loggerName_ record)
-                            :exception (.-exception_ record)}))]
-       (unchecked-set handler "handler-fn" handler-fn)
-       (.addHandler ^Logger l handler)))))
-
-(defn add-handler-once!
-  ([handler-fn]
-   (add-handler-once! root handler-fn))
-  ([logger-or-name handler-fn]
-   (when-let [l (get-logger logger-or-name)]
-     (when-not (some (comp #{handler-fn} #(gobj/get % "handler-fn"))
-                     (.-handlers_ l))
-       (add-handler! l handler-fn)))))
+     (glog/removeHandler l handler-fn)
+     (glog/addHandler l handler-fn))))
 
 (defn- prepare-message
   [message]
@@ -173,33 +157,35 @@
                  (assoc message k v)
                  specials))))))
 
-(defonce default-console-handler
-  (fn [{:keys [message exception level logger-name]}]
-    (let [header-styles (str "font-weight: 600; color: " (level->color level))
-          normal-styles (str "font-weight: 300; color: " (get colors :gray6))
-          level-name    (level->short-name level)
-          header        (str "%c" level-name " [" logger-name "] ")]
+(defn default-handler
+  [{:keys [message exception level logger-name]}]
+  (let [header-styles (str "font-weight: 600; color: " (level->color level))
+        normal-styles (str "font-weight: 300; color: " (get colors :gray6))
+        level-name    (level->short-name level)
+        header        (str "%c" level-name " [" logger-name "] ")]
 
-      (if (string? message)
-        (let [message (str header "%c" message)]
-          (js/console.log message header-styles normal-styles))
-        (let [[message specials] (prepare-message message)]
-          (if (seq specials)
-            (let [message (str header "%c" (pr-str message))]
-              (js/console.group message header-styles normal-styles)
-              (doseq [[type n v] specials]
-                (case type
-                  :js (js/console.log n v)
-                  :error (if (instance? cljs.core.ExceptionInfo v)
-                           (js/console.error (pr-str v))
-                           (js/console.error v))))
-              (js/console.groupEnd message))
-            (let [message (str header "%c" (pr-str message))]
-              (js/console.log message header-styles normal-styles))))))))
+    (if (string? message)
+      (let [message (str header "%c" message)]
+        (js/console.log message header-styles normal-styles))
+      (let [[message specials] (prepare-message message)]
+        (if (seq specials)
+          (let [message (str header "%c" (pr-str message))]
+            (js/console.group message header-styles normal-styles)
+            (doseq [[type n v] specials]
+              (case type
+                :js (js/console.log n v)
+                :error (if (instance? cljs.core.ExceptionInfo v)
+                         (js/console.error (pr-str v))
+                         (js/console.error v))))
+            (js/console.groupEnd message))
+          (let [message (str header "%c" (pr-str message))]
+            (js/console.log message header-styles normal-styles)))))))
+
+(defonce default-console-handler
+  #(default-handler (record->map %)))
 
 (defn initialize!
   []
-  (when-let [instance Console/instance]
-    (.setCapturing ^Console instance false))
+  (add-handler! :root default-console-handler)
+  nil)
 
-  (add-handler-once! default-console-handler))

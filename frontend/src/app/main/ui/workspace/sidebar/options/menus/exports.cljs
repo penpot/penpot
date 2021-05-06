@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.exports
   (:require
@@ -13,26 +10,24 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]
    [app.common.data :as d]
+   [app.main.repo :as rp]
    [app.main.ui.icons :as i]
    [app.main.data.messages :as dm]
    [app.main.data.workspace :as udw]
    [app.main.store :as st]
    [app.util.object :as obj]
    [app.util.dom :as dom]
-   [app.util.http-api :as http]
+   [app.util.http :as http]
    [app.util.i18n :as i18n :refer  [tr t]]))
 
 (defn- request-export
   [shape exports]
-  (http/send! {:method :post
-               :uri "/export"
-               :response-type :blob
-               :auth true
-               :body {:page-id (:page-id shape)
-                      :file-id  (:file-id shape)
-                      :object-id (:id shape)
-                      :name (:name shape)
-                      :exports exports}}))
+  (rp/query! :export
+             {:page-id (:page-id shape)
+              :file-id  (:file-id shape)
+              :object-id (:id shape)
+              :name (:name shape)
+              :exports exports}))
 
 (defn- trigger-download
   [filename blob]
@@ -68,12 +63,11 @@
            (swap! loading? not)
            (->> (request-export (assoc shape :page-id page-id :file-id file-id) exports)
                 (rx/subs
-                 (fn [{:keys [status body] :as response}]
-                   (js/console.log status body)
-                   (if (= status 200)
-                     (trigger-download filename body)
-                     (st/emit! (dm/error (tr "errors.unexpected-error")))))
-                 (constantly nil)
+                 (fn [body]
+                   (trigger-download filename body))
+                 (fn [error]
+                   (swap! loading? not)
+                   (st/emit! (dm/error (tr "errors.unexpected-error"))))
                  (fn []
                    (swap! loading? not))))))
 

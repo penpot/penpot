@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.stroke
   (:require
@@ -14,7 +11,9 @@
    [app.common.data :as d]
    [app.common.math :as math]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.colors :as dc]
+   [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
@@ -81,7 +80,7 @@
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/read-string))]
-            (st/emit! (dwc/update-shapes ids #(assoc % :stroke-style value)))))
+            (st/emit! (dch/update-shapes ids #(assoc % :stroke-style value)))))
 
         on-stroke-alignment-change
         (fn [event]
@@ -89,7 +88,7 @@
                           (dom/get-value)
                           (d/read-string))]
             (when-not (str/empty? value)
-              (st/emit! (dwc/update-shapes ids #(assoc % :stroke-alignment value))))))
+              (st/emit! (dch/update-shapes ids #(assoc % :stroke-alignment value))))))
 
         on-stroke-width-change
         (fn [event]
@@ -97,11 +96,11 @@
                           (dom/get-value)
                           (d/parse-integer 0))]
             (when-not (str/empty? value)
-              (st/emit! (dwc/update-shapes ids #(assoc % :stroke-width value))))))
+              (st/emit! (dch/update-shapes ids #(assoc % :stroke-width value))))))
 
         on-add-stroke
         (fn [event]
-          (st/emit! (dwc/update-shapes ids #(assoc %
+          (st/emit! (dch/update-shapes ids #(assoc %
                                                    :stroke-style :solid
                                                    :stroke-color "#000000"
                                                    :stroke-opacity 1
@@ -109,19 +108,19 @@
 
         on-del-stroke
         (fn [event]
-          (st/emit! (dwc/update-shapes ids #(assoc % :stroke-style :none))))
+          (st/emit! (dch/update-shapes ids #(assoc % :stroke-style :none))))
 
         on-open-picker
         (mf/use-callback
          (mf/deps ids)
          (fn [value opacity id file-id]
-           (st/emit! (dwc/start-undo-transaction))))
+           (st/emit! (dwu/start-undo-transaction))))
 
         on-close-picker
         (mf/use-callback
          (mf/deps ids)
          (fn [value opacity id file-id]
-           (st/emit! (dwc/commit-undo-transaction))))]
+           (st/emit! (dwu/commit-undo-transaction))))]
 
     (if show-options
       [:div.element-set

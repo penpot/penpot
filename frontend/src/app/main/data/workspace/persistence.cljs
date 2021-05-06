@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.data.workspace.persistence
   (:require
@@ -20,6 +17,7 @@
    [app.main.data.media :as di]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.svg-upload :as svg]
@@ -54,7 +52,7 @@
       (let [stoper   (rx/filter #(= ::finalize %) stream)
             forcer   (rx/filter #(= ::force-persist %) stream)
             notifier (->> stream
-                          (rx/filter (ptk/type? ::dwc/commit-changes))
+                          (rx/filter dch/commit-changes?)
                           (rx/debounce 2000)
                           (rx/merge stoper forcer))
 
@@ -82,7 +80,7 @@
               (st/emit! (update-persistence-status {:status :saved})))]
         (->> (rx/merge
                (->> stream
-                    (rx/filter (ptk/type? ::dwc/commit-changes))
+                    (rx/filter dch/commit-changes?)
                     (rx/map deref)
                     (rx/filter local-file?)
                     (rx/tap on-dirty)
@@ -94,7 +92,7 @@
                     (rx/tap on-saving)
                     (rx/take-until (rx/delay 100 stoper)))
                (->> stream
-                    (rx/filter (ptk/type? ::dwc/commit-changes))
+                    (rx/filter dch/commit-changes?)
                     (rx/map deref)
                     (rx/filter library-file?)
                     (rx/filter (complement #(empty? (:changes %))))
@@ -379,78 +377,59 @@
 
 ;; --- Upload File Media objects
 
-(s/def ::local? ::us/boolean)
-(s/def ::data ::di/blobs)
-(s/def ::name ::us/string)
-(s/def ::uri  ::us/string)
-(s/def ::uris (s/coll-of ::uri))
-(s/def ::mtype ::us/string)
-
-(s/def ::upload-media-objects
-  (s/and
-   (s/keys :req-un [::file-id ::local?]
-           :opt-in [::name ::data ::uris ::mtype])
-   (fn [props]
-     (or (contains? props :data)
-         (contains? props :uris)))))
-
-(defn parse-svg [[name text]]
-  (->> (http/send! {:method :post
-                    :uri "/api/svg/parse"
-                    :headers {"content-type" "image/svg+xml"}
-                    :body text})
-       (rx/map (fn [{:keys [status body]}]
-                 (let [result (t/decode body)]
-                   (if (= status 200)
-                     (assoc result :name name)
-                     (throw result)))))))
+(defn parse-svg
+  [[name text]]
+  (->> (rp/query! :parsed-svg {:data text})
+       (rx/map #(assoc % :name name))))
 
 (defn fetch-svg [name uri]
-  (->> (http/send! {:method :get :uri uri})
+  (->> (http/send! {:method :get :uri uri :mode :no-cors})
        (rx/map #(vector
                  (or name (uu/uri-name uri))
                  (:body %)))))
 
-(defn- handle-upload-error [on-error stream]
-  (->> stream
-       (rx/catch
-           (fn on-error* [error]
-             (if (ex/ex-info? error)
-               (on-error* (ex-data error))
-               (cond
-                 (= (:code error) :invalid-svg-file)
-                 (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+(defn- handle-upload-error
+  "Generic error handler for all upload methods."
+  [on-error stream]
+  (letfn [(on-error* [error]
+            (if (ex/ex-info? error)
+              (on-error* (ex-data error))
+              (cond
+                (= (:code error) :invalid-svg-file)
+                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
-                 (= (:code error) :media-type-not-allowed)
-                 (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+                (= (:code error) :media-type-not-allowed)
+                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
-                 (= (:code error) :ubable-to-access-to-url)
-                 (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+                (= (:code error) :ubable-to-access-to-url)
+                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
-                 (= (:code error) :invalid-image)
-                 (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+                (= (:code error) :invalid-image)
+                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
-                 (= (:code error) :media-too-large)
-                 (rx/of (dm/error (tr "errors.media-too-large")))
+                (= (:code error) :media-too-large)
+                (rx/of (dm/error (tr "errors.media-too-large")))
 
-                 (= (:code error) :media-type-mismatch)
-                 (rx/of (dm/error (tr "errors.media-type-mismatch")))
+                (= (:code error) :media-type-mismatch)
+                (rx/of (dm/error (tr "errors.media-type-mismatch")))
 
-                 (= (:code error) :unable-to-optimize)
-                 (rx/of (dm/error (:hint error)))
+                (= (:code error) :unable-to-optimize)
+                (rx/of (dm/error (:hint error)))
 
-                 (fn? on-error)
-                 (on-error error)
+                (fn? on-error)
+                (on-error error)
 
-                 :else
-                 (rx/throw error)))))))
+                :else
+                (rx/throw error))))]
+    (rx/catch on-error* stream)))
 
-(defn- upload-uris [file-id local? name uris mtype on-image on-svg]
+(defn- process-uris
+  [{:keys [file-id local? name uris mtype on-image on-svg]}]
   (letfn [(svg-url? [url]
             (or (and mtype (= mtype "image/svg+xml"))
                 (str/ends-with? url ".svg")))
 
-          (prepare-uri [uri]
+          (prepare [uri]
             {:file-id file-id
              :is-local local?
              :name (or name (uu/uri-name uri))
@@ -458,7 +437,7 @@
     (rx/merge
      (->> (rx/from uris)
           (rx/filter (comp not svg-url?))
-          (rx/map prepare-uri)
+          (rx/map prepare)
           (rx/mapcat #(rp/mutation! :create-file-media-object-from-url %))
           (rx/do on-image))
 
@@ -468,81 +447,91 @@
           (rx/merge-map parse-svg)
           (rx/do on-svg)))))
 
-(defn- upload-data [file-id local? name data force-media on-image on-svg]
-  (let [svg-blob? (fn [blob]
-                    (and (not force-media)
-                         (= (.-type blob) "image/svg+xml")))
-        prepare-file
-        (fn [blob]
-          (let [name (or name (if (di/file? blob) (.-name blob) "blob"))]
-            {:file-id file-id
-             :name name
-             :is-local local?
-             :content blob}))
+(defn- process-blobs
+  [{:keys [file-id local? name blobs force-media on-image on-svg]}]
+  (letfn [(svg-blob? [blob]
+            (and (not force-media)
+                 (= (.-type blob) "image/svg+xml")))
 
-        extract-content
-        (fn [blob]
-          (let [name (or name (.-name blob))]
-            (-> (.text blob)
-                (p/then #(vector name %)))))
+          (prepare-blob [blob]
+            (let [name (or name (if (di/file? blob) (.-name blob) "blob"))]
+              {:file-id file-id
+               :name name
+               :is-local local?
+               :content blob}))
 
-        file-stream (->> (rx/from data)
-                         (rx/map di/validate-file))]
+          (extract-content [blob]
+            (let [name (or name (.-name blob))]
+              (-> (.text ^js blob)
+                  (p/then #(vector name %)))))]
+
     (rx/merge
-     (->> file-stream
+     (->> (rx/from blobs)
+          (rx/map di/validate-file)
           (rx/filter (comp not svg-blob?))
-          (rx/map prepare-file)
+          (rx/map prepare-blob)
           (rx/mapcat #(rp/mutation! :upload-file-media-object %))
           (rx/do on-image))
 
-     (->> file-stream
+     (->> (rx/from blobs)
+          (rx/map di/validate-file)
           (rx/filter svg-blob?)
           (rx/merge-map extract-content)
           (rx/merge-map parse-svg)
           (rx/do on-svg)))))
 
-(defn- upload-media-objects
-  [{:keys [file-id local? data name uris mtype svg-as-images] :as params}]
-  (us/assert ::upload-media-objects params)
-  (ptk/reify ::upload-media-objects
+(s/def ::local? ::us/boolean)
+(s/def ::blobs ::di/blobs)
+(s/def ::name ::us/string)
+(s/def ::uris (s/coll-of ::us/string))
+(s/def ::mtype ::us/string)
+
+(s/def ::process-media-objects
+  (s/and
+   (s/keys :req-un [::file-id ::local?]
+           :opt-in [::name ::data ::uris ::mtype])
+   (fn [props]
+     (or (contains? props :blobs)
+         (contains? props :uris)))))
+
+(defn- process-media-objects
+  [{:keys [uris on-error] :as params}]
+  (us/assert ::process-media-objects params)
+  (ptk/reify ::process-media-objects
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [{:keys [on-image on-svg on-error]
-             :or {on-image identity
-                  on-svg   identity}} (meta params)]
-        (rx/concat
-         (rx/of (dm/show {:content (tr "media.loading")
-                          :type :info
-                          :timeout nil
-                          :tag :media-loading}))
-         (->> (if (seq uris)
-                ;; Media objects is a list of URL's pointing to the path
-                (upload-uris file-id local? name uris mtype on-image on-svg)
-                ;; Media objects are blob of data to be upload
-                (upload-data file-id local? name data svg-as-images on-image on-svg))
-              ;; Every stream has its own sideffect. We need to ignore the result
-              (rx/ignore)
-              (handle-upload-error on-error)
-              (rx/finalize (st/emitf (dm/hide-tag :media-loading)))))))))
+      (rx/concat
+       (rx/of (dm/show {:content (tr "media.loading")
+                        :type :info
+                        :timeout nil
+                        :tag :media-loading}))
+       (->> (if (seq uris)
+              ;; Media objects is a list of URL's pointing to the path
+              (process-uris params)
+              ;; Media objects are blob of data to be upload
+              (process-blobs params))
+
+            ;; Every stream has its own sideffect. We need to ignore the result
+            (rx/ignore)
+            (handle-upload-error on-error)
+            (rx/finalize (st/emitf (dm/hide-tag :media-loading))))))))
 
 (defn upload-media-asset
   [params]
-  (let [params (-> params
-                   (assoc :svg-as-images true)
-                   (assoc :local? false)
-                   (with-meta {:on-image #(st/emit! (dwl/add-media %))}))]
-    (upload-media-objects params)))
+  (let [params (assoc params
+                      :force-media true
+                      :local? false
+                      :on-image #(st/emit! (dwl/add-media %)))]
+    (process-media-objects params)))
 
 (defn upload-media-workspace
-  [params position]
-  (let [{:keys [x y]} position
-        mdata  {:on-image #(st/emit! (dwc/image-uploaded % x y))
-                :on-svg   #(st/emit! (svg/svg-uploaded % (:file-id params) x y))}
+  [{:keys [position file-id] :as params}]
+  (let [params (assoc params
+                      :local? true
+                      :on-image #(st/emit! (dwc/image-uploaded % position))
+                      :on-svg   #(st/emit! (svg/svg-uploaded % file-id position)))]
 
-        params (-> (assoc params :local? true)
-                   (with-meta mdata))]
-
-    (upload-media-objects params)))
+    (process-media-objects params)))
 
 
 ;; --- Upload File Media objects

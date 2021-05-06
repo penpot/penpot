@@ -3,8 +3,10 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -100,13 +102,13 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            objects  (wsh/lookup-page-objects state page-id)
+            selected (wsh/lookup-selected state)
             selected (cp/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group rchanges uchanges] (prepare-create-group page-id shapes "Group-" false)]
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (def ungroup-selected
@@ -114,23 +116,23 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            objects  (wsh/lookup-page-objects state page-id)
+            selected (wsh/lookup-selected state)
             group-id (first selected)
             group    (get objects group-id)]
         (when (and (= 1 (count selected))
                    (= (:type group) :group))
           (let [[rchanges uchanges]
                 (prepare-remove-group page-id group objects)]
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))))
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))))
 
 (def mask-group
   (ptk/reify ::mask-group
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            objects  (wsh/lookup-page-objects state page-id)
+            selected (wsh/lookup-selected state)
             selected (cp/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
@@ -176,7 +178,7 @@
                                 :page-id page-id
                                 :shapes [(:id group)]})]
 
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (def unmask-group
@@ -184,8 +186,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])]
+            objects  (wsh/lookup-page-objects state page-id)
+            selected (wsh/lookup-selected state)]
         (when (= (count selected) 1)
           (let [group (get objects (first selected))
 
@@ -209,7 +211,7 @@
                            :page-id page-id
                            :shapes [(:id group)]}]]
 
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 

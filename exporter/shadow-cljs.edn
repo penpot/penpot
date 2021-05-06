@@ -1,14 +1,14 @@
 {:dependencies
  [[funcool/promesa "6.0.0"]
   [danlentz/clj-uuid "0.1.9"]
-  [funcool/cuerdas "2020.03.26-3"]
-  [lambdaisland/glogi "1.0.74"]
-  [metosin/reitit-core "0.5.9"]
-  [com.cognitect/transit-cljs "0.8.264"]
+  [funcool/cuerdas "2021.05.02-0"]
+  [lambdaisland/glogi "1.0.106"]
+  [metosin/reitit-core "0.5.13"]
+  [com.cognitect/transit-cljs "0.8.269"]
   [frankiesardo/linked "1.3.0"]]
 
- :source-paths ["src" "../common"]
- :jvm-opts ["-Xmx512m" "-Xms512m"]
+ :source-paths ["src" "vendor" "../common"]
+ :jvm-opts ["-Xmx512m" "-Xms50m" "-XX:+UseSerialGC"]
 
  :builds
  {:main
@@ -33,5 +33,3 @@
      :pretty-print true
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}}}
-
-

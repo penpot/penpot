@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.storage.s3
   "Storage backends abstraction layer."
@@ -13,12 +10,12 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.storage.impl :as impl]
    [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig]
-   [lambdaisland.uri :as u])
+   [integrant.core :as ig])
   (:import
    java.time.Duration
    java.util.Collection

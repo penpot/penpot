@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.worker.thumbnails
   (:require
@@ -15,7 +12,7 @@
    [app.main.fonts :as fonts]
    [app.main.exports :as exports]
    [app.worker.impl :as impl]
-   [app.util.http-api :as http]
+   [app.util.http :as http]
    ["react-dom/server" :as rds]))
 
 (defn- handle-response
@@ -39,6 +36,7 @@
        (->> (http/send! {:uri uri
                          :query {:file-id file-id :id page-id}
                          :method :get})
+            (rx/map http/conditional-decode-transit)
             (rx/mapcat handle-response)
             (rx/subs (fn [body]
                        (resolve body))

@@ -2,16 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.svg-attrs
   (:require
    [cuerdas.core :as str]
    [app.common.data :as d]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
    [app.util.dom :as dom]
@@ -64,7 +62,7 @@
          (fn [attr value]
            (let [update-fn
                  (fn [shape] (assoc-in shape (concat [:svg-attrs] attr) value))]
-             (st/emit! (dwc/update-shapes ids update-fn)))))
+             (st/emit! (dch/update-shapes ids update-fn)))))
 
         handle-delete
         (mf/use-callback
@@ -79,7 +77,7 @@
                                  (empty? (get-in shape [:svg-attrs :style]))
                                  (update :svg-attrs dissoc :style))]
                      shape))]
-             (st/emit! (dwc/update-shapes ids update-fn)))))
+             (st/emit! (dch/update-shapes ids update-fn)))))
 
         ]
 

@@ -2,16 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
    [app.common.uuid :as uuid]
-   [app.main.data.colors :as dwc]
-   [app.main.data.fetch :as mdf]
+   [app.main.data.workspace.colors :as dwc]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -134,7 +130,7 @@
          (mf/deps img-ref)
          (fn []
            (let [img-node (mf/ref-val img-ref)
-                 svg-node #_(mf/ref-val svg-ref) (dom/get-element "render")
+                 svg-node (dom/get-element "render")
                  xml  (-> (js/XMLSerializer.)
                           (.serializeToString svg-node)
                           js/encodeURIComponent
@@ -161,21 +157,19 @@
          #(rx/dispose! sub))))
 
     (mf/use-effect
-     #_(mf/deps svg-ref)
      (fn []
        (let [config #js {:attributes true
                          :childList true
                          :subtree true
                          :characterData true}
-             svg-node #_(mf/ref-val svg-ref) (dom/get-element "render")
+             svg-node (dom/get-element "render")
              observer (js/MutationObserver. handle-svg-change)
              ]
          (.observe observer svg-node config)
          (handle-svg-change)
 
          ;; Disconnect on unmount
-         #(.disconnect observer)
-         )))
+         #(.disconnect observer))))
 
     [:*
      [:div.pixel-overlay
@@ -195,17 +189,4 @@
                  :height (:height vport 0)
                  :style {:position "absolute"
                          :width "100%"
-                         :height "100%"}}]
-
-       #_[:& (mf/provider muc/embed-ctx) {:value true}
-        [:svg.viewport
-         {:ref svg-ref
-          :preserveAspectRatio "xMidYMid meet"
-          :width (:width vport 0)
-          :height (:height vport 0)
-          :view-box (format-viewbox vbox)
-          :style {:position "absolute"
-                  :width "100%"
-                  :height "100%"
-                  :background-color (get options :background "#E8E9EA")}}
-         [:& overlay-frames]]]]]]))
+                         :height "100%"}}]]]]))

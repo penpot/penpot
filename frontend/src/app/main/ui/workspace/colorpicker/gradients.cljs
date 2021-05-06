@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.colorpicker.gradients
   (:require
@@ -21,7 +18,7 @@
    [app.main.store :as st]
    [app.main.refs :as refs]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.colors :as dc]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.modal :as modal]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.shapes.custom-stroke
   (:require
@@ -40,7 +40,7 @@
             clip-props (obj/merge
                          base-props
                          #js {:transform nil
-                              :style (obj/merge 
+                              :style (obj/merge
                                        base-style
                                        #js {:stroke nil
                                             :strokeWidth nil

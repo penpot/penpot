@@ -2,21 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.refs
   "A collection of derived refs."
   (:require
-   [beicon.core :as rx]
-   [okulary.core :as l]
    [app.common.data :as d]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.constants :as c]
-   [app.main.store :as st]))
+   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.store :as st]
+   [beicon.core :as rx]
+   [okulary.core :as l]))
 
 ;; ---- Global refs
 
@@ -74,7 +72,7 @@
   (l/derived :workspace-drawing st/state))
 
 (def selected-shapes
-  (l/derived :selected workspace-local))
+  (l/derived wsh/lookup-selected st/state))
 
 (defn make-selected-ref
   [id]
@@ -88,7 +86,6 @@
                               :edition
                               :edit-path
                               :tooltip
-                              :selected
                               :panning
                               :picking-color?
                               :transform
@@ -214,30 +211,28 @@
              workspace-page-objects =))
 
 (def selected-data
-  (l/derived #(let [selected (get-in % [:workspace-local :selected])
-                    page-id  (:current-page-id %)
-                    objects  (get-in % [:workspace-data :pages-index page-id :objects])]
+  (l/derived #(let [selected (wsh/lookup-selected %)
+                    objects (wsh/lookup-page-objects %)]
                 (hash-map :selected selected
-                          :page-id page-id
                           :objects objects))
              st/state =))
 
 (defn is-child-selected?
   [id]
-  (letfn [(selector [{:keys [selected page-id objects]}]
+  (letfn [(selector [{:keys [selected objects]}]
             (let [children (cp/get-children id objects)]
               (some #(contains? selected %) children)))]
     (l/derived selector selected-data =)))
 
 (def selected-objects
-  (letfn [(selector [{:keys [selected page-id objects]}]
+  (letfn [(selector [{:keys [selected objects]}]
             (->> selected
                  (map #(get objects %))
                  (filterv (comp not nil?))))]
     (l/derived selector selected-data =)))
 
 (def selected-shapes-with-children
-  (letfn [(selector [{:keys [selected page-id objects]}]
+  (letfn [(selector [{:keys [selected objects]}]
             (let [children (->> selected
                                 (mapcat #(cp/get-children % objects))
                                 (filterv (comp not nil?)))]
@@ -245,7 +240,7 @@
     (l/derived selector selected-data =)))
 
 (def selected-objects-with-children
-  (letfn [(selector [{:keys [selected page-id objects]}]
+  (letfn [(selector [{:keys [selected objects]}]
             (let [children (->> selected
                                 (mapcat #(cp/get-children % objects))
                                 (filterv (comp not nil?)))

@@ -2,17 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs S.L
+;; Copyright (c) UXBOX Labs S.L
 
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   ["mousetrap" :as mousetrap]
    [app.common.spec :as us]
-   [app.main.data.shortcuts :refer [bind-shortcuts]]
+   [app.main.data.shortcuts :as dsc]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.dom.dnd :as dnd]
@@ -42,16 +38,8 @@
   [shortcuts]
   (mf/use-effect
    (fn []
-     (bind-shortcuts
-      shortcuts
-      mousetrap/bind
-      (fn [key cb]
-        (fn [event]
-          (log/debug :msg (str "Shortcut" key))
-          (.preventDefault event)
-          (cb event))))
-     (fn [] (mousetrap/reset))))
-  nil)
+     (dsc/bind-shortcuts shortcuts)
+     (fn [] (dsc/remove-shortcuts)))))
 
 (defn invisible-image
   []

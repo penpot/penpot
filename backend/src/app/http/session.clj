@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.http.session
   (:require
@@ -15,100 +12,97 @@
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.async :as aa]
-   [app.util.log4j :refer [update-thread-context!]]
+   [app.util.logging :as l]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [buddy.core.codecs :as bc]
-   [buddy.core.nonce :as bn]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
+
+;; A default cookie name for storing the session. We don't allow
+;; configure it.
+(def cookie-name "auth-token")
 
 ;; --- IMPL
 
-(defn- next-session-id
-  ([] (next-session-id 96))
-  ([n]
-   (-> (bn/random-nonce n)
-       (bc/bytes->b64u)
-       (bc/bytes->str))))
+(defn- create-session
+  [{:keys [conn tokens] :as cfg} {:keys [profile-id headers] :as request}]
+  (let [token  (tokens :generate {:iss "authentication"
+                                  :iat (dt/now)
+                                  :uid profile-id})
+        params {:user-agent (get headers "user-agent")
+                :profile-id profile-id
+                :id token}]
+    (db/insert! conn :http-session params)))
 
-(defn- create
-  [{:keys [conn] :as cfg} {:keys [profile-id user-agent]}]
-  (let [id (next-session-id)]
-    (db/insert! conn :http-session {:id id
-                                    :profile-id profile-id
-                                    :user-agent user-agent})
-    id))
-
-(defn- delete
-  [{:keys [conn cookie-name] :as cfg} {:keys [cookies] :as request}]
+(defn- delete-session
+  [{:keys [conn] :as cfg} {:keys [cookies] :as request}]
   (when-let [token (get-in cookies [cookie-name :value])]
     (db/delete! conn :http-session {:id token}))
   nil)
 
-(defn- retrieve
-  [{:keys [conn] :as cfg} token]
-  (when token
-    (db/exec-one! conn ["select id, profile_id from http_session where id = ?" token])))
+(defn- retrieve-session
+  [{:keys [conn] :as cfg} id]
+  (when id
+    (db/exec-one! conn ["select id, profile_id from http_session where id = ?" id])))
 
 (defn- retrieve-from-request
-  [{:keys [cookie-name] :as cfg} {:keys [cookies] :as request}]
+  [cfg {:keys [cookies] :as request}]
   (->> (get-in cookies [cookie-name :value])
-       (retrieve cfg)))
+       (retrieve-session cfg)))
 
-(defn- cookies
-  [{:keys [cookie-name] :as cfg} vals]
-  {cookie-name (merge vals {:path "/" :http-only true})})
+(defn- add-cookies
+  [response {:keys [id] :as session}]
+  (assoc response :cookies {cookie-name {:path "/" :http-only true :value id}}))
+
+(defn- clear-cookies
+  [response]
+  (assoc response :cookies {cookie-name {:value "" :max-age -1}}))
 
 (defn- middleware
   [cfg handler]
   (fn [request]
     (if-let [{:keys [id profile-id] :as session} (retrieve-from-request cfg request)]
-      (let [ech (::events-ch cfg)]
-        (a/>!! ech id)
-        (update-thread-context! {:profile-id profile-id})
+      (do
+        (a/>!! (::events-ch cfg) id)
+        (l/update-thread-context! {:profile-id profile-id})
         (handler (assoc request :profile-id profile-id)))
       (handler request))))
 
 ;; --- STATE INIT: SESSION
 
-(s/def ::cookie-name ::cfg/http-session-cookie-name)
-
 (defmethod ig/pre-init-spec ::session [_]
-  (s/keys :req-un [::db/pool]
-          :opt-un [::cookie-name]))
+  (s/keys :req-un [::db/pool]))
 
 (defmethod ig/prep-key ::session
   [_ cfg]
-  (merge {:cookie-name "auth-token"
-          :buffer-size 64}
-         (d/without-nils cfg)))
+  (d/merge {:buffer-size 64}
+           (d/without-nils cfg)))
 
 (defmethod ig/init-key ::session
   [_ {:keys [pool] :as cfg}]
   (let [events (a/chan (a/dropping-buffer (:buffer-size cfg)))
-        cfg    (assoc cfg
-                      :conn pool
-                      ::events-ch events)]
+        cfg    (-> cfg
+                   (assoc :conn pool)
+                   (assoc ::events-ch events))]
     (-> cfg
         (assoc :middleware #(middleware cfg %))
         (assoc :create (fn [profile-id]
                          (fn [request response]
-                           (let [uagent (get-in request [:headers "user-agent"])
-                                 value  (create cfg {:profile-id profile-id :user-agent uagent})]
-                             (assoc response :cookies (cookies cfg {:value value}))))))
+                           (let [request (assoc request :profile-id profile-id)
+                                 session (create-session cfg request)]
+                             (add-cookies response session)))))
         (assoc :delete (fn [request response]
-                         (delete cfg request)
-                         (assoc response
-                                :status 204
-                                :body ""
-                                :cookies (cookies cfg {:value "" :max-age -1})))))))
+                         (delete-session cfg request)
+                         (-> response
+                             (assoc :status 204)
+                             (assoc :body "")
+                             (clear-cookies)))))))
 
 (defmethod ig/halt-key! ::session
   [_ data]
   (a/close! (::events-ch data)))
+
 
 ;; --- STATE INIT: SESSION UPDATER
 
@@ -132,9 +126,9 @@
 
 (defmethod ig/init-key ::updater
   [_ {:keys [session metrics] :as cfg}]
-  (log/infof "initialize session updater (max-batch-age=%s, max-batch-size=%s)"
-             (str (:max-batch-age cfg))
-             (str (:max-batch-size cfg)))
+  (l/info :action "initialize session updater"
+          :max-batch-age (str (:max-batch-age cfg))
+          :max-batch-size (str (:max-batch-size cfg)))
   (let [input (batch-events cfg (::events-ch session))
         mcnt  (mtx/create
                {:name "http_session_update_total"
@@ -146,8 +140,13 @@
         (let [result (a/<! (update-sessions cfg batch))]
           (mcnt :inc)
           (if (ex/exception? result)
-            (log/error result "updater: unexpected error on update sessions")
-            (log/debugf "updater: updated %s sessions (reason: %s)." result (name reason)))
+            (l/error :task "updater"
+                     :hint "unexpected error on update sessions"
+                     :cause result)
+            (l/debug :task "updater"
+                     :action "update sessions"
+                     :reason (name reason)
+                     :count result))
           (recur))))))
 
 (defn- timeout-chan
@@ -209,7 +208,9 @@
       (let [interval (db/interval max-age)
             result   (db/exec-one! conn [sql:delete-expired interval])
             result   (:next.jdbc/update-count result)]
-        (log/debugf "gc-task: removed %s rows from http-session table" result)
+        (l/debug :task "gc"
+                 :action "clean http sessions"
+                 :count result)
         result))))
 
 (def ^:private

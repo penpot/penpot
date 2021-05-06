@@ -2,16 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.metrics
   (:require
    [app.common.exceptions :as ex]
+   [app.util.logging :as l]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig])
   (:import
    io.prometheus.client.CollectorRegistry
@@ -50,7 +47,7 @@
 
 (defmethod ig/init-key ::metrics
   [_ {:keys [definitions] :as cfg}]
-  (log/infof "Initializing prometheus registry and instrumentation.")
+  (l/info :action "initialize metrics")
   (let [registry    (create-registry)
         definitions (reduce-kv (fn [res k v]
                                  (->> (assoc v :registry registry)

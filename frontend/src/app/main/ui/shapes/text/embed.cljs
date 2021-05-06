@@ -2,9 +2,6 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.shapes.text.embed
@@ -12,13 +9,33 @@
   (:require
    [app.common.data :as d]
    [app.common.text :as txt]
-   [app.main.data.fetch :as df]
    [app.main.fonts :as fonts]
+   [app.util.http :as http]
+   [app.util.time :as dt]
+   [app.util.webapi :as wapi]
    [app.util.object :as obj]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [promesa.core :as p]
+   [beicon.core :as rx]
    [rumext.alpha :as mf]))
+
+
+(defonce cache (atom {}))
+
+(defn with-cache
+  [{:keys [key max-age]} observable]
+  (let [entry (get @cache key)
+        age   (when entry
+                (dt/diff (dt/now)
+                         (:created-at entry)))]
+    (if (and (some? entry)
+             (< age max-age))
+      (rx/of (:data entry))
+      (->> observable
+           (rx/tap (fn [data]
+                     (let [entry {:created-at (dt/now) :data data}]
+                       (swap! cache assoc key entry))))))))
 
 (def font-face-template "
 /* latin */
@@ -45,10 +62,14 @@
   "Given a font and the variant-id, retrieves the style CSS for it."
   [{:keys [id backend family variants] :as font} font-variant-id]
   (if (= :google backend)
-    (-> (fonts/gfont-url family [{:id font-variant-id}])
-        (js/fetch)
-        (p/then (fn [res] (.text res))))
-
+    (let [uri (fonts/gfont-url family [{:id font-variant-id}])]
+      (->> (http/send! {:method :get
+                        :mode :cors
+                        :omit-default-headers true
+                        :uri uri
+                        :response-type :text})
+           (rx/map :body)
+           (http/as-promise)))
     (let [{:keys [name weight style suffix] :as variant} (d/seek #(= (:id %) font-variant-id) variants)
           result (str/fmt font-face-template {:family family
                                               :style style
@@ -56,14 +77,31 @@
                                               :weight weight})]
       (p/resolved result))))
 
+(defn- to-promise
+  [observable]
+  (p/create (fn [resolve reject]
+              (->> (rx/take 1 observable)
+                   (rx/subs resolve reject)))))
+
+(defn fetch-font-data
+  "Parses the CSS and retrieves the font data as DataURI."
+  [^string css]
+  (let [uris (->> (re-seq #"url\(([^)]+)\)" css)
+                  (mapv second))]
+    (with-cache {:key uris :max-age (dt/duration {:hours 4})}
+      (->> (rx/from (seq uris))
+           (rx/mapcat (fn [uri]
+                        (->> (http/send! {:method :get :uri uri :response-type :blob :omit-default-headers true})
+                             (rx/map :body)
+                             (rx/mapcat wapi/read-file-as-data-url)
+                             (rx/map #(vector uri %)))))
+           (rx/reduce conj [])))))
+
 (defn get-font-data
   "Parses the CSS and retrieves the font data as DataURI."
   [^string css]
-  (->> css
-       (re-seq #"url\(([^)]+)\)")
-       (map second)
-       (map df/fetch-as-data-uri)
-       (p/all)))
+  (->> (fetch-font-data css)
+       (http/as-promise)))
 
 (defn embed-font
   "Given a font-id and font-variant-id, retrieves the CSS for it and
@@ -88,9 +126,10 @@
 
 (mf/defc embed-fontfaces-style
   {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
+   ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
   [props]
-  (let [node  (obj/get props "node")
+  (let [shapes  (obj/get props "shapes")
+        node {:children (->> shapes (map :content))}
         fonts (-> node get-node-fonts memoize)
         style (mf/use-state nil)]
 

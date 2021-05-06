@@ -2,19 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.cli.migrate-media
   (:require
    [app.common.media :as cm]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
    [app.storage :as sto]
-   [clojure.tools.logging :as log]
+   [app.util.logging :as l]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [integrant.core :as ig]))
@@ -34,7 +31,7 @@
 
 (defn run
   []
-  (let [config (select-keys (main/build-system-config cfg/config)
+  (let [config (select-keys main/system-config
                             [:app.db/pool
                              :app.migrations/migrations
                              :app.metrics/metrics
@@ -49,7 +46,7 @@
           (run-in-system)
           (ig/halt!))
       (catch Exception e
-        (log/errorf e "Unhandled exception.")))))
+        (l/error :hint "unhandled exception" :cause e)))))
 
 
 ;; --- IMPL
@@ -60,7 +57,7 @@
             (->> (db/exec! conn ["select * from profile"])
                  (filter #(not (str/empty? (:photo %))))
                  (seq)))]
-    (let [base    (fs/path (:storage-fs-old-directory cfg/config))
+    (let [base    (fs/path (cf/get :storage-fs-old-directory))
           storage (-> (:app.storage/storage system)
                       (assoc :conn conn))]
       (doseq [profile (retrieve-profiles conn)]
@@ -81,7 +78,7 @@
             (->> (db/exec! conn ["select * from team"])
                  (filter #(not (str/empty? (:photo %))))
                  (seq)))]
-    (let [base    (fs/path (:storage-fs-old-directory cfg/config))
+    (let [base    (fs/path (cf/get :storage-fs-old-directory))
           storage (-> (:app.storage/storage system)
                       (assoc :conn conn))]
       (doseq [team (retrieve-teams conn)]
@@ -105,7 +102,7 @@
                                     from file_media_object as fmo
                                     join file_media_thumbnail as fth on (fth.media_object_id = fmo.id)"])
                  (seq)))]
-    (let [base    (fs/path (:storage-fs-old-directory cfg/config))
+    (let [base    (fs/path (cf/get :storage-fs-old-directory))
           storage (-> (:app.storage/storage system)
                       (assoc :conn conn))]
       (doseq [mobj (retrieve-media-objects conn)]

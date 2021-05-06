@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.migrations
   (:require
@@ -166,6 +163,9 @@
 
    {:name "0051-mod-file-library-rel-table"
     :fn (mg/resource "app/migrations/sql/0051-mod-file-library-rel-table.sql")}
+
+   {:name "0052-del-legacy-user-and-team"
+    :fn (mg/resource "app/migrations/sql/0052-del-legacy-user-and-team.sql")}
    ])
 
 

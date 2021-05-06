@@ -2,28 +2,26 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.rpc.mutations.profile
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.emails :as emails]
+   [app.emails :as eml]
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.setup.initial-data :as sid]
    [app.storage :as sto]
-   [app.tasks :as tasks]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
@@ -117,16 +115,19 @@
 
         ;; Don't allow proceed in register page if the email is
         ;; already reported as permanent bounced
-        (when (emails/has-bounce-reports? conn (:email profile))
+        (when (eml/has-bounce-reports? conn (:email profile))
           (ex/raise :type :validation
                     :code :email-has-permanent-bounces
                     :hint "looks like the email has one or many bounces reported"))
 
-        (emails/send! conn emails/register
-                      {:to (:email profile)
-                       :name (:fullname profile)
-                       :token vtoken
-                       :extra-data ptoken})
+        (eml/send! {::eml/conn conn
+                    ::eml/factory eml/register
+                    :public-uri (:public-uri cfg)
+                    :to (:email profile)
+                    :name (:fullname profile)
+                    :token vtoken
+                    :extra-data ptoken})
+
         (with-meta profile
           {:before-complete (annotate-profile-register metrics profile)})))))
 
@@ -303,15 +304,34 @@
 
 (defn login-or-register
   [{:keys [conn] :as cfg} {:keys [email backend] :as params}]
-  (letfn [(create-profile [conn {:keys [fullname email]}]
+  (letfn [(info->props [info]
+            (dissoc info :name :fullname :email :backend))
+
+          (info->lang [{:keys [locale] :as info}]
+            (when (and (string? locale)
+                       (not (str/blank? locale)))
+              locale))
+
+          (create-profile [conn {:keys [email] :as info}]
             (db/insert! conn :profile
                         {:id (uuid/next)
-                         :fullname fullname
+                         :fullname (:fullname info)
                          :email (str/lower email)
+                         :lang (info->lang info)
                          :auth-backend backend
                          :is-active true
                          :password "!"
+                         :props (db/tjson (info->props info))
                          :is-demo false}))
+
+          (update-profile [conn info profile]
+            (let [props (d/merge (:props profile)
+                                 (info->props info))]
+              (db/update! conn :profile
+                          {:props (db/tjson props)
+                           :modified-at (dt/now)}
+                          {:id (:id profile)})
+              (assoc profile :props props)))
 
           (register-profile [conn params]
             (let [profile (->> (create-profile conn params)
@@ -321,7 +341,9 @@
 
     (let [profile (profile/retrieve-profile-data-by-email conn email)
           profile (if profile
-                    (profile/populate-additional-data conn profile)
+                    (->> profile
+                         (update-profile conn params)
+                         (profile/populate-additional-data conn))
                     (register-profile conn params))]
       (profile/strip-private-attrs profile))))
 
@@ -345,7 +367,6 @@
   (db/with-atomic [conn pool]
     (update-profile conn params)
     nil))
-
 
 ;; --- Mutation: Update Password
 
@@ -439,7 +460,7 @@
   {:changed true})
 
 (defn- request-email-change
-  [{:keys [conn tokens]} {:keys [profile email] :as params}]
+  [{:keys [conn tokens] :as cfg} {:keys [profile email] :as params}]
   (let [token   (tokens :generate
                         {:iss :change-email
                          :exp (dt/in-future "15m")
@@ -452,22 +473,24 @@
     (when (not= email (:email profile))
       (check-profile-existence! conn params))
 
-    (when-not (emails/allow-send-emails? conn profile)
+    (when-not (eml/allow-send-emails? conn profile)
       (ex/raise :type :validation
                 :code :profile-is-muted
                 :hint "looks like the profile has reported repeatedly as spam or has permanent bounces."))
 
-    (when (emails/has-bounce-reports? conn email)
+    (when (eml/has-bounce-reports? conn email)
       (ex/raise :type :validation
                 :code :email-has-permanent-bounces
                 :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
 
-    (emails/send! conn emails/change-email
-                  {:to (:email profile)
-                   :name (:fullname profile)
-                   :pending-email email
-                   :token token
-                   :extra-data ptoken})
+    (eml/send! {::eml/conn conn
+                ::eml/factory eml/change-email
+                :public-uri (:public-uri cfg)
+                :to (:email profile)
+                :name (:fullname profile)
+                :pending-email email
+                :token token
+                :extra-data ptoken})
     nil))
 
 
@@ -493,16 +516,18 @@
             (let [ptoken (tokens :generate-predefined
                                  {:iss :profile-identity
                                   :profile-id (:id profile)})]
-              (emails/send! conn emails/password-recovery
-                            {:to (:email profile)
-                             :token (:token profile)
-                             :name (:fullname profile)
-                             :extra-data ptoken})
+              (eml/send! {::eml/conn conn
+                          ::eml/factory eml/password-recovery
+                          :public-uri (:public-uri cfg)
+                          :to (:email profile)
+                          :token (:token profile)
+                          :name (:fullname profile)
+                          :extra-data ptoken})
               nil))]
 
     (db/with-atomic [conn pool]
       (when-let [profile (profile/retrieve-profile-data-by-email conn email)]
-        (when-not (emails/allow-send-emails? conn profile)
+        (when-not (eml/allow-send-emails? conn profile)
           (ex/raise :type :validation
                     :code :profile-is-muted
                     :hint "looks like the profile has reported repeatedly as spam or has permanent bounces."))
@@ -512,7 +537,7 @@
                     :code :profile-not-verified
                     :hint "the user need to validate profile before recover password"))
 
-        (when (emails/has-bounce-reports? conn (:email profile))
+        (when (eml/has-bounce-reports? conn (:email profile))
           (ex/raise :type :validation
                     :code :email-has-permanent-bounces
                     :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
@@ -579,9 +604,10 @@
     (check-can-delete-profile! conn profile-id)
 
     ;; Schedule a complete deletion of profile
-    (tasks/submit! conn {:name "delete-profile"
-                         :delay cfg/deletion-delay
-                         :props {:profile-id profile-id}})
+    (wrk/submit! {::wrk/task :delete-profile
+                  ::wrk/dalay cfg/deletion-delay
+                  ::wrk/conn conn
+                  :profile-id profile-id})
 
     (db/update! conn :profile
                 {:deleted-at (dt/now)}

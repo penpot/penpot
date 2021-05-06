@@ -2,31 +2,30 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.data.workspace.libraries
   (:require
    [app.common.data :as d]
-   [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [app.common.pages :as cp]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
+   [app.common.pages :as cp]
+   [app.common.pages :as cp]
+   [app.common.spec :as us]
+   [app.common.uuid :as uuid]
    [app.main.data.messages :as dm]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries-helpers :as dwlh]
-   [app.common.pages :as cp]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.util.color :as color]
    [app.util.i18n :refer [tr]]
+   [app.util.logging :as log]
    [app.util.router :as rt]
    [app.util.time :as dt]
-   [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -93,7 +92,7 @@
               uchg {:type :del-color
                     :id id}]
           (rx/of #(assoc-in % [:workspace-local :color-for-rename] id)
-                 (dwc/commit-changes [rchg] [uchg] {:commit-local? true})))))))
+                 (dch/commit-changes [rchg] [uchg] {:commit-local? true})))))))
 
 (defn add-recent-color
   [color]
@@ -103,7 +102,7 @@
     (watch [_ state s]
       (let [rchg {:type :add-recent-color
                   :color color}]
-        (rx/of (dwc/commit-changes [rchg] [] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [] {:commit-local? true}))))))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
@@ -123,7 +122,7 @@
                   :color color}
             uchg {:type :mod-color
                   :color prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
                (sync-file (:current-file-id state) file-id))))))
 
 (defn delete-color
@@ -137,7 +136,7 @@
                   :id id}
             uchg {:type :add-color
                   :color prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (defn add-media
   [{:keys [id] :as media}]
@@ -150,7 +149,7 @@
                   :object obj}
             uchg {:type :del-media
                   :id id}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (defn rename-media
   [id new-name]
@@ -160,16 +159,19 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [object (get-in state [:workspace-data :media id])
+            [path name] (cp/parse-path-name new-name)
 
             rchanges [{:type :mod-media
                        :object {:id id
-                                :name new-name}}]
+                                :name name
+                                :path path}}]
 
             uchanges [{:type :mod-media
                        :object {:id id
-                                :name (:name object)}}]]
+                                :name (:name object)
+                                :path (:path object)}}]]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn delete-media
   [{:keys [id] :as params}]
@@ -182,7 +184,7 @@
                   :id id}
             uchg {:type :add-media
                   :object prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (defn add-typography
   ([typography] (add-typography typography true))
@@ -193,10 +195,10 @@
        ptk/WatchEvent
        (watch [_ state s]
          (let [rchg {:type :add-typography
-                     :typography (assoc typography :ts (.now js/Date))}
+                     :typography typography}
                uchg {:type :del-typography
                      :id (:id typography)}]
-           (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
+           (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
                   #(cond-> %
                      edit?
                      (assoc-in [:workspace-local :rename-typography] (:id typography))))))))))
@@ -213,7 +215,7 @@
                   :typography typography}
             uchg {:type :mod-typography
                   :typography prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
                (sync-file (:current-file-id state) file-id))))))
 
 (defn delete-typography
@@ -227,7 +229,7 @@
                   :id id}
             uchg {:type :add-typography
                   :typography prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (def add-component
   "Add a new component to current file library, from the currently selected shapes."
@@ -236,13 +238,13 @@
     (watch [_ state stream]
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
+            objects  (wsh/lookup-page-objects state page-id)
+            selected (wsh/lookup-selected state)
             selected (cp/clean-loops objects selected)]
         (let [[group rchanges uchanges]
               (dwlh/generate-add-component selected objects page-id file-id)]
           (when-not (empty? rchanges)
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (defn rename-component
@@ -253,23 +255,27 @@
   (ptk/reify ::rename-component
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [component (get-in state [:workspace-data :components id])
+      (let [[path name] (cp/parse-path-name new-name)
+            component (get-in state [:workspace-data :components id])
             objects (get component :objects)
+            ; Give the same name to the root shape
             new-objects (assoc-in objects
                                   [(:id component) :name]
-                                  new-name)
+                                  name)
 
             rchanges [{:type :mod-component
                        :id id
-                       :name new-name
+                       :name name
+                       :path path
                        :objects new-objects}]
 
             uchanges [{:type :mod-component
                        :id id
                        :name (:name component)
+                       :path (:path component)
                        :objects objects}]]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
@@ -291,12 +297,13 @@
             rchanges [{:type :add-component
                        :id (:id new-shape)
                        :name new-name
+                       :path (:path component)
                        :shapes new-shapes}]
 
             uchanges [{:type :del-component
                        :id (:id new-shape)}]]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
@@ -313,9 +320,10 @@
             uchanges [{:type :add-component
                        :id id
                        :name (:name component)
+                       :path (:path component)
                        :shapes (vals (:objects component))}]]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn instantiate-component
   "Create a new shape in the current page, from the component with the given id
@@ -336,7 +344,7 @@
             delta     (gpt/subtract position orig-pos)
 
             page-id   (:current-page-id state)
-            objects   (dwc/lookup-page-objects state page-id)
+            objects   (wsh/lookup-page-objects state page-id)
             unames    (atom (dwc/retrieve-used-names objects))
 
             frame-id (cp/frame-id-by-position objects (gpt/add orig-pos delta))
@@ -392,7 +400,7 @@
                              :ignore-touched true})
                           new-shapes)]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
                (dwc/select-shapes (d/ordered-set (:id new-shape))))))))
 
 (defn detach-component
@@ -404,7 +412,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
             shapes (cp/get-object-with-children id objects)
 
             rchanges (map (fn [obj]
@@ -455,7 +463,7 @@
                                            :val (:touched obj)}]})
                           shapes)]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn nav-to-component-file
   [file-id]
@@ -508,7 +516,7 @@
                                                                   rchanges
                                                                   local-library))
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn update-component
   "Modify the component linked to the shape with the given id, in the
@@ -563,11 +571,11 @@
                                   file))
 
         (rx/of (when (seq local-rchanges)
-                 (dwc/commit-changes local-rchanges local-uchanges
+                 (dch/commit-changes local-rchanges local-uchanges
                                      {:commit-local? true
                                       :file-id (:id local-library)}))
                (when (seq rchanges)
-                 (dwc/commit-changes rchanges uchanges
+                 (dch/commit-changes rchanges uchanges
                                      {:commit-local? true
                                       :file-id file-id})))))))
 
@@ -617,7 +625,7 @@
         (rx/concat
           (rx/of (dm/hide-tag :sync-dialog))
           (when rchanges
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true
+            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true
                                                           :file-id file-id})))
           (when (not= file-id library-id)
             ;; When we have just updated the library file, give some time for the
@@ -660,7 +668,7 @@
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
                                                                           rchanges
                                                                           file))
-          (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true
+          (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true
                                                         :file-id file-id})))))))
 
 (def ignore-sync

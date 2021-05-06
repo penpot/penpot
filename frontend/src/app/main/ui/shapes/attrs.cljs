@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2016-2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.shapes.attrs
   (:require
@@ -124,10 +121,7 @@
 (defn add-layer-props [attrs shape]
   (cond-> attrs
     (:opacity shape)
-    (obj/set! "opacity" (:opacity shape))
-
-    (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
-    (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
+    (obj/set! "opacity" (:opacity shape))))
 
 (defn extract-svg-attrs
   [render-id svg-defs svg-attrs]

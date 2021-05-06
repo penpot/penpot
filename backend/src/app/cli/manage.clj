@@ -2,22 +2,18 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.cli.manage
   "A manage cli api."
   (:require
-   [app.config :as cfg]
    [app.db :as db]
    [app.main :as main]
    [app.rpc.mutations.profile :as profile]
    [app.rpc.queries.profile :refer [retrieve-profile-data-by-email]]
+   [app.util.logging :as l]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig])
   (:import
    java.io.Console))
@@ -26,7 +22,7 @@
 
 (defn init-system
   []
-  (let [data (-> (main/build-system-config cfg/config)
+  (let [data (-> main/system-config
                  (select-keys [:app.db/pool :app.metrics/metrics])
                  (assoc :app.migrations/all {}))]
     (-> data ig/prep ig/init)))
@@ -35,7 +31,7 @@
   [{:keys [label type] :or {type :text}}]
   (let [^Console console (System/console)]
     (when-not console
-      (log/error "no console found, can proceed")
+      (l/error :hint "no console found, can proceed")
       (System/exit 1))
 
     (binding [*out* (.writer console)]

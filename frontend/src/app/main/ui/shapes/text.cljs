@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.shapes.text
   (:require
@@ -13,7 +10,6 @@
    [app.common.geom.shapes :as geom]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.text.embed :as ste]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.color :as uc]
    [app.util.object :as obj]
@@ -33,15 +29,12 @@
   {::mf/wrap-props false}
   [props]
   (let [node     (obj/get props "node")
-        embed?   (obj/get props "embed-fonts?")
         children (obj/get props "children")
         shape    (obj/get props "shape")
         style    (sts/generate-root-styles shape node)]
     [:div.root.rich-text
      {:style style
       :xmlns "http://www.w3.org/1999/xhtml"}
-     (when embed?
-       [ste/embed-fontfaces-style {:node node}])
      children]))
 
 (mf/defc render-paragraph-set
@@ -97,7 +90,6 @@
   [props ref]
   (let [{:keys [id x y width height content] :as shape} (obj/get props "shape")
         grow-type (obj/get props "grow-type") ;; This is only needed in workspace
-        embed-fonts? (mf/use-ctx muc/embed-ctx)
         ;; We add 8px to add a padding for the exporter
         ;; width (+ width 8)
         ]
@@ -112,5 +104,4 @@
                      :ref ref}
      [:& render-node {:index 0
                       :shape shape
-                      :node content
-                      :embed-fonts? embed-fonts?}]]))
+                      :node content}]]))

@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.pages.changes
   (:require
@@ -34,7 +31,7 @@
    ;; When verify? false we spec the schema validation. Currently used to make just
    ;; 1 validation even if the changes are applied twice
    (when verify?
-     (us/verify ::spec/changes items))
+     (us/assert ::spec/changes items))
 
    (let [pages (into #{} (map :page-id) items)
          result (->> items
@@ -367,21 +364,25 @@
 ;; -- Components
 
 (defmethod process-change :add-component
-  [data {:keys [id name shapes]}]
+  [data {:keys [id name path shapes]}]
   (assoc-in data [:components id]
             {:id id
              :name name
+             :path path
              :objects (d/index-by :id shapes)}))
 
 (defmethod process-change :mod-component
-  [data {:keys [id name objects]}]
+  [data {:keys [id name path objects]}]
   (update-in data [:components id]
              #(cond-> %
-                (some? name)
-                (assoc :name name)
+                  (some? name)
+                  (assoc :name name)
 
-                (some? objects)
-                (assoc :objects objects))))
+                  (some? path)
+                  (assoc :path path)
+
+                  (some? objects)
+                  (assoc :objects objects))))
 
 (defmethod process-change :del-component
   [data {:keys [id]}]

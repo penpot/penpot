@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.media
   "Media postprocessing."
@@ -15,7 +12,7 @@
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.rlimits :as rlm]
-   [app.svgparse :as svg]
+   [app.rpc.queries.svg :as svg]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs])

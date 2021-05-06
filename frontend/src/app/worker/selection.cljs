@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.worker.selection
   (:require
@@ -44,8 +41,8 @@
     nil))
 
 (defmethod impl/handler :selection/query
-  [{:keys [page-id rect frame-id include-frames? include-groups? disabled-masks] :or {include-groups? true
-                                                                                      disabled-masks #{}} :as message}]
+  [{:keys [page-id rect frame-id include-frames? include-groups? disabled-masks reverse?]
+    :or {include-groups? true disabled-masks #{} reverse? false} :as message}]
   (when-let [index (get @state page-id)]
     (let [result (-> (qdt/search index (clj->js rect))
                      (es6-iterator-seq))
@@ -79,11 +76,13 @@
                       (filter (comp overlaps? :frame))
                       (filter (comp overlaps-masks? :masks))
                       (filter overlaps?))
-                result)]
+                result)
+
+          keyfn (if reverse? (comp - :z) :z)]
 
       (into (d/ordered-set)
             (->> matching-shapes
-                 (sort-by (comp - :z))
+                 (sort-by keyfn)
                  (map :id))))))
 
 (defn create-mask-index

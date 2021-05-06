@@ -4,10 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * This Source Code Form is "Incompatible With Secondary Licenses", as
- * defined by the Mozilla Public License, v. 2.0.
- *
- * Copyright (c) 2020 UXBOX Labs SL
+ * Copyright (c) UXBOX Labs SL
  */
 
 /*
@@ -23,11 +20,23 @@ goog.provide("app.util.globals");
 goog.scope(function() {
   app.util.globals.global = goog.global;
 
+  function createGlobalEventEmiter(k) {
+    /* Allow mocked objects to be event emitters, so other modules
+     * may subscribe to them.
+     */
+    return {
+      addListener(...args) {
+      },
+      removeListener(...args) {
+      }
+    }
+  }
+
   app.util.globals.window = (function() {
     if (typeof goog.global.window !== "undefined") {
       return goog.global.window;
     } else {
-      return {};
+      return createGlobalEventEmiter();
     }
   })();
 
@@ -35,7 +44,7 @@ goog.scope(function() {
     if (typeof goog.global.document !== "undefined") {
       return goog.global.document;
     } else {
-      return {};
+      return createGlobalEventEmiter();
     }
   })();
 
@@ -43,7 +52,7 @@ goog.scope(function() {
     if (typeof goog.global.location !== "undefined") {
       return goog.global.location;
     } else {
-      return {};
+      return createGlobalEventEmiter();
     }
   })();
 
@@ -51,7 +60,15 @@ goog.scope(function() {
     if (typeof goog.global.navigator !== "undefined") {
       return goog.global.navigator;
     } else {
-      return {};
+      return createGlobalEventEmiter();
+    }
+  })();
+
+  app.util.globals.FormData = (function() {
+    if (typeof goog.global.FormData !== "undefined") {
+      return goog.global.FormData;
+    } else {
+      return function() {};
     }
   })();
 });

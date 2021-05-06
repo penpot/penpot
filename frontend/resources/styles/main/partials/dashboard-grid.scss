@@ -2,10 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// This Source Code Form is "Incompatible With Secondary Licenses", as
-// defined by the Mozilla Public License, v. 2.0.
-//
-// Copyright (c) 2020 UXBOX Labs SL
+// Copyright (c) UXBOX Labs SL
 
 .dashboard-grid {
   font-size: $fs14;
@@ -36,7 +33,10 @@
     position: relative;
     text-align: center;
     width: 18%;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    }
 
     .grid-item-th {
       text-align: initial;

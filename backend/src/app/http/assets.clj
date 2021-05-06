@@ -2,23 +2,20 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.http.assets
   "Assets related handlers."
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.storage :as sto]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig]
-   [lambdaisland.uri :as u]))
+   [integrant.core :as ig]))
 
 (def ^:private cache-max-age
   (dt/duration {:hours 24}))

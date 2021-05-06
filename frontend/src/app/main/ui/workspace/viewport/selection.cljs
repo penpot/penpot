@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.viewport.selection
   "Selection handlers component."
@@ -22,7 +19,6 @@
    [app.main.streams :as ms]
    [app.main.ui.cursors :as cur]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.workspace.viewport.outline :refer [outline]]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [app.util.data :as d]
    [app.util.debug :refer [debug?]]
@@ -258,7 +254,6 @@
                            :zoom zoom
                            :color color
                            :on-move-selected on-move-selected}]
-       [:& outline {:shape shape :color color}]
 
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect shape zoom)]

@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) UXBOX Labs SL
 
 (ns user
   (:require
@@ -70,7 +67,7 @@
   []
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
-                             (-> (main/build-system-config cfg/config)
+                             (-> main/system-config
                                  (ig/prep)
                                  (ig/init))))
   :started)

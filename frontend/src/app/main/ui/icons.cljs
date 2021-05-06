@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.icons
   (:require-macros [app.main.ui.icons :refer [icon-xref]])
@@ -63,10 +60,11 @@
 (def libraries (icon-xref :libraries))
 (def library (icon-xref :library))
 (def line (icon-xref :line))
+(def listing-enum (icon-xref :listing-enum))
+(def listing-thumbs (icon-xref :listing-thumbs))
 (def line-height (icon-xref :line-height))
 (def loader (icon-xref :loader))
 (def lock (icon-xref :lock))
-(def lock-open (icon-xref :lock-open))
 (def logo (icon-xref :uxbox-logo))
 (def logo-icon (icon-xref :uxbox-logo-icon))
 (def logout (icon-xref :logout))
@@ -88,7 +86,6 @@
 (def nodes-remove (icon-xref :nodes-remove))
 (def nodes-separate (icon-xref :nodes-separate))
 (def nodes-snap (icon-xref :nodes-snap))
-(def options (icon-xref :options))
 (def organize (icon-xref :organize))
 (def palette (icon-xref :palette))
 (def pen (icon-xref :pen))
@@ -98,6 +95,7 @@
 (def picker-hsv (icon-xref :picker-hsv))
 (def picker-ramp (icon-xref :picker-ramp))
 (def pin (icon-xref :pin))
+(def pin-fill (icon-xref :pin-fill))
 (def play (icon-xref :play))
 (def plus (icon-xref :plus))
 (def pointer-inner (icon-xref :pointer-inner))
@@ -120,9 +118,10 @@
 (def shape-vdistribute (icon-xref :shape-vdistribute))
 (def size-horiz (icon-xref :size-horiz))
 (def size-vert (icon-xref :size-vert))
+(def sort-ascending (icon-xref :sort-ascending))
+(def sort-descending (icon-xref :sort-descending))
 (def strikethrough (icon-xref :strikethrough))
 (def stroke (icon-xref :stroke))
-(def sublevel (icon-xref :sublevel))
 (def text (icon-xref :text))
 (def text-align-center (icon-xref :text-align-center))
 (def text-align-justify (icon-xref :text-align-justify))
@@ -138,7 +137,6 @@
 (def unchain (icon-xref :unchain))
 (def underline (icon-xref :underline))
 (def undo (icon-xref :undo))
-(def undo-history (icon-xref :undo-history))
 (def ungroup (icon-xref :ungroup))
 (def unlock (icon-xref :unlock))
 (def uppercase (icon-xref :uppercase))

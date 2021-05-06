@@ -2,24 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.data.workspace.drawing.box
   (:require
-   [beicon.core :as rx]
-   [potok.core :as ptk]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.uuid :as uuid]
+   [app.common.math :as mth]
    [app.common.pages :as cp]
-   [app.main.data.workspace.common :as dwc]
+   [app.common.uuid :as uuid]
+   [app.main.data.workspace.drawing.common :as common]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
-   [app.main.data.workspace.drawing.common :as common]
-   [app.common.math :as mth]))
+   [beicon.core :as rx]
+   [potok.core :as ptk]))
 
 (defn truncate-zero [num default]
   (if (mth/almost-zero? num) default num))
@@ -63,7 +60,7 @@
             initial @ms/mouse-position
 
             page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state page-id)
             layout  (get state :workspace-layout)
             zoom    (get-in state [:workspace-local :zoom] 1)
 

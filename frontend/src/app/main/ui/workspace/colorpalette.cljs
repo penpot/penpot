@@ -2,16 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.colorpalette
   (:require
    [app.common.math :as mth]
-   [app.main.data.colors :as mdc]
    [app.main.data.workspace :as udw]
+   [app.main.data.workspace.colors :as mdc]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
@@ -19,11 +17,9 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
-   [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [beicon.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
    [okulary.core :as l]
@@ -53,7 +49,7 @@
   [{:keys [color size local?]}]
   (let [select-color
         (fn [event]
-          (let [ids (get-in @st/state [:workspace-local :selected])]
+          (let [ids (wsh/lookup-selected @st/state)]
             (if (kbd/shift? event)
               (st/emit! (mdc/change-stroke ids (merge uc/empty-color color)))
               (st/emit! (mdc/change-fill ids (merge uc/empty-color color))))))]
@@ -76,8 +72,6 @@
 
         close-fn   #(st/emit! (udw/toggle-layout-flags :colorpalette))
         container  (mf/use-ref nil)
-
-        locale    (mf/deref i18n/locale)
 
         on-left-arrow-click
         (mf/use-callback
@@ -146,7 +140,7 @@
        [:li.palette-library
         {:on-click #(st/emit! (mdc/change-palette-selected :file))}
         (when (= selected :file) i/tick)
-        [:div.library-name (str (t locale "workspace.libraries.colors.file-library")
+        [:div.library-name (str (tr "workspace.libraries.colors.file-library")
                                 (str/format " (%s)" (count file-colors)))]
         [:div.color-sample
          (for [[idx color] (map-indexed vector (take 7 (vals file-colors))) ]
@@ -156,7 +150,7 @@
        [:li.palette-library
         {:on-click #(st/emit! (mdc/change-palette-selected :recent))}
         (when (= selected :recent) i/tick)
-        [:div.library-name (str (t locale "workspace.libraries.colors.recent-colors")
+        [:div.library-name (str (tr "workspace.libraries.colors.recent-colors")
                                 (str/format " (%s)" (count recent-colors)))]
         [:div.color-sample
          (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors))) ]
@@ -168,12 +162,12 @@
        [:li
         {:on-click #(st/emit! (mdc/change-palette-size :big))}
         (when (= size :big) i/tick)
-        (t locale "workspace.libraries.colors.big-thumbnails")]
+        (tr "workspace.libraries.colors.big-thumbnails")]
 
        [:li
         {:on-click #(st/emit! (mdc/change-palette-size :small))}
         (when (= size :small) i/tick)
-        (t locale "workspace.libraries.colors.small-thumbnails")]]]
+        (tr "workspace.libraries.colors.small-thumbnails")]]]
 
      [:div.color-palette-actions
       {:on-click #(swap! state assoc :show-menu true)}

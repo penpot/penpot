@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.tests.helpers
   (:require
@@ -13,7 +10,7 @@
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
    [app.media]
@@ -38,16 +35,23 @@
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
 
+(def defaults
+  {:database-uri "postgresql://postgres/penpot_test"
+   :redis-uri "redis://redis/1"})
+
 (def config
-  (merge {:redis-uri "redis://redis/1"
-          :database-uri "postgresql://postgres/penpot_test"
-          :storage-fs-directory "/tmp/app/storage"
-          :migrations-verbose false}
-         cfg/config))
+  (->> (cf/read-env "penpot-test")
+       (merge cf/defaults defaults)
+       (us/conform ::cf/config)))
 
 (defn state-init
   [next]
-  (let [config (-> (main/build-system-config config)
+  (let [config (-> main/system-config
+                   (assoc-in [:app.msgbus/msgbus :redis-uri] (:redis-uri config))
+                   (assoc-in [:app.db/pool :uri] (:database-uri config))
+                   (assoc-in [:app.db/pool :username] (:database-username config))
+                   (assoc-in [:app.db/pool :password] (:database-password config))
+                   (assoc-in [[:app.main/main :app.storage.fs/backend] :directory] "/tmp/app/storage")
                    (dissoc :app.srepl/server
                            :app.http/server
                            :app.http/router
@@ -328,8 +332,10 @@
   "Helper for mock app.config/get"
   [data]
   (fn
-    ([key] (get (merge config data) key))
-    ([key default] (get (merge config data) key default))))
+    ([key]
+     (get data key (get @cf/config key)))
+    ([key default]
+     (get data key (get @cf/config key default)))))
 
 (defn reset-mock!
   [m]

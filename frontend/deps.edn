@@ -1,52 +1,9 @@
 {:paths ["src" "vendor" "resources" "../common"]
- :deps
- {org.clojure/clojurescript {:mvn/version "1.10.773"}
-  org.clojure/clojure {:mvn/version "1.10.3"}
-  com.cognitect/transit-cljs {:mvn/version "0.8.264"}
-
-  environ/environ {:mvn/version "1.2.0"}
-  metosin/reitit-core {:mvn/version "0.5.12"}
-  expound/expound {:mvn/version "0.8.9"}
-
-  danlentz/clj-uuid {:mvn/version "0.1.9"}
-  frankiesardo/linked {:mvn/version "1.3.0"}
-
-  funcool/beicon {:mvn/version "2021.01.29-1"}
-  funcool/cuerdas {:mvn/version "2020.03.26-3"}
-  funcool/okulary {:mvn/version "2020.04.14-0"}
-  funcool/potok {:mvn/version "3.2.0"}
-  funcool/promesa {:mvn/version "6.0.0"}
-  funcool/rumext {:mvn/version "2021.01.26-0"}
-
-  lambdaisland/uri {:mvn/version "1.4.54"
-                    :exclusions [org.clojure/data.json]}
-
-  }
+ :deps {}
  :aliases
- {:dev
-  {:extra-paths ["tests" "dev"]
-   :extra-deps
-   {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
-    com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-    org.clojure/tools.namespace {:mvn/version "0.3.1"}
-    hashp/hashp {:mvn/version "RELEASE"}
-
-    metosin/jsonista {:mvn/version "0.2.5"}
-    funcool/datoteka {:mvn/version "1.2.0"}
-    binaryage/devtools {:mvn/version "RELEASE"}
-
-    thheller/shadow-cljs {:mvn/version "2.11.20"}
-
-    ;; i18n parsing
-    carocad/parcera {:mvn/version "0.11.0"}
-    org.antlr/antlr4-runtime {:mvn/version "4.7"}}}
-
-  :outdated
-  {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
-   :main-opts ["-m" "depot.outdated.main"]}
-
-  :repl
-  {:main-opts  ["-m" "rebel-readline.main"]}
-
+ {:outdated
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}
+                org.slf4j/slf4j-nop {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "antq.core"]}
   }}
 
