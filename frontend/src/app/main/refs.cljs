@@ -138,8 +138,8 @@
 
 (def workspace-file-colors
   (l/derived (fn [state]
-               (when-let [file (:workspace-file state)]
-                 (->> (get-in file [:data :colors])
+               (when-let [file (:workspace-data state)]
+                 (->> (:colors file)
                       (d/mapm #(assoc %2 :file-id (:id file))))))
              st/state))
 
@@ -150,8 +150,8 @@
 
 (def workspace-file-typography
   (l/derived (fn [state]
-               (when-let [file (:workspace-file state)]
-                 (get-in file [:data :typographies])))
+               (when-let [file (:workspace-data state)]
+                 (:typographies file)))
              st/state))
 
 (def workspace-project

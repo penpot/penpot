@@ -811,9 +811,9 @@
 (defn file-colors-ref
   [id]
   (l/derived (fn [state]
-               (let [wfile (:workspace-file state)]
+               (let [wfile (:workspace-data state)]
                  (if (= (:id wfile) id)
-                   (vals (get-in wfile [:data :colors]))
+                   (vals (get-in wfile [:colors]))
                    (vals (get-in state [:workspace-libraries id :data :colors])))))
              st/state =))
 
@@ -821,27 +821,27 @@
 (defn file-media-ref
   [id]
   (l/derived (fn [state]
-               (let [wfile (:workspace-file state)]
+               (let [wfile (:workspace-data state)]
                  (if (= (:id wfile) id)
-                   (vals (get-in wfile [:data :media]))
+                   (vals (get-in wfile [:media]))
                    (vals (get-in state [:workspace-libraries id :data :media])))))
              st/state =))
 
 (defn file-components-ref
   [id]
   (l/derived (fn [state]
-               (let [wfile (:workspace-file state)]
+               (let [wfile (:workspace-data state)]
                  (if (= (:id wfile) id)
-                   (vals (get-in wfile [:data :components]))
+                   (vals (get-in wfile [:components]))
                    (vals (get-in state [:workspace-libraries id :data :components])))))
              st/state =))
 
 (defn file-typography-ref
   [id]
   (l/derived (fn [state]
-               (let [wfile (:workspace-file state)]
+               (let [wfile (:workspace-data state)]
                  (if (= (:id wfile) id)
-                   (vals (get-in wfile [:data :typographies]))
+                   (vals (get-in wfile [:typographies]))
                    (vals (get-in state [:workspace-libraries id :data :typographies])))))
              st/state =))
 

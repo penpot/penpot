@@ -164,7 +164,7 @@
 (defn- make-page-ref
   [page-id]
   (l/derived (fn [state]
-               (let [page (get-in state [:workspace-file :data :pages-index page-id])]
+               (let [page (get-in state [:workspace-data :pages-index page-id])]
                  (select-keys page [:id :name])))
               st/state =))
 

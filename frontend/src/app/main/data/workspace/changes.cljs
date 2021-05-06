@@ -159,10 +159,8 @@
   ([changes undo-changes]
    (commit-changes changes undo-changes {}))
   ([changes undo-changes {:keys [save-undo?
-                                 commit-local?
                                  file-id]
-                          :or {save-undo? true
-                               commit-local? false}
+                          :or {save-undo? true}
                           :as opts}]
    (us/assert ::cp/changes changes)
    (us/assert ::cp/changes undo-changes)
@@ -173,23 +171,20 @@
    (let [error (volatile! nil)]
      (ptk/reify ::commit-changes
        cljs.core/IDeref
-       (-deref [_] {:file-id file-id :changes changes})
+       (-deref [_]
+         {:file-id file-id
+          :changes changes})
 
        ptk/UpdateEvent
        (update [_ state]
          (let [current-file-id (get state :current-file-id)
                file-id (or file-id current-file-id)
-               path1   (if (= file-id current-file-id)
-                         [:workspace-file :data]
-                         [:workspace-libraries file-id :data])
-               path2   (if (= file-id current-file-id)
+               path    (if (= file-id current-file-id)
                          [:workspace-data]
                          [:workspace-libraries file-id :data])]
            (try
              (us/assert ::spec/changes changes)
-             (let [state (update-in state path1 cp/process-changes changes false)]
-               (cond-> state
-                 commit-local? (update-in path2 cp/process-changes changes false)))
+             (update-in state path cp/process-changes changes false)
              (catch :default e
                (vreset! error e)
                state))))
