@@ -228,7 +228,7 @@
                                            context  (-> @context
                                                         (d/merge (:context event))
                                                         (assoc :session session*))]
-                                       (swap! session (constantly session*))
+                                       (reset! session session*)
                                        (-> event
                                            (assoc :timestamp (dt/now))
                                            (assoc :context context)))))
