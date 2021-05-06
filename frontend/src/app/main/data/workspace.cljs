@@ -34,6 +34,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.main.streams :as ms]
+   [app.main.worker :as uw]
    [app.util.http :as http]
    [app.util.i18n :as i18n]
    [app.util.logging :as log]
@@ -1269,7 +1270,27 @@
 
 (defn copy-selected
   []
-  (letfn [;; Retrieve all ids of selected shapes with corresponding
+  (letfn [;; Sort objects so they have the same relative ordering
+          ;; when pasted later.
+          (sort-selected [state data]
+            (let [selected (:selected data)
+                  page-id (:current-page-id state)
+                  objects (get-in state [:workspace-data
+                                         :pages-index
+                                         page-id
+                                         :objects])]
+              (->> (uw/ask! {:cmd :selection/query-z-index
+                             :page-id page-id
+                             :objects objects
+                             :ids selected})
+                   (rx/map (fn [z-indexes]
+                             (assoc data :selected
+                                    (->> (d/zip selected z-indexes)
+                                         (sort-by second)
+                                         (map first)
+                                         (into (d/ordered-set)))))))))
+
+          ;; Retrieve all ids of selected shapes with corresponding
           ;; children; this is needed because each shape should be
           ;; processed one by one because of async events (data url
           ;; fetching).
@@ -1334,6 +1355,7 @@
           (->> (rx/from (seq (vals pdata)))
                (rx/merge-map (partial prepare-object objects selected))
                (rx/reduce collect-data initial)
+               (rx/mapcat (partial sort-selected state))
                (rx/map t/encode)
                (rx/map wapi/write-to-clipboard)
                (rx/catch on-copy-error)
