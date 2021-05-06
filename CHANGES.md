@@ -9,6 +9,16 @@
 ### :heart: Community contributions by (Thank you!)
 
 
+## 1.5.1-alpha
+
+### :bug: Bugs fixed
+
+- Fix issue with bitmap image clipboard.
+- Fix issue when removing all path points.
+- Increase default team invitation token expiration to 48h.
+- Fix wrong error message when an expired token is used.
+
+
 ## 1.5.0-alpha
 
 ### :sparkles: New features
