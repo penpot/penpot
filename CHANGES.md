@@ -8,6 +8,11 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+## 1.5.2-alpha
+
+### :bug: Bugs fixed
+
+- Fix problem with `close-path` command [#917](https://github.com/penpot/penpot/issues/917)
 
 ## 1.5.1-alpha
 
