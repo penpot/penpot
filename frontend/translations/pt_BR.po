@@ -1,2 +1,47 @@
 msgid ""
-msgstr "X-Generator: Weblate\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit"
+msgstr ""
+"PO-Revision-Date: 2021-05-07 08:30+0000\n"
+"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
+"Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_BR/>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 4.7-dev\n"
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Você deve carregar apenas fontes que possui ou tem licença para usar na "
+"Penpot. Descubra mais na seção de Direitos de conteúdo nos [Termos de "
+"Serviço da Penpot](https://penpot.app/terms.html). Você pode também querer "
+"ler sobre [licenciamento de fontes](2)."
+
+msgid "labels.upload-custom-fonts"
+msgstr "Carregar fontes personalizadas"
+
+msgid "labels.font-providers"
+msgstr "Provedores de fonte"
+
+msgid "labels.search-font"
+msgstr "Buscar fonte"
+
+msgid "labels.custom-fonts"
+msgstr "Fontes personalizadas"
+
+msgid "labels.font-variant"
+msgstr "Estilo"
+
+msgid "labels.font-family"
+msgstr "Família da fonte"
+
+msgid "labels.installed-fonts"
+msgstr "Fontes instaladas"
+
+msgid "labels.uploading"
+msgstr "Carregando..."
+
+msgid "labels.upload"
+msgstr "Carregar"
