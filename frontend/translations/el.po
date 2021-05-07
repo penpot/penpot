@@ -2204,15 +2204,15 @@ msgstr "Στροφή  (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.ellipse"
-msgstr "Έλλειψη (Ε)"
+msgstr "Έλλειψη (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.frame"
-msgstr "Artboard (Α)"
+msgstr "Artboard (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.image"
-msgstr "Εικόνα (Κ)"
+msgstr "Εικόνα (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.move"
@@ -2220,15 +2220,15 @@ msgstr ""
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.path"
-msgstr "Path (Ρ)"
+msgstr "Path (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.rect"
-msgstr "Ορθογώνιο (R)"
+msgstr "Ορθογώνιο (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
-msgstr "Κείμενο (Τ)"
+msgstr "Κείμενο (%s)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"

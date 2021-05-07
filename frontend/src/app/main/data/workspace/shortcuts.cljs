@@ -155,8 +155,8 @@
                         :command "c"
                         :fn #(st/emit! (dwd/select-for-drawing :comments))}
 
-   :insert-image       {:tooltip "K"
-                        :command "k"
+   :insert-image       {:tooltip (ds/shift "K")
+                        :command "shift+k"
                         :fn #(-> "image-upload" dom/get-element dom/click)}
 
    :copy               {:tooltip (ds/meta "C")
