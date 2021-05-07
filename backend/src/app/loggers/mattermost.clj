@@ -65,9 +65,7 @@
                     "- detail: " (cfg/get :public-uri) "/dbg/error-by-id/" id "\n"
                     "- profile-id: `" (:profile-id cdata) "`\n"
                     "- host: `" host "`\n"
-                    "- version: `" version "`\n"
-                    (when error
-                      (str "```\n" (:trace error)  "\n```")))
+                    "- version: `" version "`\n")
           rsp    (http/send! {:uri uri
                               :method :post
                               :headers {"content-type" "application/json"}
