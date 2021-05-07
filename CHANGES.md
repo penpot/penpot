@@ -13,6 +13,7 @@
 ### :bug: Bugs fixed
 
 - Fix problem with `close-path` command [#917](https://github.com/penpot/penpot/issues/917)
+- Fix wrong query for obtain the profile default project-id
 
 ## 1.5.1-alpha
 
