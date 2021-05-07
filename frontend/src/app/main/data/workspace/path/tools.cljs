@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.state :as st]
@@ -34,7 +35,9 @@
              new-content (-> (tool-fn (:content shape) points)
                              (ups/close-subpaths))
              [rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
-         (rx/of (dch/commit-changes rch uch {:commit-local? true})))))))
+         (rx/of (dch/commit-changes rch uch {:commit-local? true})
+                (when (empty? new-content)
+                  dwc/clear-edition-mode)))))))
 
 (defn make-corner
   ([]
