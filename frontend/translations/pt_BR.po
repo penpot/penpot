@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-07 08:30+0000\n"
-"Last-Translator: Guilherme Dimas <guilhermedimasrosa@gmail.com>\n"
+"PO-Revision-Date: 2021-05-09 00:37+0000\n"
+"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -94,3 +94,70 @@ msgstr "Já tem uma conta?"
 
 msgid "modals.delete-font.title"
 msgstr "Excluindo fonte"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Link de recuperação de senha foi enviado para sua caixa de entrada."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr ""
+"Perfil não verificado. Por favor, verifique o perfil antes de continuar."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-succesfully"
+msgstr "Senha alterada com sucesso"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "O token de recuperação é inválido."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Digite uma nova senha"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "Entrar com OpenID (SSO)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "Entrar com LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Entrar com o Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "Entrar com o Gitlab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "Entrar com o Github"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Bom te ver de novo!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-subtitle"
+msgstr "Insira seus dados abaixo"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Entrar"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Este é um serviço DEMONSTRATIVO, NÃO USE para trabalho real, os projetos "
+"serão apagados periodicamente."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Só quer experimentar?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Criar conta de demonstração"
