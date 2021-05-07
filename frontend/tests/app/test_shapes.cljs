@@ -50,10 +50,6 @@
                (dwl/add-recent-color color))
              (rx/map
                (fn [new-state]
-                 (t/is (= (get-in new-state [:workspace-file
-                                             :data
-                                             :recent-colors])
-                          [color]))
                  (t/is (= (get-in new-state [:workspace-data
                                              :recent-colors])
                           [color]))))

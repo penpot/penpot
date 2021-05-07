@@ -61,6 +61,10 @@
   {:target :node-test
    :output-to "target/tests.js"
    :ns-regexp "^app.test-"
-   :autorun true}}}
+   :autorun true
 
+   :compiler-options
+   {:output-feature-set :es8
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}}}}
 
