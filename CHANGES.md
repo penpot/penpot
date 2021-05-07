@@ -14,6 +14,7 @@
 
 - Fix problem with `close-path` command [#917](https://github.com/penpot/penpot/issues/917)
 - Fix wrong query for obtain the profile default project-id
+- Fix problems with empty paths and shortcuts [#923](https://github.com/penpot/penpot/issues/923)
 
 ## 1.5.1-alpha
 

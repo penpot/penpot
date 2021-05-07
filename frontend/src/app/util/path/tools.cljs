@@ -8,14 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as gshp]
-   [app.util.svg :as usvg]
-   [cuerdas.core :as str]
-   [clojure.set :as set]
    [app.common.math :as mth]
    [app.util.path.commands :as upc]
    [app.util.path.geom :as upg]
-   ))
+   [clojure.set :as set]))
 
 (defn remove-line-curves
   "Remove all curves that have both handlers in the same position that the
@@ -235,70 +231,73 @@
   to keep everything consistent"
   [content points]
 
-  (let [content (d/with-prev content)]
+  (if (empty? points)
+    content
 
-    (loop [result []
-           last-handler nil
-           [cur-cmd prev-cmd] (first content)
-           content (rest content)]
+    (let [content (d/with-prev content)]
 
-      (if (nil? cur-cmd)
-        ;; The result with be an array of arrays were every entry is a subpath
-        (->> result
-             ;; remove empty and only 1 node subpaths
-             (filter #(> (count %) 1))
-             ;; flatten array-of-arrays plain array
-             (flatten)
-             (into []))
+      (loop [result []
+             last-handler nil
+             [cur-cmd prev-cmd] (first content)
+             content (rest content)]
 
-        (let [move? (= :move-to (:command cur-cmd))
-              curve? (= :curve-to (:command cur-cmd))
+        (if (nil? cur-cmd)
+          ;; The result with be an array of arrays were every entry is a subpath
+          (->> result
+               ;; remove empty and only 1 node subpaths
+               (filter #(> (count %) 1))
+               ;; flatten array-of-arrays plain array
+               (flatten)
+               (into []))
 
-              ;; When the old command was a move we start a subpath
-              result (if move? (conj result []) result)
+          (let [move? (= :move-to (:command cur-cmd))
+                curve? (= :curve-to (:command cur-cmd))
 
-              subpath (peek result)
+                ;; When the old command was a move we start a subpath
+                result (if move? (conj result []) result)
 
-              point (upc/command->point cur-cmd)
-              
-              old-prev-point (upc/command->point prev-cmd)
-              new-prev-point (upc/command->point (peek subpath))
+                subpath (peek result)
 
-              remove? (contains? points point)
+                point (upc/command->point cur-cmd)
 
-              
-              ;; We store the first handler for the first curve to be removed to
-              ;; use it for the first handler of the regenerated path
-              cur-handler (cond
-                            (and (not last-handler) remove? curve?)
-                            (select-keys (:params cur-cmd) [:c1x :c1y])
+                old-prev-point (upc/command->point prev-cmd)
+                new-prev-point (upc/command->point (peek subpath))
 
-                            (not remove?)
-                            nil
+                remove? (contains? points point)
 
-                            :else
-                            last-handler)
 
-              cur-cmd (cond-> cur-cmd
-                        ;; If we're starting a subpath and it's not a move make it a move
-                        (and (not move?) (empty? subpath))
-                        (assoc :command :move-to
-                               :params (select-keys (:params cur-cmd) [:x :y]))
+                ;; We store the first handler for the first curve to be removed to
+                ;; use it for the first handler of the regenerated path
+                cur-handler (cond
+                              (and (not last-handler) remove? curve?)
+                              (select-keys (:params cur-cmd) [:c1x :c1y])
 
-                        ;; If have a curve the first handler will be relative to the previous
-                        ;; point. We change the handler to the new previous point
-                        (and curve? (not (empty? subpath)) (not= old-prev-point new-prev-point))
-                        (update :params merge last-handler))
+                              (not remove?)
+                              nil
 
-              head-idx (dec (count result))
+                              :else
+                              last-handler)
 
-              result (cond-> result
-                       (not remove?)
-                       (update head-idx conj cur-cmd))]
-          (recur result
-                 cur-handler
-                 (first content)
-                 (rest content)))))))
+                cur-cmd (cond-> cur-cmd
+                          ;; If we're starting a subpath and it's not a move make it a move
+                          (and (not move?) (empty? subpath))
+                          (assoc :command :move-to
+                                 :params (select-keys (:params cur-cmd) [:x :y]))
+
+                          ;; If have a curve the first handler will be relative to the previous
+                          ;; point. We change the handler to the new previous point
+                          (and curve? (not (empty? subpath)) (not= old-prev-point new-prev-point))
+                          (update :params merge last-handler))
+
+                head-idx (dec (count result))
+
+                result (cond-> result
+                         (not remove?)
+                         (update head-idx conj cur-cmd))]
+            (recur result
+                   cur-handler
+                   (first content)
+                   (rest content))))))))
 
 (defn join-nodes
   "Creates new segments between points that weren't previously"
