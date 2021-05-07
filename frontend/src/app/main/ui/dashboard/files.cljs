@@ -8,6 +8,7 @@
   (:require
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -77,15 +78,11 @@
      [:a.btn-secondary.btn-small {:on-click on-create-clicked}
       (tr "dashboard.new-file")]]))
 
-(defn files-ref
-  [project-id]
-  (l/derived (l/in [:files project-id]) st/state))
-
 (mf/defc files-section
   [{:keys [project team] :as props}]
-  (let [files-ref (mf/use-memo (mf/deps (:id project)) #(files-ref (:id project)))
-        files-map (mf/deref files-ref)
+  (let [files-map (mf/deref refs/dashboard-files)
         files     (->> (vals files-map)
+                       (filter #(= (:id project) (:project-id %)))
                        (sort-by :modified-at)
                        (reverse))]
 

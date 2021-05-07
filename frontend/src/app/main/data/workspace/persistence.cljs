@@ -310,8 +310,8 @@
   (us/assert ::us/uuid team-id)
   (ptk/reify ::fetch-shared-files
     ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query :shared-files params)
+    (watch [it state stream]
+      (->> (rp/query :team-shared-files {:team-id team-id})
            (rx/map shared-files-fetched)))))
 
 (defn shared-files-fetched

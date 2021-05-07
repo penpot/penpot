@@ -25,45 +25,29 @@
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
-  [{:keys [locale team] :as props}]
-  (let [create #(st/emit! (dd/create-project {:team-id (:id team)}))]
+  []
+  (let [create (st/emitf (dd/create-project))]
     [:header.dashboard-header
      [:div.dashboard-title
-      [:h1 (t locale "dashboard.projects-title")]]
+      [:h1 (tr "dashboard.projects-title")]]
      [:a.btn-secondary.btn-small {:on-click create}
-      (t locale "dashboard.new-project")]]))
-
-(defn files-ref
-  [project-id]
-  (l/derived (l/in [:files project-id]) st/state))
-
-(defn recent-ref
-  [project-id]
-  (l/derived (l/in [:recent-files project-id]) st/state))
+      (tr "dashboard.new-project")]]))
 
 (mf/defc project-item
-  [{:keys [project first? locale] :as props}]
-  (let [files-ref  (mf/use-memo (mf/deps project) #(files-ref (:id project)))
-        recent-ref (mf/use-memo (mf/deps project) #(recent-ref (:id project)))
-
-        files-map  (mf/deref files-ref)
-        recent-ids (mf/deref recent-ref)
-
-        files      (some->> recent-ids
-                            (map #(get files-map %))
-                            (sort-by :modified-at)
-                            (filter some?)
-                            (reverse))
+  [{:keys [project first? files] :as props}]
+  (let [locale     (mf/deref i18n/locale)
 
         project-id (:id project)
         team-id    (:team-id project)
         file-count (or (:count project) 0)
 
-        dstate  (mf/deref refs/dashboard-local)
-        edit-id (:project-for-edit dstate)
-        local (mf/use-state {:menu-open false
-                             :menu-pos nil
-                             :edition? (= (:id project) edit-id)})
+        dstate     (mf/deref refs/dashboard-local)
+        edit-id    (:project-for-edit dstate)
+
+        local
+        (mf/use-state {:menu-open false
+                       :menu-pos nil
+                       :edition? (= (:id project) edit-id)})
 
         on-nav
         (mf/use-callback
@@ -145,20 +129,26 @@
 
       [:a.btn-secondary.btn-small
        {:on-click create-file}
-       (t locale "dashboard.new-file")]]
+       (tr "dashboard.new-file")]]
 
      [:& line-grid
       {:project-id (:id project)
+       :project project
        :team-id team-id
        :on-load-more on-nav
        :files files}]]))
 
+
+(def recent-files-ref
+  (l/derived :dashboard-recent-files st/state))
+
 (mf/defc projects-section
   [{:keys [team projects] :as props}]
-  (let [projects (->> (vals projects)
-                      (sort-by :modified-at)
-                      (reverse))
-        locale   (mf/deref i18n/locale)]
+  (let [projects   (->> (vals projects)
+                        (sort-by :modified-at)
+                        (reverse))
+        recent-map (mf/deref recent-files-ref)
+        files      (vals recent-map)]
 
     (mf/use-effect
      (mf/deps team)
@@ -166,18 +156,20 @@
        (dom/set-html-title (tr "title.dashboard.projects"
                               (if (:is-default team)
                                 (tr "dashboard.your-penpot")
-                                (:name team))))
-       (st/emit! (dd/fetch-recent-files {:team-id (:id team)})
-                 (dd/clear-selected-files))))
+                                (:name team))))))
+
+    (mf/use-effect
+     (st/emitf (dd/fetch-recent-files)
+               (dd/clear-selected-files)))
 
     (when (seq projects)
       [:*
-       [:& header {:locale locale
-                   :team team}]
+       [:& header]
        [:section.dashboard-container
-        (for [project projects]
-          [:& project-item {:project project
-                            :locale locale
-                            :first? (= project (first projects))
-                            :key (:id project)}])]])))
+        (for [{:keys [id] :as project} projects]
+          (let [files (some->> files (filterv #(= id (:project-id %))))]
+            [:& project-item {:project project
+                              :files   files
+                              :first? (= project (first projects))
+                              :key (:id project)}]))]])))
 

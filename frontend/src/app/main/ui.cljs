@@ -107,85 +107,85 @@
 (mf/defc main-page
   {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}
   [{:keys [route] :as props}]
+  (let [{:keys [data params]} route]
+    [:& (mf/provider ctx/current-route) {:value route}
+     (case (:name data)
+       (:auth-login
+        :auth-register
+        :auth-register-success
+        :auth-recovery-request
+        :auth-recovery)
+       [:& auth {:route route}]
 
-  [:& (mf/provider ctx/current-route) {:value route}
-   (case (get-in route [:data :name])
-     (:auth-login
-      :auth-register
-      :auth-register-success
-      :auth-recovery-request
-      :auth-recovery)
-     [:& auth {:route route}]
+       :auth-verify-token
+       [:& verify-token {:route route}]
 
-     :auth-verify-token
-     [:& verify-token {:route route}]
+       (:settings-profile
+        :settings-password
+        :settings-options
+        :settings-feedback)
+       [:& settings/settings {:route route}]
 
-     (:settings-profile
-      :settings-password
-      :settings-options
-      :settings-feedback)
-     [:& settings/settings {:route route}]
+       :debug-icons-preview
+       (when *assert*
+         [:div.debug-preview
+          [:h1 "Cursors"]
+          [:& c/debug-preview]
+          [:h1 "Icons"]
+          [:& i/debug-icons-preview]
+          ])
 
-     :debug-icons-preview
-     (when *assert*
-       [:div.debug-preview
-        [:h1 "Cursors"]
-        [:& c/debug-preview]
-        [:h1 "Icons"]
-        [:& i/debug-icons-preview]
-        ])
+       (:dashboard-search
+        :dashboard-projects
+        :dashboard-files
+        :dashboard-libraries
+        :dashboard-fonts
+        :dashboard-font-providers
+        :dashboard-team-members
+        :dashboard-team-settings)
+       [:*
+        #_[:div.modal-wrapper
+           [:& app.main.ui.onboarding/release-notes-modal {:version "1.5"}]]
+        [:& dashboard {:route route}]]
 
-     (:dashboard-search
-      :dashboard-projects
-      :dashboard-files
-      :dashboard-libraries
-      :dashboard-fonts
-      :dashboard-font-providers
-      :dashboard-team-members
-      :dashboard-team-settings)
-     [:*
-      #_[:div.modal-wrapper
-         [:& app.main.ui.onboarding/release-notes-modal {:version "1.5"}]]
-      [:& dashboard {:route route}]]
+       :viewer
+       (let [index   (get-in route [:query-params :index])
+             token   (get-in route [:query-params :token])
+             section (get-in route [:query-params :section] :interactions)
+             file-id (get-in route [:path-params :file-id])
+             page-id (get-in route [:path-params :page-id])]
+         [:& fs/fullscreen-wrapper {}
+          (if (= section :handoff)
+            [:& handoff {:page-id page-id
+                         :file-id file-id
+                         :index index
+                         :token token}]
+            [:& viewer-page {:page-id page-id
+                             :file-id file-id
+                             :section section
+                             :index index
+                             :token token}])])
 
-     :viewer
-     (let [index   (get-in route [:query-params :index])
-           token   (get-in route [:query-params :token])
-           section (get-in route [:query-params :section] :interactions)
-           file-id (get-in route [:path-params :file-id])
-           page-id (get-in route [:path-params :page-id])]
-       [:& fs/fullscreen-wrapper {}
-        (if (= section :handoff)
-          [:& handoff {:page-id page-id
-                       :file-id file-id
-                       :index index
-                       :token token}]
-          [:& viewer-page {:page-id page-id
-                           :file-id file-id
-                           :section section
-                           :index index
-                           :token token}])])
+       :render-object
+       (do
+         (let [file-id   (uuid (get-in route [:path-params :file-id]))
+               page-id   (uuid (get-in route [:path-params :page-id]))
+               object-id (uuid (get-in route [:path-params :object-id]))]
+           [:& render/render-object {:file-id file-id
+                                     :page-id page-id
+                                     :object-id object-id}]))
 
-     :render-object
-     (do
-       (let [file-id   (uuid (get-in route [:path-params :file-id]))
-             page-id   (uuid (get-in route [:path-params :page-id]))
-             object-id (uuid (get-in route [:path-params :object-id]))]
-         [:& render/render-object {:file-id file-id
-                                   :page-id page-id
-                                   :object-id object-id}]))
-
-     :workspace
-     (let [project-id (uuid (get-in route [:params :path :project-id]))
-           file-id (uuid (get-in route [:params :path :file-id]))
-           page-id (uuid (get-in route [:params :query :page-id]))
-           layout-name (get-in route [:params :query :layout])]
-       [:& workspace/workspace {:project-id project-id
-                                :file-id file-id
-                                :page-id page-id
-                                :layout-name (keyword layout-name)
-                                :key file-id}])
-     nil)])
+       :workspace
+       (let [project-id (some-> params :path :project-id uuid)
+             file-id    (some-> params :path :file-id uuid)
+             page-id    (some-> params :query :page-id uuid)
+             layout     (some-> params :query :layout keyword)]
+         [:& workspace/workspace {:project-id project-id
+                                  :file-id file-id
+                                  :page-id page-id
+                                  :layout-name layout
+                                  :key file-id}])
+       nil)]))
 
 (mf/defc app
   []
@@ -249,7 +249,7 @@
         context (str/fmt "ns: '%s'\nname: '%s'\nfile: '%s:%s'"
                               (:ns context)
                               (:name context)
-                              (str cfg/public-uri "/js/cljs-runtime/" (:file context))
+                              (str cfg/public-uri "js/cljs-runtime/" (:file context))
                               (:line context))]
     (ts/schedule
      (st/emitf

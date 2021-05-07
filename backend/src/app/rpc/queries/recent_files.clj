@@ -13,6 +13,8 @@
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
+;; DEPRECATED: should be removed on 1.6.x
+
 (def sql:recent-files
   "with recent_files as (
      select f.*, row_number() over w as row_num

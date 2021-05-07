@@ -160,16 +160,12 @@
        ;; Initialize notifications (websocket connection) and the file persistence
        (->> stream
             (rx/filter (ptk/type? ::dwp/bundle-fetched))
-            (rx/first)
-            (rx/mapcat #(rx/of (dwn/initialize file-id)
-                               (dwp/initialize-file-persistence file-id))))
-
-       ;; Initialize Indexes (webworker)
-       (->> stream
-            (rx/filter (ptk/type? ::dwp/bundle-fetched))
+            (rx/take 1)
             (rx/map deref)
-            (rx/map dwc/initialize-indices)
-            (rx/first))
+            (rx/mapcat (fn [bundle]
+                         (rx/of (dwn/initialize file-id)
+                                (dwp/initialize-file-persistence file-id)
+                                (dwc/initialize-indices bundle)))))
 
        ;; Mark file initialized when indexes are ready
        (->> stream
@@ -217,35 +213,39 @@
       (rx/of (dwn/finalize file-id)
              ::dwp/finalize))))
 
+(declare go-to-page)
 
 (defn initialize-page
   [page-id]
+  (us/assert ::us/uuid page-id)
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
       (let [;; we maintain a cache of page state for user convenience
             ;; with the exception of the selection; when user abandon
             ;; the current page, the selection is lost
-            local      (-> state
-                           (get-in [:workspace-cache page-id] workspace-local-default)
-                           (assoc :selected (d/ordered-set)))
-            page       (-> (get-in state [:workspace-data :pages-index page-id])
-                           (select-keys [:id :name]))]
-        (assoc state
-               :current-page-id page-id   ; mainly used by events
-               :trimmed-page page
-               :workspace-local local)))))
+
+            page    (get-in state [:workspace-data :pages-index page-id])
+            local   (-> state
+                        (get-in [:workspace-cache page-id] workspace-local-default)
+                        (assoc :selected (d/ordered-set)))]
+        (-> state
+            (assoc :current-page-id page-id)
+            (assoc :trimmed-page (select-keys page [:id :name]))
+            (assoc :workspace-local local)
+            (update-in [:route :params :query] assoc :page-id (str page-id)))))))
 
 (defn finalize-page
   [page-id]
-  (us/verify ::us/uuid page-id)
+  (us/assert ::us/uuid page-id)
   (ptk/reify ::finalize-page
     ptk/UpdateEvent
     (update [_ state]
-      (let [local (-> (:workspace-local state)
-                      (dissoc :edition)
-                      (dissoc :edit-path)
-                      (dissoc :selected))]
+      (let [page-id (or page-id (get-in state [:workspace-data :pages 0]))
+            local   (-> (:workspace-local state)
+                        (dissoc :edition)
+                        (dissoc :edit-path)
+                        (dissoc :selected))]
         (-> state
             (assoc-in [:workspace-cache page-id] local)
             (dissoc :current-page-id :workspace-local :trimmed-page :workspace-drawing))))))
@@ -1043,7 +1043,7 @@
             uchg {:type :mov-page
                   :id id
                   :index cidx}]
-        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes [rchg] [uchg]))))))
 
 ;; --- Shape / Selection Alignment and Distribution
 
@@ -1169,16 +1169,27 @@
         (rx/of (rt/nav :workspace/page params))))))
 
 (defn go-to-page
-  [page-id]
-  (us/verify ::us/uuid page-id)
-  (ptk/reify ::go-to-page
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [project-id (get-in state [:workspace-project :id])
-            file-id    (get-in state [:workspace-file :id])
-            pparams    {:file-id file-id :project-id project-id}
-            qparams    {:page-id page-id}]
-        (rx/of (rt/nav :workspace pparams qparams))))))
+  ([]
+   (ptk/reify ::go-to-page
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [project-id (:current-project-id state)
+             file-id    (:current-file-id state)
+             page-id    (get-in state [:workspace-data :pages 0])
+
+             pparams    {:file-id file-id :project-id project-id}
+             qparams    {:page-id page-id}]
+         (rx/of (rt/nav :workspace pparams qparams))))))
+  ([page-id]
+   (us/verify ::us/uuid page-id)
+   (ptk/reify ::go-to-page
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [project-id (:current-project-id state)
+             file-id    (:current-file-id state)
+             pparams    {:file-id file-id :project-id project-id}
+             qparams    {:page-id page-id}]
+         (rx/of (rt/nav :workspace pparams qparams)))))))
 
 (defn go-to-layout
   [layout]
