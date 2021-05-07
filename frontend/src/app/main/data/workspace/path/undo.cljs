@@ -124,7 +124,8 @@
            dissoc :undo-lock :undo-stack)))))
 
 (defn- stop-undo? [event]
-  (= :app.main.data.workspace.common/clear-edition-mode (ptk/type event)))
+  (or (= :app.main.data.workspace.common/clear-edition-mode (ptk/type event))
+      (= :app.main.data.workspace/finalize-page (ptk/type event))))
 
 (def path-content-ref
   (letfn [(selector [state]
