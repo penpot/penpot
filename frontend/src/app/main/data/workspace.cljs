@@ -240,10 +240,13 @@
   (ptk/reify ::finalize-page
     ptk/UpdateEvent
     (update [_ state]
-      (let [local (:workspace-local state)]
+      (let [local (-> (:workspace-local state)
+                      (dissoc :edition)
+                      (dissoc :edit-path)
+                      (dissoc :selected))]
         (-> state
             (assoc-in [:workspace-cache page-id] local)
-            (dissoc :current-page-id :workspace-local :trimmed-page))))))
+            (dissoc :current-page-id :workspace-local :trimmed-page :workspace-drawing))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Page CRUD

@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
@@ -63,9 +64,12 @@
 
             [rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
 
-        (rx/of (dch/commit-changes rch uch {:commit-local? true})
-               (selection/update-selection point-change)
-               (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler)))))))
+        (if (empty? new-content)
+          (rx/of (dch/commit-changes rch uch {:commit-local? true})
+                 dwc/clear-edition-mode)
+          (rx/of (dch/commit-changes rch uch {:commit-local? true})
+                 (selection/update-selection point-change)
+                 (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler))))))))
 
 (defn modify-content-point
   [content {dx :x dy :y} modifiers point]

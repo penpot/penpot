@@ -21,6 +21,8 @@
 (defn end-path-event? [{:keys [type shift] :as event}]
   (or (= (ptk/type event) ::common/finish-path)
       (= (ptk/type event) :esc-pressed)
+      (= :app.main.data.workspace.common/clear-edition-mode (ptk/type event))
+      (= :app.main.data.workspace/finalize-page (ptk/type event))
       (= event :interrupt) ;; ESC
       (and (ms/mouse-double-click? event))))
 
