@@ -8,6 +8,7 @@
   (:require
    [app.util.transit :as t]
    [app.util.timers :as tm]
+   [app.util.globals :as g]
    [app.common.exceptions :as ex]))
 
 (defn- ^boolean is-worker?
@@ -36,17 +37,18 @@
 
 (defn- load
   [storage]
-  (let [len (.-length ^js storage)]
-    (reduce (fn [res index]
-              (let [key (.key ^js storage index)
-                    val (.getItem ^js storage key)]
-                (try
-                  (assoc res (t/decode key) (t/decode val))
-                  (catch :default e
-                    res))))
-            {}
-            (range len))))
+  (when storage
+    (let [len (.-length ^js storage)]
+      (reduce (fn [res index]
+                (let [key (.key ^js storage index)
+                      val (.getItem ^js storage key)]
+                  (try
+                    (assoc res (t/decode key) (t/decode val))
+                    (catch :default e
+                      res))))
+              {}
+              (range len)))))
 
 
-(defonce storage (atom (load js/localStorage)))
+(defonce storage (atom (load (unchecked-get g/global "localStorage"))))
 (add-watch storage :persistence #(persist js/localStorage %3 %4))
