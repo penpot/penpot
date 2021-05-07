@@ -162,8 +162,7 @@
                                  file-id]
                           :or {save-undo? true}
                           :as opts}]
-   (us/assert ::cp/changes changes)
-   (us/assert ::cp/changes undo-changes)
+
    (log/debug :msg "commit-changes"
               :js/changes changes
               :js/undo-changes undo-changes)
@@ -178,12 +177,13 @@
        ptk/UpdateEvent
        (update [_ state]
          (let [current-file-id (get state :current-file-id)
-               file-id (or file-id current-file-id)
-               path    (if (= file-id current-file-id)
-                         [:workspace-data]
-                         [:workspace-libraries file-id :data])]
+               file-id         (or file-id current-file-id)
+               path            (if (= file-id current-file-id)
+                                 [:workspace-data]
+                                 [:workspace-libraries file-id :data])]
            (try
              (us/assert ::spec/changes changes)
+             (us/assert ::spec/changes undo-changes)
              (update-in state path cp/process-changes changes false)
              (catch :default e
                (vreset! error e)

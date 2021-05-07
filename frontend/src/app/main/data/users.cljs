@@ -58,19 +58,28 @@
   [team-id]
   (swap! storage assoc ::current-team-id team-id))
 
-
 ;; --- EVENT: fetch-teams
+
+(defn teams-fetched
+  [teams]
+  (let [teams (d/index-by :id teams)]
+    (ptk/reify ::teams-fetched
+      IDeref
+      (-deref [_] teams)
+
+      ptk/UpdateEvent
+      (update [_ state]
+        (assoc state :teams teams)))))
 
 (defn fetch-teams
   []
-  (letfn [(on-fetched [state data]
-            (let [teams (d/index-by :id data)]
-              (assoc state :teams teams)))]
-    (ptk/reify ::fetch-teams
-      ptk/WatchEvent
-      (watch [_ state s]
-        (->> (rp/query! :teams)
-             (rx/map (fn [data] #(on-fetched % data))))))))
+  (ptk/reify ::fetch-teams
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query! :teams)
+           (rx/map teams-fetched)))))
+
+;; --- EVENT: fetch-profile
 
 (defn profile-fetched
   [{:keys [id] :as profile}]
@@ -93,8 +102,6 @@
           (i18n/set-locale! (:lang profile))
           (some-> (:theme profile)
                   (theme/set-current-theme!)))))))
-
-;; --- Fetch Profile
 
 (defn fetch-profile
   []

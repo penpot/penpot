@@ -100,8 +100,13 @@
     (mf/use-layout-effect
      (mf/deps page-id)
      (fn []
-       (st/emit! (dw/initialize-page page-id))
-       (st/emitf (dw/finalize-page page-id))))
+       (if (nil? page-id)
+         (st/emit! (dw/go-to-page))
+         (st/emit! (dw/initialize-page page-id)))
+
+       (fn []
+         (when page-id
+           (st/emitf (dw/finalize-page page-id))))))
 
     (when page
       [:& workspace-content {:key page-id
@@ -116,7 +121,6 @@
 (mf/defc workspace
   {::mf/wrap [mf/memo]}
   [{:keys [project-id file-id page-id layout-name] :as props}]
-
   (let [file    (mf/deref refs/workspace-file)
         project (mf/deref refs/workspace-project)
         layout  (mf/deref refs/workspace-layout)]

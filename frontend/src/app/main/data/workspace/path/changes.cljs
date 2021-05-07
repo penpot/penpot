@@ -21,9 +21,9 @@
   [objects page-id shape old-content new-content]
   (us/verify ::spec/content old-content)
   (us/verify ::spec/content new-content)
-  (let [shape-id (:id shape)
-        frame-id (:frame-id shape)
-        parent-id (:parent-id shape)
+  (let [shape-id     (:id shape)
+        frame-id     (:frame-id shape)
+        parent-id    (:parent-id shape)
         parent-index (cp/position-on-parent shape-id objects)
 
         [old-points old-selrect] (helpers/content->points+selrect shape old-content)
@@ -72,7 +72,6 @@
 (defn save-path-content
   ([]
    (save-path-content {}))
-
   ([{:keys [preserve-move-to] :or {preserve-move-to false}}]
    (ptk/reify ::save-path-content
      ptk/UpdateEvent
@@ -86,14 +85,14 @@
 
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [objects (wsh/lookup-page-objects state)
-             id (get-in state [:workspace-local :edition])
+       (let [objects     (wsh/lookup-page-objects state)
+             page-id     (:current-page-id state)
+             id          (get-in state [:workspace-local :edition])
              old-content (get-in state [:workspace-local :edit-path id :old-content])]
          (if (some? old-content)
-           (let [shape (get-in state (st/get-path state))
-                 page-id (:current-page-id state)
+           (let [shape     (get-in state (st/get-path state))
                  [rch uch] (generate-path-changes objects page-id shape old-content (:content shape))]
-             (rx/of (dch/commit-changes rch uch {:commit-local? true})))
+             (rx/of (dch/commit-changes rch uch)))
            (rx/empty)))))))
 
 
