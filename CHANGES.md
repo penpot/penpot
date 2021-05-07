@@ -6,6 +6,7 @@
 ### :bug: Bugs fixed
 
 - Remove interactions when the destination artboard is deleted [Taiga #1656](https://tree.taiga.io/project/penpot/issue/1656)
+- Fix snap index problem [Taiga #1661](https://tree.taiga.io/project/penpot/issue/1661)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
