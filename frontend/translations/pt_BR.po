@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-05-07 08:30+0000\n"
-"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
+"Last-Translator: Guilherme Dimas <guilhermedimasrosa@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -45,3 +45,52 @@ msgstr "Carregando..."
 
 msgid "labels.upload"
 msgstr "Carregar"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.go-back-to-login"
+msgstr "Voltar!"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Nome completo"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Esqueceu a senha?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "E-mail"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Confirmar senha"
+
+msgid "modals.delete-font.message"
+msgstr ""
+"Tem certeza que deseja excluir essa fonte? Ela não será carregada se for "
+"utilizada em um arquivo."
+
+msgid "labels.fonts"
+msgstr "Fontes"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Provedores de fonte - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Fontes - %s - Penpot"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Verifique seu e-mail e clique no link de verificação para começar a usar o "
+"Penpot."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Já tem uma conta?"
+
+msgid "modals.delete-font.title"
+msgstr "Excluindo fonte"
