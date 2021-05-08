@@ -86,23 +86,26 @@
     (us/assert ::cp/color color)
     (ptk/reify ::add-color
       ptk/WatchEvent
-      (watch [_ state s]
+      (watch [it state s]
         (let [rchg {:type :add-color
                     :color color}
               uchg {:type :del-color
                     :id id}]
           (rx/of #(assoc-in % [:workspace-local :color-for-rename] id)
-                 (dch/commit-changes [rchg] [uchg] {:commit-local? true})))))))
-
+                 (dch/commit-changes {:redo-changes [rchg]
+                                      :undo-chages [uchg]
+                                      :origin it})))))))
 (defn add-recent-color
   [color]
   (us/assert ::cp/recent-color color)
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
-    (watch [_ state s]
+    (watch [it state s]
       (let [rchg {:type :add-recent-color
                   :color color}]
-        (rx/of (dch/commit-changes [rchg] [] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                    :undo-chages []
+                                    :origin it}))))))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
@@ -116,13 +119,15 @@
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-color
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [prev (get-in state [:workspace-data :colors id])
             rchg {:type :mod-color
                   :color color}
             uchg {:type :mod-color
                   :color prev}]
-        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
+        (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                    :undo-chages [uchg]
+                                    :origin it})
                (sync-file (:current-file-id state) file-id))))))
 
 (defn delete-color
@@ -130,26 +135,30 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::delete-color
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [prev (get-in state [:workspace-data :colors id])
             rchg {:type :del-color
                   :id id}
             uchg {:type :add-color
                   :color prev}]
-        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                    :undo-chages [uchg]
+                                    :origin it}))))))
 
 (defn add-media
   [{:keys [id] :as media}]
   (us/assert ::cp/media-object media)
   (ptk/reify ::add-media
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [obj  (select-keys media [:id :name :width :height :mtype])
             rchg {:type :add-media
                   :object obj}
             uchg {:type :del-media
                   :id id}]
-        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                    :undo-changes [uchg]
+                                    :origin it}))))))
 
 (defn rename-media
   [id new-name]
@@ -157,7 +166,7 @@
   (us/assert ::us/string new-name)
   (ptk/reify ::rename-media
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [object (get-in state [:workspace-data :media id])
             [path name] (cp/parse-path-name new-name)
 
@@ -171,20 +180,24 @@
                                 :name (:name object)
                                 :path (:path object)}}]]
 
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
 
 (defn delete-media
   [{:keys [id] :as params}]
   (us/assert ::us/uuid id)
   (ptk/reify ::delete-media
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [prev (get-in state [:workspace-data :media id])
             rchg {:type :del-media
                   :id id}
             uchg {:type :add-media
                   :object prev}]
-        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                    :undo-changes [uchg]
+                                    :origin it}))))))
 
 (defn add-typography
   ([typography] (add-typography typography true))
@@ -193,12 +206,14 @@
      (us/assert ::cp/typography typography)
      (ptk/reify ::add-typography
        ptk/WatchEvent
-       (watch [_ state s]
+       (watch [it state s]
          (let [rchg {:type :add-typography
                      :typography typography}
                uchg {:type :del-typography
                      :id (:id typography)}]
-           (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
+           (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                       :undo-changes [uchg]
+                                       :origin it})
                   #(cond-> %
                      edit?
                      (assoc-in [:workspace-local :rename-typography] (:id typography))))))))))
@@ -209,13 +224,15 @@
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-typography
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [prev (get-in state [:workspace-data :typographies (:id typography)])
             rchg {:type :mod-typography
                   :typography typography}
             uchg {:type :mod-typography
                   :typography prev}]
-        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
+        (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                    :undo-changes [uchg]
+                                    :origin it})
                (sync-file (:current-file-id state) file-id))))))
 
 (defn delete-typography
@@ -223,19 +240,21 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::delete-typography
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [prev (get-in state [:workspace-data :typographies id])
             rchg {:type :del-typography
                   :id id}
             uchg {:type :add-typography
                   :typography prev}]
-        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                    :undo-changes [uchg]
+                                    :origin it}))))))
 
 (def add-component
   "Add a new component to current file library, from the currently selected shapes."
   (ptk/reify ::add-component
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
@@ -244,7 +263,9 @@
         (let [[group rchanges uchanges]
               (dwlh/generate-add-component selected objects page-id file-id)]
           (when-not (empty? rchanges)
-            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes {:redo-changes rchanges
+                                        :undo-changes uchanges
+                                        :origin it})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (defn rename-component
@@ -254,7 +275,7 @@
   (us/assert ::us/string new-name)
   (ptk/reify ::rename-component
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [[path name] (cp/parse-path-name new-name)
             component (get-in state [:workspace-data :components id])
             objects (get component :objects)
@@ -275,14 +296,16 @@
                        :path (:path component)
                        :objects objects}]]
 
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
   [{:keys [id] :as params}]
   (ptk/reify ::duplicate-component
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [component      (cp/get-component id
                                              (:current-file-id state)
                                              (dwlh/get-local-file state)
@@ -303,7 +326,9 @@
             uchanges [{:type :del-component
                        :id (:id new-shape)}]]
 
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
@@ -311,7 +336,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::delete-component
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [component (get-in state [:workspace-data :components id])
 
             rchanges [{:type :del-component
@@ -323,7 +348,9 @@
                        :path (:path component)
                        :shapes (vals (:objects component))}]]
 
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
 
 (defn instantiate-component
   "Create a new shape in the current page, from the component with the given id
@@ -334,7 +361,7 @@
   (us/assert ::us/point position)
   (ptk/reify ::instantiate-component
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [local-library   (dwlh/get-local-file state)
             libraries       (get state :workspace-libraries)
             component       (cp/get-component component-id file-id local-library libraries)
@@ -400,7 +427,9 @@
                              :ignore-touched true})
                           new-shapes)]
 
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it})
                (dwc/select-shapes (d/ordered-set (:id new-shape))))))))
 
 (defn detach-component
@@ -410,7 +439,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::detach-component
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
             shapes (cp/get-object-with-children id objects)
@@ -463,14 +492,16 @@
                                            :val (:touched obj)}]})
                           shapes)]
 
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
 
 (defn nav-to-component-file
   [file-id]
   (us/assert ::us/uuid file-id)
   (ptk/reify ::nav-to-component-file
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [file (get-in state [:workspace-libraries file-id])
             pparams {:project-id (:project-id file)
                      :file-id (:id file)}
@@ -499,7 +530,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::reset-component
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
       (let [local-library (dwlh/get-local-file state)
             libraries     (dwlh/get-libraries state)
@@ -516,7 +547,9 @@
                                                                   rchanges
                                                                   local-library))
 
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
 
 (defn update-component
   "Modify the component linked to the shape with the given id, in the
@@ -531,7 +564,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::update-component
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
       (let [page-id       (get state :current-page-id)
             local-library (dwlh/get-local-file state)
@@ -571,12 +604,14 @@
                                   file))
 
         (rx/of (when (seq local-rchanges)
-                 (dch/commit-changes local-rchanges local-uchanges
-                                     {:commit-local? true
+                 (dch/commit-changes {:redo-changes local-rchanges
+                                      :undo-changes local-uchanges
+                                      :origin it
                                       :file-id (:id local-library)}))
                (when (seq rchanges)
-                 (dch/commit-changes rchanges uchanges
-                                     {:commit-local? true
+                 (dch/commit-changes {:redo-changes rchanges
+                                      :undo-changes uchanges
+                                      :origin it
                                       :file-id file-id})))))))
 
 (declare sync-file-2nd-stage)
@@ -597,7 +632,7 @@
         state))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (log/info :msg "SYNC-FILE"
                 :file (dwlh/pretty-file file-id state)
                 :library (dwlh/pretty-file library-id state))
@@ -625,8 +660,10 @@
         (rx/concat
           (rx/of (dm/hide-tag :sync-dialog))
           (when rchanges
-            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true
-                                                          :file-id file-id})))
+            (rx/of (dch/commit-changes {:redo-changes rchanges
+                                        :undo-changes uchanges
+                                        :origin it
+                                        :file-id file-id})))
           (when (not= file-id library-id)
             ;; When we have just updated the library file, give some time for the
             ;; update to finish, before marking this file as synced.
@@ -655,7 +692,7 @@
   (us/assert ::us/uuid library-id)
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (log/info :msg "SYNC-FILE (2nd stage)"
                 :file (dwlh/pretty-file file-id state)
                 :library (dwlh/pretty-file library-id state))
@@ -668,8 +705,10 @@
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
                                                                           rchanges
                                                                           file))
-          (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true
-                                                        :file-id file-id})))))))
+          (rx/of (dch/commit-changes {:redo-changes rchanges
+                                      :undo-changes uchanges
+                                      :origin it
+                                      :file-id file-id})))))))
 
 (def ignore-sync
   (ptk/reify ::ignore-sync
@@ -678,7 +717,7 @@
       (assoc-in state [:workspace-file :ignore-sync-until] (dt/now)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (rp/mutation :ignore-sync
                    {:file-id (get-in state [:workspace-file :id])
                     :date (dt/now)}))))
@@ -688,7 +727,7 @@
   (us/assert ::us/uuid file-id)
   (ptk/reify ::notify-sync-file
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [libraries-need-sync (filter #(> (:modified-at %) (:synced-at %))
                                         (vals (get state :workspace-libraries)))
             do-update #(do (apply st/emit! (map (fn [library]

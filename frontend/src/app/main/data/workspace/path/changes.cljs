@@ -84,7 +84,7 @@
          (assoc-in state (st/get-path state :content) content)))
 
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [it state stream]
        (let [objects     (wsh/lookup-page-objects state)
              page-id     (:current-page-id state)
              id          (get-in state [:workspace-local :edition])
@@ -92,7 +92,9 @@
          (if (some? old-content)
            (let [shape     (get-in state (st/get-path state))
                  [rch uch] (generate-path-changes objects page-id shape old-content (:content shape))]
-             (rx/of (dch/commit-changes rch uch)))
+             (rx/of (dch/commit-changes {:redo-changes rch
+                                         :undo-changes uch
+                                         :origin it})))
            (rx/empty)))))))
 
 

@@ -135,7 +135,7 @@
             (assoc-in [:workspace-local :transform] :resize)))
 
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [it state stream]
         (let [initial-position @ms/mouse-position
               stoper  (rx/filter ms/mouse-up? stream)
               layout  (:workspace-layout state)
@@ -169,7 +169,7 @@
           (assoc-in [:workspace-local :transform] :rotate)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [stoper          (rx/filter ms/mouse-up? stream)
             group           (gsh/selection-rect shapes)
             group-center    (gsh/center-selrect group)
@@ -208,7 +208,7 @@
   []
   (ptk/reify ::start-move-selected
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [initial  (deref ms/mouse-position)
             selected (wsh/lookup-selected state)
             stopper  (rx/filter ms/mouse-up? stream)]
@@ -231,7 +231,7 @@
 (defn start-move-duplicate [from-position]
   (ptk/reify ::start-move-selected
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (->> stream
            (rx/filter (ptk/type? ::dws/duplicate-selected))
            (rx/first)
@@ -240,7 +240,7 @@
 (defn calculate-frame-for-move [ids]
   (ptk/reify ::calculate-frame-for-move
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [position @ms/mouse-position
             page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
@@ -267,7 +267,9 @@
 
         (when-not (empty? uch)
           (rx/of dwu/pop-undo-into-transaction
-                 (dch/commit-changes rch uch {:commit-local? true})
+                 (dch/commit-changes {:redo-changes rch
+                                      :undo-changes uch
+                                      :origin it})
                  (dwu/commit-undo-transaction)
                  (dwc/expand-collapse frame-id)))))))
 
@@ -281,7 +283,7 @@
            (assoc-in [:workspace-local :transform] :move)))
 
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [it state stream]
        (let [page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)
              ids     (if (nil? ids) (wsh/lookup-selected state) ids)
@@ -362,7 +364,7 @@
           state))
 
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [it state stream]
         (if (= same-event (get-in state [:workspace-local :current-move-selected]))
           (let [selected (wsh/lookup-selected state)
                 move-events (->> stream
@@ -449,7 +451,7 @@
 (defn increase-rotation [ids rotation]
   (ptk/reify ::increase-rotation
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
 
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
@@ -465,7 +467,7 @@
   (us/verify (s/coll-of uuid?) ids)
   (ptk/reify ::apply-modifiers
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [objects (wsh/lookup-page-objects state)
             children-ids (->> ids (mapcat #(cp/get-children % objects)))
             ids-with-children (d/concat [] children-ids ids)]
@@ -511,7 +513,7 @@
          #(reduce update-shape % ids))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
             ids (d/concat [] ids (mapcat #(cp/get-children % objects) ids))]
@@ -520,7 +522,7 @@
 (defn flip-horizontal-selected []
   (ptk/reify ::flip-horizontal-selected
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [objects  (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state)
             shapes   (map #(get objects %) selected)
@@ -537,7 +539,7 @@
 (defn flip-vertical-selected []
   (ptk/reify ::flip-vertical-selected
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [objects  (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state)
             shapes   (map #(get objects %) selected)

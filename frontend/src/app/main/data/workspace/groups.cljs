@@ -100,7 +100,7 @@
 (def group-selected
   (ptk/reify ::group-selected
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
@@ -108,13 +108,15 @@
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group rchanges uchanges] (prepare-create-group page-id shapes "Group-" false)]
-            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes {:redo-changes rchanges
+                                        :undo-changes uchanges
+                                        :origin it})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (def ungroup-selected
   (ptk/reify ::ungroup-selected
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
@@ -124,12 +126,14 @@
                    (= (:type group) :group))
           (let [[rchanges uchanges]
                 (prepare-remove-group page-id group objects)]
-            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))))
+            (rx/of (dch/commit-changes {:redo-changes rchanges
+                                        :undo-changes uchanges
+                                        :origin it}))))))))
 
 (def mask-group
   (ptk/reify ::mask-group
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
@@ -178,13 +182,15 @@
                                 :page-id page-id
                                 :shapes [(:id group)]})]
 
-            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes {:redo-changes rchanges
+                                        :undo-changes uchanges
+                                        :origin it})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (def unmask-group
   (ptk/reify ::unmask-group
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)]
@@ -211,7 +217,9 @@
                            :page-id page-id
                            :shapes [(:id group)]}]]
 
-            (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dch/commit-changes {:redo-changes rchanges
+                                        :undo-changes uchanges
+                                        :origin it})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 

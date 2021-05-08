@@ -47,7 +47,7 @@
 (defn apply-content-modifiers []
   (ptk/reify ::apply-content-modifiers
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [objects (wsh/lookup-page-objects state)
 
             id (st/get-path-id state)
@@ -65,9 +65,13 @@
             [rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
 
         (if (empty? new-content)
-          (rx/of (dch/commit-changes rch uch {:commit-local? true})
+          (rx/of (dch/commit-changes {:redo-changes rch
+                                      :undo-changes uch
+                                      :origin it})
                  dwc/clear-edition-mode)
-          (rx/of (dch/commit-changes rch uch {:commit-local? true})
+          (rx/of (dch/commit-changes {:redo-changes rch
+                                      :undo-changes uch
+                                      :origin it})
                  (selection/update-selection point-change)
                  (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler))))))))
 
@@ -133,7 +137,7 @@
   [position shift?]
   (ptk/reify ::start-move-path-point
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [id (get-in state [:workspace-local :edition])
             selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
             selected? (contains? selected-points position)]
@@ -147,7 +151,7 @@
   [start-position]
   (ptk/reify ::drag-selected-points
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [stopper (->> stream (rx/filter ms/mouse-up?))
             id (get-in state [:workspace-local :edition])
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
@@ -202,7 +206,7 @@
             state)))
 
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [it state stream]
         (let [id (get-in state [:workspace-local :edition])
               current-move (get-in state [:workspace-local :edit-path id :current-move])]
           (if (= same-event current-move)
@@ -236,7 +240,7 @@
   [index prefix]
   (ptk/reify ::start-move-handler
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [id (get-in state [:workspace-local :edition])
             cx (d/prefix-keyword prefix :x)
             cy (d/prefix-keyword prefix :y)
@@ -292,7 +296,7 @@
           (assoc-in [:workspace-local :edit-path id :edit-mode] :draw))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [mode (get-in state [:workspace-local :edit-path id :edit-mode])]
         (rx/concat
          (rx/of (undo/start-path-undo))
@@ -322,5 +326,5 @@
             (update-in (st/get-path state :content) upt/split-segments #{from-p to-p} t))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (rx/of (changes/save-path-content {:preserve-move-to true})))))
