@@ -12,6 +12,7 @@
    [app.common.spec :as us]
    [app.main.data.workspace.undo :as dwu]
    [app.main.worker :as uw]
+   [app.main.store :as st]
    [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -66,7 +67,7 @@
    (us/assert fn? f)
    (ptk/reify ::update-shapes
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [it state stream]
        (let [page-id (:current-page-id state)
              objects (get-in state [:workspace-data :pages-index page-id :objects])
              reg-objects {:type :reg-objects :page-id page-id :shapes (vec ids)}]
@@ -79,7 +80,9 @@
                           rch (cond-> rch (and has-rch? reg-objects?) (conj reg-objects))
                           uch (cond-> uch (and has-rch? reg-objects?) (conj reg-objects))]
                       (when (and has-rch? has-uch?)
-                        (commit-changes rch uch {:commit-local? true}))))
+                        (commit-changes {:redo-changes rch
+                                         :undo-changes uch
+                                         :origin it}))))
 
              (let [id   (first ids)
                    obj1 (get objects id)
@@ -140,11 +143,13 @@
                          (conj uchanges uchg))))))]
     (ptk/reify ::update-shapes-recursive
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [it state stream]
         (let [page-id  (:current-page-id state)
               objects  (get-in state [:workspace-data :pages-index page-id :objects])
               [rchanges uchanges] (impl-gen-changes objects page-id (seq ids))]
-          (rx/of (commit-changes rchanges uchanges {:commit-local? true})))))))
+          (rx/of (commit-changes {:redo-changes rchanges
+                                  :undo-changes uchanges
+                                  :origin it})))))))
 
 (defn update-indices
   [page-id changes]
@@ -156,62 +161,60 @@
                 :changes changes}))))
 
 (defn commit-changes
-  ([changes undo-changes]
-   (commit-changes changes undo-changes {}))
-  ([changes undo-changes {:keys [save-undo?
-                                 file-id]
-                          :or {save-undo? true}
-                          :as opts}]
+  [{:keys [redo-changes undo-changes origin save-undo? file-id]
+    :or {save-undo? true}}]
 
-   (log/debug :msg "commit-changes"
-              :js/changes changes
-              :js/undo-changes undo-changes)
+  (log/debug :msg "commit-changes"
+             :js/redo-changes redo-changes
+             :js/undo-changes undo-changes)
 
-   (let [error (volatile! nil)]
-     (ptk/reify ::commit-changes
-       cljs.core/IDeref
-       (-deref [_]
-         {:file-id file-id
-          :changes changes})
+  (let [error (volatile! nil)]
+    (ptk/reify ::commit-changes
+      cljs.core/IDeref
+      (-deref [_]
+        {:file-id file-id
+         :hint-events @st/last-events
+         :hint-origin (ptk/type origin)
+         :changes redo-changes})
 
-       ptk/UpdateEvent
-       (update [_ state]
-         (let [current-file-id (get state :current-file-id)
-               file-id         (or file-id current-file-id)
-               path            (if (= file-id current-file-id)
-                                 [:workspace-data]
-                                 [:workspace-libraries file-id :data])]
-           (try
-             (us/assert ::spec/changes changes)
-             (us/assert ::spec/changes undo-changes)
-             (update-in state path cp/process-changes changes false)
-             (catch :default e
-               (vreset! error e)
-               state))))
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [current-file-id (get state :current-file-id)
+              file-id         (or file-id current-file-id)
+              path            (if (= file-id current-file-id)
+                                [:workspace-data]
+                                [:workspace-libraries file-id :data])]
+          (try
+            (us/assert ::spec/changes redo-changes)
+            (us/assert ::spec/changes undo-changes)
+            (update-in state path cp/process-changes redo-changes false)
+            (catch :default e
+              (vreset! error e)
+              state))))
 
-       ptk/WatchEvent
-       (watch [_ state stream]
-         (when-not @error
-           (let [;; adds page-id to page changes (that have the `id` field instead)
-                 add-page-id
-                 (fn [{:keys [id type page] :as change}]
-                   (cond-> change
-                     (page-change? type)
-                     (assoc :page-id (or id (:id page)))))
+      ptk/WatchEvent
+      (watch [it state stream]
+        (when-not @error
+          (let [;; adds page-id to page changes (that have the `id` field instead)
+                add-page-id
+                (fn [{:keys [id type page] :as change}]
+                  (cond-> change
+                    (page-change? type)
+                    (assoc :page-id (or id (:id page)))))
 
-                 changes-by-pages
-                 (->> changes
-                      (map add-page-id)
-                      (remove #(nil? (:page-id %)))
-                      (group-by :page-id))
+                changes-by-pages
+                (->> redo-changes
+                     (map add-page-id)
+                     (remove #(nil? (:page-id %)))
+                     (group-by :page-id))
 
-                 process-page-changes
-                 (fn [[page-id changes]]
-                   (update-indices page-id changes))]
-             (rx/concat
-              (rx/from (map process-page-changes changes-by-pages))
+                process-page-changes
+                (fn [[page-id changes]]
+                  (update-indices page-id redo-changes))]
+            (rx/concat
+             (rx/from (map process-page-changes changes-by-pages))
 
-              (when (and save-undo? (seq undo-changes))
-                (let [entry {:undo-changes undo-changes
-                             :redo-changes changes}]
-                  (rx/of (dwu/append-undo entry))))))))))))
+             (when (and save-undo? (seq undo-changes))
+               (let [entry {:undo-changes undo-changes
+                            :redo-changes redo-changes}]
+                 (rx/of (dwu/append-undo entry)))))))))))

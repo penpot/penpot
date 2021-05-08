@@ -23,6 +23,21 @@
 (defonce state  (ptk/store {:resolve ptk/resolve}))
 (defonce stream (ptk/input-stream state))
 
+(defonce last-events
+  (let [buffer (atom #queue [])
+        remove #{:potok.core/undefined
+                 :app.main.data.workspace.notifications/handle-pointer-update}]
+    (->> stream
+         (rx/filter ptk/event?)
+         (rx/map ptk/type)
+         (rx/filter (complement remove))
+         (rx/map str)
+         (rx/dedupe)
+         (rx/buffer 20 1)
+         (rx/subs #(reset! buffer %)))
+
+    buffer))
+
 (when *assert*
   (defonce debug-subscription
     (->> stream
@@ -46,6 +61,9 @@
 
 (defn ^:export dump-state []
   (logjs "state" @state))
+
+(defn ^:export dump-buffer []
+  (logjs "state" @last-events))
 
 (defn ^:export get-state [str-path]
   (let [path (->> (str/split str-path " ")

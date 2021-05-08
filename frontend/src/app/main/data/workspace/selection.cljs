@@ -378,11 +378,12 @@
 (def duplicate-selected
   (ptk/reify ::duplicate-selected
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
             delta    (gpt/point 0 0)
+
             unames   (dwc/retrieve-used-names objects)
 
             rchanges (->> (prepare-duplicate-changes objects page-id unames selected delta)
@@ -396,7 +397,9 @@
                           (map #(get-in % [:obj :id]))
                           (into (d/ordered-set)))]
 
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it})
                (select-shapes selected))))))
 
 (defn change-hover-state

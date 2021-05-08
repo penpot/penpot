@@ -25,7 +25,7 @@
   ([points tool-fn]
    (ptk/reify ::process-path-tool
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [it state stream]
        (let [objects (wsh/lookup-page-objects state)
              id (st/get-path-id state)
              page-id (:current-page-id state)
@@ -37,7 +37,9 @@
            (let [new-content (-> (tool-fn (:content shape) points)
                                  (ups/close-subpaths))
                  [rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
-             (rx/of (dch/commit-changes rch uch {:commit-local? true})
+             (rx/of (dch/commit-changes {:redo-changes rch
+                                         :undo-changes uch
+                                         :origin it})
                     (when (empty? new-content)
                       dwc/clear-edition-mode)))))))))
 

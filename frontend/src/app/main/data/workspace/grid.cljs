@@ -40,7 +40,7 @@
   (us/assert ::us/uuid frame-id)
   (ptk/reify ::add-frame-grid
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id (:current-page-id state)
             data    (get-in state [:workspace-data :pages-index page-id])
             params  (or (get-in data [:options :saved-grids :square])
@@ -56,29 +56,30 @@
   [frame-id index]
   (ptk/reify ::set-frame-grid
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (rx/of (dch/update-shapes [frame-id] (fn [o] (update o :grids (fnil #(d/remove-at-index % index) []))))))))
 
 (defn set-frame-grid
   [frame-id index data]
   (ptk/reify ::set-frame-grid
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (rx/of (dch/update-shapes [frame-id] #(assoc-in % [:grids index] data))))))
 
 (defn set-default-grid
   [type params]
   (ptk/reify ::set-default-grid
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [pid (:current-page-id state)
             prev-value (get-in state [:workspace-data :pages-index pid :options :saved-grids type])]
-        (rx/of (dch/commit-changes [{:type :set-option
-                                     :page-id pid
-                                     :option [:saved-grids type]
-                                     :value params}]
-                                   [{:type :set-option
-                                     :page-id pid
-                                     :option [:saved-grids type]
-                                     :value prev-value}]
-                                   {:commit-local? true}))))))
+        (rx/of (dch/commit-changes
+                {:redo-changes [{:type :set-option
+                                 :page-id pid
+                                 :option [:saved-grids type]
+                                 :value params}]
+                 :undo-changes [{:type :set-option
+                                 :page-id pid
+                                 :option [:saved-grids type]
+                                 :value prev-value}]
+                 :origin it}))))))

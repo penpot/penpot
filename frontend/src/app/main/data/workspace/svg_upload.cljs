@@ -387,7 +387,7 @@
   [svg-data file-id position]
   (ptk/reify ::svg-uploaded
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       ;; Once the SVG is uploaded, we need to extract all the bitmap
       ;; images and upload them separatelly, then proceed to create
       ;; all shapes.
@@ -414,7 +414,7 @@
   [svg-data {:keys [x y] :as position}]
   (ptk/reify ::create-svg-shapes
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (try
         (let [page-id (:current-page-id state)
               objects (wsh/lookup-page-objects state page-id)
@@ -464,7 +464,9 @@
 
               rchanges (conj rchanges reg-objects-action)]
 
-          (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
+          (rx/of (dch/commit-changes {:redo-changes rchanges
+                                      :undo-changes uchanges
+                                      :origin it})
                  (dwc/select-shapes (d/ordered-set root-id))))
 
         (catch :default e

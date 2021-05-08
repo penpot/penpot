@@ -86,9 +86,11 @@
                     (rx/tap on-dirty)
                     (rx/buffer-until notifier)
                     (rx/filter (complement empty?))
-                    (rx/map (fn [buf] {:file-id file-id
-                                       :changes (into [] (mapcat :changes) buf)}))
-                    (rx/map persist-changes)
+                    (rx/map (fn [buf]
+                              (->> (into [] (comp (map #(assoc % :id (uuid/next)))
+                                                  (map #(assoc % :file-id file-id)))
+                                         buf)
+                                   (persist-changes file-id))))
                     (rx/tap on-saving)
                     (rx/take-until (rx/delay 100 stoper)))
                (->> stream
@@ -109,27 +111,25 @@
                         (on-saved))))))))
 
 (defn persist-changes
-  [{:keys [file-id changes]}]
+  [file-id changes]
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-changes
     ptk/UpdateEvent
     (update [_ state]
-      (let [conj (fnil conj [])
-            chng {:id (uuid/next)
-                  :changes changes}]
-        (update-in state [:workspace-persistence :queue] conj chng)))
+      (let [conj    (fnil conj [])
+            into*   (fnil into [])]
+        (update-in state [:workspace-persistence :queue] into* changes)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [sid     (:session-id state)
             file    (get state :workspace-file)
             queue   (get-in state [:workspace-persistence :queue] [])
 
-            xf-cat  (comp (mapcat :changes))
             params  {:id (:id file)
                      :revn (:revn file)
                      :session-id sid
-                     :changes (into [] xf-cat queue)}
+                     :changes-with-metadata (into [] queue)}
 
             ids     (into #{} (map :id) queue)
 
@@ -172,7 +172,7 @@
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-synchronous-changes
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [sid     (:session-id state)
             file    (get-in state [:workspace-libraries file-id])
 
@@ -255,7 +255,7 @@
   [project-id file-id]
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (->> (rx/zip (rp/query :file {:id file-id})
                    (rp/query :team-users {:file-id file-id})
                    (rp/query :project {:id project-id})
@@ -295,7 +295,7 @@
       (assoc-in state [:workspace-file :is-shared] is-shared))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [params {:id id :is-shared is-shared}]
         (->> (rp/mutation :set-file-shared params)
              (rx/ignore))))))
@@ -330,7 +330,7 @@
   [file-id library-id]
   (ptk/reify ::link-file-to-library
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [fetched #(assoc-in %2 [:workspace-libraries (:id %1)] %1)
             params  {:file-id file-id
                      :library-id library-id}]
@@ -342,7 +342,7 @@
   [file-id library-id]
   (ptk/reify ::unlink-file-from-library
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [unlinked #(d/dissoc-in % [:workspace-libraries library-id])
             params   {:file-id file-id
                       :library-id library-id}]
@@ -358,7 +358,7 @@
   (us/verify ::us/uuid page-id)
   (ptk/reify ::fetch-pages
     ptk/WatchEvent
-    (watch [_ state s]
+    (watch [it state s]
       (->> (rp/query :page {:id page-id})
            (rx/map page-fetched)))))
 
@@ -498,7 +498,7 @@
   (us/assert ::process-media-objects params)
   (ptk/reify ::process-media-objects
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (rx/concat
        (rx/of (dm/show {:content (tr "media.loading")
                         :type :info
@@ -545,7 +545,7 @@
   (us/assert ::clone-media-objects-params params)
    (ptk/reify ::clone-media-objects
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [it state stream]
        (let [{:keys [on-success on-error]
               :or {on-success identity
                    on-error identity}} (meta params)
