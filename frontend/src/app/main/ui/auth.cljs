@@ -54,8 +54,7 @@
         [:& recovery-request-page {:locale locale}]
 
         :auth-recovery
-        [:& recovery-page {:locale locale
-                           :params (:query-params route)}])
+        [:& recovery-page {:locale locale :params params}])
       [:div.terms-login
        [:a {:href "https://penpot.app/terms.html" :target "_blank"} "Terms of service"]
        [:span "and"]

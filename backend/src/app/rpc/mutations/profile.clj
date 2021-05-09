@@ -13,6 +13,7 @@
    [app.config :as cfg]
    [app.db :as db]
    [app.emails :as eml]
+   [app.http.oauth :refer [extract-props]]
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
@@ -101,7 +102,8 @@
             resp   {:invitation-token token}]
         (with-meta resp
           {:transform-response ((:create session) (:id profile))
-           :before-complete (annotate-profile-register metrics profile)}))
+           :before-complete (annotate-profile-register metrics profile)
+           :result profile}))
 
       ;; If no token is provided, send a verification email
       (let [vtoken (tokens :generate
@@ -129,7 +131,8 @@
                     :extra-data ptoken})
 
         (with-meta profile
-          {:before-complete (annotate-profile-register metrics profile)})))))
+          {:before-complete (annotate-profile-register metrics profile)
+           :result profile})))))
 
 (defn email-domain-in-whitelist?
   "Returns true if email's domain is in the given whitelist or if given
@@ -174,11 +177,12 @@
 (defn create-profile
   "Create the profile entry on the database with limited input
   filling all the other fields with defaults."
-  [conn {:keys [id fullname email password props is-active is-muted is-demo opts]
-         :or {is-active false is-muted false is-demo false}}]
+  [conn {:keys [id fullname email password is-active is-muted is-demo opts]
+         :or {is-active false is-muted false is-demo false}
+         :as params}]
   (let [id        (or id (uuid/next))
         is-active (if is-demo true is-active)
-        props     (db/tjson (or props {}))
+        props     (-> params extract-props db/tjson)
         password  (derive-password password)
         params    {:id id
                    :fullname fullname

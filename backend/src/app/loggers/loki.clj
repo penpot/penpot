@@ -31,16 +31,16 @@
   [_ {:keys [receiver uri] :as cfg}]
   (when uri
     (l/info :msg "intializing loki reporter" :uri uri)
-    (let [output (a/chan (a/sliding-buffer 1024))]
-      (receiver :sub output)
+    (let [input (a/chan (a/sliding-buffer 1024))]
+      (receiver :sub input)
       (a/go-loop []
-        (let [msg (a/<! output)]
+        (let [msg (a/<! input)]
           (if (nil? msg)
             (l/info :msg "stoping error reporting loop")
             (do
               (a/<! (handle-event cfg msg))
               (recur)))))
-      output)))
+      input)))
 
 (defmethod ig/halt-key! ::reporter
   [_ output]

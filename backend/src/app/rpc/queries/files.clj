@@ -6,7 +6,6 @@
 
 (ns app.rpc.queries.files
   (:require
-   [app.common.exceptions :as ex]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.db :as db]
@@ -254,7 +253,7 @@
 (defn retrieve-file-libraries
   [conn is-indirect file-id]
   (let [libraries (->> (db/exec! conn [sql:file-libraries file-id])
-                       (map #(assoc :is-indirect is-indirect))
+                       (map #(assoc % :is-indirect is-indirect))
                        (into #{} decode-row-xf))]
     (reduce #(into %1 (retrieve-file-libraries conn true %2))
             libraries
