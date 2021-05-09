@@ -6,7 +6,6 @@
 
 (ns app.main
   (:require
-   [app.common.data :as d]
    [app.config :as cf]
    [app.util.logging :as l]
    [app.util.time :as dt]
@@ -140,7 +139,8 @@
     :storage    (ig/ref :app.storage/storage)
     :msgbus     (ig/ref :app.msgbus/msgbus)
     :rlimits    (ig/ref :app.rlimits/all)
-    :public-uri (cf/get :public-uri)}
+    :public-uri (cf/get :public-uri)
+    :activity   (ig/ref :app.loggers.activity/reporter)}
 
    :app.notifications/handler
    {:msgbus   (ig/ref :app.msgbus/msgbus)
@@ -263,6 +263,11 @@
    :app.loggers.zmq/receiver
    {:endpoint (cf/get :loggers-zmq-uri)}
 
+   :app.loggers.activity/reporter
+   {:uri      (cf/get :activity-reporter-uri)
+    :tokens   (ig/ref :app.tokens/tokens)
+    :executor (ig/ref :app.worker/executor)}
+
    :app.loggers.loki/reporter
    {:uri      (cf/get :loggers-loki-uri)
     :receiver (ig/ref :app.loggers.zmq/receiver)
@@ -298,13 +303,6 @@
 
    [::main :app.storage.db/backend]
    {:pool (ig/ref :app.db/pool)}})
-
-(defmethod ig/init-key :default [_ data] data)
-(defmethod ig/prep-key :default
-  [_ data]
-  (if (map? data)
-    (d/without-nils data)
-    data))
 
 (def system nil)
 

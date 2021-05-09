@@ -179,7 +179,6 @@
     (effect [_ state stream]
       (let [profile-id (:profile-id state)
             events     (into [] (take max-buffer-size) @buffer)]
-        (prn ::persistence (count events) profile-id)
         (when (seq events)
           (->> events
                (filterv #(= profile-id (:profile-id %)))

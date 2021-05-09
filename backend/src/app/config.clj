@@ -8,6 +8,7 @@
   "A configuration management."
   (:refer-clojure :exclude [get])
   (:require
+   [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.version :as v]
    [app.util.time :as dt]
@@ -16,7 +17,8 @@
    [clojure.pprint :as pprint]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [environ.core :refer [env]]))
+   [environ.core :refer [env]]
+   [integrant.core :as ig]))
 
 (prefer-method print-method
                clojure.lang.IRecord
@@ -25,6 +27,16 @@
 (prefer-method pprint/simple-dispatch
                clojure.lang.IPersistentMap
                clojure.lang.IDeref)
+
+(defmethod ig/init-key :default
+  [_ data]
+  (d/without-nils data))
+
+(defmethod ig/prep-key :default
+  [_ data]
+  (if (map? data)
+    (d/without-nils data)
+    data))
 
 (def defaults
   {:http-server-port 6060

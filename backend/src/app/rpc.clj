@@ -84,19 +84,31 @@
         (rlm/execute rlinst (f cfg params))))
     f))
 
+
 (defn- wrap-impl
-  [cfg f mdata]
-  (let [f     (wrap-with-rlimits cfg f mdata)
-        f     (wrap-with-metrics cfg f mdata)
-        spec  (or (::sv/spec mdata) (s/spec any?))]
+  [{:keys [activity] :as cfg} f mdata]
+  (let [f      (wrap-with-rlimits cfg f mdata)
+        f      (wrap-with-metrics cfg f mdata)
+        spec   (or (::sv/spec mdata) (s/spec any?))
+        auth?  (:auth mdata true)]
     (l/trace :action "register"
              :name (::sv/name mdata))
     (fn [params]
-      (when (and (:auth mdata true) (not (uuid? (:profile-id params))))
+      (when (and auth? (not (uuid? (:profile-id params))))
         (ex/raise :type :authentication
                   :code :authentication-required
                   :hint "authentication required for this endpoint"))
-      (f cfg (us/conform spec params)))))
+      (let [params  (us/conform spec params)
+            result  (f cfg params)
+            ;; On non authenticated handlers we check the private
+            ;; result that can be found on the metadata.
+            result* (if auth? result (:result (meta result) {}))]
+        (when (::type cfg)
+          (activity :submit {:type (::type cfg)
+                             :name (::sv/name mdata)
+                             :params params
+                             :result result*}))
+        result))))
 
 (defn- process-method
   [cfg vfn]
@@ -133,7 +145,7 @@
                :registry (get-in cfg [:metrics :registry])
                :type :histogram
                :help "Timing of mutation services."})
-        cfg  (assoc cfg ::mobj mobj)]
+        cfg  (assoc cfg ::mobj mobj ::type :mutation)]
     (->> (sv/scan-ns 'app.rpc.mutations.demo
                      'app.rpc.mutations.media
                      'app.rpc.mutations.profile
@@ -152,9 +164,11 @@
 (s/def ::storage some?)
 (s/def ::session map?)
 (s/def ::tokens fn?)
+(s/def ::activity some?)
 
 (defmethod ig/pre-init-spec ::rpc [_]
-  (s/keys :req-un [::db/pool ::storage ::session ::tokens ::mtx/metrics ::rlm/rlimits]))
+  (s/keys :req-un [::storage ::session ::tokens ::activity
+                   ::mtx/metrics ::rlm/rlimits ::db/pool]))
 
 (defmethod ig/init-key ::rpc
   [_ cfg]

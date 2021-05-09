@@ -6,6 +6,7 @@
 
 (ns app.http.oauth
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uri :as u]
@@ -138,16 +139,32 @@
 
     (cond-> info
       (some? (:invitation-token state))
-      (assoc :invitation-token (:invitation-token state)))))
+      (assoc :invitation-token (:invitation-token state))
+
+      (map? (:props state))
+      (d/merge (:props state)))))
 
 ;; --- HTTP HANDLERS
 
+(defn extract-props
+  [params]
+  (reduce-kv (fn [params k v]
+               (let [sk (name k)]
+                 (cond-> params
+                   (or (str/starts-with? sk "pm_")
+                       (str/starts-with? sk "pm-"))
+                   (assoc (-> sk str/kebab keyword) v))))
+             {}
+             params))
+
 (defn- auth-handler
-  [{:keys [tokens] :as cfg} request]
-  (let [invitation (get-in request [:params :invitation-token])
+  [{:keys [tokens] :as cfg} {:keys [params] :as request}]
+  (let [invitation (:invitation-token params)
+        props      (extract-props params)
         state      (tokens :generate
                            {:iss :oauth
                             :invitation-token invitation
+                            :props props
                             :exp (dt/in-future "15m")})
         uri        (build-auth-uri cfg state)]
     {:status 200
