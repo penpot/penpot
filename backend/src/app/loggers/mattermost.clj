@@ -58,7 +58,7 @@
   (a/close! output))
 
 (defn- send-mattermost-notification!
-  [cfg {:keys [host version id error] :as cdata}]
+  [cfg {:keys [host version id] :as cdata}]
   (try
     (let [uri  (:uri cfg)
           text (str "Unhandled exception (@channel):\n"
