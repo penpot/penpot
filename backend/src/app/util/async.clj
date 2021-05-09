@@ -60,3 +60,34 @@
   (if (= executor ::default)
     `(a/thread-call (^:once fn* [] (try ~@body (catch Exception e# e#))))
     `(thread-call ~executor (^:once fn* [] ~@body))))
+
+(defn batch
+  [in {:keys [max-batch-size
+              max-batch-age
+              init]
+       :or {max-batch-size 200
+            max-batch-age (* 30 1000)
+            init #{}}
+       :as opts}]
+  (let [out (a/chan)]
+    (a/go-loop [tch (a/timeout max-batch-age) buf init]
+      (let [[val port] (a/alts! [tch in])]
+        (cond
+          (identical? port tch)
+          (if (empty? buf)
+            (recur (a/timeout max-batch-age) buf)
+            (do
+              (a/>! out [:timeout buf])
+              (recur (a/timeout max-batch-age) init)))
+
+          (nil? val)
+          (a/close! out)
+
+          (identical? port in)
+          (let [buf (conj buf val)]
+            (if (>= (count buf) max-batch-size)
+              (do
+                (a/>! out [:size buf])
+                (recur (a/timeout max-batch-age) init))
+              (recur tch buf))))))
+    out))
