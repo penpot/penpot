@@ -1,3 +1,4 @@
+
 ;; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -209,7 +210,10 @@
              st/state))
 
 (def workspace-page-objects
-  (l/derived :objects workspace-page))
+  (l/derived wsh/lookup-page-objects st/state =))
+
+(def workspace-modifiers
+  (l/derived :workspace-modifiers st/state))
 
 (def workspace-page-options
   (l/derived :options workspace-page))
@@ -228,12 +232,21 @@
   (l/derived #(get % id) workspace-page-objects))
 
 (defn objects-by-id
-  [ids]
-  (l/derived (fn [objects]
-               (into [] (comp (map #(get objects %))
-                              (remove nil?))
-                     ids))
-             workspace-page-objects =))
+  ([ids]
+   (objects-by-id ids nil))
+
+  ([ids {:keys [with-modifiers?]
+         :or { with-modifiers? false }}]
+   (l/derived (fn [state]
+                (let [objects (wsh/lookup-page-objects state)
+                      modifiers (:workspace-modifiers state)
+                      objects (cond-> objects
+                                with-modifiers?
+                                (d/deep-merge modifiers))
+                      xform (comp (map #(get objects %))
+                                  (remove nil?))]
+                  (into [] xform ids)))
+              st/state =)))
 
 (def selected-data
   (l/derived #(let [selected (wsh/lookup-selected %)

@@ -59,6 +59,8 @@
         drawing           (mf/deref refs/workspace-drawing)
         options           (mf/deref refs/workspace-page-options)
         objects           (mf/deref refs/workspace-page-objects)
+        object-modifiers  (mf/deref refs/workspace-modifiers)
+        objects           (d/deep-merge objects object-modifiers)
 
         ;; STATE
         alt?              (mf/use-state false)
@@ -133,8 +135,7 @@
         show-snap-distance?      (and (contains? layout :dynamic-alignment) (= transform :move) (not (empty? selected)))
         show-snap-points?        (and (contains? layout :dynamic-alignment) (or drawing-obj transform))
         show-selrect?            (and selrect (empty? drawing))
-        show-measures?           (and (not transform) (not path-editing?) show-distances?)
-        ]
+        show-measures?           (and (not transform) (not path-editing?) show-distances?)]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
     (hooks/setup-viewport-size viewport-ref)
@@ -205,8 +206,7 @@
        :on-pointer-enter on-pointer-enter
        :on-pointer-leave on-pointer-leave
        :on-pointer-move  on-pointer-move
-       :on-pointer-up    on-pointer-up
-       }
+       :on-pointer-up    on-pointer-up}
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
 
@@ -222,6 +222,7 @@
        (when show-selection-handlers?
          [:& selection/selection-handlers
           {:selected selected
+           :shapes selected-shapes
            :zoom zoom
            :edition edition
            :disable-handlers (or drawing-tool edition)

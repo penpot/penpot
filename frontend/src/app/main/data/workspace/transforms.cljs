@@ -424,8 +424,8 @@
              ids-with-children (concat ids (mapcat #(cp/get-children % objects)
                                                    (filter not-frame-id? ids)))]
 
-         (d/update-in-when state [:workspace-data :pages-index page-id :objects]
-                           #(reduce update-shape % ids-with-children)))))))
+         (update state :workspace-modifiers
+                 #(reduce update-shape % ids-with-children)))))))
 
 
 ;; Set-rotation is custom because applies different modifiers to each
@@ -476,9 +476,13 @@
     (watch [it state stream]
       (let [objects (wsh/lookup-page-objects state)
             children-ids (->> ids (mapcat #(cp/get-children % objects)))
-            ids-with-children (d/concat [] children-ids ids)]
+            ids-with-children (d/concat [] children-ids ids)
+            object-modifiers (get state :workspace-modifiers)]
         (rx/of (dwu/start-undo-transaction)
-               (dch/update-shapes ids-with-children gsh/transform-shape {:reg-objects? true})
+               (dch/update-shapes ids-with-children (fn [shape]
+                                                      (-> shape
+                                                          (merge (get object-modifiers (:id shape)))
+                                                          (gsh/transform-shape))) {:reg-objects? true})
                (clear-local-transform)
                (dwu/commit-undo-transaction))))))
 
@@ -572,4 +576,5 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
+          (dissoc :workspace-modifiers)
           (update :workspace-local dissoc :modifiers :current-move-selected)))))
