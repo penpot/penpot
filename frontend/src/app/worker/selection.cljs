@@ -57,30 +57,34 @@
     {:index index :z-index z-index}))
 
 (defn- update-index
-  [{index :index z-index :z-index} old-objects new-objects]
+  [{index :index z-index :z-index :as data} old-objects new-objects]
 
-  (let [changes? (fn [id]
-                   (not= (get old-objects id)
-                         (get new-objects id)))
+  (if (some? data)
+    (let [changes? (fn [id]
+                     (not= (get old-objects id)
+                           (get new-objects id)))
 
-        changed-ids (into #{}
-                          (filter changes?)
-                          (set/union (keys old-objects)
-                                     (keys new-objects)))
+          changed-ids (into #{}
+                            (filter changes?)
+                            (set/union (keys old-objects)
+                                       (keys new-objects)))
 
-        shapes (->> changed-ids (mapv #(get new-objects %)) (filterv (comp not nil?)))
-        parents-index (cp/generate-child-all-parents-index new-objects shapes)
-        masks-index   (cp/create-mask-index new-objects parents-index)
+          shapes (->> changed-ids (mapv #(get new-objects %)) (filterv (comp not nil?)))
+          parents-index (cp/generate-child-all-parents-index new-objects shapes)
+          masks-index   (cp/create-mask-index new-objects parents-index)
 
-        new-index (qdt/remove-all index changed-ids)
+          new-index (qdt/remove-all index changed-ids)
 
-        index (reduce (index-shape new-objects parents-index masks-index)
-                      new-index
-                      shapes)
+          index (reduce (index-shape new-objects parents-index masks-index)
+                        new-index
+                        shapes)
 
-        z-index (cp/update-z-index z-index changed-ids old-objects new-objects)]
+          z-index (cp/update-z-index z-index changed-ids old-objects new-objects)]
 
-    {:index index :z-index z-index}))
+      {:index index :z-index z-index})
+
+    ;; If not previous data. We need to create from scratch
+    (create-index new-objects)))
 
 (defn- query-index
   [{index :index z-index :z-index} rect frame-id include-frames? include-groups? disabled-masks reverse?]
