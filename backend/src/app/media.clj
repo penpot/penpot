@@ -13,6 +13,8 @@
    [app.common.spec :as us]
    [app.rlimits :as rlm]
    [app.rpc.queries.svg :as svg]
+   [buddy.core.bytes :as bb]
+   [buddy.core.codecs :as bc]
    [clojure.java.io :as io]
    [clojure.java.shell :as sh]
    [clojure.spec.alpha :as s]
@@ -64,7 +66,8 @@
 
 (defmethod process-error :default
   [error]
-  (ex/raise :type :internal :cause error))
+  (ex/raise :type :internal
+            :cause error))
 
 (defn run
   [{:keys [rlimits] :as cfg} {:keys [rlimit] :or {rlimit :image} :as params}]
@@ -232,6 +235,19 @@
                 (fs/slurp-bytes output-file))))
 
 
+          (otf->ttf [data]
+            (let [input-file  (fs/create-tempfile :prefix "penpot")
+                  output-file (fs/path (str input-file ".ttf"))
+                  _           (with-open [out (io/output-stream input-file)]
+                                (IOUtils/writeChunked ^bytes data ^OutputStream out)
+                                (.flush ^OutputStream out))
+                  res         (sh/sh "fontforge" "-lang=ff" "-c"
+                                     (str/fmt "Open('%s'); Generate('%s')"
+                                              (str input-file)
+                                              (str output-file)))]
+              (when (zero? (:exit res))
+                (fs/slurp-bytes output-file))))
+
           (ttf-or-otf->woff [data]
             (let [input-file  (fs/create-tempfile :prefix "penpot" :suffix "")
                   output-file (fs/path (str input-file ".woff"))
@@ -250,17 +266,68 @@
                                 (.flush ^OutputStream out))
                   res         (sh/sh "woff2_compress" (str input-file))]
               (when (zero? (:exit res))
-                (fs/slurp-bytes output-file))))]
+                (fs/slurp-bytes output-file))))
+
+          (woff->sfnt [data]
+            (let [input-file  (fs/create-tempfile :prefix "penpot" :suffix "")
+                  _           (with-open [out (io/output-stream input-file)]
+                                (IOUtils/writeChunked ^bytes data ^OutputStream out)
+                                (.flush ^OutputStream out))
+                  res         (sh/sh "woff2sfnt" (str input-file)
+                                     :out-enc :bytes)]
+              (when (zero? (:exit res))
+                (:out res))))
+
+          ;; Documented here:
+          ;; https://docs.microsoft.com/en-us/typography/opentype/spec/otff#table-directory
+          (get-sfnt-type [data]
+            (let [buff (bb/slice data 0 4)
+                  type (bc/bytes->hex buff)]
+              (case type
+                "4f54544f" :otf
+                "00010000" :ttf
+                (ex/raise :type :internal
+                          :code :unexpected-data
+                          :hint "unexpected font data"))))
+
+          (gen-if-nil [val factory]
+            (if (nil? val)
+              (factory)
+              val))]
 
     (let [current (into #{} (keys input))]
-      (if (contains? current "font/ttf")
-        (-> input
-            (assoc "font/otf" (ttf->otf (get input "font/ttf")))
-            (assoc "font/woff" (ttf-or-otf->woff (get input "font/ttf")))
-            (assoc "font/woff2" (ttf-or-otf->woff2 (get input "font/ttf"))))
+      (cond
+        (contains? current "font/ttf")
+        (let [data (get input "font/ttf")]
+          (-> input
+              (update "font/otf" gen-if-nil #(ttf->otf data))
+              (update "font/woff" gen-if-nil #(ttf-or-otf->woff data))
+              (assoc "font/woff2" (ttf-or-otf->woff2 data))))
 
-        (-> input
-            ;; TODO: pending to implement
-            ;; (assoc "font/ttf" (otf->ttf (get input "font/ttf")))
-            (assoc "font/woff" (ttf-or-otf->woff (get input "font/otf")))
-            (assoc "font/woff2" (ttf-or-otf->woff2 (get input "font/otf"))))))))
+        (contains? current "font/otf")
+        (let [data (get input "font/otf")]
+          (-> input
+              (update "font/woff" gen-if-nil #(ttf-or-otf->woff data))
+              (assoc "font/ttf" (otf->ttf data))
+              (assoc "font/woff2" (ttf-or-otf->woff2 data))))
+
+        (contains? current "font/woff")
+        (let [data (get input "font/woff")
+              sfnt (woff->sfnt data)]
+          (when-not sfnt
+            (ex/raise :type :validation
+                      :code :invalid-woff-file
+                      :hint "invalid woff file"))
+          (let [stype (get-sfnt-type sfnt)]
+            (cond-> input
+              true
+              (-> (assoc "font/woff" data)
+                  (assoc "font/woff2" (ttf-or-otf->woff2 sfnt)))
+
+              (= stype :otf)
+              (-> (assoc "font/otf" sfnt)
+                  (assoc "font/ttf" (otf->ttf sfnt)))
+
+              (= stype :ttf)
+              (-> (assoc "font/otf" (ttf->otf sfnt))
+                  (assoc "font/ttf" sfnt)))))))))
