@@ -69,6 +69,7 @@
      (watch [_ state stream]
        (let [page-id (:current-page-id state)
              objects (get-in state [:workspace-data :pages-index page-id :objects])
+             objects' (get-in state [:workspace-file :data :pages-index page-id :objects])
              reg-objects {:type :reg-objects :page-id page-id :shapes (vec ids)}]
          (loop [ids (seq ids)
                 rch []
@@ -84,8 +85,9 @@
              (let [id   (first ids)
                    obj1 (get objects id)
                    obj2 (f obj1)
+                   obj3 (get objects' id)
                    rch-operations (generate-operations obj1 obj2)
-                   uch-operations (generate-operations obj2 obj1 true)
+                   uch-operations (generate-operations obj2 obj3 true)
                    rchg {:type :mod-obj
                          :page-id page-id
                          :operations rch-operations
