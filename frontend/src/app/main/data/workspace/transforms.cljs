@@ -81,10 +81,15 @@
 ;; -- RESIZE
 (defn start-resize
   [handler initial ids shape]
-  (letfn [(resize [shape initial resizing-shapes [point lock? point-snap]]
+  (letfn [(resize [shape initial resizing-shapes layout [point lock? point-snap]]
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
                   shapev (-> (gpt/point width height))
+
+                  scale-text (:scale-text layout)
+
+                  ;; Force lock if the scale text mode is active
+                  lock? (or lock? scale-text)
 
                   ;; Vector modifiers depending on the handler
                   handler-modif (let [[x y] (handler-modifiers handler)] (gpt/point x y))
@@ -119,6 +124,7 @@
                                     {:resize-vector scalev
                                      :resize-origin origin
                                      :resize-transform shape-transform
+                                     :resize-scale-text scale-text
                                      :resize-transform-inverse shape-transform-inverse}
                                     false))))
 
@@ -154,7 +160,7 @@
                 (rx/switch-map (fn [[point :as current]]
                                (->> (snap/closest-snap-point page-id resizing-shapes layout zoom point)
                                     (rx/map #(conj current %)))))
-                (rx/mapcat (partial resize shape initial-position resizing-shapes))
+                (rx/mapcat (partial resize shape initial-position resizing-shapes layout))
                 (rx/take-until stoper))
            (rx/of (apply-modifiers ids)
                   (finish-transform))))))))

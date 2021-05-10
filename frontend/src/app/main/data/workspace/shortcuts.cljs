@@ -61,7 +61,11 @@
    :toggle-alignment  {:tooltip (ds/meta "\\")
                        :command (ds/c-mod "\\")
                        :fn #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}
-   
+
+   :toggle-scale-text {:tooltip "K"
+                       :command "k"
+                       :fn #(st/emit! (dw/toggle-layout-flags :scale-text))}
+
    :increase-zoom      {:tooltip "+"
                         :command "+"
                         :fn #(st/emit! (dw/increase-zoom nil))}
@@ -155,8 +159,8 @@
                         :command "c"
                         :fn #(st/emit! (dwd/select-for-drawing :comments))}
 
-   :insert-image       {:tooltip "K"
-                        :command "k"
+   :insert-image       {:tooltip (ds/shift "K")
+                        :command "shift+k"
                         :fn #(-> "image-upload" dom/get-element dom/click)}
 
    :copy               {:tooltip (ds/meta "C")

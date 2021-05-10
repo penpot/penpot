@@ -45,7 +45,7 @@
              (st/emit! (dw/upload-media-workspace params)))))]
 
        [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.image")
+        {:alt (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
          :on-click on-click}
         [:*
          i/image

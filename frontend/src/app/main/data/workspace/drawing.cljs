@@ -30,7 +30,12 @@
    (ptk/reify ::select-for-drawing
      ptk/UpdateEvent
      (update [_ state]
-       (update state :workspace-drawing assoc :tool tool :object data))
+       (-> state
+           (update :workspace-drawing assoc :tool tool :object data)
+           ;; When changing drawing tool disable "scale text" mode
+           ;; automatically, to help users that ignore how this
+           ;; mode works.
+           (update :workspace-layout disj :scale-text)))
 
      ptk/WatchEvent
      (watch [_ state stream]
