@@ -5,6 +5,7 @@
 ### :sparkles: New features
 
 - Add option to interactively scale text [Taiga #1527](https://tree.taiga.io/project/penpot/us/1527)
+- Translate automatic names of new files and projects.
 
 ### :bug: Bugs fixed
 

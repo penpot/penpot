@@ -305,9 +305,17 @@ msgstr "Mover a otro equipo"
 msgid "dashboard.new-file"
 msgstr "+ Nuevo Archivo"
 
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Nuevo Archivo"
+
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.new-project"
 msgstr "+ Nuevo proyecto"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Nuevo Proyecto"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
