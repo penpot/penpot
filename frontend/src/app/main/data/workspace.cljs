@@ -161,6 +161,7 @@
        (->> stream
             (rx/filter (ptk/type? ::dwp/bundle-fetched))
             (rx/take 1)
+
             (rx/map deref)
             (rx/mapcat (fn [bundle]
                          (rx/of (dwn/initialize file-id)
@@ -1185,6 +1186,7 @@
 
 (defn go-to-page
   ([]
+
    (ptk/reify ::go-to-page
      ptk/WatchEvent
      (watch [it state stream]

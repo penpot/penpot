@@ -106,7 +106,7 @@
 
        (fn []
          (when page-id
-           (st/emitf (dw/finalize-page page-id))))))
+           (st/emit! (dw/finalize-page page-id))))))
 
     (when page
       [:& workspace-content {:key page-id
@@ -158,6 +158,9 @@
 
          (if (and (and file project)
                   (:initialized file))
-           [:& workspace-page {:page-id page-id :file file :layout layout}]
+           [:& workspace-page {:key (str "page-" page-id)
+                               :page-id page-id
+                               :file file
+                               :layout layout}]
            [:& workspace-loader])]]]]]))
 

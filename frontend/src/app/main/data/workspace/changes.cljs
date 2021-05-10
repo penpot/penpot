@@ -62,7 +62,8 @@
 
 (defn update-shapes
   ([ids f] (update-shapes ids f nil))
-  ([ids f {:keys [reg-objects?] :or {reg-objects? false}}]
+  ([ids f {:keys [reg-objects? save-undo?]
+           :or {reg-objects? false save-undo? true}}]
    (us/assert ::coll-of-uuid ids)
    (us/assert fn? f)
    (ptk/reify ::update-shapes
@@ -82,7 +83,8 @@
                       (when (and has-rch? has-uch?)
                         (commit-changes {:redo-changes rch
                                          :undo-changes uch
-                                         :origin it}))))
+                                         :origin it
+                                         :save-undo? save-undo?}))))
 
              (let [id   (first ids)
                    obj1 (get objects id)
@@ -164,6 +166,7 @@
   [{:keys [redo-changes undo-changes origin save-undo? file-id]
     :or {save-undo? true}}]
 
+
   (log/debug :msg "commit-changes"
              :js/redo-changes redo-changes
              :js/undo-changes undo-changes)
@@ -182,12 +185,14 @@
         (let [current-file-id (get state :current-file-id)
               file-id         (or file-id current-file-id)
               path            (if (= file-id current-file-id)
+
                                 [:workspace-data]
                                 [:workspace-libraries file-id :data])]
           (try
             (us/assert ::spec/changes redo-changes)
             (us/assert ::spec/changes undo-changes)
             (update-in state path cp/process-changes redo-changes false)
+
             (catch :default e
               (vreset! error e)
               state))))

@@ -8,6 +8,7 @@
   (:require
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
+   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as projects]
@@ -120,6 +121,7 @@
                   profile-id team-id
                   search-term]))
 
+
 ;; --- Query: Files
 
 ;; DEPRECATED: should be removed probably on 1.6.x
@@ -185,13 +187,43 @@
 (s/def ::page
   (s/keys :req-un [::profile-id ::file-id]))
 
+(defn remove-thumbnails-frames
+  "Removes from data the children for frames that have a thumbnail set up"
+  [data]
+  (let [filter-shape?
+        (fn [objects [id shape]]
+          (let [frame-id (:frame-id shape)]
+            (or (= id uuid/zero)
+                (= frame-id uuid/zero)
+                (not (some? (get-in objects [frame-id :thumbnail]))))))
+
+        ;; We need to remove from the attribute :shapes its childrens because
+        ;; they will not be sent in the data
+        remove-frame-children
+        (fn [[id shape]]
+          [id (cond-> shape
+                (some? (:thumbnail shape))
+                (assoc :shapes []))])
+
+        update-objects
+        (fn [objects]
+          (into {}
+                (comp (map remove-frame-children)
+                      (filter (partial filter-shape? objects)))
+                objects))]
+
+    (update data :objects update-objects)))
+
 (sv/defmethod ::page
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id id strip-thumbnails]}]
   [{:keys [pool] :as cfg} {:keys [profile-id file-id]}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
     (let [file    (retrieve-file conn file-id)
           page-id (get-in file [:data :pages 0])]
-      (get-in file [:data :pages-index page-id]))))
+      (cond-> (get-in file [:data :pages-index page-id])
+        strip-thumbnails
+        (remove-thumbnails-frames)))))
 
 ;; --- Query: Shared Library Files
 
@@ -244,6 +276,7 @@
 
 (def ^:private sql:file-libraries
   "select fl.*,
+
           flr.synced_at as synced_at
      from file as fl
     inner join file_library_rel as flr on (flr.library_file_id = fl.id)
@@ -258,6 +291,7 @@
     (reduce #(into %1 (retrieve-file-libraries conn true %2))
             libraries
             (map :id libraries))))
+
 
 (s/def ::file-libraries
   (s/keys :req-un [::profile-id ::file-id]))

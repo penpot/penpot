@@ -27,6 +27,7 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
+   [app.main.ui.workspace.viewport.thumbnail-renderer :as wtr]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [beicon.core :as rx]
@@ -69,6 +70,7 @@
         hover-ids         (mf/use-state nil)
         hover             (mf/use-state nil)
         frame-hover       (mf/use-state nil)
+        active-frames     (mf/use-state {})
 
         ;; REFS
         viewport-ref      (mf/use-ref nil)
@@ -145,9 +147,12 @@
     (hooks/setup-hover-shapes page-id move-stream selected objects transform selected ctrl? hover hover-ids)
     (hooks/setup-viewport-modifiers modifiers selected objects render-ref)
     (hooks/setup-shortcuts path-editing? drawing-path?)
+    (hooks/setup-active-frames objects vbox hover active-frames)
 
     [:div.viewport
      [:div.viewport-overlays
+      [:& wtr/frame-renderer {:objects objects}]
+
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox
                                      :vport vport
@@ -180,7 +185,8 @@
       [:& (mf/provider muc/embed-ctx) {:value true}
        ;; Render root shape
        [:& shapes/root-shape {:key page-id
-                              :objects objects}]]]
+                              :objects objects
+                              :active-frames @active-frames}]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
