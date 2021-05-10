@@ -433,7 +433,7 @@
   (ptk/reify ::create-project
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [name    (name (gensym "New Project "))
+      (let [name    (name (gensym (str (tr "dashboard.new-project-prefix") " ")))
             team-id (:current-team-id state)
             params  {:name name
                      :team-id team-id}
@@ -624,7 +624,7 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)
 
-            name   (name (gensym "New File "))
+            name   (name (gensym (str (tr "dashboard.new-file-prefix") " ")))
             params (assoc params :name name)]
 
         (->> (rp/mutation! :create-file params)
