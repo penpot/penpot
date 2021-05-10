@@ -16,11 +16,13 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.media :as di]
    [app.main.data.messages :as dm]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.svg-upload :as svg]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.avatars :as avatars]
@@ -33,6 +35,7 @@
    [app.util.uri :as uu]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
+   [clojure.set :as set]
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [promesa.core :as p]))
@@ -349,30 +352,6 @@
         (->> (rp/mutation :unlink-file-from-library params)
              (rx/map (constantly unlinked)))))))
 
-;; --- Fetch Pages
-
-(declare page-fetched)
-
-(defn fetch-page
-  [page-id]
-  (us/verify ::us/uuid page-id)
-  (ptk/reify ::fetch-pages
-    ptk/WatchEvent
-    (watch [it state s]
-      (->> (rp/query :page {:id page-id})
-           (rx/map page-fetched)))))
-
-(defn page-fetched
-  [{:keys [id] :as page}]
-  (us/verify ::page page)
-  (ptk/reify ::page-fetched
-    IDeref
-    (-deref [_] page)
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-pages id] page))))
-
 
 ;; --- Upload File Media objects
 
@@ -572,3 +551,101 @@
       (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
       (update :workspace-pages dissoc id)))
 
+(def update-frame-thumbnail? (ptk/type? ::update-frame-thumbnail))
+
+(defn remove-thumbnails
+  [ids]
+  (ptk/reify ::remove-thumbnails
+    ptk/WatchEvent
+    (watch [_ state stream]
+      ;; Removes the thumbnail while it's regenerated
+      (rx/of (dch/update-shapes
+              ids
+              #(dissoc % :thumbnail)
+              {:save-undo? false})))))
+
+(defn update-frame-thumbnail
+  [frame-id]
+  (ptk/event ::update-frame-thumbnail {:frame-id frame-id}))
+
+(defn- extract-frame-changes
+  "Process a changes set in a commit to extract the frames that are channging"
+  [[event objects]]
+  (let [changes (-> event deref :changes)
+
+        extract-ids
+        (fn [{type :type :as change}]
+          (case type
+            :add-obj [(:id change)]
+            :mod-obj [(:id change)]
+            :del-obj [(:id change)]
+            :reg-objects (:shapes change)
+            :mov-objects (:shapes change)
+            []))
+
+        get-frame-id
+        (fn [id]
+          (or (and (= :frame (get-in objects [id :type])) id)
+              (get-in objects [id :frame-id])))
+
+        ;; Extracts the frames and then removes nils and the root frame
+        xform (comp (mapcat extract-ids)
+                    (map get-frame-id)
+                    (remove nil?)
+                    (filter #(not= uuid/zero %)))]
+
+    (into #{} xform changes)))
+
+(defn thumbnail-change?
+  "Checks if a event is only updating thumbnails to ignore in the thumbnail generation process"
+  [event]
+  (let [changes (-> event deref :changes)
+
+        is-thumbnail-op?
+        (fn [{type :type attr :attr}]
+          (and (= type :set)
+               (= attr :thumbnail)))
+
+        is-thumbnail-change?
+        (fn [change]
+          (and (= (:type change) :mod-obj)
+               (->> change :operations (every? is-thumbnail-op?))))]
+
+    (->> changes (every? is-thumbnail-change?))))
+
+(defn watch-state-changes []
+  (ptk/reify ::watch-state-changes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stopper (->> stream
+                         (rx/filter #(or (= :app.main.data.workspace/finalize-page (ptk/type %))
+                                         (= ::watch-state-changes (ptk/type %)))))
+
+            objects-stream (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
+
+            frame-changes (->> stream
+                               (rx/filter dch/commit-changes?)
+                               (rx/filter (comp not thumbnail-change?))
+                               (rx/with-latest-from objects-stream)
+                               (rx/map extract-frame-changes))
+
+            frames (-> state wsh/lookup-page-objects cp/select-frames)
+            no-thumb-frames (->> frames
+                                 (filter (comp nil? :thumbnail))
+                                 (mapv :id))]
+
+        (rx/concat
+         (->> (rx/from no-thumb-frames)
+              (rx/map #(update-frame-thumbnail %)))
+
+         ;; We remove the thumbnails inmediately but defer their generation
+         (rx/merge
+          (->> frame-changes
+               (rx/take-until stopper)
+               (rx/map #(remove-thumbnails %)))
+
+          (->> frame-changes
+               (rx/take-until stopper)
+               (rx/buffer-until (->> frame-changes (rx/debounce 1000)))
+               (rx/flat-map #(reduce set/union %))
+               (rx/map #(update-frame-thumbnail %)))))))))

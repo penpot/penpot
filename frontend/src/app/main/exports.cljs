@@ -121,7 +121,7 @@
 
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [data width height] :as props}]
+  [{:keys [data width height thumbnails?] :as props}]
   (let [objects (:objects data)
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
@@ -146,11 +146,23 @@
            :xmlns "http://www.w3.org/2000/svg"}
      [:& background {:vbox dim :color background-color}]
      (for [item shapes]
-       (if (= (:type item) :frame)
-         [:& frame-wrapper {:shape item
-                            :key (:id item)}]
-         [:& shape-wrapper {:shape item
-                            :key (:id item)}]))]))
+       (let [frame? (= (:type item) :frame)]
+         (cond
+           (and frame? thumbnails? (some? (:thumbnail item)))
+           [:image {:xlinkHref (:thumbnail item)
+                    :x (:x item)
+                    :y (:y item)
+                    :width (:width item)
+                    :height (:height item)
+                    ;; DEBUG
+                    ;; :style {:filter "sepia(1)"}
+                    }]
+           frame?
+           [:& frame-wrapper {:shape item
+                              :key (:id item)}]
+           :else
+           [:& shape-wrapper {:shape item
+                              :key (:id item)}])))]))
 
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}

@@ -9,6 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.changes :as dch]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as muc]
@@ -17,10 +18,17 @@
    [app.main.ui.shapes.text.embed :as ste]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
+
+(def obs-config
+  #js {:attributes true
+       :childList true
+       :subtree true
+       :characterData true})
 
 (defn make-is-moving-ref
   [id]
@@ -43,13 +51,31 @@
   (let [new-shape (unchecked-get new-props "shape")
         old-shape (unchecked-get old-props "shape")
 
+        new-thumbnail? (unchecked-get new-props "thumbnail?")
+        old-thumbnail? (unchecked-get old-props "thumbnail?")
+
         new-objects (unchecked-get new-props "objects")
         old-objects (unchecked-get old-props "objects")
 
         new-children (->> new-shape :shapes (mapv #(get new-objects %)))
         old-children (->> old-shape :shapes (mapv #(get old-objects %)))]
     (and (= new-shape old-shape)
+         (= new-thumbnail? old-thumbnail?)
          (= new-children old-children))))
+
+(mf/defc thumbnail
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (obj/get props "shape")]
+    (when (:thumbnail shape)
+      [:image {:xlinkHref (:thumbnail shape)
+               :x (:x shape)
+               :y (:y shape)
+               :width (:width shape)
+               :height (:height shape)
+               ;; DEBUG
+               ;; :style {:filter "sepia(1)"}
+               }])))
 
 ;; This custom deffered don't deffer rendering when ghost rendering is
 ;; used.
@@ -76,6 +102,8 @@
       [props]
       (let [shape       (unchecked-get props "shape")
             objects     (unchecked-get props "objects")
+            thumbnail?  (unchecked-get props "thumbnail?")
+
             edition     (mf/deref refs/selected-edition)
             embed-fonts? (mf/use-ctx muc/embed-ctx)
 
@@ -90,10 +118,15 @@
 
         (when (and shape (not (:hidden shape)))
           [:g.frame-wrapper {:display (when (:hidden shape) "none")}
-           [:> shape-container {:shape shape}
-            (when embed-fonts?
-              [:& ste/embed-fontfaces-style {:shapes text-childs}])
-            [:& frame-shape
-             {:shape shape
-              :childs children}]]])))))
+
+           (if (and thumbnail? (some? (:thumbnail shape)))
+             [:& thumbnail {:shape shape}]
+
+             [:> shape-container {:shape shape }
+
+              (when embed-fonts?
+                [:& ste/embed-fontfaces-style {:shapes text-childs}])
+
+              [:& frame-shape {:shape shape
+                               :childs children}]])])))))
 

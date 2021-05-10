@@ -34,7 +34,7 @@
     (p/create
      (fn [resolve reject]
        (->> (http/send! {:uri uri
-                         :query {:file-id file-id :id page-id}
+                         :query {:file-id file-id :id page-id :strip-thumbnails true}
                          :method :get})
             (rx/map http/conditional-decode-transit)
             (rx/mapcat handle-response)
@@ -50,7 +50,7 @@
   (let [prev (get @cache ckey)]
     (if (= (:data prev) data)
       (:result prev)
-      (let [elem   (mf/element exports/page-svg #js {:data data :width "290" :height "150"})
+      (let [elem   (mf/element exports/page-svg #js {:data data :width "290" :height "150" :thumbnails? true})
             result (rds/renderToStaticMarkup elem)]
         (swap! cache assoc ckey {:data data :result result})
         result))))

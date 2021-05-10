@@ -51,7 +51,8 @@
   "Draws the root shape of the viewport and recursively all the shapes"
   {::mf/wrap-props false}
   [props]
-  (let [objects     (obj/get props "objects")
+  (let [objects       (obj/get props "objects")
+        active-frames (obj/get props "active-frames")
         root-shapes (get-in objects [uuid/zero :shapes])
         shapes      (->> root-shapes (mapv #(get objects %)))]
 
@@ -59,7 +60,8 @@
       (if (= (:type item) :frame)
         [:& frame-wrapper {:shape item
                            :key (:id item)
-                           :objects objects}]
+                           :objects objects
+                           :thumbnail? (not (get active-frames (:id item) false))}]
 
         [:& shape-wrapper {:shape item
                            :key (:id item)}]))))
