@@ -355,13 +355,8 @@
 
 (mf/defc selection-handlers
   {::mf/wrap [mf/memo]}
-  [{:keys [selected edition zoom disable-handlers on-move-selected] :as props}]
-  (let [;; We need remove posible nil values because on shape
-        ;; deletion many shape will reamin selected and deleted
-        ;; in the same time for small instant of time
-        shapes (->> (mf/deref (refs/objects-by-id selected))
-                    (remove nil?))
-        num (count shapes)
+  [{:keys [shapes selected edition zoom disable-handlers on-move-selected] :as props}]
+  (let [num (count shapes)
         {:keys [id type] :as shape} (first shapes)
 
         color (if (or (> num 1) (nil? (:shape-ref shape)))

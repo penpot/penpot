@@ -235,7 +235,7 @@
   [{:keys [bounds frame selected-shapes hover-shape zoom]}]
   (let [selected-ids          (into #{} (map :id) selected-shapes)
         selected-selrect      (gsh/selection-rect selected-shapes)
-        hover-selrect         (:selrect hover-shape)
+        hover-selrect         (-> hover-shape :points gsh/points->selrect)
         bounds-selrect        (bound->selrect bounds)
         hover-selected-shape? (not (contains? selected-ids (:id hover-shape)))]
 
