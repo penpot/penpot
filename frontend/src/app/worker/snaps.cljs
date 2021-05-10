@@ -39,16 +39,15 @@
             (rt/insert tree (coord point) data))]
     (->> shapes
          (mapcat (process-shape frame-id coord))
-         (reduce into-tree data))))
+         (reduce into-tree (or data (rt/make-tree))))))
 
 (defn remove-coord-data
   [data frame-id shapes coord]
-
   (letfn [(remove-tree [tree [point _ :as data]]
             (rt/remove tree (coord point) data))]
     (->> shapes
          (mapcat (process-shape frame-id coord))
-         (reduce remove-tree data))))
+         (reduce remove-tree (or data (rt/make-tree))))))
 
 (defn aggregate-data
   ([objects]
@@ -117,16 +116,13 @@
         add-frames
         (fn [snap-data frame-id]
           (assoc snap-data frame-id {:x (rt/make-tree)
-                                    :y (rt/make-tree)}))
+                                     :y (rt/make-tree)}))]
 
-        snap-data (as-> snap-data $
-                    (reduce add-frames $ frames-to-add)
-                    (reduce add-data $ to-add)
-                    (reduce delete-data $ to-delete)
-                    (reduce delete-frames $ frames-to-delete))
-        ]
-
-    snap-data))
+    (as-> snap-data $
+      (reduce add-frames $ frames-to-add)
+      (reduce add-data $ to-add)
+      (reduce delete-data $ to-delete)
+      (reduce delete-frames $ frames-to-delete))))
 
 (defn- log-state
   "Helper function to print a friendly version of the snap tree. Debugging purposes"
