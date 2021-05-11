@@ -90,6 +90,7 @@
 ;;; COLORS
 
 (s/def :internal.color/name ::string)
+(s/def :internal.color/path (s/nilable ::string))
 (s/def :internal.color/value (s/nilable ::string))
 (s/def :internal.color/color (s/nilable ::string))
 (s/def :internal.color/opacity (s/nilable ::safe-number))
@@ -98,11 +99,11 @@
 (s/def ::color
   (s/keys :opt-un [::id
                    :internal.color/name
+                   :internal.color/path
                    :internal.color/value
                    :internal.color/color
                    :internal.color/opacity
                    :internal.color/gradient]))
-
 
 
 ;;; SHADOW EFFECT
