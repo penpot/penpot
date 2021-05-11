@@ -227,7 +227,9 @@
   (ptk/reify ::update-typography
     ptk/WatchEvent
     (watch [it state stream]
-      (let [prev (get-in state [:workspace-data :typographies (:id typography)])
+      (let [[path name] (cp/parse-path-name (:name typography))
+            typography (assoc typography :path path :name name)
+            prev (get-in state [:workspace-data :typographies (:id typography)])
             rchg {:type :mod-typography
                   :typography typography}
             uchg {:type :mod-typography
