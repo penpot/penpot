@@ -93,7 +93,7 @@
                     :id id}]
           (rx/of #(assoc-in % [:workspace-local :color-for-rename] id)
                  (dch/commit-changes {:redo-changes [rchg]
-                                      :undo-chages [uchg]
+                                      :undo-changes [uchg]
                                       :origin it})))))))
 (defn add-recent-color
   [color]
@@ -104,7 +104,7 @@
       (let [rchg {:type :add-recent-color
                   :color color}]
         (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-chages []
+                                    :undo-changes []
                                     :origin it}))))))
 
 (def clear-color-for-rename
@@ -120,13 +120,15 @@
   (ptk/reify ::update-color
     ptk/WatchEvent
     (watch [it state stream]
-      (let [prev (get-in state [:workspace-data :colors id])
+      (let [[path name] (cp/parse-path-name (:name color))
+            color (assoc color :path path :name name)
+            prev (get-in state [:workspace-data :colors id])
             rchg {:type :mod-color
                   :color color}
             uchg {:type :mod-color
                   :color prev}]
         (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-chages [uchg]
+                                    :undo-changes [uchg]
                                     :origin it})
                (sync-file (:current-file-id state) file-id))))))
 
@@ -142,7 +144,7 @@
             uchg {:type :add-color
                   :color prev}]
         (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-chages [uchg]
+                                    :undo-changes [uchg]
                                     :origin it}))))))
 
 (defn add-media

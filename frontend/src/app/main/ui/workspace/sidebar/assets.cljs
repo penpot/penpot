@@ -499,7 +499,8 @@
 
 (mf/defc color-item
   [{:keys [color local? file-id selected-colors multi-colors? multi-assets?
-           on-asset-click on-assets-delete on-clear-selection colors locale] :as props}]
+           on-asset-click on-assets-delete on-clear-selection on-group
+           colors locale] :as props}]
   (let [rename?   (= (:color-for-rename @refs/workspace-local) (:id color))
         id        (:id color)
         input-ref (mf/use-ref)
@@ -623,16 +624,23 @@
                       [(t locale "workspace.assets.rename") rename-color-clicked])
                     (when-not (or multi-colors? multi-assets?)
                       [(t locale "workspace.assets.edit") edit-color-clicked])
-                    [(t locale "workspace.assets.delete") delete-color]]}])]))
+                    [(t locale "workspace.assets.delete") delete-color]
+                    (when-not multi-assets?
+                      [(tr "workspace.assets.group") on-group])]}])]))
 
 (mf/defc colors-box
   [{:keys [file-id local? colors locale open? selected-assets
            on-asset-click on-assets-delete on-clear-selection] :as props}]
-  (let [selected-colors     (:colors selected-assets)
+  (let [state (mf/use-state {:folded-groups empty-folded-groups})
+
+        selected-colors     (:colors selected-assets)
         multi-colors?       (> (count selected-colors) 1)
         multi-assets?       (or (not (empty? (:components selected-assets)))
                                 (not (empty? (:graphics selected-assets)))
                                 (not (empty? (:typographies selected-assets))))
+
+        groups        (group-assets colors)
+        folded-groups (:folded-groups @state)
 
         add-color
         (mf/use-callback
@@ -651,7 +659,39 @@
                          :on-accept add-color
                          :data {:color "#406280"
                                 :opacity 1}
-                         :position :right})))]
+                         :position :right})))
+
+        create-group
+        (mf/use-callback
+          (mf/deps colors selected-colors on-clear-selection file-id)
+          (fn [name]
+            (on-clear-selection)
+            (st/emit! (dwu/start-undo-transaction))
+            (apply st/emit!
+                   (->> colors
+                        (filter #(contains? selected-colors (:id %)))
+                        (map #(dwl/update-color
+                                (assoc % :name
+                                  (str name " / "
+                                       (cp/merge-path-item (:path %) (:name %))))
+                                file-id))))
+            (st/emit! (dwu/commit-undo-transaction))))
+
+        on-fold-group
+        (mf/use-callback
+          (mf/deps groups folded-groups)
+          (fn [path]
+            (fn [event]
+              (dom/stop-propagation event)
+              (swap! state update :folded-groups
+                     toggle-folded-group path))))
+
+        on-group
+        (mf/use-callback
+          (mf/deps colors selected-colors)
+          (fn [event]
+            (dom/stop-propagation event)
+            (modal/show! :create-group-dialog {:create create-group})))]
 
     [:div.asset-section
      [:div.asset-title {:class (when (not open?) "closed")}
@@ -661,24 +701,41 @@
       (when local?
         [:div.assets-button {:on-click add-color-clicked} i/plus])]
      (when open?
-       [:div.asset-list
-        (for [color colors]
-          (let [color (cond-> color
-                        (:value color) (assoc :color (:value color) :opacity 1)
-                        (:value color) (dissoc :value)
-                        true (assoc :file-id file-id))]
-            [:& color-item {:key (:id color)
-                            :color color
-                            :file-id file-id
-                            :local? local?
-                            :selected-colors selected-colors
-                            :multi-colors? multi-colors?
-                            :multi-assets? multi-assets?
-                            :on-asset-click on-asset-click
-                            :on-assets-delete on-assets-delete
-                            :on-clear-selection on-clear-selection
-                            :colors colors
-                            :locale locale}]))])]))
+       (for [group groups]
+         (let [path        (first group)
+               colors      (second group)
+               group-open? (not (contains? folded-groups path))]
+           [:*
+            (when-not (empty? path)
+              (let [[other-path last-path truncated] (cp/compact-path path 35)]
+                [:div.group-title {:class (when-not group-open? "closed")
+                                   :on-click (on-fold-group path)}
+                 [:span i/arrow-slide]
+                 (when-not (empty? other-path)
+                   [:span.dim {:title (when truncated path)}
+                    other-path "\u00A0/\u00A0"])
+                 [:span {:title (when truncated path)}
+                  last-path]]))
+            (when group-open?
+              [:div.asset-list
+               (for [color colors]
+                 (let [color (cond-> color
+                               (:value color) (assoc :color (:value color) :opacity 1)
+                               (:value color) (dissoc :value)
+                               true (assoc :file-id file-id))]
+                   [:& color-item {:key (:id color)
+                                   :color color
+                                   :file-id file-id
+                                   :local? local?
+                                   :selected-colors selected-colors
+                                   :multi-colors? multi-colors?
+                                   :multi-assets? multi-assets?
+                                   :on-asset-click on-asset-click
+                                   :on-assets-delete on-assets-delete
+                                   :on-clear-selection on-clear-selection
+                                   :on-group on-group
+                                   :colors colors
+                                   :locale locale}]))])])))]))
 
 
 ;; ---- Typography box ----
@@ -817,7 +874,6 @@
                    (vals (get-in state [:workspace-libraries id :data :colors])))))
              st/state =))
 
-
 (defn file-media-ref
   [id]
   (l/derived (fn [state]
@@ -860,7 +916,7 @@
          (sort-by #(str/lower (:name %)) comp-fn))))
 
 (mf/defc file-library
-  [{:keys [file local?  default-open? filters locale] :as props}]
+  [{:keys [file local? default-open? filters locale] :as props}]
   (let [open-file       (mf/deref (open-file-ref (:id file)))
         open?           (-> open-file
                             :library
