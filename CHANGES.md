@@ -16,6 +16,12 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+## 1.5.3-alpha
+
+### :bug: Bugs fixed
+
+- Fix problem undo/redo.
+
 ## 1.5.2-alpha
 
 ### :bug: Bugs fixed
