@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.typography
   (:require
    [app.common.data :as d]
+   [app.common.pages :as cp]
    [app.common.text :as txt]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
@@ -212,11 +213,17 @@
         open? (mf/use-state editting?)
         hover-detach (mf/use-state false)
         name-input-ref (mf/use-ref nil)
+        value (mf/use-state (cp/merge-path-item (:path typography) (:name typography)))
 
         #_(rt/resolve router :workspace
                       {:project-id (:project-id file)
                        :file-id (:id file)}
                       {:page-id (get-in file [:data :pages 0])})
+
+        handle-change
+        (fn [event]
+          (reset! value (dom/get-target-val event)))
+
         handle-go-to-edit
         (fn [] (st/emit! (rt/nav :workspace {:project-id (:project-id file)
                                              :file-id (:id file)}
@@ -303,7 +310,8 @@
            [:input.element-name.adv-typography-name
             {:type "text"
              :ref name-input-ref
-             :value (:name typography)
-             :on-change #(on-change {:name (dom/get-target-val %)})}]]]
+             :value @value
+             :on-change handle-change
+             :on-blur #(on-change {:name @value})}]]]
          [:& typography-options {:values typography
                                  :on-change on-change}]])]]))
