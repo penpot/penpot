@@ -51,12 +51,7 @@
                           ;; Prevent browser dragging of the image
                           (dom/prevent-default event))]
 
-      (if (nil? @data-uri)
-        [:> "rect" (obj/merge!
-                    props
-                    #js {:fill "#E8E9EA"
-                         :stroke "#000000"})]
-        [:> "image" (obj/merge!
-                     props
-                     #js {:xlinkHref @data-uri
-                          :onDragStart on-drag-start})]))))
+      [:> "image" (obj/merge!
+                   props
+                   #js {:xlinkHref (or @data-uri uri)
+                        :onDragStart on-drag-start})])))

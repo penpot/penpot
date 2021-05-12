@@ -287,7 +287,7 @@ goog.scope(function() {
 
     function moveRedLeft(branch) {
         flipColors(branch);
-        if (isRed(branch.right.left)) {
+        if (branch.right && isRed(branch.right.left)) {
             branch.right = rotateRight(branch.right);
             branch = rotateLeft(branch);
             flipColors(branch);

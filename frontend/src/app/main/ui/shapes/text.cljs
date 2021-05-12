@@ -22,7 +22,7 @@
   (let [node  (obj/get props "node")
         text  (:text node)
         style (sts/generate-text-styles node)]
-    [:span {:style style}
+    [:span.text-node {:style style}
      (if (= text "") "\u00A0" text)]))
 
 (mf/defc render-root
@@ -102,6 +102,10 @@
                      :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
                      :style (-> (obj/new) (attrs/add-layer-props shape))
                      :ref ref}
+     ;; We use a class here because react has a bug that won't use the appropiate selector for
+     ;; `background-clip`
+     [:style ".text-node { background-clip: text;
+                           -webkit-background-clip: text;" ]
      [:& render-node {:index 0
                       :shape shape
                       :node content}]]))

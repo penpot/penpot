@@ -15,8 +15,19 @@
 
 (defn update-transform [node shapes modifiers]
   (doseq [{:keys [id type]} shapes]
-    (when-let [node (dom/get-element (str "shape-" id))]
-      (let [node (if (= :frame type) (.-parentNode node) node)]
+    (let [shape-node (dom/get-element (str "shape-" id))
+
+          ;; When the shape is a frame we maybe need to move its thumbnail
+          thumb-node (dom/get-element (str "thumbnail-" id))]
+      (when-let [node (cond
+                        (and (some? shape-node) (= :frame type))
+                        (.-parentNode shape-node)
+
+                        (and (some? thumb-node) (= :frame type))
+                        thumb-node
+
+                        :else
+                        shape-node)]
         (dom/set-attribute node "transform" (str (:displacement modifiers)))))))
 
 (defn remove-transform [node shapes]
