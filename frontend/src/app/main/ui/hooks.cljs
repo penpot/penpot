@@ -9,10 +9,11 @@
   (:require
    [app.common.spec :as us]
    [app.main.data.shortcuts :as dsc]
+   [app.main.store :as st]
    [app.util.dom :as dom]
-   [app.util.object :as obj]
    [app.util.dom.dnd :as dnd]
    [app.util.logging :as log]
+   [app.util.object :as obj]
    [app.util.timers :as ts]
    [app.util.transit :as t]
    [app.util.webapi :as wapi]
@@ -35,11 +36,13 @@
     state))
 
 (defn use-shortcuts
-  [shortcuts]
+  [key shortcuts]
   (mf/use-effect
+   #js [(str key) shortcuts]
    (fn []
-     (dsc/bind-shortcuts shortcuts)
-     (fn [] (dsc/remove-shortcuts)))))
+     (st/emit! (dsc/push-shortcuts key shortcuts))
+     (fn []
+       (st/emit! (dsc/pop-shortcuts key))))))
 
 (defn invisible-image
   []
