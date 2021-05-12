@@ -153,18 +153,6 @@
           (utils/update-transform render-node roots modifiers)
           (utils/remove-transform render-node roots))))))
 
-(defn setup-shortcuts [path-editing? drawing-path?]
-  (mf/use-effect
-   (mf/deps path-editing? drawing-path?)
-   (fn []
-     (cond
-       (or drawing-path? path-editing?)
-       (dsc/bind-shortcuts psc/shortcuts)
-
-       :else
-       (dsc/bind-shortcuts wsc/shortcuts))
-     dsc/remove-shortcuts)))
-
 (defn inside-vbox [vbox objects frame-id]
   (let [frame (get objects frame-id)]
 
@@ -195,3 +183,17 @@
                       (:frame-id @hover))]
        (when (not (contains? @active-frames frame-id))
          (swap! active-frames assoc frame-id true))))))
+
+;; NOTE: this is executed on each page change, maybe we need to move
+;; this shortcuts outside the viewport?
+
+(defn setup-shortcuts
+  [path-editing? drawing-path?]
+  (hooks/use-shortcuts ::workspace wsc/shortcuts)
+
+  (mf/use-effect
+   (mf/deps path-editing? drawing-path?)
+   (fn []
+     (when (or drawing-path? path-editing?)
+       (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
+       (st/emitf (dsc/pop-shortcuts ::path))))))
