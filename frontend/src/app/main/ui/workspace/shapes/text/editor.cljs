@@ -139,7 +139,9 @@
 
     [:div.text-editor
      {:ref self-ref
-      :style {:cursor cur/text}
+      :style {:cursor cur/text
+              :width (:width shape)
+              :height (:height shape)}
       :on-click (st/emitf (dwt/focus-editor))
       :class (dom/classnames
               :align-top    (= (:vertical-align content "top") "top")
