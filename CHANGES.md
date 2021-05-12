@@ -25,6 +25,11 @@
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
+
+- The OIDC setting `PENPOT_OIDC_SCOPES` has chenged the default semantincs. Before this
+  configuration added scopes to the default set. Now it replaces it, so use with care, because
+  penpot requires at least `name` and `email` props found on the user info object.
+
 ### :heart: Community contributions by (Thank you!)
 
 
