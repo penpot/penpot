@@ -131,3 +131,14 @@
     :else
     (ex/raise :type :not-supported
               :hint "seems like the current browset does not support fullscreen api.")))
+
+(defn observe-resize
+  [node]
+  (rx/create
+   (fn [subs]
+     (let [obs (js/ResizeObserver.
+                (fn [entries x]
+                  (rx/push! subs entries)))]
+       (.observe ^js obs node)
+       (fn []
+         (.disconnect ^js obs))))))
