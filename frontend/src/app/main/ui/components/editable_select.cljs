@@ -44,17 +44,18 @@
         (fn [node]
           ;; There is a problem when changing the state in this callback that
           ;; produces the dropdown to close in the same event
-          (timers/schedule
-           #(when-let [bounds (when node (dom/get-bounding-rect node))]
-              (let [{window-height :height} (dom/get-window-size)
-                    {:keys [left top height]} bounds
-                    bottom (when (< (- window-height top) 300) (- window-height top))
-                    top (when (>= (- window-height top) 300) (+ top height))]
-                (swap! state
-                       assoc
-                       :left left
-                       :top top
-                       :bottom bottom)))))]
+          (when node
+            (timers/schedule
+             #(when-let [bounds (when node (dom/get-bounding-rect node))]
+                (let [{window-height :height} (dom/get-window-size)
+                      {:keys [left top height]} bounds
+                      bottom (when (< (- window-height top) 300) (- window-height top))
+                      top (when (>= (- window-height top) 300) (+ top height))]
+                  (swap! state
+                         assoc
+                         :left left
+                         :top top
+                         :bottom bottom))))))]
 
     (mf/use-effect
      (mf/deps value)
