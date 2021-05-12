@@ -242,7 +242,7 @@
                       modifiers (:workspace-modifiers state)
                       objects (cond-> objects
                                 with-modifiers?
-                                (d/deep-merge modifiers))
+                                (cp/merge-modifiers modifiers))
                       xform (comp (map #(get objects %))
                                   (remove nil?))]
                   (into [] xform ids)))

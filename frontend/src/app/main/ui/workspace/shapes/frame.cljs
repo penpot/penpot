@@ -68,14 +68,16 @@
   [props]
   (let [shape (obj/get props "shape")]
     (when (:thumbnail shape)
-      [:image {:xlinkHref (:thumbnail shape)
-               :x (:x shape)
-               :y (:y shape)
-               :width (:width shape)
-               :height (:height shape)
-               ;; DEBUG
-               ;; :style {:filter "sepia(1)"}
-               }])))
+      [:image.frame-thumbnail
+       {:id (str "thumbnail-" (:id shape))
+        :xlinkHref (:thumbnail shape)
+        :x (:x shape)
+        :y (:y shape)
+        :width (:width shape)
+        :height (:height shape)
+        ;; DEBUG
+        ;; :style {:filter "sepia(1)"}
+        }])))
 
 ;; This custom deffered don't deffer rendering when ghost rendering is
 ;; used.
@@ -114,19 +116,30 @@
                              (filterv #(and (= :text (:type %))
                                             (= (:id shape) (:frame-id %)))))
 
-            ds-modifier (get-in shape [:modifiers :displacement])]
+            ds-modifier (get-in shape [:modifiers :displacement])
+
+            rendered? (mf/use-state false)
+
+            show-thumbnail? (and thumbnail? (some? (:thumbnail shape)))
+
+            on-dom
+            (mf/use-callback
+             (fn [node]
+               (ts/schedule-on-idle #(reset! rendered? (some? node)))))]
 
         (when (and shape (not (:hidden shape)))
           [:g.frame-wrapper {:display (when (:hidden shape) "none")}
 
-           (if (and thumbnail? (some? (:thumbnail shape)))
-             [:& thumbnail {:shape shape}]
-
-             [:> shape-container {:shape shape }
+           (when-not show-thumbnail?
+             [:> shape-container {:shape shape
+                                  :ref on-dom}
 
               (when embed-fonts?
                 [:& ste/embed-fontfaces-style {:shapes text-childs}])
 
               [:& frame-shape {:shape shape
-                               :childs children}]])])))))
+                               :childs children}]])
+
+           (when (or (not @rendered?) show-thumbnail?)
+             [:& thumbnail {:shape shape}])])))))
 

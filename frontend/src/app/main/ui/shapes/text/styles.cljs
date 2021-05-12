@@ -89,10 +89,10 @@
       (let [text-color (-> (update gradient :type keyword)
                            (uc/gradient->css))]
         (-> base
-            (obj/set! "background" "var(--text-color)")
+            (obj/set! "--text-color" text-color)
+            (obj/set! "backgroundImage" "var(--text-color)")
             (obj/set! "WebkitTextFillColor" "transparent")
-            (obj/set! "WebkitBackgroundClip" "text")
-            (obj/set! "--text-color" text-color))))
+            (obj/set! "WebkitBackgroundClip" "text"))))
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
