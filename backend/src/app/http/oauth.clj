@@ -232,8 +232,7 @@
               :token-uri     (cf/get :oidc-token-uri)
               :auth-uri      (cf/get :oidc-auth-uri)
               :user-uri      (cf/get :oidc-user-uri)
-              :scopes        (into #{"openid" "profile" "email" "name"}
-                                   (cf/get :oidc-scopes #{}))
+              :scopes        (cf/get :oidc-scopes #{"openid" "profile"})
               :roles-attr    (cf/get :oidc-roles-attr)
               :roles         (cf/get :oidc-roles)
               :name          "oidc"}]
