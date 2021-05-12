@@ -16,6 +16,14 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+
+## 1.5.4-alpha
+
+### :bug: Bugs fixed
+
+- Fix issues on group rendering.
+
+
 ## 1.5.3-alpha
 
 ### :bug: Bugs fixed
