@@ -71,6 +71,13 @@
     (update [_ state]
       (assoc-in state [:workspace-local :assets-files-open file-id box] open?))))
 
+(defn set-assets-group-open
+  [file-id box path open?]
+  (ptk/reify ::set-assets-group-open
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :assets-files-open file-id :groups box path] open?))))
+
 (defn default-color-name [color]
   (or (:color color)
       (case (get-in color [:gradient :type])

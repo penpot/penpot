@@ -1584,6 +1584,10 @@ msgid "workspace.assets.rename"
 msgstr "Renombrar"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename-group"
+msgstr "Renombrar grupo"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.search"
 msgstr "Buscar recursos"
 
@@ -1632,6 +1636,10 @@ msgstr "Ag"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
 msgstr "Transformar texto"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "Desagrupar"
 
 #: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.linear"
