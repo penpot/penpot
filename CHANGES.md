@@ -22,6 +22,7 @@
 ### :bug: Bugs fixed
 
 - Fix issues on group rendering.
+- Fix problem with text editing auto-height [Taiga #1683](https://tree.taiga.io/project/penpot/issue/1683)
 
 
 ## 1.5.3-alpha
