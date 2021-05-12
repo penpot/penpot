@@ -253,14 +253,8 @@
    (map (fn [x] (f x) x) coll)))
 
 (defn merge
-  "A faster merge."
   [& maps]
-  (loop [res  (transient (or (first maps) {}))
-         maps (next maps)]
-    (if (nil? maps)
-      (persistent! res)
-      (recur (reduce-kv assoc! res (first maps))
-             (next maps)))))
+  (reduce conj (or (first maps) {}) (rest maps)))
 
 (defn distinct-xf
   [f]

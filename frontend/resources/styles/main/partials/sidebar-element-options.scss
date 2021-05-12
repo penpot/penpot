@@ -2,8 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+// Copyright (c) UXBOX Labs SL
 
 .element-options {
   display: flex;
@@ -809,9 +808,10 @@
   left: 0;
   position: absolute;
   top: 0;
-  width: calc(100% - 8px);
+  width: calc(100%);
   opacity: 0.4;
   z-index: 10;
+  display: flex;
 }
 
 .advanced-options-wrapper {
@@ -1061,37 +1061,200 @@
 }
 
 .multiple-typography {
-    margin: 0.5rem;
-    padding: 0.5rem;
-    border: 1px dashed $color-gray-30;
-    border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
+  margin: 0.5rem;
+  padding: 0.5rem;
+  border: 1px dashed $color-gray-30;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
 
-    .multiple-typography-text,
-    .multiple-typography-button {
-        font-size: $fs13;
-        display: flex;
-        align-items: center;
+  .multiple-typography-text,
+  .multiple-typography-button {
+    font-size: $fs13;
+    display: flex;
+    align-items: center;
+  }
+
+  .multiple-typography-button {
+    cursor: pointer;
+    svg {
+      transition: fill 0.3s;
+      width: 16px;
+      height: 16px;
+      fill: $color-gray-10;
     }
 
-    .multiple-typography-button {
-        cursor: pointer;
-        svg {
-            transition: fill 0.3s;
-            width: 16px;
-            height: 16px;
-            fill: $color-gray-10;
-        }
+    &:hover svg {
+      fill: $color-primary;
+    }
+  }
 
-        &:hover svg {
-            fill: $color-primary;
+  svg {
+  }
+
+  .multiple-typography-button:hover svg {
+  }
+}
+
+.font-selector {
+  background: $color-black;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: calc(100%);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .font-selector-dropdown {
+    background: #303236;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    height: 100%;
+  }
+
+  header {
+    padding: 15px 17px;
+    display: flex;
+    align-items: center;
+    position: relative;
+
+    .backend-filters {
+      padding: $small $medium;
+      // width: 220px;
+      top: 40px;
+      right: 20px;
+    }
+    .backend-filter {
+      display: flex;
+      align-items: center;
+      padding: $small 0;
+      cursor: pointer;
+
+      .checkbox-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: $medium;
+        height: $medium;
+        border: 1px solid $color-gray-30;
+        border-radius: $br-small;
+
+        svg {
+          width: 8px;
+          display: none;
+          height: 8px;
+          fill: $color-black;
         }
+      }
+
+      .backend-name {
+        margin-left: $small;
+        color: $color-gray-50;
+      }
+
+      &.selected {
+        .checkbox-icon {
+          svg {
+            display: inherit;
+          }
+        }
+      }
+
+    }
+
+    input {
+      display: flex;
+      flex-grow: 1;
+      padding: 4px;
+      font-size: $fs12;
+      background: $color-gray-50;
+      border-radius: $br-small;
+      color: $color-gray-20;
+      border: 1px solid $color-gray-30;
+      margin: 0px;
+    }
+
+    .options {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 24px;
+      height: 24px;
+      margin-left: $small;
+
+      svg {
+        width: 16px;
+        height: 16px;
+        fill: $color-gray-20
+      }
+
+      &.active {
+        svg {
+          fill: $color-primary;
+        }
+      }
+    }
+  }
+
+  .fonts-list {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    position: relative;
+    -webkit-box-flex: 1;
+    flex: 1 1 auto;
+  }
+
+  hr {
+    margin-bottom: 0px;
+    margin-top: 0px;
+  }
+
+  .font-item {
+    padding-left: $big;
+    height: $x-big;
+    max-height: $x-big;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: $color-gray-10;
+
+    &.selected {
+      background-color: $color-black;
+      color: $color-primary;
+
+      .icon svg {fill: $color-primary;}
+    }
+
+    &:hover {
+      background-color: $color-primary;
+      color: $color-black;
+    }
+
+    .icon {
+      display: flex;
+      // justify-content: center;
+      align-items: center;
+      // border: 1px solid red;
+      width: $big
+    }
+
+    .label {
+      font-size: 12px;
     }
 
     svg {
+      fill: $color-gray-10;
+      width: 10px;
+      height: 10px;
     }
-
-    .multiple-typography-button:hover svg {
-    }
+  }
 }
+
+

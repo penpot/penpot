@@ -15,6 +15,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
    [app.main.data.media :as di]
+   [app.main.data.fonts :as df]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -270,7 +271,8 @@
                       :project project
                       :libraries libraries}))
            (rx/mapcat (fn [{:keys [project] :as bundle}]
-                        (rx/of (ptk/data-event ::bundle-fetched bundle))))))))
+                        (rx/of (ptk/data-event ::bundle-fetched bundle)
+                               (df/load-team-fonts (:team-id project)))))))))
 
 ;; --- Set File shared
 

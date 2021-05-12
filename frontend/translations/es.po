@@ -47,6 +47,9 @@ msgstr "Estilo"
 msgid "labels.custom-fonts"
 msgstr "Fuentes personalizadas"
 
+msgid "labels.manage-fonts"
+msgstr "Administrar fuentes"
+
 msgid "labels.search-font"
 msgstr "Buscar fuente"
 

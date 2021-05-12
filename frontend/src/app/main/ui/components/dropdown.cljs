@@ -13,7 +13,7 @@
   [props]
   (let [children (gobj/get props "children")
         on-close (gobj/get props "on-close")
-        ref (gobj/get props "container")
+        ref      (gobj/get props "container")
 
         on-click
         (fn [event]
