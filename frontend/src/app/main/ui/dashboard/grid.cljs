@@ -26,6 +26,7 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.timers :as ts]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
@@ -255,17 +256,19 @@
 
     (mf/use-effect
       (fn []
-        (let [node   (mf/ref-val rowref)
-              obs    (new js/ResizeObserver
-                          (fn [entries x]
-                            (ts/raf #(let [row (first entries)
-                                           row-rect (.-contentRect ^js row)
-                                           row-width (.-width ^js row-rect)]
-                                       (reset! width row-width)))))]
-
-          (.observe ^js obs node)
+        (let [node (mf/ref-val rowref)
+              mnt? (volatile! true)
+              sub  (->> (wapi/observe-resize node)
+                        (rx/observe-on :af)
+                        (rx/subs (fn [entries]
+                                   (let [row (first entries)
+                                         row-rect (.-contentRect ^js row)
+                                         row-width (.-width ^js row-rect)]
+                                     (when @mnt?
+                                       (reset! width row-width))))))]
           (fn []
-            (.disconnect ^js obs)))))
+            (vreset! mnt? false)
+            (rx/dispose! sub)))))
 
     [:div.grid-row.no-wrap {:ref rowref}
      (when dragging?
