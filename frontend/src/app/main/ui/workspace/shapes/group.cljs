@@ -30,7 +30,7 @@
   [shape-wrapper]
   (let [group-shape (group/group-shape shape-wrapper)]
     (mf/fnc group-wrapper
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
+      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
        ::mf/wrap-props false}
       [props]
       (let [shape (unchecked-get props "shape")
