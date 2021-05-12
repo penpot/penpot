@@ -13,6 +13,7 @@
    [app.main.repo :as rp]
    [app.main.data.events :as ev]
    [app.main.data.users :as du]
+   [app.main.data.fonts :as df]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
@@ -86,6 +87,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/merge
+       (ptk/watch (df/load-team-fonts id) state stream)
        (ptk/watch (fetch-projects) state stream)
        (ptk/watch (du/fetch-teams) state stream)
        (ptk/watch (du/fetch-users {:team-id id}) state stream)))))
