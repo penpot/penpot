@@ -1254,6 +1254,15 @@
          (rx/of ::dwp/force-persist
                 (rt/nav :dashboard-projects {:team-id team-id})))))))
 
+(defn go-to-dashboard-fonts
+  []
+   (ptk/reify ::go-to-dashboard
+     ptk/WatchEvent
+     (watch [it state stream]
+       (let [team-id (:current-team-id state)]
+         (rx/of ::dwp/force-persist
+                (rt/nav :dashboard-fonts {:team-id team-id}))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

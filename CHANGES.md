@@ -4,9 +4,10 @@
 
 ### :sparkles: New features
 
+- Add improved workspace font selector [Taiga US #292](https://tree.taiga.io/project/penpot/us/292)
 - Add many performance related improvements to indexes handling on workspace.
 - Add option to interactively scale text [Taiga #1527](https://tree.taiga.io/project/penpot/us/1527)
-- Add the ability to upload/use custom fonts (and automatically generate all needed webfonts).
+- Add the ability to upload/use custom fonts (and automatically generate all needed webfonts) [Taiga US #292](https://tree.taiga.io/project/penpot/us/292)
 - Refactor dashboard state management (improves considerably the performance when you have a dashboard with a big collection of projects and files).
 - Translate automatic names of new files and projects.
 

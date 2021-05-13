@@ -190,7 +190,6 @@
 (defn setup-shortcuts
   [path-editing? drawing-path?]
   (hooks/use-shortcuts ::workspace wsc/shortcuts)
-
   (mf/use-effect
    (mf/deps path-editing? drawing-path?)
    (fn []

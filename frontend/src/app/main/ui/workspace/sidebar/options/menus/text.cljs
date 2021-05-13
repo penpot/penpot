@@ -128,7 +128,6 @@
        :on-click #(handle-change % "rtl")}
       i/text-direction-rtl]]))
 
-
 (mf/defc vertical-align
   [{:keys [shapes ids values on-change] :as props}]
   (let [{:keys [vertical-align]} values
@@ -225,63 +224,73 @@
                        (tr "workspace.options.text-options.title"))
 
         emit-update!
-        (fn [id attrs]
-          (let [attrs (select-keys attrs root-attrs)]
-            (when-not (empty? attrs)
-              (st/emit! (dwt/update-root-attrs {:id id :attrs attrs}))))
+        (mf/use-callback
+         (fn [id attrs]
+           (let [attrs (select-keys attrs root-attrs)]
+             (when-not (empty? attrs)
+               (st/emit! (dwt/update-root-attrs {:id id :attrs attrs}))))
 
-          (let [attrs (select-keys attrs paragraph-attrs)]
-            (when-not (empty? attrs)
-              (st/emit! (dwt/update-paragraph-attrs {:id id :attrs attrs}))))
+           (let [attrs (select-keys attrs paragraph-attrs)]
+             (when-not (empty? attrs)
+               (st/emit! (dwt/update-paragraph-attrs {:id id :attrs attrs}))))
 
-          (let [attrs (select-keys attrs text-attrs)]
-            (when-not (empty? attrs)
-              (st/emit! (dwt/update-text-attrs {:id id :attrs attrs})))))
+           (let [attrs (select-keys attrs text-attrs)]
+             (when-not (empty? attrs)
+               (st/emit! (dwt/update-text-attrs {:id id :attrs attrs}))))))
+
+        on-change
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [attrs]
+           (run! #(emit-update! % attrs) ids)))
 
         typography
-        (cond
-          (and (:typography-ref-id values)
-               (not= (:typography-ref-id values) :multiple)
-               (not= (:typography-ref-file values) file-id))
-          (-> shared-libs
-              (get-in [(:typography-ref-file values) :data :typographies (:typography-ref-id values)])
-              (assoc :file-id (:typography-ref-file values)))
+        (mf/use-memo
+         (mf/deps values file-id shared-libs)
+         (fn []
+           (cond
+             (and (:typography-ref-id values)
+                  (not= (:typography-ref-id values) :multiple)
+                  (not= (:typography-ref-file values) file-id))
+             (-> shared-libs
+                 (get-in [(:typography-ref-file values) :data :typographies (:typography-ref-id values)])
+                 (assoc :file-id (:typography-ref-file values)))
 
-          (and (:typography-ref-id values)
-               (not= (:typography-ref-id values) :multiple)
-               (= (:typography-ref-file values) file-id))
-          (get typographies (:typography-ref-id values)))
+             (and (:typography-ref-id values)
+                  (not= (:typography-ref-id values) :multiple)
+                  (= (:typography-ref-file values) file-id))
+             (get typographies (:typography-ref-id values)))))
 
         on-convert-to-typography
-        (mf/use-callback
-         (mf/deps values)
-         (fn [event]
-           (let [setted-values (-> (d/without-nils values)
-                                   (select-keys
-                                    (d/concat text-font-attrs
-                                              text-spacing-attrs
-                                              text-transform-attrs)))
-                 typography (merge txt/default-typography setted-values)
-                 typography (generate-typography-name typography)]
-             (let [id (uuid/next)]
-               (st/emit! (dwl/add-typography (assoc typography :id id) false))
-               (run! #(emit-update! % {:typography-ref-id id
-                                       :typography-ref-file file-id}) ids)))))
+        (fn [event]
+          (let [setted-values (-> (d/without-nils values)
+                                  (select-keys
+                                   (d/concat text-font-attrs
+                                             text-spacing-attrs
+                                             text-transform-attrs)))
+                typography (merge txt/default-typography setted-values)
+                typography (generate-typography-name typography)]
+            (let [id (uuid/next)]
+              (st/emit! (dwl/add-typography (assoc typography :id id) false))
+              (run! #(emit-update! % {:typography-ref-id id
+                                      :typography-ref-file file-id}) ids))))
 
         handle-detach-typography
-        (fn []
-          (run! #(emit-update! % {:typography-ref-file nil
-                                  :typography-ref-id nil})
-                ids))
+        (mf/use-callback
+         (mf/deps on-change)
+         (fn []
+           (on-change {:typography-ref-file nil
+                       :typography-ref-id nil})))
 
         handle-change-typography
-        (fn [changes]
-          (st/emit! (dwl/update-typography (merge typography changes) file-id)))
+        (mf/use-callback
+         (mf/deps typography file-id)
+         (fn [changes]
+           (st/emit! (dwl/update-typography (merge typography changes) file-id))))
 
         opts #js {:ids ids
                   :values values
-                  :on-change (fn [attrs]
-                               (run! #(emit-update! % attrs) ids))}]
+                  :on-change on-change}]
 
     [:div.element-set
      [:div.element-set-title

@@ -46,6 +46,9 @@ msgstr "Style"
 msgid "labels.custom-fonts"
 msgstr "Custom fonts"
 
+msgid "labels.manage-fonts"
+msgstr "Manage fonts"
+
 msgid "labels.search-font"
 msgstr "Search font"
 
@@ -55,13 +58,14 @@ msgstr "Font providers"
 msgid "labels.upload-custom-fonts"
 msgstr "Upload custom fonts"
 
+
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr "Any web font you upload here will be added to the font family list available at the text properties of the files of this team. Fonts with the same font family name will be grouped as a **single font family**. You can upload fonts with the following formats: **TTF, OTF and WOFF** (only one will be needed)."
 
 #, markdown
 msgid "dashboard.fonts.hero-text2"
-msgstr "You should only upload fonts you own or have license to use in Penpot. Find out more in the Content rights section of [Penpot's Terms of Service](https://penpot.app/terms.html). You also might want to read about [font licensing](2)."
+msgstr "You should only upload fonts you own or have license to use in Penpot. Find out more in the Content rights section of [Penpot's Terms of Service](https://penpot.app/terms.html). You also might want to read about [font licensing](https://www.typography.com/faq)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
