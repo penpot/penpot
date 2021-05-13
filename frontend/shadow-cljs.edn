@@ -3,7 +3,7 @@
  :jvm-opts ["-Xmx600m" "-Xms50m" "-XX:+UseSerialGC"]
  :dev-http {8888 "classpath:public"}
 
- :source-paths ["src", "vendor", "resources", "../common", "tests"]
+ :source-paths ["src", "vendor", "resources", "../common", "tests", "dev"]
  :dependencies
  [[binaryage/devtools "RELEASE"]
 
@@ -19,7 +19,7 @@
   [funcool/okulary "2020.04.14-0"]
   [funcool/potok "4.0.0"]
   [funcool/promesa "6.0.0"]
-  [funcool/rumext "2021.01.26-0"]
+  [funcool/rumext "2021.05.12-1"]
 
   [lambdaisland/uri "1.4.54"
    :exclusions [org.clojure/data.json]]
