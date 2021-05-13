@@ -161,40 +161,40 @@
        (->> stream
             (rx/filter (ptk/type? ::dwp/bundle-fetched))
             (rx/take 1)
-
             (rx/map deref)
-            (rx/mapcat (fn [bundle]
-                         (rx/of (dwn/initialize file-id)
-                                (dwp/initialize-file-persistence file-id)
-                                (dwc/initialize-indices bundle)))))
+            (rx/mapcat (fn [{:keys [project] :as bundle}]
+                         (rx/merge
+                          (rx/of (dwn/initialize file-id)
+                                 (dwp/initialize-file-persistence file-id)
+                                 (dwc/initialize-indices bundle))
 
-       ;; Mark file initialized when indexes are ready
-       (->> stream
-            (rx/filter #(= ::dwc/index-initialized %))
-            (rx/first)
-            (rx/map (fn []
-                      (file-initialized project-id file-id))))
-
-       ))))
+                          (->> stream
+                               (rx/filter #(= ::dwc/index-initialized %))
+                               (rx/first)
+                               (rx/map #(file-initialized bundle)))))))))))
 
 (defn- file-initialized
-  [project-id file-id]
+  [{:keys [file users project libraries] :as bundle}]
   (ptk/reify ::file-initialized
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-file
-              (fn [file]
-                (if (= (:id file) file-id)
-                  (assoc file :initialized true)
-                  file))))
+      (assoc state
+             :current-team-id (:team-id project)
+             :users (d/index-by :id users)
+             :workspace-undo {}
+             :workspace-project project
+             :workspace-file (assoc file :initialized true)
+             :workspace-data (:data file)
+             :workspace-libraries (d/index-by :id libraries)))
 
     ptk/WatchEvent
     (watch [it state stream]
-      (let [ignore-until (get-in state [:workspace-file :ignore-sync-until])
+      (let [file-id       (:id file)
+            ignore-until  (:ignore-sync-until file)
             needs-update? (some #(and (> (:modified-at %) (:synced-at %))
                                       (or (not ignore-until)
                                           (> (:modified-at %) ignore-until)))
-                                (vals (get state :workspace-libraries)))]
+                                libraries)]
         (when needs-update?
           (rx/of (dwl/notify-sync-file file-id)))))))
 
