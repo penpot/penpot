@@ -15,16 +15,28 @@
 
 ### :sparkles: New features
 
+- Add many performance related improvements to indexes handling on workspace.
 - Add option to interactively scale text [Taiga #1527](https://tree.taiga.io/project/penpot/us/1527)
+- Add the ability to upload/use custom fonts (and automatically generate all needed webfonts).
+- Refactor dashboard state management (improves considerably the performance when you have a dashboard with a big collection of projects and files).
 - Translate automatic names of new files and projects.
 
 ### :bug: Bugs fixed
 
 - Remove interactions when the destination artboard is deleted [Taiga #1656](https://tree.taiga.io/project/penpot/issue/1656)
-- Fix snap index problem [Taiga #1661](https://tree.taiga.io/project/penpot/issue/1661)
 
 ### :arrow_up: Deps updates
+
+- Update exporter dependencies (puppetteer), that fixes some unexpected exceptions.
+- Update string manipulation library.
+
+
 ### :boom: Breaking changes
+
+- The OIDC setting `PENPOT_OIDC_SCOPES` has changed the default semantics. Before this
+  configuration added scopes to the default set. Now it replaces it, so use with care, because
+  penpot requires at least `name` and `email` props found on the user info object.
+
 ### :heart: Community contributions by (Thank you!)
 
 

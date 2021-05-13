@@ -138,7 +138,7 @@
     (mf/use-effect
      (fn []
        ;; Close any non-modal dialog that may be still open
-       (st/emitf dm/hide)))
+       (st/emit! dm/hide)))
 
     (mf/use-effect
      (mf/deps file)

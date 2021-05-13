@@ -263,29 +263,14 @@
                    (rp/query :team-users {:file-id file-id})
                    (rp/query :project {:id project-id})
                    (rp/query :file-libraries {:file-id file-id}))
-           (rx/first)
-           (rx/map (fn [bundle] (apply bundle-fetched bundle)))))))
-
-(defn- bundle-fetched
-  [file users project libraries]
-  (ptk/reify ::bundle-fetched
-    IDeref
-    (-deref [_]
-      {:file file
-       :users users
-       :project project
-       :libraries libraries})
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state
-             :users (d/index-by :id users)
-             :workspace-undo {}
-             :workspace-project project
-             :workspace-file file
-             :workspace-data (:data file)
-             :workspace-libraries (d/index-by :id libraries)))))
-
+           (rx/take 1)
+           (rx/map (fn [[file users project libraries]]
+                     {:file file
+                      :users users
+                      :project project
+                      :libraries libraries}))
+           (rx/mapcat (fn [{:keys [project] :as bundle}]
+                        (rx/of (ptk/data-event ::bundle-fetched bundle))))))))
 
 ;; --- Set File shared
 

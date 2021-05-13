@@ -21,6 +21,7 @@
    [app.util.logging :as log]
    [app.util.object :as obj]
    [app.util.timers :as timers]
+   [app.util.webapi :as wapi]
    [app.util.text-editor :as ted]
    [okulary.core :as l]
    [beicon.core :as rx]
@@ -62,6 +63,7 @@
                 (true? (obj/get props "edition?"))
                 (update-with-current-editor-state))
 
+        mnt           (mf/use-ref true)
         paragraph-ref (mf/use-state nil)
 
         handle-resize-text
@@ -83,20 +85,24 @@
          (mf/deps handle-resize-text)
          (fn [node]
            (when node
-             (let [obs-ref (atom nil)]
-               (timers/schedule
-                (fn []
-                  (when-let [ps-node (dom/query node ".paragraph-set")]
-                    (reset! paragraph-ref ps-node))))))))]
+             (timers/schedule
+              #(when (mf/ref-val mnt)
+                 (when-let [ps-node (dom/query node ".paragraph-set")]
+                   (reset! paragraph-ref ps-node)))))))]
 
     (mf/use-effect
      (mf/deps @paragraph-ref handle-resize-text grow-type)
      (fn []
        (when-let [paragraph-node @paragraph-ref]
-         (let [observer (js/ResizeObserver. handle-resize-text)]
+         (let [sub (->> (wapi/observe-resize paragraph-node)
+                        (rx/observe-on :af)
+                        (rx/subs handle-resize-text))]
            (log/debug :msg "Attach resize observer" :shape-id id :shape-name name)
-           (.observe observer paragraph-node)
-           #(.disconnect observer)))))
+           (fn []
+             (rx/dispose! sub))))))
+
+    (mf/use-effect
+     (fn [] #(mf/set-ref-val! mnt false)))
 
     [:& text/text-shape {:ref text-ref-cb :shape shape :grow-type (:grow-type shape)}]))
 
