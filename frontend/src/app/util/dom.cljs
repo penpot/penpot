@@ -293,3 +293,21 @@
 
 (defn remove-attribute [^js node ^string attr]
   (.removeAttribute node attr))
+
+(defn scroll-into-view!
+  ([element]
+   (.scrollIntoView ^js element false))
+  ([element scroll-top]
+   (.scrollIntoView ^js element scroll-top)))
+
+(defn is-in-viewport?
+  [element]
+  (let [rect   (.getBoundingClientRect element)
+        height (or (.-innerHeight js/window)
+                   (.. js/document -documentElement -clientHeight))
+        width  (or (.-innerWidth js/window)
+                   (.. js/document -documentElement -clientWidth))]
+    (and (>= (.-top rect) 0)
+         (>= (.-left rect) 0)
+         (<= (.-bottom rect) height)
+         (<= (.-right rect) width))))
