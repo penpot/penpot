@@ -23,6 +23,7 @@
    [app.main.snap :as snap]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.util.path.shapes-to-path :as ups]
    [beicon.core :as rx]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -626,3 +627,11 @@
       (-> state
           (dissoc :workspace-modifiers)
           (update :workspace-local dissoc :modifiers :current-move-selected)))))
+
+(defn selected-to-path
+  []
+  (ptk/reify ::selected-to-path
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [ids (wsh/lookup-selected state)]
+        (rx/of (dch/update-shapes ids ups/convert-to-path))))))

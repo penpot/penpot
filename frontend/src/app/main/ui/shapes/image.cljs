@@ -17,13 +17,10 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
-(mf/defc image-shape
-  {::mf/wrap-props false}
-  [props]
-
-  (let [shape (unchecked-get props "shape")
-        {:keys [id x y width height rotation metadata]} shape
-        uri              (cfg/resolve-file-media metadata)
+(defn use-image-uri
+  [media]
+  (let [uri              (mf/use-memo (mf/deps (:id media))
+                                      #(cfg/resolve-file-media media))
         embed-resources? (mf/use-ctx muc/embed-ctx)
         data-uri         (mf/use-state (when (not embed-resources?) uri))]
 
@@ -37,6 +34,16 @@
               (rx/map :body)
               (rx/mapcat wapi/read-file-as-data-url)
               (rx/subs #(reset! data-uri  %))))))
+
+    (or @data-uri uri)))
+
+(mf/defc image-shape
+  {::mf/wrap-props false}
+  [props]
+
+  (let [shape (unchecked-get props "shape")
+        {:keys [id x y width height rotation metadata]} shape
+        uri (use-image-uri metadata)]
 
     (let [transform (geom/transform-matrix shape)
           props (-> (attrs/extract-style-attrs shape)
@@ -53,5 +60,5 @@
 
       [:> "image" (obj/merge!
                    props
-                   #js {:xlinkHref (or @data-uri uri)
+                   #js {:xlinkHref uri
                         :onDragStart on-drag-start})])))

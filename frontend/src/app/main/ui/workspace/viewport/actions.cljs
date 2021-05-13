@@ -179,8 +179,8 @@
                          (dw/start-editing-selected))
 
                :else
-               ;; Do nothing
-               nil))))))
+               (st/emit! (dw/selected-to-path)
+                         (dw/start-editing-selected))))))))
 
 (defn on-context-menu
   [hover]

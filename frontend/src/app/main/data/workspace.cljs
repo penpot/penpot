@@ -1797,6 +1797,7 @@
 (d/export dwt/update-dimensions)
 (d/export dwt/flip-horizontal-selected)
 (d/export dwt/flip-vertical-selected)
+(d/export dwt/selected-to-path)
 
 ;; Persistence
 
@@ -1820,12 +1821,10 @@
 (d/export dws/duplicate-selected)
 (d/export dws/handle-selection)
 (d/export dws/select-inside-group)
-;;(d/export dws/select-last-layer)
 (d/export dwd/select-for-drawing)
 (d/export dwc/clear-edition-mode)
 (d/export dwc/add-shape)
 (d/export dwc/start-edition-mode)
-#_(d/export dwc/start-path-edit)
 
 ;; Groups
 

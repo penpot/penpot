@@ -4,6 +4,9 @@
 ## :rocket: Next
 
 ### :sparkles: New features
+
+- Transform shapes to path on double click
+
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
