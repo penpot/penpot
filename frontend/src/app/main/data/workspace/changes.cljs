@@ -11,6 +11,7 @@
    [app.common.pages.spec :as spec]
    [app.common.spec :as us]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.worker :as uw]
    [app.main.store :as st]
    [app.util.logging :as log]
@@ -31,127 +32,75 @@
 
 (def commit-changes? (ptk/type? ::commit-changes))
 
-(defn- generate-operations
-  ([ma mb] (generate-operations ma mb false))
-  ([ma mb undo?]
-   (let [ops (let [ma-keys (set (keys ma))
-                   mb-keys (set (keys mb))
-                   added   (set/difference mb-keys ma-keys)
-                   removed (set/difference ma-keys mb-keys)
-                   both    (set/intersection ma-keys mb-keys)]
-               (d/concat
-                (mapv #(array-map :type :set :attr % :val (get mb %)) added)
-                (mapv #(array-map :type :set :attr % :val nil) removed)
-                (loop [items  (seq both)
-                       result []]
-                  (if items
-                    (let [k   (first items)
-                          vma (get ma k)
-                          vmb (get mb k)]
-                      (if (= vma vmb)
-                        (recur (next items) result)
-                        (recur (next items)
-                               (conj result {:type :set
-                                             :attr k
-                                             :val vmb
-                                             :ignore-touched undo?}))))
-                    result))))]
-     (if undo?
-       (conj ops {:type :set-touched :touched (:touched mb)})
-       ops))))
+(defn- generate-operation
+  "Given an object old and new versions and an attribute will append into changes
+  the set and undo operations"
+  [changes attr old new]
+  (let [old-val (get old attr)
+        new-val (get new attr)]
+    (if (= old-val new-val)
+      changes
+      (-> changes
+          (update :rops conj {:type :set :attr attr :val new-val})
+          (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
+
+(defn- update-shape-changes
+  "Calculate the changes and undos to be done when a function is applied to a
+  single object"
+  [changes page-id objects update-fn attrs id]
+  (let [old-obj (get objects id)
+        new-obj (update-fn old-obj)
+
+        attrs (or attrs (d/concat #{} (keys old-obj) (keys new-obj)))
+
+        {rops :rops uops :uops}
+        (reduce #(generate-operation %1 %2 old-obj new-obj)
+                {:rops [] :uops []}
+                attrs)
+
+        uops (cond-> uops
+               (not (empty? uops))
+               (conj {:type :set-touched :touched (:touched old-obj)}))
+
+        change {:type :mod-obj :page-id page-id :id id}]
+
+    (cond-> changes
+      (not (empty? rops))
+      (update :rch conj (assoc change :operations rops))
+
+      (not (empty? uops))
+      (update :uch conj (assoc change :operations uops)))))
 
 (defn update-shapes
   ([ids f] (update-shapes ids f nil))
-  ([ids f {:keys [reg-objects? save-undo?]
-           :or {reg-objects? false save-undo? true}}]
+  ([ids f {:keys [reg-objects? save-undo? keys]
+           :or {reg-objects? false save-undo? true attrs nil}}]
+
    (us/assert ::coll-of-uuid ids)
    (us/assert fn? f)
+
    (ptk/reify ::update-shapes
      ptk/WatchEvent
      (watch [it state stream]
        (let [page-id (:current-page-id state)
-             objects (get-in state [:workspace-data :pages-index page-id :objects])
-             reg-objects {:type :reg-objects :page-id page-id :shapes (vec ids)}]
-         (loop [ids (seq ids)
-                rch []
-                uch []]
-           (if (nil? ids)
-             (rx/of (let [has-rch? (not (empty? rch))
-                          has-uch? (not (empty? uch))
-                          rch (cond-> rch (and has-rch? reg-objects?) (conj reg-objects))
-                          uch (cond-> uch (and has-rch? reg-objects?) (conj reg-objects))]
-                      (when (and has-rch? has-uch?)
-                        (commit-changes {:redo-changes rch
-                                         :undo-changes uch
-                                         :origin it
-                                         :save-undo? save-undo?}))))
+             objects (wsh/lookup-page-objects state)
+             reg-objects {:type :reg-objects :page-id page-id :shapes (vec ids)}
 
-             (let [id   (first ids)
-                   obj1 (get objects id)
-                   obj2 (f obj1)
-                   rch-operations (generate-operations obj1 obj2)
-                   uch-operations (generate-operations obj2 obj1 true)
-                   rchg {:type :mod-obj
-                         :page-id page-id
-                         :operations rch-operations
-                         :id id}
-                   uchg {:type :mod-obj
-                         :page-id page-id
-                         :operations uch-operations
-                         :id id}]
-               (recur (next ids)
-                      (if (empty? rch-operations) rch (conj rch rchg))
-                      (if (empty? uch-operations) uch (conj uch uchg)))))))))))
+             {redo-changes :rch undo-changes :uch}
+             (reduce #(update-shape-changes %1 page-id objects f keys %2)
+                     {:rch [] :uch []} ids)]
 
-(defn update-shapes-recursive
-  [ids f]
-  (us/assert ::coll-of-uuid ids)
-  (us/assert fn? f)
-  (letfn [(impl-get-children [objects id]
-            (cons id (cp/get-children id objects)))
+         (when-not (empty? redo-changes)
+           (let [redo-changes (cond-> redo-changes
+                                reg-objects? (conj reg-objects))
 
-          (impl-gen-changes [objects page-id ids]
-            (loop [sids (seq ids)
-                   cids (seq (impl-get-children objects (first sids)))
-                   rchanges []
-                   uchanges []]
-              (cond
-                (nil? sids)
-                [rchanges uchanges]
+                 undo-changes (cond-> undo-changes
+                                reg-objects? (conj reg-objects))]
 
-                (nil? cids)
-                (recur (next sids)
-                       (seq (impl-get-children objects (first (next sids))))
-                       rchanges
-                       uchanges)
-
-                :else
-                (let [id   (first cids)
-                      obj1 (get objects id)
-                      obj2 (f obj1)
-                      rops (generate-operations obj1 obj2)
-                      uops (generate-operations obj2 obj1 true)
-                      rchg {:type :mod-obj
-                            :page-id page-id
-                            :operations rops
-                            :id id}
-                      uchg {:type :mod-obj
-                            :page-id page-id
-                            :operations uops
-                            :id id}]
-                  (recur sids
-                         (next cids)
-                         (conj rchanges rchg)
-                         (conj uchanges uchg))))))]
-    (ptk/reify ::update-shapes-recursive
-      ptk/WatchEvent
-      (watch [it state stream]
-        (let [page-id  (:current-page-id state)
-              objects  (get-in state [:workspace-data :pages-index page-id :objects])
-              [rchanges uchanges] (impl-gen-changes objects page-id (seq ids))]
-          (rx/of (commit-changes {:redo-changes rchanges
-                                  :undo-changes uchanges
-                                  :origin it})))))))
+             (rx/of (commit-changes {:redo-changes redo-changes
+                                     :undo-changes undo-changes
+                                     :origin it
+                                     :save-undo? save-undo?})))))))))
 
 (defn update-indices
   [page-id changes]

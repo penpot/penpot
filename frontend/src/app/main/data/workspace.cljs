@@ -1164,11 +1164,15 @@
   (ptk/reify ::update-shape-flags
     ptk/WatchEvent
     (watch [it state stream]
-      (letfn [(update-fn [obj]
-                (cond-> obj
-                  (boolean? blocked) (assoc :blocked blocked)
-                  (boolean? hidden) (assoc :hidden hidden)))]
-        (rx/of (dch/update-shapes-recursive [id] update-fn))))))
+      (let [update-fn
+            (fn [obj]
+              (cond-> obj
+                (boolean? blocked) (assoc :blocked blocked)
+                (boolean? hidden) (assoc :hidden hidden)))
+
+            objects (wsh/lookup-page-objects state)
+            ids (d/concat [id] (cp/get-children id objects))]
+        (rx/of (dch/update-shapes ids update-fn))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
