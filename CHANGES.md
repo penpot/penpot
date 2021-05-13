@@ -1,6 +1,17 @@
 # CHANGELOG #
 
+
 ## :rocket: Next
+
+### :sparkles: New features
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :boom: Breaking changes
+### :heart: Community contributions by (Thank you!)
+
+
+
+## 1.6.0-alpha
 
 ### :sparkles: New features
 
