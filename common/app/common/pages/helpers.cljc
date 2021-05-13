@@ -457,3 +457,12 @@
   [path name]
   (let [path-split (split-path path)]
     (merge-path-item (first path-split) name)))
+
+(defn merge-modifiers
+  [objects modifiers]
+
+  (let [set-modifier (fn [objects [id modifiers]]
+                       (-> objects
+                           (d/update-when id assoc :modifiers modifiers)))]
+    (->> modifiers
+         (reduce set-modifier objects))))

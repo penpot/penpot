@@ -16,8 +16,9 @@
    [rumext.alpha :as mf]))
 
 (mf/defc shape-container
-  {::mf/wrap-props false}
-  [props]
+  {::mf/forward-ref true
+   ::mf/wrap-props false}
+  [props ref]
   (let [shape          (obj/get props "shape")
         children       (obj/get props "children")
         pointer-events (obj/get props "pointer-events")
@@ -33,6 +34,7 @@
         frame? (= :frame type)
         group-props (-> (obj/clone props)
                         (obj/without ["shape" "children"])
+                        (obj/set! "ref" ref)
                         (obj/set! "id" (str "shape-" (:id shape)))
                         (obj/set! "filter" (filters/filter-str filter-id shape))
                         (obj/set! "style" styles)
