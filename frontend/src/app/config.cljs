@@ -121,9 +121,10 @@
 (defn resolve-file-media
   ([media]
    (resolve-file-media media false))
-  ([{:keys [id] :as media} thumnail?]
+
+  ([{:keys [id]} thumbnail?]
    (str (cond-> (u/join public-uri "assets/by-file-media-id/")
-          (true? thumnail?) (u/join (str id "/thumbnail"))
-          (false? thumnail?) (u/join (str id))))))
+          (true? thumbnail?) (u/join (str id "/thumbnail"))
+          (false? thumbnail?) (u/join (str id))))))
 
 
