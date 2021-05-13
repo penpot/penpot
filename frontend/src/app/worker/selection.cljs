@@ -122,9 +122,9 @@
         (into []
               (comp (map #(unchecked-get % "data"))
                     (filter match-criteria?)
+                    (filter overlaps?)
                     (filter (comp overlaps? :frame))
                     (filter (comp overlaps-masks? :masks))
-                    (filter overlaps?)
                     (map add-z-index))
               result)
 

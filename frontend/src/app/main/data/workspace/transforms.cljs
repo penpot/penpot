@@ -320,8 +320,7 @@
                  (rx/map snap/correct-snap-point)
                  (rx/map start-local-displacement))
 
-            (rx/of (set-modifiers ids)
-                   (apply-modifiers ids)
+            (rx/of (apply-modifiers ids {:set-modifiers? true})
                    (calculate-frame-for-move ids)
                    (finish-transform)))))))))
 
@@ -390,8 +389,7 @@
                    (rx/map start-local-displacement))
               (rx/of (move-selected direction shift?)))
 
-             (rx/of (set-modifiers selected)
-                    (apply-modifiers selected)
+             (rx/of (apply-modifiers selected {:set-modifiers? true})
                     (finish-transform))))
             (rx/empty))))))
 
@@ -469,22 +467,46 @@
          (rx/of (apply-modifiers ids)))))))
 
 (defn apply-modifiers
-  [ids]
-  (us/verify (s/coll-of uuid?) ids)
-  (ptk/reify ::apply-modifiers
-    ptk/WatchEvent
-    (watch [it state stream]
-      (let [objects (wsh/lookup-page-objects state)
-            children-ids (->> ids (mapcat #(cp/get-children % objects)))
-            ids-with-children (d/concat [] children-ids ids)
-            object-modifiers (get state :workspace-modifiers)]
-        (rx/of (dwu/start-undo-transaction)
-               (dch/update-shapes ids-with-children (fn [shape]
-                                                      (-> shape
-                                                          (merge (get object-modifiers (:id shape)))
-                                                          (gsh/transform-shape))) {:reg-objects? true})
-               (clear-local-transform)
-               (dwu/commit-undo-transaction))))))
+  ([ids]
+   (apply-modifiers ids nil))
+
+  ([ids {:keys [set-modifiers?]
+         :or   {set-modifiers? false}}]
+   (us/verify (s/coll-of uuid?) ids)
+   (ptk/reify ::apply-modifiers
+     ptk/WatchEvent
+     (watch [it state stream]
+       (let [objects (wsh/lookup-page-objects state)
+             children-ids (->> ids (mapcat #(cp/get-children % objects)))
+             ids-with-children (d/concat [] children-ids ids)
+
+             state (if set-modifiers?
+                     (ptk/update (set-modifiers ids) state)
+                     state)
+             object-modifiers (get state :workspace-modifiers)]
+
+         (rx/of (dwu/start-undo-transaction)
+                (dch/update-shapes
+                 ids-with-children
+                 (fn [shape]
+                   (-> shape
+                       (merge (get object-modifiers (:id shape)))
+                       (gsh/transform-shape)))
+                 {:reg-objects? true
+                  ;; Attributes that can change in the transform. This way we don't have to check
+                  ;; all the attributes
+                  :attrs [:selrect :points
+                          :x :y
+                          :width :height
+                          :content
+                          :transform
+                          :transform-inverse
+                          :rotation
+                          :flip-x
+                          :flip-y]
+                  })
+                (clear-local-transform)
+                (dwu/commit-undo-transaction)))))))
 
 ;; --- Update Dimensions
 

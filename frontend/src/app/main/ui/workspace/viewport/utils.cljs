@@ -24,7 +24,7 @@
                         (.-parentNode shape-node)
 
                         (and (some? thumb-node) (= :frame type))
-                        thumb-node
+                        (.-parentNode thumb-node)
 
                         :else
                         shape-node)]
