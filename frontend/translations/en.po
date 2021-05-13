@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-14 13:44+0000\n"
-"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
-"Language-Team: Spanish "
-"<https://hosted.weblate.org/projects/penpot/frontend/en/>\n"
-"Language: es\n"
+"PO-Revision-Date: 2021-05-07 08:30+0000\n"
+"Last-Translator: Jan C. Borchardt <hey@jancborchardt.net>\n"
+"Language-Team: English <https://hosted.weblate.org/projects/penpot/frontend/"
+"en/>\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.6-dev\n"
+"X-Generator: Weblate 4.7-dev\n"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.fonts"
@@ -396,7 +396,7 @@ msgstr "Your file has been moved successfully"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-files"
-msgstr "Your files has been moved successfully"
+msgstr "Your files have been moved successfully"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
@@ -1564,7 +1564,7 @@ msgstr "Search assets"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.selected-count"
 msgid_plural "workspace.assets.selected-count"
-msgstr[0] "%s items selected"
+msgstr[0] "%s item selected"
 msgstr[1] "%s items selected"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs

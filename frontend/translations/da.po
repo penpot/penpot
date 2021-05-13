@@ -1,0 +1,234 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2021-05-13 01:35+0000\n"
+"Last-Translator: Simon Bechmann <sbechmann@hotmail.com>\n"
+"Language-Team: Danish <https://hosted.weblate.org/projects/penpot/frontend/"
+"da/>\n"
+"Language: da\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.7-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Vi har sendt en bekræftelsesmail til"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Når du opretter en ny konto, accepterer du vores servicevilkår og "
+"fortrolighedspolitik."
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "Open-source løsningen for design og prototyping."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Opret en konto"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Det er gratis, det er Open Source"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Opret en konto"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Ingen konto?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Skift din adgangskode"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Glemt adgangskode?"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Vi sender dig en mail med instruktioner"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Gendannelseslink for adgangskoden er sendt til din indbakke."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Gendan Adgangskode"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Mindst 8 karakterer"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Adgangskode"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Tilsluttet teamet med succes"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr ""
+"Profilen er ikke bekræftet, venligt verificer profilen før du går videre."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-succesfully"
+msgstr "Adgangskoden er blevet ændret"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Bekræft adgangskode"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Glemt adgangskode?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Genopretningspoletten er ugyldig."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Indtast et nyt kodeord"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "Log på med OpenID (SSO)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Log på med Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "Log på med Gitlab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "Log på med Github"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Log på her"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "Log på med LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Fedt at se dig igen!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-subtitle"
+msgstr "Indtast dine oplysninger nedenunder"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Log på"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.go-back-to-login"
+msgstr "Gå tilbage!"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Fulde Navn"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Email"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Det her er en DEMO service, BRUG IKKE for rigtigt arbejde, projekterne vil "
+"blive slettet periodevis."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Vil du bare prøve det?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Lav demokonto"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Tjek din mail og klik på linket for at bekræfte og starte med at bruge "
+"Penpot."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Har du allerede en konto?"
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Du bør kun uploade skrifttyper som du ejer eller har licens til at bruge i "
+"Penpot. Find ud af mere i sektionen om indholdsrettigheder i [Penpot's Terms "
+"of Service] (https://penpot.app/terms.html). Du kan også læse om [font "
+"licensing](2)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Alle web skrifttyper, som du uploader her, vil blive tilføjet til listen af "
+"skrifttypefamilier tilgængelig ved tekstindstillingerne i filerne for dette "
+"team. Skrifttyper med det samme skrifttypefamilienavn vil blive grupperet "
+"som en **enkelt skrifttypefamilie**. Du kan uploade skrifttyper med følgende "
+"formater: **TTF, OTF og WOFF** (kun én er nødvendig)."
+
+msgid "labels.upload-custom-fonts"
+msgstr "Upload brugerdefinerede skrifttyper"
+
+msgid "labels.font-providers"
+msgstr "Skrifttype udbydere"
+
+msgid "labels.search-font"
+msgstr "Søg efter skrifttype"
+
+msgid "labels.custom-fonts"
+msgstr "Brugerdefinerede skrifttyper"
+
+msgid "labels.font-variant"
+msgstr "Stil"
+
+msgid "labels.font-family"
+msgstr "Skrifttypefamilie"
+
+msgid "labels.installed-fonts"
+msgstr "Installeret skrifttyper"
+
+msgid "labels.fonts"
+msgstr "Skrifttyper"
+
+msgid "modals.delete-font.message"
+msgstr ""
+"Er du sikker på, at du vil slette denne skrifttype? Den vil ikke indlæse, "
+"hvis den bliver brugt i en fil."
+
+msgid "modals.delete-font.title"
+msgstr "Sletter skrifttype"
+
+msgid "labels.uploading"
+msgstr "Uploader..."
+
+msgid "labels.upload"
+msgstr "Upload"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Skrifttyper"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Skrifttype Udbydere"
