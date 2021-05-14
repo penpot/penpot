@@ -169,6 +169,9 @@
 
    {:name "0053-add-team-font-variant-table"
     :fn (mg/resource "app/migrations/sql/0053-add-team-font-variant-table.sql")}
+
+   {:name "0054-add-audit-log-table"
+    :fn (mg/resource "app/migrations/sql/0054-add-audit-log-table.sql")}
    ])
 
 
