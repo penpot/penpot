@@ -266,7 +266,7 @@
 (defn apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
-  [shape transform]
+  [shape transform round-coords?]
   ;;
   (let [points (-> shape :points (transform-points transform))
         center (gco/center-points points)
@@ -283,6 +283,11 @@
                              center
                              (:width points-temp-dim)
                              (:height points-temp-dim))
+                            (cond-> round-coords?
+                              (-> (update :x #(mth/precision % 0))
+                                  (update :y #(mth/precision % 0))
+                                  (update :width #(mth/precision % 0))
+                                  (update :height #(mth/precision % 0))))
                             (update :width max 1)
                             (update :height max 1))
 
@@ -297,11 +302,7 @@
 
                 :else
                 (-> shape
-                    (merge  rect-shape)
-                    (update :x #(mth/precision % 0))
-                    (update :y #(mth/precision % 0))
-                    (update :width #(mth/precision % 0))
-                    (update :height #(mth/precision % 0))))]
+                    (merge  rect-shape)))]
     (as-> shape $
       (update $ :transform #(gmt/multiply (or % (gmt/matrix)) matrix))
       (update $ :transform-inverse #(gmt/multiply matrix-inverse (or % (gmt/matrix))))
@@ -347,18 +348,23 @@
                                 %)))
     shape))
 
-(defn transform-shape [shape]
-  (let [shape (apply-displacement shape)
-        center (gco/center-shape shape)
-        modifiers (:modifiers shape)]
-    (if (and modifiers center)
-      (let [transform (modifiers->transform center modifiers)]
-        (-> shape
-            (set-flip modifiers)
-            (apply-transform transform)
-            (apply-text-resize shape modifiers)
-            (dissoc :modifiers)))
-      shape)))
+(defn transform-shape
+  ([shape]
+   (transform-shape shape nil))
+
+  ([shape {:keys [round-coords?]
+           :or {round-coords? true}}]
+   (let [shape (apply-displacement shape)
+         center (gco/center-shape shape)
+         modifiers (:modifiers shape)]
+     (if (and modifiers center)
+       (let [transform (modifiers->transform center modifiers)]
+         (-> shape
+             (set-flip modifiers)
+             (apply-transform transform round-coords?)
+             (apply-text-resize shape modifiers)
+             (dissoc :modifiers)))
+       shape))))
 
 (defn update-group-viewbox
   "Updates the viewbox for groups imported from SVG's"
@@ -407,5 +413,5 @@
         ;; need to remove the flip flags
         (assoc :flip-x false)
         (assoc :flip-y false)
-        (apply-transform (gmt/matrix)))))
+        (apply-transform (gmt/matrix) true))))
 

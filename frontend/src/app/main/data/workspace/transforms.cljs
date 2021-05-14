@@ -72,6 +72,27 @@
                 :bottom-left [ex sy])]
     (gpt/point x y)))
 
+(defn- fix-init-point
+  "Fix the initial point so the resizes are accurate"
+  [initial handler shape]
+  (let [{:keys [x y width height]} (:selrect shape)
+        {:keys [rotation]} shape
+        rotation (or rotation 0)]
+    (if (= rotation 0)
+      (cond-> initial
+        (contains? #{:left :top-left :bottom-left} handler)
+        (assoc :x x)
+
+        (contains? #{:right :top-right :bottom-right} handler)
+        (assoc :x (+ x width))
+
+        (contains? #{:top :top-right :top-left} handler)
+        (assoc :y y)
+
+        (contains? #{:bottom :bottom-right :bottom-left} handler)
+        (assoc :y (+ y height)))
+      initial)))
+
 (defn finish-transform []
   (ptk/reify ::finish-transform
     ptk/UpdateEvent
@@ -84,6 +105,10 @@
   (letfn [(resize [shape initial resizing-shapes layout [point lock? point-snap]]
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
+                  rotation (or rotation 0)
+
+                  initial (fix-init-point initial handler shape)
+
                   shapev (-> (gpt/point width height))
 
                   scale-text (:scale-text layout)
@@ -253,6 +278,7 @@
             frame-id (cp/frame-id-by-position objects position)
 
             moving-shapes (->> ids
+                               (cp/clean-loops objects)
                                (map #(get objects %))
                                (remove #(= (:frame-id %) frame-id)))
 

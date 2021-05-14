@@ -72,7 +72,7 @@
   [props]
   (let [shape  (obj/get props "shape")
         frame  (obj/get props "frame")
-        shape  (-> (geom/transform-shape shape)
+        shape  (-> (geom/transform-shape shape {:round-coords? false})
                    (geom/translate-to-frame frame))
         opts  #js {:shape shape
                    :frame frame}

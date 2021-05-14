@@ -71,13 +71,23 @@
         (fn [frame-id shapes]
           {:x (-> (rt/make-tree) (add-coord-data frame-id shapes :x))
            :y (-> (rt/make-tree) (add-coord-data frame-id shapes :y))})]
-
     (d/mapm create-index shapes-data)))
+
+;; Attributes that will change the values of their snap
+(def snap-attrs [:x :y :width :height :selrect :grids])
 
 (defn- update-snap-data
   [snap-data old-objects new-objects]
 
-  (let [changed? #(not= (get old-objects %) (get new-objects %))
+  (let [changed? (fn [id]
+                   (let [oldv (get old-objects id)
+                         newv (get new-objects id)]
+                     ;; Check first without select-keys because is faster if they are
+                     ;; the same reference
+                     (and (not= oldv newv)
+                          (not= (select-keys oldv snap-attrs)
+                                (select-keys newv snap-attrs)))))
+
         is-deleted-frame? #(and (not= uuid/zero %)
                                 (contains? old-objects %)
                                 (not (contains? new-objects %))
@@ -119,9 +129,9 @@
                                      :y (rt/make-tree)}))]
 
     (as-> snap-data $
+      (reduce delete-data $ to-delete)
       (reduce add-frames $ frames-to-add)
       (reduce add-data $ to-add)
-      (reduce delete-data $ to-delete)
       (reduce delete-frames $ frames-to-delete))))
 
 (defn- log-state
@@ -160,8 +170,10 @@
 
 (defmethod impl/handler :snaps/update-index
   [{:keys [page-id old-objects new-objects] :as message}]
-  ;; TODO: Check the difference and update the index acordingly
   (swap! state update-page page-id old-objects new-objects)
+
+  ;; Uncomment this to regenerate the index everytime
+  #_(swap! state index-page page-id new-objects)
   ;; (log-state)
   nil)
 

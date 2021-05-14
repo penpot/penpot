@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.snap-points
   (:require
+   [app.common.pages :as cp]
    [app.common.math :as mth]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
@@ -151,15 +152,25 @@
 
 (mf/defc snap-points
   {::mf/wrap [mf/memo]}
-  [{:keys [layout zoom selected page-id drawing transform modifiers] :as props}]
-  (let [shapes        (mf/deref (refs/objects-by-id selected))
-        filter-shapes (mf/deref refs/selected-shapes-with-children)
+  [{:keys [layout zoom objects selected page-id drawing transform modifiers] :as props}]
+
+  (let [;; shapes        (mf/deref (refs/objects-by-id selected))
+        ;; filter-shapes (mf/deref refs/selected-shapes-with-children)
+
+        shapes (->> selected
+                    (map #(get objects %))
+                    (filterv (comp not nil?)))
+        filter-shapes (into #{}
+                            (mapcat #(cp/get-object-with-children % objects))
+                            selected)
+
         filter-shapes (fn [id]
                         (if (= id :layout)
                           (or (not (contains? layout :display-grid))
                               (not (contains? layout :snap-grid)))
                           (or (filter-shapes id)
                               (not (contains? layout :dynamic-alignment)))))
+
         shapes    (if drawing [drawing] shapes)]
     (when (or drawing transform)
       [:& snap-feedback {:shapes shapes

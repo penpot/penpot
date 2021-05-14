@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport
   (:require
    [app.common.data :as d]
+   [app.common.pages :as cp]
    [app.common.geom.shapes :as gsh]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
@@ -61,7 +62,9 @@
         options           (mf/deref refs/workspace-page-options)
         objects           (mf/deref refs/workspace-page-objects)
         object-modifiers  (mf/deref refs/workspace-modifiers)
-        objects           (d/deep-merge objects object-modifiers)
+        objects           (mf/use-memo
+                           (mf/deps objects object-modifiers)
+                           #(cp/merge-modifiers objects object-modifiers))
 
         ;; STATE
         alt?              (mf/use-state false)
@@ -135,7 +138,9 @@
         show-prototypes?         (= options-mode :prototype)
         show-selection-handlers? (seq selected)
         show-snap-distance?      (and (contains? layout :dynamic-alignment) (= transform :move) (not (empty? selected)))
-        show-snap-points?        (and (contains? layout :dynamic-alignment) (or drawing-obj transform))
+        show-snap-points?        (and (or (contains? layout :dynamic-alignment)
+                                          (contains? layout :snap-grid))
+                                      (or drawing-obj transform))
         show-selrect?            (and selrect (empty? drawing))
         show-measures?           (and (not transform) (not path-editing?) show-distances?)]
 
@@ -283,6 +288,7 @@
            :zoom zoom
            :page-id page-id
            :selected selected
+           :objects objects
            :modifiers modifiers}])
 
        (when show-snap-distance?
