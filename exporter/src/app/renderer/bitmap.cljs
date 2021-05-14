@@ -40,16 +40,20 @@
 
           (screenshot [page uri cookie]
             (log/info :uri uri)
-            (p/do!
-             (bw/emulate! page {:viewport [1920 1080]
-                                 :scale scale})
-             (bw/set-cookie! page cookie)
-             (bw/navigate! page uri)
-             (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
-             (p/let [dom (bw/select page "#screenshot")]
-               (case type
-                 :png  (bw/screenshot dom {:omit-background? true :type type})
-                 :jpeg (bw/screenshot dom {:omit-background? false :type type})))))]
+            (let [viewport {:width 1920
+                            :height 1080
+                            :scale scale}
+                  options  {:viewport viewport
+                            :cookie cookie}]
+              (p/do!
+               (bw/configure-page! page options)
+               (bw/navigate! page uri)
+               (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
+               (bw/wait-for page "#screenshot")
+               (p/let [dom (bw/select page "#screenshot")]
+                 (case type
+                   :png  (bw/screenshot dom {:omit-background? true :type type})
+                   :jpeg (bw/screenshot dom {:omit-background? false :type type}))))))]
 
     (bw/exec! browser handle)))
 

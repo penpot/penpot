@@ -253,15 +253,19 @@
               result))
 
           (render-in-page [page {:keys [uri cookie] :as rctx}]
-            (p/do!
-             (bw/emulate! page {:viewport [1920 1080]
-                                 :scale 4})
-             (bw/set-cookie! page cookie)
-             (bw/navigate! page uri)
-             ;; (bw/wait-for page "#screenshot foreignObject" {:visible true})
-             (bw/sleep page 2000)
-             ;; (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
-             page))
+            (let [viewport {:width 1920
+                            :height 1080
+                            :scale 4}
+                  options  {:viewport viewport
+                            :timeout 15000
+                            :cookie cookie}]
+              (p/do!
+               (bw/configure-page! page options)
+               (bw/navigate! page uri)
+               (bw/wait-for page "#screenshot")
+               (bw/sleep page 2000)
+               ;; (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
+               page)))
 
           (handle [rctx page]
             (p/let [page (render-in-page page rctx)]

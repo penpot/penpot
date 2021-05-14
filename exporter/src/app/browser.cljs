@@ -6,14 +6,17 @@
 
 (ns app.browser
   (:require
+   ["puppeteer-cluster" :as ppc]
+   [app.common.data :as d]
    [app.config :as cf]
    [lambdaisland.glogi :as log]
-   [promesa.core :as p]
-   ["puppeteer-cluster" :as ppc]))
+   [promesa.core :as p]))
 
 ;; --- BROWSER API
 
-(def USER-AGENT
+(def default-timeout 30000)
+(def default-viewport {:width 1920 :height 1080 :scale 1})
+(def default-user-agent
   (str "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
        "(KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"))
 
@@ -23,15 +26,25 @@
                           (let [page (unchecked-get props "page")]
                             (f page)))))
 
-(defn emulate!
-  [page {:keys [viewport user-agent scale]
-         :or {user-agent USER-AGENT
-              scale 1}}]
-  (let [[width height] viewport]
-    (.emulate ^js page #js {:viewport #js {:width width
-                                           :height height
-                                           :deviceScaleFactor scale}
-                            :userAgent user-agent})))
+(defn set-cookie!
+  [page {:keys [key value domain]}]
+  (.setCookie ^js page #js {:name key
+                            :value value
+                            :domain domain}))
+
+(defn configure-page!
+  [page {:keys [timeout cookie user-agent viewport]}]
+  (let [timeout    (or timeout default-timeout)
+        user-agent (or user-agent default-user-agent)
+        viewport   (d/merge default-viewport viewport)]
+    (p/do!
+     (.setViewport ^js page #js {:width (:width viewport)
+                                 :height (:height viewport)
+                                 :deviceScaleFactor (:scale viewport)})
+     (.setUserAgent ^js page user-agent)
+     (.setDefaultTimeout ^js page timeout)
+     (when cookie
+       (set-cookie! page cookie)))))
 
 (defn navigate!
   ([page url] (navigate! page url nil))
@@ -43,10 +56,9 @@
   [page ms]
   (.waitForTimeout ^js page ms))
 
-
 (defn wait-for
   ([page selector] (wait-for page selector nil))
-  ([page selector {:keys [visible] :or {visible false}}]
+  ([page selector {:keys [visible timeout] :or {visible false timeout 10000}}]
    (.waitForSelector ^js page selector #js {:visible visible})))
 
 (defn screenshot
@@ -71,11 +83,6 @@
   [frame selector]
   (.$$ ^js frame selector))
 
-(defn set-cookie!
-  [page {:keys [key value domain]}]
-  (.setCookie ^js page #js {:name key
-                            :value value
-                            :domain domain}))
 
 ;; --- BROWSER STATE
 
