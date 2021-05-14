@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-13 01:35+0000\n"
+"PO-Revision-Date: 2021-05-17 21:32+0000\n"
 "Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
@@ -902,3 +902,28 @@ msgstr "Remover “%s” como Biblioteca Compartilhada"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
 msgstr "Remover como Biblioteca Compartilhada"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "Sua Penpot"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Novo projeto"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Novo arquivo"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Sua Penpot"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Qualquer fonte da web que você carregar aqui será adicionada à lista de "
+"família de fontes disponível nas propriedades de texto dos arquivos desta "
+"equipe. As fontes com o mesmo nome de família de fontes serão agrupadas como "
+"uma **única família de fontes**. Você pode fazer upload de fontes com os "
+"seguintes formatos: **TTF, OTF e WOFF** (apenas uma será necessária)."
