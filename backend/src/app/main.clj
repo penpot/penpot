@@ -220,7 +220,7 @@
 
    :app.tasks.tasks-gc/handler
    {:pool    (ig/ref :app.db/pool)
-    :max-age (dt/duration {:hours 24})
+    :max-age cf/deletion-delay
     :metrics (ig/ref :app.metrics/metrics)}
 
    :app.tasks.delete-object/handler
@@ -239,12 +239,12 @@
    :app.tasks.file-media-gc/handler
    {:pool    (ig/ref :app.db/pool)
     :metrics (ig/ref :app.metrics/metrics)
-    :max-age (dt/duration {:hours 48})}
+    :max-age cf/deletion-delay}
 
    :app.tasks.file-xlog-gc/handler
    {:pool    (ig/ref :app.db/pool)
     :metrics (ig/ref :app.metrics/metrics)
-    :max-age (dt/duration {:hours 48})}
+    :max-age cf/deletion-delay}
 
    :app.tasks.telemetry/handler
    {:pool        (ig/ref :app.db/pool)
