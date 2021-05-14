@@ -140,7 +140,7 @@
     :msgbus     (ig/ref :app.msgbus/msgbus)
     :rlimits    (ig/ref :app.rlimits/all)
     :public-uri (cf/get :public-uri)
-    :activity   (ig/ref :app.loggers.activity/reporter)}
+    :audit      (ig/ref :app.loggers.audit/collector)}
 
    :app.notifications/handler
    {:msgbus   (ig/ref :app.msgbus/msgbus)
@@ -187,6 +187,14 @@
      {:cron #app/cron "0 0 0 */1 * ?"  ;; daily
       :task :tasks-gc}
 
+     (when (cf/get :audit-archive-enabled)
+       {:cron #app/cron "0 0 * * * ?" ;; every 1h
+        :task :audit-archive})
+
+     (when (cf/get :audit-archive-gc-enabled)
+       {:cron #app/cron "0 0 * * * ?" ;; every 1h
+        :task :audit-archive-gc})
+
      (when (cf/get :telemetry-enabled)
        {:cron #app/cron "0 0 */6 * * ?" ;; every 6h
         :task :telemetry})]}
@@ -204,7 +212,9 @@
      :storage-recheck    (ig/ref :app.storage/recheck-task)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
-     :session-gc         (ig/ref :app.http.session/gc-task)}}
+     :session-gc         (ig/ref :app.http.session/gc-task)
+     :audit-archive      (ig/ref :app.loggers.audit/archive-task)
+     :audit-archive-gc   (ig/ref :app.loggers.audit/archive-gc-task)}}
 
    :app.emails/sendmail-handler
    {:host             (cf/get :smtp-host)
@@ -263,10 +273,21 @@
    :app.loggers.zmq/receiver
    {:endpoint (cf/get :loggers-zmq-uri)}
 
-   :app.loggers.activity/reporter
-   {:uri      (cf/get :activity-reporter-uri)
-    :tokens   (ig/ref :app.tokens/tokens)
+   :app.loggers.audit/collector
+   {:enabled  (cf/get :audit-enabled false)
+    :pool     (ig/ref :app.db/pool)
     :executor (ig/ref :app.worker/executor)}
+
+   :app.loggers.audit/archive-task
+   {:uri      (cf/get :audit-archive-uri)
+    :enabled  (cf/get :audit-archive-enabled false)
+    :tokens   (ig/ref :app.tokens/tokens)
+    :pool     (ig/ref :app.db/pool)}
+
+   :app.loggers.audit/archive-gc-task
+   {:enabled  (cf/get :audit-archive-gc-enabled false)
+    :max-age  (cf/get :audit-archive-gc-max-age cf/deletion-delay)
+    :pool     (ig/ref :app.db/pool)}
 
    :app.loggers.loki/reporter
    {:uri      (cf/get :loggers-loki-uri)

@@ -99,6 +99,12 @@
    :initial-project-skey "initial-project"
    })
 
+(s/def ::audit-enabled ::us/boolean)
+(s/def ::audit-archive-enabled ::us/boolean)
+(s/def ::audit-archive-uri ::us/string)
+(s/def ::audit-archive-gc-enabled ::us/boolean)
+(s/def ::audit-archive-gc-max-age ::dt/duration)
+
 (s/def ::secret-key ::us/string)
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::asserts-enabled ::us/boolean)
@@ -182,6 +188,11 @@
 (s/def ::config
   (s/keys :opt-un [::secret-key
                    ::allow-demo-users
+                   ::audit-enabled
+                   ::audit-archive-enabled
+                   ::audit-archive-uri
+                   ::audit-archive-gc-enabled
+                   ::audit-archive-gc-max-age
                    ::asserts-enabled
                    ::database-password
                    ::database-uri
