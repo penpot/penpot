@@ -81,7 +81,11 @@
               (recur (a/timeout max-batch-age) init)))
 
           (nil? val)
-          (a/close! out)
+          (if (empty? buf)
+            (a/close! out)
+            (do
+              (a/offer! out [:timeout buf])
+              (a/close! out)))
 
           (identical? port in)
           (let [buf (conj buf val)]
@@ -91,3 +95,7 @@
                 (recur (a/timeout max-batch-age) init))
               (recur tch buf))))))
     out))
+
+(defn thread-sleep
+  [ms]
+  (Thread/sleep ms))
