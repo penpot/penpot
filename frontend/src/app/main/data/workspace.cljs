@@ -552,7 +552,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              #(impl-update-zoom % center (fn [z] (min (* z 1.1) 200)))))))
+              #(impl-update-zoom % center (fn [z] (min (* z 1.3) 200)))))))
 
 (defn decrease-zoom
   [center]
@@ -560,7 +560,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              #(impl-update-zoom % center (fn [z] (max (* z 0.9) 0.01)))))))
+              #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01)))))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom

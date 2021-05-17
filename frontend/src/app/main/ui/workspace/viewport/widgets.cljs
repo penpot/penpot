@@ -64,13 +64,19 @@
 
 (mf/defc selection-rect
   {:wrap [mf/memo]}
-  [{:keys [data] :as props}]
+  [{:keys [data zoom] :as props}]
   (when data
     [:rect.selection-rect
      {:x (:x data)
       :y (:y data)
       :width (:width data)
-      :height (:height data)}]))
+      :height (:height data)
+      :style {;; Primary with 0.1 opacity
+              :fill "rgb(49, 239, 184, 0.1)"
+
+              ;; Primary color
+              :stroke "rgb(49, 239, 184)"
+              :stroke-width (/ 1 zoom)}}]))
 
 ;; Ensure that the label has always the same font
 ;; size, regardless of zoom
