@@ -88,7 +88,9 @@
 
 (defn grid-snap-points
   "Returns the snap points for a given grid"
-  ([shape coord] (mapcat #(grid-snap-points shape % coord) (:grids shape)))
+  ([shape coord]
+   (mapcat #(grid-snap-points shape % coord) (:grids shape)))
+
   ([shape {:keys [type display params] :as grid} coord]
    (when (:display grid)
      (case type

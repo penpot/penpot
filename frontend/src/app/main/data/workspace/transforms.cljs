@@ -72,6 +72,27 @@
                 :bottom-left [ex sy])]
     (gpt/point x y)))
 
+(defn- fix-init-point
+  "Fix the initial point so the resizes are accurate"
+  [initial handler shape]
+  (let [{:keys [x y width height]} (:selrect shape)
+        {:keys [rotation]} shape
+        rotation (or rotation 0)]
+    (if (= rotation 0)
+      (cond-> initial
+        (contains? #{:left :top-left :bottom-left} handler)
+        (assoc :x x)
+
+        (contains? #{:right :top-right :bottom-right} handler)
+        (assoc :x (+ x width))
+
+        (contains? #{:top :top-right :top-left} handler)
+        (assoc :y y)
+
+        (contains? #{:bottom :bottom-right :bottom-left} handler)
+        (assoc :y (+ y height)))
+      initial)))
+
 (defn finish-transform []
   (ptk/reify ::finish-transform
     ptk/UpdateEvent
@@ -84,6 +105,10 @@
   (letfn [(resize [shape initial resizing-shapes layout [point lock? point-snap]]
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
+                  rotation (or rotation 0)
+
+                  initial (fix-init-point initial handler shape)
+
                   shapev (-> (gpt/point width height))
 
                   scale-text (:scale-text layout)
@@ -253,6 +278,7 @@
             frame-id (cp/frame-id-by-position objects position)
 
             moving-shapes (->> ids
+                               (cp/clean-loops objects)
                                (map #(get objects %))
                                (remove #(= (:frame-id %) frame-id)))
 
@@ -320,8 +346,7 @@
                  (rx/map snap/correct-snap-point)
                  (rx/map start-local-displacement))
 
-            (rx/of (set-modifiers ids)
-                   (apply-modifiers ids)
+            (rx/of (apply-modifiers ids {:set-modifiers? true})
                    (calculate-frame-for-move ids)
                    (finish-transform)))))))))
 
@@ -390,8 +415,7 @@
                    (rx/map start-local-displacement))
               (rx/of (move-selected direction shift?)))
 
-             (rx/of (set-modifiers selected)
-                    (apply-modifiers selected)
+             (rx/of (apply-modifiers selected {:set-modifiers? true})
                     (finish-transform))))
             (rx/empty))))))
 
@@ -469,22 +493,46 @@
          (rx/of (apply-modifiers ids)))))))
 
 (defn apply-modifiers
-  [ids]
-  (us/verify (s/coll-of uuid?) ids)
-  (ptk/reify ::apply-modifiers
-    ptk/WatchEvent
-    (watch [it state stream]
-      (let [objects (wsh/lookup-page-objects state)
-            children-ids (->> ids (mapcat #(cp/get-children % objects)))
-            ids-with-children (d/concat [] children-ids ids)
-            object-modifiers (get state :workspace-modifiers)]
-        (rx/of (dwu/start-undo-transaction)
-               (dch/update-shapes ids-with-children (fn [shape]
-                                                      (-> shape
-                                                          (merge (get object-modifiers (:id shape)))
-                                                          (gsh/transform-shape))) {:reg-objects? true})
-               (clear-local-transform)
-               (dwu/commit-undo-transaction))))))
+  ([ids]
+   (apply-modifiers ids nil))
+
+  ([ids {:keys [set-modifiers?]
+         :or   {set-modifiers? false}}]
+   (us/verify (s/coll-of uuid?) ids)
+   (ptk/reify ::apply-modifiers
+     ptk/WatchEvent
+     (watch [it state stream]
+       (let [objects (wsh/lookup-page-objects state)
+             children-ids (->> ids (mapcat #(cp/get-children % objects)))
+             ids-with-children (d/concat [] children-ids ids)
+
+             state (if set-modifiers?
+                     (ptk/update (set-modifiers ids) state)
+                     state)
+             object-modifiers (get state :workspace-modifiers)]
+
+         (rx/of (dwu/start-undo-transaction)
+                (dch/update-shapes
+                 ids-with-children
+                 (fn [shape]
+                   (-> shape
+                       (merge (get object-modifiers (:id shape)))
+                       (gsh/transform-shape)))
+                 {:reg-objects? true
+                  ;; Attributes that can change in the transform. This way we don't have to check
+                  ;; all the attributes
+                  :attrs [:selrect :points
+                          :x :y
+                          :width :height
+                          :content
+                          :transform
+                          :transform-inverse
+                          :rotation
+                          :flip-x
+                          :flip-y]
+                  })
+                (clear-local-transform)
+                (dwu/commit-undo-transaction)))))))
 
 ;; --- Update Dimensions
 

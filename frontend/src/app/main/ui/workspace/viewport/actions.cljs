@@ -142,7 +142,7 @@
                     (not selected?)
                     (not edition)
                     (not drawing-path?)
-                    (not (#{:comments :path} drawing-tool)))
+                    (not drawing-tool))
            (st/emit! (dw/select-shape (:id @hover)))))))))
 
 (defn on-double-click

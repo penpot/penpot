@@ -99,7 +99,8 @@
            (timers/schedule
             (fn []
               (st/emit! (dwc/update-shapes [@shape-id]
-                                           #(assoc % :thumbnail data)))
+                                           #(assoc % :thumbnail data)
+                                           {:save-undo? false}))
               (rx/push! next :next)))))
 
         on-frame-not-found

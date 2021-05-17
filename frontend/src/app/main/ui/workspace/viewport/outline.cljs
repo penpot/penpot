@@ -29,7 +29,7 @@
          (mf/deps shape)
          #(when path? (upf/format-path (:content shape))))
 
-        {:keys [id x y width height]} shape
+        {:keys [id x y width height selrect]} shape
 
         outline-type (case (:type shape)
                        :circle "ellipse"
@@ -53,10 +53,10 @@
                 {:d path-data
                  :transform nil}
 
-                {:x x
-                 :y y
-                 :width width
-                 :height height})]
+                {:x (:x selrect)
+                 :y (:y selrect)
+                 :width (:width selrect)
+                 :height (:height selrect)})]
 
     [:> outline-type (map->obj (merge common props))]))
 

@@ -6,7 +6,8 @@
 
 (ns app.main.data.workspace.state-helpers
   (:require
-   [app.common.data :as d]))
+   [app.common.data :as d]
+   [app.common.pages :as cp]))
 
 (defn lookup-page-objects
   ([state]
@@ -26,8 +27,9 @@
 
 (defn lookup-selected
   [state]
-  (let [selected (get-in state [:workspace-local :selected])
-        objects (lookup-page-objects state)
+  (let [objects (lookup-page-objects state)
+        selected (->> (get-in state [:workspace-local :selected])
+                      (cp/clean-loops objects))
         is-present? (fn [id] (contains? objects id))]
     (into (d/ordered-set)
           (filter is-present?)
