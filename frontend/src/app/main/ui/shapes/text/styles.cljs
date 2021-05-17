@@ -65,9 +65,7 @@
         font-id         (:font-id data (:font-id txt/default-text-attrs))
         font-variant-id (:font-variant-id data)
 
-        font-family     (:font-family data)
         font-size       (:font-size data)
-
         fill-color      (:fill-color data)
         fill-opacity    (:fill-opacity data)
 
@@ -106,14 +104,15 @@
                (pos? (alength font-id)))
       (fonts/ensure-loaded! font-id)
       (let [font (get fontsdb font-id)]
-        (let [font-family (or (:family font)
-                              (obj/get data "fontFamily"))
+        (let [font-family  (str/quote
+                            (or (:family font)
+                                (:font-family data)))
               font-variant (d/seek #(= font-variant-id (:id %))
                                    (:variants font))
-              font-style  (or (:style font-variant)
-                              (obj/get data "fontStyle"))
-              font-weight (or (:weight font-variant)
-                              (obj/get data "fontWeight"))]
+              font-style   (or (:style font-variant)
+                               (:font-style data))
+              font-weight  (or (:weight font-variant)
+                               (:font-weight data))]
           (obj/set! base "fontFamily" font-family)
           (obj/set! base "fontStyle" font-style)
           (obj/set! base "fontWeight" font-weight))))
