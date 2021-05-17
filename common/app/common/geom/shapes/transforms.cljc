@@ -283,17 +283,19 @@
                              center
                              (:width points-temp-dim)
                              (:height points-temp-dim))
-                            (cond-> round-coords?
-                              (-> (update :x #(mth/precision % 0))
-                                  (update :y #(mth/precision % 0))
-                                  (update :width #(mth/precision % 0))
-                                  (update :height #(mth/precision % 0))))
                             (update :width max 1)
                             (update :height max 1))
 
         rect-points     (gpr/rect->points rect-shape)
 
         [matrix matrix-inverse] (calculate-adjust-matrix points-temp rect-points (:flip-x shape) (:flip-y shape))
+
+        rect-shape (cond-> rect-shape
+                     round-coords?
+                     (-> (update :x mth/round)
+                         (update :y mth/round)
+                         (update :width mth/round)
+                         (update :height mth/round)))
 
         shape (cond
                 (= :path (:type shape))
@@ -302,7 +304,7 @@
 
                 :else
                 (-> shape
-                    (merge  rect-shape)))]
+                    (merge rect-shape)))]
     (as-> shape $
       (update $ :transform #(gmt/multiply (or % (gmt/matrix)) matrix))
       (update $ :transform-inverse #(gmt/multiply matrix-inverse (or % (gmt/matrix))))
