@@ -90,12 +90,12 @@
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
   (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %)))
 
-(defn setup-hover-shapes [page-id move-stream selected objects transform selected ctrl? hover hover-ids]
+(defn setup-hover-shapes [page-id move-stream selected objects transform selected ctrl? hover hover-ids zoom]
   (let [query-point
         (mf/use-callback
          (mf/deps page-id)
          (fn [point]
-           (let [rect (gsh/center->rect point 8 8)]
+           (let [rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
              (uw/ask-buffered!
               {:cmd :selection/query
                :page-id page-id
