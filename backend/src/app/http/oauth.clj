@@ -152,7 +152,8 @@
                (let [sk (name k)]
                  (cond-> params
                    (or (str/starts-with? sk "pm_")
-                       (str/starts-with? sk "pm-"))
+                       (str/starts-with? sk "pm-")
+                       (str/starts-with? sk "utm_"))
                    (assoc (-> sk str/kebab keyword) v))))
              {}
              params))
