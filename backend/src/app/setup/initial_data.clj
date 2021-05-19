@@ -8,7 +8,7 @@
   (:refer-clojure :exclude [load])
   (:require
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.db :as db]
    [app.rpc.mutations.management :refer [duplicate-file]]
    [app.rpc.mutations.projects :refer [create-project create-project-role]]
@@ -36,7 +36,7 @@
   ([system project-id {:keys [skey project-name]
                        :or {project-name "Penpot Onboarding"}}]
    (db/with-atomic [conn (:app.db/pool system)]
-     (let [skey  (or skey (cfg/get :initial-project-skey))
+     (let [skey  (or skey (cf/get :initial-project-skey))
            files (db/exec! conn [sql:file project-id])
            flibs (db/exec! conn [sql:file-library-rel project-id])
            fmeds (db/exec! conn [sql:file-media-object project-id])
@@ -65,7 +65,7 @@
 (defn load-initial-project!
   ([conn profile] (load-initial-project! conn profile nil))
   ([conn profile opts]
-   (let [skey (or (:skey opts) (cfg/get :initial-project-skey))
+   (let [skey (or (:skey opts) (cf/get :initial-project-skey))
          data (retrieve-data conn skey)]
      (when data
        (let [index   (reduce #(assoc %1 (:id %2) (uuid/next)) {} (:files data))
@@ -82,10 +82,16 @@
                                     :role :owner})
 
          (doseq [file (:files data)]
-           (let [params {:profile-id (:id profile)
+           (let [flibs  (filterv #(= (:id file) (:file-id %)) (:flibs data))
+                 fmeds  (filterv #(= (:id file) (:file-id %)) (:fmeds data))
+
+                 params {:profile-id (:id profile)
                          :project-id (:id project)
                          :file file
-                         :index index}
+                         :index index
+                         :flibs flibs
+                         :fmeds fmeds}
+
                  opts   {:reset-shared-flag false}]
              (duplicate-file conn params opts))))))))
 

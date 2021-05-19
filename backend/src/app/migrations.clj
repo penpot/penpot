@@ -172,6 +172,9 @@
 
    {:name "0054-add-audit-log-table"
     :fn (mg/resource "app/migrations/sql/0054-add-audit-log-table.sql")}
+
+   {:name "0055-mod-file-media-object-table"
+    :fn (mg/resource "app/migrations/sql/0055-mod-file-media-object-table.sql")}
    ])
 
 
