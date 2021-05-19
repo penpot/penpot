@@ -99,7 +99,6 @@
         (ex/raise :type :authentication
                   :code :authentication-required
                   :hint "authentication required for this endpoint"))
-
       (let [params  (us/conform spec params)
             result  (f cfg params)
             resultm (meta result)]
@@ -111,7 +110,7 @@
             (audit :submit {:type (::type cfg)
                             :name (::sv/name mdata)
                             :profile-id profile-id
-                            :props (audit/clean-props props)})))
+                            :props props})))
         result))))
 
 (defn- process-method

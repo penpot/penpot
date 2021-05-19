@@ -277,10 +277,12 @@
                               :member-email (:email profile))
                 token  (tokens :generate claims)]
             (with-meta {:invitation-token token}
-              {:transform-response ((:create session) (:id profile))}))
+              {:transform-response ((:create session) (:id profile))
+               ::audit/profile-id (:id profile)}))
 
           (with-meta profile
-            {:transform-response ((:create session) (:id profile))}))))))
+            {:transform-response ((:create session) (:id profile))
+             ::audit/profile-id (:id profile)}))))))
 
 ;; --- Mutation: Logout
 
@@ -307,7 +309,9 @@
     (let [profile (-> (assoc cfg :conn conn)
                       (login-or-register params))]
       (with-meta profile
-        {:before-complete (annotate-profile-register metrics profile)}))))
+        {:before-complete (annotate-profile-register metrics profile)
+         ::audit/props (:props profile)
+         ::audit/profile-id (:id profile)}))))
 
 (defn login-or-register
   [{:keys [conn] :as cfg} {:keys [email backend] :as params}]
@@ -614,7 +618,7 @@
 
     ;; Schedule a complete deletion of profile
     (wrk/submit! {::wrk/task :delete-profile
-                  ::wrk/dalay cfg/deletion-delay
+                  ::wrk/delay cfg/deletion-delay
                   ::wrk/conn conn
                   :profile-id profile-id})
 
