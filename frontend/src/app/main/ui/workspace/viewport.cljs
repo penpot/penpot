@@ -149,7 +149,7 @@
     (hooks/setup-cursor cursor alt? panning drawing-tool drawing-path? path-editing?)
     (hooks/setup-resize layout viewport-ref)
     (hooks/setup-keyboard alt? ctrl?)
-    (hooks/setup-hover-shapes page-id move-stream selected objects transform selected ctrl? hover hover-ids)
+    (hooks/setup-hover-shapes page-id move-stream selected objects transform selected ctrl? hover hover-ids zoom)
     (hooks/setup-viewport-modifiers modifiers selected objects render-ref)
     (hooks/setup-shortcuts path-editing? drawing-path?)
     (hooks/setup-active-frames objects vbox hover active-frames)
@@ -315,5 +315,6 @@
           {:selected selected}])
 
        (when show-selrect?
-         [:& widgets/selection-rect {:data selrect}])]]]))
+         [:& widgets/selection-rect {:data selrect
+                                     :zoom zoom}])]]]))
 

@@ -14,6 +14,7 @@
    [app.db :as db]
    [app.emails :as eml]
    [app.http.oauth :refer [extract-props]]
+   [app.loggers.audit :as audit]
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
@@ -103,7 +104,8 @@
         (with-meta resp
           {:transform-response ((:create session) (:id profile))
            :before-complete (annotate-profile-register metrics profile)
-           :result profile}))
+           ::audit/props (:props profile)
+           ::audit/profile-id (:id profile)}))
 
       ;; If no token is provided, send a verification email
       (let [vtoken (tokens :generate
@@ -132,7 +134,8 @@
 
         (with-meta profile
           {:before-complete (annotate-profile-register metrics profile)
-           :result profile})))))
+           ::audit/props (:props profile)
+           ::audit/profile-id (:id profile)})))))
 
 (defn email-domain-in-whitelist?
   "Returns true if email's domain is in the given whitelist or if given

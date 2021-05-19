@@ -4,15 +4,10 @@
 ## :rocket: Next
 
 ### :sparkles: New features
-
-- Transform shapes to path on double click.
-- Use shift instead of ctrl/cmd to keep aspect ratio [Taiga 1697](https://tree.taiga.io/project/penpot/issue/1697).
-
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
-
 
 
 ## 1.6.0-alpha
@@ -24,6 +19,8 @@
 - Add the ability to upload/use custom fonts (and automatically generate all needed webfonts).
 - Refactor dashboard state management (improves considerably the performance when you have a dashboard with a big collection of projects and files).
 - Translate automatic names of new files and projects.
+- Transform shapes to path on double click
+- Use shift instead of ctrl/cmd to keep aspect ratio [Taiga 1697](https://tree.taiga.io/project/penpot/issue/1697).
 
 ### :bug: Bugs fixed
 

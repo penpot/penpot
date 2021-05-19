@@ -9,6 +9,7 @@
   (:refer-clojure :exclude [get])
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.version :as v]
    [app.util.time :as dt]
@@ -46,8 +47,7 @@
    :database-username "penpot"
    :database-password "penpot"
 
-   :default-blob-version 1
-
+   :default-blob-version 3
    :loggers-zmq-uri "tcp://localhost:45556"
 
    :asserts-enabled false
@@ -98,6 +98,12 @@
    ;; a server prop key where initial project is stored.
    :initial-project-skey "initial-project"
    })
+
+(s/def ::audit-enabled ::us/boolean)
+(s/def ::audit-archive-enabled ::us/boolean)
+(s/def ::audit-archive-uri ::us/string)
+(s/def ::audit-archive-gc-enabled ::us/boolean)
+(s/def ::audit-archive-gc-max-age ::dt/duration)
 
 (s/def ::secret-key ::us/string)
 (s/def ::allow-demo-users ::us/boolean)
@@ -182,6 +188,11 @@
 (s/def ::config
   (s/keys :opt-un [::secret-key
                    ::allow-demo-users
+                   ::audit-enabled
+                   ::audit-archive-enabled
+                   ::audit-archive-uri
+                   ::audit-archive-gc-enabled
+                   ::audit-archive-gc-max-age
                    ::asserts-enabled
                    ::database-password
                    ::database-uri
@@ -273,9 +284,17 @@
 
 (defn- read-config
   []
-  (->> (read-env "penpot")
-       (merge defaults)
-       (us/conform ::config)))
+  (try
+    (->> (read-env "penpot")
+         (merge defaults)
+         (us/conform ::config))
+    (catch Throwable e
+      (when (ex/ex-info? e)
+        (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
+        (println "Error on validating configuration:")
+        (println (:explain (ex-data e))
+        (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")))
+      (throw e))))
 
 (def version (v/parse (or (some-> (io/resource "version.txt")
                                   (slurp)

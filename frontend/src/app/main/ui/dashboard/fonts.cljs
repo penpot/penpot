@@ -63,7 +63,7 @@
      [:div.dashboard-title
       [:h1 (tr "labels.fonts")]]
      [:nav
-      [:ul
+      #_[:ul
        [:li {:class (when (= section :fonts) "active")}
         [:a {:on-click go-fonts} (tr "labels.custom-fonts")]]
        [:li {:class (when (= section :providers) "active")}
