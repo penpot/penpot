@@ -131,8 +131,10 @@
             (rect->path x y width height r1 r2 r3 r4))
 
           ;; Apply the transforms that had the shape
-          transform (gmt/transform-in (gsh/center-shape shape) (:transform shape))
-          new-content (gsp/transform-content new-content transform)]
+          transform (:transform shape)
+          new-content (cond-> new-content
+                        (some? transform)
+                        (gsp/transform-content (gmt/transform-in (gsh/center-shape shape) transform)))]
 
       (-> shape
           (d/without-keys dissoc-attrs)
