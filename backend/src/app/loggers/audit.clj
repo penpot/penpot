@@ -24,19 +24,33 @@
    [lambdaisland.uri :as u]))
 
 (defn clean-props
-  "Cleans the params from complex data, only accept strings, numbers and
-  uuids and removing sensitive data such as :password and related
-  props."
-  [params]
-  (let [params (dissoc params :session-id :password :old-password :token)]
-    (reduce-kv (fn [params k v]
-                 (cond-> params
-                   (or (string? v)
-                       (uuid? v)
-                       (number? v))
-                   (assoc k v)))
-               {}
-               params)))
+  [{:keys [profile-id] :as event}]
+  (letfn [(clean-common [props]
+            (-> props
+                (dissoc :session-id)
+                (dissoc :password)
+                (dissoc :old-password)
+                (dissoc :token)))
+
+          (clean-profile-id [props]
+            (cond-> props
+              (= profile-id (:profile-id props))
+              (dissoc :profile-id)))
+
+          (clean-complex-data [props]
+            (reduce-kv (fn [props k v]
+                         (cond-> props
+                           (or (string? v)
+                               (uuid? v)
+                               (boolean? v)
+                               (number? v))
+                           (assoc k v)
+
+                           (keyword? v)
+                           (assoc k (name v))))
+                       {}
+                       props))]
+    (update event :props #(-> % clean-common clean-profile-id clean-complex-data))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Collector
@@ -52,11 +66,16 @@
 (defmethod ig/pre-init-spec ::collector [_]
   (s/keys :req-un [::db/pool ::wrk/executor ::enabled]))
 
+(def event-xform
+  (comp
+   (filter :profile-id)
+   (map clean-props)))
+
 (defmethod ig/init-key ::collector
   [_ {:keys [enabled] :as cfg}]
   (when enabled
     (l/info :msg "intializing audit collector")
-    (let [input  (a/chan)
+    (let [input  (a/chan 1 event-xform)
           buffer (aa/batch input {:max-batch-size 100
                                   :max-batch-age (* 5 1000)
                                   :init []})]
@@ -65,14 +84,17 @@
           (l/debug :action "persist-events (batch)"
                    :reason (name type)
                    :count (count events))
-          (a/<! (persist-events cfg events))
+          (let [res (a/<! (persist-events cfg events))]
+            (when (ex/exception? res)
+              (l/error :hint "error on persiting events"
+                       :cause res)))
           (recur)))
 
       (fn [& [cmd & params]]
         (case cmd
           :stop (a/close! input)
           :submit (when-not (a/offer! input (first params))
-                      (l/warn :msg "activity channel is full")))))))
+                    (l/warn :msg "activity channel is full")))))))
 
 
 (defn- persist-events
@@ -113,7 +135,6 @@
       (ex/raise :type :internal
                 :code :task-not-configured
                 :hint "archive task not configured, missing uri"))
-    (l/debug :msg "start archiver" :uri uri)
     (loop []
       (let [res (archive-events cfg)]
         (when (= res :continue)
@@ -204,7 +225,6 @@
 
 (defn- clean-archived
   [{:keys [pool max-age]}]
-  (prn "clean-archived" max-age)
   (let [interval (db/interval max-age)
         result   (db/exec-one! pool [sql:clean-archived interval])
         result   (:next.jdbc/update-count result)]

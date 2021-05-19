@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
-   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -25,42 +25,36 @@
       (rx/of (dm/error msg)))
     (rx/throw error)))
 
-(defn on-success
-  [x]
-  (st/emit! (rt/nav :auth-login)))
-
 (mf/defc delete-account-modal
   {::mf/register modal/components
    ::mf/register-as :delete-account}
   [props]
-  (let [locale (mf/deref i18n/locale)
-        on-close
+  (let [on-close
         (mf/use-callback (st/emitf (modal/hide)))
 
         on-accept
         (mf/use-callback
          (st/emitf (modal/hide)
                    (du/request-account-deletion
-                    (with-meta {} {:on-error on-error
-                                   :on-success on-success}))))]
+                    (with-meta {} {:on-error on-error}))))]
 
     [:div.modal-overlay
      [:div.modal-container.change-email-modal
       [:div.modal-header
        [:div.modal-header-title
-        [:h2 (t locale "modals.delete-account.title")]]
+        [:h2 (tr "modals.delete-account.title")]]
        [:div.modal-close-button
         {:on-click on-close} i/close]]
 
       [:div.modal-content
        [:& msgs/inline-banner
         {:type :warning
-         :content (t locale "modals.delete-account.info")}]]
+         :content (tr "modals.delete-account.info")}]]
 
       [:div.modal-footer
        [:div.action-buttons
         [:button.btn-warning.btn-large {:on-click on-accept}
-         (t locale "modals.delete-account.confirm")]
+         (tr "modals.delete-account.confirm")]
         [:button.btn-secondary.btn-large {:on-click on-close}
-         (t locale "modals.delete-account.cancel")]]]]]))
+         (tr "modals.delete-account.cancel")]]]]]))
 

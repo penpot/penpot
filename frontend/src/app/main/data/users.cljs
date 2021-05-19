@@ -379,8 +379,10 @@
                   on-success identity}} (meta params)]
         (->> (rp/mutation :delete-profile {})
              (rx/tap on-success)
+             (rx/delay-at-least 300)
+             (rx/catch (constantly (rx/of 1)))
+             (rx/map logged-out)
              (rx/catch on-error))))))
-
 
 ;; --- EVENT: request-profile-recovery
 
