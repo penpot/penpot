@@ -1254,7 +1254,7 @@
    (ptk/reify ::go-to-dashboard
      ptk/WatchEvent
      (watch [it state stream]
-       (let [team-id (or team-id (get-in state [:workspace-project :team-id]))]
+       (when-let [team-id (or team-id (:current-team-id state))]
          (rx/of ::dwp/force-persist
                 (rt/nav :dashboard-projects {:team-id team-id})))))))
 

@@ -115,12 +115,15 @@
          (if (:is-default project)
            (tr "labels.drafts")
            (:name project))])
-      [:& project-menu {:project project
-                        :show? (:menu-open @local)
-                        :left (:x (:menu-pos @local))
-                        :top (:y (:menu-pos @local))
-                        :on-edit on-edit-open
-                        :on-menu-close on-menu-close}]
+
+      (when (:menu-open @local)
+        [:& project-menu {:project project
+                          :show? (:menu-open @local)
+                          :left (:x (:menu-pos @local))
+                          :top (:y (:menu-pos @local))
+                          :on-edit on-edit-open
+                          :on-menu-close on-menu-close}])
+
       [:span.info (str file-count " files")]
       (when (> file-count 0)
         (let [time (-> (:modified-at project)
@@ -147,8 +150,7 @@
   (let [projects   (->> (vals projects)
                         (sort-by :modified-at)
                         (reverse))
-        recent-map (mf/deref recent-files-ref)
-        files      (vals recent-map)]
+        recent-map (mf/deref recent-files-ref)]
 
     (mf/use-effect
      (mf/deps team)
@@ -167,7 +169,9 @@
        [:& header]
        [:section.dashboard-container
         (for [{:keys [id] :as project} projects]
-          (let [files (some->> files (filterv #(= id (:project-id %))))]
+          (let [files (when recent-map
+                        (->> (vals recent-map)
+                             (filterv #(= id (:project-id %)))))]
             [:& project-item {:project project
                               :files   files
                               :first? (= project (first projects))

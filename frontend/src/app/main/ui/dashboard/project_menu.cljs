@@ -9,6 +9,7 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
@@ -28,7 +29,8 @@
         left (or left 0)
 
         current-team-id (mf/use-ctx ctx/current-team-id)
-        teams           (mf/use-state nil)
+        teams           (mf/deref refs/teams)
+        teams           (-> teams (dissoc current-team-id) vals vec)
 
         on-duplicate-success
         (fn [new-project]
@@ -71,27 +73,19 @@
            :accept-label (tr "modals.delete-project-confirm.accept")
            :on-accept delete-fn}))]
 
-    (mf/use-effect
-     (fn []
-       (->> (rp/query! :teams)
-            (rx/map (fn [teams]
-                      (into [] (remove #(= (:id %) current-team-id)) teams)))
-            (rx/subs #(reset! teams %)))))
-
-    (when @teams
-      [:& context-menu {:on-close on-menu-close
-                        :show show?
-                        :fixed? (or (not= top 0) (not= left 0))
-                        :min-width? true
-                        :top top
-                        :left left
-                        :options [[(tr "labels.rename") on-edit]
-                                  [(tr "dashboard.duplicate") on-duplicate]
-                                  [(tr "dashboard.pin-unpin") toggle-pin]
-                                  (when (seq @teams)
-                                    [(tr "dashboard.move-to") nil
-                                     (for [team @teams]
-                                       [(:name team) (on-move (:id team))])])
-                                  [:separator]
-                                  [(tr "labels.delete") on-delete]]}])))
+    [:& context-menu {:on-close on-menu-close
+                      :show show?
+                      :fixed? (or (not= top 0) (not= left 0))
+                      :min-width? true
+                      :top top
+                      :left left
+                      :options [[(tr "labels.rename") on-edit]
+                                [(tr "dashboard.duplicate") on-duplicate]
+                                [(tr "dashboard.pin-unpin") toggle-pin]
+                                (when (seq teams)
+                                  [(tr "dashboard.move-to") nil
+                                   (for [team teams]
+                                     [(:name team) (on-move (:id team))])])
+                                [:separator]
+                                [(tr "labels.delete") on-delete]]}]))
 
