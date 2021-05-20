@@ -502,54 +502,72 @@
       [:div.animated {:class @klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/path-tool.gif" :border "0" :alt "New path tool"}]]
+         [:img {:src "images/features/custom-fonts.gif" :border "0" :alt "Upload/use custom fonts"}]]
         [:div.modal-right
          [:div.modal-title
-          [:h2 "New features for paths"]]
+          [:h2 "Upload/use custom fonts"]]
          [:div.modal-content
-          [:p "Now you can select snap points on edition, add/remove nodes, merge/join/split nodes."]
-          [:p "The usability and performance of the paths tool has been improved too."]]
+          [:p "With local font support you would have the advantage of open-source projects being able to use these fonts in their wireframes and mockups, share those with the community."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& navigation-bullets
            {:slide @slide
             :navigate navigate
-            :total 3}]]]]]]
+            :total 4}]]]]]]
 
      1
      [:div.modal-overlay
       [:div.animated {:class @klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/assets-organiz.gif" :border "0" :alt "Manage libraries"}]]
+         [:img {:src "images/features/scale-text.gif" :border "0" :alt "Interactively scale text"}]]
         [:div.modal-right
          [:div.modal-title
-          [:h2 "New libraries organization"]]
+          [:h2 "Interactively scale text"]]
          [:div.modal-content
-          [:p "Penpot now allows to group, multiselect and bulk edition of assets (components and graphics)."]
-          [:p "It is time to have all the libraries well organized and work more efficiently."]]
+          [:p "New main menu option “Scale text (K)” to set scale text mode."]
+          [:p "False by default, and resets to false again when changing draw tool."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& navigation-bullets
            {:slide @slide
             :navigate navigate
-            :total 3}]]]]]]
+            :total 4}]]]]]]
 
      2
      [:div.modal-overlay
       [:div.animated {:class @klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/smart-inputs.gif" :border "0" :alt "Smart inputs"}]]
+         [:img {:src "images/features/performance.gif" :border "0" :alt "Performance improvements"}]]
         [:div.modal-right
          [:div.modal-title
-          [:h2 "Smart inputs"]]
+          [:h2 "Performance improvements"]]
          [:div.modal-content
-          [:p "Now you can have more precision in your designs with basic math operations in inputs."]
-          [:p "It's easier to specify by how much you want to change a value and work with measures and distances."]]
+          [:p "Penpot brings important improvements handling large files."]
+          [:p "The performance in managing files in the dashboard has also been improved."]]
+         [:div.modal-navigation
+          [:button.btn-secondary {:on-click next} "Continue"]
+          [:& navigation-bullets
+           {:slide @slide
+            :navigate navigate
+            :total 4}]]]]]]
+
+     3
+     [:div.modal-overlay
+      [:div.animated {:class @klass}
+       [:div.modal-container.onboarding.feature
+        [:div.modal-left
+         [:img {:src "images/features/shapes-to-path.gif" :border "0" :alt "Shapes to path"}]]
+        [:div.modal-right
+         [:div.modal-title
+          [:h2 "Shapes to path"]]
+         [:div.modal-content
+          [:p "Now you can edit basic shapes like rectangles, circles and image containers by double clicking."]
+          [:p "An easy way to increase speed by working with vectors!"]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& navigation-bullets
            {:slide @slide
             :navigate navigate
-            :total 3}]]]]]])))
+            :total 4}]]]]]])))
