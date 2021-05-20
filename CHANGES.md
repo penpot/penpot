@@ -23,6 +23,7 @@
 - Transform shapes to path on double click
 - Translate automatic names of new files and projects.
 - Use shift instead of ctrl/cmd to keep aspect ratio [Taiga 1697](https://tree.taiga.io/project/penpot/issue/1697).
+- New translations: Portuguese (Brazil) and Romanias. 
 
 
 ### :bug: Bugs fixed
@@ -42,6 +43,10 @@
 - The OIDC setting `PENPOT_OIDC_SCOPES` has changed the default semantics. Before this
   configuration added scopes to the default set. Now it replaces it, so use with care, because
   penpot requires at least `name` and `email` props found on the user info object.
+
+### :heart: Community contributions by (Thank you!)
+
+- Translations: Portuguese (Brazil) and Romanias.
 
 
 ## 1.5.4-alpha
