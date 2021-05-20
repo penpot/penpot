@@ -23,7 +23,7 @@
 (defn index-shape
   [objects parents-index masks-index]
   (fn [index shape]
-    (let [{:keys [x y width height]} (:selrect shape)
+    (let [{:keys [x y width height]} (gsh/points->selrect (:points shape))
           shape-bound #js {:x x :y y :width width :height height}
 
           parents (get parents-index (:id shape))
@@ -42,11 +42,10 @@
   (let [shapes        (-> objects (dissoc uuid/zero) (vals))
         parents-index (cp/generate-child-all-parents-index objects)
         masks-index   (cp/create-mask-index objects parents-index)
-        bounds        (gsh/selection-rect shapes)
-        bounds #js {:x (:x bounds)
-                    :y (:y bounds)
-                    :width (:width bounds)
-                    :height (:height bounds)}
+        bounds #js {:x (int -0.5e7)
+                    :y (int -0.5e7)
+                    :width (int 1e7)
+                    :height (int 1e7)}
 
         index (reduce (index-shape objects parents-index masks-index)
                       (qdt/create bounds)
@@ -65,7 +64,8 @@
                            (get new-objects id)))
 
           changed-ids (into #{}
-                            (filter changes?)
+                            (comp (filter changes?)
+                                  (filter #(not= % uuid/zero)))
                             (set/union (keys old-objects)
                                        (keys new-objects)))
 

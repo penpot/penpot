@@ -48,6 +48,7 @@
     "react-dom": "~17.0.1",
     "react-virtualized": "^9.22.3",
     "rxjs": "~7.0.1",
+    "sax": "^1.2.4",
     "source-map-support": "^0.5.16",
     "tdigest": "^0.1.1",
     "ua-parser-js": "^0.7.28",

@@ -240,6 +240,15 @@
      (js/console.error explain)))
   (js/console.groupEnd "Validation Error"))
 
+;; Error on parsing an SVG
+(defmethod ptk/handle-error :svg-parser
+  [error]
+  (ts/schedule
+   (st/emitf
+    (dm/show {:content "SVG is invalid or malformed"
+              :type :error
+              :timeout 3000}))))
+
 ;; This is a pure frontend error that can be caused by an active
 ;; assertion (assertion that is preserved on production builds). From
 ;; the user perspective this should be treated as internal error.
