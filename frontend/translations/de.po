@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-05-13 08:44+0000\n"
 "Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
-"de/>\n"
+"Language-Team: German "
+"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -18,8 +18,8 @@ msgstr "Sie haben schon ein Konto?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
 msgstr ""
-"Überprüfen Sie Ihre E-Mail, klicken Sie auf den Link um sich zu verifizieren "
-"und Penpot zu nutzen."
+"Überprüfen Sie Ihre E-Mail, klicken Sie auf den Link um sich zu "
+"verifizieren und Penpot zu nutzen."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -36,8 +36,8 @@ msgstr "Einfach testen?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
 msgstr ""
-"Das ist eine DEMO-VERSION, verwenden Sie es NICHT zum Arbeiten, die Projekte "
-"werden regelmäßig gelöscht."
+"Das ist eine DEMO-VERSION, verwenden Sie es NICHT zum Arbeiten, die "
+"Projekte werden regelmäßig gelöscht."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
@@ -103,8 +103,7 @@ msgstr ""
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
-msgstr ""
-"Der Link zur Wiederherstellung des Passworts wurde an Ihre E-Mail gesendet."
+msgstr "Der Link zur Wiederherstellung des Passworts wurde an Ihre E-Mail gesendet."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
@@ -418,8 +417,7 @@ msgid "errors.ldap-disabled"
 msgstr "Die LDAP-Authentifizierung ist deaktiviert."
 
 msgid "errors.media-format-unsupported"
-msgstr ""
-"Das Bildformat wird nicht unterstützt (es muss ein SVG, JPG oder PNG sein)."
+msgstr "Das Bildformat wird nicht unterstützt (es muss ein SVG, JPG oder PNG sein)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -428,7 +426,8 @@ msgstr "Das Bild ist zu groß, um eingefügt zu werden (es muss unter 5MB sein).
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
 msgstr ""
-"Es scheint, dass der Bildinhalt nicht mit der Dateierweiterung übereinstimmt."
+"Es scheint, dass der Bildinhalt nicht mit der Dateierweiterung "
+"übereinstimmt."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
@@ -437,8 +436,8 @@ msgstr "Es scheint, dass dies kein gültiges Bild ist."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.member-is-muted"
 msgstr ""
-"In dem von Ihnen eingeladenen Profil sind E-Mails stummgeschaltet (Spam-"
-"Berichte oder hohe Unzustellbarkeitsberichte)."
+"In dem von Ihnen eingeladenen Profil sind E-Mails stummgeschaltet "
+"(Spam-Berichte oder hohe Unzustellbarkeitsberichte)."
 
 msgid "errors.network"
 msgstr "Es kann keine Verbindung zum Server hergestellt werden."
@@ -514,8 +513,8 @@ msgstr "Betreff"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Bitte beschreiben Sie den Grund Ihrer E-Mail und geben Sie an, ob es sich um "
-"ein Problem, eine Idee oder einem Bedenken handelt. Ein Mitglied unseres "
+"Bitte beschreiben Sie den Grund Ihrer E-Mail und geben Sie an, ob es sich "
+"um ein Problem, eine Idee oder einem Bedenken handelt. Ein Mitglied unseres "
 "Teams wird Ihnen so schnell wie möglich antworten."
 
 #: src/app/main/ui/settings/feedback.cljs
@@ -1182,8 +1181,7 @@ msgstr "Befördern"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
-msgstr ""
-"Sind Sie sicher, dass Sie diesen Benutzer zum Eigentümer befördern wollen?"
+msgstr "Sind Sie sicher, dass Sie diesen Benutzer zum Eigentümer befördern wollen?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
@@ -1215,7 +1213,8 @@ msgstr "Abbrechen"
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Sie sind dabei, eine Komponente in einer gemeinsam genutzten Bibliothek zu "
-"aktualisieren. Dies kann sich auf andere Dateien auswirken, die es verwenden."
+"aktualisieren. Dies kann sich auf andere Dateien auswirken, die es "
+"verwenden."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
@@ -1228,8 +1227,8 @@ msgstr "Einladung erfolgreich gesendet"
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
 msgstr ""
-"Sie können Ihr Profil nicht löschen. Weisen Sie Ihre Teams neu zu, bevor Sie "
-"fortfahren."
+"Sie können Ihr Profil nicht löschen. Weisen Sie Ihre Teams neu zu, bevor "
+"Sie fortfahren."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -1613,7 +1612,8 @@ msgstr "BIBLIOTHEK"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr ""
-"Es gibt keine gemeinsam genutzte Bibliotheken, die aktualisiert werden müssen"
+"Es gibt keine gemeinsam genutzte Bibliotheken, die aktualisiert werden "
+"müssen"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-matches-for"

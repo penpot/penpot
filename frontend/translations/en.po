@@ -2,70 +2,14 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-05-20 14:12+0000\n"
 "Last-Translator: Jan C. Borchardt <hey@jancborchardt.net>\n"
-"Language-Team: English <https://hosted.weblate.org/projects/penpot/frontend/"
-"en/>\n"
+"Language-Team: English "
+"<https://hosted.weblate.org/projects/penpot/frontend/en/>\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 4.7-dev\n"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "title.dashboard.fonts"
-msgstr "Fonts - %s - Penpot"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "title.dashboard.font-providers"
-msgstr "Font Providers - %s - Penpot"
-
-msgid "labels.upload"
-msgstr "Upload"
-
-msgid "labels.uploading"
-msgstr "Uploading…"
-
-msgid "modals.delete-font.title"
-msgstr "Deleting font"
-
-msgid "modals.delete-font.message"
-msgstr "Are you sure you want to delete this font? It will not load if is used in a file."
-
-msgid "labels.fonts"
-msgstr "Fonts"
-
-msgid "labels.installed-fonts"
-msgstr "Installed fonts"
-
-msgid "labels.font-family"
-msgstr "Font Family"
-
-msgid "labels.font-variant"
-msgstr "Style"
-
-msgid "labels.custom-fonts"
-msgstr "Custom fonts"
-
-msgid "labels.manage-fonts"
-msgstr "Manage fonts"
-
-msgid "labels.search-font"
-msgstr "Search font"
-
-msgid "labels.font-providers"
-msgstr "Font providers"
-
-msgid "labels.upload-custom-fonts"
-msgstr "Upload custom fonts"
-
-
-#, markdown
-msgid "dashboard.fonts.hero-text1"
-msgstr "Any web font you upload here will be added to the font family list available at the text properties of the files of this team. Fonts with the same font family name will be grouped as a **single font family**. You can upload fonts with the following formats: **TTF, OTF and WOFF** (only one will be needed)."
-
-#, markdown
-msgid "dashboard.fonts.hero-text2"
-msgstr "You should only upload fonts you own or have license to use in Penpot. Find out more in the Content rights section of [Penpot's Terms of Service](https://penpot.app/terms.html). You also might want to read about [font licensing](https://www.typography.com/faq)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -261,6 +205,23 @@ msgstr "Duplicate %s files"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
 msgstr "You still have no files here"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Any web font you upload here will be added to the font family list "
+"available at the text properties of the files of this team. Fonts with the "
+"same font family name will be grouped as a **single font family**. You can "
+"upload fonts with the following formats: **TTF, OTF and WOFF** (only one "
+"will be needed)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"You should only upload fonts you own or have license to use in Penpot. Find "
+"out more in the Content rights section of [Penpot's Terms of "
+"Service](https://penpot.app/terms.html). You also might want to read about "
+"[font licensing](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -877,6 +838,9 @@ msgstr "Create new team"
 msgid "labels.create-team.placeholder"
 msgstr "Enter new team name"
 
+msgid "labels.custom-fonts"
+msgstr "Custom fonts"
+
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
 msgstr "Dashboard"
@@ -921,6 +885,18 @@ msgstr "Feedback disabled"
 msgid "labels.feedback-sent"
 msgstr "Feedback sent"
 
+msgid "labels.font-family"
+msgstr "Font Family"
+
+msgid "labels.font-providers"
+msgstr "Font providers"
+
+msgid "labels.font-variant"
+msgstr "Style"
+
+msgid "labels.fonts"
+msgstr "Fonts"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Give feedback"
@@ -934,6 +910,9 @@ msgstr "Icons"
 
 msgid "labels.images"
 msgstr "Images"
+
+msgid "labels.installed-fonts"
+msgstr "Installed fonts"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
@@ -952,6 +931,9 @@ msgstr "Language"
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "Logout"
+
+msgid "labels.manage-fonts"
+msgstr "Manage fonts"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
@@ -1051,6 +1033,9 @@ msgstr "Role"
 msgid "labels.save"
 msgstr "Save"
 
+msgid "labels.search-font"
+msgstr "Search font"
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.send"
 msgstr "Send"
@@ -1094,6 +1079,15 @@ msgstr "Update"
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.update-team"
 msgstr "Update team"
+
+msgid "labels.upload"
+msgstr "Upload"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Upload custom fonts"
+
+msgid "labels.uploading"
+msgstr "Uploading…"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
@@ -1194,6 +1188,14 @@ msgstr "Are you sure you want to delete %s files?"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Deleting %s files"
+
+msgid "modals.delete-font.message"
+msgstr ""
+"Are you sure you want to delete this font? It will not load if is used in a "
+"file."
+
+msgid "modals.delete-font.title"
+msgstr "Deleting font"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "modals.delete-page.body"
@@ -1357,6 +1359,14 @@ msgstr "Mixed"
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
 msgstr "%s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Font Providers - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Fonts - %s - Penpot"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "title.dashboard.projects"

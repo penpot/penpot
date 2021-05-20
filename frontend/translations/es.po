@@ -11,77 +11,11 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 4.7-dev\n"
 
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "title.dashboard.fonts"
-msgstr "Fuentes - %s - Penpot"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "title.dashboard.font-providers"
-msgstr "Proveedores de fuentes - %s - Penpot"
-
-msgid "labels.upload"
-msgstr "Subir"
-
-msgid "labels.uploading"
-msgstr "Subiendo..."
-
-msgid "modals.delete-font.title"
-msgstr "Eliminando fuente"
-
-msgid "modals.delete-font.message"
-msgstr "Are you sure you want to delete this font? It will not load if is used in a file."
-msgstr "¿Estas seguro que quieres eliminar esta fuente? La fuente dejara de cargar si es usada en algun fichero."
-
-msgid "labels.fonts"
-msgstr "Fuentes"
-
-msgid "labels.installed-fonts"
-msgstr "Fuentes instaladas"
-
-msgid "labels.font-family"
-msgstr "Familia de fuente"
-
-msgid "labels.font-variant"
-msgstr "Estilo"
-
-msgid "labels.custom-fonts"
-msgstr "Fuentes personalizadas"
-
-msgid "labels.manage-fonts"
-msgstr "Administrar fuentes"
-
-msgid "labels.search-font"
-msgstr "Buscar fuente"
-
-msgid "labels.font-providers"
-msgstr "Proveedores de fuentes"
-
-msgid "labels.upload-custom-fonts"
-msgstr "Subir fuente"
-
-#, markdown
-msgid "dashboard.fonts.hero-text1"
-msgstr "Any web font you upload here will be added to the font family list available at the text properties of the files of this team. Fonts with the same font family name will be grouped as a **single font family**. You can upload fonts with the following formats: **TTF, OTF and WOFF** (only one will be needed)."
-
-#, markdown
-msgid "dashboard.fonts.hero-text2"
-msgstr "You should only upload fonts you own or have license to use in Penpot. Find out more in the Content rights section of [Penpot's Terms of Service](https://penpot.app/terms.html). You also might want to read about [font licensing](2)."
-
-
-
-
-
-
-
-
-
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
 msgstr "¿Tienes ya una cuenta?"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.check-your-email"
 msgstr ""
 "Comprueba tu email y haz click en el link de verificación para comenzar a "
@@ -275,6 +209,23 @@ msgstr "Duplicar %s archivos"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
 msgstr "Todavía no hay ningún archivo aquí"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Any web font you upload here will be added to the font family list "
+"available at the text properties of the files of this team. Fonts with the "
+"same font family name will be grouped as a **single font family**. You can "
+"upload fonts with the following formats: **TTF, OTF and WOFF** (only one "
+"will be needed)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"You should only upload fonts you own or have license to use in Penpot. Find "
+"out more in the Content rights section of [Penpot's Terms of "
+"Service](https://penpot.app/terms.html). You also might want to read about "
+"[font licensing](2)."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -889,6 +840,9 @@ msgstr "Crear"
 msgid "labels.create-team"
 msgstr "Crea un nuevo equipo"
 
+msgid "labels.custom-fonts"
+msgstr "Fuentes personalizadas"
+
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
 msgstr "Panel"
@@ -933,6 +887,18 @@ msgstr "El modulo de recepción de opiniones esta deshabilitado."
 msgid "labels.feedback-sent"
 msgstr "Opinión enviada"
 
+msgid "labels.font-family"
+msgstr "Familia de fuente"
+
+msgid "labels.font-providers"
+msgstr "Proveedores de fuentes"
+
+msgid "labels.font-variant"
+msgstr "Estilo"
+
+msgid "labels.fonts"
+msgstr "Fuentes"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Danos tu opinión"
@@ -946,6 +912,9 @@ msgstr "Iconos"
 
 msgid "labels.images"
 msgstr "Imágenes"
+
+msgid "labels.installed-fonts"
+msgstr "Fuentes instaladas"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
@@ -964,6 +933,9 @@ msgstr "Idioma"
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "Salir"
+
+msgid "labels.manage-fonts"
+msgstr "Administrar fuentes"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
@@ -1063,6 +1035,9 @@ msgstr "Cargo"
 msgid "labels.save"
 msgstr "Guardar"
 
+msgid "labels.search-font"
+msgstr "Buscar fuente"
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.send"
 msgstr "Enviar"
@@ -1106,6 +1081,15 @@ msgstr "Actualizar"
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.update-team"
 msgstr "Actualiza el equipo"
+
+msgid "labels.upload"
+msgstr "Subir"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Subir fuente"
+
+msgid "labels.uploading"
+msgstr "Subiendo..."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
@@ -1206,6 +1190,14 @@ msgstr "¿Seguro que quieres eliminar %s archivos?"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Eliminando %s archivos"
+
+msgid "modals.delete-font.message"
+msgstr ""
+"Are you sure you want to delete this font? It will not load if is used in a "
+"file."
+
+msgid "modals.delete-font.title"
+msgstr "Eliminando fuente"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "modals.delete-page.body"
@@ -1361,6 +1353,14 @@ msgstr "Verificación de email enviada a %s. Comprueba tu correo."
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Varios"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Proveedores de fuentes - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Fuentes - %s - Penpot"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "title.dashboard.projects"
@@ -2596,13 +2596,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.check-your-email"
-msgstr ""
-"Comprueba tu email y haz click en el link de verificación para comenzar a "
-"usar Penpot."
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.verification-email-sent"
-msgstr "Hemos enviado un email de verificación a"
