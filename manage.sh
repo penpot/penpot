@@ -98,6 +98,54 @@ Copyright (c) UXBOX Labs SL
 EOF
 }
 
+function build-frontend-bundle {
+    echo ">> bundle frontend start";
+
+    local version=$(print-current-version);
+    local bundle_dir="./bundle-frontend";
+
+    build "frontend";
+
+    rm -rf $bundle_dir;
+    mv ./frontend/target/dist $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle frontend end";
+}
+
+function build-backend-bundle {
+    echo ">> bundle backend start";
+
+    local version=$(print-current-version);
+    local bundle_dir="./bundle-backend";
+
+    build "backend";
+
+    rm -rf $bundle_dir;
+    mv ./backend/target/dist $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle frontend end";
+}
+
+function build-exporter-bundle {
+    echo ">> bundle exporter start";
+    local version=$(print-current-version);
+    local bundle_dir="./bundle-exporter";
+
+    build "exporter";
+
+    rm -rf $bundle_dir;
+    mv ./exporter/target $bundle_dir;
+
+    echo $version > $bundle_dir/version.txt
+    put-license-file $bundle_dir;
+
+    echo ">> bundle exporter end";
+}
+
+# DEPRECATED: temporary mantained for backward compatibilty.
+
 function build-app-bundle {
     echo ">> bundle app start";
 
@@ -115,22 +163,6 @@ function build-app-bundle {
     echo $version > $bundle_dir/version.txt
     put-license-file $bundle_dir;
     echo ">> bundle app end";
-}
-
-function build-exporter-bundle {
-    echo ">> bundle exporter start";
-    local version=$(print-current-version);
-    local bundle_dir="./bundle-exporter";
-
-    build "exporter";
-
-    rm -rf $bundle_dir;
-    mv ./exporter/target $bundle_dir;
-
-    echo $version > $bundle_dir/version.txt
-    put-license-file $bundle_dir;
-
-    echo ">> bundle exporter end";
 }
 
 function usage {
@@ -180,6 +212,14 @@ case $1 in
     # production builds
     build-app-bundle)
         build-app-bundle;
+        ;;
+
+    build-frontend-bundle)
+        build-frontend-bundle;
+        ;;
+
+    build-backend-bundle)
+        build-backend-bundle;
         ;;
 
     build-exporter-bundle)

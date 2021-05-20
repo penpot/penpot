@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
+   [app.loggers.audit :as audit]
    [app.rpc.mutations.profile :as profile]
    [app.setup.initial-data :as sid]
    [app.util.services :as sv]
@@ -53,5 +54,6 @@
                     ::wrk/conn conn
                     :profile-id id})
 
-      {:email email
-       :password password})))
+      (with-meta {:email email
+                  :password password}
+        {::audit/profile-id id}))))
