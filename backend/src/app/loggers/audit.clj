@@ -156,7 +156,7 @@
               (assoc :props (db/decode-transit-pgobject props))))
 
           (row->event [{:keys [name type created-at profile-id props]}]
-            {:type (str "backend:" type)
+            {:type type
              :name name
              :timestamp created-at
              :profile-id profile-id
