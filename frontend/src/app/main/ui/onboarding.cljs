@@ -507,7 +507,8 @@
          [:div.modal-title
           [:h2 "Upload/use custom fonts"]]
          [:div.modal-content
-          [:p "With local font support you would have the advantage of open-source projects being able to use these fonts in their wireframes and mockups, share those with the community."]]
+          [:p "From now on you can upload fonts from your computer to a Penpot team and use them across its files. This is one of the most requested features since our first release (we listen!)"]
+          [:p "We hope you enjoy having more typography options and our brand new font selector."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& navigation-bullets
@@ -523,10 +524,10 @@
          [:img {:src "images/features/scale-text.gif" :border "0" :alt "Interactively scale text"}]]
         [:div.modal-right
          [:div.modal-title
-          [:h2 "Interactively scale text"]]
+          [:h2 "Scale text layers at resizing"]]
          [:div.modal-content
-          [:p "New main menu option “Scale text (K)” to set scale text mode."]
-          [:p "False by default, and resets to false again when changing draw tool."]]
+          [:p "New main menu option “Scale text (K)” to enable scale text mode."]
+          [:p "Disabled by default, this tool is disabled back after being used."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& navigation-bullets
@@ -544,8 +545,8 @@
          [:div.modal-title
           [:h2 "Performance improvements"]]
          [:div.modal-content
-          [:p "Penpot brings important improvements handling large files."]
-          [:p "The performance in managing files in the dashboard has also been improved."]]
+          [:p "Penpot brings important improvements handling large files. The performance in managing files in the dashboard has also been improved."]
+          [:p "You should have the feeling that files and layers show up a bit faster :)"]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& navigation-bullets
