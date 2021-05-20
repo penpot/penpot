@@ -307,37 +307,39 @@
   [{:keys [pool metrics] :as cfg} params]
   (db/with-atomic [conn pool]
     (let [profile (-> (assoc cfg :conn conn)
-                      (login-or-register params))]
+                      (login-or-register params))
+          props   (merge
+                   (select-keys profile [:backend :fullname :email])
+                   (:props profile))]
       (with-meta profile
         {:before-complete (annotate-profile-register metrics profile)
-         ::audit/props (:props profile)
+         ::audit/name (if (::created profile) "register" "login")
+         ::audit/props props
          ::audit/profile-id (:id profile)}))))
 
 (defn login-or-register
   [{:keys [conn] :as cfg} {:keys [email backend] :as params}]
-  (letfn [(info->props [info]
-            (dissoc info :name :fullname :email :backend))
-
-          (info->lang [{:keys [locale] :as info}]
+  (letfn [(info->lang [{:keys [locale] :as info}]
             (when (and (string? locale)
                        (not (str/blank? locale)))
               locale))
 
-          (create-profile [conn {:keys [email] :as info}]
-            (db/insert! conn :profile
-                        {:id (uuid/next)
-                         :fullname (:fullname info)
-                         :email (str/lower email)
-                         :lang (info->lang info)
-                         :auth-backend backend
-                         :is-active true
-                         :password "!"
-                         :props (db/tjson (info->props info))
-                         :is-demo false}))
+          (create-profile [conn {:keys [fullname backend email props] :as info}]
+            (let [params {:id (uuid/next)
+                          :fullname fullname
+                          :email (str/lower email)
+                          :lang (info->lang props)
+                          :auth-backend backend
+                          :is-active true
+                          :password "!"
+                          :props (db/tjson props)
+                          :is-demo false}]
+              (-> (db/insert! conn :profile params)
+                  (update :props db/decode-transit-pgobject))))
 
           (update-profile [conn info profile]
-            (let [props (d/merge (:props profile)
-                                 (info->props info))]
+            (let [props (merge (:props profile)
+                               (:props info))]
               (db/update! conn :profile
                           {:props (db/tjson props)
                            :modified-at (dt/now)}
