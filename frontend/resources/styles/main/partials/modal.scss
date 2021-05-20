@@ -382,7 +382,7 @@
 
   .modal-left {
     align-items: center;
-    background-color: $color-primary;
+    background-color: $color-pink;
     border-top-left-radius: 5px;
     border-bottom-left-radius: 5px;
     display: flex;
@@ -391,6 +391,10 @@
     overflow: hidden;
     padding: $x-big;
     width: 230px;
+
+    &.welcome {
+      padding: 0;
+    }
   }
 
   .modal-right {
@@ -498,6 +502,7 @@
       color: $color-black;
       flex: 1;
       flex-direction: column;
+      overflow: visible;
       padding: $x-big 40px;
       text-align: center;
 
