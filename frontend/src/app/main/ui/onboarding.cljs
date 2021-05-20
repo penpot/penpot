@@ -296,7 +296,7 @@
 
 (defmethod render-release-notes "0.0"
   [params]
-  (render-release-notes (assoc params :version "1.5")))
+  (render-release-notes (assoc params :version "1.6")))
 
 (defmethod render-release-notes "1.4"
   [{:keys [slide klass next finish navigate version]}]
