@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-07 08:30+0000\n"
+"PO-Revision-Date: 2021-05-20 14:12+0000\n"
 "Last-Translator: Jan C. Borchardt <hey@jancborchardt.net>\n"
 "Language-Team: English <https://hosted.weblate.org/projects/penpot/frontend/"
 "en/>\n"
@@ -23,7 +23,7 @@ msgid "labels.upload"
 msgstr "Upload"
 
 msgid "labels.uploading"
-msgstr "Uploading..."
+msgstr "Uploading…"
 
 msgid "modals.delete-font.title"
 msgstr "Deleting font"
@@ -1057,7 +1057,7 @@ msgstr "Send"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.sending"
-msgstr "Sending..."
+msgstr "Sending…"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.desc-message"
