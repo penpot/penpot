@@ -14,8 +14,8 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
-   [app.main.data.media :as di]
    [app.main.data.fonts :as df]
+   [app.main.data.media :as di]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -39,7 +39,8 @@
    [clojure.set :as set]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [tubax.core :as tubax]))
 
 (declare persist-changes)
 (declare persist-sychronous-changes)
@@ -344,8 +345,12 @@
 
 (defn parse-svg
   [[name text]]
-  (->> (rp/query! :parsed-svg {:data text})
-       (rx/map #(assoc % :name name))))
+  (try
+    (->> (rx/of (-> (tubax/xml->clj text)
+                    (assoc :name name))))
+
+    (catch :default err
+      (rx/throw {:type :svg-parser}))))
 
 (defn fetch-svg [name uri]
   (->> (http/send! {:method :get :uri uri :mode :no-cors})

@@ -20,6 +20,7 @@
   [funcool/potok "4.0.0"]
   [funcool/promesa "6.0.0"]
   [funcool/rumext "2021.05.12-1"]
+  [funcool/tubax "2021.05.20-0"]
 
   [lambdaisland/uri "1.4.54"
    :exclusions [org.clojure/data.json]]
