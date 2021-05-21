@@ -7,12 +7,13 @@
 (ns app.main.ui.workspace.viewport
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages :as cp]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
    [app.main.ui.context :as muc]
    [app.main.ui.measurements :as msr]
+   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.text.editor :as editor]
    [app.main.ui.workspace.viewport.actions :as actions]
@@ -187,7 +188,7 @@
        :style {:background-color (get options :background "#E8E9EA")
                :pointer-events "none"}}
 
-      [:& (mf/provider muc/embed-ctx) {:value true}
+      [:& (mf/provider embed/context) {:value true}
        ;; Render root shape
        [:& shapes/root-shape {:key page-id
                               :objects objects

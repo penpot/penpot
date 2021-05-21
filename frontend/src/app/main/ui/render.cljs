@@ -14,7 +14,7 @@
    [app.common.uuid :as uuid]
    [app.main.exports :as exports]
    [app.main.repo :as repo]
-   [app.main.ui.context :as muc]
+   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [beicon.core :as rx]
@@ -71,7 +71,7 @@
          #(exports/shape-wrapper-factory objects))
         ]
 
-    [:& (mf/provider muc/embed-ctx) {:value true}
+    [:& (mf/provider embed/context) {:value true}
      [:svg {:id "screenshot"
             :view-box vbox
             :width width

@@ -7,35 +7,13 @@
 (ns app.main.ui.shapes.image
   (:require
    [app.common.geom.shapes :as geom]
-   [app.config :as cfg]
-   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.embed :as se]
    [app.util.dom :as dom]
-   [app.util.http :as http]
    [app.util.object :as obj]
-   [app.util.webapi :as wapi]
-   [beicon.core :as rx]
-   [rumext.alpha :as mf]))
-
-(defn use-image-uri
-  [media]
-  (let [uri              (mf/use-memo (mf/deps (:id media))
-                                      #(cfg/resolve-file-media media))
-        embed-resources? (mf/use-ctx muc/embed-ctx)
-        data-uri         (mf/use-state (when (not embed-resources?) uri))]
-
-    (mf/use-effect
-     (mf/deps uri)
-     (fn []
-       (if embed-resources?
-         (->> (http/send! {:method :get
-                           :uri uri
-                           :response-type :blob})
-              (rx/map :body)
-              (rx/mapcat wapi/read-file-as-data-url)
-              (rx/subs #(reset! data-uri  %))))))
-
-    (or @data-uri uri)))
+   [rumext.alpha :as mf]
+   [app.config :as cfg]
+   [app.main.ui.shapes.embed :as embed]))
 
 (mf/defc image-shape
   {::mf/wrap-props false}
@@ -43,7 +21,8 @@
 
   (let [shape (unchecked-get props "shape")
         {:keys [id x y width height rotation metadata]} shape
-        uri (use-image-uri metadata)]
+        uri (cfg/resolve-file-media metadata)
+        embed (embed/use-data-uris [uri])]
 
     (let [transform (geom/transform-matrix shape)
           props (-> (attrs/extract-style-attrs shape)
@@ -60,5 +39,5 @@
 
       [:> "image" (obj/merge!
                    props
-                   #js {:xlinkHref uri
+                   #js {:xlinkHref (get embed uri uri)
                         :onDragStart on-drag-start})])))

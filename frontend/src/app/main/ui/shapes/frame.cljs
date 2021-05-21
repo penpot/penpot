@@ -7,12 +7,15 @@
 (ns app.main.ui.shapes.frame
   (:require
    [app.common.data :as d]
-   [app.common.geom.shapes :as geom]
    [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.text.fontfaces :as ff]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
 (def frame-default-props {:fill-color "#ffffff"})
+
+(defn is-text? [{type :type}]
+  (= :text type))
 
 (defn frame-shape
   [shape-wrapper]
@@ -23,6 +26,8 @@
           shape      (unchecked-get props "shape")
           {:keys [id width height]} shape
 
+          text-childs (->> childs (filterv is-text?))
+
           props (-> (merge frame-default-props shape)
                     (attrs/extract-style-attrs)
                     (obj/merge!
@@ -32,6 +37,7 @@
                           :height height
                           :className "frame-background"}))]
       [:*
+       [:& ff/fontfaces-style {:shapes text-childs}]
        [:> :rect props]
        (for [[i item] (d/enumerate childs)]
          [:& shape-wrapper {:frame shape

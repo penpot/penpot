@@ -6,44 +6,14 @@
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
-   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.main.data.workspace :as dw]
-   [app.main.data.workspace.changes :as dch]
    [app.main.refs :as refs]
-   [app.main.store :as st]
-   [app.main.ui.context :as muc]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.main.ui.shapes.text.embed :as ste]
-   [app.util.dom :as dom]
-   [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.core :as rx]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
-
-(def obs-config
-  #js {:attributes true
-       :childList true
-       :subtree true
-       :characterData true})
-
-(defn make-is-moving-ref
-  [id]
-  (let [check-moving (fn [local]
-                       (and (= :move (:transform local))
-                            (contains? (:selected local) id)))]
-    (l/derived check-moving refs/workspace-local)))
-
-(defn check-props
-  ([props] (check-props props =))
-  ([props eqfn?]
-   (fn [np op]
-     (every? #(eqfn? (unchecked-get np %)
-                     (unchecked-get op %))
-             props))))
 
 (defn check-frame-props
   "Checks for changes in the props of a frame"
@@ -107,14 +77,9 @@
             thumbnail?  (unchecked-get props "thumbnail?")
 
             edition     (mf/deref refs/selected-edition)
-            embed-fonts? (mf/use-ctx muc/embed-ctx)
 
             shape       (gsh/transform-shape shape)
             children    (mapv #(get objects %) (:shapes shape))
-            text-childs (->> objects
-                             vals
-                             (filterv #(and (= :text (:type %))
-                                            (= (:id shape) (:frame-id %)))))
 
             ds-modifier (get-in shape [:modifiers :displacement])
 
@@ -131,12 +96,7 @@
           [:g.frame-wrapper {:display (when (:hidden shape) "none")}
 
            (when-not show-thumbnail?
-             [:> shape-container {:shape shape
-                                  :ref on-dom}
-
-              (when embed-fonts?
-                [:& ste/embed-fontfaces-style {:shapes text-childs}])
-
+             [:> shape-container {:shape shape :ref on-dom}
               [:& frame-shape {:shape shape
                                :childs children}]])
 
