@@ -225,3 +225,28 @@
      (fn []
        (mf/set-ref-val! ref value)))
     (mf/ref-val ref)))
+
+(defn use-equal-memo
+  [val]
+  (let [ref (mf/use-ref nil)]
+    (when-not (= (mf/ref-val ref) val)
+      (mf/set-ref-val! ref val))
+    (mf/ref-val ref)))
+
+(defn- ssr?
+  "Checks if the current environment is run under a SSR context"
+  []
+  (try
+    (not js/window)
+    (catch :default e
+      ;; When exception accessing window we're in ssr
+      true)))
+
+(defn use-effect-ssr
+  "Use effect that handles SSR"
+  [deps effect-fn]
+
+  (if (ssr?)
+    (let [ret (effect-fn)]
+      (when (fn? ret) (ret)))
+    (mf/use-effect deps effect-fn)))

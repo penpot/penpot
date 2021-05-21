@@ -26,7 +26,8 @@
    [app.main.ui.shapes.text :as text]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.svg-raw :as svg-raw]
-   [app.main.ui.shapes.shape :refer [shape-container]]))
+   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.embed :as embed]))
 
 (def ^:private default-color "#E8E9EA") ;; $color-canvas
 
@@ -43,8 +44,9 @@
   [{:keys [objects] :as data} vport]
   (let [shapes (cp/select-toplevel-shapes objects {:include-frames? true})
         to-finite (fn [val fallback] (if (not (mth/finite? val)) fallback val))
-        rect (->> (gsh/selection-rect shapes)
-                  (gal/adjust-to-viewport vport))]
+        rect (cond->> (gsh/selection-rect shapes)
+               (some? vport)
+               (gal/adjust-to-viewport vport))]
     (-> rect
         (update :x to-finite 0)
         (update :y to-finite 0)
@@ -121,13 +123,14 @@
 
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [data width height thumbnails?] :as props}]
+  [{:keys [data width height thumbnails? embed?] :as props}]
   (let [objects (:objects data)
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
                      (map #(get objects %)))
 
-        vport   {:width width :height height}
+        vport   (when (and (some? width) (some? height))
+                  {:width width :height height})
         dim     (calculate-dimensions data vport)
         vbox    (get-viewbox dim)
         background-color (get-in data [:options :background] default-color)
@@ -140,29 +143,31 @@
         (mf/use-memo
          (mf/deps objects)
          #(shape-wrapper-factory objects))]
-    [:svg {:view-box vbox
-           :version "1.1"
-           :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns "http://www.w3.org/2000/svg"}
-     [:& background {:vbox dim :color background-color}]
-     (for [item shapes]
-       (let [frame? (= (:type item) :frame)]
-         (cond
-           (and frame? thumbnails? (some? (:thumbnail item)))
-           [:image {:xlinkHref (:thumbnail item)
-                    :x (:x item)
-                    :y (:y item)
-                    :width (:width item)
-                    :height (:height item)
-                    ;; DEBUG
-                    ;; :style {:filter "sepia(1)"}
-                    }]
-           frame?
-           [:& frame-wrapper {:shape item
-                              :key (:id item)}]
-           :else
-           [:& shape-wrapper {:shape item
-                              :key (:id item)}])))]))
+    [:& (mf/provider embed/context) {:value embed?}
+     [:svg {:view-box vbox
+            :version "1.1"
+            :xmlnsXlink "http://www.w3.org/1999/xlink"
+            :xmlns "http://www.w3.org/2000/svg"
+            :xmlns:penpot "https://penpot.app/xmlns"}
+      [:& background {:vbox dim :color background-color}]
+      (for [item shapes]
+        (let [frame? (= (:type item) :frame)]
+          (cond
+            (and frame? thumbnails? (some? (:thumbnail item)))
+            [:image {:xlinkHref (:thumbnail item)
+                     :x (:x item)
+                     :y (:y item)
+                     :width (:width item)
+                     :height (:height item)
+                     ;; DEBUG
+                     ;; :style {:filter "sepia(1)"}
+                     }]
+            frame?
+            [:& frame-wrapper {:shape item
+                               :key (:id item)}]
+            :else
+            [:& shape-wrapper {:shape item
+                               :key (:id item)}])))]]))
 
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}

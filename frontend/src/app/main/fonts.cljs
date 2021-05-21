@@ -8,17 +8,19 @@
   "Fonts management and loading logic."
   (:require-macros [app.main.fonts :refer [preload-gfonts]])
   (:require
-   [app.config :as cf]
    [app.common.data :as d]
+   [app.common.text :as txt]
+   [app.config :as cf]
    [app.util.dom :as dom]
+   [app.util.http :as http]
+   [app.util.logging :as log]
    [app.util.object :as obj]
    [app.util.timers :as ts]
-   [app.util.logging :as log]
-   [lambdaisland.uri :as u]
-   [goog.events :as gev]
    [beicon.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
+   [goog.events :as gev]
+   [lambdaisland.uri :as u]
    [okulary.core :as l]
    [promesa.core :as p]))
 
@@ -216,3 +218,55 @@
   (or
    (d/seek #(or (= (:id %) "regular") (= (:name %) "regular")) variants)
    (first variants)))
+
+;; Font embedding functions
+
+;; Template for a CSS font face
+
+(def font-face-template "
+/* latin */
+@font-face {
+  font-family: '%(family)s';
+  font-style: %(style)s;
+  font-weight: %(weight)s;
+  font-display: block;
+  src: url(/fonts/%(family)s-%(suffix)s.woff) format('woff');
+}
+")
+
+(defn get-content-fonts
+  "Extracts the fonts used by the content of a text shape"
+  [{font-id :font-id children :children :as content}]
+  (let [current-font
+        (if (some? font-id)
+          #{(select-keys content [:font-id :font-variant-id])}
+          #{(select-keys txt/default-text-attrs [:font-id :font-variant-id])})
+        children-font (->> children (mapv get-content-fonts))]
+    (reduce set/union (conj children-font current-font))))
+
+
+(defn fetch-font-css
+  "Given a font and the variant-id, retrieves the fontface CSS"
+  [{:keys [font-id font-variant-id]
+    :or   {font-variant-id "regular"}}]
+
+  (let [{:keys [backend family variants]} (get @fontsdb font-id)]
+    (if (= :google backend)
+      (-> (generate-gfonts-url
+           {:family family
+            :variants [{:id font-variant-id}]})
+          (http/fetch-text))
+
+      (let [{:keys [weight style suffix] :as variant}
+            (d/seek #(= (:id %) font-variant-id) variants)
+            font-data {:family family
+                       :style style
+                       :suffix (or suffix font-variant-id)
+                       :weight weight}]
+        (rx/of (str/fmt font-face-template font-data))))))
+
+(defn extract-fontface-urls
+  "Parses the CSS and retrieves the font urls"
+  [^string css]
+  (->> (re-seq #"url\(([^)]+)\)" css)
+       (mapv second)))

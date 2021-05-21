@@ -10,9 +10,12 @@
    [app.common.data :as d]
    [app.common.uri :as u]
    [app.config :as cfg]
+   [app.util.cache :as c]
    [app.util.globals :as globals]
    [app.util.object :as obj]
+   [app.util.time :as dt]
    [app.util.transit :as t]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]))
@@ -152,6 +155,27 @@
 
 (defn as-promise
   [observable]
-  (p/create (fn [resolve reject]
-              (->> (rx/take 1 observable)
-                   (rx/subs resolve reject)))))
+  (p/create
+   (fn [resolve reject]
+     (->> (rx/take 1 observable)
+          (rx/subs resolve reject)))))
+
+(defn fetch-data-uri [uri]
+  (c/with-cache {:key uri :max-age (dt/duration {:hours 4})}
+    (->> (send! {:method :get
+                 :uri uri
+                 :response-type :blob
+                 :omit-default-headers true})
+         (rx/map :body)
+         (rx/mapcat wapi/read-file-as-data-url)
+         (rx/map #(hash-map uri %)))))
+
+(defn fetch-text [url]
+  (c/with-cache {:key url :max-age (dt/duration {:hours 4})}
+    (->> (send!
+          {:method :get
+           :mode :cors
+           :omit-default-headers true
+           :uri url
+           :response-type :text})
+         (rx/map :body))))
