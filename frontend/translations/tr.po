@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-17 21:32+0000\n"
+"PO-Revision-Date: 2021-05-23 21:33+0000\n"
 "Last-Translator: Gizem Akgüney <gizembln@gmail.com>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -263,7 +263,7 @@ msgstr "Yeni Proje"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
-msgstr "%s için hiç sonuç bulunamadı"
+msgstr "\"%s\" için sonuç bulunamadı"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.no-projects-placeholder"
@@ -870,7 +870,7 @@ msgstr "Gönder"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.sending"
-msgstr "Gönderiliyor..."
+msgstr "Gönderiliyor…"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.desc-message"
@@ -921,3 +921,136 @@ msgstr "Fontu sil"
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.fonts"
 msgstr "Fontlar - %s - Penpot"
+
+msgid "labels.manage-fonts"
+msgstr "Fontları yönet"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.main-message"
+msgstr "İç Hata"
+
+msgid "labels.font-providers"
+msgstr "Font sağlayıcısı"
+
+msgid "labels.custom-fonts"
+msgstr "Özel Fontlar"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.main-message"
+msgstr "Hatalı Ağ Geçidi"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.desc-message"
+msgstr ""
+"Görünüşe göre biraz beklemen ve yeniden denemen gerekiyor; sunucularımızda "
+"küçük bir bakım yapıyoruz."
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Kod"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "Altı Çizili"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "Üstü Çizili"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "Satır Yüksekliği"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.letter-spacing"
+msgstr "Harf Aralığı"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "Font Stili"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "Font Boyutu"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "Font Ailesi"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "Tipografi"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "Genişlik"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Düz"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "Hiçbiri"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "Karışık"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "Noktalı"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "Merkezi"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "Dışarıda"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.inner"
+msgstr "İçinde"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke"
+msgstr "Çerçeve"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-y"
+msgstr "Y"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-x"
+msgstr "X"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "Gölge"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "Genişlik"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "Üst"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "Rotasyon"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "Sol"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "Yükseklik"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subtitle"
+msgstr ""
+"Lütfen bir sorun, fikir ya da kuşkunuzu açıklayarak e-postanızın nedenini "
+"belirtin. Ekibimizin bir üyesi en kısa sürede yanıt verecektir."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle2"
+msgstr ""
+"Soru sorabilir ve soruları cevaplayabilir, açık uçlu tartışmalar yapabilir "
+"ve projeyi etkileyen kararları takip edebilirsin."
