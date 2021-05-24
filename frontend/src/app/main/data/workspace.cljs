@@ -991,19 +991,22 @@
                     [[] [] []]
                     ids)
 
-            [rchanges uchanges] (relocate-shapes-changes objects
-                                                         parents
-                                                         parent-id
-                                                         page-id
-                                                         to-index
-                                                         ids
-                                                         groups-to-delete
-                                                         groups-to-unmask
-                                                         shapes-to-detach
-                                                         shapes-to-reroot
-                                                         shapes-to-deroot)]
+            [rchanges uchanges]
+            (relocate-shapes-changes objects
+                                     parents
+                                     parent-id
+                                     page-id
+                                     to-index
+                                     ids
+                                     groups-to-delete
+                                     groups-to-unmask
+                                     shapes-to-detach
+                                     shapes-to-reroot
+                                     shapes-to-deroot)
+
+            ]
         (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-chanes uchanges
+                                    :undo-changes uchanges
                                     :origin it})
                (dwc/expand-collapse parent-id))))))
 
@@ -1058,7 +1061,7 @@
                   :id id
                   :index cidx}]
         (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-chanes [uchg]
+                                    :undo-changes [uchg]
                                     :origin it}))))))
 
 ;; --- Shape / Selection Alignment and Distribution
