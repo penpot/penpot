@@ -22,7 +22,10 @@
 (defn add-subpath-command
   "Adds a command to the subpath"
   [subpath command]
-  (let [p (upc/command->point command)]
+  (let [command (if (= :close-path (:command command))
+                  (upc/make-line-to (:from subpath))
+                  command)
+        p (upc/command->point command)]
     (-> subpath
         (assoc :to p)
         (update :data conj command))))
