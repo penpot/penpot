@@ -135,7 +135,7 @@
 
       :else "transparent")))
 
-(defn multiple? [{:keys [id file-id value color gradient]}]
+(defn multiple? [{:keys [id file-id value color gradient opacity]}]
   (or (= value :multiple)
       (= color :multiple)
       (= gradient :multiple)

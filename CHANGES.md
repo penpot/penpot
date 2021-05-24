@@ -34,6 +34,7 @@
 - Fix problem with color picker positioning
 - Fix order on color palette [#961](https://github.com/penpot/penpot/issues/961)
 - Fix issue when group creation leaves an empty group [#1724](https://tree.taiga.io/project/penpot/issue/1724)
+- Fix problem with :multiple for colors and typographies [#1668](https://tree.taiga.io/project/penpot/issue/1668)
 
 ### :arrow_up: Deps updates
 

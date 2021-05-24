@@ -27,7 +27,19 @@
 (defn color-picker-callback
   [color disable-gradient disable-opacity handle-change-color handle-open handle-close]
   (fn [event]
-    (let [x (.-clientX event)
+    (let [color
+          (cond
+            (uc/multiple? color)
+            {:color cp/default-color
+             :opacity 1}
+
+            (= :multiple (:opacity color))
+            (assoc color :opacity 1)
+
+            :else
+            color)
+
+          x (.-clientX event)
           y (.-clientY event)
           props {:x x
                  :y y
@@ -98,16 +110,12 @@
 
         handle-click-color (mf/use-callback
                             (mf/deps color)
-                            (let [;; If multiple, we change to default color
-                                  color (if (uc/multiple? color)
-                                          {:color cp/default-color :opacity 1}
-                                          color)]
-                              (color-picker-callback color
-                                                     disable-gradient
-                                                     disable-opacity
-                                                     handle-pick-color
-                                                     handle-open
-                                                     handle-close)))
+                            (color-picker-callback color
+                                                   disable-gradient
+                                                   disable-opacity
+                                                   handle-pick-color
+                                                   handle-open
+                                                   handle-close))
 
         prev-color (h/use-previous color)]
 
