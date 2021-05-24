@@ -75,7 +75,8 @@
         ;;            (uc/hex->rgba fill-color fill-opacity))
 
         [r g b a]       (uc/hex->rgba fill-color fill-opacity)
-        text-color      (str/format "rgba(%s, %s, %s, %s)" r g b a)
+        text-color      (when (and (some? fill-color) (some? fill-opacity))
+                          (str/format "rgba(%s, %s, %s, %s)" r g b a))
         fontsdb         (deref fonts/fontsdb)
 
         base            #js {:textDecoration text-decoration

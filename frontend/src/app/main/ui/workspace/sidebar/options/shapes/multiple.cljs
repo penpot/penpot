@@ -148,22 +148,23 @@
 
         extract-attrs
         (fn [[ids values] {:keys [id type shapes content] :as shape}]
-          (let [props (get-in type->props [type attr-type])
-                result (case props
-                         :ignore   [ids values]
-                         :shape    [(conj ids id)
-                                    (merge-attrs values (merge
-                                                         (empty-map attrs)
-                                                         (select-keys shape attrs)))]
-                         :text     [(conj ids id)
-                                    (-> values
-                                        (merge-attrs (select-keys shape attrs))
-                                        (merge-attrs (attrs/get-attrs-multi (txt/node-seq content) attrs)))]
-                         :children (let [children (->> (:shapes shape []) (map #(get objects %)))
-                                         [new-ids new-values] (get-attrs children objects attr-type)]
-                                     [(d/concat ids new-ids) (merge-attrs values new-values)])
-                         [])]
-            result))]
+          (let [props (get-in type->props [type attr-type])]
+            (case props
+              :ignore   [ids values]
+              :shape    [(conj ids id)
+                         (merge-attrs values (merge
+                                              (empty-map attrs)
+                                              (select-keys shape attrs)))]
+              :text     [(conj ids id)
+                         (-> values
+                             (merge-attrs (select-keys shape attrs))
+                             (merge-attrs (merge
+                                           (select-keys txt/default-text-attrs attrs)
+                                           (attrs/get-attrs-multi (txt/node-seq content) attrs))))]
+              :children (let [children (->> (:shapes shape []) (map #(get objects %)))
+                              [new-ids new-values] (get-attrs children objects attr-type)]
+                          [(d/concat ids new-ids) (merge-attrs values new-values)])
+              [])))]
     (reduce extract-attrs [[] []] shapes)))
 
 (mf/defc options
