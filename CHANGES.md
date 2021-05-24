@@ -32,7 +32,7 @@
 - Fix problem with fonts that ends with numbers [#940](https://github.com/penpot/penpot/issues/940).
 - Fix problem with imported SVG on editing paths [#971](https://github.com/penpot/penpot/issues/971)
 - Fix problem with color picker positioning
-
+- Fix order on color palette [#961](https://github.com/penpot/penpot/issues/961)
 
 ### :arrow_up: Deps updates
 
