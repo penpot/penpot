@@ -35,7 +35,8 @@
               (rx/mapcat wapi/read-file-as-data-url)
               (rx/subs #(reset! data-uri  %))))))
 
-    (or @data-uri uri)))
+    {:uri (or @data-uri uri)
+     :loading (not (some? @data-uri))}))
 
 (mf/defc image-shape
   {::mf/wrap-props false}
@@ -43,7 +44,7 @@
 
   (let [shape (unchecked-get props "shape")
         {:keys [id x y width height rotation metadata]} shape
-        uri (use-image-uri metadata)]
+        {:keys [uri loading]} (use-image-uri metadata)]
 
     (let [transform (geom/transform-matrix shape)
           props (-> (attrs/extract-style-attrs shape)
@@ -53,7 +54,10 @@
                           :transform transform
                           :width width
                           :height height
-                          :preserveAspectRatio "none"}))
+                          :preserveAspectRatio "none"})
+                    (cond-> loading
+                      (obj/set! "data-loading" "true")))
+
           on-drag-start (fn [event]
                           ;; Prevent browser dragging of the image
                           (dom/prevent-default event))]

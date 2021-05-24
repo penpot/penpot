@@ -29,16 +29,19 @@
            (when node
              (let [img-node (mf/ref-val thumbnail-img)]
                (timers/schedule-on-idle
-                #(if-let [frame-node (dom/get-element (str "shape-" (:id shape)))]
-                   (let [xml  (-> (js/XMLSerializer.)
-                                  (.serializeToString frame-node)
-                                  js/encodeURIComponent
-                                  js/unescape
-                                  js/btoa)
-                         img-src (str "data:image/svg+xml;base64," xml)]
-                     (obj/set! img-node "src" img-src))
+                #(let [frame-node (dom/get-element (str "shape-" (:id shape)))
+                       loading-node (when frame-node
+                                      (dom/query frame-node "[data-loading=\"true\"]"))]
+                   (if (and (some? frame-node) (not (some? loading-node)))
+                     (let [xml  (-> (js/XMLSerializer.)
+                                    (.serializeToString frame-node)
+                                    js/encodeURIComponent
+                                    js/unescape
+                                    js/btoa)
+                           img-src (str "data:image/svg+xml;base64," xml)]
+                       (obj/set! img-node "src" img-src))
 
-                   (on-frame-not-found (:id shape))))))))
+                     (on-frame-not-found (:id shape)))))))))
 
         on-image-load
         (mf/use-callback
@@ -108,8 +111,9 @@
          (fn [frame-id]
            ;; If we couldn't find the frame maybe is still rendering. We push the event again
            ;; after a time
-           (timers/schedule-on-idle #(dwp/update-frame-thumbnail frame-id))
-           (rx/push! next :next)))]
+           (reset! shape-id nil)
+           (rx/push! next :next)
+           (timers/schedule-on-idle (st/emitf (dwp/update-frame-thumbnail frame-id)))))]
 
     (mf/use-effect
      (mf/deps render-frame)

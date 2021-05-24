@@ -34,12 +34,13 @@
       (-dispose [_]
         (js/clearInterval sem)))))
 
-(if (and (exists? js/window) (.-requestIdleCallback js/window))
+(if (and (exists? js/window)
+         (.-requestIdleCallback js/window))
   (do
     (def ^:private request-idle-callback #(js/requestIdleCallback %))
     (def ^:private cancel-idle-callback #(js/cancelIdleCallback %)))
   (do
-    (def ^:private request-idle-callback #(js/setTimeout % 100))
+    (def ^:private request-idle-callback #(js/setTimeout % 250))
     (def ^:private cancel-idle-callback #(js/clearTimeout %))))
 
 (defn schedule-on-idle

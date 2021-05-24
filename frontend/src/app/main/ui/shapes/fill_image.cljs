@@ -23,7 +23,7 @@
       (let [{:keys [x y width height]} (:selrect shape)
             fill-image-id (str "fill-image-" render-id)
             media (:fill-image shape)
-            uri (image/use-image-uri media)
+            {:keys [uri loading]} (image/use-image-uri media)
             transform (gsh/transform-matrix shape)]
 
         [:pattern {:id fill-image-id
@@ -32,7 +32,8 @@
                    :y y
                    :height height
                    :width width
-                   :patternTransform transform}
+                   :patternTransform transform
+                   :data-loading (str loading)}
          [:image {:xlinkHref uri
                   :width width
                   :height height}]]))))
