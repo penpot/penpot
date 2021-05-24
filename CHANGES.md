@@ -30,6 +30,7 @@
 
 - Remove interactions when the destination artboard is deleted [Taiga #1656](https://tree.taiga.io/project/penpot/issue/1656).
 - Fix problem with fonts that ends with numbers [#940](https://github.com/penpot/penpot/issues/940).
+- Fix problem with imported SVG on editing paths [#971](https://github.com/penpot/penpot/issues/971)
 
 
 ### :arrow_up: Deps updates
