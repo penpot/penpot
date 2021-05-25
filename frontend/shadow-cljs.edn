@@ -1,6 +1,8 @@
 {:http {:port 3448}
  :nrepl {:port 3447}
- :jvm-opts ["-Xmx600m" "-Xms50m" "-XX:+UseSerialGC"]
+ :jvm-opts ["-Xmx600m" "-Xms50m"
+            "-XX:+UseZGC" "-XX:ConcGCThreads=1"
+            "-XX:-OmitStackTraceInFastThrow"]
  :dev-http {8888 "classpath:public"}
 
  :source-paths ["src", "vendor", "resources", "../common", "tests", "dev"]
