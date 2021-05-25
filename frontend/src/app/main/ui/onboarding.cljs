@@ -507,7 +507,7 @@
          [:div.modal-title
           [:h2 "Upload/use custom fonts"]]
          [:div.modal-content
-          [:p "From now on you can upload fonts from your computer to a Penpot team and use them across its files. This is one of the most requested features since our first release (we listen!)"]
+          [:p "From now on you can upload fonts to a Penpot team and use them across its files. This is one of the most requested features since our first release (we listen!)"]
           [:p "We hope you enjoy having more typography options and our brand new font selector."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
