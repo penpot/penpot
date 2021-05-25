@@ -323,7 +323,8 @@
                  :has-media-trimmed false}
                 {:id (:id file)})
 
-    (let [params (assoc params :file file)]
+    (let [params (-> params (assoc :file file
+                                   :changes changes))]
       ;; Send asynchronous notifications
       (send-notifications cfg params)
 
