@@ -54,10 +54,6 @@
                   (vec)
                   (reset! fonts))))
 
-(defn- remove-fonts
-  [db backend]
-  (reduce-kv #(cond-> %1 (= backend (:backend %3)) (dissoc %2)) db db))
-
 (defn register!
   [backend fonts]
   (swap! fontsdb
@@ -93,7 +89,6 @@
     (unchecked-set node "rel" "stylesheet")
     (unchecked-set node "type" "text/css")
     node))
-
 
 (defn- create-style-element
   [css]
@@ -164,9 +159,9 @@
          url(%(otf-uri)s) format('otf');
   }")
 
-(defn- font-id->uri
-  [font-id]
-  (str (u/join cf/public-uri "assets/by-id/" font-id)))
+(defn- asset-id->uri
+  [asset-id]
+  (str (u/join cf/public-uri "assets/by-id/" asset-id)))
 
 (defn generate-custom-font-variant-css
   [family variant]
@@ -174,10 +169,10 @@
            {:family family
             :style (:style variant)
             :weight (:weight variant)
-            :woff2-uri (font-id->uri (::woff2-file-id variant))
-            :woff1-uri (font-id->uri (::woff1-file-id variant))
-            :ttf-uri (font-id->uri (::ttf-file-id variant))
-            :otf-uri (font-id->uri (::otf-file-id variant))}))
+            :woff2-uri (asset-id->uri (::woff2-file-id variant))
+            :woff1-uri (asset-id->uri (::woff1-file-id variant))
+            :ttf-uri (asset-id->uri (::ttf-file-id variant))
+            :otf-uri (asset-id->uri (::otf-file-id variant))}))
 
 (defn- generate-custom-font-css
   [{:keys [family variants] :as font}]
@@ -188,7 +183,7 @@
 (defmethod load-font :custom
   [{:keys [id family variants ::on-loaded] :as font}]
   (when (exists? js/window)
-    (js/console.log "[debug:fonts]: loading google font" id)
+    (js/console.log "[debug:fonts]: loading custom font" id)
     (let [css (generate-custom-font-css font)]
       (add-font-css! css))))
 
