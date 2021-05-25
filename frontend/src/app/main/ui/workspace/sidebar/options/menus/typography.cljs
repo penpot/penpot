@@ -310,7 +310,16 @@
      [:div.row-flex
       [:div.input-select.font-option
        {:on-click #(reset! open-selector? true)}
-       (:name font)]]
+       (cond
+         (= :multiple font-id)
+         "--"
+
+         (some? font)
+         (:name font)
+
+         :else
+         (tr "dashboard.fonts.deleted-placeholder"))]]
+
 
      [:div.row-flex
       (let [size-options [8 9 10 11 12 14 18 24 36 48 72]

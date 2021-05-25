@@ -22,6 +22,7 @@
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
+        font-id (uuid/custom 10 1)
 
         ttfdata (-> (io/resource "app/tests/_files/font-1.ttf")
                     (fs/slurp-bytes))
@@ -29,7 +30,7 @@
         params  {::th/type :create-font-variant
                  :profile-id (:id prof)
                  :team-id team-id
-                 :font-id "custom-somefont"
+                 :font-id font-id
                  :font-family "somefont"
                  :font-weight 400
                  :font-style "normal"
@@ -56,6 +57,7 @@
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
+        font-id (uuid/custom 10 1)
 
         data    (-> (io/resource "app/tests/_files/font-1.woff")
                     (fs/slurp-bytes))
@@ -63,7 +65,7 @@
         params  {::th/type :create-font-variant
                  :profile-id (:id prof)
                  :team-id team-id
-                 :font-id "custom-somefont"
+                 :font-id font-id
                  :font-family "somefont"
                  :font-weight 400
                  :font-style "normal"

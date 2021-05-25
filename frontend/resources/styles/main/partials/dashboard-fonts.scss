@@ -30,8 +30,13 @@
     align-items: center;
     padding: 0px $big;
 
-    > div {
-      width: 30%;
+    > .family {
+      min-width: 200px;
+      width: 200px;
+    }
+
+    > .variants {
+      padding-left: 12px;
     }
 
     .search-input {
@@ -50,20 +55,18 @@
     }
   }
 
-  .fonts-group {
-    margin-top: $big;
-  }
-
   .font-item {
+    margin-top: $big;
     color: $color-gray-40;
     font-size: $fs14;
     background-color: $color-white;
     display: flex;
     min-width: 1000px;
     width: 100%;
-    height: 97px;
+    min-height: 97px;
     align-items: center;
     padding: $big;
+    justify-content: space-between;
 
     &:not(:first-child) {
       border-top: 1px solid $color-gray-10;
@@ -77,13 +80,51 @@
       font-size: $fs12;
     }
 
-    > div {
-      width: 30%;
+    > .family {
+      min-width: 200px;
+      width: 200px;
     }
 
-    .variant {
-      font-size: $fs14;
+    > .filenames {
+      min-width: 200px;
     }
+
+    > .variants {
+      font-size: $fs14;
+      display: flex;
+      flex-wrap: wrap;
+      flex-grow: 1;
+
+      .variant {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        cursor: pointer;
+
+        .icon {
+          display: flex;
+          height: 16px;
+          width: 16px;
+          margin-left: 6px;
+          align-items: center;
+          svg {
+            fill: transparent;
+            width: 12px;
+            height: 12px;
+            transform: rotate(45deg);
+          }
+        }
+
+        &:hover {
+          .icon svg {
+            fill: $color-gray-30;
+          }
+        }
+
+      }
+    }
+
 
     .filenames {
       display: flex;
@@ -116,7 +157,6 @@
       }
     }
   }
-
 
   .dashboard-fonts-upload {
     max-width: 1000px;
@@ -162,6 +202,33 @@
       }
       width: 80%;
       color: $color-gray-40;
+    }
+  }
+
+  .fonts-placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 1000px;
+    width: 100%;
+    height: 161px;
+
+    border: 1px dashed $color-gray-20;
+    margin-top: 16px;
+
+
+    .icon {
+      svg {
+        fill: $color-gray-40;
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .label {
+      color: $color-gray-40;
+      font-size: $fs14;
     }
   }
 }
