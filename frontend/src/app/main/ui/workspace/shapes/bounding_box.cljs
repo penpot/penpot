@@ -42,7 +42,7 @@
            :height height
            :transform (or transform "none")
            :style {:stroke color
-                   :fill "transparent"
+                   :fill "none"
                    :stroke-width "1px"
                    :pointer-events "none"}}])
 

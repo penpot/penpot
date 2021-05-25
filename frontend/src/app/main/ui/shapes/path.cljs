@@ -28,8 +28,8 @@
                    #js {:d pdata}))]
     (if background?
       [:g
-       [:path {:stroke "transparent"
-               :fill "transparent"
+       [:path {:stroke "none"
+               :fill "none"
                :stroke-width "20px"
                :d pdata}]
        [:& shape-custom-stroke {:shape shape

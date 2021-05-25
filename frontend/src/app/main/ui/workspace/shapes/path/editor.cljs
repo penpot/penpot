@@ -86,10 +86,11 @@
                :on-mouse-down on-mouse-down
                :on-mouse-enter on-enter
                :on-mouse-leave on-leave
+               :pointer-events (when-not preview? "visible")
                :style {:cursor (cond
                                  (= edit-mode :draw) cur/pen-node
                                  (= edit-mode :move) cur/pointer-node)
-                       :fill "transparent"}}]]))
+                       :fill "none"}}]]))
 
 (mf/defc path-handler [{:keys [index prefix point handler zoom selected? hover? edit-mode snap-angle?]}]
   (when (and point handler)
@@ -111,7 +112,7 @@
               (= edit-mode :move)
               (st/emit! (drp/start-move-handler index prefix))))]
 
-      [:g.handler {:pointer-events (when (= edit-mode :draw))}
+      [:g.handler {:pointer-events (if (= edit-mode :draw) "none" "visible")}
        [:line
         {:x1 (:x point)
          :y1 (:y point)
@@ -147,12 +148,12 @@
                  :on-mouse-enter on-enter
                  :on-mouse-leave on-leave
                  :style {:cursor (when (= edit-mode :move) cur/pointer-move)
-                         :fill "transparent"}}]])))
+                         :fill "none"}}]])))
 
 (mf/defc path-preview [{:keys [zoom command from]}]
   [:g.preview {:style {:pointer-events "none"}}
    (when (not= :move-to (:command command))
-     [:path {:style {:fill "transparent"
+     [:path {:style {:fill "none"
                      :stroke pc/black-color
                      :stroke-width (/ 1 zoom)
                      :stroke-dasharray (/ 4 zoom)}
@@ -274,6 +275,7 @@
        [:g.drag-handler {:pointer-events "none"}
         [:& path-handler {:point last-p
                           :handler drag-handler
+                          :edit-mode edit-mode
                           :zoom zoom}]])
 
      (when @hover-point
@@ -325,6 +327,7 @@
      (when prev-handler
        [:g.prev-handler {:pointer-events "none"}
         [:& path-handler {:point last-p
+                          :edit-mode edit-mode
                           :handler prev-handler
                           :zoom zoom}]])
 

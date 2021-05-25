@@ -177,7 +177,7 @@
              :y y
              :width width
              :height height
-             :style {:fill "transparent"
+             :style {:fill "none"
                      :stroke hover-color
                      :stroke-width selection-rect-width}}]]))
 
