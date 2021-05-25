@@ -84,7 +84,6 @@
 
    :allow-demo-users true
    :registration-enabled true
-   :registration-domain-whitelist ""
 
    :telemetry-enabled false
    :telemetry-uri "https://telemetry.penpot.app/"
@@ -161,7 +160,7 @@
 (s/def ::profile-complaint-threshold ::us/integer)
 (s/def ::public-uri ::us/string)
 (s/def ::redis-uri ::us/string)
-(s/def ::registration-domain-whitelist ::us/string)
+(s/def ::registration-domain-whitelist ::us/set-of-str)
 (s/def ::registration-enabled ::us/boolean)
 (s/def ::rlimits-image ::us/integer)
 (s/def ::rlimits-password ::us/integer)

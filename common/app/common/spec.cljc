@@ -137,29 +137,34 @@
 
 
 ;; --- SPEC: email
+(def email-re  #"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 
-(let [re  #"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
-      cfn (fn [v]
-            (if (string? v)
-              (if-let [matches (re-seq re v)]
-                (first matches)
-                (do ::s/invalid))
-              ::s/invalid))]
-  (s/def ::email (s/conformer cfn str)))
-
+(s/def ::email
+  (s/conformer
+   (fn [v]
+     (if (string? v)
+       (if-let [matches (re-seq email-re v)]
+         (first matches)
+         (do ::s/invalid))
+       ::s/invalid))
+   str))
 
 ;; --- SPEC: set-of-str
-(letfn [(conformer [s]
-          (cond
-            (string? s) (into #{} (str/split s #"\s*,\s*"))
-            (set? s)    (if (every? string? s)
-                          s
-                          ::s/invalid)
-            :else       ::s/invalid))
 
-        (unformer [s]
-          (str/join "," s))]
-  (s/def ::set-of-str (s/conformer conformer unformer)))
+(s/def ::set-of-str
+  (s/conformer
+   (fn [s]
+     (let [xform (comp
+                  (filter string?)
+                  (remove str/empty?)
+                  (remove str/blank?))]
+       (cond
+         (string? s) (->> (str/split s #"\s*,\s*")
+                          (into #{} xform))
+         (set? s)    (into #{} xform s)
+         :else       ::s/invalid)))
+   (fn [s]
+     (str/join "," s))))
 
 ;; --- Macros
 

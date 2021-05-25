@@ -60,9 +60,10 @@
     (ex/raise :type :restriction
               :code :registration-disabled))
 
-  (when-not (email-domain-in-whitelist? (cfg/get :registration-domain-whitelist) (:email params))
-    (ex/raise :type :validation
-              :code :email-domain-is-not-allowed))
+  (when-let [domains (cfg/get :registration-domain-whitelist)]
+    (when-not (email-domain-in-whitelist? domains (:email params))
+      (ex/raise :type :validation
+                :code :email-domain-is-not-allowed)))
 
   (when-not (:terms-privacy params)
     (ex/raise :type :validation
@@ -137,14 +138,15 @@
            ::audit/profile-id (:id profile)})))))
 
 (defn email-domain-in-whitelist?
-  "Returns true if email's domain is in the given whitelist or if given
-  whitelist is an empty string."
-  [whitelist email]
-  (if (str/empty-or-nil? whitelist)
+  "Returns true if email's domain is in the given whitelist or if
+  given whitelist is an empty string."
+  [domains email]
+  (if (or (empty? domains)
+          (nil? domains))
     true
-    (let [domains (str/split whitelist #",\s*")
-          domain  (second (str/split email #"@" 2))]
-      (contains? (set domains) domain))))
+    (let [[_ candidate] (-> (str/lower email)
+                            (str/split #"@" 2))]
+      (contains? domains candidate))))
 
 (def ^:private sql:profile-existence
   "select exists (select * from profile
