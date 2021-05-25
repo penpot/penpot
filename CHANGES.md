@@ -30,7 +30,12 @@
 
 - Remove interactions when the destination artboard is deleted [Taiga #1656](https://tree.taiga.io/project/penpot/issue/1656).
 - Fix problem with fonts that ends with numbers [#940](https://github.com/penpot/penpot/issues/940).
-
+- Fix problem with imported SVG on editing paths [#971](https://github.com/penpot/penpot/issues/971)
+- Fix problem with color picker positioning
+- Fix order on color palette [#961](https://github.com/penpot/penpot/issues/961)
+- Fix issue when group creation leaves an empty group [#1724](https://tree.taiga.io/project/penpot/issue/1724)
+- Fix problem with :multiple for colors and typographies [#1668](https://tree.taiga.io/project/penpot/issue/1668)
+- Fix problem with locked shapes when change parents [#974](https://github.com/penpot/penpot/issues/974)
 
 ### :arrow_up: Deps updates
 

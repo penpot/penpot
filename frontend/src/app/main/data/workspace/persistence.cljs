@@ -562,7 +562,7 @@
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are channging"
-  [[event objects]]
+  [[event [old-objects new-objects]]]
   (let [changes (-> event deref :changes)
 
         extract-ids
@@ -577,8 +577,11 @@
 
         get-frame-id
         (fn [id]
-          (or (and (= :frame (get-in objects [id :type])) id)
-              (get-in objects [id :frame-id])))
+          (let [shape (or (get new-objects id)
+                          (get old-objects id))]
+
+            (or (and (= :frame (:type shape)) id)
+                (:frame-id shape))))
 
         ;; Extracts the frames and then removes nils and the root frame
         xform (comp (mapcat extract-ids)
@@ -613,7 +616,12 @@
                          (rx/filter #(or (= :app.main.data.workspace/finalize-page (ptk/type %))
                                          (= ::watch-state-changes (ptk/type %)))))
 
-            objects-stream (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
+            objects-stream (->> (rx/concat
+                                 (rx/of nil)
+                                 (rx/from-atom refs/workspace-page-objects {:emit-current-value? true}))
+                                ;; We need to keep the old-objects so we can check the frame for the
+                                ;; deleted objects
+                                (rx/buffer 2 1))
 
             frame-changes (->> stream
                                (rx/filter dch/commit-changes?)

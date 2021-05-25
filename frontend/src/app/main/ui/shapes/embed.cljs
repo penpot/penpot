@@ -22,18 +22,22 @@
     (hooks/use-effect-ssr
      (mf/deps embed? urls)
      (fn []
-       (let [sub (when embed?
-                   (->> (rx/from urls)
-                        (rx/merge-map http/fetch-data-uri)
-                        (rx/reduce conj {})
-                        (rx/subs (fn [data]
-                                   (when-not (= data (mf/ref-val uri-data))
-                                     (mf/set-ref-val! uri-data data)
-                                     (reset! state inc))))))]
+       (let [;; When not active the embedding we return the URI
+             url-mapping (fn [obs]
+                           (if embed?
+                             (rx/merge-map http/fetch-data-uri obs)
+                             (rx/map identity obs)))
+
+             sub (->> (rx/from urls)
+                      (url-mapping)
+                      (rx/reduce conj {})
+                      (rx/subs (fn [data]
+                                 (when-not (= data (mf/ref-val uri-data))
+                                   (mf/set-ref-val! uri-data data)
+                                   (reset! state inc)))))]
          #(when sub
             (rx/dispose! sub)))))
 
     ;; Use ref so if the urls are cached will return inmediately instead of the
     ;; next render
-    (when embed?
-      (mf/ref-val uri-data))))
+    (mf/ref-val uri-data)))

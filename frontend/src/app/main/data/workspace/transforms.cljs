@@ -242,23 +242,24 @@
     ptk/WatchEvent
     (watch [it state stream]
       (let [initial  (deref ms/mouse-position)
-            selected (wsh/lookup-selected state)
+            selected (wsh/lookup-selected state {:omit-blocked? true})
             stopper  (rx/filter ms/mouse-up? stream)]
-        (->> ms/mouse-position
-             (rx/take-until stopper)
-             (rx/map #(gpt/to-vec initial %))
-             (rx/map #(gpt/length %))
-             (rx/filter #(> % 1))
-             (rx/take 1)
-             (rx/with-latest vector ms/mouse-position-alt)
-             (rx/mapcat
-              (fn [[_ alt?]]
-                (if alt?
-                  ;; When alt is down we start a duplicate+move
-                  (rx/of (start-move-duplicate initial)
-                         dws/duplicate-selected)
-                  ;; Otherwise just plain old move
-                  (rx/of (start-move initial selected))))))))))
+        (when-not (empty? selected)
+          (->> ms/mouse-position
+               (rx/take-until stopper)
+               (rx/map #(gpt/to-vec initial %))
+               (rx/map #(gpt/length %))
+               (rx/filter #(> % 1))
+               (rx/take 1)
+               (rx/with-latest vector ms/mouse-position-alt)
+               (rx/mapcat
+                (fn [[_ alt?]]
+                  (if alt?
+                    ;; When alt is down we start a duplicate+move
+                    (rx/of (start-move-duplicate initial)
+                           dws/duplicate-selected)
+                    ;; Otherwise just plain old move
+                    (rx/of (start-move initial selected)))))))))))
 
 (defn start-move-duplicate [from-position]
   (ptk/reify ::start-move-selected
@@ -319,7 +320,8 @@
      (watch [it state stream]
        (let [page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)
-             ids     (if (nil? ids) (wsh/lookup-selected state) ids)
+             selected (wsh/lookup-selected state {:omit-blocked? true})
+             ids     (if (nil? ids) selected ids)
              shapes  (mapv #(get objects %) ids)
              stopper (rx/filter ms/mouse-up? stream)
              layout  (get state :workspace-layout)
@@ -398,7 +400,7 @@
       ptk/WatchEvent
       (watch [it state stream]
         (if (= same-event (get-in state [:workspace-local :current-move-selected]))
-          (let [selected (wsh/lookup-selected state)
+          (let [selected (wsh/lookup-selected state {:omit-blocked? true})
                 move-events (->> stream
                                  (rx/filter (ptk/type? ::move-selected))
                                  (rx/filter #(= direction (deref %))))
@@ -435,6 +437,8 @@
              page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)
 
+             ids (->> ids (into #{} (remove #(get-in objects [% :blocked] false))))
+
              not-frame-id?
              (fn [shape-id]
                (let [shape (get objects shape-id)]
@@ -457,27 +461,28 @@
 ;; shape adjusting their position.
 
 (defn set-rotation
-  ([delta-rotation shapes]
-   (set-rotation delta-rotation shapes (-> shapes gsh/selection-rect gsh/center-selrect)))
+  ([angle shapes]
+   (set-rotation angle shapes (-> shapes gsh/selection-rect gsh/center-selrect)))
 
-  ([delta-rotation shapes center]
-   (letfn [(rotate-shape [objects angle shape center]
-             (update-in objects [(:id shape) :modifiers] merge (gsh/rotation-modifiers center shape angle)))
+  ([angle shapes center]
+   (ptk/reify ::set-rotation
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [objects (wsh/lookup-page-objects state)
+             id->obj #(get objects %)
+             get-children (fn [shape] (map id->obj (cp/get-children (:id shape) objects)))
 
-           (rotate-around-center [objects angle center shapes]
-             (reduce #(rotate-shape %1 angle %2 center) objects shapes))
+             shapes (->> shapes (into [] (remove #(get % :blocked false))))
 
-           (set-rotation [objects]
-             (let [id->obj #(get objects %)
-                   get-children (fn [shape] (map id->obj (cp/get-children (:id shape) objects)))
-                   shapes (concat shapes (mapcat get-children shapes))]
-               (rotate-around-center objects delta-rotation center shapes)))]
+             shapes (->> shapes (mapcat get-children) (concat shapes))
 
-     (ptk/reify ::set-rotation
-       ptk/UpdateEvent
-       (update [_ state]
-         (let [page-id (:current-page-id state)]
-           (d/update-in-when state [:workspace-data :pages-index page-id :objects] set-rotation)))))))
+             update-shape
+             (fn [modifiers shape]
+               (let [rotate-modifiers (gsh/rotation-modifiers shape center angle)]
+                 (assoc-in modifiers [(:id shape) :modifiers] rotate-modifiers)))]
+         (-> state
+             (update :workspace-modifiers
+                     #(reduce update-shape % shapes))))))))
 
 (defn increase-rotation [ids rotation]
   (ptk/reify ::increase-rotation
@@ -583,7 +588,7 @@
     ptk/WatchEvent
     (watch [it state stream]
       (let [objects  (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state)
+            selected (wsh/lookup-selected state {:omit-blocked? true})
             shapes   (map #(get objects %) selected)
             selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
             origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))]
@@ -600,7 +605,7 @@
     ptk/WatchEvent
     (watch [it state stream]
       (let [objects  (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state)
+            selected (wsh/lookup-selected state {:omit-blocked? true})
             shapes   (map #(get objects %) selected)
             selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
             origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))]
@@ -633,5 +638,5 @@
   (ptk/reify ::selected-to-path
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [ids (wsh/lookup-selected state)]
+      (let [ids (wsh/lookup-selected state {:omit-blocked? true})]
         (rx/of (dch/update-shapes ids ups/convert-to-path))))))

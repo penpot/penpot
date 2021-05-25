@@ -288,6 +288,8 @@
          (fn [changes]
            (st/emit! (dwl/update-typography (merge typography changes) file-id))))
 
+        multiple? (->> values vals (d/seek #(= % :multiple)))
+
         opts #js {:ids ids
                   :values values
                   :on-change on-change}]
@@ -295,7 +297,7 @@
     [:div.element-set
      [:div.element-set-title
       [:span label]
-      (when (not typography)
+      (when (and (not typography) (not multiple?))
         [:div.add-page {:on-click on-convert-to-typography} i/close])]
 
      (cond

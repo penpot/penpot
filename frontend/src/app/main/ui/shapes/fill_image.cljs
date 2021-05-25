@@ -31,7 +31,8 @@
                    :y y
                    :height height
                    :width width
-                   :patternTransform transform}
+                   :patternTransform transform
+                   :data-loading (str (not (contains? embed uri)))}
          [:image {:xlinkHref (get embed uri uri)
                   :width width
                   :height height}]]))))

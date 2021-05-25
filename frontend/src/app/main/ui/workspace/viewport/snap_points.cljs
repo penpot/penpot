@@ -131,7 +131,7 @@
          #(rx/dispose! sub))))
 
     (mf/use-effect
-     (mf/deps shapes modifiers)
+     (mf/deps shapes filter-shapes modifiers)
      (fn []
        (rx/push! subject props)))
 
@@ -161,7 +161,8 @@
                     (map #(get objects %))
                     (filterv (comp not nil?)))
         filter-shapes (into #{}
-                            (mapcat #(cp/get-object-with-children % objects))
+                            (comp (mapcat #(cp/get-object-with-children % objects))
+                                  (map :id))
                             selected)
 
         filter-shapes (fn [id]

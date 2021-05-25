@@ -32,31 +32,97 @@
         (gsh/setup selrect)
         (assoc :shapes (mapv :id shapes)))))
 
+(defn get-empty-groups
+  "Retrieve emtpy groups after group creation"
+  [objects parent-id shapes]
+  (let [ids (cp/clean-loops objects (into #{} (map :id) shapes))
+        parents (->> ids
+                     (reduce #(conj %1 (cp/get-parent %2 objects))
+                             #{}))]
+    (loop [current-id (first parents)
+           to-check (rest parents)
+           removed-id? ids
+           result #{}]
+
+      (if-not current-id
+        ;; Base case, no next element
+        result
+
+        (let [group (get objects current-id)]
+          (if (and (not= :frame (:type group))
+                   (not= current-id parent-id)
+                   (empty? (remove removed-id? (:shapes group))))
+
+            ;; Adds group to the remove and check its parent
+            (let [to-check (d/concat [] to-check [(cp/get-parent current-id objects)]) ]
+              (recur (first to-check)
+                     (rest to-check)
+                     (conj removed-id? current-id)
+                     (conj result current-id)))
+
+            ;; otherwise recur
+            (recur (first to-check)
+                   (rest to-check)
+                   removed-id?
+                   result)))))))
+
 (defn prepare-create-group
-  [page-id shapes prefix keep-name]
+  [objects page-id shapes prefix keep-name]
   (let [group (make-group shapes prefix keep-name)
+        frame-id (:frame-id (first shapes))
+        parent-id (:parent-id (first shapes))
         rchanges [{:type :add-obj
                    :id (:id group)
                    :page-id page-id
-                   :frame-id (:frame-id (first shapes))
-                   :parent-id (:parent-id (first shapes))
+                   :frame-id frame-id
+                   :parent-id parent-id
                    :obj group
                    :index (::index (first shapes))}
+
                   {:type :mov-objects
                    :page-id page-id
                    :parent-id (:id group)
                    :shapes (mapv :id shapes)}]
 
-        uchanges (conj
-                   (mapv (fn [obj] {:type :mov-objects
-                                    :page-id page-id
-                                    :parent-id (:parent-id obj)
-                                    :index (::index obj)
-                                    :shapes [(:id obj)]})
-                         shapes)
-                   {:type :del-obj
-                    :id (:id group)
-                    :page-id page-id})]
+        uchanges  (-> (mapv
+                       (fn [obj]
+                         {:type :mov-objects
+                          :page-id page-id
+                          :parent-id (:parent-id obj)
+                          :index (::index obj)
+                          :shapes [(:id obj)]}) shapes)
+                      (conj
+                       {:type :del-obj
+                        :id (:id group)
+                        :page-id page-id}))
+
+        ids-to-delete (get-empty-groups objects parent-id shapes)
+
+        delete-group
+        (fn [changes id]
+          (-> changes
+              (conj {:type :del-obj
+                     :id id
+                     :page-id page-id})))
+
+        add-deleted-group
+        (fn [changes id]
+          (let [obj (-> (get objects id)
+                        (d/without-keys [:shapes]))]
+
+            (d/concat [{:type :add-obj
+                        :id id
+                        :page-id page-id
+                        :frame-id (:frame-id obj)
+                        :parent-id (:parent-id obj)
+                        :obj obj
+                        :index (::index obj)}] changes)))
+
+        rchanges (->> ids-to-delete
+                      (reduce delete-group rchanges))
+
+        uchanges (->> ids-to-delete
+                      (reduce add-deleted-group uchanges))]
     [group rchanges uchanges]))
 
 (defn prepare-remove-group
@@ -107,7 +173,8 @@
             selected (cp/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
-          (let [[group rchanges uchanges] (prepare-create-group page-id shapes "Group-" false)]
+          (let [[group rchanges uchanges]
+                (prepare-create-group objects page-id shapes "Group-" false)]
             (rx/of (dch/commit-changes {:redo-changes rchanges
                                         :undo-changes uchanges
                                         :origin it})
@@ -146,7 +213,7 @@
                 (if (and (= (count shapes) 1)
                          (= (:type (first shapes)) :group))
                   [(first shapes) [] []]
-                  (prepare-create-group page-id shapes "Group-" true))
+                  (prepare-create-group objects page-id shapes "Group-" true))
 
                 rchanges (d/concat rchanges
                                    [{:type :mod-obj

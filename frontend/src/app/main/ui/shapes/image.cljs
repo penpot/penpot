@@ -32,7 +32,9 @@
                           :transform transform
                           :width width
                           :height height
-                          :preserveAspectRatio "none"}))
+                          :preserveAspectRatio "none"
+                          :data-loading (str (not (contains? embed uri)))}))
+
           on-drag-start (fn [event]
                           ;; Prevent browser dragging of the image
                           (dom/prevent-default event))]

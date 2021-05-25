@@ -209,7 +209,7 @@
                (into []
                      (cond
                        (= selected :recent) (reverse recent-colors)
-                       (= selected :file)   (vals file-colors)
+                       (= selected :file)   (->> (vals file-colors) (sort-by :name))
                        :else                (library->colors shared-libs selected))))))
 
     (mf/use-effect
@@ -222,7 +222,8 @@
      (mf/deps file-colors)
      (fn []
        (when (= selected :file)
-         (reset! current-library-colors (into [] (vals file-colors))))))
+         (reset! current-library-colors (into [] (->> (vals file-colors)
+                                                      (sort-by :name)))))))
 
     [:& palette {:left-sidebar? left-sidebar?
                  :current-colors @current-library-colors
