@@ -26,11 +26,18 @@
    (get-in state [:workspace-data :components component-id :objects])))
 
 (defn lookup-selected
-  [state]
-  (let [objects (lookup-page-objects state)
-        selected (->> (get-in state [:workspace-local :selected])
-                      (cp/clean-loops objects))
-        is-present? (fn [id] (contains? objects id))]
-    (into (d/ordered-set)
-          (filter is-present?)
-          selected)))
+  ([state]
+   (lookup-selected state nil))
+
+  ([state {:keys [omit-blocked?]
+           :or   {omit-blocked? false}}]
+   (let [objects (lookup-page-objects state)
+         selected (->> (get-in state [:workspace-local :selected])
+                       (cp/clean-loops objects))
+         selectable? (fn [id]
+                       (and (contains? objects id)
+                            (or (not omit-blocked?)
+                                (not (get-in objects [id :blocked] false)))))]
+     (into (d/ordered-set)
+           (filter selectable?)
+           selected))))

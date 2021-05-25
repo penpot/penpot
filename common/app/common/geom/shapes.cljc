@@ -162,7 +162,7 @@
                :points points))))
 
 (defn rotation-modifiers
-  [center shape angle]
+  [shape center angle]
   (let [displacement (let [shape-center (gco/center-shape shape)]
                        (-> (gmt/matrix)
                            (gmt/rotate angle center)

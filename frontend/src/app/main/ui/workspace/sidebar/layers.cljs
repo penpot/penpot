@@ -150,10 +150,6 @@
           (dom/prevent-default event)
           (let [id (:id item)]
             (cond
-              (or (:blocked item)
-                  (:hidden item))
-              nil
-
               (kbd/shift? event)
               (st/emit! (dw/shift-select-shapes id))
 
