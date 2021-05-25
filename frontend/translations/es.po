@@ -1468,7 +1468,7 @@ msgstr "Cualquiera con el enlace podrá acceder"
 
 #: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.title"
-msgstr "Enlace"
+msgstr "Compartir prototipo"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"

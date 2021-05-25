@@ -282,7 +282,6 @@
 
       [:a.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
        {:alt (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
-        :href (str "#" view-url)
         :on-click go-viewer}
        i/play]]]))
 

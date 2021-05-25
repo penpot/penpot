@@ -56,16 +56,27 @@
       }
     }
 
-    svg {
-      fill: $color-gray-30;
-      height: 16px;
-      width: 16px;
-    }
-
     .dropdown {
       top: 40px;
       left: 0px;
       width: 260px;
+    }
+    
+    .view-options-dropdown {
+      align-items: center;
+      cursor: pointer;
+      display: flex;
+
+      span {
+        font-size: $fs13;
+        margin-right: $small;
+      }
+
+      svg {
+        fill: $color-gray-20;
+        height: 12px;
+        width: 12px;
+      }
     }
   }
 
@@ -164,6 +175,10 @@
         width: 20px;
         height: 20px;
       }
+    }
+
+    .btn-primary {
+      flex-shrink: 0;
     }
   }
 

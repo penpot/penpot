@@ -273,7 +273,7 @@
     (mf/use-effect
       (mf/deps (:file data))
       #(when-let [name (get-in data [:file :name])]
-         (dom/set-html-title (tr "title.viewer" name))))
+         (dom/set-html-title (str "\u25b6 " (tr "title.viewer" name)))))
 
     (when (and data state)
       [:& viewer-content
