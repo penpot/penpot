@@ -29,21 +29,6 @@
               :name (:name shape)
               :exports exports}))
 
-(defn- trigger-download
-  [filename blob]
-  (let [link (dom/create-element "a")
-        uri  (dom/create-uri blob)
-        extension (dom/mtype->extension (.-type ^js blob))
-        filename (if extension
-                   (str filename "." extension)
-                   filename)]
-    (obj/set! link "href" uri)
-    (obj/set! link "download" filename)
-    (obj/set! (.-style ^js link) "display" "none")
-    (.appendChild (.-body ^js js/document) link)
-    (.click link)
-    (.remove link)))
-
 (mf/defc exports-menu
   [{:keys [shape page-id file-id] :as props}]
   (let [locale   (mf/deref i18n/locale)
@@ -64,7 +49,7 @@
            (->> (request-export (assoc shape :page-id page-id :file-id file-id) exports)
                 (rx/subs
                  (fn [body]
-                   (trigger-download filename body))
+                   (dom/trigger-download filename body))
                  (fn [error]
                    (swap! loading? not)
                    (st/emit! (dm/error (tr "errors.unexpected-error"))))

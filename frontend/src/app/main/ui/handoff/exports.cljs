@@ -34,7 +34,7 @@
                  (fn [{:keys [status body] :as response}]
                    (js/console.log status body)
                    (if (= status 200)
-                     (we/trigger-download (:name shape) body)
+                     (dom/trigger-download (:name shape) body)
                      (st/emit! (dm/error (t locale "errors.unexpected-error")))))
                  (constantly nil)
                  (fn []
