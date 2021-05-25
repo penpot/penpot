@@ -69,17 +69,17 @@
 (defn parse-font-weight
   [variant]
   (cond
-    (re-seq #"(?i)(?:hairline|thin)" variant)           100
-    (re-seq #"(?i)(?:extra light|ultra light)" variant) 200
-    (re-seq #"(?i)(?:light)" variant)                   300
-    (re-seq #"(?i)(?:normal|regular)" variant)          400
-    (re-seq #"(?i)(?:medium)" variant)                  500
-    (re-seq #"(?i)(?:semi bold|demi bold)" variant)     600
-    (re-seq #"(?i)(?:bold)" variant)                    700
-    (re-seq #"(?i)(?:extra bold|ultra bold)" variant)   800
-    (re-seq #"(?i)(?:black|heavy)" variant)             900
-    (re-seq #"(?i)(?:extra black|ultra black)" variant) 950
-    :else                                               400))
+    (re-seq #"(?i)(?:hairline|thin)" variant)               100
+    (re-seq #"(?i)(?:extra\s*light|ultra\s*light)" variant) 200
+    (re-seq #"(?i)(?:light)" variant)                       300
+    (re-seq #"(?i)(?:normal|regular)" variant)              400
+    (re-seq #"(?i)(?:medium)" variant)                      500
+    (re-seq #"(?i)(?:semi\s*bold|demi\s*bold)" variant)     600
+    (re-seq #"(?i)(?:extra\s*bold|ultra\s*bold)" variant)   800
+    (re-seq #"(?i)(?:bold)" variant)                        700
+    (re-seq #"(?i)(?:extra\s*black|ultra\s*black)" variant) 950
+    (re-seq #"(?i)(?:black|heavy)" variant)                 900
+    :else                                                   400))
 
 (defn parse-font-style
   [variant]

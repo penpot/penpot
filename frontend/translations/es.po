@@ -210,6 +210,12 @@ msgstr "Duplicar %s archivos"
 msgid "dashboard.empty-files"
 msgstr "Todavía no hay ningún archivo aquí"
 
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Fuente eliminada."
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Aun no tienes fuentes personalizadas."
+
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
@@ -242,6 +248,9 @@ msgstr "Bibliotecas Compartidas"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.loading-files"
 msgstr "cargando tus ficheros …"
+
+msgid "dashboard.loading-fonts"
+msgstr "cargando tus fuentes …"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
@@ -796,6 +805,9 @@ msgstr "Estás viendo la versión %s"
 msgid "labels.accept"
 msgstr "Aceptar"
 
+msgid "labels.add-custom-font"
+msgstr "Añadir fuentes personalizada"
+
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
 msgstr "Administración"
@@ -893,8 +905,8 @@ msgstr "Familia de fuente"
 msgid "labels.font-providers"
 msgstr "Proveedores de fuentes"
 
-msgid "labels.font-variant"
-msgstr "Estilo"
+msgid "labels.font-variants"
+msgstr "Estilos"
 
 msgid "labels.fonts"
 msgstr "Fuentes"
@@ -1191,10 +1203,18 @@ msgstr "¿Seguro que quieres eliminar %s archivos?"
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Eliminando %s archivos"
 
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"Estas seguro de querer eliminar esta estilo de fuente? Dejara de cargar si "
+"es usada en algun fichero."
+
+msgid "modals.delete-font-variant.title"
+msgstr "Eliminando estilo de fuente"
+
 msgid "modals.delete-font.message"
 msgstr ""
-"Are you sure you want to delete this font? It will not load if is used in a "
-"file."
+"Estas seguro de querer eliminar esta fuente? Dejara de cargar si es usada "
+"en algun fichero."
 
 msgid "modals.delete-font.title"
 msgstr "Eliminando fuente"

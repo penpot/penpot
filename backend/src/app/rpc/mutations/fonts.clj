@@ -16,20 +16,20 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]))
+   [clojure.spec.alpha :as s]))
 
 (declare create-font-variant)
 
 (def valid-weight #{100 200 300 400 500 600 700 800 900 950})
 (def valid-style #{"normal" "italic"})
 
+(s/def ::id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::name ::us/not-empty-string)
 (s/def ::weight valid-weight)
 (s/def ::style valid-style)
-(s/def ::font-id (s/and ::us/string #(str/starts-with? % "custom-")))
+(s/def ::font-id ::us/uuid)
 (s/def ::content-type ::media/font-content-type)
 (s/def ::data (s/map-of ::us/string any?))
 
@@ -76,21 +76,49 @@
                  :otf-file-id (:id otf)
                  :ttf-file-id (:id ttf)})))
 
-;; --- UPDATE FONT VARIANT
+;; --- UPDATE FONT FAMILY
 
-(s/def ::update-font-variant
-  (s/keys :req-un [::profile-id ::team-id ::id ::font-family ::font-id]))
+(s/def ::update-font
+  (s/keys :req-un [::profile-id ::team-id ::id ::name]))
 
-(sv/defmethod ::update-font-variant
-  [{:keys [pool] :as cfg} {:keys [id team-id profile-id font-family font-id] :as params}]
+(def sql:update-font
+  "update team_font_variant
+      set font_family = ?
+    where team_id = ?
+      and font_id = ?")
+
+(sv/defmethod ::update-font
+  [{:keys [pool] :as cfg} {:keys [team-id profile-id id name] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
-    (db/update! conn :team-font-variant
-                {:font-family font-family
-                 :font-id font-id}
-                {:id id
-                 :team-id team-id})
+    (db/exec-one! conn [sql:update-font name team-id id])
     nil))
+
+;; --- DELETE FONT
+
+(s/def ::delete-font
+  (s/keys :req-un [::profile-id ::team-id ::id]))
+
+(sv/defmethod ::delete-font
+  [{:keys [pool] :as cfg} {:keys [id team-id profile-id] :as params}]
+  (db/with-atomic [conn pool]
+    (teams/check-edition-permissions! conn profile-id team-id)
+
+    (let [items (db/query conn :team-font-variant
+                          {:font-id id :team-id team-id}
+                          {:for-update true})]
+      (doseq [item items]
+        ;; Schedule object deletion
+        (wrk/submit! {::wrk/task :delete-object
+                      ::wrk/delay cf/deletion-delay
+                      ::wrk/conn conn
+                      :id (:id item)
+                      :type :team-font-variant}))
+
+      (db/update! conn :team-font-variant
+                  {:deleted-at (dt/now)}
+                  {:font-id id :team-id team-id})
+      nil)))
 
 ;; --- DELETE FONT VARIANT
 
@@ -98,7 +126,7 @@
   (s/keys :req-un [::profile-id ::team-id ::id]))
 
 (sv/defmethod ::delete-font-variant
-  [{:keys [pool] :as cfg} {:keys [id team-id profile-id font-family font-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [id team-id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
 
@@ -111,6 +139,5 @@
 
     (db/update! conn :team-font-variant
                 {:deleted-at (dt/now)}
-                {:id id
-                 :team-id team-id})
+                {:id id :team-id team-id})
     nil))
