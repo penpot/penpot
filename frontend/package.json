@@ -40,6 +40,7 @@
     "draft-js": "^0.11.7",
     "highlight.js": "^10.6.0",
     "js-beautify": "^1.13.5",
+    "jszip": "^3.6.0",
     "luxon": "^1.26.0",
     "mousetrap": "^1.6.5",
     "opentype.js": "^1.3.3",
