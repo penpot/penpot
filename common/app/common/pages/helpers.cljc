@@ -181,7 +181,7 @@
 (defn calculate-invalid-targets
   [shape-id objects]
   (let [result #{shape-id}
-        children (get-in objects [shape-id :shape])
+        children (get-in objects [shape-id :shapes])
         reduce-fn (fn [result child-id]
                     (into result (calculate-invalid-targets child-id objects)))]
     (reduce reduce-fn result children)))
