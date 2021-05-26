@@ -11,6 +11,22 @@
 ### :heart: Community contributions by (Thank you!)
 
 
+## 1.6.1-alpha
+
+### :bug: Bugs fixed
+
+- Make the navigation async by default.
+- Improve editor lifecycle management.
+- Fix problem when creating a component with empty data.
+- Fix dashboard ordering issue.
+- Fix problem with moving shapes into frames.
+- Fix problems with mov-objects.
+- Fix wrong type usage on libraries changes.
+- Fix custom fonts embbedding issue.
+- Add safety check on reg-objects change impl.
+- Fix unexpected excetion related to rounding integers.
+
+
 ## 1.6.0-alpha
 
 ### :sparkles: New features
