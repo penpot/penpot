@@ -96,7 +96,7 @@
   the nearest integer."
   [v]
   #?(:cljs (js/Math.round v)
-     :clj (Math/round v)))
+     :clj (Math/round (float v))))
 
 (defn ceil
   "Returns the smallest integer greater than

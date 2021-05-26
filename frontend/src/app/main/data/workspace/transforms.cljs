@@ -282,7 +282,8 @@
             moving-shapes (->> ids
                                (cp/clean-loops objects)
                                (map #(get objects %))
-                               (remove #(= (:frame-id %) frame-id)))
+                               (remove #(or (nil? %)
+                                            (= (:frame-id %) frame-id))))
 
             rch [{:type :mov-objects
                   :page-id page-id

@@ -246,12 +246,19 @@
     :or   {font-variant-id "regular"}}]
 
   (let [{:keys [backend family variants]} (get @fontsdb font-id)]
-    (if (= :google backend)
+    (cond
+      (= :google backend)
       (-> (generate-gfonts-url
            {:family family
             :variants [{:id font-variant-id}]})
           (http/fetch-text))
 
+      (= :custom backend)
+      (let [variant (d/seek #(= (:id %) font-variant-id) variants)
+            result  (generate-custom-font-variant-css family variant)]
+        (p/resolved result))
+
+      :else
       (let [{:keys [weight style suffix] :as variant}
             (d/seek #(= (:id %) font-variant-id) variants)
             font-data {:family family

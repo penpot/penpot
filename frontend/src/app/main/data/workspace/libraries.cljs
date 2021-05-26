@@ -264,13 +264,14 @@
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
             selected (cp/clean-loops objects selected)]
-        (let [[group rchanges uchanges]
-              (dwlh/generate-add-component selected objects page-id file-id)]
-          (when-not (empty? rchanges)
-            (rx/of (dch/commit-changes {:redo-changes rchanges
-                                        :undo-changes uchanges
-                                        :origin it})
-                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
+        (when-not (empty? selected)
+          (let [[group rchanges uchanges]
+                (dwlh/generate-add-component selected objects page-id file-id)]
+            (when-not (empty? rchanges)
+              (rx/of (dch/commit-changes {:redo-changes rchanges
+                                          :undo-changes uchanges
+                                          :origin it})
+                     (dwc/select-shapes (d/ordered-set (:id group)))))))))))
 
 (defn rename-component
   "Rename the component with the given id, in the current file library."
@@ -414,22 +415,22 @@
                               (get component :objects)
                               update-new-shape)
 
-            rchanges (map (fn [obj]
-                            {:type :add-obj
-                             :id (:id obj)
-                             :page-id page-id
-                             :frame-id (:frame-id obj)
-                             :parent-id (:parent-id obj)
-                             :ignore-touched true
-                             :obj obj})
-                          new-shapes)
+            rchanges (mapv (fn [obj]
+                             {:type :add-obj
+                              :id (:id obj)
+                              :page-id page-id
+                              :frame-id (:frame-id obj)
+                              :parent-id (:parent-id obj)
+                              :ignore-touched true
+                              :obj obj})
+                           new-shapes)
 
-            uchanges (map (fn [obj]
-                            {:type :del-obj
-                             :id (:id obj)
-                             :page-id page-id
-                             :ignore-touched true})
-                          new-shapes)]
+            uchanges (mapv (fn [obj]
+                             {:type :del-obj
+                              :id (:id obj)
+                              :page-id page-id
+                              :ignore-touched true})
+                           new-shapes)]
 
         (rx/of (dch/commit-changes {:redo-changes rchanges
                                     :undo-changes uchanges
@@ -448,53 +449,53 @@
             objects (wsh/lookup-page-objects state page-id)
             shapes (cp/get-object-with-children id objects)
 
-            rchanges (map (fn [obj]
-                            {:type :mod-obj
-                             :page-id page-id
-                             :id (:id obj)
-                             :operations [{:type :set
-                                           :attr :component-id
-                                           :val nil}
-                                          {:type :set
-                                           :attr :component-file
-                                           :val nil}
-                                          {:type :set
-                                           :attr :component-root?
-                                           :val nil}
-                                          {:type :set
-                                           :attr :remote-synced?
-                                           :val nil}
-                                          {:type :set
-                                           :attr :shape-ref
-                                           :val nil}
-                                          {:type :set
-                                           :attr :touched
-                                           :val nil}]})
-                          shapes)
+            rchanges (mapv (fn [obj]
+                             {:type :mod-obj
+                              :page-id page-id
+                              :id (:id obj)
+                              :operations [{:type :set
+                                            :attr :component-id
+                                            :val nil}
+                                           {:type :set
+                                            :attr :component-file
+                                            :val nil}
+                                           {:type :set
+                                            :attr :component-root?
+                                            :val nil}
+                                           {:type :set
+                                            :attr :remote-synced?
+                                            :val nil}
+                                           {:type :set
+                                            :attr :shape-ref
+                                            :val nil}
+                                           {:type :set
+                                            :attr :touched
+                                            :val nil}]})
+                           shapes)
 
-            uchanges (map (fn [obj]
-                            {:type :mod-obj
-                             :page-id page-id
-                             :id (:id obj)
-                             :operations [{:type :set
-                                           :attr :component-id
-                                           :val (:component-id obj)}
-                                          {:type :set
-                                           :attr :component-file
-                                           :val (:component-file obj)}
-                                          {:type :set
-                                           :attr :component-root?
-                                           :val (:component-root? obj)}
-                                          {:type :set
-                                           :attr :remote-synced?
-                                           :val (:remote-synced? obj)}
-                                          {:type :set
-                                           :attr :shape-ref
-                                           :val (:shape-ref obj)}
-                                          {:type :set
-                                           :attr :touched
-                                           :val (:touched obj)}]})
-                          shapes)]
+            uchanges (mapv (fn [obj]
+                             {:type :mod-obj
+                              :page-id page-id
+                              :id (:id obj)
+                              :operations [{:type :set
+                                            :attr :component-id
+                                            :val (:component-id obj)}
+                                           {:type :set
+                                            :attr :component-file
+                                            :val (:component-file obj)}
+                                           {:type :set
+                                            :attr :component-root?
+                                            :val (:component-root? obj)}
+                                           {:type :set
+                                            :attr :remote-synced?
+                                            :val (:remote-synced? obj)}
+                                           {:type :set
+                                            :attr :shape-ref
+                                            :val (:shape-ref obj)}
+                                           {:type :set
+                                            :attr :touched
+                                            :val (:touched obj)}]})
+                           shapes)]
 
         (rx/of (dch/commit-changes {:redo-changes rchanges
                                     :undo-changes uchanges
