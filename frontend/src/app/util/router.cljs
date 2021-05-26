@@ -84,12 +84,13 @@
 
     ptk/EffectEvent
     (effect [_ state stream]
-      (let [router  (:router state)
-            history (:history state)
-            path    (resolve router id params qparams)]
-        (if ^boolean replace
-          (bhistory/replace-token! history path)
-          (bhistory/set-token! history path))))))
+      (ts/asap
+       #(let [router  (:router state)
+              history (:history state)
+              path    (resolve router id params qparams)]
+          (if ^boolean replace
+            (bhistory/replace-token! history path)
+            (bhistory/set-token! history path)))))))
 
 (defn nav
   ([id] (nav id nil nil))
