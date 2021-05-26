@@ -164,11 +164,12 @@
   [content points]
   (let [point-set (set points)]
 
-    (loop [segments []
-           prev-point nil
+    (loop [segments    []
+           prev-point  nil
            start-point nil
-           cur-cmd (first content)
-           content (rest content)]
+           index       0
+           cur-cmd     (first content)
+           content     (rest content)]
 
       (let [;; Close-path makes a segment from the last point to the initial path point
             cur-point (if (= :close-path (:command cur-cmd))
@@ -191,12 +192,16 @@
 
             segments (cond-> segments
                        is-segment?
-                       (conj [prev-point cur-point cur-cmd]))]
+                       (conj {:start prev-point
+                              :end cur-point
+                              :cmd cur-cmd
+                              :index index}))]
 
         (if (some? cur-cmd)
           (recur segments
                  cur-point
                  start-point
+                 (inc index)
                  (first content)
                  (rest content))
 
@@ -205,12 +210,13 @@
 (defn split-segments
   "Given a content creates splits commands between points with new segments"
   [content points value]
+
   (let [split-command
-        (fn [[start end cmd]]
+        (fn [{:keys [start end cmd index]}]
           (case (:command cmd)
-            :line-to [cmd (upg/split-line-to start cmd value)]
-            :curve-to [cmd (upg/split-curve-to start cmd value)]
-            :close-path [cmd [(upc/make-line-to (gpt/line-val start end value)) cmd]]
+            :line-to [index (upg/split-line-to start cmd value)]
+            :curve-to [index (upg/split-curve-to start cmd value)]
+            :close-path [index [(upc/make-line-to (gpt/line-val start end value)) cmd]]
             nil))
 
         cmd-changes
@@ -219,12 +225,12 @@
                             (filter (comp not nil?)))))
 
         process-segments
-        (fn [command]
-          (if (contains? cmd-changes command)
-            (get cmd-changes command)
+        (fn [[index command]]
+          (if (contains? cmd-changes index)
+            (get cmd-changes index)
             [command]))]
 
-    (into [] (mapcat process-segments) content)))
+    (into [] (mapcat process-segments) (d/enumerate content))))
 
 (defn remove-nodes
   "Removes from content the points given. Will try to reconstruct the paths
