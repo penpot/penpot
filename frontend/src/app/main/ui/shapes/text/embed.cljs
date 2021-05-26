@@ -61,7 +61,8 @@
 (defn get-font-css
   "Given a font and the variant-id, retrieves the style CSS for it."
   [{:keys [id backend family variants] :as font} font-variant-id]
-  (if (= :google backend)
+  (cond
+    (= :google backend)
     (let [uri (fonts/generate-gfonts-url {:family family :variants [{:id font-variant-id}]})]
       (->> (http/send! {:method :get
                         :mode :cors
@@ -70,6 +71,14 @@
                         :response-type :text})
            (rx/map :body)
            (http/as-promise)))
+
+
+    (= :custom backend)
+    (let [variant (d/seek #(= (:id %) font-variant-id) variants)
+          result  (fonts/generate-custom-font-variant-css family variant)]
+      (p/resolved result))
+
+    :else
     (let [{:keys [name weight style suffix] :as variant} (d/seek #(= (:id %) font-variant-id) variants)
           result (str/fmt font-face-template {:family family
                                               :style style
