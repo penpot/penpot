@@ -171,7 +171,8 @@
         (for [{:keys [id] :as project} projects]
           (let [files (when recent-map
                         (->> (vals recent-map)
-                             (filterv #(= id (:project-id %)))))]
+                             (filterv #(= id (:project-id %)))
+                             (sort-by :modified-at #(compare %2 %1))))]
             [:& project-item {:project project
                               :files   files
                               :first? (= project (first projects))
