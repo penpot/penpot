@@ -264,13 +264,14 @@
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
             selected (cp/clean-loops objects selected)]
-        (let [[group rchanges uchanges]
-              (dwlh/generate-add-component selected objects page-id file-id)]
-          (when-not (empty? rchanges)
-            (rx/of (dch/commit-changes {:redo-changes rchanges
-                                        :undo-changes uchanges
-                                        :origin it})
-                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
+        (when-not (empty? selected)
+          (let [[group rchanges uchanges]
+                (dwlh/generate-add-component selected objects page-id file-id)]
+            (when-not (empty? rchanges)
+              (rx/of (dch/commit-changes {:redo-changes rchanges
+                                          :undo-changes uchanges
+                                          :origin it})
+                     (dwc/select-shapes (d/ordered-set (:id group)))))))))))
 
 (defn rename-component
   "Rename the component with the given id, in the current file library."
