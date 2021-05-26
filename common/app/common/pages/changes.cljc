@@ -221,28 +221,31 @@
               ;; the new destination target parent id.
               (if (= prev-parent-id parent-id)
                 objects
-                (loop [sid shape-id
-                       pid prev-parent-id
-                       objects objects]
-                  (let [obj (get objects pid)]
-                    (cond-> objects
-                      true
-                      (update-in [pid :shapes] strip-id sid)
+                (let [sid shape-id
+                      pid prev-parent-id
+                      obj (get objects pid)
+                      component? (and (:shape-ref obj)
+                                      (= (:type obj) :group)
+                                      (not ignore-touched))]
 
-                      (and (:shape-ref obj)
-                           (= (:type obj) :group)
-                           (not ignore-touched))
-                      (->
-                       (update-in [pid :touched]
-                                  cph/set-touched-group :shapes-group)
-                       (d/dissoc-in [pid :remote-synced?]))))))))
+                  (-> objects
+                      (d/update-in-when [pid :shapes] strip-id sid)
+
+                      (cond-> component?
+                        (d/update-when
+                         pid
+                         #(-> %
+                              (update :touched cph/set-touched-group :shapes-group)
+                              (dissoc :remote-synced?)))))))))
 
           (update-parent-id [objects id]
-            (assoc-in objects [id :parent-id] parent-id))
+            (-> objects
+                (d/update-when id assoc :parent-id parent-id)))
 
           ;; Updates the frame-id references that might be outdated
           (assign-frame-id [frame-id objects id]
-            (let [objects (update objects id assoc :frame-id frame-id)
+            (let [objects (-> objects
+                              (d/update-when id assoc :frame-id frame-id))
                   obj     (get objects id)]
               (cond-> objects
                 ;; If we moving frame, the parent frame is the root
