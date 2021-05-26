@@ -95,7 +95,7 @@
             (st/emit! (dwt/initialize-editor-state shape default-decorator)
                       (dwt/select-all shape))
             #(do
-               (st/emit! (dwt/finalize-editor-state shape))
+               (st/emit! ::dwt/finalize-editor-state)
                (doseq [key keys]
                  (events/unlistenByKey key)))))
 

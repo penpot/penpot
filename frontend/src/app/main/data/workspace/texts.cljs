@@ -22,6 +22,7 @@
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [app.util.timers :as ts]
+   [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -54,17 +55,6 @@
         (update state :workspace-editor-state assoc id editor-state)
         (update state :workspace-editor-state dissoc id)))))
 
-(defn initialize-editor-state
-  [{:keys [id content] :as shape} decorator]
-  (ptk/reify ::initialize-editor-state
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-editor-state id]
-                 (fn [_]
-                   (ted/create-editor-state
-                    (some->> content ted/import-content)
-                    decorator))))))
-
 (defn finalize-editor-state
   [{:keys [id] :as shape}]
   (ptk/reify ::finalize-editor-state
@@ -72,6 +62,7 @@
     (watch [_ state stream]
       (let [content (-> (get-in state [:workspace-editor-state id])
                         (ted/get-editor-current-content))]
+
         (if (ted/content-has-text? content)
           (let [content (d/merge (ted/export-content content)
                                  (dissoc (:content shape) :children))]
@@ -84,6 +75,28 @@
                 (dwu/commit-undo-transaction)))))
           (rx/of (dws/deselect-shape id)
                  (dwc/delete-shapes [id])))))))
+
+(defn initialize-editor-state
+  [{:keys [id content] :as shape} decorator]
+  (ptk/reify ::initialize-editor-state
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-editor-state id]
+                 (fn [_]
+                   (ted/create-editor-state
+                    (some->> content ted/import-content)
+                    decorator))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      ;; We need to finalize editor on two main events: (1) when user
+      ;; explicitly navigates to other section or page; (2) when user
+      ;; leaves the editor.
+      (->> (rx/merge
+            (rx/filter (ptk/type? ::rt/navigate) stream)
+            (rx/filter #(= ::finalize-editor-state %) stream))
+           (rx/take 1)
+           (rx/map #(finalize-editor-state shape))))))
 
 (defn select-all
   "Select all content of the current editor. When not editor found this
