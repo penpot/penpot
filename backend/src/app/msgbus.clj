@@ -21,6 +21,7 @@
    java.time.Duration
    io.lettuce.core.RedisClient
    io.lettuce.core.RedisURI
+   io.lettuce.core.api.StatefulConnection
    io.lettuce.core.api.StatefulRedisConnection
    io.lettuce.core.api.async.RedisAsyncCommands
    io.lettuce.core.codec.ByteArrayCodec
@@ -130,6 +131,7 @@
 
 ;; --- REDIS BACKEND IMPL
 
+(declare impl-redis-open?)
 (declare impl-redis-pub)
 (declare impl-redis-sub)
 (declare impl-redis-unsub)
@@ -162,7 +164,8 @@
     (a/go-loop []
       (when-let [val (a/<! pub-ch)]
         (let [result (a/<! (impl-redis-pub rac val))]
-          (when (ex/exception? result)
+          (when (and (impl-redis-open? pub-conn)
+                     (ex/exception? result))
             (l/error :cause result
                      :hint "unexpected error on publish message to redis")))
         (recur)))))
@@ -214,7 +217,8 @@
                   (let [result (a/<!! (impl-redis-unsub rac topic))]
                     (l/trace :action "close subscription"
                              :topic topic)
-                    (when (ex/exception? result)
+                    (when (and (impl-redis-open? sub-conn)
+                               (ex/exception? result))
                       (l/error :cause result
                                :hint "unexpected exception on unsubscribing"
                                :topic topic))))
@@ -264,6 +268,10 @@
                                  (filter some?)
                                  (run! a/close!)))))))))
 
+
+(defn- impl-redis-open?
+  [^StatefulConnection conn]
+  (.isOpen conn))
 
 (defn- impl-redis-pub
   [^RedisAsyncCommands rac {:keys [topic message]}]

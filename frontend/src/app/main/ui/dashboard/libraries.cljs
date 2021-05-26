@@ -10,20 +10,16 @@
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.icons :as i]
+   [app.main.refs :as refs]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
-(defn files-ref
-  [team-id]
-  (l/derived (l/in [:shared-files team-id]) st/state))
-
 (mf/defc libraries-page
   [{:keys [team] :as props}]
-  (let [files-ref (mf/use-memo (mf/deps (:id team)) #(files-ref (:id team)))
-        files-map (mf/deref files-ref)
+  (let [files-map (mf/deref refs/dashboard-shared-files)
         files     (->> (vals files-map)
                        (sort-by :modified-at)
                        (reverse))]
@@ -33,9 +29,11 @@
        (dom/set-html-title (tr "title.dashboard.shared-libraries"
                                (if (:is-default team)
                                  (tr "dashboard.your-penpot")
-                                 (:name team))))
-       (st/emit! (dd/fetch-shared-files {:team-id (:id team)})
-                 (dd/clear-selected-files))))
+                                 (:name team))))))
+
+    (mf/use-effect
+     (st/emitf (dd/fetch-shared-files)
+               (dd/clear-selected-files)))
 
     [:*
      [:header.dashboard-header

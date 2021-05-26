@@ -1,12 +1,57 @@
 # CHANGELOG #
 
+
 ## :rocket: Next
 
 ### :sparkles: New features
+
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
+
+
+## 1.6.0-alpha
+
+### :sparkles: New features
+
+- Add improved workspace font selector [Taiga US #292](https://tree.taiga.io/project/penpot/us/292).
+- Add option to interactively scale text [Taiga #1527](https://tree.taiga.io/project/penpot/us/1527)
+- Add performance improvements on dashboard data loading.
+- Add performance improvements to indexes handling on workspace.
+- Add the ability to upload/use custom fonts (and automatically generate all needed webfonts) [Taiga US #292](https://tree.taiga.io/project/penpot/us/292).
+- Transform shapes to path on double click
+- Translate automatic names of new files and projects.
+- Use shift instead of ctrl/cmd to keep aspect ratio [Taiga 1697](https://tree.taiga.io/project/penpot/issue/1697).
+- New translations: Portuguese (Brazil) and Romanias. 
+
+
+### :bug: Bugs fixed
+
+- Remove interactions when the destination artboard is deleted [Taiga #1656](https://tree.taiga.io/project/penpot/issue/1656).
+- Fix problem with fonts that ends with numbers [#940](https://github.com/penpot/penpot/issues/940).
+- Fix problem with imported SVG on editing paths [#971](https://github.com/penpot/penpot/issues/971)
+- Fix problem with color picker positioning
+- Fix order on color palette [#961](https://github.com/penpot/penpot/issues/961)
+- Fix issue when group creation leaves an empty group [#1724](https://tree.taiga.io/project/penpot/issue/1724)
+- Fix problem with :multiple for colors and typographies [#1668](https://tree.taiga.io/project/penpot/issue/1668)
+- Fix problem with locked shapes when change parents [#974](https://github.com/penpot/penpot/issues/974)
+
+### :arrow_up: Deps updates
+
+- Update exporter dependencies (puppeteer), that fixes some unexpected exceptions.
+- Update string manipulation library.
+
+
+### :boom: Breaking changes
+
+- The OIDC setting `PENPOT_OIDC_SCOPES` has changed the default semantics. Before this
+  configuration added scopes to the default set. Now it replaces it, so use with care, because
+  penpot requires at least `name` and `email` props found on the user info object.
+
+### :heart: Community contributions by (Thank you!)
+
+- Translations: Portuguese (Brazil) and Romanias.
 
 
 ## 1.5.4-alpha

@@ -218,6 +218,13 @@
            (tr "workspace.header.menu.enable-dynamic-alignment"))]
         [:span.shortcut (sc/get-tooltip :toggle-alignment)]]
 
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :scale-text))}
+        [:span
+         (if (contains? layout :scale-text)
+           (tr "workspace.header.menu.disable-scale-text")
+           (tr "workspace.header.menu.enable-scale-text"))]
+        [:span.shortcut (sc/get-tooltip :toggle-scale-text)]]
+
        (if (:is-shared file)
          [:li {:on-click on-remove-shared}
           [:span (tr "dashboard.remove-shared")]]

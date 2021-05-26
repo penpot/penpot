@@ -6,22 +6,22 @@
 
 (ns app.main.ui.auth.login
   (:require
-   [cljs.spec.alpha :as s]
-   [beicon.core :as rx]
-   [rumext.alpha :as mf]
-   [app.config :as cfg]
    [app.common.spec :as us]
-   [app.main.ui.icons :as i]
-   [app.main.data.auth :as da]
+   [app.config :as cfg]
+   [app.main.data.messages :as dm]
+   [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.messages :as msgs]
-   [app.main.data.messages :as dm]
    [app.main.ui.components.forms :as fm]
-   [app.util.object :as obj]
+   [app.main.ui.icons :as i]
+   [app.main.ui.messages :as msgs]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr t]]
-   [app.util.router :as rt]))
+   [app.util.object :as obj]
+   [app.util.router :as rt]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [rumext.alpha :as mf]))
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)
@@ -45,7 +45,7 @@
          (rx/subs (fn [profile]
                     (if-let [token (:invitation-token profile)]
                       (st/emit! (rt/nav :auth-verify-token {} {:token token}))
-                      (st/emit! (da/logged-in profile))))
+                      (st/emit! (du/login-from-token {:profile profile}))))
                   (fn [{:keys [type code] :as error}]
                     (cond
                       (and (= type :restriction)
@@ -72,7 +72,7 @@
            (reset! error nil)
            (let [params (with-meta (:clean-data @form)
                           {:on-error on-error})]
-             (st/emit! (da/login params)))))
+             (st/emit! (du/login params)))))
 
         on-submit-ldap
         (mf/use-callback
@@ -149,15 +149,13 @@
 
     [:div.links
      [:div.link-entry
-      [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))
-           :tab-index "5"}
+      [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))}
        (tr "auth.forgot-password")]]
 
      (when cfg/registration-enabled
        [:div.link-entry
         [:span (tr "auth.register") " "]
-        [:a {:on-click #(st/emit! (rt/nav :auth-register {} params))
-             :tab-index "6"}
+        [:a {:on-click #(st/emit! (rt/nav :auth-register {} params))}
          (tr "auth.register-submit")]])]
 
     [:& login-buttons {:params params}]
@@ -166,6 +164,5 @@
       [:div.links.demo
        [:div.link-entry
         [:span (tr "auth.create-demo-profile") " "]
-        [:a {:on-click (st/emitf da/create-demo-profile)
-             :tab-index "6"}
+        [:a {:on-click (st/emitf (du/create-demo-profile))}
          (tr "auth.create-demo-account")]]])]])

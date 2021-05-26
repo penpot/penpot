@@ -6,48 +6,133 @@
 
 (ns app.worker.snaps
   (:require
-   [okulary.core :as l]
-   [app.common.uuid :as uuid]
-   [app.common.pages :as cp]
    [app.common.data :as d]
-   [app.worker.impl :as impl]
-   [app.util.range-tree :as rt]
+   [app.common.pages :as cp]
+   [app.common.uuid :as uuid]
+   [app.util.geom.grid :as gg]
    [app.util.geom.snap-points :as snap]
-   [app.util.geom.grid :as gg]))
+   [app.util.range-tree :as rt]
+   [app.worker.impl :as impl]
+   [clojure.set :as set]
+   [okulary.core :as l]))
 
 (defonce state (l/atom {}))
 
-(defn- create-coord-data
-  "Initializes the range tree given the shapes"
-  [frame-id shapes coord]
-  (let [process-shape (fn [coord]
-                        (fn [shape]
-                          (concat
-                           (let [points (snap/shape-snap-points shape)]
-                             (map #(vector % (:id shape)) points))
+(defn process-shape [frame-id coord]
+  (fn [shape]
+    (let [points (snap/shape-snap-points shape)
+          shape-data (->> points (mapv #(vector % (:id shape))))]
+      (if (= (:id shape) frame-id)
+        (d/concat
+         shape-data
 
-                           ;; The grid points are only added by the "root" of the coord-dat
-                           (when (= (:id shape) frame-id)
-                             (let [points (gg/grid-snap-points shape coord)]
-                               (map #(vector % :layout) points))))))
-        into-tree (fn [tree [point _ :as data]]
-                    (rt/insert tree (coord point) data))]
+         ;; The grid points are only added by the "root" of the coord-dat
+         (->> (gg/grid-snap-points shape coord)
+              (map #(vector % :layout))))
+
+        shape-data))))
+
+(defn- add-coord-data
+  "Initializes the range tree given the shapes"
+  [data frame-id shapes coord]
+  (letfn [(into-tree [tree [point _ :as data]]
+            (rt/insert tree (coord point) data))]
     (->> shapes
-         (mapcat (process-shape coord))
-         (reduce into-tree (rt/make-tree)))))
+         (mapcat (process-shape frame-id coord))
+         (reduce into-tree (or data (rt/make-tree))))))
+
+(defn remove-coord-data
+  [data frame-id shapes coord]
+  (letfn [(remove-tree [tree [point _ :as data]]
+            (rt/remove tree (coord point) data))]
+    (->> shapes
+         (mapcat (process-shape frame-id coord))
+         (reduce remove-tree (or data (rt/make-tree))))))
+
+(defn aggregate-data
+  ([objects]
+   (aggregate-data objects (keys objects)))
+
+  ([objects ids]
+   (->> ids
+        (filter #(contains? objects %))
+        (map #(get objects %))
+        (filter :frame-id)
+        (group-by :frame-id)
+        ;; Adds the frame
+        (d/mapm #(conj %2 (get objects %1))))))
 
 (defn- initialize-snap-data
   "Initialize the snap information with the current workspace information"
   [objects]
-  (let [frame-shapes (->> (vals objects)
-                          (filter :frame-id)
-                          (group-by :frame-id))
-        frame-shapes (->> (cp/select-frames objects)
-                          (reduce #(update %1 (:id %2) conj %2) frame-shapes))]
+  (let [shapes-data (aggregate-data objects)
 
-    (d/mapm (fn [frame-id shapes] {:x (create-coord-data frame-id shapes :x)
-                                   :y (create-coord-data frame-id shapes :y)})
-            frame-shapes)))
+        create-index
+        (fn [frame-id shapes]
+          {:x (-> (rt/make-tree) (add-coord-data frame-id shapes :x))
+           :y (-> (rt/make-tree) (add-coord-data frame-id shapes :y))})]
+    (d/mapm create-index shapes-data)))
+
+;; Attributes that will change the values of their snap
+(def snap-attrs [:x :y :width :height :selrect :grids])
+
+(defn- update-snap-data
+  [snap-data old-objects new-objects]
+
+  (let [changed? (fn [id]
+                   (let [oldv (get old-objects id)
+                         newv (get new-objects id)]
+                     ;; Check first without select-keys because is faster if they are
+                     ;; the same reference
+                     (and (not= oldv newv)
+                          (not= (select-keys oldv snap-attrs)
+                                (select-keys newv snap-attrs)))))
+
+        is-deleted-frame? #(and (not= uuid/zero %)
+                                (contains? old-objects %)
+                                (not (contains? new-objects %))
+                                (= :frame (get-in old-objects [% :type])))
+        is-new-frame? #(and (not= uuid/zero %)
+                            (contains? new-objects %)
+                            (not (contains? old-objects %))
+                            (= :frame (get-in new-objects [% :type])))
+
+        changed-ids (into #{}
+                          (filter changed?)
+                          (set/union (keys old-objects) (keys new-objects)))
+
+        to-delete (aggregate-data old-objects changed-ids)
+        to-add    (aggregate-data new-objects changed-ids)
+
+        frames-to-delete (->> changed-ids (filter is-deleted-frame?))
+        frames-to-add (->> changed-ids (filter is-new-frame?))
+
+        delete-data
+        (fn [snap-data [frame-id shapes]]
+          (-> snap-data
+              (update-in [frame-id :x] remove-coord-data frame-id shapes :x)
+              (update-in [frame-id :y] remove-coord-data frame-id shapes :y)))
+
+        add-data
+        (fn [snap-data [frame-id shapes]]
+          (-> snap-data
+              (update-in [frame-id :x] add-coord-data frame-id shapes :x)
+              (update-in [frame-id :y] add-coord-data frame-id shapes :y)))
+
+        delete-frames
+        (fn [snap-data frame-id]
+          (dissoc snap-data frame-id))
+
+        add-frames
+        (fn [snap-data frame-id]
+          (assoc snap-data frame-id {:x (rt/make-tree)
+                                     :y (rt/make-tree)}))]
+
+    (as-> snap-data $
+      (reduce delete-data $ to-delete)
+      (reduce add-frames $ frames-to-add)
+      (reduce add-data $ to-add)
+      (reduce delete-frames $ frames-to-delete))))
 
 (defn- log-state
   "Helper function to print a friendly version of the snap tree. Debugging purposes"
@@ -58,6 +143,16 @@
 
 (defn- index-page [state page-id objects]
   (let [snap-data (initialize-snap-data objects)]
+    (assoc state page-id snap-data)))
+
+(defn- update-page [state page-id old-objects new-objects]
+  (let [changed? #(not= (get old-objects %) (get new-objects %))
+        changed-ids (into #{}
+                          (filter changed?)
+                          (set/union (keys old-objects) (keys new-objects)))
+
+        snap-data (get state page-id)
+        snap-data (update-snap-data snap-data old-objects new-objects)]
     (assoc state page-id snap-data)))
 
 ;; Public API
@@ -74,9 +169,11 @@
     nil))
 
 (defmethod impl/handler :snaps/update-index
-  [{:keys [page-id objects] :as message}]
-  ;; TODO: Check the difference and update the index acordingly
-  (swap! state index-page page-id objects)
+  [{:keys [page-id old-objects new-objects] :as message}]
+  (swap! state update-page page-id old-objects new-objects)
+
+  ;; Uncomment this to regenerate the index everytime
+  #_(swap! state index-page page-id new-objects)
   ;; (log-state)
   nil)
 

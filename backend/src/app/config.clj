@@ -8,6 +8,8 @@
   "A configuration management."
   (:refer-clojure :exclude [get])
   (:require
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.version :as v]
    [app.util.time :as dt]
@@ -16,7 +18,8 @@
    [clojure.pprint :as pprint]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [environ.core :refer [env]]))
+   [environ.core :refer [env]]
+   [integrant.core :as ig]))
 
 (prefer-method print-method
                clojure.lang.IRecord
@@ -26,6 +29,16 @@
                clojure.lang.IPersistentMap
                clojure.lang.IDeref)
 
+(defmethod ig/init-key :default
+  [_ data]
+  (d/without-nils data))
+
+(defmethod ig/prep-key :default
+  [_ data]
+  (if (map? data)
+    (d/without-nils data)
+    data))
+
 (def defaults
   {:http-server-port 6060
    :host "devenv"
@@ -34,8 +47,7 @@
    :database-username "penpot"
    :database-password "penpot"
 
-   :default-blob-version 1
-
+   :default-blob-version 3
    :loggers-zmq-uri "tcp://localhost:45556"
 
    :asserts-enabled false
@@ -72,7 +84,6 @@
 
    :allow-demo-users true
    :registration-enabled true
-   :registration-domain-whitelist ""
 
    :telemetry-enabled false
    :telemetry-uri "https://telemetry.penpot.app/"
@@ -87,6 +98,13 @@
    :initial-project-skey "initial-project"
    })
 
+(s/def ::audit-enabled ::us/boolean)
+(s/def ::audit-archive-enabled ::us/boolean)
+(s/def ::audit-archive-uri ::us/string)
+(s/def ::audit-archive-gc-enabled ::us/boolean)
+(s/def ::audit-archive-gc-max-age ::dt/duration)
+
+(s/def ::secret-key ::us/string)
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::asserts-enabled ::us/boolean)
 (s/def ::assets-path ::us/string)
@@ -142,7 +160,7 @@
 (s/def ::profile-complaint-threshold ::us/integer)
 (s/def ::public-uri ::us/string)
 (s/def ::redis-uri ::us/string)
-(s/def ::registration-domain-whitelist ::us/string)
+(s/def ::registration-domain-whitelist ::us/set-of-str)
 (s/def ::registration-enabled ::us/boolean)
 (s/def ::rlimits-image ::us/integer)
 (s/def ::rlimits-password ::us/integer)
@@ -162,14 +180,18 @@
 (s/def ::storage-s3-bucket ::us/string)
 (s/def ::storage-s3-region ::us/keyword)
 (s/def ::telemetry-enabled ::us/boolean)
-(s/def ::telemetry-server-enabled ::us/boolean)
-(s/def ::telemetry-server-port ::us/integer)
 (s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-with-taiga ::us/boolean)
 (s/def ::tenant ::us/string)
 
 (s/def ::config
-  (s/keys :opt-un [::allow-demo-users
+  (s/keys :opt-un [::secret-key
+                   ::allow-demo-users
+                   ::audit-enabled
+                   ::audit-archive-enabled
+                   ::audit-archive-uri
+                   ::audit-archive-gc-enabled
+                   ::audit-archive-gc-max-age
                    ::asserts-enabled
                    ::database-password
                    ::database-uri
@@ -242,8 +264,6 @@
                    ::storage-s3-bucket
                    ::storage-s3-region
                    ::telemetry-enabled
-                   ::telemetry-server-enabled
-                   ::telemetry-server-port
                    ::telemetry-uri
                    ::telemetry-referer
                    ::telemetry-with-taiga
@@ -263,9 +283,17 @@
 
 (defn- read-config
   []
-  (->> (read-env "penpot")
-       (merge defaults)
-       (us/conform ::config)))
+  (try
+    (->> (read-env "penpot")
+         (merge defaults)
+         (us/conform ::config))
+    (catch Throwable e
+      (when (ex/ex-info? e)
+        (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
+        (println "Error on validating configuration:")
+        (println (:explain (ex-data e))
+        (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")))
+      (throw e))))
 
 (def version (v/parse (or (some-> (io/resource "version.txt")
                                   (slurp)

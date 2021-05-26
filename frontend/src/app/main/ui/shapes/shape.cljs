@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
+   [app.main.ui.shapes.fill-image :as fim]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.gradients :as grad]
    [app.main.ui.shapes.svg-defs :as defs]
@@ -16,8 +17,9 @@
    [rumext.alpha :as mf]))
 
 (mf/defc shape-container
-  {::mf/wrap-props false}
-  [props]
+  {::mf/forward-ref true
+   ::mf/wrap-props false}
+  [props ref]
   (let [shape          (obj/get props "shape")
         children       (obj/get props "children")
         pointer-events (obj/get props "pointer-events")
@@ -33,6 +35,7 @@
         frame? (= :frame type)
         group-props (-> (obj/clone props)
                         (obj/without ["shape" "children"])
+                        (obj/set! "ref" ref)
                         (obj/set! "id" (str "shape-" (:id shape)))
                         (obj/set! "filter" (filters/filter-str filter-id shape))
                         (obj/set! "style" styles)
@@ -49,8 +52,9 @@
     [:& (mf/provider muc/render-ctx) {:value render-id}
      [:> wrapper-tag group-props
       [:defs
-       [:& defs/svg-defs   {:shape shape :render-id render-id}]
-       [:& filters/filters {:shape shape :filter-id filter-id}]
-       [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
-       [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
+       [:& defs/svg-defs          {:shape shape :render-id render-id}]
+       [:& filters/filters        {:shape shape :filter-id filter-id}]
+       [:& grad/gradient          {:shape shape :attr :fill-color-gradient}]
+       [:& grad/gradient          {:shape shape :attr :stroke-color-gradient}]
+       [:& fim/fill-image-pattern {:shape shape :render-id render-id}]]
       children]]))

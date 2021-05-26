@@ -4,24 +4,24 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.http.export-svg
+(ns app.renderer.svg
   (:require
    ["path" :as path]
    ["xml-js" :as xml]
-   [app.browser :as bwr]
+   [app.browser :as bw]
    [app.common.data :as d]
-   [app.common.exceptions :as exc :include-macros true]
+   [app.common.exceptions :as ex :include-macros true]
    [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.util.shell :as sh]
    [cljs.spec.alpha :as s]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
    [lambdaisland.glogi :as log]
-   [promesa.core :as p])
-  (:import
-   goog.Uri))
+   [lambdaisland.uri :as u]
+   [app.renderer.bitmap :refer [create-cookie]]
+   [promesa.core :as p]))
 
 (log/set-level "app.http.export-svg" :trace)
 
@@ -66,7 +66,6 @@
          (or (str/blank? d)
              (nil? d)
              (str/empty? d)))))
-
 
 (defn flatten-toplevel-svg-elements
   "Flattens XML data structure if two nested top-side SVG elements found."
@@ -165,7 +164,9 @@
                 ;; objects.
                 (let [vbox      (-> (get-in result ["attributes" "viewBox"])
                                     (parse-viewbox))
-                      transform (str/fmt "translate(%s, %s) scale(%s, %s)" x y (/ width (:width vbox)) (/ height (:height vbox)))]
+                      transform (str/fmt "translate(%s, %s) scale(%s, %s)" x y
+                                         (/ width (:width vbox))
+                                         (/ height (:height vbox)))]
                   (-> result
                       (assoc "name" "g")
                       (assoc "attributes" {})
@@ -212,8 +213,8 @@
           (extract-single-node [node]
             (log/trace :fn :extract-single-node)
 
-            (p/let [attrs (bwr/eval! node extract-element-attrs)
-                    shot  (bwr/screenshot node {:omit-background? true :type "png"})]
+            (p/let [attrs (bw/eval! node extract-element-attrs)
+                    shot  (bw/screenshot node {:omit-background? true :type "png"})]
               {:id     (unchecked-get attrs "id")
                :x      (unchecked-get attrs "x")
                :y      (unchecked-get attrs "y")
@@ -235,12 +236,12 @@
 
           (process-text-nodes [page]
             (log/trace :fn :process-text-nodes)
-            (-> (bwr/select-all page "#screenshot foreignObject")
+            (-> (bw/select-all page "#screenshot foreignObject")
                 (p/then (fn [nodes] (p/all (map process-text-node nodes))))))
 
           (extract-svg [page]
-            (p/let [dom     (bwr/select page "#screenshot")
-                    xmldata (bwr/eval! dom (fn [elem] (.-outerHTML ^js elem)))
+            (p/let [dom     (bw/select page "#screenshot")
+                    xmldata (bw/eval! dom (fn [elem] (.-outerHTML ^js elem)))
                     nodes   (process-text-nodes page)
                     nodes   (d/index-by :id nodes)
                     result  (replace-text-nodes xmldata nodes)]
@@ -252,31 +253,33 @@
               result))
 
           (render-in-page [page {:keys [uri cookie] :as rctx}]
-            (p/do!
-             (bwr/emulate! page {:viewport [1920 1080]
-                                 :scale 4})
-             (bwr/set-cookie! page cookie)
-             (bwr/navigate! page uri)
-             ;; (bwr/wait-for page "#screenshot foreignObject" {:visible true})
-             (bwr/sleep page 2000)
-             ;; (bwr/eval! page (js* "() => document.body.style.background = 'transparent'"))
-             page))
+            (let [viewport {:width 1920
+                            :height 1080
+                            :scale 4}
+                  options  {:viewport viewport
+                            :timeout 15000
+                            :cookie cookie}]
+              (p/do!
+               (bw/configure-page! page options)
+               (bw/navigate! page uri)
+               (bw/wait-for page "#screenshot")
+               (bw/sleep page 2000)
+               ;; (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
+               page)))
 
           (handle [rctx page]
             (p/let [page (render-in-page page rctx)]
               (extract-svg page)))]
 
-    (let [path (str "/render-object/" file-id "/" page-id "/" object-id)
-          uri  (doto (Uri. (:public-uri cfg/config))
-                 (.setPath "/")
-                 (.setFragment path))
-          rctx {:cookie {:domain (str (.getDomain uri) ":" (.getPort uri))
-                         :key "auth-token"
-                         :value token}
-                :uri (.toString uri)}]
-
-      (log/info :uri (.toString uri))
-      (bwr/exec! browser (partial handle rctx)))))
+    (let [path   (str "/render-object/" file-id "/" page-id "/" object-id)
+          uri    (-> (u/uri (cf/get :public-uri))
+                     (assoc :path "/")
+                     (assoc :fragment path))
+          cookie (create-cookie uri token)
+          rctx   {:cookie cookie
+                  :uri (str uri)}]
+      (log/info :uri (:uri rctx))
+      (bw/exec! browser (partial handle rctx)))))
 
 (s/def ::name ::us/string)
 (s/def ::suffix ::us/string)
@@ -288,18 +291,25 @@
 (s/def ::token ::us/string)
 (s/def ::filename ::us/string)
 
-(s/def ::export-params
+(s/def ::render-params
   (s/keys :req-un [::name ::suffix ::type ::object-id ::page-id ::file-id ::scale ::token]
           :opt-un [::filename]))
 
-(defn export
-  [browser params]
-  (us/assert ::export-params params)
-  (p/let [content (render-object browser params)]
-    {:content content
-     :filename (or (:filename params)
-                   (str (:name params)
-                        (:suffix params "")
-                        ".svg"))
-     :length (alength content)
-     :mime-type "image/svg+xml"}))
+(defn render
+  [params]
+  (us/assert ::render-params params)
+  (let [browser @bw/instance]
+    (when-not browser
+      (ex/raise :type :internal
+                :code :browser-not-ready
+                :hint "browser cluster is not initialized yet"))
+
+
+    (p/let [content (render-object browser params)]
+      {:content content
+       :filename (or (:filename params)
+                     (str (:name params)
+                          (:suffix params "")
+                          ".svg"))
+       :length (alength content)
+       :mime-type "image/svg+xml"})))

@@ -1,3 +1,4 @@
+
 ;; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -44,6 +45,33 @@
 (def dashboard-local
   (l/derived :dashboard-local st/state))
 
+(def dashboard-fonts
+  (l/derived :dashboard-fonts st/state))
+
+(def dashboard-projects
+  (l/derived :dashboard-projects st/state))
+
+(def dashboard-files
+  (l/derived :dashboard-files st/state))
+
+(def dashboard-shared-files
+  (l/derived :dashboard-shared-files st/state))
+
+(def dashboard-search-result
+  (l/derived :dashboard-search-result st/state))
+
+(def dashboard-team
+  (l/derived (fn [state]
+               (let [team-id (:current-team-id state)]
+                 (get-in state [:teams team-id])))
+             st/state))
+
+(def dashboard-team-stats
+  (l/derived :dashboard-team-stats st/state))
+
+(def dashboard-team-members
+  (l/derived :dashboard-team-members st/state))
+
 (def dashboard-selected-project
   (l/derived (fn [state]
                (get-in state [:dashboard-local :selected-project]))
@@ -51,17 +79,14 @@
 
 (def dashboard-selected-files
   (l/derived (fn [state]
-               (get-in state [:dashboard-local :selected-files] #{}))
-             st/state))
-
-(def dashboard-selected-file-objs
-  (l/derived (fn [state]
-               (let [dashboard-local  (get state :dashboard-local)
-                     selected-project (get dashboard-local :selected-project)
-                     selected-files   (get dashboard-local :selected-files #{})]
-                 (map #(get-in state [:files selected-project %])
-                      selected-files)))
-             st/state))
+               (let [get-file #(get-in state [:dashboard-files %])
+                     sim-file #(select-keys % [:id :name :project-id])
+                     selected (get-in state [:dashboard-local :selected-files])
+                     xform    (comp (map get-file)
+                                    (map sim-file))]
+                 (->> (into #{} xform selected)
+                      (d/index-by :id))))
+             st/state =))
 
 ;; ---- Workspace refs
 
@@ -127,16 +152,17 @@
 
 (def workspace-file
   (l/derived (fn [state]
-               (when-let [file (:workspace-file state)]
+               (let [file (:workspace-file state)
+                     data (:workspace-data state)]
                  (-> file
                      (dissoc :data)
-                     (assoc :pages (get-in file [:data :pages])))))
+                     (assoc :pages (:pages data)))))
              st/state =))
 
 (def workspace-file-colors
   (l/derived (fn [state]
-               (when-let [file (:workspace-file state)]
-                 (->> (get-in file [:data :colors])
+               (when-let [file (:workspace-data state)]
+                 (->> (:colors file)
                       (d/mapm #(assoc %2 :file-id (:id file))))))
              st/state))
 
@@ -147,8 +173,8 @@
 
 (def workspace-file-typography
   (l/derived (fn [state]
-               (when-let [file (:workspace-file state)]
-                 (get-in file [:data :typographies])))
+               (when-let [file (:workspace-data state)]
+                 (:typographies file)))
              st/state))
 
 (def workspace-project
@@ -184,7 +210,10 @@
              st/state))
 
 (def workspace-page-objects
-  (l/derived :objects workspace-page))
+  (l/derived wsh/lookup-page-objects st/state =))
+
+(def workspace-modifiers
+  (l/derived :workspace-modifiers st/state))
 
 (def workspace-page-options
   (l/derived :options workspace-page))
@@ -203,12 +232,21 @@
   (l/derived #(get % id) workspace-page-objects))
 
 (defn objects-by-id
-  [ids]
-  (l/derived (fn [objects]
-               (into [] (comp (map #(get objects %))
-                              (remove nil?))
-                     ids))
-             workspace-page-objects =))
+  ([ids]
+   (objects-by-id ids nil))
+
+  ([ids {:keys [with-modifiers?]
+         :or { with-modifiers? false }}]
+   (l/derived (fn [state]
+                (let [objects (wsh/lookup-page-objects state)
+                      modifiers (:workspace-modifiers state)
+                      objects (cond-> objects
+                                with-modifiers?
+                                (cp/merge-modifiers modifiers))
+                      xform (comp (map #(get objects %))
+                                  (remove nil?))]
+                  (into [] xform ids)))
+              st/state =)))
 
 (def selected-data
   (l/derived #(let [selected (wsh/lookup-selected %)

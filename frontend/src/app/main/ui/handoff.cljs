@@ -91,7 +91,7 @@
               (events/unlistenByKey key1))))]
 
     (mf/use-effect on-mount)
-    (hooks/use-shortcuts sc/shortcuts)
+    (hooks/use-shortcuts ::handoff sc/shortcuts)
 
     [:div.handoff-layout {:class (dom/classnames :force-visible
                                                  (:show-thumbnails state))}

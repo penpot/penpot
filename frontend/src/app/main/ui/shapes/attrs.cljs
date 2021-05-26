@@ -81,6 +81,10 @@
                      (contains? shape :fill-color)
                      {:fill (:fill-color shape)}
 
+                     (contains? shape :fill-image)
+                     (let [fill-image-id (str "fill-image-" render-id)]
+                       {:fill (str/format "url(#%s)" fill-image-id) })
+
                      ;; If contains svg-attrs the origin is svg. If it's not svg origin
                      ;; we setup the default fill as transparent (instead of black)
                      (and (not (contains? shape :svg-attrs))

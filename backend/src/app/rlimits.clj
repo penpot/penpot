@@ -18,6 +18,7 @@
 
 (derive ::password ::instance)
 (derive ::image ::instance)
+(derive ::font ::instance)
 
 (defmethod ig/pre-init-spec ::instance [_]
   (s/spec int?))

@@ -12,8 +12,9 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
-   [app.main.data.auth :refer [logout]]
+   [app.main.data.users :as du]
    [app.main.data.messages :as dm]
+   [app.main.data.events :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.auth :refer [auth]]
@@ -90,6 +91,8 @@
     ["/settings"             :dashboard-team-settings]
     ["/projects"             :dashboard-projects]
     ["/search"               :dashboard-search]
+    ["/fonts"                :dashboard-fonts]
+    ["/fonts/providers"      :dashboard-font-providers]
     ["/libraries"            :dashboard-libraries]
     ["/projects/:project-id" :dashboard-files]]
 
@@ -104,82 +107,85 @@
 (mf/defc main-page
   {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}
   [{:keys [route] :as props}]
-  [:& (mf/provider ctx/current-route) {:value route}
-   (case (get-in route [:data :name])
-     (:auth-login
-      :auth-register
-      :auth-register-success
-      :auth-recovery-request
-      :auth-recovery)
-     [:& auth {:route route}]
+  (let [{:keys [data params]} route]
+    [:& (mf/provider ctx/current-route) {:value route}
+     (case (:name data)
+       (:auth-login
+        :auth-register
+        :auth-register-success
+        :auth-recovery-request
+        :auth-recovery)
+       [:& auth {:route route}]
 
-     :auth-verify-token
-     [:& verify-token {:route route}]
+       :auth-verify-token
+       [:& verify-token {:route route}]
 
-     (:settings-profile
-      :settings-password
-      :settings-options
-      :settings-feedback)
-     [:& settings/settings {:route route}]
+       (:settings-profile
+        :settings-password
+        :settings-options
+        :settings-feedback)
+       [:& settings/settings {:route route}]
 
-     :debug-icons-preview
-     (when *assert*
-       [:div.debug-preview
-        [:h1 "Cursors"]
-        [:& c/debug-preview]
-        [:h1 "Icons"]
-        [:& i/debug-icons-preview]
-        ])
+       :debug-icons-preview
+       (when *assert*
+         [:div.debug-preview
+          [:h1 "Cursors"]
+          [:& c/debug-preview]
+          [:h1 "Icons"]
+          [:& i/debug-icons-preview]
+          ])
 
-     (:dashboard-search
-      :dashboard-projects
-      :dashboard-files
-      :dashboard-libraries
-      :dashboard-team-members
-      :dashboard-team-settings)
-     [:*
-      #_[:div.modal-wrapper
-         [:& app.main.ui.onboarding/release-notes-modal {:version "1.5"}]]
-      [:& dashboard {:route route}]]
+       (:dashboard-search
+        :dashboard-projects
+        :dashboard-files
+        :dashboard-libraries
+        :dashboard-fonts
+        :dashboard-font-providers
+        :dashboard-team-members
+        :dashboard-team-settings)
+       [:*
+        #_[:div.modal-wrapper
+           [:& app.main.ui.onboarding/release-notes-modal {:version "1.6"}]]
+        [:& dashboard {:route route}]]
 
-     :viewer
-     (let [index   (get-in route [:query-params :index])
-           token   (get-in route [:query-params :token])
-           section (get-in route [:query-params :section] :interactions)
-           file-id (get-in route [:path-params :file-id])
-           page-id (get-in route [:path-params :page-id])]
-       [:& fs/fullscreen-wrapper {}
-        (if (= section :handoff)
-          [:& handoff {:page-id page-id
-                       :file-id file-id
-                       :index index
-                       :token token}]
-          [:& viewer-page {:page-id page-id
-                           :file-id file-id
-                           :section section
-                           :index index
-                           :token token}])])
+       :viewer
+       (let [index   (get-in route [:query-params :index])
+             token   (get-in route [:query-params :token])
+             section (get-in route [:query-params :section] :interactions)
+             file-id (get-in route [:path-params :file-id])
+             page-id (get-in route [:path-params :page-id])]
+         [:& fs/fullscreen-wrapper {}
+          (if (= section :handoff)
+            [:& handoff {:page-id page-id
+                         :file-id file-id
+                         :index index
+                         :token token}]
+            [:& viewer-page {:page-id page-id
+                             :file-id file-id
+                             :section section
+                             :index index
+                             :token token}])])
 
-     :render-object
-     (do
-       (let [file-id   (uuid (get-in route [:path-params :file-id]))
-             page-id   (uuid (get-in route [:path-params :page-id]))
-             object-id (uuid (get-in route [:path-params :object-id]))]
-         [:& render/render-object {:file-id file-id
-                                   :page-id page-id
-                                   :object-id object-id}]))
+       :render-object
+       (do
+         (let [file-id   (uuid (get-in route [:path-params :file-id]))
+               page-id   (uuid (get-in route [:path-params :page-id]))
+               object-id (uuid (get-in route [:path-params :object-id]))]
+           [:& render/render-object {:file-id file-id
+                                     :page-id page-id
+                                     :object-id object-id}]))
 
-     :workspace
-     (let [project-id (uuid (get-in route [:params :path :project-id]))
-           file-id (uuid (get-in route [:params :path :file-id]))
-           page-id (uuid (get-in route [:params :query :page-id]))
-           layout-name (get-in route [:params :query :layout])]
-       [:& workspace/workspace {:project-id project-id
-                                :file-id file-id
-                                :page-id page-id
-                                :layout-name (keyword layout-name)
-                                :key file-id}])
-     nil)])
+       :workspace
+       (let [project-id (some-> params :path :project-id uuid)
+             file-id    (some-> params :path :file-id uuid)
+             page-id    (some-> params :query :page-id uuid)
+             layout     (some-> params :query :layout keyword)]
+         [:& workspace/workspace {:project-id project-id
+                                  :file-id file-id
+                                  :page-id page-id
+                                  :layout-name layout
+                                  :key file-id}])
+       nil)]))
 
 (mf/defc app
   []
@@ -210,7 +216,7 @@
 ;; all profile data and redirect the user to the login page.
 (defmethod ptk/handle-error :authentication
   [error]
-  (ts/schedule (st/emitf (logout))))
+  (ts/schedule (st/emitf (du/logout))))
 
 ;; Error that happens on an active bussines model validation does not
 ;; passes an validation (example: profile can't leave a team). From
@@ -220,8 +226,9 @@
   [error]
   (ts/schedule
    (st/emitf
-    (dm/show {:content "Unexpected validation error (server side)."
-              :type :error})))
+    (dm/show {:content "Unexpected validation error."
+              :type :error
+              :timeout 3000})))
 
   ;; Print to the console some debug info.
   (js/console.group "Validation Error")
@@ -233,62 +240,95 @@
      (js/console.error explain)))
   (js/console.groupEnd "Validation Error"))
 
+;; Error on parsing an SVG
+(defmethod ptk/handle-error :svg-parser
+  [error]
+  (ts/schedule
+   (st/emitf
+    (dm/show {:content "SVG is invalid or malformed"
+              :type :error
+              :timeout 3000}))))
+
 ;; This is a pure frontend error that can be caused by an active
 ;; assertion (assertion that is preserved on production builds). From
 ;; the user perspective this should be treated as internal error.
 (defmethod ptk/handle-error :assertion
-  [{:keys [data stack message context] :as error}]
-  (ts/schedule
-   (st/emitf (dm/show {:content "Internal error: assertion."
-                       :type :error})))
+  [{:keys [data stack message hint context] :as error}]
+  (let [message (or message hint)
+        context (str/fmt "ns: '%s'\nname: '%s'\nfile: '%s:%s'"
+                              (:ns context)
+                              (:name context)
+                              (str cfg/public-uri "js/cljs-runtime/" (:file context))
+                              (:line context))]
+    (ts/schedule
+     (st/emitf
+      (dm/show {:content "Internal error: assertion."
+                :type :error
+                :timeout 3000})
+      (ptk/event ::ev/event
+                 {::ev/type "exception"
+                  ::ev/name "assertion-error"
+                  :message message
+                  :context context
+                  :trace stack})))
 
-  ;; Print to the console some debugging info
-  (js/console.group message)
-  (js/console.info (str/format "ns: '%s'\nname: '%s'\nfile: '%s:%s'"
-                                (:ns context)
-                                (:name context)
-                                (str cfg/public-uri "/js/cljs-runtime/" (:file context))
-                                (:line context)))
-  (js/console.groupCollapsed "Stack Trace")
-  (js/console.info stack)
-  (js/console.groupEnd "Stack Trace")
-  (js/console.error (with-out-str (expound/printer data)))
-  (js/console.groupEnd message))
+    ;; Print to the console some debugging info
+    (js/console.group message)
+    (js/console.info context)
+    (js/console.groupCollapsed "Stack Trace")
+    (js/console.info stack)
+    (js/console.groupEnd "Stack Trace")
+    (js/console.error (with-out-str (expound/printer data)))
+    (js/console.groupEnd message)))
 
 ;; This happens when the backed server fails to process the
 ;; request. This can be caused by an internal assertion or any other
 ;; uncontrolled error.
 (defmethod ptk/handle-error :server-error
-  [{:keys [data] :as error}]
-  (ts/schedule
-   (st/emitf (dm/show
-              {:content "Something wrong has happened (on backend)."
-               :type :error})))
+  [{:keys [data hint] :as error}]
+  (let [hint (or hint (:hint data) (:message data))
+        info (with-out-str (pprint (dissoc data :explain)))
+        expl (:explain data)]
+    (ts/schedule
+     (st/emitf
+      (dm/show {:content "Something wrong has happened (on backend)."
+                :type :error
+                :timeout 3000})
+      (ptk/event ::ev/event
+                 {::ev/type "exception"
+                  ::ev/name "server-error"
+                  :hint hint
+                  :info info
+                  :explain expl})))
 
-  (js/console.group "Internal Server Error:")
-  (js/console.error "hint:" (or (:hint data) (:message data)))
-  (js/console.info
-   (with-out-str
-     (pprint (dissoc data :explain))))
-  (when-let [explain (:explain data)]
-    (js/console.error explain))
-  (js/console.groupEnd "Internal Server Error:"))
+    (js/console.group "Internal Server Error:")
+    (js/console.error "hint:" hint)
+    (js/console.info info)
+    (when expl (js/console.error expl))
+    (js/console.groupEnd "Internal Server Error:")))
 
 (defmethod ptk/handle-error :default
   [error]
   (if (instance? ExceptionInfo error)
     (ptk/handle-error (ex-data error))
-    (do
+    (let [stack (.-stack error)
+          hint  (or (ex-message error)
+                    (:hint error)
+                    (:message error))]
       (ts/schedule
-       (st/emitf (dm/assign-exception error)))
+       (st/emitf
+        (dm/assign-exception error)
+        (ptk/event ::ev/event
+                   {::ev/type "exception"
+                    ::ev/name "unexpected-error"
+                    :message hint
+                    :trace (.-stack error)})))
 
       (js/console.group "Internal error:")
-      (js/console.log "hint:" (or (ex-message error)
-                                  (:hint error)
-                                  (:message error)))
+      (js/console.log "hint:" hint)
       (ex/ignoring
        (js/console.error (clj->js error))
-       (js/console.error "stack:" (.-stack error)))
+       (js/console.error "stack:" stack))
       (js/console.groupEnd "Internal error:"))))
 
 (defonce uncaught-error-handler

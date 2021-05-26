@@ -98,10 +98,11 @@
           res (http/send! req)]
 
       (when (= 200 (:status res))
-        (let [{:keys [name] :as data} (json/read-str (:body res) :key-fn keyword)]
-          (-> data
-              (assoc :backend (:name provider))
-              (assoc :fullname name)))))
+        (let [info (json/read-str (:body res) :key-fn keyword)]
+          {:backend (:name provider)
+           :email (:email info)
+           :fullname (:name info)
+           :props (dissoc info :name :email)})))
 
     (catch Exception e
       (l/error :hint "unexpected exception on retrieve-user-info"
@@ -117,7 +118,8 @@
                         (retrieve-user-info cfg))]
     (when-not info
       (ex/raise :type :internal
-                :code :unable-to-auth))
+                :code :unable-to-auth
+                :hint "no user info"))
 
     ;; If the provider is OIDC, we can proceed to check
     ;; roles if they are defined.
@@ -138,16 +140,35 @@
 
     (cond-> info
       (some? (:invitation-token state))
-      (assoc :invitation-token (:invitation-token state)))))
+      (assoc :invitation-token (:invitation-token state))
+
+      ;; If state token comes with props, merge them. The state token
+      ;; props can contain pm_ and utm_ prefixed query params.
+      (map? (:props state))
+      (update :props merge (:props state)))))
 
 ;; --- HTTP HANDLERS
 
+(defn extract-props
+  [params]
+  (reduce-kv (fn [params k v]
+               (let [sk (name k)]
+                 (cond-> params
+                   (or (str/starts-with? sk "pm_")
+                       (str/starts-with? sk "pm-")
+                       (str/starts-with? sk "utm_"))
+                   (assoc (-> sk str/kebab keyword) v))))
+             {}
+             params))
+
 (defn- auth-handler
-  [{:keys [tokens] :as cfg} request]
-  (let [invitation (get-in request [:params :invitation-token])
+  [{:keys [tokens] :as cfg} {:keys [params] :as request}]
+  (let [invitation (:invitation-token params)
+        props      (extract-props params)
         state      (tokens :generate
                            {:iss :oauth
                             :invitation-token invitation
+                            :props props
                             :exp (dt/in-future "15m")})
         uri        (build-auth-uri cfg state)]
     {:status 200
@@ -215,8 +236,7 @@
               :token-uri     (cf/get :oidc-token-uri)
               :auth-uri      (cf/get :oidc-auth-uri)
               :user-uri      (cf/get :oidc-user-uri)
-              :scopes        (into #{"openid" "profile" "email" "name"}
-                                   (cf/get :oidc-scopes #{}))
+              :scopes        (cf/get :oidc-scopes #{"openid" "profile"})
               :roles-attr    (cf/get :oidc-roles-attr)
               :roles         (cf/get :oidc-roles)
               :name          "oidc"}]
@@ -238,9 +258,7 @@
   [cfg]
   (let [opts {:client-id     (cf/get :google-client-id)
               :client-secret (cf/get :google-client-secret)
-              :scopes        #{"email" "profile" "openid"
-                               "https://www.googleapis.com/auth/userinfo.email"
-                               "https://www.googleapis.com/auth/userinfo.profile"}
+              :scopes        #{"openid" "email" "profile"}
               :auth-uri      "https://accounts.google.com/o/oauth2/v2/auth"
               :token-uri     "https://oauth2.googleapis.com/token"
               :user-uri      "https://openidconnect.googleapis.com/v1/userinfo"
@@ -256,8 +274,7 @@
   [cfg]
   (let [opts {:client-id     (cf/get :github-client-id)
               :client-secret (cf/get :github-client-secret)
-              :scopes        #{"read:user"
-                               "user:email"}
+              :scopes        #{"read:user" "user:email"}
               :auth-uri      "https://github.com/login/oauth/authorize"
               :token-uri     "https://github.com/login/oauth/access_token"
               :user-uri      "https://api.github.com/user"

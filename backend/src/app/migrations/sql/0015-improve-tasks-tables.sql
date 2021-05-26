@@ -1,4 +1,4 @@
-DROP TABLE task;
+DROP TABLE IF EXISTS task;
 
 CREATE TABLE task (
   id uuid DEFAULT uuid_generate_v4(),
@@ -27,3 +27,11 @@ CREATE TABLE task_default partition OF task default;
 CREATE INDEX task__scheduled_at__queue__idx
     ON task (scheduled_at, queue)
  WHERE status = 'new' or status = 'retry';
+
+ALTER TABLE task
+  ALTER COLUMN queue SET STORAGE external,
+  ALTER COLUMN name SET STORAGE external,
+  ALTER COLUMN props SET STORAGE external,
+  ALTER COLUMN status SET STORAGE external,
+  ALTER COLUMN error SET STORAGE external;
+

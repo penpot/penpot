@@ -15,7 +15,7 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]))
 
-(defn- handle-response
+(defn handle-response
   [{:keys [status body] :as response}]
   (cond
     (= 204 status)
@@ -108,14 +108,6 @@
                     :uri (u/join base-uri "export")
                     :body (http/transit-data params)
                     :response-type :blob})
-       (rx/mapcat handle-response)))
-
-(defmethod query :parsed-svg
-  [id params]
-  (->> (http/send! {:method :post
-                    :uri (u/join base-uri "api/rpc/query/" (name id))
-                    :body (http/transit-data params)})
-       (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
 
 (derive :upload-file-media-object ::multipart-upload)

@@ -60,10 +60,9 @@
                                  :uri (:uri cfg)
                                  :headers {"content-type" "application/json"}
                                  :body (json/encode-str data)})]
-
-    (when (not= 200 (:status response))
+    (when (> (:status response) 206)
       (ex/raise :type :internal
-                :code :invalid-response-from-google
+                :code :invalid-response
                 :context {:status (:status response)
                           :body (:body response)}))))
 

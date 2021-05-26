@@ -1,10 +1,15 @@
 msgid ""
 msgstr ""
+"PO-Revision-Date: 2021-05-13 08:47+0000\n"
+"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
+"Language-Team: French "
+"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Generator: Weblate 4.7-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2036,15 +2041,15 @@ msgstr "Courbe (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.ellipse"
-msgstr "Ellipse (E)"
+msgstr "Ellipse (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.frame"
-msgstr "Plan de travail (A)"
+msgstr "Plan de travail (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.image"
-msgstr "Image (K)"
+msgstr "Image (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.move"
@@ -2052,15 +2057,15 @@ msgstr "Déplacer"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.path"
-msgstr "Chemin (P)"
+msgstr "Chemin (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.rect"
-msgstr "Rectangle (R)"
+msgstr "Rectangle (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
-msgstr "Texte (T)"
+msgstr "Texte (%s)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"

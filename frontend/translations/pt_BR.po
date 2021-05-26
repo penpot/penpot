@@ -1,0 +1,928 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2021-05-17 21:32+0000\n"
+"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
+"Language-Team: Portuguese (Brazil) "
+"<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 4.7-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Já tem uma conta?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Verifique seu e-mail e clique no link de verificação para começar a usar o "
+"Penpot."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Confirmar senha"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Criar conta de demonstração"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Só quer experimentar?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Este é um serviço DEMONSTRATIVO, NÃO USE para trabalho real, os projetos "
+"serão apagados periodicamente."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "E-mail"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Esqueceu a senha?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Nome completo"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.go-back-to-login"
+msgstr "Voltar!"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Entrar aqui"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Entrar"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-subtitle"
+msgstr "Insira seus dados abaixo"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Bom te ver de novo!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "Entrar com o Github"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "Entrar com o Gitlab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Entrar com o Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "Entrar com LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "Entrar com OpenID (SSO)"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Digite uma nova senha"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "O token de recuperação é inválido."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-succesfully"
+msgstr "Senha alterada com sucesso"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "Perfil não verificado. Por favor, verifique o perfil antes de continuar."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Link de recuperação de senha foi enviado para sua caixa de entrada."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Entrou para a equipe com sucesso"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Senha"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Pelo menos 8 caracteres"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Recuperar senha"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Enviaremos para você um e-mail com instruções"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Esqueceu a senha?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Mudar sua senha"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Ainda não tem uma conta?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Criar uma conta"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "É de graça, é código aberto"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Criar uma conta"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "A solução de código aberto para design e prototipagem."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Ao criar uma nova conta, você concorda com nossos termos de serviço e "
+"política de privacidade."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Enviamos um e-mail de verificação para"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Adicionar como Biblioteca Compartilhada"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "Alterar e-mail"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(copiar)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ Criar nova equipe"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Sua Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Deletar equipe"
+
+msgid "dashboard.draft-title"
+msgstr "Rascunho"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Duplicar"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Duplicar %s arquivos"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.empty-files"
+msgstr "Você ainda não tem arquivos aqui"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Qualquer fonte da web que você carregar aqui será adicionada à lista de "
+"família de fontes disponível nas propriedades de texto dos arquivos desta "
+"equipe. As fontes com o mesmo nome de família de fontes serão agrupadas "
+"como uma **única família de fontes**. Você pode fazer upload de fontes com "
+"os seguintes formatos: **TTF, OTF e WOFF** (apenas uma será necessária)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Você deve carregar apenas fontes que possui ou tem licença para usar na "
+"Penpot. Descubra mais na seção de Direitos de conteúdo nos [Termos de "
+"Serviço da Penpot](https://penpot.app/terms.html). Você pode também querer "
+"ler sobre [licenciamento de fontes](2)."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Convidar para a equipe"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Sair da equipe"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Bibliotecas Compartilhadas"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "carregando seus arquivos…"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Mover para"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Mover %s arquivos para"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Mover para outra equipe"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ Novo arquivo"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Novo arquivo"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Novo projeto"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Novo projeto"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "Nenhuma correspondência encontrada para “%s“"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Projetos fixados aparecerão aqui"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Seu endereço de e-mail foi atualizado com sucesso"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Seu endereço de e-mail foi verificado com sucesso"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "Senha salva com sucesso!"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s membros"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Abrir arquivo em uma nova guia"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "Alterar senha"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Fixar/Desafixar"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Projetos"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.promote-to-owner"
+msgstr "Promover a proprietário"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "Quer remover sua conta?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "Remover como Biblioteca Compartilhada"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "Pesquisar…"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "Pesquisando por “%s“…"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-language"
+msgstr "Selecionar idioma da UI"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-theme"
+msgstr "Selecionar tema"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.show-all-files"
+msgstr "Mostrar todos os arquivos"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "Seu arquivo foi excluído com sucesso"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "Seu projeto foi excluído com sucesso"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "Seu arquivo foi duplicado com sucesso"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "Seu projeto foi duplicado com sucesso"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "Seu arquivo foi movido com sucesso"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "Seus arquivos foram movidos com sucesso"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "Seu projeto foi movido com sucesso"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.switch-team"
+msgstr "Trocar de equipe"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-info"
+msgstr "Informação da equipe"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-members"
+msgstr "Membros da equipe"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-projects"
+msgstr "Projetos da equipe"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.theme-change"
+msgstr "Tema da UI"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.title-search"
+msgstr "Resultados da pesquisa"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.type-something"
+msgstr "Digite para pesquisar resultados"
+
+#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+msgid "dashboard.update-settings"
+msgstr "Atualizar configurações"
+
+#: src/app/main/ui/settings.cljs
+msgid "dashboard.your-account-title"
+msgstr "Sua conta"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "E-mail"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-name"
+msgstr "Seu nome"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "Sua Penpot"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-cancel"
+msgstr "Cancelar"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+msgid "ds.confirm-title"
+msgstr "Tem certeza?"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "ds.updated-at"
+msgstr "Atualizado: %s"
+
+#: src/app/main/data/workspace.cljs
+msgid "errors.clipboard-not-implemented"
+msgstr "Seu navegador não pode fazer esta operação"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-already-exists"
+msgstr "E-mail já utilizado"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.email-already-validated"
+msgstr "E-mail já validado."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-invalid-confirmation"
+msgstr "E-mail de confirmação deve ser o mesmo"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.generic"
+msgstr "Algo errado aconteceu."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.google-auth-not-enabled"
+msgstr "Autenticação com google desativada no backend"
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Cor inválida"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "Autenticação por LDAP está desativada."
+
+msgid "errors.media-format-unsupported"
+msgstr "O formato da imagem não é compatível (deve ser svg, jpg ou png)."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.media-too-large"
+msgstr "A imagem é muito grande para ser inserida (deve ter menos de 5mb)."
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-mismatch"
+msgstr "Parece que o conteúdo da imagem não corresponde à extensão do arquivo."
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-not-allowed"
+msgstr "Parece que esta não é uma imagem válida."
+
+msgid "errors.network"
+msgstr "Não foi possível conectar ao servidor backend."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-invalid-confirmation"
+msgstr "A senha de confirmação deve ser a mesma"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-too-short"
+msgstr "A senha deve ter pelo menos 8 caracteres"
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr "Você deve aceitar nossos termos de serviço e política de privacidade."
+
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "errors.unexpected-error"
+msgstr "Um erro inesperado ocorreu."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "Token desconhecido"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.wrong-credentials"
+msgstr "O nome de usuário ou a senha parecem estar errados."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.wrong-old-password"
+msgstr "A senha antiga está incorreta"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-start"
+msgstr "Junte-se ao chat"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-subtitle"
+msgstr "Com vontade de falar? Converse conosco no Gitter"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "Descrição"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-go-to"
+msgstr "Ir para discussões"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "Altura da linha"
+
+msgid "handoff.attributes.typography.text-decoration.none"
+msgstr "Nenhum"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "Riscado"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "Sublinhado"
+
+msgid "handoff.attributes.typography.text-transform.lowercase"
+msgstr "Minúsculo"
+
+msgid "handoff.attributes.typography.text-transform.none"
+msgstr "Nenhum"
+
+msgid "handoff.attributes.typography.text-transform.uppercase"
+msgstr "Maiúsculo"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Código"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "Círculo"
+
+msgid "handoff.tabs.code.selected.curve"
+msgstr "Curva"
+
+msgid "handoff.tabs.code.selected.frame"
+msgstr "Prancheta"
+
+msgid "handoff.tabs.code.selected.group"
+msgstr "Grupo"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "Imagem"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code.selected.multiple"
+msgstr "%s selecionados"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "Retângulo"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "Texto"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "Informação"
+
+msgid "history.alert-message"
+msgstr "Você está vendo a versão %s"
+
+msgid "labels.accept"
+msgstr "Aceitar"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "Administrador"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.desc-message"
+msgstr ""
+"Parece que você precisa esperar um pouco e tentar novamente; estamos "
+"realizando pequenas manutenções em nossos servidores."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.main-message"
+msgstr "Bad Gateway"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.cancel"
+msgstr "Cancelar"
+
+msgid "labels.centered"
+msgstr "Centro"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "labels.comments"
+msgstr "Comentários"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.confirm-password"
+msgstr "Confirmar senha"
+
+msgid "labels.content"
+msgstr "Conteúdo"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Criar"
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "Criar nova equipe"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "Insira o nome da nova equipe"
+
+msgid "labels.custom-fonts"
+msgstr "Fontes personalizadas"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "Painel"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete"
+msgstr "Excluir"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment"
+msgstr "Excluir comentário"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment-thread"
+msgstr "Excluir tópico"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "Excluir %s arquivos"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.drafts"
+msgstr "Rascunhos"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "Editar"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.editor"
+msgstr "Editor"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.email"
+msgstr "E-mail"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-disabled"
+msgstr "Feedback desativado"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-sent"
+msgstr "Feedback enviado"
+
+msgid "labels.font-family"
+msgstr "Família da fonte"
+
+msgid "labels.font-providers"
+msgstr "Provedores de fonte"
+
+msgid "labels.font-variant"
+msgstr "Estilo"
+
+msgid "labels.fonts"
+msgstr "Fontes"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.give-feedback"
+msgstr "Enviar feedback"
+
+msgid "labels.icons"
+msgstr "Ícones"
+
+msgid "labels.images"
+msgstr "Imagens"
+
+msgid "labels.installed-fonts"
+msgstr "Fontes instaladas"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.desc-message"
+msgstr ""
+"Algo errado aconteceu. Repita a operação e se o problema persistir, entre "
+"em contato com o suporte."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.main-message"
+msgstr "Erro interno"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "labels.language"
+msgstr "Linguagem"
+
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.logout"
+msgstr "Sair"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "Membros"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.name"
+msgstr "Nome"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.new-password"
+msgstr "Nova senha"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+msgid "labels.no-comments-available"
+msgstr "Você não tem notificações de comentários pendentes"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.auth-info"
+msgstr "Você está conectado como"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.desc-message"
+msgstr "Esta página não existe ou você não tem permissão para acessá-la."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.main-message"
+msgstr "Oops!"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-files"
+msgid_plural "labels.num-of-files"
+msgstr[0] "1 arquivo"
+msgstr[1] "%s arquivos"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-projects"
+msgid_plural "labels.num-of-projects"
+msgstr[0] "1 projeto"
+msgstr[1] "% projetos"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.old-password"
+msgstr "Senha antiga"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.only-yours"
+msgstr "Apenas seu"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.owner"
+msgstr "Proprietário"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.password"
+msgstr "Senha"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.permissions"
+msgstr "Permissões"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.profile"
+msgstr "Perfil"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "Projetos"
+
+msgid "labels.recent"
+msgstr "Recente"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.release-notes"
+msgstr "Notas de lançamento"
+
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove"
+msgstr "Excluir"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.rename"
+msgstr "Renomear"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.rename-team"
+msgstr "Renomear equipe"
+
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+msgid "labels.retry"
+msgstr "Tentar novamente"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.role"
+msgstr "Cargo"
+
+msgid "labels.save"
+msgstr "Salvar"
+
+msgid "labels.search-font"
+msgstr "Buscar fonte"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.send"
+msgstr "Enviar"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.sending"
+msgstr "Enviando..."
+
+msgid "labels.upload"
+msgstr "Carregar"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Carregar fontes personalizadas"
+
+msgid "labels.uploading"
+msgstr "Carregando..."
+
+msgid "modals.delete-font.message"
+msgstr ""
+"Tem certeza que deseja excluir essa fonte? Ela não será carregada se for "
+"utilizada em um arquivo."
+
+msgid "modals.delete-font.title"
+msgstr "Excluindo fonte"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-member-confirm.accept"
+msgstr "Enviar convite"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-member.title"
+msgstr "Convidar para se juntar à equipe"
+
+msgid "modals.leave-and-reassign.forbiden"
+msgstr ""
+"Você não pode deixar a equipe se não houver outro membro para promover a "
+"proprietário. Você pode excluir a equipe."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.hint2"
+msgstr "Selecione outro membro para promover antes de sair"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.promote-and-leave"
+msgstr "Promover e sair"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.select-memeber-to-promote"
+msgstr "Selecione um membro para promover"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.title"
+msgstr "Selecione um membro para promover"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.accept"
+msgstr "Sair da equipe"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.message"
+msgstr "Tem certeza de que deseja sair deste equipe?"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.title"
+msgstr "Saindo da equipe"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.accept"
+msgstr "Promover"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.message"
+msgstr "Tem certeza de que deseja promover este usuário a proprietário?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.title"
+msgstr "Promover a proprietário"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.accept"
+msgstr "Remover como Biblioteca Compartilhada"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.message"
+msgstr "Remover “%s” como Biblioteca Compartilhada"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.accept"
+msgstr "Atualizar componente"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.cancel"
+msgstr "Cancelar"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Provedores de fonte - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Fontes - %s - Penpot"

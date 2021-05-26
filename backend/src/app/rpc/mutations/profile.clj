@@ -6,13 +6,14 @@
 
 (ns app.rpc.mutations.profile
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
    [app.emails :as eml]
+   [app.http.oauth :refer [extract-props]]
+   [app.loggers.audit :as audit]
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
@@ -59,9 +60,10 @@
     (ex/raise :type :restriction
               :code :registration-disabled))
 
-  (when-not (email-domain-in-whitelist? (cfg/get :registration-domain-whitelist) (:email params))
-    (ex/raise :type :validation
-              :code :email-domain-is-not-allowed))
+  (when-let [domains (cfg/get :registration-domain-whitelist)]
+    (when-not (email-domain-in-whitelist? domains (:email params))
+      (ex/raise :type :validation
+                :code :email-domain-is-not-allowed)))
 
   (when-not (:terms-privacy params)
     (ex/raise :type :validation
@@ -101,7 +103,9 @@
             resp   {:invitation-token token}]
         (with-meta resp
           {:transform-response ((:create session) (:id profile))
-           :before-complete (annotate-profile-register metrics profile)}))
+           :before-complete (annotate-profile-register metrics profile)
+           ::audit/props (:props profile)
+           ::audit/profile-id (:id profile)}))
 
       ;; If no token is provided, send a verification email
       (let [vtoken (tokens :generate
@@ -129,17 +133,20 @@
                     :extra-data ptoken})
 
         (with-meta profile
-          {:before-complete (annotate-profile-register metrics profile)})))))
+          {:before-complete (annotate-profile-register metrics profile)
+           ::audit/props (:props profile)
+           ::audit/profile-id (:id profile)})))))
 
 (defn email-domain-in-whitelist?
-  "Returns true if email's domain is in the given whitelist or if given
-  whitelist is an empty string."
-  [whitelist email]
-  (if (str/empty-or-nil? whitelist)
+  "Returns true if email's domain is in the given whitelist or if
+  given whitelist is an empty string."
+  [domains email]
+  (if (or (empty? domains)
+          (nil? domains))
     true
-    (let [domains (str/split whitelist #",\s*")
-          domain  (second (str/split email #"@" 2))]
-      (contains? (set domains) domain))))
+    (let [[_ candidate] (-> (str/lower email)
+                            (str/split #"@" 2))]
+      (contains? domains candidate))))
 
 (def ^:private sql:profile-existence
   "select exists (select * from profile
@@ -174,11 +181,12 @@
 (defn create-profile
   "Create the profile entry on the database with limited input
   filling all the other fields with defaults."
-  [conn {:keys [id fullname email password props is-active is-muted is-demo opts]
-         :or {is-active false is-muted false is-demo false}}]
+  [conn {:keys [id fullname email password is-active is-muted is-demo opts]
+         :or {is-active false is-muted false is-demo false}
+         :as params}]
   (let [id        (or id (uuid/next))
         is-active (if is-demo true is-active)
-        props     (db/tjson (or props {}))
+        props     (-> params extract-props db/tjson)
         password  (derive-password password)
         params    {:id id
                    :fullname fullname
@@ -270,10 +278,12 @@
                               :member-email (:email profile))
                 token  (tokens :generate claims)]
             (with-meta {:invitation-token token}
-              {:transform-response ((:create session) (:id profile))}))
+              {:transform-response ((:create session) (:id profile))
+               ::audit/profile-id (:id profile)}))
 
           (with-meta profile
-            {:transform-response ((:create session) (:id profile))}))))))
+            {:transform-response ((:create session) (:id profile))
+             ::audit/profile-id (:id profile)}))))))
 
 ;; --- Mutation: Logout
 
@@ -298,35 +308,39 @@
   [{:keys [pool metrics] :as cfg} params]
   (db/with-atomic [conn pool]
     (let [profile (-> (assoc cfg :conn conn)
-                      (login-or-register params))]
+                      (login-or-register params))
+          props   (merge
+                   (select-keys profile [:backend :fullname :email])
+                   (:props profile))]
       (with-meta profile
-        {:before-complete (annotate-profile-register metrics profile)}))))
+        {:before-complete (annotate-profile-register metrics profile)
+         ::audit/name (if (::created profile) "register" "login")
+         ::audit/props props
+         ::audit/profile-id (:id profile)}))))
 
 (defn login-or-register
-  [{:keys [conn] :as cfg} {:keys [email backend] :as params}]
-  (letfn [(info->props [info]
-            (dissoc info :name :fullname :email :backend))
-
-          (info->lang [{:keys [locale] :as info}]
+  [{:keys [conn] :as cfg} {:keys [email] :as params}]
+  (letfn [(info->lang [{:keys [locale] :as info}]
             (when (and (string? locale)
                        (not (str/blank? locale)))
               locale))
 
-          (create-profile [conn {:keys [email] :as info}]
-            (db/insert! conn :profile
-                        {:id (uuid/next)
-                         :fullname (:fullname info)
-                         :email (str/lower email)
-                         :lang (info->lang info)
-                         :auth-backend backend
-                         :is-active true
-                         :password "!"
-                         :props (db/tjson (info->props info))
-                         :is-demo false}))
+          (create-profile [conn {:keys [fullname backend email props] :as info}]
+            (let [params {:id (uuid/next)
+                          :fullname fullname
+                          :email (str/lower email)
+                          :lang (info->lang props)
+                          :auth-backend backend
+                          :is-active true
+                          :password "!"
+                          :props (db/tjson props)
+                          :is-demo false}]
+              (-> (db/insert! conn :profile params)
+                  (update :props db/decode-transit-pgobject))))
 
           (update-profile [conn info profile]
-            (let [props (d/merge (:props profile)
-                                 (info->props info))]
+            (let [props (merge (:props profile)
+                               (:props info))]
               (db/update! conn :profile
                           {:props (db/tjson props)
                            :modified-at (dt/now)}
@@ -401,7 +415,9 @@
 
 (declare update-profile-photo)
 
-(s/def ::file ::media/upload)
+(s/def ::content-type ::media/image-content-type)
+(s/def ::file (s/and ::media/upload (s/keys :req-un [::content-type])))
+
 (s/def ::update-profile-photo
   (s/keys :req-un [::profile-id ::file]))
 
@@ -605,7 +621,7 @@
 
     ;; Schedule a complete deletion of profile
     (wrk/submit! {::wrk/task :delete-profile
-                  ::wrk/dalay cfg/deletion-delay
+                  ::wrk/delay cfg/deletion-delay
                   ::wrk/conn conn
                   :profile-id profile-id})
 

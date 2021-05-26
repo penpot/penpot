@@ -10,6 +10,7 @@
    [app.config :as cfg]
    [app.util.globals :as globals]
    [app.util.storage :refer [storage]]
+   [app.util.object :as obj]
    [app.util.transit :as t]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -24,6 +25,8 @@
    {:label "Deutsch (community)" :value "de"}
    {:label "Русский (community)" :value "ru"}
    {:label "Türkçe (community)" :value "tr"}
+   {:label "Rumanian (communit)" :value "ro"}
+   {:label "Portuguese (Brazil, community)" :value "pt_br"}
    {:label "Ελληνική γλώσσα (community)" :value "el"}
    {:label "简体中文 (community)" :value "zh_cn"}])
 
@@ -51,7 +54,7 @@
         cfg/default-language))))
 
 (defonce translations #js {})
-(defonce locale (l/atom (or (get storage ::locale)
+(defonce locale (l/atom (or (get @storage ::locale)
                             (autodetect))))
 
 ;; The traslations `data` is a javascript object and should be treated
@@ -135,6 +138,13 @@
 (defn tr
   ([code] (t @locale code))
   ([code & args] (apply t @locale code args)))
+
+(mf/defc tr-html
+  {::mf/wrap-props false}
+  [props]
+  (let [label    (obj/get props "label")
+        tag-name (obj/get props "tag-name" "p")]
+    [:> tag-name {:dangerouslySetInnerHTML #js {:__html (tr label)}}]))
 
 ;; DEPRECATED
 (defn use-locale

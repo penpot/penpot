@@ -12,6 +12,9 @@
    ["date-fns/locale/el" :default dateFnsLocalesEl]
    ["date-fns/locale/fr" :default dateFnsLocalesFr]
    ["date-fns/locale/ca" :default dateFnsLocalesCa]
+   ["date-fns/locale/de" :default dateFnsLocalesDe]
+   ["date-fns/locale/ro" :default dateFnsLocalesRo]
+   ["date-fns/locale/pt-BR" :default dateFnsLocalesPtBr]
    ["date-fns/locale/en-US" :default dateFnsLocalesEnUs]
    ["date-fns/locale/zh-CN" :default dateFnsLocalesZhCn]
    ["date-fns/locale/es" :default dateFnsLocalesEs]
@@ -205,6 +208,9 @@
        :ca dateFnsLocalesCa
        :el dateFnsLocalesEl
        :ru dateFnsLocalesRu
+       :ro dateFnsLocalesRo
+       :de dateFnsLocalesDe
+       :pt_br dateFnsLocalesPtBr
        :zh_cn dateFnsLocalesZhCn})
 
 (defn timeago

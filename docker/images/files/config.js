@@ -9,3 +9,4 @@
 //var penpotOIDCClientID = "<oidc-client-id-here>";
 //var penpotLoginWithLDAP = <true|false>;
 //var penpotRegistrationEnabled = <true|false>;
+//var penpotAnalyticsEnabled = <true|false>;

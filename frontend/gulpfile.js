@@ -17,6 +17,7 @@ const mkdirp = require("mkdirp");
 const rimraf = require("rimraf");
 const sass = require("sass");
 const gettext = require("gettext-parser");
+const marked = require("marked");
 
 const mapStream = require("map-stream");
 const paths = {};
@@ -32,7 +33,7 @@ paths.dist = "./target/dist/";
 // Templates
 
 function readLocales() {
-  const langs = ["ca", "de", "el", "en", "es", "fr", "tr", "ru", "zh_cn"];
+  const langs = ["ca", "de", "el", "en", "es", "fr", "tr", "ru", "zh_CN", "pt_BR", "ro"];
   const result = {};
 
   for (let lang of langs) {
@@ -45,17 +46,35 @@ function readLocales() {
 
     for (let key of Object.keys(trdata)) {
       if (key === "") continue;
+      const comments = trdata[key].comments || {};
 
       if (l.isNil(result[key])) {
         result[key] = {};
       }
 
-      const msgstr = trdata[key].msgstr;
-      if (msgstr.length === 1) {
-        result[key][lang] = msgstr[0];
+      const isMarkdown = l.includes(comments.flag, "markdown");
+
+      const msgs = trdata[key].msgstr;
+      if (msgs.length === 1) {
+        let message = msgs[0];
+        if (isMarkdown) {
+          message = marked.parseInline(message);
+        }
+
+        result[key][lang] = message;
       } else {
-        result[key][lang] = msgstr;
+        result[key][lang] = msgs.map((item) => {
+          if (isMarkdown) {
+            return marked.parseInline(item);
+          } else {
+            return item;
+          }
+        });
       }
+      // if (key === "modals.delete-font.title") {
+      //   console.dir(trdata[key], {depth:10});
+      //   console.dir(result[key], {depth:10});
+      // }
     }
   }
 

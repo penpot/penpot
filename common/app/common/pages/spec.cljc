@@ -90,6 +90,7 @@
 ;;; COLORS
 
 (s/def :internal.color/name ::string)
+(s/def :internal.color/path (s/nilable ::string))
 (s/def :internal.color/value (s/nilable ::string))
 (s/def :internal.color/color (s/nilable ::string))
 (s/def :internal.color/opacity (s/nilable ::safe-number))
@@ -98,11 +99,11 @@
 (s/def ::color
   (s/keys :opt-un [::id
                    :internal.color/name
+                   :internal.color/path
                    :internal.color/value
                    :internal.color/color
                    :internal.color/opacity
                    :internal.color/gradient]))
-
 
 
 ;;; SHADOW EFFECT
@@ -380,6 +381,7 @@
 
 (s/def :internal.typography/id ::id)
 (s/def :internal.typography/name ::string)
+(s/def :internal.typography/path (s/nilable ::string))
 (s/def :internal.typography/font-id ::string)
 (s/def :internal.typography/font-family ::string)
 (s/def :internal.typography/font-variant-id ::string)
@@ -401,7 +403,8 @@
                    :internal.typography/font-style
                    :internal.typography/line-height
                    :internal.typography/letter-spacing
-                   :internal.typography/text-transform]))
+                   :internal.typography/text-transform]
+          :opt-un [:internal.typography/path]))
 
 (s/def :internal.file/pages
   (s/coll-of ::uuid :kind vector?))

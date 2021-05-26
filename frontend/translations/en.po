@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-14 13:44+0000\n"
-"Last-Translator: Andrés Moya <andres.moya@kaleidos.net>\n"
+"PO-Revision-Date: 2021-05-20 14:12+0000\n"
+"Last-Translator: Jan C. Borchardt <hey@jancborchardt.net>\n"
 "Language-Team: English "
 "<https://hosted.weblate.org/projects/penpot/frontend/en/>\n"
 "Language: en\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.6-dev\n"
+"X-Generator: Weblate 4.7-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -206,6 +206,29 @@ msgstr "Duplicate %s files"
 msgid "dashboard.empty-files"
 msgstr "You still have no files here"
 
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Font deleted"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "You still have no custom fonts installed."
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Any web font you upload here will be added to the font family list "
+"available at the text properties of the files of this team. Fonts with the "
+"same font family name will be grouped as a **single font family**. You can "
+"upload fonts with the following formats: **TTF, OTF and WOFF** (only one "
+"will be needed)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"You should only upload fonts you own or have license to use in Penpot. Find "
+"out more in the Content rights section of [Penpot's Terms of "
+"Service](https://penpot.app/terms.html). You also might want to read about "
+"[font licensing](https://www.typography.com/faq)."
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
 msgstr "Invite to team"
@@ -221,6 +244,9 @@ msgstr "Shared Libraries"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.loading-files"
 msgstr "loading your files …"
+
+msgid "dashboard.loading-fonts"
+msgstr "loading your fonts …"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
@@ -238,9 +264,17 @@ msgstr "Move to other team"
 msgid "dashboard.new-file"
 msgstr "+ New File"
 
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "New File"
+
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.new-project"
 msgstr "+ New project"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "New Project"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -336,7 +370,7 @@ msgstr "Your file has been moved successfully"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-files"
-msgstr "Your files has been moved successfully"
+msgstr "Your files have been moved successfully"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
@@ -765,6 +799,9 @@ msgstr "You are seeing version %s"
 msgid "labels.accept"
 msgstr "Accept"
 
+msgid "labels.add-custom-font"
+msgstr "Add custom font"
+
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
 msgstr "Admin"
@@ -813,6 +850,9 @@ msgstr "Create new team"
 msgid "labels.create-team.placeholder"
 msgstr "Enter new team name"
 
+msgid "labels.custom-fonts"
+msgstr "Custom fonts"
+
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
 msgstr "Dashboard"
@@ -857,6 +897,18 @@ msgstr "Feedback disabled"
 msgid "labels.feedback-sent"
 msgstr "Feedback sent"
 
+msgid "labels.font-family"
+msgstr "Font Family"
+
+msgid "labels.font-providers"
+msgstr "Font providers"
+
+msgid "labels.font-variants"
+msgstr "Styles"
+
+msgid "labels.fonts"
+msgstr "Fonts"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Give feedback"
@@ -870,6 +922,9 @@ msgstr "Icons"
 
 msgid "labels.images"
 msgstr "Images"
+
+msgid "labels.installed-fonts"
+msgstr "Installed fonts"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
@@ -888,6 +943,9 @@ msgstr "Language"
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "Logout"
+
+msgid "labels.manage-fonts"
+msgstr "Manage fonts"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
@@ -987,13 +1045,16 @@ msgstr "Role"
 msgid "labels.save"
 msgstr "Save"
 
+msgid "labels.search-font"
+msgstr "Search font"
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.send"
 msgstr "Send"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.sending"
-msgstr "Sending..."
+msgstr "Sending…"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.desc-message"
@@ -1030,6 +1091,15 @@ msgstr "Update"
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.update-team"
 msgstr "Update team"
+
+msgid "labels.upload"
+msgstr "Upload"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Upload custom fonts"
+
+msgid "labels.uploading"
+msgstr "Uploading…"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
@@ -1130,6 +1200,22 @@ msgstr "Are you sure you want to delete %s files?"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Deleting %s files"
+
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"Are you sure you want to delete this font style? It will not load if is "
+"used in a file."
+
+msgid "modals.delete-font-variant.title"
+msgstr "Deleting font style"
+
+msgid "modals.delete-font.message"
+msgstr ""
+"Are you sure you want to delete this font? It will not load if is used in a "
+"file."
+
+msgid "modals.delete-font.title"
+msgstr "Deleting font"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "modals.delete-page.body"
@@ -1293,6 +1379,14 @@ msgstr "Mixed"
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
 msgstr "%s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Font Providers - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Fonts - %s - Penpot"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "title.dashboard.projects"
@@ -1504,7 +1598,7 @@ msgstr "Search assets"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.selected-count"
 msgid_plural "workspace.assets.selected-count"
-msgstr[0] "%s items selected"
+msgstr[0] "%s item selected"
 msgstr[1] "%s items selected"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -1560,12 +1654,20 @@ msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Disable dynamic alignment"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "Disable scale text"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-grid"
 msgstr "Disable snap to grid"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Enable dynamic aligment"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "Enable scale text"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-grid"
@@ -2365,15 +2467,15 @@ msgstr "Curve (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.ellipse"
-msgstr "Ellipse (E)"
+msgstr "Ellipse (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.frame"
-msgstr "Artboard (A)"
+msgstr "Artboard (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.image"
-msgstr "Image (K)"
+msgstr "Image (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.move"
@@ -2381,15 +2483,15 @@ msgstr "Move"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.path"
-msgstr "Path (P)"
+msgstr "Path (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.rect"
-msgstr "Rectangle (R)"
+msgstr "Rectangle (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
-msgstr "Text (T)"
+msgstr "Text (%s)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"

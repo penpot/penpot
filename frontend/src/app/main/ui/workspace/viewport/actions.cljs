@@ -142,7 +142,7 @@
                     (not selected?)
                     (not edition)
                     (not drawing-path?)
-                    (not (#{:comments :path} drawing-tool)))
+                    (not drawing-tool))
            (st/emit! (dw/select-shape (:id @hover)))))))))
 
 (defn on-double-click
@@ -179,8 +179,8 @@
                          (dw/start-editing-selected))
 
                :else
-               ;; Do nothing
-               nil))))))
+               (st/emit! (dw/selected-to-path)
+                         (dw/start-editing-selected))))))))
 
 (defn on-context-menu
   [hover]

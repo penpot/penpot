@@ -17,13 +17,10 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
-(mf/defc image-shape
-  {::mf/wrap-props false}
-  [props]
-
-  (let [shape (unchecked-get props "shape")
-        {:keys [id x y width height rotation metadata]} shape
-        uri              (cfg/resolve-file-media metadata)
+(defn use-image-uri
+  [media]
+  (let [uri              (mf/use-memo (mf/deps (:id media))
+                                      #(cfg/resolve-file-media media))
         embed-resources? (mf/use-ctx muc/embed-ctx)
         data-uri         (mf/use-state (when (not embed-resources?) uri))]
 
@@ -38,6 +35,17 @@
               (rx/mapcat wapi/read-file-as-data-url)
               (rx/subs #(reset! data-uri  %))))))
 
+    {:uri (or @data-uri uri)
+     :loading (not (some? @data-uri))}))
+
+(mf/defc image-shape
+  {::mf/wrap-props false}
+  [props]
+
+  (let [shape (unchecked-get props "shape")
+        {:keys [id x y width height rotation metadata]} shape
+        {:keys [uri loading]} (use-image-uri metadata)]
+
     (let [transform (geom/transform-matrix shape)
           props (-> (attrs/extract-style-attrs shape)
                     (obj/merge!
@@ -46,17 +54,15 @@
                           :transform transform
                           :width width
                           :height height
-                          :preserveAspectRatio "none"}))
+                          :preserveAspectRatio "none"})
+                    (cond-> loading
+                      (obj/set! "data-loading" "true")))
+
           on-drag-start (fn [event]
                           ;; Prevent browser dragging of the image
                           (dom/prevent-default event))]
 
-      (if (nil? @data-uri)
-        [:> "rect" (obj/merge!
-                    props
-                    #js {:fill "#E8E9EA"
-                         :stroke "#000000"})]
-        [:> "image" (obj/merge!
-                     props
-                     #js {:xlinkHref @data-uri
-                          :onDragStart on-drag-start})]))))
+      [:> "image" (obj/merge!
+                   props
+                   #js {:xlinkHref uri
+                        :onDragStart on-drag-start})])))

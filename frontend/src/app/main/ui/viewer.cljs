@@ -237,7 +237,7 @@
               (events/unlistenByKey key3))))]
 
     (mf/use-effect on-mount)
-    (hooks/use-shortcuts sc/shortcuts)
+    (hooks/use-shortcuts ::viewer sc/shortcuts)
 
     [:div.viewer-layout {:class (dom/classnames :force-visible
                                                 (:show-thumbnails state))}

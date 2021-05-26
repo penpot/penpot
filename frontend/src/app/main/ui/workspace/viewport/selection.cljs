@@ -241,8 +241,7 @@
         disable-handlers  (obj/get props "disable-handlers")
         current-transform (mf/deref refs/current-transform)
 
-        selrect (-> (:selrect shape)
-                    minimum-selrect)
+        selrect (:selrect shape)
         transform (geom/transform-matrix shape {:no-flip true})]
 
     (when (not (#{:move :rotate} current-transform))
@@ -327,7 +326,7 @@
 (mf/defc single-selection-handlers
   [{:keys [shape zoom color disable-handlers on-move-selected] :as props}]
   (let [shape-id (:id shape)
-        shape (geom/transform-shape shape)
+        shape (geom/transform-shape shape {:round-coords? false})
 
         frame (mf/deref (refs/object-by-id (:frame-id shape)))
         frame (when-not (= (:id frame) uuid/zero) frame)
@@ -355,13 +354,8 @@
 
 (mf/defc selection-handlers
   {::mf/wrap [mf/memo]}
-  [{:keys [selected edition zoom disable-handlers on-move-selected] :as props}]
-  (let [;; We need remove posible nil values because on shape
-        ;; deletion many shape will reamin selected and deleted
-        ;; in the same time for small instant of time
-        shapes (->> (mf/deref (refs/objects-by-id selected))
-                    (remove nil?))
-        num (count shapes)
+  [{:keys [shapes selected edition zoom disable-handlers on-move-selected] :as props}]
+  (let [num (count shapes)
         {:keys [id type] :as shape} (first shapes)
 
         color (if (or (> num 1) (nil? (:shape-ref shape)))

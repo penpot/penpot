@@ -7,56 +7,52 @@
 (ns app.main.ui.dashboard.search
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
-
-(def result-ref
-  (l/derived (l/in [:dashboard-local :search-result]) st/state))
-
 (mf/defc search-page
   [{:keys [team search-term] :as props}]
-  (let [result (mf/deref result-ref)
-        locale (mf/deref i18n/locale)]
-
+  (let [result (mf/deref refs/dashboard-search-result)]
     (mf/use-effect
-     (mf/deps team search-term)
+     (mf/deps team)
      (fn []
-       (dom/set-html-title (t locale "title.dashboard.search"
+       (dom/set-html-title (tr "title.dashboard.search"
                               (if (:is-default team)
-                                (t locale "dashboard.your-penpot")
-                                (:name team))))
-       (when search-term
-         (st/emit! (dd/search-files {:team-id (:id team)
-                                     :search-term search-term})
-                   (dd/clear-selected-files)))))
+                                (tr "dashboard.your-penpot")
+                                (:name team))))))
+    (mf/use-effect
+     (mf/deps search-term)
+     (fn []
+       (st/emit! (dd/search {:search-term search-term})
+                 (dd/clear-selected-files))))
 
     [:*
      [:header.dashboard-header
       [:div.dashboard-title
-       [:h1 (t locale "dashboard.title-search")]]]
+       [:h1 (tr "dashboard.title-search")]]]
 
      [:section.dashboard-container.search
       (cond
         (empty? search-term)
         [:div.grid-empty-placeholder
          [:div.icon i/search]
-         [:div.text (t locale "dashboard.type-something")]]
+         [:div.text (tr "dashboard.type-something")]]
 
         (nil? result)
         [:div.grid-empty-placeholder
          [:div.icon i/search]
-         [:div.text  (t locale "dashboard.searching-for" search-term)]]
+         [:div.text (tr "dashboard.searching-for" search-term)]]
 
         (empty? result)
         [:div.grid-empty-placeholder
          [:div.icon i/search]
-         [:div.text  (t locale "dashboard.no-matches-for" search-term)]]
+         [:div.text (tr "dashboard.no-matches-for" search-term)]]
 
         :else
         [:& grid {:files result

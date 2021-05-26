@@ -163,3 +163,62 @@
     (-> data
         (update :components  #(d/mapm update-container %))
         (update :pages-index #(d/mapm update-container %)))))
+
+
+;; Remove interactions pointing to deleted frames
+(defmethod migrate 7
+  [data]
+  (letfn [(update-object [page _ object]
+            (d/update-when object :interactions
+              (fn [interactions]
+                (filterv #(get-in page [:objects (:destination %)])
+                         interactions))))
+
+          (update-page [_ page]
+            (update page :objects #(d/mapm (partial update-object page) %)))]
+
+    (update data :pages-index #(d/mapm update-page %))))
+
+
+;; Remove groups without any shape, both in pages and components
+
+(defmethod migrate 8
+  [data]
+  (letfn [(clean-parents [obj deleted?]
+            (d/update-when obj :shapes
+                           (fn [shapes]
+                             (into [] (remove deleted?) shapes))))
+
+          (obj-is-empty? [obj]
+            (and (= (:type obj) :group)
+                 (or (empty? (:shapes obj))
+                     (nil? (:selrect obj)))))
+
+          (clean-objects [objects]
+            (loop [entries (seq objects)
+                   deleted #{}
+                   result  objects]
+              (let [[id obj :as entry] (first entries)]
+                (if entry
+                  (if (obj-is-empty? obj)
+                    (recur (rest entries)
+                           (conj deleted id)
+                           (dissoc result id))
+                    (recur (rest entries)
+                           deleted
+                           result))
+                  [(count deleted)
+                   (d/mapm #(clean-parents %2 deleted) result)]))))
+
+          (clean-container [_ container]
+            (loop [n       0
+                   objects (:objects container)]
+              (let [[deleted objects] (clean-objects objects)]
+                (if (and (pos? deleted) (< n 1000))
+                  (recur (inc n) objects)
+                  (assoc container :objects objects)))))]
+
+    (-> data
+        (update :pages-index #(d/mapm clean-container %))
+        (d/update-when :components #(d/mapm clean-container %)))))
+

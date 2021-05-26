@@ -179,10 +179,10 @@
     ))
 
 (t/deftest registration-domain-whitelist
-  (let [whitelist "gmail.com, hey.com, ya.ru"]
+  (let [whitelist #{"gmail.com" "hey.com" "ya.ru"}]
     (t/testing "allowed email domain"
       (t/is (true? (profile/email-domain-in-whitelist? whitelist "username@ya.ru")))
-      (t/is (true? (profile/email-domain-in-whitelist? "" "username@somedomain.com"))))
+      (t/is (true? (profile/email-domain-in-whitelist? #{} "username@somedomain.com"))))
 
     (t/testing "not allowed email domain"
       (t/is (false? (profile/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))

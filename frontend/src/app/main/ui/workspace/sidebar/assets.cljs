@@ -213,7 +213,7 @@
           (fn [path]
             (fn [event]
               (dom/stop-propagation event)
-              (swap! state update :folded-groups 
+              (swap! state update :folded-groups
                      toggle-folded-group path))))
 
         on-group
@@ -401,7 +401,7 @@
           (fn [path]
             (fn [event]
               (dom/stop-propagation event)
-              (swap! state update :folded-groups 
+              (swap! state update :folded-groups
                      toggle-folded-group path))))
 
         on-group
@@ -427,7 +427,7 @@
       (when local?
         [:div.assets-button {:on-click add-graphic}
          i/plus
-         [:& file-uploader {:accept cm/str-media-types
+         [:& file-uploader {:accept cm/str-image-types
                             :multi true
                             :input-ref input-ref
                             :on-selected on-file-selected}]])]
@@ -499,7 +499,8 @@
 
 (mf/defc color-item
   [{:keys [color local? file-id selected-colors multi-colors? multi-assets?
-           on-asset-click on-assets-delete on-clear-selection colors locale] :as props}]
+           on-asset-click on-assets-delete on-clear-selection on-group
+           colors locale] :as props}]
   (let [rename?   (= (:color-for-rename @refs/workspace-local) (:id color))
         id        (:id color)
         input-ref (mf/use-ref)
@@ -623,16 +624,23 @@
                       [(t locale "workspace.assets.rename") rename-color-clicked])
                     (when-not (or multi-colors? multi-assets?)
                       [(t locale "workspace.assets.edit") edit-color-clicked])
-                    [(t locale "workspace.assets.delete") delete-color]]}])]))
+                    [(t locale "workspace.assets.delete") delete-color]
+                    (when-not multi-assets?
+                      [(tr "workspace.assets.group") on-group])]}])]))
 
 (mf/defc colors-box
   [{:keys [file-id local? colors locale open? selected-assets
            on-asset-click on-assets-delete on-clear-selection] :as props}]
-  (let [selected-colors     (:colors selected-assets)
+  (let [state (mf/use-state {:folded-groups empty-folded-groups})
+
+        selected-colors     (:colors selected-assets)
         multi-colors?       (> (count selected-colors) 1)
         multi-assets?       (or (not (empty? (:components selected-assets)))
                                 (not (empty? (:graphics selected-assets)))
                                 (not (empty? (:typographies selected-assets))))
+
+        groups        (group-assets colors)
+        folded-groups (:folded-groups @state)
 
         add-color
         (mf/use-callback
@@ -651,7 +659,39 @@
                          :on-accept add-color
                          :data {:color "#406280"
                                 :opacity 1}
-                         :position :right})))]
+                         :position :right})))
+
+        create-group
+        (mf/use-callback
+          (mf/deps colors selected-colors on-clear-selection file-id)
+          (fn [name]
+            (on-clear-selection)
+            (st/emit! (dwu/start-undo-transaction))
+            (apply st/emit!
+                   (->> colors
+                        (filter #(contains? selected-colors (:id %)))
+                        (map #(dwl/update-color
+                                (assoc % :name
+                                  (str name " / "
+                                       (cp/merge-path-item (:path %) (:name %))))
+                                file-id))))
+            (st/emit! (dwu/commit-undo-transaction))))
+
+        on-fold-group
+        (mf/use-callback
+          (mf/deps groups folded-groups)
+          (fn [path]
+            (fn [event]
+              (dom/stop-propagation event)
+              (swap! state update :folded-groups
+                     toggle-folded-group path))))
+
+        on-group
+        (mf/use-callback
+          (mf/deps colors selected-colors)
+          (fn [event]
+            (dom/stop-propagation event)
+            (modal/show! :create-group-dialog {:create create-group})))]
 
     [:div.asset-section
      [:div.asset-title {:class (when (not open?) "closed")}
@@ -661,24 +701,41 @@
       (when local?
         [:div.assets-button {:on-click add-color-clicked} i/plus])]
      (when open?
-       [:div.asset-list
-        (for [color colors]
-          (let [color (cond-> color
-                        (:value color) (assoc :color (:value color) :opacity 1)
-                        (:value color) (dissoc :value)
-                        true (assoc :file-id file-id))]
-            [:& color-item {:key (:id color)
-                            :color color
-                            :file-id file-id
-                            :local? local?
-                            :selected-colors selected-colors
-                            :multi-colors? multi-colors?
-                            :multi-assets? multi-assets?
-                            :on-asset-click on-asset-click
-                            :on-assets-delete on-assets-delete
-                            :on-clear-selection on-clear-selection
-                            :colors colors
-                            :locale locale}]))])]))
+       (for [group groups]
+         (let [path        (first group)
+               colors      (second group)
+               group-open? (not (contains? folded-groups path))]
+           [:*
+            (when-not (empty? path)
+              (let [[other-path last-path truncated] (cp/compact-path path 35)]
+                [:div.group-title {:class (when-not group-open? "closed")
+                                   :on-click (on-fold-group path)}
+                 [:span i/arrow-slide]
+                 (when-not (empty? other-path)
+                   [:span.dim {:title (when truncated path)}
+                    other-path "\u00A0/\u00A0"])
+                 [:span {:title (when truncated path)}
+                  last-path]]))
+            (when group-open?
+              [:div.asset-list
+               (for [color colors]
+                 (let [color (cond-> color
+                               (:value color) (assoc :color (:value color) :opacity 1)
+                               (:value color) (dissoc :value)
+                               true (assoc :file-id file-id))]
+                   [:& color-item {:key (:id color)
+                                   :color color
+                                   :file-id file-id
+                                   :local? local?
+                                   :selected-colors selected-colors
+                                   :multi-colors? multi-colors?
+                                   :multi-assets? multi-assets?
+                                   :on-asset-click on-asset-click
+                                   :on-assets-delete on-assets-delete
+                                   :on-clear-selection on-clear-selection
+                                   :on-group on-group
+                                   :colors colors
+                                   :locale locale}]))])])))]))
 
 
 ;; ---- Typography box ----
@@ -690,15 +747,19 @@
                              :menu-open? false
                              :top nil
                              :left nil
-                             :id nil})
+                             :id nil
+                             :folded-groups empty-folded-groups})
 
         local    (deref refs/workspace-local)
 
+        groups        (group-assets typographies)
+        folded-groups (:folded-groups @state)
+
         selected-typographies (:typographies selected-assets)
         multi-typographies?   (> (count selected-typographies) 1)
-        multi-assets?         (or (not (empty? (:graphics selected-assets)))
-                                  (not (empty? (:colors selected-assets)))
-                                  (not (empty? (:typographies selected-assets))))
+        multi-assets?         (or (not (empty? (:components selected-assets)))
+                                  (not (empty? (:graphics selected-assets)))
+                                  (not (empty? (:colors selected-assets))))
 
         add-typography
         (mf/use-callback
@@ -721,6 +782,38 @@
                         (d/without-keys typography [:id :name]))]
             (run! #(st/emit! (dwt/update-text-attrs {:id % :editor (get-in local [:editors %]) :attrs attrs}))
                   ids)))
+
+        create-group
+        (mf/use-callback
+          (mf/deps typographies selected-typographies on-clear-selection file-id)
+          (fn [name]
+            (on-clear-selection)
+            (st/emit! (dwu/start-undo-transaction))
+            (apply st/emit!
+                   (->> typographies
+                        (filter #(contains? selected-typographies (:id %)))
+                        (map #(dwl/update-typography
+                                (assoc % :name
+                                  (str name " / "
+                                       (cp/merge-path-item (:path %) (:name %))))
+                                file-id))))
+            (st/emit! (dwu/commit-undo-transaction))))
+
+        on-fold-group
+        (mf/use-callback
+          (mf/deps groups folded-groups)
+          (fn [path]
+            (fn [event]
+              (dom/stop-propagation event)
+              (swap! state update :folded-groups
+                     toggle-folded-group path))))
+
+        on-group
+        (mf/use-callback
+          (mf/deps typographies selected-typographies)
+          (fn [event]
+            (dom/stop-propagation event)
+            (modal/show! :create-group-dialog {:create create-group})))
 
         on-context-menu
         (mf/use-callback
@@ -788,22 +881,40 @@
                    [(t locale "workspace.assets.rename") handle-rename-typography-clicked])
                  (when-not (or multi-typographies? multi-assets?)
                    [(t locale "workspace.assets.edit") handle-edit-typography-clicked])
-                 [(t locale "workspace.assets.delete") handle-delete-typography]]}]
+                 [(t locale "workspace.assets.delete") handle-delete-typography]
+                 (when-not multi-assets?
+                   [(tr "workspace.assets.group") on-group])]}]
      (when open?
-       [:div.asset-list
-        (for [typography typographies]
-          [:& typography-entry
-           {:key (:id typography)
-            :typography typography
-            :file file
-            :read-only? (not local?)
-            :on-context-menu #(on-context-menu (:id typography) %)
-            :on-change #(handle-change typography %)
-            :selected? (contains? selected-typographies (:id typography))
-            :on-click  #(on-asset-click % (:id typography) {"" typographies}
-                                        (partial apply-typography typography))
-            :editting? (= editting-id (:id typography))
-            :focus-name? (= (:rename-typography local) (:id typography))}])])]))
+       (for [group groups]
+         (let [path         (first group)
+               typographies (second group)
+               group-open?  (not (contains? folded-groups path))]
+           [:*
+            (when-not (empty? path)
+              (let [[other-path last-path truncated] (cp/compact-path path 35)]
+                [:div.group-title {:class (when-not group-open? "closed")
+                                   :on-click (on-fold-group path)}
+                 [:span i/arrow-slide]
+                 (when-not (empty? other-path)
+                   [:span.dim {:title (when truncated path)}
+                    other-path "\u00A0/\u00A0"])
+                 [:span {:title (when truncated path)}
+                  last-path]]))
+            (when group-open?
+              [:div.asset-list
+               (for [typography typographies]
+                 [:& typography-entry
+                  {:key (:id typography)
+                   :typography typography
+                   :file file
+                   :read-only? (not local?)
+                   :on-context-menu #(on-context-menu (:id typography) %)
+                   :on-change #(handle-change typography %)
+                   :selected? (contains? selected-typographies (:id typography))
+                   :on-click  #(on-asset-click % (:id typography) {"" typographies}
+                                               (partial apply-typography typography))
+                   :editting? (= editting-id (:id typography))
+                   :focus-name? (= (:rename-typography local) (:id typography))}])])])))]))
 
 
 ;; --- Assets toolbox ----
@@ -811,37 +922,36 @@
 (defn file-colors-ref
   [id]
   (l/derived (fn [state]
-               (let [wfile (:workspace-file state)]
+               (let [wfile (:workspace-data state)]
                  (if (= (:id wfile) id)
-                   (vals (get-in wfile [:data :colors]))
+                   (vals (get-in wfile [:colors]))
                    (vals (get-in state [:workspace-libraries id :data :colors])))))
              st/state =))
-
 
 (defn file-media-ref
   [id]
   (l/derived (fn [state]
-               (let [wfile (:workspace-file state)]
+               (let [wfile (:workspace-data state)]
                  (if (= (:id wfile) id)
-                   (vals (get-in wfile [:data :media]))
+                   (vals (get-in wfile [:media]))
                    (vals (get-in state [:workspace-libraries id :data :media])))))
              st/state =))
 
 (defn file-components-ref
   [id]
   (l/derived (fn [state]
-               (let [wfile (:workspace-file state)]
+               (let [wfile (:workspace-data state)]
                  (if (= (:id wfile) id)
-                   (vals (get-in wfile [:data :components]))
+                   (vals (get-in wfile [:components]))
                    (vals (get-in state [:workspace-libraries id :data :components])))))
              st/state =))
 
 (defn file-typography-ref
   [id]
   (l/derived (fn [state]
-               (let [wfile (:workspace-file state)]
+               (let [wfile (:workspace-data state)]
                  (if (= (:id wfile) id)
-                   (vals (get-in wfile [:data :typographies]))
+                   (vals (get-in wfile [:typographies]))
                    (vals (get-in state [:workspace-libraries id :data :typographies])))))
              st/state =))
 
@@ -860,7 +970,7 @@
          (sort-by #(str/lower (:name %)) comp-fn))))
 
 (mf/defc file-library
-  [{:keys [file local?  default-open? filters locale] :as props}]
+  [{:keys [file local? default-open? filters locale] :as props}]
   (let [open-file       (mf/deref (open-file-ref (:id file)))
         open?           (-> open-file
                             :library

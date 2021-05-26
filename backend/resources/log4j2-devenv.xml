@@ -12,6 +12,11 @@
       </Policies>
       <DefaultRolloverStrategy max="9"/>
     </RollingFile>
+
+    <JeroMQ name="zmq">
+      <Property name="endpoint">tcp://localhost:45556</Property>
+      <JsonLayout complete="false" compact="true" includeTimeMillis="true" stacktraceAsString="true" properties="true" />
+    </JeroMQ>
   </Appenders>
 
   <Loggers>
@@ -30,10 +35,12 @@
 
     <Logger name="app" level="all" additivity="false">
       <AppenderRef ref="main" level="trace" />
+      <AppenderRef ref="zmq" level="debug" />
     </Logger>
 
-    <Logger name="penpot" level="fatal" additivity="false">
-      <AppenderRef ref="main" level="fatal" />
+    <Logger name="penpot" level="debug" additivity="false">
+      <AppenderRef ref="main" level="debug" />
+      <AppenderRef ref="zmq" level="debug" />
     </Logger>
 
     <Logger name="user" level="trace" additivity="false">

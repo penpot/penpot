@@ -9,14 +9,13 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.6-dev\n"
+"X-Generator: Weblate 4.7-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
 msgstr "¿Tienes ya una cuenta?"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.check-your-email"
 msgstr ""
 "Comprueba tu email y haz click en el link de verificación para comenzar a "
@@ -211,6 +210,29 @@ msgstr "Duplicar %s archivos"
 msgid "dashboard.empty-files"
 msgstr "Todavía no hay ningún archivo aquí"
 
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Fuente eliminada."
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Aun no tienes fuentes personalizadas."
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Any web font you upload here will be added to the font family list "
+"available at the text properties of the files of this team. Fonts with the "
+"same font family name will be grouped as a **single font family**. You can "
+"upload fonts with the following formats: **TTF, OTF and WOFF** (only one "
+"will be needed)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"You should only upload fonts you own or have license to use in Penpot. Find "
+"out more in the Content rights section of [Penpot's Terms of "
+"Service](https://penpot.app/terms.html). You also might want to read about "
+"[font licensing](2)."
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
 msgstr "Invitar al equipo"
@@ -226,6 +248,9 @@ msgstr "Bibliotecas Compartidas"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.loading-files"
 msgstr "cargando tus ficheros …"
+
+msgid "dashboard.loading-fonts"
+msgstr "cargando tus fuentes …"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
@@ -243,9 +268,17 @@ msgstr "Mover a otro equipo"
 msgid "dashboard.new-file"
 msgstr "+ Nuevo Archivo"
 
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Nuevo Archivo"
+
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.new-project"
 msgstr "+ Nuevo proyecto"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Nuevo Proyecto"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -772,6 +805,9 @@ msgstr "Estás viendo la versión %s"
 msgid "labels.accept"
 msgstr "Aceptar"
 
+msgid "labels.add-custom-font"
+msgstr "Añadir fuentes personalizada"
+
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
 msgstr "Administración"
@@ -815,6 +851,9 @@ msgstr "Crear"
 #: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "Crea un nuevo equipo"
+
+msgid "labels.custom-fonts"
+msgstr "Fuentes personalizadas"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
@@ -860,6 +899,18 @@ msgstr "El modulo de recepción de opiniones esta deshabilitado."
 msgid "labels.feedback-sent"
 msgstr "Opinión enviada"
 
+msgid "labels.font-family"
+msgstr "Familia de fuente"
+
+msgid "labels.font-providers"
+msgstr "Proveedores de fuentes"
+
+msgid "labels.font-variants"
+msgstr "Estilos"
+
+msgid "labels.fonts"
+msgstr "Fuentes"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Danos tu opinión"
@@ -873,6 +924,9 @@ msgstr "Iconos"
 
 msgid "labels.images"
 msgstr "Imágenes"
+
+msgid "labels.installed-fonts"
+msgstr "Fuentes instaladas"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
@@ -891,6 +945,9 @@ msgstr "Idioma"
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "Salir"
+
+msgid "labels.manage-fonts"
+msgstr "Administrar fuentes"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
@@ -990,6 +1047,9 @@ msgstr "Cargo"
 msgid "labels.save"
 msgstr "Guardar"
 
+msgid "labels.search-font"
+msgstr "Buscar fuente"
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.send"
 msgstr "Enviar"
@@ -1033,6 +1093,15 @@ msgstr "Actualizar"
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.update-team"
 msgstr "Actualiza el equipo"
+
+msgid "labels.upload"
+msgstr "Subir"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Subir fuente"
+
+msgid "labels.uploading"
+msgstr "Subiendo..."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
@@ -1133,6 +1202,22 @@ msgstr "¿Seguro que quieres eliminar %s archivos?"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Eliminando %s archivos"
+
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"Estas seguro de querer eliminar esta estilo de fuente? Dejara de cargar si "
+"es usada en algun fichero."
+
+msgid "modals.delete-font-variant.title"
+msgstr "Eliminando estilo de fuente"
+
+msgid "modals.delete-font.message"
+msgstr ""
+"Estas seguro de querer eliminar esta fuente? Dejara de cargar si es usada "
+"en algun fichero."
+
+msgid "modals.delete-font.title"
+msgstr "Eliminando fuente"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "modals.delete-page.body"
@@ -1288,6 +1373,14 @@ msgstr "Verificación de email enviada a %s. Comprueba tu correo."
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Varios"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Proveedores de fuentes - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Fuentes - %s - Penpot"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "title.dashboard.projects"
@@ -1553,12 +1646,20 @@ msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Desactivar alineamiento dinámico"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "Desactivar escalar texto"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-grid"
 msgstr "Desactivar alinear a la rejilla"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Activar alineamiento dinámico"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "Activar escalar texto"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-grid"
@@ -2360,15 +2461,15 @@ msgstr "Curva (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.ellipse"
-msgstr "Elipse (E)"
+msgstr "Elipse (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.frame"
-msgstr "Tablero (A)"
+msgstr "Tablero (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.image"
-msgstr "Imagen (K)"
+msgstr "Imagen (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.move"
@@ -2376,15 +2477,15 @@ msgstr "Mover"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.path"
-msgstr "Ruta (P)"
+msgstr "Ruta (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.rect"
-msgstr "Rectángulo (R)"
+msgstr "Rectángulo (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
-msgstr "Texto (T)"
+msgstr "Texto (%s)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"

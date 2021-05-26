@@ -32,12 +32,15 @@
 (s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 
+
 ;; --- Create File Media object (upload)
 
 (declare create-file-media-object)
 (declare select-file)
 
-(s/def ::content ::media/upload)
+(s/def ::content-type ::media/image-content-type)
+(s/def ::content (s/and ::media/upload (s/keys :req-un [::content-type])))
+
 (s/def ::is-local ::us/boolean)
 
 (s/def ::upload-file-media-object

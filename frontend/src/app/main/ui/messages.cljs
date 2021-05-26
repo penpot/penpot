@@ -18,33 +18,33 @@
 (mf/defc banner
   [{:keys [type position status controls content actions on-close] :as props}]
   [:div.banner {:class (dom/classnames
-                         :warning  (= type :warning)
-                         :error    (= type :error)
-                         :success  (= type :success)
-                         :info     (= type :info)
-                         :fixed    (= position :fixed)
-                         :floating (= position :floating)
-                         :inline   (= position :inline)
-                         :hide     (= status :hide))}
+                        :warning  (= type :warning)
+                        :error    (= type :error)
+                        :success  (= type :success)
+                        :info     (= type :info)
+                        :fixed    (= position :fixed)
+                        :floating (= position :floating)
+                        :inline   (= position :inline)
+                        :hide     (= status :hide))}
    [:div.wrapper
-     [:div.icon (case type
-                  :warning i/msg-warning
-                  :error i/msg-error
-                  :success i/msg-success
-                  :info i/msg-info
-                  i/msg-error)]
-     [:div.content {:class (dom/classnames
-                             :inline-actions (= controls :inline-actions)
-                             :bottom-actions (= controls :bottom-actions))}
-      content
-      (when (or (= controls :bottom-actions) (= controls :inline-actions))
-        [:div.actions
-          (for [action actions]
-            [:div.btn-secondary.btn-small {:key (uuid/next)
-                                           :on-click (:callback action)}
-             (:label action)])])]
-   (when (= controls :close)
-     [:div.btn-close {:on-click on-close} i/close])]])
+    [:div.icon (case type
+                 :warning i/msg-warning
+                 :error i/msg-error
+                 :success i/msg-success
+                 :info i/msg-info
+                 i/msg-error)]
+    [:div.content {:class (dom/classnames
+                           :inline-actions (= controls :inline-actions)
+                           :bottom-actions (= controls :bottom-actions))}
+     content
+     (when (or (= controls :bottom-actions) (= controls :inline-actions))
+       [:div.actions
+        (for [action actions]
+          [:div.btn-secondary.btn-small {:key (uuid/next)
+                                         :on-click (:callback action)}
+           (:label action)])])]
+    (when (= controls :close)
+      [:div.btn-close {:on-click on-close} i/close])]])
 
 (mf/defc notifications
   []

@@ -145,8 +145,8 @@
     (make-output-stream [_ opts]
       (throw (UnsupportedOperationException. "not implemented")))
 
-      clojure.lang.Counted
-      (count [_] size)))
+    clojure.lang.Counted
+    (count [_] size)))
 
 (defn content
   ([data] (content data nil))

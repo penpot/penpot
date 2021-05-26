@@ -12,6 +12,7 @@
   (:require
    [linked.set :as lks]
    [app.common.math :as mth]
+   [clojure.set :as set]
    #?(:clj [cljs.analyzer.api :as aapi])
    #?(:cljs [cljs.reader :as r]
       :clj [clojure.edn :as r])
@@ -252,15 +253,22 @@
    (map (fn [x] (f x) x) coll)))
 
 (defn merge
-  "A faster merge."
   [& maps]
-  (loop [res  (transient (or (first maps) {}))
-         maps (next maps)]
-    (if (nil? maps)
-      (persistent! res)
-      (recur (reduce-kv assoc! res (first maps))
-             (next maps)))))
+  (reduce conj (or (first maps) {}) (rest maps)))
 
+(defn distinct-xf
+  [f]
+  (fn [rf]
+    (let [seen (volatile! #{})]
+      (fn
+        ([] (rf))
+        ([result] (rf result))
+        ([result input]
+         (let [input* (f input)]
+           (if (contains? @seen input*)
+             result
+             (do (vswap! seen conj input*)
+                 (rf result input)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
@@ -448,3 +456,50 @@
         kw     (if (keyword? kw) (name kw) kw)]
     (keyword (str prefix kw))))
 
+
+(defn tap
+  "Simpilar to the tap in rxjs but for plain collections"
+  [f coll]
+  (f coll)
+  coll)
+
+(defn map-diff
+  "Given two maps returns the diff of its attributes in a map where
+  the keys will be the attributes that change and the values the previous
+  and current value. For attributes which value is a map this will be recursive.
+
+  For example:
+  (map-diff {:a 1 :b 2 :c { :foo 1 :var 2}
+            {:a 2      :c { :foo 10 } :d 10)
+
+     => { :a [1 2]
+          :b [2 nil]
+          :c { :foo [1 10]
+               :var [2 nil]}
+          :d [nil 10] }
+
+  If both maps are identical the result will be an empty map
+  "
+  [m1 m2]
+
+  (let [m1ks (keys m1)
+        m2ks (keys m2)
+        keys (set/union m1ks m2ks)
+
+        diff-attr
+        (fn [diff key]
+
+          (let [v1 (get m1 key)
+                v2 (get m2 key)]
+            (cond
+              (= v1 v2)
+              diff
+
+              (and (map? v1) (map? v2))
+              (assoc diff key (map-diff v1 v2))
+
+              :else
+              (assoc diff key [(get m1 key) (get m2 key)]))))]
+
+    (->> keys
+         (reduce diff-attr {}))))

@@ -90,12 +90,12 @@
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
   (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %)))
 
-(defn setup-hover-shapes [page-id move-stream selected objects transform selected ctrl? hover hover-ids]
+(defn setup-hover-shapes [page-id move-stream selected objects transform selected ctrl? hover hover-ids zoom]
   (let [query-point
         (mf/use-callback
          (mf/deps page-id)
          (fn [point]
-           (let [rect (gsh/center->rect point 8 8)]
+           (let [rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
              (uw/ask-buffered!
               {:cmd :selection/query
                :page-id page-id
@@ -153,14 +153,46 @@
           (utils/update-transform render-node roots modifiers)
           (utils/remove-transform render-node roots))))))
 
-(defn setup-shortcuts [path-editing? drawing-path?]
+(defn inside-vbox [vbox objects frame-id]
+  (let [frame (get objects frame-id)]
+
+    (and (some? frame)
+         (gsh/overlaps? frame vbox))))
+
+(defn setup-active-frames
+  [objects vbox hover active-frames]
+
+  (mf/use-effect
+   (mf/deps vbox)
+
+   (fn []
+     (swap! active-frames
+            (fn [active-frames]
+              (let [set-active-frames
+                    (fn [active-frames id active?]
+                      (cond-> active-frames
+                        (and active? (inside-vbox vbox objects id))
+                        (assoc id true)))]
+                (reduce-kv set-active-frames {} active-frames))))))
+
+  (mf/use-effect
+   (mf/deps @hover @active-frames)
+   (fn []
+     (let [frame-id (if (= :frame (:type @hover))
+                      (:id @hover)
+                      (:frame-id @hover))]
+       (when (not (contains? @active-frames frame-id))
+         (swap! active-frames assoc frame-id true))))))
+
+;; NOTE: this is executed on each page change, maybe we need to move
+;; this shortcuts outside the viewport?
+
+(defn setup-shortcuts
+  [path-editing? drawing-path?]
+  (hooks/use-shortcuts ::workspace wsc/shortcuts)
   (mf/use-effect
    (mf/deps path-editing? drawing-path?)
    (fn []
-     (cond
-       (or drawing-path? path-editing?)
-       (dsc/bind-shortcuts psc/shortcuts)
-
-       :else
-       (dsc/bind-shortcuts wsc/shortcuts))
-     dsc/remove-shortcuts)))
+     (when (or drawing-path? path-editing?)
+       (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
+       (st/emitf (dsc/pop-shortcuts ::path))))))

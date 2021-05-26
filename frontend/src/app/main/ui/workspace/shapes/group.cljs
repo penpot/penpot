@@ -38,7 +38,7 @@
 
             {:keys [id x y width height]} shape
 
-            childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
+            childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape) {:with-modifiers? true}))
             childs     (mf/deref childs-ref)]
 
         [:> shape-container {:shape shape}

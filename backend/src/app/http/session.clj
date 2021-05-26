@@ -106,7 +106,6 @@
 
 ;; --- STATE INIT: SESSION UPDATER
 
-(declare batch-events)
 (declare update-sessions)
 
 (s/def ::session map?)
@@ -129,7 +128,9 @@
   (l/info :action "initialize session updater"
           :max-batch-age (str (:max-batch-age cfg))
           :max-batch-size (str (:max-batch-size cfg)))
-  (let [input (batch-events cfg (::events-ch session))
+  (let [input (aa/batch (::events-ch session)
+                        {:max-batch-size (:max-batch-size cfg)
+                         :max-batch-age (inst-ms (:max-batch-age cfg))})
         mcnt  (mtx/create
                {:name "http_session_update_total"
                 :help "A counter of session update batch events."
@@ -148,36 +149,6 @@
                      :reason (name reason)
                      :count result))
           (recur))))))
-
-(defn- timeout-chan
-  [cfg]
-  (a/timeout (inst-ms (:max-batch-age cfg))))
-
-(defn- batch-events
-  [cfg in]
-  (let [out (a/chan)]
-    (a/go-loop [tch (timeout-chan cfg)
-                buf #{}]
-      (let [[val port] (a/alts! [tch in])]
-        (cond
-          (identical? port tch)
-          (if (empty? buf)
-            (recur (timeout-chan cfg) buf)
-            (do
-              (a/>! out [:timeout buf])
-              (recur (timeout-chan cfg) #{})))
-
-          (nil? val)
-          (a/close! out)
-
-          (identical? port in)
-          (let [buf (conj buf val)]
-            (if (>= (count buf) (:max-batch-size cfg))
-              (do
-                (a/>! out [:size buf])
-                (recur (timeout-chan cfg) #{}))
-              (recur tch buf))))))
-    out))
 
 (defn- update-sessions
   [{:keys [pool executor]} ids]

@@ -164,7 +164,7 @@
 (defn- make-page-ref
   [page-id]
   (l/derived (fn [state]
-               (let [page (get-in state [:workspace-file :data :pages-index page-id])]
+               (let [page (get-in state [:workspace-data :pages-index page-id])]
                  (select-keys page [:id :name])))
               st/state =))
 
@@ -198,10 +198,12 @@
 
 (mf/defc sitemap
   [{:keys [layout] :as props}]
-  (let [create      (mf/use-callback #(st/emit! dw/create-empty-page))
+  (let [file        (mf/deref refs/workspace-file)
+        create      (mf/use-callback
+                     (mf/deps file)
+                     (st/emitf (dw/create-page {:file-id (:id file)
+                                                :project-id (:project-id file)})))
         show-pages? (mf/use-state true)
-
-        file        (mf/deref refs/workspace-file)
 
         toggle-pages
         (mf/use-callback #(reset! show-pages? not))]

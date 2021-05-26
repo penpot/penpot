@@ -228,15 +228,9 @@
               {:id file-id}))
 
 
+;; --- MUTATION: update-file
+
 ;; A generic, Changes based (granular) file update method.
-
-(s/def ::changes
-  (s/coll-of map? :kind vector?))
-
-(s/def ::session-id ::us/uuid)
-(s/def ::revn ::us/integer)
-(s/def ::update-file
-  (s/keys :req-un [::id ::session-id ::profile-id ::revn ::changes]))
 
 ;; File changes that affect to the library, and must be notified
 ;; to all clients using it.
@@ -256,6 +250,31 @@
 (declare send-notifications)
 (declare update-file)
 
+(s/def ::changes
+  (s/coll-of map? :kind vector?))
+
+(s/def ::hint-origin ::us/keyword)
+(s/def ::hint-events
+  (s/every ::us/keyword :kind vector?))
+
+(s/def ::change-with-metadata
+  (s/keys :req-un [::changes]
+          :opt-un [::hint-origin
+                   ::hint-events]))
+
+(s/def ::changes-with-metadata
+  (s/every ::change-with-metadata :kind vector?))
+
+(s/def ::session-id ::us/uuid)
+(s/def ::revn ::us/integer)
+(s/def ::update-file
+  (s/and
+   (s/keys :req-un [::id ::session-id ::profile-id ::revn]
+           :opt-un [::changes ::changes-with-metadata])
+   (fn [o]
+     (or (contains? o :changes)
+         (contains? o :changes-with-metadata)))))
+
 (sv/defmethod ::update-file
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
@@ -265,7 +284,7 @@
                    (assoc params :file file)))))
 
 (defn- update-file
-  [{:keys [conn] :as cfg} {:keys [file changes session-id profile-id] :as params}]
+  [{:keys [conn] :as cfg} {:keys [file changes changes-with-metadata session-id profile-id] :as params}]
   (when (> (:revn params)
            (:revn file))
     (ex/raise :type :validation
@@ -274,15 +293,19 @@
               :context {:incoming-revn (:revn params)
                         :stored-revn (:revn file)}))
 
-  (let [file (-> file
-                 (update :revn inc)
-                 (update :data (fn [data]
-                                 (-> data
-                                     (blob/decode)
-                                     (assoc :id (:id file))
-                                     (pmg/migrate-data)
-                                     (cp/process-changes changes)
-                                     (blob/encode)))))]
+  (let [changes (if changes-with-metadata
+                  (mapcat :changes changes-with-metadata)
+                  changes)
+
+        file    (-> file
+                    (update :revn inc)
+                    (update :data (fn [data]
+                                    (-> data
+                                        (blob/decode)
+                                        (assoc :id (:id file))
+                                        (pmg/migrate-data)
+                                        (cp/process-changes changes)
+                                        (blob/encode)))))]
     ;; Insert change to the xlog
     (db/insert! conn :file-change
                 {:id (uuid/next)
@@ -300,7 +323,8 @@
                  :has-media-trimmed false}
                 {:id (:id file)})
 
-    (let [params (assoc params :file file)]
+    (let [params (-> params (assoc :file file
+                                   :changes changes))]
       ;; Send asynchronous notifications
       (send-notifications cfg params)
 

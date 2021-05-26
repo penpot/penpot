@@ -1,18 +1,18 @@
 (ns app.test-components-sync
-  (:require [cljs.test :as t :include-macros true]
-            [cljs.pprint :refer [pprint]]
-            [clojure.stacktrace :as stk]
-            [beicon.core :as rx]
-            [linked.core :as lks]
-            [app.test-helpers.events :as the]
-            [app.test-helpers.pages :as thp]
-            [app.test-helpers.libraries :as thl]
-            [app.common.geom.point :as gpt]
-            [app.common.data :as d]
-            [app.common.pages.helpers :as cph]
-            [app.main.data.workspace.common :as dwc]
-            [app.main.data.workspace.libraries :as dwl]
-            [app.main.data.workspace.libraries-helpers :as dwlh]))
+  (:require
+   [cljs.test :as t :include-macros true]
+   [cljs.pprint :refer [pprint]]
+   [beicon.core :as rx]
+   [linked.core :as lks]
+   [app.test-helpers.events :as the]
+   [app.test-helpers.pages :as thp]
+   [app.test-helpers.libraries :as thl]
+   [app.common.geom.point :as gpt]
+   [app.common.data :as d]
+   [app.common.pages.helpers :as cph]
+   [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.libraries-helpers :as dwlh]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})

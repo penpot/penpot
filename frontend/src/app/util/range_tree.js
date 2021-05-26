@@ -13,7 +13,7 @@
 "use strict";
 
 goog.provide("app.util.range_tree");
-goog.require("cljs.core")
+goog.require("cljs.core");
 
 goog.scope(function() {
     const eq = cljs.core._EQ_;
@@ -92,7 +92,7 @@ goog.scope(function() {
         }
 
         isEmpty() {
-            return this.root === null;
+            return !this.root;
         }
 
         toString() {
@@ -111,12 +111,12 @@ goog.scope(function() {
     // Tree implementation functions
 
     function isRed(branch) {
-        return branch !== null && branch.color === Color.RED;
+        return branch && branch.color === Color.RED;
     }
 
     // Insert recursively in the tree
     function recInsert (branch, value, data) {
-        if (branch === null) {
+        if (!branch) {
             const ret = new Node(value, data);
             ret.color = Color.RED;
             return ret;
@@ -144,7 +144,7 @@ goog.scope(function() {
 
     // Search for the min node
     function searchMin(branch) {
-        if (branch.left === null) {
+        if (!branch.left) {
             return branch;
         } else {
             return searchMin(branch.left);
@@ -153,7 +153,7 @@ goog.scope(function() {
 
     // Remove the lefmost node of the current branch
     function recRemoveMin(branch) {
-        if (branch.left === null) {
+        if (!branch.left) {
             return null;
         }
 
@@ -167,7 +167,7 @@ goog.scope(function() {
     // Remove the data element for the value given
     // this will not remove the node, we have to remove the empty node afterwards
     function recRemoveData(branch, value, data) {
-        if (branch === null) {
+        if (!branch) {
             // Not found
             return branch;
         } else if (branch.value === value) {
@@ -193,7 +193,7 @@ goog.scope(function() {
             if (isRed(branch.left)) {
                 branch = rotateRight(branch);
             }
-            if (value === branch.value && branch.right === null) {
+            if (value === branch.value && !branch.right) {
                 return null;
             }
             if (!isRed(branch.right) && !isRed(branch.right.left)) {
@@ -214,7 +214,7 @@ goog.scope(function() {
 
     // Retrieve all the data related to value
     function recGet(branch, value) {
-        if (branch === null) {
+        if (!branch) {
             return null;
         } else if (branch.value === value) {
             return branch.data;
@@ -226,7 +226,7 @@ goog.scope(function() {
     }
 
     function recUpdate(branch, value, oldData, newData) {
-        if (branch === null) {
+        if (!branch) {
             return branch;
         } else if (branch.value === value) {
             branch.data = branch.data.map((it) => (eq(it, oldData)) ? newData : it);
@@ -239,7 +239,7 @@ goog.scope(function() {
     }
 
     function recRangeQuery(branch, fromValue, toValue, result) {
-        if (branch === null) {
+        if (!branch) {
             return result;
         }
         if (fromValue < branch.value) {
@@ -287,7 +287,7 @@ goog.scope(function() {
 
     function moveRedLeft(branch) {
         flipColors(branch);
-        if (isRed(branch.right.left)) {
+        if (branch.right && isRed(branch.right.left)) {
             branch.right = rotateRight(branch.right);
             branch = rotateLeft(branch);
             flipColors(branch);
@@ -329,7 +329,7 @@ goog.scope(function() {
     // This will return the string representation. We don't care about internal structure
     // only the data
     function recToString(branch, result) {
-        if (branch === null) {
+        if (!branch) {
             return;
         }
 

@@ -63,8 +63,6 @@
 
    {:type :path
     :name "Path"
-    :fill-color "#000000"
-    :fill-opacity 0
     :stroke-style :solid
     :stroke-alignment :center
     :stroke-width 2

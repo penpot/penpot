@@ -1,0 +1,796 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2021-05-09 00:37+0000\n"
+"Last-Translator: Allan Nordhøy <epost@anotheragency.no>\n"
+"Language-Team: Norwegian Bokmål "
+"<https://hosted.weblate.org/projects/penpot/frontend/nb_NO/>\n"
+"Language: nb_NO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.7-dev\n"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Bekreft passord"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+#, fuzzy
+msgid "auth.email"
+msgstr "E-post"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Glemt passordet?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Fullt navn"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Skriv inn et nytt passord"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Gjenopprettelsessymbolet er ugyldig."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Passord"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Gjenopprett passord"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Endre passordet ditt"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Ingen konto enda?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+#, fuzzy
+msgid "auth.register-submit"
+msgstr "Opprett konto"
+
+#: src/app/main/ui/auth/register.cljs
+#, fuzzy
+msgid "auth.register-title"
+msgstr "Opprett konto"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Legg til som delt bibliotek"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(kopi)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Din Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Slett lag"
+
+msgid "dashboard.draft-title"
+msgstr "Kladd"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Inviter til lag"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Forlat lag"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Delte biblioteker"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Flytt til"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Flytt %s filer til"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "dashboard.move-to-other-team"
+msgstr "Flytt til annet lag"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+#, fuzzy
+msgid "dashboard.new-file"
+msgstr "+ Ny fil"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Nytt prosjekt"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s medlemmer"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Åpne fil i ny fane"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "Endre passord"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Fest/løsne"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Prosjekter"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.promote-to-owner"
+msgstr "Promoter til eier"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "Ønsker du å fjerne kontoen din?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "dashboard.remove-shared"
+msgstr "Fjern som delt bibliotek"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "Søk …"
+
+#: src/app/main/ui/dashboard/search.cljs
+#, fuzzy
+msgid "dashboard.searching-for"
+msgstr "Şøker etter «%s» …"
+
+#: src/app/main/ui/settings/options.cljs
+#, fuzzy
+msgid "dashboard.select-ui-language"
+msgstr "Velg grensesnittsspråk"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-theme"
+msgstr "Velg drakt"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.show-all-files"
+msgstr "Vis alle filer"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.switch-team"
+msgstr "Bytt lag"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-info"
+msgstr "Laginfo"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-members"
+msgstr "Lagmedlemmer"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-projects"
+msgstr "Lagprosjekter"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.theme-change"
+msgstr "Grensesnittsdrakt"
+
+#: src/app/main/ui/settings.cljs
+msgid "dashboard.your-account-title"
+msgstr "Din konto"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-name"
+msgstr "Ditt navn"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "Din Penpot"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-cancel"
+msgstr "Avbryt"
+
+#: src/app/main/ui/confirm.cljs
+#, fuzzy
+msgid "ds.confirm-ok"
+msgstr "OK"
+
+#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+msgid "ds.confirm-title"
+msgstr "Er du sikker?"
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Ugyldig farge"
+
+#, fuzzy
+msgid "errors.media-format-unsupported"
+msgstr "Bildeformatet støttes ikke (må være SVG, JPG, eller PNG)."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "Ukjent symbol"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-start"
+msgstr "Ta del i sludringen"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "Beskrivelse"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-go-to"
+msgstr "Gå til diskusjoner"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-title"
+msgstr "Lagdiskusjoner"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "Emne"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur.value"
+msgstr "Verdi"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "Last ned kildebilde"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "Høyde"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "Bredde"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "Høyde"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "Venstre"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "Bredde"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "Skygge"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "Bredde"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "Typografi"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "Skriftfamilie"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "Skriftstørrelse"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "Skriftstil"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Kode"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "Sirkel"
+
+msgid "handoff.tabs.code.selected.group"
+msgstr "Gruppe"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "Bilde"
+
+msgid "handoff.tabs.code.selected.path"
+msgstr "Sti"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "Tekst"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "Info"
+
+msgid "labels.accept"
+msgstr "Godta"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.cancel"
+msgstr "Avbryt"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.confirm-password"
+msgstr "Bekreft passord"
+
+msgid "labels.content"
+msgstr "Innhold"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Opprett"
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "Opprett nytt lag"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "Skriv inn nytt lagnavn"
+
+msgid "labels.custom-fonts"
+msgstr "Egendefinerte skrifter"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "Oversikt"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete"
+msgstr "Slett"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment"
+msgstr "Slett kommentar"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment-thread"
+msgstr "Slett tråd"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "Slett %s filer"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.drafts"
+msgstr "Kladder"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "Rediger"
+
+msgid "labels.font-family"
+msgstr "Skriftfamilie"
+
+msgid "labels.font-providers"
+msgstr "Skrifttilbydere"
+
+msgid "labels.font-variant"
+msgstr "Stil"
+
+msgid "labels.fonts"
+msgstr "Skrifter"
+
+msgid "labels.icons"
+msgstr "Ikoner"
+
+msgid "labels.images"
+msgstr "Bilder"
+
+msgid "labels.installed-fonts"
+msgstr "Installerte skrifter"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "labels.language"
+msgstr "Språk"
+
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "labels.logout"
+msgstr "Logg ut"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "Medlemmer"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.name"
+msgstr "Navn"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.new-password"
+msgstr "Nytt passord"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.auth-info"
+msgstr "Du er innlogget som"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.old-password"
+msgstr "Gammelt passord"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.owner"
+msgstr "Eier"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.password"
+msgstr "Passord"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.permissions"
+msgstr "Tilganger"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.profile"
+msgstr "Profil"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "Prosjekter"
+
+#, fuzzy
+msgid "labels.recent"
+msgstr "Nylige"
+
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove"
+msgstr "Fjern"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.rename"
+msgstr "Gi nytt navn"
+
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+msgid "labels.retry"
+msgstr "Prøv igjen"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.role"
+msgstr "Rolle"
+
+msgid "labels.save"
+msgstr "Lagre"
+
+#, fuzzy
+msgid "labels.search-font"
+msgstr "Søk etter skrift"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.send"
+msgstr "Send"
+
+#: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
+msgid "labels.sending"
+msgstr "Sender …"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.settings"
+msgstr "Innstillinger"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shared-libraries"
+msgstr "Delte bibliotek"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-all-comments"
+msgstr "Vis alle kommentarer"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.sign-out"
+msgstr "Logg ut"
+
+msgid "labels.upload"
+msgstr "Last opp"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Last opp egendefinerte skrifter"
+
+msgid "labels.uploading"
+msgstr "Laster opp …"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.write-new-comment"
+msgstr "Skriv ny kommentar"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "media.loading"
+msgstr "Laster inn bilde …"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "modals.add-shared-confirm.accept"
+msgstr "Legg til som delt bibliotek"
+
+#: src/app/main/ui/settings/change_email.cljs
+#, fuzzy
+msgid "modals.change-email.confirm-email"
+msgstr "Bekreft ny e-postadresse"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.confirm"
+msgstr "Ja, slett kontoen min"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.accept"
+msgstr "Slett samtale"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.title"
+msgstr "Slett samtale"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.accept"
+msgstr "Slett fil"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "Slett filer"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.title"
+msgstr "Slett side"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.accept"
+msgstr "Slett prosjekt"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.accept"
+msgstr "Slett medlem"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.title"
+msgstr "Slett lagmedlem"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.accept"
+msgstr "Forlat lag"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.cancel"
+msgstr "Avbryt"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "notifications.invitation-email-sent"
+msgstr "Invitasjon sendt"
+
+#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
+#, fuzzy
+msgid "notifications.profile-saved"
+msgstr "Profil lagret"
+
+#: src/app/main/ui/settings/options.cljs
+#, fuzzy
+msgid "title.settings.options"
+msgstr "Innstillinger - Penpot"
+
+#: src/app/main/ui/settings/password.cljs
+#, fuzzy
+msgid "title.settings.password"
+msgstr "Passord - Penpot"
+
+#: src/app/main/ui/settings/profile.cljs
+#, fuzzy
+msgid "title.settings.profile"
+msgstr "Profil - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "title.team-settings"
+msgstr "Innstillinger - %s - Penpot"
+
+#: src/app/main/ui/workspace.cljs
+#, fuzzy
+msgid "title.workspace"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.edit-page"
+msgstr "Rediger side"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.create-link"
+msgstr "Opprett lenke"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.remove-link"
+msgstr "Fjern lenke"
+
+msgid "workspace.assets.box-filter-graphics"
+msgstr "Grafikk"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.colors"
+msgstr "Farger"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.components"
+msgstr "Komponenter"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group"
+msgstr "Opprett en gruppe"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.delete"
+msgstr "Slett"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.edit"
+msgstr "Rediger"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.file-library"
+msgstr "Filbibliotek"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.graphics"
+msgstr "Grafikk"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group"
+msgstr "Gruppe"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group-name"
+msgstr "Gruppenavn"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.libraries"
+msgstr "Bibliotek"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename"
+msgstr "Gi nytt navn"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-id"
+msgstr "Skrift"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-size"
+msgstr "Størrelse"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-variant-id"
+msgstr "Variant"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-grid"
+msgstr "Fest til rutenett"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-grid"
+msgstr "Vis rutenett"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-layers"
+msgstr "Vis lag"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-rules"
+msgstr "Vis regler"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.add"
+msgstr "Legg til"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.colors"
+msgstr "%s farger"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.file-library"
+msgstr "Filbibliotek"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.recent-colors"
+msgstr "Nylige farger"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.save-color"
+msgstr "Lagre fargestil"
+
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.small-thumbnails"
+msgstr "Små miniatyrbilder"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.components"
+msgstr "%s komponenter"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.file-library"
+msgstr "Filbibliotek"
+
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Bakgrunn"
+
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Lag"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
+msgid "workspace.options.component"
+msgstr "Komponent"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.design"
+msgstr "Design"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.exporting-object"
+msgstr "Eksporterer …"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.columns"
+msgstr "Kolonner"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.height"
+msgstr "Høyde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.rows"
+msgstr "Rader"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.set-default"
+msgstr "Sett som forvalg"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.size"
+msgstr "Størrelse"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type"
+msgstr "Type"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.use-default"
+msgstr "Bruk forvalg"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.width"
+msgstr "Bredde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.row"
+msgstr "Rader"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.lighten"
+msgstr "Lysne"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.screen"
+msgstr "Skjerm"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.all-corners"
+msgstr "Alle hjørner"

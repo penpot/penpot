@@ -4,8 +4,8 @@
   "jcenter" {:url "https://jcenter.bintray.com/"}}
  :deps
  {org.clojure/clojure {:mvn/version "1.10.3"}
-  org.clojure/data.json {:mvn/version "2.2.1"}
-  org.clojure/core.async {:mvn/version "1.3.610"}
+  org.clojure/data.json {:mvn/version "2.2.3"}
+  org.clojure/core.async {:mvn/version "1.3.618"}
   org.clojure/tools.cli {:mvn/version "1.0.206"}
   org.clojure/clojurescript {:mvn/version "1.10.844"}
 
@@ -32,28 +32,28 @@
                                                  org.eclipse.jetty/jetty-servlet]}
   io.prometheus/simpleclient_httpserver {:mvn/version "0.9.0"}
 
-  selmer/selmer {:mvn/version "1.12.33"}
+  selmer/selmer {:mvn/version "1.12.40"}
   expound/expound {:mvn/version "0.8.9"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
 
-  io.lettuce/lettuce-core {:mvn/version "6.1.1.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "6.1.2.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.2"}
 
   info.sunng/ring-jetty9-adapter {:mvn/version "0.15.1"}
-  com.github.seancorfield/next.jdbc {:mvn/version "1.1.646"}
-  metosin/reitit-ring {:mvn/version "0.5.12"}
-  metosin/jsonista {:mvn/version "0.3.1"}
+  com.github.seancorfield/next.jdbc {:mvn/version "1.2.659"}
+  metosin/reitit-ring {:mvn/version "0.5.13"}
+  metosin/jsonista {:mvn/version "0.3.3"}
 
-  org.postgresql/postgresql {:mvn/version "42.2.19"}
+  org.postgresql/postgresql {:mvn/version "42.2.20"}
   com.zaxxer/HikariCP {:mvn/version "4.0.3"}
 
-  funcool/datoteka {:mvn/version "1.2.0"}
-  funcool/promesa {:mvn/version "6.0.0"}
-  funcool/cuerdas {:mvn/version "2020.03.26-3"}
+  funcool/datoteka {:mvn/version "2.0.0"}
+  funcool/promesa {:mvn/version "6.0.1"}
+  funcool/cuerdas {:mvn/version "2021.05.09-0"}
 
-  buddy/buddy-core {:mvn/version "1.9.0"}
-  buddy/buddy-hashers {:mvn/version "1.7.0"}
-  buddy/buddy-sign {:mvn/version "3.3.0"}
+  buddy/buddy-core {:mvn/version "1.10.1"}
+  buddy/buddy-hashers {:mvn/version "1.8.1"}
+  buddy/buddy-sign {:mvn/version "3.4.1"}
 
   lambdaisland/uri {:mvn/version "1.4.54"
                     :exclusions [org.clojure/data.json]}
@@ -69,7 +69,7 @@
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
   integrant/integrant {:mvn/version "0.8.0"}
 
-  software.amazon.awssdk/s3 {:mvn/version "2.16.44"}
+  software.amazon.awssdk/s3 {:mvn/version "2.16.62"}
 
   ;; exception printing
   io.aviso/pretty {:mvn/version "0.1.37"}
@@ -78,9 +78,9 @@
  :aliases
  {:dev
   {:extra-deps
-   {com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-    org.clojure/tools.namespace {:mvn/version "1.1.0"}
-    org.clojure/test.check {:mvn/version "1.1.0"}
+   {com.bhauman/rebel-readline {:mvn/version "RELEASE"}
+    org.clojure/tools.namespace {:mvn/version "RELEASE"}
+    org.clojure/test.check {:mvn/version "RELEASE"}
 
     fipp/fipp {:mvn/version "0.6.23"}
     criterium/criterium {:mvn/version "0.4.6"}

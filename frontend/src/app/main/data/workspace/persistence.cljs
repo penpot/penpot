@@ -14,13 +14,16 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
+   [app.main.data.fonts :as df]
    [app.main.data.media :as di]
    [app.main.data.messages :as dm]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.svg-upload :as svg]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.avatars :as avatars]
@@ -33,9 +36,11 @@
    [app.util.uri :as uu]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
+   [clojure.set :as set]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [tubax.core :as tubax]))
 
 (declare persist-changes)
 (declare persist-sychronous-changes)
@@ -86,9 +91,11 @@
                     (rx/tap on-dirty)
                     (rx/buffer-until notifier)
                     (rx/filter (complement empty?))
-                    (rx/map (fn [buf] {:file-id file-id
-                                       :changes (into [] (mapcat :changes) buf)}))
-                    (rx/map persist-changes)
+                    (rx/map (fn [buf]
+                              (->> (into [] (comp (map #(assoc % :id (uuid/next)))
+                                                  (map #(assoc % :file-id file-id)))
+                                         buf)
+                                   (persist-changes file-id))))
                     (rx/tap on-saving)
                     (rx/take-until (rx/delay 100 stoper)))
                (->> stream
@@ -109,27 +116,25 @@
                         (on-saved))))))))
 
 (defn persist-changes
-  [{:keys [file-id changes]}]
+  [file-id changes]
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-changes
     ptk/UpdateEvent
     (update [_ state]
-      (let [conj (fnil conj [])
-            chng {:id (uuid/next)
-                  :changes changes}]
-        (update-in state [:workspace-persistence :queue] conj chng)))
+      (let [conj    (fnil conj [])
+            into*   (fnil into [])]
+        (update-in state [:workspace-persistence :queue] into* changes)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [sid     (:session-id state)
             file    (get state :workspace-file)
             queue   (get-in state [:workspace-persistence :queue] [])
 
-            xf-cat  (comp (mapcat :changes))
             params  {:id (:id file)
                      :revn (:revn file)
                      :session-id sid
-                     :changes (into [] xf-cat queue)}
+                     :changes-with-metadata (into [] queue)}
 
             ids     (into #{} (map :id) queue)
 
@@ -172,7 +177,7 @@
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-synchronous-changes
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [sid     (:session-id state)
             file    (get-in state [:workspace-libraries file-id])
 
@@ -211,8 +216,7 @@
       (if (= file-id (:current-file-id state))
         (-> state
             (update-in [:workspace-file :revn] max revn)
-            (update :workspace-data cp/process-changes changes)
-            (update-in [:workspace-file :data] cp/process-changes changes))
+            (update :workspace-data cp/process-changes changes))
         (-> state
             (update-in [:workspace-libraries file-id :revn] max revn)
             (update-in [:workspace-libraries file-id :data]
@@ -256,34 +260,20 @@
   [project-id file-id]
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (->> (rx/zip (rp/query :file {:id file-id})
                    (rp/query :team-users {:file-id file-id})
                    (rp/query :project {:id project-id})
                    (rp/query :file-libraries {:file-id file-id}))
-           (rx/first)
-           (rx/map (fn [bundle] (apply bundle-fetched bundle)))))))
-
-(defn- bundle-fetched
-  [file users project libraries]
-  (ptk/reify ::bundle-fetched
-    IDeref
-    (-deref [_]
-      {:file file
-       :users users
-       :project project
-       :libraries libraries})
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state
-             :users (d/index-by :id users)
-             :workspace-undo {}
-             :workspace-project project
-             :workspace-file file
-             :workspace-data (:data file)
-             :workspace-libraries (d/index-by :id libraries)))))
-
+           (rx/take 1)
+           (rx/map (fn [[file users project libraries]]
+                     {:file file
+                      :users users
+                      :project project
+                      :libraries libraries}))
+           (rx/mapcat (fn [{:keys [project] :as bundle}]
+                        (rx/of (ptk/data-event ::bundle-fetched bundle)
+                               (df/load-team-fonts (:team-id project)))))))))
 
 ;; --- Set File shared
 
@@ -296,7 +286,7 @@
       (assoc-in state [:workspace-file :is-shared] is-shared))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [params {:id id :is-shared is-shared}]
         (->> (rp/mutation :set-file-shared params)
              (rx/ignore))))))
@@ -311,8 +301,8 @@
   (us/assert ::us/uuid team-id)
   (ptk/reify ::fetch-shared-files
     ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query :shared-files params)
+    (watch [it state stream]
+      (->> (rp/query :team-shared-files {:team-id team-id})
            (rx/map shared-files-fetched)))))
 
 (defn shared-files-fetched
@@ -331,7 +321,7 @@
   [file-id library-id]
   (ptk/reify ::link-file-to-library
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [fetched #(assoc-in %2 [:workspace-libraries (:id %1)] %1)
             params  {:file-id file-id
                      :library-id library-id}]
@@ -343,44 +333,24 @@
   [file-id library-id]
   (ptk/reify ::unlink-file-from-library
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [unlinked #(d/dissoc-in % [:workspace-libraries library-id])
             params   {:file-id file-id
                       :library-id library-id}]
         (->> (rp/mutation :unlink-file-from-library params)
              (rx/map (constantly unlinked)))))))
 
-;; --- Fetch Pages
-
-(declare page-fetched)
-
-(defn fetch-page
-  [page-id]
-  (us/verify ::us/uuid page-id)
-  (ptk/reify ::fetch-pages
-    ptk/WatchEvent
-    (watch [_ state s]
-      (->> (rp/query :page {:id page-id})
-           (rx/map page-fetched)))))
-
-(defn page-fetched
-  [{:keys [id] :as page}]
-  (us/verify ::page page)
-  (ptk/reify ::page-fetched
-    IDeref
-    (-deref [_] page)
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-pages id] page))))
-
 
 ;; --- Upload File Media objects
 
 (defn parse-svg
   [[name text]]
-  (->> (rp/query! :parsed-svg {:data text})
-       (rx/map #(assoc % :name name))))
+  (try
+    (->> (rx/of (-> (tubax/xml->clj text)
+                    (assoc :name name))))
+
+    (catch :default err
+      (rx/throw {:type :svg-parser}))))
 
 (defn fetch-svg [name uri]
   (->> (http/send! {:method :get :uri uri :mode :no-cors})
@@ -499,7 +469,7 @@
   (us/assert ::process-media-objects params)
   (ptk/reify ::process-media-objects
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (rx/concat
        (rx/of (dm/show {:content (tr "media.loading")
                         :type :info
@@ -546,7 +516,7 @@
   (us/assert ::clone-media-objects-params params)
    (ptk/reify ::clone-media-objects
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [it state stream]
        (let [{:keys [on-success on-error]
               :or {on-success identity
                    on-error identity}} (meta params)
@@ -573,3 +543,109 @@
       (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
       (update :workspace-pages dissoc id)))
 
+(def update-frame-thumbnail? (ptk/type? ::update-frame-thumbnail))
+
+(defn remove-thumbnails
+  [ids]
+  (ptk/reify ::remove-thumbnails
+    ptk/WatchEvent
+    (watch [_ state stream]
+      ;; Removes the thumbnail while it's regenerated
+      (rx/of (dch/update-shapes
+              ids
+              #(dissoc % :thumbnail)
+              {:save-undo? false})))))
+
+(defn update-frame-thumbnail
+  [frame-id]
+  (ptk/event ::update-frame-thumbnail {:frame-id frame-id}))
+
+(defn- extract-frame-changes
+  "Process a changes set in a commit to extract the frames that are channging"
+  [[event [old-objects new-objects]]]
+  (let [changes (-> event deref :changes)
+
+        extract-ids
+        (fn [{type :type :as change}]
+          (case type
+            :add-obj [(:id change)]
+            :mod-obj [(:id change)]
+            :del-obj [(:id change)]
+            :reg-objects (:shapes change)
+            :mov-objects (:shapes change)
+            []))
+
+        get-frame-id
+        (fn [id]
+          (let [shape (or (get new-objects id)
+                          (get old-objects id))]
+
+            (or (and (= :frame (:type shape)) id)
+                (:frame-id shape))))
+
+        ;; Extracts the frames and then removes nils and the root frame
+        xform (comp (mapcat extract-ids)
+                    (map get-frame-id)
+                    (remove nil?)
+                    (filter #(not= uuid/zero %)))]
+
+    (into #{} xform changes)))
+
+(defn thumbnail-change?
+  "Checks if a event is only updating thumbnails to ignore in the thumbnail generation process"
+  [event]
+  (let [changes (-> event deref :changes)
+
+        is-thumbnail-op?
+        (fn [{type :type attr :attr}]
+          (and (= type :set)
+               (= attr :thumbnail)))
+
+        is-thumbnail-change?
+        (fn [change]
+          (and (= (:type change) :mod-obj)
+               (->> change :operations (every? is-thumbnail-op?))))]
+
+    (->> changes (every? is-thumbnail-change?))))
+
+(defn watch-state-changes []
+  (ptk/reify ::watch-state-changes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stopper (->> stream
+                         (rx/filter #(or (= :app.main.data.workspace/finalize-page (ptk/type %))
+                                         (= ::watch-state-changes (ptk/type %)))))
+
+            objects-stream (->> (rx/concat
+                                 (rx/of nil)
+                                 (rx/from-atom refs/workspace-page-objects {:emit-current-value? true}))
+                                ;; We need to keep the old-objects so we can check the frame for the
+                                ;; deleted objects
+                                (rx/buffer 2 1))
+
+            frame-changes (->> stream
+                               (rx/filter dch/commit-changes?)
+                               (rx/filter (comp not thumbnail-change?))
+                               (rx/with-latest-from objects-stream)
+                               (rx/map extract-frame-changes))
+
+            frames (-> state wsh/lookup-page-objects cp/select-frames)
+            no-thumb-frames (->> frames
+                                 (filter (comp nil? :thumbnail))
+                                 (mapv :id))]
+
+        (rx/concat
+         (->> (rx/from no-thumb-frames)
+              (rx/map #(update-frame-thumbnail %)))
+
+         ;; We remove the thumbnails inmediately but defer their generation
+         (rx/merge
+          (->> frame-changes
+               (rx/take-until stopper)
+               (rx/map #(remove-thumbnails %)))
+
+          (->> frame-changes
+               (rx/take-until stopper)
+               (rx/buffer-until (->> frame-changes (rx/debounce 1000)))
+               (rx/flat-map #(reduce set/union %))
+               (rx/map #(update-frame-thumbnail %)))))))))

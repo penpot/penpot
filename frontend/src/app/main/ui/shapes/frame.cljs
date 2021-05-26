@@ -21,7 +21,7 @@
     [props]
     (let [childs     (unchecked-get props "childs")
           shape      (unchecked-get props "shape")
-          {:keys [id x y width height]} shape
+          {:keys [id width height]} shape
 
           props (-> (merge frame-default-props shape)
                     (attrs/extract-style-attrs)

@@ -58,29 +58,48 @@
 
 ;; --- Navigate (Event)
 
-(deftype Navigate [id params qparams replace]
-  ptk/UpdateEvent
-  (update [_ state]
-    (dissoc state :exception))
+(defn navigated
+  [match]
+  (ptk/reify ::navigated
+    IDeref
+    (-deref [_] match)
 
-  ptk/EffectEvent
-  (effect [_ state stream]
-    (let [router  (:router state)
-          history (:history state)
-          path    (resolve router id params qparams)]
-      (if ^boolean replace
-        (bhistory/replace-token! history path)
-        (bhistory/set-token! history path)))))
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :route match))))
+
+(defn navigate*
+  [id params qparams replace]
+  (ptk/reify ::navigate
+    IDeref
+    (-deref [_]
+      {:id id
+       :path-params params
+       :query-params qparams
+       :replace replace})
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :exception))
+
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (let [router  (:router state)
+            history (:history state)
+            path    (resolve router id params qparams)]
+        (if ^boolean replace
+          (bhistory/replace-token! history path)
+          (bhistory/set-token! history path))))))
 
 (defn nav
   ([id] (nav id nil nil))
   ([id params] (nav id params nil))
-  ([id params qparams] (Navigate. id params qparams false)))
+  ([id params qparams] (navigate* id params qparams false)))
 
 (defn nav'
   ([id] (nav id nil nil))
   ([id params] (nav id params nil))
-  ([id params qparams] (Navigate. id params qparams true)))
+  ([id params qparams] (navigate* id params qparams true)))
 
 (def navigate nav)
 

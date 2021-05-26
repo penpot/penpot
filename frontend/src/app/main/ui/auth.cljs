@@ -7,7 +7,6 @@
 (ns app.main.ui.auth
   (:require
    [app.common.uuid :as uuid]
-   [app.main.data.auth :as da]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
@@ -19,7 +18,6 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
-   [app.util.storage :refer [cache]]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]
    [app.util.timers :as ts]
@@ -56,8 +54,7 @@
         [:& recovery-request-page {:locale locale}]
 
         :auth-recovery
-        [:& recovery-page {:locale locale
-                           :params (:query-params route)}])
+        [:& recovery-page {:locale locale :params params}])
       [:div.terms-login
        [:a {:href "https://penpot.app/terms.html" :target "_blank"} "Terms of service"]
        [:span "and"]

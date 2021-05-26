@@ -1,25 +1,26 @@
 {:http {:port 3448}
  :nrepl {:port 3447}
- :jvm-opts ["-Xmx500m" "-Xms50m" "-XX:+UseSerialGC"]
+ :jvm-opts ["-Xmx700m" "-Xms100m" "-XX:+UseSerialGC" "-XX:-OmitStackTraceInFastThrow"]
  :dev-http {8888 "classpath:public"}
 
- :source-paths ["src", "vendor", "resources", "../common", "tests"]
+ :source-paths ["src", "vendor", "resources", "../common", "tests", "dev"]
  :dependencies
  [[binaryage/devtools "RELEASE"]
 
   [environ/environ "1.2.0"]
-  [metosin/reitit-core "0.5.12"]
+  [metosin/reitit-core "0.5.13"]
   [expound/expound "0.8.9"]
 
   [danlentz/clj-uuid "0.1.9"]
   [frankiesardo/linked "1.3.0"]
 
-  [funcool/beicon "2021.04.27-2"]
-  [funcool/cuerdas "2020.03.26-3"]
+  [funcool/beicon "2021.04.29-0"]
+  [funcool/cuerdas "2021.05.09-0"]
   [funcool/okulary "2020.04.14-0"]
-  [funcool/potok "3.2.0"]
+  [funcool/potok "4.0.0"]
   [funcool/promesa "6.0.0"]
-  [funcool/rumext "2021.01.26-0"]
+  [funcool/rumext "2021.05.12-1"]
+  [funcool/tubax "2021.05.20-0"]
 
   [lambdaisland/uri "1.4.54"
    :exclusions [org.clojure/data.json]]
@@ -43,9 +44,11 @@
     :worker {:entries [app.worker]
              :web-worker true
              :depends-on #{:shared}}}
+
    :compiler-options
    {:output-feature-set :es8
-    :output-wrapper false}
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
 
    :release
    {:compiler-options
@@ -59,6 +62,10 @@
   {:target :node-test
    :output-to "target/tests.js"
    :ns-regexp "^app.test-"
-   :autorun true}}}
+   :autorun true
 
+   :compiler-options
+   {:output-feature-set :es8
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}}}}
 

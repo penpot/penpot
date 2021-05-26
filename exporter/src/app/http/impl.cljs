@@ -13,25 +13,15 @@
    [app.util.transit :as t]
    [cuerdas.core :as str]
    [lambdaisland.glogi :as log]
+   [lambdaisland.uri :as u]
    [promesa.core :as p]
-   [reitit.core :as r])
-  (:import
-   goog.Uri))
-
-(defn- query-params
-  "Given goog.Uri, read query parameters into Clojure map."
-  [^Uri uri]
-  (let [^js q (.getQueryData uri)]
-    (->> q
-         (.getKeys)
-         (map (juxt keyword #(.get q %)))
-         (into {}))))
+   [reitit.core :as r]))
 
 (defn- match
   [router ctx]
-  (let [uri (.parse Uri (unchecked-get ctx "originalUrl"))]
-    (when-let [match (r/match-by-path router (.getPath ^js uri))]
-      (assoc match :query-params (query-params uri)))))
+  (let [uri (u/uri (unchecked-get ctx "originalUrl"))]
+    (when-let [match (r/match-by-path router (:path uri))]
+      (assoc match :query-params (u/query-string->map (:query uri))))))
 
 (defn- handle-error
   [error request]
@@ -48,16 +38,20 @@
            :headers {"content-type" "text/html"}
            :body (str "<pre style='font-size:16px'>" (:explain data) "</pre>\n")}))
 
+      (and (= :internal type)
+           (= :browser-not-ready code))
+      {:status 503
+       :headers {"x-error" (t/encode data)}
+       :body ""}
+
       :else
       (do
         (log/error :msg "Unexpected error"
                    :error error)
         (js/console.error error)
         {:status 500
-         :headers {"x-metadata" (t/encode {:type :unexpected
-                                           :message (ex-message error)})}
+         :headers {"x-error" (t/encode data)}
          :body ""}))))
-
 
 (defn- handle-response
   [ctx {:keys [body headers status] :or {headers {} status 200}}]
@@ -89,17 +83,16 @@
                     (t/decode))))))))
 
 (defn- wrap-handler
-  [f extra]
+  [f]
   (fn [ctx]
     (p/let [cookies (unchecked-get ctx "cookies")
             headers (parse-headers ctx)
             body    (parse-body ctx)
-            request (assoc extra
-                           :method (str/lower (unchecked-get ctx "method"))
-                           :body body
-                           :ctx ctx
-                           :headers headers
-                           :cookies cookies)]
+            request {:method (str/lower (unchecked-get ctx "method"))
+                     :body body
+                     :ctx ctx
+                     :headers headers
+                     :cookies cookies}]
       (-> (p/do! (f request))
           (p/then  (fn [rsp]
                      (when (map? rsp)
@@ -131,10 +124,10 @@
   (.createServer http @handler))
 
 (defn handler
-  [router extra]
+  [router]
   (let [instance (doto (new koa)
                    (.use (-> (router-handler router)
-                             (wrap-handler extra))))]
+                             (wrap-handler))))]
     (specify! instance
       cljs.core/IDeref
       (-deref [_]

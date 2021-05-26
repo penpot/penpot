@@ -18,6 +18,7 @@
    [app.main.ui.dashboard.files :refer [files-section]]
    [app.main.ui.dashboard.libraries :refer [libraries-page]]
    [app.main.ui.dashboard.projects :refer [projects-section]]
+   [app.main.ui.dashboard.fonts :refer [fonts-page font-providers-page]]
    [app.main.ui.dashboard.search :refer [search-page]]
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
    [app.main.ui.dashboard.team :refer [team-settings-page team-members-page]]
@@ -50,20 +51,18 @@
       (uuid-str? project-id)
       (assoc :project-id (uuid project-id)))))
 
-(defn- team-ref
-  [id]
-  (l/derived (l/in [:teams id]) st/state))
-
-(defn- projects-ref
-  [team-id]
-  (l/derived (l/in [:projects team-id]) st/state))
-
 (mf/defc dashboard-content
   [{:keys [team projects project section search-term profile] :as props}]
   [:div.dashboard-content {:on-click (st/emitf (dd/clear-selected-files))}
    (case section
      :dashboard-projects
      [:& projects-section {:team team :projects projects}]
+
+     :dashboard-fonts
+     [:& fonts-page {:team team}]
+
+     :dashboard-font-providers
+     [:& font-providers-page {:team team}]
 
      :dashboard-files
      (when project
@@ -94,16 +93,15 @@
         team-id      (:team-id params)
         search-term  (:search-term params)
 
-        projects-ref (mf/use-memo (mf/deps team-id) #(projects-ref team-id))
-        team-ref     (mf/use-memo (mf/deps team-id) #(team-ref team-id))
+        teams        (mf/deref refs/teams)
+        team         (get teams team-id)
 
-        team         (mf/deref team-ref)
-        projects     (mf/deref projects-ref)
+        projects     (mf/deref refs/dashboard-projects)
         project      (get projects project-id)]
 
     (mf/use-effect
      (mf/deps team-id)
-     (st/emitf (dd/fetch-bundle {:id team-id})))
+     (st/emitf (dd/initialize {:id team-id})))
 
     (mf/use-effect
      (mf/deps)
@@ -115,23 +113,31 @@
                     (not= "0.0" (:main @cf/version)))
            (tm/schedule 1000 #(st/emit! (modal/show {:type :release-notes :version (:main @cf/version)})))))))
 
-    [:& (mf/provider ctx/current-file-id) {:value nil}
-     [:& (mf/provider ctx/current-team-id) {:value team-id}
-      [:& (mf/provider ctx/current-project-id) {:value project-id}
-       [:& (mf/provider ctx/current-page-id) {:value nil}
+    [:& (mf/provider ctx/current-team-id) {:value team-id}
+     [:& (mf/provider ctx/current-project-id) {:value project-id}
 
-        [:section.dashboard-layout
-         [:& sidebar {:team team
-                      :projects projects
-                      :project project
-                      :profile profile
-                      :section section
-                      :search-term search-term}]
+      ;; NOTE: dashboard events and other related functions assumes
+      ;; that the team is a implicit context variable that is
+      ;; available using react context or accessing
+      ;; the :current-team-id on the state. We set the key to the
+      ;; team-id becase we want to completly refresh all the
+      ;; components on team change. Many components assumess that the
+      ;; team is already set so don't put the team into mf/deps.
+      (when team
+        [:section.dashboard-layout {:key (:id team)}
+         [:& sidebar
+          {:team team
+           :projects projects
+           :project project
+           :profile profile
+           :section section
+           :search-term search-term}]
          (when (and team (seq projects))
-           [:& dashboard-content {:projects projects
-                                  :profile profile
-                                  :project project
-                                  :section section
-                                  :search-term search-term
-                                  :team team}])]]]]]))
+           [:& dashboard-content
+            {:projects projects
+             :profile profile
+             :project project
+             :section section
+             :search-term search-term
+             :team team}])])]]))
 

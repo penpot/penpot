@@ -87,14 +87,14 @@
 
          (->> ms/mouse-position
               (rx/filter #(> (gpt/distance % initial) 2))
-              (rx/with-latest vector ms/mouse-position-ctrl)
+              (rx/with-latest vector ms/mouse-position-shift)
               (rx/switch-map
                (fn [[point :as current]]
                  (->> (snap/closest-snap-point page-id [shape] layout zoom point)
                       (rx/map #(conj current %)))))
               (rx/map
-               (fn [[_ ctrl? point]]
-                 #(update-drawing % point ctrl?)))
+               (fn [[_ shift? point]]
+                 #(update-drawing % point shift?)))
 
               (rx/take-until stoper))
          (rx/of common/handle-finish-drawing))))))

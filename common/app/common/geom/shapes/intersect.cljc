@@ -174,9 +174,17 @@
   "Checks if the given rect overlaps with the path in any point"
   [shape rect]
   
-  (let [rect-points  (gpr/rect->points rect)
+  (let [;; If paths are too complex the intersection is too expensive
+        ;; we fallback to check its bounding box otherwise the performance penalty
+        ;; is too big
+        ;; TODO: Look for ways to optimize this operation
+        simple? (> (count (:content shape)) 100)
+
+        rect-points  (gpr/rect->points rect)
         rect-lines   (points->lines rect-points)
-        path-lines   (gpp/path->lines shape)
+        path-lines   (if simple?
+                       (points->lines (:points shape))
+                       (gpp/path->lines shape))
         start-point (-> shape :content (first) :params (gpt/point))]
     
     (or (is-point-inside-nonzero? (first rect-points) path-lines)

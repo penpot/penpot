@@ -8,7 +8,6 @@
   (:require
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.main.data.auth :as da]
    [app.main.data.users :as du]
    [app.main.data.messages :as dm]
    [app.main.store :as st]
@@ -93,7 +92,7 @@
            (let [data (with-meta (:clean-data @form)
                         {:on-error (partial on-error form)
                          :on-success (partial on-success form)})]
-             (st/emit! (da/register data)))))]
+             (st/emit! (du/register data)))))]
 
 
     [:& fm/form {:on-submit on-submit
@@ -158,7 +157,7 @@
     (when cfg/allow-demo-users
       [:div.link-entry
        [:span (tr "auth.create-demo-profile") " "]
-       [:a {:on-click #(st/emit! da/create-demo-profile)
+       [:a {:on-click #(st/emit! (du/create-demo-profile))
             :tab-index "5"}
         (tr "auth.create-demo-account")]])
 

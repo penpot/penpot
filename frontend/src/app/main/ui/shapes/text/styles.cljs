@@ -65,9 +65,7 @@
         font-id         (:font-id data (:font-id txt/default-text-attrs))
         font-variant-id (:font-variant-id data)
 
-        font-family     (:font-family data)
         font-size       (:font-size data)
-
         fill-color      (:fill-color data)
         fill-opacity    (:fill-opacity data)
 
@@ -77,7 +75,8 @@
         ;;            (uc/hex->rgba fill-color fill-opacity))
 
         [r g b a]       (uc/hex->rgba fill-color fill-opacity)
-        text-color      (str/format "rgba(%s, %s, %s, %s)" r g b a)
+        text-color      (when (and (some? fill-color) (some? fill-opacity))
+                          (str/format "rgba(%s, %s, %s, %s)" r g b a))
         fontsdb         (deref fonts/fontsdb)
 
         base            #js {:textDecoration text-decoration
@@ -89,10 +88,10 @@
       (let [text-color (-> (update gradient :type keyword)
                            (uc/gradient->css))]
         (-> base
-            (obj/set! "background" "var(--text-color)")
+            (obj/set! "--text-color" text-color)
+            (obj/set! "backgroundImage" "var(--text-color)")
             (obj/set! "WebkitTextFillColor" "transparent")
-            (obj/set! "WebkitBackgroundClip" "text")
-            (obj/set! "--text-color" text-color))))
+            (obj/set! "WebkitBackgroundClip" "text"))))
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
@@ -106,14 +105,15 @@
                (pos? (alength font-id)))
       (fonts/ensure-loaded! font-id)
       (let [font (get fontsdb font-id)]
-        (let [font-family (or (:family font)
-                              (obj/get data "fontFamily"))
+        (let [font-family  (str/quote
+                            (or (:family font)
+                                (:font-family data)))
               font-variant (d/seek #(= font-variant-id (:id %))
                                    (:variants font))
-              font-style  (or (:style font-variant)
-                              (obj/get data "fontStyle"))
-              font-weight (or (:weight font-variant)
-                              (obj/get data "fontWeight"))]
+              font-style   (or (:style font-variant)
+                               (:font-style data))
+              font-weight  (or (:weight font-variant)
+                               (:font-weight data))]
           (obj/set! base "fontFamily" font-family)
           (obj/set! base "fontStyle" font-style)
           (obj/set! base "fontWeight" font-weight))))

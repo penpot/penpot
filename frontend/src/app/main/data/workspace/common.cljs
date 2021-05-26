@@ -40,7 +40,7 @@
   [{:keys [file] :as bundle}]
   (ptk/reify ::setup-selection-index
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [msg {:cmd :initialize-indices
                  :file-id (:id file)
                  :data (:data file)}]
@@ -112,7 +112,7 @@
 (def undo
   (ptk/reify ::undo
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
         ;; Editors handle their own undo's
@@ -123,12 +123,15 @@
             (when-not (or (empty? items) (= index -1))
               (let [changes (get-in items [index :undo-changes])]
                 (rx/of (dwu/materialize-undo changes (dec index))
-                       (dch/commit-changes changes [] {:save-undo? false}))))))))))
+                       (dch/commit-changes {:redo-changes changes
+                                            :undo-changes []
+                                            :save-undo? false
+                                            :origin it}))))))))))
 
 (def redo
   (ptk/reify ::redo
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
         (when-not (or (some? edition) (not-empty drawing))
@@ -138,7 +141,10 @@
             (when-not (or (empty? items) (= index (dec (count items))))
               (let [changes (get-in items [(inc index) :redo-changes])]
                 (rx/of (dwu/materialize-undo changes (inc index))
-                       (dch/commit-changes changes [] {:save-undo? false}))))))))))
+                       (dch/commit-changes {:redo-changes changes
+                                            :undo-changes []
+                                            :origin it
+                                            :save-undo? false}))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shapes
@@ -174,7 +180,7 @@
       (assoc-in state [:workspace-local :selected] ids))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
        (let [page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)]
          (rx/of (expand-all-parents ids objects))))))
@@ -196,7 +202,7 @@
           state)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [objects (wsh/lookup-page-objects state)]
         (->> stream
              (rx/filter interrupt?)
@@ -276,7 +282,7 @@
   (us/verify ::shape-attrs attrs)
   (ptk/reify ::add-shape
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
 
@@ -296,7 +302,9 @@
                                      (assoc :name name)))]
 
         (rx/concat
-         (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
+         (rx/of (dch/commit-changes {:redo-changes rchanges
+                                     :undo-changes uchanges
+                                     :origin it})
                 (select-shapes (d/ordered-set id)))
          (when (= :text (:type attrs))
            (->> (rx/of (start-edition-mode id))
@@ -305,7 +313,7 @@
 (defn move-shapes-into-frame [frame-id shapes]
   (ptk/reify ::move-shapes-into-frame
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
             to-move-shapes (->> (cp/select-toplevel-shapes objects {:include-frames? false})
@@ -329,15 +337,16 @@
                                    :page-id page-id
                                    :index index
                                    :shapes [shape-id]})))]
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
-
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
 
 (defn delete-shapes
   [ids]
   (us/assert (s/coll-of ::us/uuid) ids)
   (ptk/reify ::delete-shapes
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
 
@@ -366,6 +375,12 @@
                     #{}
                     ids)
 
+            interacting-shapes
+            (filter (fn [shape]
+                      (let [interactions (:interactions shape)]
+                        (some ids (map :destination interactions))))
+                    (vals objects))
+
             rchanges
             (d/concat
               (reduce (fn [res id]
@@ -391,7 +406,18 @@
                       :operations [{:type :set
                                     :attr :masked-group?
                                     :val false}])
-                   groups-to-unmask))
+                   groups-to-unmask)
+              (map #(array-map
+                      :type :mod-obj
+                      :page-id page-id
+                      :id (:id %)
+                      :operations [{:type :set
+                                    :attr :interactions
+                                    :val (vec (remove (fn [interaction]
+                                                        (contains? ids (:destination interaction)))
+                                                      (:interactions %)))}])
+                   interacting-shapes))
+
 
             uchanges
             (d/concat
@@ -430,14 +456,23 @@
                       :operations [{:type :set
                                     :attr :masked-group?
                                     :val true}])
-                   groups-to-unmask))]
+                   groups-to-unmask)
+              (map #(array-map
+                      :type :mod-obj
+                      :page-id page-id
+                      :id (:id %)
+                      :operations [{:type :set
+                                    :attr :interactions
+                                    :val (:interactions %)}])
+                   interacting-shapes))]
 
         ;; (println "================ rchanges")
         ;; (cljs.pprint/pprint rchanges)
         ;; (println "================ uchanges")
         ;; (cljs.pprint/pprint uchanges)
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
-
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
 
 ;; --- Add shape to Workspace
 
@@ -450,7 +485,7 @@
   [type frame-x frame-y data]
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [{:keys [width height]} data
 
             [vbc-x vbc-y] (viewport-center state)
@@ -470,7 +505,7 @@
   [image {:keys [x y]}]
   (ptk/reify ::image-uploaded
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [{:keys [name width height id mtype]} image
             shape {:name name
                    :width width

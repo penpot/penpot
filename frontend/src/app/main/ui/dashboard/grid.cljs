@@ -21,11 +21,12 @@
    [app.main.worker :as wrk]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.i18n :as i18n :refer [t tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.timers :as ts]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
@@ -55,76 +56,66 @@
   [{:keys [modified-at]}]
   (let [locale (mf/deref i18n/locale)
         time   (dt/timeago modified-at {:locale locale})]
-    (str (t locale "ds.updated-at" time))))
+    (str (tr "ds.updated-at" time))))
+
+(defn create-counter-element
+  [element file-count]
+  (let [counter-el (dom/create-element "div")]
+    (dom/set-property! counter-el "class" "drag-counter")
+    (dom/set-text! counter-el (str file-count))
+    counter-el))
 
 (mf/defc grid-item
   {:wrap [mf/memo]}
-  [{:keys [id file selected-files navigate?] :as props}]
-  (let [local     (mf/use-state {:menu-open false
-                                 :menu-pos nil
-                                 :edition false})
-        locale    (mf/deref i18n/locale)
-        item-ref  (mf/use-ref)
-        menu-ref  (mf/use-ref)
-        selected? (contains? selected-files id)
-
-        selected-file-objs
-        (deref refs/dashboard-selected-file-objs)
-          ;; not needed to subscribe and repaint if changed
+  [{:keys [file navigate?] :as props}]
+  (let [file-id        (:id file)
+        local          (mf/use-state {:menu-open false
+                                      :menu-pos nil
+                                      :edition false})
+        selected-files (mf/deref refs/dashboard-selected-files)
+        item-ref       (mf/use-ref)
+        menu-ref       (mf/use-ref)
+        selected?      (contains? selected-files file-id)
 
         on-menu-close
         (mf/use-callback
           #(swap! local assoc :menu-open false))
 
         on-select
-        (mf/use-callback
-          (mf/deps id selected? selected-files @local)
-          (fn [event]
-            (when (and (or (not selected?) (> (count selected-files) 1))
-                       (not (:menu-open @local)))
-              (dom/stop-propagation event)
-              (let [shift? (kbd/shift? event)]
-                (when-not shift?
-                  (st/emit! (dd/clear-selected-files)))
-                (st/emit! (dd/toggle-file-select {:file file}))))))
+        (fn [event]
+          (when (and (or (not selected?) (> (count selected-files) 1))
+                     (not (:menu-open @local)))
+            (dom/stop-propagation event)
+            (let [shift? (kbd/shift? event)]
+              (when-not shift?
+                (st/emit! (dd/clear-selected-files)))
+              (st/emit! (dd/toggle-file-select file)))))
 
         on-navigate
         (mf/use-callback
-         (mf/deps id)
+         (mf/deps file)
          (fn [event]
            (let [menu-icon (mf/ref-val menu-ref)
                  target    (dom/get-target event)]
              (when-not (dom/child? target menu-icon)
-               (let [pparams {:project-id (:project-id file)
-                              :file-id (:id file)}
-                     qparams {:page-id (first (get-in file [:data :pages]))}]
-                 (st/emit! (rt/nav :workspace pparams qparams)))))))
-
-        create-counter
-        (mf/use-callback
-          (fn [element file-count]
-            (let [counter-el (dom/create-element "div")]
-              (dom/set-property! counter-el "class" "drag-counter")
-              (dom/set-text! counter-el (str file-count))
-              counter-el)))
+               (st/emit! (dd/go-to-workspace file))))))
 
         on-drag-start
         (mf/use-callback
           (mf/deps selected-files)
           (fn [event]
-            (let [offset (dom/get-offset-position (.-nativeEvent event))
+            (let [offset          (dom/get-offset-position (.-nativeEvent event))
 
                   select-current? (not (contains? selected-files (:id file)))
 
-                  item-el    (mf/ref-val item-ref)
-                  counter-el (create-counter item-el
-                                             (if select-current?
-                                               1
-                                               (count selected-files)))]
-
+                  item-el         (mf/ref-val item-ref)
+                  counter-el      (create-counter-element item-el
+                                                          (if select-current?
+                                                            1
+                                                            (count selected-files)))]
               (when select-current?
                 (st/emit! (dd/clear-selected-files))
-                (st/emit! (dd/toggle-file-select {:file file})))
+                (st/emit! (dd/toggle-file-select file)))
 
               (dnd/set-data! event "penpot/files" "dummy")
               (dnd/set-allowed-effect! event "move")
@@ -135,7 +126,7 @@
               ;; afterwards, in the next render cycle.
               (dom/append-child! item-el counter-el)
               (dnd/set-drag-image! event item-el (:x offset) (:y offset))
-              (ts/raf #(.removeChild item-el counter-el)))))
+              (ts/raf #(.removeChild ^js item-el counter-el)))))
 
         on-menu-click
         (mf/use-callback
@@ -146,10 +137,11 @@
              (let [shift? (kbd/shift? event)]
                (when-not shift?
                  (st/emit! (dd/clear-selected-files)))
-               (st/emit! (dd/toggle-file-select {:file file}))))
+               (st/emit! (dd/toggle-file-select file))))
            (let [position (dom/get-client-position event)]
-             (swap! local assoc :menu-open true
-                                :menu-pos position))))
+             (swap! local assoc
+                    :menu-open true
+                    :menu-pos position))))
 
         edit
         (mf/use-callback
@@ -168,19 +160,20 @@
                   :menu-open false)))]
 
     (mf/use-effect
-      (mf/deps selected? local)
-      (fn []
-        (when (and (not selected?) (:menu-open @local))
-          (swap! local assoc :menu-open false))))
+     (mf/deps selected? local)
+     (fn []
+       (when (and (not selected?) (:menu-open @local))
+         (swap! local assoc :menu-open false))))
 
-    [:div.grid-item.project-th {:class (dom/classnames
-                                         :selected selected?)
-                                :ref item-ref
-                                :draggable true
-                                :on-click on-select
-                                :on-double-click on-navigate
-                                :on-drag-start on-drag-start
-                                :on-context-menu on-menu-click}
+    [:div.grid-item.project-th
+     {:class (dom/classnames :selected selected?)
+      :ref item-ref
+      :draggable true
+      :on-click on-select
+      :on-double-click on-navigate
+      :on-drag-start on-drag-start
+      :on-context-menu on-menu-click}
+
      [:div.overlay]
      [:& grid-item-thumbnail {:file file}]
      (when (:is-shared file)
@@ -198,7 +191,7 @@
         :on-click on-menu-click}
        i/actions
        (when selected?
-         [:& file-menu {:files selected-file-objs
+         [:& file-menu {:files (vals selected-files)
                         :show? (:menu-open @local)
                         :left (+ 24 (:x (:menu-pos @local)))
                         :top (:y (:menu-pos @local))
@@ -223,28 +216,24 @@
 
 (mf/defc grid
   [{:keys [id opts files] :as props}]
-  (let [locale           (mf/deref i18n/locale)
-        selected-files   (mf/deref refs/dashboard-selected-files)]
-    [:section.dashboard-grid
-     (cond
-       (nil? files)
-       [:& loading-placeholder]
+  [:section.dashboard-grid
+   (cond
+     (nil? files)
+     [:& loading-placeholder]
 
-       (seq files)
-       [:div.grid-row
-        (for [item files]
-          [:& grid-item
-           {:id (:id item)
-            :file item
-            :selected-files selected-files
-            :key (:id item)
-            :navigate? true}])]
+     (seq files)
+     [:div.grid-row
+      (for [item files]
+        [:& grid-item
+         {:file item
+          :key (:id item)
+          :navigate? true}])]
 
-       :else
-       [:& empty-placeholder])]))
+     :else
+     [:& empty-placeholder])])
 
 (mf/defc line-grid-row
-  [{:keys [locale files team-id selected-files on-load-more dragging?] :as props}]
+  [{:keys [files team-id selected-files on-load-more dragging?] :as props}]
   (let [rowref           (mf/use-ref)
 
         width            (mf/use-state nil)
@@ -267,17 +256,19 @@
 
     (mf/use-effect
       (fn []
-        (let [node   (mf/ref-val rowref)
-              obs    (new js/ResizeObserver
-                          (fn [entries x]
-                            (ts/raf #(let [row (first entries)
-                                           row-rect (.-contentRect ^js row)
-                                           row-width (.-width ^js row-rect)]
-                                       (reset! width row-width)))))]
-
-          (.observe ^js obs node)
+        (let [node (mf/ref-val rowref)
+              mnt? (volatile! true)
+              sub  (->> (wapi/observe-resize node)
+                        (rx/observe-on :af)
+                        (rx/subs (fn [entries]
+                                   (let [row (first entries)
+                                         row-rect (.-contentRect ^js row)
+                                         row-width (.-width ^js row-rect)]
+                                     (when @mnt?
+                                       (reset! width row-width))))))]
           (fn []
-            (.disconnect ^js obs)))))
+            (vreset! mnt? false)
+            (rx/dispose! sub)))))
 
     [:div.grid-row.no-wrap {:ref rowref}
      (when dragging?
@@ -294,12 +285,11 @@
        [:div.grid-item.placeholder {:on-click on-load-more}
         [:div.placeholder-icon i/arrow-down]
         [:div.placeholder-label
-         (t locale "dashboard.show-all-files")]])]))
+         (tr "dashboard.show-all-files")]])]))
 
 (mf/defc line-grid
   [{:keys [project-id team-id opts files on-load-more] :as props}]
-  (let [locale (mf/deref i18n/locale)
-        dragging?        (mf/use-state false)
+  (let [dragging?        (mf/use-state false)
 
         selected-files   (mf/deref refs/dashboard-selected-files)
         selected-project (mf/deref refs/dashboard-selected-project)
@@ -327,6 +317,12 @@
             (when-not (dnd/from-child? e)
               (reset! dragging? false))))
 
+        on-drop-success
+        (fn []
+          (st/emit! (dm/success (tr "dashboard.success-move-file"))
+                    (dd/fetch-recent-files)
+                    (dd/clear-selected-files)))
+
         on-drop
         (mf/use-callback
           (mf/deps files selected-files)
@@ -335,11 +331,7 @@
             (when (not= selected-project project-id)
               (let [data  {:ids selected-files
                            :project-id project-id}
-
-                    mdata {:on-success
-                           (st/emitf (dm/success (tr "dashboard.success-move-file"))
-                                     (dd/fetch-recent-files {:team-id team-id})
-                                     (dd/clear-selected-files))}]
+                    mdata {:on-success on-drop-success}]
                 (st/emit! (dd/move-files (with-meta data mdata)))))))]
 
     [:section.dashboard-grid {:on-drag-enter on-drag-enter
@@ -355,8 +347,7 @@
                           :team-id team-id
                           :selected-files selected-files
                           :on-load-more on-load-more
-                          :dragging? @dragging?
-                          :locale locale}]
+                          :dragging? @dragging?}]
 
        :else
        [:& empty-placeholder {:dragging? @dragging?}])]))

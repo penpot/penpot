@@ -62,7 +62,7 @@
   "Given a font and the variant-id, retrieves the style CSS for it."
   [{:keys [id backend family variants] :as font} font-variant-id]
   (if (= :google backend)
-    (let [uri (fonts/gfont-url family [{:id font-variant-id}])]
+    (let [uri (fonts/generate-gfonts-url {:family family :variants [{:id font-variant-id}]})]
       (->> (http/send! {:method :get
                         :mode :cors
                         :omit-default-headers true

@@ -34,6 +34,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.main.streams :as ms]
+   [app.main.worker :as uw]
    [app.util.http :as http]
    [app.util.i18n :as i18n]
    [app.util.logging :as log]
@@ -72,6 +73,7 @@
     :rules
     :display-grid
     :snap-grid
+    :scale-text
     :dynamic-alignment})
 
 (s/def ::layout-flags (s/coll-of ::layout-flag))
@@ -132,7 +134,7 @@
                 (or layout default-layout))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (if (and layout-name (contains? layout-names layout-name))
         (rx/of (ensure-layout layout-name))
         (rx/of (ensure-layout :layers))))))
@@ -151,51 +153,48 @@
              :workspace-presence {}))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (rx/merge
        (rx/of (dwp/fetch-bundle project-id file-id))
 
        ;; Initialize notifications (websocket connection) and the file persistence
        (->> stream
             (rx/filter (ptk/type? ::dwp/bundle-fetched))
-            (rx/first)
-            (rx/mapcat #(rx/of (dwn/initialize file-id)
-                               (dwp/initialize-file-persistence file-id))))
-
-       ;; Initialize Indexes (webworker)
-       (->> stream
-            (rx/filter (ptk/type? ::dwp/bundle-fetched))
+            (rx/take 1)
             (rx/map deref)
-            (rx/map dwc/initialize-indices)
-            (rx/first))
+            (rx/mapcat (fn [{:keys [project] :as bundle}]
+                         (rx/merge
+                          (rx/of (dwn/initialize file-id)
+                                 (dwp/initialize-file-persistence file-id)
+                                 (dwc/initialize-indices bundle))
 
-       ;; Mark file initialized when indexes are ready
-       (->> stream
-            (rx/filter #(= ::dwc/index-initialized %))
-            (rx/first)
-            (rx/map (fn []
-                      (file-initialized project-id file-id))))
-
-       ))))
+                          (->> stream
+                               (rx/filter #(= ::dwc/index-initialized %))
+                               (rx/first)
+                               (rx/map #(file-initialized bundle)))))))))))
 
 (defn- file-initialized
-  [project-id file-id]
+  [{:keys [file users project libraries] :as bundle}]
   (ptk/reify ::file-initialized
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-file
-              (fn [file]
-                (if (= (:id file) file-id)
-                  (assoc file :initialized true)
-                  file))))
+      (assoc state
+             :current-team-id (:team-id project)
+             :users (d/index-by :id users)
+             :workspace-undo {}
+             :workspace-project project
+             :workspace-file (assoc file :initialized true)
+             :workspace-data (:data file)
+             :workspace-libraries (d/index-by :id libraries)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
-      (let [ignore-until (get-in state [:workspace-file :ignore-sync-until])
+    (watch [it state stream]
+      (let [file-id       (:id file)
+            ignore-until  (:ignore-sync-until file)
             needs-update? (some #(and (> (:modified-at %) (:synced-at %))
                                       (or (not ignore-until)
                                           (> (:modified-at %) ignore-until)))
-                                (vals (get state :workspace-libraries)))]
+                                libraries)]
         (when needs-update?
           (rx/of (dwl/notify-sync-file file-id)))))))
 
@@ -211,39 +210,43 @@
               :workspace-persistence))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (rx/of (dwn/finalize file-id)
              ::dwp/finalize))))
 
+(declare go-to-page)
 
 (defn initialize-page
   [page-id]
+  (us/assert ::us/uuid page-id)
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
       (let [;; we maintain a cache of page state for user convenience
             ;; with the exception of the selection; when user abandon
             ;; the current page, the selection is lost
-            local      (-> state
-                           (get-in [:workspace-cache page-id] workspace-local-default)
-                           (assoc :selected (d/ordered-set)))
-            page       (-> (get-in state [:workspace-data :pages-index page-id])
-                           (select-keys [:id :name]))]
-        (assoc state
-               :current-page-id page-id   ; mainly used by events
-               :trimmed-page page
-               :workspace-local local)))))
+
+            page    (get-in state [:workspace-data :pages-index page-id])
+            local   (-> state
+                        (get-in [:workspace-cache page-id] workspace-local-default)
+                        (assoc :selected (d/ordered-set)))]
+        (-> state
+            (assoc :current-page-id page-id)
+            (assoc :trimmed-page (select-keys page [:id :name]))
+            (assoc :workspace-local local)
+            (update-in [:route :params :query] assoc :page-id (str page-id)))))))
 
 (defn finalize-page
   [page-id]
-  (us/verify ::us/uuid page-id)
+  (us/assert ::us/uuid page-id)
   (ptk/reify ::finalize-page
     ptk/UpdateEvent
     (update [_ state]
-      (let [local (-> (:workspace-local state)
-                      (dissoc :edition)
-                      (dissoc :edit-path)
-                      (dissoc :selected))]
+      (let [page-id (or page-id (get-in state [:workspace-data :pages 0]))
+            local   (-> (:workspace-local state)
+                        (dissoc :edition)
+                        (dissoc :edit-path)
+                        (dissoc :selected))]
         (-> state
             (assoc-in [:workspace-cache page-id] local)
             (dissoc :current-page-id :workspace-local :trimmed-page :workspace-drawing))))))
@@ -252,23 +255,31 @@
 ;; Workspace Page CRUD
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def create-empty-page
-  (ptk/reify ::create-empty-page
-    ptk/WatchEvent
-    (watch [this state stream]
-      (let [id      (uuid/next)
-            pages   (get-in state [:workspace-data :pages-index])
-            unames  (dwc/retrieve-used-names pages)
-            name    (dwc/generate-unique-name unames "Page")
+(defn create-page
+  [{:keys [file-id]}]
+  (let [id (uuid/next)]
+    (ptk/reify ::create-page
+      IDeref
+      (-deref [_]
+        {:id id :file-id file-id})
 
-            rchange {:type :add-page
-                     :id id
-                     :name name}
-            uchange {:type :del-page
-                     :id id}]
-        (rx/of (dch/commit-changes [rchange] [uchange] {:commit-local? true}))))))
+      ptk/WatchEvent
+      (watch [it state stream]
+        (let [pages   (get-in state [:workspace-data :pages-index])
+              unames  (dwc/retrieve-used-names pages)
+              name    (dwc/generate-unique-name unames "Page")
 
-(defn duplicate-page [page-id]
+              rchange {:type :add-page
+                       :id id
+                       :name name}
+              uchange {:type :del-page
+                       :id id}]
+          (rx/of (dch/commit-changes {:redo-changes [rchange]
+                                      :undo-changes [uchange]
+                                      :origin it})))))))
+
+(defn duplicate-page
+  [page-id]
   (ptk/reify ::duplicate-page
     ptk/WatchEvent
     (watch [this state stream]
@@ -284,7 +295,9 @@
                      :page page}
             uchange {:type :del-page
                      :id id}]
-        (rx/of (dch/commit-changes [rchange] [uchange] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes [rchange]
+                                    :undo-changes [uchange]
+                                    :origin this}))))))
 
 (s/def ::rename-page
   (s/keys :req-un [::id ::name]))
@@ -295,7 +308,7 @@
   (us/verify string? name)
   (ptk/reify ::rename-page
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page (get-in state [:workspace-data :pages-index id])
             rchg {:type :mod-page
                   :id id
@@ -303,7 +316,9 @@
             uchg {:type :mod-page
                   :id id
                   :name (:name page)}]
-        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                    :undo-changes [uchg]
+                                    :origin it}))))))
 
 (declare purge-page)
 (declare go-to-file)
@@ -314,13 +329,15 @@
   [id]
   (ptk/reify ::delete-page
     ptk/WatchEvent
-    (watch [_ state s]
+    (watch [it state stream]
       (let [page (get-in state [:workspace-data :pages-index id])
             rchg {:type :del-page
                   :id id}
             uchg {:type :add-page
                   :page page}]
-        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true})
+        (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                    :undo-changes [uchg]
+                                    :origin it})
                (when (= id (:current-page-id state))
                  go-to-file))))))
 
@@ -338,7 +355,7 @@
       (assoc-in state [:workspace-file :name] name))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [params {:id id :name name}]
         (->> (rp/mutation :rename-file params)
              (rx/ignore))))))
@@ -437,7 +454,7 @@
 (defn start-panning []
   (ptk/reify ::start-panning
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [stopper (->> stream (rx/filter (ptk/type? ::finish-panning)))
             zoom (-> (get-in state [:workspace-local :zoom]) gpt/point)]
         (when-not (get-in state [:workspace-local :panning])
@@ -535,7 +552,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              #(impl-update-zoom % center (fn [z] (min (* z 1.1) 200)))))))
+              #(impl-update-zoom % center (fn [z] (min (* z 1.3) 200)))))))
 
 (defn decrease-zoom
   [center]
@@ -543,7 +560,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              #(impl-update-zoom % center (fn [z] (max (* z 0.9) 0.01)))))))
+              #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01)))))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom
@@ -600,7 +617,7 @@
   (us/verify ::shape-attrs attrs)
   (ptk/reify ::update-shape
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (rx/of (dch/update-shapes [id] #(merge % attrs))))))
 
 (defn start-rename-shape
@@ -625,7 +642,7 @@
   (us/verify ::shape-attrs attrs)
   (ptk/reify ::update-selected-shapes
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [selected (wsh/lookup-selected state)]
         (rx/from (map #(update-shape % attrs) selected))))))
 
@@ -663,7 +680,7 @@
   "Deselect all and remove all selected shapes."
   (ptk/reify ::delete-selected
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [selected (wsh/lookup-selected state)]
         (rx/of (dwc/delete-shapes selected)
                (dws/deselect-all))))))
@@ -675,9 +692,9 @@
 (defn vertical-order-selected
   [loc]
   (us/verify ::loc loc)
-  (ptk/reify ::vertical-order-selected-shpes
+  (ptk/reify ::vertical-order-selected
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
@@ -709,7 +726,9 @@
                                 :index (cp/position-on-parent id objects)}))
                             selected)]
         ;; TODO: maybe missing the :reg-objects event?
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
 
 
 ;; --- Change Shape Order (D&D Ordering)
@@ -884,7 +903,7 @@
 
   (ptk/reify ::relocate-shapes
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
 
@@ -972,25 +991,30 @@
                     [[] [] []]
                     ids)
 
-            [rchanges uchanges] (relocate-shapes-changes objects
-                                                         parents
-                                                         parent-id
-                                                         page-id
-                                                         to-index
-                                                         ids
-                                                         groups-to-delete
-                                                         groups-to-unmask
-                                                         shapes-to-detach
-                                                         shapes-to-reroot
-                                                         shapes-to-deroot)]
-        (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
+            [rchanges uchanges]
+            (relocate-shapes-changes objects
+                                     parents
+                                     parent-id
+                                     page-id
+                                     to-index
+                                     ids
+                                     groups-to-delete
+                                     groups-to-unmask
+                                     shapes-to-detach
+                                     shapes-to-reroot
+                                     shapes-to-deroot)
+
+            ]
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it})
                (dwc/expand-collapse parent-id))))))
 
 (defn relocate-selected-shapes
   [parent-id to-index]
   (ptk/reify ::relocate-selected-shapes
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [selected (wsh/lookup-selected state)]
         (rx/of (relocate-shapes selected parent-id to-index))))))
 
@@ -999,7 +1023,7 @@
   []
   (ptk/reify ::start-editing-selected
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [selected (wsh/lookup-selected state)]
         (if-not (= 1 (count selected))
           (rx/empty)
@@ -1027,7 +1051,7 @@
   [id index]
   (ptk/reify ::relocate-pages
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [cidx (-> (get-in state [:workspace-data :pages])
                      (d/index-of id))
             rchg {:type :mov-page
@@ -1036,7 +1060,9 @@
             uchg {:type :mov-page
                   :id id
                   :index cidx}]
-        (rx/of (dch/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dch/commit-changes {:redo-changes [rchg]
+                                    :undo-changes [uchg]
+                                    :origin it}))))))
 
 ;; --- Shape / Selection Alignment and Distribution
 
@@ -1048,7 +1074,7 @@
   (us/verify ::gal/align-axis axis)
   (ptk/reify :align-objects
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
@@ -1079,7 +1105,7 @@
   (us/verify ::gal/dist-axis axis)
   (ptk/reify :align-objects
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
@@ -1097,7 +1123,7 @@
   [id lock]
   (ptk/reify ::set-shape-proportion-lock
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (letfn [(assign-proportions [shape]
                 (if-not lock
                   (assoc shape :proportion-lock false)
@@ -1118,7 +1144,7 @@
   (us/verify ::position position)
   (ptk/reify ::update-position
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
             shape   (get objects id)
@@ -1140,12 +1166,16 @@
   (s/assert ::shape-attrs flags)
   (ptk/reify ::update-shape-flags
     ptk/WatchEvent
-    (watch [_ state stream]
-      (letfn [(update-fn [obj]
-                (cond-> obj
-                  (boolean? blocked) (assoc :blocked blocked)
-                  (boolean? hidden) (assoc :hidden hidden)))]
-        (rx/of (dch/update-shapes-recursive [id] update-fn))))))
+    (watch [it state stream]
+      (let [update-fn
+            (fn [obj]
+              (cond-> obj
+                (boolean? blocked) (assoc :blocked blocked)
+                (boolean? hidden) (assoc :hidden hidden)))
+
+            objects (wsh/lookup-page-objects state)
+            ids (d/concat [id] (cp/get-children id objects))]
+        (rx/of (dch/update-shapes ids update-fn))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1156,29 +1186,41 @@
   [project-id]
   (ptk/reify ::navigate-to-project
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-ids (get-in state [:projects project-id :pages])
             params {:project project-id :page (first page-ids)}]
         (rx/of (rt/nav :workspace/page params))))))
 
 (defn go-to-page
-  [page-id]
-  (us/verify ::us/uuid page-id)
-  (ptk/reify ::go-to-page
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [project-id (get-in state [:workspace-project :id])
-            file-id    (get-in state [:workspace-file :id])
-            pparams    {:file-id file-id :project-id project-id}
-            qparams    {:page-id page-id}]
-        (rx/of (rt/nav :workspace pparams qparams))))))
+  ([]
+
+   (ptk/reify ::go-to-page
+     ptk/WatchEvent
+     (watch [it state stream]
+       (let [project-id (:current-project-id state)
+             file-id    (:current-file-id state)
+             page-id    (get-in state [:workspace-data :pages 0])
+
+             pparams    {:file-id file-id :project-id project-id}
+             qparams    {:page-id page-id}]
+         (rx/of (rt/nav :workspace pparams qparams))))))
+  ([page-id]
+   (us/verify ::us/uuid page-id)
+   (ptk/reify ::go-to-page
+     ptk/WatchEvent
+     (watch [it state stream]
+       (let [project-id (:current-project-id state)
+             file-id    (:current-file-id state)
+             pparams    {:file-id file-id :project-id project-id}
+             qparams    {:page-id page-id}]
+         (rx/of (rt/nav :workspace pparams qparams)))))))
 
 (defn go-to-layout
   [layout]
   (us/verify ::layout-flag layout)
   (ptk/reify ::go-to-layout
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [project-id (get-in state [:workspace-project :id])
             file-id    (get-in state [:workspace-file :id])
             page-id    (get-in state [:current-page-id])
@@ -1189,7 +1231,7 @@
 (def go-to-file
   (ptk/reify ::go-to-file
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [{:keys [id project-id data] :as file} (:workspace-file state)
             page-id (get-in data [:pages 0])
             pparams {:project-id project-id :file-id id}
@@ -1202,7 +1244,7 @@
   ([{:keys [file-id page-id]}]
    (ptk/reify ::go-to-viewer
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [it state stream]
        (let [{:keys [current-file-id current-page-id]} state
              params {:file-id (or file-id current-file-id)
                      :page-id (or page-id current-page-id)}]
@@ -1214,10 +1256,19 @@
   ([{:keys [team-id]}]
    (ptk/reify ::go-to-dashboard
      ptk/WatchEvent
-     (watch [_ state stream]
-       (let [team-id (or team-id (get-in state [:workspace-project :team-id]))]
+     (watch [it state stream]
+       (when-let [team-id (or team-id (:current-team-id state))]
          (rx/of ::dwp/force-persist
                 (rt/nav :dashboard-projects {:team-id team-id})))))))
+
+(defn go-to-dashboard-fonts
+  []
+   (ptk/reify ::go-to-dashboard
+     ptk/WatchEvent
+     (watch [it state stream]
+       (let [team-id (:current-team-id state)]
+         (rx/of ::dwp/force-persist
+                (rt/nav :dashboard-fonts {:team-id team-id}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Menu
@@ -1244,7 +1295,7 @@
   (us/verify ::cp/minimal-shape shape)
   (ptk/reify ::show-shape-context-menu
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [selected (wsh/lookup-selected state)]
         (rx/concat
           (when-not (selected (:id shape))
@@ -1264,7 +1315,27 @@
 
 (defn copy-selected
   []
-  (letfn [;; Retrieve all ids of selected shapes with corresponding
+  (letfn [;; Sort objects so they have the same relative ordering
+          ;; when pasted later.
+          (sort-selected [state data]
+            (let [selected (:selected data)
+                  page-id (:current-page-id state)
+                  objects (get-in state [:workspace-data
+                                         :pages-index
+                                         page-id
+                                         :objects])]
+              (->> (uw/ask! {:cmd :selection/query-z-index
+                             :page-id page-id
+                             :objects objects
+                             :ids selected})
+                   (rx/map (fn [z-indexes]
+                             (assoc data :selected
+                                    (->> (d/zip selected z-indexes)
+                                         (sort-by second)
+                                         (map first)
+                                         (into (d/ordered-set)))))))))
+
+          ;; Retrieve all ids of selected shapes with corresponding
           ;; children; this is needed because each shape should be
           ;; processed one by one because of async events (data url
           ;; fetching).
@@ -1316,7 +1387,7 @@
 
     (ptk/reify ::copy-selected
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [it state stream]
         (let [objects  (wsh/lookup-page-objects state)
               selected (->> (wsh/lookup-selected state)
                             (cp/clean-loops objects))
@@ -1329,6 +1400,7 @@
           (->> (rx/from (seq (vals pdata)))
                (rx/merge-map (partial prepare-object objects selected))
                (rx/reduce collect-data initial)
+               (rx/mapcat (partial sort-selected state))
                (rx/map t/encode)
                (rx/map wapi/write-to-clipboard)
                (rx/catch on-copy-error)
@@ -1342,7 +1414,7 @@
 (def paste
   (ptk/reify ::paste
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (try
         (let [clipboard-str (wapi/read-from-clipboard)
 
@@ -1381,7 +1453,7 @@
   [event in-viewport?]
   (ptk/reify ::paste-from-event
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (try
         (let [objects (wsh/lookup-page-objects state)
               paste-data    (wapi/read-from-paste-event event)
@@ -1499,7 +1571,7 @@
                 change)))
 
           ;; Procceed with the standard shape paste procediment.
-          (do-paste [state mouse-pos media]
+          (do-paste [it state mouse-pos media]
             (let [media-idx     (d/index-by :prev-id media)
                   page-id       (:current-page-id state)
 
@@ -1545,19 +1617,21 @@
                                  (map #(get-in % [:obj :id]))
                                  (into (d/ordered-set)))]
 
-              (rx/of (dch/commit-changes rchanges uchanges {:commit-local? true})
+              (rx/of (dch/commit-changes {:redo-changes rchanges
+                                          :undo-changes uchanges
+                                          :origin it})
                      (dwc/select-shapes selected))))]
     (ptk/reify ::paste-shape
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [it state stream]
         (let [file-id   (:current-file-id state)
               mouse-pos (deref ms/mouse-position)]
           (if (= file-id (:file-id data))
-            (do-paste state mouse-pos [])
+            (do-paste it state mouse-pos [])
             (->> (rx/from images)
                  (rx/merge-map (partial upload-media file-id))
                  (rx/reduce conj [])
-                 (rx/mapcat (partial do-paste state mouse-pos)))))))))
+                 (rx/mapcat (partial do-paste it state mouse-pos)))))))))
 
 
 (defn as-content [text]
@@ -1573,7 +1647,7 @@
   (s/assert string? text)
   (ptk/reify ::paste-text
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [id (uuid/next)
             {:keys [x y]} @ms/mouse-position
             width (max 8 (min (* 7 (count text)) 700))
@@ -1602,7 +1676,7 @@
   (s/assert string? text)
   (ptk/reify ::paste-svg
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [position (deref ms/mouse-position)
             file-id  (:current-file-id state)]
         (->> (dwp/parse-svg ["svg" text])
@@ -1612,7 +1686,7 @@
   [image]
   (ptk/reify ::paste-bin-impl
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [file-id (get-in state [:workspace-file :id])
             params  {:file-id file-id
                      :blobs [image]
@@ -1637,7 +1711,7 @@
   []
   (ptk/reify ::start-create-interaction
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [initial-pos @ms/mouse-position
             selected (wsh/lookup-selected state)
             stopper (rx/filter ms/mouse-up? stream)]
@@ -1674,7 +1748,7 @@
           (assoc-in [:workspace-local :draw-interaction-to-frame] nil)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [position @ms/mouse-position
             page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
@@ -1702,20 +1776,20 @@
   [color]
   (ptk/reify ::change-canvas-color
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [page-id (get state :current-page-id)
             options (wsh/lookup-page-options state page-id)
             previus-color  (:background options)]
         (rx/of (dch/commit-changes
-                [{:type :set-option
-                  :page-id page-id
-                  :option :background
-                  :value (:color color)}]
-                [{:type :set-option
-                  :page-id page-id
-                  :option :background
-                  :value previus-color}]
-                {:commit-local? true}))))))
+                {:redo-changes [{:type :set-option
+                                 :page-id page-id
+                                 :option :background
+                                 :value (:color color)}]
+                 :undo-changes [{:type :set-option
+                                 :page-id page-id
+                                 :option :background
+                                 :value previus-color}]
+                 :origin it}))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1735,6 +1809,7 @@
 (d/export dwt/update-dimensions)
 (d/export dwt/flip-horizontal-selected)
 (d/export dwt/flip-vertical-selected)
+(d/export dwt/selected-to-path)
 
 ;; Persistence
 
@@ -1758,12 +1833,10 @@
 (d/export dws/duplicate-selected)
 (d/export dws/handle-selection)
 (d/export dws/select-inside-group)
-;;(d/export dws/select-last-layer)
 (d/export dwd/select-for-drawing)
 (d/export dwc/clear-edition-mode)
 (d/export dwc/add-shape)
 (d/export dwc/start-edition-mode)
-#_(d/export dwc/start-path-edit)
 
 ;; Groups
 

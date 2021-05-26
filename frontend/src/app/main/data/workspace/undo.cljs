@@ -27,8 +27,8 @@
 ;; Undo / Redo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::undo-changes ::cp/changes)
-(s/def ::redo-changes ::cp/changes)
+(s/def ::undo-changes ::spec/changes)
+(s/def ::redo-changes ::spec/changes)
 (s/def ::undo-entry
   (s/keys :req-un [::undo-changes ::redo-changes]))
 

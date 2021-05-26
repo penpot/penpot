@@ -164,6 +164,8 @@
     .asset-title {
       display: flex;
       cursor: pointer;
+      font-size: $fs11;
+      text-transform: uppercase;
 
       & .num-assets {
         color: $color-gray-30;
@@ -371,14 +373,11 @@
     //   overflow-y: scroll;
     // }
 
-    .asset-list {
-      margin-top: $medium;
-    }
-
     .asset-list-item {
       display: flex;
       align-items: center;
       border: 1px solid transparent;
+      border-radius: $br-small;
       margin-top: $x-small;
       padding: 2px;
       font-size: $fs12;

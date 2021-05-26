@@ -33,7 +33,7 @@
    :toggle-assets     {:tooltip (ds/alt "I")
                        :command (ds/a-mod "i")
                        :fn #(st/emit! (dw/go-to-layout :assets))}
-   
+
    :toggle-history    {:tooltip (ds/alt "H")
                        :command (ds/a-mod "h")
                        :fn #(st/emit! (dw/go-to-layout :document-history))}
@@ -45,7 +45,7 @@
    :toggle-rules      {:tooltip (ds/meta-shift "R")
                        :command (ds/c-mod "shift+r")
                        :fn #(st/emit! (dw/toggle-layout-flags :rules))}
-   
+
    :select-all        {:tooltip (ds/meta "A")
                        :command (ds/c-mod "a")
                        :fn #(st/emit! (dw/select-all))}
@@ -61,7 +61,11 @@
    :toggle-alignment  {:tooltip (ds/meta "\\")
                        :command (ds/c-mod "\\")
                        :fn #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}
-   
+
+   :toggle-scale-text {:tooltip "K"
+                       :command "k"
+                       :fn #(st/emit! (dw/toggle-layout-flags :scale-text))}
+
    :increase-zoom      {:tooltip "+"
                         :command "+"
                         :fn #(st/emit! (dw/increase-zoom nil))}
@@ -69,7 +73,7 @@
    :decrease-zoom      {:tooltip "-"
                         :command "-"
                         :fn #(st/emit! (dw/decrease-zoom nil))}
-   
+
    :group              {:tooltip (ds/meta "G")
                         :command (ds/c-mod "g")
                         :fn #(st/emit! dw/group-selected)}
@@ -155,8 +159,8 @@
                         :command "c"
                         :fn #(st/emit! (dwd/select-for-drawing :comments))}
 
-   :insert-image       {:tooltip "K"
-                        :command "k"
+   :insert-image       {:tooltip (ds/shift "K")
+                        :command "shift+k"
                         :fn #(-> "image-upload" dom/get-element dom/click)}
 
    :copy               {:tooltip (ds/meta "C")
@@ -169,7 +173,8 @@
 
    :paste              {:tooltip (ds/meta "V")
                         :disabled true
-                        :command (ds/c-mod "v")}
+                        :command (ds/c-mod "v")
+                        :fn (constantly nil)}
 
    :delete             {:tooltip (ds/supr)
                         :command ["del" "backspace"]

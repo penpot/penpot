@@ -12,17 +12,13 @@ goog.provide("app.common.uuid_impl");
 
 goog.scope(function() {
   const core = cljs.core;
+  const global = goog.global;
   const self = app.common.uuid_impl;
 
   const fill = (() => {
-    if (typeof window === "object" && typeof window.crypto !== "undefined") {
+    if (typeof global.crypto !== "undefined") {
       return (buf) => {
-        window.crypto.getRandomValues(buf);
-        return buf;
-      };
-    } else if (typeof self === "object" && typeof self.crypto !== "undefined") {
-      return (buf) => {
-        self.crypto.getRandomValues(buf);
+        global.crypto.getRandomValues(buf);
         return buf;
       };
     } else if (typeof require === "function") {
@@ -34,7 +30,7 @@ goog.scope(function() {
       };
     } else {
       // FALLBACK
-      console.warn("No high quality RNG available, switching back to Math.random.");
+      console.warn("No SRNG available, switching back to Math.random.");
 
       return (buf) => {
         for (let i = 0, r; i < buf.length; i++) {

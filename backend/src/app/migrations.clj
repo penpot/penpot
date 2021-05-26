@@ -166,6 +166,15 @@
 
    {:name "0052-del-legacy-user-and-team"
     :fn (mg/resource "app/migrations/sql/0052-del-legacy-user-and-team.sql")}
+
+   {:name "0053-add-team-font-variant-table"
+    :fn (mg/resource "app/migrations/sql/0053-add-team-font-variant-table.sql")}
+
+   {:name "0054-add-audit-log-table"
+    :fn (mg/resource "app/migrations/sql/0054-add-audit-log-table.sql")}
+
+   {:name "0055-mod-file-media-object-table"
+    :fn (mg/resource "app/migrations/sql/0055-mod-file-media-object-table.sql")}
    ])
 
 

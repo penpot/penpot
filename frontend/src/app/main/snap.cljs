@@ -19,7 +19,7 @@
    [beicon.core :as rx]
    [clojure.set :as set]))
 
-(defonce ^:private snap-accuracy 10)
+(defonce ^:private snap-accuracy 5)
 (defonce ^:private snap-path-accuracy 10)
 (defonce ^:private snap-distance-accuracy 10)
 
@@ -284,7 +284,7 @@
   ([matches other]
    (let [merge-coord
          (fn [matches other]
-           
+
            (let [matches (into {} matches)
                  other (into {} other)
                  keys (set/union (keys matches) (keys other))]
@@ -305,7 +305,7 @@
           (if (< (mth/abs cur-val) (mth/abs other-val))
             current
             other))
-        
+
         min-match-coord
         (fn [matches]
           (if (and (seq matches) (not (empty? matches)))
@@ -337,13 +337,15 @@
   "Snaps a position given an old snap to a different position. We use this to provide a temporal
   snap while the new is being processed."
   [[position [snap-pos snap-delta]]]
-  (let [dx (if (not= 0 (:x snap-delta))
-             (- (+ (:x snap-pos) (:x snap-delta)) (:x position))
-             0)
-        dy (if (not= 0 (:y snap-delta))
-             (- (+ (:y snap-pos) (:y snap-delta)) (:y position))
-             0)]
+  (if (some? snap-delta)
+    (let [dx (if (not= 0 (:x snap-delta))
+               (- (+ (:x snap-pos) (:x snap-delta)) (:x position))
+               0)
+          dy (if (not= 0 (:y snap-delta))
+               (- (+ (:y snap-pos) (:y snap-delta)) (:y position))
+               0)]
 
-    (cond-> position
-      (<= (mth/abs dx) snap-accuracy) (update :x + dx)
-      (<= (mth/abs dy) snap-accuracy) (update :y + dy))))
+      (cond-> position
+        (<= (mth/abs dx) snap-accuracy) (update :x + dx)
+        (<= (mth/abs dy) snap-accuracy) (update :y + dy)))
+    position))

@@ -100,8 +100,13 @@
     (mf/use-layout-effect
      (mf/deps page-id)
      (fn []
-       (st/emit! (dw/initialize-page page-id))
-       (st/emitf (dw/finalize-page page-id))))
+       (if (nil? page-id)
+         (st/emit! (dw/go-to-page))
+         (st/emit! (dw/initialize-page page-id)))
+
+       (fn []
+         (when page-id
+           (st/emit! (dw/finalize-page page-id))))))
 
     (when page
       [:& workspace-content {:key page-id
@@ -116,7 +121,6 @@
 (mf/defc workspace
   {::mf/wrap [mf/memo]}
   [{:keys [project-id file-id page-id layout-name] :as props}]
-
   (let [file    (mf/deref refs/workspace-file)
         project (mf/deref refs/workspace-project)
         layout  (mf/deref refs/workspace-layout)]
@@ -134,7 +138,7 @@
     (mf/use-effect
      (fn []
        ;; Close any non-modal dialog that may be still open
-       (st/emitf dm/hide)))
+       (st/emit! dm/hide)))
 
     (mf/use-effect
      (mf/deps file)
@@ -154,6 +158,9 @@
 
          (if (and (and file project)
                   (:initialized file))
-           [:& workspace-page {:page-id page-id :file file :layout layout}]
+           [:& workspace-page {:key (str "page-" page-id)
+                               :page-id page-id
+                               :file file
+                               :layout layout}]
            [:& workspace-loader])]]]]]))
 

@@ -200,6 +200,13 @@
               (sql/insert table params opts)
               (assoc opts :return-keys true))))
 
+(defn insert-multi!
+  ([ds table cols rows] (insert-multi! ds table cols rows nil))
+  ([ds table cols rows opts]
+   (exec! ds
+          (sql/insert-multi table cols rows opts)
+          (assoc opts :return-keys true))))
+
 (defn update!
   ([ds table params where] (update! ds table params where nil))
   ([ds table params where opts]
@@ -325,6 +332,12 @@
             (= typ "jsonb"))
       (t/decode-str val)
       val)))
+
+(defn inet
+  [ip-addr]
+  (doto (org.postgresql.util.PGobject.)
+    (.setType "inet")
+    (.setValue (str ip-addr))))
 
 (defn tjson
   "Encode as transit json."

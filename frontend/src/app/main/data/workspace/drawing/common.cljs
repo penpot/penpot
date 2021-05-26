@@ -28,7 +28,6 @@
     (watch [_ state stream]
       (let [shape (get-in state [:workspace-drawing :object])]
         (rx/concat
-         (rx/of clear-drawing)
          (when (:initialized? shape)
            (let [page-id (:current-page-id state)
                  shape-click-width (case (:type shape)
@@ -65,4 +64,8 @@
                                :page-id page-id
                                :rect (:selrect shape)})
                      (rx/map #(dwc/move-shapes-into-frame (:id shape) %)))
-                (rx/empty))))))))))
+                (rx/empty)))))
+
+         ;; Delay so the mouse event can read the drawing state
+         (->> (rx/of clear-drawing)
+              (rx/delay 0)))))))
