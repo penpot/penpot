@@ -142,7 +142,7 @@
 (defmethod process-change :reg-objects
   [data {:keys [page-id component-id shapes]}]
   (letfn [(reg-objects [objects]
-            (reduce #(update %1 %2 update-group %1) objects
+            (reduce #(d/update-when %1 %2 update-group %1) objects
                     (sequence (comp
                                (mapcat #(cons % (cph/get-parents % objects)))
                                (map #(get objects %))
