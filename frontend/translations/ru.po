@@ -600,6 +600,10 @@ msgid "viewer.header.share.title"
 msgstr "Поделиться ссылкой"
 
 #: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header-interactions"
+msgstr "взаимодействия"
+
+#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Показывать взаимодействия"
 

@@ -1331,6 +1331,10 @@ msgid "viewer.header.share.title"
 msgstr "Prototyp teilen"
 
 #: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Interaktionen"
+
+#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Interaktionen anzeigen"
 

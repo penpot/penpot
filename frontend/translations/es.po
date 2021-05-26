@@ -1471,6 +1471,10 @@ msgid "viewer.header.share.title"
 msgstr "Compartir prototipo"
 
 #: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Interacciones"
+
+#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Mostrar interacciones"
 

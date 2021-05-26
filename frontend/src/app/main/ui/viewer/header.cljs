@@ -119,7 +119,7 @@
 
     [:div.view-options
      [:div.view-options-dropdown {:on-click #(swap! show-dropdown? not)}
-      [:span "Interactions"]
+      [:span (t locale "viewer.header.interactions")]
       i/arrow-down]
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
