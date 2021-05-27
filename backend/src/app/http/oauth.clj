@@ -109,6 +109,17 @@
                :cause e)
       nil)))
 
+(s/def ::backend ::us/not-empty-string)
+(s/def ::email ::us/not-empty-string)
+(s/def ::fullname ::us/not-empty-string)
+(s/def ::props (s/map-of ::us/keyword any?))
+
+(s/def ::info
+  (s/keys :req-un [::backend
+                   ::email
+                   ::fullname
+                   ::props]))
+
 (defn retrieve-info
   [{:keys [tokens provider] :as cfg} request]
   (let [state  (get-in request [:params :state])
@@ -116,7 +127,10 @@
         info   (some->> (get-in request [:params :code])
                         (retrieve-access-token cfg)
                         (retrieve-user-info cfg))]
-    (when-not info
+
+    (when-not (s/valid? ::info info)
+      (l/warn :hint "received incomplete profile info object (please set correct scopes)"
+              :info (pr-str info))
       (ex/raise :type :internal
                 :code :unable-to-auth
                 :hint "no user info"))
@@ -236,7 +250,7 @@
               :token-uri     (cf/get :oidc-token-uri)
               :auth-uri      (cf/get :oidc-auth-uri)
               :user-uri      (cf/get :oidc-user-uri)
-              :scopes        (cf/get :oidc-scopes #{"openid" "profile"})
+              :scopes        (cf/get :oidc-scopes #{"openid" "profile" "email"})
               :roles-attr    (cf/get :oidc-roles-attr)
               :roles         (cf/get :oidc-roles)
               :name          "oidc"}]

@@ -97,7 +97,7 @@ update_registration_enabled() {
   fi
 }
 
-update_registration_enabled() {
+update_analytics_enabled() {
   if [ -n "$PENPOT_ANALYTICS_ENABLED" ]; then
     sed -i \
       -e "s|^//var penpotAnalyticsEnabled = .*;|var penpotAnalyticsEnabled = $PENPOT_ANALYTICS_ENABLED;|g" \
