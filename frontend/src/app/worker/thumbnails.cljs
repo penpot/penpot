@@ -31,17 +31,12 @@
 (defn- request-page
   [file-id page-id]
   (let [uri "/api/rpc/query/page"]
-    (p/create
-     (fn [resolve reject]
-       (->> (http/send! {:uri uri
-                         :query {:file-id file-id :id page-id :strip-thumbnails true}
-                         :method :get})
-            (rx/map http/conditional-decode-transit)
-            (rx/mapcat handle-response)
-            (rx/subs (fn [body]
-                       (resolve body))
-                     (fn [error]
-                       (reject error))))))))
+    (->> (http/send!
+          {:uri uri
+           :query {:file-id file-id :id page-id :strip-thumbnails true}
+           :method :get})
+         (rx/map http/conditional-decode-transit)
+         (rx/mapcat handle-response))))
 
 (defonce cache (atom {}))
 
@@ -57,8 +52,8 @@
 
 (defmethod impl/handler :thumbnails/generate
   [{:keys [file-id page-id] :as message}]
-  (p/then
-   (request-page file-id page-id)
-   (fn [data]
-     {:svg (render-page data #{file-id page-id})
-      :fonts @fonts/loaded})))
+  (->> (request-page file-id page-id)
+       (rx/map
+        (fn [data]
+          {:svg (render-page data #{file-id page-id})
+           :fonts @fonts/loaded}))))
