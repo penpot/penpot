@@ -33,7 +33,7 @@
 
              selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
              points (or points selected-points)]
-         (when-not (empty? points)
+         (when (and (not (empty? points)) (some? shape))
            (let [new-content (-> (tool-fn (:content shape) points)
                                  (ups/close-subpaths))
                  [rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
