@@ -24,6 +24,9 @@
   (fn [current]
     (>= (gpt/distance start current) (/ drag-threshold zoom))))
 
+(defn finish-edition? [event]
+  (= (ptk/type event) :app.main.data.workspace.common/clear-edition-mode))
+
 (defn drag-stream
   ([to-stream]
    (drag-stream to-stream (rx/empty)))
@@ -31,7 +34,8 @@
   ([to-stream not-drag-stream]
    (let [start @ms/mouse-position
          zoom  (get-in @st/state [:workspace-local :zoom] 1)
-         mouse-up (->> st/stream (rx/filter #(ms/mouse-up? %)))
+         mouse-up (->> st/stream (rx/filter #(or (finish-edition? %)
+                                                 (ms/mouse-up? %))))
 
          position-stream
          (->> ms/mouse-position
