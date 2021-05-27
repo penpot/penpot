@@ -109,6 +109,17 @@
                :cause e)
       nil)))
 
+(s/def ::backend ::us/not-empty-string)
+(s/def ::email ::us/not-empty-string)
+(s/def ::fullname ::us/not-empty-string)
+(s/def ::props (s/map-of ::us/keyword any?))
+
+(s/def ::info
+  (s/keys :req-un [::backend
+                   ::email
+                   ::fullname
+                   ::props]))
+
 (defn retrieve-info
   [{:keys [tokens provider] :as cfg} request]
   (let [state  (get-in request [:params :state])
@@ -116,7 +127,10 @@
         info   (some->> (get-in request [:params :code])
                         (retrieve-access-token cfg)
                         (retrieve-user-info cfg))]
-    (when-not info
+
+    (when-not (s/valid? ::info info)
+      (l/warn :hint "received incomplete profile info object (please set correct scopes)"
+              :info (pr-str info))
       (ex/raise :type :internal
                 :code :unable-to-auth
                 :hint "no user info"))
@@ -228,6 +242,13 @@
                :auth-uri (get data "authorization_endpoint")
                :user-uri (get data "userinfo_endpoint"))))))
 
+(defn- obfuscate-string
+  [s]
+  (if (< (count s) 10)
+    (apply str (take (count s) (repeat "*")))
+    (str (subs s 0 5)
+         (apply str (take (- (count s) 5) (repeat "*"))))))
+
 (defn- initialize-oidc-provider
   [cfg]
   (let [opts {:base-uri      (cf/get :oidc-base-uri)
@@ -236,7 +257,7 @@
               :token-uri     (cf/get :oidc-token-uri)
               :auth-uri      (cf/get :oidc-auth-uri)
               :user-uri      (cf/get :oidc-user-uri)
-              :scopes        (cf/get :oidc-scopes #{"openid" "profile"})
+              :scopes        (cf/get :oidc-scopes #{"openid" "profile" "email"})
               :roles-attr    (cf/get :oidc-roles-attr)
               :roles         (cf/get :oidc-roles)
               :name          "oidc"}]
@@ -247,10 +268,12 @@
                (string? (:user-uri opts))
                (string? (:auth-uri opts)))
         (do
-          (l/info :action "initialize" :provider "oid" :method "static")
+          (l/info :action "initialize" :provider "oidc" :method "static"
+                  :opts (pr-str (update opts :client-secret obfuscate-string)))
           (assoc-in cfg [:providers "oidc"] opts))
         (let [opts (discover-oidc-config opts)]
-          (l/info :action "initialize" :provider "oid" :method "discover")
+          (l/info :action "initialize" :provider "oidc" :method "discover"
+                  :opts (pr-str (update opts :client-secret obfuscate-string)))
           (assoc-in cfg [:providers "oidc"] opts)))
       cfg)))
 
@@ -266,7 +289,8 @@
     (if (and (string? (:client-id opts))
              (string? (:client-secret opts)))
       (do
-        (l/info :action "initialize" :provider "google")
+        (l/info :action "initialize" :provider "google"
+                :opts (pr-str (update opts :client-secret obfuscate-string)))
         (assoc-in cfg [:providers "google"] opts))
       cfg)))
 
@@ -282,7 +306,8 @@
     (if (and (string? (:client-id opts))
              (string? (:client-secret opts)))
       (do
-        (l/info :action "initialize" :provider "github")
+        (l/info :action "initialize" :provider "github"
+                :opts (pr-str (update opts :client-secret obfuscate-string)))
         (assoc-in cfg [:providers "github"] opts))
       cfg)))
 
@@ -301,7 +326,8 @@
     (if (and (string? (:client-id opts))
              (string? (:client-secret opts)))
       (do
-        (l/info :action "initialize" :provider "gitlab")
+        (l/info :action "initialize" :provider "gitlab"
+                :opts (pr-str (update opts :client-secret obfuscate-string)))
         (assoc-in cfg [:providers "gitlab"] opts))
       cfg)))
 

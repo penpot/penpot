@@ -36,6 +36,7 @@
               :message (ex-message e))
       (ex/raise :type :validation
                 :code :invalid-svg-file
+                :hint "invalid svg file"
                 :cause e))))
 
 (declare pre-process)
@@ -53,6 +54,6 @@
   [data]
   (cond-> data
     (str/includes? data "<!DOCTYPE")
-    (str/replace #"<\!DOCTYPE[^>]+>" "")))
+    (str/replace #"<\!DOCTYPE[^>]*>" "")))
 
 (def pre-process strip-doctype)

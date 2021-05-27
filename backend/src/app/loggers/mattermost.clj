@@ -61,7 +61,7 @@
   [cfg {:keys [host version id] :as cdata}]
   (try
     (let [uri  (:uri cfg)
-          text (str "Unhandled exception (@channel):\n"
+          text (str "Unhandled exception:\n"
                     "- detail: " (cfg/get :public-uri) "/dbg/error-by-id/" id "\n"
                     "- profile-id: `" (:profile-id cdata) "`\n"
                     "- host: `" host "`\n"

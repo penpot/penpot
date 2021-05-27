@@ -428,26 +428,27 @@
       [:> text-transform-options opts]]]))
 
 
+;; TODO: this need to be refactored, right now combines too much logic
+;; and has a dropdown that behaves like a modal but is not a modal.
+;; In summary, this need to a good UX/UI/IMPL rework.
+
 (mf/defc typography-entry
   [{:keys [typography read-only? selected? on-click on-change on-detach on-context-menu editting? focus-name? file]}]
-  (let [open? (mf/use-state editting?)
-        hover-detach (mf/use-state false)
-        name-input-ref (mf/use-ref nil)
-        value (mf/use-state (cp/merge-path-item (:path typography) (:name typography)))
+  (let [open?          (mf/use-state editting?)
+        hover-detach   (mf/use-state false)
+        name-input-ref (mf/use-ref)
 
-        #_(rt/resolve router :workspace
-                      {:project-id (:project-id file)
-                       :file-id (:id file)}
-                      {:page-id (get-in file [:data :pages 0])})
-
-        handle-change
+        on-name-blur
         (fn [event]
-          (reset! value (dom/get-target-val event)))
+          (let [content (dom/get-target-val event)]
+            (when-not (str/blank? content)
+              (on-change {:name content}))))
 
         handle-go-to-edit
-        (fn [] (st/emit! (rt/nav :workspace {:project-id (:project-id file)
-                                             :file-id (:id file)}
-                                 {:page-id (get-in file [:data :pages 0])})))]
+        (fn []
+          (let [pparams {:project-id (:project-id file)
+                         :file-id (:id file)}]
+            (st/emit! (rt/nav :workspace pparams))))]
 
     (mf/use-effect
      (mf/deps editting?)
@@ -459,7 +460,7 @@
      (mf/deps focus-name?)
      (fn []
        (when focus-name?
-         (ts/schedule 100
+         (ts/schedule
           #(when-let [node (mf/ref-val name-input-ref)]
              (dom/focus! node)
              (dom/select-text! node))))))
@@ -530,8 +531,7 @@
            [:input.element-name.adv-typography-name
             {:type "text"
              :ref name-input-ref
-             :value @value
-             :on-change handle-change
-             :on-blur #(on-change {:name @value})}]]]
+             :default-value (cp/merge-path-item (:path typography) (:name typography))
+             :on-blur on-name-blur}]]]
          [:& typography-options {:values typography
                                  :on-change on-change}]])]]))

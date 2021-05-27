@@ -66,8 +66,7 @@
 
 (defmethod process-error :default
   [error]
-  (ex/raise :type :internal
-            :cause error))
+  (throw error))
 
 (defn run
   [{:keys [rlimits] :as cfg} {:keys [rlimit] :or {rlimit :image} :as params}]
@@ -184,11 +183,10 @@
   (us/assert ::input input)
   (let [{:keys [path mtype]} input]
     (if (= mtype "image/svg+xml")
-      (let [data (svg/parse (slurp path))
-            info (get-basic-info-from-svg data)]
+      (let [info (some-> path slurp svg/parse get-basic-info-from-svg)]
         (when-not info
           (ex/raise :type :validation
-                    :code :unable-to-retrieve-dimensions
+                    :code :invalid-svg-file
                     :hint "uploaded svg does not provides dimensions"))
         (assoc info :mtype mtype))
 
@@ -211,6 +209,7 @@
   [error]
   (ex/raise :type :validation
             :code :invalid-image
+            :hint "invalid image"
             :cause error))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

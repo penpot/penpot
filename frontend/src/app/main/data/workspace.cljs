@@ -1238,7 +1238,6 @@
             qparams {:page-id page-id}]
         (rx/of (rt/nav :workspace pparams qparams))))))
 
-
 (defn go-to-viewer
   ([] (go-to-viewer {}))
   ([{:keys [file-id page-id]}]

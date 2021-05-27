@@ -60,20 +60,20 @@
 
             old-points (->> content upg/content->points)
             new-points (->> new-content upg/content->points)
-            point-change (->> (map hash-map old-points new-points) (reduce merge))
+            point-change (->> (map hash-map old-points new-points) (reduce merge))]
 
-            [rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
-
-        (if (empty? new-content)
-          (rx/of (dch/commit-changes {:redo-changes rch
-                                      :undo-changes uch
-                                      :origin it})
-                 dwc/clear-edition-mode)
-          (rx/of (dch/commit-changes {:redo-changes rch
-                                      :undo-changes uch
-                                      :origin it})
-                 (selection/update-selection point-change)
-                 (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler))))))))
+        (when (and (some? new-content) (some? shape))
+          (let [[rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
+            (if (empty? new-content)
+              (rx/of (dch/commit-changes {:redo-changes rch
+                                          :undo-changes uch
+                                          :origin it})
+                     dwc/clear-edition-mode)
+              (rx/of (dch/commit-changes {:redo-changes rch
+                                          :undo-changes uch
+                                          :origin it})
+                     (selection/update-selection point-change)
+                     (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler))))))))))
 
 (defn modify-content-point
   [content {dx :x dy :y} modifiers point]
@@ -263,7 +263,8 @@
         (streams/drag-stream
          (rx/concat
           (->> (streams/move-handler-stream snap-toggled start-point point handler opposite points)
-               (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
+               (rx/take-until (->> stream (rx/filter #(or (ms/mouse-up? %)
+                                                          (streams/finish-edition? %)))))
                (rx/map
                 (fn [{:keys [x y alt? shift?]}]
                   (let [pos (cond-> (gpt/point x y)

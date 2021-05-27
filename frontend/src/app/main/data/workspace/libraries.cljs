@@ -228,7 +228,7 @@
     ptk/WatchEvent
     (watch [it state stream]
       (let [[path name] (cp/parse-path-name (:name typography))
-            typography (assoc typography :path path :name name)
+            typography  (assoc typography :path path :name name)
             prev (get-in state [:workspace-data :typographies (:id typography)])
             rchg {:type :mod-typography
                   :typography typography}
