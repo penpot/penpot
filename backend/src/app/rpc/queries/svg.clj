@@ -36,6 +36,7 @@
               :message (ex-message e))
       (ex/raise :type :validation
                 :code :invalid-svg-file
+                :hint "invalid svg file"
                 :cause e))))
 
 (declare pre-process)
