@@ -82,27 +82,13 @@
 
 (defn encode-style-value
   [v]
-  (cond
-    (uuid? v)    (str "u:" v)
-    (string? v)  (str "s:" v)
-    (number? v)  (str "n:" v)
-    (keyword? v) (str "k:" (name v))
-    (map? v)     (str "m:" (t/encode v))
-    (nil? v)     (str "z:null")
-    :else (str "o:" v)))
+  #?(:cljs (t/encode v)
+     :clj  (t/encode-str v)))
 
 (defn decode-style-value
   [v]
-  (let [prefix (subs v 0 2)]
-    (case prefix
-      "s:" (subs v 2)
-      "n:" (js/Number (subs v 2))
-      "k:" (keyword (subs v 2))
-      "m:" (t/decode (subs v 2))
-      "u:" (uuid/uuid (subs v 2))
-      "z:" nil
-      "o:" (subs v 2)
-      v)))
+  #?(:cljs (t/decode v)
+     :clj  (t/decode-str v)))
 
 (defn encode-style
   [key val]

@@ -20,8 +20,8 @@
                        :font-weight "400",
                        :font-style "normal",
                        :text text}]}]}]}]
-    (cljs.pprint/pprint (txt/convert-to-draft content))
-    (cljs.pprint/pprint (txt/convert-from-draft (txt/convert-to-draft content)))
+    ;; (cljs.pprint/pprint (txt/convert-to-draft content))
+    ;; (cljs.pprint/pprint (txt/convert-from-draft (txt/convert-to-draft content)))
     (t/is (= (txt/convert-from-draft (txt/convert-to-draft content))
              content))))
 
