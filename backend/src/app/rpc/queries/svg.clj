@@ -54,6 +54,6 @@
   [data]
   (cond-> data
     (str/includes? data "<!DOCTYPE")
-    (str/replace #"<\!DOCTYPE[^>]+>" "")))
+    (str/replace #"<\!DOCTYPE[^>]*>" "")))
 
 (def pre-process strip-doctype)

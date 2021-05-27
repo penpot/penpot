@@ -183,7 +183,7 @@
   (us/assert ::input input)
   (let [{:keys [path mtype]} input]
     (if (= mtype "image/svg+xml")
-      (let [info (some-> path slurp svg/pre-process svg/parse get-basic-info-from-svg)]
+      (let [info (some-> path slurp svg/parse get-basic-info-from-svg)]
         (when-not info
           (ex/raise :type :validation
                     :code :invalid-svg-file
