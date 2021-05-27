@@ -242,6 +242,13 @@
                :auth-uri (get data "authorization_endpoint")
                :user-uri (get data "userinfo_endpoint"))))))
 
+(defn- obfuscate-string
+  [s]
+  (if (< (count s) 10)
+    (apply str (take (count s) (repeat "*")))
+    (str (subs s 0 5)
+         (apply str (take (- (count s) 5) (repeat "*"))))))
+
 (defn- initialize-oidc-provider
   [cfg]
   (let [opts {:base-uri      (cf/get :oidc-base-uri)
@@ -261,10 +268,12 @@
                (string? (:user-uri opts))
                (string? (:auth-uri opts)))
         (do
-          (l/info :action "initialize" :provider "oid" :method "static")
+          (l/info :action "initialize" :provider "oidc" :method "static"
+                  :opts (pr-str (update opts :client-secret obfuscate-string)))
           (assoc-in cfg [:providers "oidc"] opts))
         (let [opts (discover-oidc-config opts)]
-          (l/info :action "initialize" :provider "oid" :method "discover")
+          (l/info :action "initialize" :provider "oidc" :method "discover"
+                  :opts (pr-str (update opts :client-secret obfuscate-string)))
           (assoc-in cfg [:providers "oidc"] opts)))
       cfg)))
 
@@ -280,7 +289,8 @@
     (if (and (string? (:client-id opts))
              (string? (:client-secret opts)))
       (do
-        (l/info :action "initialize" :provider "google")
+        (l/info :action "initialize" :provider "google"
+                :opts (pr-str (update opts :client-secret obfuscate-string)))
         (assoc-in cfg [:providers "google"] opts))
       cfg)))
 
@@ -296,7 +306,8 @@
     (if (and (string? (:client-id opts))
              (string? (:client-secret opts)))
       (do
-        (l/info :action "initialize" :provider "github")
+        (l/info :action "initialize" :provider "github"
+                :opts (pr-str (update opts :client-secret obfuscate-string)))
         (assoc-in cfg [:providers "github"] opts))
       cfg)))
 
@@ -315,7 +326,8 @@
     (if (and (string? (:client-id opts))
              (string? (:client-secret opts)))
       (do
-        (l/info :action "initialize" :provider "gitlab")
+        (l/info :action "initialize" :provider "gitlab"
+                :opts (pr-str (update opts :client-secret obfuscate-string)))
         (assoc-in cfg [:providers "gitlab"] opts))
       cfg)))
 
