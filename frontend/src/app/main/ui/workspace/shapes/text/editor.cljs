@@ -9,6 +9,7 @@
    ["draft-js" :as draft]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.text :as txt]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
@@ -154,7 +155,7 @@
        :handle-return handle-return
        :strip-pasted-styles true
        :custom-style-fn (fn [styles _]
-                          (-> (ted/styles-to-attrs styles)
+                          (-> (txt/styles-to-attrs styles)
                               (sts/generate-text-styles)))
        :block-renderer-fn #(render-block % shape)
        :ref on-editor

@@ -1,16 +1,17 @@
 (ns app.test-helpers.pages
-  (:require [cljs.test :as t :include-macros true]
-            [cljs.pprint :refer [pprint]]
-            [beicon.core :as rx]
-            [potok.core :as ptk]
-            [app.common.uuid :as uuid]
-            [app.common.geom.point :as gpt]
-            [app.common.geom.shapes :as gsh]
-            [app.common.pages :as cp]
-            [app.common.pages.helpers :as cph]
-            [app.main.data.workspace :as dw]
-            [app.main.data.workspace.groups :as dwg]
-            [app.main.data.workspace.libraries-helpers :as dwlh]))
+  (:require
+   [cljs.test :as t :include-macros true]
+   [cljs.pprint :refer [pprint]]
+   [beicon.core :as rx]
+   [potok.core :as ptk]
+   [app.common.uuid :as uuid]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.libraries-helpers :as dwlh]))
 
 ;; ---- Helpers to manage pages and objects
 
@@ -84,7 +85,7 @@
          shapes (dwg/shapes-for-grouping (:objects page) ids)
 
          [group rchanges uchanges]
-         (dwg/prepare-create-group (:id page) shapes prefix true)]
+         (dwg/prepare-create-group (:objects page) (:id page) shapes prefix true)]
 
      (swap! idmap assoc label (:id group))
      (update state :workspace-data
