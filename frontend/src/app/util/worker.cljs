@@ -14,14 +14,25 @@
 (declare handle-response)
 (defrecord Worker [instance stream])
 
-(defn- send-message! [worker {sender-id :sender-id :as message}]
-  (let [data (t/encode message)
-        instance (:instance worker)]
-    (.postMessage instance data)
-    (->> (:stream worker)
-         (rx/filter #(= (:reply-to %) sender-id))
-         (rx/take 1)
-         (rx/map handle-response))))
+(defn- send-message!
+  ([worker message]
+   (send-message! worker message nil))
+
+  ([worker {sender-id :sender-id :as message} {:keys [many?] :or {many? false}}]
+   (let [take-messages
+         (fn [ob]
+           (if many?
+             (rx/take-while #(not (:completed %)) ob)
+             (rx/take 1 ob)))
+
+         data (t/encode message)
+         instance (:instance worker)]
+
+     (.postMessage instance data)
+     (->> (:stream worker)
+          (rx/filter #(= (:reply-to %) sender-id))
+          (take-messages)
+          (rx/map handle-response)))))
 
 (defn ask!
   [worker message]
@@ -29,6 +40,14 @@
    worker
    {:sender-id (uuid/next)
     :payload message}))
+
+(defn ask-many!
+  [worker message]
+  (send-message!
+   worker
+   {:sender-id (uuid/next)
+    :payload message}
+   {:many? true}))
 
 (defn ask-buffered!
   [worker message]

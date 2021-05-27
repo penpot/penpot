@@ -45,6 +45,6 @@
                    :width width
                    :height height
                    :style {:stroke "#1FDEA7"
-                           :fill "transparent"
+                           :fill "none"
                            :stroke-width (/ 1 zoom)}}])))
 

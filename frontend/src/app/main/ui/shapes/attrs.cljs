@@ -89,7 +89,7 @@
                      ;; we setup the default fill as transparent (instead of black)
                      (and (not (contains? shape :svg-attrs))
                           (not (#{ :svg-raw :group } (:type shape))))
-                     {:fill "transparent"}
+                     {:fill "none"}
 
                      :else
                      {})

@@ -54,6 +54,10 @@
   [id]
   (dom/getElement id))
 
+(defn get-elements-by-tag
+  [node tag]
+  (.getElementsByTagName node tag))
+
 (defn stop-propagation
   [e]
   (when e
@@ -279,13 +283,14 @@
 (defn mtype->extension [mtype]
   ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
   (case mtype
-    "image/apng"    "apng"
-    "image/avif"    "avif"
-    "image/gif"     "gif"
-    "image/jpeg"    "jpg"
-    "image/png"     "png"
-    "image/svg+xml" "svg"
-    "image/webp"    "webp"
+    "image/apng"      "apng"
+    "image/avif"      "avif"
+    "image/gif"       "gif"
+    "image/jpeg"      "jpg"
+    "image/png"       "png"
+    "image/svg+xml"   "svg"
+    "image/webp"      "webp"
+    "application/zip" "zip"
     nil))
 
 (defn set-attribute [^js node ^string attr value]
@@ -311,3 +316,21 @@
          (>= (.-left rect) 0)
          (<= (.-bottom rect) height)
          (<= (.-right rect) width))))
+
+(defn trigger-download-uri
+  [filename mtype uri]
+  (let [link (create-element "a")
+        extension (mtype->extension mtype)
+        filename (if extension
+                   (str filename "." extension)
+                   filename)]
+    (obj/set! link "href" uri)
+    (obj/set! link "download" filename)
+    (obj/set! (.-style ^js link) "display" "none")
+    (.appendChild (.-body ^js js/document) link)
+    (.click link)
+    (.remove link)))
+
+(defn trigger-download
+  [filename blob]
+  (trigger-download-uri filename (.-type ^js blob) (dom/create-uri blob)))

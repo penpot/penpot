@@ -109,7 +109,7 @@
                              "translate(" (* zoom x) ", " (* zoom y) ")")}]
       (when arrow-dir
         [:path {:stroke "#31EFB8"
-                :fill "transparent"
+                :fill "none"
                 :stroke-width 2
                 :d arrow-pdata
                 :transform (str
@@ -134,14 +134,16 @@
 
     (if-not selected?
       [:path {:stroke "#B1B2B5"
-              :fill "transparent"
+              :fill "none"
+              :pointer-events "visible"
               :stroke-width (/ 2 zoom)
               :d pdata
               :on-mouse-down #(on-mouse-down % orig-shape selected)}]
 
       [:g {:on-mouse-down #(on-mouse-down % orig-shape selected)}
        [:path {:stroke "#31EFB8"
-               :fill "transparent"
+               :fill "none"
+               :pointer-events "visible"
                :stroke-width (/ 2 zoom)
                :d pdata}]
        [:& interaction-marker {:x orig-x

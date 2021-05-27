@@ -43,35 +43,42 @@
   "Process the message and returns to the client"
   [{:keys [sender-id payload] :as message}]
   (us/assert ::message message)
-  (try
-    (let [result (impl/handler payload)]
-      (cond
-        (p/promise? result)
-        (p/handle result
-                  (fn [msg]
-                    (.postMessage js/self (t/encode
-                                           {:reply-to sender-id
-                                            :payload msg})))
-                  (fn [err]
-                    (.postMessage js/self (t/encode
-                                           {:reply-to sender-id
-                                            :error {:data (ex-data err)
-                                                    :message (ex-message err)}}))))
+  (letfn [(post [msg]
+            (let [msg (-> msg (assoc :reply-to sender-id) (t/encode))]
+              (.postMessage js/self msg)))
 
-        (or (rx/observable? result)
-            (rx/subject? result))
-        (throw (ex-info "not implemented" {}))
+          (reply [result]
+            (post {:payload result}))
 
-        :else
-        (.postMessage js/self (t/encode
-                               {:reply-to sender-id
-                                :payload result}))))
-    (catch :default e
-      (.error js/console "error" e)
-      (let [message {:reply-to sender-id
-                     :error {:data (ex-data e)
-                             :message (ex-message e)}}]
-        (.postMessage js/self (t/encode message))))))
+          (reply-error [err]
+            (.error js/console "error" err)
+            (post {:error {:data (ex-data err)
+                           :message (ex-message err)}}))
+
+          (reply-completed
+            ([] (reply-completed nil))
+            ([msg] (post {:payload msg
+                          :completed true})))]
+
+    (try
+      (let [result (impl/handler payload)
+            promise? (p/promise? result)
+            stream? (or (rx/observable? result) (rx/subject? result))]
+
+        (cond
+          promise?
+          (-> result
+              (p/then reply-completed)
+              (p/catch reply-error))
+
+          stream?
+          (rx/subscribe result reply reply-error reply-completed)
+
+          :else
+          (reply result)))
+
+      (catch :default err
+        (reply-error err)))))
 
 (defn- drop-message
   "Sends to the client a notifiction that its messages have been dropped"

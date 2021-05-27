@@ -26,3 +26,7 @@
 (defn ask-buffered!
   [message]
   (uw/ask-buffered! instance message))
+
+(defn ask-many!
+  [message]
+  (uw/ask-many! instance message))

@@ -55,7 +55,7 @@
                      :opacity color-opacity}
                 #js {:stroke color-value
                      :strokeOpacity color-opacity
-                     :fill "transparent"})]
+                     :fill "none"})]
     [:g.grid
      (for [{:keys [x y width height]} (gg/grid-areas frame grid)]
        (do

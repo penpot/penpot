@@ -75,7 +75,7 @@
              :y y
              :width width
              :height height
-             :style {:fill "transparent"
+             :style {:fill "none"
                      :stroke select-color
                      :stroke-width selection-rect-width}}]]))
 

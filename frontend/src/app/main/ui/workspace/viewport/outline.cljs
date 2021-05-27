@@ -36,7 +36,7 @@
                        :path "path"
                        "rect")
 
-        common {:fill "transparent"
+        common {:fill "none"
                 :stroke color
                 :strokeWidth (/ 1 zoom)
                 :pointerEvents "none"
