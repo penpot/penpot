@@ -89,7 +89,7 @@
               {:content {:data (js/Uint8Array. data)
                          :name name
                          :type type}
-               :font-family family
+               :font-family (or family "")
                :font-weight (cm/parse-font-weight variant)
                :font-style  (cm/parse-font-style variant)}))
 

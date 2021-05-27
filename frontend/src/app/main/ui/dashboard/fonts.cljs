@@ -192,9 +192,10 @@
         on-save
         (fn [event]
           (let [font-family @state]
-            (st/emit! (df/update-font
-                       {:id font-id
-                        :name font-family}))
+            (when-not (str/blank? font-family)
+              (st/emit! (df/update-font
+                         {:id font-id
+                          :name font-family})))
             (reset! edit? false)))
 
         on-key-down
