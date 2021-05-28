@@ -310,7 +310,7 @@
   [content points]
 
   (let [segments-set (into #{}
-                           (map (fn [[p1 p2 _]] [p1 p2]))
+                           (map (fn [{:keys [start end]}] [start end]))
                            (get-segments content points))
 
         create-line-command (fn [point other]
@@ -382,7 +382,7 @@
 
 (defn group-segments [segments]
   (loop [result []
-         [point-a point-b :as segment] (first segments)
+         {point-a :start point-b :end :as segment} (first segments)
          segments (rest segments)]
 
     (if (nil? segment)

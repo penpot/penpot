@@ -10,6 +10,11 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+## 1.6.3-alpha
+
+### :bug: Bugs fixed
+
+- Fix problem with merge and join nodes [#990](https://github.com/penpot/penpot/issues/990)
 
 ## 1.6.2-alpha
 
