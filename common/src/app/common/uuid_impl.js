@@ -16,7 +16,8 @@ goog.scope(function() {
   const self = app.common.uuid_impl;
 
   const fill = (() => {
-    if (typeof global.crypto !== "undefined") {
+    if (typeof global.crypto !== "undefined" &&
+        typeof global.crypto.getRandomValues !== "undefined") {
       return (buf) => {
         global.crypto.getRandomValues(buf);
         return buf;

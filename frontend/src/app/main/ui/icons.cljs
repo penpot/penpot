@@ -5,6 +5,7 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.icons
+  (:refer-clojure :exclude [import])
   (:require-macros [app.main.ui.icons :refer [icon-xref]])
   (:require [rumext.alpha :as mf]))
 
@@ -53,6 +54,7 @@
 (def icon-set (icon-xref :icon-set))
 (def icon-verify (icon-xref :icon-verify))
 (def image (icon-xref :image))
+(def import (icon-xref :import))
 (def infocard (icon-xref :infocard))
 (def interaction (icon-xref :interaction))
 (def layers (icon-xref :layers))
@@ -60,9 +62,9 @@
 (def libraries (icon-xref :libraries))
 (def library (icon-xref :library))
 (def line (icon-xref :line))
+(def line-height (icon-xref :line-height))
 (def listing-enum (icon-xref :listing-enum))
 (def listing-thumbs (icon-xref :listing-thumbs))
-(def line-height (icon-xref :line-height))
 (def loader (icon-xref :loader))
 (def lock (icon-xref :lock))
 (def logo (icon-xref :uxbox-logo))

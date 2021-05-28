@@ -6,6 +6,7 @@
 
 (ns app.worker
   (:require
+
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.transit :as t]
@@ -14,6 +15,9 @@
    [app.util.worker :as w]
    [app.worker.impl :as impl]
    [app.worker.selection]
+
+   [app.worker.import]
+   [app.worker.export]
    [app.worker.snaps]
    [app.worker.thumbnails]
    [beicon.core :as rx]
@@ -158,5 +162,4 @@
   []
   (set! process-message-sub (subscribe-buffer-messages))
   (.addEventListener js/self "message" on-message))
-
 
