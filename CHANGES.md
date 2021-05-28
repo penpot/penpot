@@ -11,20 +11,37 @@
 ### :heart: Community contributions by (Thank you!)
 
 
+## 1.6.2-alpha
+
+### :bug: Bugs fixed
+
+- Add better auth module logging.
+- Add missing `email` scope to OIDC backend.
+- Add missing cause prop on error loging.
+- Fix empty font-family handling on custom fonts page.
+- Fix incorrect unicode code points handling on draft-to-penpot conversion.
+- Fix some problems with paths.
+- Fix unexpected exception on duplicate project.
+- Fix unexpected exception when user leaves typography name empty.
+- Improve error report on uploading invalid image to library.
+- Minor fix on previous commit.
+- Minor improvements on svg uploading on libraries.
+
+
 ## 1.6.1-alpha
 
 ### :bug: Bugs fixed
 
-- Make the navigation async by default.
-- Improve editor lifecycle management.
-- Fix problem when creating a component with empty data.
+- Add safety check on reg-objects change impl.
+- Fix custom fonts embbedding issue.
 - Fix dashboard ordering issue.
+- Fix problem when creating a component with empty data.
 - Fix problem with moving shapes into frames.
 - Fix problems with mov-objects.
-- Fix wrong type usage on libraries changes.
-- Fix custom fonts embbedding issue.
-- Add safety check on reg-objects change impl.
 - Fix unexpected excetion related to rounding integers.
+- Fix wrong type usage on libraries changes.
+- Improve editor lifecycle management.
+- Make the navigation async by default.
 
 
 ## 1.6.0-alpha

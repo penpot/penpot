@@ -117,7 +117,8 @@
     (l/error :hint "psql exception"
              :error-message (ex-message error)
              :error-id (str (:id cdata))
-             :sql-state state)
+             :sql-state state
+             :cause error)
 
     (cond
       (= state "57014")
