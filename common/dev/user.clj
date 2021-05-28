@@ -6,28 +6,15 @@
 
 (ns user
   (:require
-   [app.common.exceptions :as ex]
-   [app.config :as cfg]
-   [app.main :as main]
-   [app.util.blob :as blob]
-   [app.util.json :as json]
-   [app.util.time :as dt]
-   [app.util.transit :as t]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint print-table]]
    [clojure.repl :refer :all]
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as sgen]
    [clojure.test :as test]
-   [clojure.test :as test]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
-   [criterium.core :refer [quick-bench bench with-progress-reporting]]
-   [integrant.core :as ig]))
-
-(repl/disable-reload! (find-ns 'integrant.core))
-
-(defonce system nil)
+   [criterium.core :refer [quick-bench bench with-progress-reporting]]))
 
 ;; --- Benchmarking Tools
 
@@ -50,7 +37,7 @@
 ;; --- Development Stuff
 
 (defn- run-tests
-  ([] (run-tests #"^app.*-test$"))
+  ([] (run-tests #"^app.common.tests.*"))
   ([o]
    (repl/refresh)
    (cond
@@ -62,36 +49,3 @@
        (do (require (symbol sns))
            (test/test-vars [(resolve o)]))
        (test/test-ns o)))))
-
-(defn- start
-  []
-  (alter-var-root #'system (fn [sys]
-                             (when sys (ig/halt! sys))
-                             (-> main/system-config
-                                 (ig/prep)
-                                 (ig/init))))
-  :started)
-
-(defn- stop
-  []
-  (alter-var-root #'system (fn [sys]
-                             (when sys (ig/halt! sys))
-                             nil))
-  :stoped)
-
-(defn restart
-  []
-  (stop)
-  (repl/refresh :after 'user/start))
-
-(defn restart-all
-  []
-  (stop)
-  (repl/refresh-all :after 'user/start))
-
-(defn compression-bench
-  [data]
-  (print-table
-   [{:v1 (alength (blob/encode data {:version 1}))
-     :v2 (alength (blob/encode data {:version 2}))
-     :v3 (alength (blob/encode data {:version 3}))}]))

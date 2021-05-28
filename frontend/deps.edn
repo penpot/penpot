@@ -1,9 +1,32 @@
-{:paths ["src" "vendor" "resources" "../common"]
- :deps {}
+{:paths ["src" "vendor" "resources" "test"]
+ :deps
+ {penpot/common
+  {:local/root "../common"}
+
+  binaryage/devtools {:mvn/version "RELEASE"}
+  metosin/reitit-core {:mvn/version "0.5.13"}
+
+  funcool/beicon {:mvn/version "2021.04.29-0"}
+  funcool/okulary {:mvn/version "2020.04.14-0"}
+  funcool/potok {:mvn/version "4.0.0"}
+  funcool/rumext {:mvn/version "2021.05.12-1"}
+  funcool/tubax {:mvn/version "2021.05.20-0"}
+
+  instaparse/instaparse {:mvn/version "1.4.10"}
+  }
+
  :aliases
  {:outdated
   {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}
                 org.slf4j/slf4j-nop {:mvn/version "RELEASE"}}
    :main-opts ["-m" "antq.core"]}
+
+  :dev
+  {:extra-deps
+   {thheller/shadow-cljs {:mvn/version "2.14.1"}}}
+
+  :shadow-cljs
+  {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
+
   }}
 
