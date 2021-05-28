@@ -163,7 +163,7 @@
 
                   ;; when connection is closed
                   (mtx-aconn :dec)
-                  (mtx-sessions :observe (/ (inst-ms (dt/duration-between created-at (dt/now))) 1000.0))
+                  (mtx-sessions :observe (/ (inst-ms (dt/diff created-at (dt/now))) 1000.0))
 
                   ;; close subscription
                   (a/close! sub-ch))))

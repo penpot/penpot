@@ -39,7 +39,7 @@
       this)))
 
 (defn tdigest-summary
-  [td]
+  [^js td]
   (str "samples=" (unchecked-get td "n") "\n"
        "Q50=" (.percentile td 0.50) "\n"
        "Q75=" (.percentile td 0.75) "\n"

@@ -10,13 +10,14 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str])
   (:import
-   java.time.Instant
    java.time.Duration
-   java.util.Date
-   java.time.ZonedDateTime
+   java.time.Instant
+   java.time.OffsetDateTime
    java.time.ZoneId
+   java.time.ZonedDateTime
    java.time.format.DateTimeFormatter
    java.time.temporal.TemporalAmount
+   java.util.Date
    org.apache.logging.log4j.core.util.CronExpression))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -54,28 +55,37 @@
     (obj->duration ms-or-obj)))
 
 (defn duration-between
+  {:deprecated true}
   [t1 t2]
   (Duration/between t1 t2))
 
-(letfn [(conformer [v]
-          (cond
-            (duration? v) v
+(defn diff
+  [t1 t2]
+  (Duration/between t1 t2))
 
-            (string? v)
-            (try
-              (duration v)
-              (catch java.time.format.DateTimeParseException _e
-                ::s/invalid))
+(s/def ::duration
+  (s/conformer
+   (fn [v]
+     (cond
+       (duration? v) v
 
-            :else
-            ::s/invalid))
-        (unformer [v]
-          (subs (str v) 2))]
-  (s/def ::duration (s/conformer conformer unformer)))
+       (string? v)
+       (try
+         (duration v)
+         (catch java.time.format.DateTimeParseException _e
+           ::s/invalid))
+
+       :else
+       ::s/invalid))
+   (fn [v]
+     (subs (str v) 2))))
 
 (extend-protocol clojure.core/Inst
   java.time.Duration
-  (inst-ms* [v] (.toMillis ^Duration v)))
+  (inst-ms* [v] (.toMillis ^Duration v))
+
+  OffsetDateTime
+  (inst-ms* [v] (.toEpochMilli (.toInstant ^OffsetDateTime v))))
 
 (defmethod print-method Duration
   [mv ^java.io.Writer writer]

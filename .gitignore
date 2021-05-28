@@ -30,6 +30,8 @@ node_modules
 /exporter/target
 /exporter/.shadow-cljs
 /docker/images/bundle*
+/common/.shadow-cljs
+/common/target
 /.clj-kondo/.cache
 /bundle*
 /media
