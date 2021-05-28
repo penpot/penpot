@@ -173,7 +173,7 @@
           index  {file-id (uuid/next)}
           params (assoc params :index index :file file)]
       (proj/check-edition-permissions! conn profile-id (:project-id file))
-
+      (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
       (-> (duplicate-file conn params {:reset-shared-flag true})
           (update :data blob/decode)))))
 
@@ -191,6 +191,7 @@
   (db/with-atomic [conn pool]
     (let [project (db/get-by-id conn :project project-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id project))
+      (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
       (duplicate-project conn (assoc params :project project)))))
 
 (defn duplicate-project
