@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-23 21:33+0000\n"
+"PO-Revision-Date: 2021-06-01 00:38+0000\n"
 "Last-Translator: Antonio <antonio@fesomia.cat>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
 "ca/>\n"
@@ -18,7 +18,7 @@ msgstr "Ja teniu un compte?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
 msgstr ""
-"Reviseu el correu i cliqueu l'enllaç per verificar i començar a utilitzar "
+"Reviseu el correu i cliqueu l'enllaç per verificar i començar a utilitzar el "
 "Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -436,7 +436,7 @@ msgstr "Descripció"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-go-to"
-msgstr ""
+msgstr "Ves als debats"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-subtitle1"
@@ -450,7 +450,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-title"
-msgstr ""
+msgstr "Debats de l'equip"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
@@ -603,3 +603,218 @@ msgstr "Entreu amb OpenID (SSO)"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
 msgstr "Entreu amb Google"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "Administració"
+
+msgid "history.alert-message"
+msgstr "Esteu veient la versió %s"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "Informació"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "Text"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "Rectangle"
+
+msgid "handoff.tabs.code.selected.path"
+msgstr "Camí"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code.selected.multiple"
+msgstr "%s seleccionats"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "Imatge"
+
+msgid "handoff.tabs.code.selected.group"
+msgstr "Grup"
+
+msgid "handoff.tabs.code.selected.frame"
+msgstr "Taula de treball"
+
+msgid "handoff.tabs.code.selected.curve"
+msgstr "Corba"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "Cercle"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.letter-spacing"
+msgstr "Espaiat de la lletra"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Codi"
+
+msgid "handoff.attributes.typography.text-transform.uppercase"
+msgstr "Majúscules"
+
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "Inicials en majúscules"
+
+msgid "handoff.attributes.typography.text-transform.none"
+msgstr "Cap"
+
+msgid "handoff.attributes.typography.text-transform.lowercase"
+msgstr "Minúscules"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-transform"
+msgstr "Transformació del text"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "Subratllat"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "Barrat"
+
+msgid "handoff.attributes.typography.text-decoration.none"
+msgstr "Cap"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "Decoració del text"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "Alçada de la línia"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "Estil de la lletra"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "Mida de la lletra"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "Família tipogràfica"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "Tipografia"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "Amplada"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Sòlid"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "Cap"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "Mesclat"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "Puntejat"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "Exterior"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.inner"
+msgstr "Interior"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "Centre"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke"
+msgstr "Traç"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.spread"
+msgstr "S"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-y"
+msgstr "Y"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-x"
+msgstr "X"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.blur"
+msgstr "B"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "Ombra"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "Amplada"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "Superior"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "Rotació"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "Radi"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "Esquerra"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "Alçada"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout"
+msgstr "Disposició"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "Amplada"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "Alçada"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "Baixa la imatge original"
+
+#: src/app/main/ui/handoff/attributes/fill.cljs
+msgid "handoff.attributes.fill"
+msgstr "Emplenat"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur.value"
+msgstr "Valor"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur"
+msgstr "Difuminat"
