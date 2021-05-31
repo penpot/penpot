@@ -9,8 +9,8 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.transit :as t]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [buddy.core.kdf :as bk]
    [buddy.sign.jwe :as jwe]
    [clojure.spec.alpha :as s]

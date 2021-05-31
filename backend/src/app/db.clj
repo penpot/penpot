@@ -10,13 +10,13 @@
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
+   [app.common.transit :as t]
    [app.db.sql :as sql]
    [app.metrics :as mtx]
    [app.util.json :as json]
    [app.util.logging :as l]
    [app.util.migrations :as mg]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
@@ -344,7 +344,7 @@
   [data]
   (doto (org.postgresql.util.PGobject.)
     (.setType "jsonb")
-    (.setValue (t/encode-verbose-str data))))
+    (.setValue (t/encode-str data {:type :json-verbose}))))
 
 (defn json
   "Encode as plain json."

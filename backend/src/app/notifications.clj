@@ -8,12 +8,12 @@
   "A websocket based notifications mechanism."
   (:require
    [app.common.spec :as us]
+   [app.common.transit :as t]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.async :as aa]
    [app.util.logging :as l]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
