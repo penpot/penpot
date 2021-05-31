@@ -6,10 +6,10 @@
 
 (ns app.http.middleware
   (:require
+   [app.common.transit :as t]
    [app.metrics :as mtx]
    [app.util.json :as json]
    [app.util.logging :as l]
-   [app.util.transit :as t]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
    [clojure.java.io :as io]

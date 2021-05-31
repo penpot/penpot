@@ -8,8 +8,8 @@
   "A generic blob storage encoding. Mainly used for page data, page
   options and txlog payload storage."
   (:require
+   [app.common.transit :as t]
    [app.config :as cf]
-   [app.util.transit :as t]
    [taoensso.nippy :as n])
   (:import
    java.io.ByteArrayInputStream
