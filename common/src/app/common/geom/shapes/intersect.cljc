@@ -6,9 +6,8 @@
 
 (ns app.common.geom.shapes.intersect
   (:require
-   [app.common.data :as d]
-   [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gpp]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]))
@@ -113,11 +112,10 @@
   ;; Even-odd algorithm
   ;; Cast a ray from the point in any direction and count the intersections
   ;; if it's odd the point is inside the polygon
-  (let []
-    (->> lines
-         (filter #(intersect-ray? p %))
-         (count)
-         (odd?))))
+  (->> lines
+       (filter #(intersect-ray? p %))
+       (count)
+       (odd?)))
 
 (defn- next-windup
   "Calculates the next windup number for the nonzero algorithm"
@@ -173,7 +171,7 @@
 (defn overlaps-path?
   "Checks if the given rect overlaps with the path in any point"
   [shape rect]
-  
+
   (let [;; If paths are too complex the intersection is too expensive
         ;; we fallback to check its bounding box otherwise the performance penalty
         ;; is too big
@@ -186,7 +184,7 @@
                        (points->lines (:points shape))
                        (gpp/path->lines shape))
         start-point (-> shape :content (first) :params (gpt/point))]
-    
+
     (or (is-point-inside-nonzero? (first rect-points) path-lines)
         (is-point-inside-nonzero? start-point rect-lines)
         (intersects-lines? rect-lines path-lines))))
@@ -197,14 +195,14 @@
 
   (let [center (gpt/point cx cy)
         transform (gmt/transform-in center transform)
-        {px :x py :y} (gpt/transform point transform)]
-    ;; Ellipse inequality formula
-    ;; https://en.wikipedia.org/wiki/Ellipse#Shifted_ellipse
-    (let [v (+ (/ (mth/sq (- px cx))
-                  (mth/sq rx))
-               (/ (mth/sq (- py cy))
-                  (mth/sq ry)))]
-      (<= v 1))))
+        {px :x py :y} (gpt/transform point transform)
+        ;; Ellipse inequality formula
+        ;; https://en.wikipedia.org/wiki/Ellipse#Shifted_ellipse
+        v (+ (/ (mth/sq (- px cx))
+                (mth/sq rx))
+             (/ (mth/sq (- py cy))
+                (mth/sq ry)))]
+    (<= v 1)))
 
 (defn intersects-line-ellipse?
   "Checks wether a single line intersects with the given ellipse"
@@ -272,13 +270,13 @@
 
         center (gpt/point (+ x (/ width 2))
                           (+ y (/ height 2)))
-        
+
         ellipse-data {:cx (:x center)
                       :cy (:y center)
                       :rx (/ width 2)
                       :ry (/ height 2)
                       :transform (:transform-inverse shape)}]
-    
+
     (or (is-point-inside-evenodd? center rect-lines)
         (is-point-inside-ellipse? (first rect-points) ellipse-data)
         (intersects-lines-ellipse? rect-lines ellipse-data))))

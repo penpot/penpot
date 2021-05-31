@@ -8,10 +8,8 @@
   (:require
    #?(:cljs [cljs.pprint :as pp]
       :clj  [clojure.pprint :as pp])
-   [cuerdas.core :as str]
-   [app.common.data :as d]
-   [app.common.math :as mth]
-   [app.common.geom.point :as gpt]))
+   [app.common.geom.point :as gpt]
+   [app.common.math :as mth]))
 
 ;; --- Matrix Impl
 

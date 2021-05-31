@@ -7,13 +7,13 @@
 (ns app.common.geom.shapes.transforms
   (:require
    [app.common.attrs :as attrs]
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpa]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
-   [app.common.data :as d]
    [app.common.text :as txt]))
 
 ;; --- Relative Movement
@@ -58,12 +58,6 @@
         dy (- (d/check-num y) (-> shape :selrect :y))]
     (move shape (gpt/point dx dy))))
 
-
-(defn- modif-rotation [shape]
-  (let [cur-rotation (d/check-num (:rotation shape))
-        delta-angle  (d/check-num (get-in shape [:modifiers :rotation]))]
-    (mod (+ cur-rotation delta-angle) 360)))
-
 (defn transform-matrix
   "Returns a transformation matrix without changing the shape properties.
   The result should be used in a `transform` attribute in svg"
@@ -86,14 +80,13 @@
                           (gpt/point 0 0))]
      (inverse-transform-matrix shape shape-center)))
   ([{:keys [flip-x flip-y] :as shape} center]
-   (let []
-     (-> (gmt/matrix)
-         (gmt/translate center)
-         (cond->
-             flip-x (gmt/scale (gpt/point -1 1))
-             flip-y (gmt/scale (gpt/point 1 -1)))
-         (gmt/multiply (:transform-inverse shape (gmt/matrix)))
-         (gmt/translate (gpt/negate center))))))
+   (-> (gmt/matrix)
+       (gmt/translate center)
+       (cond->
+           flip-x (gmt/scale (gpt/point -1 1))
+           flip-y (gmt/scale (gpt/point 1 -1)))
+       (gmt/multiply (:transform-inverse shape (gmt/matrix)))
+       (gmt/translate (gpt/negate center)))))
 
 (defn transform-point-center
   "Transform a point around the shape center"
@@ -333,8 +326,9 @@
               (dissoc :modifiers))))
       shape)))
 
+;; TODO: looks like orig-shape is useless argument
 (defn apply-text-resize
-  [shape orig-shape modifiers]
+  [shape _orig-shape modifiers]
   (if (and (= (:type shape) :text)
            (:resize-scale-text modifiers))
     (let [merge-attrs (fn [attrs]
@@ -376,7 +370,7 @@
                 :y      (- (:y new-selrect 0)      (:y selrect 0))
                 :width  (- (:width new-selrect 1)  (:width selrect 1))
                 :height (- (:height new-selrect 1) (:height selrect 1))}]
-    
+
     (cond-> group
       (and (some? svg-viewbox) (some? selrect) (some? new-selrect))
       (update :svg-viewbox
@@ -388,9 +382,6 @@
 
 (defn update-group-selrect [group children]
   (let [shape-center (gco/center-shape group)
-        transform (:transform group (gmt/matrix))
-        transform-inverse (:transform-inverse group (gmt/matrix))
-
         ;; Points for every shape inside the group
         points (->> children (mapcat :points))
 

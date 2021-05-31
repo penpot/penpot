@@ -7,7 +7,6 @@
 (ns app.common.pages.indices
   (:require
    [app.common.data :as d]
-   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as helpers]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
@@ -100,7 +99,8 @@
   "Retrieves the mask information for an object"
   [objects parents-index]
   (let [retrieve-masks
-        (fn [id parents]
+        (fn [_ parents]
+          ;; TODO: use transducers?
           (->> parents
                (map #(get objects %))
                (filter #(:masked-group? %))

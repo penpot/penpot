@@ -6,9 +6,9 @@
 
 (ns app.common.geom.align
   (:require
-   [clojure.spec.alpha :as s]
+   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.data :as d]))
+   [clojure.spec.alpha :as s]))
 
 ;; --- Alignment
 

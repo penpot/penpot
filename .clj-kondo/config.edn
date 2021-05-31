@@ -1,7 +1,12 @@
 {:lint-as {potok.core/reify clojure.core/reify
            promesa.core/let clojure.core/let
            rumext.alpha/defc clojure.core/defn
+           app.common.data/export clojure.core/def
            app.db/with-atomic clojure.core/with-open}
+
+ :hooks
+ {:analyze-call {app.common.data/export hooks.export/export}}
+
  :output
  {:exclude-files ["data_readers.clj"]}
 

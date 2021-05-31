@@ -6,10 +6,10 @@
 
 (ns app.common.geom.shapes.path
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.rect :as gpr]
-   [app.common.math :as mth]
-   [app.common.data :as d]))
+   [app.common.math :as mth]))
 
 (defn content->points [content]
   (->> content
@@ -79,7 +79,7 @@
               ;; When the term a is close to zero we have a linear equation
               [(/ (- c) b)]
 
-              ;; If a is not close to zero return the two roots for a cuadratic 
+              ;; If a is not close to zero return the two roots for a cuadratic
               (not (mth/almost-zero? a))
               [(/ (+ (- b) sqrt-b2-4ac)
                   (* 2 a))
@@ -267,7 +267,7 @@
 
                         (and (< (d ht) (d t1)) (< (d ht) (d t2)))
                         [ht1 ht2]
-                        
+
                         (< (d t1) (d t2))
                         [t1 ht]
 
@@ -324,7 +324,7 @@
                          (if (and (some? acc) (or (not cur) (<= min-dist cur-dist)))
                            [min-p min-dist]
                            [cur-p cur-dist]))]
-    
+
     (->> (:content shape)
          (d/with-prev)
          (map point+distance)

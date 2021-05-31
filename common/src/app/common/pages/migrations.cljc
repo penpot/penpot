@@ -6,13 +6,13 @@
 
 (ns app.common.pages.migrations
   (:require
-   [app.common.pages :as cp]
+   [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
-   [app.common.geom.matrix :as gmt]
    [app.common.math :as mth]
-   [app.common.uuid :as uuid]
-   [app.common.data :as d]))
+   [app.common.pages :as cp]
+   [app.common.uuid :as uuid]))
 
 ;; TODO: revisit this and rename to file-migrations
 
@@ -94,7 +94,7 @@
               (= :curve (:type object))
               (assoc :type :path)
 
-              (or (#{:curve :path} (:type object)))
+              (#{:curve :path} (:type object))
               (migrate-path)
 
               (= :frame (:type object))

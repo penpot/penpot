@@ -9,12 +9,11 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
-   [app.common.pages.spec :as ps]
-   [app.common.spec :as us]
    [app.common.pages.common :refer [component-sync-attrs]]
+   [app.common.pages.helpers :as cph]
    [app.common.pages.init :as init]
-   [app.common.pages.spec :as spec]))
+   [app.common.pages.spec :as spec]
+   [app.common.spec :as us]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Transformation Changes
@@ -33,7 +32,7 @@
    (when verify?
      (us/assert ::spec/changes items))
 
-   (let [pages (into #{} (map :page-id) items)
+   (let [pages  (into #{} (map :page-id) items)
          result (->> items
                      (reduce #(or (process-change %1 %2) %1) data))]
 
@@ -42,7 +41,7 @@
         (doseq [page-id pages]
           (let [page (get-in result [:pages-index page-id])]
             (doseq [[id shape] (:objects page)]
-              (if-not (= shape (get-in data [:pages-index page-id :objects id]))
+              (when-not (= shape (get-in data [:pages-index page-id :objects id]))
                 ;; If object has change verify is correct
                 (us/verify ::spec/shape shape))))))
 
