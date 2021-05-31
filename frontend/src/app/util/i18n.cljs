@@ -9,9 +9,8 @@
   (:require
    [app.config :as cfg]
    [app.util.globals :as globals]
-   [app.util.storage :refer [storage]]
    [app.util.object :as obj]
-   [app.util.transit :as t]
+   [app.util.storage :refer [storage]]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [goog.object :as gobj]

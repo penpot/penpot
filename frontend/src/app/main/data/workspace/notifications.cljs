@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.workspace.changes :as dch]
@@ -21,7 +22,6 @@
    [app.util.avatars :as avatars]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [app.util.websockets :as ws]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -74,7 +74,7 @@
               ;; Process all incoming messages.
               (->> (ws/-stream wsession)
                    (rx/filter ws/message?)
-                   (rx/map (comp t/decode :payload))
+                   (rx/map (comp t/decode-str :payload))
                    (rx/filter #(s/valid? ::message %))
                    (rx/map process-message))
 

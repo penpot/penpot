@@ -8,13 +8,13 @@
   "A http client with rx streams interface."
   (:require
    [app.common.data :as d]
+   [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cfg]
    [app.util.cache :as c]
    [app.util.globals :as globals]
    [app.util.object :as obj]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -129,7 +129,7 @@
 (defn transit-data
   [data]
   (reify IBodyData
-    (-get-body-data [_] (t/encode data))
+    (-get-body-data [_] (t/encode-str data))
     (-update-headers [_ headers]
       (assoc headers "content-type" "application/transit+json"))))
 
@@ -138,7 +138,7 @@
   (let [contentype (get headers "content-type")]
     (if (and (str/starts-with? contentype "application/transit+json")
              (pos? (count body)))
-      (assoc response :body (t/decode body))
+      (assoc response :body (t/decode-str body))
       response)))
 
 (defn success?

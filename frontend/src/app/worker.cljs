@@ -6,20 +6,20 @@
 
 (ns app.worker
   (:require
-   [cljs.spec.alpha :as s]
-   [promesa.core :as p]
-   [beicon.core :as rx]
-   [cuerdas.core :as str]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
+   [app.util.object :as obj]
+   [app.util.worker :as w]
    [app.worker.impl :as impl]
    [app.worker.selection]
-   [app.worker.thumbnails]
    [app.worker.snaps]
-   [app.util.object :as obj]
-   [app.util.transit :as t]
-   [app.util.worker :as w]))
+   [app.worker.thumbnails]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [promesa.core :as p]))
 
 ;; --- Messages Handling
 
@@ -44,7 +44,7 @@
   [{:keys [sender-id payload] :as message}]
   (us/assert ::message message)
   (letfn [(post [msg]
-            (let [msg (-> msg (assoc :reply-to sender-id) (t/encode))]
+            (let [msg (-> msg (assoc :reply-to sender-id) (t/encode-str))]
               (.postMessage js/self msg)))
 
           (reply [result]
@@ -84,8 +84,8 @@
   "Sends to the client a notifiction that its messages have been dropped"
   [{:keys [sender-id payload] :as message}]
   (us/assert ::message message)
-  (.postMessage js/self (t/encode {:reply-to sender-id
-                                   :dropped true})))
+  (.postMessage js/self (t/encode-str {:reply-to sender-id
+                                       :dropped true})))
 
 (defn subscribe-buffer-messages
   "Creates a subscription to process the buffer messages"
@@ -143,7 +143,7 @@
   [event]
   (when (nil? (.-source event))
     (let [message (.-data event)
-          message (t/decode message)]
+          message (t/decode-str message)]
       (if (:buffer? message)
         (rx/push! buffer message)
         (handle-message message)))))
