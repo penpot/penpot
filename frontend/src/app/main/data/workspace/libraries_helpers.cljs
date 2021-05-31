@@ -124,10 +124,8 @@
   "If there is exactly one id, and it's a group, use it as root. Otherwise,
   create a group that contains all ids. Then, make a component with it,
   and link all shapes to their corresponding one in the component."
-  [ids objects page-id file-id]
-  (let [shapes (dwg/shapes-for-grouping objects ids)
-
-        [group rchanges uchanges]
+  [shapes objects page-id file-id]
+  (let [[group rchanges uchanges]
         (if (and (= (count shapes) 1)
                  (= (:type (first shapes)) :group))
           [(first shapes) [] []]
