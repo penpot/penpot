@@ -15,10 +15,7 @@
 (d/export u/join)
 (d/export u/query-encode)
 (d/export un/percent-encode)
-
-(defn uri?
-  [o]
-  (instance? lambdaisland.uri.URI o))
+(d/export u/uri?)
 
 (defn query-string->map
   [s]

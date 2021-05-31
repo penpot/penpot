@@ -28,7 +28,7 @@
   funcool/promesa {:mvn/version "6.0.1"}
   funcool/cuerdas {:mvn/version "2021.05.29-0"}
 
-  lambdaisland/uri {:mvn/version "1.4.54"
+  lambdaisland/uri {:mvn/version "1.4.70"
                     :exclusions [org.clojure/data.json]}
 
   frankiesardo/linked {:mvn/version "1.3.0"}
