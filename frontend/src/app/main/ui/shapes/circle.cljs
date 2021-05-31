@@ -32,6 +32,5 @@
                         :ry ry
                         :transform transform}))]
 
-    [:& shape-custom-stroke {:shape shape
-                             :base-props props
-                             :elem-name "ellipse"}]))
+    [:& shape-custom-stroke {:shape shape}
+     [:> :ellipse props]]))

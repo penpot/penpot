@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
+   [app.main.ui.shapes.custom-stroke :as cs]
    [app.main.ui.shapes.fill-image :as fim]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.gradients :as grad]
@@ -56,5 +57,6 @@
        [:& filters/filters        {:shape shape :filter-id filter-id}]
        [:& grad/gradient          {:shape shape :attr :fill-color-gradient}]
        [:& grad/gradient          {:shape shape :attr :stroke-color-gradient}]
-       [:& fim/fill-image-pattern {:shape shape :render-id render-id}]]
+       [:& fim/fill-image-pattern {:shape shape :render-id render-id}]
+       [:& cs/stroke-defs         {:shape shape :render-id render-id}]]
       children]]))
