@@ -410,10 +410,10 @@
   "Decompose a string in the form 'one / two / three' into
   a vector of strings, normalizing spaces."
   [path]
-  (->> (str/split path "/")
-       (map str/trim)
-       (remove str/empty?)
-       vec))
+  (let [xf (comp (map str/trim)
+                 (remove str/empty?))]
+    (->> (str/split path "/")
+         (into [] xf))))
 
 (defn join-path
   "Regenerate a path as a string, from a vector."
