@@ -6,8 +6,6 @@
 
 (ns app.common.text
   (:require
-   [app.common.attrs :as attrs]
-   [app.common.uuid :as uuid]
    [app.common.data :as d]
    [app.common.transit :as t]
    [clojure.walk :as walk]

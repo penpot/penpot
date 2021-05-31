@@ -10,14 +10,15 @@
   #?(:cljs
      (:require-macros [app.common.data]))
   (:require
-   [linked.set :as lks]
    [app.common.math :as mth]
    [clojure.set :as set]
    #?(:clj [cljs.analyzer.api :as aapi])
    #?(:cljs [cljs.reader :as r]
       :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as core]
-      :clj [clojure.core :as core]))
+      :clj [clojure.core :as core])
+   [linked.set :as lks])
+
   #?(:clj
      (:import linked.set.LinkedSet)))
 
@@ -482,8 +483,8 @@
   "
   [m1 m2]
 
-  (let [m1ks (keys m1)
-        m2ks (keys m2)
+  (let [m1ks (set (keys m1))
+        m2ks (set (keys m2))
         keys (set/union m1ks m2ks)
 
         diff-attr

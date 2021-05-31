@@ -7,14 +7,13 @@
 (ns app.common.geom.shapes
   (:require
    [app.common.data :as d]
-   [app.common.math :as mth]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
+   [app.common.geom.shapes.intersect :as gin]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.transforms :as gtr]
-   [app.common.geom.shapes.intersect :as gin]
    [app.common.spec :as us]))
 
 

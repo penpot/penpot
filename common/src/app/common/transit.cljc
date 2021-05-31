@@ -212,5 +212,5 @@
   [v]
   (try
     (-> v decode-str nil? not)
-    (catch #?(:cljs js/SyntaxError :clj Exception) e
+    (catch #?(:cljs js/SyntaxError :clj Exception) _e
       false)))

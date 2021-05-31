@@ -46,7 +46,7 @@
   (assoc-in stack [:items index] value))
 
 (defn undo
-  [{index :index items :items :as stack}]
+  [stack]
   (update stack :index dec))
 
 (defn redo
@@ -56,5 +56,5 @@
     (update :index inc)))
 
 (defn size
-  [{index :index items :items :as stack}]
+  [{index :index :as stack}]
   (inc index))

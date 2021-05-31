@@ -7,9 +7,9 @@
 (ns app.common.pages.init
   (:require
    [app.common.data :as d]
-   [app.common.uuid :as uuid]
    [app.common.exceptions :as ex]
-   [app.common.pages.common :refer [file-version default-color]]))
+   [app.common.pages.common :refer [file-version default-color]]
+   [app.common.uuid :as uuid]))
 
 (def root uuid/zero)
 

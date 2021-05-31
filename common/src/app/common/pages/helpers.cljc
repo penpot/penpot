@@ -10,7 +10,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [clojure.set :as set]
    [cuerdas.core :as str]))
 
 (defn walk-pages
@@ -119,14 +118,14 @@
                      (conj! pending current)
                      (first children)
                      (rest children))
-              [result pending]))]
+              [result pending]))
 
-      ;; If we have still pending, advance the iterator
-      (let [length (count pending)]
-        (if (pos? length)
-          (let [next (get pending (dec length))]
-            (recur result (pop! pending) next))
-          (persistent! result))))))
+          ;; If we have still pending, advance the iterator
+          length (count pending)]
+      (if (pos? length)
+        (let [next (get pending (dec length))]
+          (recur result (pop! pending) next))
+        (persistent! result)))))
 
 (defn get-children-objects
   "Retrieve all children objects recursively for a given object"
@@ -403,14 +402,14 @@
   [objects shape-id]
   (let [shape (get objects shape-id)
         parent (get objects (:parent-id shape))
-        [parent-idx _] (d/seek (fn [[idx child-id]] (= child-id shape-id))
+        [parent-idx _] (d/seek (fn [[_idx child-id]] (= child-id shape-id))
                                (d/enumerate (:shapes parent)))]
     parent-idx))
 
 (defn split-path
-  [path]
   "Decompose a string in the form 'one / two / three' into
   an array of strings, normalizing spaces."
+  [path]
   (->> (str/split path "/")
        (map str/trim)
        (remove str/empty?)))
