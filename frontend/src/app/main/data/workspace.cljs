@@ -16,6 +16,7 @@
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.messages :as dm]
@@ -39,7 +40,6 @@
    [app.util.i18n :as i18n]
    [app.util.logging :as log]
    [app.util.router :as rt]
-   [app.util.transit :as t]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -1400,7 +1400,7 @@
                (rx/merge-map (partial prepare-object objects selected))
                (rx/reduce collect-data initial)
                (rx/mapcat (partial sort-selected state))
-               (rx/map t/encode)
+               (rx/map t/encode-str)
                (rx/map wapi/write-to-clipboard)
                (rx/catch on-copy-error)
                (rx/ignore)))))))
@@ -1420,7 +1420,7 @@
               paste-transit-str
               (->> clipboard-str
                    (rx/filter t/transit?)
-                   (rx/map t/decode)
+                   (rx/map t/decode-str)
                    (rx/filter #(= :copied-shapes (:type %)))
                    (rx/map #(select-keys % [:selected :objects]))
                    (rx/map paste-shape))
@@ -1459,7 +1459,7 @@
               image-data    (wapi/extract-images paste-data)
               text-data     (wapi/extract-text paste-data)
               decoded-data  (and (t/transit? text-data)
-                                 (t/decode text-data))
+                                 (t/decode-str text-data))
 
               edit-id (get-in state [:workspace-local :edition])
               is-editing-text? (and edit-id (= :text (get-in objects [edit-id :type])))]

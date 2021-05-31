@@ -24,7 +24,6 @@
    [app.main.worker :as uw]
    [app.util.router :as rt]
    [app.util.timers :as ts]
-   [app.util.transit :as t]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]

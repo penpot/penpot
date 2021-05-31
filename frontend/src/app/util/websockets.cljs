@@ -7,9 +7,9 @@
 (ns app.util.websockets
   "A interface to webworkers exposed functionality."
   (:require
+   [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cfg]
-   [app.util.transit :as t]
    [beicon.core :as rx]
    [goog.events :as ev]
    [potok.core :as ptk])
@@ -55,4 +55,4 @@
 
 (defn send!
   [ws msg]
-  (-send ws (t/encode msg)))
+  (-send ws (t/encode-str msg)))

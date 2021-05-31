@@ -6,9 +6,9 @@
 
 (ns app.worker.impl
   (:require
-   [okulary.core :as l]
-   [app.util.transit :as t]
-   [app.common.pages.changes :as ch]))
+   [app.common.pages.changes :as ch]
+   [app.common.transit :as t]
+   [okulary.core :as l]))
 
 (enable-console-print!)
 

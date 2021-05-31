@@ -32,7 +32,6 @@
    [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [app.util.uri :as uu]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]

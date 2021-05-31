@@ -15,7 +15,6 @@
    [app.util.logging :as log]
    [app.util.object :as obj]
    [app.util.timers :as ts]
-   [app.util.transit :as t]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]

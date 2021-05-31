@@ -11,7 +11,6 @@
    [app.config :as cfg]
    [app.util.http :as http]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [beicon.core :as rx]
    [cuerdas.core :as str]))
 

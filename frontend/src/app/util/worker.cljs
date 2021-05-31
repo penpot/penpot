@@ -7,9 +7,9 @@
 (ns app.util.worker
   "A lightweight layer on top of webworkers api."
   (:require
-   [beicon.core :as rx]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
-   [app.util.transit :as t]))
+   [beicon.core :as rx]))
 
 (declare handle-response)
 (defrecord Worker [instance stream])
@@ -25,7 +25,7 @@
              (rx/take-while #(not (:completed %)) ob)
              (rx/take 1 ob)))
 
-         data (t/encode message)
+         data (t/encode-str message)
          instance (:instance worker)]
 
      (.postMessage instance data)
@@ -67,7 +67,7 @@
         handle-message
         (fn [event]
           (let [data (.-data event)
-                data (t/decode data)]
+                data (t/decode-str data)]
             (if (:error data)
               (on-error (:error data))
               (rx/push! bus data))))
@@ -75,7 +75,7 @@
         handle-error
         (fn [error]
           (on-error worker (.-data error)))]
-    
+
     (.addEventListener instance "message" handle-message)
     (.addEventListener instance "error" handle-error)
 
