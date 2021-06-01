@@ -364,8 +364,10 @@
 
 (defn calc-child-modifiers
   [parent transformed-parent child parent-modifiers]
-  (let [parent-rect (:selrect parent)
-        transformed-parent-rect (:selrect transformed-parent)]
+  (let [parent-rect             (:selrect parent)
+        transformed-parent-rect (:selrect transformed-parent)
+        child-rect              (:selrect child)]
+
     (case (:name child)
       "topleft"
       {}
@@ -375,6 +377,25 @@
                                 (:width parent-rect))
                              (- (:height transformed-parent-rect)
                                 (:height parent-rect)))]
+        {:displacement (gmt/translate-matrix delta)})
+
+      "leftright"
+      (let [delta (gpt/point (- (:width transformed-parent-rect)
+                                (:width parent-rect))
+                             (- (:height transformed-parent-rect)
+                                (:height parent-rect)))
+            scale (gpt/point (/ (+ (:width child-rect) (:x delta))
+                                (:width child-rect))
+                             (/ (+ (:height child-rect) (:y delta))
+                                (:height child-rect)))]
+        {:resize-origin (gpt/point (:x child-rect) (:y child-rect))
+         :resize-vector scale})
+
+      "center"
+      (let [delta (gpt/point (/ (- (:width transformed-parent-rect)
+                                   (:width parent-rect)) 2)
+                             (/ (- (:height transformed-parent-rect)
+                                   (:height parent-rect)) 2))]
         {:displacement (gmt/translate-matrix delta)})
 
       parent-modifiers)))
