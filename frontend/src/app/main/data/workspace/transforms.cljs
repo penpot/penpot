@@ -151,8 +151,7 @@
                                      :resize-origin origin
                                      :resize-transform shape-transform
                                      :resize-scale-text scale-text
-                                     :resize-transform-inverse shape-transform-inverse}
-                                    false))))
+                                     :resize-transform-inverse shape-transform-inverse}))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion
@@ -426,10 +425,34 @@
 
 ;; -- Apply modifiers
 
+(defn- set-modifiers-recursive
+  [modif-tree objects shape modifiers]
+  (let [children (->> (get shape :shapes [])
+                      (map #(get objects %)))
+
+        transformed-shape (when (seq children) ; <- don't calculate it if not needed
+                            (gsh/transform-shape
+                              (assoc shape :modifiers (select-keys modifiers
+                                                                   [:resize-origin
+                                                                    :resize-vector]))))
+
+        set-child (fn [modif-tree child]
+                    (let [child-modifiers (gsh/calc-child-modifiers shape
+                                                                    transformed-shape
+                                                                    child
+                                                                    modifiers)]
+                      (set-modifiers-recursive modif-tree
+                                               objects
+                                               child
+                                               child-modifiers)))]
+
+    (reduce set-child
+            (update-in modif-tree [(:id shape) :modifiers] #(merge % modifiers))
+            children)))
+
 (defn set-modifiers
-  ([ids] (set-modifiers ids nil true))
-  ([ids modifiers] (set-modifiers ids modifiers true))
-  ([ids modifiers recurse-frames?]
+  ([ids] (set-modifiers ids nil))
+  ([ids modifiers]
    (us/verify (s/coll-of uuid?) ids)
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
@@ -438,25 +461,16 @@
              page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)
 
-             ids (->> ids (into #{} (remove #(get-in objects [% :blocked] false))))
+             ids (->> ids (into #{} (remove #(get-in objects [% :blocked] false))))]
 
-             not-frame-id?
-             (fn [shape-id]
-               (let [shape (get objects shape-id)]
-                 (or recurse-frames? (not (= :frame (:type shape))))))
-
-             ;; For each shape updates the modifiers given as arguments
-             update-shape
-             (fn [objects shape-id]
-               (update-in objects [shape-id :modifiers] #(merge % modifiers)))
-
-             ;; ID's + Children but remove frame children if the flag is set to false
-             ids-with-children (concat ids (mapcat #(cp/get-children % objects)
-                                                   (filter not-frame-id? ids)))]
-
-         (update state :workspace-modifiers
-                 #(reduce update-shape % ids-with-children)))))))
-
+         (reduce (fn [state id]
+                   (update state :workspace-modifiers
+                           #(set-modifiers-recursive %
+                                                     objects
+                                                     (get objects id)
+                                                     modifiers)))
+                 state
+                 ids))))))
 
 ;; Set-rotation is custom because applies different modifiers to each
 ;; shape adjusting their position.
@@ -567,10 +581,7 @@
             (fn [objects shape-id]
               (let [shape (get objects shape-id)
                     modifier (gsh/resize-modifiers shape attr value)]
-                (-> objects
-                    (assoc-in [shape-id :modifiers] modifier)
-                    (cond-> (not (= :frame (:type shape)))
-                      (update-children (cp/get-children shape-id objects) modifier)))))]
+                (set-modifiers-recursive objects objects shape modifier)))]
 
         (d/update-in-when
          state
@@ -597,8 +608,7 @@
         (rx/of (set-modifiers selected
                               {:resize-vector (gpt/point -1.0 1.0)
                                :resize-origin origin
-                               :displacement (gmt/translate-matrix (gpt/point (- (:width selrect)) 0))}
-                              false)
+                               :displacement (gmt/translate-matrix (gpt/point (- (:width selrect)) 0))})
                (apply-modifiers selected))))))
 
 (defn flip-vertical-selected []
@@ -614,8 +624,7 @@
         (rx/of (set-modifiers selected
                               {:resize-vector (gpt/point 1.0 -1.0)
                                :resize-origin origin
-                               :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))}
-                              false)
+                               :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))})
                (apply-modifiers selected))))))
 
 (defn start-local-displacement [point]

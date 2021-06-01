@@ -188,6 +188,7 @@
 (d/export gpr/center->rect)
 
 (d/export gtr/transform-shape)
+(d/export gtr/calc-child-modifiers)
 (d/export gtr/transform-matrix)
 (d/export gtr/inverse-transform-matrix)
 (d/export gtr/transform-point-center)

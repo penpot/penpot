@@ -14,6 +14,7 @@
    [app.common.geom.shapes.path :as gpa]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
+   [app.common.pages.spec :as spec]
    [app.common.text :as txt]))
 
 ;; --- Relative Movement
@@ -361,6 +362,138 @@
              (apply-text-resize shape modifiers)
              (dissoc :modifiers)))
        shape))))
+
+
+(defn calc-child-modifiers
+  [parent transformed-parent child parent-modifiers]
+  (let [parent-rect             (:selrect parent)
+        transformed-parent-rect (:selrect transformed-parent)
+        child-rect              (:selrect child)
+
+        origin (:resize-origin parent-modifiers)
+
+        orig-h (when origin
+                 (cond
+                   (mth/close? (:x origin) (gpr/left-of parent-rect)) :left
+                   (mth/close? (:x origin) (gpr/right-of parent-rect)) :right
+                   :else :middle))
+
+        orig-v (when origin
+                 (cond
+                   (mth/close? (:y origin) (gpr/top-of parent-rect)) :top
+                   (mth/close? (:y origin) (gpr/bottom-of parent-rect)) :bottom
+                   :else :middle))
+
+        delta-h (when orig-h
+                  (cond (= orig-h :left)
+                        (- (gpr/right-of transformed-parent-rect) (gpr/right-of parent-rect))
+
+                        (= orig-h :right)
+                        (- (gpr/left-of transformed-parent-rect) (gpr/left-of parent-rect))
+
+                        :else 0))
+
+        delta-v (when orig-v
+                  (cond (= orig-v :top)
+                        (- (gpr/bottom-of transformed-parent-rect) (gpr/bottom-of parent-rect))
+
+                        (= orig-v :bottom)
+                        (- (gpr/top-of transformed-parent-rect) (gpr/top-of parent-rect))
+
+                        :else 0))
+
+        constraints-h (get child :constraints-h (spec/default-constraints-h child))
+        constraints-v (get child :constraints-v (spec/default-constraints-v child))
+
+        modifiers-h (case constraints-h
+                      :left
+                      (if (= orig-h :right)
+                        {:displacement (gpt/point delta-h 0)} ;; we convert to matrix below
+                        {})
+
+                      :right
+                      (if (= orig-h :left)
+                        {:displacement (gpt/point delta-h 0)}
+                        {})
+
+                      :leftright
+                      (cond (= orig-h :left)
+                            {:resize-origin (gpt/point (gpr/left-of child-rect) (gpr/top-of child-rect))
+                             :resize-vector (gpt/point (/ (+ (:width child-rect) delta-h)
+                                                          (:width child-rect))
+                                                       1)}
+
+                            (= orig-h :right)
+                            {:resize-origin (gpt/point (gpr/right-of child-rect) (gpr/top-of child-rect))
+                             :resize-vector (gpt/point (/ (- (:width child-rect) delta-h)
+                                                          (:width child-rect))
+                                                       1)}
+
+                            :else {})
+
+                      :center
+                      {:displacement (gpt/point (/ delta-h 2) 0)}
+
+                      :scale
+                      (if (:resize-origin parent-modifiers)
+                        {:resize-origin (:resize-origin parent-modifiers)
+                         :resize-vector (gpt/point (:x (:resize-vector parent-modifiers)) 1)}
+                        {})
+
+                      {})
+
+        modifiers-v (case constraints-v
+                      :top
+                      (if (= orig-v :bottom)
+                        {:displacement (gpt/point 0 delta-v)}
+                        {})
+
+                      :bottom
+                      (if (= orig-v :top)
+                        {:displacement (gpt/point 0 delta-v)}
+                        {})
+
+                      :topbottom
+                      (cond (= orig-v :top)
+                            {:resize-origin (gpt/point (gpr/left-of child-rect) (gpr/top-of child-rect))
+                             :resize-vector (gpt/point 1
+                                                       (/ (+ (:height child-rect) delta-v)
+                                                          (:height child-rect)))}
+
+                            (= orig-v :bottom)
+                            {:resize-origin (gpt/point (gpr/left-of child-rect) (gpr/bottom-of child-rect))
+                             :resize-vector (gpt/point 1
+                                                       (/ (- (:height child-rect) delta-v)
+                                                          (:height child-rect)))}
+
+                            :else {})
+
+                      :center
+                      {:displacement (gpt/point 0 (/ delta-v 2))}
+
+                      :scale
+                      (if (:resize-origin parent-modifiers)
+                        {:resize-origin (:resize-origin parent-modifiers)
+                         :resize-vector (gpt/point 1 (:y (:resize-vector parent-modifiers)))}
+                        {})
+
+                      {})]
+
+    (cond-> {}
+      (or (:displacement modifiers-h) (:displacement modifiers-v))
+      (assoc :displacement (gmt/translate-matrix
+                             (gpt/point (get (:displacement modifiers-h) :x 0)
+                                        (get (:displacement modifiers-v) :y 0))))
+
+      (or (:resize-vector modifiers-h) (:resize-vector modifiers-v))
+      (assoc :resize-origin (or (:resize-origin modifiers-h)  ;; we assume that the origin is the same
+                                (:resize-origin modifiers-v)) ;; in any direction
+             :resize-vector (gpt/point (get (:resize-vector modifiers-h) :x 1)
+                                       (get (:resize-vector modifiers-v) :y 1)))
+      (:displacement parent-modifiers)
+      (update :displacement #(if (nil? %)
+                               (:displacement parent-modifiers)
+                               (gmt/multiply % (:displacement parent-modifiers)))))))
 
 (defn update-group-viewbox
   "Updates the viewbox for groups imported from SVG's"
