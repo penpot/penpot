@@ -9,6 +9,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
+   [app.common.uuid :as uuid]
    [clojure.spec.alpha :as s]))
 
 ;; --- Specs
@@ -195,6 +196,30 @@
 (s/def :internal.shape/interactions
   (s/coll-of :internal.shape/interaction :kind vector?))
 
+;; Size constraints
+
+(s/def :internal.shape/constraints-h #{:left :right :leftright :center :scale})
+(s/def :internal.shape/constraints-v #{:top :bottom :topbottom :center :scale})
+(s/def :internal.shape/fixed-scroll boolean?)
+
+; Shapes in the top frame have no constraints. Shapes directly below some
+; frame are left-top constrained. Else (shapes in a group) are scaled.
+(defn default-constraints-h
+  [shape]
+  (if (= (:parent-id shape) uuid/zero)
+    nil
+    (if (= (:parent-id shape) (:frame-id shape))
+      :left
+      :scale)))
+
+(defn default-constraints-v
+  [shape]
+  (if (= (:parent-id shape) uuid/zero)
+    nil
+    (if (= (:parent-id shape) (:frame-id shape))
+      :top
+      :scale)))
+
 ;; Page Data related
 (s/def :internal.shape/blocked boolean?)
 (s/def :internal.shape/collapsed boolean?)
@@ -297,6 +322,9 @@
                    :internal.shape/locked
                    :internal.shape/proportion
                    :internal.shape/proportion-lock
+                   :internal.shape/constraints-h
+                   :internal.shape/constraints-v
+                   :internal.shape/fixed-scroll
                    :internal.shape/rx
                    :internal.shape/ry
                    :internal.shape/r1
