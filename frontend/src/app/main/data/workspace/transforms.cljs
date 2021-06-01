@@ -551,12 +551,12 @@
   (let [children (->> (get shape :shapes [])
                       (map #(get objects %)))
 
-        shape' (when (seq children)
-                 (gsh/transform-shape (assoc shape :modifiers modifiers)))
+        transformed-shape (when (seq children)
+                            (gsh/transform-shape (assoc shape :modifiers modifiers)))
 
         set-child (fn [objects child]
                     (let [child-modifiers (gsh/calc-child-modifiers shape
-                                                                    shape'
+                                                                    transformed-shape
                                                                     child
                                                                     modifiers)]
                       (set-modifiers-recursive objects child child-modifiers)))]

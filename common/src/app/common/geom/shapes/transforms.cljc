@@ -363,16 +363,18 @@
        shape))))
 
 (defn calc-child-modifiers
-  [parent parent' child parent-modifiers]
+  [parent transformed-parent child parent-modifiers]
   (let [parent-rect (:selrect parent)
-        parent'-rect (:selrect parent')]
+        transformed-parent-rect (:selrect transformed-parent)]
     (case (:name child)
       "topleft"
       {}
 
       "bottomright"
-      (let [delta (gpt/point (- (:width parent'-rect) (:width parent-rect))
-                             (- (:height parent'-rect) (:height parent-rect)))]
+      (let [delta (gpt/point (- (:width transformed-parent-rect)
+                                (:width parent-rect))
+                             (- (:height transformed-parent-rect)
+                                (:height parent-rect)))]
         {:displacement (gmt/translate-matrix delta)})
 
       parent-modifiers)))
