@@ -275,7 +275,7 @@
               (if (and valid? (seq shapes))
                 (as-> objects $
                   ;; Add the new shapes to the parent object.
-                  (update $ parent-id #(add-to-parent % index shapes))
+                  (d/update-when $ parent-id #(add-to-parent % index shapes))
 
                   ;; Update each individual shape link to the new parent
                   (reduce update-parent-id $ shapes)

@@ -90,7 +90,7 @@
              id          (get-in state [:workspace-local :edition])
              old-content (get-in state [:workspace-local :edit-path id :old-content])
              shape (get-in state (st/get-path state))]
-         (if (and (some? old-content) (some? shape))
+         (if (and (some? old-content) (some? (:id shape)))
            (let [[rch uch] (generate-path-changes objects page-id shape old-content (:content shape))]
              (rx/of (dch/commit-changes {:redo-changes rch
                                          :undo-changes uch

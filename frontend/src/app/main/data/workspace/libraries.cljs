@@ -10,24 +10,21 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
-   [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.streams :as ms]
-   [app.util.color :as color]
    [app.util.i18n :refer [tr]]
    [app.util.logging :as log]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
@@ -263,10 +260,11 @@
             page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
-            selected (cp/clean-loops objects selected)]
-        (when-not (empty? selected)
+            selected (cp/clean-loops objects selected)
+            shapes (dwg/shapes-for-grouping objects selected)]
+        (when-not (empty? shapes)
           (let [[group rchanges uchanges]
-                (dwlh/generate-add-component selected objects page-id file-id)]
+                (dwlh/generate-add-component shapes objects page-id file-id)]
             (when-not (empty? rchanges)
               (rx/of (dch/commit-changes {:redo-changes rchanges
                                           :undo-changes uchanges
