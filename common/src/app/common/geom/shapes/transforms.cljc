@@ -362,6 +362,21 @@
              (dissoc :modifiers)))
        shape))))
 
+(defn calc-child-modifiers
+  [parent parent' child parent-modifiers]
+  (let [parent-rect (:selrect parent)
+        parent'-rect (:selrect parent')]
+    (case (:name child)
+      "topleft"
+      {}
+
+      "bottomright"
+      (let [delta (gpt/point (- (:width parent'-rect) (:width parent-rect))
+                             (- (:height parent'-rect) (:height parent-rect)))]
+        {:displacement (gmt/translate-matrix delta)})
+
+      parent-modifiers)))
+
 (defn update-group-viewbox
   "Updates the viewbox for groups imported from SVG's"
   [{:keys [selrect svg-viewbox] :as group} new-selrect]

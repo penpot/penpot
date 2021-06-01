@@ -546,6 +546,25 @@
 ;; Event mainly used for handling user modification of the size of the
 ;; object from workspace sidebar options inputs.
 
+(defn set-modifiers-recursive
+  [objects shape modifiers]
+  (let [children (->> (get shape :shapes [])
+                      (map #(get objects %)))
+
+        shape' (when (seq children)
+                 (gsh/transform-shape (assoc shape :modifiers modifiers)))
+
+        set-child (fn [objects child]
+                    (let [child-modifiers (gsh/calc-child-modifiers shape
+                                                                    shape'
+                                                                    child
+                                                                    modifiers)]
+                      (set-modifiers-recursive objects child child-modifiers)))]
+
+    (reduce set-child
+            (assoc-in objects [(:id shape) :modifiers] modifiers)
+            children)))
+
 (defn update-dimensions
   [ids attr value]
   (us/verify (s/coll-of ::us/uuid) ids)
@@ -567,10 +586,7 @@
             (fn [objects shape-id]
               (let [shape (get objects shape-id)
                     modifier (gsh/resize-modifiers shape attr value)]
-                (-> objects
-                    (assoc-in [shape-id :modifiers] modifier)
-                    (cond-> (not (= :frame (:type shape)))
-                      (update-children (cp/get-children shape-id objects) modifier)))))]
+                (set-modifiers-recursive objects shape modifier)))]
 
         (d/update-in-when
          state

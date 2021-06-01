@@ -1257,4 +1257,101 @@
   }
 }
 
+.constraints-widget {
+  width: 72px;
+  height: 72px;
+  position: relative;
+  background-color: $color-gray-60;
 
+  .constraints-box {
+    width: 28px;
+    height: 28px;
+    position: absolute;
+    top: 22px;
+    left: 22px;
+    border: 2px solid $color-gray-50;
+  }
+
+  .constraint-button {
+    position: absolute;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &::after {
+      content: ' ';
+      background-color: $color-gray-20;
+    }
+
+    &:hover {
+      &::after {
+        background-color: $color-primary;
+      }
+    }
+
+    &.top,
+    &.bottom {
+      width: 28px;
+      height: 22px;
+      left: calc(50% - 14px);
+
+      &::after {
+        width: 3px;
+        height: 15px;
+      }
+    }
+
+    &.top {
+      top: 0;
+    }
+
+    &.bottom {
+      bottom: 0;
+    }
+
+    &.left,
+    &.right {
+      width: 22px;
+      height: 28px;
+      top: calc(50% - 14px);
+
+      &::after {
+        width: 15px;
+        height: 3px;
+      }
+    }
+
+    &.left {
+      left: 0;
+    }
+
+    &.right {
+      right: 0;
+    }
+
+    &.centerv {
+      width: 28px;
+      height: 28px;
+      left: calc(50% - 14px);
+      top: calc(50% - 14px);
+
+      &::after {
+        width: 3px;
+        height: 15px;
+      }
+    }
+
+    &.centerh {
+      width: 28px;
+      height: 15px;
+      left: calc(50% - 14px);
+      top: calc(50% - 7px);
+
+      &::after {
+        width: 15px;
+        height: 3px;
+      }
+    }
+  }
+}

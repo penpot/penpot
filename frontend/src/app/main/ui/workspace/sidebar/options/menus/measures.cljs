@@ -153,6 +153,12 @@
 
              (st/emit! (dch/update-shapes ids-with-children radius-update)))))
 
+        on-constraint-button-clicked
+        (mf/use-callback
+          (fn [constraint]
+            (fn [event]
+              (println "click" constraint))))
+
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
         on-pos-x-change #(on-position-change % :x)
@@ -163,6 +169,7 @@
         on-radius-r4-change #(on-radius-4-change % :r4)
         select-all #(-> % (dom/get-target) (.select))]
 
+    [:*
     [:div.element-set
      [:div.element-set-content
 
@@ -291,5 +298,20 @@
                   :min 0
                   :on-click select-all
                   :on-change on-radius-r4-change
-                  :value (attr->string :r4 values)}]]])
-           ]))]]))
+                  :value (attr->string :r4 values)}]]])]))]]
+
+      [:div.element-set
+       [:div.element-set-title
+        [:span (t locale "workspace.options.constraints")]]
+
+       [:div.element-set-content
+        [:div.row-flex
+         [:div.constraints-widget
+          [:div.constraints-box]
+          [:div.constraint-button.top {:on-click (on-constraint-button-clicked :top)}]
+          [:div.constraint-button.bottom {:on-click (on-constraint-button-clicked :bottom)}]
+          [:div.constraint-button.left {:on-click (on-constraint-button-clicked :left)}]
+          [:div.constraint-button.right {:on-click (on-constraint-button-clicked :right)}]
+          [:div.constraint-button.centerv {:on-click (on-constraint-button-clicked :centerv)}]
+          [:div.constraint-button.centerh {:on-click (on-constraint-button-clicked :centerh)}]]]]]
+    ]))

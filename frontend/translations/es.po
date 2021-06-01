@@ -1859,6 +1859,10 @@ msgstr "Color de fondo"
 msgid "workspace.options.component"
 msgstr "Componente"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints"
+msgstr "Restricciones"
+
 #: src/app/main/ui/workspace/sidebar/options.cljs
 msgid "workspace.options.design"
 msgstr "Diseño"
