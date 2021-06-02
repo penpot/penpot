@@ -14,12 +14,12 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
-(log/set-level! :warn)
+(log/set-level! :debug)
 
 (defn use-import-file
-  [project-id]
+  [project-id on-finish-import]
   (mf/use-callback
-   (mf/deps project-id)
+   (mf/deps project-id on-finish-import)
    (fn [files]
      (when files
        (let [files (->> files (mapv dom/create-uri))]
@@ -30,16 +30,23 @@
 
               (rx/subs
                (fn [result]
-                 (log/debug :action "import-result" :result result)))))))))
+                 (log/debug :action "import-result" :result result))
+
+               (fn [err]
+                 (log/debug :action "import-error" :result err))
+
+               (fn []
+                 (log/debug :action "import-end")
+                 (when on-finish-import (on-finish-import))))))))))
 
 (mf/defc import-button
-  [{:keys [project-id]}]
+  [{:keys [project-id on-finish-import]}]
 
   (let [file-input (mf/use-ref nil)
-        on-file-selected (use-import-file project-id)]
+        on-file-selected (use-import-file project-id on-finish-import)]
     [:form.import-file
-     [:button.import-file-icon {:type "button"
-                                :on-click #(dom/click (mf/ref-val file-input))} i/import]
+     [:button.import-file-btn {:type "button"
+                               :on-click #(dom/click (mf/ref-val file-input))} i/import]
      [:& file-uploader {:accept "application/zip"
                         :multi true
                         :input-ref file-input
