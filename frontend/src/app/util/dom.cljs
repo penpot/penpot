@@ -333,4 +333,5 @@
 
 (defn trigger-download
   [filename blob]
-  (trigger-download-uri filename (.-type ^js blob) (dom/create-uri blob)))
+  (trigger-download-uri filename (.-type ^js blob) (create-uri blob)))
+
