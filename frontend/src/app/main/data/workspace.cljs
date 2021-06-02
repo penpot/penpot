@@ -1248,7 +1248,7 @@
              params {:file-id (or file-id current-file-id)
                      :page-id (or page-id current-page-id)}]
          (rx/of ::dwp/force-persist
-                (rt/nav :viewer params {:index 0})))))))
+                (rt/nav-new-window :viewer params {:index 0})))))))
 
 (defn go-to-dashboard
   ([] (go-to-dashboard nil))

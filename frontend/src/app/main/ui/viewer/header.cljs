@@ -118,7 +118,9 @@
            (st/emit! (dv/set-interactions-mode mode))))]
 
     [:div.view-options
-     [:div.icon {:on-click #(swap! show-dropdown? not)} i/eye]
+     [:div.view-options-dropdown {:on-click #(swap! show-dropdown? not)}
+      [:span (t locale "viewer.header.interactions")]
+      i/arrow-down]
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
       [:ul.dropdown.with-check
@@ -265,10 +267,6 @@
       (when has-permission?
         [:& share-link {:token (:token data)
                         :page  (:page data)}])
-
-      (when has-permission?
-        [:a.btn-text-basic.btn-small {:on-click on-edit}
-         (t locale "viewer.header.edit-page")])
 
       [:& zoom-widget
        {:zoom (:zoom state)

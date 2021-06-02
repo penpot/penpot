@@ -1470,6 +1470,10 @@ msgid "viewer.header.show-interactions"
 msgstr "Afişează interacţiunile"
 
 #: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Interacţiunile"
+
+#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions-on-click"
 msgstr "Afişează interacţiunile la click"
 
