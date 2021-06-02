@@ -80,7 +80,7 @@
                                   :max-batch-age (* 10 1000) ; 10s
                                   :init []})]
       (a/go-loop []
-        (when-let [[type events] (a/<! buffer)]
+        (when-let [[_type events] (a/<! buffer)]
           (let [res (a/<! (persist-events cfg events))]
             (when (ex/exception? res)
               (l/error :hint "error on persiting events"
