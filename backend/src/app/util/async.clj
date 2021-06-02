@@ -64,12 +64,14 @@
 (defn batch
   [in {:keys [max-batch-size
               max-batch-age
+              buffer-size
               init]
        :or {max-batch-size 200
             max-batch-age (* 30 1000)
+            buffer-size 128
             init #{}}
        :as opts}]
-  (let [out (a/chan)]
+  (let [out (a/chan buffer-size)]
     (a/go-loop [tch (a/timeout max-batch-age) buf init]
       (let [[val port] (a/alts! [tch in])]
         (cond

@@ -75,15 +75,12 @@
   [_ {:keys [enabled] :as cfg}]
   (when enabled
     (l/info :msg "intializing audit collector")
-    (let [input  (a/chan 1 event-xform)
+    (let [input  (a/chan 512 event-xform)
           buffer (aa/batch input {:max-batch-size 100
-                                  :max-batch-age (* 5 1000)
+                                  :max-batch-age (* 10 1000) ; 10s
                                   :init []})]
       (a/go-loop []
         (when-let [[type events] (a/<! buffer)]
-          (l/debug :action "persist-events (batch)"
-                   :reason (name type)
-                   :count (count events))
           (let [res (a/<! (persist-events cfg events))]
             (when (ex/exception? res)
               (l/error :hint "error on persiting events"

@@ -20,6 +20,10 @@
 ### :bug: Bugs fixed
 
 - Fix problem with merge and join nodes [#990](https://github.com/penpot/penpot/issues/990)
+- Fix problem with empty path editing.
+- Fix problem with create component.
+- Fix problem with move-objects.
+- Fix problem with merge and join nodes.
 
 ## 1.6.2-alpha
 

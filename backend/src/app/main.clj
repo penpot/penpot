@@ -166,25 +166,25 @@
     :tasks      (ig/ref :app.worker/registry)
     :pool       (ig/ref :app.db/pool)
     :schedule
-    [{:cron #app/cron "0 0 0 */1 * ? *" ;; daily
+    [{:cron #app/cron "0 0 0 * * ? *" ;; daily
       :task :file-media-gc}
 
-     {:cron #app/cron "0 0 */1 * * ?"  ;; hourly
+     {:cron #app/cron "0 0 * * * ?"  ;; hourly
       :task :file-xlog-gc}
 
-     {:cron #app/cron "0 0 1 */1 * ?"  ;; daily (1 hour shift)
+     {:cron #app/cron "0 0 1 * * ?"  ;; daily (1 hour shift)
       :task :storage-deleted-gc}
 
-     {:cron #app/cron "0 0 2 */1 * ?"  ;; daily (2 hour shift)
+     {:cron #app/cron "0 0 2 * * ?"  ;; daily (2 hour shift)
       :task :storage-touched-gc}
 
-     {:cron #app/cron "0 0 3 */1 * ?"  ;; daily (3 hour shift)
+     {:cron #app/cron "0 0 3 * * ?"  ;; daily (3 hour shift)
       :task :session-gc}
 
-     {:cron #app/cron "0 0 */1 * * ?"  ;; hourly
+     {:cron #app/cron "0 0 * * * ?"  ;; hourly
       :task :storage-recheck}
 
-     {:cron #app/cron "0 0 0 */1 * ?"  ;; daily
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :tasks-gc}
 
      (when (cf/get :audit-archive-enabled)

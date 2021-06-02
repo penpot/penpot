@@ -140,10 +140,13 @@
       (when-let [[reason batch] (a/<! input)]
         (let [result (a/<! (update-sessions cfg batch))]
           (mcnt :inc)
-          (if (ex/exception? result)
+          (cond
+            (ex/exception? result)
             (l/error :task "updater"
                      :hint "unexpected error on update sessions"
                      :cause result)
+
+            (= :size reason)
             (l/debug :task "updater"
                      :action "update sessions"
                      :reason (name reason)
