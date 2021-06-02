@@ -8,10 +8,11 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
-   [app.util.object :as obj]
    [app.util.globals :as globals]
+   [app.util.object :as obj]
    [cuerdas.core :as str]
-   [goog.dom :as dom]))
+   [goog.dom :as dom]
+   [promesa.core :as p]))
 
 ;; --- Deprecated methods
 
@@ -335,3 +336,21 @@
   [filename blob]
   (trigger-download-uri filename (.-type ^js blob) (create-uri blob)))
 
+(defn save-as
+  [uri filename mtype description]
+
+  ;; Only chrome supports the save dialog
+  (if (obj/contains? globals/window "showSaveFilePicker")
+    (let [extension (mtype->extension mtype)
+          opts {:suggestedName (str filename "." extension)
+                :types [{:description description
+                         :accept { mtype [(str "." extension)]}}]}]
+
+      (p/let [file-system (.showSaveFilePicker globals/window (clj->js opts))
+              writable    (.createWritable file-system)
+              response    (js/fetch uri)
+              blob        (.blob response)
+              _           (.write writable blob)]
+        (.close writable)))
+
+    (trigger-download-uri filename mtype uri)))
