@@ -1,14 +1,4 @@
-{:dependencies
- [[com.cognitect/transit-cljs "0.8.269"]
-  [danlentz/clj-uuid "0.1.9"]
-  [frankiesardo/linked "1.3.0"]
-  [funcool/cuerdas "2021.05.02-0"]
-  [funcool/promesa "6.0.0"]
-  [integrant/integrant "0.8.0"]
-  [lambdaisland/glogi "1.0.106"]
-  [lambdaisland/uri "1.4.54"]
-  [metosin/reitit-core "0.5.13"]]
-
+{:deps {:aliases [:dev]}
  :source-paths ["src" "vendor" "../common"]
  :jvm-opts ["-Xmx512m" "-Xms50m" "-XX:+UseSerialGC"]
 

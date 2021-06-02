@@ -23,6 +23,7 @@
   selmer/selmer {:mvn/version "1.12.40"}
   expound/expound {:mvn/version "0.8.9"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
+  com.cognitect/transit-cljs {:mvn/version "0.8.269"}
   java-http-clj/java-http-clj {:mvn/version "0.4.2"}
 
   funcool/promesa {:mvn/version "6.0.1"}
