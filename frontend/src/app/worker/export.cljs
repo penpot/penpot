@@ -7,24 +7,11 @@
 (ns app.worker.export
   (:require
    [app.main.render :as r]
+   [app.main.repo :as rp]
    [app.util.dom :as dom]
-   [app.util.http :as http]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]))
-
-(defn- handle-response
-  [response]
-  (cond
-    (http/success? response)
-    (rx/of (:body response))
-
-    (http/client-error? response)
-    (rx/throw (:body response))
-
-    :else
-    (rx/throw {:type :unexpected
-               :code (:error response)})))
 
 (defn get-page-data
   [{file-name :file-name {:keys [id name] :as data} :data}]
@@ -34,13 +21,6 @@
                   :name name
                   :file-name file-name
                   :markup markup}))))
-
-(defn query-file [file-id]
-  (->> (http/send! {:uri "/api/rpc/query/file"
-                    :query {:id file-id}
-                    :method :get})
-       (rx/map http/conditional-decode-transit)
-       (rx/mapcat handle-response)))
 
 (defn process-pages [file]
   (let [pages (get-in file [:data :pages])
@@ -59,7 +39,7 @@
 
   (let [render-stream
         (->> (rx/from (->> files (mapv :id)))
-             (rx/merge-map query-file)
+             (rx/merge-map #(rp/query :file {:id %}))
              (rx/flat-map process-pages)
              (rx/observe-on :async)
              (rx/flat-map get-page-data)
@@ -71,7 +51,6 @@
                              :data (str "Render " (:file-name %) " - " (:name %)))))
      (->> render-stream
           (rx/reduce collect-page [])
-          (rx/tap #(prn %))
           (rx/flat-map uz/compress-files)
           (rx/map #(hash-map :type :finish
                              :data (dom/create-uri %)))))))
