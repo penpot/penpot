@@ -81,9 +81,6 @@
                                   :init []})]
       (a/go-loop []
         (when-let [[type events] (a/<! buffer)]
-          (l/debug :action "persist-events (batch)"
-                   :reason (name type)
-                   :count (count events))
           (let [res (a/<! (persist-events cfg events))]
             (when (ex/exception? res)
               (l/error :hint "error on persiting events"
