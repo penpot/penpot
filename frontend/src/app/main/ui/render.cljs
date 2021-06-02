@@ -78,7 +78,8 @@
             :height height
             :version "1.1"
             :xmlnsXlink "http://www.w3.org/1999/xlink"
-            :xmlns "http://www.w3.org/2000/svg"}
+            :xmlns "http://www.w3.org/2000/svg"
+            :xmlns:penpot "https://penpot.app/xmlns"}
       (case (:type object)
         :frame [:& frame-wrapper {:shape object :view-box vbox}]
         :group [:> shape-container {:shape object}

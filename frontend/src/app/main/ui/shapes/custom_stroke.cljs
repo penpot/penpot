@@ -6,11 +6,13 @@
 
 (ns app.main.ui.shapes.custom-stroke
   (:require
-   [rumext.alpha :as mf]
-   [app.common.uuid :as uuid]
+   [app.common.data :as d]
    [app.common.geom.shapes :as geom]
+   [app.common.uuid :as uuid]
+   [app.main.ui.context :as muc]
    [app.util.object :as obj]
-   [app.main.ui.context :as muc]))
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (defn add-props
   [props new-props]
@@ -71,13 +73,22 @@
         shape        (obj/get props "shape")
         stroke-width (:stroke-width shape 0)
         stroke-mask-id (str "outer-stroke-" render-id)
-        shape-id (str "stroke-shape-" render-id)]
+        shape-id (str "stroke-shape-" render-id)
+
+        style-str (->> (obj/get base-props "style")
+                       (js->clj)
+                       (mapv (fn [[k v]]
+                               (-> (d/name k)
+                                   (str/kebab)
+                                   (str ":" v))))
+                       (str/join ";"))]
 
     [:g.outer-stroke-shape
      [:symbol
       [:> elem-name (-> (obj/clone base-props)
                         (obj/set! "id" shape-id)
-                        (obj/without  ["style"]))]]
+                        (obj/set! "data-style" style-str)
+                        (obj/without ["style"]))]]
 
      [:use {:href (str "#" shape-id)
             :mask (str "url(#" stroke-mask-id ")")

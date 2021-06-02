@@ -278,7 +278,6 @@
                            (let [point (gpt/transform point transform-inverse)
                                  end-x (/ (- (:x point) x) width)
                                  end-y (/ (- (:y point) y) height)
-
                                  end-x (mth/precision end-x 2)
                                  end-y (mth/precision end-y 2)]
                              (change! {:end-x end-x :end-y end-y})))
@@ -287,8 +286,8 @@
                           (let [scale-factor-y (/ gradient-length (/ height 2))
                                 norm-dist (/ (gpt/distance point from-p)
                                              (* (/ width 2) scale-factor-y))]
-
-                            (change! {:width norm-dist})))]
+                            (when (and norm-dist (mth/finite? norm-dist))
+                              (change! {:width norm-dist}))))]
 
     (when (and gradient
                (= id (:shape-id gradient))
