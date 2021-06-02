@@ -60,6 +60,8 @@
 (d/export helpers/get-base-shape)
 (d/export helpers/is-parent?)
 (d/export helpers/get-index-in-parent)
+(d/export helpers/split-path)
+(d/export helpers/join-path)
 (d/export helpers/parse-path-name)
 (d/export helpers/merge-path-item)
 (d/export helpers/compact-path)

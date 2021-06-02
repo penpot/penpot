@@ -5,6 +5,11 @@
 
 ### :sparkles: New features
 
+- Allow nested asset groups [Taiga #1716](https://tree.taiga.io/project/penpot/us/1716)
+- Allow to ungroup assets [Taiga #1719](https://tree.taiga.io/project/penpot/us/1719)
+- Allow to rename assets groups [Taiga #1721](https://tree.taiga.io/project/penpot/us/1721)
+- Memorize collapse state of assets in panel [Taiga #1718](https://tree.taiga.io/project/penpot/us/1718)
+
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes

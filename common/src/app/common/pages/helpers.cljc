@@ -408,11 +408,17 @@
 
 (defn split-path
   "Decompose a string in the form 'one / two / three' into
-  an array of strings, normalizing spaces."
+  a vector of strings, normalizing spaces."
   [path]
-  (->> (str/split path "/")
-       (map str/trim)
-       (remove str/empty?)))
+  (let [xf (comp (map str/trim)
+                 (remove str/empty?))]
+    (->> (str/split path "/")
+         (into [] xf))))
+
+(defn join-path
+  "Regenerate a path as a string, from a vector."
+  [path-vec]
+  (str/join " / " path-vec))
 
 (defn parse-path-name
   "Parse a string in the form 'group / subgroup / name'.
@@ -427,7 +433,9 @@
   "Put the item at the end of the path."
   [path name]
   (if-not (empty? path)
-    (str path " / " name)
+    (if-not (empty? name)
+      (str path " / " name)
+      path)
     name))
 
 (defn compact-path
