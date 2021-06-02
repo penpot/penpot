@@ -745,8 +745,6 @@
       (reduce gmt/multiply (gmt/matrix) matrices))
     (gmt/matrix)))
 
-
-
 (defn format-move [[x y]] (str "M" x " " y))
 (defn format-line [[x y]] (str "L" x " " y))
 

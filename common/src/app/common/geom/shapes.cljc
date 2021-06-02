@@ -100,6 +100,10 @@
   [shape {:keys [x y]}]
   (gtr/move shape (gpt/negate (gpt/point x y)))  )
 
+(defn translate-from-frame
+  [shape {:keys [x y]}]
+  (gtr/move shape (gpt/point x y))  )
+
 ;; --- Helpers
 
 (defn fully-contained?

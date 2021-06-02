@@ -6,7 +6,7 @@
 
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
-  (:refer-clojure :exclude [set! get get-in merge clone])
+  (:refer-clojure :exclude [set! get get-in merge clone contains?])
   (:require
    [cuerdas.core :as str]
    [goog.object :as gobj]
@@ -21,6 +21,10 @@
   ([obj k default]
    (let [result (get obj k)]
      (if (undefined? result) default result))))
+
+(defn contains?
+  [obj k]
+  (some? (unchecked-get obj k)))
 
 (defn get-keys
   [obj]

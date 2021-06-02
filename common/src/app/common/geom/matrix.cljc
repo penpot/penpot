@@ -8,6 +8,7 @@
   (:require
    #?(:cljs [cljs.pprint :as pp]
       :clj  [clojure.pprint :as pp])
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]))
 
@@ -24,6 +25,15 @@
    (Matrix. 1 0 0 1 0 0))
   ([a b c d e f]
    (Matrix. a b c d e f)))
+
+(def number-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
+
+(defn str->matrix
+  [matrix-str]
+  (let [params (->> (re-seq number-regex matrix-str)
+                    (filter #(-> % first empty? not))
+                    (map (comp d/parse-double first)))]
+    (apply matrix params)))
 
 (defn multiply
   ([{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
