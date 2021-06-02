@@ -54,11 +54,11 @@
          (db/insert! conn :file-profile-rel))))
 
 (defn create-file
-  [conn {:keys [id name project-id is-shared]
+  [conn {:keys [id name project-id is-shared data]
          :or {is-shared false}
          :as params}]
-  (let [id   (or id (uuid/next))
-        data (cp/make-file-data id)
+  (let [id   (or id (:id data) (uuid/next))
+        data (or data (cp/make-file-data id))
         file (db/insert! conn :file
                          {:id id
                           :project-id project-id
