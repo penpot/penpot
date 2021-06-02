@@ -6,7 +6,7 @@
   binaryage/devtools {:mvn/version "RELEASE"}
   metosin/reitit-core {:mvn/version "0.5.13"}
 
-  funcool/beicon {:mvn/version "2021.04.29-0"}
+  funcool/beicon {:mvn/version "2021.06.02-0"}
   funcool/okulary {:mvn/version "2020.04.14-0"}
   funcool/potok {:mvn/version "4.0.0"}
   funcool/rumext {:mvn/version "2021.05.12-1"}
