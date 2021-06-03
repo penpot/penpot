@@ -23,12 +23,12 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool max-age] :as cfg}]
-  (fn [_]
+  (fn [task]
     (db/with-atomic [conn pool]
       (let [interval (db/interval max-age)
             result   (db/exec-one! conn [sql:delete-files-xlog interval])
             result   (:next.jdbc/update-count result)]
-        (l/debug :action "trim file-change table" :removed result)
+        (l/debug :removed result :hint "remove old file changes")
         result))))
 
 (def ^:private

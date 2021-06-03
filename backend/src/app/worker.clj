@@ -98,11 +98,11 @@
           ;; Terminate the loop if close channel is closed or
           ;; event-loop-fn returns nil.
           (or (= port close-ch) (nil? val))
-          (l/debug :msg "stop condition found")
+          (l/debug :hint "stop condition found")
 
           (db/pool-closed? pool)
           (do
-            (l/debug :msg "eventloop aborted because pool is closed")
+            (l/debug :hint "eventloop aborted because pool is closed")
             (a/close! close-ch))
 
           (and (instance? java.sql.SQLException val)
@@ -115,7 +115,7 @@
           (and (instance? java.sql.SQLException val)
                (= "40001" (.getSQLState ^java.sql.SQLException val)))
           (do
-            (l/debug :msg "serialization failure (retrying in some instants)")
+            (l/debug :hint "serialization failure (retrying in some instants)")
             (a/<! (a/timeout poll-ms))
             (recur))
 
@@ -243,7 +243,7 @@
   (let [task-fn (get tasks name)]
     (if task-fn
       (task-fn item)
-      (l/warn :msg "no task handler found"
+      (l/warn :hint "no task handler found"
               :name (d/name name)))
     {:status :completed :task item}))
 
@@ -281,19 +281,13 @@
   [{:keys [tasks]} item]
   (let [name (d/name (:name item))]
     (try
-      (l/debug :action "start task"
-               :name name
+      (l/debug :action "execute task"
                :id (:id item)
+               :name name
                :retry (:retry-num item))
-
       (handle-task tasks item)
       (catch Exception e
-        (handle-exception e item))
-      (finally
-        (l/debug :action "end task"
-                 :name name
-                 :id (:id item)
-                 :retry (:retry-num item))))))
+        (handle-exception e item)))))
 
 (def sql:select-next-tasks
   "select * from task as t

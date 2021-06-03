@@ -18,7 +18,7 @@
 (declare handle-deletion)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool]))
+  (s/keys :req-un [::db/pool ::sto/storage]))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as cfg}]
