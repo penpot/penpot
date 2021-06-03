@@ -23,7 +23,7 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool max-age] :as cfg}]
-  (fn [task]
+  (fn [_]
     (db/with-atomic [conn pool]
       (let [interval (db/interval max-age)
             result   (db/exec-one! conn [sql:delete-files-xlog interval])

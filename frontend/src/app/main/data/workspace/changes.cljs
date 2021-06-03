@@ -66,10 +66,10 @@
 
     (cond-> changes
       (not (empty? rops))
-      (update :rch conj (assoc change :operations rops))
+      (update :redo-changes conj (assoc change :operations rops))
 
       (not (empty? uops))
-      (update :uch conj (assoc change :operations uops)))))
+      (update :undo-changes conj (assoc change :operations uops)))))
 
 (defn update-shapes
   ([ids f] (update-shapes ids f nil))
@@ -82,25 +82,26 @@
    (ptk/reify ::update-shapes
      ptk/WatchEvent
      (watch [it state stream]
-       (let [page-id (:current-page-id state)
-             objects (wsh/lookup-page-objects state)
-             reg-objects {:type :reg-objects :page-id page-id :shapes (vec ids)}
+       (let [page-id   (:current-page-id state)
+             objects   (wsh/lookup-page-objects state)
+             changes   {:redo-changes []
+                        :undo-changes []
+                        :origin it
+                        :save-undo? save-undo?}
 
-             {redo-changes :rch undo-changes :uch}
-             (reduce #(update-shape-changes %1 page-id objects f keys %2)
-                     {:rch [] :uch []} ids)]
+             ids       (into [] (filter some?) ids)
 
-         (when-not (empty? redo-changes)
-           (let [redo-changes (cond-> redo-changes
-                                reg-objects? (conj reg-objects))
+             changes   (reduce #(update-shape-changes %1 page-id objects f keys %2) changes ids)]
 
-                 undo-changes (cond-> undo-changes
-                                reg-objects? (conj reg-objects))]
-
-             (rx/of (commit-changes {:redo-changes redo-changes
-                                     :undo-changes undo-changes
-                                     :origin it
-                                     :save-undo? save-undo?})))))))))
+         (when-not (empty? (:redo-changes changes))
+           (let [reg-objs {:type :reg-objects
+                           :page-id page-id
+                           :shapes ids}
+                 changes  (cond-> changes
+                            reg-objects?
+                            (-> (update :redo-changes conj reg-objs)
+                                (update :undo-changes conj reg-objs)))]
+             (rx/of (commit-changes changes)))))))))
 
 (defn update-indices
   [page-id changes]
