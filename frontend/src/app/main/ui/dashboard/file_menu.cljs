@@ -11,8 +11,9 @@
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.components.context-menu :refer [context-menu]]
+   [app.main.ui.context :as ctx]
+   [app.main.worker :as uw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
@@ -150,7 +151,22 @@
                       :hint (tr "modals.remove-shared-confirm.hint")
                       :cancel-label :omit
                       :accept-label (tr "modals.remove-shared-confirm.accept")
-                      :on-accept del-shared})))]
+                      :on-accept del-shared})))
+
+        on-export-files
+        (fn [event]
+          (->> (uw/ask-many!
+                {:cmd :export-file
+                 :team-id current-team-id
+                 :files files})
+               (rx/subs
+                (fn [{:keys [type data] :as msg}]
+                  (case type
+                    :progress
+                    (prn "[Progress]" data)
+
+                    :finish
+                    (dom/save-as data "export" "application/zip" "Export package (*.zip)"))))))]
 
     (mf/use-effect
      (fn []
@@ -176,6 +192,7 @@
                       [[(tr "dashboard.duplicate-multi" file-count) on-duplicate]
                        (when (or (seq current-projects) (seq other-teams))
                          [(tr "dashboard.move-to-multi" file-count) nil sub-options])
+                       #_[(tr "dashboard.export-multi" file-count) on-export-files]
                        [:separator]
                        [(tr "labels.delete-multi-files" file-count) on-delete]]
 
@@ -187,6 +204,7 @@
                        (if (:is-shared file)
                          [(tr "dashboard.remove-shared") on-del-shared]
                          [(tr "dashboard.add-shared") on-add-shared])
+                       #_[(tr "dashboard.export-single") on-export-files]
                        [:separator]
                        [(tr "labels.delete") on-delete]])]
 

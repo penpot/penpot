@@ -165,3 +165,30 @@
     }
   }
 }
+
+.import-file-btn {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  height: 2rem;
+  justify-content: center;
+  overflow: hidden;
+  padding: 4px;
+  width: 2rem;
+
+  background: none;
+  border: 1px solid $color-gray-20;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.4s;
+  margin-left: 1rem;
+
+  &:hover {
+    background: $color-primary;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}

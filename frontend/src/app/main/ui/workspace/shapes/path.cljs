@@ -28,5 +28,4 @@
 
     [:> shape-container {:shape shape
                          :pointer-events (when editing? "none")}
-     [:& path/path-shape {:shape shape
-                          :background? true}]]))
+     [:& path/path-shape {:shape shape}]]))

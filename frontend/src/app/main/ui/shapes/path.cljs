@@ -26,16 +26,6 @@
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!
                    #js {:d pdata}))]
-    (if background?
-      [:g
-       [:path {:stroke "none"
-               :fill "none"
-               :stroke-width "20px"
-               :d pdata}]
-       [:& shape-custom-stroke {:shape shape
-                                :base-props props
-                                :elem-name "path"}]]
-      [:& shape-custom-stroke {:shape shape
-                               :base-props props
-                               :elem-name "path"}])))
+    [:& shape-custom-stroke {:shape shape}
+     [:> :path props]]))
 

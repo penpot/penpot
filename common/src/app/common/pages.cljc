@@ -84,6 +84,7 @@
 (d/export init/make-file-data)
 (d/export init/make-minimal-shape)
 (d/export init/make-minimal-group)
+(d/export init/empty-file-data)
 
 ;; Specs
 

@@ -4,6 +4,7 @@
  :jvm-opts ["-Xmx700m" "-Xms100m" "-XX:+UseSerialGC" "-XX:-OmitStackTraceInFastThrow"]
  :dev-http {8888 "classpath:public"}
 
+
  :builds
  {:main
   {:target :browser
@@ -35,6 +36,27 @@
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}
 
+  :lib-penpot
+  {:target :esm
+   :output-dir "resources/public/libs"
+
+   :modules
+   {:penpot {:exports {:renderPage app.libs.render/render-page-export
+                       :createFile app.libs.file-builder/create-file-export}}}
+
+   :compiler-options
+   {:output-feature-set :es8
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :source-map true
+     :elide-asserts true
+     :anon-fn-naming-policy :off
+     :source-map-detail-level :all}}}
+
   :test
   {:target :node-test
    :output-to "target/tests.js"
@@ -45,4 +67,3 @@
    {:output-feature-set :es8
     :output-wrapper false
     :warnings {:fn-deprecated false}}}}}
-

@@ -21,7 +21,8 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.alpha :as mf]
+   [app.main.ui.dashboard.import :refer [import-button]]))
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
@@ -30,6 +31,7 @@
     [:header.dashboard-header
      [:div.dashboard-title
       [:h1 (tr "dashboard.projects-title")]]
+
      [:a.btn-secondary.btn-small {:on-click create}
       (tr "dashboard.new-project")]]))
 
@@ -96,7 +98,13 @@
          (fn []
            (let [mdata  {:on-success on-file-created}
                  params {:project-id (:id project)}]
-             (st/emit! (dd/create-file (with-meta params mdata))))))]
+             (st/emit! (dd/create-file (with-meta params mdata))))))
+
+        on-finish-import
+        (mf/use-callback
+         (fn []
+           (st/emit! (dd/fetch-recent-files)
+                     (dd/clear-selected-files))))]
 
     [:div.dashboard-project-row {:class (when first? "first")}
      [:div.project
@@ -129,6 +137,9 @@
         (let [time (-> (:modified-at project)
                        (dt/timeago {:locale locale}))]
           [:span.recent-files-row-title-info (str ", " time)]))
+
+      #_[:& import-button {:project-id (:id project)
+                         :on-finish-import on-finish-import}]
 
       [:a.btn-secondary.btn-small
        {:on-click create-file}
