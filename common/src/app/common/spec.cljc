@@ -11,6 +11,11 @@
   (:require
    #?(:clj  [clojure.spec.alpha :as s]
       :cljs [cljs.spec.alpha :as s])
+
+   ;; NOTE: don't remove this, causes exception on advanced build
+   ;; because of some strange interaction with cljs.spec.alpha and
+   ;; modules spliting.
+   [expound.alpha]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]
