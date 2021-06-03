@@ -245,7 +245,7 @@
 
    :app.tasks.file-xlog-gc/handler
    {:pool    (ig/ref :app.db/pool)
-    :max-age (dt/duration {:hours 48})}
+    :max-age (dt/duration {:hours 24})}
 
    :app.tasks.telemetry/handler
    {:pool        (ig/ref :app.db/pool)
