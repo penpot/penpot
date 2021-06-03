@@ -91,7 +91,7 @@
   [type node]
 
   (if (search-data-node? type)
-    (let [data-tags #{:ellipse :rect :path :text :foreignObject}]
+    (let [data-tags #{:ellipse :rect :path :text :foreignObject :image}]
       (->> node
            (node-seq)
            (filter #(contains? data-tags (:tag %)))
@@ -220,11 +220,19 @@
       (= stroke-alignment :inner)
       (update :stroke-width / 2))))
 
+(defn add-image-data
+  [props node data]
+  (-> props
+      (assoc-in [:metadata :id] (get-meta node :media-id))
+      (assoc-in [:metadata :width] (get-meta node :media-width))
+      (assoc-in [:metadata :height] (get-meta node :media-height))
+      (assoc-in [:metadata :mtype] (get-meta node :media-mtype))))
+
 (defn add-text-data
   [props node]
   (-> props
       (assoc :grow-type (get-meta node :grow-type keyword))
-      (assoc :content (get-meta node :content json/decode))))
+      (assoc :content   (get-meta node :content json/decode))))
 
 (defn str->bool
   [val]
@@ -249,6 +257,9 @@
           (assoc :blocked blocked)
           (assoc :hidden hidden)
 
+          (cond-> (= :image type)
+            (add-image-data node data))
+
           (cond-> (= :text type)
             (add-text-data node))
 
@@ -257,3 +268,12 @@
 
           (cond-> (some? transform-inverse)
             (assoc :transform-inverse transform-inverse))))))
+
+(defn get-image-name
+  [node]
+  (get-in node [:attrs :penpot:name]))
+
+(defn get-image-data
+  [node]
+  (let [data (get-shape-data :image node)]
+    (:xlink:href data)))

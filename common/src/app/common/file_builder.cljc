@@ -24,7 +24,7 @@
   (when verify-on-commit?
     (us/assert ::spec/change change))
   (-> file
-      (update :changes conj change)
+      (update :changes (fnil conj []) change)
       (update :data ch/process-changes [change] verify-on-commit?)))
 
 (defn- lookup-objects

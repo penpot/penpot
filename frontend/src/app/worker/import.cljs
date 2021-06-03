@@ -11,6 +11,7 @@
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
+   [app.util.http :as http]
    [app.util.import.parser :as cip]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
@@ -21,21 +22,21 @@
 ;; Upload changes batches size
 (def change-batch-size 100)
 
-(defn create-empty-file
+(defn create-file
   "Create a new file on the back-end"
-  [project-id file]
-  (rp/mutation
-   :create-file
-   {:id (:id file)
-    :name (:name file)
-    :project-id project-id
-    :data (-> cp/empty-file-data
-              (assoc :id (:id file)))}))
+  [project-id name]
+  (let [file-id (uuid/next)]
+    (rp/mutation
+     :create-file
+     {:id file-id
+      :name name
+      :project-id project-id
+      :data (-> cp/empty-file-data (assoc :id file-id))})))
 
 (defn send-changes
   "Creates batches of changes to be sent to the backend"
-  [file init-revn]
-  (let [revn (atom init-revn)
+  [file]
+  (let [revn (atom (:revn file))
         file-id (:id file)
         session-id (uuid/next)
         changes-batches
@@ -55,11 +56,21 @@
 
          (rx/tap #(reset! revn (:revn %))))))
 
-(defn persist-file
-  "Sends to the back-end the imported data"
-  [project-id file]
-  (->> (create-empty-file project-id file)
-       (rx/flat-map #(send-changes file (:revn %)))))
+(defn upload-media-files
+  "Upload a image to the backend and returns its id"
+  [file-id name data-uri]
+  (->> (http/send!
+        {:uri data-uri
+         :response-type :blob
+         :method :get})
+       (rx/map :body)
+       (rx/map
+        (fn [blob]
+          {:name name
+           :file-id file-id
+           :content blob
+           :is-local true}))
+       (rx/flat-map #(rp/mutation! :upload-file-media-object %))))
 
 (defn parse-file-name
   [dir]
@@ -102,15 +113,41 @@
         ;; default
         file))))
 
+(defn merge-reduce [f seed ob]
+  (->> (rx/concat
+        (rx/of seed)
+        (rx/merge-scan f seed ob))
+       (rx/last)))
+
+(defn resolve-images
+  [file-id node]
+  (if (and (cip/shape? node) (= (cip/get-type node) :image) (not (cip/close? node)))
+    (let [name     (cip/get-image-name node)
+          data-uri (cip/get-image-data node)]
+      (->> (upload-media-files file-id name data-uri)
+           (rx/map
+            (fn [media]
+              (-> node
+                  (assoc-in [:attrs :penpot:media-id]     (:id media))
+                  (assoc-in [:attrs :penpot:media-width]  (:width media))
+                  (assoc-in [:attrs :penpot:media-height] (:height media))
+                  (assoc-in [:attrs :penpot:media-mtype]  (:mtype media)))))))
+
+    ;; If the node is not an image just return the node
+    (rx/of node)))
+
 (defn import-page
   [file {:keys [path content]}]
   (let [page-name (parse-page-name path)]
-    (when (cip/valid? content)
-      (let [nodes (->> content cip/node-seq)]
-        (->> nodes
-             (filter cip/shape?)
-             (reduce add-shape-file (fb/add-page file page-name))
-             (fb/close-page))))))
+    (if (cip/valid? content)
+      (let [nodes (->> content cip/node-seq)
+            file-id (:id file)]
+        (->> (rx/from nodes)
+             (rx/filter cip/shape?)
+             (rx/mapcat (partial resolve-images file-id))
+             (rx/reduce add-shape-file (fb/add-page file page-name))
+             (rx/map fb/close-page)))
+      (rx/empty))))
 
 (defmethod impl/handler :import-file
   [{:keys [project-id files]}]
@@ -130,14 +167,19 @@
              (rx/map #(d/update-when % :content tubax/xml->clj)))]
 
     (->> dir-str
+         (rx/merge-map #(create-file project-id (parse-file-name %)))
          (rx/merge-map
-          (fn [dir]
-            (let [file (fb/create-file (parse-file-name dir))]
-              (rx/concat
-               (->> file-str
-                    (rx/filter #(str/starts-with? (:path %) dir))
-                    (rx/reduce import-page file)
-                    (rx/flat-map #(persist-file project-id %))
-                    (rx/ignore))
+          (fn [file]
+            (rx/concat
+             (->> file-str
+                  (rx/filter #(str/starts-with? (:path %) (:name file)))
+                  (merge-reduce import-page file)
+                  (rx/flat-map send-changes)
+                  (rx/catch (fn [err]
+                              (.error js/console "ERROR" err (clj->js (.-data err)))
 
-               (rx/of (select-keys file [:id :name])))))))))
+                              ;; We delete the file when there is an error
+                              (rp/mutation! :delete-file {:id (:id file)})))
+                  (rx/ignore))
+
+             (rx/of (select-keys file [:id :name]))))))))
