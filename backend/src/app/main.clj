@@ -254,7 +254,7 @@
    :app.tasks.file-xlog-gc/handler
    {:pool    (ig/ref :app.db/pool)
     :metrics (ig/ref :app.metrics/metrics)
-    :max-age cf/deletion-delay}
+    :max-age (dt/duration {:hours 48})}
 
    :app.tasks.telemetry/handler
    {:pool        (ig/ref :app.db/pool)

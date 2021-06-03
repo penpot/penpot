@@ -31,7 +31,7 @@
   [_ {:keys [receiver uri] :as cfg}]
   (when uri
     (l/info :msg "intializing loki reporter" :uri uri)
-    (let [input (a/chan (a/sliding-buffer 1024))]
+    (let [input (a/chan (a/dropping-buffer 512))]
       (receiver :sub input)
       (a/go-loop []
         (let [msg (a/<! input)]
@@ -69,17 +69,23 @@
                                 :method :post
                                 :headers {"content-type" "application/json"}
                                 :body (json/encode payload)})]
-      (if (= (:status response) 204)
+      (cond
+        (= (:status response) 204)
         true
+
+        (= (:status response) 400)
         (do
-          (l/error :hint "error on sending log to loki"
-                   :try i
+          (l/error :hint "error on sending log to loki (no retry)"
+                   :rsp (pr-str response))
+          true)
+
+        :else
+        (do
+          (l/error :hint "error on sending log to loki" :try i
                    :rsp (pr-str response))
           false)))
     (catch Exception e
-      (l/error :hint "error on sending message to loki"
-               :cause e
-               :try i)
+      (l/error :hint "error on sending message to loki" :cause e :try i)
       false)))
 
 (defn- handle-event
