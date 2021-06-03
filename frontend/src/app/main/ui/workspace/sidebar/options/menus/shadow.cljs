@@ -104,19 +104,27 @@
        {:on-click #(reset! open-shadow true)}
        i/actions]
 
-      [:> numeric-input {:ref basic-offset-x-ref
-                         :on-change (update-attr index :offset-x valid-number?)
-                         :on-click (select-text basic-offset-x-ref)
-                         :value (:offset-x value)}]
-      [:> numeric-input {:ref basic-offset-y-ref
-                         :on-change (update-attr index :offset-y valid-number?)
-                         :on-click (select-text basic-offset-y-ref)
-                         :value (:offset-y value)}]
-      [:> numeric-input {:ref basic-blur-ref
-                         :on-click (select-text basic-blur-ref)
-                         :on-change (update-attr index :blur valid-number?)
-                         :min 0
-                         :value (:blur value)}]           
+      ;; [:> numeric-input {:ref basic-offset-x-ref
+      ;;                    :on-change (update-attr index :offset-x valid-number?)
+      ;;                    :on-click (select-text basic-offset-x-ref)
+      ;;                    :value (:offset-x value)}]
+      ;; [:> numeric-input {:ref basic-offset-y-ref
+      ;;                    :on-change (update-attr index :offset-y valid-number?)
+      ;;                    :on-click (select-text basic-offset-y-ref)
+      ;;                    :value (:offset-y value)}]
+      ;; [:> numeric-input {:ref basic-blur-ref
+      ;;                    :on-click (select-text basic-blur-ref)
+      ;;                    :on-change (update-attr index :blur valid-number?)
+      ;;                    :min 0
+      ;;                    :value (:blur value)}]
+
+      [:select.input-select
+        {:default-value (str (:style value))
+         :on-change (fn [event]
+                      (let [value (-> event dom/get-target dom/get-value d/read-string)]
+                        (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
+        [:option {:value ":drop-shadow"} (t locale "workspace.options.shadow-options.drop-shadow")]
+        [:option {:value ":inner-shadow"} (t locale "workspace.options.shadow-options.inner-shadow")]]
 
       [:div.element-set-actions
        [:div.element-set-actions-button {:on-click (toggle-visibility index)}
@@ -126,7 +134,10 @@
 
      [:& advanced-options {:visible? @open-shadow
                            :on-close #(reset! open-shadow false)}
-      [:div.row-grid-2
+      [:div.color-data
+       [:div.element-set-actions-button
+        {:on-click #(reset! open-shadow false)}
+        i/actions]
        [:select.input-select
         {:default-value (str (:style value))
          :on-change (fn [event]

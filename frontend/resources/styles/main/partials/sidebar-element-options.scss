@@ -816,13 +816,13 @@
 
 .advanced-options-wrapper {
   width: 100%;
-  padding-left: 0.25rem;
 }
 
 .advanced-options {
-  background-color: #303236;
+  border: 1px solid $color-gray-60;
+  background-color: $color-gray-50;
   border-radius: 4px;
-  padding: 0.5rem;
+  padding: 8px 3px;
   position: relative;
   top: 2px;
   width: 100%;
@@ -896,6 +896,22 @@
 
   .download-button {
     margin-top: 10px;
+  }
+
+  .input-element {
+    width: 100%;
+    flex-shrink: initial;
+  }
+
+  .row-grid-2 {
+    grid-column-gap: 1em;
+  }
+
+  .color-info {
+    input {
+      margin-right: 1em;
+      width: 74px;
+    }
   }
 }
 
