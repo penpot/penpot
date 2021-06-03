@@ -7,11 +7,11 @@
 (ns app.common.file-builder
   "A version parsing helper."
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes :as ch]
    [app.common.pages.init :as init]
    [app.common.pages.spec :as spec]
-   [app.common.spec :as us]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]))
 
@@ -130,6 +130,7 @@
                 (lookup-shape file frame-id))
         obj (-> (init/make-minimal-shape type)
                 (merge data)
+                (d/without-nils)
                 (cond-> frame
                   (gsh/translate-from-frame frame)))]
     (commit-shape file obj)))

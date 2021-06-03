@@ -30,6 +30,15 @@
                :stop-color color
                :stop-opacity opacity}])]))
 
+(defn add-metadata [props gradient]
+  (-> props
+      (obj/set! "penpot:start-x" (:start-x gradient))
+      (obj/set! "penpot:start-x" (:start-x gradient))
+      (obj/set! "penpot:start-y" (:start-y gradient))
+      (obj/set! "penpot:end-x"   (:end-x gradient))
+      (obj/set! "penpot:end-y"   (:end-y gradient))
+      (obj/set! "penpot:width"   (:width gradient))))
+
 (mf/defc radial-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} (:selrect shape)
         center (gsh/center-shape shape)
@@ -59,13 +68,17 @@
           transform (gmt/multiply transform
                                   (gmt/translate-matrix translate-vec)
                                   (gmt/rotate-matrix angle)
-                                  (gmt/scale-matrix scale-vec))]
-      [:radialGradient {:id id
-                        :cx 0
-                        :cy 0
-                        :r 1
-                        :gradientUnits "userSpaceOnUse"
-                        :gradientTransform transform}
+                                  (gmt/scale-matrix scale-vec))
+
+          base-props #js {:id id
+                          :cx 0
+                          :cy 0
+                          :r 1
+                          :gradientUnits "userSpaceOnUse"
+                          :gradientTransform transform}
+
+          props (-> base-props (add-metadata gradient))]
+      [:> :radialGradient props
        (for [{:keys [offset color opacity]} (:stops gradient)]
          [:stop {:key (str id "-stop-" offset)
                  :offset (or offset 0)

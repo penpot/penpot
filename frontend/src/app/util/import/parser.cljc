@@ -9,8 +9,10 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
-   [cuerdas.core :as str]
-   [app.util.path.parser :as upp]))
+   [app.util.color :as uc]
+   [app.util.json :as json]
+   [app.util.path.parser :as upp]
+   [cuerdas.core :as str]))
 
 (defn valid?
   [root]
@@ -38,9 +40,9 @@
   (or (close? node)
       (contains? (:attrs node) :penpot:type)))
 
-(defn get-attr
+(defn get-meta
   ([m att]
-   (get-attr m att identity))
+   (get-meta m att identity))
   ([m att val-fn]
    (let [ns-att (->> att d/name (str "penpot:") keyword)
          val (get-in m [:attrs ns-att])]
@@ -78,22 +80,25 @@
   (reduce-kv
    (fn [m k v]
      (if (#{:style :data-style} k)
-       (assoc m :style (parse-style v))
+       (merge m (parse-style v))
        (assoc m k v)))
    m
    attrs))
 
-(defn get-data-node
-  [node]
-
-  (let [data-tags #{:ellipse :rect :path}]
-    (->> node
-         (node-seq)
-         (filter #(contains? data-tags (:tag %)))
-         (map #(:attrs %))
-         (reduce add-attrs {}))))
-
 (def search-data-node? #{:rect :image :path :text :circle})
+
+(defn get-shape-data
+  [type node]
+
+  (if (search-data-node? type)
+    (let [data-tags #{:ellipse :rect :path :text :foreignObject}]
+      (->> node
+           (node-seq)
+           (filter #(contains? data-tags (:tag %)))
+           (map #(:attrs %))
+           (reduce add-attrs {})))
+    (:attrs node)))
+
 (def has-position? #{:frame :rect :image :text})
 
 (defn parse-position
@@ -123,22 +128,103 @@
         (assoc :selrect selrect)
         (assoc :points points))))
 
-(defn extract-data
-  [type node]
-  (let [data (if (search-data-node? type)
-               (get-data-node node)
-               (:attrs node))]
-    (cond-> {}
-      (has-position? type)
-      (-> (parse-position data)
-          (gsh/setup-selrect))
+(def url-regex #"url\(#([^\)]*)\)")
 
-      (= type :circle)
-      (-> (parse-circle data)
-          (gsh/setup-selrect))
+(defn seek-node [id coll]
+  (->> coll (d/seek #(= id (-> % :attrs :id)))))
 
-      (= type :path)
-      (parse-path data))))
+(defn parse-stops [gradient-node]
+  (->> gradient-node
+       (node-seq)
+       (filter #(= :stop (:tag %)))
+       (mapv (fn [{{:keys [offset stop-color stop-opacity]} :attrs}]
+               {:color stop-color
+                :opacity (d/parse-double stop-opacity)
+                :offset (d/parse-double offset)}))))
+
+(defn parse-gradient
+  [node ref-url]
+  (let [[_ url] (re-matches url-regex ref-url)
+        gradient-node (->> node (node-seq) (seek-node url))
+        stops (parse-stops gradient-node)]
+
+    (cond-> {:stops stops}
+      (= :linearGradient (:tag gradient-node))
+      (assoc :type :linear
+             :start-x (-> gradient-node :attrs :x1 d/parse-double)
+             :start-y (-> gradient-node :attrs :y1 d/parse-double)
+             :end-x   (-> gradient-node :attrs :x2 d/parse-double)
+             :end-y   (-> gradient-node :attrs :y2 d/parse-double)
+             :width   1)
+
+      (= :radialGradient (:tag gradient-node))
+      (assoc :type :radial
+             :start-x (get-meta gradient-node :start-x d/parse-double)
+             :start-y (get-meta gradient-node :start-y d/parse-double)
+             :end-x   (get-meta gradient-node :end-x   d/parse-double)
+             :end-y   (get-meta gradient-node :end-y   d/parse-double)
+             :width   (get-meta gradient-node :width   d/parse-double)))))
+
+(defn add-position
+  [props type node data]
+  (cond-> props
+    (has-position? type)
+    (-> (parse-position data)
+        (gsh/setup-selrect))
+
+    (= type :circle)
+    (-> (parse-circle data)
+        (gsh/setup-selrect))
+
+    (= type :path)
+    (parse-path data)))
+
+(defn add-fill
+  [props type node data]
+
+  (let [fill (:fill data)]
+    (cond-> props
+      (= fill "none")
+      (assoc :fill-color nil
+             :fill-opacity nil)
+
+      (str/starts-with? fill "url")
+      (assoc :fill-color-gradient (parse-gradient node fill)
+             :fill-color nil
+             :fill-opacity nil)
+
+      (uc/hex? fill)
+      (assoc :fill-color fill
+             :fill-opacity (-> data (:fill-opacity "1") d/parse-double)))))
+
+(defn add-stroke
+  [props type node data]
+
+  (let [stroke-style (get-meta node :stroke-style keyword)
+        stroke-alignment (get-meta node :stroke-alignment keyword)
+        stroke (:stroke data)]
+
+    (cond-> props
+      :always
+      (assoc :stroke-alignment stroke-alignment
+             :stroke-style stroke-style
+             :stroke-color (-> data (:stroke "#000000"))
+             :stroke-opacity (-> data (:stroke-opacity "1") d/parse-double)
+             :stroke-width (-> data (:stroke-width "0") d/parse-double))
+
+      (str/starts-with? stroke "url")
+      (assoc :stroke-color-gradient (parse-gradient node stroke)
+             :stroke-color nil
+             :stroke-opacity nil)
+
+      (= stroke-alignment :inner)
+      (update :stroke-width / 2))))
+
+(defn add-text-data
+  [props node]
+  (-> props
+      (assoc :grow-type (get-meta node :grow-type keyword))
+      (assoc :content (get-meta node :content json/decode))))
 
 (defn str->bool
   [val]
@@ -148,17 +234,26 @@
   [type node]
 
   (when-not (close? node)
-    (let [name              (get-attr node :name)
-          blocked           (get-attr node :blocked str->bool)
-          hidden            (get-attr node :hidden str->bool)
-          transform         (get-attr node :transform gmt/str->matrix)
-          transform-inverse (get-attr node :transform-inverse gmt/str->matrix)]
+    (let [name              (get-meta node :name)
+          blocked           (get-meta node :blocked str->bool)
+          hidden            (get-meta node :hidden str->bool)
+          transform         (get-meta node :transform gmt/str->matrix)
+          transform-inverse (get-meta node :transform-inverse gmt/str->matrix)
+          data              (get-shape-data type node)]
 
-      (-> (extract-data type node)
+      (-> {}
+          (add-position type node data)
+          (add-fill type node data)
+          (add-stroke type node data)
           (assoc :name name)
           (assoc :blocked blocked)
           (assoc :hidden hidden)
+
+          (cond-> (= :text type)
+            (add-text-data node))
+
           (cond-> (some? transform)
             (assoc :transform transform))
+
           (cond-> (some? transform-inverse)
             (assoc :transform-inverse transform-inverse))))))

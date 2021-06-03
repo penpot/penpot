@@ -16,7 +16,8 @@
    [app.main.ui.shapes.gradients :as grad]
    [app.main.ui.shapes.svg-defs :as defs]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.alpha :as mf]
+   [app.util.json :as json]))
 
 (defn add-metadata
   "Adds as metadata properties that we cannot deduce from the exported SVG"
@@ -26,7 +27,8 @@
           (let [ns-attr (str "penpot:" (-> attr d/name))]
             (-> props
                 (obj/set! ns-attr val))))
-        frame? (= :frame (:type shape))]
+        frame? (= :frame (:type shape))
+        text? (= :text (:type shape))]
     (-> props
         (add! :name              (-> shape :name))
         (add! :blocked           (-> shape (:blocked false) str))
@@ -44,6 +46,10 @@
               (add! :r2 (-> shape (:r2 0) str))
               (add! :r3 (-> shape (:r3 0) str))
               (add! :r4 (-> shape (:r4 0) str))))
+
+        (cond-> text?
+          (-> (add! :grow-type (-> shape :grow-type))
+              (add! :content (-> shape :content json/encode))))
 
         (cond-> frame?
           (obj/set! "xmlns:penpot" "https://penpot.app/xmlns")))))
