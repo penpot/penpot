@@ -1,6 +1,5 @@
 # CHANGELOG #
 
-
 ## :rocket: Next
 
 ### :sparkles: New features
@@ -9,6 +8,25 @@
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
+
+## 1.6.4-alpha
+
+### :sparkles: Minor improvements
+
+-  Decrease default bulk buffers on storage tasks.
+-  Reduce file_change preserve interval to 24h.
+
+### :bug: Bugs fixed
+
+- Don't allow rename drafts project.
+- Fix custom font deletion task.
+- Fix custom font rendering on exporting shapes.
+- Fix font loading on viewer app.
+- Fix problem when moving files with drag & drop.
+- Fix unexpected exception on searching without term.
+- Properly handle nil values on `update-shapes` function.
+- Replace frame term usage by artboard on viewer app.
+
 
 ## 1.6.3-alpha
 
