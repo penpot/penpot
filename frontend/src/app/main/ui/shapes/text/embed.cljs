@@ -86,12 +86,6 @@
                                               :weight weight})]
       (p/resolved result))))
 
-(defn- to-promise
-  [observable]
-  (p/create (fn [resolve reject]
-              (->> (rx/take 1 observable)
-                   (rx/subs resolve reject)))))
-
 (defn fetch-font-data
   "Parses the CSS and retrieves the font data as DataURI."
   [^string css]
@@ -137,10 +131,10 @@
   {::mf/wrap-props false
    ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
   [props]
-  (let [shapes  (obj/get props "shapes")
-        node {:children (->> shapes (map :content))}
-        fonts (-> node get-node-fonts memoize)
-        style (mf/use-state nil)]
+  (let [shapes (obj/get props "shapes")
+        node   {:children (->> shapes (map :content))}
+        fonts  (-> node get-node-fonts memoize)
+        style  (mf/use-state nil)]
 
     (mf/use-effect
      (mf/deps fonts)
