@@ -12,11 +12,14 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
+   [app.main.store :as st]
+   [app.main.data.fonts :as df]
    [app.main.exports :as exports]
    [app.main.repo :as repo]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.text.embed :refer [embed-fontfaces-style]]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -42,6 +45,9 @@
         objects  (reduce updt-fn objects mod-ids)
         object   (get objects object-id)
 
+        txt-xfm  (comp (map #(get objects %))
+                       (filter #(= :text (:type %))))
+        txt-objs (into [] txt-xfm mod-ids)
 
         {:keys [width height]} (gsh/points->selrect (:points object))
 
@@ -72,6 +78,9 @@
         ]
 
     [:& (mf/provider muc/embed-ctx) {:value true}
+     (when (seq txt-objs)
+       [:& embed-fontfaces-style {:shapes txt-objs}])
+
      [:svg {:id "screenshot"
             :view-box vbox
             :width width
@@ -79,6 +88,7 @@
             :version "1.1"
             :xmlnsXlink "http://www.w3.org/1999/xlink"
             :xmlns "http://www.w3.org/2000/svg"}
+
       (case (:type object)
         :frame [:& frame-wrapper {:shape object :view-box vbox}]
         :group [:> shape-container {:shape object}
@@ -97,7 +107,6 @@
       (assoc objects (:id object) object))
     objects))
 
-
 ;; NOTE: for now, it is ok download the entire file for render only
 ;; single page but in a future we need consider to add a specific
 ;; backend entry point for download only the data of single page.
@@ -106,12 +115,19 @@
   [{:keys [file-id page-id object-id] :as props}]
   (let [objects (mf/use-state nil)]
     (mf/use-effect
-     #(let [subs (->> (repo/query! :file {:id file-id})
-                      (rx/subs (fn [{:keys [data]}]
-                                 (let [objs (get-in data [:pages-index page-id :objects])
-                                       objs (adapt-root-frame objs object-id)]
-                                   (reset! objects objs)))))]
-        (fn [] (rx/dispose! subs))))
+     (mf/deps file-id page-id object-id)
+     (fn []
+       (->> (rx/zip
+             (repo/query! :font-variants {:file-id file-id})
+             (repo/query! :file {:id file-id}))
+            (rx/subs
+             (fn [[fonts {:keys [data]} :as kaka]]
+               (when (seq fonts)
+                 (st/emit! (df/fonts-fetched fonts)))
+               (let [objs (get-in data [:pages-index page-id :objects])
+                     objs (adapt-root-frame objs object-id)]
+                 (reset! objects objs)))))
+       (constantly nil)))
 
     (when @objects
       [:& object-svg {:objects @objects

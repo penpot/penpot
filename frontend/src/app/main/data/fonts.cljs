@@ -25,7 +25,7 @@
 ;; General purpose events & IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn team-fonts-loaded
+(defn fonts-fetched
   [fonts]
   (letfn [;; Prepare font to the internal font database format.
           (prepare-font [[id [item :as items]]]
@@ -74,8 +74,8 @@
   (ptk/reify ::load-team-fonts
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :team-font-variants {:team-id team-id})
-           (rx/map team-fonts-loaded)))))
+      (->> (rp/query :font-variants {:team-id team-id})
+           (rx/map fonts-fetched)))))
 
 (defn process-upload
   "Given a seq of blobs and the team id, creates a ready-to-use fonts

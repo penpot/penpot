@@ -102,23 +102,20 @@
       {::mf/wrap [#(mf/memo' % check-frame-props) custom-deferred]
        ::mf/wrap-props false}
       [props]
-      (let [shape       (unchecked-get props "shape")
-            objects     (unchecked-get props "objects")
-            thumbnail?  (unchecked-get props "thumbnail?")
+      (let [shape        (unchecked-get props "shape")
+            objects      (unchecked-get props "objects")
+            thumbnail?   (unchecked-get props "thumbnail?")
 
-            edition     (mf/deref refs/selected-edition)
+            edition      (mf/deref refs/selected-edition)
             embed-fonts? (mf/use-ctx muc/embed-ctx)
 
-            shape       (gsh/transform-shape shape)
-            children    (mapv #(get objects %) (:shapes shape))
-            text-childs (->> objects
-                             vals
-                             (filterv #(and (= :text (:type %))
-                                            (= (:id shape) (:frame-id %)))))
+            shape        (gsh/transform-shape shape)
+            children     (mapv #(get objects %) (:shapes shape))
+            text-childs  (->> (vals objects)
+                              (filterv #(and (= :text (:type %))
+                                             (= (:id shape) (:frame-id %)))))
 
-            ds-modifier (get-in shape [:modifiers :displacement])
-
-            rendered? (mf/use-state false)
+            rendered?    (mf/use-state false)
 
             show-thumbnail? (and thumbnail? (some? (:thumbnail shape)))
 

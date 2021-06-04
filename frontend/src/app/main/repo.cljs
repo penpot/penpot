@@ -20,7 +20,7 @@
   (cond
     (= 204 status)
     ;; We need to send "something" so the streams listening downstream can act
-    (rx/of :empty)
+    (rx/of nil)
 
     (= 502 status)
     (rx/throw {:type :bad-gateway})

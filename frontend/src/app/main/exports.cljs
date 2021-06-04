@@ -7,26 +7,26 @@
 (ns app.main.exports
   "The main logic for SVG export functionality."
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.common.uuid :as uuid]
-   [app.common.pages :as cp]
-   [app.common.math :as mth]
-   [app.common.geom.shapes :as gsh]
    [app.common.geom.align :as gal]
-   [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
-   [app.util.timers :as ts]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.common.pages :as cp]
+   [app.common.uuid :as uuid]
+   [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
-   [app.main.ui.shapes.circle :as circle]
+   [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
-   [app.main.ui.shapes.text :as text]
-   [app.main.ui.shapes.group :as group]
+   [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
-   [app.main.ui.shapes.shape :refer [shape-container]]))
+   [app.main.ui.shapes.text :as text]
+   [app.util.timers :as ts]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (def ^:private default-color "#E8E9EA") ;; $color-canvas
 

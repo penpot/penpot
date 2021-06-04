@@ -356,8 +356,8 @@
 
   ([shape {:keys [round-coords?]
            :or {round-coords? true}}]
-   (let [shape (apply-displacement shape)
-         center (gco/center-shape shape)
+   (let [shape     (apply-displacement shape)
+         center    (gco/center-shape shape)
          modifiers (:modifiers shape)]
      (if (and modifiers center)
        (let [transform (modifiers->transform center modifiers)]
@@ -376,7 +376,7 @@
                 :y      (- (:y new-selrect 0)      (:y selrect 0))
                 :width  (- (:width new-selrect 1)  (:width selrect 1))
                 :height (- (:height new-selrect 1) (:height selrect 1))}]
-    
+
     (cond-> group
       (and (some? svg-viewbox) (some? selrect) (some? new-selrect))
       (update :svg-viewbox
