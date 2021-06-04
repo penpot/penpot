@@ -50,9 +50,14 @@
           libs    (files/retrieve-file-libraries conn false file-id)
           users   (teams/retrieve-users conn (:team-id project))
 
+          fonts   (db/query conn :team-font-variant
+                            {:team-id (:team-id project)
+                             :deleted-at nil})
+
           bundle  {:file file
                    :page page
                    :users users
+                   :fonts fonts
                    :project project
                    :libraries libs}]
 

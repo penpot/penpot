@@ -12,9 +12,10 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.constants :as c]
+   [app.main.data.comments :as dcm]
+   [app.main.data.fonts :as df]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.data.comments :as dcm]
    [app.util.avatars :as avatars]
    [app.util.router :as rt]
    [beicon.core :as rx]
@@ -97,7 +98,10 @@
                             :file-id file-id}
                      (string? token) (assoc :token token))]
         (->> (rp/query :viewer-bundle params)
-             (rx/map bundle-fetched))))))
+             (rx/mapcat
+              (fn [{:keys [fonts] :as bundle}]
+                (rx/of (df/fonts-fetched fonts)
+                       (bundle-fetched bundle)))))))))
 
 (defn- extract-frames
   [objects]
