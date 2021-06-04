@@ -75,7 +75,7 @@
 (mf/defc thumbnails-summary
   [{:keys [on-toggle-expand on-close total] :as props}]
   [:div.thumbnails-summary
-   [:span.counter (str total " frames")]
+   [:span.counter (tr "labels.num-of-frames" (i18n/c total))]
    [:span.buttons
     [:span.btn-expand {:on-click on-toggle-expand} i/arrow-down]
     [:span.btn-close {:on-click on-close} i/close]]])

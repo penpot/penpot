@@ -319,7 +319,7 @@
       where s.deleted_at is not null
         and s.deleted_at < (now() - ?::interval)
       order by s.deleted_at
-      limit 500
+      limit 100
    )
    delete from storage_object
     where id in (select id from items_part)
@@ -396,7 +396,7 @@
      from storage_object as so
     where so.touched_at is not null
     order by so.touched_at
-    limit 500;")
+    limit 100;")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Recheck Stalled Task

@@ -12,8 +12,10 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
+   [app.main.data.fonts :as df]
    [app.main.exports :as exports]
    [app.main.repo :as repo]
+   [app.main.store :as st]
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.shape :refer [shape-container]]
@@ -41,7 +43,6 @@
 
         objects  (reduce updt-fn objects mod-ids)
         object   (get objects object-id)
-
 
         {:keys [width height]} (gsh/points->selrect (:points object))
 
@@ -80,6 +81,7 @@
             :xmlnsXlink "http://www.w3.org/1999/xlink"
             :xmlns "http://www.w3.org/2000/svg"
             :xmlns:penpot "https://penpot.app/xmlns"}
+
       (case (:type object)
         :frame [:& frame-wrapper {:shape object :view-box vbox}]
         :group [:> shape-container {:shape object}
@@ -107,12 +109,19 @@
   [{:keys [file-id page-id object-id] :as props}]
   (let [objects (mf/use-state nil)]
     (mf/use-effect
-     #(let [subs (->> (repo/query! :file {:id file-id})
-                      (rx/subs (fn [{:keys [data]}]
-                                 (let [objs (get-in data [:pages-index page-id :objects])
-                                       objs (adapt-root-frame objs object-id)]
-                                   (reset! objects objs)))))]
-        (fn [] (rx/dispose! subs))))
+     (mf/deps file-id page-id object-id)
+     (fn []
+       (->> (rx/zip
+             (repo/query! :font-variants {:file-id file-id})
+             (repo/query! :file {:id file-id}))
+            (rx/subs
+             (fn [[fonts {:keys [data]} :as kaka]]
+               (when (seq fonts)
+                 (st/emit! (df/fonts-fetched fonts)))
+               (let [objs (get-in data [:pages-index page-id :objects])
+                     objs (adapt-root-frame objs object-id)]
+                 (reset! objects objs)))))
+       (constantly nil)))
 
     (when @objects
       [:& object-svg {:objects @objects

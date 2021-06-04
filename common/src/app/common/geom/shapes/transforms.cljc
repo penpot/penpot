@@ -350,8 +350,8 @@
 
   ([shape {:keys [round-coords?]
            :or {round-coords? true}}]
-   (let [shape (apply-displacement shape)
-         center (gco/center-shape shape)
+   (let [shape     (apply-displacement shape)
+         center    (gco/center-shape shape)
          modifiers (:modifiers shape)]
      (if (and modifiers center)
        (let [transform (modifiers->transform center modifiers)]
