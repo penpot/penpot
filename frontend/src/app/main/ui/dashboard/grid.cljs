@@ -329,7 +329,7 @@
           (fn [e]
             (reset! dragging? false)
             (when (not= selected-project project-id)
-              (let [data  {:ids selected-files
+              (let [data  {:ids (into #{} (keys selected-files))
                            :project-id project-id}
                     mdata {:on-success on-drop-success}]
                 (st/emit! (dd/move-files (with-meta data mdata)))))))]
