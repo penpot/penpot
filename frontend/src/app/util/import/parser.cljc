@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
+   [app.common.uuid :as uuid]
    [app.util.color :as uc]
    [app.util.json :as json]
    [app.util.path.parser :as upp]
@@ -28,24 +29,29 @@
   (and (vector? node)
        (= ::close (first node))))
 
+(defn get-data [node]
+  (->> node :content (d/seek #(= :penpot:shape (:tag %)))))
+
 (defn get-type
   [node]
   (if (close? node)
     (second node)
-    (-> (get-in node [:attrs :penpot:type])
-        (keyword))))
+    (let [data (get-data node)]
+      (-> (get-in data [:attrs :penpot:type])
+          (keyword)))))
 
 (defn shape?
   [node]
   (or (close? node)
-      (contains? (:attrs node) :penpot:type)))
+      (some? (get-data node))))
 
 (defn get-meta
   ([m att]
    (get-meta m att identity))
   ([m att val-fn]
    (let [ns-att (->> att d/name (str "penpot:") keyword)
-         val (get-in m [:attrs ns-att])]
+         val (or (get-in m [:attrs ns-att])
+                 (get-in (get-data m) [:attrs ns-att]))]
      (when val (val-fn val)))))
 
 (defn get-children
@@ -87,7 +93,7 @@
 
 (def search-data-node? #{:rect :image :path :text :circle})
 
-(defn get-shape-data
+(defn get-svg-data
   [type node]
 
   (if (search-data-node? type)
@@ -102,14 +108,14 @@
 (def has-position? #{:frame :rect :image :text})
 
 (defn parse-position
-  [props data]
-  (let [values (->> (select-keys data [:x :y :width :height])
+  [props svg-data]
+  (let [values (->> (select-keys svg-data [:x :y :width :height])
                     (d/mapm (fn [_ val] (d/parse-double val))))]
     (d/merge props values)))
 
 (defn parse-circle
-  [props data]
-  (let [values (->> (select-keys data [:cx :cy :rx :ry])
+  [props svg-data]
+  (let [values (->> (select-keys svg-data [:cx :cy :rx :ry])
                     (d/mapm (fn [_ val] (d/parse-double val))))]
 
     {:x (- (:cx values) (:rx values))
@@ -118,8 +124,8 @@
      :height (* (:ry values) 2)}))
 
 (defn parse-path
-  [props data]
-  (let [content (upp/parse-path (:d data))
+  [props svg-data]
+  (let [content (upp/parse-path (:d svg-data))
         selrect (gsh/content->selrect content)
         points (gsh/rect->points selrect)]
 
@@ -130,10 +136,12 @@
 
 (def url-regex #"url\(#([^\)]*)\)")
 
-(defn seek-node [id coll]
+(defn seek-node
+  [id coll]
   (->> coll (d/seek #(= id (-> % :attrs :id)))))
 
-(defn parse-stops [gradient-node]
+(defn parse-stops
+  [gradient-node]
   (->> gradient-node
        (node-seq)
        (filter #(= :stop (:tag %)))
@@ -166,23 +174,23 @@
              :width   (get-meta gradient-node :width   d/parse-double)))))
 
 (defn add-position
-  [props type node data]
+  [props type node svg-data]
   (cond-> props
     (has-position? type)
-    (-> (parse-position data)
+    (-> (parse-position svg-data)
         (gsh/setup-selrect))
 
     (= type :circle)
-    (-> (parse-circle data)
+    (-> (parse-circle svg-data)
         (gsh/setup-selrect))
 
     (= type :path)
-    (parse-path data)))
+    (parse-path svg-data)))
 
 (defn add-fill
-  [props type node data]
+  [props type node svg-data]
 
-  (let [fill (:fill data)]
+  (let [fill (:fill svg-data)]
     (cond-> props
       (= fill "none")
       (assoc :fill-color nil
@@ -195,22 +203,22 @@
 
       (uc/hex? fill)
       (assoc :fill-color fill
-             :fill-opacity (-> data (:fill-opacity "1") d/parse-double)))))
+             :fill-opacity (-> svg-data (:fill-opacity "1") d/parse-double)))))
 
 (defn add-stroke
-  [props type node data]
+  [props type node svg-data]
 
   (let [stroke-style (get-meta node :stroke-style keyword)
         stroke-alignment (get-meta node :stroke-alignment keyword)
-        stroke (:stroke data)]
+        stroke (:stroke svg-data)]
 
     (cond-> props
       :always
       (assoc :stroke-alignment stroke-alignment
-             :stroke-style stroke-style
-             :stroke-color (-> data (:stroke "#000000"))
-             :stroke-opacity (-> data (:stroke-opacity "1") d/parse-double)
-             :stroke-width (-> data (:stroke-width "0") d/parse-double))
+             :stroke-style     stroke-style
+             :stroke-color     (-> svg-data (:stroke "#000000"))
+             :stroke-opacity   (-> svg-data (:stroke-opacity "1") d/parse-double)
+             :stroke-width     (-> svg-data (:stroke-width "0") d/parse-double))
 
       (str/starts-with? stroke "url")
       (assoc :stroke-color-gradient (parse-gradient node stroke)
@@ -221,12 +229,12 @@
       (update :stroke-width / 2))))
 
 (defn add-image-data
-  [props node data]
+  [props node]
   (-> props
-      (assoc-in [:metadata :id] (get-meta node :media-id))
-      (assoc-in [:metadata :width] (get-meta node :media-width))
+      (assoc-in [:metadata :id]     (get-meta node :media-id))
+      (assoc-in [:metadata :width]  (get-meta node :media-width))
       (assoc-in [:metadata :height] (get-meta node :media-height))
-      (assoc-in [:metadata :mtype] (get-meta node :media-mtype))))
+      (assoc-in [:metadata :mtype]  (get-meta node :media-mtype))))
 
 (defn add-text-data
   [props node]
@@ -245,6 +253,65 @@
       mask?
       (assoc :masked-group? true))))
 
+(defn parse-shadow [node]
+  {:id       (uuid/next)
+   :style    (get-meta node :shadow-type keyword)
+   :hidden   (get-meta node :hidden str->bool)
+   :color    {:color (get-meta node :color)
+              :opacity (get-meta node :opacity d/parse-double)}
+   :offset-x (get-meta node :offset-x d/parse-double)
+   :offset-y (get-meta node :offset-y d/parse-double)
+   :blur     (get-meta node :blur d/parse-double)
+   :spread   (get-meta node :spread d/parse-double)})
+
+(defn parse-blur [node]
+  {:id       (uuid/next)
+   :type     (get-meta node :blur-type keyword)
+   :hidden   (get-meta node :hidden str->bool)
+   :value    (get-meta node :value d/parse-double)})
+
+(defn parse-export [node]
+  {:type   (get-meta node :type keyword)
+   :suffix (get-meta node :suffix)
+   :scale  (get-meta node :scale d/parse-double)})
+
+(defn extract-from-data [node tag parse-fn]
+  (let [shape-data (get-data node)]
+    (->> shape-data
+         (node-seq)
+         (filter #(= (:tag %) tag))
+         (mapv parse-fn))))
+
+(defn add-shadows
+  [props node]
+  (let [shadows (extract-from-data node :penpot:shadow parse-shadow)]
+    (cond-> props
+      (not (empty? shadows))
+      (assoc :shadow shadows))))
+
+(defn add-blur
+  [props node]
+  (let [blur (->> (extract-from-data node :penpot:blur parse-blur) (first))]
+    (cond-> props
+      (some? blur)
+      (assoc :blur blur))))
+
+(defn add-exports
+  [props node]
+  (let [exports (extract-from-data node :penpot:export parse-export)]
+    (cond-> props
+      (not (empty? exports))
+      (assoc :exports exports))))
+
+(defn get-image-name
+  [node]
+  (get-in node [:attrs :penpot:name]))
+
+(defn get-image-data
+  [node]
+  (let [svg-data (get-svg-data :image node)]
+    (:xlink:href svg-data)))
+
 (defn parse-data
   [type node]
 
@@ -254,12 +321,15 @@
           hidden            (get-meta node :hidden str->bool)
           transform         (get-meta node :transform gmt/str->matrix)
           transform-inverse (get-meta node :transform-inverse gmt/str->matrix)
-          data              (get-shape-data type node)]
+          svg-data          (get-svg-data type node)]
 
       (-> {}
-          (add-position type node data)
-          (add-fill type node data)
-          (add-stroke type node data)
+          (add-position type node svg-data)
+          (add-fill type node svg-data)
+          (add-stroke type node svg-data)
+          (add-shadows node)
+          (add-blur node)
+          (add-exports node)
           (assoc :name name)
           (assoc :blocked blocked)
           (assoc :hidden hidden)
@@ -268,7 +338,7 @@
             (add-group-data node))
 
           (cond-> (= :image type)
-            (add-image-data node data))
+            (add-image-data node))
 
           (cond-> (= :text type)
             (add-text-data node))
@@ -278,12 +348,3 @@
 
           (cond-> (some? transform-inverse)
             (assoc :transform-inverse transform-inverse))))))
-
-(defn get-image-name
-  [node]
-  (get-in node [:attrs :penpot:name]))
-
-(defn get-image-data
-  [node]
-  (let [data (get-shape-data :image node)]
-    (:xlink:href data)))
