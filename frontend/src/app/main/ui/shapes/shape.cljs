@@ -26,7 +26,7 @@
           (let [ns-attr (str "penpot:" (-> attr d/name))]
             (-> props
                 (obj/set! ns-attr val))))
-        frame? (= :frame type)]
+        frame? (= :frame (:type shape))]
     (-> props
         (add! :name              (-> shape :name))
         (add! :blocked           (-> shape (:blocked false) str))
