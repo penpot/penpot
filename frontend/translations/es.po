@@ -983,6 +983,11 @@ msgid_plural "labels.num-of-files"
 msgstr[0] "1 archivo"
 msgstr[1] "%s archivos"
 
+msgid "labels.num-of-frames"
+msgid_plural "labels.num-of-frames"
+msgstr[0] "1 tablero"
+msgstr[1] "%s tableros"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-projects"
 msgid_plural "labels.num-of-projects"
