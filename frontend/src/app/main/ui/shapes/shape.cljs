@@ -28,7 +28,10 @@
             (-> props
                 (obj/set! ns-attr val))))
         frame? (= :frame (:type shape))
-        text? (= :text (:type shape))]
+        group? (= :group (:type shape))
+        rect?  (= :text (:type shape))
+        text?  (= :text (:type shape))
+        mask?  (and group? (:masked-group? shape))]
     (-> props
         (add! :name              (-> shape :name))
         (add! :blocked           (-> shape (:blocked false) str))
@@ -41,7 +44,7 @@
         (add! :transform         (-> shape (:transform (gmt/matrix)) str))
         (add! :transform-inverse (-> shape (:transform-inverse (gmt/matrix)) str))
 
-        (cond-> (some? (:r1 shape))
+        (cond-> (and rect? (some? (:r1 shape)))
           (-> (add! :r1 (-> shape (:r1 0) str))
               (add! :r2 (-> shape (:r2 0) str))
               (add! :r3 (-> shape (:r3 0) str))
@@ -50,6 +53,9 @@
         (cond-> text?
           (-> (add! :grow-type (-> shape :grow-type))
               (add! :content (-> shape :content json/encode))))
+
+        (cond-> mask?
+          (add! :masked-group "true"))
 
         (cond-> frame?
           (obj/set! "xmlns:penpot" "https://penpot.app/xmlns")))))

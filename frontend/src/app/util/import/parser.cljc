@@ -238,6 +238,13 @@
   [val]
   (= val "true"))
 
+(defn add-group-data
+  [props node]
+  (let [mask? (get-meta node :masked-group str->bool)]
+    (cond-> props
+      mask?
+      (assoc :masked-group? true))))
+
 (defn parse-data
   [type node]
 
@@ -256,6 +263,9 @@
           (assoc :name name)
           (assoc :blocked blocked)
           (assoc :hidden hidden)
+
+          (cond-> (= :group type)
+            (add-group-data node))
 
           (cond-> (= :image type)
             (add-image-data node data))
