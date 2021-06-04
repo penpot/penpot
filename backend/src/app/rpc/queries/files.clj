@@ -112,14 +112,16 @@
     order by f.created_at asc")
 
 (s/def ::search-files
-  (s/keys :req-un [::profile-id ::team-id ::search-term]))
+  (s/keys :req-un [::profile-id ::team-id]
+          :opt-un [::search-term]))
 
 (sv/defmethod ::search-files
   [{:keys [pool] :as cfg} {:keys [profile-id team-id search-term] :as params}]
-  (db/exec! pool [sql:search-files
-                  profile-id team-id
-                  profile-id team-id
-                  search-term]))
+  (when search-term
+    (db/exec! pool [sql:search-files
+                    profile-id team-id
+                    profile-id team-id
+                    search-term])))
 
 
 ;; --- Query: Files
