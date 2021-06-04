@@ -79,7 +79,8 @@
                       :min-width? true
                       :top top
                       :left left
-                      :options [[(tr "labels.rename") on-edit]
+                      :options [(when-not (:is-default project)
+                                  [(tr "labels.rename") on-edit])
                                 [(tr "dashboard.duplicate") on-duplicate]
                                 [(tr "dashboard.pin-unpin") toggle-pin]
                                 (when (seq teams)
