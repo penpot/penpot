@@ -8,14 +8,12 @@
   (:require
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as proj]
    [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as wrk]
    [clojure.spec.alpha :as s]))
 
 ;; --- Helpers & Specs
@@ -123,14 +121,6 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id id)
-
-    ;; Schedule object deletion
-    (wrk/submit! {::wrk/task :delete-object
-                  ::wrk/delay cfg/deletion-delay
-                  ::wrk/conn conn
-                  :id id
-                  :type :project})
-
     (db/update! conn :project
                 {:deleted-at (dt/now)}
                 {:id id})

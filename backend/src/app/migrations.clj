@@ -175,6 +175,15 @@
 
    {:name "0055-mod-file-media-object-table"
     :fn (mg/resource "app/migrations/sql/0055-mod-file-media-object-table.sql")}
+
+   {:name "0056-add-missing-index-on-deleted-at"
+    :fn (mg/resource "app/migrations/sql/0056-add-missing-index-on-deleted-at.sql")}
+
+   {:name "0057-del-profile-on-delete-trigger"
+    :fn (mg/resource "app/migrations/sql/0057-del-profile-on-delete-trigger.sql")}
+
+   {:name "0058-del-team-on-delete-trigger"
+    :fn (mg/resource "app/migrations/sql/0058-del-team-on-delete-trigger.sql")}
    ])
 
 

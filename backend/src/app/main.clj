@@ -172,17 +172,20 @@
      {:cron #app/cron "0 0 * * * ?"  ;; hourly
       :task :file-xlog-gc}
 
-     {:cron #app/cron "0 0 1 * * ?"  ;; daily (1 hour shift)
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :storage-deleted-gc}
 
-     {:cron #app/cron "0 0 2 * * ?"  ;; daily (2 hour shift)
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :storage-touched-gc}
 
-     {:cron #app/cron "0 0 3 * * ?"  ;; daily (3 hour shift)
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :session-gc}
 
      {:cron #app/cron "0 0 * * * ?"  ;; hourly
       :task :storage-recheck}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :objects-gc}
 
      {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :tasks-gc}
@@ -203,6 +206,7 @@
    {:metrics (ig/ref :app.metrics/metrics)
     :tasks
     {:sendmail           (ig/ref :app.emails/sendmail-handler)
+     :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
      :delete-object      (ig/ref :app.tasks.delete-object/handler)
      :delete-profile     (ig/ref :app.tasks.delete-profile/handler)
      :file-media-gc      (ig/ref :app.tasks.file-media-gc/handler)
@@ -235,6 +239,11 @@
    :app.tasks.delete-object/handler
    {:pool    (ig/ref :app.db/pool)
     :storage (ig/ref :app.storage/storage)}
+
+   :app.tasks.objects-gc/handler
+   {:pool    (ig/ref :app.db/pool)
+    :storage (ig/ref :app.storage/storage)
+    :max-age cf/deletion-delay}
 
    :app.tasks.delete-profile/handler
    {:pool    (ig/ref :app.db/pool)}

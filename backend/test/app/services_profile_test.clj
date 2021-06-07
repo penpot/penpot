@@ -9,6 +9,7 @@
    [app.db :as db]
    [app.rpc.mutations.profile :as profile]
    [app.test-helpers :as th]
+   [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -117,7 +118,7 @@
     ))
 
 (t/deftest profile-deletion-simple
-  (let [task (:app.tasks.delete-profile/handler th/*system*)
+  (let [task (:app.tasks.objects-gc/handler th/*system*)
         prof (th/create-profile* 1)
         file (th/create-file* 1 {:profile-id (:id prof)
                                  :project-id (:default-project-id prof)
@@ -125,23 +126,14 @@
 
     ;; profile is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (task {:props {:profile-id (:id prof)}})]
+    (let [result (task {:max-age (dt/duration 0)})]
       (t/is (nil? result)))
 
     ;; Request profile to be deleted
-    (with-mocks [mock {:target 'app.worker/submit! :return nil}]
-      (let [params {::th/type :delete-profile
-                    :profile-id (:id prof)}
-            out    (th/mutation! params)]
-        (t/is (nil? (:error out)))
-
-        ;; check the mock
-        (let [mock (deref mock)
-              mock-params (first (:call-args mock))]
-          (t/is (:called? mock))
-          (t/is (= 1 (:call-count mock)))
-          (t/is (= :delete-profile (:app.worker/task mock-params)))
-          (t/is (= (:id prof) (:profile-id mock-params))))))
+    (let [params {::th/type :delete-profile
+                  :profile-id (:id prof)}
+          out    (th/mutation! params)]
+      (t/is (nil? (:error out))))
 
     ;; query files after profile soft deletion
     (let [params {::th/type :files
@@ -153,8 +145,8 @@
       (t/is (= 1 (count (:result out)))))
 
     ;; execute permanent deletion task
-    (let [result (task {:props {:profile-id (:id prof)}})]
-      (t/is (true? result)))
+    (let [result (task {:max-age (dt/duration "-1m")})]
+      (t/is (nil? result)))
 
     ;; query profile after delete
     (let [params {::th/type :profile
@@ -165,17 +157,6 @@
             error-data (ex-data error)]
         (t/is (th/ex-info? error))
         (t/is (= (:type error-data) :not-found))))
-
-    ;; query files after profile soft deletion
-    (let [params {::th/type :files
-                  :project-id (:default-project-id prof)
-                  :profile-id (:id prof)}
-          out    (th/query! params)]
-        ;; (th/print-result! out)
-        (let [error (:error out)
-              error-data (ex-data error)]
-          (t/is (th/ex-info? error))
-          (t/is (= (:type error-data) :not-found))))
     ))
 
 (t/deftest registration-domain-whitelist
