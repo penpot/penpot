@@ -221,14 +221,20 @@
               (sql/delete table params opts)
               (assoc opts :return-keys true))))
 
+(defn- is-deleted?
+  [{:keys [deleted-at]}]
+  (and (dt/instant? deleted-at)
+       (< (inst-ms deleted-at)
+          (inst-ms (dt/now)))))
+
 (defn get-by-params
   ([ds table params]
    (get-by-params ds table params nil))
   ([ds table params {:keys [uncheked] :or {uncheked false} :as opts}]
    (let [res (exec-one! ds (sql/select table params opts))]
-     (when (and (not uncheked)
-                (or (:deleted-at res) (not res)))
+     (when (and (not uncheked) (or (not res) (is-deleted? res)))
        (ex/raise :type :not-found
+                 :table table
                  :hint "database object not found"))
      res)))
 
