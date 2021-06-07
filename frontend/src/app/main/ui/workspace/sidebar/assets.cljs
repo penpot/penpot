@@ -204,7 +204,8 @@
 
 (mf/defc asset-section
   [{:keys [children file-id title box assets-count open?]}]
-  (let [children (if (array? children) children [children])
+  (let [children (->> (if (array? children) children [children])
+                      (filter some?))
         get-role #(.. % -props -role)
         title-buttons (filter #(= (get-role %) :title-button) children)
         content       (filter #(= (get-role %) :content) children)]
