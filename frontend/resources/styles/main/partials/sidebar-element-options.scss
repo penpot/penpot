@@ -543,7 +543,7 @@
   padding: 0 $x-small;
 
   &:first-child {
-    justify-content: space-between;
+    justify-content: flex-start;
     margin-left: 0;
   }
 
@@ -1001,6 +1001,7 @@
 
 .spacing-options {
   display: flex;
+  width: 100%;
 }
 
 .asset-section {
@@ -1023,7 +1024,7 @@
     width: 100%;
     max-width: none;
     margin: 0;
-    background: #303236;
+    background-color: #303236;
     border-top: none;
     border-left: none;
     border-right: none;
