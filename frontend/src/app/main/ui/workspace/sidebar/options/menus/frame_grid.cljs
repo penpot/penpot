@@ -150,6 +150,8 @@
 
      [:& advanced-options {:visible? (:show-advanced-options @state)
                            :on-close toggle-advanced-options}
+      [:button.custom-button {:class (when (:show-advanced-options @state) "is-active")
+                              :on-click toggle-advanced-options} i/actions]
       (when (= :square type)
         [:& input-row {:label (t locale "workspace.options.grid.params.size")
                        :class "pixels"

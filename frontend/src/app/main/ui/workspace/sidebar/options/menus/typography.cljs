@@ -502,8 +502,8 @@
           [:span.label (tr "workspace.assets.typography.font-id")]
           [:span (:font-id typography)]]
 
-         [:div.element-set-actions-button
-          {:on-click #(reset! open? true)}
+         [:div.element-set-actions-button.actions-inside
+          {:on-click #(reset! open? false)}
           i/actions]
 
          [:div.row-flex
