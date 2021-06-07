@@ -13,6 +13,7 @@
    [app.main.repo :as rp]
    [app.util.http :as http]
    [app.util.import.parser :as cip]
+   [app.util.json :as json]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
@@ -27,7 +28,7 @@
   [project-id name]
   (let [file-id (uuid/next)]
     (rp/mutation
-     :create-file
+     :create-temp-file
      {:id file-id
       :name name
       :project-id project-id
@@ -44,17 +45,20 @@
              (partition change-batch-size change-batch-size nil)
              (mapv vec))]
 
-    (->> (rx/from changes-batches)
-         (rx/merge-map
-          (fn [cur-changes-batch]
-            (rp/mutation
-             :update-file
-             {:id file-id
-              :session-id session-id
-              :revn @revn
-              :changes cur-changes-batch})))
+    (rx/concat
+     (->> (rx/from changes-batches)
+          (rx/mapcat
+           (fn [cur-changes-batch]
+             (rp/mutation
+              :update-file
+              {:id file-id
+               :session-id session-id
+               :revn @revn
+               :changes cur-changes-batch})))
 
-         (rx/tap #(reset! revn (:revn %))))))
+          (rx/tap #(reset! revn (:revn %))))
+
+     (rp/mutation :make-permanent {:id (:id file)}))))
 
 (defn upload-media-files
   "Upload a image to the backend and returns its id"
@@ -71,17 +75,6 @@
            :content blob
            :is-local true}))
        (rx/flat-map #(rp/mutation! :upload-file-media-object %))))
-
-(defn parse-file-name
-  [dir]
-  (if (str/ends-with? dir "/")
-    (subs dir 0 (dec (count dir)))
-    dir))
-
-(defn parse-page-name
-  [path]
-  (let [[file page] (str/split path "/")]
-    (str/replace page ".svg" "")))
 
 (defn add-shape-file
   [file node]
@@ -137,49 +130,50 @@
     (rx/of node)))
 
 (defn import-page
-  [file {:keys [path content]}]
-  (let [page-name (parse-page-name path)]
-    (if (cip/valid? content)
-      (let [nodes (->> content cip/node-seq)
-            file-id (:id file)]
-        (->> (rx/from nodes)
-             (rx/filter cip/shape?)
-             (rx/mapcat (partial resolve-images file-id))
-             (rx/reduce add-shape-file (fb/add-page file page-name))
-             (rx/map fb/close-page)))
-      (rx/empty))))
+  [file [page-name content]]
+  (if (cip/valid? content)
+    (let [nodes (->> content cip/node-seq)
+          file-id (:id file)]
+      (->> (rx/from nodes)
+           (rx/filter cip/shape?)
+           (rx/mapcat (partial resolve-images file-id))
+           (rx/reduce add-shape-file (fb/add-page file page-name))
+           (rx/map fb/close-page)))
+    (rx/empty)))
+
+(defn get-page-path [dir-id id]
+  (str dir-id "/" id ".svg"))
+
+(defn process-page [file-id zip [page-id page-name]]
+  (->> (uz/get-file zip (get-page-path (d/name file-id) page-id))
+       (rx/map (comp tubax/xml->clj :content))
+       (rx/map #(vector page-name %))))
+
+(defn process-file
+  [file file-id file-desc zip]
+  (let [index (:pagesIndex file-desc)
+        pages (->> (:pages file-desc)
+                   (mapv #(vector % (get-in index [(keyword %) :name]))))]
+    (->> (rx/from pages)
+         (rx/flat-map #(process-page file-id zip %))
+         (merge-reduce import-page file)
+         (rx/flat-map send-changes)
+         (rx/ignore))))
 
 (defmethod impl/handler :import-file
   [{:keys [project-id files]}]
 
-  (let [extract-stream
-        (->> (rx/from files)
-             (rx/merge-map uz/extract-files))
+  (let [zip-str (->> (rx/from files)
+                     (rx/flat-map uz/load-from-url)
+                     (rx/share))]
 
-        dir-str
-        (->> extract-stream
-             (rx/filter #(contains? % :dir))
-             (rx/map :dir))
-
-        file-str
-        (->> extract-stream
-             (rx/filter #(not (contains? % :dir)))
-             (rx/map #(d/update-when % :content tubax/xml->clj)))]
-
-    (->> dir-str
-         (rx/merge-map #(create-file project-id (parse-file-name %)))
-         (rx/merge-map
-          (fn [file]
-            (rx/concat
-             (->> file-str
-                  (rx/filter #(str/starts-with? (:path %) (:name file)))
-                  (merge-reduce import-page file)
-                  (rx/flat-map send-changes)
-                  (rx/catch (fn [err]
-                              (.error js/console "ERROR" err (clj->js (.-data err)))
-
-                              ;; We delete the file when there is an error
-                              (rp/mutation! :delete-file {:id (:id file)})))
-                  (rx/ignore))
-
-             (rx/of (select-keys file [:id :name]))))))))
+    (->> zip-str
+         (rx/flat-map #(uz/get-file % "manifest.json"))
+         (rx/flat-map (comp :files json/decode :content))
+         (rx/with-latest-from zip-str)
+         (rx/flat-map
+          (fn [[[file-id file-desc] zip]]
+            (->> (create-file project-id (:name file-desc))
+                 (rx/flat-map #(process-file % file-id file-desc zip))
+                 (rx/catch (fn [err]
+                             (.error js/console "ERROR" err (clj->js (.-data err)))))))))))

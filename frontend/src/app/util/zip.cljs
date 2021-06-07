@@ -10,7 +10,8 @@
    ["jszip" :as zip]
    [app.common.data :as d]
    [beicon.core :as rx]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [app.util.http :as http]))
 
 (defn compress-files
   [files]
@@ -21,32 +22,44 @@
       (->> (.generateAsync zobj #js {:type "blob"})
            (rx/from)))))
 
+(defn load-from-url
+  "Loads the data from a blob url"
+  [url]
+  (->> (http/send!
+        {:uri url
+         :response-type :blob
+         :method :get})
+       (rx/map :body)
+       (rx/flat-map zip/loadAsync)))
+
+(defn- process-file [entry path]
+  (cond
+    (nil? entry)
+    (p/rejected "No file found")
+
+    (.-dir entry)
+    (p/resolved {:dir path})
+
+    :else
+    (-> (.async entry "text")
+        (p/then #(hash-map :path path :content %)))))
+
+(defn get-file
+  "Gets a single file from the zip archive"
+  [zip path]
+  (-> (.file zip path)
+      (process-file path)
+      (rx/from)))
+
 (defn extract-files
   "Creates a stream that will emit values for every file in the zip"
-  [file]
-  (rx/create
-   (fn [subs]
-     (let [process-entry
-           (fn [path entry]
-             (if (.-dir entry)
-               (rx/push! subs {:dir path})
-               (p/then
-                (.async entry "text")
-                (fn [content]
-                  (rx/push! subs
-                            {:path path
-                             :content content})))))]
+  [zip]
+  (let [promises (atom [])
+        get-file
+        (fn [path entry]
+          (let [current (process-file entry path)]
+            (swap! promises conj current)))]
+    (.forEach zip get-file)
 
-       (p/let [response (js/fetch file)
-               data     (.blob response)
-               content  (zip/loadAsync data)]
-
-         (let [promises (atom [])]
-           (.forEach content
-                     (fn [path entry]
-                       (let [current (process-entry path entry)]
-                         (swap! promises conj current))))
-
-           (p/then (p/all @promises)
-                   #(rx/end! subs))))
-       nil))))
+    (->> (rx/from (p/all @promises))
+         (rx/flat-map identity))))

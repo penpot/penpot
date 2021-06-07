@@ -11,6 +11,7 @@
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+
    [app.db :as db]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.files :as files]
@@ -18,6 +19,7 @@
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
+
    [clojure.spec.alpha :as s]))
 
 ;; --- Helpers & Specs
@@ -43,6 +45,7 @@
     (proj/check-edition-permissions! conn profile-id project-id)
     (create-file conn params)))
 
+
 (defn create-file-role
   [conn {:keys [file-id profile-id role]}]
   (let [params {:file-id file-id
@@ -51,8 +54,9 @@
          (db/insert! conn :file-profile-rel))))
 
 (defn create-file
-  [conn {:keys [id name project-id is-shared data]
-         :or {is-shared false}
+  [conn {:keys [id name project-id is-shared data deleted-at]
+         :or {is-shared false
+              deleted-at nil}
          :as params}]
   (let [id   (or id (:id data) (uuid/next))
         data (or data (cp/make-file-data id))
@@ -61,7 +65,8 @@
                           :project-id project-id
                           :name name
                           :is-shared is-shared
-                          :data (blob/encode data)})]
+                          :data (blob/encode data)
+                          :deleted-at deleted-at})]
     (->> (assoc params :file-id id :role :owner)
          (create-file-role conn))
     (assoc file :data data)))
@@ -118,6 +123,7 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
+
     (mark-file-deleted conn params)))
 
 (defn mark-file-deleted
@@ -268,7 +274,8 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (db/xact-lock! conn id)
-    (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-key-share true})]
+    (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-key-share true
+                                                             :uncheked true})]
       (files/check-edition-permissions! conn profile-id id)
       (update-file (assoc cfg :conn  conn)
                    (assoc params :file file)))))
@@ -381,3 +388,24 @@
   [conn project-id]
   (:team-id (db/get-by-id conn :project project-id {:columns [:team-id]})))
 
+
+;; TEMPORARY FILE CREATION
+
+(s/def ::create-temp-file ::create-file)
+
+(sv/defmethod ::create-temp-file
+  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
+  (db/with-atomic [conn pool]
+    (proj/check-edition-permissions! conn profile-id project-id)
+    (create-file conn (assoc params :deleted-at (dt/in-future {:days 1})))))
+
+(s/def ::make-permanent
+  (s/keys :req-un [::id ::profile-id]))
+
+(sv/defmethod ::make-permanent
+  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  (db/with-atomic [conn pool]
+    (files/check-edition-permissions! conn profile-id id)
+    (db/update! conn :file
+                {:deleted-at nil}
+                {:id id})))
