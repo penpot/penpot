@@ -10,8 +10,8 @@
    [app.db :as db]
    [app.http :as http]
    [app.test-helpers :as th]
-   [clojure.test :as t]
-   [promesa.core :as p]))
+   [app.util.time :as dt]
+   [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -170,3 +170,71 @@
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
+
+(t/deftest test-deletion
+  (let [task     (:app.tasks.objects-gc/handler th/*system*)
+        profile1 (th/create-profile* 1)
+        project  (th/create-project* 1 {:team-id (:default-team-id profile1)
+                                        :profile-id (:id profile1)})]
+
+    ;; project is not deleted because it does not meet all
+    ;; conditions to be deleted.
+    (let [result (task {:max-age (dt/duration 0)})]
+      (t/is (nil? result)))
+
+    ;; query the list of projects
+    (let [data {::th/type :projects
+                :team-id (:default-team-id profile1)
+                :profile-id (:id profile1)}
+          out  (th/query! data)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (let [result (:result out)]
+        (t/is (= 2 (count result)))))
+
+    ;; Request project to be deleted
+    (let [params {::th/type :delete-project
+                  :id (:id project)
+                  :profile-id (:id profile1)}
+          out    (th/mutation! params)]
+      (t/is (nil? (:error out))))
+
+    ;; query the list of projects after soft deletion
+    (let [data {::th/type :projects
+                :team-id (:default-team-id profile1)
+                :profile-id (:id profile1)}
+          out  (th/query! data)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (let [result (:result out)]
+        (t/is (= 1 (count result)))))
+
+    ;; run permanent deletion (should be noop)
+    (let [result (task {:max-age (dt/duration {:minutes 1})})]
+      (t/is (nil? result)))
+
+    ;; query the list of files of a after soft deletion
+    (let [data {::th/type :project-files
+                :project-id (:id project)
+                :profile-id (:id profile1)}
+          out  (th/query! data)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (let [result (:result out)]
+        (t/is (= 0 (count result)))))
+
+    ;; run permanent deletion
+    (let [result (task {:max-age (dt/duration 0)})]
+      (t/is (nil? result)))
+
+    ;; query the list of files of a after hard deletion
+    (let [data {::th/type :project-files
+                :project-id (:id project)
+                :profile-id (:id profile1)}
+          out  (th/query! data)]
+      ;; (th/print-result! out)
+      (let [error (:error out)
+            error-data (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type error-data) :not-found))))
+    ))

@@ -22,7 +22,6 @@
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as wrk]
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
@@ -179,9 +178,9 @@
        :valid false})))
 
 (defn create-profile
-  "Create the profile entry on the database with limited input
-  filling all the other fields with defaults."
-  [conn {:keys [id fullname email password is-active is-muted is-demo opts]
+  "Create the profile entry on the database with limited input filling
+  all the other fields with defaults."
+  [conn {:keys [id fullname email password is-active is-muted is-demo opts deleted-at]
          :or {is-active false is-muted false is-demo false}
          :as params}]
   (let [id        (or id (uuid/next))
@@ -193,6 +192,7 @@
                    :email (str/lower email)
                    :auth-backend "penpot"
                    :password password
+                   :deleted-at deleted-at
                    :props props
                    :is-active is-active
                    :is-muted is-muted
@@ -264,7 +264,8 @@
       (let [profile (->> (profile/retrieve-profile-data-by-email conn email)
                          (validate-profile)
                          (profile/strip-private-attrs)
-                         (profile/populate-additional-data conn))]
+                         (profile/populate-additional-data conn))
+            profile (update profile :props db/decode-transit-pgobject)]
         (if-let [token (:invitation-token params)]
           ;; If the request comes with an invitation token, this means
           ;; that user wants to accept it with different user. A very
@@ -618,12 +619,6 @@
   [{:keys [pool session] :as cfg} {:keys [profile-id] :as params}]
   (db/with-atomic [conn pool]
     (check-can-delete-profile! conn profile-id)
-
-    ;; Schedule a complete deletion of profile
-    (wrk/submit! {::wrk/task :delete-profile
-                  ::wrk/delay cfg/deletion-delay
-                  ::wrk/conn conn
-                  :profile-id profile-id})
 
     (db/update! conn :profile
                 {:deleted-at (dt/now)}

@@ -104,21 +104,10 @@
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
 
-    (let [items (db/query conn :team-font-variant
-                          {:font-id id :team-id team-id}
-                          {:for-update true})]
-      (doseq [item items]
-        ;; Schedule object deletion
-        (wrk/submit! {::wrk/task :delete-object
-                      ::wrk/delay cf/deletion-delay
-                      ::wrk/conn conn
-                      :id (:id item)
-                      :type :team-font-variant}))
-
-      (db/update! conn :team-font-variant
-                  {:deleted-at (dt/now)}
-                  {:font-id id :team-id team-id})
-      nil)))
+    (db/update! conn :team-font-variant
+                {:deleted-at (dt/now)}
+                {:font-id id :team-id team-id})
+    nil))
 
 ;; --- DELETE FONT VARIANT
 

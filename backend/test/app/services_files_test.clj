@@ -11,6 +11,7 @@
    [app.http :as http]
    [app.storage :as sto]
    [app.test-helpers :as th]
+   [app.util.time :as dt]
    [clojure.test :as t]
    [datoteka.core :as fs]))
 
@@ -337,3 +338,69 @@
       (t/is (th/ex-info? error))
       (t/is (th/ex-of-type? error :not-found))))
 
+(t/deftest deletion-test
+  (let [task     (:app.tasks.objects-gc/handler th/*system*)
+        profile1 (th/create-profile* 1)
+        file     (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})]
+    ;; file is not deleted because it does not meet all
+    ;; conditions to be deleted.
+    (let [result (task {:max-age (dt/duration 0)})]
+      (t/is (nil? result)))
+
+    ;; query the list of files
+    (let [data {::th/type :project-files
+                :project-id (:default-project-id profile1)
+                :profile-id (:id profile1)}
+          out  (th/query! data)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (let [result (:result out)]
+        (t/is (= 1 (count result)))))
+
+    ;; Request file to be deleted
+    (let [params {::th/type :delete-file
+                  :id (:id file)
+                  :profile-id (:id profile1)}
+          out    (th/mutation! params)]
+      (t/is (nil? (:error out))))
+
+    ;; query the list of files after soft deletion
+    (let [data {::th/type :project-files
+                :project-id (:default-project-id profile1)
+                :profile-id (:id profile1)}
+          out  (th/query! data)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (let [result (:result out)]
+        (t/is (= 0 (count result)))))
+
+    ;; run permanent deletion (should be noop)
+    (let [result (task {:max-age (dt/duration {:minutes 1})})]
+      (t/is (nil? result)))
+
+    ;; query the list of file libraries of a after hard deletion
+    (let [data {::th/type :file-libraries
+                :file-id (:id file)
+                :profile-id (:id profile1)}
+          out  (th/query! data)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (let [result (:result out)]
+        (t/is (= 0 (count result)))))
+
+    ;; run permanent deletion
+    (let [result (task {:max-age (dt/duration 0)})]
+      (t/is (nil? result)))
+
+    ;; query the list of file libraries of a after hard deletion
+    (let [data {::th/type :file-libraries
+                :file-id (:id file)
+                :profile-id (:id profile1)}
+          out  (th/query! data)]
+      ;; (th/print-result! out)
+      (let [error (:error out)
+            error-data (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type error-data) :not-found))))
+    ))
