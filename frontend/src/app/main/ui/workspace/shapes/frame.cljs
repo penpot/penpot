@@ -10,6 +10,7 @@
    [app.main.refs :as refs]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.text.fontfaces :as ff]
    [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.core :as rx]
@@ -92,11 +93,12 @@
              (fn [node]
                (ts/schedule-on-idle #(reset! rendered? (some? node)))))]
 
-        (when (and shape (not (:hidden shape)))
+        (when (some? shape)
           [:g.frame-wrapper {:display (when (:hidden shape) "none")}
 
            (when-not show-thumbnail?
              [:> shape-container {:shape shape :ref on-dom}
+              [:& ff/fontfaces-style {:shapes children}]
               [:& frame-shape {:shape shape
                                :childs children}]])
 
