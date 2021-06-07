@@ -40,6 +40,6 @@ RUN set -eux; \
     rm -rf /tmp/openjdk.tar.gz;
 
 ENV JAVA_HOME=/usr/lib/jvm/openjdk16 PATH="/usr/lib/jvm/openjdk16/bin:$PATH"
-ADD ./bundle-app/backend/ /opt/bundle/
-WORKDIR /opt/bundle
+ADD ./bundle-backend/ /opt/penpot/backend/
+WORKDIR /opt/penpot/backend
 CMD ["/bin/bash", "run.sh"]
