@@ -42,7 +42,7 @@
    {org.clojure/tools.namespace {:mvn/version "RELEASE"}
     org.clojure/test.check {:mvn/version "RELEASE"}
     org.clojure/tools.deps.alpha {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.14.1"}
+    thheller/shadow-cljs {:mvn/version "2.12.6"}
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}
    :extra-paths ["test" "dev"]}
