@@ -83,20 +83,19 @@
     (when (and shape (not (:hidden shape)))
       [:*
        (if-not svg-element?
-         [:g.shape-wrapper
-          (case (:type shape)
-            :path [:> path/path-wrapper opts]
-            :text [:> text/text-wrapper opts]
-            :group [:> group-wrapper opts]
-            :rect [:> rect-wrapper opts]
-            :image [:> image-wrapper opts]
-            :circle [:> circle-wrapper opts]
-            :svg-raw [:> svg-raw-wrapper opts]
+         (case (:type shape)
+           :path [:> path/path-wrapper opts]
+           :text [:> text/text-wrapper opts]
+           :group [:> group-wrapper opts]
+           :rect [:> rect-wrapper opts]
+           :image [:> image-wrapper opts]
+           :circle [:> circle-wrapper opts]
+           :svg-raw [:> svg-raw-wrapper opts]
 
-            ;; Only used when drawing a new frame.
-            :frame [:> frame-wrapper {:shape shape}]
+           ;; Only used when drawing a new frame.
+           :frame [:> frame-wrapper {:shape shape}]
 
-            nil)]
+           nil)
 
          ;; Don't wrap svg elements inside a <g> otherwise some can break
          [:> svg-raw-wrapper opts])

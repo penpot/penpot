@@ -9,11 +9,12 @@
    [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
+   [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :as cs]
+   [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.fill-image :as fim]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.gradients :as grad]
-   [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.svg-defs :as defs]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
@@ -35,6 +36,7 @@
 
         {:keys [x y width height type]} shape
         frame? (= :frame type)
+        group? (= :group type)
 
         wrapper-props
         (-> (obj/clone props)
@@ -42,16 +44,23 @@
             (obj/set! "ref" ref)
             (obj/set! "id" (str "shape-" (:id shape)))
             (obj/set! "filter" (filters/filter-str filter-id shape))
-            (obj/set! "style" styles)
+            (obj/set! "style" styles))
 
-            (cond-> frame?
-              (-> (obj/set! "x" x)
-                  (obj/set! "y" y)
-                  (obj/set! "width" width)
-                  (obj/set! "height" height)
-                  (obj/set! "xmlnsXlink" "http://www.w3.org/1999/xlink")
-                  (obj/set! "xmlns" "http://www.w3.org/2000/svg")
-                  (obj/set! "xmlns:penpot" "https://penpot.app/xmlns"))))
+        wrapper-props
+        (cond-> wrapper-props
+          frame?
+          (-> (obj/set! "x" x)
+              (obj/set! "y" y)
+              (obj/set! "width" width)
+              (obj/set! "height" height)
+              (obj/set! "xmlnsXlink" "http://www.w3.org/1999/xlink")
+              (obj/set! "xmlns" "http://www.w3.org/2000/svg")
+              (obj/set! "xmlns:penpot" "https://penpot.app/xmlns")))
+
+        wrapper-props
+        (cond-> wrapper-props
+          group?
+          (attrs/add-style-attrs shape))
 
         wrapper-tag (if frame? "svg" "g")]
 

@@ -96,14 +96,15 @@
 (defn get-svg-data
   [type node]
 
-  (if (search-data-node? type)
-    (let [data-tags #{:ellipse :rect :path :text :foreignObject :image}]
-      (->> node
-           (node-seq)
-           (filter #(contains? data-tags (:tag %)))
-           (map #(:attrs %))
-           (reduce add-attrs {})))
-    (:attrs node)))
+  (let [node-attrs (add-attrs {} (:attrs node))]
+    (if (search-data-node? type)
+      (let [data-tags #{:ellipse :rect :path :text :foreignObject :image}]
+        (->> node
+             (node-seq)
+             (filter #(contains? data-tags (:tag %)))
+             (map #(:attrs %))
+             (reduce add-attrs node-attrs)))
+      node-attrs)))
 
 (def has-position? #{:frame :rect :image :text})
 
@@ -188,7 +189,7 @@
     (parse-path svg-data)))
 
 (defn add-fill
-  [props type node svg-data]
+  [props node svg-data]
 
   (let [fill (:fill svg-data)]
     (cond-> props
@@ -206,7 +207,7 @@
              :fill-opacity (-> svg-data (:fill-opacity "1") d/parse-double)))))
 
 (defn add-stroke
-  [props type node svg-data]
+  [props node svg-data]
 
   (let [stroke-style (get-meta node :stroke-style keyword)
         stroke-alignment (get-meta node :stroke-alignment keyword)
@@ -303,6 +304,18 @@
       (not (empty? exports))
       (assoc :exports exports))))
 
+(defn add-layer-options
+  [props svg-data]
+  (let [blend-mode (get svg-data :mix-blend-mode)
+        opacity (-> (get svg-data :opacity) d/parse-double)]
+
+    (cond-> props
+      (some? blend-mode)
+      (assoc :blend-mode (keyword blend-mode))
+
+     (some? opacity)
+     (assoc :opacity opacity))))
+
 (defn get-image-name
   [node]
   (get-in node [:attrs :penpot:name]))
@@ -325,8 +338,9 @@
 
       (-> {}
           (add-position type node svg-data)
-          (add-fill type node svg-data)
-          (add-stroke type node svg-data)
+          (add-fill node svg-data)
+          (add-stroke node svg-data)
+          (add-layer-options svg-data)
           (add-shadows node)
           (add-blur node)
           (add-exports node)
