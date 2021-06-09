@@ -252,8 +252,11 @@
    (exec! ds (sql/select table params opts))))
 
 (defn pgobject?
-  [v]
-  (instance? PGobject v))
+  ([v]
+   (instance? PGobject v))
+  ([v type]
+   (and (instance? PGobject v)
+        (= type (.getType ^PGobject v)))))
 
 (defn pginterval?
   [v]
