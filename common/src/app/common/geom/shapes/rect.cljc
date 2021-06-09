@@ -9,11 +9,6 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]))
 
-(defn left-of [rect] (:x rect))
-(defn right-of [rect] (+ (:x rect) (:width rect)))
-(defn top-of [rect] (:y rect))
-(defn bottom-of [rect] (+ (:y rect) (:height rect)))
-
 (defn rect->points [{:keys [x y width height]}]
   ;; (assert (number? x))
   ;; (assert (number? y))
