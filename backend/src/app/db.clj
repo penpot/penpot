@@ -349,6 +349,12 @@
     (.setType "inet")
     (.setValue (str ip-addr))))
 
+(defn decode-inet
+  [^PGobject o]
+  (if (= "inet" (.getType o))
+    (.getValue o)
+    nil))
+
 (defn tjson
   "Encode as transit json."
   [data]
