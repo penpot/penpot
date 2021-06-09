@@ -268,8 +268,9 @@
 (sv/defmethod ::update-file
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-update true})]
+    (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-key-share true})]
       (files/check-edition-permissions! conn profile-id id)
+      (db/xact-lock! conn id)
       (update-file (assoc cfg :conn  conn)
                    (assoc params :file file)))))
 

@@ -43,8 +43,8 @@
   ([table where-params opts]
    (let [opts (merge default-opts opts)
          opts (cond-> opts
-                (:for-update opts)
-                (assoc :suffix "FOR UPDATE"))]
+                (:for-update opts)    (assoc :suffix "FOR UPDATE")
+                (:for-key-share opts) (assoc :suffix "FOR KEY SHARE"))]
      (sql/for-query table where-params opts))))
 
 (defn update

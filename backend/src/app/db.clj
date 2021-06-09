@@ -11,6 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.common.transit :as t]
+   [app.common.uuid :as uuid]
    [app.db.sql :as sql]
    [app.metrics :as mtx]
    [app.util.json :as json]
@@ -366,3 +367,25 @@
 (defn pgarray->vector
   [v]
   (vec (.getArray ^PgArray v)))
+
+
+;; --- Locks
+
+(defn- xact-check-param
+  [n]
+  (cond
+    (uuid? n) (uuid/get-word-high n)
+    (int? n)  n
+    :else (throw (IllegalArgumentException. "uuid or number allowed"))))
+
+(defn xact-lock!
+  [conn n]
+  (let [n (xact-check-param n)]
+    (exec-one! conn ["select pg_advisory_xact_lock(?::bigint) as lock" n])
+    true))
+
+(defn xact-try-lock!
+  [conn n]
+  (let [n   (xact-check-param n)
+        row (exec-one! conn ["select pg_try_advisory_xact_lock(?::bigint) as lock" n])]
+    (:lock row)))

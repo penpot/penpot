@@ -6,13 +6,13 @@
 
 (ns app.common.uuid
   (:refer-clojure :exclude [next uuid zero?])
-  #?(:clj (:import java.util.UUID))
-  #?(:clj
-     (:require [clj-uuid :as impl]
-               [clojure.core :as c])
-     :cljs
-     (:require [app.common.uuid-impl :as impl]
-               [cljs.core :as c])))
+  (:require
+   [app.common.data :as d]
+   #?(:clj [clj-uuid :as impl])
+   #?(:clj [clojure.core :as c])
+   #?(:cljs [app.common.uuid-impl :as impl])
+   #?(:cljs [cljs.core :as c]))
+  #?(:clj (:import java.util.UUID)))
 
 (def zero #uuid "00000000-0000-0000-0000-000000000000")
 
@@ -45,3 +45,6 @@
 (defn custom
   ([a] #?(:clj (UUID. 0 a) :cljs (c/uuid (impl/custom 0 a))))
   ([b a] #?(:clj (UUID. b a) :cljs (c/uuid (impl/custom b a)))))
+
+#?(:clj
+   (d/export impl/get-word-high))
