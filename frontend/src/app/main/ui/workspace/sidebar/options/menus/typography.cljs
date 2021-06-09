@@ -468,7 +468,8 @@
 
     [:*
      [:div.element-set-options-group.typography-entry
-      {:class (when selected? "selected")}
+      {:class (when selected? "selected")
+       :style {:display (when @open? "none")}}
       [:div.typography-selection-wrapper
        {:class (when on-click "is-selectable")
         :on-click on-click

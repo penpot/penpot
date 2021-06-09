@@ -13,7 +13,6 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]))

@@ -117,11 +117,13 @@
             (on-save-grid grid)))
 
         is-default (= (->> grid :params)
-                      (->> grid :type default-grid-params))]
+                      (->> grid :type default-grid-params))
+
+        open? (:show-advanced-options @state)]
 
     [:div.grid-option
-     [:div.grid-option-main
-      [:button.custom-button {:class (when (:show-advanced-options @state) "is-active")
+     [:div.grid-option-main {:style {:display (when open? "none")}}
+      [:button.custom-button {:class (when open? "is-active")
                               :on-click toggle-advanced-options} i/actions]
 
       [:& select {:class "flex-grow"
@@ -148,10 +150,9 @@
        [:button.custom-button {:on-click handle-toggle-visibility} (if display i/eye i/eye-closed)]
        [:button.custom-button {:on-click handle-remove-grid} i/minus]]]
 
-     [:& advanced-options {:visible? (:show-advanced-options @state)
+     [:& advanced-options {:visible? open?
                            :on-close toggle-advanced-options}
-      [:button.custom-button {:class (when (:show-advanced-options @state) "is-active")
-                              :on-click toggle-advanced-options} i/actions]
+      [:button.custom-button {:on-click toggle-advanced-options} i/actions]
       (when (= :square type)
         [:& input-row {:label (t locale "workspace.options.grid.params.size")
                        :class "pixels"

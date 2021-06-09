@@ -98,8 +98,7 @@
           (fn []
             (st/emit! (dch/update-shapes ids #(update-in % [:shadow index :hidden] not)))))]
     [:*
-     [:div.element-set-options-group 
-
+     [:div.element-set-options-group {:style {:display (when @open-shadow "none")}}
       [:div.element-set-actions-button
        {:on-click #(reset! open-shadow true)}
        i/actions]
