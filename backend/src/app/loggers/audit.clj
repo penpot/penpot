@@ -101,12 +101,13 @@
              (:name event)
              (:type event)
              (:profile-id event)
+             (some-> (:ip-addr event) db/inet)
              (db/tjson (:props event))])]
 
     (aa/with-thread executor
       (db/with-atomic [conn pool]
         (db/insert-multi! conn :audit-log
-                          [:id :name :type :profile-id :props]
+                          [:id :name :type :profile-id :ip-addr :props]
                           (sequence (map event->row) events))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -147,17 +148,22 @@
 
 (defn archive-events
   [{:keys [pool uri tokens] :as cfg}]
-  (letfn [(decode-row [{:keys [props] :as row}]
+  (letfn [(decode-row [{:keys [props ip-addr] :as row}]
             (cond-> row
               (db/pgobject? props)
-              (assoc :props (db/decode-transit-pgobject props))))
+              (assoc :props (db/decode-transit-pgobject props))
 
-          (row->event [{:keys [name type created-at profile-id props]}]
-            {:type type
-             :name name
-             :timestamp created-at
-             :profile-id profile-id
-             :props props})
+              (db/pgobject? ip-addr "inet")
+              (assoc :ip-addr (db/decode-inet ip-addr))))
+
+          (row->event [{:keys [name type created-at profile-id props ip-addr]}]
+            (cond-> {:type type
+                     :name name
+                     :timestamp created-at
+                     :profile-id profile-id
+                     :props props}
+              (some? ip-addr)
+              (update :context assoc :source-ip ip-addr)))
 
           (send [events]
             (let [token   (tokens :generate {:iss "authentication"
@@ -168,7 +174,7 @@
                            "origin" (cf/get :public-uri)
                            "cookie" (u/map->query-string {:auth-token token})}
                   params  {:uri uri
-                           :timeout 5000
+                           :timeout 6000
                            :method :post
                            :headers headers
                            :body body}
@@ -187,7 +193,6 @@
 
     (db/with-atomic [conn pool]
       (let [rows   (db/exec! conn [sql:retrieve-batch-of-audit-log])
-
             xform  (comp (map decode-row)
                          (map row->event))
             events (into [] xform rows)]
