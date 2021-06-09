@@ -374,31 +374,31 @@
 
         orig-h (when origin
                  (cond
-                   (mth/close? (:x origin) (gpr/left-of parent-rect)) :left
-                   (mth/close? (:x origin) (gpr/right-of parent-rect)) :right
+                   (mth/close? (:x origin) (:x1 parent-rect)) :left
+                   (mth/close? (:x origin) (:x2 parent-rect)) :right
                    :else :middle))
 
         orig-v (when origin
                  (cond
-                   (mth/close? (:y origin) (gpr/top-of parent-rect)) :top
-                   (mth/close? (:y origin) (gpr/bottom-of parent-rect)) :bottom
+                   (mth/close? (:y origin) (:y1 parent-rect)) :top
+                   (mth/close? (:y origin) (:y2 parent-rect)) :bottom
                    :else :middle))
 
         delta-h (when orig-h
                   (cond (= orig-h :left)
-                        (- (gpr/right-of transformed-parent-rect) (gpr/right-of parent-rect))
+                        (- (:x2 transformed-parent-rect) (:x2 parent-rect))
 
                         (= orig-h :right)
-                        (- (gpr/left-of transformed-parent-rect) (gpr/left-of parent-rect))
+                        (- (:x1 transformed-parent-rect) (:x1 parent-rect))
 
                         :else 0))
 
         delta-v (when orig-v
                   (cond (= orig-v :top)
-                        (- (gpr/bottom-of transformed-parent-rect) (gpr/bottom-of parent-rect))
+                        (- (:y2 transformed-parent-rect) (:y2 parent-rect))
 
                         (= orig-v :bottom)
-                        (- (gpr/top-of transformed-parent-rect) (gpr/top-of parent-rect))
+                        (- (:y1 transformed-parent-rect) (:y1 parent-rect))
 
                         :else 0))
 
@@ -418,13 +418,13 @@
 
                       :leftright
                       (cond (= orig-h :left)
-                            {:resize-origin (gpt/point (gpr/left-of child-rect) (gpr/top-of child-rect))
+                            {:resize-origin (gpt/point (:x1 child-rect) (:y1 child-rect))
                              :resize-vector (gpt/point (/ (+ (:width child-rect) delta-h)
                                                           (:width child-rect))
                                                        1)}
 
                             (= orig-h :right)
-                            {:resize-origin (gpt/point (gpr/right-of child-rect) (gpr/top-of child-rect))
+                            {:resize-origin (gpt/point (:x2 child-rect) (:y1 child-rect))
                              :resize-vector (gpt/point (/ (- (:width child-rect) delta-h)
                                                           (:width child-rect))
                                                        1)}
@@ -455,13 +455,13 @@
 
                       :topbottom
                       (cond (= orig-v :top)
-                            {:resize-origin (gpt/point (gpr/left-of child-rect) (gpr/top-of child-rect))
+                            {:resize-origin (gpt/point (:x1 child-rect) (:y1 child-rect))
                              :resize-vector (gpt/point 1
                                                        (/ (+ (:height child-rect) delta-v)
                                                           (:height child-rect)))}
 
                             (= orig-v :bottom)
-                            {:resize-origin (gpt/point (gpr/left-of child-rect) (gpr/bottom-of child-rect))
+                            {:resize-origin (gpt/point (:x1 child-rect) (:y2 child-rect))
                              :resize-vector (gpt/point 1
                                                        (/ (- (:height child-rect) delta-v)
                                                           (:height child-rect)))}
@@ -493,7 +493,7 @@
       (:displacement parent-modifiers)
       (update :displacement #(if (nil? %)
                                (:displacement parent-modifiers)
-                               (gmt/multiply % (:displacement parent-modifiers)))))))
+                               (gmt/add-translate % (:displacement parent-modifiers)))))))
 
 (defn update-group-viewbox
   "Updates the viewbox for groups imported from SVG's"

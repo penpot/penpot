@@ -48,6 +48,22 @@
   ([m1 m2 & others]
    (reduce multiply (multiply m1 m2) others)))
 
+(defn add-translate
+  "Given two TRANSLATE matrixes (only e and f have significative
+  values), combine them. Quicker than multiplying them, for this
+  precise case."
+  ([{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
+    {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f}]
+   (Matrix.
+     1
+     0
+     0
+     1
+    (+ m1e m2e)
+    (+ m1f m2f)))
+  ([m1 m2 & others]
+   (reduce add-translate (add-translate m1 m2) others)))
+
 (defn substract
   [{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
    {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f}]
