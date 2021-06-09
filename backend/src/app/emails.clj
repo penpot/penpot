@@ -127,9 +127,9 @@
 (s/def :internal.emails.invite-to-team/token ::us/string)
 
 (s/def ::invite-to-team
-  (s/keys :keys [:internal.emails.invite-to-team/invited-by
-                 :internal.emails.invite-to-team/token
-                 :internal.emails.invite-to-team/team]))
+  (s/keys :req-un [:internal.emails.invite-to-team/invited-by
+                   :internal.emails.invite-to-team/token
+                   :internal.emails.invite-to-team/team]))
 
 (def invite-to-team
   "Teams member invitation email."
