@@ -32,9 +32,10 @@
   [methods {:keys [profile-id] :as request}]
   (let [type   (keyword (get-in request [:path-params :type]))
 
-        data   (d/merge (:params request)
-                        (:body-params request)
-                        (:uploads request))
+        data   (merge (:params request)
+                      (:body-params request)
+                      (:uploads request)
+                      {::request request})
 
         data   (if profile-id
                  (assoc data :profile-id profile-id)
@@ -50,12 +51,15 @@
 (defn- rpc-mutation-handler
   [methods {:keys [profile-id] :as request}]
   (let [type   (keyword (get-in request [:path-params :type]))
-        data   (d/merge (:params request)
-                        (:body-params request)
-                        (:uploads request))
+        data   (merge (:params request)
+                      (:body-params request)
+                      (:uploads request)
+                      {::request request})
+
         data   (if profile-id
                  (assoc data :profile-id profile-id)
                  (dissoc data :profile-id))
+
         result ((get methods type default-handler) data)
         mdata  (meta result)]
     (cond->> {:status 200 :body result}
@@ -85,6 +89,11 @@
         (rlm/execute rlinst (f cfg params))))
     f))
 
+(defn- parse-client-ip
+  [{:keys [headers] :as request}]
+  (or (some-> (get headers "x-forwarded-for") (str/split ",") first)
+      (get headers "x-real-ip")
+      (get request :remote-addr)))
 
 (defn- wrap-impl
   [{:keys [audit] :as cfg} f mdata]
@@ -95,15 +104,23 @@
 
     (l/trace :action "register" :name (::sv/name mdata))
     (fn [params]
+
+      ;; Raise authentication error when rpc method requires auth but
+      ;; no profile-id is found in the request.
       (when (and auth? (not (uuid? (:profile-id params))))
         (ex/raise :type :authentication
                   :code :authentication-required
                   :hint "authentication required for this endpoint"))
-      (let [params  (us/conform spec params)
-            result  (f cfg params)
-            resultm (meta result)]
-        (when (and (::type cfg) (fn? audit))
-          (let [profile-id (or (:profile-id params)
+
+      (let [params' (dissoc params ::request)
+            params' (us/conform spec params')
+            result  (f cfg params')]
+
+        ;; When audit log is enabled (default false).
+        (when (fn? audit)
+          (let [resultm    (meta result)
+                request    (::request params)
+                profile-id (or (:profile-id params')
                                (:profile-id result)
                                (::audit/profile-id resultm))
                 props      (d/merge params (::audit/props resultm))]
@@ -111,7 +128,9 @@
                             :name (or (::audit/name resultm)
                                       (::sv/name mdata))
                             :profile-id profile-id
+                            :ip-addr (parse-client-ip request)
                             :props props})))
+
         result))))
 
 (defn- process-method

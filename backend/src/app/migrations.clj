@@ -184,6 +184,9 @@
 
    {:name "0058-del-team-on-delete-trigger"
     :fn (mg/resource "app/migrations/sql/0058-del-team-on-delete-trigger.sql")}
+
+   {:name "0059-mod-audit-log-table"
+    :fn (mg/resource "app/migrations/sql/0059-mod-audit-log-table.sql")}
    ])
 
 
