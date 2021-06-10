@@ -43,7 +43,6 @@
     (proj/check-edition-permissions! conn profile-id project-id)
     (create-file conn params)))
 
-
 (defn create-file-role
   [conn {:keys [file-id profile-id role]}]
   (let [params {:file-id file-id
@@ -274,10 +273,20 @@
       (update-file (assoc cfg :conn  conn)
                    (assoc params :file file)))))
 
+(defn- take-snapshot?
+  "Defines the rule when file `data` snapshot should be saved."
+  [{:keys [revn modified-at] :as file}]
+  ;; The snapshot will be saved every 20 changes or if the last
+  ;; modification is older than 3 hour.
+  (or (zero? (mod revn 20))
+      (> (inst-ms (dt/diff modified-at (dt/now)))
+         (inst-ms (dt/duration {:hours 3})))))
+
 (defn- update-file
   [{:keys [conn] :as cfg} {:keys [file changes changes-with-metadata session-id profile-id] :as params}]
   (when (> (:revn params)
            (:revn file))
+
     (ex/raise :type :validation
               :code :revn-conflict
               :hint "The incoming revision number is greater that stored version."
@@ -304,7 +313,8 @@
                  :profile-id profile-id
                  :file-id (:id file)
                  :revn (:revn file)
-                 :data (:data file)
+                 :data (when (take-snapshot? file)
+                         (:data file))
                  :changes (blob/encode changes)})
 
     ;; Update file
