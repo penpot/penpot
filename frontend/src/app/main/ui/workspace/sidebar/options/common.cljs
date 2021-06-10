@@ -22,9 +22,7 @@
            (.scrollIntoViewIfNeeded ^js node)))))
 
     (when visible?
-      [:*
-       [:div.focus-overlay {:on-click handle-click}]
-       [:div.advanced-options-wrapper {:ref ref}
-        [:div.advanced-options {}
-         children]]])))
+      [:div.advanced-options-wrapper {:ref ref}
+       [:div.advanced-options {}
+        children]])))
 

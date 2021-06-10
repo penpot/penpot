@@ -424,7 +424,8 @@
     [:div.element-set-content
      [:> font-options opts]
      [:div.row-flex
-      [:> spacing-options opts]
+      [:> spacing-options opts]]
+     [:div.row-flex
       [:> text-transform-options opts]]]))
 
 
@@ -467,7 +468,8 @@
 
     [:*
      [:div.element-set-options-group.typography-entry
-      {:class (when selected? "selected")}
+      {:class (when selected? "selected")
+       :style {:display (when @open? "none")}}
       [:div.typography-selection-wrapper
        {:class (when on-click "is-selectable")
         :on-click on-click
@@ -501,6 +503,10 @@
           [:span.label (tr "workspace.assets.typography.font-id")]
           [:span (:font-id typography)]]
 
+         [:div.element-set-actions-button.actions-inside
+          {:on-click #(reset! open? false)}
+          i/actions]
+
          [:div.row-flex
           [:span.label (tr "workspace.assets.typography.font-variant-id")]
           [:span (:font-variant-id typography)]]
@@ -532,6 +538,11 @@
             {:type "text"
              :ref name-input-ref
              :default-value (cp/merge-path-item (:path typography) (:name typography))
-             :on-blur on-name-blur}]]]
+             :on-blur on-name-blur}]
+             
+             [:div.element-set-actions-button
+              {:on-click #(reset! open? false)}
+             i/actions]]]
+
          [:& typography-options {:values typography
                                  :on-change on-change}]])]]))

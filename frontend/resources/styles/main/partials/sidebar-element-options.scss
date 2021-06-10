@@ -543,7 +543,7 @@
   padding: 0 $x-small;
 
   &:first-child {
-    justify-content: space-between;
+    justify-content: flex-start;
     margin-left: 0;
   }
 
@@ -733,6 +733,16 @@
 
 .grid-option {
   margin-bottom: 0.5rem;
+  .advanced-options {
+    .row-flex {
+      justify-content: flex-end;
+    }
+    .custom-button {
+      left: 0;
+      position: absolute;
+      top: 12px;
+    }
+  }
 }
 
 .element-set-content .custom-select.input-option {
@@ -816,13 +826,13 @@
 
 .advanced-options-wrapper {
   width: 100%;
-  padding-left: 0.25rem;
 }
 
 .advanced-options {
-  background-color: #303236;
+  border: 1px solid $color-gray-60;
+  background-color: $color-gray-50;
   border-radius: 4px;
-  padding: 0.5rem;
+  padding: 8px;
   position: relative;
   top: 2px;
   width: 100%;
@@ -897,6 +907,22 @@
   .download-button {
     margin-top: 10px;
   }
+
+  .input-element {
+    width: 100%;
+    flex-shrink: initial;
+  }
+
+  .row-grid-2 {
+    grid-column-gap: 1em;
+  }
+
+  .color-info {
+    input {
+      margin-right: 1em;
+      width: 74px;
+    }
+  }
 }
 
 .shadow-options .color-row-wrap {
@@ -919,6 +945,10 @@
 
     &:hover svg {
         fill: $color-primary;
+    }
+    &.actions-inside {
+      position: absolute;
+      right: 0;
     }
 }
 
@@ -985,6 +1015,7 @@
 
 .spacing-options {
   display: flex;
+  width: 100%;
 }
 
 .asset-section {
@@ -1007,7 +1038,7 @@
     width: 100%;
     max-width: none;
     margin: 0;
-    background: #303236;
+    background-color: #303236;
     border-top: none;
     border-left: none;
     border-right: none;
@@ -1045,17 +1076,16 @@
     .go-to-lib-button {
         transition: border 0.3s, color 0.3s;
         text-align: center;
-        background: $color-gray-60;
+        background: $color-gray-50;
         padding: 0.5rem;
         border-radius: 2px;
         cursor: pointer;
         font-size: 14px;
         margin-top: 1rem;
-        border: 1px solid $color-gray-60;
 
         &:hover {
-            border: 1px solid $color-primary;
-            color: $color-primary;
+            background: $color-primary;
+            color: $color-black;
         }
     }
 }
