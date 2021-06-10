@@ -18,12 +18,13 @@
 (mf/defc linear-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} (:selrect shape)
         transform (when (= :path (:type shape)) (gsh/transform-matrix shape nil (gpt/point 0.5 0.5)))]
-    [:linearGradient {:id id
-                      :x1 (:start-x gradient)
-                      :y1 (:start-y gradient)
-                      :x2 (:end-x gradient)
-                      :y2 (:end-y gradient)
-                      :gradientTransform transform}
+    [:> :linearGradient #js {:id id
+                             :x1 (:start-x gradient)
+                             :y1 (:start-y gradient)
+                             :x2 (:end-x gradient)
+                             :y2 (:end-y gradient)
+                             :gradientTransform transform
+                             :penpot:gradient "true"}
      (for [{:keys [offset color opacity]} (:stops gradient)]
        [:stop {:key (str id "-stop-" offset)
                :offset (or offset 0)
@@ -32,6 +33,7 @@
 
 (defn add-metadata [props gradient]
   (-> props
+      (obj/set! "penpot:gradient" "true")
       (obj/set! "penpot:start-x" (:start-x gradient))
       (obj/set! "penpot:start-x" (:start-x gradient))
       (obj/set! "penpot:start-y" (:start-y gradient))

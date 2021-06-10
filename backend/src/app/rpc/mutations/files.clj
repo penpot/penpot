@@ -274,8 +274,7 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (db/xact-lock! conn id)
-    (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-key-share true
-                                                             :uncheked true})]
+    (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-key-share true})]
       (files/check-edition-permissions! conn profile-id id)
       (update-file (assoc cfg :conn  conn)
                    (assoc params :file file)))))
@@ -399,10 +398,10 @@
     (proj/check-edition-permissions! conn profile-id project-id)
     (create-file conn (assoc params :deleted-at (dt/in-future {:days 1})))))
 
-(s/def ::make-permanent
+(s/def ::persist-temp-file
   (s/keys :req-un [::id ::profile-id]))
 
-(sv/defmethod ::make-permanent
+(sv/defmethod ::persist-temp-file
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)

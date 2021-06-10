@@ -503,3 +503,51 @@
 
     (->> keys
          (reduce diff-attr {}))))
+
+(defn- extract-numeric-suffix
+  [basename]
+  (if-let [[match p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
+    [p1 (+ 1 (parse-integer p2))]
+    [basename 1]))
+
+(defn unique-name
+  "A unique name generator"
+  ([basename used]
+   (unique-name basename used false))
+
+  ([basename used prefix-first?]
+   (assert (string? basename))
+   (assert (set? used))
+
+   (let [[prefix initial] (extract-numeric-suffix basename)]
+     (if (and (not prefix-first?)
+              (not (contains? used basename)))
+       basename
+       (loop [counter initial]
+         (let [candidate (if (and (= 1 counter) prefix-first?)
+                           (str prefix)
+                           (str prefix "-" counter))]
+           (if (contains? used candidate)
+             (recur (inc counter))
+             candidate)))))))
+
+(defn deep-mapm
+  "Applies a map function to an associative map and recurses over its children
+  when it's a vector or a map"
+  [mfn m]
+  (let [do-map
+        (fn [[k v]]
+          (cond
+            (or (vector? v) (map? v))
+            [k (deep-mapm mfn v)]
+            :else
+            (mfn [k v])))]
+    (cond
+      (map? m)
+      (into {} (map do-map) m)
+
+      (vector? m)
+      (into [] (map (partial deep-mapm mfn)) m)
+
+      :else
+      m)))

@@ -48,17 +48,16 @@
     (rx/concat
      (->> (rx/from changes-batches)
           (rx/mapcat
-           (fn [cur-changes-batch]
-             (rp/mutation
-              :update-file
-              {:id file-id
-               :session-id session-id
-               :revn @revn
-               :changes cur-changes-batch})))
-
+           #(rp/mutation
+             :update-file
+             {:id file-id
+              :session-id session-id
+              :revn @revn
+              :changes %}))
+          (rx/map first)
           (rx/tap #(reset! revn (:revn %))))
 
-     (rp/mutation :make-permanent {:id (:id file)}))))
+     (rp/mutation :persist-temp-file {:id (:id file)}))))
 
 (defn upload-media-files
   "Upload a image to the backend and returns its id"
@@ -91,6 +90,9 @@
         :group
         (fb/close-group file)
 
+        :svg-raw
+        (fb/close-svg-raw file)
+
         ;; default
         file)
 
@@ -102,6 +104,7 @@
         :path     (fb/create-path file data)
         :text     (fb/create-text file data)
         :image    (fb/create-image file data)
+        :svg-raw  (fb/create-svg-raw file data)
 
         ;; default
         file))))
@@ -127,7 +130,8 @@
                   (assoc-in [:attrs :penpot:media-mtype]  (:mtype media)))))))
 
     ;; If the node is not an image just return the node
-    (rx/of node)))
+    (->> (rx/of node)
+         (rx/observe-on :async))))
 
 (defn import-page
   [file [page-name content]]

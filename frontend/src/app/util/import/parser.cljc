@@ -29,8 +29,13 @@
   (and (vector? node)
        (= ::close (first node))))
 
-(defn get-data [node]
-  (->> node :content (d/seek #(= :penpot:shape (:tag %)))))
+(defn get-data
+  ([node]
+   (->> node :content (d/seek #(= :penpot:shape (:tag %)))))
+  ([node tag]
+   (->> (get-data node)
+        :content
+        (d/seek #(= tag (:tag %))))))
 
 (defn get-type
   [node]
@@ -65,9 +70,6 @@
   [content]
   (->> content (tree-seq branch? get-children)))
 
-(defn get-transform
-  [type node])
-
 (defn parse-style
   "Transform style list into a map"
   [style-str]
@@ -97,13 +99,19 @@
   [type node]
 
   (let [node-attrs (add-attrs {} (:attrs node))]
-    (if (search-data-node? type)
+    (cond
+      (search-data-node? type)
       (let [data-tags #{:ellipse :rect :path :text :foreignObject :image}]
         (->> node
              (node-seq)
              (filter #(contains? data-tags (:tag %)))
              (map #(:attrs %))
              (reduce add-attrs node-attrs)))
+
+      (= type :svg-raw)
+      (->> node :content last)
+
+      :else
       node-attrs)))
 
 (def has-position? #{:frame :rect :image :text})
@@ -153,32 +161,52 @@
 
 (defn parse-gradient
   [node ref-url]
-  (let [[_ url] (re-matches url-regex ref-url)
+  (let [[_ url] (re-find url-regex ref-url)
         gradient-node (->> node (node-seq) (seek-node url))
         stops (parse-stops gradient-node)]
 
-    (cond-> {:stops stops}
-      (= :linearGradient (:tag gradient-node))
-      (assoc :type :linear
-             :start-x (-> gradient-node :attrs :x1 d/parse-double)
-             :start-y (-> gradient-node :attrs :y1 d/parse-double)
-             :end-x   (-> gradient-node :attrs :x2 d/parse-double)
-             :end-y   (-> gradient-node :attrs :y2 d/parse-double)
-             :width   1)
+    (when (contains? (:attrs gradient-node) :penpot:gradient)
+      (cond-> {:stops stops}
+        (= :linearGradient (:tag gradient-node))
+        (assoc :type :linear
+               :start-x (-> gradient-node :attrs :x1 d/parse-double)
+               :start-y (-> gradient-node :attrs :y1 d/parse-double)
+               :end-x   (-> gradient-node :attrs :x2 d/parse-double)
+               :end-y   (-> gradient-node :attrs :y2 d/parse-double)
+               :width   1)
 
-      (= :radialGradient (:tag gradient-node))
-      (assoc :type :radial
-             :start-x (get-meta gradient-node :start-x d/parse-double)
-             :start-y (get-meta gradient-node :start-y d/parse-double)
-             :end-x   (get-meta gradient-node :end-x   d/parse-double)
-             :end-y   (get-meta gradient-node :end-y   d/parse-double)
-             :width   (get-meta gradient-node :width   d/parse-double)))))
+        (= :radialGradient (:tag gradient-node))
+        (assoc :type :radial
+               :start-x (get-meta gradient-node :start-x d/parse-double)
+               :start-y (get-meta gradient-node :start-y d/parse-double)
+               :end-x   (get-meta gradient-node :end-x   d/parse-double)
+               :end-y   (get-meta gradient-node :end-y   d/parse-double)
+               :width   (get-meta gradient-node :width   d/parse-double))))))
+
+(defn add-svg-position [props node]
+  (let [svg-content (get-data node :penpot:svg-content)]
+    (cond-> props
+      (contains? (:attrs svg-content) :penpot:x)
+      (assoc :x (-> svg-content :attrs :penpot:x d/parse-double))
+
+      (contains? (:attrs svg-content) :penpot:y)
+      (assoc :y (-> svg-content :attrs :penpot:y d/parse-double))
+
+      (contains? (:attrs svg-content) :penpot:width)
+      (assoc :width (-> svg-content :attrs :penpot:width d/parse-double))
+
+      (contains? (:attrs svg-content) :penpot:height)
+      (assoc :height (-> svg-content :attrs :penpot:height d/parse-double)))))
 
 (defn add-position
   [props type node svg-data]
   (cond-> props
     (has-position? type)
     (-> (parse-position svg-data)
+        (gsh/setup-selrect))
+
+    (= type :svg-raw)
+    (-> (add-svg-position node)
         (gsh/setup-selrect))
 
     (= type :circle)
@@ -191,14 +219,16 @@
 (defn add-fill
   [props node svg-data]
 
-  (let [fill (:fill svg-data)]
+  (let [fill (:fill svg-data)
+        gradient (when (str/starts-with? fill "url")
+                   (parse-gradient node fill))]
     (cond-> props
-      (= fill "none")
+      :always
       (assoc :fill-color nil
              :fill-opacity nil)
 
-      (str/starts-with? fill "url")
-      (assoc :fill-color-gradient (parse-gradient node fill)
+      (some? gradient)
+      (assoc :fill-color-gradient gradient
              :fill-color nil
              :fill-opacity nil)
 
@@ -211,23 +241,43 @@
 
   (let [stroke-style (get-meta node :stroke-style keyword)
         stroke-alignment (get-meta node :stroke-alignment keyword)
-        stroke (:stroke svg-data)]
+        stroke (:stroke svg-data)
+        gradient (when (str/starts-with? stroke "url")
+                   (parse-gradient node stroke))]
 
     (cond-> props
       :always
       (assoc :stroke-alignment stroke-alignment
              :stroke-style     stroke-style
-             :stroke-color     (-> svg-data (:stroke "#000000"))
-             :stroke-opacity   (-> svg-data (:stroke-opacity "1") d/parse-double)
-             :stroke-width     (-> svg-data (:stroke-width "0") d/parse-double))
+             :stroke-color     (-> svg-data :stroke)
+             :stroke-opacity   (-> svg-data :stroke-opacity d/parse-double)
+             :stroke-width     (-> svg-data :stroke-width d/parse-double))
 
-      (str/starts-with? stroke "url")
-      (assoc :stroke-color-gradient (parse-gradient node stroke)
+      (some? gradient)
+      (assoc :stroke-color-gradient  gradient
              :stroke-color nil
              :stroke-opacity nil)
 
       (= stroke-alignment :inner)
       (update :stroke-width / 2))))
+
+(defn add-rect-data
+  [props node svg-data]
+  (let [r1 (get-meta node :r1 d/parse-double)
+        r2 (get-meta node :r2 d/parse-double)
+        r3 (get-meta node :r3 d/parse-double)
+        r4 (get-meta node :r4 d/parse-double)
+
+        rx (-> (get svg-data :rx) d/parse-double)
+        ry (-> (get svg-data :ry) d/parse-double)]
+
+    (cond-> props
+      (some? r1)
+      (assoc :r1 r1 :r2 r2 :r3 r3 :r4 r4
+             :rx nil :ry nil)
+
+      (and (nil? r1) (some? rx))
+      (assoc :rx rx :ry ry))))
 
 (defn add-image-data
   [props node]
@@ -276,12 +326,16 @@
    :suffix (get-meta node :suffix)
    :scale  (get-meta node :scale d/parse-double)})
 
-(defn extract-from-data [node tag parse-fn]
-  (let [shape-data (get-data node)]
-    (->> shape-data
-         (node-seq)
-         (filter #(= (:tag %) tag))
-         (mapv parse-fn))))
+(defn extract-from-data
+  ([node tag]
+   (extract-from-data node tag identity))
+
+  ([node tag parse-fn]
+   (let [shape-data (get-data node)]
+     (->> shape-data
+          (node-seq)
+          (filter #(= (:tag %) tag))
+          (mapv parse-fn)))))
 
 (defn add-shadows
   [props node]
@@ -313,8 +367,111 @@
       (some? blend-mode)
       (assoc :blend-mode (keyword blend-mode))
 
-     (some? opacity)
-     (assoc :opacity opacity))))
+      (some? opacity)
+      (assoc :opacity opacity))))
+
+(defn remove-prefix [s]
+  (cond-> s
+    (string? s)
+    (str/replace #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}-" "")))
+
+(defn get-svg-attrs
+  [svg-data svg-attrs]
+  (let [assoc-key
+        (fn [acc prop]
+          (let [key (keyword prop)]
+            (if-let [v (or (get svg-data key)
+                           (get-in svg-data [:attrs key]))]
+              (assoc acc key (remove-prefix v))
+              acc)))]
+
+    (->> (str/split svg-attrs ",")
+         (reduce assoc-key {}))))
+
+(defn get-svg-defs
+  [node svg-defs]
+
+  (let [svg-import (get-data node :penpot:svg-import)]
+    (->> svg-import
+         :content
+         (filter #(= (:tag %) :penpot:svg-def))
+         (map #(vector (-> % :attrs :def-id)
+                       (-> % :content first)))
+         (into {}))))
+
+(defn add-svg-attrs
+  [props node svg-data]
+
+  (let [svg-import (get-data node :penpot:svg-import)]
+    (if (some? svg-import)
+      (let [svg-attrs (get-in svg-import [:attrs :penpot:svg-attrs])
+            svg-defs (get-in svg-import [:attrs :penpot:svg-defs])
+            svg-transform (get-in svg-import [:attrs :penpot:svg-transform])
+            viewbox-x (get-in svg-import [:attrs :penpot:svg-viewbox-x])
+            viewbox-y (get-in svg-import [:attrs :penpot:svg-viewbox-y])
+            viewbox-width (get-in svg-import [:attrs :penpot:svg-viewbox-width])
+            viewbox-height (get-in svg-import [:attrs :penpot:svg-viewbox-height])]
+
+        (cond-> props
+          :true
+          (assoc :svg-attrs (get-svg-attrs svg-data svg-attrs))
+
+          (some? viewbox-x)
+          (assoc :svg-viewbox {:x      (d/parse-double viewbox-x)
+                               :y      (d/parse-double viewbox-y)
+                               :width  (d/parse-double viewbox-width)
+                               :height (d/parse-double viewbox-height)})
+
+          (some? svg-transform)
+          (assoc :svg-transform (gmt/str->matrix svg-transform))
+
+
+          (some? svg-defs)
+          (assoc :svg-defs (get-svg-defs node svg-defs))))
+
+      props)))
+
+(defn without-penpot-prefix
+  [m]
+  (let [no-penpot-prefix?
+        (fn [[k v]]
+          (not (str/starts-with? (d/name k) "penpot:")))]
+    (into {} (filter no-penpot-prefix?) m)))
+
+(defn camelize [[k v]]
+  [(-> k d/name str/camel keyword) v])
+
+(defn camelize-keys
+  [m]
+  (assert (map? m) (str m))
+
+  (into {} (map camelize) m))
+
+(defn fix-style-attr
+  [m]
+  (let [fix-style
+        (fn [[k v]]
+          (if (= k :style)
+            [k (-> v parse-style camelize-keys)]
+            [k v]))]
+
+    (d/deep-mapm (comp camelize fix-style) m)))
+
+(defn add-svg-content
+  [props node]
+  (let [svg-content (get-data node :penpot:svg-content)
+        attrs (-> (:attrs svg-content) (without-penpot-prefix))
+        tag (-> svg-content :attrs :penpot:tag keyword)
+        content {:attrs   attrs
+                 :tag     tag
+                 :content (cond
+                            (= tag :svg)
+                            (->> node :content last :content last :content fix-style-attr)
+
+                            (= tag :text)
+                            (-> node :content last :content))}]
+    (-> props
+        (assoc :content content))))
 
 (defn get-image-name
   [node]
@@ -337,6 +494,9 @@
           svg-data          (get-svg-data type node)]
 
       (-> {}
+          (assoc :name name)
+          (assoc :blocked blocked)
+          (assoc :hidden hidden)
           (add-position type node svg-data)
           (add-fill node svg-data)
           (add-stroke node svg-data)
@@ -344,12 +504,16 @@
           (add-shadows node)
           (add-blur node)
           (add-exports node)
-          (assoc :name name)
-          (assoc :blocked blocked)
-          (assoc :hidden hidden)
+          (add-svg-attrs node svg-data)
+
+          (cond-> (= :svg-raw type)
+            (add-svg-content node))
 
           (cond-> (= :group type)
             (add-group-data node))
+
+          (cond-> (= :rect type)
+            (add-rect-data node svg-data))
 
           (cond-> (= :image type)
             (add-image-data node))

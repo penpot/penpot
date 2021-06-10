@@ -13,7 +13,8 @@
    [app.common.pages.init :as init]
    [app.common.pages.spec :as spec]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [cuerdas.core :as str]))
 
 (def root-frame uuid/zero)
 
@@ -51,6 +52,27 @@
           :parent-id parent-id
           :obj obj}))))
 
+(defn generate-name
+  [type data]
+  (if (= type :svg-raw)
+    (let [tag (get-in data [:content :tag])]
+      (str "svg-" (cond (string? tag) tag
+                        (keyword? tag) (d/name tag)
+                        (nil? tag) "node"
+                        :else (str tag))))
+    (str/capital (d/name type))))
+
+(defn check-name
+  "Given a tag returns its layer name"
+  [data file type]
+
+  (cond-> data
+    (nil? (:name data))
+    (assoc :name (generate-name type data))
+
+    :always
+    (update :name d/unique-name (:unames file))))
+
 ;; PUBLIC API
 
 (defn create-file
@@ -82,14 +104,31 @@
         (assoc :current-frame-id root-frame)
 
         ;; Current parent stack we'll be nesting
-        (assoc :parent-stack [root-frame]))))
+        (assoc :parent-stack [root-frame])
+
+        ;; Last object id added
+        (assoc :last-id nil)
+
+        ;; Current used names
+        (assoc :unames #{}))))
+
+(defn close-page [file]
+  (-> file
+      (dissoc :current-page-id)
+      (dissoc :parent-stack)
+      (dissoc :last-id)
+      (dissoc :unames)))
 
 (defn add-artboard [file data]
   (let [obj (-> (init/make-minimal-shape :frame)
-                (merge data))]
+                (merge data)
+                (check-name file :frame)
+                (d/without-nils))]
     (-> file
         (commit-shape obj)
         (assoc :current-frame-id (:id obj))
+        (assoc :last-id (:id obj))
+        (update :unames conj (:name obj))
         (update :parent-stack conj (:id obj)))))
 
 (defn close-artboard [file]
@@ -102,9 +141,13 @@
         selrect init/empty-selrect
         name (:name data)
         obj (-> (init/make-minimal-group frame-id selrect name)
-                (merge data))]
+                (merge data)
+                (check-name file :group)
+                (d/without-nils))]
     (-> file
         (commit-shape obj)
+        (assoc :last-id (:id obj))
+        (update :unames conj (:name obj))
         (update :parent-stack conj (:id obj)))))
 
 (defn close-group [file]
@@ -115,13 +158,14 @@
         points   (gsh/rect->points selrect)]
 
     (-> file
-        (commit-change
-         {:type :mod-obj
-          :page-id (:current-page-id file)
-          :id group-id
-          :operations
-          [{:type :set :attr :selrect :val selrect}
-           {:type :set :attr :points  :val points}]})
+        (cond-> (not (empty? shapes))
+          (commit-change
+           {:type :mod-obj
+            :page-id (:current-page-id file)
+            :id group-id
+            :operations
+            [{:type :set :attr :selrect :val selrect}
+             {:type :set :attr :points  :val points}]}))
         (update :parent-stack pop))))
 
 (defn create-shape [file type data]
@@ -130,10 +174,14 @@
                 (lookup-shape file frame-id))
         obj (-> (init/make-minimal-shape type)
                 (merge data)
-                (d/without-nils)
-                (cond-> frame
-                  (gsh/translate-from-frame frame)))]
-    (commit-shape file obj)))
+                (check-name file :type)
+                (d/without-nils))
+        obj (cond-> obj
+              frame (gsh/translate-from-frame frame))]
+    (-> file
+        (commit-shape obj)
+        (assoc :last-id (:id obj))
+        (update :unames conj (:name obj)))))
 
 (defn create-rect [file data]
   (create-shape file :rect data))
@@ -150,10 +198,27 @@
 (defn create-image [file data]
   (create-shape file :image data))
 
-(defn close-page [file]
+(declare close-svg-raw)
+
+(defn create-svg-raw [file data]
+  (let [file (as-> file $
+               (create-shape $ :svg-raw data)
+               (update $ :parent-stack conj (:last-id $)))
+
+        create-child
+        (fn [file child]
+          (-> file
+              (create-svg-raw (assoc data :content child))
+              (close-svg-raw)))]
+
+    ;; First :content is the the shape attribute, the other content is the
+    ;; XML children
+    (reduce create-child file (get-in data [:content :content]))))
+
+(defn close-svg-raw [file]
   (-> file
-      (dissoc :current-page-id)
-      (dissoc :parent-stack)))
+      (update :parent-stack pop)))
+
 
 (defn generate-changes
   [file]

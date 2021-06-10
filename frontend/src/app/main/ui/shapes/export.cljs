@@ -10,7 +10,24 @@
   [app.common.geom.matrix :as gmt]
   [app.util.json :as json]
   [app.util.object :as obj]
+  [app.util.svg :as usvg]
+  [cuerdas.core :as str]
   [rumext.alpha :as mf]))
+
+(mf/defc render-xml
+  [{{:keys [tag attrs content] :as node} :xml}]
+
+  (cond
+    (map? node)
+    [:> (d/name tag) (clj->js (usvg/clean-attrs attrs))
+     (for [child content]
+       [:& render-xml {:xml child}])]
+
+    (string? node)
+    node
+
+    :else
+    nil))
 
 (defn add-data
   "Adds as metadata properties that we cannot deduce from the exported SVG"
@@ -22,7 +39,7 @@
                 (obj/set! ns-attr val))))
         frame? (= :frame (:type shape))
         group? (= :group (:type shape))
-        rect?  (= :text (:type shape))
+        rect?  (= :rect (:type shape))
         text?  (= :text (:type shape))
         mask?  (and group? (:masked-group? shape))]
     (-> props
@@ -74,5 +91,33 @@
      (for [{:keys [scale suffix type]} (:exports shape)]
        [:> "penpot:export" #js {:penpot:type   (d/name type)
                                 :penpot:suffix suffix
-                                :penpot:scale  (str scale)}])]))
+                                :penpot:scale  (str scale)}])
+
+     (when (contains? shape :svg-attrs)
+       (let [svg-transform (get shape :svg-transform)
+             svg-attrs     (->> shape :svg-attrs keys (mapv d/name) (str/join ",") )
+             svg-defs      (->> shape :svg-defs keys (mapv d/name) (str/join ","))]
+         [:> "penpot:svg-import" #js {:penpot:svg-attrs          (when-not (empty? svg-attrs) svg-attrs)
+                                      :penpot:svg-defs           (when-not (empty? svg-defs) svg-defs)
+                                      :penpot:svg-transform      (when svg-transform (str svg-transform))
+                                      :penpot:svg-viewbox-x      (get-in shape [:svg-viewbox :x])
+                                      :penpot:svg-viewbox-y      (get-in shape [:svg-viewbox :y])
+                                      :penpot:svg-viewbox-width  (get-in shape [:svg-viewbox :width])
+                                      :penpot:svg-viewbox-height (get-in shape [:svg-viewbox :height])}
+          (for [[def-id def-xml] (:svg-defs shape)]
+            [:> "penpot:svg-def" #js {:def-id def-id}
+             [:& render-xml {:xml def-xml}]])]))
+
+     (when (= (:type shape) :svg-raw)
+       (let [props (-> (obj/new)
+                       (obj/set! "penpot:x" (:x shape))
+                       (obj/set! "penpot:y" (:y shape))
+                       (obj/set! "penpot:width" (:width shape))
+                       (obj/set! "penpot:height" (:height shape))
+                       (obj/set! "penpot:tag" (-> (get-in shape [:content :tag]) d/name))
+                       (obj/merge! (-> (get-in shape [:content :attrs])
+                                       (clj->js))))]
+         [:> "penpot:svg-content" props
+          (for [leaf (->> shape :content :content (filter string?))]
+            [:> "penpot:svg-child" {} leaf])]))]))
 
