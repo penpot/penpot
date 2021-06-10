@@ -332,6 +332,24 @@
       ;; Retrieve and return lagged data
       (retrieve-lagged-changes conn params))))
 
+(def ^:private
+  sql:lagged-changes
+  "select s.id, s.revn, s.file_id,
+          s.session_id, s.changes
+     from file_change as s
+    where s.file_id = ?
+      and s.revn > ?
+    order by s.created_at asc")
+
+(defn- retrieve-lagged-changes
+  [conn params]
+  (->> (db/exec! conn [sql:lagged-changes (:id params) (:revn params)])
+       (into [] (comp (map files/decode-row)
+                      (map (fn [row]
+                             (cond-> row
+                               (= (:revn row) (:revn (:file params)))
+                               (assoc :changes []))))))))
+
 (defn- send-notifications
   [{:keys [msgbus conn] :as cfg} {:keys [file changes session-id] :as params}]
   (let [lchanges (filter library-change? changes)]
@@ -362,18 +380,4 @@
 (defn- retrieve-team-id
   [conn project-id]
   (:team-id (db/get-by-id conn :project project-id {:columns [:team-id]})))
-
-(def ^:private
-  sql:lagged-changes
-  "select s.id, s.revn, s.file_id,
-          s.session_id, s.changes
-     from file_change as s
-    where s.file_id = ?
-      and s.revn > ?
-    order by s.created_at asc")
-
-(defn- retrieve-lagged-changes
-  [conn params]
-  (->> (db/exec! conn [sql:lagged-changes (:id params) (:revn params)])
-       (mapv files/decode-row)))
 
