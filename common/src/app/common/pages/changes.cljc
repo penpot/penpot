@@ -408,20 +408,22 @@
   (let [attr       (:attr op)
         val        (:val op)
         ignore     (:ignore-touched op)
+        ignore-geometry (:ignore-geometry op)
         shape-ref  (:shape-ref shape)
         group      (get component-sync-attrs attr)
         root-name? (and (= group :name-group)
                         (:component-root? shape))]
 
     (cond-> shape
+      ;; Depending on the origin of the attribute change, we need or not to
+      ;; set the "touched" flag for the group the attribute belongs to.
+      ;; In some cases we need to ignore touched only if the attribute is
+      ;; geometric (position, width or transformation).
       (and shape-ref group (not ignore) (not= val (get shape attr))
            (not root-name?)
-           ;; FIXME: it's difficult to tell if the geometry changes affect
-           ;;        an individual shape inside the component, or are for
-           ;;        the whole component (in which case we shouldn't set
-           ;;        touched). For the moment we disable geometry touched
-           ;;        except width and height that seems to work well.
-           (or (not= group :geometry-group) (#{:width :height} attr)))
+           (not (and ignore-geometry
+                     (and (= group :geometry-group)
+                          (not (#{:width :height} attr))))))
       (->
         (update :touched cph/set-touched-group group)
         (dissoc :remote-synced?))
