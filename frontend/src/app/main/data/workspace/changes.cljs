@@ -34,26 +34,26 @@
 (defn- generate-operation
   "Given an object old and new versions and an attribute will append into changes
   the set and undo operations"
-  [changes attr old new]
+  [changes attr old new ignore-geometry?]
   (let [old-val (get old attr)
         new-val (get new attr)]
     (if (= old-val new-val)
       changes
       (-> changes
-          (update :rops conj {:type :set :attr attr :val new-val})
+          (update :rops conj {:type :set :attr attr :val new-val :ignore-geometry ignore-geometry?})
           (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
 
 (defn- update-shape-changes
   "Calculate the changes and undos to be done when a function is applied to a
   single object"
-  [changes page-id objects update-fn attrs id]
+  [changes page-id objects update-fn attrs id ignore-geometry?]
   (let [old-obj (get objects id)
         new-obj (update-fn old-obj)
 
         attrs (or attrs (d/concat #{} (keys old-obj) (keys new-obj)))
 
         {rops :rops uops :uops}
-        (reduce #(generate-operation %1 %2 old-obj new-obj)
+        (reduce #(generate-operation %1 %2 old-obj new-obj ignore-geometry?)
                 {:rops [] :uops []}
                 attrs)
 
@@ -72,8 +72,8 @@
 
 (defn update-shapes
   ([ids f] (update-shapes ids f nil))
-  ([ids f {:keys [reg-objects? save-undo? keys]
-           :or {reg-objects? false save-undo? true}}]
+  ([ids f {:keys [reg-objects? save-undo? keys ignore-tree]
+           :or {reg-objects? false save-undo? true attrs nil}}]
 
    (us/assert ::coll-of-uuid ids)
    (us/assert fn? f)
@@ -90,7 +90,9 @@
 
              ids       (into [] (filter some?) ids)
 
-             changes   (reduce #(update-shape-changes %1 page-id objects f keys %2) changes ids)]
+             changes   (reduce
+                         #(update-shape-changes %1 page-id objects f keys %2 (get ignore-tree %2))
+                         changes ids)]
 
          (when-not (empty? (:redo-changes changes))
            (let [reg-objs {:type :reg-objects
