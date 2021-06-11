@@ -156,7 +156,8 @@
 
     (mapv #(update % :params transform-params) content)))
 
-(defn transform-content [content transform]
+(defn transform-content
+  [content transform]
   (let [set-tr (fn [params px py]
                  (let [tr-point (-> (gpt/point (get params px) (get params py))
                                     (gpt/transform transform))]

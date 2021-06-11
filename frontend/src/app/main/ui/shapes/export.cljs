@@ -8,6 +8,7 @@
  (:require
   [app.common.data :as d]
   [app.common.geom.matrix :as gmt]
+  [app.common.geom.shapes :as gsh]
   [app.util.json :as json]
   [app.util.object :as obj]
   [app.util.svg :as usvg]
@@ -29,43 +30,58 @@
     :else
     nil))
 
+(defn bool->str [val]
+  (when (some? val) (str val)))
+
 (defn add-data
   "Adds as metadata properties that we cannot deduce from the exported SVG"
   [props shape]
-  (let [add!
-        (fn [props attr val]
-          (let [ns-attr (str "penpot:" (-> attr d/name))]
-            (-> props
-                (obj/set! ns-attr val))))
-        frame? (= :frame (:type shape))
-        group? (= :group (:type shape))
-        rect?  (= :rect (:type shape))
-        text?  (= :text (:type shape))
-        mask?  (and group? (:masked-group? shape))]
-    (-> props
-        (add! :name              (-> shape :name))
-        (add! :blocked           (-> shape (:blocked false) str))
-        (add! :hidden            (-> shape (:hidden false) str))
-        (add! :type              (-> shape :type d/name))
+  (letfn [(add!
+            ([props attr]
+             (add! props attr str))
 
-        (add! :stroke-style      (-> shape (:stroke-style :none) d/name))
-        (add! :stroke-alignment  (-> shape (:stroke-alignment :center) d/name))
+            ([props attr trfn]
+             (let [val (get shape attr)
+                   val (if (keyword? val) (d/name val) val)
+                   ns-attr (str "penpot:" (-> attr d/name))]
+               (cond-> props
+                 (some? val)
+                 (obj/set! ns-attr (trfn val))))))]
+    (let [frame? (= :frame (:type shape))
+          group? (= :group (:type shape))
+          rect?  (= :rect (:type shape))
+          text?  (= :text (:type shape))
+          mask?  (and group? (:masked-group? shape))
+          center (gsh/center-shape shape)]
+      (-> props
+          (add! :name)
+          (add! :blocked)
+          (add! :hidden)
+          (add! :type)
+          (add! :stroke-style)
+          (add! :stroke-alignment)
+          (add! :transform)
+          (add! :transform-inverse)
+          (add! :flip-x)
+          (add! :flip-y)
+          (add! :proportion)
+          (add! :proportion-lock)
+          (add! :rotation)
+          (obj/set! "penpot:center-x" (-> center :x str))
+          (obj/set! "penpot:center-y" (-> center :y str))
 
-        (add! :transform         (-> shape (:transform (gmt/matrix)) str))
-        (add! :transform-inverse (-> shape (:transform-inverse (gmt/matrix)) str))
+          (cond-> (and rect? (some? (:r1 shape)))
+            (-> (add! :r1)
+                (add! :r2)
+                (add! :r3)
+                (add! :r4)))
 
-        (cond-> (and rect? (some? (:r1 shape)))
-          (-> (add! :r1 (-> shape (:r1 0) str))
-              (add! :r2 (-> shape (:r2 0) str))
-              (add! :r3 (-> shape (:r3 0) str))
-              (add! :r4 (-> shape (:r4 0) str))))
+          (cond-> text?
+            (-> (add! :grow-type)
+                (add! :content json/encode)))
 
-        (cond-> text?
-          (-> (add! :grow-type (-> shape :grow-type))
-              (add! :content (-> shape :content json/encode))))
-
-        (cond-> mask?
-          (add! :masked-group "true")))))
+          (cond-> mask?
+            (obj/set! "penpot:masked-group" "true"))))))
 
 (mf/defc export-data
   [{:keys [shape]}]

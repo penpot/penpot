@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]
    [app.util.color :as uc]
    [app.util.json :as json]
@@ -49,6 +50,10 @@
   [node]
   (or (close? node)
       (some? (get-data node))))
+
+(defn str->bool
+  [val]
+  (when (some? val) (= val "true")))
 
 (defn get-meta
   ([m att]
@@ -133,15 +138,31 @@
      :height (* (:ry values) 2)}))
 
 (defn parse-path
-  [props svg-data]
-  (let [content (upp/parse-path (:d svg-data))
-        selrect (gsh/content->selrect content)
-        points (gsh/rect->points selrect)]
-
+  [props center svg-data]
+  (let [transform-inverse (:transform-inverse props (gmt/matrix))
+        transform         (:transform props (gmt/matrix))
+        content           (upp/parse-path (:d svg-data))
+        content-tr        (gsh/transform-content
+                           content
+                           (gmt/transform-in center transform-inverse))
+        selrect (gsh/content->selrect content-tr)
+        points (-> (gsh/rect->points selrect)
+                   (gsh/transform-points center transform))]
     (-> props
         (assoc :content content)
         (assoc :selrect selrect)
         (assoc :points points))))
+
+(defn setup-selrect [props]
+  (let [data (select-keys props [:x :y :width :height])
+        transform (:transform props (gmt/matrix))
+        selrect (gsh/rect->selrect data)
+        points (gsh/rect->points data)
+        center (gsh/center-rect data)]
+
+    (assoc props
+           :selrect selrect
+           :points (gsh/transform-points points center transform))))
 
 (def url-regex #"url\(#([^\)]*)\)")
 
@@ -198,23 +219,52 @@
       (contains? (:attrs svg-content) :penpot:height)
       (assoc :height (-> svg-content :attrs :penpot:height d/parse-double)))))
 
+(defn add-common-data
+  [props node]
+
+  (let [name              (get-meta node :name)
+        blocked           (get-meta node :blocked str->bool)
+        hidden            (get-meta node :hidden str->bool)
+        transform         (get-meta node :transform gmt/str->matrix)
+        transform-inverse (get-meta node :transform-inverse gmt/str->matrix)
+        flip-x            (get-meta node :flip-x str->bool)
+        flip-y            (get-meta node :flip-y str->bool)
+        proportion        (get-meta node :proportion d/parse-double)
+        proportion-lock   (get-meta node :proportion-lock str->bool)
+        rotation          (get-meta node :rotation d/parse-double)]
+
+    (-> props
+        (assoc :name name)
+        (assoc :blocked blocked)
+        (assoc :hidden hidden)
+        (assoc :transform transform)
+        (assoc :transform-inverse transform-inverse)
+        (assoc :flip-x flip-x)
+        (assoc :flip-y flip-y)
+        (assoc :proportion proportion)
+        (assoc :proportion-lock proportion-lock)
+        (assoc :rotation rotation))))
+
 (defn add-position
   [props type node svg-data]
-  (cond-> props
-    (has-position? type)
-    (-> (parse-position svg-data)
-        (gsh/setup-selrect))
+  (let [center-x (get-meta node :center-x d/parse-double)
+        center-y (get-meta node :center-y d/parse-double)
+        center (gpt/point center-x center-y)]
+    (cond-> props
+      (has-position? type)
+      (parse-position svg-data)
 
-    (= type :svg-raw)
-    (-> (add-svg-position node)
-        (gsh/setup-selrect))
+      (= type :svg-raw)
+      (add-svg-position node)
 
-    (= type :circle)
-    (-> (parse-circle svg-data)
-        (gsh/setup-selrect))
+      (= type :circle)
+      (parse-circle svg-data)
 
-    (= type :path)
-    (parse-path svg-data)))
+      (= type :path)
+      (parse-path center svg-data)
+
+      (or (has-position? type) (= type :svg-raw) (= type :circle))
+      (setup-selrect))))
 
 (defn add-fill
   [props node svg-data]
@@ -292,10 +342,6 @@
   (-> props
       (assoc :grow-type (get-meta node :grow-type keyword))
       (assoc :content   (get-meta node :content json/decode))))
-
-(defn str->bool
-  [val]
-  (= val "true"))
 
 (defn add-group-data
   [props node]
@@ -462,16 +508,19 @@
   (let [svg-content (get-data node :penpot:svg-content)
         attrs (-> (:attrs svg-content) (without-penpot-prefix))
         tag (-> svg-content :attrs :penpot:tag keyword)
-        content {:attrs   attrs
-                 :tag     tag
-                 :content (cond
-                            (= tag :svg)
-                            (->> node :content last :content last :content fix-style-attr)
 
-                            (= tag :text)
-                            (-> node :content last :content))}]
-    (-> props
-        (assoc :content content))))
+        node-content
+        (cond
+          (= tag :svg)
+          (->> node :content last :content last :content fix-style-attr)
+
+          (= tag :text)
+          (-> node :content last :content))]
+    (assoc
+     props :content
+     {:attrs   attrs
+      :tag     tag
+      :content node-content})))
 
 (defn get-image-name
   [node]
@@ -486,17 +535,9 @@
   [type node]
 
   (when-not (close? node)
-    (let [name              (get-meta node :name)
-          blocked           (get-meta node :blocked str->bool)
-          hidden            (get-meta node :hidden str->bool)
-          transform         (get-meta node :transform gmt/str->matrix)
-          transform-inverse (get-meta node :transform-inverse gmt/str->matrix)
-          svg-data          (get-svg-data type node)]
-
+    (let [svg-data (get-svg-data type node)]
       (-> {}
-          (assoc :name name)
-          (assoc :blocked blocked)
-          (assoc :hidden hidden)
+          (add-common-data node)
           (add-position type node svg-data)
           (add-fill node svg-data)
           (add-stroke node svg-data)
@@ -519,10 +560,4 @@
             (add-image-data node))
 
           (cond-> (= :text type)
-            (add-text-data node))
-
-          (cond-> (some? transform)
-            (assoc :transform transform))
-
-          (cond-> (some? transform-inverse)
-            (assoc :transform-inverse transform-inverse))))))
+            (add-text-data node))))))
