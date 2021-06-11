@@ -42,9 +42,8 @@
             childs     (mf/deref childs-ref)]
 
         [:> shape-container {:shape shape}
-         [:g.group-shape
-          [:& group-shape
-           {:frame frame
-            :shape shape
-            :childs childs}]]]))))
+         [:& group-shape
+          {:frame frame
+           :shape shape
+           :childs childs}]]))))
 

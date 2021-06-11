@@ -35,23 +35,13 @@
 
             def-ctx? (mf/use-ctx muc/def-ctx)]
 
-        (cond
-          (and (svg-raw/graphic-element? tag) (not def-ctx?))
-          [:> shape-container { :shape shape }
-           [:& svg-raw-shape
-            {:frame frame
-             :shape shape
-             :childs childs}]]
-
-          ;; We cannot wrap inside groups the shapes that go inside the defs tag
-          ;; we use the context so we know when we should not render the container
-          (= tag :defs)
-          [:& (mf/provider muc/def-ctx) {:value true}
+        (if (or (= (get-in shape [:content :tag]) :svg)
+                (and (contains? shape :svg-attrs) (map? (:content shape))))
+          [:> shape-container {:shape shape}
            [:& svg-raw-shape {:frame frame
                               :shape shape
                               :childs childs}]]
 
-          :else
           [:& svg-raw-shape {:frame frame
                              :shape shape
                              :childs childs}])))))

@@ -30,7 +30,7 @@
   (let [clip-id (str "inner-stroke-" render-id)
         shape-id (str "stroke-shape-" render-id)]
     [:> "clipPath" #js {:id clip-id}
-     [:use {:href (str "#" shape-id)}]]))
+     [:use {:xlinkHref (str "#" shape-id)}]]))
 
 (mf/defc outer-stroke-mask
   [{:keys [shape render-id]}]
@@ -38,10 +38,10 @@
         shape-id (str "stroke-shape-" render-id)
         stroke-width (:stroke-width shape 0)]
     [:mask {:id stroke-mask-id}
-     [:use {:href (str "#" shape-id)
+     [:use {:xlinkHref (str "#" shape-id)
             :style #js {:fill "none" :stroke "white" :strokeWidth (* stroke-width 2)}}]
 
-     [:use {:href (str "#" shape-id)
+     [:use {:xlinkHref (str "#" shape-id)
             :style #js {:fill "black"}}]]))
 
 (mf/defc stroke-defs
@@ -84,13 +84,13 @@
                        (str/join ";"))]
 
     [:g.outer-stroke-shape
-     [:symbol
+     [:defs
       [:> elem-name (-> (obj/clone base-props)
                         (obj/set! "id" shape-id)
                         (obj/set! "data-style" style-str)
                         (obj/without ["style"]))]]
 
-     [:use {:href (str "#" shape-id)
+     [:use {:xlinkHref (str "#" shape-id)
             :mask (str "url(#" stroke-mask-id ")")
             :style (-> (obj/get base-props "style")
                        (obj/clone)
@@ -98,7 +98,7 @@
                        (obj/without ["fill" "fillOpacity"])
                        (obj/set! "fill" "none"))}]
 
-     [:use {:href (str "#" shape-id)
+     [:use {:xlinkHref (str "#" shape-id)
             :style (-> (obj/get base-props "style")
                        (obj/clone)
                        (obj/without ["stroke" "strokeWidth" "strokeOpacity" "strokeStyle" "strokeDasharray"]))}]]))
@@ -121,14 +121,18 @@
         clip-id (str "inner-stroke-" render-id)
         shape-id (str "stroke-shape-" render-id)
 
+        clip-path (str "url('#" clip-id "')")
         shape-props (-> base-props
                         (add-props {:id shape-id
-                                    :transform nil
-                                    :clipPath (str "url('#" clip-id "')")})
+                                    :transform nil})
                         (add-style {:strokeWidth (* stroke-width 2)}))]
 
     [:g.inner-stroke-shape {:transform transform}
-     [:> elem-name shape-props]]))
+     [:defs
+      [:> elem-name shape-props]]
+
+     [:use {:xlinkHref (str "#" shape-id)
+            :clipPath clip-path}]]))
 
 
 ; The SVG standard does not implement yet the 'stroke-alignment'
