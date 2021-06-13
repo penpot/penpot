@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-26 09:23+0000\n"
+"PO-Revision-Date: 2021-06-15 18:34+0000\n"
 "Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
@@ -1025,3 +1025,232 @@ msgstr "Excluir membro da equipe"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.message"
 msgstr "Tem certeza de que deseja excluir este membro da equipe?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.solid"
+msgstr "Sólido"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.outer"
+msgstr "Fora"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.mixed"
+msgstr "Misturado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.inner"
+msgstr "Dentro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dotted"
+msgstr "Pontilhada"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dashed"
+msgstr "Tracejada"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.center"
+msgstr "Centro"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs
+msgid "workspace.options.size-presets"
+msgstr "Predefinições de tamanho"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.size"
+msgstr "Tamanho"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title"
+msgstr "Sombra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsety"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsetx"
+msgstr "X"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.inner-shadow"
+msgstr "Sombra interior"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.drop-shadow"
+msgstr "Sombra projetada"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.blur"
+msgstr "Borrar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.rotation"
+msgstr "Rotação"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.single-corners"
+msgstr "Cantos individuais"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.all-corners"
+msgstr "Todos cantos"
+
+msgid "workspace.options.radius"
+msgstr "Raio"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.prototype"
+msgstr "Protótipo"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.position"
+msgstr "Posição"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.none"
+msgstr "Nenhum"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.navigate-to"
+msgstr "Navegar para"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title.multiple"
+msgstr "Camadas selecionadas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color"
+msgstr "Cor"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.title"
+msgstr "Grades & Layouts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.square"
+msgstr "Quadrado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.row"
+msgstr "Linhas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.width"
+msgstr "Largura"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.use-default"
+msgstr "Usar padrão"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.top"
+msgstr "Superior"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.stretch"
+msgstr "Esticar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.right"
+msgstr "Direita"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.left"
+msgstr "Esquerda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.center"
+msgstr "Centro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.bottom"
+msgstr "Inferior"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type"
+msgstr "Tipo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.size"
+msgstr "Tamanho"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.set-default"
+msgstr "Definir como padrão"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.rows"
+msgstr "Linhas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.margin"
+msgstr "Margem"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.height"
+msgstr "Altura"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.columns"
+msgstr "Colunas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.column"
+msgstr "Colunas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.auto"
+msgstr "Automático"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.fill"
+msgstr "Preencher"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.exporting-object"
+msgstr "Exportando…"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "workspace.options.export.suffix"
+msgstr "Sufixo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-object"
+msgstr "Exportar forma"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export"
+msgstr "Exportar"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.design"
+msgstr "Design"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
+msgid "workspace.options.component"
+msgstr "Componente"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title"
+msgstr ""
+
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Camada"
+
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Fundo"
+
+msgid "workspace.library.store"
+msgstr "Bibliotecas da loja"
+
+msgid "workspace.library.own"
+msgstr "Minhas bibliotecas"
+
+msgid "workspace.library.libraries"
+msgstr "Bibliotecas"
+
+msgid "workspace.library.all"
+msgstr "Todas bibliotecas"
