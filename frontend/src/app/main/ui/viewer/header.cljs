@@ -276,11 +276,13 @@
         :on-zoom-to-100 (st/emitf dv/reset-zoom)
         :on-zoom-to-200 (st/emitf dv/zoom-to-200)}]
 
-      [:span.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
+      [:span.btn-icon-basic.btn-small.tooltip.tooltip-bottom-left
        {:alt (t locale "viewer.header.fullscreen")
         :on-click #(if @fullscreen (fullscreen false) (fullscreen true))}
        (if @fullscreen
          i/full-screen-off
          i/full-screen)]
-      ]]))
+
+      [:span.btn-icon-dark.btn-small
+         i/actions]]]))
 
