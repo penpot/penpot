@@ -8,10 +8,10 @@
   "Storage backends abstraction layer."
   (:require
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [buddy.core.codecs :as bc]
-   [clojure.java.io :as io])
+   [clojure.java.io :as io]
+   [cuerdas.core :as str])
   (:import
    java.nio.ByteBuffer
    java.util.UUID
@@ -40,6 +40,14 @@
 (defmulti get-object-data (fn [cfg _] (:type cfg)))
 
 (defmethod get-object-data :default
+  [cfg _]
+  (ex/raise :type :internal
+            :code :invalid-storage-backend
+            :context cfg))
+
+(defmulti get-object-bytes (fn [cfg _] (:type cfg)))
+
+(defmethod get-object-bytes :default
   [cfg _]
   (ex/raise :type :internal
             :code :invalid-storage-backend
@@ -109,7 +117,10 @@
       (make-output-stream [_ opts]
         (throw (UnsupportedOperationException. "not implemented")))
       clojure.lang.Counted
-      (count [_] size))))
+      (count [_] size)
+
+    java.lang.AutoCloseable
+    (close [_]))))
 
 (defn string->content
   [^String v]
@@ -129,7 +140,10 @@
 
       clojure.lang.Counted
       (count [_]
-        (alength data)))))
+        (alength data))
+
+    java.lang.AutoCloseable
+    (close [_]))))
 
 (defn- input-stream->content
   [^InputStream is size]
@@ -137,7 +151,7 @@
     IContentObject
     io/IOFactory
     (make-reader [_ opts]
-	  (io/make-reader is opts))
+      (io/make-reader is opts))
     (make-writer [_ opts]
       (throw (UnsupportedOperationException. "not implemented")))
     (make-input-stream [_ opts]
@@ -146,7 +160,11 @@
       (throw (UnsupportedOperationException. "not implemented")))
 
     clojure.lang.Counted
-    (count [_] size)))
+    (count [_] size)
+
+    java.lang.AutoCloseable
+    (close [_]
+      (.close is))))
 
 (defn content
   ([data] (content data nil))
@@ -179,10 +197,20 @@
 
 (defn slurp-bytes
   [content]
-  (us/assert content? content)
   (with-open [input  (io/input-stream content)
               output (java.io.ByteArrayOutputStream. (count content))]
     (io/copy input output)
     (.toByteArray output)))
 
+(defn resolve-backend
+  [{:keys [conn pool] :as storage} backend-id]
+  (when backend-id
+    (let [backend (get-in storage [:backends backend-id])]
+      (when-not backend
+        (ex/raise :type :internal
+                  :code :backend-not-configured
+                  :hint (str/fmt "backend '%s' not configured" backend-id)))
+      (assoc backend
+             :conn (or conn pool)
+             :id backend-id))))
 

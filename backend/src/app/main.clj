@@ -166,7 +166,7 @@
     :tasks      (ig/ref :app.worker/registry)
     :pool       (ig/ref :app.db/pool)
     :schedule
-    [{:cron #app/cron "0 0 0 * * ? *" ;; daily
+    [{:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :file-media-gc}
 
      {:cron #app/cron "0 0 * * * ?"  ;; hourly
@@ -189,6 +189,10 @@
 
      {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :tasks-gc}
+
+     (when (cf/get :fdata-storage-backed)
+       {:cron #app/cron "0 0 * * * ?"  ;; hourly
+        :task :file-offload})
 
      (when (cf/get :audit-archive-enabled)
        {:cron #app/cron "0 0 * * * ?" ;; every 1h
@@ -217,6 +221,7 @@
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
      :session-gc         (ig/ref :app.http.session/gc-task)
+     :file-offload       (ig/ref :app.tasks.file-offload/handler)
      :audit-archive      (ig/ref :app.loggers.audit/archive-task)
      :audit-archive-gc   (ig/ref :app.loggers.audit/archive-gc-task)}}
 
@@ -255,6 +260,12 @@
    :app.tasks.file-xlog-gc/handler
    {:pool    (ig/ref :app.db/pool)
     :max-age (dt/duration {:hours 72})}
+
+   :app.tasks.file-offload/handler
+   {:pool    (ig/ref :app.db/pool)
+    :max-age (dt/duration {:seconds 5})
+    :storage (ig/ref :app.storage/storage)
+    :backend (cf/get :fdata-storage-backed :fdata-s3)}
 
    :app.tasks.telemetry/handler
    {:pool        (ig/ref :app.db/pool)
@@ -306,23 +317,32 @@
    :app.storage/storage
    {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref :app.worker/executor)
-    :backend  (cf/get :storage-backend :fs)
-    :backends {:s3  (ig/ref [::main :app.storage.s3/backend])
-               :db  (ig/ref [::main :app.storage.db/backend])
-               :fs  (ig/ref [::main :app.storage.fs/backend])
-               :tmp (ig/ref [::tmp  :app.storage.fs/backend])}}
+    :backend  (cf/get :assets-storage-backend :assets-fs)
+    :backends {:assets-s3 (ig/ref [::assets :app.storage.s3/backend])
+               :assets-db (ig/ref [::assets :app.storage.db/backend])
+               :assets-fs (ig/ref [::assets :app.storage.fs/backend])
+               :s3        (ig/ref [::assets :app.storage.s3/backend])
+               :db        (ig/ref [::assets :app.storage.db/backend])
+               :fs        (ig/ref [::assets :app.storage.fs/backend])
+               :tmp       (ig/ref [::tmp  :app.storage.fs/backend])
+               :fdata-s3  (ig/ref [::fdata :app.storage.s3/backend])}}
 
-   [::main :app.storage.s3/backend]
-   {:region (cf/get :storage-s3-region)
-    :bucket (cf/get :storage-s3-bucket)}
+   [::fdata :app.storage.s3/backend]
+   {:region (cf/get :storage-fdata-s3-region)
+    :bucket (cf/get :storage-fdata-s3-bucket)
+    :prefix (cf/get :storage-fdata-s3-prefix)}
 
-   [::main :app.storage.fs/backend]
-   {:directory (cf/get :storage-fs-directory)}
+   [::assets :app.storage.s3/backend]
+   {:region (cf/get :storage-assets-s3-region)
+    :bucket (cf/get :storage-assets-s3-bucket)}
+
+   [::assets :app.storage.fs/backend]
+   {:directory (cf/get :storage-assets-fs-directory)}
 
    [::tmp :app.storage.fs/backend]
    {:directory "/tmp/penpot"}
 
-   [::main :app.storage.db/backend]
+   [::assets :app.storage.db/backend]
    {:pool (ig/ref :app.db/pool)}})
 
 (def system nil)

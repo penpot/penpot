@@ -49,7 +49,7 @@
       {:status 200
        :headers {"content-type" (:content-type mdata)
                  "cache-control" (str "max-age=" (inst-ms cache-max-age))}
-       :body (sto/get-object-data storage obj)}
+       :body (sto/get-object-bytes storage obj)}
 
       :s3
       (let [url (sto/get-object-url storage obj {:max-age signature-max-age})]

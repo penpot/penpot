@@ -190,6 +190,9 @@
 
    {:name "0060-mod-file-change-table"
     :fn (mg/resource "app/migrations/sql/0060-mod-file-change-table.sql")}
+
+   {:name "0061-mod-file-table"
+    :fn (mg/resource "app/migrations/sql/0061-mod-file-table.sql")}
    ])
 
 

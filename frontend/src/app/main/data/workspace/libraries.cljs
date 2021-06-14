@@ -747,6 +747,7 @@
                            (st/emit! dm/hide))
             do-dismiss #(do (st/emit! ignore-sync)
                             (st/emit! dm/hide))]
+
         (rx/of (dm/info-dialog
                  (tr "workspace.updates.there-are-updates")
                  :inline-actions

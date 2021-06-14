@@ -79,6 +79,10 @@
                 :path (str full)))
     (io/input-stream full)))
 
+(defmethod impl/get-object-bytes :fs
+  [backend object]
+  (fs/slurp-bytes (impl/get-object-data backend object)))
+
 (defmethod impl/get-object-url :fs
   [{:keys [uri] :as backend} {:keys [id] :as object} _]
   (update uri :path

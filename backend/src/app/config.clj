@@ -58,11 +58,8 @@
    :srepl-host "127.0.0.1"
    :srepl-port 6062
 
-   :storage-backend :fs
-
-   :storage-fs-directory "assets"
-   :storage-s3-region :eu-central-1
-   :storage-s3-bucket "penpot-devenv-assets-pre"
+   :assets-storage-backend :fs
+   :storage-assets-fs-directory "assets"
 
    :feedback-destination "info@example.com"
    :feedback-enabled false
@@ -175,10 +172,14 @@
 (s/def ::smtp-username (s/nilable ::us/string))
 (s/def ::srepl-host ::us/string)
 (s/def ::srepl-port ::us/integer)
-(s/def ::storage-backend ::us/keyword)
-(s/def ::storage-fs-directory ::us/string)
-(s/def ::storage-s3-bucket ::us/string)
-(s/def ::storage-s3-region ::us/keyword)
+(s/def ::assets-storage-backend ::us/keyword)
+(s/def ::fdata-storage-backend ::us/keyword)
+(s/def ::storage-assets-fs-directory ::us/string)
+(s/def ::storage-assets-s3-bucket ::us/string)
+(s/def ::storage-assets-s3-region ::us/keyword)
+(s/def ::storage-fdata-s3-bucket ::us/string)
+(s/def ::storage-fdata-s3-region ::us/keyword)
+(s/def ::storage-fdata-s3-prefix ::us/string)
 (s/def ::telemetry-enabled ::us/boolean)
 (s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-with-taiga ::us/boolean)
@@ -257,12 +258,20 @@
                    ::smtp-ssl
                    ::smtp-tls
                    ::smtp-username
+
                    ::srepl-host
                    ::srepl-port
-                   ::storage-backend
-                   ::storage-fs-directory
-                   ::storage-s3-bucket
-                   ::storage-s3-region
+
+                   ::assets-storage-backend
+                   ::storage-assets-fs-directory
+                   ::storage-assets-s3-bucket
+                   ::storage-assets-s3-region
+
+                   ::fdata-storage-backend
+                   ::storage-fdata-s3-bucket
+                   ::storage-fdata-s3-region
+                   ::storage-fdata-s3-prefix
+
                    ::telemetry-enabled
                    ::telemetry-uri
                    ::telemetry-referer

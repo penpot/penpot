@@ -42,12 +42,13 @@
 (sv/defmethod ::viewer-bundle {:auth false}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id page-id token] :as params}]
   (db/with-atomic [conn pool]
-    (let [file    (files/retrieve-file conn file-id)
+    (let [cfg     (assoc cfg :conn conn)
+          file    (files/retrieve-file cfg file-id)
           project (retrieve-project conn (:project-id file))
           page    (get-in file [:data :pages-index page-id])
           file    (merge (dissoc file :data)
                          (select-keys (:data file) [:colors :media :typographies]))
-          libs    (files/retrieve-file-libraries conn false file-id)
+          libs    (files/retrieve-file-libraries cfg false file-id)
           users   (teams/retrieve-users conn (:team-id project))
 
           fonts   (db/query conn :team-font-variant

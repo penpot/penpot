@@ -22,6 +22,8 @@
 
    [clojure.spec.alpha :as s]))
 
+(declare create-file)
+
 ;; --- Helpers & Specs
 
 (s/def ::id ::us/uuid)
@@ -31,8 +33,6 @@
 (s/def ::url ::us/url)
 
 ;; --- Mutation: Create File
-
-(declare create-file)
 
 (s/def ::is-shared ::us/boolean)
 (s/def ::create-file
@@ -67,10 +67,11 @@
                           :is-shared is-shared
                           :data (blob/encode data)
                           :deleted-at deleted-at})]
+
     (->> (assoc params :file-id id :role :owner)
          (create-file-role conn))
-    (assoc file :data data)))
 
+    (assoc file :data data)))
 
 ;; --- Mutation: Rename File
 
@@ -202,7 +203,6 @@
               {:file-id file-id
                :library-file-id library-id}))
 
-
 ;; --- Mutation: Ignore updates in linked files
 
 (declare ignore-sync)
@@ -303,7 +303,8 @@
                   (mapcat :changes changes-with-metadata)
                   changes)
 
-        file    (-> file
+        ts      (dt/now)
+        file    (-> (files/retrieve-data cfg file)
                     (update :revn inc)
                     (update :data (fn [data]
                                     (-> data
@@ -317,6 +318,7 @@
                 {:id (uuid/next)
                  :session-id session-id
                  :profile-id profile-id
+                 :created-at ts
                  :file-id (:id file)
                  :revn (:revn file)
                  :data (when (take-snapshot? file)
@@ -327,11 +329,16 @@
     (db/update! conn :file
                 {:revn (:revn file)
                  :data (:data file)
+                 :data-backend nil
+                 :modified-at ts
                  :has-media-trimmed false}
                 {:id (:id file)})
 
-    (let [params (-> params (assoc :file file
-                                   :changes changes))]
+    (db/update! conn :project
+                {:modified-at ts}
+                {:id (:project-id file)})
+
+    (let [params (assoc params :file file :changes changes)]
       ;; Send asynchronous notifications
       (send-notifications cfg params)
 
