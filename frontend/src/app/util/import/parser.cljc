@@ -267,7 +267,10 @@
         flip-y            (get-meta node :flip-y str->bool)
         proportion        (get-meta node :proportion d/parse-double)
         proportion-lock   (get-meta node :proportion-lock str->bool)
-        rotation          (get-meta node :rotation d/parse-double)]
+        rotation          (get-meta node :rotation d/parse-double)
+        constraints-h     (get-meta node :constraints-h keyword)
+        constraints-v     (get-meta node :constraints-v keyword)
+        fixed-scroll      (get-meta node :fixed-scroll str->bool)]
 
     (-> props
         (assoc :name name)
@@ -279,7 +282,16 @@
         (assoc :flip-y flip-y)
         (assoc :proportion proportion)
         (assoc :proportion-lock proportion-lock)
-        (assoc :rotation rotation))))
+        (assoc :rotation rotation)
+
+        (cond-> (some? constraints-h)
+          (assoc :constraints-h constraints-h))
+
+        (cond-> (some? constraints-v)
+          (assoc :constraints-v constraints-v))
+
+        (cond-> (some? fixed-scroll)
+          (assoc :fixed-scroll fixed-scroll)))))
 
 (defn add-position
   [props type node svg-data]

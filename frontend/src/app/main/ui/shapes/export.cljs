@@ -70,6 +70,11 @@
           (obj/set! "penpot:center-x" (-> center :x str))
           (obj/set! "penpot:center-y" (-> center :y str))
 
+          ;; Constraints
+          (add! :constraints-h)
+          (add! :constraints-v)
+          (add! :fixed-scroll)
+
           (cond-> (and rect? (some? (:r1 shape)))
             (-> (add! :r1)
                 (add! :r2)
@@ -105,14 +110,14 @@
 
 (mf/defc export-page
   [{:keys [options]}]
-  [:> "penpot:page" #js {}
-   (let [saved-grids (get options :saved-grids)]
-     (when-not (empty? saved-grids)
-       (let [parse-grid
-             (fn [[type params]]
-               {:type type :params params})
-             grids (->> saved-grids (mapv parse-grid))]
-         [:& export-grid-data {:grids grids}])))])
+  (let [saved-grids (get options :saved-grids)]
+    (when-not (empty? saved-grids)
+      (let [parse-grid
+            (fn [[type params]]
+              {:type type :params params})
+            grids (->> saved-grids (mapv parse-grid))]
+        [:> "penpot:page" #js {}
+         [:& export-grid-data {:grids grids}]]))))
 
 (mf/defc export-data
   [{:keys [shape]}]
