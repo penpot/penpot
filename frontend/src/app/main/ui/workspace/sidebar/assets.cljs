@@ -743,7 +743,7 @@
           i/plus
           [:& file-uploader {:accept cm/str-image-types
                              :multi true
-                             :input-ref input-ref
+                             :ref input-ref
                              :on-selected on-file-selected}]]])
 
        [:& asset-section-block {:role :content}

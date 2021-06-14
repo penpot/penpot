@@ -144,7 +144,7 @@
        [:& file-uploader {:input-id "font-upload"
                           :accept cm/str-font-types
                           :multi true
-                          :input-ref input-ref
+                          :ref input-ref
                           :on-selected on-selected}]]]
 
      [:*

@@ -52,7 +52,7 @@
          [:& file-uploader {:input-id "image-upload"
                             :accept cm/str-image-types
                             :multi true
-                            :input-ref ref
+                            :ref ref
                             :on-selected on-files-selected}]]]))
 
 (mf/defc left-toolbar

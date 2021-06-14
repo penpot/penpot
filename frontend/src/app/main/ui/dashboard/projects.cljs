@@ -21,8 +21,7 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [okulary.core :as l]
-   [rumext.alpha :as mf]
-   [app.main.ui.dashboard.import :refer [import-button]]))
+   [rumext.alpha :as mf]))
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
@@ -98,13 +97,7 @@
          (fn []
            (let [mdata  {:on-success on-file-created}
                  params {:project-id (:id project)}]
-             (st/emit! (dd/create-file (with-meta params mdata))))))
-
-        on-finish-import
-        (mf/use-callback
-         (fn []
-           (st/emit! (dd/fetch-recent-files)
-                     (dd/clear-selected-files))))]
+             (st/emit! (dd/create-file (with-meta params mdata))))))]
 
     [:div.dashboard-project-row {:class (when first? "first")}
      [:div.project
@@ -117,22 +110,18 @@
            (tr "labels.drafts")
            (:name project))])
 
-      (when (:menu-open @local)
-        [:& project-menu {:project project
-                          :show? (:menu-open @local)
-                          :left (:x (:menu-pos @local))
-                          :top (:y (:menu-pos @local))
-                          :on-edit on-edit-open
-                          :on-menu-close on-menu-close}])
+      [:& project-menu {:project project
+                        :show? (:menu-open @local)
+                        :left (:x (:menu-pos @local))
+                        :top (:y (:menu-pos @local))
+                        :on-edit on-edit-open
+                        :on-menu-close on-menu-close}]
 
       [:span.info (str file-count " files")]
       (when (> file-count 0)
         (let [time (-> (:modified-at project)
                        (dt/timeago {:locale locale}))]
           [:span.recent-files-row-title-info (str ", " time)]))
-
-      #_[:& import-button {:project-id (:id project)
-                         :on-finish-import on-finish-import}]
 
       (when-not (:is-default project)
         [:span.pin-icon.tooltip.tooltip-bottom

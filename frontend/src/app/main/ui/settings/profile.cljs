@@ -96,7 +96,7 @@
       [:img {:src photo}]
       [:& file-uploader {:accept "image/jpeg,image/png"
                          :multi false
-                         :input-ref file-input
+                         :ref file-input
                          :on-selected on-file-selected}]]]))
 
 ;; --- Profile Page
