@@ -83,6 +83,37 @@
           (cond-> mask?
             (obj/set! "penpot:masked-group" "true"))))))
 
+(defn prefix-keys [m]
+  (letfn [(prefix-entry [[k v]]
+            [(str "penpot:" (d/name k)) v])]
+    (into {} (map prefix-entry) m)))
+
+(mf/defc export-grid-data
+  [{:keys [grids]}]
+  [:> "penpot:grids" #js {}
+   (for [{:keys [type display params]} grids]
+     (let [props (->> (d/without-keys params [:color])
+                      (prefix-keys)
+                      (clj->js))]
+       [:> "penpot:grid"
+        (-> props
+            (obj/set! "penpot:color" (get-in params [:color :color]))
+            (obj/set! "penpot:opacity" (get-in params [:color :opacity]))
+            (obj/set! "penpot:type" (d/name type))
+            (cond-> (some? display)
+              (obj/set! "penpot:display" (str display))))]))])
+
+(mf/defc export-page
+  [{:keys [options]}]
+  [:> "penpot:page" #js {}
+   (let [saved-grids (get options :saved-grids)]
+     (when-not (empty? saved-grids)
+       (let [parse-grid
+             (fn [[type params]]
+               {:type type :params params})
+             grids (->> saved-grids (mapv parse-grid))]
+         [:& export-grid-data {:grids grids}])))])
+
 (mf/defc export-data
   [{:keys [shape]}]
   (let [props (-> (obj/new)
@@ -135,5 +166,10 @@
                                        (clj->js))))]
          [:> "penpot:svg-content" props
           (for [leaf (->> shape :content :content (filter string?))]
-            [:> "penpot:svg-child" {} leaf])]))]))
+            [:> "penpot:svg-child" {} leaf])]))
+
+
+     (when (and (= (:type shape) :frame)
+                (not (empty? (:grids shape))))
+       [:& export-grid-data {:grids (:grids shape)}])]))
 

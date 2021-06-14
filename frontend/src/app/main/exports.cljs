@@ -16,6 +16,7 @@
    [app.common.uuid :as uuid]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.embed :as embed]
+   [app.main.ui.shapes.export :as use]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
@@ -158,6 +159,9 @@
             :style {:width "100%"
                     :height "100%"
                     :background background-color}}
+
+      [:& use/export-page {:options (:options data)}]
+
       (for [item shapes]
         (let [frame? (= (:type item) :frame)]
           (cond

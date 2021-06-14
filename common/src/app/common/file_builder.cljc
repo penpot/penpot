@@ -87,15 +87,15 @@
       :changes []})))
 
 (defn add-page
-  [file name]
-  (let [page-id (uuid/next)]
+  [file data]
+  (let [page-id (uuid/next)
+        page (-> init/empty-page-data
+                 (assoc :id page-id)
+                 (d/deep-merge data))]
     (-> file
         (commit-change
          {:type :add-page
-          :id page-id
-          :name name
-          :page (-> init/empty-page-data
-                    (assoc :name name))})
+          :page page})
 
         ;; Current page being edited
         (assoc :current-page-id page-id)

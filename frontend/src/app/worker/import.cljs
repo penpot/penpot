@@ -137,11 +137,13 @@
   [file [page-name content]]
   (if (cip/valid? content)
     (let [nodes (->> content cip/node-seq)
-          file-id (:id file)]
+          file-id (:id file)
+          page-data (-> (cip/parse-page-data content)
+                        (assoc :name page-name))]
       (->> (rx/from nodes)
            (rx/filter cip/shape?)
            (rx/mapcat (partial resolve-images file-id))
-           (rx/reduce add-shape-file (fb/add-page file page-name))
+           (rx/reduce add-shape-file (fb/add-page file page-data))
            (rx/map fb/close-page)))
     (rx/empty)))
 

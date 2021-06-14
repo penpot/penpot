@@ -32,7 +32,8 @@
 
 (defn get-data
   ([node]
-   (->> node :content (d/seek #(= :penpot:shape (:tag %)))))
+   (->> node :content (d/seek #(or (= :penpot:shape (:tag %))
+                                   (= :penpot:page (:tag %))))))
   ([node tag]
    (->> (get-data node)
         :content
@@ -97,6 +98,41 @@
        (assoc m k v)))
    m
    attrs))
+
+(defn without-penpot-prefix
+  [m]
+  (let [no-penpot-prefix?
+        (fn [[k v]]
+          (not (str/starts-with? (d/name k) "penpot:")))]
+    (into {} (filter no-penpot-prefix?) m)))
+
+(defn remove-penpot-prefix
+  [m]
+  (into {}
+        (map (fn [[k v]]
+               (if (str/starts-with? (d/name k) "penpot:")
+                 [(-> k d/name (str/replace "penpot:" "") keyword) v]
+                 [k v])))
+        m))
+
+(defn camelize [[k v]]
+  [(-> k d/name str/camel keyword) v])
+
+(defn camelize-keys
+  [m]
+  (assert (map? m) (str m))
+
+  (into {} (map camelize) m))
+
+(defn fix-style-attr
+  [m]
+  (let [fix-style
+        (fn [[k v]]
+          (if (= k :style)
+            [k (-> v parse-style camelize-keys)]
+            [k v]))]
+
+    (d/deep-mapm (comp camelize fix-style) m)))
 
 (def search-data-node? #{:rect :image :path :text :circle})
 
@@ -372,6 +408,26 @@
    :suffix (get-meta node :suffix)
    :scale  (get-meta node :scale d/parse-double)})
 
+
+(defn parse-grid-node [node]
+  (let [attrs (-> node :attrs remove-penpot-prefix)
+        color {:color (:color attrs)
+               :opacity (-> attrs :opacity d/parse-double)}
+
+        params (-> (d/without-keys attrs [:color :opacity :display :type])
+                   (d/update-when :size d/parse-double)
+                   (d/update-when :item-length d/parse-double)
+                   (d/update-when :gutter d/parse-double)
+                   (d/update-when :margin d/parse-double)
+                   (assoc :color color))]
+    {:type    (-> attrs :type keyword)
+     :display (-> attrs :display str->bool)
+     :params  params}))
+
+(defn parse-grids [node]
+  (let [grid-node (get-data node :penpot:grids)]
+    (->> grid-node :content (mapv parse-grid-node))))
+
 (defn extract-from-data
   ([node tag]
    (extract-from-data node tag identity))
@@ -477,32 +533,6 @@
 
       props)))
 
-(defn without-penpot-prefix
-  [m]
-  (let [no-penpot-prefix?
-        (fn [[k v]]
-          (not (str/starts-with? (d/name k) "penpot:")))]
-    (into {} (filter no-penpot-prefix?) m)))
-
-(defn camelize [[k v]]
-  [(-> k d/name str/camel keyword) v])
-
-(defn camelize-keys
-  [m]
-  (assert (map? m) (str m))
-
-  (into {} (map camelize) m))
-
-(defn fix-style-attr
-  [m]
-  (let [fix-style
-        (fn [[k v]]
-          (if (= k :style)
-            [k (-> v parse-style camelize-keys)]
-            [k v]))]
-
-    (d/deep-mapm (comp camelize fix-style) m)))
-
 (defn add-svg-content
   [props node]
   (let [svg-content (get-data node :penpot:svg-content)
@@ -521,6 +551,12 @@
      {:attrs   attrs
       :tag     tag
       :content node-content})))
+
+(defn add-frame-data [props node]
+  (let [grids (parse-grids node)]
+    (cond-> props
+      (not (empty? grids))
+      (assoc :grids grids))))
 
 (defn get-image-name
   [node]
@@ -550,6 +586,9 @@
           (cond-> (= :svg-raw type)
             (add-svg-content node))
 
+          (cond-> (= :frame type)
+            (add-frame-data node))
+
           (cond-> (= :group type)
             (add-group-data node))
 
@@ -561,3 +600,17 @@
 
           (cond-> (= :text type)
             (add-text-data node))))))
+
+(defn parse-page-data
+  [node]
+  (let [style (parse-style (get-in node [:attrs :style]))
+        background (:background style)
+        grids  (->> (parse-grids node)
+                    (group-by :type)
+                    (d/mapm (fn [k v] (-> v first :params))))]
+    (cond-> {}
+      (some? background)
+      (assoc-in [:options :background] background)
+
+      (not (empty? grids))
+      (assoc-in [:options :saved-grids] grids))))
