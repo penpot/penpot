@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-06-10 15:33+0000\n"
+"PO-Revision-Date: 2021-06-15 18:34+0000\n"
 "Last-Translator: Amine Gdoura <amine2gdoura@gmail.com>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
 "ar/>\n"
@@ -495,3 +495,185 @@ msgstr "فتح ملف في علامة تبويب جديدة"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.num-of-members"
 msgstr "٪s الأعضاء"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "عرض"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "صلب"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "لا أحد"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "مختلط"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "منقط"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "خارج"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.inner"
+msgstr "داخل"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "مركز"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "ظل"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "عرض"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "أعلى"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "دوران"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "نصف قطر"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "يسار"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "ارتفاع"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout"
+msgstr "تخطيط"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "عرض"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "ارتفاع"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "تحميل صورة المصدر"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur.value"
+msgstr "قيمة"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "generic.error"
+msgstr "حدث خطأ"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "البريد الإلكتروني"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subtitle"
+msgstr ""
+"يرجى وصف سبب بريدك الإلكتروني ، وتحديد ما إذا كانت مشكلة أم فكرة أم شك. سيرد "
+"أحد أعضاء فريقنا في أسرع وقت ممكن."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "موضوع"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-title"
+msgstr "مناقشات الفريق"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle2"
+msgstr ""
+"يمكنك طرح الأسئلة والإجابة عليها، إجراء محادثات مفتوحة، ومتابعة القرارات "
+"التي تؤثر على المشروع."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle1"
+msgstr "انضم إلى منتدى التواصل التعاوني لفريق Penpot."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-go-to"
+msgstr "اذهب إلى المناقشات"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "وصف"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-subtitle"
+msgstr "ترغب في الكلام؟ تحدث معنا في Gitter"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-start"
+msgstr "انضم إلى الدردشة"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.wrong-old-password"
+msgstr "كلمة المرور القديمة غير صحيحة"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-too-short"
+msgstr "يجب ألا تقل كلمة المرور عن 8 أحرف"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-invalid-confirmation"
+msgstr "يجب أن تتطابق كلمة مرور التأكيد"
+
+msgid "errors.network"
+msgstr "تعذر الاتصال بخادم الواجهة الخلفية."
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-not-allowed"
+msgstr "يبدو أن هذه ليست صورة صالحة."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.media-too-large"
+msgstr "الصورة كبيرة جدا بحيث لا يمكن إدراجها (يجب أن تكون أقل من 5mb)."
+
+msgid "errors.media-format-unsupported"
+msgstr "تنسيق الصورة غير مدعوم (يجب أن يكون svg أو jpg أو png)."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "تم تعطيل مصادقة LDAP."
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "لون غير صالح"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.google-auth-not-enabled"
+msgstr "المصادقة مع جوجل تعطلت في الخلفية"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.generic"
+msgstr "حدث خطأ ما."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-invalid-confirmation"
+msgstr "يجب أن يتطابق البريد الإلكتروني للتأكيد"
