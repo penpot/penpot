@@ -30,14 +30,28 @@
   (and (vector? node)
        (= ::close (first node))))
 
+(defn find-node
+  [node tag]
+  (when (some? node)
+    (->> node :content (d/seek #(= (:tag %) tag)))))
+
+(defn find-node-by-id
+  [id coll]
+  (->> coll (d/seek #(= id (-> % :attrs :id)))))
+
+(defn find-all-nodes
+  [node tag]
+  (when (some? node)
+    (->> node :content (filterv #(= (:tag %) :defs)))))
+
 (defn get-data
   ([node]
-   (->> node :content (d/seek #(or (= :penpot:shape (:tag %))
-                                   (= :penpot:page (:tag %))))))
-  ([node tag]
-   (->> (get-data node)
-        :content
-        (d/seek #(= tag (:tag %))))))
+   (or (find-node node :penpot:shape)
+       (find-node node :penpot:page)))
+
+   ([node tag]
+    (-> (get-data node)
+        (find-node tag))))
 
 (defn get-type
   [node]
@@ -184,6 +198,7 @@
         selrect (gsh/content->selrect content-tr)
         points (-> (gsh/rect->points selrect)
                    (gsh/transform-points center transform))]
+
     (-> props
         (assoc :content content)
         (assoc :selrect selrect)
@@ -202,9 +217,6 @@
 
 (def url-regex #"url\(#([^\)]*)\)")
 
-(defn seek-node
-  [id coll]
-  (->> coll (d/seek #(= id (-> % :attrs :id)))))
 
 (defn parse-stops
   [gradient-node]
@@ -219,7 +231,7 @@
 (defn parse-gradient
   [node ref-url]
   (let [[_ url] (re-find url-regex ref-url)
-        gradient-node (->> node (node-seq) (seek-node url))
+        gradient-node (->> node (node-seq) (find-node-by-id url))
         stops (parse-stops gradient-node)]
 
     (when (contains? (:attrs gradient-node) :penpot:gradient)
@@ -276,13 +288,17 @@
         (assoc :name name)
         (assoc :blocked blocked)
         (assoc :hidden hidden)
-        (assoc :transform transform)
-        (assoc :transform-inverse transform-inverse)
         (assoc :flip-x flip-x)
         (assoc :flip-y flip-y)
         (assoc :proportion proportion)
         (assoc :proportion-lock proportion-lock)
         (assoc :rotation rotation)
+
+        (cond-> (some? transform)
+          (assoc :transform transform))
+
+        (cond-> (some? transform-inverse)
+          (assoc :transform-inverse transform-inverse))
 
         (cond-> (some? constraints-h)
           (assoc :constraints-h constraints-h))
@@ -378,12 +394,17 @@
       (assoc :rx rx :ry ry))))
 
 (defn add-image-data
-  [props node]
-  (-> props
-      (assoc-in [:metadata :id]     (get-meta node :media-id))
-      (assoc-in [:metadata :width]  (get-meta node :media-width))
-      (assoc-in [:metadata :height] (get-meta node :media-height))
-      (assoc-in [:metadata :mtype]  (get-meta node :media-mtype))))
+  [props type node]
+  (let [metadata {:id     (get-meta node :media-id)
+                  :width  (get-meta node :media-width)
+                  :height (get-meta node :media-height)
+                  :mtype  (get-meta node :media-mtype)}]
+    (cond-> props
+      (= type :image)
+      (assoc :metadata metadata)
+
+      (not= type :image)
+      (assoc :fill-image metadata))))
 
 (defn add-text-data
   [props node]
@@ -570,13 +591,30 @@
       (not (empty? grids))
       (assoc :grids grids))))
 
+(defn has-image?
+  [type node]
+  (let [pattern-image
+        (-> node
+            (find-node :defs)
+            (find-node :pattern)
+            (find-node :image))]
+    (or (= type :image)
+        (some? pattern-image))))
+
 (defn get-image-name
   [node]
   (get-in node [:attrs :penpot:name]))
 
 (defn get-image-data
   [node]
-  (let [svg-data (get-svg-data :image node)]
+  (let [pattern-data
+        (-> node
+            (find-node :defs)
+            (find-node :pattern)
+            (find-node :image)
+            :attrs)
+        image-data (get-svg-data :image node)
+        svg-data (or image-data pattern-data)]
     (:xlink:href svg-data)))
 
 (defn parse-data
@@ -607,8 +645,8 @@
           (cond-> (= :rect type)
             (add-rect-data node svg-data))
 
-          (cond-> (= :image type)
-            (add-image-data node))
+          (cond-> (some? (get-in node [:attrs :penpot:media-id]))
+            (add-image-data type node))
 
           (cond-> (= :text type)
             (add-text-data node))))))

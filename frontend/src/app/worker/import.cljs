@@ -117,7 +117,8 @@
 
 (defn resolve-images
   [file-id node]
-  (if (and (cip/shape? node) (= (cip/get-type node) :image) (not (cip/close? node)))
+  (if (and (not (cip/close? node))
+           (cip/has-image? type node))
     (let [name     (cip/get-image-name node)
           data-uri (cip/get-image-data node)]
       (->> (upload-media-files file-id name data-uri)
