@@ -10,3 +10,4 @@
 //var penpotLoginWithLDAP = <true|false>;
 //var penpotRegistrationEnabled = <true|false>;
 //var penpotAnalyticsEnabled = <true|false>;
+//var penpotFlags = "";

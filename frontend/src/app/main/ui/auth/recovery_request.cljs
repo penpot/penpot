@@ -86,4 +86,4 @@
     [:div.links
      [:div.link-entry
       [:a {:on-click #(st/emit! (rt/nav :auth-login))}
-       (tr "auth.go-back-to-login")]]]]])
+       (tr "labels.go-back")]]]]])

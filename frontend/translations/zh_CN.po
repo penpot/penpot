@@ -42,10 +42,6 @@ msgstr "忘记密码？"
 msgid "auth.fullname"
 msgstr "全名"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "返回！"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "在这里登录"
@@ -750,6 +746,9 @@ msgstr "反馈已发出"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "提交反馈"
+
+msgid "labels.go-back"
+msgstr "返回"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"

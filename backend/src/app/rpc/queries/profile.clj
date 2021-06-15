@@ -73,7 +73,8 @@
 (defn decode-profile-row
   [{:keys [props] :as row}]
   (cond-> row
-    (db/pgobject? props) (assoc :props (db/decode-transit-pgobject props))))
+    (db/pgobject? props "jsonb")
+    (assoc :props (db/decode-transit-pgobject props))))
 
 (defn retrieve-profile-data
   [conn id]

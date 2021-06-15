@@ -36,105 +36,13 @@
 (s/def ::password ::us/not-empty-string)
 (s/def ::old-password ::us/not-empty-string)
 (s/def ::theme ::us/string)
-
-;; --- Mutation: Register Profile
+(s/def ::invitation-token ::us/not-empty-string)
 
 (declare annotate-profile-register)
 (declare check-profile-existence!)
 (declare create-profile)
 (declare create-profile-relations)
-(declare email-domain-in-whitelist?)
 (declare register-profile)
-
-(s/def ::invitation-token ::us/not-empty-string)
-(s/def ::terms-privacy ::us/boolean)
-
-(s/def ::register-profile
-  (s/keys :req-un [::email ::password ::fullname ::terms-privacy]
-          :opt-un [::invitation-token]))
-
-(sv/defmethod ::register-profile {:auth false :rlimit :password}
-  [{:keys [pool tokens session] :as cfg} params]
-  (when-not (cfg/get :registration-enabled)
-    (ex/raise :type :restriction
-              :code :registration-disabled))
-
-  (when-let [domains (cfg/get :registration-domain-whitelist)]
-    (when-not (email-domain-in-whitelist? domains (:email params))
-      (ex/raise :type :validation
-                :code :email-domain-is-not-allowed)))
-
-  (when-not (:terms-privacy params)
-    (ex/raise :type :validation
-              :code :invalid-terms-and-privacy))
-
-  (db/with-atomic [conn pool]
-    (let [cfg     (assoc cfg :conn conn)]
-      (register-profile cfg params))))
-
-(defn- annotate-profile-register
-  "A helper for properly increase the profile-register metric once the
-  transaction is completed."
-  [metrics profile]
-  (fn []
-    (when (::created profile)
-      ((get-in metrics [:definitions :profile-register]) :inc))))
-
-(defn- register-profile
-  [{:keys [conn tokens session metrics] :as cfg} params]
-  (check-profile-existence! conn params)
-  (let [profile (->> (create-profile conn params)
-                     (create-profile-relations conn))
-        profile (assoc profile ::created true)]
-
-    (sid/load-initial-project! conn profile)
-
-    (if-let [token (:invitation-token params)]
-      ;; If invitation token comes in params, this is because the
-      ;; user comes from team-invitation process; in this case,
-      ;; regenerate token and send back to the user a new invitation
-      ;; token (and mark current session as logged).
-      (let [claims (tokens :verify {:token token :iss :team-invitation})
-            claims (assoc claims
-                          :member-id  (:id profile)
-                          :member-email (:email profile))
-            token  (tokens :generate claims)
-            resp   {:invitation-token token}]
-        (with-meta resp
-          {:transform-response ((:create session) (:id profile))
-           :before-complete (annotate-profile-register metrics profile)
-           ::audit/props (:props profile)
-           ::audit/profile-id (:id profile)}))
-
-      ;; If no token is provided, send a verification email
-      (let [vtoken (tokens :generate
-                           {:iss :verify-email
-                            :exp (dt/in-future "48h")
-                            :profile-id (:id profile)
-                            :email (:email profile)})
-            ptoken (tokens :generate-predefined
-                           {:iss :profile-identity
-                            :profile-id (:id profile)})]
-
-        ;; Don't allow proceed in register page if the email is
-        ;; already reported as permanent bounced
-        (when (eml/has-bounce-reports? conn (:email profile))
-          (ex/raise :type :validation
-                    :code :email-has-permanent-bounces
-                    :hint "looks like the email has one or many bounces reported"))
-
-        (eml/send! {::eml/conn conn
-                    ::eml/factory eml/register
-                    :public-uri (:public-uri cfg)
-                    :to (:email profile)
-                    :name (:fullname profile)
-                    :token vtoken
-                    :extra-data ptoken})
-
-        (with-meta profile
-          {:before-complete (annotate-profile-register metrics profile)
-           ::audit/props (:props profile)
-           ::audit/profile-id (:id profile)})))))
 
 (defn email-domain-in-whitelist?
   "Returns true if email's domain is in the given whitelist or if
@@ -177,28 +85,171 @@
       {:update false
        :valid false})))
 
+
+;; --- MUTATION: Prepare Register
+
+(s/def ::prepare-register-profile
+  (s/keys :req-un [::email ::password]
+          :opt-un [::invitation-token]))
+
+(sv/defmethod ::prepare-register-profile {:auth false}
+  [{:keys [pool tokens] :as cfg} params]
+  (when-not (cfg/get :registration-enabled)
+    (ex/raise :type :restriction
+              :code :registration-disabled))
+
+  (when-let [domains (cfg/get :registration-domain-whitelist)]
+    (when-not (email-domain-in-whitelist? domains (:email params))
+      (ex/raise :type :validation
+                :code :email-domain-is-not-allowed)))
+
+  ;; Don't allow proceed in preparing registration if the profile is
+  ;; already reported as spamer.
+  (when (eml/has-bounce-reports? pool (:email params))
+    (ex/raise :type :validation
+              :code :email-has-permanent-bounces
+              :hint "looks like the email has one or many bounces reported"))
+
+  (check-profile-existence! pool params)
+
+  (let [params (assoc params
+                      :backend "penpot"
+                      :iss :prepared-register
+                      :exp (dt/in-future "48h"))
+        token  (tokens :generate params)]
+    {:token token}))
+
+;; --- MUTATION: Register Profile
+
+(s/def ::accept-terms-and-privacy ::us/boolean)
+(s/def ::accept-newsletter-subscription ::us/boolean)
+(s/def ::token ::us/not-empty-string)
+
+(s/def ::register-profile
+  (s/keys :req-un [::token ::fullname
+                   ::accept-terms-and-privacy]
+          :opt-un [::accept-newsletter-subscription]))
+
+(sv/defmethod ::register-profile {:auth false :rlimit :password}
+  [{:keys [pool tokens session] :as cfg} params]
+
+  (when-not (:accept-terms-and-privacy params)
+    (ex/raise :type :validation
+              :code :invalid-terms-and-privacy))
+
+  (db/with-atomic [conn pool]
+    (let [cfg     (assoc cfg :conn conn)]
+      (register-profile cfg params))))
+
+(defn- annotate-profile-register
+  "A helper for properly increase the profile-register metric once the
+  transaction is completed."
+  [metrics]
+  (fn []
+    ((get-in metrics [:definitions :profile-register]) :inc)))
+
+(defn register-profile
+  [{:keys [conn tokens session metrics] :as cfg} {:keys [token] :as params}]
+  (let [claims (tokens :verify {:token token :iss :prepared-register})
+        params (merge params claims)]
+    (check-profile-existence! conn params)
+    (let [profile (->> params
+                       (create-profile conn)
+                       (create-profile-relations conn))]
+
+      (sid/load-initial-project! conn profile)
+
+      (cond
+        ;; If invitation token comes in params, this is because the
+        ;; user comes from team-invitation process; in this case,
+        ;; regenerate token and send back to the user a new invitation
+        ;; token (and mark current session as logged).
+        (some? (:invitation-token params))
+        (let [token (:invitation-token params)
+              claims (tokens :verify {:token token :iss :team-invitation})
+              claims (assoc claims
+                            :member-id  (:id profile)
+                            :member-email (:email profile))
+              token  (tokens :generate claims)
+              resp   {:invitation-token token}]
+          (with-meta resp
+            {:transform-response ((:create session) (:id profile))
+             :before-complete (annotate-profile-register metrics)
+             ::audit/props (:props profile)
+             ::audit/profile-id (:id profile)}))
+
+        ;; If auth backend is different from "penpot" means user is
+        ;; registring using third party auth mechanism; in this case
+        ;; we need to mark this session as logged.
+        (not= "penpot" (:auth-backend profile))
+        (with-meta (profile/strip-private-attrs profile)
+          {:transform-response ((:create session) (:id profile))
+           :before-complete (annotate-profile-register metrics)
+           ::audit/props (:props profile)
+           ::audit/profile-id (:id profile)})
+
+        ;; In all other cases, send a verification email.
+        :else
+        (let [vtoken (tokens :generate
+                             {:iss :verify-email
+                              :exp (dt/in-future "48h")
+                              :profile-id (:id profile)
+                              :email (:email profile)})
+              ptoken (tokens :generate-predefined
+                             {:iss :profile-identity
+                              :profile-id (:id profile)})]
+
+          (eml/send! {::eml/conn conn
+                      ::eml/factory eml/register
+                      :public-uri (:public-uri cfg)
+                      :to (:email profile)
+                      :name (:fullname profile)
+                      :token vtoken
+                      :extra-data ptoken})
+
+          (with-meta profile
+            {:before-complete (annotate-profile-register metrics)
+             ::audit/props (:props profile)
+             ::audit/profile-id (:id profile)}))))))
+
 (defn create-profile
   "Create the profile entry on the database with limited input filling
   all the other fields with defaults."
-  [conn {:keys [id fullname email password is-active is-muted is-demo opts deleted-at]
-         :or {is-active false is-muted false is-demo false}
-         :as params}]
-  (let [id        (or id (uuid/next))
-        is-active (if is-demo true is-active)
-        props     (-> params extract-props db/tjson)
-        password  (derive-password password)
+  [conn params]
+  (let [id        (or (:id params) (uuid/next))
+
+        props     (-> (extract-props params)
+                      (merge (:props params))
+                      (assoc :accept-terms-and-privacy (:accept-terms-and-privacy params true))
+                      (assoc :accept-newsletter-subscription (:accept-newsletter-subscription params false))
+                      (db/tjson))
+
+        password  (if-let [password (:password params)]
+                    (derive-password password)
+                    "!")
+
+        locale    (as-> (:locale params) locale
+                    (and (string? locale) (not (str/blank? locale)) locale))
+
+        backend   (:backend params "penpot")
+        is-demo   (:is-demo params false)
+        is-muted  (:is-muted params false)
+        is-active (:is-active params (or (not= "penpot" backend) is-demo))
+        email     (str/lower (:email params))
+
         params    {:id id
-                   :fullname fullname
-                   :email (str/lower email)
-                   :auth-backend "penpot"
+                   :fullname (:fullname params)
+                   :email email
+                   :auth-backend backend
+                   :lang locale
                    :password password
-                   :deleted-at deleted-at
+                   :deleted-at (:deleted-at params)
                    :props props
                    :is-active is-active
                    :is-muted is-muted
                    :is-demo is-demo}]
     (try
-      (-> (db/insert! conn :profile params opts)
+      (-> (db/insert! conn :profile params)
           (update :props db/decode-transit-pgobject))
       (catch org.postgresql.util.PSQLException e
         (let [state (.getSQLState e)]
@@ -231,7 +282,7 @@
         (assoc :default-team-id (:id team))
         (assoc :default-project-id (:id project)))))
 
-;; --- Mutation: Login
+;; --- MUTATION: Login
 
 (s/def ::email ::us/email)
 (s/def ::scope ::us/string)
@@ -286,7 +337,7 @@
             {:transform-response ((:create session) (:id profile))
              ::audit/profile-id (:id profile)}))))))
 
-;; --- Mutation: Logout
+;; --- MUTATION: Logout
 
 (s/def ::logout
   (s/keys :req-un [::profile-id]))
@@ -296,74 +347,7 @@
   (with-meta {}
     {:transform-response (:delete session)}))
 
-
-;; --- Mutation: Register if not exists
-
-(declare login-or-register)
-
-(s/def ::backend ::us/string)
-(s/def ::login-or-register
-  (s/keys :req-un [::email ::fullname ::backend]))
-
-(sv/defmethod ::login-or-register {:auth false}
-  [{:keys [pool metrics] :as cfg} params]
-  (db/with-atomic [conn pool]
-    (let [profile (-> (assoc cfg :conn conn)
-                      (login-or-register params))
-          props   (merge
-                   (select-keys profile [:backend :fullname :email])
-                   (:props profile))]
-      (with-meta profile
-        {:before-complete (annotate-profile-register metrics profile)
-         ::audit/name (if (::created profile) "register" "login")
-         ::audit/props props
-         ::audit/profile-id (:id profile)}))))
-
-(defn login-or-register
-  [{:keys [conn] :as cfg} {:keys [email] :as params}]
-  (letfn [(info->lang [{:keys [locale] :as info}]
-            (when (and (string? locale)
-                       (not (str/blank? locale)))
-              locale))
-
-          (create-profile [conn {:keys [fullname backend email props] :as info}]
-            (let [params {:id (uuid/next)
-                          :fullname fullname
-                          :email (str/lower email)
-                          :lang (info->lang props)
-                          :auth-backend backend
-                          :is-active true
-                          :password "!"
-                          :props (db/tjson props)
-                          :is-demo false}]
-              (-> (db/insert! conn :profile params)
-                  (update :props db/decode-transit-pgobject))))
-
-          (update-profile [conn info profile]
-            (let [props (merge (:props profile)
-                               (:props info))]
-              (db/update! conn :profile
-                          {:props (db/tjson props)
-                           :modified-at (dt/now)}
-                          {:id (:id profile)})
-              (assoc profile :props props)))
-
-          (register-profile [conn params]
-            (let [profile (->> (create-profile conn params)
-                               (create-profile-relations conn))]
-              (sid/load-initial-project! conn profile)
-              (assoc profile ::created true)))]
-
-    (let [profile (profile/retrieve-profile-data-by-email conn email)
-          profile (if profile
-                    (->> profile
-                         (update-profile conn params)
-                         (profile/populate-additional-data conn))
-                    (register-profile conn params))]
-      (profile/strip-private-attrs profile))))
-
-
-;; --- Mutation: Update Profile (own)
+;; --- MUTATION: Update Profile (own)
 
 (defn- update-profile
   [conn {:keys [id fullname lang theme] :as params}]
@@ -383,7 +367,7 @@
     (update-profile conn params)
     nil))
 
-;; --- Mutation: Update Password
+;; --- MUTATION: Update Password
 
 (declare validate-password!)
 (declare update-profile-password!)
@@ -412,7 +396,7 @@
               {:password (derive-password password)}
               {:id id}))
 
-;; --- Mutation: Update Photo
+;; --- MUTATION: Update Photo
 
 (declare update-profile-photo)
 
@@ -447,7 +431,7 @@
   nil)
 
 
-;; --- Mutation: Request Email Change
+;; --- MUTATION: Request Email Change
 
 (declare request-email-change)
 (declare change-email-inmediatelly)
@@ -515,7 +499,7 @@
   [conn id]
   (db/get-by-id conn :profile id {:for-update true}))
 
-;; --- Mutation: Request Profile Recovery
+;; --- MUTATION: Request Profile Recovery
 
 (s/def ::request-profile-recovery
   (s/keys :req-un [::email]))
@@ -564,7 +548,7 @@
              (send-email-notification conn))))))
 
 
-;; --- Mutation: Recover Profile
+;; --- MUTATION: Recover Profile
 
 (s/def ::token ::us/not-empty-string)
 (s/def ::recover-profile
@@ -585,7 +569,7 @@
            (update-password conn))
       nil)))
 
-;; --- Mutation: Update Profile Props
+;; --- MUTATION: Update Profile Props
 
 (s/def ::props map?)
 (s/def ::update-profile-props
@@ -607,7 +591,7 @@
       nil)))
 
 
-;; --- Mutation: Delete Profile
+;; --- MUTATION: Delete Profile
 
 (declare check-can-delete-profile!)
 (declare mark-profile-as-deleted!)

@@ -54,6 +54,20 @@
   justify-content: center;
   position: relative;
 
+  input {
+    margin-bottom: 0px;
+  }
+
+  .buttons-stack {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    *:not(:last-child) {
+      margin-bottom: $medium;
+    }
+  }
+
   .form-container {
     width: 412px;
 
@@ -83,15 +97,47 @@
   }
 
   .btn-github-auth {
-      margin-bottom: $medium;
-      text-decoration: none;
+    margin-bottom: $medium;
+    text-decoration: none;
 
-      .logo {
-        width: 20px;
-        height: 20px;
-        margin-right: 1rem;
+    .logo {
+      width: 20px;
+      height: 20px;
+      margin-right: 1rem;
+    }
+  }
+
+  .separator {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    text-transform: uppercase;
+  }
+
+  .links {
+    display: flex;
+    font-size: $fs14;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-top: $medium;
+    margin-bottom: $medium;
+
+
+    &.demo {
+      justify-content: center;
+      margin-top: $big;
+    }
+
+    .link-entry {
+      font-size: $fs14;
+      color: $color-gray-40;
+      margin-bottom: 10px;
+      a {
+        font-size: $fs14;
+        color: $color-primary-dark;
       }
     }
+  }
 }
 
 .terms-login {

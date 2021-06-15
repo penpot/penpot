@@ -221,6 +221,7 @@
 
 ;; --- EVENT: register
 
+;; TODO: remove
 (s/def ::invitation-token ::us/not-empty-string)
 
 (s/def ::register

@@ -105,6 +105,14 @@ update_analytics_enabled() {
   fi
 }
 
+update_flags() {
+  if [ -n "$PENPOT_FLAGS" ]; then
+    sed -i \
+      -e "s|^//var penpotFlags = .*;|var penpotFlags = \"$PENPOT_FLAGS\";|g" \
+      "$1"
+  fi
+}
+
 update_public_uri /var/www/app/js/config.js
 update_demo_warning /var/www/app/js/config.js
 update_allow_demo_users /var/www/app/js/config.js
@@ -115,5 +123,5 @@ update_oidc_client_id /var/www/app/js/config.js
 update_login_with_ldap /var/www/app/js/config.js
 update_registration_enabled /var/www/app/js/config.js
 update_analytics_enabled /var/www/app/js/config.js
-
+update_flags /var/www/app/js/config.js
 exec "$@";
