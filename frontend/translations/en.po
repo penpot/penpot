@@ -1454,8 +1454,8 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "Don't show interactions"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Edit page"
+msgid "viewer.header.edit-file"
+msgstr "Edit file"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
