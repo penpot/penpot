@@ -55,6 +55,7 @@
    {com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
     org.clojure/test.check {:mvn/version "RELEASE"}
+    com.clojure-goes-fast/clj-async-profiler {:mvn/version "0.5.0"}
 
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}
