@@ -110,6 +110,7 @@
    :app.http.oauth/handlers
    {:rpc           (ig/ref :app.rpc/rpc)
     :session       (ig/ref :app.http.session/session)
+    :pool          (ig/ref :app.db/pool)
     :tokens        (ig/ref :app.tokens/tokens)
     :public-uri    (cf/get :public-uri)}
 

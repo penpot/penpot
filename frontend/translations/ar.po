@@ -48,10 +48,6 @@ msgstr "هل نسيت كلمة السر؟"
 msgid "auth.fullname"
 msgstr "الاسم بالكامل"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "الرجوع للخلف!"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "تسجيل الدخول هنا"
@@ -189,6 +185,9 @@ msgstr "نمط"
 
 msgid "labels.fonts"
 msgstr "الخطوط"
+
+msgid "labels.go-back"
+msgstr "الرجوع للخلف"
 
 msgid "labels.images"
 msgstr "الصور"

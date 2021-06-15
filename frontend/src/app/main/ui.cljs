@@ -63,6 +63,8 @@
     (when cfg/registration-enabled
       ["/register"         :auth-register])
     (when cfg/registration-enabled
+      ["/register/validate" :auth-register-validate])
+    (when cfg/registration-enabled
       ["/register/success" :auth-register-success])
     ["/recovery/request" :auth-recovery-request]
     ["/recovery"         :auth-recovery]
@@ -112,6 +114,7 @@
      (case (:name data)
        (:auth-login
         :auth-register
+        :auth-register-validate
         :auth-register-success
         :auth-recovery-request
         :auth-recovery)

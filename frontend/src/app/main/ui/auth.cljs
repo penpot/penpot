@@ -14,7 +14,7 @@
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
-   [app.main.ui.auth.register :refer [register-page register-success-page]]
+   [app.main.ui.auth.register :refer [register-page register-success-page register-validate-page]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
@@ -36,13 +36,16 @@
 
     [:div.auth
      [:section.auth-sidebar
-      [:a.logo {:href "https://penpot.app"} i/logo]
+      [:a.logo {:href "#/"} i/logo]
       [:span.tagline (t locale "auth.sidebar-tagline")]]
 
      [:section.auth-content
       (case section
         :auth-register
-        [:& register-page {:locale locale :params params}]
+        [:& register-page {:params params}]
+
+        :auth-register-validate
+        [:& register-validate-page {:params params}]
 
         :auth-register-success
         [:& register-success-page {:params params}]
@@ -55,6 +58,7 @@
 
         :auth-recovery
         [:& recovery-page {:locale locale :params params}])
+
       [:div.terms-login
        [:a {:href "https://penpot.app/terms.html" :target "_blank"} "Terms of service"]
        [:span "and"]

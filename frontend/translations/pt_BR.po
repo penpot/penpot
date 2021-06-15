@@ -51,10 +51,6 @@ msgstr "Esqueceu a senha?"
 msgid "auth.fullname"
 msgstr "Nome completo"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "Voltar!"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Entrar aqui"
@@ -696,6 +692,9 @@ msgstr "Fontes"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Enviar feedback"
+
+msgid "labels.go-back"
+msgstr "Voltar"
 
 msgid "labels.icons"
 msgstr "Ícones"

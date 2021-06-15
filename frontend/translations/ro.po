@@ -52,10 +52,6 @@ msgstr "Ai uitat parola?"
 msgid "auth.fullname"
 msgstr "Numele complet"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "Întoarce-te!"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Conectează-te"
@@ -907,6 +903,9 @@ msgstr "Fonturi"
 msgid "labels.give-feedback"
 msgstr "Lasă un feedback"
 
+msgid "labels.go-back"
+msgstr "Întoarce-te"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Ascunde comentariile rezolvate"
@@ -1442,6 +1441,10 @@ msgid "viewer.header.fullscreen"
 msgstr "Ecran complet"
 
 #: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Interacţiunile"
+
+#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
 msgstr "Copiază link"
 
@@ -1468,10 +1471,6 @@ msgstr "Distribuie link"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Afişează interacţiunile"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.interactions"
-msgstr "Interacţiunile"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions-on-click"

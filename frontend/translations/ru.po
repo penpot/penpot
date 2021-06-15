@@ -40,10 +40,6 @@ msgstr "Забыли пароль?"
 msgid "auth.fullname"
 msgstr "Полное имя"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "Назад!"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Войти здесь"
@@ -359,6 +355,9 @@ msgstr "Email"
 msgid "labels.give-feedback"
 msgstr "Дать обратную связь"
 
+msgid "labels.go-back"
+msgstr "Назад"
+
 msgid "labels.icons"
 msgstr "Иконки"
 
@@ -564,6 +563,10 @@ msgid "viewer.frame-not-found"
 msgstr "Кадры не найдены."
 
 #: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header-interactions"
+msgstr "взаимодействия"
+
+#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
 msgstr "Не показывать взаимодействия"
 
@@ -598,10 +601,6 @@ msgstr "Любой, у кого есть ссылка будет иметь до
 #: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.title"
 msgstr "Поделиться ссылкой"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header-interactions"
-msgstr "взаимодействия"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"

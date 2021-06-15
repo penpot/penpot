@@ -46,10 +46,6 @@ msgstr "Has oblidat la contrasenya?"
 msgid "auth.fullname"
 msgstr "Nom complet"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "Tornar"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Inicia sessió aquí"
@@ -466,6 +462,9 @@ msgstr "S'ha produït un error"
 
 msgid "labels.accept"
 msgstr "Acceptar"
+
+msgid "labels.go-back"
+msgstr "Tornar"
 
 msgid "labels.recent"
 msgstr "Recent"

@@ -51,10 +51,6 @@ msgstr "Passwort vergessen?"
 msgid "auth.fullname"
 msgstr "Vollständiger Name"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "Zurück!"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Hier einloggen"
@@ -823,6 +819,9 @@ msgstr "Feedback gesendet"
 msgid "labels.give-feedback"
 msgstr "Feedback geben"
 
+msgid "labels.go-back"
+msgstr "Zurück!"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Erledigte Kommentare ausblenden"
@@ -1307,6 +1306,10 @@ msgid "viewer.header.fullscreen"
 msgstr "Vollbildmodus"
 
 #: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Interaktionen"
+
+#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
 msgstr "Link kopieren"
 
@@ -1329,10 +1332,6 @@ msgstr "Jeder mit dem Link hat Zugriff"
 #: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.title"
 msgstr "Prototyp teilen"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.interactions"
-msgstr "Interaktionen"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
