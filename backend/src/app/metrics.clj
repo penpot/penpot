@@ -210,9 +210,15 @@
          ([a b]
           (mobj :inc)
           (origf a b))
-         ([a b & more]
+         ([a b c]
           (mobj :inc)
-          (apply origf a b more)))
+          (origf a b c))
+         ([a b c d]
+          (mobj :inc)
+          (origf a b c d))
+         ([a b c d & more]
+          (mobj :inc)
+          (apply origf a b c d more)))
        (assoc mdata ::original origf))))
   ([rootf mobj labels]
    (let [mdata  (meta rootf)

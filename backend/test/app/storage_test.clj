@@ -22,7 +22,6 @@
                        th/database-reset
                        th/clean-storage))
 
-;; TODO: add specific tests for DB backend.
 
 (t/deftest put-and-retrieve-object
   (let [storage (:app.storage/storage th/*system*)

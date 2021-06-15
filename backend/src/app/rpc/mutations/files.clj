@@ -11,16 +11,18 @@
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-
+   [app.config :as cf]
    [app.db :as db]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as proj]
+   [app.storage.impl :as simpl]
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
-
    [clojure.spec.alpha :as s]))
+
+(declare create-file)
 
 ;; --- Helpers & Specs
 
@@ -32,8 +34,6 @@
 
 ;; --- Mutation: Create File
 
-(declare create-file)
-
 (s/def ::is-shared ::us/boolean)
 (s/def ::create-file
   (s/keys :req-un [::profile-id ::name ::project-id]
@@ -44,7 +44,6 @@
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id project-id)
     (create-file conn params)))
-
 
 (defn create-file-role
   [conn {:keys [file-id profile-id role]}]
@@ -67,10 +66,11 @@
                           :is-shared is-shared
                           :data (blob/encode data)
                           :deleted-at deleted-at})]
+
     (->> (assoc params :file-id id :role :owner)
          (create-file-role conn))
-    (assoc file :data data)))
 
+    (assoc file :data data)))
 
 ;; --- Mutation: Rename File
 
@@ -110,7 +110,6 @@
   (db/update! conn :file
               {:is-shared is-shared}
               {:id id}))
-
 
 ;; --- Mutation: Delete File
 
@@ -202,7 +201,6 @@
               {:file-id file-id
                :library-file-id library-id}))
 
-
 ;; --- Mutation: Ignore updates in linked files
 
 (declare ignore-sync)
@@ -288,6 +286,11 @@
       (> (inst-ms (dt/diff modified-at (dt/now)))
          (inst-ms (dt/duration {:hours 3})))))
 
+(defn- delete-from-storage
+  [{:keys [storage] :as cfg} file]
+  (when-let [backend (simpl/resolve-backend storage (cf/get :fdata-storage-backend))]
+    (simpl/del-object backend file)))
+
 (defn- update-file
   [{:keys [conn] :as cfg} {:keys [file changes changes-with-metadata session-id profile-id] :as params}]
   (when (> (:revn params)
@@ -303,7 +306,8 @@
                   (mapcat :changes changes-with-metadata)
                   changes)
 
-        file    (-> file
+        ts      (dt/now)
+        file    (-> (files/retrieve-data cfg file)
                     (update :revn inc)
                     (update :data (fn [data]
                                     (-> data
@@ -317,6 +321,7 @@
                 {:id (uuid/next)
                  :session-id session-id
                  :profile-id profile-id
+                 :created-at ts
                  :file-id (:id file)
                  :revn (:revn file)
                  :data (when (take-snapshot? file)
@@ -327,11 +332,20 @@
     (db/update! conn :file
                 {:revn (:revn file)
                  :data (:data file)
+                 :data-backend nil
+                 :modified-at ts
                  :has-media-trimmed false}
                 {:id (:id file)})
 
-    (let [params (-> params (assoc :file file
-                                   :changes changes))]
+    ;; We need to delete the data from external storage backend
+    (when-not (nil? (:data-backend file))
+      (delete-from-storage cfg file))
+
+    (db/update! conn :project
+                {:modified-at ts}
+                {:id (:project-id file)})
+
+    (let [params (assoc params :file file :changes changes)]
       ;; Send asynchronous notifications
       (send-notifications cfg params)
 

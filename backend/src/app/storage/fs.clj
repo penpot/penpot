@@ -79,6 +79,10 @@
                 :path (str full)))
     (io/input-stream full)))
 
+(defmethod impl/get-object-bytes :fs
+  [backend object]
+  (fs/slurp-bytes (impl/get-object-data backend object)))
+
 (defmethod impl/get-object-url :fs
   [{:keys [uri] :as backend} {:keys [id] :as object} _]
   (update uri :path
@@ -87,6 +91,13 @@
               (str existing (impl/id->path id))
               (str existing "/" (impl/id->path id))))))
 
+(defmethod impl/del-object :fs
+  [backend {:keys [id] :as object}]
+  (let [base (fs/path (:directory backend))
+        path (fs/path (impl/id->path id))
+        path (fs/join base path)]
+    (Files/deleteIfExists ^Path path)))
+
 (defmethod impl/del-objects-in-bulk :fs
   [backend ids]
   (let [base (fs/path (:directory backend))]
@@ -94,3 +105,4 @@
       (let [path (fs/path (impl/id->path id))
             path (fs/join base path)]
         (Files/deleteIfExists ^Path path)))))
+
