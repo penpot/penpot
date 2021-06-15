@@ -121,10 +121,8 @@
             fill: $color-gray-30;
           }
         }
-
       }
     }
-
 
     .filenames {
       display: flex;
@@ -153,7 +151,6 @@
             transform: rotate(45deg);
           }
         }
-
       }
     }
   }
@@ -163,7 +160,6 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-
 
     .upload-button {
       width: 100px;
@@ -182,7 +178,7 @@
     .banner {
       background-color: unset;
 
-        display: flex;
+      display: flex;
 
       .icon {
         display: flex;
@@ -203,6 +199,10 @@
       width: 80%;
       color: $color-gray-40;
     }
+
+    .btn-primary {
+      flex-shrink: 0;
+    }
   }
 
   .fonts-placeholder {
@@ -216,7 +216,6 @@
 
     border: 1px dashed $color-gray-20;
     margin-top: 16px;
-
 
     .icon {
       svg {
