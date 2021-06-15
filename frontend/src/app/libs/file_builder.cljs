@@ -15,19 +15,23 @@
     (js->clj $ :keywordize-keys true)
     ;; Transforms camelCase to kebab-case
     (d/deep-mapm
-     (fn [[k v]]
-       [(-> k d/name str/kebab keyword) v]) $)))
+     (fn [[key value]]
+       (let [value (if (= (type value) js/Symbol)
+                     (keyword (js/Symbol.keyFor value))
+                     value)
+             key (-> key d/name str/kebab keyword)]
+         [key value])) $)))
 
 (deftype File [^:mutable file]
   Object
 
-  (addPage
-    ([self name]
-     (addPage self name nil))
+  (addPage [self name]
+    (set! file (fb/add-page file {:name name}))
+    (str (:current-page-id file)))
 
-    ([self name options]
-     (set! file (fb/add-page file {:name name :options options}))
-     (str (:current-page-id file))))
+  (addPage [self name options]
+    (set! file (fb/add-page file {:name name :options options}))
+    (str (:current-page-id file)))
 
   (closePage [self]
     (set! file (fb/close-page file)))
@@ -65,7 +69,10 @@
     (set! file (fb/create-svg-raw file (parse-data data))))
 
   (closeSVG [self]
-    (set! file (fb/close-svg-raw file))))
+    (set! file (fb/close-svg-raw file)))
+
+  (asMap [self]
+    (clj->js file)))
 
 (defn create-file-export [^string name]
   (File. (fb/create-file name)))
