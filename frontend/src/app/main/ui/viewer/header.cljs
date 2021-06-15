@@ -108,9 +108,9 @@
   [{:keys [state locale] :as props}]
   (let [imode          (:interactions-mode state)
 
-        show-dropdown? (mf/use-state false)
-        show-dropdown  (mf/use-fn #(reset! show-dropdown? true))
-        hide-dropdown  (mf/use-fn #(reset! show-dropdown? false))
+        show-dropdown?  (mf/use-state false)
+        toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
+        hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
 
         select-mode
         (mf/use-callback
@@ -118,7 +118,7 @@
            (st/emit! (dv/set-interactions-mode mode))))]
 
     [:div.view-options
-     [:div.view-options-dropdown {:on-click #(swap! show-dropdown? not)}
+     [:div.view-options-dropdown {:on-click toggle-dropdown}
       [:span (t locale "viewer.header.interactions")]
       i/arrow-down]
      [:& dropdown {:show @show-dropdown?
@@ -139,14 +139,13 @@
         [:span.icon i/tick]
         [:span.label (t locale "viewer.header.show-interactions-on-click")]]]]]))
 
-
 (mf/defc comments-menu
   [{:keys [locale] :as props}]
   (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
 
-        show-dropdown? (mf/use-state false)
-        show-dropdown  (mf/use-fn #(reset! show-dropdown? true))
-        hide-dropdown  (mf/use-fn #(reset! show-dropdown? false))
+        show-dropdown?  (mf/use-state false)
+        toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
+        hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
 
         update-mode
         (mf/use-callback
@@ -159,7 +158,7 @@
            (st/emit! (dcm/update-filters {:show mode}))))]
 
     [:div.view-options
-     [:div.icon {:on-click #(swap! show-dropdown? not)} i/eye]
+     [:div.icon {:on-click toggle-dropdown} i/eye]
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
       [:ul.dropdown.with-check
@@ -179,6 +178,28 @@
              :on-click #(update-show (if (= :pending cshow) :all :pending))}
         [:span.icon i/tick]
         [:span.label (t locale "labels.hide-resolved-comments")]]]]]))
+
+(mf/defc file-menu
+  [{:keys [locale project-id file-id page-id] :as props}]
+  (let [show-dropdown?  (mf/use-state false)
+        toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
+        hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
+
+        on-edit
+        (mf/use-callback
+         (mf/deps project-id file-id page-id)
+         (st/emitf (rt/nav :workspace
+                           {:project-id project-id
+                            :file-id file-id}
+                           {:page-id page-id})))]
+    [:div.file-menu
+     [:span.btn-icon-dark.btn-small {:on-click toggle-dropdown}
+      i/actions
+      [:& dropdown {:show @show-dropdown?
+                    :on-close hide-dropdown}
+       [:ul.dropdown
+        [:li {:on-click on-edit}
+         [:span.label (t locale "viewer.header.edit-file")]]]]]]))
 
 (mf/defc header
   [{:keys [data index section state] :as props}]
@@ -209,13 +230,6 @@
          (mf/deps project)
          (st/emitf (dv/go-to-dashboard project)))
 
-        on-edit
-        (mf/use-callback
-         (mf/deps project-id file-id page-id)
-         (st/emitf (rt/nav :workspace
-                           {:project-id project-id
-                            :file-id file-id}
-                           {:page-id page-id})))
         navigate
         (mf/use-callback
          (mf/deps file-id page-id)
@@ -283,6 +297,8 @@
          i/full-screen-off
          i/full-screen)]
 
-      [:span.btn-icon-dark.btn-small
-         i/actions]]]))
+      [:& file-menu {:locale locale
+                     :project-id project-id
+                     :file-id file-id
+                     :page-id page-id}]]]))
 
