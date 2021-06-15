@@ -39,17 +39,15 @@
                  (log/debug :action "import-end")
                  (when on-finish-import (on-finish-import))))))))))
 
-(mf/defc import-button
-  [{:keys [project-id on-finish-import]}]
+(mf/defc import-form
+  {::mf/forward-ref true}
+  [{:keys [project-id on-finish-import]} external-ref]
 
-  (let [file-input (mf/use-ref nil)
-        on-file-selected (use-import-file project-id on-finish-import)]
+  (let [on-file-selected (use-import-file project-id on-finish-import)]
     [:form.import-file
-     [:button.import-file-btn {:type "button"
-                               :on-click #(dom/click (mf/ref-val file-input))} i/import]
      [:& file-uploader {:accept "application/zip"
                         :multi true
-                        :input-ref file-input
+                        :ref external-ref
                         :on-selected on-file-selected}]]))
 
 

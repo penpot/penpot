@@ -30,13 +30,28 @@
   (and (vector? node)
        (= ::close (first node))))
 
+(defn find-node
+  [node tag]
+  (when (some? node)
+    (->> node :content (d/seek #(= (:tag %) tag)))))
+
+(defn find-node-by-id
+  [id coll]
+  (->> coll (d/seek #(= id (-> % :attrs :id)))))
+
+(defn find-all-nodes
+  [node tag]
+  (when (some? node)
+    (->> node :content (filterv #(= (:tag %) :defs)))))
+
 (defn get-data
   ([node]
-   (->> node :content (d/seek #(= :penpot:shape (:tag %)))))
-  ([node tag]
-   (->> (get-data node)
-        :content
-        (d/seek #(= tag (:tag %))))))
+   (or (find-node node :penpot:shape)
+       (find-node node :penpot:page)))
+
+   ([node tag]
+    (-> (get-data node)
+        (find-node tag))))
 
 (defn get-type
   [node]
@@ -98,6 +113,41 @@
    m
    attrs))
 
+(defn without-penpot-prefix
+  [m]
+  (let [no-penpot-prefix?
+        (fn [[k v]]
+          (not (str/starts-with? (d/name k) "penpot:")))]
+    (into {} (filter no-penpot-prefix?) m)))
+
+(defn remove-penpot-prefix
+  [m]
+  (into {}
+        (map (fn [[k v]]
+               (if (str/starts-with? (d/name k) "penpot:")
+                 [(-> k d/name (str/replace "penpot:" "") keyword) v]
+                 [k v])))
+        m))
+
+(defn camelize [[k v]]
+  [(-> k d/name str/camel keyword) v])
+
+(defn camelize-keys
+  [m]
+  (assert (map? m) (str m))
+
+  (into {} (map camelize) m))
+
+(defn fix-style-attr
+  [m]
+  (let [fix-style
+        (fn [[k v]]
+          (if (= k :style)
+            [k (-> v parse-style camelize-keys)]
+            [k v]))]
+
+    (d/deep-mapm (comp camelize fix-style) m)))
+
 (def search-data-node? #{:rect :image :path :text :circle})
 
 (defn get-svg-data
@@ -148,6 +198,7 @@
         selrect (gsh/content->selrect content-tr)
         points (-> (gsh/rect->points selrect)
                    (gsh/transform-points center transform))]
+
     (-> props
         (assoc :content content)
         (assoc :selrect selrect)
@@ -166,9 +217,6 @@
 
 (def url-regex #"url\(#([^\)]*)\)")
 
-(defn seek-node
-  [id coll]
-  (->> coll (d/seek #(= id (-> % :attrs :id)))))
 
 (defn parse-stops
   [gradient-node]
@@ -183,7 +231,7 @@
 (defn parse-gradient
   [node ref-url]
   (let [[_ url] (re-find url-regex ref-url)
-        gradient-node (->> node (node-seq) (seek-node url))
+        gradient-node (->> node (node-seq) (find-node-by-id url))
         stops (parse-stops gradient-node)]
 
     (when (contains? (:attrs gradient-node) :penpot:gradient)
@@ -231,19 +279,35 @@
         flip-y            (get-meta node :flip-y str->bool)
         proportion        (get-meta node :proportion d/parse-double)
         proportion-lock   (get-meta node :proportion-lock str->bool)
-        rotation          (get-meta node :rotation d/parse-double)]
+        rotation          (get-meta node :rotation d/parse-double)
+        constraints-h     (get-meta node :constraints-h keyword)
+        constraints-v     (get-meta node :constraints-v keyword)
+        fixed-scroll      (get-meta node :fixed-scroll str->bool)]
 
     (-> props
         (assoc :name name)
         (assoc :blocked blocked)
         (assoc :hidden hidden)
-        (assoc :transform transform)
-        (assoc :transform-inverse transform-inverse)
         (assoc :flip-x flip-x)
         (assoc :flip-y flip-y)
         (assoc :proportion proportion)
         (assoc :proportion-lock proportion-lock)
-        (assoc :rotation rotation))))
+        (assoc :rotation rotation)
+
+        (cond-> (some? transform)
+          (assoc :transform transform))
+
+        (cond-> (some? transform-inverse)
+          (assoc :transform-inverse transform-inverse))
+
+        (cond-> (some? constraints-h)
+          (assoc :constraints-h constraints-h))
+
+        (cond-> (some? constraints-v)
+          (assoc :constraints-v constraints-v))
+
+        (cond-> (some? fixed-scroll)
+          (assoc :fixed-scroll fixed-scroll)))))
 
 (defn add-position
   [props type node svg-data]
@@ -330,12 +394,17 @@
       (assoc :rx rx :ry ry))))
 
 (defn add-image-data
-  [props node]
-  (-> props
-      (assoc-in [:metadata :id]     (get-meta node :media-id))
-      (assoc-in [:metadata :width]  (get-meta node :media-width))
-      (assoc-in [:metadata :height] (get-meta node :media-height))
-      (assoc-in [:metadata :mtype]  (get-meta node :media-mtype))))
+  [props type node]
+  (let [metadata {:id     (get-meta node :media-id)
+                  :width  (get-meta node :media-width)
+                  :height (get-meta node :media-height)
+                  :mtype  (get-meta node :media-mtype)}]
+    (cond-> props
+      (= type :image)
+      (assoc :metadata metadata)
+
+      (not= type :image)
+      (assoc :fill-image metadata))))
 
 (defn add-text-data
   [props node]
@@ -371,6 +440,26 @@
   {:type   (get-meta node :type keyword)
    :suffix (get-meta node :suffix)
    :scale  (get-meta node :scale d/parse-double)})
+
+
+(defn parse-grid-node [node]
+  (let [attrs (-> node :attrs remove-penpot-prefix)
+        color {:color (:color attrs)
+               :opacity (-> attrs :opacity d/parse-double)}
+
+        params (-> (d/without-keys attrs [:color :opacity :display :type])
+                   (d/update-when :size d/parse-double)
+                   (d/update-when :item-length d/parse-double)
+                   (d/update-when :gutter d/parse-double)
+                   (d/update-when :margin d/parse-double)
+                   (assoc :color color))]
+    {:type    (-> attrs :type keyword)
+     :display (-> attrs :display str->bool)
+     :params  params}))
+
+(defn parse-grids [node]
+  (let [grid-node (get-data node :penpot:grids)]
+    (->> grid-node :content (mapv parse-grid-node))))
 
 (defn extract-from-data
   ([node tag]
@@ -477,32 +566,6 @@
 
       props)))
 
-(defn without-penpot-prefix
-  [m]
-  (let [no-penpot-prefix?
-        (fn [[k v]]
-          (not (str/starts-with? (d/name k) "penpot:")))]
-    (into {} (filter no-penpot-prefix?) m)))
-
-(defn camelize [[k v]]
-  [(-> k d/name str/camel keyword) v])
-
-(defn camelize-keys
-  [m]
-  (assert (map? m) (str m))
-
-  (into {} (map camelize) m))
-
-(defn fix-style-attr
-  [m]
-  (let [fix-style
-        (fn [[k v]]
-          (if (= k :style)
-            [k (-> v parse-style camelize-keys)]
-            [k v]))]
-
-    (d/deep-mapm (comp camelize fix-style) m)))
-
 (defn add-svg-content
   [props node]
   (let [svg-content (get-data node :penpot:svg-content)
@@ -522,13 +585,36 @@
       :tag     tag
       :content node-content})))
 
+(defn add-frame-data [props node]
+  (let [grids (parse-grids node)]
+    (cond-> props
+      (not (empty? grids))
+      (assoc :grids grids))))
+
+(defn has-image?
+  [type node]
+  (let [pattern-image
+        (-> node
+            (find-node :defs)
+            (find-node :pattern)
+            (find-node :image))]
+    (or (= type :image)
+        (some? pattern-image))))
+
 (defn get-image-name
   [node]
   (get-in node [:attrs :penpot:name]))
 
 (defn get-image-data
   [node]
-  (let [svg-data (get-svg-data :image node)]
+  (let [pattern-data
+        (-> node
+            (find-node :defs)
+            (find-node :pattern)
+            (find-node :image)
+            :attrs)
+        image-data (get-svg-data :image node)
+        svg-data (or image-data pattern-data)]
     (:xlink:href svg-data)))
 
 (defn parse-data
@@ -550,14 +636,31 @@
           (cond-> (= :svg-raw type)
             (add-svg-content node))
 
+          (cond-> (= :frame type)
+            (add-frame-data node))
+
           (cond-> (= :group type)
             (add-group-data node))
 
           (cond-> (= :rect type)
             (add-rect-data node svg-data))
 
-          (cond-> (= :image type)
-            (add-image-data node))
+          (cond-> (some? (get-in node [:attrs :penpot:media-id]))
+            (add-image-data type node))
 
           (cond-> (= :text type)
             (add-text-data node))))))
+
+(defn parse-page-data
+  [node]
+  (let [style (parse-style (get-in node [:attrs :style]))
+        background (:background style)
+        grids  (->> (parse-grids node)
+                    (group-by :type)
+                    (d/mapm (fn [k v] (-> v first :params))))]
+    (cond-> {}
+      (some? background)
+      (assoc-in [:options :background] background)
+
+      (not (empty? grids))
+      (assoc-in [:options :saved-grids] grids))))

@@ -6,7 +6,7 @@
    [app.common.math :as mth]
    [cljs.pprint :refer [pprint]]))
 
-(def debug-options #{:bounding-boxes :group :events :rotation-handler :resize-handler :selection-center #_:simple-selection})
+(def debug-options #{:bounding-boxes :group :events :rotation-handler :resize-handler :selection-center :export :import #_:simple-selection})
 
 ;; These events are excluded when we activate the :events flag
 (def debug-exclude-events

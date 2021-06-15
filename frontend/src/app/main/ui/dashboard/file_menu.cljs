@@ -14,6 +14,7 @@
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.context :as ctx]
    [app.main.worker :as uw]
+   [app.util.debug :as d]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
@@ -192,7 +193,8 @@
                       [[(tr "dashboard.duplicate-multi" file-count) on-duplicate]
                        (when (or (seq current-projects) (seq other-teams))
                          [(tr "dashboard.move-to-multi" file-count) nil sub-options])
-                       #_[(tr "dashboard.export-multi" file-count) on-export-files]
+                       (when (d/debug? :export)
+                         [(tr "dashboard.export-multi" file-count) on-export-files])
                        [:separator]
                        [(tr "labels.delete-multi-files" file-count) on-delete]]
 
@@ -204,7 +206,8 @@
                        (if (:is-shared file)
                          [(tr "dashboard.remove-shared") on-del-shared]
                          [(tr "dashboard.add-shared") on-add-shared])
-                       #_[(tr "dashboard.export-single") on-export-files]
+                       (when (d/debug? :export)
+                         [(tr "dashboard.export-single") on-export-files])
                        [:separator]
                        [(tr "labels.delete") on-delete]])]
 

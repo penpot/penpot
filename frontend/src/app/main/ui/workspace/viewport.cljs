@@ -14,6 +14,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.measurements :as msr]
    [app.main.ui.shapes.embed :as embed]
+   [app.main.ui.shapes.export :as use]
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.text.editor :as editor]
    [app.main.ui.workspace.viewport.actions :as actions]
@@ -187,6 +188,8 @@
        :view-box (utils/format-viewbox vbox)
        :style {:background-color (get options :background "#E8E9EA")
                :pointer-events "none"}}
+
+      [:& use/export-page {:options options}]
 
       [:& (mf/provider embed/context) {:value true}
        ;; Render root shape

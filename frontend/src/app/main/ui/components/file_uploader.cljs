@@ -12,17 +12,21 @@
    [app.util.dom :as dom]))
 
 (mf/defc file-uploader
-  [{:keys [accept multi label-text label-class input-id input-ref on-selected] :as props}]
+  {::mf/forward-ref true}
+  [{:keys [accept multi label-text label-class input-id on-selected] :as props} input-ref]
   (let [opt-pick-one #(if multi % (first %))
 
-        on-files-selected (fn [event]
-                            (let [target (dom/get-target event)]
-                              (st/emit!
-                                (some-> target
-                                        (dom/get-files)
-                                        (opt-pick-one)
-                                        (on-selected)))
-                              (dom/clean-value! target)))]
+        on-files-selected
+        (mf/use-callback
+         (mf/deps opt-pick-one)
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (st/emit!
+              (some-> target
+                      (dom/get-files)
+                      (opt-pick-one)
+                      (on-selected)))
+             (dom/clean-value! target))))]
     [:*
      (when label-text
        [:label {:for input-id :class-name label-class} label-text])

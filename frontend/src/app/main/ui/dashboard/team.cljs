@@ -285,7 +285,7 @@
           [:img {:src (cfg/resolve-team-photo-url team)}]
           [:& file-uploader {:accept "image/jpeg,image/png"
                              :multi false
-                             :input-ref finput
+                             :ref finput
                              :on-selected on-file-selected}]]]
 
         [:div.block.owner-block
