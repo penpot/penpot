@@ -2693,3 +2693,6 @@ msgstr "Export file"
 
 msgid "dashboard.export-multi"
 msgstr "Export %s files"
+
+msgid "dashboard.options"
+msgstr "Options"

@@ -29,7 +29,11 @@
         team-id    (:id team)
 
         on-menu-click
-        (mf/use-callback #(swap! local assoc :menu-open true))
+        (mf/use-callback
+         (fn [event]
+           (let [position (dom/get-client-position event)]
+             (dom/prevent-default event)
+             (swap! local assoc :menu-open true :menu-pos position))))
 
         on-menu-close
         (mf/use-callback #(swap! local assoc :menu-open false))
@@ -63,20 +67,26 @@
          [:div.dashboard-title
           [:h1 {:on-double-click on-edit}
            (:name project)]
-          [:div.icon {:on-click on-menu-click}
-           i/actions]
           [:& project-menu {:project project
                             :show? (:menu-open @local)
+                            :left (- (:x (:menu-pos @local)) 180)
+                            :top (:y (:menu-pos @local))
                             :on-edit on-edit
-                            :on-menu-close on-menu-close}]
-          [:div.icon.pin-icon
-           {:class (when (:is-pinned project) "active")
-            :on-click toggle-pin}
-           (if (:is-pinned project)
-             i/pin-fill
-             i/pin)]]))
-     [:a.btn-secondary.btn-small {:on-click on-create-clicked}
-      (tr "dashboard.new-file")]]))
+                            :on-menu-close on-menu-close}]]))
+     [:div.dashboard-header-actions
+      [:a.btn-secondary.btn-small {:on-click on-create-clicked}
+       (tr "dashboard.new-file")]
+
+      [:div.icon.pin-icon.tooltip.tooltip-bottom
+       {:class (when (:is-pinned project) "active")
+       :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
+       (if (:is-pinned project)
+         i/pin-fill
+         i/pin)]
+      
+      [:div.icon.tooltip.tooltip-bottom
+       {:on-click on-menu-click :alt (tr "dashboard.options")}
+       i/actions]]]))
 
 (mf/defc files-section
   [{:keys [project team] :as props}]
