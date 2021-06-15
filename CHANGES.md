@@ -8,6 +8,7 @@
 - Allow to ungroup assets [Taiga #1719](https://tree.taiga.io/project/penpot/us/1719)
 - Allow to rename assets groups [Taiga #1721](https://tree.taiga.io/project/penpot/us/1721)
 - Memorize collapse state of assets in panel [Taiga #1718](https://tree.taiga.io/project/penpot/us/1718)
+- Headers button sets and menus review [Taiga #1663](https://tree.taiga.io/project/penpot/us/1663)
 - Add the ability to offload file data to a cheaper storage when file
   becomes inactive.
 

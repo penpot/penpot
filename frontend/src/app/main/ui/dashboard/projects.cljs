@@ -108,13 +108,6 @@
 
     [:div.dashboard-project-row {:class (when first? "first")}
      [:div.project
-      (when-not (:is-default project)
-        [:span.pin-icon
-         {:class (when (:is-pinned project) "active")
-          :on-click toggle-pin}
-         (if (:is-pinned project)
-           i/pin-fill
-           i/pin)])
       (if (:edition? @local)
         [:& inline-edition {:content (:name project)
                             :on-end on-edit}]
@@ -141,9 +134,21 @@
       #_[:& import-button {:project-id (:id project)
                          :on-finish-import on-finish-import}]
 
-      [:a.btn-secondary.btn-small
-       {:on-click create-file}
-       (tr "dashboard.new-file")]]
+      (when-not (:is-default project)
+        [:span.pin-icon.tooltip.tooltip-bottom
+         {:class (when (:is-pinned project) "active")
+          :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
+         (if (:is-pinned project)
+           i/pin-fill
+           i/pin)])
+
+      [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
+       {:on-click create-file :alt (tr "dashboard.new-file")}
+       i/close]
+
+      [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
+       {:on-click on-menu-click :alt (tr "dashboard.options")}
+       i/actions]]
 
      [:& line-grid
       {:project-id (:id project)

@@ -34,7 +34,7 @@
     height: 40px;
 
     .btn-secondary {
-      margin-left: $big;
+      border: none;
       height: 32px;
     }
 
@@ -62,6 +62,7 @@
       cursor: pointer;
       display: flex;
       align-items: center;
+      margin-left: 40px;
       margin-right: 10px;
       svg {
         width: 15px;

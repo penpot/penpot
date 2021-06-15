@@ -104,7 +104,12 @@
     }
   }
 
+  .dashboard-header-actions {
+    display: flex;
+  }
+
   .pin-icon {
+    margin: 0 $small 0 $big;
     svg {
       fill: $color-gray-20;
     }
