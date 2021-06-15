@@ -43,7 +43,6 @@
 (s/def ::max-age ::dt/duration)
 (s/def ::backend ::us/keyword)
 
-
 (defmethod ig/pre-init-spec ::handler [_]
   (s/keys :req-un [::db/pool ::max-age ::sto/storage ::backend]))
 

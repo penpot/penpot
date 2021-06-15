@@ -11,15 +11,15 @@
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-
+   [app.config :as cf]
    [app.db :as db]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as proj]
+   [app.storage.impl :as simpl]
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
-
    [clojure.spec.alpha :as s]))
 
 (declare create-file)
@@ -44,7 +44,6 @@
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id project-id)
     (create-file conn params)))
-
 
 (defn create-file-role
   [conn {:keys [file-id profile-id role]}]
@@ -111,7 +110,6 @@
   (db/update! conn :file
               {:is-shared is-shared}
               {:id id}))
-
 
 ;; --- Mutation: Delete File
 
@@ -288,6 +286,11 @@
       (> (inst-ms (dt/diff modified-at (dt/now)))
          (inst-ms (dt/duration {:hours 3})))))
 
+(defn- delete-from-storage
+  [{:keys [storage] :as cfg} file]
+  (when-let [backend (simpl/resolve-backend storage (cf/get :fdata-storage-backend))]
+    (simpl/del-object backend file)))
+
 (defn- update-file
   [{:keys [conn] :as cfg} {:keys [file changes changes-with-metadata session-id profile-id] :as params}]
   (when (> (:revn params)
@@ -333,6 +336,10 @@
                  :modified-at ts
                  :has-media-trimmed false}
                 {:id (:id file)})
+
+    ;; We need to delete the data from external storage backend
+    (when-not (nil? (:data-backend file))
+      (delete-from-storage cfg file))
 
     (db/update! conn :project
                 {:modified-at ts}

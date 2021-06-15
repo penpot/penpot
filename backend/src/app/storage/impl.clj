@@ -62,6 +62,14 @@
             :context cfg))
 
 
+(defmulti del-object (fn [cfg _] (:type cfg)))
+
+(defmethod del-object :default
+  [cfg _]
+  (ex/raise :type :internal
+            :code :invalid-storage-backend
+            :context cfg))
+
 (defmulti del-objects-in-bulk (fn [cfg _] (:type cfg)))
 
 (defmethod del-objects-in-bulk :default
@@ -69,7 +77,6 @@
   (ex/raise :type :internal
             :code :invalid-storage-backend
             :context cfg))
-
 
 ;; --- HELPERS
 

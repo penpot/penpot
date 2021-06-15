@@ -8,8 +8,10 @@
   "A maintenance task that performs a general purpose garbage collection
   of deleted objects."
   (:require
+   [app.config :as cf]
    [app.db :as db]
    [app.storage :as sto]
+   [app.storage.impl :as simpl]
    [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -47,6 +49,23 @@
 
     (doseq [{:keys [id] :as item} result]
       (l/trace :action "delete object" :table table :id id))
+
+    (count result)))
+
+
+;; --- IMPL: file deletion
+
+(defmethod delete-objects "file"
+  [{:keys [conn max-age table storage] :as cfg}]
+  (let [sql     (str/fmt sql:delete-objects
+                         {:table table :limit 50})
+        result  (db/exec! conn [sql max-age])
+        backend (simpl/resolve-backend storage (cf/get :fdata-storage-backend))]
+
+    (doseq [{:keys [id] :as item} result]
+      (l/trace :action "delete object" :table table :id id)
+      (when backend
+        (simpl/del-object backend item)))
 
     (count result)))
 

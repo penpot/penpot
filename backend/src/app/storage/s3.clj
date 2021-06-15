@@ -29,6 +29,7 @@
    software.amazon.awssdk.services.s3.model.CopyObjectRequest
    software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
    software.amazon.awssdk.services.s3.model.DeleteObjectsResponse
+   software.amazon.awssdk.services.s3.model.DeleteObjectRequest
    software.amazon.awssdk.services.s3.model.GetObjectRequest
    software.amazon.awssdk.services.s3.model.ObjectIdentifier
    software.amazon.awssdk.services.s3.model.PutObjectRequest
@@ -44,6 +45,7 @@
 (declare get-object-bytes)
 (declare get-object-data)
 (declare get-object-url)
+(declare del-object)
 (declare del-object-in-bulk)
 (declare build-s3-client)
 (declare build-s3-presigner)
@@ -103,6 +105,10 @@
 (defmethod impl/get-object-url :s3
   [backend object options]
   (get-object-url backend object options))
+
+(defmethod impl/del-object :s3
+  [backend object]
+  (del-object backend object))
 
 (defmethod impl/del-objects-in-bulk :s3
   [backend ids]
@@ -197,6 +203,15 @@
                  (build))
         pgor (.presignGetObject ^S3Presigner presigner ^GetObjectPresignRequest gopr)]
     (u/uri (str (.url ^PresignedGetObjectRequest pgor)))))
+
+(defn del-object
+  [{:keys [bucket client prefix]} {:keys [id] :as obj}]
+  (let [dor (.. (DeleteObjectRequest/builder)
+                (bucket bucket)
+                (key (str prefix (impl/id->path id)))
+                (build))]
+    (.deleteObject ^S3Client client
+                   ^DeleteObjectRequest dor)))
 
 (defn del-object-in-bulk
   [{:keys [bucket client prefix]} ids]

@@ -55,8 +55,15 @@
   [_ _]
   (throw (UnsupportedOperationException. "not supported")))
 
+(defmethod impl/del-object :db
+  [_ _]
+  ;; NOOP: because deleting the row already deletes the file data from
+  ;; the database.
+  nil)
+
 (defmethod impl/del-objects-in-bulk :db
   [_ _]
   ;; NOOP: because deleting the row already deletes the file data from
   ;; the database.
   nil)
+
