@@ -34,7 +34,8 @@
            on-decrease
            on-zoom-to-50
            on-zoom-to-100
-           on-zoom-to-200]
+           on-zoom-to-200
+           on-fullscreen]
     :as props}]
   (let [show-dropdown? (mf/use-state false)]
     [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
@@ -52,7 +53,10 @@
        [:li {:on-click on-zoom-to-100}
         "Zoom to 100%" [:span (sc/get-tooltip :reset-zoom)]]
        [:li {:on-click on-zoom-to-200}
-        "Zoom to 200%" [:span (sc/get-tooltip :zoom-200)]]]]]))
+        "Zoom to 200%" [:span (sc/get-tooltip :zoom-200)]]
+       [:li {:on-click on-fullscreen}
+        "Full screen"]]]]))
+        ;; "Full screen" [:span (sc/get-tooltip :full-screen)]]]]]))
 
 (mf/defc share-link
   [{:keys [page token] :as props}]
@@ -234,7 +238,13 @@
         (mf/use-callback
          (mf/deps file-id page-id)
          (fn [section]
-           (st/emit! (dv/go-to-section section))))]
+           (st/emit! (dv/go-to-section section))))
+
+        toggle-fullscreen
+        (mf/use-callback
+          (mf/deps fullscreen)
+          (fn []
+            (if @fullscreen (fullscreen false) (fullscreen true))))]
 
     [:header.viewer-header
      [:div.main-icon
@@ -288,17 +298,19 @@
         :on-decrease (st/emitf dv/decrease-zoom)
         :on-zoom-to-50 (st/emitf dv/zoom-to-50)
         :on-zoom-to-100 (st/emitf dv/reset-zoom)
-        :on-zoom-to-200 (st/emitf dv/zoom-to-200)}]
+        :on-zoom-to-200 (st/emitf dv/zoom-to-200)
+        :on-fullscreen toggle-fullscreen}]
 
       [:span.btn-icon-basic.btn-small.tooltip.tooltip-bottom-left
        {:alt (t locale "viewer.header.fullscreen")
-        :on-click #(if @fullscreen (fullscreen false) (fullscreen true))}
+        :on-click toggle-fullscreen}
        (if @fullscreen
          i/full-screen-off
          i/full-screen)]
 
-      [:& file-menu {:locale locale
-                     :project-id project-id
-                     :file-id file-id
-                     :page-id page-id}]]]))
+      (when has-permission?
+        [:& file-menu {:locale locale
+                       :project-id project-id
+                       :file-id file-id
+                       :page-id page-id}])]]))
 
