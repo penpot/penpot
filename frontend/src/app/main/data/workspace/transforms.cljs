@@ -471,14 +471,8 @@
 
         modifiers (assoc modifiers :ignore-geometry? ignore-geometry?)
 
-        resized-shape (when (seq children) ; <- don't calculate it if not needed
-                        (gsh/transform-shape
-                          (assoc shape :modifiers (select-keys modifiers
-                                                               [:resize-origin
-                                                                :resize-vector]))))
         set-child (fn [modif-tree child]
                     (let [child-modifiers (gsh/calc-child-modifiers shape
-                                                                    resized-shape
                                                                     child
                                                                     modifiers)]
                       (set-modifiers-recursive modif-tree
