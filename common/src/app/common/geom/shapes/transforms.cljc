@@ -368,14 +368,27 @@
              (dissoc :modifiers)))
        shape))))
 
-
 (defn calc-child-modifiers
-  [parent transformed-parent child parent-modifiers]
+  "Given the modifiers to apply to the parent, calculate the corresponding
+  modifiers for the child, depending on the child constraints."
+  [parent child parent-modifiers]
   (let [parent-rect             (:selrect parent)
-        transformed-parent-rect (:selrect transformed-parent)
         child-rect              (:selrect child)
 
-        origin (:resize-origin parent-modifiers)
+        ; If the modifiers include a resize vector, apply it to the parent,
+        ; and then calculate the displacement of the side opposite to the
+        ; origin of the vector.
+        origin (-> (:resize-origin parent-modifiers)
+                   ((d/nilf transform-point-center)
+                    (gco/center-shape parent)
+                    (:resize-transform-inverse parent-modifiers (gmt/matrix))))
+
+        transformed-parent-rect (-> parent-rect
+                                    (gpr/rect->points)
+                                    (transform-points
+                                      origin
+                                      (gmt/scale-matrix (get parent-modifiers :resize-vector (gpt/point 1 1))))
+                                    (gpr/points->selrect))
 
         orig-h (when origin
                  (cond
@@ -407,6 +420,8 @@
 
                         :else 0))
 
+        ;; Calculate the modifiers in the horizontal and vertical directions
+        ;; depending on the constraints, and the origin of the resize vector.
         constraints-h (get child :constraints-h (spec/default-constraints-h child))
         constraints-v (get child :constraints-v (spec/default-constraints-v child))
 
@@ -423,13 +438,19 @@
 
                       :leftright
                       (cond (= orig-h :left)
-                            {:resize-origin (gpt/point (:x1 child-rect) (:y1 child-rect))
+                            {:resize-origin (-> (gpt/point (:x1 child-rect) (:y1 child-rect))
+                                                (transform-point-center
+                                                  (gco/center-shape child)
+                                                  (:transform child (gmt/matrix))))
                              :resize-vector (gpt/point (/ (+ (:width child-rect) delta-h)
                                                           (:width child-rect))
                                                        1)}
 
                             (= orig-h :right)
-                            {:resize-origin (gpt/point (:x2 child-rect) (:y1 child-rect))
+                            {:resize-origin (-> (gpt/point (:x2 child-rect) (:y1 child-rect))
+                                                (transform-point-center
+                                                  (gco/center-shape child)
+                                                  (:transform child (gmt/matrix))))
                              :resize-vector (gpt/point (/ (- (:width child-rect) delta-h)
                                                           (:width child-rect))
                                                        1)}
@@ -460,13 +481,19 @@
 
                       :topbottom
                       (cond (= orig-v :top)
-                            {:resize-origin (gpt/point (:x1 child-rect) (:y1 child-rect))
+                            {:resize-origin (-> (gpt/point (:x1 child-rect) (:y1 child-rect))
+                                                (transform-point-center
+                                                  (gco/center-shape child)
+                                                  (:transform child (gmt/matrix))))
                              :resize-vector (gpt/point 1
                                                        (/ (+ (:height child-rect) delta-v)
                                                           (:height child-rect)))}
 
                             (= orig-v :bottom)
-                            {:resize-origin (gpt/point (:x1 child-rect) (:y2 child-rect))
+                            {:resize-origin (-> (gpt/point (:x1 child-rect) (:y2 child-rect))
+                                                (transform-point-center
+                                                  (gco/center-shape child)
+                                                  (:transform child (gmt/matrix))))
                              :resize-vector (gpt/point 1
                                                        (/ (- (:height child-rect) delta-v)
                                                           (:height child-rect)))}
@@ -487,18 +514,25 @@
     (cond-> {}
       (or (:displacement modifiers-h) (:displacement modifiers-v))
       (assoc :displacement (gmt/translate-matrix
-                             (gpt/point (get (:displacement modifiers-h) :x 0)
-                                        (get (:displacement modifiers-v) :y 0))))
+                             (-> (gpt/point (get (:displacement modifiers-h) :x 0)
+                                            (get (:displacement modifiers-v) :y 0))
+                                 (gpt/transform
+                                   (:resize-transform parent-modifiers (gmt/matrix))))))
 
       (or (:resize-vector modifiers-h) (:resize-vector modifiers-v))
       (assoc :resize-origin (or (:resize-origin modifiers-h)  ;; we assume that the origin is the same
                                 (:resize-origin modifiers-v)) ;; in any direction
              :resize-vector (gpt/point (get (:resize-vector modifiers-h) :x 1)
                                        (get (:resize-vector modifiers-v) :y 1)))
+
       (:displacement parent-modifiers)
       (update :displacement #(if (nil? %)
                                (:displacement parent-modifiers)
-                               (gmt/add-translate % (:displacement parent-modifiers)))))))
+                               (gmt/add-translate % (:displacement parent-modifiers))))
+
+      (:resize-transform parent-modifiers)
+      (assoc :resize-transform (:resize-transform parent-modifiers)
+             :resize-transform-inverse (:resize-transform-inverse parent-modifiers)))))
 
 (defn update-group-viewbox
   "Updates the viewbox for groups imported from SVG's"
