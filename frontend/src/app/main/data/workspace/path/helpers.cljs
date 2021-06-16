@@ -26,12 +26,31 @@
       (= event :interrupt) ;; ESC
       (and (ms/mouse-double-click? event))))
 
+(defn content-center
+  [content]
+  (-> content
+      gsh/content->selrect
+      gsh/center-selrect))
+
 (defn content->points+selrect
   "Given the content of a shape, calculate its points and selrect"
   [shape content]
-  (let [transform (:transform shape (gmt/matrix))
-        transform-inverse (:transform-inverse shape (gmt/matrix))
-        center (gsh/center-shape shape)
+
+  (let [{:keys [flip-x flip-y]} shape
+        transform
+        (cond-> (:transform shape (gmt/matrix))
+          flip-x (gmt/scale (gpt/point -1 1))
+          flip-y (gmt/scale (gpt/point 1 -1)))
+
+        transform-inverse
+        (cond-> (gmt/matrix)
+          flip-x (gmt/scale (gpt/point -1 1))
+          flip-y (gmt/scale (gpt/point 1 -1))
+          :always (gmt/multiply (:transform-inverse shape (gmt/matrix))))
+
+        center (or (gsh/center-shape shape)
+                   (content-center content))
+
         base-content (gsh/transform-content
                       content
                       (gmt/transform-in center transform-inverse))
@@ -39,30 +58,22 @@
         ;; Calculates the new selrect with points given the old center
         points (-> (gsh/content->selrect base-content)
                    (gsh/rect->points)
-                   (gsh/transform-points center (:transform shape (gmt/matrix))))
+                   (gsh/transform-points center transform))
 
         points-center (gsh/center-points points)
 
         ;; Points is now the selrect but the center is different so we can create the selrect
         ;; through points
         selrect (-> points
-                    (gsh/transform-points points-center (:transform-inverse shape (gmt/matrix)))
+                    (gsh/transform-points points-center transform-inverse)
                     (gsh/points->selrect))]
     [points selrect]))
 
 (defn update-selrect
   "Updates the selrect and points for a path"
   [shape]
-  (if (= (:rotation shape 0) 0)
-    (let [content (:content shape)
-          selrect (gsh/content->selrect content)
-          points (gsh/rect->points selrect)]
-      (assoc shape :points points :selrect selrect))
-
-    (let [content (:content shape)
-          [points selrect] (content->points+selrect shape content)]
-      (assoc shape :points points :selrect selrect))))
-
+  (let [[points selrect] (content->points+selrect shape (:content shape))]
+    (assoc shape :points points :selrect selrect)))
 
 (defn closest-angle
   [angle]
