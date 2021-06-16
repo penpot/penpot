@@ -7,7 +7,18 @@ WORKDIR /root
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qqy --no-install-recommends install curl tzdata locales ca-certificates imagemagick webp fontconfig; \
+    apt-get -qqy --no-install-recommends install \
+        curl \
+        tzdata \
+        locales \
+        ca-certificates \
+        imagemagick \
+        webp \
+        fontconfig \
+        woff-tools \
+        woff2 \
+        fontforge \
+    ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
     rm -rf /var/lib/apt/lists/*;
