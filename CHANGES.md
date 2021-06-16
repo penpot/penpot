@@ -11,6 +11,12 @@
 
 ## 1.6.4-alpha
 
+## 1.6.4-alpha
+
+### :bug: Bugs fixed
+
+- Fix problem with paths editing after flip [#1040](https://github.com/penpot/penpot/issues/1040)
+
 ### :sparkles: Minor improvements
 
 -  Decrease default bulk buffers on storage tasks.
