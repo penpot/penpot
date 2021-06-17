@@ -62,20 +62,19 @@
     (st/emit! (dd/update-team (with-meta team mdata))
               (modal/hide))))
 
-(mf/defc team-form-modal
-  {::mf/register modal/components
+(defn- on-submit
+  [form _]
+  (let [data (:clean-data @form)]
+    (if (:id data)
+      (on-update-submit form)
+      (on-create-submit form))))
+
+(mf/defc team-form-modal {::mf/register modal/components
    ::mf/register-as :team-form}
   [{:keys [team] :as props}]
-  (let [form   (fm/use-form :spec ::team-form
-                            :initial (or team {}))
-
-        on-submit
-        (mf/use-callback
-         (mf/deps team)
-         (if team
-           (partial on-update-submit form)
-           (partial on-create-submit form)))]
-
+  (let [initial (mf/use-memo (fn [] (or team {})))
+        form    (fm/use-form :spec ::team-form
+                             :initial initial)]
     [:div.modal-overlay
      [:div.modal-container.team-form-modal
       [:& fm/form {:form form :on-submit on-submit}
@@ -91,7 +90,7 @@
 
        [:div.modal-content.generic-form
         [:& fm/input {:type "text"
-                      :auto-focus true
+                      :auto-focus? true
                       :form form
                       :name :name
                       :label (tr "labels.create-team.placeholder")}]]
