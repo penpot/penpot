@@ -15,6 +15,12 @@
    [app.util.path.parser :as upp]
    [cuerdas.core :as str]))
 
+(def url-regex
+  #"url\(#([^\)]*)\)")
+
+(def uuid-regex
+  #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}")
+
 (defn valid?
   [root]
   (contains? (:attrs root) :xmlns:penpot))
@@ -41,7 +47,7 @@
 (defn find-all-nodes
   [node tag]
   (when (some? node)
-    (->> node :content (filterv #(= (:tag %) :defs)))))
+    (->> node :content (filterv #(= (:tag %) tag)))))
 
 (defn get-data
   ([node]
@@ -64,6 +70,11 @@
   [node]
   (or (close? node)
       (some? (get-data node))))
+
+(defn get-id
+  [node]
+  (when-let [id (re-find uuid-regex (get-in node [:attrs :id]))]
+    (uuid/uuid id)))
 
 (defn str->bool
   [val]
@@ -192,9 +203,6 @@
     (-> props
         (assoc :content content)
         (assoc :center center))))
-
-(def url-regex #"url\(#([^\)]*)\)")
-
 
 (defn parse-stops
   [gradient-node]
@@ -483,7 +491,7 @@
 (defn remove-prefix [s]
   (cond-> s
     (string? s)
-    (str/replace #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}-" "")))
+    (str/replace (re-pattern (str uuid-regex "-")) "")))
 
 (defn get-svg-attrs
   [svg-data svg-attrs]
@@ -640,3 +648,12 @@
 
       (not (empty? grids))
       (assoc-in [:options :saved-grids] grids))))
+
+(defn parse-interactions
+  [node]
+  (let [interactions-node (get-data node :penpot:interactions)]
+    (->> (find-all-nodes interactions-node :penpot:interaction)
+         (mapv (fn [node]
+                 {:destination (get-meta node :destination uuid/uuid)
+                  :action-type (get-meta node :action-type keyword)
+                  :event-type  (get-meta node :event-type keyword)})))))

@@ -78,36 +78,65 @@
 (defn add-shape-file
   [file node]
 
-  (let [type   (cip/get-type node)
-        close? (cip/close? node)
-        data   (cip/parse-data type node)]
-
+  (let [type         (cip/get-type node)
+        close?       (cip/close? node)]
     (if close?
       (case type
-        :frame
-        (fb/close-artboard file)
+        :frame    (fb/close-artboard file)
+        :group    (fb/close-group file)
+        :svg-raw  (fb/close-svg-raw file)
+        #_default file)
 
-        :group
-        (fb/close-group file)
+      (let [data         (cip/parse-data type node)
+            old-id       (cip/get-id node)
+            interactions (cip/parse-interactions node)
 
-        :svg-raw
-        (fb/close-svg-raw file)
+            file (case type
+                   :frame    (fb/add-artboard file data)
+                   :group    (fb/add-group file data)
+                   :rect     (fb/create-rect file data)
+                   :circle   (fb/create-circle file data)
+                   :path     (fb/create-path file data)
+                   :text     (fb/create-text file data)
+                   :image    (fb/create-image file data)
+                   :svg-raw  (fb/create-svg-raw file data)
+                   #_default file)]
 
-        ;; default
-        file)
+        (assert (some? old-id) "ID not found")
 
-      (case type
-        :frame    (fb/add-artboard file data)
-        :group    (fb/add-group file data)
-        :rect     (fb/create-rect file data)
-        :circle   (fb/create-circle file data)
-        :path     (fb/create-path file data)
-        :text     (fb/create-text file data)
-        :image    (fb/create-image file data)
-        :svg-raw  (fb/create-svg-raw file data)
+        ;; We store this data for post-processing after every shape has been
+        ;; added
+        (cond-> file
+          (some? (:last-id file))
+          (assoc-in [:id-mapping old-id] (:last-id file))
 
-        ;; default
-        file))))
+          (not (empty? interactions))
+          (assoc-in [:interactions old-id] interactions))))))
+
+(defn post-process-file
+  [file]
+
+  (letfn [(add-interaction
+            [id file {:keys [action-type event-type destination] :as interaction}]
+            (fb/add-interaction file action-type event-type id destination))
+
+          (add-interactions
+            [file [old-id interactions]]
+            (let [id (get-in file [:id-mapping old-id])]
+              (->> interactions
+                   (mapv (fn [interaction]
+                           (let [id (get-in file [:id-mapping (:destination interaction)])]
+                             (assoc interaction :destination id))))
+                   (reduce
+                    (partial add-interaction id) file))))
+
+          (process-interactions
+            [file]
+            (reduce add-interactions file (:interactions file)))]
+
+    (-> file
+        (process-interactions)
+        (dissoc :id-mapping :interactions))))
 
 (defn merge-reduce [f seed ob]
   (->> (rx/concat
@@ -145,6 +174,7 @@
            (rx/filter cip/shape?)
            (rx/mapcat (partial resolve-images file-id))
            (rx/reduce add-shape-file (fb/add-page file page-data))
+           (rx/map post-process-file)
            (rx/map fb/close-page)))
     (rx/empty)))
 

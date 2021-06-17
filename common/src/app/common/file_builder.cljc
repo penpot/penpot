@@ -291,6 +291,31 @@
   (-> file
       (update :parent-stack pop)))
 
+(defn add-interaction
+  [file action-type event-type from-id destination-id]
+
+  (assert (some? (lookup-shape file from-id)) (str "Cannot locate shape with id " from-id))
+  (assert (some? (lookup-shape file destination-id)) (str "Cannot locate shape with id " destination-id))
+
+  (let [interactions (->> (lookup-shape file from-id)
+                          :interactions
+                          (filterv #(or (not= (:action-type %) action-type)
+                                        (not= (:event-type %) event-type))))
+        conj (fnil conj [])
+        interactions (-> interactions
+                         (conj
+                          {:action-type action-type
+                           :event-type event-type
+                           :destination destination-id}))]
+    (commit-change
+     file
+     {:type :mod-obj
+      :page-id (:current-page-id file)
+      :id from-id
+
+      :operations
+      [{:type :set :attr :interactions :val interactions}]})))
+
 (defn generate-changes
   [file]
   (:changes file))
