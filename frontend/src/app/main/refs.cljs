@@ -80,7 +80,7 @@
 (def dashboard-selected-files
   (l/derived (fn [state]
                (let [get-file #(get-in state [:dashboard-files %])
-                     sim-file #(select-keys % [:id :name :project-id])
+                     sim-file #(select-keys % [:id :name :project-id :is-shared])
                      selected (get-in state [:dashboard-local :selected-files])
                      xform    (comp (map get-file)
                                     (map sim-file))]
