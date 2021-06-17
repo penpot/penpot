@@ -15,7 +15,6 @@
    "app/util/perf.cljs"
    "app/util/import/.*"
    "app/worker/.*"
-   "app/main/ui.*"
    "app/libs/.*"
    "app/main/data/workspace/path/selection.cljs"
    "app/main/data/workspace/transforms.cljs"

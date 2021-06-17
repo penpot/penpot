@@ -6,9 +6,10 @@
 
 (ns app.main.ui.cursors
   (:require-macros [app.main.ui.cursors :refer [cursor-ref cursor-fn]])
-  (:require [rumext.alpha :as mf]
-            [cuerdas.core :as str]
-            [app.util.timers :as ts]))
+  (:require
+   [app.util.timers :as ts]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 ;; Static cursors
 (def comments (cursor-ref :comments 0 2 20))
@@ -40,7 +41,7 @@
 
 (mf/defc debug-preview
   {::mf/wrap-props false}
-  [props]
+  []
   (let [rotation (mf/use-state 0)]
     (mf/use-effect (fn [] (ts/interval 100 #(reset! rotation inc))))
 

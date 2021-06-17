@@ -8,7 +8,7 @@
   (:require [rumext.alpha :as mf]))
 
 (mf/defc tab-element
-  [{:keys [children id title]}]
+  [{:keys [children]}]
   [:div.tab-element
    [:div.tab-element-content children]])
 

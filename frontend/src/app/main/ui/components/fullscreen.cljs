@@ -8,7 +8,6 @@
   (:require
    [app.util.dom :as dom]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 (def fullscreen-context
@@ -21,7 +20,7 @@
 
         change
         (mf/use-callback
-         (fn [event]
+         (fn [_]
            (let [val (dom/fullscreen?)]
              (reset! state val))))
 

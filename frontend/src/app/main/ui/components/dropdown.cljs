@@ -1,11 +1,16 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) UXBOX Labs SL
+
 (ns app.main.ui.components.dropdown
   (:require
-   [rumext.alpha :as mf]
-   [app.common.uuid :as uuid]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [goog.events :as events]
-   [goog.object :as gobj])
+   [goog.object :as gobj]
+   [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
 (mf/defc dropdown'

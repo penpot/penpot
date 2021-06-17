@@ -7,7 +7,6 @@
 (ns app.main.ui.dashboard.import
   (:require
    [app.main.ui.components.file-uploader :refer [file-uploader]]
-   [app.main.ui.icons :as i]
    [app.main.worker :as uw]
    [app.util.dom :as dom]
    [app.util.logging :as log]

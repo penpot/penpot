@@ -6,8 +6,6 @@
 
 (ns app.main.ui.dashboard.projects
   (:require
-   [app.common.exceptions :as ex]
-   [app.main.constants :as c]
    [app.main.data.dashboard :as dd]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -16,8 +14,7 @@
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
-   [app.util.keyboard :as kbd]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [okulary.core :as l]
@@ -38,7 +35,6 @@
   [{:keys [project first? files] :as props}]
   (let [locale     (mf/deref i18n/locale)
 
-        project-id (:id project)
         team-id    (:team-id project)
         file-count (or (:count project) 0)
 

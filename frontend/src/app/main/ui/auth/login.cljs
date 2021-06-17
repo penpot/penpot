@@ -16,8 +16,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.util.dom :as dom]
-   [app.util.i18n :refer [tr t]]
-   [app.util.object :as obj]
+   [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -74,7 +73,7 @@
         on-submit
         (mf/use-callback
          (mf/deps form)
-         (fn [event]
+         (fn [_]
            (reset! error nil)
            (let [params (with-meta (:clean-data @form)
                           {:on-error on-error})]

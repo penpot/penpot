@@ -6,10 +6,9 @@
 
 (ns app.main.ui.components.file-uploader
   (:require
-   [rumext.alpha :as mf]
-   [app.main.data.workspace :as dw]
    [app.main.store :as st]
-   [app.util.dom :as dom]))
+   [app.util.dom :as dom]
+   [rumext.alpha :as mf]))
 
 (mf/defc file-uploader
   {::mf/forward-ref true}

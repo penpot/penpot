@@ -6,19 +6,16 @@
 
 (ns app.main.ui.handoff.attributes.common
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [okulary.core :as l]
    [app.common.math :as mth]
+   [app.main.store :as st]
+   [app.main.ui.components.color-bullet :refer [color-bullet color-name]]
+   [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [t] :as i18n]
-   [app.util.color :as uc]
-   [app.util.code-gen :as cg]
-   [app.util.webapi :as wapi]
-   [app.main.ui.icons :as i]
-   [app.main.store :as st]
-   [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.color-bullet :refer [color-bullet color-name]]))
+   [cuerdas.core :as str]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 
 (def file-colors-ref

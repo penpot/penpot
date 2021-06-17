@@ -13,7 +13,6 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (mf/defc search-page

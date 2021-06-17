@@ -6,16 +6,11 @@
 
 (ns app.main.ui.components.color-input
   (:require
-   [app.common.data :as d]
-   [app.common.math :as math]
-   [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.util.color :as uc]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [app.util.simple-math :as sm]
-   [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
 (mf/defc color-input
@@ -80,7 +75,7 @@
         handle-blur
         (mf/use-callback
          (mf/deps parse-value apply-value update-input)
-         (fn [event]
+         (fn [_]
            (let [new-value (parse-value)]
              (if new-value
                (apply-value new-value)

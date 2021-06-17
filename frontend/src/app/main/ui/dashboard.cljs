@@ -6,9 +6,7 @@
 
 (ns app.main.ui.dashboard
   (:require
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
@@ -16,19 +14,13 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.files :refer [files-section]]
+   [app.main.ui.dashboard.fonts :refer [fonts-page font-providers-page]]
    [app.main.ui.dashboard.libraries :refer [libraries-page]]
    [app.main.ui.dashboard.projects :refer [projects-section]]
-   [app.main.ui.dashboard.fonts :refer [fonts-page font-providers-page]]
    [app.main.ui.dashboard.search :refer [search-page]]
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
    [app.main.ui.dashboard.team :refer [team-settings-page team-members-page]]
-   [app.main.ui.icons :as i]
-   [app.util.i18n :as i18n :refer [t]]
-   [app.util.router :as rt]
    [app.util.timers :as tm]
-   [beicon.core :as rx]
-   [cuerdas.core :as str]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (defn ^boolean uuid-str?
@@ -37,9 +29,8 @@
        (boolean (re-seq us/uuid-rx s))))
 
 (defn- parse-params
-  [route profile]
-  (let [route-name  (get-in route [:data :name])
-        search-term (get-in route [:params :query :search-term])
+  [route]
+  (let [search-term (get-in route [:params :query :search-term])
         team-id     (get-in route [:params :path :team-id])
         project-id  (get-in route [:params :path :project-id])]
     (cond->
@@ -87,7 +78,7 @@
   [{:keys [route] :as props}]
   (let [profile      (mf/deref refs/profile)
         section      (get-in route [:data :name])
-        params       (parse-params route profile)
+        params       (parse-params route)
 
         project-id   (:project-id params)
         team-id      (:team-id params)

@@ -11,12 +11,9 @@
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (s/def ::password-1 ::us/not-empty-string)
@@ -40,7 +37,7 @@
       (assoc :password-1 {:message "errors.password-too-short"}))))
 
 (defn- on-error
-  [form error]
+  [_form _error]
   (st/emit! (dm/error (tr "auth.notifications.invalid-token-error"))))
 
 (defn- on-success
@@ -49,7 +46,7 @@
             (rt/nav :auth-login)))
 
 (defn- on-submit
-  [form event]
+  [form _event]
   (let [mdata  {:on-error on-error
                 :on-success on-success}
         params {:token (get-in @form [:clean-data :token])
@@ -57,7 +54,7 @@
     (st/emit! (du/recover-profile (with-meta params mdata)))))
 
 (mf/defc recovery-form
-  [{:keys [locale params] :as props}]
+  [{:keys [params] :as props}]
   (let [form (fm/use-form :spec ::recovery-form
                           :validators [password-equality]
                           :initial params)]
@@ -66,28 +63,28 @@
      [:div.fields-row
       [:& fm/input {:type "password"
                     :name :password-1
-                    :label (t locale "auth.new-password")}]]
+                    :label (tr "auth.new-password")}]]
 
      [:div.fields-row
       [:& fm/input {:type "password"
                     :name :password-2
-                    :label (t locale "auth.confirm-password")}]]
+                    :label (tr "auth.confirm-password")}]]
 
      [:& fm/submit-button
-      {:label (t locale "auth.recovery-submit")}]]))
+      {:label (tr "auth.recovery-submit")}]]))
 
 ;; --- Recovery Request Page
 
 (mf/defc recovery-page
-  [{:keys [locale params] :as props}]
+  [{:keys [params] :as props}]
   [:section.generic-form
    [:div.form-container
     [:h1 "Forgot your password?"]
     [:div.subtitle "Please enter your new password"]
-    [:& recovery-form {:locale locale :params params}]
+    [:& recovery-form {:params params}]
 
     [:div.links
      [:div.link-entry
       [:a {:on-click #(st/emit! (rt/nav :auth-login))}
-       (t locale "profile.recovery.go-to-login")]]]]])
+       (tr "profile.recovery.go-to-login")]]]]])
 

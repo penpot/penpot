@@ -6,19 +6,17 @@
 
 (ns app.main.ui.handoff.attributes.image
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
    [app.config :as cfg]
-   [app.util.i18n :refer [t]]
-   [app.util.dom :as dom]
-   [app.main.ui.icons :as i]
+   [app.main.ui.components.copy-button :refer [copy-button]]
    [app.util.code-gen :as cg]
-   [app.main.ui.components.copy-button :refer [copy-button]]))
+   [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
+   [rumext.alpha :as mf]))
 
 (defn has-image? [shape]
-  (and (= (:type shape) :image)))
+  (= (:type shape) :image))
 
-(mf/defc image-panel [{:keys [shapes locale]}]
+(mf/defc image-panel [{:keys [shapes]}]
   (let [shapes (->> shapes (filter has-image?))]
     (for [shape shapes]
       [:div.attributes-block {:key (str "image-" (:id shape))}
@@ -27,12 +25,12 @@
          [:img {:src (cfg/resolve-file-media (-> shape :metadata))}]]]
 
        [:div.attributes-unit-row
-        [:div.attributes-label (t locale "handoff.attributes.image.width")]
+        [:div.attributes-label (tr "handoff.attributes.image.width")]
         [:div.attributes-value (-> shape :metadata :width) "px"]
         [:& copy-button {:data (cg/generate-css-props shape :width)}]]
 
        [:div.attributes-unit-row
-        [:div.attributes-label (t locale "handoff.attributes.image.height")]
+        [:div.attributes-label (tr "handoff.attributes.image.height")]
         [:div.attributes-value (-> shape :metadata :height) "px"]
         [:& copy-button {:data (cg/generate-css-props shape :height)}]]
 
@@ -44,4 +42,4 @@
                                           (str name "." extension)
                                           name)
                               :href (cfg/resolve-file-media (-> shape :metadata))}
-          (t locale "handoff.attributes.image.download")])])))
+          (tr "handoff.attributes.image.download")])])))
