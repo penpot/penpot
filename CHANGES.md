@@ -15,6 +15,7 @@
 ### :bug: Bugs fixed
 
 - Remove unnecesary redirect from history when user goes to workspace from dashboard [Taiga 1820](https://tree.taiga.io/project/penpot/issue/1820).
+- Fix tooltip position on view application [Taiga 1819](https://tree.taiga.io/project/penpot/issue/1819).
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes

@@ -968,7 +968,7 @@ input[type=range]:focus::-ms-fill-upper {
   &.tooltip-bottom {
     &:hover {
       &::after {
-        left: -100%;
+        left: -20%;
         top: 130%;
       }
     }
