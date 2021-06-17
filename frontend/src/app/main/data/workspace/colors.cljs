@@ -7,23 +7,13 @@
 (ns app.main.data.workspace.colors
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
-   [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.repo :as rp]
-   [app.main.store :as st]
-   [app.main.streams :as ms]
-   [app.util.color :as color]
-   [app.util.i18n :refer [tr]]
-   [app.util.router :as rt]
-   [app.util.time :as dt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]
    [potok.core :as ptk]))
 
 (def clear-color-for-rename
@@ -38,17 +28,16 @@
   [file-id color-id name]
   (ptk/reify ::rename-color
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (->> (rp/mutation! :rename-color {:id color-id :name name})
            (rx/map (partial rename-color-result file-id))))))
 
 (defn rename-color-result
-  [file-id color]
+  [_file-id color]
   (ptk/reify ::rename-color-result
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (update-in [:workspace-file :colors] #(d/replace-by-id % color))))))
+      (update-in state [:workspace-file :colors] #(d/replace-by-id % color)))))
 
 (defn change-palette-size
   [size]
@@ -125,7 +114,7 @@
   [ids color]
   (ptk/reify ::change-fill
     ptk/WatchEvent
-    (watch [_ state s]
+    (watch [_ state _]
       (let [page-id   (:current-page-id state)
             objects   (wsh/lookup-page-objects state page-id)
 
@@ -157,32 +146,29 @@
   [ids color]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
-    (watch [_ state s]
-      (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
+    (watch [_ _ _]
+      (let [attrs (cond-> {}
+                    (contains? color :color)
+                    (assoc :stroke-color (:color color))
 
-            attrs   (cond-> {}
-                      (contains? color :color)
-                      (assoc :stroke-color (:color color))
+                    (contains? color :id)
+                    (assoc :stroke-color-ref-id (:id color))
 
-                      (contains? color :id)
-                      (assoc :stroke-color-ref-id (:id color))
+                    (contains? color :file-id)
+                    (assoc :stroke-color-ref-file (:file-id color))
 
-                      (contains? color :file-id)
-                      (assoc :stroke-color-ref-file (:file-id color))
+                    (contains? color :gradient)
+                    (assoc :stroke-color-gradient (:gradient color))
 
-                      (contains? color :gradient)
-                      (assoc :stroke-color-gradient (:gradient color))
+                    (contains? color :opacity)
+                    (assoc :stroke-opacity (:opacity color)))]
 
-                      (contains? color :opacity)
-                      (assoc :stroke-opacity (:opacity color)))]
-
-            (rx/of (dch/update-shapes ids (fn [shape]
-                                            (cond-> (d/merge shape attrs)
-                                              (= (:stroke-style shape) :none)
-                                              (assoc :stroke-style :solid
-                                                     :stroke-width 1
-                                                     :stroke-opacity 1)))))))))
+        (rx/of (dch/update-shapes ids (fn [shape]
+                                        (cond-> (d/merge shape attrs)
+                                          (= (:stroke-style shape) :none)
+                                          (assoc :stroke-style :solid
+                                                 :stroke-width 1
+                                                 :stroke-opacity 1)))))))))
 
 
 (defn picker-for-selected-shape

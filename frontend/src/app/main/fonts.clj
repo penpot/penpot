@@ -7,9 +7,9 @@
 (ns app.main.fonts
   "A fonts loading macros."
   (:require
-   [cuerdas.core :as str]
+   [clojure.data.json :as json]
    [clojure.java.io :as io]
-   [clojure.data.json :as json]))
+   [cuerdas.core :as str]))
 
 (defn- parse-gfont-variant
   [variant]

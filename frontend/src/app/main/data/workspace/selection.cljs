@@ -61,7 +61,7 @@
                :height (mth/abs (- end-y start-y))}))]
     (ptk/reify ::handle-selection
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ stream]
         (let [stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
               stoper (->> stream (rx/filter stop?))]
           (rx/concat
@@ -100,7 +100,7 @@
                         (conj selected id))))))
 
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [_ state _]
        (let [page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)]
          (rx/of (dwc/expand-all-parents [id] objects)))))))
@@ -136,7 +136,7 @@
       (assoc-in state [:workspace-local :selected] ids))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
        (let [objects (wsh/lookup-page-objects state)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
@@ -144,7 +144,7 @@
   []
   (ptk/reify ::select-all
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [page-id      (:current-page-id state)
             objects      (wsh/lookup-page-objects state page-id)
             new-selected (let [selected-objs
@@ -204,7 +204,7 @@
   [preserve?]
   (ptk/reify ::select-shapes-by-current-selrect
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state)
@@ -224,25 +224,23 @@
                  (rx/map select-shapes))))))))
 
 (defn select-inside-group
-  ([group-id position] (select-inside-group group-id position false))
-  ([group-id position deep-children]
-   (ptk/reify ::select-inside-group
-     ptk/WatchEvent
-     (watch [_ state stream]
-       (let [page-id  (:current-page-id state)
-             objects  (wsh/lookup-page-objects state page-id)
-             group    (get objects group-id)
-             children (map #(get objects %) (:shapes group))
+  [group-id position]
+  (ptk/reify ::select-inside-group
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page-id  (:current-page-id state)
+            objects  (wsh/lookup-page-objects state page-id)
+            group    (get objects group-id)
+            children (map #(get objects %) (:shapes group))
 
-             ;; We need to reverse the children because if two children
-             ;; overlap we want to select the one that's over (and it's
-             ;; in the later vector position
-             selected (->> children
-                           reverse
+            ;; We need to reverse the children because if two children
+            ;; overlap we want to select the one that's over (and it's
+            ;; in the later vector position
+            selected (->> children
+                          reverse
                            (d/seek #(geom/has-point? % position)))]
-         (when selected
-           (rx/of (select-shape (:id selected)))))))))
-
+        (when selected
+          (rx/of (select-shape (:id selected))))))))
 
 ;; --- Duplicate Shapes
 (declare prepare-duplicate-change)
@@ -321,7 +319,6 @@
         name        (dwc/generate-unique-name names (:name obj))
         renamed-obj (assoc obj :id id :name name)
         moved-obj   (geom/move renamed-obj delta)
-        frames      (cp/select-frames objects)
         parent-id   (or parent-id frame-id)
 
         children-changes
@@ -378,7 +375,7 @@
 (def duplicate-selected
   (ptk/reify ::duplicate-selected
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)

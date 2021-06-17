@@ -10,14 +10,13 @@
    [app.common.pages :as cp]
    [app.common.pages.spec :as spec]
    [app.common.spec :as us]
-   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.worker :as uw]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
+   [app.main.worker :as uw]
    [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
@@ -59,29 +58,29 @@
                 attrs)
 
         uops (cond-> uops
-               (not (empty? uops))
+               (seq uops)
                (conj {:type :set-touched :touched (:touched old-obj)}))
 
         change {:type :mod-obj :page-id page-id :id id}]
 
     (cond-> changes
-      (not (empty? rops))
+      (seq rops)
       (update :redo-changes conj (assoc change :operations rops))
 
-      (not (empty? uops))
+      (seq uops)
       (update :undo-changes conj (assoc change :operations uops)))))
 
 (defn update-shapes
   ([ids f] (update-shapes ids f nil))
   ([ids f {:keys [reg-objects? save-undo? keys]
-           :or {reg-objects? false save-undo? true attrs nil}}]
+           :or {reg-objects? false save-undo? true}}]
 
    (us/assert ::coll-of-uuid ids)
    (us/assert fn? f)
 
    (ptk/reify ::update-shapes
      ptk/WatchEvent
-     (watch [it state stream]
+     (watch [it state _]
        (let [page-id   (:current-page-id state)
              objects   (wsh/lookup-page-objects state)
              changes   {:redo-changes []
@@ -107,7 +106,7 @@
   [page-id changes]
   (ptk/reify ::update-indices
     ptk/EffectEvent
-    (effect [_ state stream]
+    (effect [_ _ _]
       (uw/ask! {:cmd :update-page-indices
                 :page-id page-id
                 :changes changes}))))
@@ -147,7 +146,7 @@
               state))))
 
       ptk/WatchEvent
-      (watch [it state stream]
+      (watch [_ _ _]
         (when-not @error
           (let [;; adds page-id to page changes (that have the `id` field instead)
                 add-page-id
@@ -163,7 +162,7 @@
                      (group-by :page-id))
 
                 process-page-changes
-                (fn [[page-id changes]]
+                (fn [[page-id _changes]]
                   (update-indices page-id redo-changes))]
             (rx/concat
              (rx/from (map process-page-changes changes-by-pages))

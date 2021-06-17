@@ -40,8 +40,8 @@
 
 (s/def ::content-entry
   (s/keys :req-un [::command]
-          :req-opt [::params
-                    ::relative?]))
+          :opt-un [::params
+                   ::relative?]))
 (s/def ::content
   (s/coll-of ::content-entry :kind vector?))
 

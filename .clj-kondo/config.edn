@@ -1,6 +1,7 @@
 {:lint-as
  {promesa.core/let clojure.core/let
   rumext.alpha/defc clojure.core/defn
+  rumext.alpha/fnc clojure.core/fn
   app.common.data/export clojure.core/def
   app.db/with-atomic clojure.core/with-open}
 
@@ -16,6 +17,8 @@
    "app/worker/.*"
    "app/main/ui.*"
    "app/libs/.*"
+   "app/main/data/workspace/path/selection.cljs"
+   "app/main/data/workspace/transforms.cljs"
    ]}
 
  :linters

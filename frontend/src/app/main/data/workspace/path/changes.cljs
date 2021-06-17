@@ -84,7 +84,7 @@
          (assoc-in state (st/get-path state :content) content)))
 
      ptk/WatchEvent
-     (watch [it state stream]
+     (watch [it state _]
        (let [objects     (wsh/lookup-page-objects state)
              page-id     (:current-page-id state)
              id          (get-in state [:workspace-local :edition])

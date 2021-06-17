@@ -9,7 +9,6 @@
    ["react-dom/server" :as rds]
    [app.config :as cfg]
    [app.main.exports :as exports]
-   [app.main.exports :as svg]
    [app.main.fonts :as fonts]
    [app.util.http :as http]
    [beicon.core :as rx]
@@ -31,16 +30,13 @@
     []))
 
 (defn populate-images-cache
-  ([data]
-   (populate-images-cache data nil))
-
-  ([data {:keys [resolve-media?] :or {resolve-media? false}}]
-   (let [images (->> (:objects data)
-                     (vals)
-                     (mapcat get-image-data))]
-     (->> (rx/from images)
-          (rx/map #(cfg/resolve-file-media %))
-          (rx/flat-map http/fetch-data-uri)))))
+  [data]
+  (let [images (->> (:objects data)
+                    (vals)
+                    (mapcat get-image-data))]
+    (->> (rx/from images)
+         (rx/map #(cfg/resolve-file-media %))
+         (rx/flat-map http/fetch-data-uri))))
 
 (defn populate-fonts-cache [data]
   (let [texts (->> (:objects data)

@@ -10,14 +10,13 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
-   [app.util.dom :as dom]
-   [potok.core :as ptk]))
+   [app.util.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
