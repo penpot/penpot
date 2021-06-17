@@ -17,8 +17,7 @@
 (mf/defc session-widget
   [{:keys [session self? profile] :as props}]
   [:li.tooltip.tooltip-bottom
-   {:alt (:fullname profile)
-    :on-click (when self? (st/emitf (rt/navigate :settings/profile)))}
+   {:alt (:fullname profile)}
    [:img {:style {:border-color (:color session)}
           :src (cfg/resolve-profile-photo-url profile)}]])
 
