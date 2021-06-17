@@ -128,7 +128,7 @@
 
 (defn set-value!
   [node value]
-  (set! (.-value node) value))
+  (set! (.-value ^js node) value))
 
 (defn select-text!
   [node]

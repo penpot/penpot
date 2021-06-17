@@ -66,7 +66,7 @@
         [:div.element-options
          [:& align-options]
          (case (count selected)
-           0 [:& page/options {:page-id page-id}]
+           0 [:& page/options]
            1 [:& shape-options {:shape (first shapes)
                                 :page-id page-id
                                 :file-id file-id
