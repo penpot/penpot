@@ -9,15 +9,13 @@
   (:require
    [app.common.spec :as us]
    [app.main.data.messages :as dm]
-   [app.main.data.users :as du]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.core :as rx]
-   [app.main.repo :as rp]
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
@@ -37,7 +35,7 @@
         on-succes
         (mf/use-callback
          (mf/deps profile)
-         (fn [event]
+         (fn [_]
            (reset! loading false)
            (st/emit! (dm/success (tr "labels.feedback-sent")))
            (swap! form assoc :data {} :touched {} :errors {})))
@@ -54,7 +52,7 @@
         on-submit
         (mf/use-callback
          (mf/deps profile)
-         (fn [form event]
+         (fn [form _]
            (reset! loading true)
            (let [data (:clean-data @form)]
              (->> (rp/mutation! :send-feedback data)
