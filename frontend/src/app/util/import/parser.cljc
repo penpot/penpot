@@ -189,31 +189,10 @@
 
 (defn parse-path
   [props center svg-data]
-  (let [transform-inverse (:transform-inverse props (gmt/matrix))
-        transform         (:transform props (gmt/matrix))
-        content           (upp/parse-path (:d svg-data))
-        content-tr        (gsh/transform-content
-                           content
-                           (gmt/transform-in center transform-inverse))
-        selrect (gsh/content->selrect content-tr)
-        points (-> (gsh/rect->points selrect)
-                   (gsh/transform-points center transform))]
-
+  (let [content           (upp/parse-path (:d svg-data))]
     (-> props
         (assoc :content content)
-        (assoc :selrect selrect)
-        (assoc :points points))))
-
-(defn setup-selrect [props]
-  (let [data (select-keys props [:x :y :width :height])
-        transform (:transform props (gmt/matrix))
-        selrect (gsh/rect->selrect data)
-        points (gsh/rect->points data)
-        center (gsh/center-rect data)]
-
-    (assoc props
-           :selrect selrect
-           :points (gsh/transform-points points center transform))))
+        (assoc :center center))))
 
 (def url-regex #"url\(#([^\)]*)\)")
 
@@ -325,10 +304,7 @@
       (parse-circle svg-data)
 
       (= type :path)
-      (parse-path center svg-data)
-
-      (or (has-position? type) (= type :svg-raw) (= type :circle))
-      (setup-selrect))))
+      (parse-path center svg-data))))
 
 (defn add-fill
   [props node svg-data]
