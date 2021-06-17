@@ -118,7 +118,7 @@
 (defn resolve-images
   [file-id node]
   (if (and (not (cip/close? node))
-           (cip/has-image? type node))
+           (cip/has-image? node))
     (let [name     (cip/get-image-name node)
           data-uri (cip/get-image-data node)]
       (->> (upload-media-files file-id name data-uri)
@@ -162,25 +162,26 @@
         pages (->> (:pages file-desc)
                    (mapv #(vector % (get-in index [(keyword %) :name]))))]
     (->> (rx/from pages)
-         (rx/flat-map #(process-page file-id zip %))
+         (rx/mapcat #(process-page file-id zip %))
          (merge-reduce import-page file)
          (rx/flat-map send-changes)
          (rx/ignore))))
 
+(defn process-package
+  [project-id zip-file]
+  (->> (uz/get-file zip-file "manifest.json")
+       (rx/flat-map (comp :files json/decode :content))
+       (rx/flat-map
+        (fn [[file-id file-desc]]
+          (->> (create-file project-id (:name file-desc))
+               (rx/flat-map #(process-file % file-id file-desc zip-file)))))))
+
 (defmethod impl/handler :import-file
   [{:keys [project-id files]}]
 
-  (let [zip-str (->> (rx/from files)
-                     (rx/flat-map uz/load-from-url)
-                     (rx/share))]
-
-    (->> zip-str
-         (rx/flat-map #(uz/get-file % "manifest.json"))
-         (rx/flat-map (comp :files json/decode :content))
-         (rx/with-latest-from zip-str)
-         (rx/flat-map
-          (fn [[[file-id file-desc] zip]]
-            (->> (create-file project-id (:name file-desc))
-                 (rx/flat-map #(process-file % file-id file-desc zip))
-                 (rx/catch (fn [err]
-                             (.error js/console "ERROR" err (clj->js (.-data err)))))))))))
+  (->> (rx/from files)
+       (rx/flat-map uz/load-from-url)
+       (rx/flat-map (partial process-package project-id))
+       (rx/catch
+           (fn [err]
+             (.error js/console "ERROR" err (clj->js (.-data err)))))))

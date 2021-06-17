@@ -27,6 +27,8 @@
 (defn set-styles [attrs shape]
   (let [custom-attrs (-> (usa/extract-style-attrs shape)
                          (obj/without ["transform"]))
+
+        attrs (or attrs {})
         attrs (cond-> attrs
                 (string? (:style attrs)) usvg/clean-attrs)
         style (obj/merge! (clj->js (:style attrs {}))

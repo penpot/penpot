@@ -45,7 +45,7 @@
 
   (let [on-file-selected (use-import-file project-id on-finish-import)]
     [:form.import-file
-     [:& file-uploader {:accept "application/zip"
+     [:& file-uploader {:accept ".penpot"
                         :multi true
                         :ref external-ref
                         :on-selected on-file-selected}]]))

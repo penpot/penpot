@@ -57,14 +57,12 @@
   [{:keys [id file-id markup] :as page}]
   [(str file-id "/" id ".svg") markup])
 
-(defmethod impl/handler :export-file
-  [{:keys [team-id project-id files] :as message}]
 
-  (let [files-ids (->> files (mapv :id))
+(defn export-file
+  [team-id file-id]
 
-        files-stream
-        (->> (rx/from files-ids)
-             (rx/merge-map #(rp/query :file {:id %}))
+  (let [files-stream
+        (->> (rp/query :file {:id file-id})
              (rx/reduce #(assoc %1 (:id %2) %2) {})
              (rx/share))
 
@@ -87,11 +85,30 @@
 
     (rx/merge
      (->> render-stream
-          (rx/map #(hash-map :type :progress
-                             :data (str "Render " (:file-name %) " - " (:name %)))))
-     (->> (rx/merge pages-stream
-                    manifest-stream)
+          (rx/map #(hash-map
+                    :type :progress
+                    :file file-id
+                    :data (str "Render " (:file-name %) " - " (:name %)))))
+
+     (->> (rx/merge manifest-stream pages-stream)
           (rx/reduce conj [])
-          (rx/flat-map uz/compress-files)
-          (rx/map #(hash-map :type :finish
-                             :data (dom/create-uri %)))))))
+          (rx/with-latest-from files-stream)
+          (rx/flat-map (fn [[data files]]
+                         (->> (uz/compress-files data)
+                              (rx/map #(vector (get files file-id) %)))))))))
+
+(defmethod impl/handler :export-file
+  [{:keys [team-id project-id files] :as message}]
+
+  (->> (rx/from files)
+       (rx/mapcat #(export-file team-id %))
+       (rx/map
+        (fn [value]
+          (if (contains? value :type)
+            value
+            (let [[file export-blob] value]
+              {:type :finish
+               :filename (:name file)
+               :mtype "application/penpot"
+               :description "Penpot export (*.penpot)"
+               :uri (dom/create-uri export-blob)}))))))
