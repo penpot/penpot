@@ -72,19 +72,19 @@
                                  (:projects current-team))
 
         on-new-tab
-        (fn [event]
+        (fn [_]
           (let [pparams {:project-id (:project-id file)
                          :file-id (:id file)}
                 qparams {:page-id (first (get-in file [:data :pages]))}]
             (st/emit! (rt/nav-new-window :workspace pparams qparams))))
 
         on-duplicate
-        (fn [event]
+        (fn [_]
           (apply st/emit! (map dd/duplicate-file files))
           (st/emit! (dm/success (tr "dashboard.success-duplicate-file"))))
 
         delete-fn
-        (fn [event]
+        (fn [_]
           (apply st/emit! (map dd/delete-file files))
           (st/emit! (dm/success (tr "dashboard.success-delete-file"))))
 
@@ -111,16 +111,18 @@
             (st/emit! (dm/success (tr "dashboard.success-move-files")))
             (st/emit! (dm/success (tr "dashboard.success-move-file"))))
           (if (or navigate? (not= team-id current-team-id))
-            (st/emit! (dd/go-to-files project-id))
+            (st/emit! (dd/go-to-files team-id project-id))
             (st/emit! (dd/fetch-recent-files)
                       (dd/clear-selected-files))))
 
         on-move
         (fn [team-id project-id]
-          (let [data  {:ids (set (map :id files))
-                       :project-id project-id}
-                mdata {:on-success #(on-move-success team-id project-id)}]
-            (st/emitf (dd/move-files (with-meta data mdata)))))
+          (let [params  {:ids (set (map :id files))
+                         :project-id project-id}]
+            (fn []
+              (st/emit! (dd/move-files
+                         (with-meta params
+                           {:on-success #(on-move-success team-id project-id)}))))))
 
         add-shared
         (st/emitf (dd/set-file-shared (assoc file :is-shared true)))
@@ -155,7 +157,7 @@
                       :on-accept del-shared})))
 
         on-export-files
-        (fn [event]
+        (fn [_]
           (->> (uw/ask-many!
                 {:cmd :export-file
                  :team-id current-team-id
