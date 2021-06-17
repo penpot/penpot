@@ -6,16 +6,11 @@
 
 (ns app.main.ui.workspace
   (:require
-   [app.common.geom.point :as gpt]
-   [app.main.constants :as c]
-   [app.main.data.history :as udh]
    [app.main.data.messages :as dm]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.main.ui.context :as ctx]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
    [app.main.ui.workspace.colorpicker]
@@ -29,10 +24,7 @@
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [beicon.core :as rx]
-   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
