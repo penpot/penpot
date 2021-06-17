@@ -7,14 +7,12 @@
 (ns app.main.ui.workspace.colorpalette
   (:require
    [app.common.math :as mth]
-   [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
@@ -39,14 +37,9 @@
   (-> (l/in [:workspace-local :selected-palette-size])
       (l/derived st/state)))
 
-(defn- make-selected-palette-item-ref
-  [lib-id]
-  (-> (l/in [:library-items :palettes lib-id])
-      (l/derived st/state)))
-
 ;; --- Components
 (mf/defc palette-item
-  [{:keys [color size local?]}]
+  [{:keys [color size]}]
   (let [select-color
         (fn [event]
           (let [ids (wsh/lookup-selected @st/state)]
@@ -70,13 +63,12 @@
         max-offset (- (count current-colors)
                       visible)
 
-        close-fn   #(st/emit! (udw/toggle-layout-flags :colorpalette))
         container  (mf/use-ref nil)
 
         on-left-arrow-click
         (mf/use-callback
          (mf/deps max-offset visible)
-         (fn [event]
+         (fn [_]
            (swap! state update :offset
                   (fn [offset]
                     (if (pos? offset)
@@ -86,7 +78,7 @@
         on-right-arrow-click
         (mf/use-callback
          (mf/deps max-offset visible)
-         (fn [event]
+         (fn [_]
            (swap! state update :offset
                   (fn [offset]
                     (if (< offset max-offset)
@@ -104,7 +96,7 @@
 
         on-resize
         (mf/use-callback
-         (fn [event]
+         (fn [_]
            (let [dom   (mf/ref-val container)
                  width (obj/get dom "clientWidth")]
              (swap! state assoc :width width))))]
@@ -132,7 +124,7 @@
             (when (= selected (:id cur-library)) i/tick)
             [:div.library-name (str (:name cur-library) " " (str/format "(%s)" (count colors)))]
             [:div.color-sample
-             (for [[idx {:keys [id color]}] (map-indexed vector (take 7 colors))]
+             (for [[idx {:keys [color]}] (map-indexed vector (take 7 colors))]
                [:& cb/color-bullet {:key (str "color-" idx)
                                     :color color}])]]))
 
@@ -193,8 +185,7 @@
 
 (mf/defc colorpalette
   []
-  (let [team-id       (mf/use-ctx ctx/current-team-id)
-        recent-colors (mf/deref refs/workspace-recent-colors)
+  (let [recent-colors (mf/deref refs/workspace-recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)
         shared-libs   (mf/deref refs/workspace-libraries)
         selected      (or (mf/deref selected-palette-ref) :recent)

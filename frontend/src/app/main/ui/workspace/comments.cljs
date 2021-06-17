@@ -16,7 +16,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as tm]
    [rumext.alpha :as mf]))
 
@@ -25,10 +25,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc sidebar-options
-  [{:keys [local] :as props}]
+  []
   (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
-        locale (mf/deref i18n/locale)
-
         update-mode
         (mf/use-callback
          (fn [mode]
@@ -43,19 +41,19 @@
      [:li {:class (dom/classnames :selected (or (= :all cmode) (nil? cmode)))
            :on-click #(update-mode :all)}
       [:span.icon i/tick]
-      [:span.label (t locale "labels.show-all-comments")]]
+      [:span.label (tr "labels.show-all-comments")]]
 
      [:li {:class (dom/classnames :selected (= :yours cmode))
            :on-click #(update-mode :yours)}
       [:span.icon i/tick]
-      [:span.label (t locale "labels.show-your-comments")]]
+      [:span.label (tr "labels.show-your-comments")]]
 
      [:hr]
 
      [:li {:class (dom/classnames :selected (= :pending cshow))
            :on-click #(update-show (if (= :pending cshow) :all :pending))}
       [:span.icon i/tick]
-      [:span.label (t locale "labels.hide-resolved-comments")]]]))
+      [:span.label (tr "labels.hide-resolved-comments")]]]))
 
 (mf/defc comments-sidebar
   []
@@ -109,7 +107,7 @@
              :on-thread-click on-thread-click
              :users users
              :key (:page-id tgroup)}]])]
-         
+
        [:div.thread-groups-placeholder
         i/chat
         (tr "labels.no-comments-available")])]))

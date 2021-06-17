@@ -6,25 +6,20 @@
 
 (ns app.main.ui.workspace.shapes.text
   (:require
-   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.main.data.workspace :as dw]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as muc]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text :as text]
-   [app.main.ui.workspace.shapes.common :as common]
    [app.util.dom :as dom]
    [app.util.logging :as log]
    [app.util.object :as obj]
+   [app.util.text-editor :as ted]
    [app.util.timers :as timers]
    [app.util.webapi :as wapi]
-   [app.util.text-editor :as ted]
-   [okulary.core :as l]
    [beicon.core :as rx]
+   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 ;; Change this to :info :debug or :trace to debug this module
@@ -50,7 +45,7 @@
 (mf/defc text-resize-content
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id name x y grow-type] :as shape} (obj/get props "shape")
+  (let [{:keys [id name grow-type] :as shape} (obj/get props "shape")
 
         ;; NOTE: this breaks the hooks rule of "no hooks inside
         ;; conditional code"; but we ensure that this component will
@@ -77,8 +72,8 @@
               #(let [width  (obj/get-in entries [0 "contentRect" "width"])
                      height (obj/get-in entries [0 "contentRect" "height"])]
                  (when (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
-                   (do (log/debug :msg "Resize detected" :shape-id id :width width :height height)
-                       (st/emit! (dwt/resize-text id (mth/ceil width) (mth/ceil height))))))))))
+                   (log/debug :msg "Resize detected" :shape-id id :width width :height height)
+                   (st/emit! (dwt/resize-text id (mth/ceil width) (mth/ceil height)))))))))
 
         text-ref-cb
         (mf/use-callback
@@ -109,7 +104,7 @@
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id x y width height] :as shape} (unchecked-get props "shape")
+  (let [{:keys [id] :as shape} (unchecked-get props "shape")
         edition-ref (mf/use-memo (mf/deps id) #(l/derived (fn [o] (= id (:edition o))) refs/workspace-local))
         edition?    (mf/deref edition-ref)]
 
@@ -124,4 +119,4 @@
       ;; the component if the edition flag changes.
       [:& text-resize-content {:shape shape
                                :edition? edition?
-                               :key (str (:id shape) edition?)}]]]))
+                               :key (str id edition?)}]]]))

@@ -6,12 +6,11 @@
 
 (ns app.main.ui.shapes.attrs
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.common.data :as d]
-   [app.util.object :as obj]
    [app.main.ui.context :as muc]
-   [app.util.svg :as usvg]))
+   [app.util.object :as obj]
+   [app.util.svg :as usvg]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (defn- stroke-type->dasharray
   [style]

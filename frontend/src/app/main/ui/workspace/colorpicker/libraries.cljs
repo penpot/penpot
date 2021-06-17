@@ -6,42 +6,29 @@
 
 (ns app.main.ui.workspace.colorpicker.libraries
   (:require
-   [rumext.alpha :as mf]
-   [okulary.core :as l]
-   [cuerdas.core :as str]
-   [app.common.geom.point :as gpt]
-   [app.common.math :as math]
    [app.common.uuid :refer [uuid]]
-   [app.util.dom :as dom]
-   [app.util.color :as uc]
-   [app.util.object :as obj]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
-   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.colors :as dc]
-   [app.main.data.modal :as modal]
-   [app.main.ui.icons :as i]
-   [app.util.i18n :as i18n :refer [t]]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
-   [app.main.ui.workspace.colorpicker.gradients :refer [gradients]]
-   [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
-   [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
-   [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
-   [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]))
+   [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 (def selected-palette-ref
   (-> (l/in [:workspace-local :selected-palette-colorpicker])
       (l/derived st/state)))
 
-(mf/defc libraries [{:keys [current-color on-select-color on-add-library-color
-                            disable-gradient disable-opacity]}]
+(mf/defc libraries
+  [{:keys [on-select-color on-add-library-color disable-gradient disable-opacity]}]
   (let [selected-library       (or (mf/deref selected-palette-ref) :recent)
         current-library-colors (mf/use-state [])
 
         shared-libs      (mf/deref refs/workspace-libraries)
         file-colors      (mf/deref refs/workspace-file-colors)
         recent-colors    (mf/deref refs/workspace-recent-colors)
-        locale           (mf/deref i18n/locale)
 
         parse-selected
         (fn [selected-str]
@@ -85,8 +72,8 @@
                             (when-let [val (parse-selected (dom/get-target-val e))]
                               (st/emit! (dc/change-palette-selected-colorpicker val))))
                :value (name selected-library)}
-      [:option {:value "recent"} (t locale "workspace.libraries.colors.recent-colors")]
-      [:option {:value "file"} (t locale "workspace.libraries.colors.file-library")]
+      [:option {:value "recent"} (tr "workspace.libraries.colors.recent-colors")]
+      [:option {:value "file"} (tr "workspace.libraries.colors.file-library")]
 
       (for [[_ {:keys [name id]}] shared-libs]
         [:option {:key id

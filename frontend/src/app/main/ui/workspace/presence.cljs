@@ -8,14 +8,12 @@
   (:require
    [app.config :as cfg]
    [app.main.refs :as refs]
-   [app.main.store :as st]
-   [app.util.router :as rt]
    [rumext.alpha :as mf]))
 
 ;; --- SESSION WIDGET
 
 (mf/defc session-widget
-  [{:keys [session self? profile] :as props}]
+  [{:keys [session profile] :as props}]
   [:li.tooltip.tooltip-bottom
    {:alt (:fullname profile)}
    [:img {:style {:border-color (:color session)}
@@ -24,15 +22,13 @@
 (mf/defc active-sessions
   {::mf/wrap [mf/memo]}
   []
-  (let [profile  (mf/deref refs/profile)
-        users    (mf/deref refs/users)
+  (let [users    (mf/deref refs/users)
         presence (mf/deref refs/workspace-presence)]
     [:ul.active-users
      (for [session (vals presence)]
        [:& session-widget
         {:session session
          :profile (get users (:profile-id session))
-         :self? (= (:profile-id session) (:id profile))
          :key (:id session)}])]))
 
 

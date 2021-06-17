@@ -6,28 +6,24 @@
 
 (ns app.main.ui.workspace.colorpicker
   (:require
-   [rumext.alpha :as mf]
-   [okulary.core :as l]
-   [cuerdas.core :as str]
-   [app.common.geom.point :as gpt]
-   [app.common.math :as math]
-   [app.common.uuid :refer [uuid]]
-   [app.util.dom :as dom]
-   [app.util.color :as uc]
-   [app.util.object :as obj]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
-   [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.colors :as dc]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.util.i18n :as i18n :refer [t]]
+   [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients]]
    [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
    [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
+   [app.main.ui.workspace.colorpicker.libraries :refer [libraries]]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
-   [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
-   [app.main.ui.workspace.colorpicker.libraries :refer [libraries]]))
+   [app.util.color :as uc]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [t]]
+   [cuerdas.core :as str]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 ;; --- Refs
 
@@ -127,7 +123,6 @@
         picking-color? (mf/deref picking-color?)
         picked-color (mf/deref picked-color)
         picked-color-select (mf/deref picked-color-select)
-        picked-shift? (mf/deref picked-shift?)
 
         editing-spot-state (mf/deref editing-spot-state-ref)
         current-gradient (mf/deref current-gradient-ref)
@@ -156,11 +151,11 @@
         handle-change-stop
         (fn [offset]
           (when-let [offset-color (get-in @state [:stops offset])]
-            (do (swap! state assoc
-                       :current-color offset-color
-                       :editing-stop offset)
+            (swap! state assoc
+                   :current-color offset-color
+                   :editing-stop offset)
 
-                (st/emit! (dc/select-gradient-stop offset)))))
+            (st/emit! (dc/select-gradient-stop offset))))
 
         on-select-library-color
         (fn [color]
@@ -172,7 +167,7 @@
                   (on-change color)))))
 
         on-add-library-color
-        (fn [color]
+        (fn [_]
           (st/emit! (dwl/add-color (state->data @state))))
 
         on-activate-gradient
@@ -197,7 +192,7 @@
     (mf/use-effect
      (mf/deps current-color)
      (fn [] (let [node (mf/ref-val ref-picker)
-                  {:keys [r g b h s v]} current-color
+                  {:keys [r g b h v]} current-color
                   rgb [r g b]
                   hue-rgb (uc/hsv->rgb [h 1.0 255])
                   hsl-from (uc/hsv->hsl [h 0.0 v])
@@ -248,9 +243,8 @@
                                                             :end-x :end-y
                                                             :width])]
            (when (not= (:gradient-data @state) gradient-data)
-             (do
-               (reset! dirty? true)
-               (swap! state assoc :gradient-data gradient-data)))))))
+             (reset! dirty? true)
+             (swap! state assoc :gradient-data gradient-data))))))
 
     ;; Check if we've opened a color with gradient
     (mf/use-effect
@@ -265,7 +259,7 @@
     (mf/use-effect
      (mf/deps @state)
      (fn []
-       (if @dirty?
+       (when @dirty?
          (let [color (state->data @state)]
            (reset! dirty? false)
            (reset! last-color color)
@@ -357,7 +351,7 @@
 (mf/defc colorpicker-modal
   {::mf/register modal/components
    ::mf/register-as :colorpicker}
-  [{:keys [x y default data page position
+  [{:keys [x y data position
            disable-gradient
            disable-opacity
            on-change on-close on-accept] :as props}]
@@ -367,7 +361,7 @@
         position (or position :left)
         style (calculate-position vport position x y)
 
-        handle-change (fn [new-data shift-clicked?]
+        handle-change (fn [new-data _shift-clicked?]
                         (reset! dirty? (not= data new-data))
                         (reset! last-change new-data)
                         (when on-change

@@ -15,7 +15,7 @@
 
 (defn generate-root-styles
   [shape node]
-  (let [valign (or (:vertical-align node "top"))
+  (let [valign (:vertical-align node "top")
         base   #js {:height (or (:height shape) "100%")
                     :width  (or (:width shape) "100%")}]
     (cond-> base
@@ -104,18 +104,18 @@
     (when (and (string? font-id)
                (pos? (alength font-id)))
       (fonts/ensure-loaded! font-id)
-      (let [font (get fontsdb font-id)]
-        (let [font-family  (str/quote
-                            (or (:family font)
-                                (:font-family data)))
-              font-variant (d/seek #(= font-variant-id (:id %))
-                                   (:variants font))
-              font-style   (or (:style font-variant)
-                               (:font-style data))
-              font-weight  (or (:weight font-variant)
-                               (:font-weight data))]
-          (obj/set! base "fontFamily" font-family)
-          (obj/set! base "fontStyle" font-style)
-          (obj/set! base "fontWeight" font-weight))))
+      (let [font         (get fontsdb font-id)
+            font-family  (str/quote
+                          (or (:family font)
+                              (:font-family data)))
+            font-variant (d/seek #(= font-variant-id (:id %))
+                                 (:variants font))
+            font-style   (or (:style font-variant)
+                             (:font-style data))
+            font-weight  (or (:weight font-variant)
+                             (:font-weight data))]
+        (obj/set! base "fontFamily" font-family)
+        (obj/set! base "fontStyle" font-style)
+        (obj/set! base "fontWeight" font-weight)))
 
     base))

@@ -6,7 +6,6 @@
 
 (ns app.main.ui.shapes.frame
   (:require
-   [app.common.data :as d]
    [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
@@ -20,7 +19,7 @@
     [props]
     (let [childs     (unchecked-get props "childs")
           shape      (unchecked-get props "shape")
-          {:keys [id width height]} shape
+          {:keys [width height]} shape
 
           props (-> (merge frame-default-props shape)
                     (attrs/extract-style-attrs)
@@ -32,7 +31,7 @@
                           :className "frame-background"}))]
       [:*
        [:> :rect props]
-       (for [[i item] (d/enumerate childs)]
+       (for [item childs]
          [:& shape-wrapper {:frame shape
                             :shape item
                             :key (:id item)}])])))

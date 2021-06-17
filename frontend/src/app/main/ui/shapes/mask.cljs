@@ -6,9 +6,9 @@
 
 (ns app.main.ui.shapes.mask
   (:require
-   [rumext.alpha :as mf]
+   [app.common.geom.shapes :as gsh]
    [cuerdas.core :as str]
-   [app.common.geom.shapes :as gsh]))
+   [rumext.alpha :as mf]))
 
 (defn mask-str [mask]
   (str/fmt "url(#%s)" (str (:id mask) "-mask")))

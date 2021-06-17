@@ -6,10 +6,9 @@
 
 (ns app.main.ui.shapes.group
   (:require
+   [app.main.ui.shapes.mask :refer [mask-str clip-str mask-factory]]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]
-   [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.mask :refer [mask-str clip-str mask-factory]]))
+   [rumext.alpha :as mf]))
 
 (defn group-shape
   [shape-wrapper]
@@ -20,9 +19,8 @@
       (let [frame          (unchecked-get props "frame")
             shape          (unchecked-get props "shape")
             childs         (unchecked-get props "childs")
-            pointer-events (unchecked-get props "pointer-events")
 
-            {:keys [id x y width height masked-group?]} shape
+            masked-group?  (:masked-group? shape)
 
             [mask childs]  (if masked-group?
                              [(first childs) (rest childs)]

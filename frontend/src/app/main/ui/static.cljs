@@ -10,12 +10,9 @@
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
-   [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (defn- go-to-dashboard
@@ -24,7 +21,7 @@
     (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))
 
 (mf/defc not-found
-  [{:keys [error] :as props}]
+  []
   (let [profile (mf/deref refs/profile)]
     [:section.exception-layout
      [:div.exception-header
@@ -42,7 +39,7 @@
          (tr "labels.sign-out")]]]]]))
 
 (mf/defc bad-gateway
-  [{:keys [error] :as props}]
+  []
   (let [profile (mf/deref refs/profile)]
     [:section.exception-layout
      [:div.exception-header
@@ -59,7 +56,7 @@
          (tr "labels.retry")]]]]]))
 
 (mf/defc service-unavailable
-  [{:keys [error] :as props}]
+  []
   (let [profile (mf/deref refs/profile)]
     [:section.exception-layout
      [:div.exception-header
@@ -76,7 +73,7 @@
          (tr "labels.retry")]]]]]))
 
 (mf/defc internal-error
-  [props]
+  []
   (let [profile (mf/deref refs/profile)]
     [:section.exception-layout
      [:div.exception-header

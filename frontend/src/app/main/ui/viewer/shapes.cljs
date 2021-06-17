@@ -13,10 +13,8 @@
    [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
    [app.main.data.viewer :as dv]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.shapes.circle :as circle]
-   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.image :as image]
@@ -62,13 +60,10 @@
   (mf/fnc generic-wrapper
     {::mf/wrap-props false}
     [props]
-    (let [shape (unchecked-get props "shape")
+    (let [shape   (unchecked-get props "shape")
           objects (unchecked-get props "objects")
-          {:keys [x y width height]} (:selrect shape)
-          frame? (= :frame (:type shape))
-
-          childs (unchecked-get props "childs")
-          frame  (unchecked-get props "frame")
+          childs  (unchecked-get props "childs")
+          frame   (unchecked-get props "frame")
 
           interactions (->> (:interactions shape)
                             (filter #(contains? objects (:destination %))))
