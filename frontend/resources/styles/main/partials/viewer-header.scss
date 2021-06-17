@@ -49,6 +49,12 @@
       display: flex;
       justify-content: center;
 
+      svg {
+        fill: $color-gray-30;
+        height: 30px;
+        width: 28px;
+      }
+
       &:hover {
         > svg {
           fill: $color-primary;
@@ -61,7 +67,7 @@
       left: 0px;
       top: 40px;
     }
-    
+
     .view-options-dropdown {
       align-items: center;
       cursor: pointer;
