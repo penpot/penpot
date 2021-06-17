@@ -117,12 +117,12 @@
                         (on-change {:text-direction val}))]
     ;; --- Align
     [:div.align-icons
-     [:span.tooltip.tooltip-bottom
+     [:span.tooltip.tooltip-bottom-left
       {:alt (tr "workspace.options.text-options.direction-ltr")
        :class (dom/classnames :current (= "ltr" direction))
        :on-click #(handle-change % "ltr")}
       i/text-direction-ltr]
-     [:span.tooltip.tooltip-bottom
+     [:span.tooltip.tooltip-bottom-left
       {:alt (tr "workspace.options.text-options.direction-rtl")
        :class (dom/classnames :current (= "rtl" direction))
        :on-click #(handle-change % "rtl")}
@@ -137,17 +137,17 @@
           (on-change {:vertical-align new-align}))]
 
     [:div.align-icons
-     [:span.tooltip.tooltip-bottom
+     [:span.tooltip.tooltip-bottom-left
       {:alt (tr "workspace.options.text-options.align-top")
        :class (dom/classnames :current (= "top" vertical-align))
        :on-click #(handle-change % "top")}
       i/align-top]
-     [:span.tooltip.tooltip-bottom
+     [:span.tooltip.tooltip-bottom-left
       {:alt (tr "workspace.options.text-options.align-middle")
        :class (dom/classnames :current (= "center" vertical-align))
        :on-click #(handle-change % "center")}
       i/align-middle]
-     [:span.tooltip.tooltip-bottom
+     [:span.tooltip.tooltip-bottom-left
       {:alt (tr "workspace.options.text-options.align-bottom")
        :class (dom/classnames :current (= "bottom" vertical-align))
        :on-click #(handle-change % "bottom")}
