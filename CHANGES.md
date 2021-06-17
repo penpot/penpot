@@ -24,6 +24,12 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+## 1.6.5-alpha
+
+### :bug: Bugs fixed
+
+- Fix problem with paths editing after flip [#1040](https://github.com/penpot/penpot/issues/1040)
+
 ## 1.6.4-alpha
 
 ### :sparkles: Minor improvements

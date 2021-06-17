@@ -298,21 +298,26 @@
 
                 :else
                 (-> shape
-                    (merge rect-shape)))]
+                    (merge rect-shape)))
+
+        base-rotation  (or (:rotation shape) 0)
+        modif-rotation (or (get-in shape [:modifiers :rotation]) 0)]
+
     (as-> shape $
       (update $ :transform #(gmt/multiply (or % (gmt/matrix)) matrix))
       (update $ :transform-inverse #(gmt/multiply matrix-inverse (or % (gmt/matrix))))
       (assoc  $ :points (into [] points))
       (assoc  $ :selrect (gpr/rect->selrect rect-shape))
-      (update $ :rotation #(mod (+ (or % 0)
-                                   (or (get-in $ [:modifiers :rotation]) 0)) 360)))))
+      (assoc  $ :rotation (mod (+ base-rotation modif-rotation) 360)))))
 
 (defn set-flip [shape modifiers]
   (let [rx (get-in modifiers [:resize-vector :x])
         ry (get-in modifiers [:resize-vector :y])]
     (cond-> shape
-      (and rx (< rx 0)) (update :flip-x not)
-      (and ry (< ry 0)) (update :flip-y not))))
+      (and rx (< rx 0)) (-> (update :flip-x not)
+                            (update :rotation -))
+      (and ry (< ry 0)) (-> (update :flip-y not)
+                            (update :rotation -)))))
 
 (defn apply-displacement [shape]
   (let [modifiers (:modifiers shape)]

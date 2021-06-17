@@ -172,7 +172,7 @@
                     (uuid/next))]
     (update current-fonts id (fn [font]
                                (-> font
-                                   (assoc :name name)
+                                   (assoc :font-family name)
                                    (assoc :font-id font-id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
