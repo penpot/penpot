@@ -51,22 +51,28 @@
     (set! file (fb/close-group file)))
 
   (createRect [self data]
-    (set! file (fb/create-rect file (parse-data data))))
+    (set! file (fb/create-rect file (parse-data data)))
+    (str (:last-id file)))
 
   (createCircle [self data]
-    (set! file (fb/create-circle file (parse-data data))))
+    (set! file (fb/create-circle file (parse-data data)))
+    (str (:last-id file)))
 
   (createPath [self data]
-    (set! file (fb/create-path file (parse-data data))))
+    (set! file (fb/create-path file (parse-data data)))
+    (str (:last-id file)))
 
   (createText [self data]
-    (set! file (fb/create-text file (parse-data data))))
+    (set! file (fb/create-text file (parse-data data)))
+    (str (:last-id file)))
 
   (createImage [self data]
-    (set! file (fb/create-image file (parse-data data))))
+    (set! file (fb/create-image file (parse-data data)))
+    (str (:last-id file)))
 
   (createSVG [self data]
-    (set! file (fb/create-svg-raw file (parse-data data))))
+    (set! file (fb/create-svg-raw file (parse-data data)))
+    (str (:last-id file)))
 
   (closeSVG [self]
     (set! file (fb/close-svg-raw file)))

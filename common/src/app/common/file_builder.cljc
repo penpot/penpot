@@ -8,6 +8,7 @@
   "A version parsing helper."
   (:require
    [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes :as ch]
    [app.common.pages.init :as init]
@@ -52,7 +53,49 @@
           :parent-id parent-id
           :obj obj}))))
 
-(defn generate-name
+(defn setup-rect-selrect [obj]
+  (let [rect      (select-keys obj [:x :y :width :height])
+        center    (gsh/center-rect rect)
+        transform (:transform obj (gmt/matrix))
+        selrect   (gsh/rect->selrect rect)
+
+        points (-> (gsh/rect->points rect)
+                   (gsh/transform-points center transform))]
+
+    (assoc obj
+           :selrect selrect
+           :points points)))
+
+(defn- setup-path-selrect
+  [obj]
+  (let [content (:content obj)
+        center  (:center obj)
+
+        transform-inverse
+        (->> (:transform-inverse obj (gmt/matrix))
+             (gmt/transform-in center))
+
+        transform
+        (->> (:transform obj (gmt/matrix))
+             (gmt/transform-in center))
+
+        content' (gsh/transform-content content transform-inverse)
+        selrect  (gsh/content->selrect content')
+        points   (-> (gsh/rect->points selrect)
+                     (gsh/transform-points transform))]
+
+    (-> obj
+        (dissoc :center)
+        (assoc :selrect selrect)
+        (assoc :points points))))
+
+(defn- setup-selrect
+  [obj]
+  (if (= (:type obj) :path)
+    (setup-path-selrect obj)
+    (setup-rect-selrect obj)))
+
+(defn- generate-name
   [type data]
   (if (= type :svg-raw)
     (let [tag (get-in data [:content :tag])]
@@ -62,7 +105,7 @@
                         :else (str tag))))
     (str/capital (d/name type))))
 
-(defn check-name
+(defn- check-name
   "Given a tag returns its layer name"
   [data file type]
 
@@ -123,6 +166,7 @@
   (let [obj (-> (init/make-minimal-shape :frame)
                 (merge data)
                 (check-name file :frame)
+                (setup-selrect)
                 (d/without-nils))]
     (-> file
         (commit-shape obj)
@@ -153,19 +197,46 @@
 (defn close-group [file]
   (let [group-id (-> file :parent-stack peek)
         group    (lookup-shape file group-id)
-        shapes   (->> group :shapes (mapv #(lookup-shape file %)))
-        selrect  (gsh/selection-rect shapes)
-        points   (gsh/rect->points selrect)]
+        children (->> group :shapes (mapv #(lookup-shape file %)))
+
+        file
+        (cond
+          (empty? children)
+          (commit-change
+           file
+           {:type :del-obj
+            :page-id (:current-page-id file)
+            :id group-id})
+
+          (:masked-group? group)
+          (let [mask (first children)]
+            (commit-change
+             file
+             {:type :mod-obj
+              :page-id (:current-page-id file)
+              :id group-id
+              :operations
+              [{:type :set :attr :x :val (-> mask :selrect :x)}
+               {:type :set :attr :y :val (-> mask :selrect :y)}
+               {:type :set :attr :width :val (-> mask :selrect :width)}
+               {:type :set :attr :height :val (-> mask :selrect :height)}
+               {:type :set :attr :flip-x :val (-> mask :flip-x)}
+               {:type :set :attr :flip-y :val (-> mask :flip-y)}
+               {:type :set :attr :selrect :val (-> mask :selrect)}
+               {:type :set :attr :points :val (-> mask :points)}]}))
+
+          :else
+          (let [group' (gsh/update-group-selrect group children)]
+            (commit-change
+             file
+             {:type :mod-obj
+              :page-id (:current-page-id file)
+              :id group-id
+              :operations
+              [{:type :set :attr :selrect :val (:selrect group')}
+               {:type :set :attr :points  :val (:points group')}]})))]
 
     (-> file
-        (cond-> (not (empty? shapes))
-          (commit-change
-           {:type :mod-obj
-            :page-id (:current-page-id file)
-            :id group-id
-            :operations
-            [{:type :set :attr :selrect :val selrect}
-             {:type :set :attr :points  :val points}]}))
         (update :parent-stack pop))))
 
 (defn create-shape [file type data]
@@ -175,6 +246,7 @@
         obj (-> (init/make-minimal-shape type)
                 (merge data)
                 (check-name file :type)
+                (setup-selrect)
                 (d/without-nils))
         obj (cond-> obj
               frame (gsh/translate-from-frame frame))]
@@ -218,7 +290,6 @@
 (defn close-svg-raw [file]
   (-> file
       (update :parent-stack pop)))
-
 
 (defn generate-changes
   [file]
