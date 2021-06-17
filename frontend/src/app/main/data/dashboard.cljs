@@ -688,13 +688,19 @@
 
 
 (defn go-to-files
-  [project-id]
-  (ptk/reify ::go-to-files
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-files {:team-id team-id
-                                         :project-id project-id}))))))
+  ([project-id]
+   (ptk/reify ::go-to-files
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [team-id (:current-team-id state)]
+         (rx/of (rt/nav :dashboard-files {:team-id team-id
+                                          :project-id project-id}))))))
+  ([team-id project-id]
+   (ptk/reify ::go-to-files
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (rx/of (rt/nav :dashboard-files {:team-id team-id
+                                        :project-id project-id}))))))
 
 (defn go-to-search
   ([] (go-to-search nil))
