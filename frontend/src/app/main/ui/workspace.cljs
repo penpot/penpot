@@ -86,22 +86,21 @@
 
 (mf/defc workspace-page
   [{:keys [file layout page-id] :as props}]
-  (let [page (mf/deref trimmed-page-ref)]
-    (mf/use-layout-effect
-     (mf/deps page-id)
+  (mf/use-layout-effect
+   (mf/deps page-id)
+   (fn []
+     (if (nil? page-id)
+       (st/emit! (dw/go-to-page))
+       (st/emit! (dw/initialize-page page-id)))
+
      (fn []
-       (if (nil? page-id)
-         (st/emit! (dw/go-to-page))
-         (st/emit! (dw/initialize-page page-id)))
+       (when page-id
+         (st/emit! (dw/finalize-page page-id))))))
 
-       (fn []
-         (when page-id
-           (st/emit! (dw/finalize-page page-id))))))
-
-    (when page
-      [:& workspace-content {:key page-id
-                             :file file
-                             :layout layout}])))
+  (when-let [page (mf/deref trimmed-page-ref)]
+    [:& workspace-content {:key page-id
+                           :file file
+                           :layout layout}]))
 
 (mf/defc workspace-loader
   []
