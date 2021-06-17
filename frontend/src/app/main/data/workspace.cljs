@@ -214,8 +214,6 @@
       (rx/of (dwn/finalize file-id)
              ::dwp/finalize))))
 
-(declare go-to-page)
-
 (defn initialize-page
   [page-id]
   (us/assert ::us/uuid page-id)
@@ -1193,7 +1191,6 @@
 
 (defn go-to-page
   ([]
-
    (ptk/reify ::go-to-page
      ptk/WatchEvent
      (watch [it state stream]
@@ -1203,7 +1200,7 @@
 
              pparams    {:file-id file-id :project-id project-id}
              qparams    {:page-id page-id}]
-         (rx/of (rt/nav :workspace pparams qparams))))))
+         (rx/of (rt/nav' :workspace pparams qparams))))))
   ([page-id]
    (us/verify ::us/uuid page-id)
    (ptk/reify ::go-to-page
