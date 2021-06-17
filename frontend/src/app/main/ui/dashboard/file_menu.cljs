@@ -97,7 +97,7 @@
                         :title (tr "modals.delete-file-multi-confirm.title" file-count)
                         :message (tr "modals.delete-file-multi-confirm.message" file-count)
                         :accept-label (tr "modals.delete-file-multi-confirm.accept" file-count)
-                          :on-accept delete-fn}))
+                        :on-accept delete-fn}))
             (st/emit! (modal/show
                        {:type :confirm
                         :title (tr "modals.delete-file-confirm.title")
