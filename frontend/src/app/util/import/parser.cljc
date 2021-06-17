@@ -592,8 +592,9 @@
       (assoc :grids grids))))
 
 (defn has-image?
-  [type node]
-  (let [pattern-image
+  [node]
+  (let [type (get-type node)
+        pattern-image
         (-> node
             (find-node :defs)
             (find-node :pattern)

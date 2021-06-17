@@ -161,15 +161,15 @@
           (->> (uw/ask-many!
                 {:cmd :export-file
                  :team-id current-team-id
-                 :files files})
+                 :files (->> files (mapv :id))})
                (rx/subs
-                (fn [{:keys [type data] :as msg}]
-                  (case type
+                (fn [msg]
+                  (case (:type msg)
                     :progress
-                    (prn "[Progress]" data)
+                    (prn "[Progress]" (:data msg))
 
                     :finish
-                    (dom/save-as data "export" "application/zip" "Export package (*.zip)"))))))]
+                    (dom/trigger-download-uri (:filename msg) (:mtype msg) (:uri msg)))))))]
 
     (mf/use-effect
      (fn []

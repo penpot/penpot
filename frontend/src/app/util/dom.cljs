@@ -284,14 +284,15 @@
 (defn mtype->extension [mtype]
   ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
   (case mtype
-    "image/apng"      "apng"
-    "image/avif"      "avif"
-    "image/gif"       "gif"
-    "image/jpeg"      "jpg"
-    "image/png"       "png"
-    "image/svg+xml"   "svg"
-    "image/webp"      "webp"
-    "application/zip" "zip"
+    "image/apng"         "apng"
+    "image/avif"         "avif"
+    "image/gif"          "gif"
+    "image/jpeg"         "jpg"
+    "image/png"          "png"
+    "image/svg+xml"      "svg"
+    "image/webp"         "webp"
+    "application/zip"    "zip"
+    "application/penpot" "penpot"
     nil))
 
 (defn set-attribute [^js node ^string attr value]
@@ -346,11 +347,15 @@
                 :types [{:description description
                          :accept { mtype [(str "." extension)]}}]}]
 
-      (p/let [file-system (.showSaveFilePicker globals/window (clj->js opts))
-              writable    (.createWritable file-system)
-              response    (js/fetch uri)
-              blob        (.blob response)
-              _           (.write writable blob)]
-        (.close writable)))
+      (-> (p/let [file-system (.showSaveFilePicker globals/window (clj->js opts))
+                  writable    (.createWritable file-system)
+                  response    (js/fetch uri)
+                  blob        (.blob response)
+                  _           (.write writable blob)]
+            (.close writable))
+          (p/catch
+              #(when-not (and (= (type %) js/DOMException)
+                              (= (.-name %) "AbortError"))
+                 (trigger-download-uri filename mtype uri)))))
 
     (trigger-download-uri filename mtype uri)))
