@@ -965,16 +965,8 @@ input[type=range]:focus::-ms-fill-upper {
     }
   }
 
+  // the default is the `right`
   &.tooltip-bottom {
-    &:hover {
-      &::after {
-        left: -20%;
-        top: 130%;
-      }
-    }
-  }
-
-  &.tooltip-bottom-right {
     &:hover {
       &::after {
         left: 0;
