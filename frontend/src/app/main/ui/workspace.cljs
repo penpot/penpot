@@ -59,10 +59,8 @@
         file   (obj/get props "file")
         layout (obj/get props "layout")]
     [:*
-     ;; TODO: left-sidebar option is obsolete because left-sidebar now
-     ;; is always visible.
      (when (:colorpalette layout)
-       [:& colorpalette {:left-sidebar? true}])
+       [:& colorpalette])
 
      [:section.workspace-content
       [:section.workspace-viewport

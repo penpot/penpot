@@ -60,7 +60,7 @@
      [:& cb/color-name {:color color :size size}]]))
 
 (mf/defc palette
-  [{:keys [left-sidebar? current-colors recent-colors file-colors shared-libs selected size]}]
+  [{:keys [current-colors recent-colors file-colors shared-libs selected size]}]
   (let [state      (mf/use-state {:show-menu false })
 
         width      (:width @state 0)
@@ -120,7 +120,7 @@
         (fn []
           (events/unlistenByKey key1))))
 
-    [:div.color-palette {:class (when left-sidebar? "left-sidebar-open")}
+    [:div.color-palette.left-sidebar-open
      [:& dropdown {:show (:show-menu @state)
                    :on-close #(swap! state assoc :show-menu false)}
       [:ul.workspace-context-menu.palette-menu
@@ -192,7 +192,7 @@
            (vals))))
 
 (mf/defc colorpalette
-  [{:keys [left-sidebar?]}]
+  []
   (let [team-id       (mf/use-ctx ctx/current-team-id)
         recent-colors (mf/deref refs/workspace-recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)
@@ -225,8 +225,7 @@
          (reset! current-library-colors (into [] (->> (vals file-colors)
                                                       (sort-by :name)))))))
 
-    [:& palette {:left-sidebar? left-sidebar?
-                 :current-colors @current-library-colors
+    [:& palette {:current-colors @current-library-colors
                  :recent-colors recent-colors
                  :file-colors file-colors
                  :shared-libs shared-libs
