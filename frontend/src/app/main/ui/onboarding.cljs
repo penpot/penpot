@@ -6,18 +6,18 @@
 
 (ns app.main.ui.onboarding
   (:require
-   [app.config :as cf]
    [app.common.spec :as us]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
-   [app.main.ui.components.forms :as fm :refer [input submit-button form]]
+   [app.main.ui.components.forms :as fm]
    [app.util.dom :as dom]
+   [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.timers :as tm]
-   [app.util.object :as obj]
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
@@ -186,24 +186,24 @@
 (mf/defc onboarding-team-modal
   {::mf/register modal/components
    ::mf/register-as :onboarding-team}
-  [props]
+  []
   (let [close (mf/use-fn (st/emitf (modal/hide)))
         form  (fm/use-form :spec ::team-form
                            :initial {})
         on-success
         (mf/use-callback
-         (fn [form response]
+         (fn [_form response]
            (st/emit! (modal/hide)
                      (rt/nav :dashboard-projects {:team-id (:id response)}))))
 
         on-error
         (mf/use-callback
-         (fn [form response]
+         (fn [_form _response]
            (st/emit! (dm/error "Error on creating team."))))
 
         on-submit
         (mf/use-callback
-         (fn [form event]
+         (fn [form _event]
            (let [mdata  {:on-success (partial on-success form)
                          :on-error   (partial on-error form)}
                  params {:name (get-in @form [:clean-data :name])}]

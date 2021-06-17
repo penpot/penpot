@@ -11,9 +11,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
-   [app.main.store :as st]
    [cuerdas.core :as str]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 ;; ------------------------------------------------
@@ -82,10 +80,10 @@
           (and (neg? ss) (> ss se)))
       (conj [ from-s (+ from-s ss) ])
 
-      (or (and (neg? se) (<= ss se)))
+      (and (neg? se) (<= ss se))
       (conj [ from-s (+ from-s se) ])
 
-      (or (and (pos? es) (<= es ee)))
+      (and (pos? es) (<= es ee))
       (conj [ from-e (+ from-e es) ])
 
       (or (and (pos? ee) (neg? es))
@@ -97,7 +95,7 @@
 ;; COMPONENTS
 ;; ------------------------------------------------
 
-(mf/defc size-display [{:keys [type selrect zoom]}]
+(mf/defc size-display [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
         size-label (str/fmt "%s x %s" (mth/round width) (mth/round height))
 
@@ -127,7 +125,6 @@
 (mf/defc distance-display-pill [{:keys [x y zoom distance bounds]}]
   (let [distance-pill-width (/ distance-pill-width zoom)
         distance-pill-height (/ distance-pill-height zoom)
-        distance-line-stroke (/ distance-line-stroke zoom)
         font-size (/ font-size zoom)
         text-padding (/ 3 zoom)
         distance-border-radius (/ distance-border-radius zoom)
@@ -169,7 +166,7 @@
                      :font-size font-size}}
       distance]]))
 
-(mf/defc selection-rect [{:keys [frame selrect zoom]}]
+(mf/defc selection-rect [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
         selection-rect-width (/ selection-rect-width zoom)]
     [:g.selection-rect
@@ -181,7 +178,7 @@
                      :stroke hover-color
                      :stroke-width selection-rect-width}}]]))
 
-(mf/defc distance-display [{:keys [type from to zoom frame bounds]}]
+(mf/defc distance-display [{:keys [from to zoom bounds]}]
   (let [fixed-x (if (gsh/fully-contained? from to)
                   (+ (:x to) (/ (:width to) 2))
                   (+ (:x from) (/ (:width from) 2)))

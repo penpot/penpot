@@ -20,7 +20,7 @@
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer  [tr t]]))
 
-(defn- request-export
+(defn request-export
   [shape exports]
   (rp/query! :export
              {:page-id (:page-id shape)

@@ -15,10 +15,9 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
-   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (s/def ::email-1 ::us/email)
@@ -63,7 +62,7 @@
                 (modal/hide)))))
 
 (defn- on-submit
-  [form event]
+  [form _event]
   (let [params {:email (get-in @form [:clean-data :email-1])}
         mdata  {:on-error (partial on-error form)
                 :on-success (partial on-success form)}]
@@ -73,8 +72,7 @@
   {::mf/register modal/components
    ::mf/register-as :change-email}
   []
-  (let [locale  (mf/deref i18n/locale)
-        profile (mf/deref refs/profile)
+  (let [profile (mf/deref refs/profile)
         form    (fm/use-form :spec ::email-change-form
                              :validators [email-equality]
                              :initial profile)
@@ -88,30 +86,30 @@
 
        [:div.modal-header
         [:div.modal-header-title
-         [:h2 (t locale "modals.change-email.title")]]
+         [:h2 (tr "modals.change-email.title")]]
         [:div.modal-close-button
          {:on-click on-close} i/close]]
 
        [:div.modal-content
         [:& msgs/inline-banner
          {:type :info
-          :content (t locale "modals.change-email.info" (:email profile))}]
+          :content (tr "modals.change-email.info" (:email profile))}]
 
         [:div.fields-row
          [:& fm/input {:type "text"
                        :name :email-1
-                       :label (t locale "modals.change-email.new-email")
+                       :label (tr "modals.change-email.new-email")
                        :trim true}]]
         [:div.fields-row
          [:& fm/input {:type "text"
                        :name :email-2
-                       :label (t locale "modals.change-email.confirm-email")
+                       :label (tr "modals.change-email.confirm-email")
                        :trim true}]]]
 
        [:div.modal-footer
         [:div.action-buttons
          [:& fm/submit-button
-          {:label (t locale "modals.change-email.submit")}]]]]]]))
+          {:label (tr "modals.change-email.submit")}]]]]]]))
 
 
 

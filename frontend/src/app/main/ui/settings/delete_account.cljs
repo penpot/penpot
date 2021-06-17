@@ -13,9 +13,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
 (defn on-error
@@ -28,7 +26,7 @@
 (mf/defc delete-account-modal
   {::mf/register modal/components
    ::mf/register-as :delete-account}
-  [props]
+  []
   (let [on-close
         (mf/use-callback (st/emitf (modal/hide)))
 

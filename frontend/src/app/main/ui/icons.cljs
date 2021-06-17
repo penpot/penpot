@@ -5,7 +5,7 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.icons
-  (:refer-clojure :exclude [import])
+  (:refer-clojure :exclude [import mask])
   (:require-macros [app.main.ui.icons :refer [icon-xref]])
   (:require [rumext.alpha :as mf]))
 
@@ -163,7 +163,7 @@
 
 (mf/defc debug-icons-preview
   {::mf/wrap-props false}
-  [props]
+  []
   [:section.debug-icons-preview
    (for [[key val] (sort-by first (ns-publics 'app.main.ui.icons))]
      (when (not= key 'debug-icons-preview)

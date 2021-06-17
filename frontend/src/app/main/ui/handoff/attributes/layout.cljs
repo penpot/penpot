@@ -6,13 +6,12 @@
 
 (ns app.main.ui.handoff.attributes.layout
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.util.i18n :refer [t]]
    [app.common.math :as mth]
-   [app.main.ui.icons :as i]
+   [app.main.ui.components.copy-button :refer [copy-button]]
    [app.util.code-gen :as cg]
-   [app.main.ui.components.copy-button :refer [copy-button]]))
+   [app.util.i18n :refer [t]]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (def properties [:width :height :x :y :radius :rx :r1])
 
