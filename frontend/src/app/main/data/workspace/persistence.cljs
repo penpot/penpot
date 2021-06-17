@@ -255,7 +255,7 @@
 (declare fetch-libraries-content)
 (declare bundle-fetched)
 
-(defn- fetch-bundle
+(defn fetch-bundle
   [project-id file-id]
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent

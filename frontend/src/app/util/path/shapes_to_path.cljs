@@ -40,14 +40,14 @@
         height (* radius 2)
 
         c   bezier-circle-c
-        c1x (+ x (* (/ width 2)  (- 1 c))) 
+        c1x (+ x (* (/ width 2)  (- 1 c)))
         c2x (+ x (* (/ width 2)  (+ 1 c)))
         c1y (+ y (* (/ height 2) (- 1 c)))
         c2y (+ y (* (/ height 2) (+ 1 c)))
 
         h1 (case corner
              :top-left     (assoc from :y c1y)
-             :top-right    (assoc from :x c2x) 
+             :top-right    (assoc from :x c2x)
              :bottom-right (assoc from :y c2y)
              :bottom-left  (assoc from :x c1x))
 
@@ -67,14 +67,13 @@
         ex (+ x width)
         ey (+ y height)
 
-        pc  (gpt/point mx my)
         p1  (gpt/point mx y)
         p2  (gpt/point ex my)
         p3  (gpt/point mx ey)
         p4  (gpt/point x my)
 
         c   bezier-circle-c
-        c1x (+ x (* (/ width 2)  (- 1 c))) 
+        c1x (+ x (* (/ width 2)  (- 1 c)))
         c2x (+ x (* (/ width 2)  (+ 1 c)))
         c1y (+ y (* (/ height 2) (- 1 c)))
         c2y (+ y (* (/ height 2) (+ 1 c)))]
@@ -90,7 +89,7 @@
   [x y width height r1 r2 r3 r4]
   (let [p1 (gpt/point x (+ y r1))
         p2 (gpt/point (+ x r1) y)
-        
+
         p3 (gpt/point (+ width x (- r2)) y)
         p4 (gpt/point (+ width x) (+ y r2))
 

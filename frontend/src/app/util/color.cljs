@@ -7,9 +7,8 @@
 (ns app.util.color
   "Color conversion utils."
   (:require
-   [cuerdas.core :as str]
-   [app.common.math :as math]
    [app.util.object :as obj]
+   [cuerdas.core :as str]
    [goog.color :as gcolor]))
 
 (defn rgb->str
@@ -31,7 +30,7 @@
   [v]
   (try
     (into [] (gcolor/hexToRgb v))
-    (catch :default e [0 0 0])))
+    (catch :default _e [0 0 0])))
 
 (defn rgb->hex
   [[r g b]]
@@ -49,7 +48,7 @@
 (defn hex->hsl [hex]
   (try
     (into [] (gcolor/hexToHsl hex))
-    (catch :default e [0 0 0])))
+    (catch :default _e [0 0 0])))
 
 (defn hex->hsla
   [^string data ^number opacity]
@@ -96,7 +95,7 @@
           c (nth v 2)]
       (str a a b b c c))
 
-    :default
+    :else
     v))
 
 (defn prepend-hash
@@ -135,7 +134,7 @@
 
       :else "transparent")))
 
-(defn multiple? [{:keys [id file-id value color gradient opacity]}]
+(defn multiple? [{:keys [id file-id value color gradient]}]
   (or (= value :multiple)
       (= color :multiple)
       (= gradient :multiple)
@@ -144,7 +143,7 @@
 
 (defn color? [^string color-str]
   (and (not (nil? color-str))
-       (not (empty? color-str))
+       (seq color-str)
        (gcolor/isValidColor color-str)))
 
 (defn parse-color [^string color-str]

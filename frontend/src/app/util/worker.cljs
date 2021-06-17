@@ -82,7 +82,7 @@
     worker))
 
 (defn- handle-response
-  [{:keys [payload error dropped] :as response}]
+  [{:keys [payload error dropped]}]
   (when-not dropped
     (if-let [{:keys [data message]} error]
       (throw (ex-info message data))

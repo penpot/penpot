@@ -11,7 +11,6 @@
    [app.util.globals :as globals]
    [app.util.object :as obj]
    [app.util.storage :refer [storage]]
-   [beicon.core :as rx]
    [cuerdas.core :as str]
    [goog.object :as gobj]
    [okulary.core :as l]
@@ -91,7 +90,7 @@
 
 (deftype C [val]
   IDeref
-  (-deref [o] val))
+  (-deref [_] val))
 
 (defn ^boolean c?
   [r]

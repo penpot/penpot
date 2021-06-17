@@ -6,22 +6,14 @@
 
 (ns app.main.data.media
   (:require
-   [app.common.data :as d]
-   [app.common.media :as cm]
-   [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.common.exceptions :as ex]
+   [app.common.media :as cm]
    [app.main.data.messages :as dm]
-   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
-   [app.util.router :as r]
-   [app.util.router :as rt]
-   [app.util.time :as ts]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [cuerdas.core :as str]))
 
 ;; --- Predicates
 

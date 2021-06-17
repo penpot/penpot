@@ -12,7 +12,6 @@
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
-   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui :as ui]
    [app.main.ui.confirm]
@@ -21,11 +20,9 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
    [app.util.logging :as log]
-   [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [app.util.theme :as theme]
-   [app.util.timers :as ts]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
@@ -81,7 +78,7 @@
 
 (defn initialize
   []
-  (letfn [(on-profile [profile]
+  (letfn [(on-profile [_profile]
             (rx/of (rt/initialize-router ui/routes)
                    (rt/initialize-history on-navigate)))]
     (ptk/reify ::initialize
@@ -90,7 +87,7 @@
         (assoc state :session-id (uuid/next)))
 
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ stream]
         (rx/merge
          (rx/of
           (ptk/event ::ev/initialize)

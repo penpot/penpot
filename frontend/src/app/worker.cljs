@@ -6,23 +6,16 @@
 
 (ns app.worker
   (:require
-
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.transit :as t]
-   [app.common.uuid :as uuid]
-   [app.util.object :as obj]
-   [app.util.worker :as w]
-   [app.worker.impl :as impl]
-   [app.worker.selection]
-
-   [app.worker.import]
    [app.worker.export]
+   [app.worker.impl :as impl]
+   [app.worker.import]
+   [app.worker.selection]
    [app.worker.snaps]
    [app.worker.thumbnails]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 ;; --- Messages Handling
@@ -38,7 +31,7 @@
 
 (s/def ::message
   (s/keys
-   :req-opt [::buffer?]
+   :opt-un [::buffer?]
    :req-un [::payload ::sender-id]))
 
 (def buffer (rx/subject))
@@ -86,7 +79,7 @@
 
 (defn- drop-message
   "Sends to the client a notifiction that its messages have been dropped"
-  [{:keys [sender-id payload] :as message}]
+  [{:keys [sender-id] :as message}]
   (us/assert ::message message)
   (.postMessage js/self (t/encode-str {:reply-to sender-id
                                        :dropped true})))
@@ -105,7 +98,7 @@
          ;; we also store the last message processed in order to detect
          ;; posible infinite loops
          (rx/scan
-          (fn [[messages dropped last] message]
+          (fn [[messages dropped _last] message]
             (let [cmd (get-in message [:payload :cmd])
 
                   ;; The previous message is dropped

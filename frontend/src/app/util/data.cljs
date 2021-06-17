@@ -39,7 +39,7 @@
    (reduce #(dissoc! %1 %2) (transient data) keys)))
 
 (defn dissoc-in
-  [m [k & ks :as keys]]
+  [m [k & ks :as _keys]]
   (if ks
     (if-let [nextmap (get m k)]
       (let [newmap (dissoc-in nextmap ks)]

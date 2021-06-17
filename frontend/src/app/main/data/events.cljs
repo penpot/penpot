@@ -8,14 +8,14 @@
   (:require
    ["ua-parser-js" :as UAParser]
    [app.common.data :as d]
-   [app.main.repo :as rp]
    [app.config :as cf]
+   [app.main.repo :as rp]
    [app.util.globals :as g]
    [app.util.http :as http]
+   [app.util.i18n :as i18n]
    [app.util.object :as obj]
    [app.util.storage :refer [storage]]
    [app.util.time :as dt]
-   [app.util.i18n :as i18n]
    [beicon.core :as rx]
    [lambdaisland.uri :as u]
    [potok.core :as ptk]))
@@ -139,7 +139,7 @@
              :project-id (:project-id data)}}))
 
 (defn- event->generic-action
-  [event name]
+  [_ name]
   {:type "action"
    :name name
    :props {}})
@@ -176,7 +176,7 @@
   [_ {:keys [buffer] :as params}]
   (ptk/reify ::persistence
     ptk/EffectEvent
-    (effect [_ state stream]
+    (effect [_ state _]
       (let [profile-id (:profile-id state)
             events     (into [] (take max-buffer-size) @buffer)]
         (when (seq events)
@@ -191,7 +191,7 @@
   (let [buffer (atom #queue [])]
     (ptk/reify ::initialize
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ stream]
         (->> (rx/merge
               (->> (rx/from-atom buffer)
                    (rx/filter #(pos? (count %)))
@@ -202,7 +202,7 @@
              (rx/map #(ptk/event ::persistence {:buffer buffer}))))
 
       ptk/EffectEvent
-      (effect [_ state stream]
+      (effect [_ _ stream]
         (let [events  (methods process-event)
               session (atom nil)
 

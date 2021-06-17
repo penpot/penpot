@@ -9,3 +9,13 @@
                   (api/token-node (symbol (name (:value sname))))
                   sname])]
     {:node result}))
+
+(defn potok-reify
+  [{:keys [:node]}]
+  (let [[rnode rtype & other] (:children node)
+        result  (api/list-node
+                 (into [(api/token-node (symbol "deftype"))
+                        (api/token-node (gensym (name (:k rtype))))
+                        (api/vector-node [])]
+                       other))]
+    {:node result}))

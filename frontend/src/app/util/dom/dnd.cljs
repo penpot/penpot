@@ -7,9 +7,8 @@
 (ns app.util.dom.dnd
   "Drag & Drop interop helpers."
   (:require
-    [app.common.transit :as t]
-    [app.util.data :refer (read-string)]
-    [cuerdas.core :as str]))
+   [app.common.transit :as t]
+   [cuerdas.core :as str]))
 
 ;; This is the official documentation for the dnd API:
 ;; https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
@@ -40,7 +39,7 @@
 (defn trace
   ;; This function is useful to debug the dnd interface behaviour when something weird occurs.
   [event data label]
-  (let [currentTarget (.-currentTarget event)
+  (let [;;currentTarget (.-currentTarget event)
         relatedTarget (.-relatedTarget event)]
     (js/console.log
       label

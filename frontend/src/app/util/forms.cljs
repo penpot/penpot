@@ -10,17 +10,14 @@
    [app.common.spec :as us]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [app.util.timers :as tm]
-   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 ;; --- Handlers Helpers
 
 (defn- interpret-problem
-  [acc {:keys [path pred val via in] :as problem}]
+  [acc {:keys [path pred via] :as problem}]
   (cond
     (and (empty? path)
          (list? pred)
@@ -28,8 +25,8 @@
     (let [path (conj path (last (last pred)))]
       (assoc-in acc path {:code ::missing :type :builtin}))
 
-    (and (not (empty? path))
-         (not (empty? via)))
+    (and (seq path)
+         (seq via))
     (assoc-in acc path {:code (last via) :type :builtin})
 
     :else acc))
@@ -37,7 +34,7 @@
 (declare create-form-mutator)
 
 (defn use-form
-  [& {:keys [spec validators initial] :as opts}]
+  [& {:keys [initial] :as opts}]
   (let [state      (mf/useState 0)
         render     (aget state 1)
         state-ref  (mf/use-ref {:data (if (fn? initial) (initial) initial)
@@ -126,9 +123,8 @@
 
 (defn on-input-blur
   [form field]
-  (fn [event]
-    (let [target  (dom/get-target event)
-          touched (get @form :touched)]
+  (fn [_]
+    (let [touched (get @form :touched)]
       (when-not (get touched field)
         (swap! form assoc-in [:touched field] true)))))
 
@@ -136,9 +132,8 @@
 
 (mf/defc field-error
   [{:keys [form field type]
-    :or {only (constantly true)}
     :as props}]
-  (let [{:keys [code message] :as error} (get-in form [:errors field])
+  (let [{:keys [message] :as error} (get-in form [:errors field])
         touched? (get-in form [:touched field])
         show? (and touched? error message
                    (cond

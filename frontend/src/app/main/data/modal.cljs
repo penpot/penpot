@@ -7,10 +7,10 @@
 (ns app.main.data.modal
   (:refer-clojure :exclude [update])
   (:require
-   [potok.core :as ptk]
-   [app.main.store :as st]
    [app.common.uuid :as uuid]
-   [cljs.core :as c]))
+   [app.main.store :as st]
+   [cljs.core :as c]
+   [potok.core :as ptk]))
 
 (defonce components (atom {}))
 
@@ -29,7 +29,7 @@
                              :allow-click-outside false})))))
 
 (defn update-props
-  ([type props]
+  ([_type props]
    (ptk/reify ::update-modal-props
      ptk/UpdateEvent
      (update [_ state]

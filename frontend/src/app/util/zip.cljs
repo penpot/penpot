@@ -8,10 +8,9 @@
   "Helpers for make zip file (using jszip)."
   (:require
    ["jszip" :as zip]
-   [app.common.data :as d]
+   [app.util.http :as http]
    [beicon.core :as rx]
-   [promesa.core :as p]
-   [app.util.http :as http]))
+   [promesa.core :as p]))
 
 (defn compress-files
   [files]

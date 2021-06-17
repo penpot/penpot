@@ -11,11 +11,9 @@
 
 (ns app.util.logging
   (:require
-   [goog.log :as glog]
-   [goog.debug.Console :as Console]
+   [app.common.exceptions :as ex]
    [cuerdas.core :as str]
-   [goog.object :as gobj])
-  (:import [goog.debug Console])
+   [goog.log :as glog])
   (:require-macros [app.util.logging]))
 
 (defn- logger-name
@@ -158,7 +156,7 @@
                  specials))))))
 
 (defn default-handler
-  [{:keys [message exception level logger-name]}]
+  [{:keys [message level logger-name]}]
   (let [header-styles (str "font-weight: 600; color: " (level->color level))
         normal-styles (str "font-weight: 300; color: " (get colors :gray6))
         level-name    (level->short-name level)
@@ -174,7 +172,7 @@
             (doseq [[type n v] specials]
               (case type
                 :js (js/console.log n v)
-                :error (if (instance? cljs.core.ExceptionInfo v)
+                :error (if (ex/ex-info? v)
                          (js/console.error (pr-str v))
                          (js/console.error v))))
             (js/console.groupEnd message))

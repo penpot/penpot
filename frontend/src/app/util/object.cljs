@@ -8,9 +8,8 @@
   "A collection of helpers for work with javascript objects."
   (:refer-clojure :exclude [set! get get-in merge clone contains?])
   (:require
-   [cuerdas.core :as str]
-   [goog.object :as gobj]
-   ["lodash/omit" :as omit]))
+   ["lodash/omit" :as omit]
+   [cuerdas.core :as str]))
 
 (defn new [] #js {})
 

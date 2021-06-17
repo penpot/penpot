@@ -8,7 +8,6 @@
   (:refer-clojure :exclude [meta reset!])
   (:require
    ["mousetrap" :as mousetrap]
-   [app.common.data :as d]
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.util.logging :as log]
@@ -164,8 +163,8 @@
           (update :shortcuts (fnil conj '()) [key shortcuts])))
 
     ptk/EffectEvent
-    (effect [_ state stream]
-      (let [[key shortcuts] (peek (:shortcuts state))]
+    (effect [_ state _]
+      (let [[_key shortcuts] (peek (:shortcuts state))]
         (reset! shortcuts)))))
 
 (defn pop-shortcuts
@@ -179,7 +178,7 @@
                                      (pop shortcuts)
                                      shortcuts)))))
     ptk/EffectEvent
-    (effect [_ state stream]
+    (effect [_ state _]
       (let [[key* shortcuts] (peek (:shortcuts state))]
         (when (not= key key*)
           (reset! shortcuts))))))

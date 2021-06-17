@@ -6,15 +6,9 @@
 
 (ns app.main.data.viewer.shortcuts
   (:require
-   [app.config :as cfg]
-   [app.main.data.workspace.colors :as mdc]
    [app.main.data.shortcuts :as ds]
-   [app.main.data.shortcuts :refer [c-mod]]
    [app.main.data.viewer :as dv]
-   [app.main.store :as st]
-   [app.util.dom :as dom]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [app.main.store :as st]))
 
 (def shortcuts
   {:increase-zoom {:tooltip "+"

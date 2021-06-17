@@ -11,8 +11,7 @@
    [app.common.exceptions :as ex]
    [app.util.object :as obj]
    [beicon.core :as rx]
-   [cuerdas.core :as str]
-   [promesa.core :as p]))
+   [cuerdas.core :as str]))
 
 (defn- file-reader
   [f]
@@ -136,7 +135,7 @@
   (rx/create
    (fn [subs]
      (let [obs (js/ResizeObserver.
-                (fn [entries x]
+                (fn [entries _]
                   (rx/push! subs entries)))]
        (.observe ^js obs node)
        (fn []

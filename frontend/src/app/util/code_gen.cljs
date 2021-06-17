@@ -33,7 +33,7 @@
         color {:color (:stroke-color shape)
                :opacity (:stroke-opacity shape)
                :gradient (:stroke-color-gradient shape)}]
-    (if-not (= :none (:stroke-style shape))
+    (when-not (= :none (:stroke-style shape))
       (str/format "%spx %s %s" width style (uc/color->background color)))))
 
 (def styles-data

@@ -6,9 +6,10 @@
 
 (ns app.util.logging)
 
-(defn- log-expr [form level keyvals]
+(defn- log-expr [_form level keyvals]
   (let [keyvals-map (apply array-map keyvals)
-        formatter (::formatter keyvals-map 'identity)]
+        ;;formatter (::formatter keyvals-map 'identity)
+        ]
     `(log ~(::logger keyvals-map (str *ns*))
           ~level
           ~(-> keyvals-map

@@ -8,11 +8,8 @@
   "A interface to webworkers exposed functionality."
   (:require
    [app.common.transit :as t]
-   [app.common.uri :as u]
-   [app.config :as cfg]
    [beicon.core :as rx]
-   [goog.events :as ev]
-   [potok.core :as ptk])
+   [goog.events :as ev])
   (:import
    goog.net.WebSocket
    goog.net.WebSocket.EventType))
