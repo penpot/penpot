@@ -12,10 +12,10 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.drawing :as dd]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.path :as dwdp]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.workspace.viewport.utils :as utils]
-   [app.main.data.workspace.path :as dwdp]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.keyboard :as kbd]
@@ -290,8 +290,7 @@
       (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta?))))))
 
 (defn on-mouse-move [viewport-ref zoom]
-  (let [last-position (mf/use-var nil)
-        viewport (mf/ref-val viewport-ref)]
+  (let [last-position (mf/use-var nil)]
     (mf/use-callback
      (mf/deps zoom)
      (fn [event]
@@ -477,7 +476,7 @@
 
 (defn on-resize [viewport-ref]
  (mf/use-callback
-  (fn [event]
+  (fn [_]
     (let [node (mf/ref-val viewport-ref)
           prnt (dom/get-parent node)
           size (dom/get-client-size prnt)]

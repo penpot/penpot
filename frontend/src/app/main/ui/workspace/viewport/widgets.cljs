@@ -16,7 +16,6 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.util.dom :as dom]
-   [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
 (mf/defc pixel-grid
@@ -110,13 +109,13 @@
         on-pointer-enter
         (mf/use-callback
          (mf/deps (:id frame) on-frame-enter)
-         (fn [event]
+         (fn [_]
            (on-frame-enter (:id frame))))
 
         on-pointer-leave
         (mf/use-callback
          (mf/deps (:id frame) on-frame-leave)
-         (fn [event]
+         (fn [_]
            (on-frame-leave (:id frame))))]
 
     [:text {:x 0

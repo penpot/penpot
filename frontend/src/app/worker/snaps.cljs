@@ -7,7 +7,6 @@
 (ns app.worker.snaps
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.util.geom.grid :as gg]
    [app.util.geom.snap-points :as snap]
@@ -99,7 +98,8 @@
 
         changed-ids (into #{}
                           (filter changed?)
-                          (set/union (keys old-objects) (keys new-objects)))
+                          (set/union (set (keys old-objects))
+                                     (set (keys new-objects))))
 
         to-delete (aggregate-data old-objects changed-ids)
         to-add    (aggregate-data new-objects changed-ids)
@@ -134,30 +134,25 @@
       (reduce add-data $ to-add)
       (reduce delete-frames $ frames-to-delete))))
 
-(defn- log-state
-  "Helper function to print a friendly version of the snap tree. Debugging purposes"
-  []
-  (let [process-frame-data #(d/mapm rt/as-map %)
-        process-page-data  #(d/mapm process-frame-data %)]
-    (js/console.log "STATE" (clj->js (d/mapm process-page-data @state)))))
+;; (defn- log-state
+;;   "Helper function to print a friendly version of the snap tree. Debugging purposes"
+;;   []
+;;   (let [process-frame-data #(d/mapm rt/as-map %)
+;;         process-page-data  #(d/mapm process-frame-data %)]
+;;     (js/console.log "STATE" (clj->js (d/mapm process-page-data @state)))))
 
 (defn- index-page [state page-id objects]
   (let [snap-data (initialize-snap-data objects)]
     (assoc state page-id snap-data)))
 
 (defn- update-page [state page-id old-objects new-objects]
-  (let [changed? #(not= (get old-objects %) (get new-objects %))
-        changed-ids (into #{}
-                          (filter changed?)
-                          (set/union (keys old-objects) (keys new-objects)))
-
-        snap-data (get state page-id)
+  (let [snap-data (get state page-id)
         snap-data (update-snap-data snap-data old-objects new-objects)]
     (assoc state page-id snap-data)))
 
 ;; Public API
 (defmethod impl/handler :snaps/initialize-index
-  [{:keys [file-id data] :as message}]
+  [{:keys [data] :as message}]
   ;; Create the index
   (letfn [(process-page [state page]
             (let [id      (:id page)

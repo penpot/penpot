@@ -6,22 +6,23 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.svg-raw
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.util.data :as d]
-   [app.util.color :as uc]
-   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]))
+   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
+   [app.util.color :as uc]
+   [app.util.data :as d]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 ;; This is a list of svg tags that can be grouped in shape-container
 ;; this allows them to have gradients, shadows and masks
 (def svg-elements #{:svg :g :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath})
 
-(defn hex->number [hex] 1)
+(defn hex->number [_] 1)
+
 (defn shorthex->longhex [hex]
   (let [[_ r g b] hex]
     (str "#" r r g g b b)))
@@ -45,10 +46,10 @@
 
 
 (defn get-fill-values [shape]
-  (let [fill-values (or (select-keys shape fill-attrs))
-        color (-> (or (get-in shape [:content :attrs :fill])
-                      (get-in shape [:content :attrs :style :fill]))
-                  (parse-color))
+  (let [fill-values (select-keys shape fill-attrs)
+        color       (-> (or (get-in shape [:content :attrs :fill])
+                            (get-in shape [:content :attrs :style :fill]))
+                        (parse-color))
 
         fill-values (if (and (empty? fill-values) color)
                       {:fill-color (:color color)
@@ -57,10 +58,10 @@
     fill-values))
 
 (defn get-stroke-values [shape]
-  (let [stroke-values (or (select-keys shape stroke-attrs))
-        color (-> (or (get-in shape [:content :attrs :stroke])
-                      (get-in shape [:content :attrs :style :stroke]))
-                  (parse-color))
+  (let [stroke-values (select-keys shape stroke-attrs)
+        color         (-> (or (get-in shape [:content :attrs :stroke])
+                              (get-in shape [:content :attrs :style :stroke]))
+                          (parse-color))
 
         stroke-color (:color color "#000000")
         stroke-opacity (:opacity color 1)
@@ -90,7 +91,7 @@
 
   (let [ids [(:id shape)]
         type (:type shape)
-        {:keys [tag attrs] :as content} (:content shape)
+        {:keys [tag] :as content} (:content shape)
         measure-values (select-keys shape measure-attrs)
         fill-values    (get-fill-values shape)
         stroke-values  (get-stroke-values shape)]

@@ -7,21 +7,18 @@
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.colors :as dwc]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace.colors :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as muc]
    [app.main.ui.cursors :as cur]
    [app.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [app.util.timers :as timers]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
-   [okulary.core :as l]
    [promesa.core :as p]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
@@ -54,11 +51,8 @@
   {::mf/wrap-props false}
   [props]
   (let [vport         (unchecked-get props "vport")
-        vbox          (unchecked-get props "vbox")
         viewport-ref  (unchecked-get props "viewport-ref")
         viewport-node (mf/ref-val viewport-ref)
-        options       (unchecked-get props "options")
-        svg-ref       (mf/use-ref nil)
         canvas-ref    (mf/use-ref nil)
         img-ref       (mf/use-ref nil)
 
@@ -67,11 +61,11 @@
         handle-keydown
         (mf/use-callback
          (fn [event]
-           (when (and (kbd/esc? event))
-             (do (dom/stop-propagation event)
-                 (dom/prevent-default event)
-                 (st/emit! (dwc/stop-picker))
-                 (modal/disallow-click-outside!)))))
+           (when (kbd/esc? event)
+             (dom/stop-propagation event)
+             (dom/prevent-default event)
+             (st/emit! (dwc/stop-picker))
+             (modal/disallow-click-outside!))))
 
         handle-mouse-move-picker
         (mf/use-callback

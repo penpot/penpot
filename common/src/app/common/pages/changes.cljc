@@ -32,13 +32,10 @@
    (when verify?
      (us/assert ::spec/changes items))
 
-   (let [pages  (into #{} (map :page-id) items)
-         result (->> items
-                     (reduce #(or (process-change %1 %2) %1) data))]
-
+   (let [result (reduce #(or (process-change %1 %2) %1) data items)]
      ;; Validate result shapes (only on the backend)
      #?(:clj
-        (doseq [page-id pages]
+        (doseq [page-id (into #{} (map :page-id) items)]
           (let [page (get-in result [:pages-index page-id])]
             (doseq [[id shape] (:objects page)]
               (when-not (= shape (get-in data [:pages-index page-id :objects id]))

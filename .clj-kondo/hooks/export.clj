@@ -19,3 +19,12 @@
                         (api/vector-node [])]
                        other))]
     {:node result}))
+
+(defn clojure-specify
+  [{:keys [:node]}]
+  (let [[rnode rtype & other] (:children node)
+        result  (api/list-node
+                 (into [(api/token-node (symbol "extend-type"))
+                        (api/token-node (gensym (:string-value rtype)))]
+                       other))]
+    {:node result}))

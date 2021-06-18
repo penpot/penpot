@@ -7,7 +7,7 @@
 (ns app.common.uuid
   (:refer-clojure :exclude [next uuid zero?])
   (:require
-   [app.common.data :as d]
+   #?(:clj [app.common.data :as d])
    #?(:clj [clj-uuid :as impl])
    #?(:clj [clojure.core :as c])
    #?(:cljs [app.common.uuid-impl :as impl])

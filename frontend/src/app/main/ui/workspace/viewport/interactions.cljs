@@ -7,15 +7,11 @@
 (ns app.main.ui.workspace.viewport.interactions
   "Visually show shape interactions in workspace"
   (:require
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.outline :refer [outline]]
-   [app.util.data :as dt]
    [app.util.dom :as dom]
-   [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    ))
@@ -24,14 +20,11 @@
   [shape]
   (first (filter #(= (:event-type %) :click) (:interactions shape))))
 
-
 (defn- on-mouse-down
-  [event {:keys [id type] :as shape} selected]
-  (do
-    (dom/stop-propagation event)
-    (st/emit! (dw/select-shape id))
-    (st/emit! (dw/start-create-interaction))))
-
+  [event {:keys [id] :as shape}]
+  (dom/stop-propagation event)
+  (st/emit! (dw/select-shape id))
+  (st/emit! (dw/start-create-interaction)))
 
 (defn connect-to-shape
   "Calculate the best position to draw an interaction line
@@ -118,7 +111,7 @@
 
 
 (mf/defc interaction-path
-  [{:keys [orig-shape dest-shape dest-point selected selected? zoom] :as props}]
+  [{:keys [orig-shape dest-shape dest-point selected? zoom] :as props}]
   (let [[orig-pos orig-x orig-y dest-pos dest-x dest-y]
         (if dest-shape
           (connect-to-shape orig-shape dest-shape)
@@ -138,9 +131,9 @@
               :pointer-events "visible"
               :stroke-width (/ 2 zoom)
               :d pdata
-              :on-mouse-down #(on-mouse-down % orig-shape selected)}]
+              :on-mouse-down #(on-mouse-down % orig-shape)}]
 
-      [:g {:on-mouse-down #(on-mouse-down % orig-shape selected)}
+      [:g {:on-mouse-down #(on-mouse-down % orig-shape)}
        [:path {:stroke "#31EFB8"
                :fill "none"
                :pointer-events "visible"
@@ -161,11 +154,11 @@
 
 
 (mf/defc interaction-handle
-  [{:keys [shape selected zoom] :as props}]
+  [{:keys [shape zoom] :as props}]
   (let [shape-rect (:selrect shape)
         handle-x (+ (:x shape-rect) (:width shape-rect))
         handle-y (+ (:y shape-rect) (/ (:height shape-rect) 2))]
-    [:g {:on-mouse-down #(on-mouse-down % shape selected)}
+    [:g {:on-mouse-down #(on-mouse-down % shape)}
      [:& interaction-marker {:x handle-x
                              :y handle-y
                              :arrow-dir :right

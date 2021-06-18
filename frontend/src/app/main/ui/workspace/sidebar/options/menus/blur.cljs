@@ -6,16 +6,13 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.blur
   (:require
-   [rumext.alpha :as mf]
-   [app.common.data :as d]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
-   [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]))
+   [app.util.i18n :as i18n :refer [tr]]
+   [rumext.alpha :as mf]))
 
 (def blur-attrs [:blur])
 
@@ -27,8 +24,7 @@
      :hidden false}))
 
 (mf/defc blur-menu [{:keys [ids type values]}]
-  (let [locale (i18n/use-locale)
-        blur (:blur values)
+  (let [blur (:blur values)
         has-value? (not (nil? blur))
         multiple? (= blur :multiple)
 
@@ -59,9 +55,9 @@
      [:div.element-set-title
       [:span
        (case type
-         :multiple (t locale "workspace.options.blur-options.title.multiple")
-         :group (t locale "workspace.options.blur-options.title.group")
-         (t locale "workspace.options.blur-options.title"))]
+         :multiple (tr "workspace.options.blur-options.title.multiple")
+         :group (tr "workspace.options.blur-options.title.group")
+         (tr "workspace.options.blur-options.title"))]
 
       [:div.element-set-title-actions
        (when (and has-value? (not multiple?))
@@ -78,5 +74,5 @@
                        :class "pixels"
                        :min 0
                        :value (:value blur)
-                       :placeholder (t locale "settings.multiple")
+                       :placeholder (tr "settings.multiple")
                        :on-change handle-change}]])]))

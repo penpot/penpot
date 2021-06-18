@@ -68,7 +68,7 @@
     (st/emit! (dm/error (tr "errors.generic")))))
 
 (defn- handle-prepare-register-success
-  [form {:keys [token] :as result}]
+  [_form {:keys [token] :as result}]
   (st/emit! (rt/nav :auth-register-validate {} {:token token})))
 
 (mf/defc register-form
@@ -163,7 +163,7 @@
       (st/emit! (dm/error (tr "errors.generic"))))))
 
 (defn- handle-register-success
-  [form data]
+  [_form data]
   (cond
     (some? (:invitation-token data))
     (let [token (:invitation-token data)]
@@ -197,7 +197,7 @@
 
         on-submit
         (mf/use-callback
-         (fn [form event]
+         (fn [form _event]
            (reset! submitted? true)
            (let [params (:clean-data @form)]
              (->> (rp/mutation :register-profile params)

@@ -6,18 +6,18 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.group
   (:require
-   [rumext.alpha :as mf]
    [app.common.data :as d]
-   [app.main.ui.workspace.sidebar.options.shapes.multiple :refer [get-attrs]]
-   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-attrs component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.text :as ot]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]))
+   [app.main.ui.workspace.sidebar.options.menus.text :as ot]
+   [app.main.ui.workspace.sidebar.options.shapes.multiple :refer [get-attrs]]
+   [rumext.alpha :as mf]))
 
 (mf/defc options
   {::mf/wrap [mf/memo]

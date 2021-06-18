@@ -7,14 +7,17 @@
 
  :hooks
  {:analyze-call {app.common.data/export hooks.export/export
-                 potok.core/reify hooks.export/potok-reify}}
+                 potok.core/reify hooks.export/potok-reify
+                 cljs.core/specify! hooks.export/clojure-specify}}
 
  :output
  {:exclude-files
   ["data_readers.clj"
    "app/util/perf.cljs"
+   "app/common/exceptions.cljc"
    "app/util/import/.*"
-   "app/worker/.*"
+   "app/worker/export.cljs"
+   "app/worker/import.cljs"
    "app/libs/.*"
    "app/main/data/workspace/path/selection.cljs"
    "app/main/data/workspace/transforms.cljs"
@@ -30,6 +33,9 @@
 
   :single-key-in
   {:level :warning}
+
+  :redundant-do
+  {:level :off}
 
   :unused-binding
   {:exclude-destructured-as true

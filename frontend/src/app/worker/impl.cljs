@@ -7,7 +7,6 @@
 (ns app.worker.impl
   (:require
    [app.common.pages.changes :as ch]
-   [app.common.transit :as t]
    [okulary.core :as l]))
 
 (enable-console-print!)

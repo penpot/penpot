@@ -45,7 +45,7 @@
          (apply min-key first)
          second)))
 
-(defn- snap-frame-id [shapes]
+(defn snap-frame-id [shapes]
   (let [frames (into #{} (map :frame-id shapes))]
     (cond
       ;; Only shapes from one frame. The common is the only one
