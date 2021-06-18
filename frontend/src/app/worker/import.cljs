@@ -25,12 +25,13 @@
 
 (defn create-file
   "Create a new file on the back-end"
-  [project-id name]
+  [project-id file-desc]
   (let [file-id (uuid/next)]
     (rp/mutation
      :create-temp-file
      {:id file-id
-      :name name
+      :name (:name file-desc)
+      :is-shared (:shared file-desc)
       :project-id project-id
       :data (-> cp/empty-file-data (assoc :id file-id))})))
 
@@ -203,7 +204,7 @@
        (rx/flat-map (comp :files json/decode :content))
        (rx/flat-map
         (fn [[file-id file-desc]]
-          (->> (create-file project-id (:name file-desc))
+          (->> (create-file project-id file-desc)
                (rx/flat-map #(process-file % file-id file-desc zip-file)))))))
 
 (defmethod impl/handler :import-file

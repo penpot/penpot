@@ -556,3 +556,7 @@
 
       :else
       m)))
+
+(defn not-empty?
+  [coll]
+  (boolean (seq coll)))
