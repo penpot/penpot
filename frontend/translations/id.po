@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-05-23 21:33+0000\n"
 "Last-Translator: luthfi azhari <fiazhari@gmail.com>\n"
-"Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
-"frontend/id/>\n"
+"Language-Team: Indonesian "
+"<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -11,84 +11,9 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 4.7-dev\n"
 
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "Anda belum memiliki file disini"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.duplicate-multi"
-msgstr "Duplikasi % file"
-
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.duplicate"
-msgstr "Duplikat"
-
-msgid "dashboard.draft-title"
-msgstr "Konsep"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.delete-team"
-msgstr "Hapus tim"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.default-team-name"
-msgstr "Penpot anda"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.create-new-team"
-msgstr "+ Buat tim baru"
-
-#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
-msgid "dashboard.copy-suffix"
-msgstr "(salin)"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.change-email"
-msgstr "Ubah email"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.add-shared"
-msgstr "Tambahkan sebagai pustaka bersama"
-
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.verification-email-sent"
-msgstr "Kami mengirim verifikasi ke surel anda"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-title"
-msgstr "Buat akun baru"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Ini gratis, Open Source"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.register-submit"
-msgstr "Buat akun baru"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.register"
-msgstr "Tidak ada akun?"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.recovery-submit"
-msgstr "Ubah kata sandi anda"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-title"
-msgstr "Lupa kata sandi?"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-subtitle"
-msgstr "Kami akan mengirimi anda surel dengan intruksi"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-submit"
-msgstr "Pemulihan Kata sandi"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-length-hint"
-msgstr "Paling tidak 8 karakter"
+msgid "auth.already-have-account"
+msgstr "Sudah memiliki akun?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
@@ -100,72 +25,13 @@ msgstr ""
 msgid "auth.confirm-password"
 msgstr "Konfirmasi kata sandi"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"Ketika membuat akun baru, anda menyetujui persyaratan layanan dan kebijakan "
-"privasi kami."
-
-#: src/app/main/ui/auth.cljs
-msgid "auth.sidebar-tagline"
-msgstr "Solusi open-source untuk desain dan pembuatan prototype."
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Buat akun demo"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.password"
-msgstr "Kata sandi"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "auth.notifications.team-invitation-accepted"
-msgstr "Berhasil bergabung dengan tim"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.notifications.recovery-token-sent"
-msgstr "Link pemulihan kata sandi berhasil dikirim ke kotak masuk anda."
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.notifications.profile-not-verified"
-msgstr ""
-"Akun belum terverifikasi, harap verifikasi profile anda sebelum melanjutkan."
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
-msgstr "Kata sandi berhasil diubah"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
-msgstr "Token pemulihan tidak valid."
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.new-password"
-msgstr "Ketikkan kata sandi baru"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-oidc-submit"
-msgstr "Masuk dengan OpenID (SSO)"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-ldap-submit"
-msgstr "Masuk dengan LDAP"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-google-submit"
-msgstr "Masuk dengan Google"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-gitlab-submit"
-msgstr "Masuk dengan Gitlab"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-github-submit"
-msgstr "Masuk dengan Github"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Senang bertemu denganmu lagi!"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-subtitle"
-msgstr "Masukkan detail anda di bawah ini"
+msgid "auth.create-demo-profile"
+msgstr "Ingin mencobanya?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
@@ -173,38 +39,171 @@ msgstr ""
 "Ini layanan DEMO, JANGAN GUNAKAN untuk pekerjaan nyata, project ini akan di "
 "hapus secara berkala."
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Surel"
+
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-submit"
-msgstr "Masuk"
+msgid "auth.forgot-password"
+msgstr "Lupa kata sandi?"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.login-here"
-msgstr "Masuk disini"
+msgid "auth.fullname"
+msgstr "Nama Lengkap"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.go-back-to-login"
 msgstr "Kembali!"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.fullname"
-msgstr "Nama Lengkap"
+msgid "auth.login-here"
+msgstr "Masuk disini"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.forgot-password"
-msgstr "Lupa kata sandi?"
+msgid "auth.login-submit"
+msgstr "Masuk"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "Surel"
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-subtitle"
+msgstr "Masukkan detail anda di bawah ini"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Senang bertemu denganmu lagi!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "Masuk dengan Github"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "Masuk dengan Gitlab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Masuk dengan Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "Masuk dengan LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "Masuk dengan OpenID (SSO)"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Ketikkan kata sandi baru"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Token pemulihan tidak valid."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-succesfully"
+msgstr "Kata sandi berhasil diubah"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "Akun belum terverifikasi, harap verifikasi profile anda sebelum melanjutkan."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Link pemulihan kata sandi berhasil dikirim ke kotak masuk anda."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Berhasil bergabung dengan tim"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.create-demo-profile"
-msgstr "Ingin mencobanya?"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.create-demo-account"
-msgstr "Buat akun demo"
+msgid "auth.password"
+msgstr "Kata sandi"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.already-have-account"
-msgstr "Sudah memiliki akun?"
+msgid "auth.password-length-hint"
+msgstr "Paling tidak 8 karakter"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Pemulihan Kata sandi"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Kami akan mengirimi anda surel dengan intruksi"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Lupa kata sandi?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Ubah kata sandi anda"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Tidak ada akun?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Buat akun baru"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Ini gratis, Open Source"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Buat akun baru"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "Solusi open-source untuk desain dan pembuatan prototype."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Ketika membuat akun baru, anda menyetujui persyaratan layanan dan kebijakan "
+"privasi kami."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Kami mengirim verifikasi ke surel anda"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Tambahkan sebagai pustaka bersama"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "Ubah email"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(salin)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ Buat tim baru"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Penpot anda"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Hapus tim"
+
+msgid "dashboard.draft-title"
+msgstr "Konsep"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Duplikat"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Duplikasi % file"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.empty-files"
+msgstr "Anda belum memiliki file disini"
