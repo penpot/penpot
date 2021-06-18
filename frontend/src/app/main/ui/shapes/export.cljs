@@ -191,8 +191,7 @@
 
 (mf/defc export-data
   [{:keys [shape]}]
-  (let [props (-> (obj/new) (add-data shape))
-        frame? (= (:type shape) :frame)]
+  (let [props (-> (obj/new) (add-data shape))]
     [:> "penpot:shape" props
      [:& export-shadow-data       shape]
      [:& export-blur-data         shape]

@@ -182,7 +182,7 @@
                               (rx/map #(vector (get files file-id) %)))))))))
 
 (defmethod impl/handler :export-file
-  [{:keys [team-id project-id files] :as message}]
+  [{:keys [team-id files] :as message}]
 
   (->> (rx/from files)
        (rx/mapcat #(export-file team-id %))

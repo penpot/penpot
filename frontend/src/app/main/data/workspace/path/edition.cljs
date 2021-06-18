@@ -141,9 +141,9 @@
             selected? (contains? selected-points position)]
         (streams/drag-stream
          (rx/of
-          (when-not selected? (selection/select-node position shift? "drag"))
+          (when-not selected? (selection/select-node position shift?))
           (drag-selected-points @ms/mouse-position))
-         (rx/of (selection/select-node position shift? "click")))))))
+         (rx/of (selection/select-node position shift?)))))))
 
 (defn drag-selected-points
   [start-position]

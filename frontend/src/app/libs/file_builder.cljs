@@ -25,59 +25,59 @@
 (deftype File [^:mutable file]
   Object
 
-  (addPage [self name]
+  (addPage [_ name]
     (set! file (fb/add-page file {:name name}))
     (str (:current-page-id file)))
 
-  (addPage [self name options]
+  (addPage [_ name options]
     (set! file (fb/add-page file {:name name :options options}))
     (str (:current-page-id file)))
 
-  (closePage [self]
+  (closePage [_]
     (set! file (fb/close-page file)))
 
-  (addArtboard [self data]
+  (addArtboard [_ data]
     (set! file (fb/add-artboard file (parse-data data)))
     (str (:last-id file)))
 
-  (closeArtboard [self data]
+  (closeArtboard [_]
     (set! file (fb/close-artboard file)))
 
-  (addGroup [self data]
+  (addGroup [_ data]
     (set! file (fb/add-group file (parse-data data)))
     (str (:last-id file)))
 
-  (closeGroup [self]
+  (closeGroup [_]
     (set! file (fb/close-group file)))
 
-  (createRect [self data]
+  (createRect [_ data]
     (set! file (fb/create-rect file (parse-data data)))
     (str (:last-id file)))
 
-  (createCircle [self data]
+  (createCircle [_ data]
     (set! file (fb/create-circle file (parse-data data)))
     (str (:last-id file)))
 
-  (createPath [self data]
+  (createPath [_ data]
     (set! file (fb/create-path file (parse-data data)))
     (str (:last-id file)))
 
-  (createText [self data]
+  (createText [_ data]
     (set! file (fb/create-text file (parse-data data)))
     (str (:last-id file)))
 
-  (createImage [self data]
+  (createImage [_ data]
     (set! file (fb/create-image file (parse-data data)))
     (str (:last-id file)))
 
-  (createSVG [self data]
+  (createSVG [_ data]
     (set! file (fb/create-svg-raw file (parse-data data)))
     (str (:last-id file)))
 
-  (closeSVG [self]
+  (closeSVG [_]
     (set! file (fb/close-svg-raw file)))
 
-  (asMap [self]
+  (asMap [_]
     (clj->js file)))
 
 (defn create-file-export [^string name]

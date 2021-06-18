@@ -126,7 +126,7 @@
 (defn without-penpot-prefix
   [m]
   (let [no-penpot-prefix?
-        (fn [[k v]]
+        (fn [[k _]]
           (not (str/starts-with? (d/name k) "penpot:")))]
     (into {} (filter no-penpot-prefix?) m)))
 
@@ -191,11 +191,11 @@
   [props svg-data]
   (let [values (->> (select-keys svg-data [:cx :cy :rx :ry])
                     (d/mapm (fn [_ val] (d/parse-double val))))]
-
-    {:x (- (:cx values) (:rx values))
-     :y (- (:cy values) (:ry values))
-     :width (* (:rx values) 2)
-     :height (* (:ry values) 2)}))
+    (-> props
+        (assoc :x (- (:cx values) (:rx values))
+               :y (- (:cy values) (:ry values))
+               :width (* (:rx values) 2)
+               :height (* (:ry values) 2)))))
 
 (defn parse-path
   [props center svg-data]
@@ -459,7 +459,7 @@
   [props node]
   (let [shadows (extract-from-data node :penpot:shadow parse-shadow)]
     (cond-> props
-      (not (empty? shadows))
+      (d/not-empty? shadows)
       (assoc :shadow shadows))))
 
 (defn add-blur
@@ -473,7 +473,7 @@
   [props node]
   (let [exports (extract-from-data node :penpot:export parse-export)]
     (cond-> props
-      (not (empty? exports))
+      (d/not-empty? exports)
       (assoc :exports exports))))
 
 (defn add-layer-options
@@ -507,7 +507,7 @@
          (reduce assoc-key {}))))
 
 (defn get-svg-defs
-  [node svg-defs]
+  [node]
 
   (let [svg-import (get-data node :penpot:svg-import)]
     (->> svg-import
@@ -545,7 +545,7 @@
 
 
           (some? svg-defs)
-          (assoc :svg-defs (get-svg-defs node svg-defs))))
+          (assoc :svg-defs (get-svg-defs node))))
 
       props)))
 
@@ -571,7 +571,7 @@
 (defn add-frame-data [props node]
   (let [grids (parse-grids node)]
     (cond-> props
-      (not (empty? grids))
+      (d/not-empty? grids)
       (assoc :grids grids))))
 
 (defn has-image?
@@ -641,12 +641,12 @@
         background (:background style)
         grids  (->> (parse-grids node)
                     (group-by :type)
-                    (d/mapm (fn [k v] (-> v first :params))))]
+                    (d/mapm (fn [_ v] (-> v first :params))))]
     (cond-> {}
       (some? background)
       (assoc-in [:options :background] background)
 
-      (not (empty? grids))
+      (d/not-empty? grids)
       (assoc-in [:options :saved-grids] grids))))
 
 (defn parse-interactions

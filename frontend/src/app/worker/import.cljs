@@ -17,7 +17,6 @@
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
-   [cuerdas.core :as str]
    [tubax.core :as tubax]))
 
 ;; Upload changes batches size
@@ -111,7 +110,7 @@
           (some? (:last-id file))
           (assoc-in [:id-mapping old-id] (:last-id file))
 
-          (not (empty? interactions))
+          (d/not-empty? interactions)
           (assoc-in [:interactions old-id] interactions))))))
 
 (defn post-process-file
