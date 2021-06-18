@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-06-15 18:34+0000\n"
+"PO-Revision-Date: 2021-06-18 09:19+0000\n"
 "Last-Translator: Amine Gdoura <amine2gdoura@gmail.com>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
 "ar/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: Weblate 4.7\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -133,7 +133,6 @@ msgid "auth.register-submit"
 msgstr "إنشاء حساب"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.register-subtitle"
 msgstr "إنه مجاني ، مفتوح المصدر"
 
@@ -339,7 +338,7 @@ msgstr "تم إرسال رابط استعادة كلمة المرور إلى ص�
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr "لم يتم التعرف على الحساب الشخصي ، يرجى التحقق  قبل المتابعة."
+msgstr "لم يتم التعرف على الحساب الشخصي ، يرجى التحقق قبل المتابعة."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.email-already-validated"
@@ -676,3 +675,82 @@ msgstr "حدث خطأ ما."
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "يجب أن يتطابق البريد الإلكتروني للتأكيد"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "مشرف"
+
+msgid "labels.accept"
+msgstr "إقبل"
+
+msgid "history.alert-message"
+msgstr "أنت ترى الإصدار٪ s"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "معلومات"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "نص"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "رباعي"
+
+msgid "handoff.tabs.code.selected.path"
+msgstr "مسار"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "صورة"
+
+msgid "handoff.tabs.code.selected.curve"
+msgstr "منحنى"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "دائرة"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "شفرة"
+
+msgid "handoff.attributes.typography.text-transform.uppercase"
+msgstr "الأحرف الكبيرة"
+
+msgid "handoff.attributes.typography.text-transform.lowercase"
+msgstr "أحرف صغيرة"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-transform"
+msgstr "تغيير النص"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "مسطر"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "يتوسطه خط"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "زخرفة النص"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "ارتفاع الخط"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.letter-spacing"
+msgstr "تباعد الحروف"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "نوع الخط"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.spread"
+msgstr "S"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-y"
+msgstr "Y"
