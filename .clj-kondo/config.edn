@@ -6,9 +6,12 @@
   app.db/with-atomic clojure.core/with-open}
 
  :hooks
- {:analyze-call {app.common.data/export hooks.export/export
-                 potok.core/reify hooks.export/potok-reify
-                 cljs.core/specify! hooks.export/clojure-specify}}
+ {:analyze-call
+  {app.common.data/export hooks.export/export
+   potok.core/reify hooks.export/potok-reify
+   cljs.core/specify! hooks.export/clojure-specify
+   app.util.services/defmethod hooks.export/service-defmethod
+   }}
 
  :output
  {:exclude-files
@@ -41,8 +44,5 @@
   {:exclude-destructured-as true
    :exclude-destructured-keys-in-fn-args false
    }
-
-  :unresolved-symbol
-  {:exclude ['(app.util.services/defmethod)
-             ]}}}
+  }}
 

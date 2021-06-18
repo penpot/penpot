@@ -28,3 +28,22 @@
                         (api/token-node (gensym (:string-value rtype)))]
                        other))]
     {:node result}))
+
+
+(defn service-defmethod
+  [{:keys [:node]}]
+  (let [[rnode rtype & other] (:children node)
+        rsym    (gensym (name (:k rtype)))
+        result  (api/list-node
+                 [(api/token-node (symbol "do"))
+                  (api/list-node
+                   [(api/token-node (symbol "declare"))
+                    (api/token-node rsym)])
+                  (api/list-node
+                   (into [(api/token-node (symbol "defmethod"))
+                          (api/token-node rsym)
+                          rtype]
+                         other))])]
+    {:node result}))
+
+
