@@ -210,7 +210,7 @@
                      (cond
                        (= selected :recent) (reverse recent-colors)
                        (= selected :file)   (->> (vals file-colors) (sort-by :name))
-                       :else                (library->colors shared-libs selected))))))
+                       :else                (->> (library->colors shared-libs selected) (sort-by :name)))))))
 
     (mf/use-effect
      (mf/deps recent-colors)
