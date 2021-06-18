@@ -1,3 +1,9 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) UXBOX Labs SL
+
 (ns app.main.data.workspace.groups
   (:require
    [app.common.data :as d]
@@ -5,7 +11,6 @@
    [app.common.pages :as cp]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -22,7 +27,6 @@
   [shapes prefix keep-name]
   (let [selrect   (gsh/selection-rect shapes)
         frame-id  (-> shapes first :frame-id)
-        parent-id (-> shapes first :parent-id)
         group-name (if (and keep-name
                             (= (count shapes) 1)
                             (= (:type (first shapes)) :group))
@@ -166,7 +170,7 @@
 (def group-selected
   (ptk/reify ::group-selected
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
@@ -183,7 +187,7 @@
 (def ungroup-selected
   (ptk/reify ::ungroup-selected
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
@@ -200,7 +204,7 @@
 (def mask-group
   (ptk/reify ::mask-group
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
@@ -257,7 +261,7 @@
 (def unmask-group
   (ptk/reify ::unmask-group
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)]

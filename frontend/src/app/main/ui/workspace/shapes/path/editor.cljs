@@ -17,10 +17,10 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]
-   [app.util.path.geom :as upg]
+   [app.util.keyboard :as kbd]
    [app.util.path.commands :as upc]
    [app.util.path.format :as upf]
-   [app.util.keyboard :as kbd]
+   [app.util.path.geom :as upg]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
    [rumext.alpha :as mf])
@@ -31,12 +31,12 @@
 
         on-enter
         (mf/use-callback
-         (fn [event]
+         (fn [_]
            (st/emit! (drp/path-pointer-enter position))))
-        
+
         on-leave
         (mf/use-callback
-         (fn [event]
+         (fn [_]
            (st/emit! (drp/path-pointer-leave position))))
 
         on-mouse-down
@@ -96,11 +96,11 @@
   (when (and point handler)
     (let [{:keys [x y]} handler
           on-enter
-          (fn [event]
+          (fn [_]
             (st/emit! (drp/path-handler-enter index prefix)))
 
           on-leave
-          (fn [event]
+          (fn [_]
             (st/emit! (drp/path-handler-leave index prefix)))
 
           on-mouse-down
@@ -135,7 +135,7 @@
          :y (- y (/ 3 zoom))
          :width (/ 6 zoom)
          :height (/ 6 zoom)
-         
+
          :style {:stroke-width (/ 1 zoom)
                  :stroke (cond (or selected? hover?) pc/black-color
                                :else pc/primary-color)
@@ -225,7 +225,6 @@
 
         points (into #{} content-points)
 
-        last-command (last content)
         last-p (->> content last upc/command->point)
         handlers (upc/content->handlers content)
 
@@ -247,7 +246,7 @@
                             moving-nodes))
 
         handle-double-click-outside
-        (fn [event]
+        (fn [_]
           (when (= edit-mode :move)
             (st/emit! :interrupt)))]
 
@@ -298,7 +297,7 @@
              last-p? (= last-point (get point->base position))
 
              pos-handlers (->> pos-handlers (filter show-handler?))
-             curve? (not (empty? pos-handlers))]
+             curve? (boolean (seq pos-handlers))]
 
          [:g.path-node
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}

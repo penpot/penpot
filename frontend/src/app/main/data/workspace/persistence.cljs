@@ -8,8 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.geom.point :as gpt]
-   [app.common.media :as cm]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -26,11 +24,9 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.util.avatars :as avatars]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
-   [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.uri :as uu]
    [beicon.core :as rx]
@@ -52,7 +48,7 @@
   [file-id]
   (ptk/reify ::initialize-persistence
     ptk/EffectEvent
-    (effect [_ state stream]
+    (effect [_ _ stream]
       (let [stoper   (rx/filter #(= ::finalize %) stream)
             forcer   (rx/filter #(= ::force-persist %) stream)
             notifier (->> stream
@@ -120,12 +116,11 @@
   (ptk/reify ::persist-changes
     ptk/UpdateEvent
     (update [_ state]
-      (let [conj    (fnil conj [])
-            into*   (fnil into [])]
+      (let [into* (fnil into [])]
         (update-in state [:workspace-persistence :queue] into* changes)))
 
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state _]
       (let [sid     (:session-id state)
             file    (get state :workspace-file)
             queue   (get-in state [:workspace-persistence :queue] [])
@@ -176,7 +171,7 @@
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-synchronous-changes
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state _]
       (let [sid     (:session-id state)
             file    (get-in state [:workspace-libraries file-id])
 
@@ -255,11 +250,11 @@
 (declare fetch-libraries-content)
 (declare bundle-fetched)
 
-(defn- fetch-bundle
+(defn fetch-bundle
   [project-id file-id]
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (->> (rx/zip (rp/query :file {:id file-id})
                    (rp/query :team-users {:file-id file-id})
                    (rp/query :project {:id project-id})
@@ -285,7 +280,7 @@
       (assoc-in state [:workspace-file :is-shared] is-shared))
 
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (let [params {:id id :is-shared is-shared}]
         (->> (rp/mutation :set-file-shared params)
              (rx/ignore))))))
@@ -300,7 +295,7 @@
   (us/assert ::us/uuid team-id)
   (ptk/reify ::fetch-shared-files
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (->> (rp/query :team-shared-files {:team-id team-id})
            (rx/map shared-files-fetched)))))
 
@@ -320,7 +315,7 @@
   [file-id library-id]
   (ptk/reify ::link-file-to-library
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (let [fetched #(assoc-in %2 [:workspace-libraries (:id %1)] %1)
             params  {:file-id file-id
                      :library-id library-id}]
@@ -332,7 +327,7 @@
   [file-id library-id]
   (ptk/reify ::unlink-file-from-library
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (let [unlinked #(d/dissoc-in % [:workspace-libraries library-id])
             params   {:file-id file-id
                       :library-id library-id}]
@@ -348,7 +343,7 @@
     (->> (rx/of (-> (tubax/xml->clj text)
                     (assoc :name name))))
 
-    (catch :default err
+    (catch :default _err
       (rx/throw {:type :svg-parser}))))
 
 (defn fetch-svg [name uri]
@@ -458,7 +453,7 @@
 (s/def ::process-media-objects
   (s/and
    (s/keys :req-un [::file-id ::local?]
-           :opt-in [::name ::data ::uris ::mtype])
+           :opt-un [::name ::data ::uris ::mtype])
    (fn [props]
      (or (contains? props :blobs)
          (contains? props :uris)))))
@@ -468,7 +463,7 @@
   (us/assert ::process-media-objects params)
   (ptk/reify ::process-media-objects
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (rx/concat
        (rx/of (dm/show {:content (tr "media.loading")
                         :type :info
@@ -515,7 +510,7 @@
   (us/assert ::clone-media-objects-params params)
    (ptk/reify ::clone-media-objects
      ptk/WatchEvent
-     (watch [it state stream]
+     (watch [_ _ _]
        (let [{:keys [on-success on-error]
               :or {on-success identity
                    on-error identity}} (meta params)
@@ -548,7 +543,7 @@
   [ids]
   (ptk/reify ::remove-thumbnails
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       ;; Removes the thumbnail while it's regenerated
       (rx/of (dch/update-shapes
               ids

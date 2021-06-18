@@ -11,16 +11,13 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.time :as dt]
-   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -105,7 +102,7 @@
                             :on-focus on-focus
                             :on-change on-change}]
      (when (or @show-buttons?
-               (not (empty? @content)))
+               (seq @content))
        [:div.buttons
         [:input.btn-primary {:type "button" :value "Post" :on-click on-submit}]
         [:input.btn-secondary {:type "button" :value "Cancel" :on-click on-cancel}]])]))
@@ -323,7 +320,7 @@
 
 (mf/defc thread-bubble
   {::mf/wrap [mf/memo]}
-  [{:keys [thread zoom open? on-click] :as params}]
+  [{:keys [thread zoom on-click] :as params}]
   (let [pos   (:position thread)
         pos-x (* (:x pos) zoom)
         pos-y (* (:y pos) zoom)

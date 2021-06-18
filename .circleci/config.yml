@@ -33,11 +33,20 @@ jobs:
            # fallback to using the latest cache if no exact match is found
            - v1-dependencies-
 
-      # run backend lint
+      - run:
+          name: common lint
+          working_directory: "./common"
+          command: "clj-kondo --parallel --lint src/"
+
+      - run:
+          name: frontend lint
+          working_directory: "./frontend"
+          command: "clj-kondo --parallel --lint src/"
+
       - run:
           name: backend lint
           working_directory: "./backend"
-          command: "clj-kondo --lint src/"
+          command: "clj-kondo --parallel --lint src/"
 
       # run backend test
       - run:
@@ -61,11 +70,6 @@ jobs:
           environment:
             JAVA_HOME: /usr/lib/jvm/openjdk16
             PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin:/usr/lib/jvm/openjdk16/bin
-
-      # - run:
-      #     name: common lint
-      #     working_directory: "./common"
-      #     command: "clj-kondo --lint src/"
 
       - run:
           working_directory: "./common"

@@ -6,14 +6,13 @@
 
 (ns app.worker.thumbnails
   (:require
-   [rumext.alpha :as mf]
-   [beicon.core :as rx]
-   [promesa.core :as p]
-   [app.main.fonts :as fonts]
+   ["react-dom/server" :as rds]
    [app.main.exports :as exports]
-   [app.worker.impl :as impl]
+   [app.main.fonts :as fonts]
    [app.util.http :as http]
-   ["react-dom/server" :as rds]))
+   [app.worker.impl :as impl]
+   [beicon.core :as rx]
+   [rumext.alpha :as mf]))
 
 (defn- handle-response
   [response]

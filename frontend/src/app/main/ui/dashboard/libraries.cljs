@@ -7,14 +7,11 @@
 (ns app.main.ui.dashboard.libraries
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
-   [app.main.ui.icons :as i]
-   [app.main.refs :as refs]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (mf/defc libraries-page

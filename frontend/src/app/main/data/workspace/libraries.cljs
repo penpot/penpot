@@ -46,7 +46,7 @@
                                         (:component-id change)
                                         :objects
                                         (:id change)])
-                          :default nil))
+                          :else nil))
 
                 prefix (if (:component-id change) "[C] " "[P] ")
 
@@ -90,7 +90,7 @@
     (us/assert ::cp/color color)
     (ptk/reify ::add-color
       ptk/WatchEvent
-      (watch [it state s]
+      (watch [it _ _]
         (let [rchg {:type :add-color
                     :color color}
               uchg {:type :del-color
@@ -104,7 +104,7 @@
   (us/assert ::cp/recent-color color)
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
-    (watch [it state s]
+    (watch [it _ _]
       (let [rchg {:type :add-recent-color
                   :color color}]
         (rx/of (dch/commit-changes {:redo-changes [rchg]
@@ -123,7 +123,7 @@
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-color
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [[path name] (cp/parse-path-name (:name color))
             color (assoc color :path path :name name)
             prev (get-in state [:workspace-data :colors id])
@@ -141,7 +141,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::delete-color
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [prev (get-in state [:workspace-data :colors id])
             rchg {:type :del-color
                   :id id}
@@ -156,7 +156,7 @@
   (us/assert ::cp/media-object media)
   (ptk/reify ::add-media
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it _ _]
       (let [obj  (select-keys media [:id :name :width :height :mtype])
             rchg {:type :add-media
                   :object obj}
@@ -172,7 +172,7 @@
   (us/assert ::us/string new-name)
   (ptk/reify ::rename-media
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [object (get-in state [:workspace-data :media id])
             [path name] (cp/parse-path-name new-name)
 
@@ -195,7 +195,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::delete-media
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [prev (get-in state [:workspace-data :media id])
             rchg {:type :del-media
                   :id id}
@@ -212,7 +212,7 @@
      (us/assert ::cp/typography typography)
      (ptk/reify ::add-typography
        ptk/WatchEvent
-       (watch [it state s]
+       (watch [it _ _]
          (let [rchg {:type :add-typography
                      :typography typography}
                uchg {:type :del-typography
@@ -230,7 +230,7 @@
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-typography
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [[path name] (cp/parse-path-name (:name typography))
             typography  (assoc typography :path path :name name)
             prev (get-in state [:workspace-data :typographies (:id typography)])
@@ -248,7 +248,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::delete-typography
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [prev (get-in state [:workspace-data :typographies id])
             rchg {:type :del-typography
                   :id id}
@@ -262,7 +262,7 @@
   "Add a new component to current file library, from the currently selected shapes."
   (ptk/reify ::add-component
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
@@ -285,7 +285,7 @@
   (us/assert ::us/string new-name)
   (ptk/reify ::rename-component
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [[path name] (cp/parse-path-name new-name)
             component (get-in state [:workspace-data :components id])
             objects (get component :objects)
@@ -315,7 +315,7 @@
   [{:keys [id] :as params}]
   (ptk/reify ::duplicate-component
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [component      (cp/get-component id
                                              (:current-file-id state)
                                              (dwlh/get-local-file state)
@@ -324,7 +324,7 @@
             unames         (set (map :name all-components))
             new-name       (dwc/generate-unique-name unames (:name component))
 
-            [new-shape new-shapes updated-shapes]
+            [new-shape new-shapes _updated-shapes]
             (dwlh/duplicate-component component)
 
             rchanges [{:type :add-component
@@ -346,7 +346,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::delete-component
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [component (get-in state [:workspace-data :components id])
 
             rchanges [{:type :del-component
@@ -371,7 +371,7 @@
   (us/assert ::us/point position)
   (ptk/reify ::instantiate-component
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [local-library   (dwlh/get-local-file state)
             libraries       (get state :workspace-libraries)
             component       (cp/get-component component-id file-id local-library libraries)
@@ -449,7 +449,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::detach-component
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
             shapes (cp/get-object-with-children id objects)
@@ -511,13 +511,13 @@
   (us/assert ::us/uuid file-id)
   (ptk/reify ::nav-to-component-file
     ptk/WatchEvent
-    (watch [it state stream]
-      (let [file (get-in state [:workspace-libraries file-id])
+    (watch [_ state _]
+      (let [file    (get-in state [:workspace-libraries file-id])
             pparams {:project-id (:project-id file)
                      :file-id (:id file)}
             qparams {:page-id (first (get-in file [:data :pages]))
                      :layout :assets}]
-        (st/emit! (rt/nav-new-window :workspace pparams qparams))))))
+        (rx/of (rt/nav-new-window :workspace pparams qparams))))))
 
 (defn ext-library-changed
   [file-id modified-at revn changes]
@@ -540,7 +540,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::reset-component
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
       (let [local-library (dwlh/get-local-file state)
             libraries     (dwlh/get-libraries state)
@@ -574,7 +574,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::update-component
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
       (let [page-id       (get state :current-page-id)
             local-library (dwlh/get-local-file state)
@@ -642,7 +642,7 @@
         state))
 
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (log/info :msg "SYNC-FILE"
                 :file (dwlh/pretty-file file-id state)
                 :library (dwlh/pretty-file library-id state))
@@ -702,7 +702,7 @@
   (us/assert ::us/uuid library-id)
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (log/info :msg "SYNC-FILE (2nd stage)"
                 :file (dwlh/pretty-file file-id state)
                 :library (dwlh/pretty-file library-id state))
@@ -727,7 +727,7 @@
       (assoc-in state [:workspace-file :ignore-sync-until] (dt/now)))
 
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state _]
       (rp/mutation :ignore-sync
                    {:file-id (get-in state [:workspace-file :id])
                     :date (dt/now)}))))
@@ -737,7 +737,7 @@
   (us/assert ::us/uuid file-id)
   (ptk/reify ::notify-sync-file
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state _]
       (let [libraries-need-sync (filter #(> (:modified-at %) (:synced-at %))
                                         (vals (get state :workspace-libraries)))
             do-update #(do (apply st/emit! (map (fn [library]

@@ -7,7 +7,6 @@
 (ns app.main.ui.shapes.export
  (:require
   [app.common.data :as d]
-  [app.common.geom.matrix :as gmt]
   [app.common.geom.shapes :as gsh]
   [app.util.json :as json]
   [app.util.object :as obj]
@@ -47,8 +46,7 @@
                (cond-> props
                  (some? val)
                  (obj/set! ns-attr (trfn val))))))]
-    (let [frame? (= :frame (:type shape))
-          group? (= :group (:type shape))
+    (let [group? (= :group (:type shape))
           rect?  (= :rect (:type shape))
           text?  (= :text (:type shape))
           mask?  (and group? (:masked-group? shape))
@@ -175,6 +173,6 @@
 
 
      (when (and (= (:type shape) :frame)
-                (not (empty? (:grids shape))))
+                (seq (:grids shape)))
        [:& export-grid-data {:grids (:grids shape)}])]))
 

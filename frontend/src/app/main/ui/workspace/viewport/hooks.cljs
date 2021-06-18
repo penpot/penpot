@@ -37,8 +37,6 @@
      (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-resize on-paste)
      (fn []
        (let [node (mf/ref-val viewport-ref)
-             prnt (dom/get-parent node)
-
              keys [(events/listen js/document EventType.KEYDOWN on-key-down)
                    (events/listen js/document EventType.KEYUP on-key-up)
                    (events/listen node EventType.MOUSEMOVE on-mouse-move)
@@ -90,7 +88,8 @@
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
   (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %)))
 
-(defn setup-hover-shapes [page-id move-stream selected objects transform selected ctrl? hover hover-ids zoom]
+;; TODO: revisit the arguments, looks like `selected` is not necessary here
+(defn setup-hover-shapes [page-id move-stream _selected objects transform selected ctrl? hover hover-ids zoom]
   (let [query-point
         (mf/use-callback
          (mf/deps page-id)
@@ -111,12 +110,7 @@
              ;; When transforming shapes we stop querying the worker
              (rx/filter #(not (some? (mf/ref-val transform-ref))))
              (rx/switch-map query-point))
-
-        roots (mf/use-memo
-               (mf/deps selected objects)
-               (fn []
-                 (let [roots-ids (cp/clean-loops objects selected)]
-                   (->> roots-ids (mapv #(get objects %))))))]
+        ]
 
     (mf/use-effect
      (mf/deps transform)

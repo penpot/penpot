@@ -8,21 +8,18 @@
   (:require
    [app.common.spec :as us]
    [app.config :as cf]
-   [app.main.data.users :as du]
    [app.main.data.messages :as dm]
-   [app.main.store :as st]
+   [app.main.data.users :as du]
    [app.main.repo :as rp]
+   [app.main.store :as st]
+   [app.main.ui.auth.login :as login]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
-   [app.main.ui.auth.login :as login]
-   [app.util.dom :as dom]
-   [app.util.i18n :refer [tr t]]
+   [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.timers :as tm]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (mf/defc demo-warning
@@ -71,7 +68,7 @@
     (st/emit! (dm/error (tr "errors.generic")))))
 
 (defn- handle-prepare-register-success
-  [form {:keys [token] :as result}]
+  [_form {:keys [token] :as result}]
   (st/emit! (rt/nav :auth-register-validate {} {:token token})))
 
 (mf/defc register-form
@@ -84,7 +81,7 @@
 
         on-submit
         (mf/use-callback
-         (fn [form event]
+         (fn [form _event]
            (reset! submitted? true)
            (let [params (:clean-data @form)]
              (->> (rp/mutation :prepare-register-profile params)
@@ -166,7 +163,7 @@
       (st/emit! (dm/error (tr "errors.generic"))))))
 
 (defn- handle-register-success
-  [form data]
+  [_form data]
   (cond
     (some? (:invitation-token data))
     (let [token (:invitation-token data)]
@@ -200,7 +197,7 @@
 
         on-submit
         (mf/use-callback
-         (fn [form event]
+         (fn [form _event]
            (reset! submitted? true)
            (let [params (:clean-data @form)]
              (->> (rp/mutation :register-profile params)

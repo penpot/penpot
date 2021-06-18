@@ -6,10 +6,9 @@
 
 (ns app.main.ui.workspace.rules
   (:require
-   [rumext.alpha :as mf]
    [app.common.math :as mth]
    [app.util.object :as obj]
-   [app.util.timers :as timers]))
+   [rumext.alpha :as mf]))
 
 (defn- calculate-step-size
   [zoom]
@@ -30,7 +29,7 @@
     :else 1))
 
 (defn draw-rule!
-  [dctx {:keys [zoom size start count type] :or {count 200}}]
+  [dctx {:keys [zoom size start type]}]
   (when start
     (let [txfm (- (* (- 0 start) zoom) 20)
           step (calculate-step-size zoom)

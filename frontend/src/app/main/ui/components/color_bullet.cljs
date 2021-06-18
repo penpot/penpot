@@ -6,9 +6,9 @@
 
 (ns app.main.ui.components.color-bullet
   (:require
-   [rumext.alpha :as mf]
+   [app.util.color :as uc]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.color :as uc]))
+   [rumext.alpha :as mf]))
 
 (mf/defc color-bullet [{:keys [color on-click]}]
   (if (uc/multiple? color)
@@ -31,7 +31,7 @@
 
 (mf/defc color-name [{:keys [color size on-click on-double-click]}]
   (let [color (if (string? color) {:color color :opacity 1} color)
-        {:keys [name color opacity gradient]} color
+        {:keys [name color gradient]} color
         color-str (or name color (gradient-type->string (:type gradient)))]
     (when (or (not size) (= size :big))
       [:span.color-text {:on-click #(when on-click (on-click %))

@@ -13,7 +13,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [cljs.spec.alpha :as s]
@@ -26,11 +25,11 @@
   (s/keys :opt-un [::lang ::theme]))
 
 (defn- on-success
-  [form]
+  [_]
   (st/emit! (dm/success (tr "notifications.profile-saved"))))
 
 (defn- on-submit
-  [form event]
+  [form _event]
   (let [data  (:clean-data @form)
         data  (cond-> data
                 (empty? (:lang data))

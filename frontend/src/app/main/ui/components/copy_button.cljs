@@ -6,11 +6,11 @@
 
 (ns app.main.ui.components.copy-button
   (:require
-   [beicon.core :as rx]
-   [rumext.alpha :as mf]
-   [app.util.webapi :as wapi]
+   [app.main.ui.icons :as i]
    [app.util.timers :as timers]
-   [app.main.ui.icons :as i]))
+   [app.util.webapi :as wapi]
+   [beicon.core :as rx]
+   [rumext.alpha :as mf]))
 
 (mf/defc copy-button [{:keys [data]}]
   (let [just-copied (mf/use-state false)]
@@ -24,9 +24,8 @@
 
     [:button.copy-button
      {:on-click #(when-not @just-copied
-                   (do
-                     (reset! just-copied true)
-                     (wapi/write-to-clipboard data)))}
+                   (reset! just-copied true)
+                   (wapi/write-to-clipboard data))}
      (if @just-copied
        i/tick
        i/copy)]))

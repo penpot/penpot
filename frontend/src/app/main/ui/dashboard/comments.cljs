@@ -6,29 +6,15 @@
 
 (ns app.main.ui.dashboard.comments
   (:require
-   [okulary.core :as l]
-   [app.common.data :as d]
-   [app.common.spec :as us]
-   [app.config :as cfg]
-   [app.main.data.dashboard :as dd]
-   [app.main.data.workspace :as dw]
-   [app.main.data.workspace.comments :as dwcm]
    [app.main.data.comments :as dcm]
+   [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
-   [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.comments :as cmt]
+   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
-   [app.util.object :as obj]
-   [app.util.router :as rt]
-   [app.util.time :as dt]
-   [app.util.timers :as tm]
-   [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
+   [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
 (mf/defc comments-section

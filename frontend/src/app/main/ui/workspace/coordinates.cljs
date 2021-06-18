@@ -6,8 +6,8 @@
 
 (ns app.main.ui.workspace.coordinates
   (:require
-   [app.main.ui.hooks :as hooks]
    [app.main.streams :as ms]
+   [app.main.ui.hooks :as hooks]
    [rumext.alpha :as mf]))
 
 (mf/defc coordinates

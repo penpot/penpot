@@ -6,24 +6,14 @@
 
 (ns app.main.ui.workspace.colorpicker.harmony
   (:require
-   [rumext.alpha :as mf]
-   [okulary.core :as l]
-   [cuerdas.core :as str]
    [app.common.geom.point :as gpt]
    [app.common.math :as math]
-   [app.common.uuid :refer [uuid]]
-   [app.util.dom :as dom]
+   [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
    [app.util.color :as uc]
+   [app.util.dom :as dom]
    [app.util.object :as obj]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
-   [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.colors :as dc]
-   [app.main.data.modal :as modal]
-   [app.main.ui.icons :as i]
-   [app.util.i18n :as i18n :refer [t]]
-   [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]))
-
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (defn create-color-wheel
   [canvas-node]
@@ -100,7 +90,7 @@
                             (on-change {:hex hex
                                         :r r :g g :b b
                                         :v new-value})))
-        on-complement-click (fn [ev]
+        on-complement-click (fn [_]
                               (let [new-hue (mod (+ hue 180) 360)
                                     hex (uc/hsv->hex [new-hue saturation value])
                                     [r g b] (uc/hex->rgb hex)]

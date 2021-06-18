@@ -100,7 +100,8 @@
           (cond->> id
             (contains? svg-defs id) (str render-id "-")))]
 
-    (when (and svg-defs (not (empty? svg-defs)))
+    ;; TODO: no key?
+    (when (seq svg-defs)
       (for [svg-def (vals svg-defs)]
         [:& svg-node {:node svg-def
                       :prefix-id prefix-id

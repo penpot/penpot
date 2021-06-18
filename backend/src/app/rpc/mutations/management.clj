@@ -167,7 +167,7 @@
           :opt-un [::name]))
 
 (sv/defmethod ::duplicate-file
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id name] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (let [file   (db/get-by-id conn :file file-id)
           index  {file-id (uuid/next)}
@@ -187,7 +187,7 @@
           :opt-un [::name]))
 
 (sv/defmethod ::duplicate-project
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id name] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (let [project (db/get-by-id conn :project project-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id project))

@@ -6,19 +6,9 @@
 
 (ns app.util.storage
   (:require
-   [app.common.exceptions :as ex]
    [app.common.transit :as t]
    [app.util.globals :as g]
    [app.util.timers :as tm]))
-
-(defn- ^boolean is-worker?
-  []
-  (or (= *target* "nodejs")
-      (not (exists? js/window))))
-
-(defn- decode
-  [v]
-  (ex/ignoring (t/decode-str v)))
 
 (defn- persist
   [storage prev curr]
@@ -43,7 +33,7 @@
                       val (.getItem ^js storage key)]
                   (try
                     (assoc res (t/decode-str key) (t/decode-str val))
-                    (catch :default e
+                    (catch :default _e
                       res))))
               {}
               (range len)))))

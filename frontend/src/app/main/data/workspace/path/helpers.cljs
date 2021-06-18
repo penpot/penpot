@@ -6,25 +6,23 @@
 
 (ns app.main.data.workspace.path.helpers
   (:require
-   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.main.data.workspace.path.common :as common]
-   [app.main.data.workspace.path.state :refer [get-path]]
    [app.main.streams :as ms]
    [app.util.path.commands :as upc]
    [app.util.path.subpaths :as ups]
    [potok.core :as ptk]))
 
-(defn end-path-event? [{:keys [type shift] :as event}]
+(defn end-path-event? [event]
   (or (= (ptk/type event) ::common/finish-path)
       (= (ptk/type event) :esc-pressed)
       (= :app.main.data.workspace.common/clear-edition-mode (ptk/type event))
       (= :app.main.data.workspace/finalize-page (ptk/type event))
       (= event :interrupt) ;; ESC
-      (and (ms/mouse-double-click? event))))
+      (ms/mouse-double-click? event)))
 
 (defn content-center
   [content]
@@ -35,7 +33,6 @@
 (defn content->points+selrect
   "Given the content of a shape, calculate its points and selrect"
   [shape content]
-
   (let [{:keys [flip-x flip-y]} shape
         transform
         (cond-> (:transform shape (gmt/matrix))

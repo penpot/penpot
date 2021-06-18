@@ -1,14 +1,30 @@
-{:lint-as {potok.core/reify clojure.core/reify
-           promesa.core/let clojure.core/let
-           rumext.alpha/defc clojure.core/defn
-           app.common.data/export clojure.core/def
-           app.db/with-atomic clojure.core/with-open}
+{:lint-as
+ {promesa.core/let clojure.core/let
+  rumext.alpha/defc clojure.core/defn
+  rumext.alpha/fnc clojure.core/fn
+  app.common.data/export clojure.core/def
+  app.db/with-atomic clojure.core/with-open}
 
  :hooks
- {:analyze-call {app.common.data/export hooks.export/export}}
+ {:analyze-call
+  {app.common.data/export hooks.export/export
+   potok.core/reify hooks.export/potok-reify
+   cljs.core/specify! hooks.export/clojure-specify
+   app.util.services/defmethod hooks.export/service-defmethod
+   }}
 
  :output
- {:exclude-files ["data_readers.clj"]}
+ {:exclude-files
+  ["data_readers.clj"
+   "app/util/perf.cljs"
+   "app/common/exceptions.cljc"
+   "app/util/import/.*"
+   "app/worker/export.cljs"
+   "app/worker/import.cljs"
+   "app/libs/.*"
+   "app/main/data/workspace/path/selection.cljs"
+   "app/main/data/workspace/transforms.cljs"
+   ]}
 
  :linters
  {:unsorted-required-namespaces
@@ -21,12 +37,12 @@
   :single-key-in
   {:level :warning}
 
+  :redundant-do
+  {:level :off}
+
   :unused-binding
   {:exclude-destructured-as true
    :exclude-destructured-keys-in-fn-args false
    }
-
-  :unresolved-symbol
-  {:exclude ['(app.util.services/defmethod)
-             ]}}}
+  }}
 

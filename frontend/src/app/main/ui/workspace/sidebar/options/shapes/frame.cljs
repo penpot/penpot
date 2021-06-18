@@ -6,23 +6,22 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.frame
   (:require
-   [rumext.alpha :as mf]
    [app.common.data :as d]
-   [app.util.dom :as dom]
-   [app.common.geom.point :as gpt]
-   [app.util.i18n :refer [tr]]
    [app.common.math :as math]
-   [app.main.store :as st]
    [app.main.data.workspace :as udw]
-   [app.main.ui.icons :as i]
+   [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
-   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
-   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]))
+   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
+   [rumext.alpha :as mf]))
 
 (declare +size-presets+)
 
@@ -50,7 +49,7 @@
           (st/emit! (udw/update-dimensions [(:id shape)] attr value)))
 
         on-proportion-lock-change
-        (fn [event]
+        (fn [_]
           (st/emit! (udw/set-shape-proportion-lock (:id shape) (not (:proportion-lock shape)))))
 
         on-position-change
@@ -82,8 +81,8 @@
                     :on-click #(on-preset-selected (:width size-preset) (:height size-preset))}
                (:name size-preset)
                [:span (:width size-preset) " x " (:height size-preset)]]))]]]
-       [:span.orientation-icon {on-click #(on-orientation-clicked :vert)} i/size-vert]
-       [:span.orientation-icon {on-click #(on-orientation-clicked :horiz)} i/size-horiz]]
+       [:span.orientation-icon {:on-click #(on-orientation-clicked :vert)} i/size-vert]
+       [:span.orientation-icon {:on-click #(on-orientation-clicked :horiz)} i/size-horiz]]
 
       ;; WIDTH & HEIGHT
       [:div.row-flex

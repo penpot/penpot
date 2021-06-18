@@ -10,7 +10,6 @@
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
-   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.context :as ctx]
@@ -19,7 +18,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 (mf/defc project-menu
@@ -62,7 +60,7 @@
                       (dd/move-project (with-meta data mdata)))))
 
         delete-fn
-        (fn [event]
+        (fn [_]
           (st/emit! (dm/success (tr "dashboard.success-delete-project"))
                     (dd/delete-project project)
                     (dd/go-to-projects (:team-id project))))

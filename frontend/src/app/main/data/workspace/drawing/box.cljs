@@ -21,7 +21,7 @@
 (defn truncate-zero [num default]
   (if (mth/almost-zero? num) default num))
 
-(defn resize-shape [{:keys [x y width height transform transform-inverse] :as shape} point lock?]
+(defn resize-shape [{:keys [x y width height] :as shape} point lock?]
   (let [;; The new shape behaves like a resize on the bottom-right corner
         initial (gpt/point (+ x width) (+ y height))
         shapev  (gpt/point width height)
@@ -53,9 +53,7 @@
   (ptk/reify ::handle-drawing-box
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [{:keys [flags]} (:workspace-local state)
-
-            stoper? #(or (ms/mouse-up? %) (= % :interrupt))
+      (let [stoper? #(or (ms/mouse-up? %) (= % :interrupt))
             stoper  (rx/filter stoper? stream)
             initial @ms/mouse-position
 

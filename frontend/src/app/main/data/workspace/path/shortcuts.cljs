@@ -22,7 +22,7 @@
 (defn esc-pressed []
   (ptk/reify :esc-pressed
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       ;;  Not interrupt when we're editing a path
       (let [edition-id (or (get-in state [:workspace-drawing :object :id])
                            (get-in state [:workspace-local :edition]))

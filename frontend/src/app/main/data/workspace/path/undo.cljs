@@ -9,8 +9,8 @@
    [app.common.data :as d]
    [app.common.data.undo-stack :as u]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.changes :as changes]
+   [app.main.data.workspace.path.state :as st]
    [app.main.store :as store]
    [beicon.core :as rx]
    [okulary.core :as l]
@@ -64,7 +64,7 @@
                undo-stack)))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (rx/of (changes/save-path-content {:preserve-move-to true})))))
 
 (defn redo-path []
@@ -82,7 +82,7 @@
              undo-stack))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (rx/of (changes/save-path-content)))))
 
 (defn merge-head
@@ -92,10 +92,9 @@
   (ptk/reify ::add-undo-entry
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (st/get-path-id state)
-            entry (make-entry state)
+      (let [id    (st/get-path-id state)
             stack (get-in state [:workspace-local :edit-path id :undo-stack])
-            head (u/peek stack)
+            head  (u/peek stack)
             stack (-> stack (u/undo) (u/fixup head))]
         (-> state
             (d/assoc-in-when
@@ -145,7 +144,7 @@
                        assoc
                        :undo-lock lock
                        :undo-stack (u/make-stack)))))
-      
+
       ptk/WatchEvent
       (watch [_ state stream]
         (let [undo-lock (get-in state [:workspace-local :edit-path (st/get-path-id state) :undo-lock])]

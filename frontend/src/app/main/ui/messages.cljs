@@ -6,7 +6,6 @@
 
 (ns app.main.ui.messages
   (:require
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.messages :as dm]
    [app.main.refs :as refs]

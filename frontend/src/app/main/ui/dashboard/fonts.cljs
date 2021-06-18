@@ -6,27 +6,22 @@
 
 (ns app.main.ui.dashboard.fonts
   (:require
-   [app.common.data :as d]
    [app.common.media :as cm]
-   [app.common.uuid :as uuid]
-   [app.main.data.dashboard :as dd]
    [app.main.data.fonts :as df]
    [app.main.data.modal :as modal]
-   [app.main.ui.components.file-uploader :refer [file-uploader]]
-   [app.main.ui.components.context-menu :refer [context-menu]]
-   [app.main.store :as st]
-   [app.main.repo :as rp]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
+   [app.main.store :as st]
+   [app.main.ui.components.context-menu :refer [context-menu]]
+   [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.logging :as log]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
-   [app.util.webapi :as wa]
-   [cuerdas.core :as str]
+   [app.util.logging :as log]
+   ;; [app.util.router :as rt]
    [beicon.core :as rx]
-   [okulary.core :as l]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (log/set-level! :trace)
@@ -47,29 +42,29 @@
 (mf/defc header
   {::mf/wrap [mf/memo]}
   [{:keys [section team] :as props}]
-  (let [go-fonts
-        (mf/use-callback
-         (mf/deps team)
-         (st/emitf (rt/nav :dashboard-fonts {:team-id (:id team)})))
+  ;; (let [go-fonts
+  ;;       (mf/use-callback
+  ;;        (mf/deps team)
+  ;;        (st/emitf (rt/nav :dashboard-fonts {:team-id (:id team)})))
 
-        go-providers
-        (mf/use-callback
-         (mf/deps team)
-         (st/emitf (rt/nav :dashboard-font-providers {:team-id (:id team)})))]
+  ;;       go-providers
+  ;;       (mf/use-callback
+  ;;        (mf/deps team)
+  ;;        (st/emitf (rt/nav :dashboard-font-providers {:team-id (:id team)})))]
 
-    (use-set-page-title team section)
+  (use-set-page-title team section)
 
-    [:header.dashboard-header
-     [:div.dashboard-title
-      [:h1 (tr "labels.fonts")]]
-     [:nav
-      #_[:ul
-         [:li {:class (when (= section :fonts) "active")}
-          [:a {:on-click go-fonts} (tr "labels.custom-fonts")]]
-         [:li {:class (when (= section :providers) "active")}
-          [:a {:on-click go-providers} (tr "labels.font-providers")]]]]
+  [:header.dashboard-header
+   [:div.dashboard-title
+    [:h1 (tr "labels.fonts")]]
+   [:nav
+    #_[:ul
+       [:li {:class (when (= section :fonts) "active")}
+        [:a {:on-click go-fonts} (tr "labels.custom-fonts")]]
+       [:li {:class (when (= section :providers) "active")}
+        [:a {:on-click go-providers} (tr "labels.font-providers")]]]]
 
-     [:div]]))
+   [:div]])
 
 (mf/defc font-variant-display-name
   [{:keys [variant]}]
@@ -87,9 +82,6 @@
 
         on-click
         (mf/use-callback #(dom/click (mf/ref-val input-ref)))
-
-        font-key-fn
-        (mf/use-callback (juxt :font-family :font-weight :font-style))
 
         on-selected
         (mf/use-callback
@@ -190,7 +182,7 @@
           (reset! state (dom/get-target-val event)))
 
         on-save
-        (fn [event]
+        (fn [_]
           (let [font-family @state]
             (when-not (str/blank? font-family)
               (st/emit! (df/update-font
@@ -204,7 +196,7 @@
             (on-save event)))
 
         on-cancel
-        (fn [event]
+        (fn [_]
           (reset! edit? false)
           (reset! state (:font-family font)))
 
@@ -221,8 +213,7 @@
                       :title (tr "modals.delete-font.title")
                       :message (tr "modals.delete-font.message")
                       :accept-label (tr "labels.delete")
-                      :on-accept (fn [props]
-                                   (delete-font-fn))})))
+                      :on-accept (fn [_props] (delete-font-fn))})))
 
         on-delete-variant
         (fn [id]
@@ -231,7 +222,7 @@
                       :title (tr "modals.delete-font-variant.title")
                       :message (tr "modals.delete-font-variant.message")
                       :accept-label (tr "labels.delete")
-                      :on-accept (fn [props]
+                      :on-accept (fn [_props]
                                    (delete-variant-fn id))})))]
 
     [:div.font-item.table-row
@@ -276,7 +267,7 @@
 
 
 (mf/defc installed-fonts
-  [{:keys [team fonts] :as props}]
+  [{:keys [fonts] :as props}]
   (let [sterm (mf/use-state "")
 
         matches?

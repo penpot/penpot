@@ -7,18 +7,18 @@
 (ns app.main.ui.workspace.libraries
   (:require
    [app.common.data :as d]
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [okulary.core :as l]
-   [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
-   [app.util.data :refer [classnames matches-search]]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.main.data.modal :as modal]))
+   [app.util.data :refer [classnames matches-search]]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [t tr]]
+   [cuerdas.core :as str]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 (def workspace-file
   (l/derived :workspace-file st/state))
@@ -68,7 +68,7 @@
 
         on-search-clear
         (mf/use-callback
-         (fn [event]
+         (fn [_]
            (reset! search-term "")))
 
         link-library
@@ -152,8 +152,7 @@
         project      (mf/deref refs/workspace-project)
         file         (mf/deref workspace-file)
         libraries    (->> (mf/deref refs/workspace-libraries)
-                          (d/removem (fn [[key val]]
-                                       (:is-indirect val))))
+                          (d/removem (fn [[_ val]] (:is-indirect val))))
         shared-files (mf/deref refs/workspace-shared-files)
 
         change-tab   #(reset! selected-tab %)

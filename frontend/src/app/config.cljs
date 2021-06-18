@@ -6,9 +6,8 @@
 
 (ns app.config
   (:require
-   [app.common.data :as d]
-   [app.common.uri :as u]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.common.version :as v]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]

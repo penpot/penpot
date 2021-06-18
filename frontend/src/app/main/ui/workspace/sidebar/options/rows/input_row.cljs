@@ -6,12 +6,10 @@
 
 (ns app.main.ui.workspace.sidebar.options.rows.input-row
   (:require
-   [rumext.alpha :as mf]
-   [app.common.data :as d]
+   [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.editable-select :refer [editable-select]]
-   [app.util.dom :as dom]))
+   [rumext.alpha :as mf]))
 
 (mf/defc input-row [{:keys [label options value class min max on-change type placeholder]}]
   [:div.row-flex.input-row

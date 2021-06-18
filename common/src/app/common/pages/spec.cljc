@@ -395,11 +395,11 @@
                    :internal.media-object/mtype]))
 
 (s/def ::media-object-update
-  (s/keys :req-un  [::id]
-          :req-opt [::name
-                    :internal.media-object/width
-                    :internal.media-object/height
-                    :internal.media-object/mtype]))
+  (s/keys :req-un [::id]
+          :opt-un [::name
+                   :internal.media-object/width
+                   :internal.media-object/height
+                   :internal.media-object/mtype]))
 
 (s/def :internal.file/colors
   (s/map-of ::uuid ::color))

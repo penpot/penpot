@@ -7,9 +7,7 @@
 (ns app.main.ui.workspace.viewport.path-actions
   (:require
    [app.main.data.workspace.path :as drp]
-   [app.main.data.workspace.path.helpers :as wph]
    [app.main.data.workspace.path.shortcuts :as sc]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.shapes.path.common :as pc]
@@ -20,8 +18,8 @@
 (defn check-enabled [content selected-points]
   (let [segments (upt/get-segments content selected-points)
         num-points (count selected-points)
-        points-selected? (not (empty? selected-points))
-        segments-selected? (not (empty? segments))]
+        points-selected? (seq selected-points)
+        segments-selected? (seq segments)]
     {:make-corner points-selected?
      :make-curve points-selected?
      :add-node segments-selected?
@@ -31,8 +29,7 @@
      :separate-nodes segments-selected?}))
 
 (mf/defc path-actions [{:keys [shape]}]
-  (let [id (mf/deref refs/selected-edition)
-        {:keys [edit-mode selected-points snap-toggled] :as all} (mf/deref pc/current-edit-path-ref)
+  (let [{:keys [edit-mode selected-points snap-toggled] :as all} (mf/deref pc/current-edit-path-ref)
         content (:content shape)
 
         enabled-buttons
@@ -42,66 +39,66 @@
 
         on-select-draw-mode
         (mf/use-callback
-         (fn [event]
+         (fn [_]
            (st/emit! (drp/change-edit-mode :draw))))
-        
+
         on-select-edit-mode
         (mf/use-callback
-         (fn [event]
+         (fn [_]
            (st/emit! (drp/change-edit-mode :move))))
-        
+
         on-add-node
         (mf/use-callback
          (mf/deps (:add-node enabled-buttons))
-         (fn [event]
+         (fn [_]
            (when (:add-node enabled-buttons)
              (st/emit! (drp/add-node)))))
-        
+
         on-remove-node
         (mf/use-callback
          (mf/deps (:remove-node enabled-buttons))
-         (fn [event]
+         (fn [_]
            (when (:remove-node enabled-buttons)
              (st/emit! (drp/remove-node)))))
-        
+
         on-merge-nodes
         (mf/use-callback
          (mf/deps (:merge-nodes enabled-buttons))
-         (fn [event]
+         (fn [_]
            (when (:merge-nodes enabled-buttons)
              (st/emit! (drp/merge-nodes)))))
-        
+
         on-join-nodes
         (mf/use-callback
          (mf/deps (:join-nodes enabled-buttons))
-         (fn [event]
+         (fn [_]
            (when (:join-nodes enabled-buttons)
              (st/emit! (drp/join-nodes)))))
-        
+
         on-separate-nodes
         (mf/use-callback
          (mf/deps (:separate-nodes enabled-buttons))
-         (fn [event]
+         (fn [_]
            (when (:separate-nodes enabled-buttons)
              (st/emit! (drp/separate-nodes)))))
 
         on-make-corner
         (mf/use-callback
          (mf/deps (:make-corner enabled-buttons))
-         (fn [event]
+         (fn [_]
            (when (:make-corner enabled-buttons)
              (st/emit! (drp/make-corner)))))
-        
+
         on-make-curve
         (mf/use-callback
          (mf/deps (:make-curve enabled-buttons))
-         (fn [event]
+         (fn [_]
            (when (:make-curve enabled-buttons)
              (st/emit! (drp/make-curve)))))
 
         on-toggle-snap
         (mf/use-callback
-         (fn [event]
+         (fn [_]
            (st/emit! (drp/toggle-snap))))
 
         ]
@@ -121,7 +118,7 @@
         :alt (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
         :on-click on-select-edit-mode}
        i/pointer-inner]]
-     
+
      [:div.viewport-actions-group
       ;; Add Node
       [:div.viewport-actions-entry.tooltip.tooltip-bottom

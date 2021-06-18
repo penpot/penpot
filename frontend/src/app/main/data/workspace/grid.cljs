@@ -6,11 +6,11 @@
 
 (ns app.main.data.workspace.grid
   (:require
-   [beicon.core :as rx]
-   [potok.core :as ptk]
    [app.common.data :as d]
    [app.common.spec :as us]
-   [app.main.data.workspace.changes :as dch]))
+   [app.main.data.workspace.changes :as dch]
+   [beicon.core :as rx]
+   [potok.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid
@@ -40,7 +40,7 @@
   (us/assert ::us/uuid frame-id)
   (ptk/reify ::add-frame-grid
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state _]
       (let [page-id (:current-page-id state)
             data    (get-in state [:workspace-data :pages-index page-id])
             params  (or (get-in data [:options :saved-grids :square])
@@ -56,21 +56,21 @@
   [frame-id index]
   (ptk/reify ::set-frame-grid
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (rx/of (dch/update-shapes [frame-id] (fn [o] (update o :grids (fnil #(d/remove-at-index % index) []))))))))
 
 (defn set-frame-grid
   [frame-id index data]
   (ptk/reify ::set-frame-grid
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (rx/of (dch/update-shapes [frame-id] #(assoc-in % [:grids index] data))))))
 
 (defn set-default-grid
   [type params]
   (ptk/reify ::set-default-grid
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [pid (:current-page-id state)
             prev-value (get-in state [:workspace-data :pages-index pid :options :saved-grids type])]
         (rx/of (dch/commit-changes

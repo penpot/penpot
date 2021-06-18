@@ -10,11 +10,8 @@
   (:require
    [app.common.data :as d]
    [app.common.pages :as cp]
-   [app.common.uuid :as uuid]
-   [app.main.constants :as c]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
-   [beicon.core :as rx]
    [okulary.core :as l]))
 
 ;; ---- Global refs

@@ -7,8 +7,6 @@
 (ns app.main.ui.shapes.custom-stroke
   (:require
    [app.common.data :as d]
-   [app.common.geom.shapes :as geom]
-   [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -26,7 +24,7 @@
     (-> props (obj/merge #js {:style style}))))
 
 (mf/defc inner-stroke-clip-path
-  [{:keys [shape render-id]}]
+  [{:keys [render-id]}]
   (let [clip-id (str "inner-stroke-" render-id)
         shape-id (str "stroke-shape-" render-id)]
     [:> "clipPath" #js {:id clip-id}
@@ -70,8 +68,6 @@
         child        (obj/get props "children")
         base-props   (obj/get child "props")
         elem-name    (obj/get child "type")
-        shape        (obj/get props "shape")
-        stroke-width (:stroke-width shape 0)
         stroke-mask-id (str "outer-stroke-" render-id)
         shape-id (str "stroke-shape-" render-id)
 
@@ -148,8 +144,8 @@
         stroke-width (:stroke-width shape 0)
         stroke-style (:stroke-style shape :none)
         stroke-position (:stroke-alignment shape :center)
-        has-stroke? (and (and (> stroke-width 0)
-                              (not= stroke-style :none)))
+        has-stroke? (and (> stroke-width 0)
+                         (not= stroke-style :none))
         inner? (= :inner stroke-position)
         outer? (= :outer stroke-position)]
 

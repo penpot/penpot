@@ -40,14 +40,12 @@
   [{:keys [file] :as bundle}]
   (ptk/reify ::setup-selection-index
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (let [msg {:cmd :initialize-indices
                  :file-id (:id file)
                  :data (:data file)}]
         (->> (uw/ask! msg)
              (rx/map (constantly ::index-initialized)))))))
-
-
 
 ;; --- Common Helpers & Events
 
@@ -59,7 +57,7 @@
 
 (defn- extract-numeric-suffix
   [basename]
-  (if-let [[match p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
+  (if-let [[_ p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
     [p1 (+ 1 (d/parse-integer p2))]
     [basename 1]))
 
@@ -112,7 +110,7 @@
 (def undo
   (ptk/reify ::undo
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
         ;; Editors handle their own undo's
@@ -131,7 +129,7 @@
 (def redo
   (ptk/reify ::redo
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
         (when-not (or (some? edition) (not-empty drawing))
@@ -180,10 +178,10 @@
       (assoc-in state [:workspace-local :selected] ids))
 
     ptk/WatchEvent
-    (watch [it state stream]
-       (let [page-id (:current-page-id state)
-             objects (wsh/lookup-page-objects state page-id)]
-         (rx/of (expand-all-parents ids objects))))))
+    (watch [_ state _]
+      (let [page-id (:current-page-id state)
+            objects (wsh/lookup-page-objects state page-id)]
+        (rx/of (expand-all-parents ids objects))))))
 
 (declare clear-edition-mode)
 
@@ -202,12 +200,11 @@
           state)))
 
     ptk/WatchEvent
-    (watch [it state stream]
-      (let [objects (wsh/lookup-page-objects state)]
-        (->> stream
-             (rx/filter interrupt?)
-             (rx/take 1)
-             (rx/map (constantly clear-edition-mode)))))))
+    (watch [_ _ stream]
+      (->> stream
+           (rx/filter interrupt?)
+           (rx/take 1)
+           (rx/map (constantly clear-edition-mode))))))
 
 ;; If these event change modules review /src/app/main/data/workspace/path/undo.cljs
 (def clear-edition-mode
@@ -282,7 +279,7 @@
   (us/verify ::shape-attrs attrs)
   (ptk/reify ::add-shape
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
 
@@ -313,7 +310,7 @@
 (defn move-shapes-into-frame [frame-id shapes]
   (ptk/reify ::move-shapes-into-frame
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
             to-move-shapes (->> (cp/select-toplevel-shapes objects {:include-frames? false})
@@ -349,7 +346,7 @@
   (us/assert ::set-of-uuid ids)
   (ptk/reify ::delete-shapes
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
 
@@ -504,7 +501,7 @@
   [type frame-x frame-y data]
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state _]
       (let [{:keys [width height]} data
 
             [vbc-x vbc-y] (viewport-center state)
@@ -524,7 +521,7 @@
   [image {:keys [x y]}]
   (ptk/reify ::image-uploaded
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (let [{:keys [name width height id mtype]} image
             shape {:name name
                    :width width

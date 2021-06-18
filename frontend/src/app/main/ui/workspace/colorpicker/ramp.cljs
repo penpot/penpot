@@ -6,26 +6,14 @@
 
 (ns app.main.ui.workspace.colorpicker.ramp
   (:require
-   [rumext.alpha :as mf]
-   [okulary.core :as l]
-   [cuerdas.core :as str]
-   [app.common.geom.point :as gpt]
    [app.common.math :as math]
-   [app.common.uuid :refer [uuid]]
-   [app.util.dom :as dom]
-   [app.util.color :as uc]
-   [app.util.object :as obj]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
-   [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.colors :as dc]
-   [app.main.data.modal :as modal]
-   [app.main.ui.icons :as i]
-   [app.util.i18n :as i18n :refer [t]]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
-   [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]))
+   [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
+   [app.util.color :as uc]
+   [app.util.dom :as dom]
+   [rumext.alpha :as mf]))
 
-(mf/defc value-saturation-selector [{:keys [hue saturation value on-change]}]
+(mf/defc value-saturation-selector [{:keys [saturation value on-change]}]
   (let [dragging? (mf/use-state false)
         calculate-pos
         (fn [ev]

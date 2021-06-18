@@ -6,21 +6,21 @@
 
 (ns app.util.time
   (:require
-   [cuerdas.core :as str]
-   ["luxon" :as lxn]
    ["date-fns/formatDistanceToNowStrict" :default dateFnsFormatDistanceToNowStrict]
-   ["date-fns/locale/el" :default dateFnsLocalesEl]
-   ["date-fns/locale/fr" :default dateFnsLocalesFr]
    ["date-fns/locale/ca" :default dateFnsLocalesCa]
    ["date-fns/locale/de" :default dateFnsLocalesDe]
-   ["date-fns/locale/ro" :default dateFnsLocalesRo]
-   ["date-fns/locale/pt-BR" :default dateFnsLocalesPtBr]
+   ["date-fns/locale/el" :default dateFnsLocalesEl]
    ["date-fns/locale/en-US" :default dateFnsLocalesEnUs]
-   ["date-fns/locale/zh-CN" :default dateFnsLocalesZhCn]
    ["date-fns/locale/es" :default dateFnsLocalesEs]
-   ["date-fns/locale/tr" :default dateFnsLocalesTr]
+   ["date-fns/locale/fr" :default dateFnsLocalesFr]
+   ["date-fns/locale/pt-BR" :default dateFnsLocalesPtBr]
+   ["date-fns/locale/ro" :default dateFnsLocalesRo]
    ["date-fns/locale/ru" :default dateFnsLocalesRu]
-   [app.util.object :as obj]))
+   ["date-fns/locale/tr" :default dateFnsLocalesTr]
+   ["date-fns/locale/zh-CN" :default dateFnsLocalesZhCn]
+   ["luxon" :as lxn]
+   [app.util.object :as obj]
+   [cuerdas.core :as str]))
 
 (def DateTime lxn/DateTime)
 (def Duration lxn/Duration)

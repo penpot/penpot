@@ -6,7 +6,6 @@
 
 (ns app.main.ui.handoff
   (:require
-   [app.common.exceptions :as ex]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
    [app.main.refs :as refs]
@@ -15,15 +14,12 @@
    [app.main.ui.handoff.render :refer [render-frame-svg]]
    [app.main.ui.handoff.right-sidebar :refer [right-sidebar]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
    [app.main.ui.viewer.header :refer [header]]
    [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [app.util.keyboard :as kbd]
-   [beicon.core :as rx]
    [goog.events :as events]
-   [okulary.core :as l]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
 

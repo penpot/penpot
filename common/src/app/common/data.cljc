@@ -11,8 +11,8 @@
      (:require-macros [app.common.data]))
   (:require
    [app.common.math :as mth]
+   [cljs.analyzer.api :as aapi]
    [clojure.set :as set]
-   #?(:clj [cljs.analyzer.api :as aapi])
    #?(:cljs [cljs.reader :as r]
       :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as core]
@@ -275,7 +275,7 @@
 ;; Data Parsing / Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- nan?
+(defn nan?
   [v]
   (not= v v))
 
@@ -506,7 +506,7 @@
 
 (defn- extract-numeric-suffix
   [basename]
-  (if-let [[match p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
+  (if-let [[_ p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
     [p1 (+ 1 (parse-integer p2))]
     [basename 1]))
 

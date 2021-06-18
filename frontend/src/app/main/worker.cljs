@@ -6,9 +6,7 @@
 
 (ns app.main.worker
   (:require
-   [cljs.spec.alpha :as s]
    [app.config :as cfg]
-   [app.common.spec :as us]
    [app.util.worker :as uw]))
 
 (defn on-error

@@ -16,7 +16,8 @@
   [state]
   (dissoc state :last-point :prev-handler :drag-handler :preview))
 
-(defn finish-path [source]
+(defn finish-path
+  [_source]
   (ptk/reify ::finish-path
     ptk/UpdateEvent
     (update [_ state]

@@ -7,11 +7,9 @@
 (ns app.main.ui.workspace.viewport
   (:require
    [app.common.data :as d]
-   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
-   [app.main.ui.context :as muc]
    [app.main.ui.measurements :as msr]
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.export :as use]
@@ -79,7 +77,6 @@
 
         ;; REFS
         viewport-ref      (mf/use-ref nil)
-        zoom-view-ref     (mf/use-ref nil)
         render-ref        (mf/use-ref nil)
 
         ;; VARS
@@ -139,7 +136,9 @@
         show-presence?           page-id
         show-prototypes?         (= options-mode :prototype)
         show-selection-handlers? (seq selected)
-        show-snap-distance?      (and (contains? layout :dynamic-alignment) (= transform :move) (not (empty? selected)))
+        show-snap-distance?      (and (contains? layout :dynamic-alignment)
+                                      (= transform :move)
+                                      (seq selected))
         show-snap-points?        (and (or (contains? layout :dynamic-alignment)
                                           (contains? layout :snap-grid))
                                       (or drawing-obj transform))

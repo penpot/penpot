@@ -13,7 +13,6 @@
    [app.config :as cfg]
    [app.util.cache :as c]
    [app.util.globals :as globals]
-   [app.util.object :as obj]
    [app.util.time :as dt]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
@@ -55,8 +54,8 @@
   {"x-frontend-version" (:full @cfg/version)})
 
 (defn fetch
-  [{:keys [method uri query headers body timeout mode omit-default-headers]
-    :or {timeout 10000 mode :cors headers {}}}]
+  [{:keys [method uri query headers body mode omit-default-headers]
+    :or {mode :cors headers {}}}]
   (rx/Observable.create
    (fn [subscriber]
      (let [controller    (js/AbortController.)
@@ -134,7 +133,7 @@
       (assoc headers "content-type" "application/transit+json"))))
 
 (defn conditional-decode-transit
-  [{:keys [body headers status] :as response}]
+  [{:keys [body headers] :as response}]
   (let [contentype (get headers "content-type")]
     (if (and (str/starts-with? contentype "application/transit+json")
              (pos? (count body)))

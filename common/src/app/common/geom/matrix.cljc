@@ -31,7 +31,7 @@
 (defn str->matrix
   [matrix-str]
   (let [params (->> (re-seq number-regex matrix-str)
-                    (filter #(-> % first empty? not))
+                    (filter #(-> % first seq))
                     (map (comp d/parse-double first)))]
     (apply matrix params)))
 
@@ -52,12 +52,11 @@
   "Given two TRANSLATE matrixes (only e and f have significative
   values), combine them. Quicker than multiplying them, for this
   precise case."
-  ([{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
-    {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f}]
+  ([{m1e :e m1f :f} {m2e :e m2f :f}]
    (Matrix.
-     1
-     0
-     0
+    1
+    0
+    0
      1
     (+ m1e m2e)
     (+ m1f m2f)))

@@ -90,7 +90,7 @@
   (assert (nil? (:shape-ref shape)))
   (let [;; Ensure that the component root is not an instance and
         ;; it's no longer tied to a frame.
-        update-new-shape (fn [new-shape original-shape]
+        update-new-shape (fn [new-shape _original-shape]
                            (cond-> new-shape
                              true
                              (-> (assoc :frame-id nil)
@@ -338,10 +338,10 @@
 (defmulti generate-sync-shape
   "Generate changes to synchronize one shape with all assets of the given type
   that is using, in the given library."
-  (fn [type library-id state container shape] type))
+  (fn [type _library-id _state _container _shape] type))
 
 (defmethod generate-sync-shape :components
-  [_ library-id state container shape]
+  [_ _ state container shape]
   (generate-sync-shape-direct container
                               (:id shape)
                               (get-local-file state)
@@ -666,7 +666,7 @@
     [(d/concat rchanges child-rchanges)
      (d/concat uchanges child-uchanges)]))
 
-(defn- generate-sync-shape-inverse
+(defn generate-sync-shape-inverse
   "Generate changes to update the component a shape is linked to, from
   the values in the shape and all its children."
   [page-id shape-id local-library libraries]
@@ -886,10 +886,10 @@
                                set-remote-synced?
                                (assoc :remote-synced? true))))
 
-        update-original-shape (fn [original-shape new-shape]
+        update-original-shape (fn [original-shape _new-shape]
                                 original-shape)
 
-        [new-shape new-shapes _]
+        [_ new-shapes _]
         (cp/clone-object component-shape
                          (:id parent-shape)
                          (get component :objects)
@@ -939,7 +939,7 @@
                                 (cp/get-parents (:id component-parent-shape)
                                                 (:objects component))))
 
-        update-new-shape (fn [new-shape original-shape]
+        update-new-shape (fn [new-shape _original-shape]
                            (reposition-shape new-shape
                                              root-instance
                                              root-main))
@@ -950,7 +950,7 @@
                                          :shape-ref (:id new-shape))
                                   original-shape))
 
-        [new-shape new-shapes updated-shapes]
+        [_new-shape new-shapes updated-shapes]
         (cp/clone-object shape
                          (:id component-parent-shape)
                          (get page :objects)
@@ -1139,33 +1139,6 @@
                          :operations
                          [{:type :set-remote-synced
                            :remote-synced? (:remote-synced? shape)}]})]]
-        [rchanges uchanges]))))
-
-(defn- set-touched-shapes-group
-  [shape container]
-  (if-not (:shape-ref shape)
-    empty-changes
-    (do
-      (log/info :msg (str "SET-TOUCHED-SHAPES-GROUP "
-                          (if (cp/page? container) "[P] " "[C] ")
-                          (:name shape)))
-      (let [rchanges [(make-change
-                        container
-                        {:type :mod-obj
-                         :id (:id shape)
-                         :operations
-                         [{:type :set-touched
-                           :touched (cp/set-touched-group
-                                      (:touched shape)
-                                      :shapes-group)}]})]
-
-            uchanges [(make-change
-                        container
-                        {:type :mod-obj
-                         :id (:id shape)
-                         :operations
-                         [{:type :set-touched
-                           :touched (:touched shape)}]})]]
         [rchanges uchanges]))))
 
 (defn- update-attrs

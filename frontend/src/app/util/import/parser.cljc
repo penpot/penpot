@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
-   [app.common.geom.shapes :as gsh]
    [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]
    [app.util.color :as uc]

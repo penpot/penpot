@@ -6,10 +6,8 @@
 
 (ns app.util.geom.snap-points
   (:require
-   [cljs.spec.alpha :as s]
-   [clojure.set :as set]
-   [app.common.geom.shapes :as gsh]
-   [app.common.geom.point :as gpt]))
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]))
 
 (defn- selrect-snap-points [{:keys [x y width height]}]
   #{(gpt/point x y)

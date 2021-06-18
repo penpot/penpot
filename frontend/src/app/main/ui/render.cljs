@@ -9,7 +9,6 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.data.fonts :as df]
@@ -20,7 +19,6 @@
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
@@ -43,8 +41,6 @@
 
         objects  (reduce updt-fn objects mod-ids)
         object   (get objects object-id)
-
-        {:keys [width height]} (gsh/points->selrect (:points object))
 
         ;; We need to get the shadows/blurs paddings to create the viewbox properly
         {:keys [x y width height]} (filters/get-filters-bounds object)
@@ -115,7 +111,7 @@
              (repo/query! :font-variants {:file-id file-id})
              (repo/query! :file {:id file-id}))
             (rx/subs
-             (fn [[fonts {:keys [data]} :as kaka]]
+             (fn [[fonts {:keys [data]}]]
                (when (seq fonts)
                  (st/emit! (df/fonts-fetched fonts)))
                (let [objs (get-in data [:pages-index page-id :objects])

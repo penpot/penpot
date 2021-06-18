@@ -97,7 +97,7 @@
        (when page-id
          (st/emit! (dw/finalize-page page-id))))))
 
-  (when-let [page (mf/deref trimmed-page-ref)]
+  (when (mf/deref trimmed-page-ref)
     [:& workspace-content {:key page-id
                            :file file
                            :layout layout}]))

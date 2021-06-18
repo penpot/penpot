@@ -7,12 +7,9 @@
 (ns app.main.ui.workspace.shapes.text.editor
   (:require
    ["draft-js" :as draft]
-   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.text :as txt]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -22,9 +19,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
-   [cuerdas.core :as str]
    [goog.events :as events]
-   [okulary.core :as l]
    [rumext.alpha :as mf])
   (:import
    goog.events.EventType))
@@ -34,12 +29,11 @@
 (mf/defc block-component
   {::mf/wrap-props false}
   [props]
-  (let [children (obj/get props "children")
-        bprops   (obj/get props "blockProps")
-        data     (obj/get bprops "data")
-        style    (sts/generate-paragraph-styles (obj/get bprops "shape")
+  (let [bprops (obj/get props "blockProps")
+        data   (obj/get bprops "data")
+        style  (sts/generate-paragraph-styles (obj/get bprops "shape")
                                                 (obj/get bprops "data"))
-        dir      (:text-direction data "auto")]
+        dir    (:text-direction data "auto")]
 
 
     [:div {:style style :dir dir}
@@ -72,10 +66,9 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false
    ::mf/forward-ref true}
-  [props ref]
-  (let [{:keys [id x y width height grow-type content] :as shape} (obj/get props "shape")
+  [props _]
+  (let [{:keys [id content] :as shape} (obj/get props "shape")
 
-        zoom          (mf/deref refs/selected-zoom)
         state-map     (mf/deref refs/workspace-editor-state)
         state         (get state-map id empty-editor-state)
         self-ref      (mf/use-ref)
@@ -86,9 +79,8 @@
         (fn [event]
           (dom/stop-propagation event)
           (when (kbd/esc? event)
-            (do
-              (st/emit! :interrupt)
-              (st/emit! dw/clear-edition-mode))))
+            (st/emit! :interrupt)
+            (st/emit! dw/clear-edition-mode)))
 
         on-mount
         (fn []
@@ -111,7 +103,7 @@
         on-focus
         (mf/use-callback
          (mf/deps shape state)
-         (fn [event]
+         (fn [_]
            (reset! blured false)))
 
         on-change
@@ -131,7 +123,7 @@
 
         handle-return
         (mf/use-callback
-         (fn [event state]
+         (fn [_ state]
            (st/emit! (dwt/update-editor-state shape (ted/editor-split-block state)))
            "handled"))
         ]
@@ -165,7 +157,7 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false
    ::mf/forward-ref true}
-  [props ref]
+  [props _]
   (let [{:keys [id x y width height grow-type] :as shape} (obj/get props "shape")
         clip-id (str "clip-" id)]
     [:g.text-editor {:clip-path (str "url(#" clip-id ")")}

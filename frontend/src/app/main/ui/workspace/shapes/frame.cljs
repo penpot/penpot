@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.shapes.frame
   (:require
    [app.common.geom.shapes :as gsh]
-   [app.main.refs :as refs]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text.fontfaces :as ff]
@@ -77,14 +76,10 @@
             objects     (unchecked-get props "objects")
             thumbnail?  (unchecked-get props "thumbnail?")
 
-            edition     (mf/deref refs/selected-edition)
-
             shape       (gsh/transform-shape shape)
             children    (mapv #(get objects %) (:shapes shape))
 
-            ds-modifier (get-in shape [:modifiers :displacement])
-
-            rendered? (mf/use-state false)
+            rendered?   (mf/use-state false)
 
             show-thumbnail? (and thumbnail? (some? (:thumbnail shape)))
 

@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
@@ -18,14 +17,12 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.repo :as rp]
    [app.util.color :as uc]
-   [app.util.object :as obj]
    [app.util.path.parser :as upp]
    [app.util.svg :as usvg]
    [app.util.uri :as uu]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
-   [promesa.core :as p]))
+   [potok.core :as ptk]))
 
 (defonce default-rect {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
 (defonce default-circle {:r 0 :cx 0 :cy 0})
@@ -163,7 +160,7 @@
         (gsh/setup-selrect))))
 
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
-  (when (and (contains? attrs :d) (not (empty? (:d attrs)) ))
+  (when (and (contains? attrs :d) (seq (:d attrs)))
     (let [svg-transform (usvg/parse-transform (:transform attrs))
           path-content (upp/parse-path (:d attrs))
           content (cond-> path-content
@@ -387,7 +384,7 @@
   [svg-data file-id position]
   (ptk/reify ::svg-uploaded
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       ;; Once the SVG is uploaded, we need to extract all the bitmap
       ;; images and upload them separatelly, then proceed to create
       ;; all shapes.
@@ -414,7 +411,7 @@
   [svg-data {:keys [x y] :as position}]
   (ptk/reify ::create-svg-shapes
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (try
         (let [page-id (:current-page-id state)
               objects (wsh/lookup-page-objects state page-id)

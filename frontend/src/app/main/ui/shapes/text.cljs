@@ -8,12 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
-   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
-   [app.util.color :as uc]
    [app.util.object :as obj]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (mf/defc render-text
@@ -40,8 +37,7 @@
 (mf/defc render-paragraph-set
   {::mf/wrap-props false}
   [props]
-  (let [node     (obj/get props "node")
-        children (obj/get props "children")
+  (let [children (obj/get props "children")
         shape    (obj/get props "shape")
         style    (sts/generate-paragraph-set-styles shape)]
     [:div.paragraph-set {:style style} children]))

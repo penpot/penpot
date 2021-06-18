@@ -132,7 +132,7 @@
         handle-blur
         (mf/use-callback
           (mf/deps parse-value apply-value update-input)
-          (fn [event]
+          (fn [_]
             (let [new-value (parse-value)]
               (if new-value
                 (apply-value new-value)

@@ -7,17 +7,15 @@
 (ns app.main.data.workspace.drawing
   "Drawing interactions."
   (:require
-   [beicon.core :as rx]
-   [potok.core :as ptk]
-   [app.common.spec :as us]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.path :as path]
+   [app.main.data.workspace.drawing.box :as box]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.drawing.curve :as curve]
-   [app.main.data.workspace.drawing.box :as box]))
+   [app.main.data.workspace.path :as path]
+   [beicon.core :as rx]
+   [potok.core :as ptk]))
 
 (declare start-drawing)
 (declare handle-drawing)
@@ -38,7 +36,7 @@
            (update :workspace-layout disj :scale-text)))
 
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [_ _ stream]
        (let [stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
          (rx/merge
           (when (= tool :path)
@@ -88,16 +86,17 @@
         (update-in state [:workspace-drawing :object] merge data)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
-      (rx/of (case type
-               :path
-               (path/handle-new-shape)
+    (watch [_ _ _]
+      (rx/of
+       (case type
+         :path
+         (path/handle-new-shape)
 
-               :curve
-               (curve/handle-drawing-curve)
+         :curve
+         (curve/handle-drawing-curve)
 
-               ;; default
-               (box/handle-drawing-box))))))
+         ;; default
+         (box/handle-drawing-box))))))
 
 
 

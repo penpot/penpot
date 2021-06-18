@@ -7,7 +7,6 @@
 (ns app.main.ui.modal
   (:require
    [app.main.data.modal :as dm]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.keyboard :as k]
@@ -19,8 +18,8 @@
 (defn- on-esc-clicked
   [event allow-click-outside]
   (when (and (k/esc? event) (not allow-click-outside))
-    (do (dom/stop-propagation event)
-        (st/emit! (dm/hide)))))
+    (dom/stop-propagation event)
+    (st/emit! (dm/hide))))
 
 (defn- on-pop-state
   [event]
@@ -28,16 +27,6 @@
   (dom/stop-propagation event)
   (st/emit! (dm/hide))
   (.forward js/history))
-
-(defn- on-parent-clicked
-  [event parent-ref]
-  (let [parent  (mf/ref-val parent-ref)
-        current (dom/get-target event)]
-    (when (and (dom/equals? (.-firstElementChild ^js parent) current)
-               (= (.-className ^js current) "modal-overlay"))
-      (dom/stop-propagation event)
-      (dom/prevent-default event)
-      (st/emit! (dm/hide)))))
 
 (defn- on-click-outside
   [event wrapper-ref type allow-click-outside]

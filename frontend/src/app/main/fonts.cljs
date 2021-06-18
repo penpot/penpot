@@ -15,7 +15,6 @@
    [app.util.http :as http]
    [app.util.logging :as log]
    [app.util.object :as obj]
-   [app.util.timers :as ts]
    [beicon.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -104,7 +103,7 @@
   [url on-loaded]
   (let [node (create-link-element url)
         head (.-head ^js js/document)]
-    (gev/listenOnce node "load" (fn [event]
+    (gev/listenOnce node "load" (fn [_]
                                   (when (fn? on-loaded)
                                     (on-loaded))))
     (dom/append-child! head node)))
@@ -140,7 +139,7 @@
     (str base ":" variants "&display=block")))
 
 (defmethod load-font :google
-  [{:keys [id family variants ::on-loaded] :as font}]
+  [{:keys [id ::on-loaded] :as font}]
   (when (exists? js/window)
     (log/debug :action "load-font" :font-id id :backend "google")
     (let [url (generate-gfonts-url font)]
@@ -183,11 +182,13 @@
        (str/join "\n")))
 
 (defmethod load-font :custom
-  [{:keys [id family variants ::on-loaded] :as font}]
+  [{:keys [id ::on-loaded] :as font}]
   (when (exists? js/window)
     (js/console.log "[debug:fonts]: loading custom font" id)
     (let [css (generate-custom-font-css font)]
-      (add-font-css! css))))
+      (add-font-css! css)
+      (when (fn? on-loaded)
+        (on-loaded)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; LOAD API

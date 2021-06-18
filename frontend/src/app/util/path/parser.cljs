@@ -8,13 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as gshp]
-   [app.common.math :as mth]
    [app.util.path.arc-to-curve :refer [a2c]]
    [app.util.path.commands :as upc]
    [app.util.path.geom :as upg]
    [app.util.svg :as usvg]
-   [clojure.set :as set]
    [cuerdas.core :as str]))
 
 ;;
@@ -52,7 +49,7 @@
                  current
                  remain))
         (cond-> result
-          (not (empty? current)) (conj current))))))
+          (seq current) (conj current))))))
 
 ;; Path specification
 ;; https://www.w3.org/TR/SVG11/paths.html
@@ -72,7 +69,7 @@
                  :relative relative
                  :params params}))))
 
-(defmethod parse-command "Z" [cmd]
+(defmethod parse-command "Z" [_]
   [{:command :close-path}])
 
 (defmethod parse-command "L" [cmd]
@@ -204,7 +201,7 @@
         ;; prev-start : previous move-to necesary for Z commands
         ;; prev-cc    : previous command control point for cubic beziers
         ;; prev-qc    : previous command control point for quadratic curves
-        (fn [[result prev-pos prev-start prev-cc prev-qc] [command prev]]
+        (fn [[result prev-pos prev-start prev-cc prev-qc] [command _prev]]
           (let [command (assoc command :prev-pos prev-pos)
 
                 command

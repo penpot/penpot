@@ -8,11 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.math :as mth]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.path.changes :as changes]
-   [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.drawing :as drawing]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.selection :as selection]
@@ -47,7 +45,7 @@
 (defn apply-content-modifiers []
   (ptk/reify ::apply-content-modifiers
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [objects (wsh/lookup-page-objects state)
 
             id (st/get-path-id state)
@@ -137,7 +135,7 @@
   [position shift?]
   (ptk/reify ::start-move-path-point
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state _]
       (let [id (get-in state [:workspace-local :edition])
             selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
             selected? (contains? selected-points position)]
@@ -151,7 +149,7 @@
   [start-position]
   (ptk/reify ::drag-selected-points
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state stream]
       (let [stopper (->> stream (rx/filter ms/mouse-up?))
             id (get-in state [:workspace-local :edition])
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
@@ -206,7 +204,7 @@
             state)))
 
       ptk/WatchEvent
-      (watch [it state stream]
+      (watch [_ state stream]
         (let [id (get-in state [:workspace-local :edition])
               current-move (get-in state [:workspace-local :edit-path id :current-move])]
           (if (= same-event current-move)
@@ -240,7 +238,7 @@
   [index prefix]
   (ptk/reify ::start-move-handler
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state stream]
       (let [id (get-in state [:workspace-local :edition])
             cx (d/prefix-keyword prefix :x)
             cy (d/prefix-keyword prefix :y)
@@ -297,7 +295,7 @@
           (assoc-in [:workspace-local :edit-path id :edit-mode] :draw))))
 
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state stream]
       (let [mode (get-in state [:workspace-local :edit-path id :edit-mode])]
         (rx/concat
          (rx/of (undo/start-path-undo))
@@ -327,5 +325,5 @@
             (update-in (st/get-path state :content) upt/split-segments #{from-p to-p} t))))
 
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (rx/of (changes/save-path-content {:preserve-move-to true})))))

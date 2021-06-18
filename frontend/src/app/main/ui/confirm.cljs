@@ -57,10 +57,10 @@
        (let [on-keydown
              (fn [event]
                (when (k/enter? event)
-                 (do (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (st/emit! (modal/hide))
-                     (on-accept props))))
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (st/emit! (modal/hide))
+                 (on-accept props)))
              key (events/listen js/document EventType.KEYDOWN on-keydown)]
          #(events/unlistenByKey key))))
 

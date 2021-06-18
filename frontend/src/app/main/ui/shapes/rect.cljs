@@ -9,7 +9,6 @@
    [app.common.geom.shapes :as gsh]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
-   [app.main.ui.shapes.gradients :refer [gradient]]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
@@ -17,7 +16,7 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        {:keys [id x y width height]} shape
+        {:keys [x y width height]} shape
         transform (gsh/transform-matrix shape)
 
         props (-> (attrs/extract-style-attrs shape)

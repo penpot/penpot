@@ -7,7 +7,6 @@
 (ns app.main.ui.components.editable-label
   (:require
    [app.main.ui.icons :as i]
-   [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
@@ -32,7 +31,7 @@
         cancel-editing (fn []
                          (stop-editing)
                          (when on-cancel (on-cancel)))
-        on-dbl-click (fn [e] (when (not disable-dbl-click?) (start-editing)))
+        on-dbl-click (fn [_] (when (not disable-dbl-click?) (start-editing)))
         on-key-up (fn [e]
                     (cond
                       (kbd/esc? e)

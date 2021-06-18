@@ -7,20 +7,14 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   [app.common.spec :as us]
    [app.main.data.shortcuts :as dsc]
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.logging :as log]
-   [app.util.object :as obj]
    [app.util.timers :as ts]
-   [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [goog.events :as events]
-   [rumext.alpha :as mf])
-  (:import goog.events.EventType))
+   [rumext.alpha :as mf]))
 
 (log/set-level! :warn)
 
@@ -98,10 +92,7 @@
 
         cleanup
         (fn []
-          ;; (js/console.log "cleanup" (:name data))
-          (when-let [subscr (:subscr @state)]
-            ;; (js/console.log "unsubscribing" (:name data))
-            (rx/unsub! (:subscr @state)))
+          (some-> (:subscr @state) rx/unsub!)
           (swap! state (fn [state]
                               (-> state
                                   (cancel-timer)
@@ -118,9 +109,8 @@
         (fn [event]
           (if disabled
             (dom/prevent-default event)
-            (let [target (dom/get-target event)]
+            (do
               (dom/stop-propagation event)
-              ;; (dnd/trace event data "drag-start")
               (dnd/set-data! event data-type data)
               (dnd/set-drag-image! event (invisible-image))
               (dnd/set-allowed-effect! event "move")
@@ -237,7 +227,7 @@
   []
   (try
     (not js/window)
-    (catch :default e
+    (catch :default _e
       ;; When exception accessing window we're in ssr
       true)))
 

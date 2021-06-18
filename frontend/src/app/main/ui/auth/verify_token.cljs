@@ -6,23 +6,16 @@
 
 (ns app.main.ui.auth.verify-token
   (:require
-   [app.common.uuid :as uuid]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.auth.login :refer [login-page]]
-   [app.main.ui.auth.recovery :refer [recovery-page]]
-   [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
-   [app.main.ui.auth.register :refer [register-page]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as ts]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
 (defmulti handle-token (fn [token] (:iss token)))
@@ -34,7 +27,7 @@
     (st/emit! (du/login-from-token data))))
 
 (defmethod handle-token :change-email
-  [data]
+  [_data]
   (let [msg (tr "dashboard.notifications.email-changed-successfully")]
     (ts/schedule 100 #(st/emit! (dm/success msg)))
     (st/emit! (rt/nav :settings-profile)
@@ -57,7 +50,7 @@
       (st/emit! (rt/nav :auth-register {} {:invitation-token token})))))
 
 (defmethod handle-token :default
-  [tdata]
+  [_tdata]
   (st/emit!
    (rt/nav :auth-login)
    (dm/warn (tr "errors.unexpected-token"))))

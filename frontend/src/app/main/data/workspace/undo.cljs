@@ -6,21 +6,10 @@
 
 (ns app.main.data.workspace.undo
   (:require
-   [app.common.data :as d]
-   [app.common.geom.proportions :as gpr]
-   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.spec :as spec]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [app.main.worker :as uw]
-   [app.main.streams :as ms]
-   [app.util.logging :as log]
-   [app.util.timers :as ts]
-   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]
-   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -42,7 +31,7 @@
       (subvec undo (- cnt MAX-UNDO-SIZE))
       undo)))
 
-(defn- materialize-undo
+(defn materialize-undo
   [changes index]
   (ptk/reify ::materialize-undo
     ptk/UpdateEvent
@@ -50,15 +39,6 @@
       (-> state
           (update :workspace-data cp/process-changes changes)
           (assoc-in [:workspace-undo :index] index)))))
-
-(defn- reset-undo
-  [index]
-  (ptk/reify ::reset-undo
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update :workspace-undo dissoc :undo-index)
-          (update-in [:workspace-undo :items] (fn [queue] (into [] (take (inc index) queue))))))))
 
 (defn- add-undo-entry
   [state entry]
@@ -81,7 +61,7 @@
       (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
       (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))))
 
-(defn- append-undo
+(defn append-undo
   [entry]
   (us/assert ::undo-entry entry)
   (ptk/reify ::append-undo

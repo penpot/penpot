@@ -7,17 +7,16 @@
 (ns app.main.ui.handoff.code
   (:require
    ["js-beautify" :as beautify]
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
-   [app.util.i18n :as i18n]
-   [app.util.dom :as dom]
-   [app.util.code-gen :as cg]
-   [app.main.ui.icons :as i]
    [app.common.geom.shapes :as gsh]
+   [app.main.ui.components.code-block :refer [code-block]]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.code-block :refer [code-block]]))
+   [app.main.ui.icons :as i]
+   [app.util.code-gen :as cg]
+   [app.util.dom :as dom]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
-(defn generate-markup-code [type shapes]
+(defn generate-markup-code [_type shapes]
   (let [frame (dom/query js/document "#svg-frame")
         markup-shape
         (fn [shape]
@@ -42,8 +41,6 @@
   [{:keys [shapes frame on-expand]}]
   (let [style-type (mf/use-state "css")
         markup-type (mf/use-state "svg")
-
-        locale (mf/deref i18n/locale)
         shapes (->> shapes
                     (map #(gsh/translate-to-frame % frame)))
 

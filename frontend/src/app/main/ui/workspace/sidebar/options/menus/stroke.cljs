@@ -6,21 +6,18 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.stroke
   (:require
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
    [app.common.data :as d]
    [app.common.math :as math]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
-   [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr t]]
-   [app.util.object :as obj]))
+   [app.util.i18n :as i18n :refer [tr]]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (def stroke-attrs
   [:stroke-style
@@ -47,11 +44,10 @@
 (mf/defc stroke-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type"]))]}
   [{:keys [ids type values] :as props}]
-  (let [locale (i18n/use-locale)
-        label (case type
-                :multiple (t locale "workspace.options.selection-stroke")
-                :group (t locale "workspace.options.group-stroke")
-                (t locale "workspace.options.stroke"))
+  (let [label (case type
+                :multiple (tr "workspace.options.selection-stroke")
+                :group (tr "workspace.options.group-stroke")
+                (tr "workspace.options.stroke"))
 
         show-options (not= (:stroke-style values :none) :none)
 
@@ -65,7 +61,7 @@
         (mf/use-callback
           (mf/deps ids)
           (fn [color]
-            (let [remove-multiple (fn [[key value]] (not= value :multiple))
+            (let [remove-multiple (fn [[_ value]] (not= value :multiple))
                   color (into {} (filter remove-multiple) color)]
               (st/emit! (dc/change-stroke ids color)))))
 
@@ -99,7 +95,7 @@
               (st/emit! (dch/update-shapes ids #(assoc % :stroke-width value))))))
 
         on-add-stroke
-        (fn [event]
+        (fn [_]
           (st/emit! (dch/update-shapes ids #(assoc %
                                                    :stroke-style :solid
                                                    :stroke-color "#000000"
@@ -107,19 +103,19 @@
                                                    :stroke-width 1))))
 
         on-del-stroke
-        (fn [event]
+        (fn [_]
           (st/emit! (dch/update-shapes ids #(assoc % :stroke-style :none))))
 
         on-open-picker
         (mf/use-callback
          (mf/deps ids)
-         (fn [value opacity id file-id]
+         (fn [_value _opacity _id _file-id]
            (st/emit! (dwu/start-undo-transaction))))
 
         on-close-picker
         (mf/use-callback
          (mf/deps ids)
-         (fn [value opacity id file-id]
+         (fn [_value _opacity _id _file-id]
            (st/emit! (dwu/commit-undo-transaction))))]
 
     (if show-options
@@ -139,29 +135,29 @@
         ;; Stroke Width, Alignment & Style
         [:div.row-flex
          [:div.input-element
-          {:class (classnames :pixels (not= (:stroke-width values) :multiple))}
+          {:class (dom/classnames :pixels (not= (:stroke-width values) :multiple))}
           [:input.input-text {:type "number"
                               :min "0"
                               :value (-> (:stroke-width values) width->string)
-                              :placeholder (t locale "settings.multiple")
+                              :placeholder (tr "settings.multiple")
                               :on-change on-stroke-width-change}]]
 
          [:select#style.input-select {:value (enum->string (:stroke-alignment values))
                                       :on-change on-stroke-alignment-change}
           (when (= (:stroke-alignment values) :multiple)
             [:option {:value ""} "--"])
-          [:option {:value ":center"} (t locale "workspace.options.stroke.center")]
-          [:option {:value ":inner"} (t locale "workspace.options.stroke.inner")]
-          [:option {:value ":outer"} (t locale "workspace.options.stroke.outer")]]
+          [:option {:value ":center"} (tr "workspace.options.stroke.center")]
+          [:option {:value ":inner"} (tr "workspace.options.stroke.inner")]
+          [:option {:value ":outer"} (tr "workspace.options.stroke.outer")]]
 
          [:select#style.input-select {:value (enum->string (:stroke-style values))
                                       :on-change on-stroke-style-change}
           (when (= (:stroke-style values) :multiple)
             [:option {:value ""} "--"])
-          [:option {:value ":solid"} (t locale "workspace.options.stroke.solid")]
-          [:option {:value ":dotted"} (t locale "workspace.options.stroke.dotted")]
-          [:option {:value ":dashed"} (t locale "workspace.options.stroke.dashed")]
-          [:option {:value ":mixed"} (t locale "workspace.options.stroke.mixed")]]]]]
+          [:option {:value ":solid"} (tr "workspace.options.stroke.solid")]
+          [:option {:value ":dotted"} (tr "workspace.options.stroke.dotted")]
+          [:option {:value ":dashed"} (tr "workspace.options.stroke.dashed")]
+          [:option {:value ":mixed"} (tr "workspace.options.stroke.mixed")]]]]]
 
       ;; NO STROKE
       [:div.element-set

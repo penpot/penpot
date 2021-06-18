@@ -6,21 +6,15 @@
 
 (ns app.main.ui.workspace.sidebar.history
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
    [app.common.data :as d]
-   [app.main.ui.icons :as i]
-   [app.main.data.history :as udh]
-   [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.util.data :refer [read-string]]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [t] :as i18n]
-   [app.util.router :as r]
-   [app.util.time :as dt]
+   [cuerdas.core :as str]
    [okulary.core :as l]
-   [app.main.store :as st]))
+   [rumext.alpha :as mf]))
 
 (def workspace-undo
   (l/derived :workspace-undo st/state))
@@ -137,7 +131,7 @@
     i/layers))
 
 (defn is-shape? [type]
-  #{:shape :rect :circle :text :path :frame :group})
+  (contains? #{:shape :rect :circle :text :path :frame :group} type))
 
 (defn parse-entry [{:keys [redo-changes]}]
   (->> redo-changes
@@ -211,7 +205,7 @@
           :modify (->> candidates
                        (filter #(= :modify (:operation %)))
                        (group-by :id)
-                       (d/mapm (fn [k v] (->> v
+                       (d/mapm (fn [_ v] (->> v
                                               (mapcat :detail)
                                               (map (comp safe-name :attr))
                                               (remove nil?)
@@ -280,7 +274,7 @@
 (mf/defc history-toolbox []
   (let [locale (mf/deref i18n/locale)
         objects (mf/deref refs/workspace-page-objects)
-        {:keys [items index transaction]} (mf/deref workspace-undo)
+        {:keys [items index]} (mf/deref workspace-undo)
         entries (parse-entries items objects)]
     [:div.history-toolbox
      [:div.history-toolbox-title (t locale "workspace.undo.title")]

@@ -1,9 +1,9 @@
 (ns app.util.debug
   "Debugging utils"
   (:require
-   [app.util.timers :as timers]
-   [app.util.object :as obj]
    [app.common.math :as mth]
+   [app.util.object :as obj]
+   [app.util.timers :as timers]
    [cljs.pprint :refer [pprint]]))
 
 (def debug-options #{:bounding-boxes :group :events :rotation-handler :resize-handler :selection-center :export :import #_:simple-selection})

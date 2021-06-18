@@ -18,8 +18,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
-   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -86,12 +84,12 @@
         on-drop
         (mf/use-callback
          (mf/deps id)
-         (fn [side {:keys [id name] :as data}]
+         (fn [side {:keys [id] :as data}]
            (let [index (if (= :bot side) (inc index) index)]
              (st/emit! (dw/relocate-page id index)))))
 
         on-duplicate
-        (fn [event]
+        (fn [_]
           (st/emit! (dw/duplicate-page id)))
 
         [dprops dref]
@@ -169,7 +167,7 @@
               st/state =))
 
 (mf/defc page-item-wrapper
-  [{:keys [file-id page-id index deletable? selected?] :as props}]
+  [{:keys [page-id index deletable? selected?] :as props}]
   (let [page-ref (mf/use-memo (mf/deps page-id) #(make-page-ref page-id))
         page     (mf/deref page-ref)]
     [:& page-item {:page page
@@ -197,7 +195,7 @@
 ;; --- Sitemap Toolbox
 
 (mf/defc sitemap
-  [{:keys [layout] :as props}]
+  []
   (let [file        (mf/deref refs/workspace-file)
         create      (mf/use-callback
                      (mf/deps file)

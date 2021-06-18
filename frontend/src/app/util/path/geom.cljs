@@ -6,13 +6,8 @@
 
 (ns app.util.path.geom
   (:require
-   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gshp]
-   [app.util.svg :as usvg]
-   [cuerdas.core :as str]
-   [clojure.set :as set]
-   [app.common.math :as mth]
    [app.util.path.commands :as upc]))
 
 (defn calculate-opposite-handler

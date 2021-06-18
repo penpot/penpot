@@ -46,7 +46,7 @@
          #(rx/dispose! sub))))
 
     (mf/ref-val fonts-css-ref)))
-  
+
 (mf/defc fontfaces-style
   {::mf/wrap-props false
    ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
@@ -74,6 +74,6 @@
 
         ;; Creates a style tag by replacing the urls with the data uri
         style (replace-embeds fonts-css fonts-urls fonts-embed)]
-       
-    (when (and (some? style) (not (empty? style)))
+
+    (when (seq style)
       [:style style])))

@@ -131,8 +131,7 @@
           :opt-un [::accept-newsletter-subscription]))
 
 (sv/defmethod ::register-profile {:auth false :rlimit :password}
-  [{:keys [pool tokens session] :as cfg} params]
-
+  [{:keys [pool] :as cfg} params]
   (when-not (:accept-terms-and-privacy params)
     (ex/raise :type :validation
               :code :invalid-terms-and-privacy))
@@ -292,7 +291,7 @@
           :opt-un [::scope ::invitation-token]))
 
 (sv/defmethod ::login {:auth false :rlimit :password}
-  [{:keys [pool session tokens] :as cfg} {:keys [email password scope] :as params}]
+  [{:keys [pool session tokens] :as cfg} {:keys [email password] :as params}]
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
               (ex/raise :type :validation
@@ -343,7 +342,7 @@
   (s/keys :req-un [::profile-id]))
 
 (sv/defmethod ::logout
-  [{:keys [pool session] :as cfg} {:keys [profile-id] :as params}]
+  [{:keys [session] :as cfg} _]
   (with-meta {}
     {:transform-response (:delete session)}))
 
@@ -376,7 +375,7 @@
   (s/keys :req-un [::profile-id ::password ::old-password]))
 
 (sv/defmethod ::update-profile-password {:rlimit :password}
-  [{:keys [pool] :as cfg} {:keys [password profile-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [password] :as params}]
   (db/with-atomic [conn pool]
     (let [profile (validate-password! conn params)]
       (update-profile-password! conn (assoc profile :password password))

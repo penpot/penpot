@@ -6,17 +6,14 @@
 
 (ns app.worker.selection
   (:require
-   [cljs.spec.alpha :as s]
-   [okulary.core :as l]
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.util.quadtree :as qdt]
    [app.worker.impl :as impl]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [okulary.core :as l]))
 
 (defonce state (l/atom {}))
 
@@ -66,8 +63,8 @@
           changed-ids (into #{}
                             (comp (filter changes?)
                                   (filter #(not= % uuid/zero)))
-                            (set/union (keys old-objects)
-                                       (keys new-objects)))
+                            (set/union (set (keys old-objects))
+                                       (set (keys new-objects))))
 
           shapes (->> changed-ids (mapv #(get new-objects %)) (filterv (comp not nil?)))
           parents-index (cp/generate-child-all-parents-index new-objects shapes)
@@ -87,7 +84,7 @@
     (create-index new-objects)))
 
 (defn- query-index
-  [{index :index z-index :z-index} rect frame-id include-frames? include-groups? disabled-masks reverse?]
+  [{index :index z-index :z-index} rect frame-id include-frames? include-groups? reverse?]
   (let [result (-> (qdt/search index (clj->js rect))
                    (es6-iterator-seq))
 
@@ -137,7 +134,7 @@
 
 
 (defmethod impl/handler :selection/initialize-index
-  [{:keys [file-id data] :as message}]
+  [{:keys [data] :as message}]
   (letfn [(index-page [state page]
             (let [id      (:id page)
                   objects (:objects page)]
@@ -154,10 +151,10 @@
   nil)
 
 (defmethod impl/handler :selection/query
-  [{:keys [page-id rect frame-id include-frames? include-groups? disabled-masks reverse?]
-    :or {include-groups? true disabled-masks #{} reverse? false} :as message}]
+  [{:keys [page-id rect frame-id include-frames? include-groups? reverse?]
+    :or {include-groups? true reverse? false} :as message}]
   (when-let [index (get @state page-id)]
-    (query-index index rect frame-id include-frames? include-groups? disabled-masks reverse?)))
+    (query-index index rect frame-id include-frames? include-groups? reverse?)))
 
 (defmethod impl/handler :selection/query-z-index
   [{:keys [page-id objects ids]}]

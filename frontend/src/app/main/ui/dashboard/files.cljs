@@ -7,7 +7,6 @@
 (ns app.main.ui.dashboard.files
   (:require
    [app.main.data.dashboard :as dd]
-   [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
@@ -16,18 +15,12 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (mf/defc header
-  [{:keys [team project] :as props}]
+  [{:keys [project] :as props}]
   (let [local      (mf/use-state {:menu-open false
                                   :edition false})
-        project-id (:id project)
-        team-id    (:id team)
-
         on-menu-click
         (mf/use-callback
          (fn [event]
@@ -83,7 +76,7 @@
        (if (:is-pinned project)
          i/pin-fill
          i/pin)]
-      
+
       [:div.icon.tooltip.tooltip-bottom
        {:on-click on-menu-click :alt (tr "dashboard.options")}
        i/actions]]]))

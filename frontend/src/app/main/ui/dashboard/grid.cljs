@@ -7,11 +7,8 @@
 (ns app.main.ui.dashboard.grid
   (:require
    [app.common.math :as mth]
-   [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
-   [app.main.data.modal :as modal]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -23,12 +20,10 @@
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 ;; --- Grid Item Thumbnail
@@ -59,7 +54,7 @@
     (str (tr "ds.updated-at" time))))
 
 (defn create-counter-element
-  [element file-count]
+  [_element file-count]
   (let [counter-el (dom/create-element "div")]
     (dom/set-property! counter-el "class" "drag-counter")
     (dom/set-text! counter-el (str file-count))
@@ -215,7 +210,7 @@
    [:div.text (tr "dashboard.loading-files")]])
 
 (mf/defc grid
-  [{:keys [id opts files] :as props}]
+  [{:keys [files] :as props}]
   [:section.dashboard-grid
    (cond
      (nil? files)
@@ -233,7 +228,7 @@
      [:& empty-placeholder])])
 
 (mf/defc line-grid-row
-  [{:keys [files team-id selected-files on-load-more dragging?] :as props}]
+  [{:keys [files selected-files on-load-more dragging?] :as props}]
   (let [rowref           (mf/use-ref)
 
         width            (mf/use-state nil)
@@ -288,7 +283,7 @@
          (tr "dashboard.show-all-files")]])]))
 
 (mf/defc line-grid
-  [{:keys [project-id team-id opts files on-load-more] :as props}]
+  [{:keys [project-id team-id files on-load-more] :as props}]
   (let [dragging?        (mf/use-state false)
 
         selected-files   (mf/deref refs/dashboard-selected-files)
@@ -326,7 +321,7 @@
         on-drop
         (mf/use-callback
           (mf/deps files selected-files)
-          (fn [e]
+          (fn [_]
             (reset! dragging? false)
             (when (not= selected-project project-id)
               (let [data  {:ids (into #{} (keys selected-files))

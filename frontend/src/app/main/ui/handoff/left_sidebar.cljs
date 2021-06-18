@@ -7,11 +7,10 @@
 (ns app.main.ui.handoff.left-sidebar
   (:require
    [app.common.data :as d]
-   [app.common.uuid :as uuid]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.layers :refer [element-icon layer-name frame-wrapper]]
+   [app.main.ui.workspace.sidebar.layers :refer [element-icon layer-name]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [okulary.core :as l]
@@ -29,7 +28,7 @@
        (l/derived st/state)))
 
 (mf/defc layer-item
-  [{:keys [index item selected objects disable-collapse?] :as props}]
+  [{:keys [item selected objects disable-collapse?] :as props}]
   (let [id        (:id item)
         selected? (contains? selected id)
         item-ref (mf/use-ref nil)

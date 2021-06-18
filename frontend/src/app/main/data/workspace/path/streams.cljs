@@ -6,17 +6,16 @@
 
 (ns app.main.data.workspace.path.streams
   (:require
-   [app.main.data.workspace.path.helpers :as helpers]
-   [app.main.data.workspace.path.state :as state]
    [app.common.geom.point :as gpt]
+   [app.common.math :as mth]
+   [app.main.data.workspace.path.state :as state]
+   [app.main.snap :as snap]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.util.path.geom :as upg]
    [beicon.core :as rx]
-   [potok.core :as ptk]
-   [app.common.math :as mth]
-   [app.main.snap :as snap]
    [okulary.core :as l]
-   [app.util.path.geom :as upg]))
+   [potok.core :as ptk]))
 
 (defonce drag-threshold 5)
 
@@ -50,7 +49,7 @@
                            (if (= value ::empty)
                              not-drag-stream
                              (rx/empty)))))
-      
+
       (->> position-stream
            (rx/merge-map (fn [] to-stream)))))))
 
@@ -107,7 +106,7 @@
                        (<= (- 180 rot-angle) 5))]
 
               (cond
-                snap-opposite-angle? 
+                snap-opposite-angle?
                 (let [rot-handler (gpt/rotate handler node (- 180 (* rot-sign rot-angle)))
                       snap (gpt/to-vec handler rot-handler)]
                   (merge position (gpt/add position snap)))
@@ -122,7 +121,7 @@
          (rx/map check-path-snap))))
 
 (defn position-stream
-  [snap-toggled points]
+  [snap-toggled _points]
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
         ;; ranges (snap/create-ranges points)
         d-pos (/ snap/snap-path-accuracy zoom)

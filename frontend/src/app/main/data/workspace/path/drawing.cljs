@@ -17,7 +17,6 @@
    [app.main.data.workspace.path.spec :as spec]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
-   [app.main.data.workspace.path.tools :as tools]
    [app.main.data.workspace.path.undo :as undo]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
@@ -60,9 +59,8 @@
           state)))))
 
 (defn drag-handler
-  ([{:keys [x y alt? shift?] :as position}]
+  ([position]
    (drag-handler nil nil :c1 position))
-
   ([position index prefix {:keys [x y alt? shift?]}]
    (ptk/reify ::drag-handler
      ptk/UpdateEvent
@@ -110,7 +108,7 @@
             (update-in (st/get-path state) helpers/update-selrect))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [id (st/get-path-id state)
             handler (get-in state [:workspace-local :edit-path id :prev-handler])]
         ;; Update the preview because can be outdated after the dragging
@@ -124,9 +122,6 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [id (st/get-path-id state)
-            zoom (get-in state [:workspace-local :zoom])
-            start-position @ms/mouse-position
-
             stop-stream
             (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                         (ms/mouse-up? %))))
@@ -166,9 +161,7 @@
   (ptk/reify ::start-path-from-point
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [start-point @ms/mouse-position
-            zoom (get-in state [:workspace-local :zoom])
-            mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
+      (let [mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                     (ms/mouse-up? %))))
             content (get-in state (st/get-path state :content))
             points (upg/content->points content)
@@ -195,7 +188,7 @@
        (rx/merge-map #(rx/empty))))
 
 (defn make-drag-stream
-  [stream snap-toggled zoom points down-event]
+  [stream snap-toggled _zoom points down-event]
   (let [mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                 (ms/mouse-up? %))))
 
@@ -211,7 +204,7 @@
        (rx/of (finish-drag)))))))
 
 (defn handle-drawing-path
-  [id]
+  [_id]
   (ptk/reify ::handle-drawing-path
     ptk/UpdateEvent
     (update [_ state]
@@ -278,11 +271,11 @@
           state)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rx/of (setup-frame-path)
-                  dwdc/handle-finish-drawing
-                  (dwc/start-edition-mode shape-id)
-                  (change-edit-mode :draw))))))
+    (watch [_ _ _]
+      (rx/of (setup-frame-path)
+             dwdc/handle-finish-drawing
+             (dwc/start-edition-mode shape-id)
+             (change-edit-mode :draw)))))
 
 (defn handle-new-shape
   "Creates a new path shape"
@@ -333,7 +326,7 @@
 (defn check-changed-content []
   (ptk/reify ::check-changed-content
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [id (st/get-path-id state)
             content (get-in state (st/get-path state :content))
             old-content (get-in state [:workspace-local :edit-path id :old-content])
@@ -354,7 +347,7 @@
           id (assoc-in [:workspace-local :edit-path id :edit-mode] mode))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [id (st/get-path-id state)]
         (cond
           (and id (= :move mode)) (rx/of (common/finish-path "change-edit-mode"))

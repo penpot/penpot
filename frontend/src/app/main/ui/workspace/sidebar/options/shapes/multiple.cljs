@@ -147,7 +147,7 @@
             :else                 (attrs/get-attrs-multi [v1 v2] attrs)))
 
         extract-attrs
-        (fn [[ids values] {:keys [id type shapes content] :as shape}]
+        (fn [[ids values] {:keys [id type content] :as shape}]
           (let [props (get-in type->props [type attr-type])]
             (case props
               :ignore   [ids values]

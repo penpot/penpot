@@ -6,16 +6,16 @@
 
 (ns app.main.ui.handoff.right-sidebar
   (:require
-   [rumext.alpha :as mf]
-   [okulary.core :as l]
-   [app.util.i18n :refer [t] :as i18n]
    [app.common.data :as d]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
-   [app.main.ui.workspace.sidebar.layers :refer [element-icon]]
    [app.main.ui.handoff.attributes :refer [attributes]]
-   [app.main.ui.handoff.code :refer [code]]))
+   [app.main.ui.handoff.code :refer [code]]
+   [app.main.ui.icons :as i]
+   [app.main.ui.workspace.sidebar.layers :refer [element-icon]]
+   [app.util.i18n :refer [t] :as i18n]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 (defn make-selected-shapes-iref
   []

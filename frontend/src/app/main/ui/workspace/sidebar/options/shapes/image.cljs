@@ -6,11 +6,11 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.image
   (:require
-   [rumext.alpha :as mf]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]))
+   [rumext.alpha :as mf]))
 
 (mf/defc options
   [{:keys [shape] :as props}]

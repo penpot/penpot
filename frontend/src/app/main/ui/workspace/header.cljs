@@ -11,7 +11,6 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
-   [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -89,8 +88,6 @@
   (let [show-menu? (mf/use-state false)
         editing? (mf/use-state false)
 
-        locale     (mf/deref i18n/locale)
-
         edit-input-ref (mf/use-ref nil)
 
         add-shared-fn
@@ -125,7 +122,7 @@
                      :on-accept del-shared-fn})))
 
 
-        handle-blur (fn [event]
+        handle-blur (fn [_]
                       (let [value (-> edit-input-ref mf/ref-val dom/get-value)]
                         (st/emit! (dw/rename-file (:id file) value)))
                       (reset! editing? false))
@@ -243,9 +240,7 @@
   [{:keys [file layout project page-id] :as props}]
   (let [team-id  (:team-id project)
         zoom     (mf/deref refs/selected-zoom)
-        router   (mf/deref refs/router)
         params   {:page-id page-id :file-id (:id file)}
-        view-url (rt/resolve router :viewer params {:index 0})
 
         go-back
         (mf/use-callback
