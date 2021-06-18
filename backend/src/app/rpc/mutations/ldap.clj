@@ -48,7 +48,7 @@
           :opt-un [::invitation-token]))
 
 (sv/defmethod ::login-with-ldap {:auth false :rlimit :password}
-  [{:keys [pool session tokens] :as cfg} {:keys [email password invitation-token] :as params}]
+  [{:keys [pool session tokens] :as cfg} params]
   (db/with-atomic [conn pool]
     (let [info (authenticate params)
           cfg  (assoc cfg :conn conn)]

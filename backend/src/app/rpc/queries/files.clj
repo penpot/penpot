@@ -232,7 +232,7 @@
     (update data :objects update-objects)))
 
 (sv/defmethod ::page
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id id strip-thumbnails]}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id strip-thumbnails]}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
     (let [cfg     (assoc cfg :conn conn)
@@ -260,7 +260,7 @@
   (s/keys :req-un [::profile-id ::team-id]))
 
 (sv/defmethod ::shared-files
-  [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [team-id] :as params}]
   (into [] decode-row-xf (db/exec! pool [sql:shared-files team-id])))
 
 
@@ -285,7 +285,7 @@
   (s/keys :req-un [::profile-id ::team-id]))
 
 (sv/defmethod ::team-shared-files
-  [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [team-id] :as params}]
   (db/exec! pool [sql:team-shared-files team-id]))
 
 

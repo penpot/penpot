@@ -169,7 +169,7 @@
   (s/keys :req-un [::profile-id ::file-id ::library-id]))
 
 (sv/defmethod ::unlink-file-from-library
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id library-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (unlink-file-from-library conn params)))
@@ -189,7 +189,7 @@
   (s/keys :req-un [::profile-id ::file-id ::library-id]))
 
 (sv/defmethod ::update-sync
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id library-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (update-sync conn params)))
@@ -209,7 +209,7 @@
   (s/keys :req-un [::profile-id ::file-id ::date]))
 
 (sv/defmethod ::ignore-sync
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id date] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (ignore-sync conn params)))
