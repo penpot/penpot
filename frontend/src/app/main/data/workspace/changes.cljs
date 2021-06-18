@@ -72,7 +72,7 @@
 
 (defn update-shapes
   ([ids f] (update-shapes ids f nil))
-  ([ids f {:keys [reg-objects? save-undo? keys ignore-tree]
+  ([ids f {:keys [reg-objects? save-undo? attrs ignore-tree]
            :or {reg-objects? false save-undo? true attrs nil}}]
 
    (us/assert ::coll-of-uuid ids)
@@ -91,7 +91,7 @@
              ids       (into [] (filter some?) ids)
 
              changes   (reduce
-                         #(update-shape-changes %1 page-id objects f keys %2 (get ignore-tree %2))
+                         #(update-shape-changes %1 page-id objects f attrs %2 (get ignore-tree %2))
                          changes ids)]
 
          (when-not (empty? (:redo-changes changes))
