@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-06-01 00:38+0000\n"
 "Last-Translator: Antonio <antonio@fesomia.cat>\n"
-"Language-Team: Catalan "
-"<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
+"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
+"ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -18,8 +18,8 @@ msgstr "Ja teniu un compte?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
 msgstr ""
-"Reviseu el correu i cliqueu l'enllaç per verificar i començar a utilitzar "
-"el Penpot."
+"Reviseu el correu i cliqueu l'enllaç per verificar i començar a utilitzar el "
+"Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -76,16 +76,8 @@ msgid "auth.login-with-gitlab-submit"
 msgstr "Entreu amb GitLab"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-google-submit"
-msgstr "Entreu amb Google"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
 msgstr "Identifiqueu-vos amb LDAP"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-oidc-submit"
-msgstr "Entreu amb OpenID (SSO)"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -101,7 +93,8 @@ msgstr "La contrasenya s'ha canviat correctament"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr "El perfil encara no ha estat verificat. Verifiqueu-lo abans de continuar."
+msgstr ""
+"El perfil encara no ha estat verificat. Verifiqueu-lo abans de continuar."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
@@ -156,12 +149,6 @@ msgid "auth.sidebar-tagline"
 msgstr "La solució de codi obert per dissenyar i prototipar."
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"En crear un nou compte, accepteu les nostres condicions del servei i la "
-"política de privacitat."
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "S'ha enviat un correu de verificació a"
 
@@ -172,10 +159,6 @@ msgstr "Afegeix una biblioteca compartida"
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.change-email"
 msgstr "Canvia el correu"
-
-#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
-msgid "dashboard.copy-suffix"
-msgstr "(còpia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
@@ -192,35 +175,9 @@ msgstr "Suprimeix l'equip"
 msgid "dashboard.draft-title"
 msgstr "Esborrany"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.duplicate"
-msgstr "Duplica"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.duplicate-multi"
-msgstr "Duplica %s fitxers"
-
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
 msgstr "Encara no teniu cap arxiu aquí"
-
-#, markdown
-msgid "dashboard.fonts.hero-text1"
-msgstr ""
-"Els tipus de lletra web que pengeu aquí s'afegiran a la llista de famílies "
-"tipogràfiques disponibles a les propietats del text dels fitxers d'aquest "
-"equip. Els tipus de lletra amb el mateix nom de família s'agruparan en "
-"**una sola família tipogràfica**. Podeu pujar tipus de lletra amb aquests "
-"formats: **TTF, OTF i WOFF** (només és necessari un)."
-
-#, markdown
-msgid "dashboard.fonts.hero-text2"
-msgstr ""
-"Només podeu pujar tipus de lletra de la vostra propietat o dels que tingueu "
-"una llicència que us permeti utilitzar-los al Penpot. Teniu més informació "
-"a la secció de drets de contingut de les [Condicions del servei del "
-"Penpot](https://penpot.app/terms.html). També podeu llegir sobre "
-"[llicenciament de tipus de lletra](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -238,33 +195,13 @@ msgstr "Biblioteques compartides"
 msgid "dashboard.loading-files"
 msgstr "S'estan carregant els fitxers…"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.move-to"
-msgstr "Mou a"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.move-to-multi"
-msgstr "Mou %s fitxers a"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.move-to-other-team"
-msgstr "Mou a un altre equip"
-
 #: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
 msgstr "+ Fitxer nou"
 
-#: src/app/main/data/dashboard.cljs
-msgid "dashboard.new-file-prefix"
-msgstr "Fitxer nou"
-
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.new-project"
 msgstr "+ Projecte nou"
-
-#: src/app/main/data/dashboard.cljs
-msgid "dashboard.new-project-prefix"
-msgstr "Projecte nou"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -290,17 +227,9 @@ msgstr "La contrasenya s'ha desat correctament"
 msgid "dashboard.num-of-members"
 msgstr "%s membres"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.open-in-new-tab"
-msgstr "Obre el fitxer en una pestanya nova"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.password-change"
 msgstr "Canvia la contrasenya"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.pin-unpin"
-msgstr "Fixa/Deixa de fixar"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
@@ -337,34 +266,6 @@ msgstr "Selecciona un tema"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.show-all-files"
 msgstr "Mostra tots els fitxers"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgstr "S'ha eliminat el fitxer"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.success-delete-project"
-msgstr "S'ha eliminat el projecte"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgstr "S'ha duplicat el fitxer"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.success-duplicate-project"
-msgstr "S'ha eliminat el projecte"
-
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-move-file"
-msgstr "S'ha mogut el fitxer"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-move-files"
-msgstr "S'han mogut els fitxers"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.success-move-project"
-msgstr "S'ha mogut el projecte"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.switch-team"
@@ -458,14 +359,6 @@ msgstr "Alguna cosa ha anat malament"
 msgid "errors.google-auth-not-enabled"
 msgstr "L'autenticació amb Google està desactivada en aquest servidor"
 
-#: src/app/main/ui/components/color_input.cljs
-msgid "errors.invalid-color"
-msgstr "El color no és vàlid"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.ldap-disabled"
-msgstr "L'autenticació LDAP està inhabilitada."
-
 msgid "errors.media-format-unsupported"
 msgstr "El format d'imatge no està suportat (ha de ser SVG, JPG o PNG)."
 
@@ -476,8 +369,7 @@ msgstr "La imatge és massa gran (ha de ser inferior a 5 MB)."
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
 msgstr ""
-"Sembla que el contingut de la imatge no coincideix amb l'extensió del "
-"fitxer."
+"Sembla que el contingut de la imatge no coincideix amb l'extensió del fitxer."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
@@ -509,15 +401,6 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "El registre està desactivat"
-
-msgid "errors.terms-privacy-agreement-invalid"
-msgstr ""
-"Heu d'acceptar les nostres condicions del servei i la política de "
-"privacitat."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "El codi ha caducat"
 
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
@@ -584,223 +467,8 @@ msgstr "Correu electrònic"
 msgid "generic.error"
 msgstr "S'ha produït un error"
 
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur"
-msgstr "Difuminat"
-
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur.value"
-msgstr "Valor"
-
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hex"
-msgstr "HEX"
-
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hsla"
-msgstr "HSLA"
-
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.rgba"
-msgstr "RGBA"
-
-#: src/app/main/ui/handoff/attributes/fill.cljs
-msgid "handoff.attributes.fill"
-msgstr "Emplenat"
-
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.download"
-msgstr "Baixa la imatge original"
-
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
-msgstr "Alçada"
-
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.width"
-msgstr "Amplada"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout"
-msgstr "Disposició"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.height"
-msgstr "Alçada"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.left"
-msgstr "Esquerra"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.radius"
-msgstr "Radi"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.rotation"
-msgstr "Rotació"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.top"
-msgstr "Superior"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.width"
-msgstr "Amplada"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow"
-msgstr "Ombra"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.blur"
-msgstr "B"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-x"
-msgstr "X"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.spread"
-msgstr "S"
-
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke"
-msgstr "Traç"
-
-#, permanent
-msgid "handoff.attributes.stroke.alignment.center"
-msgstr "Centre"
-
-#, permanent
-msgid "handoff.attributes.stroke.alignment.inner"
-msgstr "Interior"
-
-#, permanent
-msgid "handoff.attributes.stroke.alignment.outer"
-msgstr "Exterior"
-
-msgid "handoff.attributes.stroke.style.dotted"
-msgstr "Puntejat"
-
-msgid "handoff.attributes.stroke.style.mixed"
-msgstr "Mesclat"
-
-msgid "handoff.attributes.stroke.style.none"
-msgstr "Cap"
-
-msgid "handoff.attributes.stroke.style.solid"
-msgstr "Sòlid"
-
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke.width"
-msgstr "Amplada"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography"
-msgstr "Tipografia"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-family"
-msgstr "Família tipogràfica"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-size"
-msgstr "Mida de la lletra"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-style"
-msgstr "Estil de la lletra"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.letter-spacing"
-msgstr "Espaiat de la lletra"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.line-height"
-msgstr "Alçada de la línia"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.text-decoration"
-msgstr "Decoració del text"
-
-msgid "handoff.attributes.typography.text-decoration.none"
-msgstr "Cap"
-
-msgid "handoff.attributes.typography.text-decoration.strikethrough"
-msgstr "Barrat"
-
-msgid "handoff.attributes.typography.text-decoration.underline"
-msgstr "Subratllat"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.text-transform"
-msgstr "Transformació del text"
-
-msgid "handoff.attributes.typography.text-transform.lowercase"
-msgstr "Minúscules"
-
-msgid "handoff.attributes.typography.text-transform.none"
-msgstr "Cap"
-
-msgid "handoff.attributes.typography.text-transform.titlecase"
-msgstr "Inicials en majúscules"
-
-msgid "handoff.attributes.typography.text-transform.uppercase"
-msgstr "Majúscules"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code"
-msgstr "Codi"
-
-msgid "handoff.tabs.code.selected.circle"
-msgstr "Cercle"
-
-msgid "handoff.tabs.code.selected.curve"
-msgstr "Corba"
-
-msgid "handoff.tabs.code.selected.frame"
-msgstr "Taula de treball"
-
-msgid "handoff.tabs.code.selected.group"
-msgstr "Grup"
-
-msgid "handoff.tabs.code.selected.image"
-msgstr "Imatge"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code.selected.multiple"
-msgstr "%s seleccionats"
-
-msgid "handoff.tabs.code.selected.path"
-msgstr "Camí"
-
-msgid "handoff.tabs.code.selected.rect"
-msgstr "Rectangle"
-
-msgid "handoff.tabs.code.selected.svg-raw"
-msgstr "SVG"
-
-msgid "handoff.tabs.code.selected.text"
-msgstr "Text"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.info"
-msgstr "Informació"
-
-msgid "history.alert-message"
-msgstr "Esteu veient la versió %s"
-
 msgid "labels.accept"
 msgstr "Acceptar"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.admin"
-msgstr "Administració"
 
 msgid "labels.go-back"
 msgstr "Enrere"
@@ -818,3 +486,334 @@ msgstr "Projectes - %s - Penpot"
 #: src/app/main/ui/dashboard/search.cljs
 msgid "title.dashboard.search"
 msgstr "Cerca - %s - Penpot"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.token-expired"
+msgstr "El codi ha caducat"
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr ""
+"Heu d'acceptar les nostres condicions del servei i la política de privacitat."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "L'autenticació LDAP està inhabilitada."
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "El color no és vàlid"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "S'ha mogut el projecte"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "S'han mogut els fitxers"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "S'ha mogut el fitxer"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "S'ha eliminat el projecte"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "S'ha duplicat el fitxer"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "S'ha eliminat el projecte"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "S'ha eliminat el fitxer"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Fixa/Deixa de fixar"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Obre el fitxer en una pestanya nova"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Projecte nou"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Fitxer nou"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Mou a un altre equip"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Mou %s fitxers a"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Mou a"
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Només podeu pujar tipus de lletra de la vostra propietat o dels que tingueu "
+"una llicència que us permeti utilitzar-los al Penpot. Teniu més informació a "
+"la secció de drets de contingut de les [Condicions del servei del "
+"Penpot](https://penpot.app/terms.html). També podeu llegir sobre ["
+"llicenciament de tipus de lletra](https://www.typography.com/faq)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Els tipus de lletra web que pengeu aquí s'afegiran a la llista de famílies "
+"tipogràfiques disponibles a les propietats del text dels fitxers d'aquest "
+"equip. Els tipus de lletra amb el mateix nom de família s'agruparan en **una "
+"sola família tipogràfica**. Podeu pujar tipus de lletra amb aquests formats: "
+"**TTF, OTF i WOFF** (només és necessari un)."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Duplica %s fitxers"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Duplica"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(còpia)"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"En crear un nou compte, accepteu les nostres condicions del servei i la "
+"política de privacitat."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "Entreu amb OpenID (SSO)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Entreu amb Google"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "Administració"
+
+msgid "history.alert-message"
+msgstr "Esteu veient la versió %s"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "Informació"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "Text"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "Rectangle"
+
+msgid "handoff.tabs.code.selected.path"
+msgstr "Camí"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code.selected.multiple"
+msgstr "%s seleccionats"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "Imatge"
+
+msgid "handoff.tabs.code.selected.group"
+msgstr "Grup"
+
+msgid "handoff.tabs.code.selected.frame"
+msgstr "Taula de treball"
+
+msgid "handoff.tabs.code.selected.curve"
+msgstr "Corba"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "Cercle"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.letter-spacing"
+msgstr "Espaiat de la lletra"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Codi"
+
+msgid "handoff.attributes.typography.text-transform.uppercase"
+msgstr "Majúscules"
+
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "Inicials en majúscules"
+
+msgid "handoff.attributes.typography.text-transform.none"
+msgstr "Cap"
+
+msgid "handoff.attributes.typography.text-transform.lowercase"
+msgstr "Minúscules"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-transform"
+msgstr "Transformació del text"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "Subratllat"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "Barrat"
+
+msgid "handoff.attributes.typography.text-decoration.none"
+msgstr "Cap"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "Decoració del text"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "Alçada de la línia"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "Estil de la lletra"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "Mida de la lletra"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "Família tipogràfica"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "Tipografia"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "Amplada"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Sòlid"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "Cap"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "Mesclat"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "Puntejat"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "Exterior"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.inner"
+msgstr "Interior"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "Centre"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke"
+msgstr "Traç"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.spread"
+msgstr "S"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-y"
+msgstr "Y"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-x"
+msgstr "X"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.blur"
+msgstr "B"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "Ombra"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "Amplada"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "Superior"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "Rotació"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "Radi"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "Esquerra"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "Alçada"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout"
+msgstr "Disposició"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "Amplada"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "Alçada"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "Baixa la imatge original"
+
+#: src/app/main/ui/handoff/attributes/fill.cljs
+msgid "handoff.attributes.fill"
+msgstr "Emplenat"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur.value"
+msgstr "Valor"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur"
+msgstr "Difuminat"
