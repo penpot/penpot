@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-06-15 18:34+0000\n"
+"PO-Revision-Date: 2021-06-21 03:32+0000\n"
 "Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: Weblate 4.7\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1253,3 +1253,238 @@ msgstr "Bibliotecas"
 
 msgid "workspace.library.all"
 msgstr "Todas bibliotecas"
+
+msgid "workspace.viewport.click-to-close-path"
+msgstr "Clique para fechar o caminho"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.update"
+msgstr "Atualizar"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.there-are-updates"
+msgstr "Existem atualizações nas bibliotecas compartilhadas"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.title"
+msgstr "Histórico"
+
+msgid "workspace.undo.entry.single.text"
+msgstr "texto"
+
+msgid "workspace.undo.entry.single.shape"
+msgstr "forma"
+
+msgid "workspace.undo.entry.single.rect"
+msgstr "retângulo"
+
+msgid "workspace.undo.entry.single.path"
+msgstr "caminho"
+
+msgid "workspace.undo.entry.single.page"
+msgstr "página"
+
+msgid "workspace.undo.entry.single.multiple"
+msgstr "objeto"
+
+msgid "workspace.undo.entry.single.image"
+msgstr "imagem"
+
+msgid "workspace.undo.entry.single.group"
+msgstr "grupo"
+
+msgid "workspace.undo.entry.single.frame"
+msgstr "prancheta"
+
+msgid "workspace.undo.entry.single.curve"
+msgstr "curva"
+
+msgid "workspace.undo.entry.single.component"
+msgstr "componente"
+
+msgid "workspace.undo.entry.single.circle"
+msgstr "círculo"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.new"
+msgstr "Novo %s"
+
+msgid "workspace.undo.entry.multiple.text"
+msgstr "textos"
+
+msgid "workspace.undo.entry.multiple.shape"
+msgstr "formas"
+
+msgid "workspace.undo.entry.multiple.rect"
+msgstr "retângulos"
+
+msgid "workspace.undo.entry.multiple.page"
+msgstr "páginas"
+
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "objetos"
+
+msgid "workspace.undo.entry.multiple.group"
+msgstr "grupos"
+
+msgid "workspace.undo.entry.multiple.frame"
+msgstr "prancheta"
+
+msgid "workspace.undo.entry.multiple.curve"
+msgstr "curvas"
+
+msgid "workspace.undo.entry.multiple.component"
+msgstr "componentes"
+
+msgid "workspace.undo.entry.multiple.circle"
+msgstr "círculos"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.move"
+msgstr "Objetos movidos"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.empty"
+msgstr "Não há mudanças no histórico até agora"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text"
+msgstr "Texto (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.rect"
+msgstr "Retângulo (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.move"
+msgstr "Mover"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.frame"
+msgstr "Prancheta (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.image"
+msgstr "Imagem (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.ellipse"
+msgstr "Elipse (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.curve"
+msgstr "Curva (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.comments"
+msgstr "Comentários (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.color-palette"
+msgstr "Paleta de cores (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.sitemap"
+msgstr "Mapa do site"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "workspace.sidebar.sitemap"
+msgstr "Páginas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "Atributos SVG importados"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.history"
+msgstr "Histórico (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.layers"
+msgstr "Camadas (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-main"
+msgstr "Atualizar o componente principal"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unmask"
+msgstr "Remover máscara"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unlock"
+msgstr "Desbloquear"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.ungroup"
+msgstr "Desagrupar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-main"
+msgstr "Mostrar componente principal"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show"
+msgstr "Mostrar"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "generic.error"
+msgstr "Um erro ocorreu"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "E-mail"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subtitle"
+msgstr ""
+"Por favor, descreva o motivo do seu e-mail, especificando se é um problema, "
+"uma ideia ou uma dúvida. Um membro de nossa equipe responderá o mais rápido "
+"possível."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "Assunto"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-title"
+msgstr "Discussões da equipe"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle2"
+msgstr ""
+"Você pode fazer e responder perguntas, ter conversas abertas e acompanhar as "
+"decisões que afetam o projeto."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle1"
+msgstr "Junte-se ao fórum de comunicação colaborativa da equipe da Penpot."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.token-expired"
+msgstr "Token expirado"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "errors.registration-disabled"
+msgstr "O registro de contas está desativado no momento."
+
+msgid "dashboard.options"
+msgstr "Opções"
+
+msgid "dashboard.loading-fonts"
+msgstr "carregando suas fontes …"
+
+msgid "dashboard.import"
+msgstr "Importar arquivos"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Você ainda não tem nenhuma fonte personalizada instalada."
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Fonte deletada"
+
+msgid "dashboard.export-single"
+msgstr "Exportar arquivo"
+
+msgid "dashboard.export-multi"
+msgstr "Exportar %s arquivos"
