@@ -72,9 +72,9 @@
         (mf/use-callback
           (mf/deps on-change update-input value)
           (fn [new-value]
-            (when new-value
-              (when (and on-change (not= new-value value))
-                (on-change new-value))
+            (when (and (some? new-value) (not= new-value value) (some? on-change))
+              (on-change new-value))
+            (when (some? new-value)
               (update-input new-value))))
 
         set-delta
