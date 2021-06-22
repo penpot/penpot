@@ -18,40 +18,53 @@
    [cuerdas.core :as str]))
 
 (def root-frame uuid/zero)
+(def conjv (fnil conj []))
+(def conjs (fnil conj #{}))
 
 ;; This flag controls if we should execute spec validation after every commit
 (def verify-on-commit? true)
 
-(defn- commit-change [file change]
-  (when verify-on-commit?
-    (us/assert ::spec/change change))
-  (-> file
-      (update :changes (fnil conj []) change)
-      (update :data ch/process-changes [change] verify-on-commit?)))
+(defn- commit-change
+  ([file change]
+   (commit-change file change nil))
+
+  ([file change {:keys [add-container?]
+                 :or   {add-container? false}}]
+   (let [component-id (:current-component-id file)
+         change (cond-> change
+                  (and add-container? (some? component-id))
+                  (assoc :component-id component-id)
+
+                  (and add-container? (nil? component-id))
+                  (assoc :page-id  (:current-page-id file)
+                         :frame-id (:current-frame-id file)))]
+
+     (when verify-on-commit?
+       (us/assert ::spec/change change))
+     (-> file
+         (update :changes conjv change)
+         (update :data ch/process-changes [change] verify-on-commit?)))))
 
 (defn- lookup-objects
   ([file]
-   (lookup-objects file (:current-page-id file)))
-
-  ([file page-id]
-   (get-in file [:data :pages-index page-id :objects])))
+   (if (some? (:current-component-id file))
+     (get-in file [:data :components  (:current-component-id file) :objects])
+     (get-in file [:data :pages-index (:current-page-id file) :objects]))))
 
 (defn- lookup-shape [file shape-id]
   (-> (lookup-objects file)
       (get shape-id)))
 
 (defn- commit-shape [file obj]
-  (let [page-id (:current-page-id file)
-        frame-id (:current-frame-id file)
-        parent-id (-> file :parent-stack peek)]
+  (let [parent-id (-> file :parent-stack peek)]
     (-> file
         (commit-change
          {:type :add-obj
           :id (:id obj)
-          :page-id page-id
-          :frame-id frame-id
-          :parent-id parent-id
-          :obj obj}))))
+          :obj obj
+          :parent-id parent-id}
+
+         {:add-container? true}))))
 
 (defn setup-rect-selrect [obj]
   (let [rect      (select-keys obj [:x :y :width :height])
@@ -62,9 +75,9 @@
         points (-> (gsh/rect->points rect)
                    (gsh/transform-points center transform))]
 
-    (assoc obj
-           :selrect selrect
-           :points points)))
+    (-> obj
+        (assoc :selrect selrect)
+        (assoc :points points))))
 
 (defn- setup-path-selrect
   [obj]
@@ -105,6 +118,23 @@
                         :else (str tag))))
     (str/capital (d/name type))))
 
+(defn- add-name
+  [file name]
+  (let [container-id (or (:current-component-id file)
+                         (:current-page-id file))]
+    (-> file
+        (update-in [:unames container-id] conjs name))))
+
+(defn- unique-name
+  [name file]
+  (let [container-id (or (:current-component-id file)
+                         (:current-page-id file))
+        unames (get-in file [:unames container-id])]
+    (d/unique-name (or unames #{}) name)))
+
+(defn clear-names [file]
+  (dissoc file :unames))
+
 (defn- check-name
   "Given a tag returns its layer name"
   [data file type]
@@ -114,7 +144,7 @@
     (assoc :name (generate-name type data))
 
     :always
-    (update :name d/unique-name (:unames file))))
+    (update :name unique-name file)))
 
 ;; PUBLIC API
 
@@ -131,6 +161,8 @@
 
 (defn add-page
   [file data]
+
+  (assert (nil? (:current-component-id file)))
   (let [page-id (uuid/next)
         page (-> init/empty-page-data
                  (assoc :id page-id)
@@ -150,19 +182,18 @@
         (assoc :parent-stack [root-frame])
 
         ;; Last object id added
-        (assoc :last-id nil)
-
-        ;; Current used names
-        (assoc :unames #{}))))
+        (assoc :last-id nil))))
 
 (defn close-page [file]
+  (assert (nil? (:current-component-id file)))
   (-> file
       (dissoc :current-page-id)
       (dissoc :parent-stack)
       (dissoc :last-id)
-      (dissoc :unames)))
+      (clear-names)))
 
 (defn add-artboard [file data]
+  (assert (nil? (:current-component-id file)))
   (let [obj (-> (init/make-minimal-shape :frame)
                 (merge data)
                 (check-name file :frame)
@@ -172,10 +203,11 @@
         (commit-shape obj)
         (assoc :current-frame-id (:id obj))
         (assoc :last-id (:id obj))
-        (update :unames conj (:name obj))
-        (update :parent-stack conj (:id obj)))))
+        (add-name (:name obj))
+        (update :parent-stack conjv (:id obj)))))
 
 (defn close-artboard [file]
+  (assert (nil? (:current-component-id file)))
   (-> file
       (assoc :current-frame-id root-frame)
       (update :parent-stack pop)))
@@ -191,8 +223,8 @@
     (-> file
         (commit-shape obj)
         (assoc :last-id (:id obj))
-        (update :unames conj (:name obj))
-        (update :parent-stack conj (:id obj)))))
+        (add-name (:name obj))
+        (update :parent-stack conjv (:id obj)))))
 
 (defn close-group [file]
   (let [group-id (-> file :parent-stack peek)
@@ -205,15 +237,14 @@
           (commit-change
            file
            {:type :del-obj
-            :page-id (:current-page-id file)
-            :id group-id})
+            :id group-id}
+           {:add-container? true})
 
           (:masked-group? group)
           (let [mask (first children)]
             (commit-change
              file
              {:type :mod-obj
-              :page-id (:current-page-id file)
               :id group-id
               :operations
               [{:type :set :attr :x :val (-> mask :selrect :x)}
@@ -223,18 +254,20 @@
                {:type :set :attr :flip-x :val (-> mask :flip-x)}
                {:type :set :attr :flip-y :val (-> mask :flip-y)}
                {:type :set :attr :selrect :val (-> mask :selrect)}
-               {:type :set :attr :points :val (-> mask :points)}]}))
+               {:type :set :attr :points :val (-> mask :points)}]}
+             {:add-container? true}))
 
           :else
           (let [group' (gsh/update-group-selrect group children)]
             (commit-change
              file
              {:type :mod-obj
-              :page-id (:current-page-id file)
               :id group-id
               :operations
               [{:type :set :attr :selrect :val (:selrect group')}
-               {:type :set :attr :points  :val (:points group')}]})))]
+               {:type :set :attr :points  :val (:points group')}]}
+
+             {:add-container? true})))]
 
     (-> file
         (update :parent-stack pop))))
@@ -253,7 +286,7 @@
     (-> file
         (commit-shape obj)
         (assoc :last-id (:id obj))
-        (update :unames conj (:name obj)))))
+        (add-name (:name obj)))))
 
 (defn create-rect [file data]
   (create-shape file :rect data))
@@ -275,7 +308,7 @@
 (defn create-svg-raw [file data]
   (let [file (as-> file $
                (create-shape $ :svg-raw data)
-               (update $ :parent-stack conj (:last-id $)))
+               (update $ :parent-stack conjv (:last-id $)))
 
         create-child
         (fn [file child]
@@ -301,9 +334,8 @@
                           :interactions
                           (filterv #(or (not= (:action-type %) action-type)
                                         (not= (:event-type %) event-type))))
-        conj (fnil conj [])
         interactions (-> interactions
-                         (conj
+                         (conjv
                           {:action-type action-type
                            :event-type event-type
                            :destination destination-id}))]
@@ -319,3 +351,107 @@
 (defn generate-changes
   [file]
   (:changes file))
+
+(defn add-library-color
+  [file color]
+
+  (let [id (uuid/next)]
+    (commit-change
+     file
+     {:type :add-color
+      :id id
+      :color color})
+
+    id))
+
+(defn add-library-typography
+  [file typography]
+  (let [id (uuid/next)]
+    (commit-change
+     file
+     {:type :add-typography
+      :id id
+      :typography typography})
+
+    id))
+
+(defn add-library-media
+  [file media]
+  (let [id (uuid/next)]
+    (commit-change
+     file
+     {:type :add-media
+      :id id
+      :media media})
+
+    id))
+
+(defn start-component
+  [file data]
+
+  (let [selrect init/empty-selrect
+        name (:name data)
+        obj (-> (init/make-minimal-group nil selrect name)
+                (merge data)
+                (check-name file :group)
+                (d/without-nils))]
+    (-> file
+        (commit-change
+         {:type :add-component
+          :id (:id obj)
+          :name name
+          :shapes [obj]})
+
+        (assoc :last-id (:id obj))
+        (update :parent-stack conjv (:id obj))
+        (assoc :current-component-id (:id obj)))))
+
+(defn finish-component
+  [file]
+  (let [component-id (:current-component-id file)
+        component    (lookup-shape file component-id)
+        children     (->> component :shapes (mapv #(lookup-shape file %)))
+
+        file
+        (cond
+          (empty? children)
+          (commit-change
+           file
+           {:type :del-component
+            :id component-id})
+
+          (:masked-group? component)
+          (let [mask (first children)]
+            (commit-change
+             file
+             {:type :mod-obj
+              :id component-id
+              :operations
+              [{:type :set :attr :x :val (-> mask :selrect :x)}
+               {:type :set :attr :y :val (-> mask :selrect :y)}
+               {:type :set :attr :width :val (-> mask :selrect :width)}
+               {:type :set :attr :height :val (-> mask :selrect :height)}
+               {:type :set :attr :flip-x :val (-> mask :flip-x)}
+               {:type :set :attr :flip-y :val (-> mask :flip-y)}
+               {:type :set :attr :selrect :val (-> mask :selrect)}
+               {:type :set :attr :points :val (-> mask :points)}]}
+
+             {:add-container? true}))
+
+          :else
+          (let [component' (gsh/update-group-selrect component children)]
+            (commit-change
+             file
+             {:type :mod-obj
+              :id component-id
+              :operations
+              [{:type :set :attr :selrect :val (:selrect component')}
+               {:type :set :attr :points  :val (:points component')}]}
+
+             {:add-container? true})))]
+
+    (-> file
+        (dissoc :current-component-id)
+        (update :parent-stack pop))))
+
+
