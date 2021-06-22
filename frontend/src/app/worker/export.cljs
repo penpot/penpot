@@ -70,26 +70,77 @@
   [{:keys [id file-id markup] :as page}]
   [(str file-id "/" id ".svg") markup])
 
-(defn collect-color
-  [result color]
+(defn collect-entries [result data keys]
   (-> result
-      (assoc (str (:id color))
-             (->> (select-keys color [:name :color :opacity :gradient])
+      (assoc (str (:id data))
+             (->> (select-keys data keys)
                   (d/deep-mapm
                    (fn [[k v]]
                      [(-> k str/camel) v]))))))
 
-(def ^:const typography-keys [:name :font-family :font-id :font-size
-                              :font-style :font-variant-id :font-weight
-                              :letter-spacing :line-height :text-transform])
+(def ^:const color-keys
+  [:name :color :opacity :gradient])
+
+(def ^:const typography-keys
+  [:name :font-family :font-id :font-size :font-style :font-variant-id :font-weight
+   :letter-spacing :line-height :text-transform])
+
+(def ^:const media-keys
+  [:name :mtype :width :height])
+
+(defn collect-color
+  [result color]
+  (collect-entries result color color-keys))
+
 (defn collect-typography
   [result typography]
-  (-> result
-      (assoc (str (:id typography))
-             (->> (select-keys typography typography-keys)
-                  (d/deep-mapm
-                   (fn [[k v]]
-                     [(-> k str/camel) v]))))))
+  (collect-entries result typography typography-keys))
+
+(defn collect-media
+  [result media]
+  (collect-entries result media media-keys))
+
+(defn parse-library-color
+  [[file-id colors]]
+  (let [markup
+        (->> (vals colors)
+             (reduce collect-color {})
+             (json/encode))]
+    [(str file-id "/colors.json") markup]))
+
+(defn parse-library-typographies
+  [[file-id typographies]]
+  (let [markup
+        (->> (vals typographies)
+             (reduce collect-typography {})
+             (json/encode))]
+    [(str file-id "/typographies.json") markup]))
+
+(defn parse-library-media
+  [[file-id media]]
+  (rx/merge
+   (let [markup
+         (->> (vals media)
+              (reduce collect-media {})
+              (json/encode))]
+     (rx/of (vector (str file-id "/images.json") markup)))
+
+   (->> (rx/from (vals media))
+        (rx/map #(assoc % :file-id file-id))
+        (rx/flat-map
+         (fn [media]
+           (let [file-path (str file-id "/images/" (:id media) "." (dom/mtype->extension (:mtype media)))]
+             (->> (http/send!
+                   {:uri (cfg/resolve-file-media media)
+                    :response-type :blob
+                    :method :get})
+                  (rx/map :body)
+                  (rx/map #(vector file-path %)))))))))
+
+(defn parse-library-components
+  [file]
+  (->> (r/render-components (:data file))
+       (rx/map #(vector (str (:id file) "/components.svg") %))))
 
 (defn export-file
   [team-id file-id]
@@ -120,42 +171,27 @@
              (rx/flat-map vals)
              (rx/map #(vector (:id %) (get-in % [:data :colors])))
              (rx/filter #(d/not-empty? (second %)))
-             (rx/map (fn [[file-id colors]]
-                       (let [markup
-                             (->> (vals colors)
-                                  (reduce collect-color {})
-                                  (json/encode))]
-                         [(str file-id "/colors.json") markup]))))
+             (rx/map parse-library-color))
 
         typographies-stream
         (->> files-stream
              (rx/flat-map vals)
              (rx/map #(vector (:id %) (get-in % [:data :typographies])))
              (rx/filter #(d/not-empty? (second %)))
-             (rx/map (fn [[file-id typographies]]
-                       (let [markup
-                             (->> (vals typographies)
-                                  (reduce collect-typography {})
-                                  (json/encode))]
-                         [(str file-id "/typographies.json") markup]))))
+             (rx/map parse-library-typographies))
 
         media-stream
         (->> files-stream
              (rx/flat-map vals)
              (rx/map #(vector (:id %) (get-in % [:data :media])))
              (rx/filter #(d/not-empty? (second %)))
-             (rx/flat-map
-              (fn [[file-id media]]
-                (->> media vals (mapv #(assoc % :file-id file-id)))))
+             (rx/flat-map parse-library-media))
 
-             (rx/flat-map
-              (fn [media]
-                (->> (http/send!
-                      {:uri (cfg/resolve-file-media media)
-                       :response-type :blob
-                       :method :get})
-                     (rx/map :body)
-                     (rx/map #(vector (str file-id "/images/" (:id media)) %))))))
+        components-stream
+        (->> files-stream
+             (rx/flat-map vals)
+             (rx/filter #(d/not-empty? (get-in % [:data :components])))
+             (rx/flat-map parse-library-components))
 
         pages-stream
         (->> render-stream
@@ -171,7 +207,7 @@
      (->> (rx/merge
            manifest-stream
            pages-stream
-           #_components-stream
+           components-stream
            media-stream
            colors-stream
            typographies-stream)

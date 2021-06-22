@@ -82,6 +82,7 @@
 
    ;; Used for export
    ["/render-object/:file-id/:page-id/:object-id" :render-object]
+   ["/render-sprite/:file-id" :render-sprite]
 
    ["/dashboard/team/:team-id"
     ["/members"              :dashboard-team-members]
@@ -171,6 +172,14 @@
            [:& render/render-object {:file-id file-id
                                      :page-id page-id
                                      :object-id object-id}]))
+
+       :render-sprite
+       (do
+         (let [file-id      (uuid (get-in route [:path-params :file-id]))
+               component-id (get-in route [:query-params :component-id])
+               component-id (when (some? component-id) (uuid component-id))]
+           [:& render/render-sprite {:file-id file-id
+                                     :component-id component-id}]))
 
        :workspace
        (let [project-id (some-> params :path :project-id uuid)
