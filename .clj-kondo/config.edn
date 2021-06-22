@@ -17,14 +17,7 @@
  {:exclude-files
   ["data_readers.clj"
    "app/util/perf.cljs"
-   "app/common/exceptions.cljc"
-   "app/util/import/.*"
-   "app/worker/export.cljs"
-   "app/worker/import.cljs"
-   "app/libs/.*"
-   "app/main/data/workspace/path/selection.cljs"
-   "app/main/data/workspace/transforms.cljs"
-   ]}
+   "app/common/exceptions.cljc"]}
 
  :linters
  {:unsorted-required-namespaces

@@ -60,7 +60,7 @@
           (some? id)
           (assoc-in [:workspace-local :edit-path id :selected-points] positions))))))
 
-(defn select-node [position shift? kk]
+(defn select-node [position shift?]
   (ptk/reify ::select-node
     ptk/UpdateEvent
     (update [_ state]
@@ -78,38 +78,6 @@
         (cond-> state
           (some? id)
           (assoc-in [:workspace-local :edit-path id :selected-points] selected-points))))))
-
-(defn deselect-node [position shift?]
-  (ptk/reify ::deselect-node
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])]
-        (-> state
-            (update-in [:workspace-local :edit-path id :selected-points] (fnil disj #{}) position))))))
-
-(defn add-to-selection-handler [index type]
-  (ptk/reify ::add-to-selection-handler
-    ptk/UpdateEvent
-    (update [_ state]
-      state)))
-
-(defn add-to-selection-node [index]
-  (ptk/reify ::add-to-selection-node
-    ptk/UpdateEvent
-    (update [_ state]
-      state)))
-
-(defn remove-from-selection-handler [index]
-  (ptk/reify ::remove-from-selection-handler
-    ptk/UpdateEvent
-    (update [_ state]
-      state)))
-
-(defn remove-from-selection-node [index]
-  (ptk/reify ::remove-from-selection-handler
-    ptk/UpdateEvent
-    (update [_ state]
-      state)))
 
 (defn deselect-all []
   (ptk/reify ::deselect-all
@@ -140,7 +108,7 @@
 
     (ptk/reify ::handle-selection
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ stream]
         (let [stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
               stoper (->> stream (rx/filter stop?))
               from-p @ms/mouse-position]

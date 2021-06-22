@@ -123,3 +123,30 @@
       [:& object-svg {:objects @objects
                       :object-id object-id
                       :zoom 1}])))
+
+(mf/defc render-sprite
+  [{:keys [file-id component-id] :as props}]
+  (let [file (mf/use-state nil)]
+    (mf/use-effect
+     (mf/deps file-id)
+     (fn []
+       (->> (repo/query! :file {:id file-id})
+            (rx/subs
+             (fn [result]
+               (reset! file result))))
+       (constantly nil)))
+
+    (when @file
+      [:*
+       [:& exports/components-sprite-svg {:data (:data @file) :embed true}
+
+        (when (some? component-id)
+          [:use {:x 0 :y 0
+                 :xlinkHref (str "#" component-id)}])]
+
+       (when-not (some? component-id)
+         [:ul
+          (for [[id data] (get-in @file [:data :components])]
+            (let [url (str "#/render-sprite/" (:id @file) "?component-id=" id)]
+              [:li [:a {:href url} (:name data)]]))])])))
+

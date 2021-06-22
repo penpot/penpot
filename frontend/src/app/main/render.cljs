@@ -66,5 +66,16 @@
            (let [elem (mf/element exports/page-svg #js {:data data :embed? true})]
              (rds/renderToStaticMarkup elem)))))))
 
+(defn render-components
+  [data]
+  (rx/concat
+   (->> (rx/merge
+         (populate-images-cache data)
+         (populate-fonts-cache data))
+        (rx/ignore))
 
-
+   (->> (rx/of data)
+        (rx/map
+         (fn [data]
+           (let [elem (mf/element exports/components-sprite-svg #js {:data data :embed? true})]
+             (rds/renderToStaticMarkup elem)))))))

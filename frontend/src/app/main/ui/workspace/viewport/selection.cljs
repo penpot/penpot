@@ -286,9 +286,9 @@
 
         shape-center (geom/center-shape shape)
 
-        on-resize (fn [current-position initial-position event]
+        on-resize (fn [current-position _initial-position event]
                     (dom/stop-propagation event)
-                    (st/emit! (dw/start-resize current-position initial-position selected shape)))
+                    (st/emit! (dw/start-resize current-position selected shape)))
 
         on-rotate #(do (dom/stop-propagation %)
                        (st/emit! (dw/start-rotate shapes)))]
@@ -311,9 +311,9 @@
         shape (geom/transform-shape shape {:round-coords? false})
 
         shape' (if (debug? :simple-selection) (geom/setup {:type :rect} (geom/selection-rect [shape])) shape)
-        on-resize (fn [current-position initial-position event]
+        on-resize (fn [current-position _initial-position event]
                     (dom/stop-propagation event)
-                    (st/emit! (dw/start-resize current-position initial-position #{shape-id} shape')))
+                    (st/emit! (dw/start-resize current-position #{shape-id} shape')))
 
         on-rotate
         #(do (dom/stop-propagation %)

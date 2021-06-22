@@ -25,6 +25,7 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
+   [app.util.object :as obj]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
@@ -73,10 +74,11 @@
     (mf/fnc group-wrapper
       [{:keys [shape frame] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
-        [:& group-shape {:frame frame
-                         :shape shape
-                         :is-child-selected? true
-                         :childs childs}]))))
+        [:& shape-container {:shape shape}
+         [:& group-shape {:frame frame
+                          :shape shape
+                          :is-child-selected? true
+                          :childs childs}]]))))
 
 (defn svg-raw-wrapper-factory
   [objects]
@@ -207,7 +209,8 @@
            :height height
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns "http://www.w3.org/2000/svg"}
+           :xmlns "http://www.w3.org/2000/svg"
+           :xmlns:penpot "https://penpot.app/xmlns"}
      [:& wrapper {:shape frame :view-box vbox}]]))
 
 (mf/defc component-svg
@@ -238,5 +241,58 @@
            :height height
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns "http://www.w3.org/2000/svg"}
+           :xmlns "http://www.w3.org/2000/svg"
+           :xmlns:penpot "https://penpot.app/xmlns"}
      [:& wrapper {:shape group :view-box vbox}]]))
+
+(mf/defc component-symbol
+  [{:keys [id data] :as props}]
+
+  (let [{:keys [name objects]} data
+        root (get objects id)
+
+        {:keys [width height]} (:selrect root)
+        vbox   (str "0 0 " width " " height)
+
+        modifier (-> (gpt/point (:x root) (:y root))
+                     (gpt/negate)
+                     (gmt/translate-matrix))
+
+        modifier-ids (concat [id] (cp/get-children id objects))
+        update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
+        objects (reduce update-fn objects modifier-ids)
+        root (assoc-in root [:modifiers :displacement] modifier)
+
+        group-wrapper
+        (mf/use-memo
+         (mf/deps objects)
+         #(group-wrapper-factory objects))]
+
+    [:symbol {:id (str id)
+              :viewBox vbox}
+     [:title name]
+     [:& group-wrapper {:shape root :view-box vbox}]]))
+
+(mf/defc components-sprite-svg
+  {::mf/wrap-props false}
+  [props]
+
+  (let [data (obj/get props "data")
+        children (obj/get props "children")
+        embed? (obj/get props "embed?")]
+    [:& (mf/provider embed/context) {:value embed?}
+     [:svg {:version "1.1"
+            :xmlns "http://www.w3.org/2000/svg"
+            :xmlnsXlink "http://www.w3.org/1999/xlink"
+            :xmlns:penpot "https://penpot.app/xmlns"
+            :style {:width "100vw"
+                    :height "100vh"
+                    :display (when-not (some? children) "none")}}
+
+      [:defs
+       (for [[component-id component-data] (:components data)]
+         [:& component-symbol {:id component-id
+                               :key (str component-id)
+                               :data component-data}])]
+
+      children]]))

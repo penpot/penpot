@@ -17,7 +17,6 @@
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
-   [cuerdas.core :as str]
    [tubax.core :as tubax]))
 
 ;; Upload changes batches size
@@ -25,12 +24,13 @@
 
 (defn create-file
   "Create a new file on the back-end"
-  [project-id name]
+  [project-id file-desc]
   (let [file-id (uuid/next)]
     (rp/mutation
      :create-temp-file
      {:id file-id
-      :name name
+      :name (:name file-desc)
+      :is-shared (:shared file-desc)
       :project-id project-id
       :data (-> cp/empty-file-data (assoc :id file-id))})))
 
@@ -78,36 +78,65 @@
 (defn add-shape-file
   [file node]
 
-  (let [type   (cip/get-type node)
-        close? (cip/close? node)
-        data   (cip/parse-data type node)]
-
+  (let [type         (cip/get-type node)
+        close?       (cip/close? node)]
     (if close?
       (case type
-        :frame
-        (fb/close-artboard file)
+        :frame    (fb/close-artboard file)
+        :group    (fb/close-group file)
+        :svg-raw  (fb/close-svg-raw file)
+        #_default file)
 
-        :group
-        (fb/close-group file)
+      (let [data         (cip/parse-data type node)
+            old-id       (cip/get-id node)
+            interactions (cip/parse-interactions node)
 
-        :svg-raw
-        (fb/close-svg-raw file)
+            file (case type
+                   :frame    (fb/add-artboard file data)
+                   :group    (fb/add-group file data)
+                   :rect     (fb/create-rect file data)
+                   :circle   (fb/create-circle file data)
+                   :path     (fb/create-path file data)
+                   :text     (fb/create-text file data)
+                   :image    (fb/create-image file data)
+                   :svg-raw  (fb/create-svg-raw file data)
+                   #_default file)]
 
-        ;; default
-        file)
+        (assert (some? old-id) "ID not found")
 
-      (case type
-        :frame    (fb/add-artboard file data)
-        :group    (fb/add-group file data)
-        :rect     (fb/create-rect file data)
-        :circle   (fb/create-circle file data)
-        :path     (fb/create-path file data)
-        :text     (fb/create-text file data)
-        :image    (fb/create-image file data)
-        :svg-raw  (fb/create-svg-raw file data)
+        ;; We store this data for post-processing after every shape has been
+        ;; added
+        (cond-> file
+          (some? (:last-id file))
+          (assoc-in [:id-mapping old-id] (:last-id file))
 
-        ;; default
-        file))))
+          (d/not-empty? interactions)
+          (assoc-in [:interactions old-id] interactions))))))
+
+(defn post-process-file
+  [file]
+
+  (letfn [(add-interaction
+            [id file {:keys [action-type event-type destination] :as interaction}]
+            (fb/add-interaction file action-type event-type id destination))
+
+          (add-interactions
+            [file [old-id interactions]]
+            (let [id (get-in file [:id-mapping old-id])]
+              (->> interactions
+                   (mapv (fn [interaction]
+                           (let [id (get-in file [:id-mapping (:destination interaction)])]
+                             (assoc interaction :destination id))))
+                   (reduce
+                    (partial add-interaction id) file))))
+
+          (process-interactions
+            [file]
+            (reduce add-interactions file (:interactions file)))]
+
+    (-> file
+        (process-interactions)
+        (dissoc :id-mapping :interactions))))
 
 (defn merge-reduce [f seed ob]
   (->> (rx/concat
@@ -145,6 +174,7 @@
            (rx/filter cip/shape?)
            (rx/mapcat (partial resolve-images file-id))
            (rx/reduce add-shape-file (fb/add-page file page-data))
+           (rx/map post-process-file)
            (rx/map fb/close-page)))
     (rx/empty)))
 
@@ -173,7 +203,7 @@
        (rx/flat-map (comp :files json/decode :content))
        (rx/flat-map
         (fn [[file-id file-desc]]
-          (->> (create-file project-id (:name file-desc))
+          (->> (create-file project-id file-desc)
                (rx/flat-map #(process-file % file-id file-desc zip-file)))))))
 
 (defmethod impl/handler :import-file
