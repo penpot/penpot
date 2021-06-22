@@ -10,8 +10,6 @@
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
-(def frame-default-props {:fill-color "#ffffff"})
-
 (defn frame-shape
   [shape-wrapper]
   (mf/fnc frame-shape
@@ -21,8 +19,11 @@
           shape      (unchecked-get props "shape")
           {:keys [width height]} shape
 
-          props (-> (merge frame-default-props shape)
-                    (attrs/extract-style-attrs)
+          has-background? (or (some? (:fill-color shape))
+                              (some? (:fill-color-gradient shape)))
+          has-stroke? (not= :none (:stroke-style shape))
+
+          props (-> (attrs/extract-style-attrs shape)
                     (obj/merge!
                      #js {:x 0
                           :y 0
@@ -30,7 +31,8 @@
                           :height height
                           :className "frame-background"}))]
       [:*
-       [:> :rect props]
+       (when (or has-background? has-stroke?)
+         [:> :rect props])
        (for [item childs]
          [:& shape-wrapper {:frame shape
                             :shape item
