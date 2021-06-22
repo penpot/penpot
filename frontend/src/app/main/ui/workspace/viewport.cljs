@@ -65,6 +65,7 @@
         objects           (mf/use-memo
                            (mf/deps objects object-modifiers)
                            #(cp/merge-modifiers objects object-modifiers))
+        background        (get options :background "#E8E9EA")
 
         ;; STATE
         alt?              (mf/use-state false)
@@ -157,7 +158,8 @@
 
     [:div.viewport
      [:div.viewport-overlays
-      [:& wtr/frame-renderer {:objects objects}]
+      [:& wtr/frame-renderer {:objects objects
+                              :background background}]
 
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox
@@ -185,7 +187,7 @@
        :width (:width vport 0)
        :height (:height vport 0)
        :view-box (utils/format-viewbox vbox)
-       :style {:background-color (get options :background "#E8E9EA")
+       :style {:background-color background
                :pointer-events "none"}}
 
       [:& use/export-page {:options options}]
