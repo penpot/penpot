@@ -445,7 +445,8 @@
   "Apply the modifiers to one shape, and the corresponding ones to all children,
    depending on the child constraints. The modifiers are not directly applied to
    the objects tree, but to a separated structure (modif-tree), that may be
-   merged later with the real objects."
+   merged later with the real objects. This way, the objects are changed only
+   once, avoiding unnecesary redrawings."
   [modif-tree objects shape modifiers root transformed-root]
   (let [children (->> (get shape :shapes [])
                       (map #(get objects %)))
@@ -594,20 +595,21 @@
   (ptk/reify ::update-dimensions
     ptk/UpdateEvent
     (update [_ state]
-
       (let [page-id (:current-page-id state)
+            objects (get-in state [:workspace-data :pages-index page-id :objects])]
 
-            ;; For each shape updates the modifiers given as arguments
-            update-shape
-            (fn [objects shape-id]
-              (let [shape (get objects shape-id)
-                    modifier (gsh/resize-modifiers shape attr value)]
-                (set-modifiers-recursive objects objects shape modifier nil nil)))]
-
-        (d/update-in-when
-         state
-         [:workspace-data :pages-index page-id :objects]
-         #(reduce update-shape % ids))))
+        (reduce (fn [state id]
+                  (let [shape (get objects id)
+                        modifiers (gsh/resize-modifiers shape attr value)]
+                    (update state :workspace-modifiers
+                            #(set-modifiers-recursive %
+                                                      objects
+                                                      shape
+                                                      modifiers
+                                                      nil
+                                                      nil))))
+                state
+                ids)))
 
     ptk/WatchEvent
     (watch [_ state _]
