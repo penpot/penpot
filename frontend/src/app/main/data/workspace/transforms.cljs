@@ -574,6 +574,7 @@
                            :content
                            :transform
                            :transform-inverse
+                           :modifiers
                            :rotation
                            :flip-x
                            :flip-y]
