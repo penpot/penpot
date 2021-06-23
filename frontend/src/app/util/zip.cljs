@@ -31,24 +31,28 @@
        (rx/map :body)
        (rx/flat-map zip/loadAsync)))
 
-(defn- process-file [entry path]
+(defn- process-file
+  [entry path type]
   (cond
     (nil? entry)
-    (p/rejected "No file found")
+    (p/rejected (str "File not found: " path))
 
     (.-dir entry)
     (p/resolved {:dir path})
 
     :else
-    (-> (.async entry "text")
+    (-> (.async entry type)
         (p/then #(hash-map :path path :content %)))))
 
 (defn get-file
   "Gets a single file from the zip archive"
-  [zip path]
-  (-> (.file zip path)
-      (process-file path)
-      (rx/from)))
+  ([zip path]
+   (get-file zip path "text"))
+
+  ([zip path type]
+   (-> (.file zip path)
+       (process-file path type)
+       (rx/from))))
 
 (defn extract-files
   "Creates a stream that will emit values for every file in the zip"
@@ -56,7 +60,7 @@
   (let [promises (atom [])
         get-file
         (fn [path entry]
-          (let [current (process-file entry path)]
+          (let [current (process-file entry path "text")]
             (swap! promises conj current)))]
     (.forEach zip get-file)
 

@@ -41,7 +41,7 @@
                           :pages           pages
                           :pagesIndex      index
                           :hasComponents   (d/not-empty? (get-in file [:data :components]))
-                          :hasImages       (d/not-empty? (get-in file [:data :media]))
+                          :hasMedia        (d/not-empty? (get-in file [:data :media]))
                           :hasColors       (d/not-empty? (get-in file [:data :colors]))
                           :hasTypographies (d/not-empty? (get-in file [:data :typographies]))}))))]
     (let [manifest {:teamId (str team-id)
@@ -123,13 +123,13 @@
          (->> (vals media)
               (reduce collect-media {})
               (json/encode))]
-     (rx/of (vector (str file-id "/images.json") markup)))
+     (rx/of (vector (str file-id "/media.json") markup)))
 
    (->> (rx/from (vals media))
         (rx/map #(assoc % :file-id file-id))
         (rx/flat-map
          (fn [media]
-           (let [file-path (str file-id "/images/" (:id media) "." (dom/mtype->extension (:mtype media)))]
+           (let [file-path (str file-id "/media/" (:id media) "." (dom/mtype->extension (:mtype media)))]
              (->> (http/send!
                    {:uri (cfg/resolve-file-media media)
                     :response-type :blob

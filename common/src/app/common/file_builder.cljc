@@ -130,7 +130,7 @@
   (let [container-id (or (:current-component-id file)
                          (:current-page-id file))
         unames (get-in file [:unames container-id])]
-    (d/unique-name (or unames #{}) name)))
+    (d/unique-name name (or unames #{}))))
 
 (defn clear-names [file]
   (dissoc file :unames))
@@ -355,36 +355,32 @@
 (defn add-library-color
   [file color]
 
-  (let [id (uuid/next)]
-    (commit-change
-     file
-     {:type :add-color
-      :id id
-      :color color})
-
-    id))
+  (let [id (or (:id color) (uuid/next))]
+    (-> file
+        (commit-change
+         {:type :add-color
+          :id id
+          :color (assoc color :id id)})
+        (assoc :last-id id))))
 
 (defn add-library-typography
   [file typography]
-  (let [id (uuid/next)]
-    (commit-change
-     file
-     {:type :add-typography
-      :id id
-      :typography typography})
-
-    id))
+  (let [id (or (:id typography) (uuid/next))]
+    (-> file
+        (commit-change
+         {:type :add-typography
+          :id id
+          :typography (assoc typography :id id)})
+        (assoc :last-id id))))
 
 (defn add-library-media
   [file media]
-  (let [id (uuid/next)]
-    (commit-change
-     file
-     {:type :add-media
-      :id id
-      :media media})
-
-    id))
+  (let [id (or (:id media) (uuid/next))]
+    (-> file
+        (commit-change
+         {:type :add-media
+          :object (assoc media :id id)})
+        (assoc :last-id id))))
 
 (defn start-component
   [file data]
