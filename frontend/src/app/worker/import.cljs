@@ -11,12 +11,14 @@
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
+   [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.import.parser :as cip]
    [app.util.json :as json]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
    [tubax.core :as tubax]))
 
 ;; Upload changes batches size
@@ -144,7 +146,7 @@
         (rx/merge-scan f seed ob))
        (rx/last)))
 
-(defn resolve-images
+(defn resolve-media
   [file-id node]
   (if (and (not (cip/close? node))
            (cip/has-image? node))
@@ -172,7 +174,7 @@
                         (assoc :name page-name))]
       (->> (rx/from nodes)
            (rx/filter cip/shape?)
-           (rx/mapcat (partial resolve-images file-id))
+           (rx/mapcat (partial resolve-media file-id))
            (rx/reduce add-shape-file (fb/add-page file page-data))
            (rx/map post-process-file)
            (rx/map fb/close-page)))
@@ -182,20 +184,98 @@
   (str dir-id "/" id ".svg"))
 
 (defn process-page [file-id zip [page-id page-name]]
-  (->> (uz/get-file zip (get-page-path (d/name file-id) page-id))
-       (rx/map (comp tubax/xml->clj :content))
-       (rx/map #(vector page-name %))))
+  (let [path (get-page-path (d/name file-id) page-id)]
+    (->> (uz/get-file zip path)
+         (rx/map (comp tubax/xml->clj :content))
+         (rx/map #(vector page-name %)))))
 
-(defn process-file
+(defn process-file-pages
   [file file-id file-desc zip]
-  (let [index (:pagesIndex file-desc)
+  (let [index (:pages-index file-desc)
         pages (->> (:pages file-desc)
                    (mapv #(vector % (get-in index [(keyword %) :name]))))]
     (->> (rx/from pages)
          (rx/mapcat #(process-page file-id zip %))
-         (merge-reduce import-page file)
-         (rx/flat-map send-changes)
-         (rx/ignore))))
+         (merge-reduce import-page file))))
+
+(defn process-library-colors
+  [file file-id file-desc zip]
+  (if (:has-colors file-desc)
+    (let [add-color
+          (fn [file [id color]]
+            (let [color (-> (d/kebab-keys color)
+                            (d/update-in-when [:gradient :type] keyword))
+                  file (fb/add-library-color file color)]
+              (assoc file [:library-mapping id] (:last-id file))))
+
+          path (str (d/name file-id) "/colors.json")]
+      (->> (uz/get-file zip path)
+           (rx/mapcat (comp json/decode :content))
+           (rx/reduce add-color file)))
+
+    (rx/of file)))
+
+(defn process-library-typographies
+  [file file-id file-desc zip]
+  (if (:has-typographies file-desc)
+    (let [add-typography
+          (fn [file [id typography]]
+            (let [typography (d/kebab-keys typography)
+                  file (fb/add-library-typography file typography)]
+              (assoc file [:library-mapping id] (:last-id file))))
+
+          path (str (d/name file-id) "/typographies.json")]
+      (->> (uz/get-file zip path)
+           (rx/mapcat (comp json/decode :content))
+           (rx/reduce add-typography file)))
+
+    (rx/of file)))
+
+(defn process-library-media
+  [file file-id file-desc zip]
+  (rx/of file)
+  (if (:has-media file-desc)
+    (let [add-media
+          (fn [file media]
+            (let [file (fb/add-library-media file (dissoc media :old-id))]
+              (assoc file [:library-mapping (:old-id media)] (:last-id file))))
+
+          path (str (d/name file-id) "/media.json")]
+
+      (->> (uz/get-file zip path)
+           (rx/mapcat (comp json/decode :content))
+           (rx/flat-map
+            (fn [[id media]]
+              (let [file-path (str (d/name file-id) "/media/" (d/name id) "." (dom/mtype->extension (:mtype media)))]
+                (->> (uz/get-file zip file-path "blob")
+                     (rx/map (fn [{blob :content}]
+                               (let [content (.slice blob 0 (.-size blob) (:mtype media))]
+                                 {:name (:name media)
+                                  :file-id (:id file)
+                                  :content content
+                                  :is-local false})))
+                     (rx/flat-map #(rp/mutation! :upload-file-media-object %))
+                     (rx/map (fn [response]
+                               (-> media
+                                   (assoc :old-id id)
+                                   (assoc :id (:id response)))))))))
+           (rx/reduce add-media file)))
+
+    (rx/of file)))
+
+(defn process-library-components
+  [file file-id file-desc zip]
+  (rx/of file))
+
+(defn process-file
+  [file file-id file-desc zip]
+  (->> (process-file-pages file file-id file-desc zip)
+       (rx/flat-map #(process-library-colors % file-id file-desc zip))
+       (rx/flat-map #(process-library-typographies % file-id file-desc zip))
+       (rx/flat-map #(process-library-media % file-id file-desc zip))
+       (rx/flat-map #(process-library-components % file-id file-desc zip))
+       (rx/flat-map send-changes)
+       (rx/ignore)))
 
 (defn process-package
   [project-id zip-file]
@@ -203,8 +283,9 @@
        (rx/flat-map (comp :files json/decode :content))
        (rx/flat-map
         (fn [[file-id file-desc]]
-          (->> (create-file project-id file-desc)
-               (rx/flat-map #(process-file % file-id file-desc zip-file)))))))
+          (let [file-desc (d/kebab-keys file-desc)]
+            (->> (create-file project-id file-desc)
+                 (rx/flat-map #(process-file % file-id file-desc zip-file))))))))
 
 (defmethod impl/handler :import-file
   [{:keys [project-id files]}]

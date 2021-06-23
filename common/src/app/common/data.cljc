@@ -13,6 +13,7 @@
    [app.common.math :as mth]
    [cljs.analyzer.api :as aapi]
    [clojure.set :as set]
+   [cuerdas.core :as str]
    #?(:cljs [cljs.reader :as r]
       :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as core]
@@ -541,12 +542,13 @@
   when it's a vector or a map"
   [mfn m]
   (let [do-map
-        (fn [[k v]]
-          (cond
-            (or (vector? v) (map? v))
-            [k (deep-mapm mfn v)]
-            :else
-            (mfn [k v])))]
+        (fn [entry]
+          (let [[k v] (mfn entry)]
+            (cond
+              (or (vector? v) (map? v))
+              [k (deep-mapm mfn v)]
+              :else
+              (mfn [k v]))))]
     (cond
       (map? m)
       (into {} (map do-map) m)
@@ -560,3 +562,9 @@
 (defn not-empty?
   [coll]
   (boolean (seq coll)))
+
+(defn kebab-keys [m]
+  (->> m
+       (deep-mapm
+        (fn [[k v]]
+          [(keyword (str/kebab (name k))) v]))))
