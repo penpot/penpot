@@ -18,7 +18,6 @@
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
-   [cuerdas.core :as str]
    [tubax.core :as tubax]))
 
 ;; Upload changes batches size
@@ -141,10 +140,17 @@
         (dissoc :id-mapping :interactions))))
 
 (defn merge-reduce [f seed ob]
-  (->> (rx/concat
-        (rx/of seed)
-        (rx/merge-scan f seed ob))
-       (rx/last)))
+  (let [current-acc (atom seed)]
+    (->> (rx/concat
+          (rx/of seed)
+          (->> ob
+               (rx/mapcat #(f @current-acc %))
+               (rx/tap #(reset! current-acc %))))
+         (rx/last))))
+
+(defn skip-last
+  [n ob]
+  (.pipe ob (.skipLast js/rxjsOperators (int n))))
 
 (defn resolve-media
   [file-id node]
@@ -233,7 +239,6 @@
 
 (defn process-library-media
   [file file-id file-desc zip]
-  (rx/of file)
   (if (:has-media file-desc)
     (let [add-media
           (fn [file media]
@@ -263,9 +268,32 @@
 
     (rx/of file)))
 
+(defn add-component [file content]
+  (let [content      (cip/find-node content :g)
+        data         (cip/parse-data :group content)
+        file         (-> file (fb/start-component data))
+        id           (-> (get-in content [:attrs :id]) (uuid/uuid))
+        component-id (:last-id file)
+        file         (assoc file [:library-mapping id] component-id)
+        nodes        (cip/node-seq content)]
+
+    (->> (rx/from nodes)
+         (rx/filter cip/shape?)
+         (rx/skip 1)
+         (skip-last 1)
+         (rx/mapcat (partial resolve-media (:id file)))
+         (rx/reduce add-shape-file file)
+         (rx/map #(fb/finish-component %)))))
+
 (defn process-library-components
   [file file-id file-desc zip]
-  (rx/of file))
+  (if (:has-components file-desc)
+    (let [path (str (d/name file-id) "/components.svg")]
+      (->> (uz/get-file zip path)
+           (rx/map (comp tubax/xml->clj :content))
+           (rx/flat-map (fn [content] (->> (cip/node-seq content) (filter #(= :symbol (:tag %))))))
+           (merge-reduce add-component file)))
+    (rx/of file)))
 
 (defn process-file
   [file file-id file-desc zip]

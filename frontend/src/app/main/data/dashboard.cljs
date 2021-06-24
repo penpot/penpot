@@ -40,7 +40,6 @@
   (s/keys :req-un [::id
                    ::name
                    ::team-id
-                   ::profile-id
                    ::created-at
                    ::modified-at
                    ::is-pinned]))

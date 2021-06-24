@@ -74,11 +74,10 @@
     (mf/fnc group-wrapper
       [{:keys [shape frame] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
-        [:& shape-container {:shape shape}
-         [:& group-shape {:frame frame
-                          :shape shape
-                          :is-child-selected? true
-                          :childs childs}]]))))
+        [:& group-shape {:frame frame
+                         :shape shape
+                         :is-child-selected? true
+                         :childs childs}]))))
 
 (defn svg-raw-wrapper-factory
   [objects]
@@ -87,7 +86,9 @@
     (mf/fnc svg-raw-wrapper
       [{:keys [shape frame] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
-        (if (and (contains? shape :svg-attrs) (map? (:content shape)))
+        (if (and (contains? shape :svg-attrs)
+                 (map? (:content shape))
+                 (not= :svg (get-in shape [:content :tag])))
           [:> shape-container {:shape shape}
            [:& svg-raw-shape {:frame frame
                               :shape shape
@@ -108,9 +109,8 @@
         (let [shape (-> (gsh/transform-shape shape)
                         (gsh/translate-to-frame frame))
               opts #js {:shape shape}
-              svg-element? (and (= :svg-raw (:type shape))
-                                (not= :svg (get-in shape [:content :tag])))]
-          (if-not svg-element?
+              svg-raw? (= :svg-raw (:type shape))]
+          (if-not svg-raw?
             [:> shape-container {:shape shape}
              (case (:type shape)
                :text    [:> text/text-shape opts]
@@ -120,7 +120,6 @@
                :circle  [:> circle/circle-shape opts]
                :frame   [:> frame-wrapper {:shape shape}]
                :group   [:> group-wrapper {:shape shape :frame frame}]
-               :svg-raw [:> svg-raw-wrapper {:shape shape :frame frame}]
                nil)]
 
             ;; Don't wrap svg elements inside a <g> otherwise some can break
@@ -271,7 +270,8 @@
     [:symbol {:id (str id)
               :viewBox vbox}
      [:title name]
-     [:& group-wrapper {:shape root :view-box vbox}]]))
+     [:> shape-container {:shape root}
+      [:& group-wrapper {:shape root :view-box vbox}]]]))
 
 (mf/defc components-sprite-svg
   {::mf/wrap-props false}

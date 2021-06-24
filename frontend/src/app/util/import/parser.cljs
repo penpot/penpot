@@ -173,6 +173,10 @@
              (map #(:attrs %))
              (reduce add-attrs node-attrs)))
 
+      (= type :frame)
+      (let [svg-node (->> node :content (d/seek #(= "frame-background" (get-in % [:attrs :class]))))]
+        (merge (add-attrs {} (:attrs svg-node)) node-attrs))
+
       (= type :svg-raw)
       (->> node :content last)
 

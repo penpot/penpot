@@ -265,7 +265,11 @@
               :id group-id
               :operations
               [{:type :set :attr :selrect :val (:selrect group')}
-               {:type :set :attr :points  :val (:points group')}]}
+               {:type :set :attr :points  :val (:points group')}
+               {:type :set :attr :x       :val (-> group' :selrect :x)}
+               {:type :set :attr :y       :val (-> group' :selrect :y)}
+               {:type :set :attr :width   :val (-> group' :selrect :width)}
+               {:type :set :attr :height  :val (-> group' :selrect :height)}]}
 
              {:add-container? true})))]
 
@@ -442,7 +446,11 @@
               :id component-id
               :operations
               [{:type :set :attr :selrect :val (:selrect component')}
-               {:type :set :attr :points  :val (:points component')}]}
+               {:type :set :attr :points  :val (:points component')}
+               {:type :set :attr :x      :val (-> component' :selrect :x)}
+               {:type :set :attr :y      :val (-> component' :selrect :y)}
+               {:type :set :attr :width  :val (-> component' :selrect :width)}
+               {:type :set :attr :height :val (-> component' :selrect :height)}]}
 
              {:add-container? true})))]
 
