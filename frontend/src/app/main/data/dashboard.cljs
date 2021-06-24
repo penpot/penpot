@@ -73,6 +73,7 @@
           (-> (assoc :current-team-id id)
               (dissoc :dashboard-files)
               (dissoc :dashboard-projects)
+              (dissoc :dashboard-shared-files)
               (dissoc :dashboard-recent-files)
               (dissoc :dashboard-team-members)
               (dissoc :dashboard-team-stats)))))
@@ -206,7 +207,10 @@
   (ptk/reify ::shared-files-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :dashboard-shared-files (d/index-by :id files)))))
+      (let [files (d/index-by :id files)]
+        (-> state
+            (assoc :dashboard-shared-files files)
+            (update :dashboard-files d/merge files))))))
 
 (defn fetch-shared-files
   []
@@ -548,6 +552,7 @@
     (update [_ state]
       (-> state
           (d/update-when :dashboard-files dissoc id)
+          (d/update-when :dashboard-shared-files dissoc id)
           (d/update-when :dashboard-recent-files dissoc id)))
 
     ptk/WatchEvent
@@ -566,6 +571,7 @@
     (update [_ state]
       (-> state
           (d/update-in-when [:dashboard-files id :name] (constantly name))
+          (d/update-in-when [:dashboard-shared-files id :name] (constantly name))
           (d/update-in-when [:dashboard-recent-files id :name] (constantly name))))
 
     ptk/WatchEvent
@@ -584,7 +590,10 @@
     (update [_ state]
       (-> state
           (d/update-in-when [:dashboard-files id :is-shared] (constantly is-shared))
-          (d/update-in-when [:dashboard-recent-files id :is-shared] (constantly is-shared))))
+          (d/update-in-when [:dashboard-recent-files id :is-shared] (constantly is-shared))
+          (cond->
+            (not is-shared)
+            (d/update-when :dashboard-shared-files dissoc id))))
 
     ptk/WatchEvent
     (watch [_ _ _]
