@@ -15,6 +15,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.pages.spec :as spec]
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
@@ -702,7 +703,9 @@
 
 ;; --- Change Shape Order (D&D Ordering)
 
-(defn relocate-shapes-changes [objects parents parent-id page-id to-index ids groups-to-delete groups-to-unmask shapes-to-detach shapes-to-reroot shapes-to-deroot]
+(defn relocate-shapes-changes [objects parents parent-id page-id to-index ids
+                               groups-to-delete groups-to-unmask shapes-to-detach
+                               shapes-to-reroot shapes-to-deroot shapes-to-unconstraint]
   (let [;; Changes to the shapes that are being move
         r-mov-change
         [{:type :mov-objects
@@ -835,6 +838,43 @@
                               :val nil}]})
              shapes-to-reroot)
 
+
+        ;; Changes resetting constraints
+
+        r-unconstraint-change
+        (map (fn [id]
+               (let [obj      (get objects id)
+                     parent   (get objects parent-id)
+                     frame-id (if (= (:type parent) :frame)
+                                (:id parent)
+                                (:frame-id parent))]
+                 {:type :mod-obj
+                  :page-id page-id
+                  :id id
+                  :operations [{:type :set
+                                :attr :constraints-h
+                                :val (spec/default-constraints-h
+                                       (assoc obj :parent-id parent-id :frame-id frame-id))}
+                               {:type :set
+                                :attr :constraints-v
+                                :val (spec/default-constraints-v
+                                       (assoc obj :parent-id parent-id :frame-id frame-id))}]}))
+             shapes-to-unconstraint)
+
+        u-unconstraint-change
+        (map (fn [id]
+               (let [obj (get objects id)]
+                 {:type :mod-obj
+                  :page-id page-id
+                  :id id
+                  :operations [{:type :set
+                                :attr :constraints-h
+                                :val (:constraints-h obj)}
+                               {:type :set
+                                :attr :constraints-v
+                                :val (:constraints-v obj)}]}))
+             shapes-to-unconstraint)
+
         r-reg-change
         [{:type :reg-objects
           :page-id page-id
@@ -852,6 +892,7 @@
                            r-detach-change
                            r-deroot-change
                            r-reroot-change
+                           r-unconstraint-change
                            r-reg-change)
 
         uchanges (d/concat []
@@ -861,6 +902,7 @@
                            u-detach-change
                            u-mask-change
                            u-mov-change
+                           u-unconstraint-change
                            u-reg-change)]
     [rchanges uchanges]))
 
@@ -971,9 +1013,9 @@
                                      groups-to-unmask
                                      shapes-to-detach
                                      shapes-to-reroot
-                                     shapes-to-deroot)
+                                     shapes-to-deroot
+                                     ids)]
 
-            ]
         (rx/of (dch/commit-changes {:redo-changes rchanges
                                     :undo-changes uchanges
                                     :origin it})
