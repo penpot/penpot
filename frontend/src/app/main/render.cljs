@@ -30,16 +30,16 @@
     []))
 
 (defn populate-images-cache
-  [data]
-  (let [images (->> (:objects data)
+  [objects]
+  (let [images (->> objects
                     (vals)
                     (mapcat get-image-data))]
     (->> (rx/from images)
          (rx/map #(cfg/resolve-file-media %))
          (rx/flat-map http/fetch-data-uri))))
 
-(defn populate-fonts-cache [data]
-  (let [texts (->> (:objects data)
+(defn populate-fonts-cache [objects]
+  (let [texts (->> objects
                    (vals)
                    (filterv text?)
                    (mapv :content)) ]
@@ -56,8 +56,8 @@
   [data]
   (rx/concat
    (->> (rx/merge
-         (populate-images-cache data)
-         (populate-fonts-cache data))
+         (populate-images-cache (:objects data))
+         (populate-fonts-cache (:objects data)))
         (rx/ignore))
 
    (->> (rx/of data)
@@ -68,14 +68,19 @@
 
 (defn render-components
   [data]
-  (rx/concat
-   (->> (rx/merge
-         (populate-images-cache data)
-         (populate-fonts-cache data))
-        (rx/ignore))
+  (let [;; Join all components objects into a single map
+        objects (->> (:components data)
+                     (vals)
+                     (map :objects)
+                     (reduce conj))]
+    (rx/concat
+     (->> (rx/merge
+           (populate-images-cache objects)
+           (populate-fonts-cache objects))
+          (rx/ignore))
 
-   (->> (rx/of data)
-        (rx/map
-         (fn [data]
-           (let [elem (mf/element exports/components-sprite-svg #js {:data data :embed? true})]
-             (rds/renderToStaticMarkup elem)))))))
+     (->> (rx/of data)
+          (rx/map
+           (fn [data]
+             (let [elem (mf/element exports/components-sprite-svg #js {:data data :embed? true})]
+               (rds/renderToStaticMarkup elem))))))))
