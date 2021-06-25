@@ -70,7 +70,9 @@
            (fn [value]
              (when (or (not valid?) (valid? value))
                (do (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index attr] value)))
-                   (when update-ref (dom/set-value! (mf/ref-val update-ref) value)))))))
+                   (let [update-node (and update-ref (mf/ref-val update-ref))]
+                     (when update-node
+                       (dom/set-value! update-node value))))))))
 
         update-color
         (fn [index]
