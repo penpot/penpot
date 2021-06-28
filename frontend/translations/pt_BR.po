@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-06-21 03:32+0000\n"
+"PO-Revision-Date: 2021-06-29 11:34+0000\n"
 "Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.7\n"
+"X-Generator: Weblate 4.7.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1488,3 +1488,197 @@ msgstr "Exportar arquivo"
 
 msgid "dashboard.export-multi"
 msgstr "Exportar %s arquivos"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vbottom"
+msgstr "Alinhar à base"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.letter-spacing"
+msgstr "Espaçamento entre letras"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-fixed"
+msgstr "Fixado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-auto-width"
+msgstr "Largura automática"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-auto-height"
+msgstr "Altura automática"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.google"
+msgstr "Google"
+
+msgid "workspace.options.text-options.decoration"
+msgstr "Decoração"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-top"
+msgstr "Alinhar ao topo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-right"
+msgstr "Alinhar à direita"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-middle"
+msgstr "Alinhar no meio"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-left"
+msgstr "Alinhar à esquerda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-justify"
+msgstr "Justificar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-center"
+msgstr "Alinhar ao centro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.multiple"
+msgstr "Sombras da seleção"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.group"
+msgstr "Sombra do grupo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.selection-fill"
+msgstr "Preenchimento da seleção"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.select-artboard"
+msgstr "Selecionar prancheta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.select-a-shape"
+msgstr ""
+"Selecione uma forma, prancheta ou grupo para arrastar uma conexão para outra "
+"prancheta."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title.group"
+msgstr "Camadas do grupo"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.edit"
+msgstr "Editar"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.duplicate"
+msgstr "Duplicar"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.delete"
+msgstr "Deletar"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group-hint"
+msgstr ""
+"Seus itens serão nomeados automaticamente como \"nome do grupo / nome do "
+"item\""
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group"
+msgstr "Criar grupo"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.components"
+msgstr "Componentes"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.colors"
+msgstr "Cores"
+
+msgid "workspace.assets.box-filter-graphics"
+msgstr "Gráficos"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vtop"
+msgstr "Alinhar ao topo"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vdistribute"
+msgstr "Distribuir espaçamento vertical"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hright"
+msgstr "Alinhar à direita"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hleft"
+msgstr "Alinhar à esquerda"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hdistribute"
+msgstr "Distribuir espaçamento horizontal"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vcenter"
+msgstr "Alinhar no centro verticalmente"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hcenter"
+msgstr "Alinhar no centro horizontalmente"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.sitemap"
+msgstr "Mapa do site"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.show-interactions-on-click"
+msgstr "Mostrar interações ao clicar"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.show-interactions"
+msgstr "Mostrar interações"
+
+#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.title"
+msgstr "Compartilhar protótipo"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.subtitle"
+msgstr "Qualquer pessoa com o link terá acesso"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.remove-link"
+msgstr "Remover link"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.placeholder"
+msgstr "O link de compartilhamento aparecerá aqui"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.create-link"
+msgstr "Criar link"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.copy-link"
+msgstr "Copiar link"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Interações"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.fullscreen"
+msgstr "Tela cheia"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.edit-file"
+msgstr "Editar arquivo"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.dont-show-interactions"
+msgstr "Não mostrar interações"
+
+#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+msgid "viewer.frame-not-found"
+msgstr "Prancheta não encontrada."
