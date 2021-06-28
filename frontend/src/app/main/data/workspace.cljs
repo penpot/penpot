@@ -1537,6 +1537,15 @@
                 (assoc change :index (get map-ids (:old-id change)))
                 change)))
 
+          ;; Check if the shape is an instance whose master is defined in a
+          ;; library that is not linked to the current file
+          (foreign-instance? [shape objects state]
+            (let [root         (cph/get-root-shape shape objects)
+                  root-file-id (:component-file root)]
+              (and (some? root)
+                   (not= root-file-id (:current-file-id state))
+                   (nil? (get-in state [:workspace-libraries root-file-id])))))
+
           ;; Procceed with the standard shape paste procediment.
           (do-paste [it state mouse-pos media]
             (let [media-idx     (d/index-by :prev-id media)
@@ -1551,8 +1560,8 @@
                                                (assoc :parent-id parent-id)
 
                                                (cond->
-                                                   ;; Pasting from another file, we deattach components
-                                                   (not= (:current-file-id state) (:file-id data))
+                                                  ;; if foreign instance, detach the shape
+                                                 (foreign-instance? shape objects state)
                                                  (dissoc :component-id
                                                          :component-file
                                                          :component-root?
