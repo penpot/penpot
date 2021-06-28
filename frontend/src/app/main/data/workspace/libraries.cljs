@@ -27,7 +27,7 @@
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-;; Change this to :info :debug or :trace to debug this module
+;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
 
 (defn- log-changes
@@ -450,57 +450,13 @@
   (ptk/reify ::detach-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
-            shapes (cp/get-object-with-children id objects)
+      (let [local-library (dwlh/get-local-file state)
+            container (cp/get-container (get state :current-page-id)
+                                        :page
+                                        local-library)
 
-            rchanges (mapv (fn [obj]
-                             {:type :mod-obj
-                              :page-id page-id
-                              :id (:id obj)
-                              :operations [{:type :set
-                                            :attr :component-id
-                                            :val nil}
-                                           {:type :set
-                                            :attr :component-file
-                                            :val nil}
-                                           {:type :set
-                                            :attr :component-root?
-                                            :val nil}
-                                           {:type :set
-                                            :attr :remote-synced?
-                                            :val nil}
-                                           {:type :set
-                                            :attr :shape-ref
-                                            :val nil}
-                                           {:type :set
-                                            :attr :touched
-                                            :val nil}]})
-                           shapes)
-
-            uchanges (mapv (fn [obj]
-                             {:type :mod-obj
-                              :page-id page-id
-                              :id (:id obj)
-                              :operations [{:type :set
-                                            :attr :component-id
-                                            :val (:component-id obj)}
-                                           {:type :set
-                                            :attr :component-file
-                                            :val (:component-file obj)}
-                                           {:type :set
-                                            :attr :component-root?
-                                            :val (:component-root? obj)}
-                                           {:type :set
-                                            :attr :remote-synced?
-                                            :val (:remote-synced? obj)}
-                                           {:type :set
-                                            :attr :shape-ref
-                                            :val (:shape-ref obj)}
-                                           {:type :set
-                                            :attr :touched
-                                            :val (:touched obj)}]})
-                           shapes)]
+            [rchanges uchanges]
+            (dwlh/generate-detach-instance id container)]
 
         (rx/of (dch/commit-changes {:redo-changes rchanges
                                     :undo-changes uchanges
