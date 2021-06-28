@@ -17,7 +17,7 @@
    [cljs.spec.alpha :as s]
    [clojure.set :as set]))
 
-;; Change this to :info :debug or :trace to debug this module
+;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
 
 (defonce empty-changes [[] []])
@@ -200,6 +200,63 @@
                      (get component :objects)
                      identity)))
 
+(defn generate-detach-instance
+  "Generate changes to remove the links between a shape and all its children
+  with a component."
+  [shape-id container]
+  (let [shapes (cp/get-object-with-children shape-id (:objects container))
+        rchanges (mapv (fn [obj]
+                         (make-change
+                           container
+                           {:type :mod-obj
+                            :id (:id obj)
+                            :operations [{:type :set
+                                          :attr :component-id
+                                          :val nil}
+                                         {:type :set
+                                          :attr :component-file
+                                          :val nil}
+                                         {:type :set
+                                          :attr :component-root?
+                                          :val nil}
+                                         {:type :set
+                                          :attr :remote-synced?
+                                          :val nil}
+                                         {:type :set
+                                          :attr :shape-ref
+                                          :val nil}
+                                         {:type :set
+                                          :attr :touched
+                                          :val nil}]}))
+                       shapes)
+
+        uchanges (mapv (fn [obj]
+                         (make-change
+                           container
+                           {:type :mod-obj
+                            :id (:id obj)
+                            :operations [{:type :set
+                                          :attr :component-id
+                                          :val (:component-id obj)}
+                                         {:type :set
+                                          :attr :component-file
+                                          :val (:component-file obj)}
+                                         {:type :set
+                                          :attr :component-root?
+                                          :val (:component-root? obj)}
+                                         {:type :set
+                                          :attr :remote-synced?
+                                          :val (:remote-synced? obj)}
+                                         {:type :set
+                                          :attr :shape-ref
+                                          :val (:shape-ref obj)}
+                                         {:type :set
+                                          :attr :touched
+                                          :val (:touched obj)}]}))
+                       shapes)]
+
+    [rchanges uchanges]))
+
 
 ;; ---- General library synchronization functions ----
 
@@ -216,26 +273,20 @@
             :file (pretty-file file-id state)
             :library (pretty-file library-id state))
 
-  (let [file          (get-file state file-id)
-        library       (get-file state library-id)
-        library-items (get library asset-type)]
-
-    (if (empty? library-items)
-      empty-changes
-
-      (loop [pages (vals (get file :pages-index))
-             rchanges []
-             uchanges []]
-        (if-let [page (first pages)]
-          (let [[page-rchanges page-uchanges]
-                (generate-sync-container asset-type
-                                         library-id
-                                         state
-                                         (cp/make-container page :page))]
-            (recur (next pages)
-                   (d/concat rchanges page-rchanges)
-                   (d/concat uchanges page-uchanges)))
-          [rchanges uchanges])))))
+  (let [file (get-file state file-id)]
+    (loop [pages (vals (get file :pages-index))
+           rchanges []
+           uchanges []]
+      (if-let [page (first pages)]
+        (let [[page-rchanges page-uchanges]
+              (generate-sync-container asset-type
+                                       library-id
+                                       state
+                                       (cp/make-container page :page))]
+          (recur (next pages)
+                 (d/concat rchanges page-rchanges)
+                 (d/concat uchanges page-uchanges)))
+        [rchanges uchanges]))))
 
 (defn generate-sync-library
   "Generate changes to synchronize all shapes in all components of the
@@ -248,27 +299,21 @@
             :file (pretty-file file-id state)
             :library (pretty-file library-id state))
 
-  (let [file          (get-file state file-id)
-        library       (get-file state library-id)
-        library-items (get library asset-type)]
-
-    (if (empty? library-items)
-      empty-changes
-
-      (loop [local-components (vals (get file :components))
-             rchanges []
-             uchanges []]
-        (if-let [local-component (first local-components)]
-          (let [[comp-rchanges comp-uchanges]
-                (generate-sync-container asset-type
-                                         library-id
-                                         state
-                                         (cp/make-container local-component
-                                                            :component))]
-            (recur (next local-components)
-                   (d/concat rchanges comp-rchanges)
-                   (d/concat uchanges comp-uchanges)))
-          [rchanges uchanges])))))
+  (let [file (get-file state file-id)]
+    (loop [local-components (vals (get file :components))
+           rchanges []
+           uchanges []]
+      (if-let [local-component (first local-components)]
+        (let [[comp-rchanges comp-uchanges]
+              (generate-sync-container asset-type
+                                       library-id
+                                       state
+                                       (cp/make-container local-component
+                                                          :component))]
+          (recur (next local-components)
+                 (d/concat rchanges comp-rchanges)
+                 (d/concat uchanges comp-uchanges)))
+        [rchanges uchanges]))))
 
 (defn- generate-sync-container
   "Generate changes to synchronize all shapes in a particular container (a page
@@ -568,7 +613,9 @@
                                             root-main
                                             reset?
                                             initial-root?)
-      empty-changes)))
+      ; If the component is not found, because the master component has been
+      ; deleted or the library unlinked, detach the instance.
+      (generate-detach-instance shape-id container))))
 
 (defn- generate-sync-shape-direct-recursive
   [container shape-inst component shape-main root-inst root-main reset? initial-root?]
