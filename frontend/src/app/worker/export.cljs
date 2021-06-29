@@ -18,6 +18,12 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]))
 
+(defn rx-expand
+  "Recursively projects each source value to an Observable
+  which is merged in the output Observable."
+  [f ob]
+  (.pipe ob (.expand ^js js/rxjsOperators f)))
+
 (defn create-manifest
   "Creates a manifest entry for the given files"
   [team-id file-id files]
@@ -40,6 +46,7 @@
                           :shared          is-shared
                           :pages           pages
                           :pagesIndex      index
+                          :libraries       (->> (:libraries file) (into #{}) (mapv str))
                           :hasComponents   (d/not-empty? (get-in file [:data :components]))
                           :hasMedia        (d/not-empty? (get-in file [:data :media]))
                           :hasColors       (d/not-empty? (get-in file [:data :colors]))
@@ -142,16 +149,49 @@
   (->> (r/render-components (:data file))
        (rx/map #(vector (str (:id file) "/components.svg") %))))
 
+(defn fetch-file-with-libraries [file-id]
+  (->> (rx/zip (rp/query :file {:id file-id})
+               (rp/query :file-libraries {:file-id file-id}))
+       (rx/map
+        (fn [[file file-libraries]]
+          (let [libraries-ids (->> file-libraries (map :id) (filterv #(not= (:id file) %)))]
+            (-> file
+                (assoc :libraries libraries-ids)))))))
+
+(defn collect-files
+  [file-id]
+
+  (letfn [(fetch-dependencies [[files pending]]
+            (if (empty? pending)
+              ;; When not pending, we finish the generation
+              (rx/empty)
+
+              ;; Still pending files, fetch the next one
+              (let [next    (peek pending)
+                    pending (pop pending)]
+                (if (contains? files next)
+                  ;; The file is already in the result
+                  (rx/of [files pending])
+
+                  (->> (fetch-file-with-libraries next)
+                       (rx/map
+                        (fn [file]
+                          [(-> files
+                               (assoc (:id file) file))
+                           (as-> pending $
+                             (reduce conj $ (:libraries file)))])))))))]
+    (let [files {}
+          pending [file-id]]
+      (->> (rx/of [files pending])
+           (rx-expand fetch-dependencies)
+           (rx/last)
+           (rx/map first)))))
+
 (defn export-file
   [team-id file-id]
 
-  (let [files-stream
-        (->> (rx/merge (rp/query :file {:id file-id})
-                       (->> (rp/query :file-libraries {:file-id file-id})
-                            (rx/flat-map identity)
-                            (rx/map #(assoc % :is-shared true))))
-             (rx/reduce #(assoc %1 (:id %2) %2) {})
-             (rx/share))
+  (let [files-stream (->> (collect-files file-id)
+                          (rx/share))
 
         manifest-stream
         (->> files-stream

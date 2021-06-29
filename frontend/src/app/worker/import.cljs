@@ -5,10 +5,12 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.worker.import
+  (:refer-clojure :exclude [resolve])
   (:require
    [app.common.data :as d]
    [app.common.file-builder :as fb]
    [app.common.pages :as cp]
+   [app.common.text :as ct]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.util.dom :as dom]
@@ -18,22 +20,109 @@
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
    [tubax.core :as tubax]))
+
+;;; TODO: Move to funcool/beicon
+
+(defn rx-merge-reduce [f seed ob]
+  (let [current-acc (atom seed)]
+    (->> (rx/concat
+          (rx/of seed)
+          (->> ob
+               (rx/mapcat #(f @current-acc %))
+               (rx/tap #(reset! current-acc %))))
+         (rx/last))))
+
+(defn rx-skip-last
+  [n ob]
+  (.pipe ob (.skipLast js/rxjsOperators (int n))))
 
 ;; Upload changes batches size
 (def change-batch-size 100)
 
+(defn get-file
+  "Resolves the file inside the context given its id and the data"
+  ([context type]
+   (get-file context type nil nil))
+
+  ([context type id]
+   (get-file context type id nil))
+
+  ([context type id media]
+   (let [file-id (:file-id context)
+         path (case type
+                :manifest     (str "manifest.json")
+                :page         (str file-id "/" id ".svg")
+                :colors       (str file-id "/colors.json")
+                :typographies (str file-id "/typographies.json")
+                :media-list   (str file-id "/media.json")
+                :media        (let [ext (dom/mtype->extension (:mtype media))]
+                                (str file-id "/media/" id "." ext))
+                :components   (str file-id "/components.svg"))
+
+         svg?    (str/ends-with? path "svg")
+         json?   (str/ends-with? path "json")
+         other?  (not (or svg? json?))
+
+         file-type (if other? "blob" "text")]
+
+     (cond->> (uz/get-file (:zip context) path file-type)
+       svg?
+       (rx/map (comp tubax/xml->clj :content))
+
+       json?
+       (rx/map (comp json/decode :content))
+
+       other?
+       (rx/map :content)))))
+
+(defn resolve-factory
+  "Creates a wrapper around the atom to remap ids to new ids and keep
+  their relationship so they ids are coherent."
+  []
+  (let [id-mapping-atom (atom {})
+        resolve
+        (fn [id-mapping id]
+          (assert (uuid? id))
+          (get id-mapping id))
+
+        set-id
+        (fn [id-mapping id]
+          (assert (uuid? id))
+          (cond-> id-mapping
+            (nil? (resolve id-mapping id))
+            (assoc id (uuid/next))))]
+
+    (fn [id]
+      (swap! id-mapping-atom set-id id)
+      (resolve @id-mapping-atom id))))
+
 (defn create-file
   "Create a new file on the back-end"
-  [project-id file-desc]
-  (let [file-id (uuid/next)]
+  [context file-id]
+  (let [resolve (:resolve context)
+        file-id (resolve file-id)]
     (rp/mutation
      :create-temp-file
      {:id file-id
-      :name (:name file-desc)
-      :is-shared (:shared file-desc)
-      :project-id project-id
+      :name (:name context)
+      :is-shared (:shared context)
+      :project-id (:project-id context)
       :data (-> cp/empty-file-data (assoc :id file-id))})))
+
+(defn persist-file [file]
+  (rp/mutation :persist-temp-file {:id (:id file)}))
+
+(defn link-file-libraries
+  "Create a new file on the back-end"
+  [context file-id]
+  (let [resolve (:resolve context)
+        file-id (resolve file-id)
+        libraries (->> context :libraries (mapv resolve))]
+    (->> (rx/from libraries)
+         (rx/map #(hash-map :file-id file-id :library-id %))
+         (rx/flat-map (partial rp/mutation :link-file-to-library)))))
 
 (defn send-changes
   "Creates batches of changes to be sent to the backend"
@@ -58,7 +147,7 @@
           (rx/map first)
           (rx/tap #(reset! revn (:revn %))))
 
-     (rp/mutation :persist-temp-file {:id (:id file)}))))
+     (rp/mutation :persist-temp-file {:id file-id}))))
 
 (defn upload-media-files
   "Upload a image to the backend and returns its id"
@@ -76,8 +165,34 @@
            :is-local true}))
        (rx/flat-map #(rp/mutation! :upload-file-media-object %))))
 
-(defn add-shape-file
-  [file node]
+(defn resolve-text-content [node context]
+  (let [resolve (:resolve context)]
+    (->> node
+         (ct/transform-nodes
+          (fn [item]
+            (-> item
+                (d/update-when :fill-color-ref-id resolve)
+                (d/update-when :fill-color-ref-file resolve)
+                (d/update-when :typography-ref-id resolve)
+                (d/update-when :typography-ref-file resolve)))))))
+
+(defn resolve-data-ids
+  [data type context]
+  (let [resolve (:resolve context)]
+    (-> data
+        (d/update-when :fill-color-ref-id resolve)
+        (d/update-when :fill-color-ref-file resolve)
+        (d/update-when :stroke-color-ref-id resolve)
+        (d/update-when :stroke-color-ref-file resolve)
+        (d/update-when :component-id resolve)
+        (d/update-when :component-file resolve)
+        (d/update-when :shape-ref resolve)
+
+        (cond-> (= type :text)
+          (d/update-when :content resolve-text-content context)))))
+
+(defn process-import-node
+  [context file node]
 
   (let [type         (cip/get-type node)
         close?       (cip/close? node)]
@@ -88,18 +203,23 @@
         :svg-raw  (fb/close-svg-raw file)
         #_default file)
 
-      (let [data         (cip/parse-data type node)
+      (let [resolve      (:resolve context)
             old-id       (cip/get-id node)
-            interactions (cip/parse-interactions node)
+            interactions (->> (cip/parse-interactions node)
+                              (mapv #(update % :destination resolve)))
+
+            data         (-> (cip/parse-data type node)
+                             (resolve-data-ids type context)
+                             (assoc :id (resolve old-id)))
 
             file (case type
-                   :frame    (fb/add-artboard file data)
-                   :group    (fb/add-group file data)
-                   :rect     (fb/create-rect file data)
-                   :circle   (fb/create-circle file data)
-                   :path     (fb/create-path file data)
-                   :text     (fb/create-text file data)
-                   :image    (fb/create-image file data)
+                   :frame    (fb/add-artboard   file data)
+                   :group    (fb/add-group      file data)
+                   :rect     (fb/create-rect    file data)
+                   :circle   (fb/create-circle  file data)
+                   :path     (fb/create-path    file data)
+                   :text     (fb/create-text    file data)
+                   :image    (fb/create-image   file data)
                    :svg-raw  (fb/create-svg-raw file data)
                    #_default file)]
 
@@ -108,49 +228,24 @@
         ;; We store this data for post-processing after every shape has been
         ;; added
         (cond-> file
-          (some? (:last-id file))
-          (assoc-in [:id-mapping old-id] (:last-id file))
-
           (d/not-empty? interactions)
-          (assoc-in [:interactions old-id] interactions))))))
+          (assoc-in [:interactions (:id data)] interactions))))))
 
-(defn post-process-file
+(defn setup-interactions
   [file]
 
-  (letfn [(add-interaction
-            [id file {:keys [action-type event-type destination] :as interaction}]
-            (fb/add-interaction file action-type event-type id destination))
-
-          (add-interactions
-            [file [old-id interactions]]
-            (let [id (get-in file [:id-mapping old-id])]
-              (->> interactions
-                   (mapv (fn [interaction]
-                           (let [id (get-in file [:id-mapping (:destination interaction)])]
-                             (assoc interaction :destination id))))
-                   (reduce
-                    (partial add-interaction id) file))))
+  (letfn [(add-interactions
+            [file [id interactions]]
+            (->> interactions
+                 (reduce #(fb/add-interaction %1 id %2) file)))
 
           (process-interactions
             [file]
-            (reduce add-interactions file (:interactions file)))]
+            (let [interactions (:interactions file)
+                  file (dissoc file :interactions)]
+              (->> interactions (reduce add-interactions file))))]
 
-    (-> file
-        (process-interactions)
-        (dissoc :id-mapping :interactions))))
-
-(defn merge-reduce [f seed ob]
-  (let [current-acc (atom seed)]
-    (->> (rx/concat
-          (rx/of seed)
-          (->> ob
-               (rx/mapcat #(f @current-acc %))
-               (rx/tap #(reset! current-acc %))))
-         (rx/last))))
-
-(defn skip-last
-  [n ob]
-  (.pipe ob (.skipLast js/rxjsOperators (int n))))
+    (-> file process-interactions)))
 
 (defn resolve-media
   [file-id node]
@@ -172,155 +267,189 @@
          (rx/observe-on :async))))
 
 (defn import-page
-  [file [page-name content]]
-  (if (cip/valid? content)
-    (let [nodes (->> content cip/node-seq)
-          file-id (:id file)
-          page-data (-> (cip/parse-page-data content)
-                        (assoc :name page-name))]
-      (->> (rx/from nodes)
-           (rx/filter cip/shape?)
-           (rx/mapcat (partial resolve-media file-id))
-           (rx/reduce add-shape-file (fb/add-page file page-data))
-           (rx/map post-process-file)
-           (rx/map fb/close-page)))
-    (rx/empty)))
+  [context file [page-id page-name content]]
+  (let [nodes (->> content cip/node-seq)
+        file-id (:id file)
+        resolve (:resolve context)
+        page-data (-> (cip/parse-page-data content)
+                      (assoc :name page-name)
+                      (assoc :id (resolve page-id)))
+        file (-> file (fb/add-page page-data))]
+    (->> (rx/from nodes)
+         (rx/filter cip/shape?)
+         (rx/mapcat (partial resolve-media file-id))
+         (rx/reduce (partial process-import-node context) file)
+         (rx/map (comp fb/close-page setup-interactions)))))
 
-(defn get-page-path [dir-id id]
-  (str dir-id "/" id ".svg"))
+(defn import-component [context file node]
+  (let [resolve      (:resolve context)
+        content      (cip/find-node node :g)
+        file-id      (:id file)
+        old-id       (cip/get-id node)
+        id           (resolve old-id)
+        data         (-> (cip/parse-data :group content)
+                         (assoc :id id))
 
-(defn process-page [file-id zip [page-id page-name]]
-  (let [path (get-page-path (d/name file-id) page-id)]
-    (->> (uz/get-file zip path)
-         (rx/map (comp tubax/xml->clj :content))
-         (rx/map #(vector page-name %)))))
+        file         (-> file (fb/start-component data))
+        children      (cip/node-seq node)]
 
-(defn process-file-pages
-  [file file-id file-desc zip]
-  (let [index (:pages-index file-desc)
-        pages (->> (:pages file-desc)
-                   (mapv #(vector % (get-in index [(keyword %) :name]))))]
+    (->> (rx/from children)
+         (rx/filter cip/shape?)
+         (rx/skip 1)
+         (rx-skip-last 1)
+         (rx/mapcat (partial resolve-media file-id))
+         (rx/reduce (partial process-import-node context) file)
+         (rx/map fb/finish-component))))
+
+(defn process-pages
+  [context file]
+  (let [index (:pages-index context)
+        get-page-data
+        (fn [page-id]
+          [page-id (get-in index [page-id :name])])
+
+        pages (->> (:pages context) (mapv get-page-data))]
+
     (->> (rx/from pages)
-         (rx/mapcat #(process-page file-id zip %))
-         (merge-reduce import-page file))))
+         (rx/mapcat
+          (fn [[page-id page-name]]
+            (->> (get-file context :page page-id)
+                 (rx/map (fn [page-data] [page-id page-name page-data])))))
+         (rx-merge-reduce (partial import-page context) file))))
 
 (defn process-library-colors
-  [file file-id file-desc zip]
-  (if (:has-colors file-desc)
-    (let [add-color
+  [context file]
+  (if (:has-colors context)
+    (let [resolve (:resolve context)
+          add-color
           (fn [file [id color]]
-            (let [color (-> (d/kebab-keys color)
-                            (d/update-in-when [:gradient :type] keyword))
-                  file (fb/add-library-color file color)]
-              (assoc file [:library-mapping id] (:last-id file))))
-
-          path (str (d/name file-id) "/colors.json")]
-      (->> (uz/get-file zip path)
-           (rx/mapcat (comp json/decode :content))
+            (let [color (-> color
+                            (d/update-in-when [:gradient :type] keyword)
+                            (assoc :id (resolve id)))]
+              (fb/add-library-color file color)))]
+      (->> (get-file context :colors)
+           (rx/flat-map (comp d/kebab-keys cip/string->uuid))
            (rx/reduce add-color file)))
 
     (rx/of file)))
 
 (defn process-library-typographies
-  [file file-id file-desc zip]
-  (if (:has-typographies file-desc)
-    (let [add-typography
-          (fn [file [id typography]]
-            (let [typography (d/kebab-keys typography)
-                  file (fb/add-library-typography file typography)]
-              (assoc file [:library-mapping id] (:last-id file))))
-
-          path (str (d/name file-id) "/typographies.json")]
-      (->> (uz/get-file zip path)
-           (rx/mapcat (comp json/decode :content))
-           (rx/reduce add-typography file)))
+  [context file]
+  (if (:has-typographies context)
+    (let [resolve (:resolve context)]
+      (->> (get-file context :typographies)
+           (rx/flat-map (comp d/kebab-keys cip/string->uuid))
+           (rx/map (fn [[id typography]]
+                     (-> typography
+                         (d/kebab-keys)
+                         (assoc :id (resolve id)))))
+           (rx/reduce fb/add-library-typography file)))
 
     (rx/of file)))
 
 (defn process-library-media
-  [file file-id file-desc zip]
-  (if (:has-media file-desc)
-    (let [add-media
-          (fn [file media]
-            (let [file (fb/add-library-media file (dissoc media :old-id))]
-              (assoc file [:library-mapping (:old-id media)] (:last-id file))))
-
-          path (str (d/name file-id) "/media.json")]
-
-      (->> (uz/get-file zip path)
-           (rx/mapcat (comp json/decode :content))
+  [context file]
+  (if (:has-media context)
+    (let [resolve (:resolve context)]
+      (->> (get-file context :media-list)
+           (rx/flat-map (comp d/kebab-keys cip/string->uuid))
            (rx/flat-map
             (fn [[id media]]
-              (let [file-path (str (d/name file-id) "/media/" (d/name id) "." (dom/mtype->extension (:mtype media)))]
-                (->> (uz/get-file zip file-path "blob")
-                     (rx/map (fn [{blob :content}]
+              (let [media (assoc media :id (resolve id))]
+                (->> (get-file context :media id media)
+                     (rx/map (fn [blob]
                                (let [content (.slice blob 0 (.-size blob) (:mtype media))]
                                  {:name (:name media)
+                                  :id (:id media)
                                   :file-id (:id file)
                                   :content content
                                   :is-local false})))
                      (rx/flat-map #(rp/mutation! :upload-file-media-object %))
-                     (rx/map (fn [response]
-                               (-> media
-                                   (assoc :old-id id)
-                                   (assoc :id (:id response)))))))))
-           (rx/reduce add-media file)))
+                     (rx/map (constantly media))))))
+           (rx/reduce fb/add-library-media file)))
 
     (rx/of file)))
 
-(defn add-component [file content]
-  (let [content      (cip/find-node content :g)
-        data         (cip/parse-data :group content)
-        file         (-> file (fb/start-component data))
-        id           (-> (get-in content [:attrs :id]) (uuid/uuid))
-        component-id (:last-id file)
-        file         (assoc file [:library-mapping id] component-id)
-        nodes        (cip/node-seq content)]
-
-    (->> (rx/from nodes)
-         (rx/filter cip/shape?)
-         (rx/skip 1)
-         (skip-last 1)
-         (rx/mapcat (partial resolve-media (:id file)))
-         (rx/reduce add-shape-file file)
-         (rx/map #(fb/finish-component %)))))
-
 (defn process-library-components
-  [file file-id file-desc zip]
-  (if (:has-components file-desc)
-    (let [path (str (d/name file-id) "/components.svg")]
-      (->> (uz/get-file zip path)
-           (rx/map (comp tubax/xml->clj :content))
-           (rx/flat-map (fn [content] (->> (cip/node-seq content) (filter #(= :symbol (:tag %))))))
-           (merge-reduce add-component file)))
+  [context file]
+  (if (:has-components context)
+    (let [split-components
+          (fn [content] (->> (cip/node-seq content)
+                             (filter #(= :symbol (:tag %)))))]
+
+      (->> (get-file context :components)
+           (rx/flat-map split-components)
+           (rx-merge-reduce (partial import-component context) file)))
     (rx/of file)))
 
 (defn process-file
-  [file file-id file-desc zip]
-  (->> (process-file-pages file file-id file-desc zip)
-       (rx/flat-map #(process-library-colors % file-id file-desc zip))
-       (rx/flat-map #(process-library-typographies % file-id file-desc zip))
-       (rx/flat-map #(process-library-media % file-id file-desc zip))
-       (rx/flat-map #(process-library-components % file-id file-desc zip))
+  [context file]
+
+  (->> (rx/of file)
+       (rx/flat-map (partial process-pages context))
+       (rx/flat-map (partial process-library-colors context))
+       (rx/flat-map (partial process-library-typographies context))
+       (rx/flat-map (partial process-library-media context))
+       (rx/flat-map (partial process-library-components context))
        (rx/flat-map send-changes)
        (rx/ignore)))
 
-(defn process-package
-  [project-id zip-file]
-  (->> (uz/get-file zip-file "manifest.json")
-       (rx/flat-map (comp :files json/decode :content))
+(defn create-files [context manifest]
+  (->> manifest :files rx/from
        (rx/flat-map
         (fn [[file-id file-desc]]
-          (let [file-desc (d/kebab-keys file-desc)]
-            (->> (create-file project-id file-desc)
-                 (rx/flat-map #(process-file % file-id file-desc zip-file))))))))
+          (create-file (merge context file-desc) file-id)))
+       (rx/reduce #(assoc %1 (:id %2) %2) {})))
+
+(defn link-libraries [context manifest]
+  (->> manifest :files rx/from
+       (rx/flat-map
+        (fn [[file-id file-desc]]
+          (link-file-libraries (merge context file-desc) file-id)))))
+
+(defn process-files [context manifest files]
+  (->> manifest :files rx/from
+       (rx/flat-map
+        (fn [[file-id file-desc]]
+          (let [resolve (:resolve context)
+                context (-> context
+                            (merge file-desc)
+                            (assoc :file-id file-id))
+                file (get files (resolve file-id))]
+            (process-file context file))))))
+
+(defn process-package
+  [context]
+  (->> (get-file context :manifest)
+       (rx/map (comp d/kebab-keys cip/string->uuid))
+
+       ;; Create the temporary files
+       (rx/mapcat (fn [manifest]
+                    (->> (create-files context manifest)
+                         (rx/map #(vector manifest %)))))
+
+       ;; Set-up the files dependencies
+       (rx/mapcat (fn [[manifest files]]
+                    (rx/concat
+                     (link-libraries context manifest)
+                     (rx/of [manifest files]))))
+
+       ;; Creates files data
+       (rx/mapcat (fn [[manifest files]]
+                      (process-files context manifest files)))
+
+       ;; Mark temporary files as persisted
+       (rx/mapcat persist-file)))
 
 (defmethod impl/handler :import-file
   [{:keys [project-id files]}]
 
-  (->> (rx/from files)
-       (rx/flat-map uz/load-from-url)
-       (rx/flat-map (partial process-package project-id))
-       (rx/catch
-           (fn [err]
-             (.error js/console "ERROR" err (clj->js (.-data err)))))))
+  (let [context {:project-id project-id
+                 :resolve    (resolve-factory)}]
+    (->> (rx/from files)
+         (rx/flat-map uz/load-from-url)
+         (rx/map #(assoc context :zip %))
+         (rx/flat-map process-package)
+         (rx/catch
+             (fn [err]
+               (.error js/console "ERROR" err (clj->js (.-data err))))))))

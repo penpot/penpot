@@ -29,62 +29,88 @@
     :else
     nil))
 
+(defn uuid->string [m]
+  (->> m
+       (d/deep-mapm
+        (fn [[k v]]
+          (if (uuid? v)
+            [k (str v)]
+            [k v])))))
+
 (defn bool->str [val]
   (when (some? val) (str val)))
+
+(defn add-factory [shape]
+  (fn add!
+    ([props attr]
+     (add! props attr str))
+
+    ([props attr trfn]
+     (let [val (get shape attr)
+           val (if (keyword? val) (d/name val) val)
+           ns-attr (str "penpot:" (-> attr d/name))]
+       (cond-> props
+         (some? val)
+         (obj/set! ns-attr (trfn val)))))))
 
 (defn add-data
   "Adds as metadata properties that we cannot deduce from the exported SVG"
   [props shape]
-  (letfn [(add!
-            ([props attr]
-             (add! props attr str))
+  (let [add! (add-factory shape)
+        group? (= :group (:type shape))
+        rect?  (= :rect (:type shape))
+        text?  (= :text (:type shape))
+        mask?  (and group? (:masked-group? shape))
+        center (gsh/center-shape shape)]
+    (-> props
+        (add! :name)
+        (add! :blocked)
+        (add! :hidden)
+        (add! :type)
+        (add! :stroke-style)
+        (add! :stroke-alignment)
+        (add! :transform)
+        (add! :transform-inverse)
+        (add! :flip-x)
+        (add! :flip-y)
+        (add! :proportion)
+        (add! :proportion-lock)
+        (add! :rotation)
+        (obj/set! "penpot:center-x" (-> center :x str))
+        (obj/set! "penpot:center-y" (-> center :y str))
 
-            ([props attr trfn]
-             (let [val (get shape attr)
-                   val (if (keyword? val) (d/name val) val)
-                   ns-attr (str "penpot:" (-> attr d/name))]
-               (cond-> props
-                 (some? val)
-                 (obj/set! ns-attr (trfn val))))))]
-    (let [group? (= :group (:type shape))
-          rect?  (= :rect (:type shape))
-          text?  (= :text (:type shape))
-          mask?  (and group? (:masked-group? shape))
-          center (gsh/center-shape shape)]
-      (-> props
-          (add! :name)
-          (add! :blocked)
-          (add! :hidden)
-          (add! :type)
-          (add! :stroke-style)
-          (add! :stroke-alignment)
-          (add! :transform)
-          (add! :transform-inverse)
-          (add! :flip-x)
-          (add! :flip-y)
-          (add! :proportion)
-          (add! :proportion-lock)
-          (add! :rotation)
-          (obj/set! "penpot:center-x" (-> center :x str))
-          (obj/set! "penpot:center-y" (-> center :y str))
+        ;; Constraints
+        (add! :constraints-h)
+        (add! :constraints-v)
+        (add! :fixed-scroll)
 
-          ;; Constraints
-          (add! :constraints-h)
-          (add! :constraints-v)
-          (add! :fixed-scroll)
+        (cond-> (and rect? (some? (:r1 shape)))
+          (-> (add! :r1)
+              (add! :r2)
+              (add! :r3)
+              (add! :r4)))
 
-          (cond-> (and rect? (some? (:r1 shape)))
-            (-> (add! :r1)
-                (add! :r2)
-                (add! :r3)
-                (add! :r4)))
+        (cond-> text?
+          (-> (add! :grow-type)
+              (add! :content (comp json/encode uuid->string))))
 
-          (cond-> text?
-            (-> (add! :grow-type)
-                (add! :content json/encode)))
+        (cond-> mask?
+          (obj/set! "penpot:masked-group" "true")))))
 
-          (cond-> mask?
-            (obj/set! "penpot:masked-group" "true"))))))
+
+(defn add-library-refs [props shape]
+  (let [add! (add-factory shape)]
+    (-> props
+        (add! :fill-color-ref-id)
+        (add! :fill-color-ref-file)
+        (add! :stroke-color-ref-id)
+        (add! :stroke-color-ref-file)
+        (add! :typography-ref-id)
+        (add! :typography-ref-file)
+        (add! :component-file)
+        (add! :component-id)
+        (add! :component-root)
+        (add! :shape-ref))))
 
 (defn prefix-keys [m]
   (letfn [(prefix-entry [[k v]]
@@ -191,7 +217,7 @@
 
 (mf/defc export-data
   [{:keys [shape]}]
-  (let [props (-> (obj/new) (add-data shape))]
+  (let [props (-> (obj/new) (add-data shape) (add-library-refs shape))]
     [:> "penpot:shape" props
      [:& export-shadow-data       shape]
      [:& export-blur-data         shape]

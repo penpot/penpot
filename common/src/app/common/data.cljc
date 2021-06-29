@@ -547,6 +547,7 @@
             (cond
               (or (vector? v) (map? v))
               [k (deep-mapm mfn v)]
+
               :else
               (mfn [k v]))))]
     (cond
@@ -567,4 +568,6 @@
   (->> m
        (deep-mapm
         (fn [[k v]]
-          [(keyword (str/kebab (name k))) v]))))
+          (if (or (keyword? k) (string? k))
+            [(keyword (str/kebab (name k))) v]
+            [k v])))))
