@@ -158,6 +158,27 @@
 
     (d/deep-mapm (comp camelize fix-style) m)))
 
+(defn string->uuid
+  "Looks in a map for keys or values that have uuid shape and converts them
+  into uuid objects"
+  [m]
+  (letfn [(convert [value]
+            (cond
+              (and (string? value) (re-matches uuid-regex value))
+              (uuid/uuid value)
+
+              (and (keyword? value) (re-matches uuid-regex (d/name value)))
+              (uuid/uuid (d/name value))
+
+              (vector? value)
+              (mapv convert value)
+
+              :else
+              value))]
+    (->> m
+         (d/deep-mapm
+          (fn [pair] (->> pair (mapv convert)))))))
+
 (def search-data-node? #{:rect :image :path :text :circle})
 
 (defn get-svg-data
@@ -397,7 +418,7 @@
   [props node]
   (-> props
       (assoc :grow-type (get-meta node :grow-type keyword))
-      (assoc :content   (get-meta node :content json/decode))))
+      (assoc :content   (get-meta node :content (comp string->uuid json/decode)))))
 
 (defn add-group-data
   [props node]
@@ -605,6 +626,37 @@
         svg-data (or image-data pattern-data)]
     (:xlink:href svg-data)))
 
+(defn add-library-refs
+  [props node]
+
+  (let [fill-color-ref-id     (get-meta node :fill-color-ref-id uuid/uuid)
+        fill-color-ref-file   (get-meta node :fill-color-ref-file uuid/uuid)
+        stroke-color-ref-id   (get-meta node :stroke-color-ref-id uuid/uuid)
+        stroke-color-ref-file (get-meta node :stroke-color-ref-file uuid/uuid)
+        component-id          (get-meta node :component-id uuid/uuid)
+        component-file        (get-meta node :component-file uuid/uuid)
+        shape-ref             (get-meta node :shape-ref uuid/uuid)
+        component-root?       (get-meta node :component-root str->bool)]
+
+    (cond-> props
+      (some? fill-color-ref-id)
+      (assoc :fill-color-ref-id fill-color-ref-id
+             :fill-color-ref-file fill-color-ref-file)
+
+      (some? stroke-color-ref-id)
+      (assoc :stroke-color-ref-id stroke-color-ref-id
+             :stroke-color-ref-file stroke-color-ref-file)
+
+      (some? component-id)
+      (assoc :component-id component-id
+             :component-file component-file)
+
+      component-root?
+      (assoc :component-root? component-root?)
+
+      (some? shape-ref)
+      (assoc :shape-ref shape-ref))))
+
 (defn parse-data
   [type node]
 
@@ -620,6 +672,7 @@
           (add-blur node)
           (add-exports node)
           (add-svg-attrs node svg-data)
+          (add-library-refs node)
 
           (cond-> (= :svg-raw type)
             (add-svg-content node))
@@ -661,3 +714,4 @@
                  {:destination (get-meta node :destination uuid/uuid)
                   :action-type (get-meta node :action-type keyword)
                   :event-type  (get-meta node :event-type keyword)})))))
+

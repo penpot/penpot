@@ -48,7 +48,7 @@
           :opt-un [::id]))
 
 (sv/defmethod ::upload-file-media-object
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (let [file (select-file conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
