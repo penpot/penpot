@@ -369,8 +369,10 @@
           (fn []
             (if (or multi-components? multi-assets?)
               (on-assets-delete)
-              (st/emit! (dwl/delete-component {:id (:component-id @state)})))
-            (st/emit! (dwl/sync-file file-id file-id))))
+              (st/emit! (dwu/start-undo-transaction)
+                        (dwl/delete-component {:id (:component-id @state)})
+                        (dwl/sync-file file-id file-id)
+                        (dwu/commit-undo-transaction)))))
 
         on-rename
         (mf/use-callback
@@ -801,11 +803,14 @@
 
         delete-color
         (mf/use-callback
-         (mf/deps @state multi-colors? multi-assets?)
+         (mf/deps @state multi-colors? multi-assets? file-id)
          (fn []
            (if (or multi-colors? multi-assets?)
              (on-assets-delete)
-             (st/emit! (dwl/delete-color color)))))
+             (st/emit! (dwu/start-undo-transaction)
+                       (dwl/delete-color color)
+                       (dwl/sync-file file-id file-id)
+                       (dwu/commit-undo-transaction)))))
 
         rename-color-clicked
         (fn [event]
@@ -1489,16 +1494,21 @@
         (mf/use-callback
           (mf/deps @selected-assets)
           (fn []
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit! (map #(dwl/delete-component {:id %})
-                                 (:components @selected-assets)))
-            (apply st/emit! (map #(dwl/delete-media {:id %})
-                                 (:graphics @selected-assets)))
-            (apply st/emit! (map #(dwl/delete-color {:id %})
-                                 (:colors @selected-assets)))
-            (apply st/emit! (map #(dwl/delete-typography %)
-                                 (:typographies @selected-assets)))
-            (st/emit! (dwu/commit-undo-transaction))))]
+            (let [selected-assets @selected-assets]
+              (st/emit! (dwu/start-undo-transaction))
+              (apply st/emit! (map #(dwl/delete-component {:id %})
+                                   (:components selected-assets)))
+              (apply st/emit! (map #(dwl/delete-media {:id %})
+                                   (:graphics selected-assets)))
+              (apply st/emit! (map #(dwl/delete-color {:id %})
+                                   (:colors selected-assets)))
+              (apply st/emit! (map #(dwl/delete-typography %)
+                                   (:typographies selected-assets)))
+              (when (or (d/not-empty? (:components selected-assets))
+                        (d/not-empty? (:colors selected-assets))
+                        (d/not-empty? (:typographies selected-assets)))
+                (st/emit! (dwl/sync-file (:id file) (:id file))))
+              (st/emit! (dwu/commit-undo-transaction)))))]
 
     [:div.tool-window {:on-context-menu #(dom/prevent-default %)
                        :on-click unselect-all}
