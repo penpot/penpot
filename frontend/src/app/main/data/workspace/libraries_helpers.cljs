@@ -23,13 +23,13 @@
 (defonce empty-changes [[] []])
 
 (defonce color-sync-attrs
-  [[:fill-color-ref-id   :color    :fill-color]
-   [:fill-color-ref-id   :gradient :fill-color-gradient]
-   [:fill-color-ref-id   :opacity  :fill-opacity]
+  [[:fill-color-ref-id   :fill-color-ref-file   :color    :fill-color]
+   [:fill-color-ref-id   :fill-color-ref-file   :gradient :fill-color-gradient]
+   [:fill-color-ref-id   :fill-color-ref-file   :opacity  :fill-opacity]
 
-   [:stroke-color-ref-id :color    :stroke-color]
-   [:stroke-color-ref-id :gradient :stroke-color-gradient]
-   [:stroke-color-ref-id :opacity  :stroke-opacity]])
+   [:stroke-color-ref-id :stroke-color-ref-file :color    :stroke-color]
+   [:stroke-color-ref-id :stroke-color-ref-file :gradient :stroke-color-gradient]
+   [:stroke-color-ref-id :stroke-color-ref-file :opacity  :stroke-opacity]])
 
 (declare generate-sync-container)
 (declare generate-sync-shape)
@@ -368,7 +368,7 @@
                  attr-ref-file (keyword (str attr "-ref-file"))]
              (and (get shape attr-ref-id)
                   (= library-id (get shape attr-ref-file))))
-          (map #(nth % 2) color-sync-attrs))))
+          (map #(nth % 3) color-sync-attrs))))
 
     :typographies
     (fn [shape]
@@ -430,12 +430,14 @@
                                    :fill-color (:color color)
                                    :fill-opacity (:opacity color)
                                    :fill-color-gradient (:gradient color))
-                            node))]
+                            (assoc node
+                                   :fill-color-ref-id nil
+                                   :fill-color-ref-file nil)))]
         (generate-sync-text-shape shape container update-node))
       (loop [attrs (seq color-sync-attrs)
              roperations []
              uoperations []]
-        (let [[attr-ref-id color-attr attr] (first attrs)]
+        (let [[attr-ref-id attr-ref-file color-attr attr] (first attrs)]
           (if (nil? attr)
             (if (empty? roperations)
               empty-changes
@@ -455,17 +457,37 @@
                      roperations
                      uoperations)
               (let [color (get colors (get shape attr-ref-id))
-                    roperation {:type :set
-                                :attr attr
-                                :val (color-attr color)
-                                :ignore-touched true}
-                    uoperation {:type :set
-                                :attr attr
-                                :val (get shape attr)
-                                :ignore-touched true}]
+                    roperations' (if color
+                                   [{:type :set
+                                     :attr attr
+                                     :val (color-attr color)
+                                     :ignore-touched true}]
+                                   ;; If the referenced color does no longer exist in the library,
+                                   ;; we must unlink the color in the shape
+                                   [{:type :set
+                                     :attr attr-ref-id
+                                     :val nil
+                                     :ignore-touched true}
+                                    {:type :set
+                                     :attr attr-ref-file
+                                     :val nil
+                                     :ignore-touched true}])
+                    uoperations' (if color
+                                   [{:type :set
+                                     :attr attr
+                                     :val (get shape attr)
+                                     :ignore-touched true}]
+                                   [{:type :set
+                                     :attr attr-ref-id
+                                     :val (get shape attr-ref-id)
+                                     :ignore-touched true}
+                                    {:type :set
+                                     :attr attr-ref-file
+                                     :val (get shape attr-ref-file)
+                                     :ignore-touched true}])]
                 (recur (next attrs)
-                       (conj roperations roperation)
-                       (conj uoperations uoperation))))))))))
+                       (concat roperations roperations')
+                       (concat uoperations uoperations'))))))))))
 
 (defmethod generate-sync-shape :typographies
   [_ library-id state container shape]
