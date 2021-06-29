@@ -48,7 +48,7 @@
           :opt-un [::id]))
 
 (sv/defmethod ::upload-file-media-object
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [file (select-file conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
@@ -92,7 +92,7 @@
 
 
 (defn create-file-media-object
-  [{:keys [conn storage] :as cfg} {:keys [file-id is-local name content] :as params}]
+  [{:keys [conn storage] :as cfg} {:keys [id file-id is-local name content] :as params}]
   (media/validate-media-type (:content-type content))
   (let [storage      (assoc storage :conn conn)
         source-path  (fs/path (:tempfile content))
@@ -118,7 +118,7 @@
                        (sto/put-object storage {:content (sto/content (:data thumb) (:size thumb))
                                                 :content-type (:mtype thumb)}))]
     (db/insert! conn :file-media-object
-                {:id (uuid/next)
+                {:id (or id (uuid/next))
                  :file-id file-id
                  :is-local is-local
                  :name name
