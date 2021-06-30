@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.text :as txt]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
@@ -22,85 +23,94 @@
 ;; attribute and how to handle them
 (def type->props
   {:frame
-   {:measure :shape
-    :layer   :shape
-    :fill    :shape
-    :shadow  :children
-    :blur    :children
-    :stroke  :children
-    :text    :children}
+   {:measure    :shape
+    :layer      :shape
+    :constraint :shape
+    :fill       :shape
+    :shadow     :children
+    :blur       :children
+    :stroke     :children
+    :text       :children}
 
    :group
-   {:measure :shape
-    :layer   :shape
-    :fill    :children
-    :shadow  :shape
-    :blur    :shape
-    :stroke  :children
-    :text    :children}
+   {:measure    :shape
+    :layer      :shape
+    :constraint :shape
+    :fill       :children
+    :shadow     :shape
+    :blur       :shape
+    :stroke     :children
+    :text       :children}
 
    :path
-   {:measure :shape
-    :layer   :shape
-    :fill    :shape
-    :shadow  :shape
-    :blur    :shape
-    :stroke  :shape
-    :text    :ignore}
+   {:measure    :shape
+    :layer      :shape
+    :constraint :shape
+    :fill       :shape
+    :shadow     :shape
+    :blur       :shape
+    :stroke     :shape
+    :text       :ignore}
 
    :text
-   {:measure :shape
-    :layer   :shape
-    :fill    :text
-    :shadow  :shape
-    :blur    :shape
-    :stroke  :ignore
-    :text    :text}
+   {:measure    :shape
+    :layer      :shape
+    :constraint :shape
+    :fill       :text
+    :shadow     :shape
+    :blur       :shape
+    :stroke     :ignore
+    :text       :text}
 
    :image
-   {:measure :shape
-    :layer   :shape
-    :fill    :ignore
-    :shadow  :shape
-    :blur    :shape
-    :stroke  :ignore
-    :text    :ignore}
+   {:measure    :shape
+    :layer      :shape
+    :constraint :shape
+    :fill       :ignore
+    :shadow     :shape
+    :blur       :shape
+    :stroke     :ignore
+    :text       :ignore}
 
    :rect
-   {:measure :shape
-    :layer   :shape
-    :fill    :shape
-    :shadow  :shape
-    :blur    :shape
-    :stroke  :shape
-    :text    :ignore}
+   {:measure    :shape
+    :layer      :shape
+    :constraint :shape
+    :fill       :shape
+    :shadow     :shape
+    :blur       :shape
+    :stroke     :shape
+    :text       :ignore}
 
    :circle
-   {:measure :shape
-    :layer   :shape
-    :fill    :shape
-    :shadow  :shape
-    :blur    :shape
-    :stroke  :shape
-    :text    :ignore}
+   {:measure    :shape
+    :layer      :shape
+    :constraint :shape
+    :fill       :shape
+    :shadow     :shape
+    :blur       :shape
+    :stroke     :shape
+    :text       :ignore}
 
    :svg-raw
-   {:measure :shape
-    :layer   :shape
-    :fill    :shape
-    :shadow  :shape
-    :blur    :shape
-    :stroke  :shape
-    :text    :ignore}})
+   {:measure    :shape
+    :layer      :shape
+    :constraint :shape
+    :fill       :shape
+    :shadow     :shape
+    :blur       :shape
+    :stroke     :shape
+    :text       :ignore}})
 
 (def props->attrs
-  {:measure measure-attrs
-   :layer   layer-attrs
-   :fill    fill-attrs
-   :shadow  shadow-attrs
-   :blur    blur-attrs
-   :stroke  stroke-attrs
-   :text    ot/attrs})
+  {:measure    measure-attrs
+   :layer      layer-attrs
+   :constraint constraint-attrs
+   :fill       fill-attrs
+   :shadow     shadow-attrs
+   :blur       blur-attrs
+   :stroke     stroke-attrs
+   :text       ot/attrs})
 
 (def shadow-keys [:style :color :offset-x :offset-y :blur :spread])
 
@@ -176,17 +186,21 @@
         objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
 
         type :multiple
-        [measure-ids measure-values] (get-attrs shapes objects :measure)
-        [layer-ids   layer-values]   (get-attrs shapes objects :layer)
-        [fill-ids    fill-values]    (get-attrs shapes objects :fill)
-        [shadow-ids  shadow-values]  (get-attrs shapes objects :shadow)
-        [blur-ids    blur-values]    (get-attrs shapes objects :blur)
-        [stroke-ids  stroke-values]  (get-attrs shapes objects :stroke)
-        [text-ids    text-values]    (get-attrs shapes objects :text)]
+        [measure-ids    measure-values]    (get-attrs shapes objects :measure)
+        [layer-ids      layer-values]      (get-attrs shapes objects :layer)
+        [constraint-ids constraint-values] (get-attrs shapes objects :constraint)
+        [fill-ids       fill-values]       (get-attrs shapes objects :fill)
+        [shadow-ids     shadow-values]     (get-attrs shapes objects :shadow)
+        [blur-ids       blur-values]       (get-attrs shapes objects :blur)
+        [stroke-ids     stroke-values]     (get-attrs shapes objects :stroke)
+        [text-ids       text-values]       (get-attrs shapes objects :text)]
 
     [:div.options
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :ids measure-ids :values measure-values}])
+
+     (when-not (empty? constraint-ids)
+       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? layer-ids)
        [:& layer-menu {:type type :ids layer-ids :values layer-values}])

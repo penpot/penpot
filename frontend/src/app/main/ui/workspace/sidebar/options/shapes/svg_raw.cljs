@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.svg-raw
   (:require
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
@@ -93,6 +94,7 @@
         type (:type shape)
         {:keys [tag] :as content} (:content shape)
         measure-values (select-keys shape measure-attrs)
+        constraint-values (select-keys shape constraint-attrs)
         fill-values    (get-fill-values shape)
         stroke-values  (get-stroke-values shape)]
 
@@ -102,12 +104,17 @@
                           :type type
                           :values measure-values}]
 
+       [:& constraints-menu {:ids ids
+                             :values constraint-values}]
+
        [:& fill-menu {:ids ids
                       :type type
                       :values fill-values}]
+
        [:& stroke-menu {:ids ids
                         :type type
                         :values stroke-values}]
+
        [:& shadow-menu {:ids ids
                         :values (select-keys shape [:shadow])}]
 

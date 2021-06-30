@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.image
   (:require
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
@@ -17,14 +18,20 @@
   (let [ids [(:id shape)]
         type (:type shape)
         measure-values (select-keys shape measure-attrs)
-        layer-values (select-keys shape layer-attrs)]
+        layer-values (select-keys shape layer-attrs)
+        constraint-values (select-keys shape constraint-attrs)]
     [:*
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values}]
+
+     [:& constraints-menu {:ids ids
+                           :values constraint-values}]
+
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]
+
      [:& shadow-menu {:ids ids
                       :values (select-keys shape [:shadow])}]
 
