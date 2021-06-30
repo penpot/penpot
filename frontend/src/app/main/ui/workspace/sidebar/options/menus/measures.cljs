@@ -419,9 +419,10 @@
              [:option {:value "topbottom"} (tr "workspace.options.constraints.topbottom")]
              [:option {:value "center"} (tr "workspace.options.constraints.center")]
              [:option {:value "scale"} (tr "workspace.options.constraints.scale")]]]
-           (when first-level?
-             [:div.row-flex
-              [:div.fix-when {:class (dom/classnames :active (:fixed-scroll values))
-                              :on-click on-fixed-scroll-clicked}
-               i/pin
-               [:span (tr "workspace.options.constraints.fix-when-scrolling")]]])]]]])]))
+          ;;  (when first-level?
+          ;;    [:div.row-flex
+          ;;     [:div.fix-when {:class (dom/classnames :active (:fixed-scroll values))
+          ;;                     :on-click on-fixed-scroll-clicked}
+          ;;      i/pin
+          ;;      [:span (tr "workspace.options.constraints.fix-when-scrolling")]]])
+               ]]]])]))

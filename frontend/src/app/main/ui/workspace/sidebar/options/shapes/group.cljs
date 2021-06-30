@@ -40,8 +40,8 @@
 
     [:div.options
      [:& measures-menu {:type type :ids measure-ids :values measure-values}]
-     [:& layer-menu {:type type :ids layer-ids :values layer-values}]
      [:& component-menu {:ids comp-ids :values comp-values}]
+     [:& layer-menu {:type type :ids layer-ids :values layer-values}]
 
      (when-not (empty? fill-ids)
        [:& fill-menu {:type type :ids fill-ids :values fill-values}])
