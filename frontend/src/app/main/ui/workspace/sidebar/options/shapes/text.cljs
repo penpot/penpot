@@ -10,6 +10,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
@@ -59,6 +60,10 @@
       {:ids ids
        :type type
        :values (select-keys shape measure-attrs)}]
+
+     [:& constraints-menu
+      {:ids ids
+       :values (select-keys shape constraint-attrs)}]
 
      [:& layer-menu {:ids ids
                      :type type

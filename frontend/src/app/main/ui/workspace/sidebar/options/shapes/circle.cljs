@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.circle
   (:require
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
@@ -21,12 +22,15 @@
         type (:type shape)
         measure-values (select-keys shape measure-attrs)
         stroke-values (select-keys shape stroke-attrs)
-        layer-values (select-keys shape layer-attrs)]
+        layer-values (select-keys shape layer-attrs)
+        constraint-values (select-keys shape constraint-attrs)]
     [:*
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values
                         :options #{:size :position :rotation}}]
+     [:& constraints-menu {:ids ids
+                           :values constraint-values}]
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]
