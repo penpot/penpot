@@ -499,7 +499,8 @@
         update-node (fn [node]
                       (if-let [typography (get typographies (:typography-ref-id node))]
                         (merge node (d/without-keys typography [:name :id]))
-                        node))]
+                        (dissoc node :typography-ref-id
+                                     :typography-ref-file)))]
     (generate-sync-text-shape shape container update-node)))
 
 (defn- get-assets

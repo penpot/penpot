@@ -1252,7 +1252,10 @@
          (fn []
            (if (or multi-typographies? multi-assets?)
              (on-assets-delete)
-             (st/emit! (dwl/delete-typography (:id @state))))))
+             (st/emit! (dwu/start-undo-transaction)
+                       (dwl/delete-typography (:id @state))
+                       (dwl/sync-file file-id file-id)
+                       (dwu/commit-undo-transaction)))))
 
         editting-id (or (:rename-typography local) (:edit-typography local))]
 
