@@ -14,7 +14,6 @@
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.import :as udi]
-   [app.util.debug :as d]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
@@ -107,8 +106,7 @@
                    [(tr "dashboard.move-to") nil
                     (for [team teams]
                       [(:name team) (on-move (:id team))])])
-                 (when (d/debug? :import)
-                   [(tr "dashboard.import") on-import-files])
+                 [(tr "dashboard.import") on-import-files]
                  [:separator]
                  [(tr "labels.delete") on-delete]]}]]))
 

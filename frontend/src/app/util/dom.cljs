@@ -213,6 +213,10 @@
   [node]
   (.focus node))
 
+(defn blur!
+  [node]
+  (.blur node))
+
 (defn fullscreen?
   []
   (cond

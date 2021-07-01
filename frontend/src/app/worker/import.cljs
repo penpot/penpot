@@ -84,25 +84,26 @@
   (let [id-mapping-atom (atom {})
         resolve
         (fn [id-mapping id]
-          (assert (uuid? id))
+          (assert (uuid? id) (str id))
           (get id-mapping id))
 
         set-id
         (fn [id-mapping id]
-          (assert (uuid? id))
+          (assert (uuid? id) (str id))
           (cond-> id-mapping
             (nil? (resolve id-mapping id))
             (assoc id (uuid/next))))]
 
     (fn [id]
-      (swap! id-mapping-atom set-id id)
-      (resolve @id-mapping-atom id))))
+      (when (some? id)
+        (swap! id-mapping-atom set-id id)
+        (resolve @id-mapping-atom id)))))
 
 (defn create-file
   "Create a new file on the back-end"
-  [context file-id]
+  [context]
   (let [resolve (:resolve context)
-        file-id (resolve file-id)]
+        file-id (resolve (:file-id context))]
     (rp/mutation
      :create-temp-file
      {:id file-id
@@ -111,18 +112,18 @@
       :project-id (:project-id context)
       :data (-> cp/empty-file-data (assoc :id file-id))})))
 
-(defn persist-file [file]
-  (rp/mutation :persist-temp-file {:id (:id file)}))
-
 (defn link-file-libraries
   "Create a new file on the back-end"
-  [context file-id]
+  [context]
   (let [resolve (:resolve context)
-        file-id (resolve file-id)
+        file-id (resolve (:file-id context))
         libraries (->> context :libraries (mapv resolve))]
     (->> (rx/from libraries)
          (rx/map #(hash-map :file-id file-id :library-id %))
          (rx/flat-map (partial rp/mutation :link-file-to-library)))))
+
+(defn persist-file [file]
+  (rp/mutation :persist-temp-file {:id (:id file)}))
 
 (defn send-changes
   "Creates batches of changes to be sent to the backend"
@@ -391,65 +392,59 @@
        (rx/flat-map (partial process-library-typographies context))
        (rx/flat-map (partial process-library-media context))
        (rx/flat-map (partial process-library-components context))
-       (rx/flat-map send-changes)
-       (rx/ignore)))
+       (rx/flat-map send-changes)))
 
-(defn create-files [context manifest]
-  (->> manifest :files rx/from
+(defn create-files
+  [context files]
+
+  (let [data (group-by :file-id files)]
+    (rx/concat
+     (->> (rx/from files)
+          (rx/map #(merge context %))
+          (rx/flat-map
+           (fn [context]
+             (->> (create-file context)
+                  (rx/map #(vector % (first (get data (:file-id context)))))))))
+
+     (->> (rx/from files)
+          (rx/map #(merge context %))
+          (rx/flat-map link-file-libraries)
+          (rx/ignore)))))
+
+(defmethod impl/handler :analyze-import
+  [{:keys [files]}]
+
+  (->> (rx/from files)
        (rx/flat-map
-        (fn [[file-id file-desc]]
-          (create-file (merge context file-desc) file-id)))
-       (rx/reduce #(assoc %1 (:id %2) %2) {})))
+        (fn [uri]
+          (->> (rx/of uri)
+               (rx/flat-map uz/load-from-url)
+               (rx/flat-map #(get-file {:zip %} :manifest))
+               (rx/map (comp d/kebab-keys cip/string->uuid))
+               (rx/map #(hash-map :uri uri :data %))
+               (rx/catch #(rx/of {:uri uri :error (.-message %)})))))))
 
-(defn link-libraries [context manifest]
-  (->> manifest :files rx/from
-       (rx/flat-map
-        (fn [[file-id file-desc]]
-          (link-file-libraries (merge context file-desc) file-id)))))
-
-(defn process-files [context manifest files]
-  (->> manifest :files rx/from
-       (rx/flat-map
-        (fn [[file-id file-desc]]
-          (let [resolve (:resolve context)
-                context (-> context
-                            (merge file-desc)
-                            (assoc :file-id file-id))
-                file (get files (resolve file-id))]
-            (process-file context file))))))
-
-(defn process-package
-  [context]
-  (->> (get-file context :manifest)
-       (rx/map (comp d/kebab-keys cip/string->uuid))
-
-       ;; Create the temporary files
-       (rx/mapcat (fn [manifest]
-                    (->> (create-files context manifest)
-                         (rx/map #(vector manifest %)))))
-
-       ;; Set-up the files dependencies
-       (rx/mapcat (fn [[manifest files]]
-                    (rx/concat
-                     (link-libraries context manifest)
-                     (rx/of [manifest files]))))
-
-       ;; Creates files data
-       (rx/mapcat (fn [[manifest files]]
-                      (process-files context manifest files)))
-
-       ;; Mark temporary files as persisted
-       (rx/mapcat persist-file)))
-
-(defmethod impl/handler :import-file
+(defmethod impl/handler :import-files
   [{:keys [project-id files]}]
 
   (let [context {:project-id project-id
                  :resolve    (resolve-factory)}]
-    (->> (rx/from files)
-         (rx/flat-map uz/load-from-url)
-         (rx/map #(assoc context :zip %))
-         (rx/flat-map process-package)
-         (rx/catch
-             (fn [err]
-               (.error js/console "ERROR" err (clj->js (.-data err))))))))
+    (->> (create-files context files)
+         (rx/catch #(.error js/console "IMPORT ERROR" %))
+         (rx/flat-map
+          (fn [[file data]]
+            (->> (uz/load-from-url (:uri data))
+                 (rx/map #(-> context (assoc :zip %) (merge data)))
+                 (rx/flat-map #(process-file % file))
+                 (rx/map
+                  (fn [_]
+                    {:status :import-success
+                     :file-id (:file-id data)}))
+
+                 (rx/catch
+                     (fn [err]
+                       (.error js/console "ERROR" (:file-id data) err)
+                       (rx/of {:status :import-error
+                               :file-id (:file-id data)
+                               :error (.-message err)
+                               :error-data (clj->js (.-data err))})))))))))

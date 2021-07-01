@@ -26,7 +26,7 @@
 
 (defn create-manifest
   "Creates a manifest entry for the given files"
-  [team-id file-id files]
+  [team-id file-id export-type files]
   (letfn [(format-page [manifest page]
             (-> manifest
                 (assoc (str (:id page))
@@ -47,6 +47,7 @@
                           :pages           pages
                           :pagesIndex      index
                           :libraries       (->> (:libraries file) (into #{}) (mapv str))
+                          :exportType      (d/name export-type)
                           :hasComponents   (d/not-empty? (get-in file [:data :components]))
                           :hasMedia        (d/not-empty? (get-in file [:data :media]))
                           :hasColors       (d/not-empty? (get-in file [:data :colors]))
@@ -158,8 +159,36 @@
             (-> file
                 (assoc :libraries libraries-ids)))))))
 
+(defn merge-assets [target-file assets-files]
+  (let [merge-file-assets
+        (fn [target file]
+          (-> target
+              (update-in [:data :colors] merge (get-in file [:data :colors]))
+              (update-in [:data :typographies] merge (get-in file [:data :typographies]))
+              (update-in [:data :media] merge (get-in file [:data :media]))
+              (update-in [:data :components] merge (get-in file [:data :components]))))]
+
+    (->> assets-files
+         (reduce merge-file-assets target-file))))
+
+(defn detach-libraries
+  [files file-id]
+  files)
+
+(defn process-export
+  [file-id export-type files]
+
+  (case export-type
+    :all      files
+    :merge    (let [file-list (-> files (d/without-keys [file-id]) vals)]
+                (-> (select-keys files [file-id])
+                    (update file-id merge-assets file-list)
+                    (update file-id dissoc :libraries)))
+    :detach (-> (select-keys files [file-id])
+                (update file-id detach-libraries file-id))))
+
 (defn collect-files
-  [file-id]
+  [file-id export-type]
 
   (letfn [(fetch-dependencies [[files pending]]
             (if (empty? pending)
@@ -185,17 +214,18 @@
       (->> (rx/of [files pending])
            (rx-expand fetch-dependencies)
            (rx/last)
-           (rx/map first)))))
+           (rx/map first)
+           (rx/map #(process-export file-id export-type %))))))
 
 (defn export-file
-  [team-id file-id]
+  [team-id file-id export-type]
 
-  (let [files-stream (->> (collect-files file-id)
+  (let [files-stream (->> (collect-files file-id export-type)
                           (rx/share))
 
         manifest-stream
         (->> files-stream
-             (rx/map #(create-manifest team-id file-id %))
+             (rx/map #(create-manifest team-id file-id export-type %))
              (rx/map #(vector "manifest.json" %)))
 
         render-stream
@@ -258,10 +288,10 @@
                               (rx/map #(vector (get files file-id) %)))))))))
 
 (defmethod impl/handler :export-file
-  [{:keys [team-id files] :as message}]
+  [{:keys [team-id files export-type] :as message}]
 
   (->> (rx/from files)
-       (rx/mapcat #(export-file team-id %))
+       (rx/mapcat #(export-file team-id % export-type))
        (rx/map
         (fn [value]
           (if (contains? value :type)
