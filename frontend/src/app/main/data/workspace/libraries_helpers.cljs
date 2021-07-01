@@ -631,20 +631,14 @@
                                              set-remote-synced?)))
 
         both (fn [child-inst child-main]
-               (let [sub-root? (and (:component-id shape-inst)
-                                    (not (:component-root? shape-inst)))]
-                 (generate-sync-shape-direct-recursive container
-                                                       child-inst
-                                                       component
-                                                       child-main
-                                                       (if sub-root?
-                                                         shape-inst
-                                                         root-inst)
-                                                       (if sub-root?
-                                                         shape-main
-                                                         root-main)
-                                                       reset?
-                                                       initial-root?)))
+               (generate-sync-shape-direct-recursive container
+                                                     child-inst
+                                                     component
+                                                     child-main
+                                                     root-inst
+                                                     root-main
+                                                     reset?
+                                                     initial-root?))
 
         moved (fn [child-inst child-main]
                 (move-shape
@@ -752,20 +746,13 @@
                                   false))
 
         both (fn [child-inst child-main]
-               (let [sub-root? (and (:component-id shape-inst)
-                                    (not (:component-root? shape-inst)))]
-
-                 (generate-sync-shape-inverse-recursive container
-                                                        child-inst
-                                                        component
-                                                        child-main
-                                                        (if sub-root?
-                                                          shape-inst
-                                                          root-inst)
-                                                        (if sub-root?
-                                                          shape-main
-                                                          root-main)
-                                                        initial-root?)))
+               (generate-sync-shape-inverse-recursive container
+                                                      child-inst
+                                                      component
+                                                      child-main
+                                                      root-inst
+                                                      root-main
+                                                      initial-root?))
 
         moved (fn [child-inst child-main]
                 (move-shape
@@ -1160,6 +1147,8 @@
         ; sync only the position relative to the origin of the component.
         ; We solve this by moving the origin shape so it is aligned with
         ; the dest root before syncing.
+        ; In case of subinstances, the comparison is always done with the
+        ; near component, because this is that we are syncing with.
         origin-shape (reposition-shape origin-shape origin-root dest-root)
         touched      (get dest-shape :touched #{})]
 
