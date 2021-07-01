@@ -9,8 +9,9 @@
 
 (defmacro icon-xref
   [id]
-  (let [href (str "#icon-" (name id))]
+  (let [href (str "#icon-" (name id))
+        class (str "icon-" (name id))]
     `(rumext.alpha/html
-      [:svg {:width 500 :height 500}
+      [:svg {:width 500 :height 500 :class ~class}
        [:use {:xlinkHref ~href}]])))
 

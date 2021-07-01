@@ -15,4 +15,4 @@
 (mf/defc loader
   []
   (when (mf/deref st/loader)
-    [:div.loader-content i/loader]))
+    [:div.loader-content i/loader-pencil]))

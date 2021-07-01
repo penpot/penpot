@@ -13,8 +13,6 @@
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.context :as ctx]
-   [app.main.worker :as uw]
-   [app.util.debug :as d]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
@@ -158,18 +156,11 @@
 
         on-export-files
         (fn [_]
-          (->> (uw/ask-many!
-                {:cmd :export-file
-                 :team-id current-team-id
-                 :files (->> files (mapv :id))})
-               (rx/subs
-                (fn [msg]
-                  (case (:type msg)
-                    :progress
-                    (prn "[Progress]" (:data msg))
-
-                    :finish
-                    (dom/trigger-download-uri (:filename msg) (:mtype msg) (:uri msg)))))))]
+          (st/emit!
+           (modal/show
+            {:type :export
+             :team-id current-team-id
+             :files (->> files (mapv :id))})))]
 
     (mf/use-effect
      (fn []
@@ -195,8 +186,7 @@
                       [[(tr "dashboard.duplicate-multi" file-count) on-duplicate]
                        (when (or (seq current-projects) (seq other-teams))
                          [(tr "dashboard.move-to-multi" file-count) nil sub-options])
-                       (when (d/debug? :export)
-                         [(tr "dashboard.export-multi" file-count) on-export-files])
+                       [(tr "dashboard.export-multi" file-count) on-export-files]
                        [:separator]
                        [(tr "labels.delete-multi-files" file-count) on-delete]]
 
@@ -208,8 +198,7 @@
                        (if (:is-shared file)
                          [(tr "dashboard.remove-shared") on-del-shared]
                          [(tr "dashboard.add-shared") on-add-shared])
-                       (when (d/debug? :export)
-                         [(tr "dashboard.export-single") on-export-files])
+                       [(tr "dashboard.export-single") on-export-files]
                        [:separator]
                        [(tr "labels.delete") on-delete]])]
 
