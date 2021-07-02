@@ -36,6 +36,11 @@
                         (not (empty (:suffix (first exports)))))
                    (str (:suffix (first exports))))
 
+        scale-enabled?
+        (mf/use-callback
+          (fn [export]
+            (#{:png :jpeg} (:type export))))
+
         on-download
         (mf/use-callback
          (mf/deps shape)
@@ -111,15 +116,16 @@
         (for [[index export] (d/enumerate exports)]
           [:div.element-set-options-group
            {:key index}
-           [:select.input-select {:on-change (partial on-scale-change index)
-                                  :value (:scale export)}
-            [:option {:value "0.5"}  "0.5x"]
-            [:option {:value "0.75"} "0.75x"]
-            [:option {:value "1"} "1x"]
-            [:option {:value "1.5"} "1.5x"]
-            [:option {:value "2"} "2x"]
-            [:option {:value "4"} "4x"]
-            [:option {:value "6"} "6x"]]
+           (when (scale-enabled? export)
+             [:select.input-select {:on-change (partial on-scale-change index)
+                                    :value (:scale export)}
+              [:option {:value "0.5"}  "0.5x"]
+              [:option {:value "0.75"} "0.75x"]
+              [:option {:value "1"} "1x"]
+              [:option {:value "1.5"} "1.5x"]
+              [:option {:value "2"} "2x"]
+              [:option {:value "4"} "4x"]
+              [:option {:value "6"} "6x"]])
            [:input.input-text {:value (:suffix export)
                                :placeholder (tr "workspace.options.export.suffix")
                                :on-change (partial on-suffix-change index)}]
@@ -127,7 +133,8 @@
                                   :on-change (partial on-type-change index)}
             [:option {:value "png"} "PNG"]
             [:option {:value "jpeg"} "JPEG"]
-            [:option {:value "svg"} "SVG"]]
+            [:option {:value "svg"} "SVG"]
+            [:option {:value "pdf"} "PDF"]]
            [:div.delete-icon {:on-click (partial delete-export index)}
             i/minus]])
 

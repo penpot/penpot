@@ -10,6 +10,7 @@
    [app.common.spec :as us]
    [app.renderer.bitmap :as rb]
    [app.renderer.svg :as rs]
+   [app.renderer.pdf :as rp]
    [app.zipfile :as zip]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -89,7 +90,8 @@
   (case (:type params)
     :png  (rb/render params)
     :jpeg (rb/render params)
-    :svg  (rs/render params)))
+    :svg  (rs/render params)
+    :pdf  (rp/render params)))
 
 (defn- find-filename-candidate
   [params used]
@@ -101,7 +103,8 @@
                          (case (:type params)
                            :png  ".png"
                            :jpeg ".jpg"
-                           :svg  ".svg"))]
+                           :svg  ".svg"
+                           :pdf  ".pdf"))]
       (if (contains? used candidate)
         (recur (inc index))
         candidate))))

@@ -9,6 +9,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.data.fonts :as df]
@@ -18,6 +19,7 @@
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.util.dom :as dom]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
@@ -67,6 +69,11 @@
          (mf/deps objects)
          #(exports/shape-wrapper-factory objects))
         ]
+
+    (mf/use-effect
+     (mf/deps width height)
+     #(dom/set-page-style {:size (str (mth/round width) "px "
+                                      (mth/round height) "px")}))
 
     [:& (mf/provider embed/context) {:value true}
      [:svg {:id "screenshot"
