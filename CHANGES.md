@@ -7,6 +7,7 @@
 - Allow nested asset groups [Taiga #1716](https://tree.taiga.io/project/penpot/us/1716).
 - Allow to ungroup assets [Taiga #1719](https://tree.taiga.io/project/penpot/us/1719).
 - Allow to rename assets groups [Taiga #1721](https://tree.taiga.io/project/penpot/us/1721).
+- Export elements to PDF [Taiga #519](https://tree.taiga.io/project/penpot/us/519).
 - Memorize collapse state of assets in panel [Taiga #1718](https://tree.taiga.io/project/penpot/us/1718).
 - Headers button sets and menus review [Taiga #1663](https://tree.taiga.io/project/penpot/us/1663).
 - Preserve components if possible, when pasted into a different file [Taiga #1063](https://tree.taiga.io/project/penpot/issue/1063).

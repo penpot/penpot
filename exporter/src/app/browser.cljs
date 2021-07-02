@@ -71,6 +71,20 @@
                                :type (name type)
                                :omitBackground omit-background?})))
 
+(defn pdf
+  ([page] (pdf page nil))
+  ([page {:keys [viewport omit-background? prefer-css-page-size?]
+          :or {viewport {}
+               omit-background? true
+               prefer-css-page-size? true}}]
+   (let [viewport (d/merge default-viewport viewport)]
+     (.pdf ^js page #js {:width (:width viewport)
+                         :height (:height viewport)
+                         :scale (:scale viewport)
+                         :omitBackground omit-background?
+                         :printBackground (not omit-background?)
+                         :preferCSSPageSize prefer-css-page-size?}))))
+
 (defn eval!
   [frame f]
   (.evaluate ^js frame f))
