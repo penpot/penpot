@@ -132,7 +132,15 @@
                                 (handle-blur event)))
         start-editing-name (fn [event]
                              (dom/prevent-default event)
-                             (reset! editing? true))]
+                             (reset! editing? true))
+
+        on-export-files
+        (fn [_]
+          (st/emit!
+           (modal/show
+            {:type :export
+             :team-id team-id
+             :files [(:id file)]})))]
     (mf/use-effect
      (mf/deps @editing?)
      #(when @editing?
@@ -232,6 +240,9 @@
          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
           [:span (tr "labels.give-feedback")]
           [:span.primary-badge "ALPHA"]])
+
+       [:li.export-file {:on-click on-export-files}
+        [:span (tr "dashboard.export-single")]]
        ]]]))
 
 ;; --- Header Component
