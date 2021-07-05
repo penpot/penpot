@@ -178,7 +178,7 @@
     :else
     (st/emit! (rt/nav :auth-register-success {} {:email (:email data)}))))
 
-(s/def ::accept-terms-and-privacy ::us/boolean)
+(s/def ::accept-terms-and-privacy (s/and ::us/boolean true?))
 (s/def ::accept-newsletter-subscription ::us/boolean)
 
 (s/def ::register-validate-form
