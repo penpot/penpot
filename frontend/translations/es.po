@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-06-18 09:19+0000\n"
 "Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
-"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
-"es/>\n"
+"Language-Team: Spanish "
+"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -91,6 +91,10 @@ msgstr "Entrar con OpenID (SSO)"
 msgid "auth.new-password"
 msgstr "Introduce la nueva contraseña"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Estoy de acuerdo en suscribirme a la lista de correo de Penpot"
+
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "El código de recuperación no es válido."
@@ -164,10 +168,6 @@ msgstr ""
 "de privacidad."
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "Estoy de acuerdo en suscribirme a la lista de correo de Penpot"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Hemos enviado un email de verificación a"
 
@@ -210,6 +210,41 @@ msgstr "Duplicar %s archivos"
 msgid "dashboard.empty-files"
 msgstr "Todavía no hay ningún archivo aquí"
 
+msgid "dashboard.export.detail"
+msgstr "* Pueden incluir components, gráficos, colores y/o tipografias."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Uno o mas ficheros que quieres exportar usan librerias compartidas. ¿Qué "
+"quieres hacer con los recursos*?"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"ficheros con librerias compartidas se inclurán en el paquete de exportación "
+"y mantendrán los enlaces."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Exportar librerias compartidas"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Las librerias compartidas no se incluirán en la exportación y ningún "
+"recurso será incluido en la librería."
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Usar los recursos como objetos básicos."
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Tu fichero será exportado con todos los recursos dentro de la libreria del "
+"propio fichero."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Incluir librerias compartidas dentro de las librerias del fichero."
+
+msgid "dashboard.export.title"
+msgstr "Exportar ficheros"
+
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Fuente eliminada."
 
@@ -230,8 +265,18 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sólo deberías cargar fuentes que te pertenecen o de las que tienes una "
 "licencia que te permita usarlas en Penpot. Encuentra más información en la "
-"sección de Derechos de Contenido: [Penpot's Terms of Service](1). También te "
-"puede interesar leer más sobre licencias tipográficas: [font licensing](2)."
+"sección de Derechos de Contenido: [Penpot's Terms of Service](1). También "
+"te puede interesar leer más sobre licencias tipográficas: [font "
+"licensing](2)."
+
+msgid "dashboard.import.analyze-error"
+msgstr "¡Vaya! No hemos podido importar el fichero."
+
+msgid "dashboard.import.import-error"
+msgstr "Hubo un problema importando el fichero. No se ha creado el fichero."
+
+msgid "dashboard.import.import-message"
+msgstr "%s ficheros han sido importados con éxito."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -584,9 +629,9 @@ msgstr "Asunto"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Por favor describe el motivo de tu mensaje, especificando si es un problema, "
-"una idea o una duda. Alguien de nuestro equipo responderá tan pronto como "
-"sea posible."
+"Por favor describe el motivo de tu mensaje, especificando si es un "
+"problema, una idea o una duda. Alguien de nuestro equipo responderá tan "
+"pronto como sea posible."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -849,6 +894,9 @@ msgstr "Confirmar contraseña"
 msgid "labels.content"
 msgstr "Contenido"
 
+msgid "labels.continue"
+msgstr "Continuar"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
 msgstr "Crear"
@@ -856,6 +904,10 @@ msgstr "Crear"
 #: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "Crea un nuevo equipo"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "Introduce un nuevo nombre de equipo"
 
 msgid "labels.custom-fonts"
 msgstr "Fuentes personalizadas"
@@ -895,6 +947,9 @@ msgstr "Editor"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.email"
 msgstr "Correo electrónico"
+
+msgid "labels.export"
+msgstr "Exportar"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
@@ -1151,8 +1206,7 @@ msgstr "Verificar el nuevo correo"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
-msgstr ""
-"Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
+msgstr "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1386,6 +1440,10 @@ msgstr "Perfil guardado correctamente!"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "notifications.validation-email-sent"
 msgstr "Verificación de email enviada a %s. Comprueba tu correo."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "profile.recovery.go-to-login"
+msgstr "Ir al login"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
@@ -2685,11 +2743,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "profile.recovery.go-to-login"
-msgstr "Ir al login"
-
-#: src/app/main/ui/dashboard/team_form.cljs
-msgid "labels.create-team.placeholder"
-msgstr "Introduce un nuevo nombre de equipo"

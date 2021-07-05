@@ -89,6 +89,10 @@ msgstr "Login with OpenID (SSO)"
 msgid "auth.new-password"
 msgstr "Type a new password"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "I agree to subscribe to the Penpot mailing list."
+
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "The recovery token is invalid."
@@ -160,10 +164,6 @@ msgstr ""
 "policy."
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "I agree to subscribe to the Penpot mailing list."
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "We've sent a verification email to"
 
@@ -212,6 +212,41 @@ msgstr "Export %s files"
 msgid "dashboard.export-single"
 msgstr "Export file"
 
+msgid "dashboard.export.detail"
+msgstr "* Might include components, graphics, colors and/or typographies."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"One or more files that you want to export are using shared libraries. What "
+"do you want to do with their assets*?"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"files with shared libraries will be included in the export, maintaining "
+"their linkage."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Export shared libraries"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Shared libraries will not be included in the export and no assets will be "
+"added to the library. "
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Treat shared library assets as basic objects"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Your file will be exported with all external assets merged into the file "
+"library."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Include shared library assets in file libraries"
+
+msgid "dashboard.export.title"
+msgstr "Export files"
+
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Font deleted"
 
@@ -237,6 +272,15 @@ msgstr ""
 
 msgid "dashboard.import"
 msgstr "Import files"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Oops! We couldn't import this file"
+
+msgid "dashboard.import.import-error"
+msgstr "There was a problem importing the file. The file wasn't imported."
+
+msgid "dashboard.import.import-message"
+msgstr "%s files have been imported succesfully."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -822,9 +866,6 @@ msgstr "Admin"
 msgid "labels.all"
 msgstr "All"
 
-msgid "labels.continue"
-msgstr "Continue"
-
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
@@ -852,6 +893,9 @@ msgstr "Confirm password"
 
 msgid "labels.content"
 msgstr "Content"
+
+msgid "labels.continue"
+msgstr "Continue"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -903,6 +947,9 @@ msgstr "Editor"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.email"
 msgstr "Email"
+
+msgid "labels.export"
+msgstr "Export"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
@@ -2700,42 +2747,3 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
-
-msgid "dashboard.import.import-message"
-msgstr "%s files have been imported succesfully."
-
-msgid "dashboard.import.import-error"
-msgstr "There was a problem importing the file. The file wasn't imported."
-
-msgid "dashboard.import.analyze-error"
-msgstr "Oops! We couldn't import this file"
-
-msgid "dashboard.export.title"
-msgstr "Export files"
-
-msgid "dashboard.export.explain"
-msgstr "One or more files that you want to export are using shared libraries. What do you want to do with their assets*?"
-
-msgid "dashboard.export.detail"
-msgstr "* Might include components, graphics, colors and/or typographies."
-
-msgid "dashboard.export.options.all.title"
-msgstr "Export shared libraries"
-
-msgid "dashboard.export.options.all.message"
-msgstr "files with shared libraries will be included in the export, maintaining their linkage."
-
-msgid "dashboard.export.options.merge.title"
-msgstr "Include shared library assets in file libraries"
-
-msgid "dashboard.export.options.merge.message"
-msgstr "Your file will be exported with all external assets merged into the file library."
-
-msgid "dashboard.export.options.detach.title"
-msgstr "Treat shared library assets as basic objects"
-
-msgid "dashboard.export.options.detach.message"
-msgstr "Shared libraries will not be included in the export and no assets will be added to the library. "
-
-msgid "labels.export"
-msgstr "Export"
