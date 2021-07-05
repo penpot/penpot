@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-06-01 00:38+0000\n"
+"PO-Revision-Date: 2021-07-05 17:02+0000\n"
 "Last-Translator: Çağlar Yeşilyurt <grch@mm.st>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: Weblate 4.8-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1561,7 +1561,7 @@ msgstr "Etkileşimleri göster"
 
 #: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.title"
-msgstr "Bağlantıyı paylaş"
+msgstr "Prototipi paylaş"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
@@ -1737,7 +1737,6 @@ msgid "workspace.options.text-options.underline"
 msgstr "Altı Çizili"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-#, fuzzy
 msgid "workspace.options.text-options.title-selection"
 msgstr "Metin seçimi"
 
@@ -2429,3 +2428,114 @@ msgstr "Dikdörtgen (%s)"
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"
 msgstr "Renk Paketi (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.sitemap"
+msgstr "Site haritası"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke"
+msgstr "Kontur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.inner"
+msgstr "İçinde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.solid"
+msgstr "Katı"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.outer"
+msgstr "Dışında"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.topbottom"
+msgstr "Üst ve Alt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.top"
+msgstr "Üst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.scale"
+msgstr "Ölçeklendir"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.right"
+msgstr "Sağ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.leftright"
+msgstr "Sol ve Sağ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.left"
+msgstr "Sol"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.fix-when-scrolling"
+msgstr "Kaydırırken sabit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.center"
+msgstr "Merkez"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.bottom"
+msgstr "Alt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints"
+msgstr "Kısıtlamalar"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "Grubu dağıt"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename-group"
+msgstr "Grubu yeniden isimlendir"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Etkileşimler"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.edit-file"
+msgstr "Dosyayı düzenle"
+
+msgid "labels.font-variants"
+msgstr "Biçimler"
+
+msgid "labels.add-custom-font"
+msgstr "Özel yazı tipi ekle"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.blur"
+msgstr "B"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle1"
+msgstr "Penpot takımı ortak iletişim forumuna katıl."
+
+msgid "dashboard.options"
+msgstr "Ayarlar"
+
+msgid "dashboard.loading-fonts"
+msgstr "yazı tipleriniz yükleniyor…"
+
+msgid "dashboard.import"
+msgstr "Dosyaları içeri aktar"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Kurulu özel yazı tipiniz bulunmamaktadır."
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Yazı tipi silindi"
+
+msgid "dashboard.export-single"
+msgstr "Dosyayı dışarı aktar"
+
+msgid "dashboard.export-multi"
+msgstr "%s dosyalarını dışarı aktar"
