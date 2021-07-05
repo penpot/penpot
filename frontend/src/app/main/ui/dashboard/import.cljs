@@ -22,9 +22,6 @@
 
 (log/set-level! :debug)
 
-(defn rx-delay-emit [ms ob]
-  (->> ob (rx/mapcat #(rx/delay ms (rx/of %)))))
-
 (defn use-import-file
   [project-id on-finish-import]
   (mf/use-callback
@@ -78,13 +75,13 @@
                  (assoc :status :analyze-error))))))
 
 (defn set-analyze-result [files uri data]
-  (let [exiting-files? (into #{} (->> files (map :file-id) (filter some?)))
+  (let [existing-files? (into #{} (->> files (map :file-id) (filter some?)))
         replace-file
         (fn [file]
           (if (and (= uri (:uri file) )
                    (= (:status file) :analyzing))
             (->> (:files data)
-                 (remove (comp exiting-files? first) )
+                 (remove (comp existing-files? first) )
                  (mapv (fn [[file-id file-data]]
                          (-> file-data
                              (assoc :file-id file-id
@@ -204,7 +201,7 @@
            (->> (uw/ask-many!
                  {:cmd :analyze-import
                   :files (->> files (mapv :uri))})
-                (rx-delay-emit 1000)
+                (rx/delay-emit 1000)
                 (rx/subs
                  (fn [{:keys [uri data error] :as msg}]
                    (log/debug :msg msg)
@@ -219,7 +216,7 @@
                  {:cmd :import-files
                   :project-id project-id
                   :files files})
-                (rx-delay-emit 1000)
+                (rx/delay-emit 1000)
                 (rx/subs
                  (fn [{:keys [file-id status] :as msg}]
                    (log/debug :msg msg)

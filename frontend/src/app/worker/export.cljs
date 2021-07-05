@@ -19,12 +19,6 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]))
 
-(defn rx-expand
-  "Recursively projects each source value to an Observable
-  which is merged in the output Observable."
-  [f ob]
-  (.pipe ob (.expand ^js js/rxjsOperators f)))
-
 (defn create-manifest
   "Creates a manifest entry for the given files"
   [team-id file-id export-type files]
@@ -377,7 +371,7 @@
     (let [files {}
           pending [file-id]]
       (->> (rx/of [files pending])
-           (rx-expand fetch-dependencies)
+           (rx/expand fetch-dependencies)
            (rx/last)
            (rx/map first)
            (rx/map #(process-export file-id export-type %))))))
