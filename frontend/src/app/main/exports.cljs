@@ -247,7 +247,7 @@
 (mf/defc component-symbol
   [{:keys [id data] :as props}]
 
-  (let [{:keys [name objects]} data
+  (let [{:keys [name path objects]} data
         root (get objects id)
 
         {:keys [width height]} (:selrect root)
@@ -267,8 +267,9 @@
          (mf/deps objects)
          #(group-wrapper-factory objects))]
 
-    [:symbol {:id (str id)
-              :viewBox vbox}
+    [:> "symbol" #js {:id (str id)
+                      :viewBox vbox
+                      "penpot:path" path}
      [:title name]
      [:> shape-container {:shape root}
       [:& group-wrapper {:shape root :view-box vbox}]]]))

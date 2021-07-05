@@ -21,7 +21,10 @@
    [app.worker.impl :as impl]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [tubax.core :as tubax]))
+   [tubax.core :as tubax]
+   [app.util.logging :as log]))
+
+(log/set-level! :trace)
 
 ;; Upload changes batches size
 (def change-batch-size 100)
@@ -46,20 +49,23 @@
                                 (str file-id "/media/" id "." ext))
                 :components   (str file-id "/components.svg"))
 
-         svg?    (str/ends-with? path "svg")
-         json?   (str/ends-with? path "json")
-         other?  (not (or svg? json?))
+         parse-svg?  (and (not= type :media) (str/ends-with? path "svg"))
+         parse-json? (and (not= type :media) (str/ends-with? path "json"))
+         no-parse?   (or (= type :media)
+                         (not (or parse-svg? parse-json?)))
 
-         file-type (if other? "blob" "text")]
+         file-type (if (or parse-svg? parse-json?) "text" "blob")]
+
+     (log/debug :action "parsing" :path path)
 
      (cond->> (uz/get-file (:zip context) path file-type)
-       svg?
+       parse-svg?
        (rx/map (comp tubax/xml->clj :content))
 
-       json?
+       parse-json?
        (rx/map (comp json/decode :content))
 
-       other?
+       no-parse?
        (rx/map :content)))))
 
 (defn resolve-factory
@@ -138,6 +144,9 @@
 (defn upload-media-files
   "Upload a image to the backend and returns its id"
   [file-id name data-uri]
+
+  (log/debug :action "uploading" :file-id file-id :name name)
+
   (->> (http/send!
         {:uri data-uri
          :response-type :blob
@@ -156,11 +165,18 @@
     (->> node
          (ct/transform-nodes
           (fn [item]
-            (-> item
-                (d/update-when :fill-color-ref-id resolve)
-                (d/update-when :fill-color-ref-file resolve)
-                (d/update-when :typography-ref-id resolve)
-                (d/update-when :typography-ref-file resolve)))))))
+            (cond-> item
+              (uuid? (get item :fill-color-ref-id))
+              (d/update-when :fill-color-ref-id resolve)
+
+              (uuid? (get item :fill-color-ref-file))
+              (d/update-when :fill-color-ref-file resolve)
+
+              (uuid? (get item :typography-ref-id))
+              (d/update-when :typography-ref-id resolve)
+
+              (uuid? (get item :typography-ref-file))
+              (d/update-when :typography-ref-file resolve)))))))
 
 (defn resolve-data-ids
   [data type context]
@@ -273,7 +289,9 @@
         file-id      (:id file)
         old-id       (cip/get-id node)
         id           (resolve old-id)
+        path         (get-in node [:attrs :penpot:path] "")
         data         (-> (cip/parse-data :group content)
+                         (assoc :path path)
                          (assoc :id id))
 
         file         (-> file (fb/start-component data))

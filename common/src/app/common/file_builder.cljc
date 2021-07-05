@@ -393,6 +393,7 @@
 
   (let [selrect init/empty-selrect
         name (:name data)
+        path (:path data)
         obj (-> (init/make-minimal-group nil selrect name)
                 (merge data)
                 (check-name file :group)
@@ -402,6 +403,7 @@
          {:type :add-component
           :id (:id obj)
           :name name
+          :path path
           :shapes [obj]})
 
         (assoc :last-id (:id obj))
