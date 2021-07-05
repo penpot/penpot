@@ -23,21 +23,6 @@
    [cuerdas.core :as str]
    [tubax.core :as tubax]))
 
-;;; TODO: Move to funcool/beicon
-
-(defn rx-merge-reduce [f seed ob]
-  (let [current-acc (atom seed)]
-    (->> (rx/concat
-          (rx/of seed)
-          (->> ob
-               (rx/mapcat #(f @current-acc %))
-               (rx/tap #(reset! current-acc %))))
-         (rx/last))))
-
-(defn rx-skip-last
-  [n ob]
-  (.pipe ob (.skipLast js/rxjsOperators (int n))))
-
 ;; Upload changes batches size
 (def change-batch-size 100)
 
@@ -297,7 +282,7 @@
     (->> (rx/from children)
          (rx/filter cip/shape?)
          (rx/skip 1)
-         (rx-skip-last 1)
+         (rx/skip-last 1)
          (rx/mapcat (partial resolve-media file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map fb/finish-component))))
@@ -316,7 +301,7 @@
           (fn [[page-id page-name]]
             (->> (get-file context :page page-id)
                  (rx/map (fn [page-data] [page-id page-name page-data])))))
-         (rx-merge-reduce (partial import-page context) file))))
+         (rx/concat-reduce (partial import-page context) file))))
 
 (defn process-library-colors
   [context file]
@@ -380,7 +365,7 @@
 
       (->> (get-file context :components)
            (rx/flat-map split-components)
-           (rx-merge-reduce (partial import-component context) file)))
+           (rx/concat-reduce (partial import-component context) file)))
     (rx/of file)))
 
 (defn process-file
