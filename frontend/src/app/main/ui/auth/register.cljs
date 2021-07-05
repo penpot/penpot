@@ -223,7 +223,7 @@
        [:div.fields-row
         [:& fm/input {:name :accept-newsletter-subscription
                       :class "check-primary"
-                      :label (tr "auth.terms-privacy-agreement")
+                      :label (tr "auth.newsletter-subscription")
                       :type "checkbox"}]])
 
      [:& fm/submit-button
@@ -233,7 +233,6 @@
 
 (mf/defc register-validate-page
   [{:keys [params] :as props}]
-  (prn "register-validate-page" params)
   [:div.form-container
    [:h1 (tr "auth.register-title")]
    [:div.subtitle (tr "auth.register-subtitle")]
