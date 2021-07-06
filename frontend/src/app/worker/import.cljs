@@ -256,6 +256,8 @@
     (let [name     (cip/get-image-name node)
           data-uri (cip/get-image-data node)]
       (->> (upload-media-files file-id name data-uri)
+           (rx/catch #(do (.error js/console %)
+                          (rx/of node)))
            (rx/map
             (fn [media]
               (-> node

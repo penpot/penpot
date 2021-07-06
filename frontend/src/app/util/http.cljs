@@ -165,6 +165,8 @@
                  :uri uri
                  :response-type :blob
                  :omit-default-headers true})
+
+         (rx/filter #(= 200 (:status %)))
          (rx/map :body)
          (rx/mapcat wapi/read-file-as-data-url)
          (rx/map #(hash-map uri %)))))
