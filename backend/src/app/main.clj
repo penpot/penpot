@@ -44,7 +44,7 @@
     :redis-uri (cf/get :redis-uri)}
 
    :app.tokens/tokens
-   {:props (ig/ref :app.setup/props)}
+   {:keys (ig/ref :app.setup/keys)}
 
    :app.storage/gc-deleted-task
    {:pool     (ig/ref :app.db/pool)
@@ -281,6 +281,9 @@
    :app.setup/props
    {:pool (ig/ref :app.db/pool)
     :key  (cf/get :secret-key)}
+
+   :app.setup/keys
+   {:props (ig/ref :app.setup/props)}
 
    :app.loggers.zmq/receiver
    {:endpoint (cf/get :loggers-zmq-uri)}

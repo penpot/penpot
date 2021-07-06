@@ -50,6 +50,7 @@
                            (assoc k (name v))))
                        {}
                        props))]
+
     (update event :props #(-> % clean-common clean-profile-id clean-complex-data))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

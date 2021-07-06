@@ -11,18 +11,9 @@
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.util.time :as dt]
-   [buddy.core.kdf :as bk]
    [buddy.sign.jwe :as jwe]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
-
-(defn- derive-tokens-secret
-  [key]
-  (let [engine (bk/engine {:key key
-                           :salt "tokens"
-                           :alg :hkdf
-                           :digest :blake2b-512})]
-    (bk/get-bytes engine 32)))
 
 (defn- generate
   [cfg claims]
@@ -50,13 +41,6 @@
                 :params params))
     claims))
 
-(s/def ::secret-key ::us/string)
-(s/def ::props
-  (s/keys :req-un [::secret-key]))
-
-(defmethod ig/pre-init-spec ::tokens [_]
-  (s/keys :req-un [::props]))
-
 (defn- generate-predefined
   [cfg {:keys [iss profile-id] :as params}]
   (case iss
@@ -70,9 +54,14 @@
               :code :not-implemented
               :hint "no predefined token")))
 
+(s/def ::keys fn?)
+
+(defmethod ig/pre-init-spec ::tokens [_]
+  (s/keys :req-un [::keys]))
+
 (defmethod ig/init-key ::tokens
-  [_ {:keys [props] :as cfg}]
-  (let [secret (derive-tokens-secret (:secret-key props))
+  [_ {:keys [keys] :as cfg}]
+  (let [secret (keys :salt "tokens" :size 32)
         cfg    (assoc cfg ::secret secret)]
     (fn [action params]
       (case action
