@@ -27,7 +27,7 @@
 (log/set-level! :trace)
 
 ;; Upload changes batches size
-(def change-batch-size 100)
+(def ^:const change-batch-size 100)
 
 (defn get-file
   "Resolves the file inside the context given its id and the data"
@@ -212,7 +212,8 @@
 
             data         (-> (cip/parse-data type node)
                              (resolve-data-ids type context)
-                             (assoc :id (resolve old-id)))
+                             (cond-> (some? old-id)
+                               (assoc :id (resolve old-id))))
 
             file (case type
                    :frame    (fb/add-artboard   file data)
@@ -224,8 +225,6 @@
                    :image    (fb/create-image   file data)
                    :svg-raw  (fb/create-svg-raw file data)
                    #_default file)]
-
-        (assert (some? old-id) "ID not found")
 
         ;; We store this data for post-processing after every shape has been
         ;; added
