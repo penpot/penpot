@@ -214,34 +214,34 @@
     :width 1920
     :height 1080}
 
-   {:name "PRINT (72dpi)"}
+   {:name "PRINT (96dpi)"}
    {:name "A0"
-    :width 2384
-    :height 3370}
+    :width 3179
+    :height 4494}
    {:name "A1"
-    :width 1684
-    :height 2384}
+    :width 2245
+    :height 3179}
    {:name "A2"
-    :width 1191
-    :height 1684}
+    :width 1587
+    :height 2245}
    {:name "A3"
-    :width 842
-    :height 1191}
+    :width 1123
+    :height 1587}
    {:name "A4"
-    :width 595
-    :height 842}
+    :width 794
+    :height 1123}
    {:name "A5"
-    :width 420
-    :height 595}
+    :width 559
+    :height 794}
    {:name "A6"
-    :width 297
-    :height 420}
+    :width 397
+    :height 559}
    {:name "Letter"
-    :width 612
-    :height 792}
+    :width 816
+    :height 1054}
    {:name "DIN Lang"
-    :width 595
-    :height 281}
+    :width 835
+    :height 413}
 
    {:name "SOCIAL MEDIA"}
    {:name "Instagram profile"
