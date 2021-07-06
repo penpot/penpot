@@ -20,7 +20,7 @@
 
 (defmethod ig/init-key :app.setup/keys
   [_ {:keys [props] :as cfg}]
-  (fn [& {:keys [salt size]}]
+  (fn [& {:keys [salt _]}]
     (let [engine (bk/engine {:key (:secret-key props)
                              :salt salt
                              :alg :hkdf
