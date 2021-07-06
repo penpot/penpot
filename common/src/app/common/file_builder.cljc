@@ -319,7 +319,9 @@
         create-child
         (fn [file child]
           (-> file
-              (create-svg-raw (assoc data :content child))
+              (create-svg-raw (assoc data
+                                     :id (uuid/next)
+                                     :content child))
               (close-svg-raw)))]
 
     ;; First :content is the the shape attribute, the other content is the
