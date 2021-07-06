@@ -17,12 +17,12 @@
    [app.util.http :as http]
    [app.util.import.parser :as cip]
    [app.util.json :as json]
+   [app.util.logging :as log]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [tubax.core :as tubax]
-   [app.util.logging :as log]))
+   [tubax.core :as tubax]))
 
 (log/set-level! :trace)
 
