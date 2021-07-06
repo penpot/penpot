@@ -82,14 +82,14 @@
                      [(-> k str/camel) v]))))))
 
 (def ^:const color-keys
-  [:name :color :opacity :gradient])
+  [:name :color :opacity :gradient :path])
 
 (def ^:const typography-keys
   [:name :font-family :font-id :font-size :font-style :font-variant-id :font-weight
-   :letter-spacing :line-height :text-transform])
+   :letter-spacing :line-height :text-transform :path])
 
 (def ^:const media-keys
-  [:name :mtype :width :height])
+  [:name :mtype :width :height :path])
 
 (defn collect-color
   [result color]

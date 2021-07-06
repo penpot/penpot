@@ -236,13 +236,13 @@
          [:li {:on-click on-add-shared}
           [:span (tr "dashboard.add-shared")]])
 
+       [:li.export-file {:on-click on-export-files}
+        [:span (tr "dashboard.export-single")]]
+
        (when cfg/feedback-enabled
          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
           [:span (tr "labels.give-feedback")]
           [:span.primary-badge "ALPHA"]])
-
-       [:li.export-file {:on-click on-export-files}
-        [:span (tr "dashboard.export-single")]]
        ]]]))
 
 ;; --- Header Component

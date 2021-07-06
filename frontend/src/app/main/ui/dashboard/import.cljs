@@ -22,6 +22,8 @@
 
 (log/set-level! :debug)
 
+(def ^:const emit-delay 1000)
+
 (defn use-import-file
   [project-id on-finish-import]
   (mf/use-callback
@@ -201,7 +203,7 @@
            (->> (uw/ask-many!
                  {:cmd :analyze-import
                   :files (->> files (mapv :uri))})
-                (rx/delay-emit 1000)
+                (rx/delay-emit emit-delay)
                 (rx/subs
                  (fn [{:keys [uri data error] :as msg}]
                    (log/debug :msg msg)
@@ -216,7 +218,7 @@
                  {:cmd :import-files
                   :project-id project-id
                   :files files})
-                (rx/delay-emit 1000)
+                (rx/delay-emit emit-delay)
                 (rx/subs
                  (fn [{:keys [file-id status] :as msg}]
                    (log/debug :msg msg)

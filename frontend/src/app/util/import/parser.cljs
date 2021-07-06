@@ -73,8 +73,10 @@
 
 (defn get-id
   [node]
-  (when-let [id (re-find uuid-regex (get-in node [:attrs :id]))]
-    (uuid/uuid id)))
+  (let [attr-id (get-in node [:attrs :id])
+        id (when (string? attr-id) (re-find uuid-regex attr-id))]
+    (when (some? id)
+      (uuid/uuid id))))
 
 (defn str->bool
   [val]
