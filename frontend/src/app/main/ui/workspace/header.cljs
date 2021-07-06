@@ -153,7 +153,7 @@
                     (modal/show
                      {:type :export
                       :team-id team-id
-                      :files (->> files (mapv :id))})))))))]
+                      :files files})))))))]
 
     (mf/use-effect
      (mf/deps @editing?)

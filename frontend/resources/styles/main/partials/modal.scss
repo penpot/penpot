@@ -215,6 +215,7 @@
   background-color: $color-white;
   border: 1px solid $color-gray-20;
   width: 30rem;
+  min-height: 14rem;
 
   p {
     font-size: $fs14;
@@ -276,10 +277,6 @@
   .modal-content {
     padding: 1rem;
   }
-}
-
-.import-dialog {
-  min-height: 215px;
 
   svg {
     max-width: 18px;
@@ -451,8 +448,6 @@
 }
 
 .export-dialog {
-  min-height: 24rem;
-
   .export-option {
     border-radius: 4px;
     border: 1px solid $color-gray-10;

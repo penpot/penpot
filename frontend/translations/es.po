@@ -855,6 +855,9 @@ msgstr "Estás viendo la versión %s"
 msgid "labels.accept"
 msgstr "Aceptar"
 
+msgid "labels.close"
+msgstr "Cerrar"
+
 msgid "labels.add-custom-font"
 msgstr "Añadir fuentes personalizada"
 

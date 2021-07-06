@@ -171,7 +171,8 @@
                     (modal/show
                      {:type :export
                       :team-id current-team-id
-                      :files (->> files (mapv :id))})))))))]
+                      :has-libraries? (->> files (some :has-libraries?))
+                      :files files})))))))]
 
     (mf/use-effect
      (fn []
