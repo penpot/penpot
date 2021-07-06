@@ -7,6 +7,7 @@
 (ns app.loggers.audit
   "Services related to the user activity (audit log)."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.transit :as t]
@@ -20,8 +21,21 @@
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]))
+
+(defn parse-client-ip
+  [{:keys [headers] :as request}]
+  (or (some-> (get headers "x-forwarded-for") (str/split ",") first)
+      (get headers "x-real-ip")
+      (get request :remote-addr)))
+
+(defn profile->props
+  [profile]
+  (-> profile
+      (select-keys [:is-active :is-muted :auth-backend :email :default-team-id :default-project-id :fullname :lang])
+      (d/without-nils)))
 
 (defn clean-props
   [{:keys [profile-id] :as event}]
@@ -88,11 +102,12 @@
                        :cause res)))
           (recur)))
 
-      (fn [& [cmd & params]]
-        (case cmd
-          :stop (a/close! input)
-          :submit (when-not (a/offer! input (first params))
-                    (l/warn :msg "activity channel is full")))))))
+      (fn [& {:keys [cmd] :as params}]
+        (let [params (dissoc params :cmd)]
+          (case cmd
+            :stop   (a/close! input)
+            :submit (when-not (a/offer! input params)
+                      (l/warn :msg "activity channel is full"))))))))
 
 
 (defn- persist-events

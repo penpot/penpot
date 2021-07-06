@@ -85,6 +85,11 @@
       {:update false
        :valid false})))
 
+(defn decode-profile-row
+  [{:keys [props] :as profile}]
+  (cond-> profile
+    (db/pgobject? props "jsonb")
+    (assoc :props (db/decode-transit-pgobject props))))
 
 ;; --- MUTATION: Prepare Register
 
@@ -154,8 +159,8 @@
     (check-profile-existence! conn params)
     (let [profile (->> params
                        (create-profile conn)
-                       (create-profile-relations conn))]
-
+                       (create-profile-relations conn)
+                       (decode-profile-row))]
       (sid/load-initial-project! conn profile)
 
       (cond
@@ -174,7 +179,7 @@
           (with-meta resp
             {:transform-response ((:create session) (:id profile))
              :before-complete (annotate-profile-register metrics)
-             ::audit/props (:props profile)
+             ::audit/props (audit/profile->props profile)
              ::audit/profile-id (:id profile)}))
 
         ;; If auth backend is different from "penpot" means user is
@@ -184,7 +189,7 @@
         (with-meta (profile/strip-private-attrs profile)
           {:transform-response ((:create session) (:id profile))
            :before-complete (annotate-profile-register metrics)
-           ::audit/props (:props profile)
+           ::audit/props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})
 
         ;; In all other cases, send a verification email.
@@ -208,7 +213,7 @@
 
           (with-meta profile
             {:before-complete (annotate-profile-register metrics)
-             ::audit/props (:props profile)
+             ::audit/props (audit/profile->props profile)
              ::audit/profile-id (:id profile)}))))))
 
 (defn create-profile
@@ -249,7 +254,7 @@
                    :is-demo is-demo}]
     (try
       (-> (db/insert! conn :profile params)
-          (update :props db/decode-transit-pgobject))
+          (decode-profile-row))
       (catch org.postgresql.util.PSQLException e
         (let [state (.getSQLState e)]
           (if (not= state "23505")
@@ -314,8 +319,8 @@
       (let [profile (->> (profile/retrieve-profile-data-by-email conn email)
                          (validate-profile)
                          (profile/strip-private-attrs)
-                         (profile/populate-additional-data conn))
-            profile (update profile :props db/decode-transit-pgobject)]
+                         (profile/populate-additional-data conn)
+                         (decode-profile-row))]
         (if-let [token (:invitation-token params)]
           ;; If the request comes with an invitation token, this means
           ;; that user wants to accept it with different user. A very
@@ -330,10 +335,12 @@
                 token  (tokens :generate claims)]
             (with-meta {:invitation-token token}
               {:transform-response ((:create session) (:id profile))
+               ::audit/props (audit/profile->props profile)
                ::audit/profile-id (:id profile)}))
 
           (with-meta profile
             {:transform-response ((:create session) (:id profile))
+             ::audit/props (audit/profile->props profile)
              ::audit/profile-id (:id profile)}))))))
 
 ;; --- MUTATION: Logout

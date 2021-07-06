@@ -90,7 +90,7 @@
     :tokens      (ig/ref :app.tokens/tokens)
     :public-uri  (cf/get :public-uri)
     :metrics     (ig/ref :app.metrics/metrics)
-    :oauth       (ig/ref :app.http.oauth/handlers)
+    :oauth       (ig/ref :app.http.oauth/handler)
     :assets      (ig/ref :app.http.assets/handlers)
     :storage     (ig/ref :app.storage/storage)
     :sns-webhook (ig/ref :app.http.awsns/handler)
@@ -107,11 +107,12 @@
    :app.http.feedback/handler
    {:pool (ig/ref :app.db/pool)}
 
-   :app.http.oauth/handlers
+   :app.http.oauth/handler
    {:rpc           (ig/ref :app.rpc/rpc)
     :session       (ig/ref :app.http.session/session)
     :pool          (ig/ref :app.db/pool)
     :tokens        (ig/ref :app.tokens/tokens)
+    :audit         (ig/ref :app.loggers.audit/collector)
     :public-uri    (cf/get :public-uri)}
 
    ;; RLimit definition for password hashing
