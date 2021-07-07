@@ -798,7 +798,9 @@
 
         edit-color
         (fn [new-color]
-          (let [updated-color (merge new-color (select-keys color [:id :file-id :name]))]
+          (let [old-data (-> (select-keys color [:id :file-id])
+                             (assoc :name (cp/merge-path-item (:path color) (:name color))))
+                updated-color (merge new-color old-data)]
             (st/emit! (dwl/update-color updated-color file-id))))
 
         delete-color

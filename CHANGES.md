@@ -27,6 +27,7 @@
 - Fix file contextual menu in shared libraries at dashboard [Taiga #1865](https://tree.taiga.io/project/penpot/issue/1865).
 - Fix problem with color picker and fonts [#1049](https://github.com/penpot/penpot/issues/1049)
 - Fix negative values in blur [#1815](https://tree.taiga.io/project/penpot/issue/1815)
+- Fix problem when editing color in group [#1816](https://tree.taiga.io/project/penpot/issue/1816)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
