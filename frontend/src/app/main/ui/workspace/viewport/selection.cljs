@@ -286,12 +286,17 @@
 
         shape-center (geom/center-shape shape)
 
-        on-resize (fn [current-position _initial-position event]
-                    (dom/stop-propagation event)
-                    (st/emit! (dw/start-resize current-position selected shape)))
+        on-resize
+        (fn [current-position _initial-position event]
+          (when (dom/left-mouse? event)
+            (dom/stop-propagation event)
+            (st/emit! (dw/start-resize current-position selected shape))))
 
-        on-rotate #(do (dom/stop-propagation %)
-                       (st/emit! (dw/start-rotate shapes)))]
+        on-rotate
+        (fn [event]
+          (when (dom/left-mouse? event)
+            (dom/stop-propagation event)
+            (st/emit! (dw/start-rotate shapes))))]
 
     [:*
      [:& controls {:shape shape
@@ -311,13 +316,19 @@
         shape (geom/transform-shape shape {:round-coords? false})
 
         shape' (if (debug? :simple-selection) (geom/setup {:type :rect} (geom/selection-rect [shape])) shape)
-        on-resize (fn [current-position _initial-position event]
-                    (dom/stop-propagation event)
-                    (st/emit! (dw/start-resize current-position #{shape-id} shape')))
+
+        on-resize
+        (fn [current-position _initial-position event]
+          (when (dom/left-mouse? event)
+            (dom/stop-propagation event)
+            (st/emit! (dw/start-resize current-position #{shape-id} shape'))))
 
         on-rotate
-        #(do (dom/stop-propagation %)
-             (st/emit! (dw/start-rotate [shape])))]
+        (fn [event]
+          (when (dom/left-mouse? event)
+            (dom/stop-propagation event)
+            (st/emit! (dw/start-rotate [shape]))))]
+
     [:& controls {:shape shape'
                   :zoom zoom
                   :color color
