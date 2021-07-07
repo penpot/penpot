@@ -30,6 +30,8 @@
 - Fix problem when editing color in group [Taiga #1816](https://tree.taiga.io/project/penpot/issue/1816)
 - Fix resize/rotate with mouse buttons different than left [#1060](https://github.com/penpot/penpot/issues/1060)
 - Fix header partialy visible on fullscreen viewer mode [Taiga #1875](https://tree.taiga.io/project/penpot/issue/1875)
+- Fix dynamic alignment enabled with hidden objects [#1063](https://github.com/penpot/penpot/issues/1063)
+
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes

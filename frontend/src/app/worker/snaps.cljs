@@ -19,7 +19,7 @@
 
 (defn process-shape [frame-id coord]
   (fn [shape]
-    (let [points (snap/shape-snap-points shape)
+    (let [points (when-not (:hidden shape) (snap/shape-snap-points shape))
           shape-data (->> points (mapv #(vector % (:id shape))))]
       (if (= (:id shape) frame-id)
         (d/concat
@@ -73,7 +73,7 @@
     (d/mapm create-index shapes-data)))
 
 ;; Attributes that will change the values of their snap
-(def snap-attrs [:x :y :width :height :selrect :grids])
+(def snap-attrs [:x :y :width :height :hidden :selrect :grids])
 
 (defn- update-snap-data
   [snap-data old-objects new-objects]
