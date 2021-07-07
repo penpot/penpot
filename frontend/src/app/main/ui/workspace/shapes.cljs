@@ -13,11 +13,13 @@
   common."
   (:require
    [app.common.geom.shapes :as geom]
+   [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.rect :as rect]
+   [app.main.ui.shapes.text.fontfaces :as ff]
    [app.main.ui.workspace.shapes.bounding-box :refer [bounding-box]]
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.workspace.shapes.frame :as frame]
@@ -53,18 +55,24 @@
   [props]
   (let [objects       (obj/get props "objects")
         active-frames (obj/get props "active-frames")
-        root-shapes (get-in objects [uuid/zero :shapes])
-        shapes      (->> root-shapes (mapv #(get objects %)))]
+        root-shapes   (get-in objects [uuid/zero :shapes])
+        shapes        (->> root-shapes (mapv #(get objects %)))
 
-    (for [item shapes]
-      (if (= (:type item) :frame)
-        [:& frame-wrapper {:shape item
-                           :key (:id item)
-                           :objects objects
-                           :thumbnail? (not (get active-frames (:id item) false))}]
+        root-children (->> shapes
+                           (filter #(not= :frame (:type %)))
+                           (mapcat #(cp/get-object-with-children (:id %) objects)))]
 
-        [:& shape-wrapper {:shape item
-                           :key (:id item)}]))))
+    [:*
+     [:& ff/fontfaces-style {:shapes root-children}]
+     (for [item shapes]
+       (if (= (:type item) :frame)
+         [:& frame-wrapper {:shape item
+                            :key (:id item)
+                            :objects objects
+                            :thumbnail? (not (get active-frames (:id item) false))}]
+
+         [:& shape-wrapper {:shape item
+                            :key (:id item)}]))]))
 
 (mf/defc shape-wrapper
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
