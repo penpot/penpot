@@ -375,19 +375,12 @@
   (let [parent-rect             (:selrect parent)
         child-rect              (:selrect child)
 
-        ; If the modifiers include a resize vector, apply it to the parent,
-        ; to check the difference and calculate child transformations.
-        origin (-> (:resize-origin parent-modifiers)
-                   ((d/nilf transform-point-center)
-                    (gco/center-shape parent)
-                    (:resize-transform-inverse parent-modifiers (gmt/matrix))))
-
-        transformed-parent-rect (-> parent-rect
-                                    (gpr/rect->points)
-                                    (transform-points
-                                      origin
-                                      (gmt/scale-matrix (get parent-modifiers :resize-vector (gpt/point 1 1))))
-                                    (gpr/points->selrect))
+        ;; Apply the modifiers to the parent, to check the difference with
+        ;; the original rect, and calculate child transformations.
+        transformed-parent-rect (-> parent
+                                    (assoc :modifiers parent-modifiers)
+                                    (transform-shape)
+                                    (:selrect))
 
         ;; Calculate the modifiers in the horizontal and vertical directions
         ;; depending on the child constraints.
@@ -431,11 +424,18 @@
                           {}))
 
                       :scale
-                      (if (and (:resize-vector parent-modifiers)
-                               (not (mth/close? (:x (:resize-vector parent-modifiers)) 1)))
-                        {:resize-origin (:resize-origin parent-modifiers)
-                         :resize-vector (gpt/point (:x (:resize-vector parent-modifiers)) 1)}
-                        {})
+                      (cond-> {}
+                        (and (:resize-vector parent-modifiers)
+                             (not (mth/close? (:x (:resize-vector parent-modifiers)) 1)))
+                        (assoc :resize-origin (:resize-origin parent-modifiers)
+                               :resize-vector (gpt/point (:x (:resize-vector parent-modifiers)) 1))
+
+                        (:displacement parent-modifiers)
+                        (assoc :displacement
+                               (gpt/point (-> (gpt/point 0 0)
+                                              (gpt/transform (:displacement parent-modifiers))
+                                              (:x))
+                                          0)))
 
                       {})
 
@@ -476,11 +476,17 @@
                           {}))
 
                       :scale
-                      (if (and (:resize-vector parent-modifiers)
-                               (not (mth/close? (:y (:resize-vector parent-modifiers)) 1)))
-                        {:resize-origin (:resize-origin parent-modifiers)
-                         :resize-vector (gpt/point 1 (:y (:resize-vector parent-modifiers)))}
-                        {})
+                      (cond-> {}
+                        (and (:resize-vector parent-modifiers)
+                             (not (mth/close? (:y (:resize-vector parent-modifiers)) 1)))
+                        (assoc :resize-origin (:resize-origin parent-modifiers)
+                               :resize-vector (gpt/point 1 (:y (:resize-vector parent-modifiers))))
+
+                        (:displacement parent-modifiers)
+                        (assoc :displacement
+                               (gpt/point 0 (-> (gpt/point 0 0)
+                                                (gpt/transform (:displacement parent-modifiers))
+                                                (:y)))))
 
                       {})]
 
@@ -497,11 +503,6 @@
                                 (:resize-origin modifiers-v)) ;; in any direction
              :resize-vector (gpt/point (get (:resize-vector modifiers-h) :x 1)
                                        (get (:resize-vector modifiers-v) :y 1)))
-
-      (:displacement parent-modifiers)
-      (update :displacement #(if (nil? %)
-                               (:displacement parent-modifiers)
-                               (gmt/add-translate % (:displacement parent-modifiers))))
 
       (:resize-transform parent-modifiers)
       (assoc :resize-transform (:resize-transform parent-modifiers)
