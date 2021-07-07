@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown']]
    [app.main.ui.icons :as i]
-   [app.util.data :refer [classnames]]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [goog.object :as gobj]
    [rumext.alpha :as mf]))
@@ -75,7 +75,7 @@
   [{:keys [selected? frame on-click index objects] :as props}]
   [:div.thumbnail-item {:on-click #(on-click % index)}
    [:div.thumbnail-preview
-    {:class (classnames :selected selected?)}
+    {:class (dom/classnames :selected selected?)}
     [:& exports/frame-svg {:frame frame :objects objects}]]
    [:div.thumbnail-info
     [:span.name {:title (:name frame)} (:name frame)]]])
@@ -104,7 +104,7 @@
                    :container container
                    :show true}
      [:section.viewer-thumbnails
-      {:class (classnames :expanded @expanded?)
+      {:class (dom/classnames :expanded @expanded?)
        :ref container
        :on-mouse-leave on-mouse-leave}
 

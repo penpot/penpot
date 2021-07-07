@@ -13,7 +13,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.util.data :refer [classnames matches-search]]
+   [app.util.data :refer [matches-search]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [cuerdas.core :as str]
@@ -170,11 +170,11 @@
       [:div.modal-content
        [:div.libraries-header
         [:div.header-item
-         {:class (classnames :active (= @selected-tab :libraries))
+         {:class (dom/classnames :active (= @selected-tab :libraries))
           :on-click #(change-tab :libraries)}
          (t locale "workspace.libraries.libraries")]
         [:div.header-item
-         {:class (classnames :active (= @selected-tab :updates))
+         {:class (dom/classnames :active (= @selected-tab :updates))
           :on-click #(change-tab :updates)}
          (t locale "workspace.libraries.updates")]]
        [:div.libraries-content

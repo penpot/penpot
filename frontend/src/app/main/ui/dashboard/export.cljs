@@ -11,7 +11,6 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.worker :as uw]
-   [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.core :as rx]
@@ -23,9 +22,10 @@
   [{:keys [file]}]
 
   [:div.file-entry
-   {:class (classnames :loading  (:loading? file)
-                       :success  (:export-success? file)
-                       :error    (:export-error? file))}
+   {:class (dom/classnames
+            :loading  (:loading? file)
+            :success  (:export-success? file)
+            :error    (:export-error? file))}
    [:div.file-name
     [:div.file-icon
      (cond (:export-success? file) i/tick

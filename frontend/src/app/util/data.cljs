@@ -153,34 +153,6 @@
 ;; Other
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn classnames
-  [& params]
-  {:pre [(even? (count params))]}
-  (str/join " " (reduce (fn [acc [k v]]
-                          (if (and k (true? v))
-                            (conj acc (name k))
-                            acc))
-                        []
-                        (partition 2 params))))
-
-;; (defn normalize-attrs
-;;   [m]
-;;   (letfn [(transform [[k v]]
-;;             (cond
-;;               (or (= k :class) (= k :class-name))
-;;               ["className" v]
-
-;;               (or (keyword? k) (string? k))
-;;               [(str/camel (name k)) v]
-
-;;               :else
-;;               [k v]))
-;;           (walker [x]
-;;             (if (map? x)
-;;               (into {} (map tf) x)
-;;               x))]
-;;     (walk/postwalk walker m)))
-
 (defn normalize-props
   [props]
   (clj->js props :keyword-fn (fn [key]
@@ -195,29 +167,4 @@
     (let [st (str/trim (str/lower search-term))
           nm (str/trim (str/lower name))]
       (str/includes? nm st))))
-
-;; (defn coalesce
-;;   [^number v ^number n]
-;;   (if (.-toFixed v)
-;;     (js/parseFloat (.toFixed v n))
-;;     0))
-
-
-
-;; (defmacro mirror-map [& fields]
-;;   (let [keys# (map #(keyword (name %)) fields)
-;;         vals# fields]
-;;     (apply hash-map (interleave keys# vals#))))
-
-;; (defmacro some->'
-;;   [x & forms]
-;;   `(let [x# (p/then' ~x (fn [v#]
-;;                           (when (nil? v#)
-;;                             (throw (ex-info "internal" {::some-interrupt true})))
-;;                           v#))]
-;;      (-> (-> x# ~@forms)
-;;          (p/catch' (fn [e#]
-;;                      (if (::some-interrupt (ex-data e#))
-;;                        nil
-;;                        (throw e#)))))))
 
