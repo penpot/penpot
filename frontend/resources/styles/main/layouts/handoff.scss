@@ -21,9 +21,18 @@ $width-settings-bar: 16rem;
   .viewer-header {
     width: 100%;
     position: fixed;
-    top: -39px;
+    top: -48px;
     left: 0;
     transition: top 400ms ease 300ms;
+
+    &::after {
+      content: " ";
+      position: absolute;
+      width: 100%;
+      height: 1rem;
+      left: 0;
+      top: 48px;
+    }
   }
 
   & .viewer-header:hover {
