@@ -86,9 +86,9 @@
     (mf/fnc svg-raw-wrapper
       [{:keys [shape frame] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
-        (if (and (contains? shape :svg-attrs)
-                 (map? (:content shape))
-                 (not= :svg (get-in shape [:content :tag])))
+        (if (and (map? (:content shape))
+                 (or (= :svg (get-in shape [:content :tag]))
+                     (contains? shape :svg-attrs)))
           [:> shape-container {:shape shape}
            [:& svg-raw-shape {:frame frame
                               :shape shape

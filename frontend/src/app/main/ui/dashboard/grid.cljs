@@ -13,6 +13,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.file-menu :refer [file-menu]]
+   [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.icons :as i]
    [app.main.worker :as wrk]
@@ -210,22 +211,68 @@
    [:div.text (tr "dashboard.loading-files")]])
 
 (mf/defc grid
-  [{:keys [files] :as props}]
-  [:section.dashboard-grid
-   (cond
-     (nil? files)
-     [:& loading-placeholder]
+  [{:keys [files project-id] :as props}]
+  (let [dragging? (mf/use-state false)
 
-     (seq files)
-     [:div.grid-row
-      (for [item files]
-        [:& grid-item
-         {:file item
-          :key (:id item)
-          :navigate? true}])]
+        on-finish-import
+        (mf/use-callback
+         (fn []
+           (st/emit! (dd/fetch-files {:project-id project-id})
+                     (dd/clear-selected-files))))
 
-     :else
-     [:& empty-placeholder])])
+        import-files (use-import-file project-id on-finish-import)
+
+        on-drag-enter
+        (mf/use-callback
+         (fn [e]
+           (when (or (dnd/has-type? e "Files")
+                     (dnd/has-type? e "application/x-moz-file"))
+             (dom/prevent-default e)
+             (reset! dragging? true))))
+
+        on-drag-over
+        (mf/use-callback
+         (fn [e]
+           (when (or (dnd/has-type? e "Files")
+                     (dnd/has-type? e "application/x-moz-file"))
+             (dom/prevent-default e))))
+
+        on-drag-leave
+        (mf/use-callback
+         (fn [e]
+           (when-not (dnd/from-child? e)
+             (reset! dragging? false))))
+
+
+        on-drop
+        (mf/use-callback
+         (fn [e]
+           (when (or (dnd/has-type? e "Files")
+                     (dnd/has-type? e "application/x-moz-file"))
+             (dom/prevent-default e)
+             (reset! dragging? false)
+             (import-files (.-files (.-dataTransfer e))))))]
+
+    [:section.dashboard-grid {:on-drag-enter on-drag-enter
+                              :on-drag-over on-drag-over
+                              :on-drag-leave on-drag-leave
+                              :on-drop on-drop}
+     (cond
+       (nil? files)
+       [:& loading-placeholder]
+
+       (seq files)
+       [:div.grid-row
+        (when @dragging?
+          [:div.grid-item])
+        (for [item files]
+          [:& grid-item
+           {:file item
+            :key (:id item)
+            :navigate? true}])]
+
+       :else
+       [:& empty-placeholder])]))
 
 (mf/defc line-grid-row
   [{:keys [files selected-files on-load-more dragging?] :as props}]
@@ -285,9 +332,16 @@
 (mf/defc line-grid
   [{:keys [project-id team-id files on-load-more] :as props}]
   (let [dragging?        (mf/use-state false)
-
         selected-files   (mf/deref refs/dashboard-selected-files)
         selected-project (mf/deref refs/dashboard-selected-project)
+
+        on-finish-import
+        (mf/use-callback
+         (fn []
+           (st/emit! (dd/fetch-recent-files)
+                     (dd/clear-selected-files))))
+
+        import-files (use-import-file project-id on-finish-import)
 
         on-drag-enter
         (mf/use-callback
@@ -298,13 +352,20 @@
               (when-not (or (dnd/from-child? e)
                             (dnd/broken-event? e))
                 (when (not= selected-project project-id)
-                  (reset! dragging? true))))))
+                  (reset! dragging? true))))
+
+            (when (or (dnd/has-type? e "Files")
+                      (dnd/has-type? e "application/x-moz-file"))
+              (dom/prevent-default e)
+              (reset! dragging? true))))
 
         on-drag-over
         (mf/use-callback
-          (fn [e]
-            (when (dnd/has-type? e "penpot/files")
-              (dom/prevent-default e))))
+         (fn [e]
+           (when (or (dnd/has-type? e "penpot/files")
+                     (dnd/has-type? e "Files")
+                     (dnd/has-type? e "application/x-moz-file"))
+             (dom/prevent-default e))))
 
         on-drag-leave
         (mf/use-callback
@@ -321,13 +382,20 @@
         on-drop
         (mf/use-callback
           (mf/deps files selected-files)
-          (fn [_]
-            (reset! dragging? false)
-            (when (not= selected-project project-id)
-              (let [data  {:ids (into #{} (keys selected-files))
-                           :project-id project-id}
-                    mdata {:on-success on-drop-success}]
-                (st/emit! (dd/move-files (with-meta data mdata)))))))]
+          (fn [e]
+            (when (or (dnd/has-type? e "Files")
+                      (dnd/has-type? e "application/x-moz-file"))
+              (dom/prevent-default e)
+              (reset! dragging? false)
+              (import-files (.-files (.-dataTransfer e))))
+
+            (when (dnd/has-type? e "penpot/files")
+              (reset! dragging? false)
+              (when (not= selected-project project-id)
+                (let [data  {:ids (into #{} (keys selected-files))
+                             :project-id project-id}
+                      mdata {:on-success on-drop-success}]
+                  (st/emit! (dd/move-files (with-meta data mdata))))))))]
 
     [:section.dashboard-grid {:on-drag-enter on-drag-enter
                               :on-drag-over on-drag-over

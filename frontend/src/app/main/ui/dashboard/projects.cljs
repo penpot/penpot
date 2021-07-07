@@ -93,7 +93,13 @@
          (fn []
            (let [mdata  {:on-success on-file-created}
                  params {:project-id (:id project)}]
-             (st/emit! (dd/create-file (with-meta params mdata))))))]
+             (st/emit! (dd/create-file (with-meta params mdata))))))
+
+        on-import
+        (mf/use-callback
+         (fn []
+           (st/emit! (dd/fetch-recent-files)
+                     (dd/clear-selected-files))))]
 
     [:div.dashboard-project-row {:class (when first? "first")}
      [:div.project
@@ -111,7 +117,8 @@
                         :left (:x (:menu-pos @local))
                         :top (:y (:menu-pos @local))
                         :on-edit on-edit-open
-                        :on-menu-close on-menu-close}]
+                        :on-menu-close on-menu-close
+                        :on-import on-import}]
 
       [:span.info (str file-count " files")]
       (when (> file-count 0)

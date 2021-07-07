@@ -20,7 +20,7 @@
    [rumext.alpha :as mf]))
 
 (mf/defc project-menu
-  [{:keys [project show? on-edit on-menu-close top left] :as props}]
+  [{:keys [project show? on-edit on-menu-close top left on-import] :as props}]
   (assert (some? project) "missing `project` prop")
   (assert (boolean? show?) "missing `show?` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
@@ -84,8 +84,7 @@
         on-finish-import
         (mf/use-callback
          (fn []
-           (st/emit! (dd/fetch-recent-files)
-                     (dd/clear-selected-files))))]
+           (when (some? on-import) (on-import))))]
 
     [:*
      [:& udi/import-form {:ref file-input
@@ -106,7 +105,8 @@
                    [(tr "dashboard.move-to") nil
                     (for [team teams]
                       [(:name team) (on-move (:id team))])])
-                 [(tr "dashboard.import") on-import-files]
+                 (when (some? on-import)
+                   [(tr "dashboard.import") on-import-files])
                  [:separator]
                  [(tr "labels.delete") on-delete]]}]]))
 

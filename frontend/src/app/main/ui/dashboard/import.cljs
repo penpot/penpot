@@ -12,7 +12,6 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.icons :as i]
    [app.main.worker :as uw]
-   [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -144,10 +143,11 @@
            (swap! state update :files remove-file (:file-id file))))]
 
     [:div.file-entry
-     {:class (classnames :loading  loading?
-                         :success  load-success?
-                         :error    (or import-error? analyze-error?)
-                         :editable (and ready? (not editing?)))}
+     {:class (dom/classnames
+              :loading  loading?
+              :success  load-success?
+              :error    (or import-error? analyze-error?)
+              :editable (and ready? (not editing?)))}
 
      [:div.file-name
       [:div.file-icon

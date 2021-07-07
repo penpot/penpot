@@ -6,6 +6,7 @@
 
 (ns app.main.ui.dashboard.file-menu
   (:require
+   [app.common.data :as d]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
@@ -155,12 +156,23 @@
                       :on-accept del-shared})))
 
         on-export-files
-        (fn [_]
-          (st/emit!
-           (modal/show
-            {:type :export
-             :team-id current-team-id
-             :files (->> files (mapv :id))})))]
+        (mf/use-callback
+         (mf/deps files current-team-id)
+         (fn [_]
+           (->> (rx/from files)
+                (rx/flat-map
+                 (fn [file]
+                   (->> (rp/query :file-libraries {:file-id (:id file)})
+                        (rx/map #(assoc file :has-libraries? (d/not-empty? %))))))
+                (rx/reduce conj [])
+                (rx/subs
+                 (fn [files]
+                   (st/emit!
+                    (modal/show
+                     {:type :export
+                      :team-id current-team-id
+                      :has-libraries? (->> files (some :has-libraries?))
+                      :files files})))))))]
 
     (mf/use-effect
      (fn []

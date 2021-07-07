@@ -450,14 +450,22 @@
   [{:keys [team-id files export-type] :as message}]
 
   (->> (rx/from files)
-       (rx/mapcat #(export-file team-id % export-type))
-       (rx/map
-        (fn [value]
-          (if (contains? value :type)
-            value
-            (let [[file export-blob] value]
-              {:type :finish
-               :filename (:name file)
-               :mtype "application/penpot"
-               :description "Penpot export (*.penpot)"
-               :uri (dom/create-uri export-blob)}))))))
+       (rx/mapcat
+        (fn [file]
+          (->> (export-file team-id file export-type)
+               (rx/map
+                (fn [value]
+                  (if (contains? value :type)
+                    value
+                    (let [[file export-blob] value]
+                      {:type :finish
+                       :file-id (:id file)
+                       :filename (:name file)
+                       :mtype "application/penpot"
+                       :description "Penpot export (*.penpot)"
+                       :uri (dom/create-uri export-blob)}))))
+               (rx/catch
+                   (fn [err]
+                     (rx/of {:type :error
+                             :error (str err)
+                             :file-id file}))))))))

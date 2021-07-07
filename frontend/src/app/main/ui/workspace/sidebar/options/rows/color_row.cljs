@@ -18,7 +18,6 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
-   [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
@@ -162,7 +161,7 @@
         (when (and (not disable-opacity)
                    (not (:gradient color)))
           [:div.input-element
-           {:class (classnames :percentail (not= (:opacity color) :multiple))}
+           {:class (dom/classnames :percentail (not= (:opacity color) :multiple))}
            [:> numeric-input {:value (-> color :opacity opacity->string)
                               :placeholder (tr "settings.multiple")
                               :on-click select-all

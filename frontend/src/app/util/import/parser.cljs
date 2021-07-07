@@ -201,7 +201,13 @@
         (merge (add-attrs {} (:attrs svg-node)) node-attrs))
 
       (= type :svg-raw)
-      (->> node :content last)
+      (let [svg-content (get-data node :penpot:svg-content)
+            tag (-> svg-content :attrs :penpot:tag keyword)
+
+            svg-node (if (= :svg tag)
+                       (->> node :content last :content last)
+                       (->> node :content last))]
+        (merge (add-attrs {} (:attrs svg-node)) node-attrs))
 
       :else
       node-attrs)))

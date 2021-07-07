@@ -6,12 +6,14 @@
 
 (ns app.main.ui.workspace.header
   (:require
+   [app.common.data :as d]
    [app.common.math :as mth]
    [app.config :as cfg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
@@ -20,6 +22,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
+   [beicon.core :as rx]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -135,12 +138,23 @@
                              (reset! editing? true))
 
         on-export-files
-        (fn [_]
-          (st/emit!
-           (modal/show
-            {:type :export
-             :team-id team-id
-             :files [(:id file)]})))]
+        (mf/use-callback
+         (mf/deps file team-id)
+         (fn [_]
+           (->> (rx/of file)
+                (rx/flat-map
+                 (fn [file]
+                   (->> (rp/query :file-libraries {:file-id (:id file)})
+                        (rx/map #(assoc file :has-libraries? (d/not-empty? %))))))
+                (rx/reduce conj [])
+                (rx/subs
+                 (fn [files]
+                   (st/emit!
+                    (modal/show
+                     {:type :export
+                      :team-id team-id
+                      :files files})))))))]
+
     (mf/use-effect
      (mf/deps @editing?)
      #(when @editing?

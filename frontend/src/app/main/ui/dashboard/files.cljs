@@ -44,7 +44,14 @@
          (mf/deps project)
          (fn [event]
            (dom/prevent-default event)
-           (st/emit! (dd/create-file {:project-id (:id project)}))))]
+           (st/emit! (dd/create-file {:project-id (:id project)}))))
+
+        on-import
+        (mf/use-callback
+         (mf/deps (:id project))
+         (fn []
+           (st/emit! (dd/fetch-files {:project-id (:id project)})
+                     (dd/clear-selected-files))))]
 
 
     [:header.dashboard-header
@@ -65,7 +72,8 @@
                             :left (- (:x (:menu-pos @local)) 180)
                             :top (:y (:menu-pos @local))
                             :on-edit on-edit
-                            :on-menu-close on-menu-close}]]))
+                            :on-menu-close on-menu-close
+                            :on-import on-import}]]))
      [:div.dashboard-header-actions
       [:a.btn-secondary.btn-small {:on-click on-create-clicked}
        (tr "dashboard.new-file")]
@@ -102,6 +110,6 @@
     [:*
      [:& header {:team team :project project}]
      [:section.dashboard-container
-      [:& grid {:id (:id project)
+      [:& grid {:project-id (:id project)
                 :files files}]]]))
 
