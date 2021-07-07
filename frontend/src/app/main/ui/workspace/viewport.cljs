@@ -182,6 +182,7 @@
        :ref render-ref
        :xmlns "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"
+       :xmlns:penpot "https://penpot.app/xmlns"
        :preserveAspectRatio "xMidYMid meet"
        :key (str "render" page-id)
        :width (:width vport 0)

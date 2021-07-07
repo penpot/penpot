@@ -153,6 +153,7 @@
                     (modal/show
                      {:type :export
                       :team-id team-id
+                      :has-libraries? (->> files (some :has-libraries?))
                       :files files})))))))]
 
     (mf/use-effect
