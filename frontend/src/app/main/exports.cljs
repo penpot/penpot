@@ -25,6 +25,7 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
+   [app.main.ui.shapes.text.fontfaces :as ff]
    [app.util.object :as obj]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
@@ -133,8 +134,14 @@
   [{:keys [data width height thumbnails? embed?] :as props}]
   (let [objects (:objects data)
         root    (get objects uuid/zero)
-        shapes  (->> (:shapes root)
-                     (map #(get objects %)))
+        shapes
+        (->> (:shapes root)
+             (map #(get objects %)))
+
+        root-children
+        (->> shapes
+             (filter #(not= :frame (:type %)))
+             (mapcat #(cp/get-object-with-children (:id %) objects)))
 
         vport   (when (and (some? width) (some? height))
                   {:width width :height height})
@@ -161,7 +168,7 @@
                     :background background-color}}
 
       [:& use/export-page {:options (:options data)}]
-
+      [:& ff/fontfaces-style {:shapes root-children}]
       (for [item shapes]
         (let [frame? (= (:type item) :frame)]
           (cond

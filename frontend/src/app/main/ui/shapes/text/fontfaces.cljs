@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.text.fontfaces
   (:require
+   [app.common.data :as d]
    [app.main.fonts :as fonts]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.embed :as embed]
@@ -47,19 +48,12 @@
 
     (mf/ref-val fonts-css-ref)))
 
-(mf/defc fontfaces-style
+(mf/defc fontfaces-style-render
   {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
+   ::mf/wrap [#(mf/memo' % (mf/check-props ["fonts"]))]}
   [props]
-  (let [shapes  (obj/get props "shapes")
 
-        content (->> shapes (mapv :content))
-
-        ;; Retrieve the fonts ids used by the text shapes
-        fonts (->> content
-                   (mapv fonts/get-content-fonts)
-                   (reduce set/union #{})
-                   (hooks/use-equal-memo))
+  (let [fonts (obj/get props "fonts")
 
         ;; Fetch its CSS fontfaces
         fonts-css (use-fonts-css fonts)
@@ -75,5 +69,23 @@
         ;; Creates a style tag by replacing the urls with the data uri
         style (replace-embeds fonts-css fonts-urls fonts-embed)]
 
-    (when (seq style)
+    (when (d/not-empty? style)
       [:style style])))
+
+(mf/defc fontfaces-style
+  {::mf/wrap-props false
+   ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
+  [props]
+  (let [shapes  (->> (obj/get props "shapes")
+                     (filterv #(= :text (:type %))))
+
+        content (->> shapes (mapv :content))
+
+        ;; Retrieve the fonts ids used by the text shapes
+        fonts (->> content
+                   (mapv fonts/get-content-fonts)
+                   (reduce set/union #{})
+                   (hooks/use-equal-memo))]
+
+    (when (d/not-empty? fonts)
+      [:> fontfaces-style-render {:fonts fonts}])))

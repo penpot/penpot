@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.shapes.frame
   (:require
    [app.common.geom.shapes :as gsh]
+   [app.common.pages :as cp]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text.fontfaces :as ff]
@@ -76,8 +77,10 @@
             objects     (unchecked-get props "objects")
             thumbnail?  (unchecked-get props "thumbnail?")
 
-            shape       (gsh/transform-shape shape)
-            children    (mapv #(get objects %) (:shapes shape))
+            shape        (gsh/transform-shape shape)
+            children     (mapv #(get objects %) (:shapes shape))
+
+            all-children (cp/get-children-objects (:id shape) objects)
 
             rendered?   (mf/use-state false)
 
@@ -93,7 +96,7 @@
 
            (when-not show-thumbnail?
              [:> shape-container {:shape shape :ref on-dom}
-              [:& ff/fontfaces-style {:shapes children}]
+              [:& ff/fontfaces-style {:shapes all-children}]
               [:& frame-shape {:shape shape
                                :childs children}]])
 

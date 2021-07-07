@@ -25,6 +25,7 @@
 - Fix workspace header presence styles and invalid link [Taiga #1813](https://tree.taiga.io/project/penpot/issue/1813).
 - Fix color-input wrong behavior (on workspace page color) [Taiga #1795](https://tree.taiga.io/project/penpot/issue/1795).
 - Fix file contextual menu in shared libraries at dashboard [Taiga #1865](https://tree.taiga.io/project/penpot/issue/1865).
+- Fix problem with color picker and fonts [#1049](https://github.com/penpot/penpot/issues/1049)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
