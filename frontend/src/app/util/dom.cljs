@@ -375,3 +375,7 @@
                  (trigger-download-uri filename mtype uri)))))
 
     (trigger-download-uri filename mtype uri)))
+
+(defn left-mouse? [bevent]
+  (let [event  (.-nativeEvent bevent)]
+    (= 1 (.-which event))))

@@ -26,8 +26,9 @@
 - Fix color-input wrong behavior (on workspace page color) [Taiga #1795](https://tree.taiga.io/project/penpot/issue/1795).
 - Fix file contextual menu in shared libraries at dashboard [Taiga #1865](https://tree.taiga.io/project/penpot/issue/1865).
 - Fix problem with color picker and fonts [#1049](https://github.com/penpot/penpot/issues/1049)
-- Fix negative values in blur [#1815](https://tree.taiga.io/project/penpot/issue/1815)
-- Fix problem when editing color in group [#1816](https://tree.taiga.io/project/penpot/issue/1816)
+- Fix negative values in blur [Taiga #1815](https://tree.taiga.io/project/penpot/issue/1815)
+- Fix problem when editing color in group [Taiga #1816](https://tree.taiga.io/project/penpot/issue/1816)
+- Fix resize/rotate with mouse buttons different than left [#1060](https://github.com/penpot/penpot/issues/1060)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
