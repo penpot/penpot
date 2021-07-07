@@ -72,7 +72,7 @@
        [:div.element-set-content
         [:& input-row {:label "Value"
                        :class "pixels"
-                       :min 0
+                       :min "0"
                        :value (:value blur)
                        :placeholder (tr "settings.multiple")
                        :on-change handle-change}]])]))
