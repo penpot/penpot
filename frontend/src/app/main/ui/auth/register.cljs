@@ -169,11 +169,8 @@
     (let [token (:invitation-token data)]
       (st/emit! (rt/nav :auth-verify-token {} {:token token})))
 
-
     (not= "penpot" (:auth-backend data))
-    (st/emit!
-     (du/fetch-profile)
-     (rt/nav :dashboard-projects {:team-id (:default-team-id data)}))
+    (st/emit! (du/login-from-register))
 
     :else
     (st/emit! (rt/nav :auth-register-success {} {:email (:email data)}))))

@@ -138,9 +138,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [team-id (get-current-team-id profile)
-            profile (with-meta profile
-                      {::ev/source "login"})]
+      (let [team-id (get-current-team-id profile)]
         (->> (rx/concat
               (rx/of (profile-fetched profile)
                      (fetch-teams))
@@ -186,6 +184,25 @@
       (rx/of (logged-in
               (with-meta profile
                 {::ev/source "login-with-token"}))))))
+
+(defn login-from-register
+  "Event used mainly for mark current session as logged-in in after the
+  user sucessfully registred using third party auth provider (in this
+  case we dont need to verify the email)."
+  []
+  (ptk/reify ::login-from-register
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (rx/merge
+       (rx/of (fetch-profile))
+       (->> stream
+            (rx/filter (ptk/type? ::profile-fetched))
+            (rx/take 1)
+            (rx/map deref)
+            (rx/map (fn [profile]
+                      (with-meta profile
+                        {::ev/source "register"})))
+            (rx/map logged-in))))))
 
 ;; --- EVENT: logout
 
