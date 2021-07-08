@@ -84,7 +84,7 @@
     (create-index new-objects)))
 
 (defn- query-index
-  [{index :index z-index :z-index} rect frame-id include-frames? include-groups? reverse?]
+  [{index :index z-index :z-index} rect frame-id include-frames? full-frame? include-groups? reverse?]
   (let [result (-> (qdt/search index (clj->js rect))
                    (es6-iterator-seq))
 
@@ -97,7 +97,11 @@
                (case (:type shape)
                  :frame   include-frames?
                  :group   include-groups?
-                 true)))
+                 true)
+
+               (or (not full-frame?)
+                   (not= :frame (:type shape))
+                   (gsh/rect-contains-shape? rect shape))))
 
         overlaps?
         (fn [shape]
@@ -151,10 +155,10 @@
   nil)
 
 (defmethod impl/handler :selection/query
-  [{:keys [page-id rect frame-id include-frames? include-groups? reverse?]
-    :or {include-groups? true reverse? false} :as message}]
+  [{:keys [page-id rect frame-id include-frames? full-frame? include-groups? reverse?]
+    :or {include-groups? true reverse? false include-frames? false full-frame? false} :as message}]
   (when-let [index (get @state page-id)]
-    (query-index index rect frame-id include-frames? include-groups? reverse?)))
+    (query-index index rect frame-id include-frames? full-frame? include-groups? reverse?)))
 
 (defmethod impl/handler :selection/query-z-index
   [{:keys [page-id objects ids]}]

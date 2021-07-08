@@ -67,10 +67,10 @@
 
                node-editing?
                ;; Handle path node area selection
-               (st/emit! (dwdp/handle-selection shift?))
+               (st/emit! (dwdp/handle-area-selection shift?))
 
                (or (not id) (and frame? (not selected?)))
-               (st/emit! (dw/handle-selection shift?))
+               (st/emit! (dw/handle-area-selection shift?))
 
                (not drawing-tool)
                (st/emit! (when (or shift? (not selected?))

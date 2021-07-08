@@ -101,12 +101,12 @@
     (update [_ state]
       (update state :workspace-local dissoc :selrect))))
 
-(defn handle-selection
+(defn handle-area-selection
   [shift?]
   (letfn [(valid-rect? [{width :width height :height}]
             (or (> width 10) (> height 10)))]
 
-    (ptk/reify ::handle-selection
+    (ptk/reify ::handle-area-selection
       ptk/WatchEvent
       (watch [_ _ stream]
         (let [stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
