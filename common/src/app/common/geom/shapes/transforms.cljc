@@ -15,11 +15,13 @@
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
    [app.common.pages.spec :as spec]
+   [app.common.spec :as us]
    [app.common.text :as txt]))
+
 
 ;; --- Relative Movement
 
-(defn move-selrect [selrect {dx :x dy :y}]
+(defn- move-selrect [selrect {dx :x dy :y}]
   (-> selrect
       (d/update-when :x + dx)
       (d/update-when :y + dy)
@@ -28,7 +30,7 @@
       (d/update-when :x2 + dx)
       (d/update-when :y2 + dy)))
 
-(defn move-points [points move-vec]
+(defn- move-points [points move-vec]
   (->> points
        (mapv #(gpt/add % move-vec))))
 
@@ -48,9 +50,8 @@
         (cond-> (= :path (:type shape))
           (update :content gpa/move-content move-vec)))))
 
-;; --- Absolute Movement
 
-(declare absolute-move-rect)
+;; --- Absolute Movement
 
 (defn absolute-move
   "Move the shape to the exactly specified position."
@@ -58,6 +59,68 @@
   (let [dx (- (d/check-num x) (-> shape :selrect :x))
         dy (- (d/check-num y) (-> shape :selrect :y))]
     (move shape (gpt/point dx dy))))
+
+
+; ---- Geometric operations
+
+(defn- normalize-scale
+  "We normalize the scale so it's not too close to 0"
+  [scale]
+  (cond
+    (and (<  scale 0) (> scale -0.01)) -0.01
+    (and (>= scale 0) (< scale  0.01))  0.01
+    :else scale))
+
+(defn- calculate-skew-angle
+  "Calculates the skew angle of the paralelogram given by the points"
+  [[p1 _ p3 p4]]
+  (let [v1 (gpt/to-vec p3 p4)
+        v2 (gpt/to-vec p4 p1)]
+    ;; If one of the vectors is zero it's a rectangle with 0 height or width
+    ;; We don't skew these
+    (if (or (gpt/almost-zero? v1)
+            (gpt/almost-zero? v2))
+      0
+      (- 90 (gpt/angle-with-other v1 v2)))))
+
+(defn- calculate-height
+  "Calculates the height of a paralelogram given by the points"
+  [[p1 _ _ p4]]
+  (-> (gpt/to-vec p4 p1)
+      (gpt/length)))
+
+(defn- calculate-width
+  "Calculates the width of a paralelogram given by the points"
+  [[p1 p2 _ _]]
+  (-> (gpt/to-vec p1 p2)
+      (gpt/length)))
+
+(defn- calculate-rotation
+  "Calculates the rotation between two shapes given the resize vector direction"
+  [center points-shape1 points-shape2 flip-x flip-y]
+
+  (let [idx-1 0
+        idx-2 (cond (and flip-x       (not flip-y)) 1
+                    (and flip-x       flip-y) 2
+                    (and (not flip-x) flip-y) 3
+                    :else 0)
+        p1 (nth points-shape1 idx-1)
+        p2 (nth points-shape2 idx-2)
+        v1 (gpt/to-vec center p1)
+        v2 (gpt/to-vec center p2)
+
+        rot-angle (gpt/angle-with-other v1 v2)
+        rot-sign (gpt/angle-sign v1 v2)]
+    (* rot-sign rot-angle)))
+
+(defn- calculate-dimensions
+  [[p1 p2 p3 _]]
+  (let [width  (gpt/distance p1 p2)
+        height (gpt/distance p2 p3)]
+    {:width width :height height}))
+
+
+;; --- Transformation matrix operations
 
 (defn transform-matrix
   "Returns a transformation matrix without changing the shape properties.
@@ -117,98 +180,6 @@
                    (transform-points matrix))]
     (gpr/points->rect points)))
 
-(defn normalize-scale
-  "We normalize the scale so it's not too close to 0"
-  [scale]
-  (cond
-    (and (<  scale 0) (> scale -0.01)) -0.01
-    (and (>= scale 0) (< scale  0.01))  0.01
-    :else scale))
-
-(defn modifiers->transform
-  [center modifiers]
-  (let [ds-modifier (:displacement modifiers (gmt/matrix))
-        {res-x :x res-y :y} (:resize-vector modifiers (gpt/point 1 1))
-
-        ;; Normalize x/y vector coordinates because scale by 0 is infinite
-        res-x (normalize-scale res-x)
-        res-y (normalize-scale res-y)
-        resize (gpt/point res-x res-y)
-
-        origin (:resize-origin modifiers (gpt/point 0 0))
-
-        resize-transform (:resize-transform modifiers (gmt/matrix))
-        resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
-        rt-modif (or (:rotation modifiers) 0)
-
-        center (gpt/transform center ds-modifier)
-
-        transform (-> (gmt/matrix)
-
-                      ;; Applies the current resize transformation
-                      (gmt/translate origin)
-                      (gmt/multiply resize-transform)
-                      (gmt/scale resize)
-                      (gmt/multiply resize-transform-inverse)
-                      (gmt/translate (gpt/negate origin))
-
-                      ;; Applies the stacked transformations
-                      (gmt/translate center)
-                      (gmt/multiply (gmt/rotate-matrix rt-modif))
-                      (gmt/translate (gpt/negate center))
-
-                      ;; Displacement
-                      (gmt/multiply ds-modifier))]
-    transform))
-
-(defn- calculate-skew-angle
-  "Calculates the skew angle of the paralelogram given by the points"
-  [[p1 _ p3 p4]]
-  (let [v1 (gpt/to-vec p3 p4)
-        v2 (gpt/to-vec p4 p1)]
-    ;; If one of the vectors is zero it's a rectangle with 0 height or width
-    ;; We don't skew these
-    (if (or (gpt/almost-zero? v1)
-            (gpt/almost-zero? v2))
-      0
-      (- 90 (gpt/angle-with-other v1 v2)))))
-
-(defn- calculate-height
-  "Calculates the height of a paralelogram given by the points"
-  [[p1 _ _ p4]]
-  (-> (gpt/to-vec p4 p1)
-      (gpt/length)))
-
-(defn- calculate-width
-  "Calculates the width of a paralelogram given by the points"
-  [[p1 p2 _ _]]
-  (-> (gpt/to-vec p1 p2)
-      (gpt/length)))
-
-(defn- calculate-rotation
-  "Calculates the rotation between two shapes given the resize vector direction"
-  [center points-shape1 points-shape2 flip-x flip-y]
-
-  (let [idx-1 0
-        idx-2 (cond (and flip-x       (not flip-y)) 1
-                    (and flip-x       flip-y) 2
-                    (and (not flip-x) flip-y) 3
-                    :else 0)
-        p1 (nth points-shape1 idx-1)
-        p2 (nth points-shape2 idx-2)
-        v1 (gpt/to-vec center p1)
-        v2 (gpt/to-vec center p2)
-
-        rot-angle (gpt/angle-with-other v1 v2)
-        rot-sign (gpt/angle-sign v1 v2)]
-    (* rot-sign rot-angle)))
-
-(defn- calculate-dimensions
-  [[p1 p2 p3 _]]
-  (let [width  (gpt/distance p1 p2)
-        height (gpt/distance p2 p3)]
-    {:width width :height height}))
-
 (defn calculate-adjust-matrix
   "Calculates a matrix that is a series of transformations we have to do to the transformed rectangle so that
   after applying them the end result is the `shape-pathn-temp`.
@@ -257,7 +228,7 @@
                                     (gmt/rotate (- rotation-angle)))]
      [stretch-matrix stretch-matrix-inverse rotation-angle])))
 
-(defn apply-transform
+(defn- apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform round-coords?]
@@ -310,7 +281,145 @@
       (assoc  $ :selrect (gpr/rect->selrect rect-shape))
       (assoc  $ :rotation (mod (+ base-rotation modif-rotation) 360)))))
 
-(defn set-flip [shape modifiers]
+(defn- update-group-viewbox
+  "Updates the viewbox for groups imported from SVG's"
+  [{:keys [selrect svg-viewbox] :as group} new-selrect]
+  (let [;; Gets deltas for the selrect to update the svg-viewbox (for svg-imports)
+        deltas {:x      (- (:x new-selrect 0)      (:x selrect 0))
+                :y      (- (:y new-selrect 0)      (:y selrect 0))
+                :width  (- (:width new-selrect 1)  (:width selrect 1))
+                :height (- (:height new-selrect 1) (:height selrect 1))}]
+
+    (cond-> group
+      (and (some? svg-viewbox) (some? selrect) (some? new-selrect))
+      (update :svg-viewbox
+              #(-> %
+                   (update :x + (:x deltas))
+                   (update :y + (:y deltas))
+                   (update :width + (:width deltas))
+                   (update :height + (:height deltas)))))))
+
+(defn update-group-selrect [group children]
+  (let [shape-center (gco/center-shape group)
+        ;; Points for every shape inside the group
+        points (->> children (mapcat :points))
+
+        ;; Invert to get the points minus the transforms applied to the group
+        base-points (transform-points points shape-center (:transform-inverse group (gmt/matrix)))
+
+        ;; Defines the new selection rect with its transformations
+        new-points (-> (gpr/points->selrect base-points)
+                       (gpr/rect->points)
+                       (transform-points shape-center (:transform group (gmt/matrix))))
+
+        ;; Calculte the new selrect
+        new-selrect (gpr/points->selrect base-points)]
+
+    ;; Updates the shape and the applytransform-rect will update the other properties
+    (-> group
+        (update-group-viewbox new-selrect)
+        (assoc :selrect new-selrect)
+        (assoc :points new-points)
+
+        ;; We're regenerating the selrect from its children so we
+        ;; need to remove the flip flags
+        (assoc :flip-x false)
+        (assoc :flip-y false)
+        (apply-transform (gmt/matrix) true))))
+
+
+;; --- Modifiers
+
+(defn resize-modifiers
+  [shape attr value]
+  (us/assert map? shape)
+  (us/assert #{:width :height} attr)
+  (us/assert number? value)
+  (let [{:keys [proportion proportion-lock]} shape
+        size (select-keys (:selrect shape) [:width :height])
+        new-size (if-not proportion-lock
+                   (assoc size attr value)
+                   (if (= attr :width)
+                     (-> size
+                         (assoc :width value)
+                         (assoc :height (/ value proportion)))
+                     (-> size
+                         (assoc :height value)
+                         (assoc :width (* value proportion)))))
+        width (:width new-size)
+        height (:height new-size)
+
+        shape-transform (:transform shape (gmt/matrix))
+        shape-transform-inv (:transform-inverse shape (gmt/matrix))
+        shape-center (gco/center-shape shape)
+        {sr-width :width sr-height :height} (:selrect shape)
+
+        origin (-> (gpt/point (:selrect shape))
+                   (transform-point-center shape-center shape-transform))
+
+        scalev (gpt/divide (gpt/point width height)
+                           (gpt/point sr-width sr-height))]
+    {:resize-vector scalev
+     :resize-origin origin
+     :resize-transform shape-transform
+     :resize-transform-inverse shape-transform-inv}))
+
+(defn rotation-modifiers
+  [shape center angle]
+  (let [displacement (let [shape-center (gco/center-shape shape)]
+                       (-> (gmt/matrix)
+                           (gmt/rotate angle center)
+                           (gmt/rotate (- angle) shape-center)))]
+    {:rotation angle
+     :displacement displacement}))
+
+(defn merge-modifiers
+  [objects modifiers]
+
+  (let [set-modifier
+        (fn [objects [id modifiers]]
+          (-> objects
+              (d/update-when id merge modifiers)))]
+    (->> modifiers
+         (reduce set-modifier objects))))
+
+(defn- modifiers->transform
+  [center modifiers]
+  (let [ds-modifier (:displacement modifiers (gmt/matrix))
+        {res-x :x res-y :y} (:resize-vector modifiers (gpt/point 1 1))
+
+        ;; Normalize x/y vector coordinates because scale by 0 is infinite
+        res-x (normalize-scale res-x)
+        res-y (normalize-scale res-y)
+        resize (gpt/point res-x res-y)
+
+        origin (:resize-origin modifiers (gpt/point 0 0))
+
+        resize-transform (:resize-transform modifiers (gmt/matrix))
+        resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
+        rt-modif (or (:rotation modifiers) 0)
+
+        center (gpt/transform center ds-modifier)
+
+        transform (-> (gmt/matrix)
+
+                      ;; Applies the current resize transformation
+                      (gmt/translate origin)
+                      (gmt/multiply resize-transform)
+                      (gmt/scale resize)
+                      (gmt/multiply resize-transform-inverse)
+                      (gmt/translate (gpt/negate origin))
+
+                      ;; Applies the stacked transformations
+                      (gmt/translate center)
+                      (gmt/multiply (gmt/rotate-matrix rt-modif))
+                      (gmt/translate (gpt/negate center))
+
+                      ;; Displacement
+                      (gmt/multiply ds-modifier))]
+    transform))
+
+(defn- set-flip [shape modifiers]
   (let [rx (get-in modifiers [:resize-vector :x])
         ry (get-in modifiers [:resize-vector :y])]
     (cond-> shape
@@ -319,7 +428,7 @@
       (and ry (< ry 0)) (-> (update :flip-y not)
                             (update :rotation -)))))
 
-(defn apply-displacement [shape]
+(defn- apply-displacement [shape]
   (let [modifiers (:modifiers shape)]
     (if (contains? modifiers :displacement)
       (let [mov-vec (-> (gpt/point 0 0)
@@ -332,9 +441,8 @@
               (dissoc :modifiers))))
       shape)))
 
-;; TODO: looks like orig-shape is useless argument
-(defn apply-text-resize
-  [shape _orig-shape modifiers]
+(defn- apply-text-resize
+  [shape modifiers]
   (if (and (= (:type shape) :text)
            (:resize-scale-text modifiers))
     (let [merge-attrs (fn [attrs]
@@ -364,7 +472,7 @@
          (-> shape
              (set-flip modifiers)
              (apply-transform transform round-coords?)
-             (apply-text-resize shape modifiers)
+             (apply-text-resize modifiers)
              (dissoc :modifiers)))
        shape))))
 
@@ -507,50 +615,4 @@
       (:resize-transform parent-modifiers)
       (assoc :resize-transform (:resize-transform parent-modifiers)
              :resize-transform-inverse (:resize-transform-inverse parent-modifiers)))))
-
-(defn update-group-viewbox
-  "Updates the viewbox for groups imported from SVG's"
-  [{:keys [selrect svg-viewbox] :as group} new-selrect]
-  (let [;; Gets deltas for the selrect to update the svg-viewbox (for svg-imports)
-        deltas {:x      (- (:x new-selrect 0)      (:x selrect 0))
-                :y      (- (:y new-selrect 0)      (:y selrect 0))
-                :width  (- (:width new-selrect 1)  (:width selrect 1))
-                :height (- (:height new-selrect 1) (:height selrect 1))}]
-
-    (cond-> group
-      (and (some? svg-viewbox) (some? selrect) (some? new-selrect))
-      (update :svg-viewbox
-              #(-> %
-                   (update :x + (:x deltas))
-                   (update :y + (:y deltas))
-                   (update :width + (:width deltas))
-                   (update :height + (:height deltas)))))))
-
-(defn update-group-selrect [group children]
-  (let [shape-center (gco/center-shape group)
-        ;; Points for every shape inside the group
-        points (->> children (mapcat :points))
-
-        ;; Invert to get the points minus the transforms applied to the group
-        base-points (transform-points points shape-center (:transform-inverse group (gmt/matrix)))
-
-        ;; Defines the new selection rect with its transformations
-        new-points (-> (gpr/points->selrect base-points)
-                       (gpr/rect->points)
-                       (transform-points shape-center (:transform group (gmt/matrix))))
-
-        ;; Calculte the new selrect
-        new-selrect (gpr/points->selrect base-points)]
-
-    ;; Updates the shape and the applytransform-rect will update the other properties
-    (-> group
-        (update-group-viewbox new-selrect)
-        (assoc :selrect new-selrect)
-        (assoc :points new-points)
-
-        ;; We're regenerating the selrect from its children so we
-        ;; need to remove the flip flags
-        (assoc :flip-x false)
-        (assoc :flip-y false)
-        (apply-transform (gmt/matrix) true))))
 

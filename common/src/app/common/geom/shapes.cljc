@@ -7,50 +7,12 @@
 (ns app.common.geom.shapes
   (:require
    [app.common.data :as d]
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.intersect :as gin]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
-   [app.common.geom.shapes.transforms :as gtr]
-   [app.common.spec :as us]))
-
-
-;; --- Resize (Dimensions)
-(defn resize-modifiers
-  [shape attr value]
-  (us/assert map? shape)
-  (us/assert #{:width :height} attr)
-  (us/assert number? value)
-  (let [{:keys [proportion proportion-lock]} shape
-        size (select-keys (:selrect shape) [:width :height])
-        new-size (if-not proportion-lock
-                   (assoc size attr value)
-                   (if (= attr :width)
-                     (-> size
-                         (assoc :width value)
-                         (assoc :height (/ value proportion)))
-                     (-> size
-                         (assoc :height value)
-                         (assoc :width (* value proportion)))))
-        width (:width new-size)
-        height (:height new-size)
-
-        shape-transform (:transform shape (gmt/matrix))
-        shape-transform-inv (:transform-inverse shape (gmt/matrix))
-        shape-center (gco/center-shape shape)
-        {sr-width :width sr-height :height} (:selrect shape)
-
-        origin (-> (gpt/point (:selrect shape))
-                   (gtr/transform-point-center shape-center shape-transform))
-
-        scalev (gpt/divide (gpt/point width height)
-                           (gpt/point sr-width sr-height))]
-    {:resize-vector scalev
-     :resize-origin origin
-     :resize-transform shape-transform
-     :resize-transform-inverse shape-transform-inv}))
+   [app.common.geom.shapes.transforms :as gtr]))
 
 ;; --- Setup (Initialize)
 ;; FIXME: Is this the correct place for these functions?
@@ -164,15 +126,6 @@
         (assoc :selrect selrect
                :points points))))
 
-(defn rotation-modifiers
-  [shape center angle]
-  (let [displacement (let [shape-center (gco/center-shape shape)]
-                       (-> (gmt/matrix)
-                           (gmt/rotate angle center)
-                           (gmt/rotate (- angle) shape-center)))]
-    {:rotation angle
-     :displacement displacement}))
-
 
 ;; EXPORTS
 (d/export gco/center-shape)
@@ -187,17 +140,20 @@
 (d/export gpr/points->rect)
 (d/export gpr/center->rect)
 
-(d/export gtr/transform-shape)
-(d/export gtr/calc-child-modifiers)
+(d/export gtr/move)
+(d/export gtr/absolute-move)
 (d/export gtr/transform-matrix)
 (d/export gtr/inverse-transform-matrix)
 (d/export gtr/transform-point-center)
-(d/export gtr/transform-rect)
-(d/export gtr/update-group-selrect)
 (d/export gtr/transform-points)
+(d/export gtr/transform-rect)
 (d/export gtr/calculate-adjust-matrix)
-(d/export gtr/move)
-(d/export gtr/absolute-move)
+(d/export gtr/update-group-selrect)
+(d/export gtr/resize-modifiers)
+(d/export gtr/rotation-modifiers)
+(d/export gtr/merge-modifiers)
+(d/export gtr/transform-shape)
+(d/export gtr/calc-child-modifiers)
 
 ;; PATHS
 (d/export gsp/content->points)

@@ -1139,33 +1139,6 @@
                       (gpr/assign-proportions))))]
         (rx/of (dch/update-shapes [id] assign-proportions))))))
 
-;; --- Update Shape Position
-
-(s/def ::x number?)
-(s/def ::y number?)
-(s/def ::position
-  (s/keys :opt-un [::x ::y]))
-
-(defn update-position
-  [id position]
-  (us/verify ::us/uuid id)
-  (us/verify ::position position)
-  (ptk/reify ::update-position
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
-            shape   (get objects id)
-
-            bbox (-> shape :points gsh/points->selrect)
-
-            cpos (gpt/point (:x bbox) (:y bbox))
-            pos  (gpt/point (or (:x position) (:x bbox))
-                            (or (:y position) (:y bbox)))
-            displ   (gmt/translate-matrix (gpt/subtract pos cpos))]
-        (rx/of (dwt/set-modifiers [id] {:displacement displ})
-               (dwt/apply-modifiers [id]))))))
-
 ;; --- Update Shape Flags
 
 (defn update-shape-flags
@@ -1811,15 +1784,13 @@
 
 ;; Transform
 
-(d/export dwt/start-rotate)
 (d/export dwt/start-resize)
+(d/export dwt/update-dimensions)
+(d/export dwt/start-rotate)
+(d/export dwt/increase-rotation)
 (d/export dwt/start-move-selected)
 (d/export dwt/move-selected)
-(d/export dwt/set-rotation)
-(d/export dwt/increase-rotation)
-(d/export dwt/set-modifiers)
-(d/export dwt/apply-modifiers)
-(d/export dwt/update-dimensions)
+(d/export dwt/update-position)
 (d/export dwt/flip-horizontal-selected)
 (d/export dwt/flip-vertical-selected)
 

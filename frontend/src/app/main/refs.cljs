@@ -9,6 +9,7 @@
   "A collection of derived refs."
   (:require
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
@@ -239,7 +240,7 @@
                       modifiers (:workspace-modifiers state)
                       objects (cond-> objects
                                 with-modifiers?
-                                (cp/merge-modifiers modifiers))
+                                (gsh/merge-modifiers modifiers))
                       xform (comp (map #(get objects %))
                                   (remove nil?))]
                   (into [] xform ids)))

@@ -66,7 +66,6 @@
 (d/export helpers/merge-path-item)
 (d/export helpers/compact-path)
 (d/export helpers/compact-name)
-(d/export helpers/merge-modifiers)
 
 ;; Indices
 (d/export indices/calculate-z-index)
