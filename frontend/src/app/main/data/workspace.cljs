@@ -1046,14 +1046,11 @@
               :text
               (rx/of (dwc/start-edition-mode id))
 
-              :path
-              (rx/of (dwc/start-edition-mode id)
-                     (dwdp/start-path-edit id))
-
               :group
               (rx/of (dwc/select-shapes (into (d/ordered-set) [(last shapes)])))
 
-              (rx/empty))))))))
+              (rx/of (dwc/start-edition-mode id)
+                     (dwdp/start-path-edit id)))))))))
 
 
 ;; --- Change Page Order (D&D Ordering)
@@ -1825,7 +1822,6 @@
 (d/export dwt/update-dimensions)
 (d/export dwt/flip-horizontal-selected)
 (d/export dwt/flip-vertical-selected)
-(d/export dwt/selected-to-path)
 
 ;; Persistence
 

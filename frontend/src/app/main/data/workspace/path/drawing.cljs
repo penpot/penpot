@@ -9,6 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.path.changes :as changes]
@@ -22,6 +23,7 @@
    [app.main.streams :as ms]
    [app.util.path.commands :as upc]
    [app.util.path.geom :as upg]
+   [app.util.path.shapes-to-path :as upsp]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -36,7 +38,7 @@
             last-point (get-in state [:workspace-local :edit-path id :last-point])
             position (cond-> (gpt/point x y)
                        fix-angle? (helpers/position-fixed-angle last-point))
-            shape (get-in state (st/get-path state))
+            shape (st/get-path state)
             {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])
             command (helpers/next-node shape position last-point prev-handler)]
         (assoc-in state [:workspace-local :edit-path id :preview] command)))))
@@ -55,7 +57,7 @@
               (assoc-in  [:workspace-local :edit-path id :last-point] position)
               (update-in [:workspace-local :edit-path id] dissoc :prev-handler)
               (update-in [:workspace-local :edit-path id] dissoc :preview)
-              (update-in (st/get-path state) helpers/append-node position last-point prev-handler))
+              (update-in (st/get-path-location state) helpers/append-node position last-point prev-handler))
           state)))))
 
 (defn drag-handler
@@ -66,7 +68,7 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [id (st/get-path-id state)
-             content (get-in state (st/get-path state :content))
+             content (st/get-path state :content)
 
              index (or index (count content))
              prefix (or prefix :c1)
@@ -96,16 +98,16 @@
       (let [id (st/get-path-id state)
 
             modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
-            content (-> (get-in state (st/get-path state :content))
+            content (-> (st/get-path state :content)
                         (upc/apply-content-modifiers modifiers))
 
             handler (get-in state [:workspace-local :edit-path id :drag-handler])]
         (-> state
-            (assoc-in (st/get-path state :content) content)
+            (st/set-content content)
             (update-in [:workspace-local :edit-path id] dissoc :drag-handler)
             (update-in [:workspace-local :edit-path id] dissoc :content-modifiers)
             (assoc-in  [:workspace-local :edit-path id :prev-handler] handler)
-            (update-in (st/get-path state) helpers/update-selrect))))
+            (update-in (st/get-path-location state) helpers/update-selrect))))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -126,7 +128,7 @@
             (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                         (ms/mouse-up? %))))
 
-            content (get-in state (st/get-path state :content))
+            content (st/get-path state :content)
             snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
             points (upg/content->points content)
 
@@ -163,7 +165,7 @@
     (watch [_ state stream]
       (let [mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                     (ms/mouse-up? %))))
-            content (get-in state (st/get-path state :content))
+            content (st/get-path state :content)
             points (upg/content->points content)
 
             id (st/get-path-id state)
@@ -218,7 +220,7 @@
             mouse-down      (->> stream (rx/filter ms/mouse-down?))
             end-path-events (->> stream (rx/filter helpers/end-path-event?))
 
-            content (get-in state (st/get-path state :content))
+            content (st/get-path state :content)
             points (upg/content->points content)
 
             id (st/get-path-id state)
@@ -316,6 +318,7 @@
             edit-mode (get-in state [:workspace-local :edit-path id :edit-mode])]
         (if (= :draw edit-mode)
           (rx/concat
+           (rx/of (dch/update-shapes [id] upsp/convert-to-path))
            (rx/of (handle-drawing-path id))
            (->> stream
                 (rx/filter (ptk/type? ::common/finish-path))
@@ -328,7 +331,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [id (st/get-path-id state)
-            content (get-in state (st/get-path state :content))
+            content (st/get-path state :content)
             old-content (get-in state [:workspace-local :edit-path id :old-content])
             mode (get-in state [:workspace-local :edit-path id :edit-mode])]
 

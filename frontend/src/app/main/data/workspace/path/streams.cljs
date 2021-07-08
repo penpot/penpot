@@ -123,9 +123,8 @@
 (defn position-stream
   [snap-toggled _points]
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
-        ;; ranges (snap/create-ranges points)
         d-pos (/ snap/snap-path-accuracy zoom)
-        get-content (fn [state] (get-in state (state/get-path state :content)))
+        get-content #(state/get-path % :content)
 
         content-stream
         (-> (l/derived get-content st/state)
