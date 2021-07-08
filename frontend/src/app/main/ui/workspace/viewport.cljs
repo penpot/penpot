@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.viewport
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
+   [app.common.geom.shapes :as gsh]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
    [app.main.ui.measurements :as msr]
@@ -64,7 +64,7 @@
         object-modifiers  (mf/deref refs/workspace-modifiers)
         objects           (mf/use-memo
                            (mf/deps objects object-modifiers)
-                           #(cp/merge-modifiers objects object-modifiers))
+                           #(gsh/merge-modifiers objects object-modifiers))
         background        (get options :background "#E8E9EA")
 
         ;; STATE
