@@ -76,12 +76,13 @@
    (ptk/reify ::save-path-content
      ptk/UpdateEvent
      (update [_ state]
-       (let [content (get-in state (st/get-path state :content))
+       (let [content (st/get-path state :content)
              content (if (and (not preserve-move-to)
                               (= (-> content last :command) :move-to))
                        (into [] (take (dec (count content)) content))
                        content)]
-         (assoc-in state (st/get-path state :content) content)))
+         (-> state
+             (st/set-content content))))
 
      ptk/WatchEvent
      (watch [it state _]
@@ -89,7 +90,7 @@
              page-id     (:current-page-id state)
              id          (get-in state [:workspace-local :edition])
              old-content (get-in state [:workspace-local :edit-path id :old-content])
-             shape (get-in state (st/get-path state))]
+             shape       (st/get-path state)]
          (if (and (some? old-content) (some? (:id shape)))
            (let [[rch uch] (generate-path-changes objects page-id shape old-content (:content shape))]
              (rx/of (dch/commit-changes {:redo-changes rch

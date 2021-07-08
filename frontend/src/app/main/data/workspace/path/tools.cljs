@@ -11,6 +11,7 @@
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.util.path.shapes-to-path :as upsp]
    [app.util.path.subpaths :as ups]
    [app.util.path.tools :as upt]
    [beicon.core :as rx]
@@ -27,19 +28,21 @@
        (let [objects (wsh/lookup-page-objects state)
              id (st/get-path-id state)
              page-id (:current-page-id state)
-             shape (get-in state (st/get-path state))
-
+             shape (st/get-path state)
              selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
              points (or points selected-points)]
          (when (and (seq points) (some? shape))
            (let [new-content (-> (tool-fn (:content shape) points)
                                  (ups/close-subpaths))
                  [rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
-             (rx/of (dch/commit-changes {:redo-changes rch
-                                         :undo-changes uch
-                                         :origin it})
-                    (when (empty? new-content)
-                      dwc/clear-edition-mode)))))))))
+
+             (rx/concat
+              (rx/of (dch/update-shapes [id] upsp/convert-to-path))
+              (rx/of (dch/commit-changes {:redo-changes rch
+                                          :undo-changes uch
+                                          :origin it})
+                     (when (empty? new-content)
+                       dwc/clear-edition-mode))))))))))
 
 (defn make-corner
   ([]

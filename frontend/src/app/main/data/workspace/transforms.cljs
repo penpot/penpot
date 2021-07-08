@@ -20,7 +20,6 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
-   [app.util.path.shapes-to-path :as ups]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -666,10 +665,3 @@
           (dissoc :workspace-modifiers)
           (update :workspace-local dissoc :modifiers :current-move-selected)))))
 
-(defn selected-to-path
-  []
-  (ptk/reify ::selected-to-path
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [ids (wsh/lookup-selected state {:omit-blocked? true})]
-        (rx/of (dch/update-shapes ids ups/convert-to-path))))))

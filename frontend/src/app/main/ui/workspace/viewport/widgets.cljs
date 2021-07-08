@@ -47,7 +47,7 @@
         shape (-> selected first)]
     (when (and (= (count selected) 1)
                (= (:id shape) edition)
-               (= :path (:type shape)))
+               (not= :text (:type shape)))
       [:div.viewport-actions
        [:& path-actions {:shape shape}]])))
 

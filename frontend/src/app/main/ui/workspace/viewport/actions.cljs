@@ -27,9 +27,9 @@
   (:import goog.events.WheelEvent))
 
 (defn on-mouse-down
-  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing? path-editing? drawing-path? create-comment?]
+  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment?]
   (mf/use-callback
-   (mf/deps id blocked hidden type selected edition drawing-tool text-editing? path-editing? drawing-path? create-comment?)
+   (mf/deps id blocked hidden type selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment?)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
                (dom/class? (dom/get-target bevent) "viewport-selrect"))
@@ -65,7 +65,7 @@
                drawing-tool
                (st/emit! (dd/start-drawing drawing-tool))
 
-               path-editing?
+               node-editing?
                ;; Handle path node area selection
                (st/emit! (dwdp/handle-selection shift?))
 
@@ -158,9 +158,7 @@
            {:keys [id type] :as shape} @hover
 
            frame? (= :frame type)
-           group? (= :group type)
-           text?  (= :text type)
-           path?  (= :path type)]
+           group? (= :group type)]
 
        (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?))
 
@@ -174,12 +172,8 @@
                  (reset! hover-ids (into [] (rest @hover-ids)))
                  (st/emit! (dw/select-shape (:id selected))))
 
-               (and (not= id edition) (or text? path?))
+               (not= id edition)
                (st/emit! (dw/select-shape id)
-                         (dw/start-editing-selected))
-
-               :else
-               (st/emit! (dw/selected-to-path)
                          (dw/start-editing-selected))))))))
 
 (defn on-context-menu

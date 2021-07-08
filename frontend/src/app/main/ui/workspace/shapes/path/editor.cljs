@@ -21,6 +21,7 @@
    [app.util.path.commands :as upc]
    [app.util.path.format :as upf]
    [app.util.path.geom :as upg]
+   [app.util.path.shapes-to-path :as ups]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
    [rumext.alpha :as mf])
@@ -213,6 +214,13 @@
          :as edit-path} (mf/deref edit-path-ref)
 
         selected-points (or selected-points #{})
+
+        shape (cond-> shape
+                (not= :path (:type shape))
+                ups/convert-to-path
+
+                :always
+                hooks/use-equal-memo)
 
         base-content (:content shape)
         base-points (mf/use-memo (mf/deps base-content) #(->> base-content upg/content->points))
