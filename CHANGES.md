@@ -14,7 +14,8 @@
 - Preserve components if possible, when pasted into a different file [Taiga #1063](https://tree.taiga.io/project/penpot/issue/1063).
 - Add the ability to offload file data to a cheaper storage when file becomes inactive.
 - Import/Export Penpot files from dashboard.
-- Double click won't make a shape a path until you change a node [Taiga #]
+- Double click won't make a shape a path until you change a node [Taiga #1796](https://tree.taiga.io/project/penpot/us/1796)
+- Incremental area selection [#779](https://github.com/penpot/penpot/discussions/779)
 
 ### :bug: Bugs fixed
 

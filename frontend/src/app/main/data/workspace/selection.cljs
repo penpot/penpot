@@ -45,7 +45,7 @@
     (update [_ state]
       (assoc-in state [:workspace-local :selrect] selrect))))
 
-(defn handle-selection
+(defn handle-area-selection
   [preserve?]
   (letfn [(data->selrect [data]
             (let [start (:start data)
@@ -59,10 +59,11 @@
                :y start-y
                :width (mth/abs (- end-x start-x))
                :height (mth/abs (- end-y start-y))}))]
-    (ptk/reify ::handle-selection
+    (ptk/reify ::handle-area-selection
       ptk/WatchEvent
-      (watch [_ _ stream]
-        (let [stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
+      (watch [_ state stream]
+        (let [zoom (get-in state [:workspace-local :zoom] 1)
+              stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
               stoper (->> stream (rx/filter stop?))]
           (rx/concat
             (when-not preserve?
@@ -74,11 +75,16 @@
                               {:start pos :stop pos}))
                           nil)
                  (rx/map data->selrect)
-                 (rx/filter #(or (> (:width %) 10)
-                                 (> (:height %) 10)))
-                 (rx/map update-selrect)
+                 (rx/filter #(or (> (:width %) (/ 10 zoom))
+                                 (> (:height %) (/ 10 zoom))))
+
+                 (rx/flat-map
+                  (fn [selrect]
+                    (rx/of (update-selrect selrect)
+                           (select-shapes-by-current-selrect preserve?))))
+
                  (rx/take-until stoper))
-            (rx/of (select-shapes-by-current-selrect preserve?))))))))
+            (rx/of (update-selrect nil))))))))
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
@@ -214,11 +220,12 @@
             selrect (get-in state [:workspace-local :selrect])
             blocked? (fn [id] (get-in objects [id :blocked] false))]
         (rx/merge
-          (rx/of (update-selrect nil))
           (when selrect
             (->> (uw/ask! {:cmd :selection/query
                            :page-id page-id
-                           :rect selrect})
+                           :rect selrect
+                           :include-frames? true
+                           :full-frame? true})
                  (rx/map #(cp/clean-loops objects %))
                  (rx/map #(into initial-set (filter (comp not blocked?)) %))
                  (rx/map select-shapes))))))))

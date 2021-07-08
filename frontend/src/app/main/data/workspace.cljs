@@ -1843,7 +1843,7 @@
 (d/export dwc/select-shapes)
 (d/export dws/shift-select-shapes)
 (d/export dws/duplicate-selected)
-(d/export dws/handle-selection)
+(d/export dws/handle-area-selection)
 (d/export dws/select-inside-group)
 (d/export dwd/select-for-drawing)
 (d/export dwc/clear-edition-mode)

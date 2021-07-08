@@ -302,3 +302,9 @@
   (let [lines (points->lines (:points shape))]
     ;; TODO: Will only work for simple shapes
     (is-point-inside-evenodd? point lines)))
+
+(defn rect-contains-shape?
+  [rect shape]
+  (->> shape
+       :points
+       (every? (partial has-point-rect? rect))))
