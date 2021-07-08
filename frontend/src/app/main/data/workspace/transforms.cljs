@@ -227,7 +227,7 @@
 
 (declare start-move)
 (declare start-move-duplicate)
-(declare start-local-displacement)
+(declare set-local-displacement)
 (declare clear-local-transform)
 
 (defn start-move-selected
@@ -342,9 +342,10 @@
             (->> position
                  (rx/with-latest vector snap-delta)
                  (rx/map snap/correct-snap-point)
-                 (rx/map start-local-displacement))
+                 (rx/map set-local-displacement))
 
-            (rx/of (apply-modifiers ids {:set-modifiers? true})
+            (rx/of (set-modifiers ids)
+                   (apply-modifiers ids)
                    (calculate-frame-for-move ids)
                    (finish-transform)))))))))
 
@@ -396,10 +397,11 @@
               (->> move-events
                    (rx/take-until stopper)
                    (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
-                   (rx/map start-local-displacement))
+                   (rx/map set-local-displacement))
               (rx/of (move-selected direction shift?)))
 
-             (rx/of (apply-modifiers selected {:set-modifiers? true})
+             (rx/of (set-modifiers selected)
+                    (apply-modifiers selected)
                     (finish-transform))))
             (rx/empty))))))
 
@@ -537,49 +539,39 @@
          (rx/of (apply-modifiers ids)))))))
 
 (defn apply-modifiers
-  ([ids]
-   (apply-modifiers ids nil))
+  [ids]
+  (us/verify (s/coll-of uuid?) ids)
+  (ptk/reify ::apply-modifiers
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            children-ids (->> ids (mapcat #(cp/get-children % objects)))
+            ids-with-children (d/concat [] children-ids ids)
+            object-modifiers (get state :workspace-modifiers)
+            ignore-tree (d/mapm #(get-in %2 [:modifiers :ignore-geometry?]) object-modifiers)]
 
-  ([ids {:keys [set-modifiers?]
-         :or   {set-modifiers? false}}]
-   (us/verify (s/coll-of uuid?) ids)
-   (ptk/reify ::apply-modifiers
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [objects (wsh/lookup-page-objects state)
-             children-ids (->> ids (mapcat #(cp/get-children % objects)))
-             ids-with-children (d/concat [] children-ids ids)
-
-             state (if set-modifiers?
-                     (ptk/update (set-modifiers ids) state)
-                     state)
-             object-modifiers (get state :workspace-modifiers)
-
-             ignore-tree (d/mapm #(get-in %2 [:modifiers :ignore-geometry?]) object-modifiers)]
-
-         (rx/of (dwu/start-undo-transaction)
-                (dch/update-shapes
-                  ids-with-children
-                  (fn [shape]
-                    (-> shape
-                        (merge (get object-modifiers (:id shape)))
-                        (gsh/transform-shape)))
-                  {:reg-objects? true
-                   :ignore-tree ignore-tree
-                   ;; Attributes that can change in the transform. This way we don't have to check
-                   ;; all the attributes
-                   :attrs [:selrect :points
-                           :x :y
-                           :width :height
-                           :content
-                           :transform
-                           :transform-inverse
-                           :rotation
-                           :flip-x
-                           :flip-y]
-                   })
-                (clear-local-transform)
-                (dwu/commit-undo-transaction)))))))
+        (rx/of (dwu/start-undo-transaction)
+               (dch/update-shapes
+                 ids-with-children
+                 (fn [shape]
+                   (-> shape
+                       (merge (get object-modifiers (:id shape)))
+                       (gsh/transform-shape)))
+                 {:reg-objects? true
+                  :ignore-tree ignore-tree
+                  ;; Attributes that can change in the transform. This way we don't have to check
+                  ;; all the attributes
+                  :attrs [:selrect :points
+                          :x :y
+                          :width :height
+                          :content
+                          :transform
+                          :transform-inverse
+                          :rotation
+                          :flip-x
+                          :flip-y]})
+               (clear-local-transform)
+               (dwu/commit-undo-transaction))))))
 
 ;; --- Update Dimensions
 
@@ -649,7 +641,7 @@
                                :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))})
                (apply-modifiers selected))))))
 
-(defn start-local-displacement [point]
+(defn set-local-displacement [point]
   (ptk/reify ::start-local-displacement
     ptk/UpdateEvent
     (update [_ state]
