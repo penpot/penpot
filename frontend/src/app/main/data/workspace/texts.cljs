@@ -68,7 +68,7 @@
                 (dch/update-shapes [id] #(assoc % :content content))
                 (dwu/commit-undo-transaction)))))
           (rx/of (dws/deselect-shape id)
-                 (dwc/delete-shapes [id])))))))
+                 (dwc/delete-shapes #{id})))))))
 
 (defn initialize-editor-state
   [{:keys [id content] :as shape} decorator]
