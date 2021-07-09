@@ -317,40 +317,41 @@
 
 (defn- prepare-duplicate-shape-change
   [objects page-id names obj delta frame-id parent-id]
-  (let [id          (uuid/next)
-        name        (dwc/generate-unique-name names (:name obj))
-        renamed-obj (assoc obj :id id :name name)
-        moved-obj   (geom/move renamed-obj delta)
-        frames      (cp/select-frames objects)
-        parent-id   (or parent-id frame-id)
+  (when (some? obj)
+    (let [id          (uuid/next)
+          name        (dwc/generate-unique-name names (:name obj))
+          renamed-obj (assoc obj :id id :name name)
+          moved-obj   (geom/move renamed-obj delta)
+          frames      (cp/select-frames objects)
+          parent-id   (or parent-id frame-id)
 
-        children-changes
-        (loop [names names
-               result []
-               cid  (first (:shapes obj))
-               cids (rest (:shapes obj))]
-          (if (nil? cid)
-            result
-            (let [obj (get objects cid)
-                  changes (prepare-duplicate-shape-change objects page-id names obj delta frame-id id)]
-              (recur
-               (into names (map change->name changes))
-               (into result changes)
-               (first cids)
-               (rest cids)))))
+          children-changes
+          (loop [names names
+                 result []
+                 cid  (first (:shapes obj))
+                 cids (rest (:shapes obj))]
+            (if (nil? cid)
+              result
+              (let [obj (get objects cid)
+                    changes (prepare-duplicate-shape-change objects page-id names obj delta frame-id id)]
+                (recur
+                 (into names (map change->name changes))
+                 (into result changes)
+                 (first cids)
+                 (rest cids)))))
 
-        reframed-obj (-> moved-obj
-                         (assoc  :frame-id frame-id)
-                         (dissoc :shapes))]
-    (into [{:type :add-obj
-            :id id
-            :page-id page-id
-            :old-id (:id obj)
-            :frame-id frame-id
-            :parent-id parent-id
-            :ignore-touched true
-            :obj (dissoc reframed-obj :shapes)}]
-          children-changes)))
+          reframed-obj (-> moved-obj
+                           (assoc  :frame-id frame-id)
+                           (dissoc :shapes))]
+      (into [{:type :add-obj
+              :id id
+              :page-id page-id
+              :old-id (:id obj)
+              :frame-id frame-id
+              :parent-id parent-id
+              :ignore-touched true
+              :obj (dissoc reframed-obj :shapes)}]
+            children-changes))))
 
 (defn- prepare-duplicate-frame-change
   [objects page-id names obj delta]
@@ -363,7 +364,7 @@
                       (assoc :id frame-id)
                       (assoc :name frame-name)
                       (assoc :frame-id uuid/zero)
-                      (dissoc :shapes)
+                      (assoc :shapes [])
                       (geom/move delta))
 
         fch {:type :add-obj
