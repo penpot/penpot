@@ -330,6 +330,31 @@
 
 ;; --- Modifiers
 
+;; The `modifiers` structure contains a list of transformations to
+;; do make to a shape, in this order:
+;;
+;; - resize-origin (gpt/point) + resize-vector (gpt/point)
+;;   apply a scale vector to all points of the shapes, starting
+;;   from the origin point.
+;;
+;; - resize-origin-2 + resize-vector-2
+;;   same as the previous one, for cases in that we need to make
+;;   two vectors from different origin points.
+;;
+;; - displacement (gmt/matrix)
+;;   apply a translation matrix to the shape
+;;
+;; - rotation (gmt/matrix)
+;;   apply a rotation matrix to the shape
+;;
+;; - resize-transform (gmt/matrix) + resize-transform-inverse (gmt/matrix)
+;;   a copy of the rotation matrix currently applied to the shape;
+;;   this is needed temporarily to apply the resize vectors.
+;;
+;; - resize-scale-text (bool)
+;;   tells if the resize vectors must be applied to text shapes
+;;   or not.
+
 (defn resize-modifiers
   [shape attr value]
   (us/assert map? shape)
@@ -387,13 +412,19 @@
   [center modifiers]
   (let [ds-modifier (:displacement modifiers (gmt/matrix))
         {res-x :x res-y :y} (:resize-vector modifiers (gpt/point 1 1))
+        {res-x-2 :x res-y-2 :y} (:resize-vector-2 modifiers (gpt/point 1 1))
 
         ;; Normalize x/y vector coordinates because scale by 0 is infinite
         res-x (normalize-scale res-x)
         res-y (normalize-scale res-y)
         resize (gpt/point res-x res-y)
 
+        res-x-2 (normalize-scale res-x-2)
+        res-y-2 (normalize-scale res-y-2)
+        resize-2 (gpt/point res-x-2 res-y-2)
+
         origin (:resize-origin modifiers (gpt/point 0 0))
+        origin-2 (:resize-origin-2 modifiers (gpt/point 0 0))
 
         resize-transform (:resize-transform modifiers (gmt/matrix))
         resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
@@ -409,6 +440,12 @@
                       (gmt/scale resize)
                       (gmt/multiply resize-transform-inverse)
                       (gmt/translate (gpt/negate origin))
+
+                      (gmt/translate origin-2)
+                      (gmt/multiply resize-transform)
+                      (gmt/scale resize-2)
+                      (gmt/multiply resize-transform-inverse)
+                      (gmt/translate (gpt/negate origin-2))
 
                       ;; Applies the stacked transformations
                       (gmt/translate center)
@@ -448,9 +485,9 @@
     (let [merge-attrs (fn [attrs]
                         (let [font-size (-> (get attrs :font-size 14)
                                             (d/parse-double)
-                                            (* (-> modifiers :resize-vector :x))
-                                            (str)
-                                            )]
+                                            (* (get-in modifiers [:resize-vector :x] 1))
+                                            (* (get-in modifiers [:resize-vector-2 :x] 1))
+                                            (str))]
                           (attrs/merge attrs {:font-size font-size})))]
       (update shape :content #(txt/transform-nodes
                                 txt/is-text-node?
@@ -538,13 +575,17 @@
                         (assoc :resize-origin (:resize-origin parent-modifiers)
                                :resize-vector (gpt/point (:x (:resize-vector parent-modifiers)) 1))
 
+                        (and (:resize-vector-2 parent-modifiers)
+                             (not (mth/close? (:x (:resize-vector-2 parent-modifiers)) 1)))
+                        (assoc :resize-origin-2 (:resize-origin-2 parent-modifiers)
+                               :resize-vector-2 (gpt/point (:x (:resize-vector-2 parent-modifiers)) 1))
+
                         (:displacement parent-modifiers)
                         (assoc :displacement
                                (gpt/point (-> (gpt/point 0 0)
                                               (gpt/transform (:displacement parent-modifiers))
                                               (:x))
                                           0)))
-
                       {})
 
         modifiers-v (case constraints-v
@@ -590,12 +631,16 @@
                         (assoc :resize-origin (:resize-origin parent-modifiers)
                                :resize-vector (gpt/point 1 (:y (:resize-vector parent-modifiers))))
 
+                        (and (:resize-vector-2 parent-modifiers)
+                             (not (mth/close? (:y (:resize-vector-2 parent-modifiers)) 1)))
+                        (assoc :resize-origin-2 (:resize-origin-2 parent-modifiers)
+                               :resize-vector-2 (gpt/point 1 (:y (:resize-vector-2 parent-modifiers))))
+
                         (:displacement parent-modifiers)
                         (assoc :displacement
                                (gpt/point 0 (-> (gpt/point 0 0)
                                                 (gpt/transform (:displacement parent-modifiers))
                                                 (:y)))))
-
                       {})]
 
     (cond-> {}
@@ -606,11 +651,15 @@
                                  (gpt/transform
                                    (:resize-transform parent-modifiers (gmt/matrix))))))
 
-      (or (:resize-vector modifiers-h) (:resize-vector modifiers-v))
-      (assoc :resize-origin (or (:resize-origin modifiers-h)  ;; we assume that the origin is the same
-                                (:resize-origin modifiers-v)) ;; in any direction
+      (:resize-vector modifiers-h)
+      (assoc :resize-origin (:resize-origin modifiers-h)
              :resize-vector (gpt/point (get (:resize-vector modifiers-h) :x 1)
-                                       (get (:resize-vector modifiers-v) :y 1)))
+                                       (get (:resize-vector modifiers-h) :y 1)))
+
+      (:resize-vector modifiers-v)
+      (assoc :resize-origin-2 (:resize-origin modifiers-v)
+             :resize-vector-2 (gpt/point (get (:resize-vector modifiers-v) :x 1)
+                                         (get (:resize-vector modifiers-v) :y 1)))
 
       (:resize-transform parent-modifiers)
       (assoc :resize-transform (:resize-transform parent-modifiers)
