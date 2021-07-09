@@ -136,7 +136,7 @@
                           (gpt/negate)
                           (gmt/translate-matrix))
 
-        update-fn     #(assoc-in %1 [%2 :modifiers :displacement] modifier)
+        update-fn     #(d/update-when %1 %2 assoc-in [:modifiers :displacement] modifier)
 
         objects       (->> (d/concat [frame-id] (cp/get-children frame-id objects))
                            (reduce update-fn objects))
