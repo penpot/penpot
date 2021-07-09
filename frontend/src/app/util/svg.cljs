@@ -488,8 +488,9 @@
            filter-values)))
 
 (defn extract-ids [val]
-  (->> (re-seq xml-id-regex val)
-       (mapv second)))
+  (when (some? val)
+    (->> (re-seq xml-id-regex val)
+         (mapv second))))
 
 (defn fix-dot-number
   "Fixes decimal numbers starting in dot but without leading 0"
