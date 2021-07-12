@@ -101,6 +101,13 @@
     (update [_ state]
       (d/update-in-when state [:workspace-editor-state id] ted/editor-select-all))))
 
+(defn cursor-to-end
+  [{:keys [id] :as shape}]
+  (ptk/reify ::cursor-to-end
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:workspace-editor-state id] ted/cursor-to-end))))
+
 ;; --- Helpers
 
 (defn- shape-current-values

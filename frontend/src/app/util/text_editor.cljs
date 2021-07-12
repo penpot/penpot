@@ -92,3 +92,7 @@
 (defn remove-editor-blur-selection
   [state]
   (impl/removeBlurSelectionEntity state))
+
+(defn cursor-to-end
+  [state]
+  (impl/cursorToEnd state))

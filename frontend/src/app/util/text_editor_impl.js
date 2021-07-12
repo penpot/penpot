@@ -56,6 +56,18 @@ function getSelectAllSelection(state) {
   });
 }
 
+function getCursorInEndPosition(state) {
+  const content = state.getCurrentContent();
+  const lastBlock = content.getBlockMap().last();
+
+  return new SelectionState({
+    "anchorKey": lastBlock.getKey(),
+    "anchorOffset": lastBlock.getLength(),
+    "focusKey": lastBlock.getKey(),
+    "focusOffset": lastBlock.getLength()
+  });
+}
+
 export function selectAll(state) {
   return EditorState.forceSelection(state, getSelectAllSelection(state));
 }
@@ -208,4 +220,17 @@ export function removeInlineStylePrefix(contentState, selectionState, stylePrefi
 
     return block.set("characterList", chars);
   });
+}
+
+export function cursorToEnd(state) {
+  const newSelection = getCursorInEndPosition(state);
+  const selection = state.getSelection();
+
+  let content = state.getCurrentContent();
+  content = Modifier.applyEntity(content, newSelection, null);
+
+  state = EditorState.forceSelection(state, newSelection);
+  state = EditorState.push(state, content, "apply-entity");
+
+  return state;
 }

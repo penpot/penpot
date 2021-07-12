@@ -126,7 +126,13 @@
          (fn [_ state]
            (st/emit! (dwt/update-editor-state shape (ted/editor-split-block state)))
            "handled"))
-        ]
+
+        on-click
+        (mf/use-callback
+         (fn [event]
+           (when (dom/class? (dom/get-target event) "DraftEditor-root")
+             (st/emit! (dwt/cursor-to-end shape)))
+           (st/emit! (dwt/focus-editor))))]
 
     (mf/use-layout-effect on-mount)
 
@@ -135,7 +141,7 @@
       :style {:cursor cur/text
               :width (:width shape)
               :height (:height shape)}
-      :on-click (st/emitf (dwt/focus-editor))
+      :on-click on-click
       :class (dom/classnames
               :align-top    (= (:vertical-align content "top") "top")
               :align-center (= (:vertical-align content) "center")
