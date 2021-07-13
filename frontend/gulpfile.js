@@ -8,7 +8,7 @@ const gulpGzip = require("gulp-gzip");
 const gulpMustache = require("gulp-mustache");
 const gulpPostcss = require("gulp-postcss");
 const gulpRename = require("gulp-rename");
-const gulpSass = require("gulp-sass");
+const gulpSass = require("gulp-sass")(require("sass"));
 const svgSprite = require("gulp-svg-sprite");
 
 const autoprefixer = require("autoprefixer")
@@ -157,7 +157,7 @@ gulpSass.compiler = sass;
 
 gulp.task("scss", function() {
   return gulp.src(paths.resources + "styles/main-default.scss")
-    .pipe(gulpSass().on('error', gulpSass.logError))
+    .pipe(gulpSass.sync().on('error', gulpSass.logError))
     .pipe(gulpPostcss([
       autoprefixer,
       // clean({format: "keep-breaks", level: 1})
