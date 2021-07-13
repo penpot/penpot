@@ -520,12 +520,33 @@
   (let [parent-rect             (:selrect parent)
         child-rect              (:selrect child)
 
-        ;; Apply the modifiers to the parent, to check the difference with
-        ;; the original rect, and calculate child transformations.
-        transformed-parent-rect (-> parent
-                                    (assoc :modifiers parent-modifiers)
-                                    (transform-shape)
-                                    (:selrect))
+        ;; Apply the modifiers to the parent's selrect, to check the difference with
+        ;; the original, and calculate child transformations from this.
+        ;;
+        ;; Note that a shape's selrect is always "horizontal" (i.e. without applying
+        ;; the shape transform, that may include some rotation and skew). Thus, to
+        ;; apply the modifiers, we first apply to them the transform-inverse.
+        parent-displacement (-> (gpt/point 0 0)
+                                (gpt/transform (get parent-modifiers :displacement (gmt/matrix)))
+                                (gpt/transform (:resize-transform-inverse parent-modifiers (gmt/matrix)))
+                                (gmt/translate-matrix))
+        parent-origin       (-> (:resize-origin parent-modifiers)
+                                ((d/nilf transform-point-center)
+                                 (gco/center-shape parent)
+                                 (:resize-transform-inverse parent-modifiers (gmt/matrix))))
+        parent-origin-2     (-> (:resize-origin-2 parent-modifiers)
+                                ((d/nilf transform-point-center)
+                                 (gco/center-shape parent)
+                                 (:resize-transform-inverse parent-modifiers (gmt/matrix))))
+        parent-vector       (get parent-modifiers :resize-vector (gpt/point 1 1))
+        parent-vector-2     (get parent-modifiers :resize-vector-2 (gpt/point 1 1))
+
+        transformed-parent-rect (-> parent-rect
+                                    (gpr/rect->points)
+                                    (transform-points parent-displacement)
+                                    (transform-points parent-origin (gmt/scale-matrix parent-vector))
+                                    (transform-points parent-origin-2 (gmt/scale-matrix parent-vector-2))
+                                    (gpr/points->selrect))
 
         ;; Calculate the modifiers in the horizontal and vertical directions
         ;; depending on the child constraints.
@@ -535,6 +556,7 @@
         modifiers-h (case constraints-h
                       :left
                       (let [delta-left (- (:x1 transformed-parent-rect) (:x1 parent-rect))]
+
                         (if-not (mth/almost-zero? delta-left)
                           {:displacement (gpt/point delta-left 0)} ;; we convert to matrix below
                           {}))
@@ -584,6 +606,7 @@
                         (assoc :displacement
                                (gpt/point (-> (gpt/point 0 0)
                                               (gpt/transform (:displacement parent-modifiers))
+                                              (gpt/transform (:resize-transform-inverse parent-modifiers (gmt/matrix)))
                                               (:x))
                                           0)))
                       {})
@@ -640,9 +663,12 @@
                         (assoc :displacement
                                (gpt/point 0 (-> (gpt/point 0 0)
                                                 (gpt/transform (:displacement parent-modifiers))
+                                                (gpt/transform (:resize-transform-inverse parent-modifiers (gmt/matrix)))
                                                 (:y)))))
                       {})]
 
+    ;; Build final child modifiers. Apply transform again to the result, to get the
+    ;; real modifiers that need to be applied to the child, including rotation as needed.
     (cond-> {}
       (or (:displacement modifiers-h) (:displacement modifiers-v))
       (assoc :displacement (gmt/translate-matrix
