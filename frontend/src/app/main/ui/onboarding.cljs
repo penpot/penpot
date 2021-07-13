@@ -292,7 +292,8 @@
   (let [versions (methods render-release-notes)
         version  (obj/get props "version")]
     (when (contains? versions version)
-      [:> release-notes props])))
+      [:div.relnotes
+       [:> release-notes props]])))
 
 (defmethod render-release-notes "0.0"
   [params]
@@ -648,7 +649,7 @@
          [:img {:src "images/features/group-components.gif" :border "0" :alt "Library assets management improvements"}]]
         [:div.modal-right
          [:div.modal-title
-          [:h2 "Library assets management improvements"]]
+          [:h2 "Library assets management"]]
          [:div.modal-content
           [:p [:strong "Collapse/expand groups"] " at any nesting level, so you don’t have to manage their visibility individually."]
           [:p "Penpot " [:strong "remembers the last library state"] ", so you don’t have to collapse a group you want hidden every time."]
