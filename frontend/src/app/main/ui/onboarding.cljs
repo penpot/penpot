@@ -670,7 +670,7 @@
          [:div.modal-title
           [:h2 "Paste components from file to file"]]
          [:div.modal-content
-          [:p "Do you sometimes copy and paste component copies from files to files? From now on, if both files are using the same library, they will not lose their linkage so you will be able to continue using them as copies of the same component."]]
+          [:p "Do you sometimes copy and paste component copies that belong to a library already shared by the original and destination files? From now on, those component copies are aware of this and will retain their linkage to the library."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& navigation-bullets
