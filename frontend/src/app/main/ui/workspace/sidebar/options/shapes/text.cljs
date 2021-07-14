@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
+   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
@@ -42,6 +43,7 @@
 
         text-values (d/merge
                      (select-keys shape [:grow-type])
+                     (select-keys shape fill-attrs)
                      (dwt/current-root-values
                       {:shape shape
                        :attrs root-attrs})

@@ -222,7 +222,7 @@
         (mf/use-callback
          (mf/deps values)
          (fn [id attrs]
-           (st/emit! (dwt/save-font (merge values attrs)))
+           (st/emit! (dwt/save-font (merge txt/default-text-attrs values attrs)))
 
            (let [attrs (select-keys attrs root-attrs)]
              (when-not (empty? attrs)

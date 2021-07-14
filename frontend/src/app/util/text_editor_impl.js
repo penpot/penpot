@@ -122,7 +122,7 @@ export function applyInlineStyle(state, styles) {
   let selection = state.getSelection();
 
   if (selection.isCollapsed()) {
-    selection = selection.set("anchorOffset", 0);
+    selection = getSelectAllSelection(state);
   }
 
   let content = null;

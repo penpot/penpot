@@ -75,11 +75,14 @@
   (ptk/reify ::initialize-editor-state
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-editor-state id]
-                 (fn [_]
-                   (ted/create-editor-state
-                    (some->> content ted/import-content)
-                    decorator))))
+      (let [text-state (some->> content ted/import-content)
+            attrs (get-in state [:workspace-local :defaults :font])
+
+            editor (cond-> (ted/create-editor-state text-state decorator)
+                     (and (nil? content) (some? attrs))
+                     (ted/update-editor-current-block-data attrs))]
+        (-> state
+            (assoc-in [:workspace-editor-state id] editor))))
 
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -326,3 +329,4 @@
       (assoc-in state
                 [:workspace-local :defaults :font]
                 data))))
+
