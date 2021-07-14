@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-06-29 11:34+0000\n"
-"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
+"PO-Revision-Date: 2021-07-15 14:33+0000\n"
+"Last-Translator: Guilherme Dimas <guilhermedimasrosa@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.7.1-dev\n"
+"X-Generator: Weblate 4.7.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -219,7 +219,7 @@ msgstr ""
 "Você deve carregar apenas fontes que possui ou tem licença para usar na "
 "Penpot. Descubra mais na seção de Direitos de conteúdo nos [Termos de "
 "Serviço da Penpot](https://penpot.app/terms.html). Você pode também querer "
-"ler sobre [licenciamento de fontes](2)."
+"ler sobre [licenciamento de fontes](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -1682,3 +1682,79 @@ msgstr "Não mostrar interações"
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.frame-not-found"
 msgstr "Prancheta não encontrada."
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "Centro"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.spread"
+msgstr "S"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-y"
+msgstr "Y"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-x"
+msgstr "X"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.blur"
+msgstr "B"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "Sombra"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "Largura"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "Superior"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "Rotação"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "Raio"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "Esquerda"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "Altura"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "Largura"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "Altura"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "Baixar imagem original"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur.value"
+msgstr "Valor"
