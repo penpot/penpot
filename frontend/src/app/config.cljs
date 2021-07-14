@@ -6,9 +6,8 @@
 
 (ns app.config
   (:require
-   [app.common.data :as d]
-   [app.common.uri :as u]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.common.version :as v]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
@@ -54,6 +53,11 @@
     :browser
     :webworker))
 
+(defn- parse-flags
+  [global]
+  (let [flags (obj/get global "penpotFlags" "")]
+    (into #{} (map keyword) (str/words flags))))
+
 (defn- parse-version
   [global]
   (-> (obj/get global "penpotVersion")
@@ -77,6 +81,8 @@
 (def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
 (def analytics            (obj/get global "penpotAnalyticsEnabled" false))
+
+(def flags                (delay (parse-flags global)))
 
 (def version              (delay (parse-version global)))
 (def target               (delay (parse-target global)))

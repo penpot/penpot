@@ -7,12 +7,10 @@
 (ns app.main.streams
   "User interaction events and streams."
   (:require
-   [beicon.core :as rx]
    [app.main.store :as st]
-   [app.main.refs :as refs]
-   [app.common.geom.point :as gpt]
    [app.util.globals :as globals]
-   [app.util.keyboard :as kbd]))
+   [app.util.keyboard :as kbd]
+   [beicon.core :as rx]))
 
 ;; --- User Events
 

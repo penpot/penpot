@@ -4,6 +4,9 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
+;; TODO: DEPRECATED
+;; Should be removed in the 1.8.x
+
 (ns app.tasks.delete-object
   "Generic task for permanent deletion of objects."
   (:require

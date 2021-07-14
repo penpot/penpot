@@ -49,10 +49,6 @@ msgstr "Forgot password?"
 msgid "auth.fullname"
 msgstr "Full Name"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "Go back!"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Login here"
@@ -92,6 +88,10 @@ msgstr "Login with OpenID (SSO)"
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Type a new password"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "I agree to subscribe to the Penpot mailing list."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
@@ -206,6 +206,47 @@ msgstr "Duplicate %s files"
 msgid "dashboard.empty-files"
 msgstr "You still have no files here"
 
+msgid "dashboard.export-multi"
+msgstr "Export %s files"
+
+msgid "dashboard.export-single"
+msgstr "Export file"
+
+msgid "dashboard.export.detail"
+msgstr "* Might include components, graphics, colors and/or typographies."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"One or more files that you want to export are using shared libraries. What "
+"do you want to do with their assets*?"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"files with shared libraries will be included in the export, maintaining "
+"their linkage."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Export shared libraries"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Shared libraries will not be included in the export and no assets will be "
+"added to the library. "
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Treat shared library assets as basic objects"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Your file will be exported with all external assets merged into the file "
+"library."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Include shared library assets in file libraries"
+
+msgid "dashboard.export.title"
+msgstr "Export files"
+
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Font deleted"
 
@@ -228,6 +269,18 @@ msgstr ""
 "out more in the Content rights section of [Penpot's Terms of "
 "Service](https://penpot.app/terms.html). You also might want to read about "
 "[font licensing](https://www.typography.com/faq)."
+
+msgid "dashboard.import"
+msgstr "Import files"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Oops! We couldn't import this file"
+
+msgid "dashboard.import.import-error"
+msgstr "There was a problem importing the file. The file wasn't imported."
+
+msgid "dashboard.import.import-message"
+msgstr "%s files have been imported succesfully."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -303,6 +356,9 @@ msgstr "%s members"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.open-in-new-tab"
 msgstr "Open file in a new tab"
+
+msgid "dashboard.options"
+msgstr "Options"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.password-change"
@@ -799,6 +855,9 @@ msgstr "You are seeing version %s"
 msgid "labels.accept"
 msgstr "Accept"
 
+msgid "labels.close"
+msgstr "Close"
+
 msgid "labels.add-custom-font"
 msgstr "Add custom font"
 
@@ -837,6 +896,9 @@ msgstr "Confirm password"
 
 msgid "labels.content"
 msgstr "Content"
+
+msgid "labels.continue"
+msgstr "Continue"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -889,6 +951,9 @@ msgstr "Editor"
 msgid "labels.email"
 msgstr "Email"
 
+msgid "labels.export"
+msgstr "Export"
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
 msgstr "Feedback disabled"
@@ -912,6 +977,9 @@ msgstr "Fonts"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Give feedback"
+
+msgid "labels.go-back"
+msgstr "Go back"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
@@ -999,6 +1067,9 @@ msgstr "Old password"
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.only-yours"
 msgstr "Only yours"
+
+msgid "labels.or"
+msgstr "or"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.owner"
@@ -1454,12 +1525,16 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "Don't show interactions"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Edit page"
+msgid "viewer.header.edit-file"
+msgstr "Edit file"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Full Screen"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Interactions"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
@@ -1483,7 +1558,7 @@ msgstr "Anyone with the link will have access"
 
 #: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.title"
-msgstr "Share link"
+msgstr "Share prototype"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
@@ -1597,6 +1672,10 @@ msgid "workspace.assets.rename"
 msgstr "Rename"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename-group"
+msgstr "Rename group"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.search"
 msgstr "Search assets"
 
@@ -1645,6 +1724,10 @@ msgstr "Ag"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
 msgstr "Text Transform"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "Ungroup"
 
 #: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.linear"
@@ -1871,6 +1954,46 @@ msgstr "Canvas background"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
 msgstr "Component"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints"
+msgstr "Constraints"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.bottom"
+msgstr "Bottom"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.center"
+msgstr "Center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.fix-when-scrolling"
+msgstr "Fix when scrolling"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.left"
+msgstr "Left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.leftright"
+msgstr "Left & Right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.right"
+msgstr "Right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.scale"
+msgstr "Scale"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.top"
+msgstr "Top"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.topbottom"
+msgstr "Top & Bottom"
 
 #: src/app/main/ui/workspace/sidebar/options.cljs
 msgid "workspace.options.design"

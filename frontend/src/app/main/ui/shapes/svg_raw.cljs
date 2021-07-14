@@ -6,15 +6,10 @@
 
 (ns app.main.ui.shapes.svg-raw
   (:require
-   [app.common.data :as cd]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.shapes.attrs :as usa]
-   [app.util.data :as ud]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 ;; Graphic tags
@@ -27,6 +22,8 @@
 (defn set-styles [attrs shape]
   (let [custom-attrs (-> (usa/extract-style-attrs shape)
                          (obj/without ["transform"]))
+
+        attrs (or attrs {})
         attrs (cond-> attrs
                 (string? (:style attrs)) usvg/clean-attrs)
         style (obj/merge! (clj->js (:style attrs {}))
@@ -51,7 +48,7 @@
         children (unchecked-get props "children")
 
         {:keys [x y width height]} shape
-        {:keys [tag attrs] :as content} (:content shape)
+        {:keys [attrs] :as content} (:content shape)
 
         ids-mapping (mf/use-memo #(usvg/generate-id-mapping content))
 
@@ -83,9 +80,7 @@
         element-id (get-in content [:attrs :id])
         attrs (cond-> (set-styles attrs shape)
                 (and element-id (contains? ids-mapping element-id))
-                (obj/set! "id" (get ids-mapping element-id)))
-
-        {:keys [x y width height]} (:selrect shape)]
+                (obj/set! "id" (get ids-mapping element-id)))]
     [:> (name tag) attrs children]))
 
 (defn svg-raw-shape [shape-wrapper]

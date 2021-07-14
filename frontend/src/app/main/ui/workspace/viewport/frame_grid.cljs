@@ -6,18 +6,17 @@
 
 (ns app.main.ui.workspace.viewport.frame-grid
   (:require
-   [rumext.alpha :as mf]
-   [okulary.core :as l]
-   [app.main.refs :as refs]
-   [app.common.math :as mth]
-   [app.common.pages :as cp]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.common.uuid :as uuid]
+   [app.main.refs :as refs]
    [app.util.geom.grid :as gg]
-   [app.common.uuid :as uuid]))
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 (mf/defc square-grid [{:keys [frame zoom grid] :as props}]
   (let [grid-id (mf/use-memo #(uuid/next))
-        {:keys [color size] :as params} (-> grid :params)
+        {:keys [size] :as params} (-> grid :params)
         {color-value :color color-opacity :opacity} (-> grid :params :color)
         ;; Support for old color format
         color-value (or color-value (:value (get-in grid [:params :color :value])))]
@@ -43,7 +42,7 @@
              :height (:height frame)
              :fill (str "url(#" grid-id ")")}]]))
 
-(mf/defc layout-grid [{:keys [key frame zoom grid]}]
+(mf/defc layout-grid [{:keys [key frame grid]}]
   (let [{color-value :color color-opacity :opacity} (-> grid :params :color)
         ;; Support for old color format
         color-value (or color-value (:value (get-in grid [:params :color :value])))
@@ -55,7 +54,7 @@
                      :opacity color-opacity}
                 #js {:stroke color-value
                      :strokeOpacity color-opacity
-                     :fill "transparent"})]
+                     :fill "none"})]
     [:g.grid
      (for [{:keys [x y width height]} (gg/grid-areas frame grid)]
        (do

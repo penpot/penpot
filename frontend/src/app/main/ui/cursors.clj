@@ -6,9 +6,9 @@
 
 (ns app.main.ui.cursors
   (:require
+   [app.common.uri :as u]
    [clojure.java.io :as io]
-   [cuerdas.core :as str]
-   [app.common.uri :as u]))
+   [cuerdas.core :as str]))
 
 (def cursor-folder "images/cursors")
 

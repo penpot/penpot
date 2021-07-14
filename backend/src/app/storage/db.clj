@@ -46,12 +46,24 @@
   (let [result (db/exec-one! conn ["select data from storage_data where id=?" id])]
     (ByteArrayInputStream. (:data result))))
 
+(defmethod impl/get-object-bytes :db
+  [{:keys [conn] :as backend} {:keys [id] :as object}]
+  (let [result (db/exec-one! conn ["select data from storage_data where id=?" id])]
+    (:data result)))
+
 (defmethod impl/get-object-url :db
   [_ _]
   (throw (UnsupportedOperationException. "not supported")))
+
+(defmethod impl/del-object :db
+  [_ _]
+  ;; NOOP: because deleting the row already deletes the file data from
+  ;; the database.
+  nil)
 
 (defmethod impl/del-objects-in-bulk :db
   [_ _]
   ;; NOOP: because deleting the row already deletes the file data from
   ;; the database.
   nil)
+

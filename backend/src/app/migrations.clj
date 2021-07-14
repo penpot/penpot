@@ -175,6 +175,24 @@
 
    {:name "0055-mod-file-media-object-table"
     :fn (mg/resource "app/migrations/sql/0055-mod-file-media-object-table.sql")}
+
+   {:name "0056-add-missing-index-on-deleted-at"
+    :fn (mg/resource "app/migrations/sql/0056-add-missing-index-on-deleted-at.sql")}
+
+   {:name "0057-del-profile-on-delete-trigger"
+    :fn (mg/resource "app/migrations/sql/0057-del-profile-on-delete-trigger.sql")}
+
+   {:name "0058-del-team-on-delete-trigger"
+    :fn (mg/resource "app/migrations/sql/0058-del-team-on-delete-trigger.sql")}
+
+   {:name "0059-mod-audit-log-table"
+    :fn (mg/resource "app/migrations/sql/0059-mod-audit-log-table.sql")}
+
+   {:name "0060-mod-file-change-table"
+    :fn (mg/resource "app/migrations/sql/0060-mod-file-change-table.sql")}
+
+   {:name "0061-mod-file-table"
+    :fn (mg/resource "app/migrations/sql/0061-mod-file-table.sql")}
    ])
 
 

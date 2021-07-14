@@ -6,15 +6,12 @@
 
 (ns app.main.ui
   (:require
-   [app.config :as cf]
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [app.config :as cfg]
-   [app.main.data.users :as du]
-   [app.main.data.messages :as dm]
+   [app.config :as cf]
    [app.main.data.events :as ev]
+   [app.main.data.messages :as dm]
+   [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.auth :refer [auth]]
@@ -32,8 +29,6 @@
    [app.main.ui.static :as static]
    [app.main.ui.viewer :refer [viewer-page]]
    [app.main.ui.workspace :as workspace]
-   [app.util.i18n :as i18n :refer [tr t]]
-   [app.util.router :as rt]
    [app.util.timers :as ts]
    [cljs.pprint :refer [pprint]]
    [cljs.spec.alpha :as s]
@@ -60,9 +55,11 @@
 (def routes
   [["/auth"
     ["/login"            :auth-login]
-    (when cfg/registration-enabled
+    (when cf/registration-enabled
       ["/register"         :auth-register])
-    (when cfg/registration-enabled
+    (when cf/registration-enabled
+      ["/register/validate" :auth-register-validate])
+    (when cf/registration-enabled
       ["/register/success" :auth-register-success])
     ["/recovery/request" :auth-recovery-request]
     ["/recovery"         :auth-recovery]
@@ -85,6 +82,7 @@
 
    ;; Used for export
    ["/render-object/:file-id/:page-id/:object-id" :render-object]
+   ["/render-sprite/:file-id" :render-sprite]
 
    ["/dashboard/team/:team-id"
     ["/members"              :dashboard-team-members]
@@ -100,9 +98,8 @@
 
 (mf/defc on-main-error
   [{:keys [error] :as props}]
-  (let [data (ex-data error)]
-    (mf/use-effect #(ptk/handle-error error))
-    [:span "Internal application errror"]))
+  (mf/use-effect #(ptk/handle-error error))
+  [:span "Internal application errror"])
 
 (mf/defc main-page
   {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}
@@ -112,6 +109,7 @@
      (case (:name data)
        (:auth-login
         :auth-register
+        :auth-register-validate
         :auth-register-success
         :auth-recovery-request
         :auth-recovery)
@@ -145,7 +143,7 @@
         :dashboard-team-settings)
        [:*
         #_[:div.modal-wrapper
-           [:& app.main.ui.onboarding/release-notes-modal {:version "1.6"}]]
+           [:& app.main.ui.onboarding/release-notes-modal {:version "1.7"}]]
         [:& dashboard {:route route}]]
 
        :viewer
@@ -174,6 +172,14 @@
            [:& render/render-object {:file-id file-id
                                      :page-id page-id
                                      :object-id object-id}]))
+
+       :render-sprite
+       (do
+         (let [file-id      (uuid (get-in route [:path-params :file-id]))
+               component-id (get-in route [:query-params :component-id])
+               component-id (when (some? component-id) (uuid component-id))]
+           [:& render/render-sprite {:file-id file-id
+                                     :component-id component-id}]))
 
        :workspace
        (let [project-id (some-> params :path :project-id uuid)
@@ -208,14 +214,14 @@
 (derive :service-unavailable ::exceptional-state)
 
 (defmethod ptk/handle-error ::exceptional-state
-  [{:keys [status] :as error}]
+  [error]
   (ts/schedule
    (st/emitf (dm/assign-exception error))))
 
 ;; We receive a explicit authentication error; this explicitly clears
 ;; all profile data and redirect the user to the login page.
 (defmethod ptk/handle-error :authentication
-  [error]
+  [_]
   (ts/schedule (st/emitf (du/logout))))
 
 ;; Error that happens on an active bussines model validation does not
@@ -242,7 +248,7 @@
 
 ;; Error on parsing an SVG
 (defmethod ptk/handle-error :svg-parser
-  [error]
+  [_]
   (ts/schedule
    (st/emitf
     (dm/show {:content "SVG is invalid or malformed"
@@ -258,7 +264,7 @@
         context (str/fmt "ns: '%s'\nname: '%s'\nfile: '%s:%s'"
                               (:ns context)
                               (:name context)
-                              (str cfg/public-uri "js/cljs-runtime/" (:file context))
+                              (str cf/public-uri "js/cljs-runtime/" (:file context))
                               (:line context))]
     (ts/schedule
      (st/emitf

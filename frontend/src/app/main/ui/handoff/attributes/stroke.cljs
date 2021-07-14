@@ -6,16 +6,15 @@
 
 (ns app.main.ui.handoff.attributes.stroke
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
    [app.common.data :as d]
    [app.common.math :as mth]
-   [app.util.i18n :refer [t]]
-   [app.util.color :as uc]
-   [app.main.ui.icons :as i]
-   [app.util.code-gen :as cg]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.handoff.attributes.common :refer [color-row]]))
+   [app.main.ui.handoff.attributes.common :refer [color-row]]
+   [app.util.code-gen :as cg]
+   [app.util.color :as uc]
+   [app.util.i18n :refer [t]]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (defn shape->color [shape]
   {:color (:stroke-color shape)

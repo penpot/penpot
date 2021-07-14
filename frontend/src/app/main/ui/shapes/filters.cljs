@@ -84,7 +84,7 @@
                 :result filter-id}]]))
 
 (mf/defc background-blur-filter
-  [{:keys [filter-id filter-in params]}]
+  [{:keys [filter-id params]}]
   [:*
    [:feGaussianBlur {:in "BackgroundImage"
                      :stdDeviation (/ (:value params) 2)}]

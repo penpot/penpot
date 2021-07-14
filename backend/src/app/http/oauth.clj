@@ -6,10 +6,14 @@
 
 (ns app.http.oauth
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.db :as db]
+   [app.loggers.audit :as audit]
+   [app.rpc.queries.profile :as profile]
    [app.util.http :as http]
    [app.util.logging :as l]
    [app.util.time :as dt]
@@ -18,36 +22,6 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
-
-(defn redirect-response
-  [uri]
-  {:status 302
-   :headers {"location" (str uri)}
-   :body ""})
-
-(defn generate-error-redirect-uri
-  [cfg]
-  (-> (u/uri (:public-uri cfg))
-      (assoc :path "/#/auth/login")
-      (assoc :query (u/map->query-string {:error "unable-to-auth"}))))
-
-(defn register-profile
-  [{:keys [rpc] :as cfg} info]
-  (let [method-fn (get-in rpc [:methods :mutation :login-or-register])
-        profile   (method-fn info)]
-    (cond-> profile
-      (some? (:invitation-token info))
-      (assoc :invitation-token (:invitation-token info)))))
-
-(defn generate-redirect-uri
-  [{:keys [tokens] :as cfg} profile]
-  (let [token (or (:invitation-token profile)
-                  (tokens :generate {:iss :auth
-                                     :exp (dt/in-future "15m")
-                                     :profile-id (:id profile)}))]
-    (-> (u/uri (:public-uri cfg))
-        (assoc :path "/#/auth/verify-token")
-        (assoc :query (u/map->query-string {:token token})))))
 
 (defn- build-redirect-uri
   [{:keys [provider] :as cfg}]
@@ -146,6 +120,7 @@
                                (string? roles) (into #{} (str/words roles))
                                (vector? roles) (into #{} roles)
                                :else #{}))]
+
         ;; check if profile has a configured set of roles
         (when-not (set/subset? provider-roles profile-roles)
           (ex/raise :type :internal
@@ -175,6 +150,63 @@
              {}
              params))
 
+(defn- retrieve-profile
+  [{:keys [pool] :as cfg} info]
+  (with-open [conn (db/open pool)]
+    (some->> (:email info)
+             (profile/retrieve-profile-data-by-email conn)
+             (profile/populate-additional-data conn)
+             (profile/decode-profile-row))))
+
+(defn- redirect-response
+  [uri]
+  {:status 302
+   :headers {"location" (str uri)}
+   :body ""})
+
+(defn- generate-error-redirect
+  [cfg error]
+  (let [uri (-> (u/uri (:public-uri cfg))
+                (assoc :path "/#/auth/login")
+                (assoc :query (u/map->query-string {:error "unable-to-auth" :hint (ex-message error)})))]
+    (redirect-response uri)))
+
+(defn- generate-redirect
+  [{:keys [tokens session audit] :as cfg} request info profile]
+  (if profile
+    (let [sxf    ((:create session) (:id profile))
+          token  (or (:invitation-token info)
+                     (tokens :generate {:iss :auth
+                                        :exp (dt/in-future "15m")
+                                        :profile-id (:id profile)}))
+          params {:token token}
+
+          uri    (-> (u/uri (:public-uri cfg))
+                     (assoc :path "/#/auth/verify-token")
+                     (assoc :query (u/map->query-string params)))]
+
+      (when (fn? audit)
+        (audit :cmd :submit
+               :type "mutation"
+               :name "login"
+               :profile-id (:id profile)
+               :ip-addr (audit/parse-client-ip request)
+               :props (audit/profile->props profile)))
+
+      (->> (redirect-response uri)
+           (sxf request)))
+    (let [info   (assoc info
+                        :iss :prepared-register
+                        :exp (dt/in-future {:hours 48}))
+          token  (tokens :generate info)
+          params (d/without-nils
+                  {:token token
+                   :fullname (:fullname info)})
+          uri    (-> (u/uri (:public-uri cfg))
+                     (assoc :path "/#/auth/register/validate")
+                     (assoc :query (u/map->query-string params)))]
+      (redirect-response uri))))
+
 (defn- auth-handler
   [{:keys [tokens] :as cfg} {:keys [params] :as request}]
   (let [invitation (:invitation-token params)
@@ -189,17 +221,15 @@
      :body {:redirect-uri uri}}))
 
 (defn- callback-handler
-  [{:keys [session] :as cfg} request]
+  [cfg request]
   (try
-    (let [info    (retrieve-info cfg request)
-          profile (register-profile cfg info)
-          uri     (generate-redirect-uri cfg profile)
-          sxf     ((:create session) (:id profile))]
-      (->> (redirect-response uri)
-           (sxf request)))
-    (catch Exception _e
-      (-> (generate-error-redirect-uri cfg)
-          (redirect-response)))))
+    (let [info     (retrieve-info cfg request)
+          profile  (retrieve-profile cfg info)]
+      (generate-redirect cfg request info profile))
+    (catch Exception e
+      (l/warn :hint "error on oauth process"
+              :cause e)
+      (generate-error-redirect cfg e))))
 
 ;; --- INIT
 
@@ -210,8 +240,8 @@
 (s/def ::tokens fn?)
 (s/def ::rpc map?)
 
-(defmethod ig/pre-init-spec :app.http.oauth/handlers [_]
-  (s/keys :req-un [::public-uri ::session ::tokens ::rpc]))
+(defmethod ig/pre-init-spec ::handler [_]
+  (s/keys :req-un [::public-uri ::session ::tokens ::rpc ::db/pool]))
 
 (defn wrap-handler
   [cfg handler]
@@ -225,7 +255,7 @@
       (-> (assoc @cfg :provider provider)
           (handler request)))))
 
-(defmethod ig/init-key :app.http.oauth/handlers
+(defmethod ig/init-key ::handler
   [_ cfg]
   (let [cfg (initialize cfg)]
     {:handler (wrap-handler cfg auth-handler)

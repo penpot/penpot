@@ -6,11 +6,10 @@
 
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
-  (:refer-clojure :exclude [set! get get-in merge clone])
+  (:refer-clojure :exclude [set! get get-in merge clone contains?])
   (:require
-   [cuerdas.core :as str]
-   [goog.object :as gobj]
-   ["lodash/omit" :as omit]))
+   ["lodash/omit" :as omit]
+   [cuerdas.core :as str]))
 
 (defn new [] #js {})
 
@@ -22,22 +21,27 @@
    (let [result (get obj k)]
      (if (undefined? result) default result))))
 
+(defn contains?
+  [obj k]
+  (some? (unchecked-get obj k)))
+
 (defn get-keys
   [obj]
   (js/Object.keys ^js obj))
 
 (defn get-in
-  [obj keys]
-  (loop [key (first keys)
-         keys (rest keys)
-         res obj]
-    (if (nil? key)
-      res
-      (if (nil? res)
-        res
-        (recur (first keys)
-               (rest keys)
-               (unchecked-get res key))))))
+  ([obj keys]
+   (get-in obj keys nil))
+
+  ([obj keys default]
+   (loop [key (first keys)
+          keys (rest keys)
+          res obj]
+     (if (or (nil? key) (nil? res))
+       (or res default)
+       (recur (first keys)
+              (rest keys)
+              (unchecked-get res key))))))
 
 (defn without
   [obj keys]
@@ -67,6 +71,14 @@
   [obj key value]
   (unchecked-set obj key value)
   obj)
+
+(defn update!
+  [obj key f & args]
+  (let [found (get obj key ::not-found)]
+    (if-not (identical? ::not-found found)
+      (do (unchecked-set obj key (apply f found args))
+          obj)
+      obj)))
 
 (defn- props-key-fn
   [key]

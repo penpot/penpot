@@ -9,6 +9,7 @@
   (:require
    [app.common.spec :as us]
    [app.srepl.main]
+   [app.util.logging :as l]
    [clojure.core.server :as ccs]
    [clojure.main :as cm]
    [clojure.spec.alpha :as s]
@@ -41,14 +42,17 @@
 
 (defmethod ig/init-key ::server
   [_ {:keys [port host name] :as cfg}]
-  (ccs/start-server {:address host
-                     :port port
-                     :name name
-                     :accept 'app.srepl/repl})
-  cfg)
+  (when (and port host name)
+    (l/info :msg "initializing server repl" :port port :host host :name name)
+    (ccs/start-server {:address host
+                       :port port
+                       :name name
+                       :accept 'app.srepl/repl})
+    cfg))
 
 (defmethod ig/halt-key! ::server
   [_ cfg]
-  (ccs/stop-server (:name cfg)))
+  (when cfg
+    (ccs/stop-server (:name cfg))))
 
 

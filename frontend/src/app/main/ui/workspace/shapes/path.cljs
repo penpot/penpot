@@ -6,13 +6,10 @@
 
 (ns app.main.ui.workspace.shapes.path
   (:require
-   [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
-   [app.main.store :as st]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.path.common :as pc]
-   [app.util.dom :as dom]
    [app.util.path.commands :as upc]
    [rumext.alpha :as mf]))
 
@@ -28,5 +25,4 @@
 
     [:> shape-container {:shape shape
                          :pointer-events (when editing? "none")}
-     [:& path/path-shape {:shape shape
-                          :background? true}]]))
+     [:& path/path-shape {:shape shape}]]))

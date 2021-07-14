@@ -9,10 +9,8 @@
   (:require
    [app.config :as cfg]
    [app.util.globals :as globals]
-   [app.util.storage :refer [storage]]
    [app.util.object :as obj]
-   [app.util.transit :as t]
-   [beicon.core :as rx]
+   [app.util.storage :refer [storage]]
    [cuerdas.core :as str]
    [goog.object :as gobj]
    [okulary.core :as l]
@@ -92,7 +90,7 @@
 
 (deftype C [val]
   IDeref
-  (-deref [o] val))
+  (-deref [_] val))
 
 (defn ^boolean c?
   [r]

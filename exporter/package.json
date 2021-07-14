@@ -12,14 +12,15 @@
     "inflation": "^2.0.0",
     "jszip": "^3.6.0",
     "koa": "^2.13.0",
-    "puppeteer": "^9.1.0",
+    "luxon": "^1.27.0",
+    "puppeteer": "^10.0.0",
     "puppeteer-cluster": "^0.22.0",
     "raw-body": "^2.4.1",
     "xml-js": "^1.6.11",
     "xregexp": "^5.0.2"
   },
   "devDependencies": {
-    "shadow-cljs": "^2.12.5",
+    "shadow-cljs": "^2.14.2",
     "source-map-support": "^0.5.19"
   }
 }

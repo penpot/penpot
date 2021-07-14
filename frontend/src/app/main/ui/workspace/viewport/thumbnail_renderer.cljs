@@ -17,7 +17,7 @@
 
 (mf/defc frame-thumbnail
   "Renders the canvas and image for a frame thumbnail and stores its value into the shape"
-  [{:keys [shape on-thumbnail-data on-frame-not-found]}]
+  [{:keys [shape background on-thumbnail-data on-frame-not-found]}]
 
   (let [thumbnail-img (mf/use-ref nil)
         thumbnail-canvas (mf/use-ref nil)
@@ -45,12 +45,21 @@
 
         on-image-load
         (mf/use-callback
-         (mf/deps on-thumbnail-data)
+         (mf/deps on-thumbnail-data background)
          (fn []
-           (let [canvas-node (mf/ref-val thumbnail-canvas)
-                 img-node (mf/ref-val thumbnail-img)
+           (let [canvas-node    (mf/ref-val thumbnail-canvas)
+                 img-node       (mf/ref-val thumbnail-img)
+
                  canvas-context (.getContext canvas-node "2d")
+                 canvas-width   (.-width canvas-node)
+                 canvas-height  (.-height canvas-node)
+
+                 _ (.clearRect canvas-context 0 0 canvas-width canvas-height)
+                 _ (.rect canvas-context 0 0 canvas-width canvas-height)
+                 _ (set! (.-fillStyle canvas-context) background)
+                 _ (.fill canvas-context)
                  _ (.drawImage canvas-context img-node 0 0)
+
                  data (.toDataURL canvas-node "image/jpeg" 0.8)]
              (on-thumbnail-data data))))]
 
@@ -72,6 +81,7 @@
   {::mf/wrap-props false}
   [props]
   (let [objects (obj/get props "objects")
+        background (obj/get props "background")
 
         ;; Id of the current frame being rendered
         shape-id (mf/use-state nil)
@@ -131,5 +141,6 @@
     (when (and (some? @shape-id) (contains? objects @shape-id))
       [:& frame-thumbnail {:key (str "thumbnail-" @shape-id)
                            :shape (get objects @shape-id)
+                           :background background
                            :on-thumbnail-data on-thumbnail-data
                            :on-frame-not-found on-frame-not-found}])))

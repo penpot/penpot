@@ -7,7 +7,6 @@
 (ns app.main.ui.dashboard.files
   (:require
    [app.main.data.dashboard :as dd]
-   [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
@@ -16,20 +15,18 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (mf/defc header
-  [{:keys [team project] :as props}]
+  [{:keys [project] :as props}]
   (let [local      (mf/use-state {:menu-open false
                                   :edition false})
-        project-id (:id project)
-        team-id    (:id team)
-
         on-menu-click
-        (mf/use-callback #(swap! local assoc :menu-open true))
+        (mf/use-callback
+         (fn [event]
+           (let [position (dom/get-client-position event)]
+             (dom/prevent-default event)
+             (swap! local assoc :menu-open true :menu-pos position))))
 
         on-menu-close
         (mf/use-callback #(swap! local assoc :menu-open false))
@@ -47,7 +44,14 @@
          (mf/deps project)
          (fn [event]
            (dom/prevent-default event)
-           (st/emit! (dd/create-file {:project-id (:id project)}))))]
+           (st/emit! (dd/create-file {:project-id (:id project)}))))
+
+        on-import
+        (mf/use-callback
+         (mf/deps (:id project))
+         (fn []
+           (st/emit! (dd/fetch-files {:project-id (:id project)})
+                     (dd/clear-selected-files))))]
 
 
     [:header.dashboard-header
@@ -63,20 +67,27 @@
          [:div.dashboard-title
           [:h1 {:on-double-click on-edit}
            (:name project)]
-          [:div.icon {:on-click on-menu-click}
-           i/actions]
           [:& project-menu {:project project
                             :show? (:menu-open @local)
+                            :left (- (:x (:menu-pos @local)) 180)
+                            :top (:y (:menu-pos @local))
                             :on-edit on-edit
-                            :on-menu-close on-menu-close}]
-          [:div.icon.pin-icon
-           {:class (when (:is-pinned project) "active")
-            :on-click toggle-pin}
-           (if (:is-pinned project)
-             i/pin-fill
-             i/pin)]]))
-     [:a.btn-secondary.btn-small {:on-click on-create-clicked}
-      (tr "dashboard.new-file")]]))
+                            :on-menu-close on-menu-close
+                            :on-import on-import}]]))
+     [:div.dashboard-header-actions
+      [:a.btn-secondary.btn-small {:on-click on-create-clicked}
+       (tr "dashboard.new-file")]
+
+      [:div.icon.pin-icon.tooltip.tooltip-bottom
+       {:class (when (:is-pinned project) "active")
+       :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
+       (if (:is-pinned project)
+         i/pin-fill
+         i/pin)]
+
+      [:div.icon.tooltip.tooltip-bottom
+       {:on-click on-menu-click :alt (tr "dashboard.options")}
+       i/actions]]]))
 
 (mf/defc files-section
   [{:keys [project team] :as props}]
@@ -99,6 +110,6 @@
     [:*
      [:& header {:team team :project project}]
      [:section.dashboard-container
-      [:& grid {:id (:id project)
+      [:& grid {:project-id (:id project)
                 :files files}]]]))
 

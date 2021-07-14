@@ -6,10 +6,130 @@
 
 (ns app.main.ui.shapes.custom-stroke
   (:require
-   [rumext.alpha :as mf]
-   [app.common.uuid :as uuid]
-   [app.common.geom.shapes :as geom]
-   [app.util.object :as obj]))
+   [app.common.data :as d]
+   [app.main.ui.context :as muc]
+   [app.util.object :as obj]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
+
+(defn add-props
+  [props new-props]
+  (-> props
+      (obj/merge (clj->js new-props))))
+
+(defn add-style
+  [props new-style]
+  (let [old-style (obj/get props "style")
+        style (obj/merge old-style (clj->js new-style))]
+    (-> props (obj/merge #js {:style style}))))
+
+(mf/defc inner-stroke-clip-path
+  [{:keys [render-id]}]
+  (let [clip-id (str "inner-stroke-" render-id)
+        shape-id (str "stroke-shape-" render-id)]
+    [:> "clipPath" #js {:id clip-id}
+     [:use {:xlinkHref (str "#" shape-id)}]]))
+
+(mf/defc outer-stroke-mask
+  [{:keys [shape render-id]}]
+  (let [stroke-mask-id (str "outer-stroke-" render-id)
+        shape-id (str "stroke-shape-" render-id)
+        stroke-width (:stroke-width shape 0)]
+    [:mask {:id stroke-mask-id}
+     [:use {:xlinkHref (str "#" shape-id)
+            :style #js {:fill "none" :stroke "white" :strokeWidth (* stroke-width 2)}}]
+
+     [:use {:xlinkHref (str "#" shape-id)
+            :style #js {:fill "black"}}]]))
+
+(mf/defc stroke-defs
+  [{:keys [shape render-id]}]
+  (cond
+    (and (= :inner (:stroke-alignment shape :center))
+         (> (:stroke-width shape 0) 0))
+    [:& inner-stroke-clip-path {:shape shape
+                                :render-id render-id}]
+
+    (and (= :outer (:stroke-alignment shape :center))
+         (> (:stroke-width shape 0) 0))
+    [:& outer-stroke-mask {:shape shape
+                           :render-id render-id}]))
+
+;; Outer alingmnent: display the shape in two layers. One
+;; without stroke (only fill), and another one only with stroke
+;; at double width (transparent fill) and passed through a mask
+;; that shows the whole shape, but hides the original shape
+;; without stroke
+(mf/defc outer-stroke
+  {::mf/wrap-props false}
+  [props]
+
+  (let [render-id    (mf/use-ctx muc/render-ctx)
+        child        (obj/get props "children")
+        base-props   (obj/get child "props")
+        elem-name    (obj/get child "type")
+        stroke-mask-id (str "outer-stroke-" render-id)
+        shape-id (str "stroke-shape-" render-id)
+
+        style-str (->> (obj/get base-props "style")
+                       (js->clj)
+                       (mapv (fn [[k v]]
+                               (-> (d/name k)
+                                   (str/kebab)
+                                   (str ":" v))))
+                       (str/join ";"))]
+
+    [:g.outer-stroke-shape
+     [:defs
+      [:> elem-name (-> (obj/clone base-props)
+                        (obj/set! "id" shape-id)
+                        (obj/set! "data-style" style-str)
+                        (obj/without ["style"]))]]
+
+     [:use {:xlinkHref (str "#" shape-id)
+            :mask (str "url(#" stroke-mask-id ")")
+            :style (-> (obj/get base-props "style")
+                       (obj/clone)
+                       (obj/update! "strokeWidth" * 2)
+                       (obj/without ["fill" "fillOpacity"])
+                       (obj/set! "fill" "none"))}]
+
+     [:use {:xlinkHref (str "#" shape-id)
+            :style (-> (obj/get base-props "style")
+                       (obj/clone)
+                       (obj/without ["stroke" "strokeWidth" "strokeOpacity" "strokeStyle" "strokeDasharray"]))}]]))
+
+
+;; Inner alignment: display the shape with double width stroke,
+;; and clip the result with the original shape without stroke.
+(mf/defc inner-stroke
+  {::mf/wrap-props false}
+  [props]
+  (let [render-id  (mf/use-ctx muc/render-ctx)
+        child      (obj/get props "children")
+        base-props (obj/get child "props")
+        elem-name  (obj/get child "type")
+        shape      (obj/get props "shape")
+        transform  (obj/get base-props "transform")
+
+        stroke-width (:stroke-width shape 0)
+
+        clip-id (str "inner-stroke-" render-id)
+        shape-id (str "stroke-shape-" render-id)
+
+        clip-path (str "url('#" clip-id "')")
+        shape-props (-> base-props
+                        (add-props {:id shape-id
+                                    :transform nil})
+                        (add-style {:strokeWidth (* stroke-width 2)}))]
+
+    [:g.inner-stroke-shape {:transform transform}
+     [:defs
+      [:> elem-name shape-props]]
+
+     [:use {:xlinkHref (str "#" shape-id)
+            :clipPath clip-path}]]))
+
 
 ; The SVG standard does not implement yet the 'stroke-alignment'
 ; attribute, to define the position of the stroke relative to the
@@ -19,100 +139,25 @@
 (mf/defc shape-custom-stroke
   {::mf/wrap-props false}
   [props]
-  (let [shape (unchecked-get props "shape")
-        base-props (unchecked-get props "base-props")
-        elem-name (unchecked-get props "elem-name")
-        base-style (obj/get base-props "style")
-        {:keys [x y width height]} (:selrect shape)
-        stroke-id (mf/use-var (uuid/next))
+  (let [child (obj/get props "children")
+        shape (obj/get props "shape")
+        stroke-width (:stroke-width shape 0)
         stroke-style (:stroke-style shape :none)
-        stroke-position (:stroke-alignment shape :center)]
+        stroke-position (:stroke-alignment shape :center)
+        has-stroke? (and (> stroke-width 0)
+                         (not= stroke-style :none))
+        inner? (= :inner stroke-position)
+        outer? (= :outer stroke-position)]
+
     (cond
-      ;; Center alignment (or no stroke): the default in SVG
-      (or (= stroke-style :none) (= stroke-position :center))
-      [:> elem-name (obj/merge! #js {} base-props)]
+      (and has-stroke? inner?)
+      [:& inner-stroke {:shape shape}
+       child]
 
-      ;; Inner alignment: display the shape with double width stroke,
-      ;; and clip the result with the original shape without stroke.
-      (= stroke-position :inner)
-      (let [clip-id (str "clip-" @stroke-id)
+      (and has-stroke? outer?)
+      [:& outer-stroke {:shape shape}
+       child]
 
-            clip-props (obj/merge
-                         base-props
-                         #js {:transform nil
-                              :style (obj/merge
-                                       base-style
-                                       #js {:stroke nil
-                                            :strokeWidth nil
-                                            :strokeOpacity nil
-                                            :strokeDasharray nil
-                                            :fill "white"
-                                            :fillOpacity 1})})
-
-            stroke-width (obj/get base-style "strokeWidth" 0)
-            shape-props (obj/merge
-                          base-props
-                          #js {:clipPath (str "url('#" clip-id "')")
-                               :style (obj/merge
-                                        base-style
-                                        #js {:strokeWidth (* stroke-width 2)})})]
-        [:*
-         [:> "clipPath" #js {:id clip-id}
-          [:> elem-name clip-props]]
-         [:> elem-name shape-props]])
-
-      ;; Outer alingmnent: display the shape in two layers. One
-      ;; without stroke (only fill), and another one only with stroke
-      ;; at double width (transparent fill) and passed through a mask
-      ;; that shows the whole shape, but hides the original shape
-      ;; without stroke
-
-      (= stroke-position :outer)
-      (let [stroke-mask-id (str "mask-" @stroke-id)
-            stroke-width   (obj/get base-style "strokeWidth" 0)
-            mask-props1 (obj/merge
-                          base-props
-                          #js {:transform nil
-                               :style (obj/merge
-                                        base-style
-                                        #js {:stroke "white"
-                                             :strokeWidth (* stroke-width 2)
-                                             :strokeOpacity 1
-                                             :strokeDasharray nil
-                                             :fill "white"
-                                             :fillOpacity 1})})
-            mask-props2 (obj/merge
-                          base-props
-                          #js {:transform nil
-                               :style (obj/merge
-                                        base-style
-                                        #js {:stroke nil
-                                             :strokeWidth nil
-                                             :strokeOpacity nil
-                                             :strokeDasharray nil
-                                             :fill "black"
-                                             :fillOpacity 1})})
-
-            shape-props1 (obj/merge
-                           base-props
-                           #js {:style (obj/merge
-                                         base-style
-                                         #js {:stroke nil
-                                              :strokeWidth nil
-                                              :strokeOpacity nil
-                                              :strokeDasharray nil})})
-            shape-props2 (obj/merge
-                           base-props
-                           #js {:mask (str "url('#" stroke-mask-id "')")
-                                :style (obj/merge
-                                         base-style
-                                         #js {:strokeWidth (* stroke-width 2)
-                                              :fill "none"
-                                              :fillOpacity 0})})]
-        [:*
-         [:mask {:id stroke-mask-id}
-          [:> elem-name mask-props1]
-          [:> elem-name mask-props2]]
-         [:> elem-name shape-props1]
-         [:> elem-name shape-props2]]))))
+      :else
+      child)))
 

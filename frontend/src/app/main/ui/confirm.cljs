@@ -9,7 +9,6 @@
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.keyboard :as k]
@@ -57,10 +56,10 @@
        (let [on-keydown
              (fn [event]
                (when (k/enter? event)
-                 (do (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (st/emit! (modal/hide))
-                     (on-accept props))))
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (st/emit! (modal/hide))
+                 (on-accept props)))
              key (events/listen js/document EventType.KEYDOWN on-keydown)]
          #(events/unlistenByKey key))))
 
@@ -86,9 +85,9 @@
             :on-click cancel-fn}])
 
         [:input.accept-button
-         {:class (classnames :danger (= accept-style :danger)
-                             :primary (= accept-style :primary))
+         {:class (dom/classnames
+                  :danger (= accept-style :danger)
+                  :primary (= accept-style :primary))
           :type "button"
           :value accept-label
           :on-click accept-fn}]]]]]))
-

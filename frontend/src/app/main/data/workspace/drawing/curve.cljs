@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.drawing.curve
   (:require
-   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
    [app.common.pages :as cp]
@@ -19,7 +18,7 @@
 
 (def simplify-tolerance 0.3)
 
-(defn stoper-event? [{:keys [type shift] :as event}]
+(defn stoper-event? [{:keys [type] :as event}]
   (ms/mouse-event? event) (= type :up))
 
 (defn initialize-drawing [state]
@@ -73,9 +72,8 @@
 (defn handle-drawing-curve []
   (ptk/reify ::handle-drawing-curve
     ptk/WatchEvent
-    (watch [_ state stream]
-      (let [{:keys [flags]} (:workspace-local state)
-            stoper (rx/filter stoper-event? stream)
+    (watch [_ _ stream]
+      (let [stoper (rx/filter stoper-event? stream)
             mouse  (rx/sample 10 ms/mouse-position)]
         (rx/concat
          (rx/of initialize-drawing)

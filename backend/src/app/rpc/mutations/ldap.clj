@@ -9,7 +9,10 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.rpc.mutations.profile :refer [login-or-register]]
+   [app.db :as db]
+   [app.loggers.audit :as audit]
+   [app.rpc.mutations.profile :as profile-m]
+   [app.rpc.queries.profile :as profile-q]
    [app.util.services :as sv]
    [clj-ldap.client :as ldap]
    [clojure.spec.alpha :as s]
@@ -34,6 +37,7 @@
 ;; --- Mutation: login-with-ldap
 
 (declare authenticate)
+(declare login-or-register)
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/string)
@@ -44,31 +48,37 @@
           :opt-un [::invitation-token]))
 
 (sv/defmethod ::login-with-ldap {:auth false :rlimit :password}
-  [{:keys [pool session tokens] :as cfg} {:keys [email password invitation-token] :as params}]
-  (let [info (authenticate params)
-        cfg  (assoc cfg :conn pool)]
-    (when-not info
-      (ex/raise :type :validation
-                :code :wrong-credentials))
-    (let [profile (login-or-register cfg {:email (:email info)
-                                          :backend (:backend info)
-                                          :fullname (:fullname info)})]
-      (if-let [token (:invitation-token params)]
-        ;; If invitation token comes in params, this is because the
-        ;; user comes from team-invitation process; in this case,
-        ;; regenerate token and send back to the user a new invitation
-        ;; token (and mark current session as logged).
-        (let [claims (tokens :verify {:token token :iss :team-invitation})
-              claims (assoc claims
-                            :member-id  (:id profile)
-                            :member-email (:email profile))
-              token  (tokens :generate claims)]
-          (with-meta
-            {:invitation-token token}
-            {:transform-response ((:create session) (:id profile))}))
+  [{:keys [pool session tokens] :as cfg} params]
+  (db/with-atomic [conn pool]
+    (let [info (authenticate params)
+          cfg  (assoc cfg :conn conn)]
 
-        (with-meta profile
-          {:transform-response ((:create session) (:id profile))})))))
+      (when-not info
+        (ex/raise :type :validation
+                  :code :wrong-credentials))
+
+      (let [profile (login-or-register cfg {:email (:email info)
+                                            :backend (:backend info)
+                                            :fullname (:fullname info)})]
+        (if-let [token (:invitation-token params)]
+          ;; If invitation token comes in params, this is because the
+          ;; user comes from team-invitation process; in this case,
+          ;; regenerate token and send back to the user a new invitation
+          ;; token (and mark current session as logged).
+          (let [claims (tokens :verify {:token token :iss :team-invitation})
+                claims (assoc claims
+                              :member-id  (:id profile)
+                              :member-email (:email profile))
+                token  (tokens :generate claims)]
+            (with-meta {:invitation-token token}
+              {:transform-response ((:create session) (:id profile))
+               ::audit/props (:props profile)
+               ::audit/profile-id (:id profile)}))
+
+          (with-meta profile
+            {:transform-response ((:create session) (:id profile))
+             ::audit/props (:props profile)
+             ::audit/profile-id (:id profile)}))))))
 
 (defn- replace-several [s & {:as replacements}]
   (reduce-kv clojure.string/replace s replacements))
@@ -88,11 +98,25 @@
     (first (ldap/search cpool base-dn params))))
 
 (defn- authenticate
-  [{:keys [password] :as params}]
+  [{:keys [password email] :as params}]
   (with-open [conn (connect)]
     (when-let [{:keys [dn] :as luser} (get-ldap-user conn params)]
       (when (ldap/bind? conn dn password)
         {:photo    (get luser (keyword (cfg/get :ldap-attrs-photo)))
          :fullname (get luser (keyword (cfg/get :ldap-attrs-fullname)))
-         :email    (get luser (keyword (cfg/get :ldap-attrs-email)))
+         :email    email
          :backend  "ldap"}))))
+
+(defn- login-or-register
+  [{:keys [conn] :as cfg} info]
+  (or (some->> (:email info)
+               (profile-q/retrieve-profile-data-by-email conn)
+               (profile-q/populate-additional-data conn)
+               (profile-q/decode-profile-row))
+      (let [params  (-> info
+                        (assoc :is-active true)
+                        (assoc :is-demo false))]
+        (->> params
+             (profile-m/create-profile conn)
+             (profile-m/create-profile-relations conn)
+             (profile-q/strip-private-attrs)))))

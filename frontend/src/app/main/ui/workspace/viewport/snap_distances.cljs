@@ -7,15 +7,11 @@
 (ns app.main.ui.workspace.viewport.snap-distances
   (:require
    [app.common.data :as d]
-   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages :as cp]
-   [app.common.uuid :as uuid]
    [app.main.refs :as refs]
-   [app.main.snap :as snap]
    [app.main.worker :as uw]
-   [app.util.geom.snap-points :as sp]
    [beicon.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -275,21 +271,20 @@
 
         update-shape (fn [shape] (-> shape
                                      (update :modifiers merge (:modifiers local))
-                                     gsh/transform-shape))]
-    (let [selrect (->> selected-shapes (map  update-shape) gsh/selection-rect)
-          key     (->> selected (map str) (str/join "-"))]
-      [:g.distance
-       [:& shape-distance
-        {:selrect selrect
-         :page-id page-id
-         :frame frame
-         :zoom zoom
-         :coord :x
-         :selected selected}]
-       [:& shape-distance
-        {:selrect selrect
-         :page-id page-id
-         :frame frame
-         :zoom zoom
-         :coord :y
-         :selected selected}]])))
+                                     gsh/transform-shape))
+        selrect (->> selected-shapes (map  update-shape) gsh/selection-rect)]
+    [:g.distance
+     [:& shape-distance
+      {:selrect selrect
+       :page-id page-id
+       :frame frame
+       :zoom zoom
+       :coord :x
+       :selected selected}]
+     [:& shape-distance
+      {:selrect selrect
+       :page-id page-id
+       :frame frame
+       :zoom zoom
+       :coord :y
+       :selected selected}]]))

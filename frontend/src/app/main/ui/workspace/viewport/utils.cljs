@@ -6,14 +6,14 @@
 
 (ns app.main.ui.workspace.viewport.utils
   (:require
-   [app.util.dom :as dom]
-   [app.common.geom.point :as gpt]
-   [cuerdas.core :as str]
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.main.ui.cursors :as cur]
-   ))
+   [app.util.dom :as dom]
+   [cuerdas.core :as str]))
 
-(defn update-transform [node shapes modifiers]
+;; TODO: looks like first argument is not necessary.
+(defn update-transform [_node shapes modifiers]
   (doseq [{:keys [id type]} shapes]
     (let [shape-node (dom/get-element (str "shape-" id))
 
@@ -30,7 +30,8 @@
                         shape-node)]
         (dom/set-attribute node "transform" (str (:displacement modifiers)))))))
 
-(defn remove-transform [node shapes]
+;; TODO: looks like first argument is not necessary.
+(defn remove-transform [_node shapes]
   (doseq [{:keys [id type]} shapes]
     (when-let [node (dom/get-element (str "shape-" id))]
       (let [node (if (= :frame type) (.-parentNode node) node)]

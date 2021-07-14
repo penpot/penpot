@@ -8,14 +8,11 @@
 (ns app.util.theme
   "A theme manager."
   (:require
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
-   [beicon.core :as rx]
-   [goog.object :as gobj]
    [app.config :as cfg]
    [app.util.dom :as dom]
-   [app.util.transit :as t]
-   [app.util.storage :refer [storage]]))
+   [app.util.storage :refer [storage]]
+   [beicon.core :as rx]
+   [rumext.alpha :as mf]))
 
 (defonce theme (get @storage ::theme cfg/default-theme))
 (defonce theme-sub (rx/subject))

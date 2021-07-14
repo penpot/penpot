@@ -1,0 +1,13 @@
+{
+  "name": "penpot-common",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "luxon": "^1.27.0"
+  },
+  "devDependencies": {
+    "source-map-support": "^0.5.19",
+    "ws": "^7.4.6"
+  }
+}

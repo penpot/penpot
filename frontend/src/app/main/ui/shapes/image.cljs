@@ -8,61 +8,37 @@
   (:require
    [app.common.geom.shapes :as geom]
    [app.config :as cfg]
-   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.embed :as embed]
    [app.util.dom :as dom]
-   [app.util.http :as http]
    [app.util.object :as obj]
-   [app.util.webapi :as wapi]
-   [beicon.core :as rx]
    [rumext.alpha :as mf]))
-
-(defn use-image-uri
-  [media]
-  (let [uri              (mf/use-memo (mf/deps (:id media))
-                                      #(cfg/resolve-file-media media))
-        embed-resources? (mf/use-ctx muc/embed-ctx)
-        data-uri         (mf/use-state (when (not embed-resources?) uri))]
-
-    (mf/use-effect
-     (mf/deps uri)
-     (fn []
-       (if embed-resources?
-         (->> (http/send! {:method :get
-                           :uri uri
-                           :response-type :blob})
-              (rx/map :body)
-              (rx/mapcat wapi/read-file-as-data-url)
-              (rx/subs #(reset! data-uri  %))))))
-
-    {:uri (or @data-uri uri)
-     :loading (not (some? @data-uri))}))
 
 (mf/defc image-shape
   {::mf/wrap-props false}
   [props]
 
   (let [shape (unchecked-get props "shape")
-        {:keys [id x y width height rotation metadata]} shape
-        {:keys [uri loading]} (use-image-uri metadata)]
+        {:keys [x y width height metadata]} shape
+        uri   (cfg/resolve-file-media metadata)
+        embed (embed/use-data-uris [uri])
 
-    (let [transform (geom/transform-matrix shape)
-          props (-> (attrs/extract-style-attrs shape)
-                    (obj/merge!
-                     #js {:x x
-                          :y y
-                          :transform transform
-                          :width width
-                          :height height
-                          :preserveAspectRatio "none"})
-                    (cond-> loading
-                      (obj/set! "data-loading" "true")))
+        transform (geom/transform-matrix shape)
+        props (-> (attrs/extract-style-attrs shape)
+                  (obj/merge!
+                   #js {:x x
+                        :y y
+                        :transform transform
+                        :width width
+                        :height height
+                        :preserveAspectRatio "none"
+                        :data-loading (str (not (contains? embed uri)))}))
 
-          on-drag-start (fn [event]
-                          ;; Prevent browser dragging of the image
-                          (dom/prevent-default event))]
+        on-drag-start (fn [event]
+                        ;; Prevent browser dragging of the image
+                        (dom/prevent-default event))]
 
-      [:> "image" (obj/merge!
-                   props
-                   #js {:xlinkHref uri
-                        :onDragStart on-drag-start})])))
+    [:> "image" (obj/merge!
+                 props
+                 #js {:xlinkHref (get embed uri uri)
+                      :onDragStart on-drag-start})]))

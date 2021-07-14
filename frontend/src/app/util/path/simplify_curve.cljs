@@ -6,14 +6,7 @@
 
 (ns app.util.path.simplify-curve
   (:require
-   [app.common.data :as d]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as gshp]
-   [app.util.path.path-impl-simplify :as impl-simplify]
-   [app.util.svg :as usvg]
-   [cuerdas.core :as str]
-   [clojure.set :as set]
-   [app.common.math :as mth]))
+   [app.util.path.path-impl-simplify :as impl-simplify]))
 
 (defn simplify
   "Simplifies a drawing done with the pen tool"

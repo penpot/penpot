@@ -6,43 +6,35 @@
 
 (ns app.main.ui.auth
   (:require
-   [app.common.uuid :as uuid]
-   [app.main.data.messages :as dm]
-   [app.main.data.users :as du]
-   [app.main.repo :as rp]
-   [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
-   [app.main.ui.auth.register :refer [register-page register-success-page]]
+   [app.main.ui.auth.register :refer [register-page register-success-page register-validate-page]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.forms :as fm]
-   [app.util.i18n :as i18n :refer [t]]
-   [app.util.router :as rt]
-   [app.util.timers :as ts]
-   [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
+   [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
 (mf/defc auth
   [{:keys [route] :as props}]
   (let [section (get-in route [:data :name])
-        locale  (mf/deref i18n/locale)
         params  (:query-params route)]
 
     (mf/use-effect
-      #(dom/set-html-title (t locale "title.default")))
+      #(dom/set-html-title (tr "title.default")))
 
     [:div.auth
      [:section.auth-sidebar
       [:a.logo {:href "https://penpot.app"} i/logo]
-      [:span.tagline (t locale "auth.sidebar-tagline")]]
+      [:span.tagline (tr "auth.sidebar-tagline")]]
 
      [:section.auth-content
       (case section
         :auth-register
-        [:& register-page {:locale locale :params params}]
+        [:& register-page {:params params}]
+
+        :auth-register-validate
+        [:& register-validate-page {:params params}]
 
         :auth-register-success
         [:& register-success-page {:params params}]
@@ -51,10 +43,11 @@
         [:& login-page {:params params}]
 
         :auth-recovery-request
-        [:& recovery-request-page {:locale locale}]
+        [:& recovery-request-page]
 
         :auth-recovery
-        [:& recovery-page {:locale locale :params params}])
+        [:& recovery-page {:params params}])
+
       [:div.terms-login
        [:a {:href "https://penpot.app/terms.html" :target "_blank"} "Terms of service"]
        [:span "and"]

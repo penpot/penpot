@@ -6,29 +6,11 @@
 
 (ns app.main.data.comments
   (:require
-   [cuerdas.core :as str]
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
-   [app.common.math :as mth]
-   [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [app.config :as cfg]
-   [app.main.constants :as c]
    [app.main.repo :as rp]
-   [app.main.store :as st]
-   [app.main.streams :as ms]
-   [app.main.worker :as uw]
-   [app.util.router :as rt]
-   [app.util.timers :as ts]
-   [app.util.transit :as t]
-   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]
    [potok.core :as ptk]))
 
 (s/def ::content ::us/string)
@@ -92,7 +74,7 @@
 
     (ptk/reify ::create-thread
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ _]
         (->> (rp/mutation :create-comment-thread params)
              (rx/mapcat #(rp/query :comment-thread {:file-id (:file-id %) :id (:id %)}))
              (rx/map #(partial created %)))))))
@@ -102,7 +84,7 @@
   (us/assert ::comment-thread thread)
   (ptk/reify ::update-comment-thread-status
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [done #(d/update-in-when % [:comment-threads id] assoc :count-unread-comments 0)]
         (->> (rp/mutation :update-comment-thread-status {:id id})
              (rx/map (constantly done)))))))
@@ -118,7 +100,7 @@
       (d/update-in-when state [:comment-threads id] assoc :is-resolved is-resolved))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (->> (rp/mutation :update-comment-thread {:id id :is-resolved is-resolved})
            (rx/ignore)))))
 
@@ -131,7 +113,7 @@
             (update-in state [:comments (:id thread)] assoc (:id comment) comment))]
     (ptk/reify ::create-comment
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ _]
         (rx/concat
          (->> (rp/mutation :add-comment {:thread-id (:id thread) :content content})
               (rx/map #(partial created %)))
@@ -146,7 +128,7 @@
       (d/update-in-when state [:comments thread-id id] assoc :content content))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (->> (rp/mutation :update-comment {:id id :content content})
            (rx/ignore)))))
 
@@ -161,7 +143,7 @@
           (update :comment-threads dissoc id)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (->> (rp/mutation :delete-comment-thread {:id id})
            (rx/ignore)))))
 
@@ -174,7 +156,7 @@
       (d/update-in-when state [:comments thread-id] dissoc id))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (->> (rp/mutation :delete-comment {:id id})
            (rx/ignore)))))
 
@@ -185,7 +167,7 @@
             (assoc-in state [:comment-threads id] thread))]
     (ptk/reify ::refresh-comment-thread
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ _]
         (->> (rp/query :comment-thread {:file-id file-id :id id})
              (rx/map #(partial fetched %)))))))
 
@@ -196,7 +178,7 @@
             (assoc state :comment-threads (d/index-by :id data)))]
     (ptk/reify ::retrieve-comment-threads
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ _]
         (->> (rp/query :comment-threads {:file-id file-id})
              (rx/map #(partial fetched %)))))))
 
@@ -207,7 +189,7 @@
             (update state :comments assoc thread-id (d/index-by :id comments)))]
     (ptk/reify ::retrieve-comments
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ _]
         (->> (rp/query :comments {:thread-id thread-id})
              (rx/map #(partial fetched %)))))))
 
@@ -217,7 +199,7 @@
   (us/assert ::us/uuid team-id)
   (ptk/reify ::retrieve-unread-comment-threads
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [fetched #(assoc %2 :comment-threads (d/index-by :id %1))]
         (->> (rp/query :unread-comment-threads {:team-id team-id})
              (rx/map #(partial fetched %)))))))
@@ -321,7 +303,7 @@
 
 (defn apply-filters
   [cstate profile threads]
-  (let [{:keys [show mode open]} cstate]
+  (let [{:keys [show mode]} cstate]
     (cond->> threads
       (= :pending show)
       (filter (comp not :is-resolved))

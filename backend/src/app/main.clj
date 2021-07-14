@@ -44,7 +44,7 @@
     :redis-uri (cf/get :redis-uri)}
 
    :app.tokens/tokens
-   {:props (ig/ref :app.setup/props)}
+   {:keys (ig/ref :app.setup/keys)}
 
    :app.storage/gc-deleted-task
    {:pool     (ig/ref :app.db/pool)
@@ -90,7 +90,7 @@
     :tokens      (ig/ref :app.tokens/tokens)
     :public-uri  (cf/get :public-uri)
     :metrics     (ig/ref :app.metrics/metrics)
-    :oauth       (ig/ref :app.http.oauth/handlers)
+    :oauth       (ig/ref :app.http.oauth/handler)
     :assets      (ig/ref :app.http.assets/handlers)
     :storage     (ig/ref :app.storage/storage)
     :sns-webhook (ig/ref :app.http.awsns/handler)
@@ -107,10 +107,12 @@
    :app.http.feedback/handler
    {:pool (ig/ref :app.db/pool)}
 
-   :app.http.oauth/handlers
+   :app.http.oauth/handler
    {:rpc           (ig/ref :app.rpc/rpc)
     :session       (ig/ref :app.http.session/session)
+    :pool          (ig/ref :app.db/pool)
     :tokens        (ig/ref :app.tokens/tokens)
+    :audit         (ig/ref :app.loggers.audit/collector)
     :public-uri    (cf/get :public-uri)}
 
    ;; RLimit definition for password hashing
@@ -166,26 +168,33 @@
     :tasks      (ig/ref :app.worker/registry)
     :pool       (ig/ref :app.db/pool)
     :schedule
-    [{:cron #app/cron "0 0 0 * * ? *" ;; daily
+    [{:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :file-media-gc}
 
      {:cron #app/cron "0 0 * * * ?"  ;; hourly
       :task :file-xlog-gc}
 
-     {:cron #app/cron "0 0 1 * * ?"  ;; daily (1 hour shift)
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :storage-deleted-gc}
 
-     {:cron #app/cron "0 0 2 * * ?"  ;; daily (2 hour shift)
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :storage-touched-gc}
 
-     {:cron #app/cron "0 0 3 * * ?"  ;; daily (3 hour shift)
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :session-gc}
 
      {:cron #app/cron "0 0 * * * ?"  ;; hourly
       :task :storage-recheck}
 
      {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :objects-gc}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :tasks-gc}
+
+     (when (cf/get :fdata-storage-backed)
+       {:cron #app/cron "0 0 * * * ?"  ;; hourly
+        :task :file-offload})
 
      (when (cf/get :audit-archive-enabled)
        {:cron #app/cron "0 0 * * * ?" ;; every 1h
@@ -203,6 +212,7 @@
    {:metrics (ig/ref :app.metrics/metrics)
     :tasks
     {:sendmail           (ig/ref :app.emails/sendmail-handler)
+     :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
      :delete-object      (ig/ref :app.tasks.delete-object/handler)
      :delete-profile     (ig/ref :app.tasks.delete-profile/handler)
      :file-media-gc      (ig/ref :app.tasks.file-media-gc/handler)
@@ -213,6 +223,7 @@
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
      :session-gc         (ig/ref :app.http.session/gc-task)
+     :file-offload       (ig/ref :app.tasks.file-offload/handler)
      :audit-archive      (ig/ref :app.loggers.audit/archive-task)
      :audit-archive-gc   (ig/ref :app.loggers.audit/archive-gc-task)}}
 
@@ -236,6 +247,11 @@
    {:pool    (ig/ref :app.db/pool)
     :storage (ig/ref :app.storage/storage)}
 
+   :app.tasks.objects-gc/handler
+   {:pool    (ig/ref :app.db/pool)
+    :storage (ig/ref :app.storage/storage)
+    :max-age cf/deletion-delay}
+
    :app.tasks.delete-profile/handler
    {:pool    (ig/ref :app.db/pool)}
 
@@ -245,7 +261,13 @@
 
    :app.tasks.file-xlog-gc/handler
    {:pool    (ig/ref :app.db/pool)
-    :max-age (dt/duration {:hours 24})}
+    :max-age (dt/duration {:hours 72})}
+
+   :app.tasks.file-offload/handler
+   {:pool    (ig/ref :app.db/pool)
+    :max-age (dt/duration {:seconds 5})
+    :storage (ig/ref :app.storage/storage)
+    :backend (cf/get :fdata-storage-backed :fdata-s3)}
 
    :app.tasks.telemetry/handler
    {:pool        (ig/ref :app.db/pool)
@@ -260,6 +282,9 @@
    :app.setup/props
    {:pool (ig/ref :app.db/pool)
     :key  (cf/get :secret-key)}
+
+   :app.setup/keys
+   {:props (ig/ref :app.setup/props)}
 
    :app.loggers.zmq/receiver
    {:endpoint (cf/get :loggers-zmq-uri)}
@@ -297,23 +322,32 @@
    :app.storage/storage
    {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref :app.worker/executor)
-    :backend  (cf/get :storage-backend :fs)
-    :backends {:s3  (ig/ref [::main :app.storage.s3/backend])
-               :db  (ig/ref [::main :app.storage.db/backend])
-               :fs  (ig/ref [::main :app.storage.fs/backend])
-               :tmp (ig/ref [::tmp  :app.storage.fs/backend])}}
+    :backend  (cf/get :assets-storage-backend :assets-fs)
+    :backends {:assets-s3 (ig/ref [::assets :app.storage.s3/backend])
+               :assets-db (ig/ref [::assets :app.storage.db/backend])
+               :assets-fs (ig/ref [::assets :app.storage.fs/backend])
+               :s3        (ig/ref [::assets :app.storage.s3/backend])
+               :db        (ig/ref [::assets :app.storage.db/backend])
+               :fs        (ig/ref [::assets :app.storage.fs/backend])
+               :tmp       (ig/ref [::tmp  :app.storage.fs/backend])
+               :fdata-s3  (ig/ref [::fdata :app.storage.s3/backend])}}
 
-   [::main :app.storage.s3/backend]
-   {:region (cf/get :storage-s3-region)
-    :bucket (cf/get :storage-s3-bucket)}
+   [::fdata :app.storage.s3/backend]
+   {:region (cf/get :storage-fdata-s3-region)
+    :bucket (cf/get :storage-fdata-s3-bucket)
+    :prefix (cf/get :storage-fdata-s3-prefix)}
 
-   [::main :app.storage.fs/backend]
-   {:directory (cf/get :storage-fs-directory)}
+   [::assets :app.storage.s3/backend]
+   {:region (cf/get :storage-assets-s3-region)
+    :bucket (cf/get :storage-assets-s3-bucket)}
+
+   [::assets :app.storage.fs/backend]
+   {:directory (cf/get :storage-assets-fs-directory)}
 
    [::tmp :app.storage.fs/backend]
    {:directory "/tmp/penpot"}
 
-   [::main :app.storage.db/backend]
+   [::assets :app.storage.db/backend]
    {:pool (ig/ref :app.db/pool)}})
 
 (def system nil)

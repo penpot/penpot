@@ -68,7 +68,7 @@
              (dom/stop-propagation event)
 
              (let [toggle-selected? (and selected? shift?)
-                   deselect? (and (not selected?) (not (empty? selected)) (not shift?))]
+                   deselect? (and (not selected?) (seq selected) (not shift?))]
                (apply
                 st/emit!
                 (cond-> []

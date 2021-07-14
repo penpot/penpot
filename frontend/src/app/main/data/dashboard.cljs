@@ -7,23 +7,16 @@
 (ns app.main.data.dashboard
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.main.repo :as rp]
-   [app.main.data.events :as ev]
-   [app.main.data.users :as du]
    [app.main.data.fonts :as df]
+   [app.main.data.media :as di]
+   [app.main.data.users :as du]
+   [app.main.repo :as rp]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.time :as dt]
-   [app.util.timers :as ts]
-   [app.util.avatars :as avatars]
-   [app.main.data.media :as di]
-   [app.main.data.messages :as dm]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
 ;; --- Specs
@@ -44,13 +37,12 @@
                    ::modified-at]))
 
 (s/def ::project
-  (s/keys ::req-un [::id
-                    ::name
-                    ::team-id
-                    ::profile-id
-                    ::created-at
-                    ::modified-at
-                    ::is-pinned]))
+  (s/keys :req-un [::id
+                   ::name
+                   ::team-id
+                   ::created-at
+                   ::modified-at
+                   ::is-pinned]))
 
 (s/def ::file
   (s/keys :req-un [::id
@@ -80,6 +72,7 @@
           (-> (assoc :current-team-id id)
               (dissoc :dashboard-files)
               (dissoc :dashboard-projects)
+              (dissoc :dashboard-shared-files)
               (dissoc :dashboard-recent-files)
               (dissoc :dashboard-team-members)
               (dissoc :dashboard-team-stats)))))
@@ -109,7 +102,7 @@
   []
   (ptk/reify ::fetch-team-members
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/query :team-members {:team-id team-id})
              (rx/map team-members-fetched))))))
@@ -127,7 +120,7 @@
   []
   (ptk/reify ::fetch-team-stats
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/query :team-stats {:team-id team-id})
              (rx/map team-stats-fetched))))))
@@ -146,7 +139,7 @@
   []
   (ptk/reify ::fetch-projects
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/query :projects {:team-id team-id})
              (rx/map projects-fetched))))))
@@ -173,7 +166,7 @@
       (dissoc state :dashboard-search-result))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)
             params  (assoc params :team-id team-id)]
         (->> (rp/query :search-files params)
@@ -202,7 +195,7 @@
   (us/assert ::us/uuid project-id)
   (ptk/reify ::fetch-files
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (->> (rp/query :project-files {:project-id project-id})
            (rx/map #(files-fetched project-id %))))))
 
@@ -213,13 +206,16 @@
   (ptk/reify ::shared-files-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :dashboard-shared-files (d/index-by :id files)))))
+      (let [files (d/index-by :id files)]
+        (-> state
+            (assoc :dashboard-shared-files files)
+            (update :dashboard-files d/merge files))))))
 
 (defn fetch-shared-files
   []
   (ptk/reify ::fetch-shared-files
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/query :team-shared-files {:team-id team-id})
              (rx/map shared-files-fetched))))))
@@ -240,7 +236,7 @@
   []
   (ptk/reify ::fetch-recent-files
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/query :team-recent-files {:team-id team-id})
              (rx/map recent-files-fetched))))))
@@ -293,7 +289,7 @@
   (us/assert string? name)
   (ptk/reify ::create-team
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
@@ -313,7 +309,7 @@
       (assoc-in state [:teams id :name] name))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (->> (rp/mutation! :update-team params)
            (rx/ignore)))))
 
@@ -322,7 +318,7 @@
   (us/assert ::di/file file)
   (ptk/reify ::update-team-photo
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [on-success di/notify-finished-loading
             on-error   #(do (di/notify-finished-loading)
                             (di/process-error %))
@@ -344,7 +340,7 @@
   (us/assert ::us/keyword role)
   (ptk/reify ::update-team-member-role
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)
             params  (assoc params :team-id team-id)]
         (->> (rp/mutation! :update-team-member-role params)
@@ -357,7 +353,7 @@
   (us/assert ::us/uuid member-id)
   (ptk/reify ::delete-team-member
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)
             params  (assoc params :team-id team-id)]
         (->> (rp/mutation! :delete-team-member params)
@@ -370,7 +366,7 @@
   (us/assert (s/nilable ::us/uuid) reassign-to)
   (ptk/reify ::leave-team
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
@@ -391,7 +387,7 @@
   (us/assert ::us/keyword role)
   (ptk/reify ::invite-team-member
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
@@ -408,7 +404,7 @@
   (us/assert ::team params)
   (ptk/reify ::delete-team
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
@@ -434,7 +430,7 @@
   []
   (ptk/reify ::create-project
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [name    (name (gensym (str (tr "dashboard.new-project-prefix") " ")))
             team-id (:current-team-id state)
             params  {:name name
@@ -461,7 +457,7 @@
   (us/assert ::us/uuid id)
   (ptk/reify ::duplicate-project
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
@@ -480,7 +476,7 @@
   (us/assert ::us/uuid team-id)
   (ptk/reify ::move-project
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
@@ -491,7 +487,7 @@
              (rx/catch on-error))))))
 
 (defn toggle-project-pin
-  [{:keys [id is-pinned team-id] :as project}]
+  [{:keys [id is-pinned] :as project}]
   (us/assert ::project project)
   (ptk/reify ::toggle-project-pin
     ptk/UpdateEvent
@@ -499,7 +495,7 @@
       (assoc-in state [:dashboard-projects id :is-pinned] (not is-pinned)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [project (get-in state [:dashboard-projects id])
             params  (select-keys project [:id :is-pinned :team-id])]
         (->> (rp/mutation :update-project-pin params)
@@ -508,7 +504,7 @@
 ;; --- EVENT: rename-project
 
 (defn rename-project
-  [{:keys [id name team-id] :as params}]
+  [{:keys [id name] :as params}]
   (us/assert ::project params)
   (ptk/reify ::rename-project
     ptk/UpdateEvent
@@ -518,7 +514,7 @@
           (update :dashboard-local dissoc :project-for-edit)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [params {:id id :name name}]
         (->> (rp/mutation :rename-project params)
              (rx/ignore))))))
@@ -526,7 +522,7 @@
 ;; --- EVENT: delete-project
 
 (defn delete-project
-  [{:keys [id team-id] :as params}]
+  [{:keys [id] :as params}]
   (us/assert ::project params)
   (ptk/reify ::delete-project
     ptk/UpdateEvent
@@ -534,14 +530,14 @@
       (update state :dashboard-projects dissoc id))
 
     ptk/WatchEvent
-    (watch [_ state s]
+    (watch [_ _ _]
       (->> (rp/mutation :delete-project {:id id})
            (rx/ignore)))))
 
 ;; --- EVENT: delete-file
 
 (defn file-deleted
-  [team-id project-id]
+  [_team-id project-id]
   (ptk/reify ::file-deleted
     ptk/UpdateEvent
     (update [_ state]
@@ -555,10 +551,11 @@
     (update [_ state]
       (-> state
           (d/update-when :dashboard-files dissoc id)
+          (d/update-when :dashboard-shared-files dissoc id)
           (d/update-when :dashboard-recent-files dissoc id)))
 
     ptk/WatchEvent
-    (watch [_ state s]
+    (watch [_ state _]
       (let [team-id (uuid/uuid (get-in state [:route :path-params :team-id]))]
         (->> (rp/mutation :delete-file {:id id})
              (rx/map #(file-deleted team-id project-id)))))))
@@ -573,10 +570,11 @@
     (update [_ state]
       (-> state
           (d/update-in-when [:dashboard-files id :name] (constantly name))
+          (d/update-in-when [:dashboard-shared-files id :name] (constantly name))
           (d/update-in-when [:dashboard-recent-files id :name] (constantly name))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [params (select-keys params [:id :name])]
         (->> (rp/mutation :rename-file params)
              (rx/ignore))))))
@@ -591,10 +589,13 @@
     (update [_ state]
       (-> state
           (d/update-in-when [:dashboard-files id :is-shared] (constantly is-shared))
-          (d/update-in-when [:dashboard-recent-files id :is-shared] (constantly is-shared))))
+          (d/update-in-when [:dashboard-recent-files id :is-shared] (constantly is-shared))
+          (cond->
+            (not is-shared)
+            (d/update-when :dashboard-shared-files dissoc id))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [params {:id id :is-shared is-shared}]
         (->> (rp/mutation :set-file-shared params)
              (rx/ignore))))))
@@ -621,7 +622,7 @@
   (us/assert ::us/uuid project-id)
   (ptk/reify ::create-file
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
@@ -642,7 +643,7 @@
   (us/assert ::name name)
   (ptk/reify ::duplicate-file
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
@@ -663,7 +664,7 @@
   (us/assert ::us/uuid project-id)
   (ptk/reify ::move-files
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
@@ -682,26 +683,32 @@
   (us/assert ::file file)
   (ptk/reify ::go-to-workspace
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [pparams {:project-id project-id :file-id id}]
         (rx/of (rt/nav :workspace pparams))))))
 
 
 (defn go-to-files
-  [project-id]
-  (ptk/reify ::go-to-files
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-files {:team-id team-id
-                                         :project-id project-id}))))))
+  ([project-id]
+   (ptk/reify ::go-to-files
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [team-id (:current-team-id state)]
+         (rx/of (rt/nav :dashboard-files {:team-id team-id
+                                          :project-id project-id}))))))
+  ([team-id project-id]
+   (ptk/reify ::go-to-files
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of (rt/nav :dashboard-files {:team-id team-id
+                                        :project-id project-id}))))))
 
 (defn go-to-search
   ([] (go-to-search nil))
   ([term]
    (ptk/reify ::go-to-search
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [_ state _]
        (let [team-id (:current-team-id state)]
          (if (empty? term)
            (rx/of (rt/nav :dashboard-search
@@ -714,13 +721,13 @@
   ([]
    (ptk/reify ::go-to-projects
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [_ state _]
        (let [team-id (:current-team-id state)]
          (rx/of (rt/nav :dashboard-projects {:team-id team-id}))))))
   ([team-id]
    (ptk/reify ::go-to-projects
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [_ _ _]
        (du/set-current-team! team-id)
        (rx/of (rt/nav :dashboard-projects {:team-id team-id}))))))
 
@@ -728,7 +735,7 @@
   []
   (ptk/reify ::go-to-team-members
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (rx/of (rt/nav :dashboard-team-members {:team-id team-id}))))))
 
@@ -736,6 +743,6 @@
   []
   (ptk/reify ::go-to-team-settings
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (rx/of (rt/nav :dashboard-team-settings {:team-id team-id}))))))

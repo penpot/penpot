@@ -7,21 +7,14 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   [app.common.spec :as us]
    [app.main.data.shortcuts :as dsc]
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.logging :as log]
-   [app.util.object :as obj]
    [app.util.timers :as ts]
-   [app.util.transit :as t]
-   [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [goog.events :as events]
-   [rumext.alpha :as mf])
-  (:import goog.events.EventType))
+   [rumext.alpha :as mf]))
 
 (log/set-level! :warn)
 
@@ -99,10 +92,7 @@
 
         cleanup
         (fn []
-          ;; (js/console.log "cleanup" (:name data))
-          (when-let [subscr (:subscr @state)]
-            ;; (js/console.log "unsubscribing" (:name data))
-            (rx/unsub! (:subscr @state)))
+          (some-> (:subscr @state) rx/unsub!)
           (swap! state (fn [state]
                               (-> state
                                   (cancel-timer)
@@ -119,9 +109,8 @@
         (fn [event]
           (if disabled
             (dom/prevent-default event)
-            (let [target (dom/get-target event)]
+            (do
               (dom/stop-propagation event)
-              ;; (dnd/trace event data "drag-start")
               (dnd/set-data! event data-type data)
               (dnd/set-drag-image! event (invisible-image))
               (dnd/set-allowed-effect! event "move")
@@ -225,3 +214,28 @@
      (fn []
        (mf/set-ref-val! ref value)))
     (mf/ref-val ref)))
+
+(defn use-equal-memo
+  [val]
+  (let [ref (mf/use-ref nil)]
+    (when-not (= (mf/ref-val ref) val)
+      (mf/set-ref-val! ref val))
+    (mf/ref-val ref)))
+
+(defn- ssr?
+  "Checks if the current environment is run under a SSR context"
+  []
+  (try
+    (not js/window)
+    (catch :default _e
+      ;; When exception accessing window we're in ssr
+      true)))
+
+(defn use-effect-ssr
+  "Use effect that handles SSR"
+  [deps effect-fn]
+
+  (if (ssr?)
+    (let [ret (effect-fn)]
+      (when (fn? ret) (ret)))
+    (mf/use-effect deps effect-fn)))

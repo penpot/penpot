@@ -6,7 +6,6 @@
 
 (ns app.main.ui.dashboard.team-form
   (:require
-   [app.common.data :as d]
    [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
@@ -14,13 +13,10 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.object :as obj]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (s/def ::name ::us/not-empty-string)
@@ -28,20 +24,20 @@
   (s/keys :req-un [::name]))
 
 (defn- on-create-success
-  [form response]
+  [_form response]
   (let [msg "Team created successfuly"]
     (st/emit! (dm/success msg)
               (modal/hide)
               (rt/nav :dashboard-projects {:team-id (:id response)}))))
 
 (defn- on-update-success
-  [form response]
+  [_form _response]
   (let [msg "Team created successfuly"]
     (st/emit! (dm/success msg)
               (modal/hide))))
 
 (defn- on-error
-  [form response]
+  [form _response]
   (let [id  (get-in @form [:clean-data :id])]
     (if id
       (rx/of (dm/error "Error on updating team."))
@@ -62,20 +58,19 @@
     (st/emit! (dd/update-team (with-meta team mdata))
               (modal/hide))))
 
-(mf/defc team-form-modal
-  {::mf/register modal/components
+(defn- on-submit
+  [form _]
+  (let [data (:clean-data @form)]
+    (if (:id data)
+      (on-update-submit form)
+      (on-create-submit form))))
+
+(mf/defc team-form-modal {::mf/register modal/components
    ::mf/register-as :team-form}
   [{:keys [team] :as props}]
-  (let [form   (fm/use-form :spec ::team-form
-                            :initial (or team {}))
-
-        on-submit
-        (mf/use-callback
-         (mf/deps team)
-         (if team
-           (partial on-update-submit form)
-           (partial on-create-submit form)))]
-
+  (let [initial (mf/use-memo (fn [] (or team {})))
+        form    (fm/use-form :spec ::team-form
+                             :initial initial)]
     [:div.modal-overlay
      [:div.modal-container.team-form-modal
       [:& fm/form {:form form :on-submit on-submit}
@@ -91,7 +86,7 @@
 
        [:div.modal-content.generic-form
         [:& fm/input {:type "text"
-                      :auto-focus true
+                      :auto-focus? true
                       :form form
                       :name :name
                       :label (tr "labels.create-team.placeholder")}]]

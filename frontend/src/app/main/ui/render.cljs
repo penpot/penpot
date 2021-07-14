@@ -12,16 +12,15 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
-   [app.main.store :as st]
    [app.main.data.fonts :as df]
    [app.main.exports :as exports]
    [app.main.repo :as repo]
-   [app.main.ui.context :as muc]
+   [app.main.store :as st]
+   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.main.ui.shapes.text.embed :refer [embed-fontfaces-style]]
+   [app.util.dom :as dom]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
@@ -44,12 +43,6 @@
 
         objects  (reduce updt-fn objects mod-ids)
         object   (get objects object-id)
-
-        txt-xfm  (comp (map #(get objects %))
-                       (filter #(= :text (:type %))))
-        txt-objs (into [] txt-xfm mod-ids)
-
-        {:keys [width height]} (gsh/points->selrect (:points object))
 
         ;; We need to get the shadows/blurs paddings to create the viewbox properly
         {:keys [x y width height]} (filters/get-filters-bounds object)
@@ -77,17 +70,20 @@
          #(exports/shape-wrapper-factory objects))
         ]
 
-    [:& (mf/provider muc/embed-ctx) {:value true}
-     (when (seq txt-objs)
-       [:& embed-fontfaces-style {:shapes txt-objs}])
+    (mf/use-effect
+     (mf/deps width height)
+     #(dom/set-page-style {:size (str (mth/round width) "px "
+                                      (mth/round height) "px")}))
 
+    [:& (mf/provider embed/context) {:value true}
      [:svg {:id "screenshot"
             :view-box vbox
             :width width
             :height height
             :version "1.1"
             :xmlnsXlink "http://www.w3.org/1999/xlink"
-            :xmlns "http://www.w3.org/2000/svg"}
+            :xmlns "http://www.w3.org/2000/svg"
+            :xmlns:penpot "https://penpot.app/xmlns"}
 
       (case (:type object)
         :frame [:& frame-wrapper {:shape object :view-box vbox}]
@@ -107,6 +103,7 @@
       (assoc objects (:id object) object))
     objects))
 
+
 ;; NOTE: for now, it is ok download the entire file for render only
 ;; single page but in a future we need consider to add a specific
 ;; backend entry point for download only the data of single page.
@@ -121,7 +118,7 @@
              (repo/query! :font-variants {:file-id file-id})
              (repo/query! :file {:id file-id}))
             (rx/subs
-             (fn [[fonts {:keys [data]} :as kaka]]
+             (fn [[fonts {:keys [data]}]]
                (when (seq fonts)
                  (st/emit! (df/fonts-fetched fonts)))
                (let [objs (get-in data [:pages-index page-id :objects])
@@ -133,3 +130,30 @@
       [:& object-svg {:objects @objects
                       :object-id object-id
                       :zoom 1}])))
+
+(mf/defc render-sprite
+  [{:keys [file-id component-id] :as props}]
+  (let [file (mf/use-state nil)]
+    (mf/use-effect
+     (mf/deps file-id)
+     (fn []
+       (->> (repo/query! :file {:id file-id})
+            (rx/subs
+             (fn [result]
+               (reset! file result))))
+       (constantly nil)))
+
+    (when @file
+      [:*
+       [:& exports/components-sprite-svg {:data (:data @file) :embed true}
+
+        (when (some? component-id)
+          [:use {:x 0 :y 0
+                 :xlinkHref (str "#" component-id)}])]
+
+       (when-not (some? component-id)
+         [:ul
+          (for [[id data] (get-in @file [:data :components])]
+            (let [url (str "#/render-sprite/" (:id @file) "?component-id=" id)]
+              [:li [:a {:href url} (:name data)]]))])])))
+

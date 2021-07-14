@@ -11,7 +11,6 @@
    [app.main.data.users :as udu]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [cljs.spec.alpha :as s]
@@ -29,7 +28,7 @@
       (st/emit! (dm/error msg)))))
 
 (defn- on-success
-  [form]
+  [_]
   (let [msg (tr "dashboard.notifications.password-saved")]
     (st/emit! (dm/success msg))))
 

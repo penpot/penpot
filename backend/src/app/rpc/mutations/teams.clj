@@ -10,7 +10,6 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.emails :as eml]
    [app.media :as media]
@@ -21,7 +20,6 @@
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]))
 
@@ -134,13 +132,6 @@
       (when-not (some :is-owner perms)
         (ex/raise :type :validation
                   :code :only-owner-can-delete-team))
-
-      ;; Schedule object deletion
-      (wrk/submit! {::wrk/task :delete-object
-                    ::wrk/delay cfg/deletion-delay
-                    ::wrk/conn conn
-                    :id id
-                    :type :team})
 
       (db/update! conn :team
                   {:deleted-at (dt/now)}

@@ -8,16 +8,14 @@
   (:require
    ["opentype.js" :as ot]
    [app.common.data :as d]
-   [app.common.spec :as us]
    [app.common.media :as cm]
+   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
-   [app.util.i18n :as i18n :refer [tr]]
    [app.util.logging :as log]
-   [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [app.util.webapi :as wa]
+   [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
@@ -62,7 +60,7 @@
         (assoc state :dashboard-fonts (d/index-by :id fonts)))
 
       ptk/EffectEvent
-      (effect [_ state stream]
+      (effect [_ _ _]
         (let [fonts (->> fonts
                          (map adapt-font-id)
                          (group-by :font-id)
@@ -73,7 +71,7 @@
   [team-id]
   (ptk/reify ::load-team-fonts
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (->> (rp/query :font-variants {:team-id team-id})
            (rx/map fonts-fetched)))))
 
@@ -121,7 +119,7 @@
           (parse-font [{:keys [data] :as params}]
             (try
               (assoc params :font (ot/parse data))
-              (catch :default e
+              (catch :default _e
                 (log/warn :msg (str/fmt "skiping file %s, unsupported format" (:name params)))
                 nil)))
 
@@ -204,7 +202,7 @@
                         fonts))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/mutation! :update-font {:id id :name name :team-id team-id})
              (rx/ignore))))))
@@ -218,10 +216,10 @@
     (update [_ state]
       (update state :dashboard-fonts
               (fn [variants]
-                (d/removem (fn [[id variant]]
+                (d/removem (fn [[_id variant]]
                              (= (:font-id variant) font-id)) variants))))
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/mutation! :delete-font {:id font-id :team-id team-id})
              (rx/ignore))))))
@@ -238,7 +236,7 @@
                              (= (:id variant) id))
                            variants))))
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (->> (rp/mutation! :delete-font-variant {:id id :team-id team-id})
              (rx/ignore))))))

@@ -202,12 +202,332 @@
       background: $color-primary;
       border: 1px solid $color-primary;
       color: $color-black;
+
       &:hover {
         background: $color-primary-dark;
       }
     }
   }
+}
 
+.import-dialog,
+.export-dialog {
+  background-color: $color-white;
+  border: 1px solid $color-gray-20;
+  width: 30rem;
+  min-height: 14rem;
+
+  p {
+    font-size: $fs14;
+    color: $color-black;
+  }
+
+  .detail {
+    font-size: $fs12;
+  }
+
+  .detail, .explain {
+    padding: 0 1rem;
+  }
+
+  .cancel-button {
+    border: 1px solid $color-gray-20;
+    background: $color-white;
+    border-radius: 3px;
+    padding: 0.3rem 1.25rem;
+    cursor: pointer;
+    margin-right: 8px;
+
+    &:hover {
+      background: $color-gray-20;
+    }
+  }
+
+  .accept-button {
+    background: $color-primary;
+    border-radius: 3px;
+    border: 1px solid $color-primary;
+    color: $color-black;
+    cursor: pointer;
+    padding: 0.3rem 1.25rem;
+
+    &[disabled] {
+      border: 1px solid #E3E3E3;
+    }
+
+    &:hover {
+      background: $color-primary-dark;
+    }
+  }
+
+  .modal-content {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(65vh);
+  }
+
+  .modal-header-title {
+    padding-left: 2rem;
+
+    h2 {
+      font-size: $fs14;
+    }
+  }
+
+  .modal-content {
+    padding: 1rem;
+  }
+
+  svg {
+    max-width: 18px;
+    max-height: 18px;
+  }
+
+  .file-entry {
+    margin: 0.75rem 1rem;
+    user-select: none;
+
+    &.editable:hover {
+      .file-name-label {
+        background-color: $color-primary-lighter;
+      }
+      .edit-entry-buttons {
+        display: flex;
+        background-color: $color-primary-lighter;
+      }
+    }
+  }
+
+  .file-icon {
+    width: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    #loader-pencil {
+      fill: $color-black;
+    }
+
+    .icon-tick {
+      fill: $color-success;
+    }
+
+    .icon-close {
+      transform: rotate(45deg);
+      fill: $color-danger;
+    }
+  }
+
+  .file-name {
+    display: flex;
+    align-items: center;
+    color: $color-black;
+
+    .file-name-label {
+      flex: 1;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      height: 2rem;
+      margin-left: -0.25rem;
+      padding-left: 0.25rem;
+
+      .icon-library {
+        width: 14px;
+        fill: $color-gray-20;
+        margin-left: 0.5rem;
+        padding-top: 1px
+      }
+    }
+
+    .file-name-edit {
+      width: 100%;
+
+      input {
+        margin: 0;
+        border: none;
+        border-bottom: 1px solid $color-gray-20;
+        height: 2rem;
+        width: 100%;
+      }
+    }
+  }
+
+  .feedback-banner {
+    color: $color-black;
+    background: $color-success-lighter;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    margin: 0 1rem;
+
+    .message {
+      padding: 0 1rem;
+      font-size: $fs12;
+    }
+
+    .icon {
+      background: $color-success;
+      height: 40px;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        width: 20px;
+        height: 20px;
+        fill: $color-white;
+      }
+    }
+  }
+
+  .error-message {
+    margin: 0 2rem;
+    color: $color-danger;
+    font-size: $fs12;
+    font-style: italic;
+  }
+
+  .linked-libraries {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: 2rem;
+
+    .icon-chain, .icon-unchain {
+      width: 10px;
+      height: 10px;
+      margin-right: 2px;
+    }
+
+    .linked-library-tag {
+      font-size: $fs10;
+      color: $color-black;
+      background: #d8f7fe;
+      border-radius: 3px;
+      padding: 2px 4px;
+      display: flex;
+      align-items: center;
+      margin: 0.25rem;
+
+      &.error {
+        background-color: $color-danger-lighter;
+      }
+    }
+  }
+
+  .edit-entry-buttons {
+    display: flex;
+    flex-direction: row;
+    font-size: $fs14;
+    height: 2rem;
+    display: none;
+
+    button {
+      border: none;
+      background: none;
+      display: block;
+      cursor: pointer;
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      &:hover svg {
+        fill: $color-primary;
+      }
+    }
+  }
+}
+
+.export-dialog {
+  .export-option {
+    border-radius: 4px;
+    border: 1px solid $color-gray-10;
+    margin-bottom: 0.5rem;
+
+    h3 {
+      font-weight: 700;
+    }
+
+    h3, p {
+      font-size: $fs12;
+      line-height: 1.5;
+      margin: 0;
+      color: $color-black;
+      padding: 0;
+    }
+
+    &.selected {
+      border: 1px solid $color-primary;
+    }
+  }
+
+  .option-container {
+    display: block;
+    position: relative;
+    padding-left: 40px;
+    padding-right: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    cursor: pointer;
+    user-select: none;
+
+    input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+    }
+
+    .option-radio-check {
+      position: absolute;
+      top: 1rem;
+      left: 12px;
+      height: 18px;
+      width: 18px;
+      background-color: $color-white;
+      border: 1px solid $color-gray-10;
+      border-radius: 50%;
+    }
+
+    &:hover input ~ .option-radio-check {
+      border-color: $color-primary;
+    }
+
+    input:checked ~ .option-radio-check {
+      border-color: $color-primary;
+      background-color: $color-white;
+    }
+
+    .option-radio-check:after {
+      content: "";
+      position: absolute;
+      display: none;
+    }
+
+    input:checked ~ .option-radio-check:after {
+      display: block;
+      background-color: $color-primary;
+    }
+
+    .option-radio-check:after {
+      top: 3px;
+      left: 3px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: white;
+    }
+  }
 }
 
 .libraries-dialog {
@@ -565,3 +885,6 @@
   }
 }
 
+.relnotes .onboarding {
+  height: 420px;
+}

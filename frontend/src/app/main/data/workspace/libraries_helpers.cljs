@@ -17,19 +17,19 @@
    [cljs.spec.alpha :as s]
    [clojure.set :as set]))
 
-;; Change this to :info :debug or :trace to debug this module
+;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
 
 (defonce empty-changes [[] []])
 
 (defonce color-sync-attrs
-  [[:fill-color-ref-id   :color    :fill-color]
-   [:fill-color-ref-id   :gradient :fill-color-gradient]
-   [:fill-color-ref-id   :opacity  :fill-opacity]
+  [[:fill-color-ref-id   :fill-color-ref-file   :color    :fill-color]
+   [:fill-color-ref-id   :fill-color-ref-file   :gradient :fill-color-gradient]
+   [:fill-color-ref-id   :fill-color-ref-file   :opacity  :fill-opacity]
 
-   [:stroke-color-ref-id :color    :stroke-color]
-   [:stroke-color-ref-id :gradient :stroke-color-gradient]
-   [:stroke-color-ref-id :opacity  :stroke-opacity]])
+   [:stroke-color-ref-id :stroke-color-ref-file :color    :stroke-color]
+   [:stroke-color-ref-id :stroke-color-ref-file :gradient :stroke-color-gradient]
+   [:stroke-color-ref-id :stroke-color-ref-file :opacity  :stroke-opacity]])
 
 (declare generate-sync-container)
 (declare generate-sync-shape)
@@ -90,7 +90,7 @@
   (assert (nil? (:shape-ref shape)))
   (let [;; Ensure that the component root is not an instance and
         ;; it's no longer tied to a frame.
-        update-new-shape (fn [new-shape original-shape]
+        update-new-shape (fn [new-shape _original-shape]
                            (cond-> new-shape
                              true
                              (-> (assoc :frame-id nil)
@@ -200,6 +200,63 @@
                      (get component :objects)
                      identity)))
 
+(defn generate-detach-instance
+  "Generate changes to remove the links between a shape and all its children
+  with a component."
+  [shape-id container]
+  (let [shapes (cp/get-object-with-children shape-id (:objects container))
+        rchanges (mapv (fn [obj]
+                         (make-change
+                           container
+                           {:type :mod-obj
+                            :id (:id obj)
+                            :operations [{:type :set
+                                          :attr :component-id
+                                          :val nil}
+                                         {:type :set
+                                          :attr :component-file
+                                          :val nil}
+                                         {:type :set
+                                          :attr :component-root?
+                                          :val nil}
+                                         {:type :set
+                                          :attr :remote-synced?
+                                          :val nil}
+                                         {:type :set
+                                          :attr :shape-ref
+                                          :val nil}
+                                         {:type :set
+                                          :attr :touched
+                                          :val nil}]}))
+                       shapes)
+
+        uchanges (mapv (fn [obj]
+                         (make-change
+                           container
+                           {:type :mod-obj
+                            :id (:id obj)
+                            :operations [{:type :set
+                                          :attr :component-id
+                                          :val (:component-id obj)}
+                                         {:type :set
+                                          :attr :component-file
+                                          :val (:component-file obj)}
+                                         {:type :set
+                                          :attr :component-root?
+                                          :val (:component-root? obj)}
+                                         {:type :set
+                                          :attr :remote-synced?
+                                          :val (:remote-synced? obj)}
+                                         {:type :set
+                                          :attr :shape-ref
+                                          :val (:shape-ref obj)}
+                                         {:type :set
+                                          :attr :touched
+                                          :val (:touched obj)}]}))
+                       shapes)]
+
+    [rchanges uchanges]))
+
 
 ;; ---- General library synchronization functions ----
 
@@ -216,26 +273,20 @@
             :file (pretty-file file-id state)
             :library (pretty-file library-id state))
 
-  (let [file          (get-file state file-id)
-        library       (get-file state library-id)
-        library-items (get library asset-type)]
-
-    (if (empty? library-items)
-      empty-changes
-
-      (loop [pages (vals (get file :pages-index))
-             rchanges []
-             uchanges []]
-        (if-let [page (first pages)]
-          (let [[page-rchanges page-uchanges]
-                (generate-sync-container asset-type
-                                         library-id
-                                         state
-                                         (cp/make-container page :page))]
-            (recur (next pages)
-                   (d/concat rchanges page-rchanges)
-                   (d/concat uchanges page-uchanges)))
-          [rchanges uchanges])))))
+  (let [file (get-file state file-id)]
+    (loop [pages (vals (get file :pages-index))
+           rchanges []
+           uchanges []]
+      (if-let [page (first pages)]
+        (let [[page-rchanges page-uchanges]
+              (generate-sync-container asset-type
+                                       library-id
+                                       state
+                                       (cp/make-container page :page))]
+          (recur (next pages)
+                 (d/concat rchanges page-rchanges)
+                 (d/concat uchanges page-uchanges)))
+        [rchanges uchanges]))))
 
 (defn generate-sync-library
   "Generate changes to synchronize all shapes in all components of the
@@ -248,27 +299,21 @@
             :file (pretty-file file-id state)
             :library (pretty-file library-id state))
 
-  (let [file          (get-file state file-id)
-        library       (get-file state library-id)
-        library-items (get library asset-type)]
-
-    (if (empty? library-items)
-      empty-changes
-
-      (loop [local-components (vals (get file :components))
-             rchanges []
-             uchanges []]
-        (if-let [local-component (first local-components)]
-          (let [[comp-rchanges comp-uchanges]
-                (generate-sync-container asset-type
-                                         library-id
-                                         state
-                                         (cp/make-container local-component
-                                                            :component))]
-            (recur (next local-components)
-                   (d/concat rchanges comp-rchanges)
-                   (d/concat uchanges comp-uchanges)))
-          [rchanges uchanges])))))
+  (let [file (get-file state file-id)]
+    (loop [local-components (vals (get file :components))
+           rchanges []
+           uchanges []]
+      (if-let [local-component (first local-components)]
+        (let [[comp-rchanges comp-uchanges]
+              (generate-sync-container asset-type
+                                       library-id
+                                       state
+                                       (cp/make-container local-component
+                                                          :component))]
+          (recur (next local-components)
+                 (d/concat rchanges comp-rchanges)
+                 (d/concat uchanges comp-uchanges)))
+        [rchanges uchanges]))))
 
 (defn- generate-sync-container
   "Generate changes to synchronize all shapes in a particular container (a page
@@ -323,7 +368,7 @@
                  attr-ref-file (keyword (str attr "-ref-file"))]
              (and (get shape attr-ref-id)
                   (= library-id (get shape attr-ref-file))))
-          (map #(nth % 2) color-sync-attrs))))
+          (map #(nth % 3) color-sync-attrs))))
 
     :typographies
     (fn [shape]
@@ -338,10 +383,10 @@
 (defmulti generate-sync-shape
   "Generate changes to synchronize one shape with all assets of the given type
   that is using, in the given library."
-  (fn [type library-id state container shape] type))
+  (fn [type _library-id _state _container _shape] type))
 
 (defmethod generate-sync-shape :components
-  [_ library-id state container shape]
+  [_ _ state container shape]
   (generate-sync-shape-direct container
                               (:id shape)
                               (get-local-file state)
@@ -385,12 +430,14 @@
                                    :fill-color (:color color)
                                    :fill-opacity (:opacity color)
                                    :fill-color-gradient (:gradient color))
-                            node))]
+                            (assoc node
+                                   :fill-color-ref-id nil
+                                   :fill-color-ref-file nil)))]
         (generate-sync-text-shape shape container update-node))
       (loop [attrs (seq color-sync-attrs)
              roperations []
              uoperations []]
-        (let [[attr-ref-id color-attr attr] (first attrs)]
+        (let [[attr-ref-id attr-ref-file color-attr attr] (first attrs)]
           (if (nil? attr)
             (if (empty? roperations)
               empty-changes
@@ -410,17 +457,37 @@
                      roperations
                      uoperations)
               (let [color (get colors (get shape attr-ref-id))
-                    roperation {:type :set
-                                :attr attr
-                                :val (color-attr color)
-                                :ignore-touched true}
-                    uoperation {:type :set
-                                :attr attr
-                                :val (get shape attr)
-                                :ignore-touched true}]
+                    roperations' (if color
+                                   [{:type :set
+                                     :attr attr
+                                     :val (color-attr color)
+                                     :ignore-touched true}]
+                                   ;; If the referenced color does no longer exist in the library,
+                                   ;; we must unlink the color in the shape
+                                   [{:type :set
+                                     :attr attr-ref-id
+                                     :val nil
+                                     :ignore-touched true}
+                                    {:type :set
+                                     :attr attr-ref-file
+                                     :val nil
+                                     :ignore-touched true}])
+                    uoperations' (if color
+                                   [{:type :set
+                                     :attr attr
+                                     :val (get shape attr)
+                                     :ignore-touched true}]
+                                   [{:type :set
+                                     :attr attr-ref-id
+                                     :val (get shape attr-ref-id)
+                                     :ignore-touched true}
+                                    {:type :set
+                                     :attr attr-ref-file
+                                     :val (get shape attr-ref-file)
+                                     :ignore-touched true}])]
                 (recur (next attrs)
-                       (conj roperations roperation)
-                       (conj uoperations uoperation))))))))))
+                       (concat roperations roperations')
+                       (concat uoperations uoperations'))))))))))
 
 (defmethod generate-sync-shape :typographies
   [_ library-id state container shape]
@@ -432,7 +499,8 @@
         update-node (fn [node]
                       (if-let [typography (get typographies (:typography-ref-id node))]
                         (merge node (d/without-keys typography [:name :id]))
-                        node))]
+                        (dissoc node :typography-ref-id
+                                     :typography-ref-file)))]
     (generate-sync-text-shape shape container update-node)))
 
 (defn- get-assets
@@ -568,7 +636,9 @@
                                             root-main
                                             reset?
                                             initial-root?)
-      empty-changes)))
+      ; If the component is not found, because the master component has been
+      ; deleted or the library unlinked, detach the instance.
+      (generate-detach-instance shape-id container))))
 
 (defn- generate-sync-shape-direct-recursive
   [container shape-inst component shape-main root-inst root-main reset? initial-root?]
@@ -631,20 +701,14 @@
                                              set-remote-synced?)))
 
         both (fn [child-inst child-main]
-               (let [sub-root? (and (:component-id shape-inst)
-                                    (not (:component-root? shape-inst)))]
-                 (generate-sync-shape-direct-recursive container
-                                                       child-inst
-                                                       component
-                                                       child-main
-                                                       (if sub-root?
-                                                         shape-inst
-                                                         root-inst)
-                                                       (if sub-root?
-                                                         shape-main
-                                                         root-main)
-                                                       reset?
-                                                       initial-root?)))
+               (generate-sync-shape-direct-recursive container
+                                                     child-inst
+                                                     component
+                                                     child-main
+                                                     root-inst
+                                                     root-main
+                                                     reset?
+                                                     initial-root?))
 
         moved (fn [child-inst child-main]
                 (move-shape
@@ -666,7 +730,7 @@
     [(d/concat rchanges child-rchanges)
      (d/concat uchanges child-uchanges)]))
 
-(defn- generate-sync-shape-inverse
+(defn generate-sync-shape-inverse
   "Generate changes to update the component a shape is linked to, from
   the values in the shape and all its children."
   [page-id shape-id local-library libraries]
@@ -752,20 +816,13 @@
                                   false))
 
         both (fn [child-inst child-main]
-               (let [sub-root? (and (:component-id shape-inst)
-                                    (not (:component-root? shape-inst)))]
-
-                 (generate-sync-shape-inverse-recursive container
-                                                        child-inst
-                                                        component
-                                                        child-main
-                                                        (if sub-root?
-                                                          shape-inst
-                                                          root-inst)
-                                                        (if sub-root?
-                                                          shape-main
-                                                          root-main)
-                                                        initial-root?)))
+               (generate-sync-shape-inverse-recursive container
+                                                      child-inst
+                                                      component
+                                                      child-main
+                                                      root-inst
+                                                      root-main
+                                                      initial-root?))
 
         moved (fn [child-inst child-main]
                 (move-shape
@@ -886,10 +943,10 @@
                                set-remote-synced?
                                (assoc :remote-synced? true))))
 
-        update-original-shape (fn [original-shape new-shape]
+        update-original-shape (fn [original-shape _new-shape]
                                 original-shape)
 
-        [new-shape new-shapes _]
+        [_ new-shapes _]
         (cp/clone-object component-shape
                          (:id parent-shape)
                          (get component :objects)
@@ -939,7 +996,7 @@
                                 (cp/get-parents (:id component-parent-shape)
                                                 (:objects component))))
 
-        update-new-shape (fn [new-shape original-shape]
+        update-new-shape (fn [new-shape _original-shape]
                            (reposition-shape new-shape
                                              root-instance
                                              root-main))
@@ -950,7 +1007,7 @@
                                          :shape-ref (:id new-shape))
                                   original-shape))
 
-        [new-shape new-shapes updated-shapes]
+        [_new-shape new-shapes updated-shapes]
         (cp/clone-object shape
                          (:id component-parent-shape)
                          (get page :objects)
@@ -1141,33 +1198,6 @@
                            :remote-synced? (:remote-synced? shape)}]})]]
         [rchanges uchanges]))))
 
-(defn- set-touched-shapes-group
-  [shape container]
-  (if-not (:shape-ref shape)
-    empty-changes
-    (do
-      (log/info :msg (str "SET-TOUCHED-SHAPES-GROUP "
-                          (if (cp/page? container) "[P] " "[C] ")
-                          (:name shape)))
-      (let [rchanges [(make-change
-                        container
-                        {:type :mod-obj
-                         :id (:id shape)
-                         :operations
-                         [{:type :set-touched
-                           :touched (cp/set-touched-group
-                                      (:touched shape)
-                                      :shapes-group)}]})]
-
-            uchanges [(make-change
-                        container
-                        {:type :mod-obj
-                         :id (:id shape)
-                         :operations
-                         [{:type :set-touched
-                           :touched (:touched shape)}]})]]
-        [rchanges uchanges]))))
-
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1187,6 +1217,8 @@
         ; sync only the position relative to the origin of the component.
         ; We solve this by moving the origin shape so it is aligned with
         ; the dest root before syncing.
+        ; In case of subinstances, the comparison is always done with the
+        ; near component, because this is that we are syncing with.
         origin-shape (reposition-shape origin-shape origin-root dest-root)
         touched      (get dest-shape :touched #{})]
 

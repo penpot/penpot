@@ -14,6 +14,9 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
+;; TODO: DEPRECATED
+;; Should be removed in the 1.8.x
+
 (declare delete-profile-data)
 
 ;; --- INIT

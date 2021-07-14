@@ -6,13 +6,11 @@
 
 (ns app.main.ui.workspace.sidebar.options
   (:require
-   [app.common.spec :as us]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.align :refer [align-options]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu]]
@@ -26,9 +24,8 @@
    [app.main.ui.workspace.sidebar.options.shapes.rect :as rect]
    [app.main.ui.workspace.sidebar.options.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.sidebar.options.shapes.text :as text]
-   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
-   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 ;; --- Options
@@ -52,32 +49,30 @@
      :page-id page-id
      :file-id file-id}]])
 
-
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
   [{:keys [selected section shapes shapes-with-children page-id file-id]}]
-  (let [locale (mf/deref i18n/locale)]
-    [:div.tool-window
-     [:div.tool-window-content
-      [:& tab-container {:on-change-tab #(st/emit! (udw/set-options-mode %))
-                         :selected section}
-       [:& tab-element {:id :design
-                        :title (t locale "workspace.options.design")}
-        [:div.element-options
-         [:& align-options]
-         (case (count selected)
-           0 [:& page/options {:page-id page-id}]
-           1 [:& shape-options {:shape (first shapes)
-                                :page-id page-id
-                                :file-id file-id
-                                :shapes-with-children shapes-with-children}]
-           [:& multiple/options {:shapes-with-children shapes-with-children
-                                 :shapes shapes}])]]
+  [:div.tool-window
+   [:div.tool-window-content
+    [:& tab-container {:on-change-tab #(st/emit! (udw/set-options-mode %))
+                       :selected section}
+     [:& tab-element {:id :design
+                      :title (tr "workspace.options.design")}
+      [:div.element-options
+       [:& align-options]
+       (case (count selected)
+         0 [:& page/options]
+         1 [:& shape-options {:shape (first shapes)
+                              :page-id page-id
+                              :file-id file-id
+                              :shapes-with-children shapes-with-children}]
+         [:& multiple/options {:shapes-with-children shapes-with-children
+                               :shapes shapes}])]]
 
-       [:& tab-element {:id :prototype
-                        :title (t locale "workspace.options.prototype")}
-        [:div.element-options
-         [:& interactions-menu {:shape (first shapes)}]]]]]]))
+     [:& tab-element {:id :prototype
+                      :title (tr "workspace.options.prototype")}
+      [:div.element-options
+       [:& interactions-menu {:shape (first shapes)}]]]]]])
 
 
 ;; TODO: this need optimizations, selected-objects and

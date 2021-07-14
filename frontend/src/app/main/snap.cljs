@@ -19,24 +19,24 @@
    [beicon.core :as rx]
    [clojure.set :as set]))
 
-(defonce ^:private snap-accuracy 5)
-(defonce ^:private snap-path-accuracy 10)
-(defonce ^:private snap-distance-accuracy 10)
+(def ^:const snap-accuracy 5)
+(def ^:const snap-path-accuracy 10)
+(def ^:const snap-distance-accuracy 10)
 
 (defn- remove-from-snap-points
   [remove-id?]
   (fn [query-result]
     (->> query-result
          (map (fn [[value data]] [value (remove (comp remove-id? second) data)]))
-         (filter (fn [[_ data]] (not (empty? data)))))))
+         (filter (fn [[_ data]] (seq data))))))
 
 (defn- flatten-to-points
   [query-result]
-  (mapcat (fn [[v data]] (map (fn [[point _]] point) data)) query-result))
+  (mapcat (fn [[_ data]] (map (fn [[point _]] point) data)) query-result))
 
 (defn- calculate-distance [query-result point coord]
   (->> query-result
-       (map (fn [[value data]] [(mth/abs (- value (coord point))) [(coord point) value]]))))
+       (map (fn [[value _]] [(mth/abs (- value (coord point))) [(coord point) value]]))))
 
 (defn- get-min-distance-snap [points coord]
   (fn [query-result]
@@ -45,7 +45,7 @@
          (apply min-key first)
          second)))
 
-(defn- snap-frame-id [shapes]
+(defn snap-frame-id [shapes]
   (let [frames (into #{} (map :frame-id shapes))]
     (cond
       ;; Only shapes from one frame. The common is the only one
@@ -286,8 +286,9 @@
          (fn [matches other]
 
            (let [matches (into {} matches)
-                 other (into {} other)
-                 keys (set/union (keys matches) (keys other))]
+                 other   (into {} other)
+                 keys    (set/union (set (keys matches))
+                                    (set (keys other)))]
              (into {}
                    (map (fn [key]
                           [key
@@ -308,7 +309,7 @@
 
         min-match-coord
         (fn [matches]
-          (if (and (seq matches) (not (empty? matches)))
+          (if (seq matches)
             (->> matches (reduce get-min))
             default))]
 

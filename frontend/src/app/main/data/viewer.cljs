@@ -7,7 +7,6 @@
 (ns app.main.data.viewer
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -15,8 +14,6 @@
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
    [app.main.repo :as rp]
-   [app.main.store :as st]
-   [app.util.avatars :as avatars]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -27,7 +24,7 @@
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 
-(s/def ::project (s/keys ::req-un [::id ::name]))
+(s/def ::project (s/keys :req-un [::id ::name]))
 (s/def ::file (s/keys :req-un [::id ::name]))
 (s/def ::page ::cp/page)
 
@@ -60,10 +57,10 @@
 
 (s/def ::initialize-params
   (s/keys :req-un [::page-id ::file-id]
-          :opt-in [::token]))
+          :opt-un [::token]))
 
 (defn initialize
-  [{:keys [page-id file-id token] :as params}]
+  [{:keys [page-id file-id] :as params}]
   (us/assert ::initialize-params params)
   (ptk/reify ::initialize
     ptk/UpdateEvent
@@ -78,7 +75,7 @@
                       lstate)))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (rx/of (fetch-bundle params)
              (fetch-comment-threads params)))))
 
@@ -86,14 +83,14 @@
 
 (s/def ::fetch-bundle-params
   (s/keys :req-un [::page-id ::file-id]
-          :opt-in [::token]))
+          :opt-un [::token]))
 
 (defn fetch-bundle
   [{:keys [page-id file-id token] :as params}]
   (us/assert ::fetch-bundle-params params)
   (ptk/reify ::fetch-file
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [params (cond-> {:page-id page-id
                             :file-id file-id}
                      (string? token) (assoc :token token))]
@@ -145,7 +142,7 @@
 
     (ptk/reify ::fetch-comment-threads
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ _]
         (->> (rp/query :comment-threads {:file-id file-id})
              (rx/map #(partial fetched %))
              (rx/catch on-error))))))
@@ -156,7 +153,7 @@
             (assoc-in state [:comment-threads id] thread))]
     (ptk/reify ::refresh-comment-thread
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ _]
         (->> (rp/query :comment-thread {:file-id file-id :id id})
              (rx/map #(partial fetched %)))))))
 
@@ -167,7 +164,7 @@
             (update state :comments assoc thread-id (d/index-by :id comments)))]
     (ptk/reify ::retrieve-comments
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ _]
         (->> (rp/query :comments {:thread-id thread-id})
              (rx/map #(partial fetched %)))))))
 
@@ -175,7 +172,7 @@
   []
   (ptk/reify ::create-share-link
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [file-id (:current-file-id state)
             page-id (:current-page-id state)]
         (->> (rp/mutation! :create-file-share-token {:file-id file-id
@@ -187,7 +184,7 @@
   []
   (ptk/reify ::delete-share-link
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [file-id (:current-file-id state)
             page-id (:current-page-id state)
             token   (get-in state [:viewer-data :token])
@@ -246,7 +243,7 @@
 (def select-prev-frame
   (ptk/reify ::select-prev-frame
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [route   (:route state)
             screen  (-> route :data :name keyword)
             qparams (:query-params route)
@@ -260,7 +257,7 @@
 (def select-next-frame
   (ptk/reify ::select-prev-frame
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [route   (:route state)
             screen  (-> route :data :name keyword)
             qparams (:query-params route)
@@ -296,7 +293,7 @@
       (assoc-in state [:viewer-local :interactions-show?] true))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ stream]
       (let [stopper (rx/filter (ptk/type? ::flash-interactions) stream)]
         (->> (rx/of flash-done)
              (rx/delay 500)
@@ -314,7 +311,7 @@
   [index]
   (ptk/reify ::go-to-frame
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [route   (:route state)
             screen  (-> route :data :name keyword)
             qparams (:query-params route)
@@ -326,7 +323,7 @@
   (us/verify ::us/uuid frame-id)
   (ptk/reify ::go-to-frame
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [frames  (get-in state [:viewer-data :frames])
             index   (d/index-of-pred frames #(= (:id %) frame-id))]
         (when index
@@ -337,13 +334,11 @@
   [section]
   (ptk/reify ::go-to-section
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [route   (:route state)
-            screen  (-> route :data :name keyword)
             pparams (:path-params route)
             qparams (:query-params route)]
-        (rx/of
-          (rt/nav :viewer pparams (assoc qparams :section section)))))))
+        (rx/of (rt/nav :viewer pparams (assoc qparams :section section)))))))
 
 
 (defn set-current-frame [frame-id]
@@ -422,6 +417,6 @@
   ([{:keys [team-id]}]
    (ptk/reify ::go-to-dashboard
      ptk/WatchEvent
-     (watch [_ state stream]
+     (watch [_ state _]
        (let [team-id (or team-id (get-in state [:viewer-data :project :team-id]))]
          (rx/of (rt/nav :dashboard-projects {:team-id team-id})))))))

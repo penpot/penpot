@@ -6,12 +6,10 @@
 
 (ns app.main.ui.workspace.viewport.snap-points
   (:require
-   [app.common.pages :as cp]
-   [app.common.math :as mth]
    [app.common.data :as d]
-   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.main.refs :as refs]
+   [app.common.math :as mth]
+   [app.common.pages :as cp]
    [app.main.snap :as snap]
    [app.util.geom.snap-points :as sp]
    [beicon.core :as rx]
@@ -106,7 +104,7 @@
                                         (hash-map coord fixedv (flip coord) maxv)]))))
 
 (mf/defc snap-feedback
-  [{:keys [shapes page-id filter-shapes zoom modifiers] :as props}]
+  [{:keys [shapes filter-shapes zoom modifiers] :as props}]
   (let [state (mf/use-state [])
         subject (mf/use-memo #(rx/subject))
 

@@ -9,12 +9,10 @@
   "A collection of derived refs."
   (:require
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
-   [app.common.uuid :as uuid]
-   [app.main.constants :as c]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
-   [beicon.core :as rx]
    [okulary.core :as l]))
 
 ;; ---- Global refs
@@ -80,7 +78,7 @@
 (def dashboard-selected-files
   (l/derived (fn [state]
                (let [get-file #(get-in state [:dashboard-files %])
-                     sim-file #(select-keys % [:id :name :project-id])
+                     sim-file #(select-keys % [:id :name :project-id :is-shared])
                      selected (get-in state [:dashboard-local :selected-files])
                      xform    (comp (map get-file)
                                     (map sim-file))]
@@ -242,7 +240,7 @@
                       modifiers (:workspace-modifiers state)
                       objects (cond-> objects
                                 with-modifiers?
-                                (cp/merge-modifiers modifiers))
+                                (gsh/merge-modifiers modifiers))
                       xform (comp (map #(get objects %))
                                   (remove nil?))]
                   (into [] xform ids)))

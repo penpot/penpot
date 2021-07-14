@@ -6,25 +6,16 @@
 
 (ns app.main.ui.viewer.thumbnails
   (:require
-   [goog.events :as events]
-   [goog.object :as gobj]
-   [rumext.alpha :as mf]
-   [app.main.ui.icons :as i]
    [app.common.data :as d]
-   [app.main.store :as st]
    [app.main.data.viewer :as dv]
-   [app.main.ui.components.dropdown :refer [dropdown']]
-   [app.main.ui.shapes.frame :as frame]
    [app.main.exports :as exports]
-   [app.util.data :refer [classnames]]
+   [app.main.store :as st]
+   [app.main.ui.components.dropdown :refer [dropdown']]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.util.i18n :as i18n :refer [t tr]]
-   [app.common.math :as mth]
-   [app.util.router :as rt]
-   [app.main.data.viewer :as vd])
-  (:import goog.events.EventType))
+   [app.util.i18n :as i18n :refer [tr]]
+   [goog.object :as gobj]
+   [rumext.alpha :as mf]))
 
 (mf/defc thumbnails-content
   [{:keys [children expanded? total] :as props}]
@@ -35,14 +26,14 @@
         offset (mf/use-state 0)
 
         on-left-arrow-click
-        (fn [event]
+        (fn [_]
           (swap! offset (fn [v]
                           (if (pos? v)
                             (dec v)
                             v))))
 
         on-right-arrow-click
-        (fn [event]
+        (fn [_]
           (let [visible (/ @width @element-width)
                 max-val (- total visible)]
             (swap! offset (fn [v]
@@ -84,37 +75,36 @@
   [{:keys [selected? frame on-click index objects] :as props}]
   [:div.thumbnail-item {:on-click #(on-click % index)}
    [:div.thumbnail-preview
-    {:class (classnames :selected selected?)}
+    {:class (dom/classnames :selected selected?)}
     [:& exports/frame-svg {:frame frame :objects objects}]]
    [:div.thumbnail-info
     [:span.name {:title (:name frame)} (:name frame)]]])
 
 (mf/defc thumbnails-panel
-  [{:keys [data index screen] :as props}]
+  [{:keys [data index] :as props}]
   (let [expanded? (mf/use-state false)
         container (mf/use-ref)
-        page-id   (get-in data [:page :id])
-        file-id   (get-in data [:file :id])
 
         on-close #(st/emit! dv/toggle-thumbnails-panel)
         selected (mf/use-var false)
 
         on-mouse-leave
-        (fn [event]
+        (fn [_]
           (when @selected
             (on-close)))
 
         on-item-click
-        (fn [event index]
+        (fn [_ index]
           (compare-and-set! selected false true)
           (st/emit! (dv/go-to-frame-by-index index))
           (when @expanded?
             (on-close)))]
+
     [:& dropdown' {:on-close on-close
                    :container container
                    :show true}
      [:section.viewer-thumbnails
-      {:class (classnames :expanded @expanded?)
+      {:class (dom/classnames :expanded @expanded?)
        :ref container
        :on-mouse-leave on-mouse-leave}
 

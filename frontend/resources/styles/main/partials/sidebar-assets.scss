@@ -400,6 +400,15 @@
       top: 10px;
       left: 10px;
     }
+
+    .advanced-options {
+      border-color: $color-black;
+      background-color: $color-gray-60;
+
+      .input-text, .input-select, .adv-typography-name {
+        background-color: $color-gray-60;
+      }
+    }
   }
 }
 

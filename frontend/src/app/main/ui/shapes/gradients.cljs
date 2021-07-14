@@ -6,71 +6,80 @@
 
 (ns app.main.ui.shapes.gradients
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.util.object :as obj]
-   [app.common.uuid :as uuid]
-   [app.main.ui.context :as muc]
-   [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
-   [app.common.geom.shapes :as gsh]))
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.main.ui.context :as muc]
+   [app.util.object :as obj]
+   [rumext.alpha :as mf]))
 
 (mf/defc linear-gradient [{:keys [id gradient shape]}]
-  (let [{:keys [x y width height]} (:selrect shape)
-        transform (when (= :path (:type shape)) (gsh/transform-matrix shape nil (gpt/point 0.5 0.5)))]
-    [:linearGradient {:id id
-                      :x1 (:start-x gradient)
-                      :y1 (:start-y gradient)
-                      :x2 (:end-x gradient)
-                      :y2 (:end-y gradient)
-                      :gradientTransform transform}
+  (let [transform (when (= :path (:type shape)) (gsh/transform-matrix shape nil (gpt/point 0.5 0.5)))]
+    [:> :linearGradient #js {:id id
+                             :x1 (:start-x gradient)
+                             :y1 (:start-y gradient)
+                             :x2 (:end-x gradient)
+                             :y2 (:end-y gradient)
+                             :gradientTransform transform
+                             :penpot:gradient "true"}
      (for [{:keys [offset color opacity]} (:stops gradient)]
        [:stop {:key (str id "-stop-" offset)
                :offset (or offset 0)
                :stop-color color
                :stop-opacity opacity}])]))
 
+(defn add-metadata [props gradient]
+  (-> props
+      (obj/set! "penpot:gradient" "true")
+      (obj/set! "penpot:start-x" (:start-x gradient))
+      (obj/set! "penpot:start-x" (:start-x gradient))
+      (obj/set! "penpot:start-y" (:start-y gradient))
+      (obj/set! "penpot:end-x"   (:end-x gradient))
+      (obj/set! "penpot:end-y"   (:end-y gradient))
+      (obj/set! "penpot:width"   (:width gradient))))
+
 (mf/defc radial-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} (:selrect shape)
-        center (gsh/center-shape shape)
         transform (if (= :path (:type shape))
                     (gsh/transform-matrix shape)
-                    (gmt/matrix))]
-    (let [[x y] (if (= (:type shape) :frame) [0 0] [x y])
-          translate-vec (gpt/point (+ x (* width (:start-x gradient)))
-                                   (+ y (* height (:start-y gradient))))
+                    (gmt/matrix))
+        [x y] (if (= (:type shape) :frame) [0 0] [x y])
+        translate-vec (gpt/point (+ x (* width (:start-x gradient)))
+                                 (+ y (* height (:start-y gradient))))
 
-          gradient-vec (gpt/to-vec (gpt/point (* width (:start-x gradient))
-                                              (* height (:start-y gradient)))
-                                   (gpt/point (* width (:end-x gradient))
-                                              (* height (:end-y gradient))))
+        gradient-vec (gpt/to-vec (gpt/point (* width (:start-x gradient))
+                                            (* height (:start-y gradient)))
+                                 (gpt/point (* width (:end-x gradient))
+                                            (* height (:end-y gradient))))
 
-          angle (gpt/angle gradient-vec
-                           (gpt/point 1 0))
+        angle (gpt/angle gradient-vec
+                         (gpt/point 1 0))
 
-          shape-height-vec (gpt/point 0 (/ height 2))
+        scale-factor-y (/ (gpt/length gradient-vec) (/ height 2))
+        scale-factor-x (* scale-factor-y (:width gradient))
 
-          scale-factor-y (/ (gpt/length gradient-vec) (/ height 2))
-          scale-factor-x (* scale-factor-y (:width gradient))
+        scale-vec (gpt/point (* scale-factor-y (/ height 2))
+                             (* scale-factor-x (/ width 2)))
 
-          scale-vec (gpt/point (* scale-factor-y (/ height 2))
-                               (* scale-factor-x (/ width 2)))
+        transform (gmt/multiply transform
+                                (gmt/translate-matrix translate-vec)
+                                (gmt/rotate-matrix angle)
+                                (gmt/scale-matrix scale-vec))
 
-          transform (gmt/multiply transform
-                                  (gmt/translate-matrix translate-vec)
-                                  (gmt/rotate-matrix angle)
-                                  (gmt/scale-matrix scale-vec))]
-      [:radialGradient {:id id
+        base-props #js {:id id
                         :cx 0
                         :cy 0
                         :r 1
                         :gradientUnits "userSpaceOnUse"
                         :gradientTransform transform}
-       (for [{:keys [offset color opacity]} (:stops gradient)]
-         [:stop {:key (str id "-stop-" offset)
-                 :offset (or offset 0)
-                 :stop-color color
-                 :stop-opacity opacity}])])))
+
+        props (-> base-props (add-metadata gradient))]
+    [:> :radialGradient props
+     (for [{:keys [offset color opacity]} (:stops gradient)]
+       [:stop {:key (str id "-stop-" offset)
+               :offset (or offset 0)
+               :stop-color color
+               :stop-opacity opacity}])]))
 
 (mf/defc gradient
   {::mf/wrap-props false}

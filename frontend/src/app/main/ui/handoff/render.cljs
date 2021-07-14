@@ -7,50 +7,46 @@
 (ns app.main.ui.handoff.render
   "The main container for a frame in handoff mode"
   (:require
-   [rumext.alpha :as mf]
-   [app.util.object :as obj]
-   [app.util.dom :as dom]
    [app.common.data :as d]
-   [app.common.pages :as cp]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
-   [app.main.refs :as refs]
-   [app.main.store :as st]
+   [app.common.pages :as cp]
    [app.main.data.viewer :as dv]
-   [app.main.ui.shapes.filters :as filters]
+   [app.main.store :as st]
+   [app.main.ui.handoff.selection-feedback :refer [selection-feedback]]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
-   [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
+   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
-   [app.main.ui.handoff.selection-feedback :refer [selection-feedback]]
-   [app.main.ui.shapes.shape :refer [shape-container]]))
+   [app.util.dom :as dom]
+   [app.util.object :as obj]
+   [rumext.alpha :as mf]))
 
 (declare shape-container-factory)
 
 (defn handle-hover-shape [{:keys [type id]} hover?]
   #(when-not (#{:group :frame} type)
-     (do
-       (dom/prevent-default %)
-       (dom/stop-propagation %)
-       (st/emit! (dv/hover-shape id hover?)))))
+     (dom/prevent-default %)
+     (dom/stop-propagation %)
+     (st/emit! (dv/hover-shape id hover?))))
 
 (defn select-shape [{:keys [type id]}]
   (fn [event]
     (when-not (#{:group :frame} type)
-      (do
-        (dom/stop-propagation event)
-        (dom/prevent-default event)
-        (cond
-          (.-shiftKey event)
-          (st/emit! (dv/toggle-selection id))
+      (dom/stop-propagation event)
+      (dom/prevent-default event)
+      (cond
+        (.-shiftKey event)
+        (st/emit! (dv/toggle-selection id))
 
-          :else
-          (st/emit! (dv/select-shape id)))))))
+        :else
+        (st/emit! (dv/select-shape id))))))
 
 (defn shape-wrapper-factory
   [component]
@@ -114,8 +110,8 @@
 (defn svg-raw-container-factory
   [objects]
   (let [shape-container (shape-container-factory objects)
-        svg-raw-shape     (svg-raw/svg-raw-shape shape-container)
-        svg-raw-wrapper   (shape-wrapper-factory svg-raw-shape)]
+        svg-raw-shape   (svg-raw/svg-raw-shape shape-container)
+        svg-raw-wrapper (shape-wrapper-factory svg-raw-shape)]
     (mf/fnc group-container
       {::mf/wrap-props false}
       [props]
@@ -127,7 +123,7 @@
         [:> svg-raw-wrapper props]))))
 
 (defn shape-container-factory
-  [objects show-interactions?]
+  [objects]
   (let [path-wrapper   (shape-wrapper-factory path/path-shape)
         text-wrapper   (shape-wrapper-factory text/text-shape)
         rect-wrapper   (shape-wrapper-factory rect/rect-shape)

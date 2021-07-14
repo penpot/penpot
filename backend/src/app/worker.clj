@@ -436,7 +436,7 @@
   (s/assert dt/cron? cron)
   (let [now  (dt/now)
         next (dt/next-valid-instant-from cron now)]
-    (inst-ms (dt/duration-between now next))))
+    (inst-ms (dt/diff now next))))
 
 (defn- schedule-task
   [{:keys [scheduler] :as cfg} {:keys [cron] :as task}]

@@ -9,6 +9,9 @@
    [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
+   [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.custom-stroke :as cs]
+   [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.fill-image :as fim]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.gradients :as grad]
@@ -33,28 +36,42 @@
 
         {:keys [x y width height type]} shape
         frame? (= :frame type)
-        group-props (-> (obj/clone props)
-                        (obj/without ["shape" "children"])
-                        (obj/set! "ref" ref)
-                        (obj/set! "id" (str "shape-" (:id shape)))
-                        (obj/set! "filter" (filters/filter-str filter-id shape))
-                        (obj/set! "style" styles)
+        group? (= :group type)
 
-                        (cond-> frame?
-                          (-> (obj/set! "x" x)
-                              (obj/set! "y" y)
-                              (obj/set! "width" width)
-                              (obj/set! "height" height)
-                              (obj/set! "xmlnsXlink" "http://www.w3.org/1999/xlink")
-                              (obj/set! "xmlns" "http://www.w3.org/2000/svg"))))
+        wrapper-props
+        (-> (obj/clone props)
+            (obj/without ["shape" "children"])
+            (obj/set! "ref" ref)
+            (obj/set! "id" (str "shape-" (:id shape)))
+            (obj/set! "filter" (filters/filter-str filter-id shape))
+            (obj/set! "style" styles))
+
+        wrapper-props
+        (cond-> wrapper-props
+          frame?
+          (-> (obj/set! "x" x)
+              (obj/set! "y" y)
+              (obj/set! "width" width)
+              (obj/set! "height" height)
+              (obj/set! "xmlnsXlink" "http://www.w3.org/1999/xlink")
+              (obj/set! "xmlns" "http://www.w3.org/2000/svg")
+              (obj/set! "xmlns:penpot" "https://penpot.app/xmlns")))
+
+        wrapper-props
+        (cond-> wrapper-props
+          group?
+          (attrs/add-style-attrs shape))
 
         wrapper-tag (if frame? "svg" "g")]
+
     [:& (mf/provider muc/render-ctx) {:value render-id}
-     [:> wrapper-tag group-props
+     [:> wrapper-tag wrapper-props
+      [:& ed/export-data {:shape shape}]
       [:defs
        [:& defs/svg-defs          {:shape shape :render-id render-id}]
        [:& filters/filters        {:shape shape :filter-id filter-id}]
        [:& grad/gradient          {:shape shape :attr :fill-color-gradient}]
        [:& grad/gradient          {:shape shape :attr :stroke-color-gradient}]
-       [:& fim/fill-image-pattern {:shape shape :render-id render-id}]]
+       [:& fim/fill-image-pattern {:shape shape :render-id render-id}]
+       [:& cs/stroke-defs         {:shape shape :render-id render-id}]]
       children]]))

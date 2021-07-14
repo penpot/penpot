@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.interactions
   (:require
-   [rumext.alpha :as mf]
    [app.common.data :as d]
    [app.common.pages :as cp]
    [app.main.data.workspace :as dw]
@@ -14,13 +13,12 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]))
+   [app.util.i18n :as i18n :refer [tr]]
+   [rumext.alpha :as mf]))
 
 (mf/defc interactions-menu
   [{:keys [shape] :as props}]
-  (let [locale      (mf/deref i18n/locale)
-        objects     (deref refs/workspace-page-objects)
+  (let [objects     (deref refs/workspace-page-objects)
         interaction (first (:interactions shape))  ; TODO: in the
                                                    ; future we may
                                                    ; have several
@@ -48,26 +46,26 @@
     (if (not shape)
       [:*
        [:div.interactions-help-icon i/interaction]
-       [:div.interactions-help (t locale "workspace.options.select-a-shape")]
+       [:div.interactions-help (tr "workspace.options.select-a-shape")]
        [:div.interactions-help-icon i/play]
-       [:div.interactions-help (t locale "workspace.options.use-play-button")]]
+       [:div.interactions-help (tr "workspace.options.use-play-button")]]
 
      [:div.element-set {:on-blur on-set-blur}
        [:div.element-set-title
-        [:span (t locale "workspace.options.navigate-to")]]
+        [:span (tr "workspace.options.navigate-to")]]
        [:div.element-set-content
         [:div.row-flex
          [:div.custom-select.flex-grow {:on-click #(reset! show-frames-dropdown? true)}
           (if destination
             [:span (:name destination)]
-            [:span (t locale "workspace.options.select-artboard")])
+            [:span (tr "workspace.options.select-artboard")])
           [:span.dropdown-button i/arrow-down]
            [:& dropdown {:show @show-frames-dropdown?
                          :on-close #(reset! show-frames-dropdown? false)}
             [:ul.custom-select-dropdown
              [:li.dropdown-separator
               {:on-click #(on-select-destination nil)}
-              (t locale "workspace.options.none")]
+              (tr "workspace.options.none")]
 
              (for [frame frames]
                (when (and (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself

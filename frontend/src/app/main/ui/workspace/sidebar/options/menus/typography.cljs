@@ -7,30 +7,24 @@
 (ns app.main.ui.workspace.sidebar.options.menus.typography
   (:require
    ["react-virtualized" :as rvt]
-   [app.common.exceptions :as ex]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.pages :as cp]
    [app.common.text :as txt]
-   [app.main.data.workspace.texts :as dwt]
    [app.main.data.shortcuts :as dsc]
-   [app.main.data.fonts :as df]
-   [app.main.data.workspace :as dw]
    [app.main.fonts :as fonts]
-   [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.util.dom :as dom]
-   [app.util.object :as obj]
-   [app.util.timers :as tm]
-   [app.util.keyboard :as kbd]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [app.util.router :as rt]
-   [app.util.timers :as ts]
-   [goog.events :as events]
+   [app.util.timers :as tm]
    [cuerdas.core :as str]
+   [goog.events :as events]
    [rumext.alpha :as mf]))
 
 (defn- attr->string [value]
@@ -88,11 +82,11 @@
                 (comp (filter #(contains? backends (:backend %)))))]
     (into [] xform fonts)))
 
-(defn- toggle-backend
-  [backends id]
-  (if (contains? backends id)
-    (disj backends id)
-    (conj backends id)))
+;; (defn- toggle-backend
+;;   [backends id]
+;;   (if (contains? backends id)
+;;     (disj backends id)
+;;     (conj backends id)))
 
 (mf/defc font-selector
   [{:keys [on-select on-close current-font] :as props}]
@@ -101,7 +95,6 @@
 
         flist    (mf/use-ref)
         input    (mf/use-ref)
-        ddown    (mf/use-ref)
 
         fonts    (mf/use-memo (mf/deps @state) #(filter-fonts @state @fonts/fonts))
 
@@ -237,7 +230,7 @@
                     :current? (= (:id font) (:id selected))}])))
 
 (mf/defc font-options
-  [{:keys [editor ids values on-change] :as props}]
+  [{:keys [values on-change] :as props}]
   (let [{:keys [font-id font-size font-variant-id]} values
 
         font-id         (or font-id (:font-id txt/default-text-attrs))
@@ -260,15 +253,6 @@
                          :font-variant-id (or id name)
                          :font-weight weight
                          :font-style style}))))
-
-        on-font-family-change
-        (mf/use-callback
-         (mf/deps fonts change-font)
-         (fn [event]
-           (let [new-font-id (dom/get-target-val event)]
-             (when-not (str/empty? new-font-id)
-               (let [font (get fonts new-font-id)]
-                 (fonts/ensure-loaded! new-font-id (partial change-font new-font-id)))))))
 
         on-font-size-change
         (mf/use-callback
@@ -345,7 +329,7 @@
 
 
 (mf/defc spacing-options
-  [{:keys [editor ids values on-change] :as props}]
+  [{:keys [values on-change] :as props}]
   (let [{:keys [line-height
                 letter-spacing]} values
 
@@ -385,13 +369,10 @@
         :on-change #(handle-change % :letter-spacing)}]]]))
 
 (mf/defc text-transform-options
-  [{:keys [editor ids values on-change] :as props}]
-  (let [{:keys [text-transform]} values
-
-        text-transform (or text-transform "none")
-
+  [{:keys [values on-change] :as props}]
+  (let [text-transform (or (:text-transform values) "none")
         handle-change
-        (fn [event type]
+        (fn [_ type]
           (on-change {:text-transform type}))]
     [:div.align-icons
      [:span.tooltip.tooltip-bottom
@@ -424,7 +405,8 @@
     [:div.element-set-content
      [:> font-options opts]
      [:div.row-flex
-      [:> spacing-options opts]
+      [:> spacing-options opts]]
+     [:div.row-flex
       [:> text-transform-options opts]]]))
 
 
@@ -460,14 +442,15 @@
      (mf/deps focus-name?)
      (fn []
        (when focus-name?
-         (ts/schedule
+         (tm/schedule
           #(when-let [node (mf/ref-val name-input-ref)]
              (dom/focus! node)
              (dom/select-text! node))))))
 
     [:*
      [:div.element-set-options-group.typography-entry
-      {:class (when selected? "selected")}
+      {:class (when selected? "selected")
+       :style {:display (when @open? "none")}}
       [:div.typography-selection-wrapper
        {:class (when on-click "is-selectable")
         :on-click on-click
@@ -501,6 +484,10 @@
           [:span.label (tr "workspace.assets.typography.font-id")]
           [:span (:font-id typography)]]
 
+         [:div.element-set-actions-button.actions-inside
+          {:on-click #(reset! open? false)}
+          i/actions]
+
          [:div.row-flex
           [:span.label (tr "workspace.assets.typography.font-variant-id")]
           [:span (:font-variant-id typography)]]
@@ -532,6 +519,11 @@
             {:type "text"
              :ref name-input-ref
              :default-value (cp/merge-path-item (:path typography) (:name typography))
-             :on-blur on-name-blur}]]]
+             :on-blur on-name-blur}]
+
+             [:div.element-set-actions-button
+              {:on-click #(reset! open? false)}
+             i/actions]]]
+
          [:& typography-options {:values typography
                                  :on-change on-change}]])]]))

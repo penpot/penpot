@@ -16,12 +16,17 @@
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.util.dom :as dom]
-   [app.util.i18n :refer [tr t]]
-   [app.util.object :as obj]
+   [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
+
+(def show-alt-login-buttons?
+  (or cfg/google-client-id
+      cfg/gitlab-client-id
+      cfg/github-client-id
+      cfg/oidc-client-id))
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)
@@ -68,7 +73,7 @@
         on-submit
         (mf/use-callback
          (mf/deps form)
-         (fn [event]
+         (fn [_]
            (reset! error nil)
            (let [params (with-meta (:clean-data @form)
                           {:on-error on-error})]
@@ -103,13 +108,15 @@
          :tab-index "3"
          :help-icon i/eye
          :label (tr "auth.password")}]]
-      [:& fm/submit-button
-       {:label (tr "auth.login-submit")}]
 
-      (when cfg/login-with-ldap
-        [:& fm/submit-button
-         {:label (tr "auth.login-with-ldap-submit")
-          :on-click on-submit-ldap}])]]))
+      [:div.buttons-stack
+       [:& fm/submit-button
+        {:label (tr "auth.login-submit")}]
+
+       (when cfg/login-with-ldap
+         [:& fm/submit-button
+          {:label (tr "auth.login-with-ldap-submit")
+           :on-click on-submit-ldap}])]]]))
 
 (mf/defc login-buttons
   [{:keys [params] :as props}]
@@ -147,6 +154,13 @@
 
     [:& login-form {:params params}]
 
+    (when show-alt-login-buttons?
+      [:*
+       [:span.separator (tr "labels.or")]
+
+       [:div.buttons
+        [:& login-buttons {:params params}]]])
+
     [:div.links
      [:div.link-entry
       [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))}
@@ -158,7 +172,6 @@
         [:a {:on-click #(st/emit! (rt/nav :auth-register {} params))}
          (tr "auth.register-submit")]])]
 
-    [:& login-buttons {:params params}]
 
     (when cfg/allow-demo-users
       [:div.links.demo

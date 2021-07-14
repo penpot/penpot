@@ -7,12 +7,7 @@
 (ns app.util.path.commands
   (:require
    [app.common.data :as d]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as gshp]
-   [app.util.svg :as usvg]
-   [cuerdas.core :as str]
-   [clojure.set :as set]
-   [app.common.math :as mth]))
+   [app.common.geom.point :as gpt]))
 
 (defn command->point
   ([prev-pos {:keys [relative params] :as command}]
@@ -179,7 +174,7 @@
   "Returns the commands involving a point with its indices"
   [content point]
   (->> (d/enumerate content)
-       (filterv (fn [[idx cmd]] (= (command->point cmd) point)))))
+       (filterv (fn [[_ cmd]] (= (command->point cmd) point)))))
 
 
 (defn prefix->coords [prefix]
@@ -192,7 +187,7 @@
   (when (and (some? index)
              (some? prefix)
              (contains? content index))
-    (let [[cx cy :as coords] (prefix->coords prefix)]
+    (let [[cx cy] (prefix->coords prefix)]
       (if (= :curve-to (get-in content [index :command]))
         (gpt/point (get-in content [index :params cx])
                    (get-in content [index :params cy]))

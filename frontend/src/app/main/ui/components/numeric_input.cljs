@@ -70,11 +70,11 @@
 
         apply-value
         (mf/use-callback
-          (mf/deps on-change update-input)
+          (mf/deps on-change update-input value)
           (fn [new-value]
-            (when new-value
-              (when on-change
-                (on-change new-value))
+            (when (and (some? new-value) (not= new-value value) (some? on-change))
+              (on-change new-value))
+            (when (some? new-value)
               (update-input new-value))))
 
         set-delta
@@ -132,7 +132,7 @@
         handle-blur
         (mf/use-callback
           (mf/deps parse-value apply-value update-input)
-          (fn [event]
+          (fn [_]
             (let [new-value (parse-value)]
               (if new-value
                 (apply-value new-value)

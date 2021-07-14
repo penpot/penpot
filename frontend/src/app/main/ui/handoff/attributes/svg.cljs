@@ -6,14 +6,14 @@
 
 (ns app.main.ui.handoff.attributes.svg
   (:require
-   [rumext.alpha :as mf]
-   [app.common.data :as d]
-   [cuerdas.core :as str]
-   [app.util.i18n :refer [tr]]
    #_[app.common.math :as mth]
    #_[app.main.ui.icons :as i]
    #_[app.util.code-gen :as cg]
-   [app.main.ui.components.copy-button :refer [copy-button]]))
+   [app.common.data :as d]
+   [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.util.i18n :refer [tr]]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 
 (defn map->css [attr]
@@ -47,7 +47,7 @@
   [{:keys [shapes]}]
 
   (let [shape (first shapes)]
-    (when (and (:svg-attrs shape) (not (empty? (:svg-attrs shape))))
+    (when (seq (:svg-attrs shape))
       [:div.attributes-block
        [:div.attributes-block-title
         [:div.attributes-block-title-text (tr "workspace.sidebar.options.svg-attrs.title")]]

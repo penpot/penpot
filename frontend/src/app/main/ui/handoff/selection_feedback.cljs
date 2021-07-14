@@ -6,15 +6,11 @@
 
 (ns app.main.ui.handoff.selection-feedback
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [okulary.core :as l]
-   [app.common.data :as d]
-   [app.common.math :as mth]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.point :as gpt]
    [app.main.store :as st]
-   [app.main.ui.measurements :refer [selection-guides size-display measurement]]))
+   [app.main.ui.measurements :refer [selection-guides size-display measurement]]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 ;; ------------------------------------------------
 ;; CONSTANTS
@@ -67,7 +63,7 @@
 ;; COMPONENTS
 ;; ------------------------------------------------
 
-(mf/defc selection-rect [{:keys [frame selrect zoom]}]
+(mf/defc selection-rect [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
         selection-rect-width (/ selection-rect-width zoom)]
     [:g.selection-rect
@@ -75,7 +71,7 @@
              :y y
              :width width
              :height height
-             :style {:fill "transparent"
+             :style {:fill "none"
                      :stroke select-color
                      :stroke-width selection-rect-width}}]]))
 

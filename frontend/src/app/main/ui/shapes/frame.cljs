@@ -6,13 +6,9 @@
 
 (ns app.main.ui.shapes.frame
   (:require
-   [app.common.data :as d]
-   [app.common.geom.shapes :as geom]
    [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
-
-(def frame-default-props {:fill-color "#ffffff"})
 
 (defn frame-shape
   [shape-wrapper]
@@ -21,10 +17,13 @@
     [props]
     (let [childs     (unchecked-get props "childs")
           shape      (unchecked-get props "shape")
-          {:keys [id width height]} shape
+          {:keys [width height]} shape
 
-          props (-> (merge frame-default-props shape)
-                    (attrs/extract-style-attrs)
+          has-background? (or (some? (:fill-color shape))
+                              (some? (:fill-color-gradient shape)))
+          has-stroke? (not= :none (:stroke-style shape))
+
+          props (-> (attrs/extract-style-attrs shape)
                     (obj/merge!
                      #js {:x 0
                           :y 0
@@ -32,8 +31,9 @@
                           :height height
                           :className "frame-background"}))]
       [:*
-       [:> :rect props]
-       (for [[i item] (d/enumerate childs)]
+       (when (or has-background? has-stroke?)
+         [:> :rect props])
+       (for [item childs]
          [:& shape-wrapper {:frame shape
                             :shape item
                             :key (:id item)}])])))

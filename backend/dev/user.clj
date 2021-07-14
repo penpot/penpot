@@ -50,7 +50,7 @@
 ;; --- Development Stuff
 
 (defn- run-tests
-  ([] (run-tests #"^app.tests.*"))
+  ([] (run-tests #"^app.*-test$"))
   ([o]
    (repl/refresh)
    (cond

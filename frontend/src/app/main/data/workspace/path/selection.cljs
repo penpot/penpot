@@ -48,7 +48,7 @@
     (update [_ state]
       (let [selrect (get-in state [:workspace-local :selrect])
             id (get-in state [:workspace-local :edition])
-            content (get-in state (st/get-path state :content))
+            content (st/get-path state :content)
             selected-point? #(gsh/has-point-rect? selrect %)
             selected-points (get-in state [:workspace-local :edit-path id :selected-points])
             positions (into (if shift? selected-points #{})
@@ -60,7 +60,7 @@
           (some? id)
           (assoc-in [:workspace-local :edit-path id :selected-points] positions))))))
 
-(defn select-node [position shift? kk]
+(defn select-node [position shift?]
   (ptk/reify ::select-node
     ptk/UpdateEvent
     (update [_ state]
@@ -78,38 +78,6 @@
         (cond-> state
           (some? id)
           (assoc-in [:workspace-local :edit-path id :selected-points] selected-points))))))
-
-(defn deselect-node [position shift?]
-  (ptk/reify ::deselect-node
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])]
-        (-> state
-            (update-in [:workspace-local :edit-path id :selected-points] (fnil disj #{}) position))))))
-
-(defn add-to-selection-handler [index type]
-  (ptk/reify ::add-to-selection-handler
-    ptk/UpdateEvent
-    (update [_ state]
-      state)))
-
-(defn add-to-selection-node [index]
-  (ptk/reify ::add-to-selection-node
-    ptk/UpdateEvent
-    (update [_ state]
-      state)))
-
-(defn remove-from-selection-handler [index]
-  (ptk/reify ::remove-from-selection-handler
-    ptk/UpdateEvent
-    (update [_ state]
-      state)))
-
-(defn remove-from-selection-node [index]
-  (ptk/reify ::remove-from-selection-handler
-    ptk/UpdateEvent
-    (update [_ state]
-      state)))
 
 (defn deselect-all []
   (ptk/reify ::deselect-all
@@ -133,14 +101,14 @@
     (update [_ state]
       (update state :workspace-local dissoc :selrect))))
 
-(defn handle-selection
+(defn handle-area-selection
   [shift?]
   (letfn [(valid-rect? [{width :width height :height}]
             (or (> width 10) (> height 10)))]
 
-    (ptk/reify ::handle-selection
+    (ptk/reify ::handle-area-selection
       ptk/WatchEvent
-      (watch [_ state stream]
+      (watch [_ _ stream]
         (let [stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
               stoper (->> stream (rx/filter stop?))
               from-p @ms/mouse-position]

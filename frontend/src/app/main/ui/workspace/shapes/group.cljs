@@ -6,15 +6,12 @@
 
 (ns app.main.ui.workspace.shapes.group
   (:require
-   [app.common.geom.shapes :as gsh]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.util.debug :refer [debug?]]
    [app.util.dom :as dom]
    [rumext.alpha :as mf]))
 
@@ -33,18 +30,15 @@
       {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
        ::mf/wrap-props false}
       [props]
-      (let [shape (unchecked-get props "shape")
-            frame (unchecked-get props "frame")
-
-            {:keys [id x y width height]} shape
+      (let [shape      (unchecked-get props "shape")
+            frame      (unchecked-get props "frame")
 
             childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape) {:with-modifiers? true}))
             childs     (mf/deref childs-ref)]
 
         [:> shape-container {:shape shape}
-         [:g.group-shape
-          [:& group-shape
-           {:frame frame
-            :shape shape
-            :childs childs}]]]))))
+         [:& group-shape
+          {:frame frame
+           :shape shape
+           :childs childs}]]))))
 

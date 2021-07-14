@@ -22,8 +22,8 @@
   transition: all .4s;
   text-decoration: none !important;
   svg {
-    height: 15px;
-    width: 15px;
+    height: 16px;
+    width: 16px;
   }
   &.btn-large {
     font-size: $fs14;
@@ -118,10 +118,10 @@
 .btn-icon-basic {
   @extend %btn;
   background: transparent;
-  color: $color-gray-60;
+  color: $color-gray-20;
   padding: $x-small;
   svg {
-    fill: $color-gray-60;
+    fill: $color-gray-20;
   }
   &:hover {
     background: transparent;
@@ -965,16 +965,8 @@ input[type=range]:focus::-ms-fill-upper {
     }
   }
 
+  // the default is the `right`
   &.tooltip-bottom {
-    &:hover {
-      &::after {
-        left: -100%;
-        top: 130%;
-      }
-    }
-  }
-
-  &.tooltip-bottom-right {
     &:hover {
       &::after {
         left: 0;

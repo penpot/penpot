@@ -6,15 +6,11 @@
 
 (ns app.main.ui.workspace.shapes.bounding-box
   (:require
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
-   [app.util.debug :as debug]
+   ["randomcolor" :as rdcolor]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.util.debug :refer [debug?]]
    [app.main.refs :as refs]
-   ["randomcolor" :as rdcolor]))
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (defn fixed
   [num]
@@ -42,7 +38,7 @@
            :height height
            :transform (or transform "none")
            :style {:stroke color
-                   :fill "transparent"
+                   :fill "none"
                    :stroke-width "1px"
                    :pointer-events "none"}}])
 
@@ -58,15 +54,11 @@
 (mf/defc bounding-box
   {::mf/wrap-props false}
   [props]
-  (let [shape (-> (unchecked-get props "shape"))
-        frame (unchecked-get props "frame")
+  (let [shape        (unchecked-get props "shape")
         bounding-box (gsh/points->selrect (-> shape :points))
         shape-center (gsh/center-shape shape)
-        line-color (rdcolor #js {:seed (str (:id shape))})
-        zoom (mf/deref refs/selected-zoom)
-        childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
-        childs     (->> (mf/deref childs-ref)
-                        (map gsh/transform-shape))]
+        line-color   (rdcolor #js {:seed (str (:id shape))})
+        zoom         (mf/deref refs/selected-zoom)]
 
     [:g.bounding-box
      [:text {:x (:x bounding-box)
@@ -81,7 +73,7 @@
       [:& cross-point {:point shape-center
                        :zoom zoom
                        :color line-color}]]
-     
+
      [:g.points
       (for [point (:points shape)]
         [:& cross-point {:point point

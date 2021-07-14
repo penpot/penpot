@@ -7,9 +7,8 @@
 (ns app.main.ui.workspace.sidebar.options.menus.text
   (:require
    [app.common.data :as d]
-   [app.common.uuid :as uuid]
    [app.common.text :as txt]
-   [app.main.data.workspace.common :as dwc]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
@@ -81,10 +80,10 @@
 (def attrs (d/concat #{} shape-attrs root-attrs paragraph-attrs text-attrs))
 
 (mf/defc text-align-options
-  [{:keys [ids values on-change] :as props}]
+  [{:keys [values on-change] :as props}]
   (let [{:keys [text-align]} values
         handle-change
-        (fn [event new-align]
+        (fn [_ new-align]
           (on-change {:text-align new-align}))]
 
     ;; --- Align
@@ -111,54 +110,53 @@
       i/text-align-justify]]))
 
 (mf/defc text-direction-options
-  [{:keys [ids values on-change] :as props}]
+  [{:keys [values on-change] :as props}]
   (let [direction     (:text-direction values)
-        handle-change (fn [event val]
+        handle-change (fn [_ val]
                         (on-change {:text-direction val}))]
     ;; --- Align
     [:div.align-icons
-     [:span.tooltip.tooltip-bottom
+     [:span.tooltip.tooltip-bottom-left
       {:alt (tr "workspace.options.text-options.direction-ltr")
        :class (dom/classnames :current (= "ltr" direction))
        :on-click #(handle-change % "ltr")}
       i/text-direction-ltr]
-     [:span.tooltip.tooltip-bottom
+     [:span.tooltip.tooltip-bottom-left
       {:alt (tr "workspace.options.text-options.direction-rtl")
        :class (dom/classnames :current (= "rtl" direction))
        :on-click #(handle-change % "rtl")}
       i/text-direction-rtl]]))
 
 (mf/defc vertical-align
-  [{:keys [shapes ids values on-change] :as props}]
+  [{:keys [values on-change] :as props}]
   (let [{:keys [vertical-align]} values
         vertical-align (or vertical-align "top")
         handle-change
-        (fn [event new-align]
+        (fn [_ new-align]
           (on-change {:vertical-align new-align}))]
 
     [:div.align-icons
-     [:span.tooltip.tooltip-bottom
+     [:span.tooltip.tooltip-bottom-left
       {:alt (tr "workspace.options.text-options.align-top")
        :class (dom/classnames :current (= "top" vertical-align))
        :on-click #(handle-change % "top")}
       i/align-top]
-     [:span.tooltip.tooltip-bottom
+     [:span.tooltip.tooltip-bottom-left
       {:alt (tr "workspace.options.text-options.align-middle")
        :class (dom/classnames :current (= "center" vertical-align))
        :on-click #(handle-change % "center")}
       i/align-middle]
-     [:span.tooltip.tooltip-bottom
+     [:span.tooltip.tooltip-bottom-left
       {:alt (tr "workspace.options.text-options.align-bottom")
        :class (dom/classnames :current (= "bottom" vertical-align))
        :on-click #(handle-change % "bottom")}
       i/align-bottom]]))
 
 (mf/defc grow-options
-  [{:keys [ids values on-change] :as props}]
-  (let [to-single-value (fn [coll] (if (> (count coll) 1) nil (first coll)))
-        grow-type (->> values :grow-type)
+  [{:keys [ids values] :as props}]
+  (let [grow-type (:grow-type values)
         handle-change-grow
-        (fn [event grow-type]
+        (fn [_ grow-type]
           (st/emit! (dch/update-shapes ids #(assoc % :grow-type grow-type))))]
 
     [:div.align-icons
@@ -179,13 +177,10 @@
       i/auto-height]]))
 
 (mf/defc text-decoration-options
-  [{:keys [ids values on-change] :as props}]
-  (let [{:keys [text-decoration]} values
-
-        text-decoration (or text-decoration "none")
-
+  [{:keys [values on-change] :as props}]
+  (let [text-decoration (or (:text-decoration values) "none")
         handle-change
-        (fn [event type]
+        (fn [_ type]
           (on-change {:text-decoration type}))]
     [:div.align-icons
      [:span.tooltip.tooltip-bottom
@@ -262,18 +257,18 @@
              (get typographies (:typography-ref-id values)))))
 
         on-convert-to-typography
-        (fn [event]
+        (fn [_]
           (let [setted-values (-> (d/without-nils values)
                                   (select-keys
                                    (d/concat text-font-attrs
                                              text-spacing-attrs
                                              text-transform-attrs)))
                 typography (merge txt/default-typography setted-values)
-                typography (generate-typography-name typography)]
-            (let [id (uuid/next)]
-              (st/emit! (dwl/add-typography (assoc typography :id id) false))
-              (run! #(emit-update! % {:typography-ref-id id
-                                      :typography-ref-file file-id}) ids))))
+                typography (generate-typography-name typography)
+                id (uuid/next)]
+            (st/emit! (dwl/add-typography (assoc typography :id id) false))
+            (run! #(emit-update! % {:typography-ref-id id
+                                    :typography-ref-file file-id}) ids)))
 
         handle-detach-typography
         (mf/use-callback

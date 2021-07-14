@@ -7,10 +7,7 @@
 (ns app.main.data.messages
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
-   [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.config :as cfg]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -54,7 +51,7 @@
         (assoc state :message message)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ stream]
       (when (:timeout data)
         (let [stoper (rx/filter (ptk/type? ::show) stream)]
           (->> (rx/of hide)
@@ -68,7 +65,7 @@
       (d/update-when state :message assoc :status :hide))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ stream]
       (let [stoper (rx/filter (ptk/type? ::show) stream)]
         (->> (rx/of #(dissoc % :message))
              (rx/delay default-animation-timeout)
@@ -78,7 +75,7 @@
   [tag]
   (ptk/reify ::hide-tag
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [message (get state :message)]
         (when (= (:tag message) tag)
           (rx/of hide))))))
@@ -127,7 +124,7 @@
           :tag tag})))
 
 (defn assign-exception
-  [{:keys [type] :as error}]
+  [error]
   (ptk/reify ::assign-exception
     ptk/UpdateEvent
     (update [_ state]

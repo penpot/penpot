@@ -12,12 +12,10 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (s/def ::email ::us/email)
@@ -30,7 +28,7 @@
 
         on-success
         (mf/use-callback
-         (fn [data]
+         (fn [_ _]
            (reset! submitted false)
            (st/emit! (dm/info (tr "auth.notifications.recovery-token-sent"))
                      (rt/nav :auth-login))))
@@ -86,4 +84,4 @@
     [:div.links
      [:div.link-entry
       [:a {:on-click #(st/emit! (rt/nav :auth-login))}
-       (tr "auth.go-back-to-login")]]]]])
+       (tr "labels.go-back")]]]]])

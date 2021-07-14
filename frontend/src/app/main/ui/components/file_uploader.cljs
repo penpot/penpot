@@ -6,23 +6,26 @@
 
 (ns app.main.ui.components.file-uploader
   (:require
-   [rumext.alpha :as mf]
-   [app.main.data.workspace :as dw]
    [app.main.store :as st]
-   [app.util.dom :as dom]))
+   [app.util.dom :as dom]
+   [rumext.alpha :as mf]))
 
 (mf/defc file-uploader
-  [{:keys [accept multi label-text label-class input-id input-ref on-selected] :as props}]
+  {::mf/forward-ref true}
+  [{:keys [accept multi label-text label-class input-id on-selected] :as props} input-ref]
   (let [opt-pick-one #(if multi % (first %))
 
-        on-files-selected (fn [event]
-                            (let [target (dom/get-target event)]
-                              (st/emit!
-                                (some-> target
-                                        (dom/get-files)
-                                        (opt-pick-one)
-                                        (on-selected)))
-                              (dom/clean-value! target)))]
+        on-files-selected
+        (mf/use-callback
+         (mf/deps opt-pick-one)
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (st/emit!
+              (some-> target
+                      (dom/get-files)
+                      (opt-pick-one)
+                      (on-selected)))
+             (dom/clean-value! target))))]
     [:*
      (when label-text
        [:label {:for input-id :class-name label-class} label-text])

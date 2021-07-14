@@ -6,10 +6,8 @@
 
 (ns app.util.path.format
   (:require
-   [app.common.data :as d]
    [app.util.path.commands :as upc]
-   [cuerdas.core :as str]
-   [app.util.path.subpaths :as ups]))
+   [cuerdas.core :as str]))
 
 (defn command->param-list [command]
   (let [params (:params command)]
@@ -47,7 +45,7 @@
            (:x params) ","
            (:y params)))))
 
-(defn command->string [{:keys [command relative params] :as entry}]
+(defn command->string [{:keys [command relative] :as entry}]
   (let [command-str (case command
                       :move-to "M"
                       :close-path "Z"

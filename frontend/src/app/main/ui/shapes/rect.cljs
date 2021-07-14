@@ -6,23 +6,18 @@
 
 (ns app.main.ui.shapes.rect
   (:require
-   [rumext.alpha :as mf]
+   [app.common.geom.shapes :as gsh]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
-   [app.common.geom.shapes :as geom]
    [app.util.object :as obj]
-   [app.main.ui.shapes.gradients :refer [gradient]]
-
-   [cuerdas.core :as str]
-   [app.common.uuid :as uuid]
-   [app.common.geom.point :as gpt]))
+   [rumext.alpha :as mf]))
 
 (mf/defc rect-shape
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        {:keys [id x y width height]} shape
-        transform (geom/transform-matrix shape)
+        {:keys [x y width height]} shape
+        transform (gsh/transform-matrix shape)
 
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!
@@ -30,11 +25,11 @@
                         :y y
                         :transform transform
                         :width width
-                        :height height}))]
+                        :height height}))
 
-    [:& shape-custom-stroke {:shape shape
-                             :base-props props
-                             :elem-name 
-                             (if (.-d props)
-                               "path"
-                               "rect")}]))
+        path? (some? (.-d props))]
+
+    [:& shape-custom-stroke {:shape shape}
+     (if path?
+       [:> :path props]
+       [:> :rect props])]))

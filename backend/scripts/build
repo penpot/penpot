@@ -49,6 +49,7 @@
 
 ;; Create the application jar
 (spit "./target/dist/version.txt" version)
+
 (-> ($ jar cvf "./target/dist/deps/app.jar" -C ~(first classpath-paths) ".") check)
 (-> ($ jar uvf "./target/dist/deps/app.jar" -C "./target/dist" "version.txt") check)
 (run! (fn [item]

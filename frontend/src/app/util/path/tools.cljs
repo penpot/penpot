@@ -80,13 +80,7 @@
   in the same vector that results from te previous->next points but with fixed length."
   [content point]
 
-  (let [make-curve-cmd (fn [cmd h1 h2]
-                         (-> cmd
-                             (update :params assoc
-                                     :c1x (:x h1) :c1y (:y h1)
-                                     :c2x (:x h2) :c2y (:y h2))))
-
-        indices (upc/point-indices content point)
+  (let [indices (upc/point-indices content point)
         vectors (->> indices (mapv (fn [index]
                                      (let [cmd (nth content index)
                                            prev-i (dec index)
@@ -151,10 +145,10 @@
       (let [add-curve
             (fn [content {:keys [index command prev-p next-c next-i]}]
               (cond-> content
-                (and (= :line-to (:command command)))
+                (= :line-to (:command command))
                 (update index #(line->curve prev-p %))
 
-                (and (= :line-to (:command next-c)))
+                (= :line-to (:command next-c))
                 (update next-i #(line->curve point %))))]
         (->> vectors (reduce add-curve content))))))
 
@@ -292,7 +286,7 @@
 
                           ;; If have a curve the first handler will be relative to the previous
                           ;; point. We change the handler to the new previous point
-                          (and curve? (not (empty? subpath)) (not= old-prev-point new-prev-point))
+                          (and curve? (seq subpath) (not= old-prev-point new-prev-point))
                           (update :params merge last-handler))
 
                 head-idx (dec (count result))
@@ -394,7 +388,7 @@
             result (cond-> result
                      (and (nil? set-a) (nil? set-b))
                      (conj #{point-a point-b})
-                     
+
                      (and (some? set-a) (nil? set-b))
                      (add-to-set set-a point-b)
 

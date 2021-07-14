@@ -40,14 +40,12 @@
   [{:keys [file] :as bundle}]
   (ptk/reify ::setup-selection-index
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (let [msg {:cmd :initialize-indices
                  :file-id (:id file)
                  :data (:data file)}]
         (->> (uw/ask! msg)
              (rx/map (constantly ::index-initialized)))))))
-
-
 
 ;; --- Common Helpers & Events
 
@@ -59,7 +57,7 @@
 
 (defn- extract-numeric-suffix
   [basename]
-  (if-let [[match p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
+  (if-let [[_ p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
     [p1 (+ 1 (d/parse-integer p2))]
     [basename 1]))
 
@@ -112,7 +110,7 @@
 (def undo
   (ptk/reify ::undo
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
         ;; Editors handle their own undo's
@@ -131,7 +129,7 @@
 (def redo
   (ptk/reify ::redo
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
         (when-not (or (some? edition) (not-empty drawing))
@@ -180,10 +178,10 @@
       (assoc-in state [:workspace-local :selected] ids))
 
     ptk/WatchEvent
-    (watch [it state stream]
-       (let [page-id (:current-page-id state)
-             objects (wsh/lookup-page-objects state page-id)]
-         (rx/of (expand-all-parents ids objects))))))
+    (watch [_ state _]
+      (let [page-id (:current-page-id state)
+            objects (wsh/lookup-page-objects state page-id)]
+        (rx/of (expand-all-parents ids objects))))))
 
 (declare clear-edition-mode)
 
@@ -202,12 +200,11 @@
           state)))
 
     ptk/WatchEvent
-    (watch [it state stream]
-      (let [objects (wsh/lookup-page-objects state)]
-        (->> stream
-             (rx/filter interrupt?)
-             (rx/take 1)
-             (rx/map (constantly clear-edition-mode)))))))
+    (watch [_ _ stream]
+      (->> stream
+           (rx/filter interrupt?)
+           (rx/take 1)
+           (rx/map (constantly clear-edition-mode))))))
 
 ;; If these event change modules review /src/app/main/data/workspace/path/undo.cljs
 (def clear-edition-mode
@@ -282,7 +279,7 @@
   (us/verify ::shape-attrs attrs)
   (ptk/reify ::add-shape
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
 
@@ -313,7 +310,7 @@
 (defn move-shapes-into-frame [frame-id shapes]
   (ptk/reify ::move-shapes-into-frame
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
             to-move-shapes (->> (cp/select-toplevel-shapes objects {:include-frames? false})
@@ -341,25 +338,17 @@
                                     :undo-changes uchanges
                                     :origin it}))))))
 
+(s/def ::set-of-uuid
+  (s/every ::us/uuid :kind set?))
+
 (defn delete-shapes
   [ids]
-  (us/assert (s/coll-of ::us/uuid) ids)
+  (us/assert ::set-of-uuid ids)
   (ptk/reify ::delete-shapes
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-
-            get-empty-parents
-            (fn [parents]
-              (->> parents
-                   (map (fn [id]
-                          (let [obj (get objects id)]
-                            (when (and (= :group (:type obj))
-                                       (= 1 (count (:shapes obj))))
-                              obj))))
-                   (take-while (complement nil?))
-                   (map :id)))
 
             groups-to-unmask
             (reduce (fn [group-ids id]
@@ -381,90 +370,117 @@
                         (some ids (map :destination interactions))))
                     (vals objects))
 
-            rchanges
-            (d/concat
-              (reduce (fn [res id]
-                        (let [children (cp/get-children id objects)
-                              parents  (cp/get-parents id objects)
-                              del-change #(array-map
-                                            :type :del-obj
-                                            :page-id page-id
-                                            :id %)]
-                              (d/concat res
-                                        (map del-change (reverse children))
-                                        [(del-change id)]
-                                        (map del-change (get-empty-parents parents))
-                                        [{:type :reg-objects
-                                          :page-id page-id
-                                          :shapes (vec parents)}])))
-                      []
-                      ids)
-              (map #(array-map
-                      :type :mod-obj
-                      :page-id page-id
-                      :id %
-                      :operations [{:type :set
-                                    :attr :masked-group?
-                                    :val false}])
-                   groups-to-unmask)
-              (map #(array-map
-                      :type :mod-obj
-                      :page-id page-id
-                      :id (:id %)
-                      :operations [{:type :set
-                                    :attr :interactions
-                                    :val (vec (remove (fn [interaction]
-                                                        (contains? ids (:destination interaction)))
-                                                      (:interactions %)))}])
-                   interacting-shapes))
+            empty-parents-xform
+            (comp
+             (map (fn [id] (get objects id)))
+             (map (fn [{:keys [shapes type] :as obj}]
+                    (when (and (= :group type)
+                               (zero? (count (remove #(contains? ids %) shapes))))
+                      obj)))
+             (take-while some?)
+             (map :id))
 
+            all-parents
+            (reduce (fn [res id]
+                      (into res (cp/get-parents id objects)))
+                    (d/ordered-set)
+                    ids)
+
+            all-children
+            (reduce (fn [res id]
+                      (into res (cp/get-children id objects)))
+                    (d/ordered-set)
+                    ids)
+
+            empty-parents
+            (into (d/ordered-set) empty-parents-xform all-parents)
+
+            mk-del-obj-xf
+            (map (fn [id]
+                   {:type :del-obj
+                    :page-id page-id
+                    :id id}))
+
+            mk-add-obj-xf
+            (map (fn [id]
+                   (let [item (get objects id)]
+                     {:type :add-obj
+                      :id (:id item)
+                      :page-id page-id
+                      :index (cp/position-on-parent id objects)
+                      :frame-id (:frame-id item)
+                      :parent-id (:parent-id item)
+                      :obj item})))
+
+            mk-mod-touched-xf
+            (map (fn [id]
+                   (let [parent (get objects id)]
+                     {:type :mod-obj
+                      :page-id page-id
+                      :id (:id parent)
+                      :operations [{:type :set-touched
+                                    :touched (:touched parent)}]})))
+
+            mk-mod-int-del-xf
+            (map (fn [obj]
+                   {:type :mod-obj
+                    :page-id page-id
+                    :id (:id obj)
+                    :operations [{:type :set
+                                  :attr :interactions
+                                  :val (vec (remove (fn [interaction]
+                                                      (contains? ids (:destination interaction)))
+                                                    (:interactions obj)))}]}))
+            mk-mod-int-add-xf
+            (map (fn [obj]
+                   {:type :mod-obj
+                    :page-id page-id
+                    :id (:id obj)
+                    :operations [{:type :set
+                                  :attr :interactions
+                                  :val (:interactions obj)}]}))
+
+            mk-mod-unmask-xf
+            (map (fn [id]
+                   {:type :mod-obj
+                    :page-id page-id
+                    :id id
+                    :operations [{:type :set
+                                  :attr :masked-group?
+                                  :val false}]}))
+
+            mk-mod-mask-xf
+            (map (fn [id]
+                   {:type :mod-obj
+                    :page-id page-id
+                    :id id
+                    :operations [{:type :set
+                                  :attr :masked-group?
+                                  :val true}]}))
+
+            rchanges
+            (-> []
+                (into mk-del-obj-xf all-children)
+                (into mk-del-obj-xf ids)
+                (into mk-del-obj-xf empty-parents)
+                (conj {:type :reg-objects
+                       :page-id page-id
+                       :shapes (vec all-parents)})
+                (into mk-mod-unmask-xf groups-to-unmask)
+                (into mk-mod-int-del-xf interacting-shapes))
 
             uchanges
-            (d/concat
-              (reduce (fn [res id]
-                        (let [children    (cp/get-children id objects)
-                              parents     (cp/get-parents id objects)
-                              parent      (get objects (first parents))
-                              add-change  (fn [id]
-                                            (let [item (get objects id)]
-                                              {:type :add-obj
-                                               :id (:id item)
-                                               :page-id page-id
-                                               :index (cp/position-on-parent id objects)
-                                               :frame-id (:frame-id item)
-                                               :parent-id (:parent-id item)
-                                               :obj item}))]
-                          (d/concat res
-                                    (map add-change (reverse (get-empty-parents parents)))
-                                    [(add-change id)]
-                                    (map add-change children)
-                                    [{:type :reg-objects
-                                      :page-id page-id
-                                      :shapes (vec parents)}]
-                                    (when (some? parent)
-                                      [{:type :mod-obj
-                                        :page-id page-id
-                                        :id (:id parent)
-                                        :operations [{:type :set-touched
-                                                      :touched (:touched parent)}]}]))))
-                      []
-                      ids)
-              (map #(array-map
-                      :type :mod-obj
-                      :page-id page-id
-                      :id %
-                      :operations [{:type :set
-                                    :attr :masked-group?
-                                    :val true}])
-                   groups-to-unmask)
-              (map #(array-map
-                      :type :mod-obj
-                      :page-id page-id
-                      :id (:id %)
-                      :operations [{:type :set
-                                    :attr :interactions
-                                    :val (:interactions %)}])
-                   interacting-shapes))]
+            (-> []
+                (into mk-add-obj-xf (reverse empty-parents))
+                (into mk-add-obj-xf (reverse ids))
+                (into mk-add-obj-xf (reverse all-children))
+                (conj {:type :reg-objects
+                       :page-id page-id
+                       :shapes (vec all-parents)})
+                (into mk-mod-touched-xf (reverse all-parents))
+                (into mk-mod-mask-xf groups-to-unmask)
+                (into mk-mod-int-add-xf interacting-shapes))
+            ]
 
         ;; (println "================ rchanges")
         ;; (cljs.pprint/pprint rchanges)
@@ -485,7 +501,7 @@
   [type frame-x frame-y data]
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ state _]
       (let [{:keys [width height]} data
 
             [vbc-x vbc-y] (viewport-center state)
@@ -505,7 +521,7 @@
   [image {:keys [x y]}]
   (ptk/reify ::image-uploaded
     ptk/WatchEvent
-    (watch [it state stream]
+    (watch [_ _ _]
       (let [{:keys [name width height id mtype]} image
             shape {:name name
                    :width width

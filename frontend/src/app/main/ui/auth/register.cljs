@@ -7,21 +7,19 @@
 (ns app.main.ui.auth.register
   (:require
    [app.common.spec :as us]
-   [app.config :as cfg]
-   [app.main.data.users :as du]
+   [app.config :as cf]
    [app.main.data.messages :as dm]
+   [app.main.data.users :as du]
+   [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.ui.auth.login :as login]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
-   [app.main.ui.auth.login :as login]
-   [app.util.dom :as dom]
-   [app.util.i18n :refer [tr t]]
+   [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.timers :as tm]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (mf/defc demo-warning
@@ -29,6 +27,8 @@
   [:& msgs/inline-banner
    {:type :warning
     :content (tr "auth.demo-warning")}])
+
+;; --- PAGE: Register
 
 (defn- validate
   [data]
@@ -48,8 +48,28 @@
 (s/def ::terms-privacy ::us/boolean)
 
 (s/def ::register-form
-  (s/keys :req-un [::password ::fullname ::email ::terms-privacy]
+  (s/keys :req-un [::password ::email]
           :opt-un [::invitation-token]))
+
+(defn- handle-prepare-register-error
+  [form error]
+  (case (:code error)
+    :registration-disabled
+    (st/emit! (dm/error (tr "errors.registration-disabled")))
+
+    :email-has-permanent-bounces
+    (let [email (get @form [:data :email])]
+      (st/emit! (dm/error (tr "errors.email-has-permanent-bounces" email))))
+
+    :email-already-exists
+    (swap! form assoc-in [:errors :email]
+           {:message "errors.email-already-exists"})
+
+    (st/emit! (dm/error (tr "errors.generic")))))
+
+(defn- handle-prepare-register-success
+  [_form {:keys [token] :as result}]
+  (st/emit! (rt/nav :auth-register-validate {} {:token token})))
 
 (mf/defc register-form
   [{:keys [params] :as props}]
@@ -59,49 +79,20 @@
                              :initial initial)
         submitted? (mf/use-state false)
 
-        on-error
-        (mf/use-callback
-         (fn [form error]
-           (reset! submitted? false)
-           (case (:code error)
-             :registration-disabled
-             (rx/of (dm/error (tr "errors.registration-disabled")))
-
-             :email-has-permanent-bounces
-             (let [email (get @form [:data :email])]
-               (rx/of (dm/error (tr "errors.email-has-permanent-bounces" email))))
-
-             :email-already-exists
-             (swap! form assoc-in [:errors :email]
-                    {:message "errors.email-already-exists"})
-
-             (rx/throw error))))
-
-        on-success
-        (mf/use-callback
-         (fn [form data]
-           (reset! submitted? false)
-           (if-let [token (:invitation-token data)]
-             (st/emit! (rt/nav :auth-verify-token {} {:token token}))
-             (st/emit! (rt/nav :auth-register-success {} {:email (:email data)})))))
-
         on-submit
         (mf/use-callback
-         (fn [form event]
+         (fn [form _event]
            (reset! submitted? true)
-           (let [data (with-meta (:clean-data @form)
-                        {:on-error (partial on-error form)
-                         :on-success (partial on-success form)})]
-             (st/emit! (du/register data)))))]
+           (let [params (:clean-data @form)]
+             (->> (rp/mutation :prepare-register-profile params)
+                  (rx/finalize #(reset! submitted? false))
+                  (rx/subs (partial handle-prepare-register-success form)
+                           (partial handle-prepare-register-error form))))))
+        ]
 
 
     [:& fm/form {:on-submit on-submit
                  :form form}
-     [:div.fields-row
-      [:& fm/input {:name :fullname
-                    :tab-index "1"
-                    :label (tr "auth.fullname")
-                    :type "text"}]]
      [:div.fields-row
       [:& fm/input {:type "email"
                     :name :email
@@ -115,26 +106,9 @@
                     :label (tr "auth.password")
                     :type "password"}]]
 
-     [:div.fields-row
-      [:& fm/input {:name :terms-privacy
-                    :class "check-primary"
-                    :tab-index "4"
-                    :label (tr "auth.terms-privacy-agreement")
-                    :type "checkbox"}]]
-
      [:& fm/submit-button
       {:label (tr "auth.register-submit")
        :disabled @submitted?}]]))
-
-;; --- Register Page
-
-(mf/defc register-success-page
-  [{:keys [params] :as props}]
-  [:div.form-container
-   [:div.notification-icon i/icon-verify]
-   [:div.notification-text (tr "auth.verification-email-sent")]
-   [:div.notification-text-email (:email params "")]
-   [:div.notification-text (tr "auth.check-your-email")]])
 
 (mf/defc register-page
   [{:keys [params] :as props}]
@@ -142,10 +116,17 @@
    [:h1 (tr "auth.register-title")]
    [:div.subtitle (tr "auth.register-subtitle")]
 
-   (when cfg/demo-warning
+   (when cf/demo-warning
      [:& demo-warning])
 
    [:& register-form {:params params}]
+
+    (when login/show-alt-login-buttons?
+      [:*
+       [:span.separator (tr "labels.or")]
+
+       [:div.buttons
+        [:& login/login-buttons {:params params}]]])
 
    [:div.links
     [:div.link-entry
@@ -154,14 +135,118 @@
           :tab-index "4"}
       (tr "auth.login-here")]]
 
-    (when cfg/allow-demo-users
+    (when cf/allow-demo-users
       [:div.link-entry
        [:span (tr "auth.create-demo-profile") " "]
        [:a {:on-click #(st/emit! (du/create-demo-profile))
             :tab-index "5"}
-        (tr "auth.create-demo-account")]])
+        (tr "auth.create-demo-account")]])]])
 
-    [:& login/login-buttons {:params params}]]])
+;; --- PAGE: register validation
+
+(defn- handle-register-error
+  [form error]
+  (case (:code error)
+    :registration-disabled
+    (st/emit! (dm/error (tr "errors.registration-disabled")))
+
+    :email-has-permanent-bounces
+    (let [email (get @form [:data :email])]
+      (st/emit! (dm/error (tr "errors.email-has-permanent-bounces" email))))
+
+    :email-already-exists
+    (swap! form assoc-in [:errors :email]
+           {:message "errors.email-already-exists"})
+
+    (do
+      (println (:explain error))
+      (st/emit! (dm/error (tr "errors.generic"))))))
+
+(defn- handle-register-success
+  [_form data]
+  (cond
+    (some? (:invitation-token data))
+    (let [token (:invitation-token data)]
+      (st/emit! (rt/nav :auth-verify-token {} {:token token})))
+
+    (not= "penpot" (:auth-backend data))
+    (st/emit! (du/login-from-register))
+
+    :else
+    (st/emit! (rt/nav :auth-register-success {} {:email (:email data)}))))
+
+(s/def ::accept-terms-and-privacy (s/and ::us/boolean true?))
+(s/def ::accept-newsletter-subscription ::us/boolean)
+
+(s/def ::register-validate-form
+  (s/keys :req-un [::token ::fullname ::accept-terms-and-privacy]
+          :opt-un [::accept-newsletter-subscription]))
+
+(mf/defc register-validate-form
+  [{:keys [params] :as props}]
+  (let [initial (mf/use-memo
+                 (mf/deps params)
+                 (fn []
+                   (assoc params :accept-newsletter-subscription false)))
+        form    (fm/use-form :spec ::register-validate-form
+                             :initial initial)
+        submitted? (mf/use-state false)
+
+        on-submit
+        (mf/use-callback
+         (fn [form _event]
+           (reset! submitted? true)
+           (let [params (:clean-data @form)]
+             (->> (rp/mutation :register-profile params)
+                  (rx/finalize #(reset! submitted? false))
+                  (rx/subs (partial handle-register-success form)
+                           (partial handle-register-error form))))))
+        ]
+
+    [:& fm/form {:on-submit on-submit
+                 :form form}
+     [:div.fields-row
+      [:& fm/input {:name :fullname
+                    :tab-index "1"
+                    :label (tr "auth.fullname")
+                    :type "text"}]]
+     [:div.fields-row
+      [:& fm/input {:name :accept-terms-and-privacy
+                    :class "check-primary"
+                    :label (tr "auth.terms-privacy-agreement")
+                    :type "checkbox"}]]
+
+     (when (contains? @cf/flags :show-newsletter-check-on-register-validation)
+       [:div.fields-row
+        [:& fm/input {:name :accept-newsletter-subscription
+                      :class "check-primary"
+                      :label (tr "auth.newsletter-subscription")
+                      :type "checkbox"}]])
+
+     [:& fm/submit-button
+      {:label (tr "auth.register-submit")
+       :disabled @submitted?}]]))
 
 
+(mf/defc register-validate-page
+  [{:keys [params] :as props}]
+  [:div.form-container
+   [:h1 (tr "auth.register-title")]
+   [:div.subtitle (tr "auth.register-subtitle")]
+
+   [:& register-validate-form {:params params}]
+
+   [:div.links
+    [:div.link-entry
+     [:a {:on-click #(st/emit! (rt/nav :auth-register {} {}))
+          :tab-index "4"}
+      (tr "labels.go-back")]]]])
+
+(mf/defc register-success-page
+  [{:keys [params] :as props}]
+  [:div.form-container
+   [:div.notification-icon i/icon-verify]
+   [:div.notification-text (tr "auth.verification-email-sent")]
+   [:div.notification-text-email (:email params "")]
+   [:div.notification-text (tr "auth.check-your-email")]])
 

@@ -10,23 +10,15 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
-   [app.common.math :as mth]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.main.ui.cursors :as cur]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
-   [app.util.data :as d]
    [app.util.debug :refer [debug?]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
-   [beicon.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
    [rumext.alpha :as mf]
    [rumext.util :refer [map->obj]]))
 
@@ -53,7 +45,7 @@
         :on-mouse-down on-move-selected
         :style {:stroke color
                 :stroke-width (/ selection-rect-width zoom)
-                :fill "transparent"}}])))
+                :fill "none"}}])))
 
 (defn- handlers-for-selection [{:keys [x y width height]} {:keys [type]} zoom]
   (let [zoom-width (* width zoom)
@@ -142,7 +134,7 @@
             :y y
             :width size
             :height size
-            :fill (if (debug? :rotation-handler) "blue" "transparent")
+            :fill (if (debug? :rotation-handler) "blue" "none")
             :transform transform
             :on-mouse-down on-rotate}]))
 
@@ -174,21 +166,16 @@
                  :width resize-point-circle-radius
                  :height resize-point-circle-radius
                  :transform (when rotation (str/fmt "rotate(%s, %s, %s)" rotation cx' cy'))
-                 :style {:fill (if (debug? :resize-handler) "red" "transparent")
+                 :style {:fill (if (debug? :resize-handler) "red" "none")
                          :cursor cursor}
                  :on-mouse-down #(on-resize {:x cx' :y cy'} %)}])
 
-       (let [rot-square (case position
-                          :top-left 0
-                          :top-right 90
-                          :bottom-right 180
-                          :bottom-left 270)]
-         [:circle {:on-mouse-down #(on-resize {:x cx' :y cy'} %)
-                   :r (/ resize-point-circle-radius zoom)
-                   :cx cx'
-                   :cy cy'
-                   :style {:fill (if (debug? :resize-handler) "red" "transparent")
-                           :cursor cursor}}])
+       [:circle {:on-mouse-down #(on-resize {:x cx' :y cy'} %)
+                 :r (/ resize-point-circle-radius zoom)
+                 :cx cx'
+                 :cy cy'
+                 :style {:fill (if (debug? :resize-handler) "red" "none")
+                         :cursor cursor}}]
        )]))
 
 (mf/defc resize-side-handler
@@ -214,7 +201,7 @@
             :transform (gmt/multiply transform
                                      (gmt/rotate-matrix angle (gpt/point x y)))
             :on-mouse-down #(on-resize res-point %)
-            :style {:fill (if (debug? :resize-handler) "yellow" "transparent")
+            :style {:fill (if (debug? :resize-handler) "yellow" "none")
                     :cursor (if (#{:left :right} position)
                               (cur/resize-ew rotation)
                               (cur/resize-ns rotation)) }}]))
@@ -232,7 +219,7 @@
 (mf/defc controls
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [overflow-text type] :as shape} (obj/get props "shape")
+  (let [{:keys [overflow-text] :as shape} (obj/get props "shape")
         zoom              (obj/get props "zoom")
         color             (obj/get props "color")
         on-move-selected  (obj/get props "on-move-selected")
@@ -245,7 +232,7 @@
         transform (geom/transform-matrix shape {:no-flip true})]
 
     (when (not (#{:move :rotate} current-transform))
-      [:g.controls {:pointer-events (when disable-handlers "none")}
+      [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
 
        ;; Selection rect
        [:& selection-rect {:rect selrect
@@ -275,17 +262,18 @@
 ;; TODO: add specs for clarity
 
 (mf/defc text-edition-selection-handlers
-  [{:keys [shape zoom color] :as props}]
+  [{:keys [shape color] :as props}]
   (let [{:keys [x y width height]} shape]
     [:g.controls
      [:rect.main {:x x :y y
                   :transform (geom/transform-matrix shape)
                   :width width
                   :height height
+                  :pointer-events "visible"
                   :style {:stroke color
                           :stroke-width "0.5"
                           :stroke-opacity "1"
-                          :fill "transparent"}}]]))
+                          :fill "none"}}]]))
 
 (mf/defc multiple-selection-handlers
   [{:keys [shapes selected zoom color disable-handlers on-move-selected] :as props}]
@@ -298,18 +286,17 @@
 
         shape-center (geom/center-shape shape)
 
-        hover-id (-> (mf/deref refs/current-hover) first)
-        hover-id (when-not (d/seek #(= hover-id (:id %)) shapes) hover-id)
-        hover-shape (mf/deref (refs/object-by-id hover-id))
+        on-resize
+        (fn [current-position _initial-position event]
+          (when (dom/left-mouse? event)
+            (dom/stop-propagation event)
+            (st/emit! (dw/start-resize current-position selected shape))))
 
-        vbox (mf/deref refs/vbox)
-
-        on-resize (fn [current-position initial-position event]
-                    (dom/stop-propagation event)
-                    (st/emit! (dw/start-resize current-position initial-position selected shape)))
-
-        on-rotate #(do (dom/stop-propagation %)
-                       (st/emit! (dw/start-rotate shapes)))]
+        on-rotate
+        (fn [event]
+          (when (dom/left-mouse? event)
+            (dom/stop-propagation event)
+            (st/emit! (dw/start-rotate shapes))))]
 
     [:*
      [:& controls {:shape shape
@@ -328,22 +315,20 @@
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape {:round-coords? false})
 
-        frame (mf/deref (refs/object-by-id (:frame-id shape)))
-        frame (when-not (= (:id frame) uuid/zero) frame)
-        vbox (mf/deref refs/vbox)
-
-        hover-id (-> (mf/deref refs/current-hover) first)
-        hover-id (when-not (= shape-id hover-id) hover-id)
-        hover-shape (mf/deref (refs/object-by-id hover-id))
-
         shape' (if (debug? :simple-selection) (geom/setup {:type :rect} (geom/selection-rect [shape])) shape)
-        on-resize (fn [current-position initial-position event]
-                    (dom/stop-propagation event)
-                    (st/emit! (dw/start-resize current-position initial-position #{shape-id} shape')))
+
+        on-resize
+        (fn [current-position _initial-position event]
+          (when (dom/left-mouse? event)
+            (dom/stop-propagation event)
+            (st/emit! (dw/start-resize current-position #{shape-id} shape'))))
 
         on-rotate
-        #(do (dom/stop-propagation %)
-             (st/emit! (dw/start-rotate [shape])))]
+        (fn [event]
+          (when (dom/left-mouse? event)
+            (dom/stop-propagation event)
+            (st/emit! (dw/start-rotate [shape]))))]
+
     [:& controls {:shape shape'
                   :zoom zoom
                   :color color
@@ -356,7 +341,7 @@
   {::mf/wrap [mf/memo]}
   [{:keys [shapes selected edition zoom disable-handlers on-move-selected] :as props}]
   (let [num (count shapes)
-        {:keys [id type] :as shape} (first shapes)
+        {:keys [type] :as shape} (first shapes)
 
         color (if (or (> num 1) (nil? (:shape-ref shape)))
                 selection-rect-color-normal
@@ -379,8 +364,7 @@
                                            :zoom zoom
                                            :color color}]
 
-      (and (= type :path)
-           (= edition (:id shape)))
+      (= edition (:id shape))
       [:& path-editor {:zoom zoom
                        :shape shape}]
 

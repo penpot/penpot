@@ -46,10 +46,6 @@ msgstr "Ξεχάσατε τον κωδικό;"
 msgid "auth.fullname"
 msgstr "Πλήρες όνομα"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "Πίσω"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Συνδεθείτε εδώ"
@@ -822,6 +818,9 @@ msgstr "Εστάλη γνώμη"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Δώστε μας τη γνώμη σας"
+
+msgid "labels.go-back"
+msgstr "Πίσω"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"

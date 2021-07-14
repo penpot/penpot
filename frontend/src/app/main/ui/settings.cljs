@@ -7,14 +7,13 @@
 (ns app.main.ui.settings
   (:require
    [app.main.refs :as refs]
-   [app.main.store :as st]
-   [app.main.ui.settings.options :refer [options-page]]
+   [app.main.ui.settings.change-email]
+   [app.main.ui.settings.delete-account]
    [app.main.ui.settings.feedback :refer [feedback-page]]
+   [app.main.ui.settings.options :refer [options-page]]
    [app.main.ui.settings.password :refer [password-page]]
    [app.main.ui.settings.profile :refer [profile-page]]
    [app.main.ui.settings.sidebar :refer [sidebar]]
-   [app.main.ui.settings.change-email]
-   [app.main.ui.settings.delete-account]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 

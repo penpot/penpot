@@ -6,15 +6,15 @@
 
 (ns app.util.simple-math
   (:require
-    [cljs.spec.alpha :as s]
-    [clojure.string :refer [index-of]]
-    [cuerdas.core :as str]
-    [instaparse.core :as insta]
-    [app.common.data :as d]
-    [app.common.exceptions :as ex]))
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
+   [cljs.spec.alpha :as s]
+   [clojure.string :refer [index-of]]
+   [cuerdas.core :as str]
+   [instaparse.core :as insta]))
 
 (def parser
-  (insta/parser 
+  (insta/parser
     "opt-expr = '' | expr
      expr = term (<spaces> ('+'|'-') <spaces> expr)* |
             ('+'|'-'|'*'|'/') <spaces> factor

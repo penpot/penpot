@@ -7,21 +7,19 @@
 (ns app.main.ui.workspace.viewport.gradients
   "Gradients handlers and renders"
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [beicon.core :as rx]
-   [okulary.core :as l]
-   [app.common.math :as mth]
-   [app.common.geom.shapes :as gsh]
-   [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
-   [app.util.dom :as dom]
-   [app.main.store :as st]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.main.data.workspace.colors :as dc]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.data.modal :as modal]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.colors :as dc]))
+   [app.util.dom :as dom]
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 (def gradient-line-stroke-width 2)
 (def gradient-line-stroke-color "white")
@@ -94,7 +92,7 @@
            on-click on-mouse-down on-mouse-up]}]
   [:g {:filter (str/fmt "url(#%s)" filter-id)
        :transform (gmt/rotate-matrix angle point)}
-   
+
    [:image {:href checkboard
             :x (- (:x point) (/ gradient-square-width 2 zoom))
             :y (- (:y point) (/ gradient-square-width 2 zoom))
@@ -127,7 +125,7 @@
 
 (mf/defc gradient-handler-transformed
   [{:keys [from-p to-p width-p from-color to-color zoom editing
-           on-change-start on-change-finish on-change-width on-change-stop-color]}]
+           on-change-start on-change-finish on-change-width]}]
   (let [moving-point (mf/use-var nil)
         angle (+ 90 (gpt/angle from-p to-p))
 
@@ -138,7 +136,7 @@
                      (st/emit! (dc/select-gradient-stop (case position
                                                           :from-p 0
                                                           :to-p 1)))))
-        
+
         on-mouse-down (fn [position event]
                         (dom/stop-propagation event)
                         (dom/prevent-default event)
@@ -148,7 +146,7 @@
                                                                :from-p 0
                                                                :to-p 1)))))
 
-        on-mouse-up (fn [position event]
+        on-mouse-up (fn [_position event]
                       (dom/stop-propagation event)
                       (dom/prevent-default event)
                       (reset! moving-point nil))]
@@ -278,7 +276,6 @@
                            (let [point (gpt/transform point transform-inverse)
                                  end-x (/ (- (:x point) x) width)
                                  end-y (/ (- (:y point) y) height)
-
                                  end-x (mth/precision end-x 2)
                                  end-y (mth/precision end-y 2)]
                              (change! {:end-x end-x :end-y end-y})))
@@ -287,8 +284,8 @@
                           (let [scale-factor-y (/ gradient-length (/ height 2))
                                 norm-dist (/ (gpt/distance point from-p)
                                              (* (/ width 2) scale-factor-y))]
-
-                            (change! {:width norm-dist})))]
+                            (when (and norm-dist (mth/finite? norm-dist))
+                              (change! {:width norm-dist}))))]
 
     (when (and gradient
                (= id (:shape-id gradient))

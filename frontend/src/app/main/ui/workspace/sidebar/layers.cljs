@@ -16,12 +16,9 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [app.util.perf :as perf]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -175,7 +172,7 @@
             (st/emit! (dw/select-shape id))))
 
         on-drop
-        (fn [side {:keys [id] :as data}]
+        (fn [side _data]
           (if (= side :center)
             (st/emit! (dw/relocate-selected-shapes (:id item) 0))
             (let [to-index  (if (= side :top) (inc index) index)

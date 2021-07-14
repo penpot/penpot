@@ -6,12 +6,11 @@
 
 (ns app.main.ui.shapes.attrs
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.common.data :as d]
-   [app.util.object :as obj]
    [app.main.ui.context :as muc]
-   [app.util.svg :as usvg]))
+   [app.util.object :as obj]
+   [app.util.svg :as usvg]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (defn- stroke-type->dasharray
   [style]
@@ -89,7 +88,7 @@
                      ;; we setup the default fill as transparent (instead of black)
                      (and (not (contains? shape :svg-attrs))
                           (not (#{ :svg-raw :group } (:type shape))))
-                     {:fill "transparent"}
+                     {:fill "none"}
 
                      :else
                      {})
@@ -141,23 +140,28 @@
         styles (-> svg-attrs (:style {}) (clj->js))]
     [attrs styles]))
 
+(defn add-style-attrs
+  [props shape]
+  (let [render-id (mf/use-ctx muc/render-ctx)
+        svg-defs  (:svg-defs shape {})
+        svg-attrs (:svg-attrs shape {})
+
+        [svg-attrs svg-styles] (mf/use-memo
+                                (mf/deps render-id svg-defs svg-attrs)
+                                #(extract-svg-attrs render-id svg-defs svg-attrs))
+
+        styles (-> (obj/get props "style" (obj/new))
+                   (obj/merge! svg-styles)
+                   (add-fill shape render-id)
+                   (add-stroke shape render-id)
+                   (add-layer-props shape))]
+
+    (-> props
+        (obj/merge! svg-attrs)
+        (add-border-radius shape)
+        (obj/set! "style" styles))))
+
 (defn extract-style-attrs
-  ([shape]
-   (let [render-id (mf/use-ctx muc/render-ctx)
-         svg-defs  (:svg-defs shape {})
-         svg-attrs (:svg-attrs shape {})
-
-         [svg-attrs svg-styles] (mf/use-memo
-                                 (mf/deps render-id svg-defs svg-attrs)
-                                 #(extract-svg-attrs render-id svg-defs svg-attrs))
-
-         styles (-> (obj/new)
-                    (obj/merge! svg-styles)
-                    (add-fill shape render-id)
-                    (add-stroke shape render-id)
-                    (add-layer-props shape))]
-
-     (-> (obj/new)
-         (obj/merge! svg-attrs)
-         (add-border-radius shape)
-         (obj/set! "style" styles)))))
+  [shape]
+  (-> (obj/new)
+      (add-style-attrs shape)))

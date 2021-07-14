@@ -6,8 +6,6 @@
 
 (ns app.main.ui.dashboard.projects
   (:require
-   [app.common.exceptions :as ex]
-   [app.main.constants :as c]
    [app.main.data.dashboard :as dd]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -16,8 +14,7 @@
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
-   [app.util.keyboard :as kbd]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [okulary.core :as l]
@@ -30,6 +27,7 @@
     [:header.dashboard-header
      [:div.dashboard-title
       [:h1 (tr "dashboard.projects-title")]]
+
      [:a.btn-secondary.btn-small {:on-click create}
       (tr "dashboard.new-project")]]))
 
@@ -37,7 +35,6 @@
   [{:keys [project first? files] :as props}]
   (let [locale     (mf/deref i18n/locale)
 
-        project-id (:id project)
         team-id    (:team-id project)
         file-count (or (:count project) 0)
 
@@ -96,17 +93,16 @@
          (fn []
            (let [mdata  {:on-success on-file-created}
                  params {:project-id (:id project)}]
-             (st/emit! (dd/create-file (with-meta params mdata))))))]
+             (st/emit! (dd/create-file (with-meta params mdata))))))
+
+        on-import
+        (mf/use-callback
+         (fn []
+           (st/emit! (dd/fetch-recent-files)
+                     (dd/clear-selected-files))))]
 
     [:div.dashboard-project-row {:class (when first? "first")}
      [:div.project
-      (when-not (:is-default project)
-        [:span.pin-icon
-         {:class (when (:is-pinned project) "active")
-          :on-click toggle-pin}
-         (if (:is-pinned project)
-           i/pin-fill
-           i/pin)])
       (if (:edition? @local)
         [:& inline-edition {:content (:name project)
                             :on-end on-edit}]
@@ -116,13 +112,13 @@
            (tr "labels.drafts")
            (:name project))])
 
-      (when (:menu-open @local)
-        [:& project-menu {:project project
-                          :show? (:menu-open @local)
-                          :left (:x (:menu-pos @local))
-                          :top (:y (:menu-pos @local))
-                          :on-edit on-edit-open
-                          :on-menu-close on-menu-close}])
+      [:& project-menu {:project project
+                        :show? (:menu-open @local)
+                        :left (:x (:menu-pos @local))
+                        :top (:y (:menu-pos @local))
+                        :on-edit on-edit-open
+                        :on-menu-close on-menu-close
+                        :on-import on-import}]
 
       [:span.info (str file-count " files")]
       (when (> file-count 0)
@@ -130,9 +126,21 @@
                        (dt/timeago {:locale locale}))]
           [:span.recent-files-row-title-info (str ", " time)]))
 
-      [:a.btn-secondary.btn-small
-       {:on-click create-file}
-       (tr "dashboard.new-file")]]
+      (when-not (:is-default project)
+        [:span.pin-icon.tooltip.tooltip-bottom
+         {:class (when (:is-pinned project) "active")
+          :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
+         (if (:is-pinned project)
+           i/pin-fill
+           i/pin)])
+
+      [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
+       {:on-click create-file :alt (tr "dashboard.new-file")}
+       i/close]
+
+      [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
+       {:on-click on-menu-click :alt (tr "dashboard.options")}
+       i/actions]]
 
      [:& line-grid
       {:project-id (:id project)

@@ -34,7 +34,7 @@
     height: 40px;
 
     .btn-secondary {
-      margin-left: $big;
+      border: none;
       height: 32px;
     }
 
@@ -62,6 +62,7 @@
       cursor: pointer;
       display: flex;
       align-items: center;
+      margin-left: 40px;
       margin-right: 10px;
       svg {
         width: 15px;
@@ -163,5 +164,32 @@
       width: 15px;
       margin: 0;
     }
+  }
+}
+
+.import-file-btn {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  height: 2rem;
+  justify-content: center;
+  overflow: hidden;
+  padding: 4px;
+  width: 2rem;
+
+  background: none;
+  border: 1px solid $color-gray-20;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.4s;
+  margin-left: 1rem;
+
+  &:hover {
+    background: $color-primary;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
   }
 }

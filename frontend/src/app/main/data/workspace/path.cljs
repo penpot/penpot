@@ -28,7 +28,7 @@
 (d/export edition/move-selected)
 
 ;; Selection
-(d/export selection/handle-selection)
+(d/export selection/handle-area-selection)
 (d/export selection/select-node)
 (d/export selection/path-handler-enter)
 (d/export selection/path-handler-leave)

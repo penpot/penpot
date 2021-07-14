@@ -6,9 +6,8 @@
 
 (ns app.util.avatars
   (:require
-   [cuerdas.core :as str]
    [app.util.object :as obj]
-   ["randomcolor" :as rdcolor]))
+   [cuerdas.core :as str]))
 
 (defn generate*
   [{:keys [name color size]

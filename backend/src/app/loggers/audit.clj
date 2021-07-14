@@ -7,8 +7,10 @@
 (ns app.loggers.audit
   "Services related to the user activity (audit log)."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -16,12 +18,24 @@
    [app.util.http :as http]
    [app.util.logging :as l]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]))
+
+(defn parse-client-ip
+  [{:keys [headers] :as request}]
+  (or (some-> (get headers "x-forwarded-for") (str/split ",") first)
+      (get headers "x-real-ip")
+      (get request :remote-addr)))
+
+(defn profile->props
+  [profile]
+  (-> profile
+      (select-keys [:is-active :is-muted :auth-backend :email :default-team-id :default-project-id :fullname :lang])
+      (d/without-nils)))
 
 (defn clean-props
   [{:keys [profile-id] :as event}]
@@ -50,6 +64,7 @@
                            (assoc k (name v))))
                        {}
                        props))]
+
     (update event :props #(-> % clean-common clean-profile-id clean-complex-data))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -87,11 +102,12 @@
                        :cause res)))
           (recur)))
 
-      (fn [& [cmd & params]]
-        (case cmd
-          :stop (a/close! input)
-          :submit (when-not (a/offer! input (first params))
-                    (l/warn :msg "activity channel is full")))))))
+      (fn [& {:keys [cmd] :as params}]
+        (let [params (dissoc params :cmd)]
+          (case cmd
+            :stop   (a/close! input)
+            :submit (when-not (a/offer! input params)
+                      (l/warn :msg "activity channel is full"))))))))
 
 
 (defn- persist-events
@@ -101,12 +117,13 @@
              (:name event)
              (:type event)
              (:profile-id event)
+             (some-> (:ip-addr event) db/inet)
              (db/tjson (:props event))])]
 
     (aa/with-thread executor
       (db/with-atomic [conn pool]
         (db/insert-multi! conn :audit-log
-                          [:id :name :type :profile-id :props]
+                          [:id :name :type :profile-id :ip-addr :props]
                           (sequence (map event->row) events))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -147,17 +164,22 @@
 
 (defn archive-events
   [{:keys [pool uri tokens] :as cfg}]
-  (letfn [(decode-row [{:keys [props] :as row}]
+  (letfn [(decode-row [{:keys [props ip-addr] :as row}]
             (cond-> row
               (db/pgobject? props)
-              (assoc :props (db/decode-transit-pgobject props))))
+              (assoc :props (db/decode-transit-pgobject props))
 
-          (row->event [{:keys [name type created-at profile-id props]}]
-            {:type type
-             :name name
-             :timestamp created-at
-             :profile-id profile-id
-             :props props})
+              (db/pgobject? ip-addr "inet")
+              (assoc :ip-addr (db/decode-inet ip-addr))))
+
+          (row->event [{:keys [name type created-at profile-id props ip-addr]}]
+            (cond-> {:type type
+                     :name name
+                     :timestamp created-at
+                     :profile-id profile-id
+                     :props props}
+              (some? ip-addr)
+              (update :context assoc :source-ip ip-addr)))
 
           (send [events]
             (let [token   (tokens :generate {:iss "authentication"
@@ -168,7 +190,7 @@
                            "origin" (cf/get :public-uri)
                            "cookie" (u/map->query-string {:auth-token token})}
                   params  {:uri uri
-                           :timeout 5000
+                           :timeout 6000
                            :method :post
                            :headers headers
                            :body body}
@@ -187,7 +209,6 @@
 
     (db/with-atomic [conn pool]
       (let [rows   (db/exec! conn [sql:retrieve-batch-of-audit-log])
-
             xform  (comp (map decode-row)
                          (map row->event))
             events (into [] xform rows)]

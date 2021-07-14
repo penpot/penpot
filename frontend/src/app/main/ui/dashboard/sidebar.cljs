@@ -9,13 +9,11 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.main.data.comments :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
-   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.forms :as fm]
@@ -24,23 +22,17 @@
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i]
-   [app.util.avatars :as avatars]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.router :as rt]
-   [app.util.time :as dt]
-   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [goog.functions :as f]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (mf/defc sidebar-project
-  [{:keys [item team-id selected?] :as props}]
+  [{:keys [item selected?] :as props}]
   (let [dstate           (mf/deref refs/dashboard-local)
         selected-files   (:selected-files dstate)
         selected-project (:selected-project dstate)
@@ -111,7 +103,7 @@
         on-drop
         (mf/use-callback
          (mf/deps item selected-files)
-         (fn [e]
+         (fn [_]
            (swap! local assoc :dragging? false)
            (when (not= selected-project (:id item))
              (let [data  {:ids selected-files
@@ -157,7 +149,7 @@
 
         on-search-blur
         (mf/use-callback
-         (fn [event]
+         (fn [_]
            (reset! focused? false)))
 
         on-search-change
@@ -170,7 +162,7 @@
         on-clear-click
         (mf/use-callback
          (mf/deps team-id)
-         (fn [event]
+         (fn [_]
            (let [search-input (dom/get-element "search-input")]
              (dom/clean-value! search-input)
              (dom/focus! search-input)
@@ -189,7 +181,7 @@
        :on-change on-search-change
        :ref #(when % (set! (.-value %) search-term))}]
 
-     (if (or @focused? (not (empty? search-term)))
+     (if (or @focused? (seq search-term))
        [:div.clear-search
         {:on-click on-clear-click}
         i/close]
@@ -199,9 +191,8 @@
         i/search])]))
 
 (mf/defc teams-selector-dropdown
-  [{:keys [team profile] :as props}]
-  (let [show-dropdown? (mf/use-state false)
-        teams          (mf/deref refs/teams)
+  [{:keys [profile] :as props}]
+  (let [teams (mf/deref refs/teams)
 
         on-create-clicked
         (mf/use-callback
@@ -246,7 +237,7 @@
 
         on-cancel   (st/emitf (modal/hide))
         on-accept
-        (fn [event]
+        (fn [_]
           (let [member-id (get-in @form [:clean-data :member-id])]
             (accept member-id)))]
 
@@ -290,9 +281,6 @@
 
         members-map (mf/deref refs/dashboard-team-members)
         members     (vals members-map)
-
-        on-create-clicked
-        (st/emitf (modal/show :team-form {}))
 
         on-rename-clicked
         (st/emitf (modal/show :team-form {:team team}))
@@ -358,9 +346,7 @@
 
 (mf/defc sidebar-team-switch
   [{:keys [team profile] :as props}]
-  (let [show-dropdown? (mf/use-state false)
-
-        show-team-opts-ddwn? (mf/use-state false)
+  (let [show-team-opts-ddwn? (mf/use-state false)
         show-teams-ddwn?     (mf/use-state false)]
 
     [:div.sidebar-team-switch

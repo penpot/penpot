@@ -5,6 +5,46 @@
 ### :sparkles: New features
 
 ### :bug: Bugs fixed
+
+### :arrow_up: Deps updates
+### :boom: Breaking changes
+### :heart: Community contributions by (Thank you!)
+
+## 1.7.0-alpha
+
+### :sparkles: New features
+
+- Allow nested asset groups [Taiga #1716](https://tree.taiga.io/project/penpot/us/1716).
+- Allow to ungroup assets [Taiga #1719](https://tree.taiga.io/project/penpot/us/1719).
+- Allow to rename assets groups [Taiga #1721](https://tree.taiga.io/project/penpot/us/1721).
+- Component constraints (left, right, left and right, center, scale...) [Taiga #1125](https://tree.taiga.io/project/penpot/us/1125).
+- Export elements to PDF [Taiga #519](https://tree.taiga.io/project/penpot/us/519).
+- Memorize collapse state of assets in panel [Taiga #1718](https://tree.taiga.io/project/penpot/us/1718).
+- Headers button sets and menus review [Taiga #1663](https://tree.taiga.io/project/penpot/us/1663).
+- Preserve components if possible, when pasted into a different file [Taiga #1063](https://tree.taiga.io/project/penpot/issue/1063).
+- Add the ability to offload file data to a cheaper storage when file becomes inactive.
+- Import/Export Penpot files from dashboard.
+- Double click won't make a shape a path until you change a node [Taiga #1796](https://tree.taiga.io/project/penpot/us/1796)
+- Incremental area selection [#779](https://github.com/penpot/penpot/discussions/779)
+
+### :bug: Bugs fixed
+
+- Process numeric input changes only if the value actually changed.
+- Remove unnecesary redirect from history when user goes to workspace from dashboard [Taiga #1820](https://tree.taiga.io/project/penpot/issue/1820).
+- Detach shapes from deleted assets [Taiga #1850](https://tree.taiga.io/project/penpot/issue/1850).
+- Fix tooltip position on view application [Taiga #1819](https://tree.taiga.io/project/penpot/issue/1819).
+- Fix dashboard navigation on moving file to other team [Taiga #1817](https://tree.taiga.io/project/penpot/issue/1817).
+- Fix workspace header presence styles and invalid link [Taiga #1813](https://tree.taiga.io/project/penpot/issue/1813).
+- Fix color-input wrong behavior (on workspace page color) [Taiga #1795](https://tree.taiga.io/project/penpot/issue/1795).
+- Fix file contextual menu in shared libraries at dashboard [Taiga #1865](https://tree.taiga.io/project/penpot/issue/1865).
+- Fix problem with color picker and fonts [#1049](https://github.com/penpot/penpot/issues/1049)
+- Fix negative values in blur [Taiga #1815](https://tree.taiga.io/project/penpot/issue/1815)
+- Fix problem when editing color in group [Taiga #1816](https://tree.taiga.io/project/penpot/issue/1816)
+- Fix resize/rotate with mouse buttons different than left [#1060](https://github.com/penpot/penpot/issues/1060)
+- Fix header partialy visible on fullscreen viewer mode [Taiga #1875](https://tree.taiga.io/project/penpot/issue/1875)
+- Fix dynamic alignment enabled with hidden objects [#1063](https://github.com/penpot/penpot/issues/1063)
+
+
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)

@@ -10,18 +10,14 @@
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.persistence :as dwp]
-   [app.main.repo :as rp]
-   [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.util.avatars :as avatars]
-   [app.util.i18n :as i18n :refer [tr]]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [app.util.websockets :as ws]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -74,7 +70,7 @@
               ;; Process all incoming messages.
               (->> (ws/-stream wsession)
                    (rx/filter ws/message?)
-                   (rx/map (comp t/decode :payload))
+                   (rx/map (comp t/decode-str :payload))
                    (rx/filter #(s/valid? ::message %))
                    (rx/map process-message))
 
@@ -104,7 +100,7 @@
   [file-id]
   (ptk/reify ::send-keepalive
     ptk/EffectEvent
-    (effect [_ state stream]
+    (effect [_ state _]
       (when-let [ws (get-in state [:ws file-id])]
         (ws/send! ws {:type :keepalive})))))
 
@@ -112,9 +108,8 @@
   [file-id point]
   (ptk/reify ::handle-pointer-update
     ptk/EffectEvent
-    (effect [_ state stream]
+    (effect [_ state _]
       (let [ws (get-in state [:ws file-id])
-            sid (:session-id state)
             pid (:current-page-id state)
             msg {:type :pointer-update
                  :page-id pid
@@ -128,7 +123,7 @@
   [file-id]
   (ptk/reify ::finalize
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (when-let [ws (get-in state [:ws file-id])]
         (ws/-close ws))
       (rx/of ::finalize))))
@@ -187,7 +182,7 @@
           (update state :workspace-presence update-presence))))))
 
 (defn handle-pointer-update
-  [{:keys [page-id profile-id session-id x y] :as msg}]
+  [{:keys [page-id session-id x y] :as msg}]
   (ptk/reify ::handle-pointer-update
     ptk/UpdateEvent
     (update [_ state]
@@ -213,7 +208,7 @@
   (us/assert ::file-change-event msg)
   (ptk/reify ::handle-file-change
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ _]
       (let [changes-by-pages (group-by :page-id changes)
             process-page-changes
             (fn [[page-id changes]]
@@ -239,7 +234,7 @@
   (us/assert ::library-change-event msg)
   (ptk/reify ::handle-library-change
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (when (contains? (:workspace-libraries state) file-id)
         (rx/of (dwl/ext-library-changed file-id modified-at revn changes)
                (dwl/notify-sync-file file-id))))))

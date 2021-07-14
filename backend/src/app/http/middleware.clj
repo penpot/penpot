@@ -6,13 +6,14 @@
 
 (ns app.http.middleware
   (:require
+   [app.common.transit :as t]
    [app.metrics :as mtx]
    [app.util.json :as json]
    [app.util.logging :as l]
-   [app.util.transit :as t]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
    [clojure.java.io :as io]
+   [ring.core.protocols :as rp]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
@@ -73,17 +74,28 @@
   {:name ::parse-request-body
    :compile (constantly wrap-parse-request-body)})
 
+(defn- transit-streamable-body
+  [data opts]
+  (reify rp/StreamableResponseBody
+    (write-body-to-stream [_ response output-stream]
+      (try
+        (let [tw (t/writer output-stream opts)]
+          (t/write! tw data))
+        (finally
+          (.close ^java.io.OutputStream output-stream))))))
+
 (defn- impl-format-response-body
-  [response]
+  [response request]
   (let [body (:body response)
-        type :json-verbose]
+        opts {:type :json-verbose}]
     (cond
       (coll? body)
       (-> response
-          (assoc :body (t/encode body {:type type}))
-          (update :headers assoc
-                  "content-type"
-                  "application/transit+json"))
+          (update :headers assoc "content-type" "application/transit+json")
+          (assoc :body
+                 (if (= :post (:request-method request))
+                   (transit-streamable-body body opts)
+                   (t/encode body opts))))
 
       (nil? body)
       (assoc response :status 204 :body "")
@@ -96,7 +108,7 @@
   (fn [request]
     (let [response (handler request)]
       (cond-> response
-        (map? response) (impl-format-response-body)))))
+        (map? response) (impl-format-response-body request)))))
 
 (def format-response-body
   {:name ::format-response-body

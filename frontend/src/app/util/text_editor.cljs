@@ -9,15 +9,7 @@
   (:require
    ["./text_editor_impl.js" :as impl]
    ["draft-js" :as draft]
-   [app.common.attrs :as attrs]
-   [app.common.data :as d]
-   [app.common.text :as txt]
-   [app.common.uuid :as uuid]
-   [app.util.array :as arr]
-   [app.util.object :as obj]
-   [app.util.transit :as t]
-   [clojure.walk :as walk]
-   [cuerdas.core :as str]))
+   [app.common.text :as txt]))
 
 ;; --- CONVERSION
 

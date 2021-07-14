@@ -6,14 +6,10 @@
 
 (ns app.main.ui.workspace.sidebar.options.common
   (:require
-   [rumext.alpha :as mf]
-   [app.util.dom :as dom]))
+   [rumext.alpha :as mf]))
 
-(mf/defc advanced-options [{:keys [visible? on-close children]}]
-  (let [ref (mf/use-ref nil)
-        handle-click (fn [event] (when on-close
-                                   (do (dom/stop-propagation event)
-                                       (on-close))))]
+(mf/defc advanced-options [{:keys [visible? children]}]
+  (let [ref (mf/use-ref nil)]
     (mf/use-effect
      (mf/deps visible?)
      (fn []
@@ -22,9 +18,7 @@
            (.scrollIntoViewIfNeeded ^js node)))))
 
     (when visible?
-      [:*
-       [:div.focus-overlay {:on-click handle-click}]
-       [:div.advanced-options-wrapper {:ref ref}
-        [:div.advanced-options {}
-         children]]])))
+      [:div.advanced-options-wrapper {:ref ref}
+       [:div.advanced-options {}
+        children]])))
 

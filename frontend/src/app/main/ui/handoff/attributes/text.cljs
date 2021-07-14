@@ -11,11 +11,9 @@
    [app.main.store :as st]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.handoff.attributes.common :refer [color-row]]
-   [app.main.ui.icons :as i]
-   [app.util.i18n :refer [tr]]
    [app.util.code-gen :as cg]
    [app.util.color :as uc]
-   [app.util.webapi :as wapi]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -68,7 +66,7 @@
   ([style & properties]
    (cg/generate-css-props style properties params)))
 
-(mf/defc typography-block [{:keys [shape text style full-style]}]
+(mf/defc typography-block [{:keys [text style full-style]}]
   (let [typography-library-ref (mf/use-memo
                                 (mf/deps (:typography-ref-file style))
                                 (make-typographies-library-ref (:typography-ref-file style)))
@@ -77,7 +75,6 @@
         file-typographies (mf/deref file-typographies-ref)
 
         color-format (mf/use-state :hex)
-        color (shape->color style)
 
         typography (get (or typography-library file-typographies) (:typography-ref-id style))]
 
@@ -163,14 +160,11 @@
     m1))
 
 (mf/defc text-block [{:keys [shape]}]
-  (let [font (cg/search-text-attrs (:content shape)
-                                   (keys txt/default-text-attrs))
-        style-text-blocks (->> (keys txt/default-text-attrs)
+  (let [style-text-blocks (->> (keys txt/default-text-attrs)
                                (cg/parse-style-text-blocks (:content shape))
-                               (remove (fn [[style text]] (str/empty? (str/trim text))))
-                               (mapv (fn [[style text]] (vector (merge txt/default-text-attrs style) text))))
+                               (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                               (mapv (fn [[style text]] (vector (merge txt/default-text-attrs style) text))))]
 
-        font (merge txt/default-text-attrs font)]
     (for [[idx [full-style text]] (map-indexed vector style-text-blocks)]
       (let [previus-style (first (nth style-text-blocks (dec idx) nil))
             style (remove-equal-values full-style previus-style)

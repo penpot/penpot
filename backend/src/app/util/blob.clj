@@ -8,8 +8,8 @@
   "A generic blob storage encoding. Mainly used for page data, page
   options and txlog payload storage."
   (:require
+   [app.common.transit :as t]
    [app.config :as cf]
-   [app.util.transit :as t]
    [taoensso.nippy :as n])
   (:import
    java.io.ByteArrayInputStream
@@ -108,7 +108,7 @@
         cdata (byte-array mlen)
         clen  (Zstd/compressByteArray ^bytes cdata 0 mlen
                                       ^bytes data 0 dlen
-                                      4)]
+                                      6)]
     (with-open [^ByteArrayOutputStream baos (ByteArrayOutputStream. (+ (alength cdata) 2 4))
                 ^DataOutputStream dos (DataOutputStream. baos)]
       (.writeShort dos (short 3)) ;; version number

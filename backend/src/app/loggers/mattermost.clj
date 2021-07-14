@@ -40,22 +40,24 @@
 
 (defmethod ig/init-key ::reporter
   [_ {:keys [receiver uri] :as cfg}]
-  (l/info :msg "intializing mattermost error reporter" :uri uri)
-  (let [output (a/chan (a/sliding-buffer 128)
-                       (filter #(= (:level %) "error")))]
-    (receiver :sub output)
-    (a/go-loop []
-      (let [msg (a/<! output)]
-        (if (nil? msg)
-          (l/info :msg "stoping error reporting loop")
-          (do
-            (a/<! (handle-event cfg msg))
-            (recur)))))
-    output))
+  (when uri
+    (l/info :msg "initializing mattermost error reporter" :uri uri)
+    (let [output (a/chan (a/sliding-buffer 128)
+                         (filter #(= (:level %) "error")))]
+      (receiver :sub output)
+      (a/go-loop []
+        (let [msg (a/<! output)]
+          (if (nil? msg)
+            (l/info :msg "stoping error reporting loop")
+            (do
+              (a/<! (handle-event cfg msg))
+              (recur)))))
+      output)))
 
 (defmethod ig/halt-key! ::reporter
   [_ output]
-  (a/close! output))
+  (when output
+    (a/close! output)))
 
 (defn- send-mattermost-notification!
   [cfg {:keys [host version id] :as cdata}]
@@ -110,7 +112,7 @@
   (aa/with-thread executor
     (try
       (let [cdata (parse-event event)]
-        (when (and (:uri cfg) @enabled-mattermost)
+        (when @enabled-mattermost
           (send-mattermost-notification! cfg cdata))
         (persist-on-database! cfg cdata))
       (catch Exception e

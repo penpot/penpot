@@ -1,0 +1,17 @@
+{:deps {:aliases [:dev]}
+ ;; :http {:port 3448}
+ ;; :nrepl {:port 3447}
+ :jvm-opts ["-Xmx700m" "-Xms100m" "-XX:+UseSerialGC" "-XX:-OmitStackTraceInFastThrow"]
+
+ :builds
+ {:test
+  {:target :node-test
+   :output-to "target/tests.js"
+   :ns-regexp "^app.common.*-test$"
+   ;; :autorun true
+
+   :compiler-options
+   {:output-feature-set :es-next
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}}}}
+

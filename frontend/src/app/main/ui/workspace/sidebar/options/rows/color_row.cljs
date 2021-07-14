@@ -6,23 +6,21 @@
 
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
+   [app.common.data :as d]
    [app.common.math :as math]
    [app.common.pages :as cp]
-   [app.common.data :as d]
-   [app.util.dom :as dom]
-   [app.util.data :refer [classnames]]
-   [app.util.i18n :as i18n :refer [tr]]
-   [app.util.color :as uc]
-   [app.main.refs :as refs]
    [app.main.data.modal :as modal]
-   [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
-   [app.main.ui.context :as ctx]
+   [app.main.refs :as refs]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.color-input :refer [color-input]]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]))
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.context :as ctx]
+   [app.main.ui.hooks :as h]
+   [app.main.ui.icons :as i]
+   [app.util.color :as uc]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
+   [rumext.alpha :as mf]))
 
 (defn color-picker-callback
   [color disable-gradient disable-opacity handle-change-color handle-open handle-close]
@@ -163,7 +161,7 @@
         (when (and (not disable-opacity)
                    (not (:gradient color)))
           [:div.input-element
-           {:class (classnames :percentail (not= (:opacity color) :multiple))}
+           {:class (dom/classnames :percentail (not= (:opacity color) :multiple))}
            [:> numeric-input {:value (-> color :opacity opacity->string)
                               :placeholder (tr "settings.multiple")
                               :on-click select-all

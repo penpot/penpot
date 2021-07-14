@@ -100,6 +100,7 @@
                :id (:id mobj)
                :media-id (:media-id mobj)
                :thumbnail-id (:thumbnail-id mobj))
+
       ;; NOTE: deleting the file-media-object in the database
       ;; automatically marks as toched the referenced storage
       ;; objects. The touch mechanism is needed because many files can

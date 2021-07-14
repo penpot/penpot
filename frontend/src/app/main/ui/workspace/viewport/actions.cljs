@@ -12,10 +12,10 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.drawing :as dd]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.path :as dwdp]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.workspace.viewport.utils :as utils]
-   [app.main.data.workspace.path :as dwdp]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.keyboard :as kbd]
@@ -27,9 +27,9 @@
   (:import goog.events.WheelEvent))
 
 (defn on-mouse-down
-  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing? path-editing? drawing-path? create-comment?]
+  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment?]
   (mf/use-callback
-   (mf/deps id blocked hidden type selected edition drawing-tool text-editing? path-editing? drawing-path? create-comment?)
+   (mf/deps id blocked hidden type selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment?)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
                (dom/class? (dom/get-target bevent) "viewport-selrect"))
@@ -65,12 +65,12 @@
                drawing-tool
                (st/emit! (dd/start-drawing drawing-tool))
 
-               path-editing?
+               node-editing?
                ;; Handle path node area selection
-               (st/emit! (dwdp/handle-selection shift?))
+               (st/emit! (dwdp/handle-area-selection shift?))
 
                (or (not id) (and frame? (not selected?)))
-               (st/emit! (dw/handle-selection shift?))
+               (st/emit! (dw/handle-area-selection shift?))
 
                (not drawing-tool)
                (st/emit! (when (or shift? (not selected?))
@@ -158,9 +158,7 @@
            {:keys [id type] :as shape} @hover
 
            frame? (= :frame type)
-           group? (= :group type)
-           text?  (= :text type)
-           path?  (= :path type)]
+           group? (= :group type)]
 
        (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?))
 
@@ -174,12 +172,8 @@
                  (reset! hover-ids (into [] (rest @hover-ids)))
                  (st/emit! (dw/select-shape (:id selected))))
 
-               (and (not= id edition) (or text? path?))
+               (not= id edition)
                (st/emit! (dw/select-shape id)
-                         (dw/start-editing-selected))
-
-               :else
-               (st/emit! (dw/selected-to-path)
                          (dw/start-editing-selected))))))))
 
 (defn on-context-menu
@@ -290,8 +284,7 @@
       (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta?))))))
 
 (defn on-mouse-move [viewport-ref zoom]
-  (let [last-position (mf/use-var nil)
-        viewport (mf/ref-val viewport-ref)]
+  (let [last-position (mf/use-var nil)]
     (mf/use-callback
      (mf/deps zoom)
      (fn [event]
@@ -477,7 +470,7 @@
 
 (defn on-resize [viewport-ref]
  (mf/use-callback
-  (fn [event]
+  (fn [_]
     (let [node (mf/ref-val viewport-ref)
           prnt (dom/get-parent node)
           size (dom/get-client-size prnt)]

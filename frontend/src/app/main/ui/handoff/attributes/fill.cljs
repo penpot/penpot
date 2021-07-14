@@ -6,13 +6,12 @@
 
 (ns app.main.ui.handoff.attributes.fill
   (:require
-   [rumext.alpha :as mf]
-   [app.util.i18n :refer [t]]
-   [app.util.color :as uc]
-   [app.main.ui.icons :as i]
-   [app.util.code-gen :as cg]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.handoff.attributes.common :refer [color-row]]))
+   [app.main.ui.handoff.attributes.common :refer [color-row]]
+   [app.util.code-gen :as cg]
+   [app.util.color :as uc]
+   [app.util.i18n :refer [tr]]
+   [rumext.alpha :as mf]))
 
 (def fill-attributes [:fill-color :fill-color-gradient])
 
@@ -36,7 +35,7 @@
    {:to-prop "background"
     :format #(uc/color->background (shape->color shape))}))
 
-(mf/defc fill-block [{:keys [shape locale]}]
+(mf/defc fill-block [{:keys [shape]}]
   (let [color-format (mf/use-state :hex)
         color (shape->color shape)]
 
@@ -46,16 +45,15 @@
                    :copy-data (copy-data shape)}]))
 
 (mf/defc fill-panel
-  [{:keys [shapes locale]}]
+  [{:keys [shapes]}]
   (let [shapes (->> shapes (filter has-color?))]
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
-        [:div.attributes-block-title-text (t locale "handoff.attributes.fill")]
+        [:div.attributes-block-title-text (tr "handoff.attributes.fill")]
         (when (= (count shapes) 1)
           [:& copy-button {:data (copy-data (first shapes))}])]
 
        (for [shape shapes]
          [:& fill-block {:key (str "fill-block-" (:id shape))
-                         :shape shape
-                         :locale locale}])])))
+                         :shape shape}])])))

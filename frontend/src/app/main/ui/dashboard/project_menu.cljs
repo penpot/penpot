@@ -10,17 +10,17 @@
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
-   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.dashboard.import :as udi]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 (mf/defc project-menu
-  [{:keys [project show? on-edit on-menu-close top left] :as props}]
+  [{:keys [project show? on-edit on-menu-close top left on-import] :as props}]
   (assert (some? project) "missing `project` prop")
   (assert (boolean? show?) "missing `show?` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
@@ -59,7 +59,7 @@
                       (dd/move-project (with-meta data mdata)))))
 
         delete-fn
-        (fn [event]
+        (fn [_]
           (st/emit! (dm/success (tr "dashboard.success-delete-project"))
                     (dd/delete-project project)
                     (dd/go-to-projects (:team-id project))))
@@ -71,22 +71,42 @@
            :title (tr "modals.delete-project-confirm.title")
            :message (tr "modals.delete-project-confirm.message")
            :accept-label (tr "modals.delete-project-confirm.accept")
-           :on-accept delete-fn}))]
+           :on-accept delete-fn}))
 
-    [:& context-menu {:on-close on-menu-close
-                      :show show?
-                      :fixed? (or (not= top 0) (not= left 0))
-                      :min-width? true
-                      :top top
-                      :left left
-                      :options [(when-not (:is-default project)
-                                  [(tr "labels.rename") on-edit])
-                                [(tr "dashboard.duplicate") on-duplicate]
-                                [(tr "dashboard.pin-unpin") toggle-pin]
-                                (when (seq teams)
-                                  [(tr "dashboard.move-to") nil
-                                   (for [team teams]
-                                     [(:name team) (on-move (:id team))])])
-                                [:separator]
-                                [(tr "labels.delete") on-delete]]}]))
+
+        file-input (mf/use-ref nil)
+
+        on-import-files
+        (mf/use-callback
+         (fn []
+           (dom/click (mf/ref-val file-input))))
+
+        on-finish-import
+        (mf/use-callback
+         (fn []
+           (when (some? on-import) (on-import))))]
+
+    [:*
+     [:& udi/import-form {:ref file-input
+                          :project-id (:id project)
+                          :on-finish-import on-finish-import}]
+     [:& context-menu
+      {:on-close on-menu-close
+       :show show?
+       :fixed? (or (not= top 0) (not= left 0))
+       :min-width? true
+       :top top
+       :left left
+       :options [(when-not (:is-default project)
+                   [(tr "labels.rename") on-edit])
+                 [(tr "dashboard.duplicate") on-duplicate]
+                 [(tr "dashboard.pin-unpin") toggle-pin]
+                 (when (seq teams)
+                   [(tr "dashboard.move-to") nil
+                    (for [team teams]
+                      [(:name team) (on-move (:id team))])])
+                 (when (some? on-import)
+                   [(tr "dashboard.import") on-import-files])
+                 [:separator]
+                 [(tr "labels.delete") on-delete]]}]]))
 

@@ -7,10 +7,8 @@
 (ns app.main.ui.dashboard.team
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.main.constants :as c]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
@@ -23,15 +21,12 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
-   [app.util.time :as dt]
    [cljs.spec.alpha :as s]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
-  [{:keys [section team] :as props}]
+  [{:keys [section] :as props}]
   (let [go-members        (st/emitf (dd/go-to-team-members))
         go-settings       (st/emitf (dd/go-to-team-settings))
         invite-member     (st/emitf (modal/show {:type ::invite-member}))
@@ -43,7 +38,7 @@
       [:h1 (cond
              members-section? (tr "labels.members")
              settings-section? (tr "labels.settings")
-             nil)]]
+             :else nil)]]
      [:nav
       [:ul
        [:li {:class (when members-section? "active")}
@@ -96,7 +91,7 @@
               (dm/error (tr "errors.member-is-muted"))
 
               (and (= :validation type)
-                   (= :email-has-permanent-bounces))
+                   (= :email-has-permanent-bounces code))
               (dm/error (tr "errors.email-has-permanent-bounces" email))
 
               :else
@@ -136,7 +131,7 @@
         set-owner-fn (partial set-role :owner)
         set-admin    (partial set-role :admin)
         set-editor   (partial set-role :editor)
-        set-viewer   (partial set-role :viewer)
+        ;; set-viewer   (partial set-role :viewer)
 
         set-owner
         (st/emitf (modal/show
@@ -242,7 +237,7 @@
                         :members-map members-map}]]]))
 
 (mf/defc team-settings-page
-  [{:keys [team profile] :as props}]
+  [{:keys [team] :as props}]
   (let [finput      (mf/use-ref)
 
         members-map (mf/deref refs/dashboard-team-members)
@@ -285,7 +280,7 @@
           [:img {:src (cfg/resolve-team-photo-url team)}]
           [:& file-uploader {:accept "image/jpeg,image/png"
                              :multi false
-                             :input-ref finput
+                             :ref finput
                              :on-selected on-file-selected}]]]
 
         [:div.block.owner-block

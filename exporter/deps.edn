@@ -1,9 +1,23 @@
-{:paths []
- :deps {}
+{:paths ["src" "vendor" "resources" "test"]
+ :deps
+ {penpot/common       {:local/root "../common"}
+  binaryage/devtools  {:mvn/version "RELEASE"}
+  metosin/reitit-core {:mvn/version "0.5.13"}
+  lambdaisland/glogi  {:mvn/version "1.0.106"}
+  funcool/beicon      {:mvn/version "2021.04.29-0"}
+  }
  :aliases
  {:outdated
   {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}
                 org.slf4j/slf4j-nop {:mvn/version "RELEASE"}}
    :main-opts ["-m" "antq.core"]}
+
+  :dev
+  {:extra-deps
+   {thheller/shadow-cljs {:mvn/version "2.14.1"}}}
+
+  :shadow-cljs
+  {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
+
   }}
 

@@ -6,13 +6,14 @@
 
 (ns app.main.ui.workspace.header
   (:require
+   [app.common.data :as d]
    [app.common.math :as mth]
    [app.config :as cfg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
-   [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
@@ -21,6 +22,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
+   [beicon.core :as rx]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -89,8 +91,6 @@
   (let [show-menu? (mf/use-state false)
         editing? (mf/use-state false)
 
-        locale     (mf/deref i18n/locale)
-
         edit-input-ref (mf/use-ref nil)
 
         add-shared-fn
@@ -125,7 +125,7 @@
                      :on-accept del-shared-fn})))
 
 
-        handle-blur (fn [event]
+        handle-blur (fn [_]
                       (let [value (-> edit-input-ref mf/ref-val dom/get-value)]
                         (st/emit! (dw/rename-file (:id file) value)))
                       (reset! editing? false))
@@ -135,7 +135,27 @@
                                 (handle-blur event)))
         start-editing-name (fn [event]
                              (dom/prevent-default event)
-                             (reset! editing? true))]
+                             (reset! editing? true))
+
+        on-export-files
+        (mf/use-callback
+         (mf/deps file team-id)
+         (fn [_]
+           (->> (rx/of file)
+                (rx/flat-map
+                 (fn [file]
+                   (->> (rp/query :file-libraries {:file-id (:id file)})
+                        (rx/map #(assoc file :has-libraries? (d/not-empty? %))))))
+                (rx/reduce conj [])
+                (rx/subs
+                 (fn [files]
+                   (st/emit!
+                    (modal/show
+                     {:type :export
+                      :team-id team-id
+                      :has-libraries? (->> files (some :has-libraries?))
+                      :files files})))))))]
+
     (mf/use-effect
      (mf/deps @editing?)
      #(when @editing?
@@ -231,6 +251,9 @@
          [:li {:on-click on-add-shared}
           [:span (tr "dashboard.add-shared")]])
 
+       [:li.export-file {:on-click on-export-files}
+        [:span (tr "dashboard.export-single")]]
+
        (when cfg/feedback-enabled
          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
           [:span (tr "labels.give-feedback")]
@@ -243,9 +266,7 @@
   [{:keys [file layout project page-id] :as props}]
   (let [team-id  (:team-id project)
         zoom     (mf/deref refs/selected-zoom)
-        router   (mf/deref refs/router)
         params   {:page-id page-id :file-id (:id file)}
-        view-url (rt/resolve router :viewer params {:index 0})
 
         go-back
         (mf/use-callback
@@ -282,7 +303,6 @@
 
       [:a.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
        {:alt (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
-        :href (str "#" view-url)
         :on-click go-viewer}
        i/play]]]))
 

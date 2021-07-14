@@ -6,12 +6,13 @@
 
 (ns app.util.dom
   (:require
-   [app.common.exceptions :as ex]
-   [app.common.geom.point :as gpt]
-   [app.util.object :as obj]
-   [app.util.globals :as globals]
-   [cuerdas.core :as str]
-   [goog.dom :as dom]))
+    [app.common.exceptions :as ex]
+    [app.common.geom.point :as gpt]
+    [app.util.globals :as globals]
+    [app.util.object :as obj]
+    [cuerdas.core :as str]
+    [goog.dom :as dom]
+    [promesa.core :as p]))
 
 ;; --- Deprecated methods
 
@@ -44,6 +45,18 @@
   [title]
   (set! (.-title globals/document) title))
 
+(defn set-page-style
+  [style]
+  (let [head (first (.getElementsByTagName ^js globals/document "head"))
+        style-str (str/join "\n"
+                            (map (fn [[k v]]
+                                   (str (name k) ": " v ";"))
+                                 style))]
+    (.insertAdjacentHTML head "beforeend"
+                         (str "<style>"
+                              "  @page {" style-str "}"
+                              "</style>"))))
+
 (defn get-element-by-class
   ([classname]
    (dom/getElementByClass classname))
@@ -53,6 +66,10 @@
 (defn get-element
   [id]
   (dom/getElement id))
+
+(defn get-elements-by-tag
+  [node tag]
+  (.getElementsByTagName node tag))
 
 (defn stop-propagation
   [e]
@@ -123,7 +140,7 @@
 
 (defn set-value!
   [node value]
-  (set! (.-value node) value))
+  (set! (.-value ^js node) value))
 
 (defn select-text!
   [node]
@@ -208,6 +225,10 @@
   [node]
   (.focus node))
 
+(defn blur!
+  [node]
+  (.blur node))
+
 (defn fullscreen?
   []
   (cond
@@ -279,13 +300,15 @@
 (defn mtype->extension [mtype]
   ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
   (case mtype
-    "image/apng"    "apng"
-    "image/avif"    "avif"
-    "image/gif"     "gif"
-    "image/jpeg"    "jpg"
-    "image/png"     "png"
-    "image/svg+xml" "svg"
-    "image/webp"    "webp"
+    "image/apng"         "apng"
+    "image/avif"         "avif"
+    "image/gif"          "gif"
+    "image/jpeg"         "jpg"
+    "image/png"          "png"
+    "image/svg+xml"      "svg"
+    "image/webp"         "webp"
+    "application/zip"    "zip"
+    "application/penpot" "penpot"
     nil))
 
 (defn set-attribute [^js node ^string attr value]
@@ -311,3 +334,48 @@
          (>= (.-left rect) 0)
          (<= (.-bottom rect) height)
          (<= (.-right rect) width))))
+
+(defn trigger-download-uri
+  [filename mtype uri]
+  (let [link (create-element "a")
+        extension (mtype->extension mtype)
+        filename (if extension
+                   (str filename "." extension)
+                   filename)]
+    (obj/set! link "href" uri)
+    (obj/set! link "download" filename)
+    (obj/set! (.-style ^js link) "display" "none")
+    (.appendChild (.-body ^js js/document) link)
+    (.click link)
+    (.remove link)))
+
+(defn trigger-download
+  [filename blob]
+  (trigger-download-uri filename (.-type ^js blob) (create-uri blob)))
+
+(defn save-as
+  [uri filename mtype description]
+
+  ;; Only chrome supports the save dialog
+  (if (obj/contains? globals/window "showSaveFilePicker")
+    (let [extension (mtype->extension mtype)
+          opts {:suggestedName (str filename "." extension)
+                :types [{:description description
+                         :accept { mtype [(str "." extension)]}}]}]
+
+      (-> (p/let [file-system (.showSaveFilePicker globals/window (clj->js opts))
+                  writable    (.createWritable file-system)
+                  response    (js/fetch uri)
+                  blob        (.blob response)
+                  _           (.write writable blob)]
+            (.close writable))
+          (p/catch
+              #(when-not (and (= (type %) js/DOMException)
+                              (= (.-name %) "AbortError"))
+                 (trigger-download-uri filename mtype uri)))))
+
+    (trigger-download-uri filename mtype uri)))
+
+(defn left-mouse? [bevent]
+  (let [event  (.-nativeEvent bevent)]
+    (= 1 (.-which event))))

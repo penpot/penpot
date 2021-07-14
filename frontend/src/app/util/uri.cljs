@@ -6,8 +6,8 @@
 
 (ns app.util.uri
   (:require
-   [cuerdas.core :as str]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [cuerdas.core :as str]))
 
 (defn uri-name [url]
   (let [query-idx (str/last-index-of url "?")

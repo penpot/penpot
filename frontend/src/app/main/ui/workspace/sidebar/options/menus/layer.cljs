@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.math :as mth]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
@@ -54,25 +53,25 @@
         handle-set-hidden
         (mf/use-callback
          (mf/deps change!)
-         (fn [event]
+         (fn [_]
            (change! :hidden true)))
 
         handle-set-visible
         (mf/use-callback
          (mf/deps change!)
-         (fn [event]
+         (fn [_]
            (change! :hidden false)))
 
         handle-set-blocked
         (mf/use-callback
          (mf/deps change!)
-         (fn [event]
+         (fn [_]
            (change! :blocked true)))
 
         handle-set-unblocked
         (mf/use-callback
          (mf/deps change!)
-         (fn [event]
+         (fn [_]
            (change! :blocked false)))]
 
     [:div.element-set
@@ -92,7 +91,7 @@
             [:option {:value "multiple"} "--"])
 
         [:option {:value "normal"} (tr "workspace.options.layer-options.blend-mode.normal")]
-        
+
         [:option {:value "darken"} (tr "workspace.options.layer-options.blend-mode.darken")]
         [:option {:value "multiply"} (tr "workspace.options.layer-options.blend-mode.multiply")]
         [:option {:value "color-burn"} (tr "workspace.options.layer-options.blend-mode.color-burn")]
@@ -127,13 +126,13 @@
         (cond
           (or (= :multiple (:hidden values)) (not (:hidden values)))
           [:div.element-set-actions-button {:on-click handle-set-hidden} i/eye]
-          
+
           :else
           [:div.element-set-actions-button {:on-click handle-set-visible} i/eye-closed])
 
         (cond
           (or (= :multiple (:blocked values)) (not (:blocked values)))
           [:div.element-set-actions-button {:on-click handle-set-blocked} i/unlock]
-          
+
           :else
           [:div.element-set-actions-button {:on-click handle-set-unblocked} i/lock])]]]]))

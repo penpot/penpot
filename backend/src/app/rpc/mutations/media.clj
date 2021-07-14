@@ -92,7 +92,7 @@
 
 
 (defn create-file-media-object
-  [{:keys [conn storage] :as cfg} {:keys [file-id is-local name content] :as params}]
+  [{:keys [conn storage] :as cfg} {:keys [id file-id is-local name content] :as params}]
   (media/validate-media-type (:content-type content))
   (let [storage      (assoc storage :conn conn)
         source-path  (fs/path (:tempfile content))
@@ -118,7 +118,7 @@
                        (sto/put-object storage {:content (sto/content (:data thumb) (:size thumb))
                                                 :content-type (:mtype thumb)}))]
     (db/insert! conn :file-media-object
-                {:id (uuid/next)
+                {:id (or id (uuid/next))
                  :file-id file-id
                  :is-local is-local
                  :name name

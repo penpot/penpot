@@ -7,15 +7,13 @@
 (ns app.main.ui.dashboard.grid
   (:require
    [app.common.math :as mth]
-   [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
-   [app.main.data.modal :as modal]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.file-menu :refer [file-menu]]
+   [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.icons :as i]
    [app.main.worker :as wrk]
@@ -23,12 +21,10 @@
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 ;; --- Grid Item Thumbnail
@@ -59,7 +55,7 @@
     (str (tr "ds.updated-at" time))))
 
 (defn create-counter-element
-  [element file-count]
+  [_element file-count]
   (let [counter-el (dom/create-element "div")]
     (dom/set-property! counter-el "class" "drag-counter")
     (dom/set-text! counter-el (str file-count))
@@ -215,25 +211,71 @@
    [:div.text (tr "dashboard.loading-files")]])
 
 (mf/defc grid
-  [{:keys [id opts files] :as props}]
-  [:section.dashboard-grid
-   (cond
-     (nil? files)
-     [:& loading-placeholder]
+  [{:keys [files project-id] :as props}]
+  (let [dragging? (mf/use-state false)
 
-     (seq files)
-     [:div.grid-row
-      (for [item files]
-        [:& grid-item
-         {:file item
-          :key (:id item)
-          :navigate? true}])]
+        on-finish-import
+        (mf/use-callback
+         (fn []
+           (st/emit! (dd/fetch-files {:project-id project-id})
+                     (dd/clear-selected-files))))
 
-     :else
-     [:& empty-placeholder])])
+        import-files (use-import-file project-id on-finish-import)
+
+        on-drag-enter
+        (mf/use-callback
+         (fn [e]
+           (when (or (dnd/has-type? e "Files")
+                     (dnd/has-type? e "application/x-moz-file"))
+             (dom/prevent-default e)
+             (reset! dragging? true))))
+
+        on-drag-over
+        (mf/use-callback
+         (fn [e]
+           (when (or (dnd/has-type? e "Files")
+                     (dnd/has-type? e "application/x-moz-file"))
+             (dom/prevent-default e))))
+
+        on-drag-leave
+        (mf/use-callback
+         (fn [e]
+           (when-not (dnd/from-child? e)
+             (reset! dragging? false))))
+
+
+        on-drop
+        (mf/use-callback
+         (fn [e]
+           (when (or (dnd/has-type? e "Files")
+                     (dnd/has-type? e "application/x-moz-file"))
+             (dom/prevent-default e)
+             (reset! dragging? false)
+             (import-files (.-files (.-dataTransfer e))))))]
+
+    [:section.dashboard-grid {:on-drag-enter on-drag-enter
+                              :on-drag-over on-drag-over
+                              :on-drag-leave on-drag-leave
+                              :on-drop on-drop}
+     (cond
+       (nil? files)
+       [:& loading-placeholder]
+
+       (seq files)
+       [:div.grid-row
+        (when @dragging?
+          [:div.grid-item])
+        (for [item files]
+          [:& grid-item
+           {:file item
+            :key (:id item)
+            :navigate? true}])]
+
+       :else
+       [:& empty-placeholder])]))
 
 (mf/defc line-grid-row
-  [{:keys [files team-id selected-files on-load-more dragging?] :as props}]
+  [{:keys [files selected-files on-load-more dragging?] :as props}]
   (let [rowref           (mf/use-ref)
 
         width            (mf/use-state nil)
@@ -288,11 +330,18 @@
          (tr "dashboard.show-all-files")]])]))
 
 (mf/defc line-grid
-  [{:keys [project-id team-id opts files on-load-more] :as props}]
+  [{:keys [project-id team-id files on-load-more] :as props}]
   (let [dragging?        (mf/use-state false)
-
         selected-files   (mf/deref refs/dashboard-selected-files)
         selected-project (mf/deref refs/dashboard-selected-project)
+
+        on-finish-import
+        (mf/use-callback
+         (fn []
+           (st/emit! (dd/fetch-recent-files)
+                     (dd/clear-selected-files))))
+
+        import-files (use-import-file project-id on-finish-import)
 
         on-drag-enter
         (mf/use-callback
@@ -303,13 +352,20 @@
               (when-not (or (dnd/from-child? e)
                             (dnd/broken-event? e))
                 (when (not= selected-project project-id)
-                  (reset! dragging? true))))))
+                  (reset! dragging? true))))
+
+            (when (or (dnd/has-type? e "Files")
+                      (dnd/has-type? e "application/x-moz-file"))
+              (dom/prevent-default e)
+              (reset! dragging? true))))
 
         on-drag-over
         (mf/use-callback
-          (fn [e]
-            (when (dnd/has-type? e "penpot/files")
-              (dom/prevent-default e))))
+         (fn [e]
+           (when (or (dnd/has-type? e "penpot/files")
+                     (dnd/has-type? e "Files")
+                     (dnd/has-type? e "application/x-moz-file"))
+             (dom/prevent-default e))))
 
         on-drag-leave
         (mf/use-callback
@@ -327,12 +383,19 @@
         (mf/use-callback
           (mf/deps files selected-files)
           (fn [e]
-            (reset! dragging? false)
-            (when (not= selected-project project-id)
-              (let [data  {:ids (into #{} (keys selected-files))
-                           :project-id project-id}
-                    mdata {:on-success on-drop-success}]
-                (st/emit! (dd/move-files (with-meta data mdata)))))))]
+            (when (or (dnd/has-type? e "Files")
+                      (dnd/has-type? e "application/x-moz-file"))
+              (dom/prevent-default e)
+              (reset! dragging? false)
+              (import-files (.-files (.-dataTransfer e))))
+
+            (when (dnd/has-type? e "penpot/files")
+              (reset! dragging? false)
+              (when (not= selected-project project-id)
+                (let [data  {:ids (into #{} (keys selected-files))
+                             :project-id project-id}
+                      mdata {:on-success on-drop-success}]
+                  (st/emit! (dd/move-files (with-meta data mdata))))))))]
 
     [:section.dashboard-grid {:on-drag-enter on-drag-enter
                               :on-drag-over on-drag-over

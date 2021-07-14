@@ -10,13 +10,14 @@
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
+   [app.common.transit :as t]
+   [app.common.uuid :as uuid]
    [app.db.sql :as sql]
    [app.metrics :as mtx]
    [app.util.json :as json]
    [app.util.logging :as l]
    [app.util.migrations :as mg]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
@@ -221,14 +222,20 @@
               (sql/delete table params opts)
               (assoc opts :return-keys true))))
 
+(defn- is-deleted?
+  [{:keys [deleted-at]}]
+  (and (dt/instant? deleted-at)
+       (< (inst-ms deleted-at)
+          (inst-ms (dt/now)))))
+
 (defn get-by-params
   ([ds table params]
    (get-by-params ds table params nil))
   ([ds table params {:keys [uncheked] :or {uncheked false} :as opts}]
    (let [res (exec-one! ds (sql/select table params opts))]
-     (when (and (not uncheked)
-                (or (:deleted-at res) (not res)))
+     (when (and (not uncheked) (or (not res) (is-deleted? res)))
        (ex/raise :type :not-found
+                 :table table
                  :hint "database object not found"))
      res)))
 
@@ -245,8 +252,11 @@
    (exec! ds (sql/select table params opts))))
 
 (defn pgobject?
-  [v]
-  (instance? PGobject v))
+  ([v]
+   (instance? PGobject v))
+  ([v type]
+   (and (instance? PGobject v)
+        (= type (.getType ^PGobject v)))))
 
 (defn pginterval?
   [v]
@@ -339,12 +349,18 @@
     (.setType "inet")
     (.setValue (str ip-addr))))
 
+(defn decode-inet
+  [^PGobject o]
+  (if (= "inet" (.getType o))
+    (.getValue o)
+    nil))
+
 (defn tjson
   "Encode as transit json."
   [data]
   (doto (org.postgresql.util.PGobject.)
     (.setType "jsonb")
-    (.setValue (t/encode-verbose-str data))))
+    (.setValue (t/encode-str data {:type :json-verbose}))))
 
 (defn json
   "Encode as plain json."
@@ -360,3 +376,25 @@
 (defn pgarray->vector
   [v]
   (vec (.getArray ^PgArray v)))
+
+
+;; --- Locks
+
+(defn- xact-check-param
+  [n]
+  (cond
+    (uuid? n) (uuid/get-word-high n)
+    (int? n)  n
+    :else (throw (IllegalArgumentException. "uuid or number allowed"))))
+
+(defn xact-lock!
+  [conn n]
+  (let [n (xact-check-param n)]
+    (exec-one! conn ["select pg_advisory_xact_lock(?::bigint) as lock" n])
+    true))
+
+(defn xact-try-lock!
+  [conn n]
+  (let [n   (xact-check-param n)
+        row (exec-one! conn ["select pg_try_advisory_xact_lock(?::bigint) as lock" n])]
+    (:lock row)))

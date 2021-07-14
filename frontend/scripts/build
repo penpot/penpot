@@ -8,7 +8,7 @@ EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS;
 
 yarn install || exit 1;
 npx gulp clean || exit 1;
-npx shadow-cljs release main --config-merge "{:release-version \"${CURRENT_HASH}\"}" $EXTRA_PARAMS || exit 1
+clojure -M:dev:shadow-cljs release main --config-merge "{:release-version \"${CURRENT_HASH}\"}" $EXTRA_PARAMS || exit 1
 npx gulp build || exit 1;
 npx gulp dist:clean || exit 1;
 npx gulp dist:copy || exit 1;

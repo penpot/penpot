@@ -6,62 +6,57 @@
 
 (ns app.main.ui.components.color-input
   (:require
-   [app.common.data :as d]
-   [app.common.math :as math]
-   [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.util.color :as uc]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [app.util.simple-math :as sm]
-   [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
 (mf/defc color-input
   {::mf/wrap-props false
    ::mf/forward-ref true}
   [props external-ref]
-  (let [value (obj/get props "value")
+  (let [value     (obj/get props "value")
         on-change (obj/get props "onChange")
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
         ;; So we use the external ref if provided, and the local one if not.
         local-ref (mf/use-ref)
-        ref (or external-ref local-ref)
+        ref       (or external-ref local-ref)
 
         parse-value
         (mf/use-callback
-          (mf/deps ref)
-          (fn []
-            (let [input-node (mf/ref-val ref)]
-              (try
-                (let [new-value (-> (dom/get-value input-node)
-                                    (uc/expand-hex)
-                                    (uc/parse-color)
-                                    (uc/prepend-hash))]
-                  (dom/set-validity! input-node "")
-                  new-value)
-              (catch :default _
-                (dom/set-validity! input-node (tr "errors.invalid-color"))
-                nil)))))
+         (mf/deps ref)
+         (fn []
+           (let [input-node (mf/ref-val ref)]
+             (try
+               (let [new-value (-> (dom/get-value input-node)
+                                   (uc/expand-hex)
+                                   (uc/parse-color)
+                                   (uc/prepend-hash))]
+                 (dom/set-validity! input-node "")
+                 new-value)
+               (catch :default _e
+                 (dom/set-validity! input-node (tr "errors.invalid-color"))
+                 nil)))))
 
         update-input
         (mf/use-callback
-          (mf/deps ref)
-          (fn [new-value]
-            (let [input-node (mf/ref-val ref)]
-              (dom/set-value! input-node (uc/remove-hash new-value)))))
+         (mf/deps ref)
+         (fn [new-value]
+           (let [input-node (mf/ref-val ref)]
+             (dom/set-value! input-node (uc/remove-hash new-value)))))
 
         apply-value
         (mf/use-callback
-          (mf/deps on-change update-input)
-          (fn [new-value]
-            (when new-value
-              (when on-change
-                (on-change new-value))
-              (update-input new-value))))
+         (mf/deps on-change update-input)
+         (fn [new-value]
+           (when new-value
+             (when on-change
+               (on-change new-value))
+             (update-input new-value))))
 
         handle-key-down
         (mf/use-callback
@@ -79,12 +74,12 @@
 
         handle-blur
         (mf/use-callback
-          (mf/deps parse-value apply-value update-input)
-          (fn [event]
-            (let [new-value (parse-value)]
-              (if new-value
-                (apply-value new-value)
-                (update-input value)))))
+         (mf/deps parse-value apply-value update-input)
+         (fn [_]
+           (let [new-value (parse-value)]
+             (if new-value
+               (apply-value new-value)
+               (update-input value)))))
 
         ;; list-id (str "colors-" (uuid/next))
 
@@ -96,6 +91,12 @@
                   (obj/set! "defaultValue" value)
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur))]
+
+    (mf/use-effect
+     (mf/deps value)
+     (fn []
+       (when-let [node (mf/ref-val ref)]
+         (dom/set-value! node value))))
 
     [:*
      [:> :input props]

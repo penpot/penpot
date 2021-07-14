@@ -6,21 +6,18 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.measures
   (:require
-   [rumext.alpha :as mf]
-   [app.main.ui.icons :as i]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
    [app.common.data :as d]
-   [app.util.dom :as dom]
-   [app.util.data :refer [classnames]]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.point :as gpt]
-   [app.main.data.workspace :as udw]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.changes :as dch]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.common.math :as math]
-   [app.util.i18n :refer [t] :as i18n]))
+   [app.main.data.workspace :as udw]
+   [app.main.data.workspace.changes :as dch]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
+   [rumext.alpha :as mf]))
 
 (def measure-attrs [:proportion-lock
                     :width :height
@@ -42,7 +39,6 @@
 (mf/defc measures-menu
   [{:keys [options ids ids-with-children values] :as props}]
   (let [options (or options #{:size :position :rotation :radius})
-        locale (i18n/use-locale)
 
         ids-with-children (or ids-with-children ids)
 
@@ -74,7 +70,7 @@
         on-proportion-lock-change
         (mf/use-callback
          (mf/deps ids)
-         (fn [event]
+         (fn [_]
            (let [new-lock (if (= proportion-lock :multiple) true (not proportion-lock))]
              (run! #(st/emit! (udw/set-shape-proportion-lock % new-lock)) ids))))
 
@@ -100,7 +96,7 @@
         on-switch-to-radius-1
         (mf/use-callback
          (mf/deps ids)
-         (fn [value]
+         (fn [_value]
            (let [radius-update
                  (fn [shape]
                    (cond-> shape
@@ -112,7 +108,7 @@
         on-switch-to-radius-4
         (mf/use-callback
          (mf/deps ids)
-         (fn [value]
+         (fn [_value]
            (let [radius-update
                  (fn [shape]
                    (cond-> shape
@@ -161,109 +157,111 @@
         on-radius-r2-change #(on-radius-4-change % :r2)
         on-radius-r3-change #(on-radius-4-change % :r3)
         on-radius-r4-change #(on-radius-4-change % :r4)
+
         select-all #(-> % (dom/get-target) (.select))]
 
-    [:div.element-set
-     [:div.element-set-content
+    [:*
+     [:div.element-set
+      [:div.element-set-content
 
-      ;; WIDTH & HEIGHT
-      (when (options :size)
-        [:div.row-flex
-         [:span.element-set-subtitle (t locale "workspace.options.size")]
-         [:div.input-element.width
-          [:> numeric-input {:min 1
-                             :no-validate true
-                             :placeholder "--"
-                             :on-click select-all
-                             :on-change on-width-change
-                             :value (attr->string :width values)}]]
+       ;; WIDTH & HEIGHT
+       (when (options :size)
+         [:div.row-flex
+          [:span.element-set-subtitle (tr "workspace.options.size")]
+          [:div.input-element.width
+           [:> numeric-input {:min 1
+                              :no-validate true
+                              :placeholder "--"
+                              :on-click select-all
+                              :on-change on-width-change
+                              :value (attr->string :width values)}]]
 
-         [:div.input-element.height
-          [:> numeric-input {:min 1
-                             :no-validate true
-                             :placeholder "--"
-                             :on-click select-all
-                             :on-change on-height-change
-                             :value (attr->string :height values)}]]
+          [:div.input-element.height
+           [:> numeric-input {:min 1
+                              :no-validate true
+                              :placeholder "--"
+                              :on-click select-all
+                              :on-change on-height-change
+                              :value (attr->string :height values)}]]
 
-         [:div.lock-size {:class (classnames
+          [:div.lock-size {:class (dom/classnames
                                    :selected (true? proportion-lock)
                                    :disabled (= proportion-lock :multiple))
-                          :on-click on-proportion-lock-change}
-          (if proportion-lock
-            i/lock
-            i/unlock)]])
+                           :on-click on-proportion-lock-change}
+           (if proportion-lock
+             i/lock
+             i/unlock)]])
 
-      ;; POSITION
-      (when (options :position)
-        [:div.row-flex
-         [:span.element-set-subtitle (t locale "workspace.options.position")]
-         [:div.input-element.Xaxis
-          [:> numeric-input {:no-validate true
-                             :placeholder "--"
-                             :on-click select-all
-                             :on-change on-pos-x-change
-                             :value (attr->string :x values)}]]
-         [:div.input-element.Yaxis
-          [:> numeric-input {:no-validate true
-                             :placeholder "--"
-                             :on-click select-all
-                             :on-change on-pos-y-change
-                             :value (attr->string :y values)}]]])
+       ;; POSITION
+       (when (options :position)
+         [:div.row-flex
+          [:span.element-set-subtitle (tr "workspace.options.position")]
+          [:div.input-element.Xaxis
+           [:> numeric-input {:no-validate true
+                              :placeholder "--"
+                              :on-click select-all
+                              :on-change on-pos-x-change
+                              :value (attr->string :x values)}]]
+          [:div.input-element.Yaxis
+           [:> numeric-input {:no-validate true
+                              :placeholder "--"
+                              :on-click select-all
+                              :on-change on-pos-y-change
+                              :value (attr->string :y values)}]]])
 
-      ;; ROTATION
-      (when (options :rotation)
-        [:div.row-flex
-         [:span.element-set-subtitle (t locale "workspace.options.rotation")]
-         [:div.input-element.degrees
-          [:> numeric-input
-           {:no-validate true
-            :min 0
-            :max 359
-            :data-wrap true
-            :placeholder "--"
-            :on-click select-all
-            :on-change on-rotation-change
-            :value (attr->string :rotation values)}]]
-         #_[:input.slidebar
-          {:type "range"
-           :min "0"
-           :max "359"
-           :step "10"
-           :no-validate true
-           :on-change on-rotation-change
-           :value (attr->string :rotation values)}]])
+       ;; ROTATION
+       (when (options :rotation)
+         [:div.row-flex
+          [:span.element-set-subtitle (tr "workspace.options.rotation")]
+          [:div.input-element.degrees
+           [:> numeric-input
+            {:no-validate true
+             :min 0
+             :max 359
+             :data-wrap true
+             :placeholder "--"
+             :on-click select-all
+             :on-change on-rotation-change
+             :value (attr->string :rotation values)}]]
+          #_[:input.slidebar
+             {:type "range"
+              :min "0"
+              :max "359"
+              :step "10"
+              :no-validate true
+              :on-change on-rotation-change
+              :value (attr->string :rotation values)}]])
 
-      ;; RADIUS
-      (let [radius-1? (some? (:rx values))
-            radius-4? (some? (:r1 values))]
-        (when (and (options :radius) (or radius-1? radius-4?))
-          [:div.row-flex
-           [:div.radius-options
+       ;; RADIUS
+       (let [radius-1? (some? (:rx values))
+             radius-4? (some? (:r1 values))]
+         (when (and (options :radius) (or radius-1? radius-4?))
+           [:div.row-flex
+            [:div.radius-options
              [:div.radius-icon.tooltip.tooltip-bottom
-              {:class (classnames
-                        :selected
-                        (and radius-1? (not radius-4?)))
-               :alt (t locale "workspace.options.radius.all-corners")
+              {:class (dom/classnames
+                       :selected
+                       (and radius-1? (not radius-4?)))
+               :alt (tr "workspace.options.radius.all-corners")
                :on-click on-switch-to-radius-1}
               i/radius-1]
              [:div.radius-icon.tooltip.tooltip-bottom
-              {:class (classnames
-                        :selected
-                        (and radius-4? (not radius-1?)))
-               :alt (t locale "workspace.options.radius.single-corners")
+              {:class (dom/classnames
+                       :selected
+                       (and radius-4? (not radius-1?)))
+               :alt (tr "workspace.options.radius.single-corners")
                :on-click on-switch-to-radius-4}
               i/radius-4]]
-           (if radius-1?
-             [:div.input-element.mini
-              [:> numeric-input
-               {:placeholder "--"
-                :min 0
-                :on-click select-all
-                :on-change on-radius-1-change
-                :value (attr->string :rx values)}]]
+            (if radius-1?
+              [:div.input-element.mini
+               [:> numeric-input
+                {:placeholder "--"
+                 :min 0
+                 :on-click select-all
+                 :on-change on-radius-1-change
+                 :value (attr->string :rx values)}]]
 
-             [:*
+              [:*
                [:div.input-element.mini
                 [:> numeric-input
                  {:placeholder "--"
@@ -291,5 +289,4 @@
                   :min 0
                   :on-click select-all
                   :on-change on-radius-r4-change
-                  :value (attr->string :r4 values)}]]])
-           ]))]]))
+                  :value (attr->string :r4 values)}]]])]))]]]))

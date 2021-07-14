@@ -8,10 +8,9 @@
   (:require
    [app.common.geom.shapes :as gsh]
    [app.config :as cfg]
+   [app.main.ui.shapes.embed :as embed]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]
-   [app.common.geom.point :as gpt]
-   [app.main.ui.shapes.image :as image]))
+   [rumext.alpha :as mf]))
 
 (mf/defc fill-image-pattern
   {::mf/wrap-props false}
@@ -22,8 +21,8 @@
     (when (contains? shape :fill-image)
       (let [{:keys [x y width height]} (:selrect shape)
             fill-image-id (str "fill-image-" render-id)
-            media (:fill-image shape)
-            {:keys [uri loading]} (image/use-image-uri media)
+            uri (cfg/resolve-file-media (:fill-image shape))
+            embed (embed/use-data-uris [uri])
             transform (gsh/transform-matrix shape)]
 
         [:pattern {:id fill-image-id
@@ -33,7 +32,7 @@
                    :height height
                    :width width
                    :patternTransform transform
-                   :data-loading (str loading)}
-         [:image {:xlinkHref uri
+                   :data-loading (str (not (contains? embed uri)))}
+         [:image {:xlinkHref (get embed uri uri)
                   :width width
                   :height height}]]))))

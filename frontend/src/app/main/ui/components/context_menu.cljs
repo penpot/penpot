@@ -6,13 +6,12 @@
 
 (ns app.main.ui.components.context-menu
   (:require
-   [rumext.alpha :as mf]
-   [goog.object :as gobj]
    [app.main.ui.components.dropdown :refer [dropdown']]
    [app.main.ui.icons :as i]
-   [app.common.uuid :as uuid]
    [app.util.dom :as dom]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [goog.object :as gobj]
+   [rumext.alpha :as mf]))
 
 (mf/defc context-menu
   {::mf/wrap-props false}
@@ -52,7 +51,7 @@
                                    (- node-height)
                                    0)]
 
-               (if (not= target-offset (:offset @local))
+               (when (not= target-offset (:offset @local))
                  (swap! local assoc :offset target-offset))))))
 
         enter-submenu
@@ -105,7 +104,9 @@
                   {:class (dom/classnames :is-selected (and selected (= option-name selected)))
                    :key option-name}
                   (if-not sub-options
-                    [:a.context-menu-action {:on-click option-handler}
+                    [:a.context-menu-action {:on-click #(do (dom/stop-propagation %)
+                                                            (on-close)
+                                                            (option-handler %))}
                      option-name]
                     [:a.context-menu-action.submenu
                      {:data-no-close true

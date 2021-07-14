@@ -6,21 +6,19 @@
 
 (ns app.main.ui.handoff.exports
   (:require
-   [rumext.alpha :as mf]
-   [beicon.core :as rx]
-   [app.util.i18n :refer [t] :as i18n]
-   [app.common.geom.shapes :as gsh]
-   [app.main.ui.icons :as i]
    [app.common.data :as d]
-   [app.util.dom :as dom]
-   [app.main.store :as st]
    [app.main.data.messages :as dm]
-   [app.main.ui.workspace.sidebar.options.menus.exports :as we]))
+   [app.main.store :as st]
+   [app.main.ui.icons :as i]
+   [app.main.ui.workspace.sidebar.options.menus.exports :as we]
+   [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
+   [beicon.core :as rx]
+   [rumext.alpha :as mf]))
 
 (mf/defc exports
   [{:keys [shape page-id file-id] :as props}]
-  (let [locale   (mf/deref i18n/locale)
-        exports  (mf/use-state (:exports shape []))
+  (let [exports  (mf/use-state (:exports shape []))
         loading? (mf/use-state false)
 
         on-download
@@ -34,8 +32,8 @@
                  (fn [{:keys [status body] :as response}]
                    (js/console.log status body)
                    (if (= status 200)
-                     (we/trigger-download (:name shape) body)
-                     (st/emit! (dm/error (t locale "errors.unexpected-error")))))
+                     (dom/trigger-download (:name shape) body)
+                     (st/emit! (dm/error (tr "errors.unexpected-error")))))
                  (constantly nil)
                  (fn []
                    (swap! loading? not))))))
@@ -90,7 +88,7 @@
 
     [:div.element-set.exports-options
      [:div.element-set-title
-      [:span (t locale "workspace.options.export")]
+      [:span (tr "workspace.options.export")]
       [:div.add-page {:on-click add-export} i/close]]
 
      (when (seq @exports)
@@ -124,6 +122,6 @@
           :class (dom/classnames :btn-disabled @loading?)
           :disabled @loading?}
          (if @loading?
-           (t locale "workspace.options.exporting-object")
-           (t locale "workspace.options.export-object"))]])]))
+           (tr "workspace.options.exporting-object")
+           (tr "workspace.options.export-object"))]])]))
 

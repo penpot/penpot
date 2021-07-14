@@ -1,38 +1,43 @@
 msgid ""
 msgstr ""
+"PO-Revision-Date: 2021-06-01 00:38+0000\n"
+"Last-Translator: Antonio <antonio@fesomia.cat>\n"
+"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
+"ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.7-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
-msgstr "Ja tens un compte?"
+msgstr "Ja teniu un compte?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
 msgstr ""
-"Revisa el teu email i fes click al link per verificar i començar a "
-"utilitzar Penpot."
+"Reviseu el correu i cliqueu l'enllaç per verificar i començar a utilitzar el "
+"Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
-msgstr "Confirmar contrasenya"
+msgstr "Confirmeu la contrasenya"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-account"
-msgstr "Crea un compte de proba"
+msgstr "Creeu un compte de prova"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-profile"
-msgstr "Vols probar-ho?"
+msgstr "Ho voleu provar?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
 msgstr ""
-"Aquest es un servei de PROBA. NO HO UTILITZIS per feina real, els projectes "
-"seran esborrats periòdicament."
+"Aquest és un servei de PROVA. NO L'UTILITZEU en feines reals, ja que els "
+"projectes s'esborraran periòdicament."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
@@ -40,51 +45,47 @@ msgstr "Correu electrònic"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
-msgstr "Has oblidat la contrasenya?"
+msgstr "Heu oblidat la contrasenya?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.fullname"
 msgstr "Nom complet"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "Tornar"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
-msgstr "Inicia sessió aquí"
+msgstr "Inicieu la sessió aquí"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
-msgstr "Accedir"
+msgstr "Entreu"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-subtitle"
-msgstr "Introdueix les teves dades aquí"
+msgstr "Introduïu les vostres dades a continuació"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
-msgstr "Encantats de tornar a veure't"
+msgstr "Ens agrada tornar-vos a veure!"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Accedir amb Github"
+msgstr "Entreu amb GitHub"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Accedir amb Gitlab"
+msgstr "Entreu amb GitLab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "Accedir amb LDAP"
+msgstr "Identifiqueu-vos amb LDAP"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
-msgstr "Introdueix la nova contrasenya"
+msgstr "Escriviu la nova contrasenya"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
-msgstr "El codi de recuperació no és vàlid"
+msgstr "El codi de recuperació no és vàlid."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.password-changed-succesfully"
@@ -93,16 +94,15 @@ msgstr "La contrasenya s'ha canviat correctament"
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
 msgstr ""
-"El perfil encara no s'ha verificat, si us plau verifica-ho abans de "
-"continuar."
+"El perfil encara no ha estat verificat. Verifiqueu-lo abans de continuar."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
-msgstr "Hem enviat un link de recuperació de contrasenya al teu email."
+msgstr "S'ha enviat un enllaç de recuperació de contrasenya al vostre correu."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
-msgstr "T'has unit al equip"
+msgstr "Us heu unit a l'equip correctament"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.password"
@@ -114,94 +114,94 @@ msgstr "Com a mínim 8 caràcters"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
-msgstr "Recuperar contrasenya"
+msgstr "Recupera la contrasenya"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-subtitle"
-msgstr "T'enviarem un correu electrónic amb instruccions"
+msgstr "Rebreu un correu electrònic amb instruccions"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-title"
-msgstr "Has oblidat la teva contrasenya?"
+msgstr "Heu oblidat la contrasenya?"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.recovery-submit"
-msgstr "Canvia la teva contrasenya"
+msgstr "Canvieu la contrasenya"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.register"
-msgstr "Encara no tens compte?"
+msgstr "No teniu un compte?"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
-msgstr "Crea un compte"
+msgstr "Creeu un compte"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-subtitle"
-msgstr "Es gratuit, es Open Source"
+msgstr "És gratuït, és de codi obert"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
-msgstr "Crea un compte"
+msgstr "Creeu un compte"
 
 #: src/app/main/ui/auth.cljs
 msgid "auth.sidebar-tagline"
-msgstr "La solució de codi obert per disenyar i prototipar"
+msgstr "La solució de codi obert per dissenyar i prototipar."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
-msgstr "Em enviat un correu de verificació a"
+msgstr "S'ha enviat un correu de verificació a"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
-msgstr "Afegeix una Biblioteca Compartida"
+msgstr "Afegeix una biblioteca compartida"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.change-email"
-msgstr "Canviar correu"
+msgstr "Canvia el correu"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Crear un nou equip"
+msgstr "+ Crea un nou equip"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
-msgstr "El teu Penpot"
+msgstr "El vostre Penpot"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.delete-team"
-msgstr "Suprimir equip"
+msgstr "Suprimeix l'equip"
 
 msgid "dashboard.draft-title"
 msgstr "Esborrany"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
-msgstr "Encara no hi ha cap arxiu aquí"
+msgstr "Encara no teniu cap arxiu aquí"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "Convidar a l'equip"
+msgstr "Convida a l'equip"
 
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
-msgstr "Abandonar l'equip"
+msgstr "Deixa l'equip"
 
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
-msgstr "Biblioteques Compartides"
+msgstr "Biblioteques compartides"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.loading-files"
-msgstr "carregan els teus fitxers"
+msgstr "S'estan carregant els fitxers…"
 
 #: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
-msgstr "+ Nou Arxiu"
+msgstr "+ Fitxer nou"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.new-project"
-msgstr "+ Nou projecte"
+msgstr "+ Projecte nou"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -213,11 +213,11 @@ msgstr "Els projectes fixats apareixeran aquí"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "dashboard.notifications.email-changed-successfully"
-msgstr "La teva adreça de correu s'ha actualizat"
+msgstr "S'ha actualitzat l'adreça de correu"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "dashboard.notifications.email-verified-successfully"
-msgstr "La teva adreça de correu ha sigut verificada"
+msgstr "S'ha verificat l'adreça de correu"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.notifications.password-saved"
@@ -241,11 +241,11 @@ msgstr "Promoure a propietari"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
-msgstr "Vols esborrar el teu compte?"
+msgstr "Voleu eliminar el vostre compte?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
-msgstr "Elimina com Biblioteca Compartida"
+msgstr "Elimina com a biblioteca compartida"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.search-placeholder"
@@ -253,7 +253,7 @@ msgstr "Cerca…"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.searching-for"
-msgstr "S'está cercant “%s“…"
+msgstr "S'està cercant “%s“…"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.select-ui-language"
@@ -265,11 +265,11 @@ msgstr "Selecciona un tema"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.show-all-files"
-msgstr "Veure tots els fitxers"
+msgstr "Mostra tots els fitxers"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.switch-team"
-msgstr "Cambiar d'equip"
+msgstr "Canvia d'equip"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
@@ -285,47 +285,47 @@ msgstr "Projectes de l'equip"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.theme-change"
-msgstr "Tema de l'interfície"
+msgstr "Tema de la interfície"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.title-search"
-msgstr "Membres de l'equip"
+msgstr "Resultats de la cerca"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.type-something"
-msgstr "Escriu per cercar resultats"
+msgstr "Escriviu per cercar resultats"
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
-msgstr "Actualitzar opcions"
+msgstr "Actualitza la configuració"
 
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
-msgstr "El teu compte"
+msgstr "El vostre compte"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.your-email"
-msgstr "Correu electrónic"
+msgstr "Correu electrònic"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.your-name"
-msgstr "El teu nom"
+msgstr "Nom"
 
 #: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
-msgstr "El teu Penpot"
+msgstr "El vostre Penpot"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-cancel"
-msgstr "Cancel·lar"
+msgstr "Cancel·la"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-ok"
-msgstr "Ok"
+msgstr "D'acord"
 
 #: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
 msgid "ds.confirm-title"
-msgstr "Estàs segur?"
+msgstr "N'esteu segur?"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "ds.updated-at"
@@ -333,19 +333,19 @@ msgstr "Actualitzat: %s"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
-msgstr "El teu navegador no pot realitzar aquesta operació"
+msgstr "El vostre navegador no pot fer aquesta operació"
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
-msgstr "El correu ja està en ús"
+msgstr "Aquest correu ja està en ús"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.email-already-validated"
-msgstr "El correu ja està validat"
+msgstr "Aquest correu ja està validat."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
-msgstr "El correu «%s» té molts informes de rebot permanents"
+msgstr "El correu «%s» té molts informes de retorn permanents."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
@@ -357,31 +357,32 @@ msgstr "Alguna cosa ha anat malament"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.google-auth-not-enabled"
-msgstr "L'autenticació amb google ha estat desactivada a aquest servidor"
+msgstr "L'autenticació amb Google està desactivada en aquest servidor"
 
 msgid "errors.media-format-unsupported"
-msgstr "El format d'imatge no està suportat (deu ser svg, jpg o png),"
+msgstr "El format d'imatge no està suportat (ha de ser SVG, JPG o PNG)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "La imatge es massa gran (ha de tenir menys de 5 mb)."
+msgstr "La imatge és massa gran (ha de ser inferior a 5 MB)."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
-msgstr "Sembla que el contingut de la imatge no coincideix amb l'extensió del arxiu"
+msgstr ""
+"Sembla que el contingut de la imatge no coincideix amb l'extensió del fitxer."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
-msgstr "La imatge no sembla pas vàlida"
+msgstr "Sembla que la imatge no és vàlida."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.member-is-muted"
 msgstr ""
-"El perfil que estàs invitant té els emails mutejats (per informes de spam o "
-"rebots alts"
+"El perfil que estàs convidant té els missatges de correu silenciats (per "
+"informes de correu brossa o de retorns alts)."
 
 msgid "errors.network"
-msgstr "Impossible connectar amb el servidor principal"
+msgstr "No es pot connectar amb el servidor principal."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
@@ -389,15 +390,17 @@ msgstr "La contrasenya de confirmació ha de coincidir"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
-msgstr "La contrasenya ha de tenir 8 com a mínim 8 caràcters"
+msgstr "La contrasenya ha de tenir 8 caràcters com a mínim"
 
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
-msgstr "El teu perfil te els emails mutejats (per informes de spam o rebots alts)."
+msgstr ""
+"El teu perfil té els missatges de correu silenciats (per informes de correu "
+"brossa o de retorn alts)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
-msgstr "El registre està desactivat actualment"
+msgstr "El registre està desactivat"
 
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
@@ -429,7 +432,7 @@ msgstr "Descripció"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-go-to"
-msgstr ""
+msgstr "Ves als debats"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-subtitle1"
@@ -443,7 +446,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-title"
-msgstr ""
+msgstr "Debats de l'equip"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
@@ -467,6 +470,9 @@ msgstr "S'ha produït un error"
 msgid "labels.accept"
 msgstr "Acceptar"
 
+msgid "labels.go-back"
+msgstr "Enrere"
+
 msgid "labels.recent"
 msgstr "Recent"
 
@@ -480,3 +486,334 @@ msgstr "Projectes - %s - Penpot"
 #: src/app/main/ui/dashboard/search.cljs
 msgid "title.dashboard.search"
 msgstr "Cerca - %s - Penpot"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.token-expired"
+msgstr "El codi ha caducat"
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr ""
+"Heu d'acceptar les nostres condicions del servei i la política de privacitat."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "L'autenticació LDAP està inhabilitada."
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "El color no és vàlid"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "S'ha mogut el projecte"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "S'han mogut els fitxers"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "S'ha mogut el fitxer"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "S'ha eliminat el projecte"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "S'ha duplicat el fitxer"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "S'ha eliminat el projecte"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "S'ha eliminat el fitxer"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Fixa/Deixa de fixar"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Obre el fitxer en una pestanya nova"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Projecte nou"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Fitxer nou"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Mou a un altre equip"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Mou %s fitxers a"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Mou a"
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Només podeu pujar tipus de lletra de la vostra propietat o dels que tingueu "
+"una llicència que us permeti utilitzar-los al Penpot. Teniu més informació a "
+"la secció de drets de contingut de les [Condicions del servei del "
+"Penpot](https://penpot.app/terms.html). També podeu llegir sobre ["
+"llicenciament de tipus de lletra](https://www.typography.com/faq)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Els tipus de lletra web que pengeu aquí s'afegiran a la llista de famílies "
+"tipogràfiques disponibles a les propietats del text dels fitxers d'aquest "
+"equip. Els tipus de lletra amb el mateix nom de família s'agruparan en **una "
+"sola família tipogràfica**. Podeu pujar tipus de lletra amb aquests formats: "
+"**TTF, OTF i WOFF** (només és necessari un)."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Duplica %s fitxers"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Duplica"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(còpia)"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"En crear un nou compte, accepteu les nostres condicions del servei i la "
+"política de privacitat."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "Entreu amb OpenID (SSO)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Entreu amb Google"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "Administració"
+
+msgid "history.alert-message"
+msgstr "Esteu veient la versió %s"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "Informació"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "Text"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "Rectangle"
+
+msgid "handoff.tabs.code.selected.path"
+msgstr "Camí"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code.selected.multiple"
+msgstr "%s seleccionats"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "Imatge"
+
+msgid "handoff.tabs.code.selected.group"
+msgstr "Grup"
+
+msgid "handoff.tabs.code.selected.frame"
+msgstr "Taula de treball"
+
+msgid "handoff.tabs.code.selected.curve"
+msgstr "Corba"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "Cercle"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.letter-spacing"
+msgstr "Espaiat de la lletra"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Codi"
+
+msgid "handoff.attributes.typography.text-transform.uppercase"
+msgstr "Majúscules"
+
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "Inicials en majúscules"
+
+msgid "handoff.attributes.typography.text-transform.none"
+msgstr "Cap"
+
+msgid "handoff.attributes.typography.text-transform.lowercase"
+msgstr "Minúscules"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-transform"
+msgstr "Transformació del text"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "Subratllat"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "Barrat"
+
+msgid "handoff.attributes.typography.text-decoration.none"
+msgstr "Cap"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "Decoració del text"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "Alçada de la línia"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "Estil de la lletra"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "Mida de la lletra"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "Família tipogràfica"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "Tipografia"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "Amplada"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Sòlid"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "Cap"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "Mesclat"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "Puntejat"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "Exterior"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.inner"
+msgstr "Interior"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "Centre"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke"
+msgstr "Traç"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.spread"
+msgstr "S"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-y"
+msgstr "Y"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-x"
+msgstr "X"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.blur"
+msgstr "B"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "Ombra"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "Amplada"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "Superior"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "Rotació"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "Radi"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "Esquerra"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "Alçada"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout"
+msgstr "Disposició"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "Amplada"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "Alçada"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "Baixa la imatge original"
+
+#: src/app/main/ui/handoff/attributes/fill.cljs
+msgid "handoff.attributes.fill"
+msgstr "Emplenat"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur.value"
+msgstr "Valor"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur"
+msgstr "Difuminat"

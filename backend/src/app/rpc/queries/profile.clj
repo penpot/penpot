@@ -11,7 +11,8 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.util.services :as sv]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]))
 
 ;; --- Helpers & Specs
 
@@ -72,7 +73,8 @@
 (defn decode-profile-row
   [{:keys [props] :as row}]
   (cond-> row
-    (db/pgobject? props) (assoc :props (db/decode-transit-pgobject props))))
+    (db/pgobject? props "jsonb")
+    (assoc :props (db/decode-transit-pgobject props))))
 
 (defn retrieve-profile-data
   [conn id]
@@ -90,16 +92,11 @@
 
     profile))
 
-(def sql:retrieve-profile-by-email
-  "select p.* from profile as p
-    where p.email = lower(?)
-      and p.deleted_at is null")
-
 (defn retrieve-profile-data-by-email
   [conn email]
-  (let [sql  [sql:retrieve-profile-by-email email]]
-    (some-> (db/exec-one! conn sql)
-            (decode-profile-row))))
+  (try
+    (db/get-by-params conn :profile {:email (str/lower email)})
+    (catch Exception _e)))
 
 ;; --- Attrs Helpers
 

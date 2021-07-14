@@ -6,8 +6,8 @@
 
 (ns app.main.ui.settings.profile
   (:require
-   [app.config :as cfg]
    [app.common.spec :as us]
+   [app.config :as cfg]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
@@ -16,13 +16,10 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
-   [app.main.ui.messages :as msgs]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr t]]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
-   [app.config :as cfg]))
+   [rumext.alpha :as mf]))
 
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::email ::us/email)
@@ -31,11 +28,11 @@
   (s/keys :req-un [::fullname ::email]))
 
 (defn- on-success
-  [form]
+  [_]
   (st/emit! (dm/success (tr "notifications.profile-saved"))))
 
 (defn- on-submit
-  [form event]
+  [form _event]
   (let [data  (:clean-data @form)
         mdata {:on-success (partial on-success form)}]
     (st/emit! (du/update-profile (with-meta data mdata)))))
@@ -96,7 +93,7 @@
       [:img {:src photo}]
       [:& file-uploader {:accept "image/jpeg,image/png"
                          :multi false
-                         :input-ref file-input
+                         :ref file-input
                          :on-selected on-file-selected}]]]))
 
 ;; --- Profile Page

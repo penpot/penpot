@@ -9,10 +9,12 @@
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as projects]
    [app.rpc.queries.teams :as teams]
+   [app.storage.impl :as simpl]
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -171,11 +173,23 @@
 
 ;; --- Query: File (By ID)
 
+(defn- retrieve-data*
+  [{:keys [storage] :as cfg} file]
+  (when-let [backend (simpl/resolve-backend storage (cf/get :fdata-storage-backend))]
+    (simpl/get-object-bytes backend file)))
+
+(defn retrieve-data
+  [cfg file]
+  (if (bytes? (:data file))
+    file
+    (assoc file :data (retrieve-data* cfg file))))
+
 (defn retrieve-file
-  [conn id]
-  (-> (db/get-by-id conn :file id)
-      (decode-row)
-      (pmg/migrate-file)))
+  [{:keys [conn] :as cfg} id]
+  (->> (db/get-by-id conn :file id)
+       (retrieve-data cfg)
+       (decode-row)
+       (pmg/migrate-file)))
 
 (s/def ::file
   (s/keys :req-un [::profile-id ::id]))
@@ -183,8 +197,9 @@
 (sv/defmethod ::file
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
   (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id id)
-    (retrieve-file conn id)))
+    (let [cfg (assoc cfg :conn conn)]
+      (check-edition-permissions! conn profile-id id)
+      (retrieve-file cfg id))))
 
 (s/def ::page
   (s/keys :req-un [::profile-id ::file-id]))
@@ -217,11 +232,11 @@
     (update data :objects update-objects)))
 
 (sv/defmethod ::page
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id id strip-thumbnails]}]
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id]}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id strip-thumbnails]}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
-    (let [file    (retrieve-file conn file-id)
+    (let [cfg     (assoc cfg :conn conn)
+          file    (retrieve-file cfg file-id)
           page-id (get-in file [:data :pages 0])]
       (cond-> (get-in file [:data :pages-index page-id])
         strip-thumbnails
@@ -245,7 +260,7 @@
   (s/keys :req-un [::profile-id ::team-id]))
 
 (sv/defmethod ::shared-files
-  [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [team-id] :as params}]
   (into [] decode-row-xf (db/exec! pool [sql:shared-files team-id])))
 
 
@@ -270,30 +285,43 @@
   (s/keys :req-un [::profile-id ::team-id]))
 
 (sv/defmethod ::team-shared-files
-  [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [team-id] :as params}]
   (db/exec! pool [sql:team-shared-files team-id]))
 
 
 ;; --- Query: File Libraries used by a File
 
 (def ^:private sql:file-libraries
-  "select fl.*,
-
-          flr.synced_at as synced_at
-     from file as fl
-    inner join file_library_rel as flr on (flr.library_file_id = fl.id)
-    where flr.file_id = ?
-      and fl.deleted_at is null")
+  "WITH RECURSIVE libs AS (
+     SELECT fl.*, flr.synced_at
+       FROM file AS fl
+       JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
+      WHERE flr.file_id = ?::uuid
+    UNION
+     SELECT fl.*, flr.synced_at
+       FROM file AS fl
+       JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
+       JOIN libs AS l ON (flr.file_id = l.id)
+   )
+   SELECT l.id,
+          l.data,
+          l.project_id,
+          l.created_at,
+          l.modified_at,
+          l.deleted_at,
+          l.name,
+          l.revn,
+          l.synced_at
+     FROM libs AS l
+    WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
 
 (defn retrieve-file-libraries
-  [conn is-indirect file-id]
-  (let [libraries (->> (db/exec! conn [sql:file-libraries file-id])
-                       (map #(assoc % :is-indirect is-indirect))
-                       (into #{} decode-row-xf))]
-    (reduce #(into %1 (retrieve-file-libraries conn true %2))
-            libraries
-            (map :id libraries))))
-
+  [{:keys [conn] :as cfg} is-indirect file-id]
+  (let [xform (comp
+               (map #(assoc % :is-indirect is-indirect))
+               (map #(retrieve-data cfg %))
+               (map decode-row))]
+    (into #{} xform (db/exec! conn [sql:file-libraries file-id]))))
 
 (s/def ::file-libraries
   (s/keys :req-un [::profile-id ::file-id]))
@@ -301,8 +329,9 @@
 (sv/defmethod ::file-libraries
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id file-id)
-    (retrieve-file-libraries conn false file-id)))
+    (let [cfg (assoc cfg :conn conn)]
+      (check-edition-permissions! conn profile-id file-id)
+      (retrieve-file-libraries cfg false file-id))))
 
 ;; --- QUERY: team-recent-files
 
@@ -333,7 +362,6 @@
   (with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (db/exec! conn [sql:team-recent-files team-id])))
-
 
 ;; --- Helpers
 

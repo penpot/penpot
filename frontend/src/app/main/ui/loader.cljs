@@ -6,13 +6,13 @@
 
 (ns app.main.ui.loader
   (:require
-   [rumext.alpha :as mf]
+   [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.main.store :as st]))
+   [rumext.alpha :as mf]))
 
 ;; --- Component
 
 (mf/defc loader
   []
   (when (mf/deref st/loader)
-    [:div.loader-content i/loader]))
+    [:div.loader-content i/loader-pencil]))

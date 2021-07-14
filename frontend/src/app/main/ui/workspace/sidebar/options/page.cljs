@@ -7,46 +7,39 @@
 (ns app.main.ui.workspace.sidebar.options.page
   "Page options menu entries."
   (:require
-   [rumext.alpha :as mf]
-   [okulary.core :as l]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.data.workspace :as dw]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.undo :as dwu]
-   [app.util.i18n :as i18n :refer [t]]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]))
-
-(defn use-change-color [page-id]
-  (mf/use-callback
-   (mf/deps page-id)
-   (fn [value]
-     (st/emit! (dw/change-canvas-color value)))))
+   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.util.i18n :as i18n :refer [tr]]
+   [rumext.alpha :as mf]))
 
 (mf/defc options
-  [{:keys [page-id] :as props}]
-  (let [locale (i18n/use-locale)
-        options (mf/deref refs/workspace-page-options)
-        handle-change-color (use-change-color page-id)
+  {::mf/wrap [mf/memo]}
+  []
+  (let [options (mf/deref refs/workspace-page-options)
+
+        on-change
+        (fn [value]
+          (st/emit! (dw/change-canvas-color value)))
 
         on-open
-        (mf/use-callback
-         (mf/deps page-id)
-         #(st/emit! (dwu/start-undo-transaction)))
+        (fn []
+          (st/emit! (dwu/start-undo-transaction)))
 
         on-close
-        (mf/use-callback
-         (mf/deps page-id)
-         #(st/emit! (dwu/commit-undo-transaction)))]
+        (fn []
+          (st/emit! (dwu/commit-undo-transaction)))]
 
     [:div.element-set
-     [:div.element-set-title (t locale "workspace.options.canvas-background")]
+     [:div.element-set-title (tr "workspace.options.canvas-background")]
      [:div.element-set-content
       [:& color-row {:disable-gradient true
                      :disable-opacity true
                      :color {:color (get options :background "#E8E9EA")
                              :opacity 1}
-                     :on-change handle-change-color
+                     :on-change on-change
                      :on-open on-open
                      :on-close on-close}]]]))
 

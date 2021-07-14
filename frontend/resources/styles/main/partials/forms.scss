@@ -109,30 +109,6 @@ textarea {
   hr {
     border-color: $color-gray-20;
   }
-
-  .links {
-    display: flex;
-    font-size: $fs14;
-    flex-direction: column;
-    justify-content: space-between;
-    margin-bottom: $medium;
-
-    &.demo {
-      justify-content: center;
-      margin-top: $big;
-    }
-  }
-
-  .link-entry {
-    font-size: $fs14;
-    color: $color-gray-40;
-    margin-bottom: 10px;
-  }
-
-  .link-entry a {
-    font-size: $fs14;
-    color: $color-primary-dark;
-  }
 }
 
 .custom-input {

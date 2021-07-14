@@ -10,14 +10,13 @@
    [app.common.pages :as cp]
    [app.common.pages.spec :as spec]
    [app.common.spec :as us]
-   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.worker :as uw]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
+   [app.main.worker :as uw]
    [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
@@ -35,45 +34,45 @@
 (defn- generate-operation
   "Given an object old and new versions and an attribute will append into changes
   the set and undo operations"
-  [changes attr old new]
+  [changes attr old new ignore-geometry?]
   (let [old-val (get old attr)
         new-val (get new attr)]
     (if (= old-val new-val)
       changes
       (-> changes
-          (update :rops conj {:type :set :attr attr :val new-val})
+          (update :rops conj {:type :set :attr attr :val new-val :ignore-geometry ignore-geometry?})
           (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
 
 (defn- update-shape-changes
   "Calculate the changes and undos to be done when a function is applied to a
   single object"
-  [changes page-id objects update-fn attrs id]
+  [changes page-id objects update-fn attrs id ignore-geometry?]
   (let [old-obj (get objects id)
         new-obj (update-fn old-obj)
 
         attrs (or attrs (d/concat #{} (keys old-obj) (keys new-obj)))
 
         {rops :rops uops :uops}
-        (reduce #(generate-operation %1 %2 old-obj new-obj)
+        (reduce #(generate-operation %1 %2 old-obj new-obj ignore-geometry?)
                 {:rops [] :uops []}
                 attrs)
 
         uops (cond-> uops
-               (not (empty? uops))
+               (seq uops)
                (conj {:type :set-touched :touched (:touched old-obj)}))
 
         change {:type :mod-obj :page-id page-id :id id}]
 
     (cond-> changes
-      (not (empty? rops))
+      (seq rops)
       (update :redo-changes conj (assoc change :operations rops))
 
-      (not (empty? uops))
+      (seq uops)
       (update :undo-changes conj (assoc change :operations uops)))))
 
 (defn update-shapes
   ([ids f] (update-shapes ids f nil))
-  ([ids f {:keys [reg-objects? save-undo? keys]
+  ([ids f {:keys [reg-objects? save-undo? attrs ignore-tree]
            :or {reg-objects? false save-undo? true attrs nil}}]
 
    (us/assert ::coll-of-uuid ids)
@@ -81,7 +80,7 @@
 
    (ptk/reify ::update-shapes
      ptk/WatchEvent
-     (watch [it state stream]
+     (watch [it state _]
        (let [page-id   (:current-page-id state)
              objects   (wsh/lookup-page-objects state)
              changes   {:redo-changes []
@@ -91,7 +90,9 @@
 
              ids       (into [] (filter some?) ids)
 
-             changes   (reduce #(update-shape-changes %1 page-id objects f keys %2) changes ids)]
+             changes   (reduce
+                         #(update-shape-changes %1 page-id objects f attrs %2 (get ignore-tree %2))
+                         changes ids)]
 
          (when-not (empty? (:redo-changes changes))
            (let [reg-objs {:type :reg-objects
@@ -107,7 +108,7 @@
   [page-id changes]
   (ptk/reify ::update-indices
     ptk/EffectEvent
-    (effect [_ state stream]
+    (effect [_ _ _]
       (uw/ask! {:cmd :update-page-indices
                 :page-id page-id
                 :changes changes}))))
@@ -147,7 +148,7 @@
               state))))
 
       ptk/WatchEvent
-      (watch [it state stream]
+      (watch [_ _ _]
         (when-not @error
           (let [;; adds page-id to page changes (that have the `id` field instead)
                 add-page-id
@@ -163,7 +164,7 @@
                      (group-by :page-id))
 
                 process-page-changes
-                (fn [[page-id changes]]
+                (fn [[page-id _changes]]
                   (update-indices page-id redo-changes))]
             (rx/concat
              (rx/from (map process-page-changes changes-by-pages))

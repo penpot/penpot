@@ -6,19 +6,14 @@
 
 (ns app.main.data.workspace.comments
   (:require
-   [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.math :as mth]
    [app.common.spec :as us]
-   [app.main.constants :as c]
+   [app.main.data.comments :as dcm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.comments :as dcm]
-   [app.main.store :as st]
    [app.main.streams :as ms]
    [app.util.router :as rt]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 (declare handle-interrupt)
@@ -29,7 +24,7 @@
   (us/assert ::us/uuid file-id)
   (ptk/reify ::initialize-comments
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ stream]
       (let [stoper (rx/filter #(= ::finalize %) stream)]
         (rx/merge
          (rx/of (dcm/retrieve-comment-threads file-id))
@@ -47,8 +42,8 @@
   []
   (ptk/reify ::handle-interrupt
     ptk/WatchEvent
-    (watch [_ state stream]
-      (let [local   (:comments-local state)]
+    (watch [_ state _]
+      (let [local (:comments-local state)]
         (cond
           (:draft local) (rx/of (dcm/close-thread))
           (:open local)  (rx/of (dcm/close-thread))
@@ -62,7 +57,7 @@
   [position]
   (ptk/reify ::handle-comment-layer-click
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ state _]
       (let [local (:comments-local state)]
         (if (some? (:open local))
           (rx/of (dcm/close-thread))
@@ -74,14 +69,13 @@
             (rx/of (dcm/create-draft params))))))))
 
 (defn center-to-comment-thread
-  [{:keys [id position] :as thread}]
+  [{:keys [position] :as thread}]
   (us/assert ::dcm/comment-thread thread)
   (ptk/reify :center-to-comment-thread
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              (fn [{:keys [vbox vport zoom] :as local}]
-                (prn "center-to-comment-thread" vbox)
+              (fn [{:keys [vbox zoom] :as local}]
                 (let [pw (/ 50 zoom)
                       ph (/ 200 zoom)
                       nw (mth/round (- (/ (:width vbox) 2) pw))
@@ -93,11 +87,11 @@
                    (update local :vbox assoc :x nx :y ny)))))))
 
 (defn navigate
-  [{:keys [project-id file-id page-id] :as thread}]
+  [thread]
   (us/assert ::dcm/comment-thread thread)
   (ptk/reify ::navigate
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ stream]
       (let [pparams {:project-id (:project-id thread)
                      :file-id (:file-id thread)}
             qparams {:page-id (:page-id thread)}]

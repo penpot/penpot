@@ -5,7 +5,7 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.storage
-  "File Storage abstraction layer."
+  "Objects storage abstraction layer."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -20,13 +20,9 @@
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
    [datoteka.core :as fs]
    [integrant.core :as ig]
-   [promesa.exec :as px])
-  (:import
-   java.io.InputStream))
-
+   [promesa.exec :as px]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Storage Module State
@@ -39,7 +35,11 @@
 (s/def ::db ::sdb/backend)
 
 (s/def ::backends
-  (s/keys :opt-un [::s3 ::fs ::db]))
+  (s/map-of ::us/keyword
+            (s/nilable
+             (s/or :s3 ::ss3/backend
+                   :fs ::sfs/backend
+                   :db ::sdb/backend))))
 
 (defmethod ig/pre-init-spec ::storage [_]
   (s/keys :req-un [::backend ::wrk/executor ::db/pool ::backends]))
@@ -50,8 +50,9 @@
       (assoc :backends (d/without-nils backends))))
 
 (defmethod ig/init-key ::storage
-  [_ cfg]
-  cfg)
+  [_ {:keys [backends] :as cfg}]
+  (-> (d/without-nils cfg)
+      (assoc :backends (d/without-nils backends))))
 
 (s/def ::storage
   (s/keys :req-un [::backends ::wrk/executor ::db/pool ::backend]))
@@ -151,8 +152,6 @@
 ;; API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare resolve-backend)
-
 (defn object->relative-path
   [{:keys [id] :as obj}]
   (impl/id->path id))
@@ -185,7 +184,7 @@
     (px/run! executor #(register-recheck storage backend (:id object)))
 
     ;; Store the data finally on the underlying storage subsystem.
-    (-> (resolve-backend storage backend)
+    (-> (impl/resolve-backend storage backend)
         (impl/put-object object content))
 
     object))
@@ -201,27 +200,36 @@
       ;; if the source and destination backends are the same, we
       ;; proceed to use the fast path with specific copy
       ;; implementation on backend.
-      (-> (resolve-backend storage (:backend storage))
+      (-> (impl/resolve-backend storage (:backend storage))
           (impl/copy-object object object*))
 
       ;; if the source and destination backends are different, we just
       ;; need to obtain the streams and proceed full copy of the data
-      (with-open [^InputStream input
-                  (-> (resolve-backend storage (:backend object))
-                      (impl/get-object-data object))]
-        (-> (resolve-backend storage (:backend storage))
-            (impl/put-object object* (impl/content input (:size object))))))
-
+      (with-open [is (-> (impl/resolve-backend storage (:backend object))
+                         (impl/get-object-data object))]
+        (-> (impl/resolve-backend storage (:backend storage))
+            (impl/put-object object* (impl/content is (:size object))))))
     object*))
 
 (defn get-object-data
+  "Return an input stream instance of the object content."
   [{:keys [pool conn] :as storage} object]
   (us/assert ::storage storage)
   (when (or (nil? (:expired-at object))
             (dt/is-after? (:expired-at object) (dt/now)))
     (-> (assoc storage :conn (or conn pool))
-        (resolve-backend (:backend object))
+        (impl/resolve-backend (:backend object))
         (impl/get-object-data object))))
+
+(defn get-object-bytes
+  "Returns a byte array of object content."
+  [{:keys [pool conn] :as storage} object]
+  (us/assert ::storage storage)
+  (when (or (nil? (:expired-at object))
+            (dt/is-after? (:expired-at object) (dt/now)))
+    (-> (assoc storage :conn (or conn pool))
+        (impl/resolve-backend (:backend object))
+        (impl/get-object-bytes object))))
 
 (defn get-object-url
   ([storage object]
@@ -231,14 +239,14 @@
    (when (or (nil? (:expired-at object))
              (dt/is-after? (:expired-at object) (dt/now)))
      (-> (assoc storage :conn (or conn pool))
-         (resolve-backend (:backend object))
+         (impl/resolve-backend (:backend object))
          (impl/get-object-url object options)))))
 
 (defn get-object-path
   "Get the Path to the object. Only works with `:fs` type of
   storages."
   [storage object]
-  (let [backend (resolve-backend storage (:backend object))]
+  (let [backend (impl/resolve-backend storage (:backend object))]
     (when (not= :fs (:type backend))
       (ex/raise :type :internal
                 :code :operation-not-allowed
@@ -254,16 +262,7 @@
   (-> (assoc storage :conn (or conn pool))
       (delete-database-object (if (uuid? id-or-obj) id-or-obj (:id id-or-obj)))))
 
-;; --- impl
-
-(defn resolve-backend
-  [{:keys [conn pool] :as storage} backend-id]
-  (let [backend (get-in storage [:backends backend-id])]
-    (when-not backend
-      (ex/raise :type :internal
-                :code :backend-not-configured
-                :hint (str/fmt "backend '%s' not configured" backend-id)))
-    (assoc backend :conn (or conn pool))))
+(d/export impl/resolve-backend)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Garbage Collection: Permanently delete objects
@@ -295,7 +294,7 @@
               (some-> (seq rows) (group-by-backend))))
 
           (delete-in-bulk [conn [backend ids]]
-            (let [backend (resolve-backend storage backend)
+            (let [backend (impl/resolve-backend storage backend)
                   backend (assoc backend :conn conn)]
               (impl/del-objects-in-bulk backend ids)))]
 
@@ -445,7 +444,7 @@
               (some-> (seq rows) (group-results))))
 
           (delete-group [conn [backend ids]]
-            (let [backend (resolve-backend storage backend)
+            (let [backend (impl/resolve-backend storage backend)
                   backend (assoc backend :conn conn)]
               (impl/del-objects-in-bulk backend ids)))
 
