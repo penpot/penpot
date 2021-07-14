@@ -22,6 +22,23 @@ function isDefined(v) {
   return v !== undefined && v !== null;
 }
 
+function mergeBlockData(block, newData) {
+  let data = block.getData();
+
+  for (let key of Object.keys(newData)) {
+    const oldVal = data.get(key);
+    if (oldVal === newData[key]) {
+      data = data.delete(key);
+    } else {
+      data = data.set(key, newData[key]);
+    }
+  }
+
+  return block.merge({
+    data: data
+  });
+}
+
 export function createEditorState(content, decorator) {
   if (content === null) {
     return EditorState.createEmpty(decorator);
@@ -95,26 +112,19 @@ export function updateCurrentBlockData(state, attrs) {
   let content = state.getCurrentContent();
 
   content = modifySelectedBlocks(content, selection, (block) => {
-    let data = block.getData();
-    for (let key of Object.keys(attrs)) {
-      const oldVal = data.get(key);
-      if (oldVal === attrs[key]) {
-        data = data.delete(key);
-      } else {
-        data = data.set(key, attrs[key]);
-      }
-    }
-
-    return block.merge({
-      data: data
-    });
+    return mergeBlockData(block, attrs);
   });
 
   return EditorState.push(state, content, "change-block-data");
 }
 
 export function applyInlineStyle(state, styles) {
-  const selection = state.getSelection();
+  let selection = state.getSelection();
+
+  if (selection.isCollapsed()) {
+    selection = selection.set("anchorOffset", 0);
+  }
+
   let content = null;
 
   for (let style of styles) {
@@ -233,4 +243,93 @@ export function cursorToEnd(state) {
   state = EditorState.push(state, content, "apply-entity");
 
   return state;
+}
+
+export function isCurrentEmpty(state) {
+  const selection = state.getSelection();
+
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+
+  const blockKey = selection.getStartKey();
+  const content = state.getCurrentContent();
+
+  const block = content.getBlockForKey(blockKey);
+
+  return block.getText() === "";
+}
+
+/*
+  Returns the block keys between a selection
+*/
+export function getSelectedBlocks(state) {
+  const selection = state.getSelection();
+  const startKey = selection.getStartKey();
+  const endKey = selection.getEndKey();
+  const content = state.getCurrentContent();
+  const result = [ startKey ];
+
+  let currentKey = startKey;
+
+  while (currentKey !== endKey) {
+    const currentBlock = content.getBlockAfter(currentKey);
+    currentKey = currentBlock.getKey();
+    result.push(currentKey);
+  }
+
+  return result;
+}
+
+export function getBlockContent(state, blockKey) {
+  const content = state.getCurrentContent();
+  const block = content.getBlockForKey(blockKey);
+  return block.getText();
+}
+
+export function getBlockData(state, blockKey) {
+  const content = state.getCurrentContent();
+  const block = content.getBlockForKey(blockKey);
+  return block && block.getData().toJS();
+}
+
+export function updateBlockData(state, blockKey, data) {
+  const userSelection = state.getSelection();
+  const content = state.getCurrentContent();
+  const block = content.getBlockForKey(blockKey);
+  const newBlock = mergeBlockData(block, data);
+
+  const blockData = newBlock.getData();
+
+  const newContent = Modifier.setBlockData(
+    state.getCurrentContent(),
+    SelectionState.createEmpty(blockKey),
+    blockData
+  );
+
+  const result = EditorState.push(state, newContent, 'change-block-data');
+  return EditorState.acceptSelection(result, userSelection)
+}
+
+export function getSelection(state) {
+  return state.getSelection();
+}
+
+export function setSelection(state, selection) {
+  return EditorState.acceptSelection(state, selection);
+}
+
+export function selectBlock(state, blockKey) {
+  const block = state.getCurrentContent().getBlockForKey(blockKey);
+  const length = block.getText().length;
+  const selection = SelectionState.createEmpty(blockKey).merge({
+    focusOffset: length
+  });
+  return EditorState.acceptSelection(state, selection);
+}
+
+export function getInlineStyle(state, blockKey, offset) {
+  const content = state.getCurrentContent();
+  const block = content.getBlockForKey(blockKey);
+  return block.getInlineStyleAt(offset).toJS();
 }

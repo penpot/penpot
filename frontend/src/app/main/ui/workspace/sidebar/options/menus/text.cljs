@@ -220,7 +220,10 @@
 
         emit-update!
         (mf/use-callback
+         (mf/deps values)
          (fn [id attrs]
+           (st/emit! (dwt/save-font (merge values attrs)))
+
            (let [attrs (select-keys attrs root-attrs)]
              (when-not (empty? attrs)
                (st/emit! (dwt/update-root-attrs {:id id :attrs attrs}))))
@@ -235,7 +238,7 @@
 
         on-change
         (mf/use-callback
-         (mf/deps ids)
+         (mf/deps ids emit-update!)
          (fn [attrs]
            (run! #(emit-update! % attrs) ids)))
 

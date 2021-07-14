@@ -316,3 +316,13 @@
                 (rx/race resize-batch change-page)
                 (rx/of #(dissoc % ::handling-texts))))
           (rx/empty))))))
+
+(defn save-font
+  [data]
+  (ptk/reify ::save-font
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; Check if the data has any multiple
+      (assoc-in state
+                [:workspace-local :defaults :font]
+                data))))
