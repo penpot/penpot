@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.undo
   (:require
-   [app.common.pages :as cp]
    [app.common.pages.spec :as spec]
    [app.common.spec :as us]
    [cljs.spec.alpha :as s]
@@ -31,13 +30,13 @@
       (subvec undo (- cnt MAX-UNDO-SIZE))
       undo)))
 
+;; TODO: Review the necessity of this method
 (defn materialize-undo
-  [changes index]
+  [_changes index]
   (ptk/reify ::materialize-undo
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-data cp/process-changes changes)
           (assoc-in [:workspace-undo :index] index)))))
 
 (defn- add-undo-entry

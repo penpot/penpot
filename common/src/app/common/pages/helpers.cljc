@@ -99,7 +99,8 @@
 
 ;; Implemented with transient for performance
 (defn get-children
-  "Retrieve all children ids recursively for a given object"
+  "Retrieve all children ids recursively for a given object. The
+  children's order will be breadth first."
   [id objects]
 
   (loop [result (transient [])

@@ -350,6 +350,8 @@
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
 
+            ids     (cp/clean-loops objects ids)
+
             groups-to-unmask
             (reduce (fn [group-ids id]
                       ;; When the shape to delete is the mask of a masked group,
@@ -387,10 +389,12 @@
                     ids)
 
             all-children
-            (reduce (fn [res id]
-                      (into res (cp/get-children id objects)))
-                    (d/ordered-set)
-                    ids)
+            (->> ids
+                 (reduce (fn [res id]
+                           (into res (cp/get-children id objects)))
+                         [])
+                 (reverse)
+                 (into (d/ordered-set)))
 
             empty-parents
             (into (d/ordered-set) empty-parents-xform all-parents)

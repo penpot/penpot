@@ -293,23 +293,24 @@
 
 (defmethod process-change :add-page
   [data {:keys [id name page]}]
-  (cond
-    (and (string? name) (uuid? id))
-    (let [page (assoc init/empty-page-data
-                      :id id
-                      :name name)]
-      (-> data
-          (update :pages conj id)
-          (update :pages-index assoc id page)))
-
-    (map? page)
-    (-> data
-        (update :pages conj (:id page))
-        (update :pages-index assoc (:id page) page))
-
-    :else
+  (when (and id name page)
     (ex/raise :type :conflict
-              :hint "name or page should be provided, never both")))
+              :hint "name or page should be provided, never both"))
+  (letfn [(conj-if-not-exists [pages id]
+            (cond-> pages
+              (not (d/seek #(= % id) pages))
+              (conj id)))]
+    (if (and (string? name) (uuid? id))
+      (let [page (assoc init/empty-page-data
+                        :id id
+                        :name name)]
+        (-> data
+            (update :pages conj-if-not-exists id)
+            (update :pages-index assoc id page)))
+
+      (-> data
+          (update :pages conj-if-not-exists (:id page))
+          (update :pages-index assoc (:id page) page)))))
 
 (defmethod process-change :mod-page
   [data {:keys [id name]}]
