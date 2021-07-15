@@ -63,15 +63,12 @@
   [cfg {:keys [host version id] :as cdata}]
   (try
     (let [uri  (:uri cfg)
-          text (str "Unhandled exception:\n"
-                    "- detail: " (cfg/get :public-uri) "/dbg/error-by-id/" id "\n"
-                    "- profile-id: `" (:profile-id cdata) "`\n"
-                    "- host: `" host "`\n"
-                    "- version: `" version "`\n")
-          rsp    (http/send! {:uri uri
-                              :method :post
-                              :headers {"content-type" "application/json"}
-                              :body (json/encode-str {:text text})})]
+          text (str "Unhandled exception (host: " host ", url: " (cfg/get :public-uri) "/dbg/error-by-id/" id "\n"
+                    "- profile-id: #" (:profile-id cdata) "\n")
+          rsp  (http/send! {:uri uri
+                            :method :post
+                            :headers {"content-type" "application/json"}
+                            :body (json/encode-str {:text text})})]
       (when (not= (:status rsp) 200)
         (l/error :hint "error on sending data to mattermost"
                  :response (pr-str rsp))))
