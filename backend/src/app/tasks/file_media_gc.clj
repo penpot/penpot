@@ -64,16 +64,21 @@
   (comp
    (map :objects)
    (mapcat vals)
-   (filter #(= :image (:type %)))
-   (map :metadata)
-   (map :id)))
+   (map (fn [{:keys [type] :as obj}]
+          (case type
+            :path (get-in obj [:fill-image :id])
+            :image (get-in obj [:metadata :id])
+            nil)))
+   (filter uuid?)))
 
 (defn- collect-used-media
   [data]
+  (let [pages (concat
+               (vals (:pages-index data))
+               (vals (:components data)))]
   (-> #{}
-      (into collect-media-xf (vals (:pages-index data)))
-      (into collect-media-xf (vals (:components data)))
-      (into (keys (:media data)))))
+      (into collect-media-xf pages)
+      (into (keys (:media data))))))
 
 (defn- process-file
   [{:keys [conn] :as cfg} {:keys [id data age] :as file}]
