@@ -95,3 +95,33 @@
    [{:v1 (alength (blob/encode data {:version 1}))
      :v2 (alength (blob/encode data {:version 2}))
      :v3 (alength (blob/encode data {:version 3}))}]))
+
+(defn update-page-1
+  [data]
+  (letfn [(find-empty-groups [objects]
+            (->> (vals objects)
+                 (filter (fn [shape]
+                           (and (= :group (:type shape))
+                                (or (empty? (:shapes shape))
+                                    (every? (fn [child-id]
+                                              (not (contains? objects child-id)))
+                                            (:shapes shape))))))
+                 (map :id)))
+
+          (update-page [[page-id page]]
+            (let [objects (:objects page)
+                  eids    (find-empty-groups objects)]
+
+              (map (fn [id]
+                     {:type :del-obj
+                      :page-id page-id
+                      :id id})
+                   eids)))]
+    (loop [i 0 data data]
+      (let [changes (mapcat update-page (:pages-index data))]
+        (prn "==== loop " i " ====")
+        (clojure.pprint/pprint changes)
+        (if (seq changes)
+          (recur (inc i)
+                 (app.common.pages.changes/process-changes data changes))
+          data)))))

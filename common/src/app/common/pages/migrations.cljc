@@ -222,3 +222,30 @@
         (update :pages-index #(d/mapm clean-container %))
         (d/update-when :components #(d/mapm clean-container %)))))
 
+(defmethod migrate 9
+  [data]
+  (letfn [(find-empty-groups [objects]
+            (->> (vals objects)
+                 (filter (fn [shape]
+                           (and (= :group (:type shape))
+                                (or (empty? (:shapes shape))
+                                    (every? (fn [child-id]
+                                              (not (contains? objects child-id)))
+                                            (:shapes shape))))))
+                 (map :id)))
+
+          (update-page [[page-id page]]
+            (let [objects (:objects page)
+                  eids    (find-empty-groups objects)]
+
+              (map (fn [id]
+                     {:type :del-obj
+                      :page-id page-id
+                      :id id})
+                   eids)))]
+
+    (loop [data data]
+      (let [changes (mapcat update-page (:pages-index data))]
+        (if (seq changes)
+          (recur (cp/process-changes data changes))
+          data)))))
