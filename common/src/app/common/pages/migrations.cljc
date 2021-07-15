@@ -264,7 +264,7 @@
                                              (filterv (fn [id] (contains? objects id)) shapes)))
               shape))
 
-          (update-page [id {:keys [objects] :as page}]
-            (d/mapm (partial update-object objects) objects))]
+          (update-page [_ page]
+            (update page :objects #(d/mapm (partial update-object %) %)))]
 
     (update data :pages-index #(d/mapm update-page %))))
