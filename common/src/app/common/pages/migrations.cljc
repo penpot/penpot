@@ -256,4 +256,15 @@
             (d/update-in-when page [:objects uuid/zero] dissoc :points :selrect))]
     (update data :pages-index #(d/mapm update-page %))))
 
+(defmethod migrate 11
+  [data]
+  (letfn [(update-object [objects id shape]
+            (if (= :frame (:type shape))
+              (d/update-when shape :shapes (fn [shapes]
+                                             (filterv (fn [id] (contains? objects id)) shapes)))
+              shape))
 
+          (update-page [id {:keys [objects] :as page}]
+            (d/mapm (partial update-object objects) objects))]
+
+    (update data :pages-index #(d/mapm update-page %))))
