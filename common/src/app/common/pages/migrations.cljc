@@ -234,7 +234,7 @@
                                             (:shapes shape))))))
                  (map :id)))
 
-          (update-page [[page-id page]]
+          (calculate-changes [[page-id page]]
             (let [objects (:objects page)
                   eids    (find-empty-groups objects)]
 
@@ -245,7 +245,15 @@
                    eids)))]
 
     (loop [data data]
-      (let [changes (mapcat update-page (:pages-index data))]
+      (let [changes (mapcat calculate-changes (:pages-index data))]
         (if (seq changes)
           (recur (cp/process-changes data changes))
           data)))))
+
+(defmethod migrate 10
+  [data]
+  (letfn [(update-page [_ page]
+            (d/update-in-when page [:objects uuid/zero] dissoc :points :selrect))]
+    (update data :pages-index #(d/mapm update-page %))))
+
+
