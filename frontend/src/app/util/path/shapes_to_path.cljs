@@ -139,8 +139,8 @@
           (d/without-keys dissoc-attrs)
           (assoc :type :path)
           (assoc :content new-content)
-          (cond-> (= :image type)
-            (assoc :fill-image metadata))))
+          (cond-> (= :image type) (-> (assoc :fill-image metadata)
+                                      (dissoc :metadata)))))
     ;; Do nothing if the shape is not of a correct type
     shape))
 
