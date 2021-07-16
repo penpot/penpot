@@ -382,7 +382,7 @@
 
             page-id   (:current-page-id state)
             objects   (wsh/lookup-page-objects state page-id)
-            unames    (atom (dwc/retrieve-used-names objects))
+            unames    (volatile! (dwc/retrieve-used-names objects))
 
             frame-id (cp/frame-id-by-position objects (gpt/add orig-pos delta))
 
@@ -391,7 +391,7 @@
               (let [new-name (dwc/generate-unique-name @unames (:name new-shape))]
 
                 (when (nil? (:parent-id original-shape))
-                  (swap! unames conj new-name))
+                  (vswap! unames conj new-name))
 
                 (cond-> new-shape
                   true
