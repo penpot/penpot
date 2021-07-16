@@ -203,8 +203,11 @@
       (when-not (some? (get-in state [:workspace-editor-state id]))
         (let [objects   (wsh/lookup-page-objects state)
               shape     (get objects id)
+              update-node? (fn [node]
+                             (or (txt/is-text-node? node)
+                                 (txt/is-paragraph-node? node)))
 
-              update-fn #(update-shape % txt/is-text-node? attrs/merge attrs)
+              update-fn #(update-shape % update-node? attrs/merge attrs)
               shape-ids (cond (= (:type shape) :text)  [id]
                               (= (:type shape) :group) (cp/get-children id objects))]
           (rx/of (dch/update-shapes shape-ids update-fn)))))))
@@ -325,8 +328,8 @@
   (ptk/reify ::save-font
     ptk/UpdateEvent
     (update [_ state]
-      ;; Check if the data has any multiple
-      (assoc-in state
-                [:workspace-local :defaults :font]
-                data))))
+      (let [multiple? (->> data vals (d/seek #(= % :multiple)))]
+        (cond-> state
+          (not multiple?)
+          (assoc-in [:workspace-local :defaults :font] data))))))
 

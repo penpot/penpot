@@ -157,11 +157,11 @@
         on-change
         (mf/use-callback
          (fn [val]
-           (let [val (handle-change val)]
-             (let [val (if (true? @blured)
-                         (ted/add-editor-blur-selection val)
-                         (ted/remove-editor-blur-selection val))]
-               (st/emit! (dwt/update-editor-state shape val))))))
+           (let [val (handle-change val)
+                 val (if (true? @blured)
+                       (ted/add-editor-blur-selection val)
+                       (ted/remove-editor-blur-selection val))]
+             (st/emit! (dwt/update-editor-state shape val)))))
 
         on-editor
         (mf/use-callback

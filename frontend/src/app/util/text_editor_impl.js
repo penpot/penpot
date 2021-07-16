@@ -34,7 +34,7 @@ function mergeBlockData(block, newData) {
     }
   }
 
-  return block.merge({
+  return block.mergeDeep({
     data: data
   });
 }
@@ -119,29 +119,31 @@ export function updateCurrentBlockData(state, attrs) {
 }
 
 export function applyInlineStyle(state, styles) {
-  let selection = state.getSelection();
+  const userSelection = state.getSelection();
+  let selection = userSelection;
 
   if (selection.isCollapsed()) {
     selection = getSelectAllSelection(state);
   }
 
+  let result = state;
   let content = null;
 
   for (let style of styles) {
     const [p, k, v] = style.split("$$$");
     const prefix = [p, k, ""].join("$$$");
 
-    content = state.getCurrentContent();
+    content = result.getCurrentContent();
     content = removeInlineStylePrefix(content, selection, prefix);
 
     if (v !== "z:null") {
       content = Modifier.applyInlineStyle(content, selection, style);
     }
 
-    state = EditorState.push(state, content, "change-inline-style");
+    result = EditorState.push(result, content, "change-inline-style");
   }
 
-  return state;
+  return EditorState.acceptSelection(result, userSelection);
 }
 
 export function splitBlockPreservingData(state) {
@@ -308,7 +310,7 @@ export function updateBlockData(state, blockKey, data) {
   );
 
   const result = EditorState.push(state, newContent, 'change-block-data');
-  return EditorState.acceptSelection(result, userSelection)
+  return EditorState.acceptSelection(result, userSelection);
 }
 
 export function getSelection(state) {
