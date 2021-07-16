@@ -7,6 +7,7 @@
 ### :bug: Bugs fixed
 
 - Add scroll bar to Teams menu [Taiga #1894](https://tree.taiga.io/project/penpot/issue/1894).
+- Fix repeated names when duplicating artboards or groups [Taiga #1892](https://tree.taiga.io/project/penpot/issue/1892).
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
