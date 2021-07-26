@@ -103,16 +103,16 @@
   children's order will be breadth first."
   [id objects]
 
-  (loop [result (transient [])
+  (loop [result  (transient [])
          pending (transient [])
-         next id]
+         next    id]
     (let [children (get-in objects [next :shapes] [])
           [result pending]
           ;; Iterate through children and add them to the result
           ;; also add them in pending to check for their children
           (loop [result result
                  pending pending
-                 current (first children)
+                 current  (first children)
                  children (rest children)]
             (if current
               (recur (conj! result current)
@@ -214,7 +214,7 @@
             (if (some #{id} acc)
               acc
               (conj acc id)))
-          prev-ids
+          (vec prev-ids)
           ids))
 
 (defn select-toplevel-shapes
