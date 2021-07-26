@@ -204,19 +204,19 @@
     ptk/UpdateEvent
     (update [_ state]
       (dissoc state
-              :workspace-file
-              :workspace-project
-              :workspace-media-objects
-              :workspace-persistence
-              :workspace-local
-              :workspace-data
-              :workspace-editor-state
-              :workspace-undo
               :current-file-id
               :current-project-id
-              :workspace-layout
+              :current-team-id
+              :workspace-data
+              :workspace-editor-state
+              :workspace-file
               :workspace-libraries
-              :workspace-presence))
+              :workspace-media-objects
+              :workspace-persistence
+              :workspace-presence
+              :workspace-project
+              :workspace-project
+              :workspace-undo))
 
     ptk/WatchEvent
     (watch [_ _ _]
