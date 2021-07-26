@@ -13,6 +13,16 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+## 1.7.1-alpha
+
+### :bug: Bugs fixed
+
+- Fix issue related to the GC and images in path shapes.
+- Fix issue on the shape order on some undo operations.
+- Fix issue on undo page deletion.
+- Fix some issues related to constraints.
+
+
 ## 1.7.0-alpha
 
 ### :sparkles: New features
