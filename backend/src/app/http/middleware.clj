@@ -85,7 +85,7 @@
           (.close ^java.io.OutputStream output-stream))))))
 
 (defn- impl-format-response-body
-  [response request]
+  [response _request]
   (let [body (:body response)
         opts {:type :json-verbose}]
     (cond

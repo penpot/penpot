@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace
   (:require
-   [app.util.timers :as ts]
    [app.main.data.messages :as dm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.persistence :as dwp]
@@ -27,6 +26,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
+   [app.util.timers :as ts]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
