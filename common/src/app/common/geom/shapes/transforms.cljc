@@ -597,10 +597,8 @@
                         (assoc :resize-origin (:resize-origin parent-modifiers)
                                :resize-vector (gpt/point (:x (:resize-vector parent-modifiers)) 1))
 
-                        (and (:resize-vector-2 parent-modifiers)
-                             (not (mth/close? (:x (:resize-vector-2 parent-modifiers)) 1)))
-                        (assoc :resize-origin-2 (:resize-origin-2 parent-modifiers)
-                               :resize-vector-2 (gpt/point (:x (:resize-vector-2 parent-modifiers)) 1))
+                        ;; resize-vector-2 is always for vertical modifiers, so no need to
+                        ;; check it here.
 
                         (:displacement parent-modifiers)
                         (assoc :displacement
@@ -654,10 +652,12 @@
                         (assoc :resize-origin (:resize-origin parent-modifiers)
                                :resize-vector (gpt/point 1 (:y (:resize-vector parent-modifiers))))
 
+                        ;; If there is a resize-vector-2, this means that we come from a recursive
+                        ;; call, and the resize-vector has no vertical data, so we may override it.
                         (and (:resize-vector-2 parent-modifiers)
                              (not (mth/close? (:y (:resize-vector-2 parent-modifiers)) 1)))
-                        (assoc :resize-origin-2 (:resize-origin-2 parent-modifiers)
-                               :resize-vector-2 (gpt/point 1 (:y (:resize-vector-2 parent-modifiers))))
+                        (assoc :resize-origin (:resize-origin-2 parent-modifiers)
+                               :resize-vector (gpt/point 1 (:y (:resize-vector-2 parent-modifiers))))
 
                         (:displacement parent-modifiers)
                         (assoc :displacement
