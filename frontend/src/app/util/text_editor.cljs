@@ -126,3 +126,7 @@
       (as-> state $
         (reduce redfn $ blocks)
         (impl/setSelection $ selection)))))
+
+(defn insert-text [state text attrs]
+  (let [style (txt/attrs-to-styles attrs)]
+    (impl/insertText state text (clj->js attrs) (clj->js style))))

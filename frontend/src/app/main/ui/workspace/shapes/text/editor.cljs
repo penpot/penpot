@@ -77,6 +77,7 @@
   (let [old-blocks (js->clj (.toJS (.getBlockMap (.getCurrentContent ^js old-state)))
                             :keywordize-keys false)
         new-blocks (js->clj (.toJS (.getBlockMap (.getCurrentContent ^js state)))
+
                             :keywordize-keys false)]
     (->> old-blocks
          (d/mapm
@@ -173,8 +174,9 @@
         handle-return
         (mf/use-callback
          (fn [_ state]
-           (let [state (ted/editor-split-block state)
-                 state (handle-change state)]
+           (let [style (ted/get-editor-current-inline-styles state)
+                 state (-> (ted/insert-text state "\n" style)
+                           (handle-change))]
              (st/emit! (dwt/update-editor-state shape state)))
            "handled"))
 
@@ -183,7 +185,16 @@
          (fn [event]
            (when (dom/class? (dom/get-target event) "DraftEditor-root")
              (st/emit! (dwt/cursor-to-end shape)))
-           (st/emit! (dwt/focus-editor))))]
+           (st/emit! (dwt/focus-editor))))
+
+        handle-pasted-text
+        (fn [text _ editor]
+          (let [style (ted/get-editor-current-inline-styles state)
+                state (-> (ted/insert-text state text style)
+                          (handle-change))]
+            (st/emit! (dwt/update-editor-state shape state)))
+
+          "handled")]
 
     (mf/use-layout-effect on-mount)
 
@@ -203,6 +214,7 @@
        :on-focus on-focus
        :handle-return handle-return
        :strip-pasted-styles true
+       :handle-pasted-text handle-pasted-text
        :custom-style-fn styles-fn
        :block-renderer-fn #(render-block % shape)
        :ref on-editor
