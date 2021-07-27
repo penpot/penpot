@@ -9,14 +9,17 @@
 'use strict';
 
 import {
+  BlockMapBuilder,
   CharacterMetadata,
-  EditorState,
   CompositeDecorator,
+  EditorState,
+  Modifier,
+  RichTextEditorUtil,
   SelectionState,
-  Modifier
 } from "draft-js";
 
-import {Map} from "immutable";
+import DraftPasteProcessor from 'draft-js/lib/DraftPasteProcessor';
+import {Map, OrderedSet} from "immutable";
 
 function isDefined(v) {
   return v !== undefined && v !== null;
@@ -334,4 +337,42 @@ export function getInlineStyle(state, blockKey, offset) {
   const content = state.getCurrentContent();
   const block = content.getBlockForKey(blockKey);
   return block.getInlineStyleAt(offset).toJS();
+}
+
+const NEWLINE_REGEX = /\r\n?|\n/g;
+
+function splitTextIntoTextBlocks(text) {
+  return text.split(NEWLINE_REGEX);
+}
+
+export function insertText(state, text, attrs, inlineStyles) {
+  const blocks = splitTextIntoTextBlocks(text);
+
+  const character = CharacterMetadata.create({style: OrderedSet(inlineStyles)});
+
+  let blockArray = DraftPasteProcessor.processText(
+    blocks,
+    character,
+    "unstyled",
+  );
+
+  blockArray = blockArray.map((b) => {
+    if (b.getText() === "") {
+      return mergeBlockData(b, attrs)
+    }
+    return b;
+  });
+
+  const fragment = BlockMapBuilder.createFromArray(blockArray);
+  const content = state.getCurrentContent();
+  const selection = state.getSelection();
+
+  const newContent = Modifier.replaceWithFragment(
+    content,
+    selection,
+    fragment
+  );
+
+  const resultSelection = SelectionState.createEmpty(selection.getStartKey());
+  return EditorState.push(state, newContent, 'insert-fragment');
 }
