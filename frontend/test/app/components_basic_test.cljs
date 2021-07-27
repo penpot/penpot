@@ -89,11 +89,11 @@
 
                    ;; NOTE: the group name depends on having executed
                    ;;       the previous test.
-                   (t/is (= (:name group) "Component-2"))
+                   (t/is (= (:name group) "Component-1"))
                    (t/is (= (:name shape1) "Rect 1"))
                    (t/is (= (:name shape2) "Rect 2"))
-                   (t/is (= (:name component) "Component-2"))
-                   (t/is (= (:name c-group) "Component-2"))
+                   (t/is (= (:name component) "Component-1"))
+                   (t/is (= (:name c-group) "Component-1"))
                    (t/is (= (:name c-shape1) "Rect 1"))
                    (t/is (= (:name c-shape2) "Rect 2"))
 
@@ -139,11 +139,11 @@
 
                    (t/is (= (:name shape1) "Rect 1"))
                    (t/is (= (:name shape2) "Rect 2"))
-                   (t/is (= (:name group) "Group-3"))
-                   (t/is (= (:name component) "Group-3"))
+                   (t/is (= (:name group) "Group-1"))
+                   (t/is (= (:name component) "Group-1"))
                    (t/is (= (:name c-shape1) "Rect 1"))
                    (t/is (= (:name c-shape2) "Rect 2"))
-                   (t/is (= (:name c-group) "Group-3"))
+                   (t/is (= (:name c-group) "Group-1"))
 
                    (thl/is-from-file group file))))
 
@@ -234,7 +234,7 @@
                          new-component-id)]
 
                    (t/is (= (:name component2)
-                            "Component-6")))))
+                            "Component-2")))))
 
              (rx/subs
                done
@@ -322,9 +322,9 @@
 
                    (t/is (not= (:id instance1) (:id instance2)))
                    (t/is (= (:id component) component-id))
-                   (t/is (= (:name instance2) "Component-8"))
+                   (t/is (= (:name instance2) "Component-2"))
                    (t/is (= (:name shape2) "Rect 1"))
-                   (t/is (= (:name c-instance2) "Component-7"))
+                   (t/is (= (:name c-instance2) "Component-1"))
                    (t/is (= (:name c-shape2) "Rect 1")))))
 
              (rx/subs
