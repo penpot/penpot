@@ -98,7 +98,7 @@
 (defn get-attribute
   "Extract the value of one attribute of a dom node."
   [node attr-name]
-  (.getAttribute node attr-name))
+  (.getAttribute ^js node attr-name))
 
 (def get-target-val (comp get-value get-target))
 
@@ -382,5 +382,5 @@
     (trigger-download-uri filename mtype uri)))
 
 (defn left-mouse? [bevent]
-  (let [event  (.-nativeEvent bevent)]
+  (let [event  (.-nativeEvent ^js bevent)]
     (= 1 (.-which event))))
