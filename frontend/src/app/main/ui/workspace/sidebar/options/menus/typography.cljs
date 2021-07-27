@@ -391,7 +391,7 @@
      [:span.tooltip.tooltip-bottom
       {:alt (tr "workspace.options.text-options.none")
        :class (dom/classnames :current (= "none" text-transform))
-       :focus #(dom/prevent-default %)
+       :on-focus #(dom/prevent-default %)
        :on-click #(handle-change % "none")}
       i/minus]
      [:span.tooltip.tooltip-bottom
