@@ -129,7 +129,7 @@
         (if (and (= (count shapes) 1)
                  (= (:type (first shapes)) :group))
           [(first shapes) [] []]
-          (dwg/prepare-create-group objects page-id shapes "Component-" true))
+          (dwg/prepare-create-group objects page-id shapes "Component" true))
 
         [new-shape new-shapes updated-shapes]
         (make-component-shape group objects file-id)
