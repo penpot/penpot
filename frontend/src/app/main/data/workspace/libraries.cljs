@@ -594,7 +594,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (if (not= library-id (:current-file-id state))
-        (assoc-in state [:workspace-libraries library-id :synced-at] (dt/now))
+        (d/assoc-in-when state [:workspace-libraries library-id :synced-at] (dt/now))
         state))
 
     ptk/WatchEvent
