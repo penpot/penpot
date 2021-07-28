@@ -188,7 +188,7 @@
            (st/emit! (dwt/focus-editor))))
 
         handle-pasted-text
-        (fn [text _ editor]
+        (fn [text _ _]
           (let [style (ted/get-editor-current-inline-styles state)
                 state (-> (ted/insert-text state text style)
                           (handle-change))]
