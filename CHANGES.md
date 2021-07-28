@@ -13,6 +13,9 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+- soultipsy [#1100](https://github.com/penpot/penpot/pull/1100)
+
+
 ## 1.7.1-alpha
 
 ### :bug: Bugs fixed
