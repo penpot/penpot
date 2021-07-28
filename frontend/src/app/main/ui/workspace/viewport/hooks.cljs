@@ -84,9 +84,10 @@
   (let [on-resize (actions/on-resize viewport-ref)]
     (mf/use-layout-effect (mf/deps layout) on-resize)))
 
-(defn setup-keyboard [alt? ctrl?]
+(defn setup-keyboard [alt? ctrl? space?]
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
-  (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %)))
+  (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %))
+  (hooks/use-stream ms/keyboard-space #(reset! space? %)))
 
 ;; TODO: revisit the arguments, looks like `selected` is not necessary here
 (defn setup-hover-shapes [page-id move-stream _selected objects transform selected ctrl? hover hover-ids zoom]
