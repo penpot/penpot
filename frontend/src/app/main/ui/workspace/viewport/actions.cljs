@@ -27,9 +27,9 @@
   (:import goog.events.WheelEvent))
 
 (defn on-mouse-down
-  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment?]
+  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment? space?]
   (mf/use-callback
-   (mf/deps id blocked hidden type selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment?)
+   (mf/deps id blocked hidden type selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment? space?)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
                (dom/class? (dom/get-target bevent) "viewport-selrect"))
@@ -68,6 +68,9 @@
                node-editing?
                ;; Handle path node area selection
                (st/emit! (dwdp/handle-area-selection shift?))
+
+               @space?
+               (st/emit! (dw/start-panning))
 
                (or (not id) (and frame? (not selected?)))
                (st/emit! (dw/handle-area-selection shift?))
@@ -209,7 +212,8 @@
            middle-click? (= 2 (.-which event))]
 
        (when left-click?
-         (st/emit! (ms/->MouseEvent :up ctrl? shift? alt?)))
+         (st/emit! (dw/finish-panning)
+                   (ms/->MouseEvent :up ctrl? shift? alt?)))
 
        (when middle-click?
          (dom/prevent-default event)
@@ -253,23 +257,20 @@
 (defn on-key-down []
  (mf/use-callback
   (fn [event]
-    (let [bevent  (.getBrowserEvent ^js event)
-          key     (.-key ^js event)
-          ctrl?   (kbd/ctrl? event)
-          shift?  (kbd/shift? event)
-          alt?    (kbd/alt? event)
-          meta?   (kbd/meta? event)
-          target  (dom/get-target event)
-          editor? (some? (.closest ^js target ".public-DraftEditor-content"))]
+    (let [bevent   (.getBrowserEvent ^js event)
+          key      (.-key ^js event)
+          ctrl?    (kbd/ctrl? event)
+          shift?   (kbd/shift? event)
+          alt?     (kbd/alt? event)
+          meta?    (kbd/meta? event)
+          target   (dom/get-target event)
+          editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
+                       (= "rich-text" (obj/get target "className"))
+                       (= "INPUT" (obj/get target "tagName"))
+                       (= "TEXTAREA" (obj/get target "tagName")))]
 
       (when-not (.-repeat bevent)
-        (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta?))
-        (when (and (kbd/space? event)
-                   (not editor?)
-                   (not= "rich-text" (obj/get target "className"))
-                   (not= "INPUT" (obj/get target "tagName"))
-                   (not= "TEXTAREA" (obj/get target "tagName")))
-          (st/emit! (dw/start-panning))))))))
+        (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta? editing?)))))))
 
 (defn on-key-up []
  (mf/use-callback
@@ -278,10 +279,13 @@
           ctrl?  (kbd/ctrl? event)
           shift? (kbd/shift? event)
           alt?   (kbd/alt? event)
-          meta?  (kbd/meta? event)]
-      (when (kbd/space? event)
-        (st/emit! (dw/finish-panning)))
-      (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta?))))))
+          meta?  (kbd/meta? event)
+          target   (dom/get-target event)
+          editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
+                       (= "rich-text" (obj/get target "className"))
+                       (= "INPUT" (obj/get target "tagName"))
+                       (= "TEXTAREA" (obj/get target "tagName")))]
+      (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta? editing?))))))
 
 (defn on-mouse-move [viewport-ref zoom]
   (let [last-position (mf/use-var nil)]

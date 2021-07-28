@@ -14,7 +14,7 @@
 
 ;; --- User Events
 
-(defrecord KeyboardEvent [type key shift ctrl alt meta])
+(defrecord KeyboardEvent [type key shift ctrl alt meta editing])
 
 (defn keyboard-event?
   [v]
@@ -136,4 +136,15 @@
                        (rx/map (constantly false))))
                  (rx/dedupe))]
         (rx/subscribe-with ob sub)
+    sub))
+
+(defonce keyboard-space
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter keyboard-event?)
+                 (rx/filter kbd/space?)
+                 (rx/filter (comp not kbd/editing?))
+                 (rx/map #(= :down (:type %)))
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
     sub))
