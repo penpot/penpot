@@ -1,15 +1,37 @@
 # CHANGELOG #
 
+
+
+
 ## :rocket: Next
 
 ### :sparkles: New features
 
 ### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :boom: Breaking changes
+### :heart: Community contributions by (Thank you!)
+
+
+## 1.7.2-alpha
+
+### :sparkles: New features
+
+- Add many improvements to text tool.
+
+### :bug: Bugs fixed
 
 - Add scroll bar to Teams menu [Taiga #1894](https://tree.taiga.io/project/penpot/issue/1894).
 - Fix repeated names when duplicating artboards or groups [Taiga #1892](https://tree.taiga.io/project/penpot/issue/1892).
+- Fix properly messages lifecycle on navigate.
+- Fix handling repeated names on duplicate object trees.
+- Fix group naming on group creation.
+- Fix some issues in svg transformation.
 
 ### :arrow_up: Deps updates
+
+- Update frontend build tooling.
+
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
