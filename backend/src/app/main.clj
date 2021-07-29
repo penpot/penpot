@@ -323,11 +323,16 @@
    {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref :app.worker/executor)
 
-    :backends {:assets-s3 (ig/ref [::assets :app.storage.s3/backend])
+    :backends {
+               :assets-s3 (ig/ref [::assets :app.storage.s3/backend])
                :assets-db (ig/ref [::assets :app.storage.db/backend])
                :assets-fs (ig/ref [::assets :app.storage.fs/backend])
                :tmp       (ig/ref [::tmp  :app.storage.fs/backend])
-               :fdata-s3  (ig/ref [::fdata :app.storage.s3/backend])}}
+               :fdata-s3  (ig/ref [::fdata :app.storage.s3/backend])
+
+               ;; keep this for backward compatibility
+               :s3        (ig/ref [::assets :app.storage.s3/backend])
+               :fs        (ig/ref [::assets :app.storage.fs/backend])}}
 
    [::fdata :app.storage.s3/backend]
    {:region (cf/get :storage-fdata-s3-region)
