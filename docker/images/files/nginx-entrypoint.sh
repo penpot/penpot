@@ -9,17 +9,6 @@ log() {
 ## App Frontend config
 #########################################
 
-
-update_public_uri() {
-  if [ -n "$PENPOT_PUBLIC_URI" ]; then
-    log "Updating Public URI: $PENPOT_PUBLIC_URI"
-    sed -i \
-      -e "s|^//var penpotPublicURI = \".*\";|var penpotPublicURI = \"$PENPOT_PUBLIC_URI\";|g" \
-      "$1"
-  fi
-}
-
-
 update_demo_warning() {
   if [ -n "$PENPOT_DEMO_WARNING" ]; then
     log "Updating Demo Warning: $PENPOT_DEMO_WARNING"
@@ -113,7 +102,6 @@ update_flags() {
   fi
 }
 
-update_public_uri /var/www/app/js/config.js
 update_demo_warning /var/www/app/js/config.js
 update_allow_demo_users /var/www/app/js/config.js
 update_google_client_id /var/www/app/js/config.js
