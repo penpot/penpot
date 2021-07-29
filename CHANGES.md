@@ -8,6 +8,7 @@
 ### :sparkles: New features
 
 - Use space + mouse drag to pan, instead of only space [Taiga #1800](https://tree.taiga.io/project/penpot/us/1800).
+- Allow to zoom with ctrl + middle button [Taiga #1428](https://tree.taiga.io/project/penpot/us/1428).
 
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates

@@ -110,6 +110,7 @@
                               :edit-path
                               :tooltip
                               :panning
+                              :zooming
                               :picking-color?
                               :transform
                               :hover
