@@ -9,7 +9,6 @@
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.db :as db]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as projects]
@@ -175,7 +174,7 @@
 
 (defn- retrieve-data*
   [{:keys [storage] :as cfg} file]
-  (when-let [backend (simpl/resolve-backend storage (cf/get :fdata-storage-backend))]
+  (when-let [backend (simpl/resolve-backend storage (:data-backend file))]
     (simpl/get-object-bytes backend file)))
 
 (defn retrieve-data

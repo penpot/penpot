@@ -58,7 +58,7 @@
    :srepl-host "127.0.0.1"
    :srepl-port 6062
 
-   :assets-storage-backend :fs
+   :assets-storage-backend :assets-fs
    :storage-assets-fs-directory "assets"
 
    :feedback-destination "info@example.com"

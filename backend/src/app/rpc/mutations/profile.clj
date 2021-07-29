@@ -9,7 +9,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
    [app.http.oauth :refer [extract-props]]
@@ -99,11 +99,11 @@
 
 (sv/defmethod ::prepare-register-profile {:auth false}
   [{:keys [pool tokens] :as cfg} params]
-  (when-not (cfg/get :registration-enabled)
+  (when-not (cf/get :registration-enabled)
     (ex/raise :type :restriction
               :code :registration-disabled))
 
-  (when-let [domains (cfg/get :registration-domain-whitelist)]
+  (when-let [domains (cf/get :registration-domain-whitelist)]
     (when-not (email-domain-in-whitelist? domains (:email params))
       (ex/raise :type :validation
                 :code :email-domain-is-not-allowed)))
@@ -402,6 +402,7 @@
               {:password (derive-password password)}
               {:id id}))
 
+
 ;; --- MUTATION: Update Photo
 
 (declare update-profile-photo)
@@ -416,11 +417,13 @@
   [{:keys [pool storage] :as cfg} {:keys [profile-id file] :as params}]
   (db/with-atomic [conn pool]
     (media/validate-media-type (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
+    (media/run cfg {:cmd :info :input {:path (:tempfile file)
+                                       :mtype (:content-type file)}})
+
     (let [profile (db/get-by-id conn :profile profile-id)
-          _       (media/run cfg {:cmd :info :input {:path (:tempfile file)
-                                                     :mtype (:content-type file)}})
-          photo   (teams/upload-photo cfg params)
-          storage (assoc storage :conn conn)]
+          storage (media/configure-assets-storage storage conn)
+          cfg     (assoc cfg :storage storage)
+          photo   (teams/upload-photo cfg params)]
 
       ;; Schedule deletion of old photo
       (when-let [id (:photo-id profile)]
@@ -453,7 +456,7 @@
           params  (assoc params
                          :profile profile
                          :email (str/lower email))]
-      (if (cfg/get :smtp-enabled)
+      (if (cf/get :smtp-enabled)
         (request-email-change cfg params)
         (change-email-inmediatelly cfg params)))))
 

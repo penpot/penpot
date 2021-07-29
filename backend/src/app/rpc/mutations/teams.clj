@@ -251,10 +251,12 @@
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
     (media/validate-media-type (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
+    (media/run cfg {:cmd :info :input {:path (:tempfile file)
+                                       :mtype (:content-type file)}})
 
     (let [team    (teams/retrieve-team conn profile-id team-id)
-          _       (media/run cfg {:cmd :info :input {:path (:tempfile file)
-                                                     :mtype (:content-type file)}})
+          storage (media/configure-assets-storage storage conn)
+          cfg     (assoc cfg :storage storage)
           photo   (upload-photo cfg params)]
 
       ;; Schedule deletion of old photo
@@ -263,8 +265,8 @@
 
       ;; Save new photo
       (db/update! conn :team
-              {:photo-id (:id photo)}
-              {:id team-id})
+                  {:photo-id (:id photo)}
+                  {:id team-id})
 
       (assoc team :photo-id (:id photo)))))
 
