@@ -27,9 +27,11 @@
   (:import goog.events.WheelEvent))
 
 (defn on-mouse-down
-  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment? space?]
+  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
+   node-editing? drawing-path? create-comment? space? viewport-ref zoom]
   (mf/use-callback
-   (mf/deps id blocked hidden type selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment? space?)
+   (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
+            node-editing? drawing-path? create-comment? space? viewport-ref zoom)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
                (dom/class? (dom/get-target bevent) "viewport-selrect"))
@@ -48,7 +50,12 @@
 
          (when middle-click?
            (dom/prevent-default bevent)
-           (st/emit! (dw/start-panning)))
+           (if ctrl?
+             (let [raw-pt   (dom/get-client-position event)
+                   viewport (mf/ref-val viewport-ref)
+                   pt       (utils/translate-point-to-viewport viewport zoom raw-pt)]
+               (st/emit! (dw/start-zooming pt)))
+             (st/emit! (dw/start-panning))))
 
          (when left-click?
            (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
@@ -221,7 +228,8 @@
          ;; We store this so in Firefox the middle button won't do a paste of the content
          (reset! disable-paste true)
          (timers/schedule #(reset! disable-paste false))
-         (st/emit! (dw/finish-panning)))))))
+         (st/emit! (dw/finish-panning)
+                   (dw/finish-zooming)))))))
 
 (defn on-pointer-enter [in-viewport?]
   (mf/use-callback
