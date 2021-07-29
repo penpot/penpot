@@ -28,8 +28,6 @@
 ;; Storage Module State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::backend ::us/keyword)
-
 (s/def ::s3 ::ss3/backend)
 (s/def ::fs ::sfs/backend)
 (s/def ::db ::sdb/backend)
@@ -42,7 +40,7 @@
                    :db ::sdb/backend))))
 
 (defmethod ig/pre-init-spec ::storage [_]
-  (s/keys :req-un [::backend ::wrk/executor ::db/pool ::backends]))
+  (s/keys :req-un [::wrk/executor ::db/pool ::backends]))
 
 (defmethod ig/prep-key ::storage
   [_ {:keys [backends] :as cfg}]
@@ -55,7 +53,7 @@
       (assoc :backends (d/without-nils backends))))
 
 (s/def ::storage
-  (s/keys :req-un [::backends ::wrk/executor ::db/pool ::backend]))
+  (s/keys :req-un [::backends ::wrk/executor ::db/pool]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Database Objects

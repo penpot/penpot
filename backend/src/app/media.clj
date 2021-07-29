@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
    [app.common.spec :as us]
+   [app.config :as cf]
    [app.rlimits :as rlm]
    [app.rpc.queries.svg :as svg]
    [buddy.core.bytes :as bb]
@@ -27,10 +28,6 @@
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation
    org.im4java.core.Info))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; --- Utility functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::image-content-type cm/valid-image-types)
 (s/def ::font-content-type cm/valid-font-types)
@@ -330,3 +327,17 @@
               (= stype :ttf)
               (-> (assoc "font/otf" (ttf->otf sfnt))
                   (assoc "font/ttf" sfnt)))))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Utility functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn configure-assets-storage
+  "Given storage map, returns a storage configured with the apropriate
+  backend for assets."
+  [storage conn]
+  (-> storage
+      (assoc :conn conn)
+      (assoc :backend (cf/get :assets-storage-backend :assets-fs))))
+
