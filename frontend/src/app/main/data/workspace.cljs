@@ -374,6 +374,9 @@
 
 ;; --- Viewport Sizing
 
+(declare increase-zoom)
+(declare decrease-zoom)
+(declare set-zoom)
 (declare zoom-to-fit-all)
 
 (defn initialize-viewport
@@ -458,7 +461,6 @@
                                             (update :height #(/ % hprop))
                                             (assoc :left-offset left-offset))))))))))))
 
-
 (defn start-panning []
   (ptk/reify ::start-panning
     ptk/WatchEvent
@@ -484,6 +486,30 @@
     (update [_ state]
       (-> state
           (update :workspace-local dissoc :panning)))))
+
+(defn start-zooming [pt]
+  (ptk/reify ::start-zooming
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stopper (->> stream (rx/filter (ptk/type? ::finish-zooming)))]
+        (when-not (get-in state [:workspace-local :zooming])
+          (rx/concat
+           (rx/of #(-> % (assoc-in [:workspace-local :zooming] true)))
+           (->> stream
+                (rx/filter ms/pointer-event?)
+                (rx/filter #(= :delta (:source %)))
+                (rx/map :pt)
+                (rx/take-until stopper)
+                (rx/map (fn [delta]
+                          (let [scale (+ 1 (/ (:y delta) 100))] ;; this number may be adjusted after user testing
+                            (set-zoom pt scale)))))))))))
+
+(defn finish-zooming []
+  (ptk/reify ::finish-zooming
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-local dissoc :zooming)))))
 
 
 ;; --- Toggle layout flag
@@ -569,6 +595,16 @@
     (update [_ state]
       (update state :workspace-local
               #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01)))))))
+
+(defn set-zoom
+  [center scale]
+  (ptk/reify ::set-zoom
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local
+              #(impl-update-zoom % center (fn [z] (-> (* z scale)
+                                                      (max 0.01)
+                                                      (min 200))))))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom

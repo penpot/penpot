@@ -114,7 +114,8 @@
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file viewport-ref zoom)
-        on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment? space?)
+        on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing?
+                                                 drawing-path? create-comment? space? viewport-ref zoom)
         on-mouse-up       (actions/on-mouse-up disable-paste)
         on-pointer-down   (actions/on-pointer-down)
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
