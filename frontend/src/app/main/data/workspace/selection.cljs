@@ -390,7 +390,12 @@
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
-            delta    (gpt/point 0 0)
+            delta    (if (= (count selected) 1)
+                       (let [obj (get objects (first selected))]
+                         (if (= (:type obj) :frame)
+                           (gpt/point (+ (:width obj) 50) 0)
+                           (gpt/point 0 0)))
+                       (gpt/point 0 0))
 
             unames   (dwc/retrieve-used-names objects)
 
