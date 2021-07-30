@@ -1,15 +1,12 @@
-# CHANGELOG #
-
-
-
+# CHANGELOG
 
 ## :rocket: Next
 
 ### :sparkles: New features
 
-- Use space + mouse drag to pan, instead of only space [Taiga #1800](https://tree.taiga.io/project/penpot/us/1800).
 - Allow to zoom with ctrl + middle button [Taiga #1428](https://tree.taiga.io/project/penpot/us/1428).
 - Auto placement of duplicated objects [Taiga #1386](https://tree.taiga.io/project/penpot/us/1386).
+- Use space + mouse drag to pan, instead of only space [Taiga #1800](https://tree.taiga.io/project/penpot/us/1800).
 
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
@@ -36,7 +33,6 @@
 
 - Update frontend build tooling.
 
-### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
 - soultipsy [#1100](https://github.com/penpot/penpot/pull/1100)
@@ -86,10 +82,6 @@
 - Fix header partialy visible on fullscreen viewer mode [Taiga #1875](https://tree.taiga.io/project/penpot/issue/1875)
 - Fix dynamic alignment enabled with hidden objects [#1063](https://github.com/penpot/penpot/issues/1063)
 
-
-### :arrow_up: Deps updates
-### :boom: Breaking changes
-### :heart: Community contributions by (Thank you!)
 
 ## 1.6.5-alpha
 
