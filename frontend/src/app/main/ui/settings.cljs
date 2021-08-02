@@ -23,9 +23,7 @@
   (let [logout (constantly nil)]
     [:header.dashboard-header
      [:div.dashboard-title
-      [:h1 (tr "dashboard.your-account-title")]]
-     [:a.btn-secondary.btn-small {:on-click logout}
-      (tr "labels.logout")]]))
+      [:h1 (tr "dashboard.your-account-title")]]]))
 
 (mf/defc settings
   [{:keys [route] :as props}]
