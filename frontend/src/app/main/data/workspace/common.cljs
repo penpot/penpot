@@ -144,6 +144,38 @@
                                             :origin it
                                             :save-undo? false}))))))))))
 
+(defn undo-to-index
+  "Repeat undoing or redoing until dest-index is reached."
+  [dest-index]
+  (ptk/reify ::undo-to-index
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [edition (get-in state [:workspace-local :edition])
+            drawing (get state :workspace-drawing)]
+        (when-not (or (some? edition) (not-empty drawing))
+          (let [undo  (:workspace-undo state)
+                items (:items undo)
+                index (or (:index undo) (dec (count items)))]
+            (when (and (some? items)
+                       (<= 0 dest-index (dec (count items))))
+              (let [changes (vec (apply concat
+                                        (cond
+                                          (< dest-index index)
+                                          (->> (subvec items (inc dest-index) (inc index))
+                                               (reverse)
+                                               (map :undo-changes))
+                                          (> dest-index index)
+                                          (->> (subvec items (inc index) (inc dest-index))
+                                               (map :redo-changes))
+                                          :else [])))]
+                (when (seq changes)
+                  (rx/of (dwu/materialize-undo changes dest-index)
+                         (dch/commit-changes {:redo-changes changes
+                                              :undo-changes []
+                                              :origin it
+                                              :save-undo? false})))))))))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shapes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
