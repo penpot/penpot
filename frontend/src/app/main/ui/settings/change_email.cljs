@@ -96,12 +96,12 @@
           :content (tr "modals.change-email.info" (:email profile))}]
 
         [:div.fields-row
-         [:& fm/input {:type "text"
+         [:& fm/input {:type "email"
                        :name :email-1
                        :label (tr "modals.change-email.new-email")
                        :trim true}]]
         [:div.fields-row
-         [:& fm/input {:type "text"
+         [:& fm/input {:type "email"
                        :name :email-2
                        :label (tr "modals.change-email.confirm-email")
                        :trim true}]]]
