@@ -47,7 +47,8 @@
 (defn create-font-variant
   [{:keys [conn storage] :as cfg} {:keys [data] :as params}]
   (let [data    (media/run cfg {:cmd :generate-fonts :input data :rlimit :font})
-        storage (assoc storage :conn conn)
+        storage (media/configure-assets-storage storage conn)
+
         otf     (when-let [fdata (get data "font/otf")]
                   (sto/put-object storage {:content (sto/content fdata)
                                            :content-type "font/otf"}))
