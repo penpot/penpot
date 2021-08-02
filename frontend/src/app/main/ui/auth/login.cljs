@@ -97,7 +97,7 @@
       [:div.fields-row
        [:& fm/input
         {:name :email
-         :type "text"
+         :type "email"
          :tab-index "2"
          :help-icon i/at
          :label (tr "auth.email")}]]
