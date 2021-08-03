@@ -15,6 +15,8 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+- eduayme [#1129](https://github.com/penpot/penpot/pull/1129).
+
 
 ## 1.7.2-alpha
 
