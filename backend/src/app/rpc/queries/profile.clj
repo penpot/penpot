@@ -95,7 +95,8 @@
 (defn retrieve-profile-data-by-email
   [conn email]
   (try
-    (db/get-by-params conn :profile {:email (str/lower email)})
+    (db/get-by-params conn :profile {:email (str/lower email)
+                                     :deleted-at nil})
     (catch Exception _e)))
 
 ;; --- Attrs Helpers

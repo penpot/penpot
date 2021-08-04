@@ -206,7 +206,6 @@
       (dissoc state
               :current-file-id
               :current-project-id
-              :current-team-id
               :workspace-data
               :workspace-editor-state
               :workspace-file

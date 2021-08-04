@@ -117,11 +117,15 @@
 (s/def ::delete-project
   (s/keys :req-un [::id ::profile-id]))
 
+;; TODO: right now, we just don't allow delete default projects, in a
+;; future we need to ensure raise a correct exception signaling that
+;; this is not allowed.
+
 (sv/defmethod ::delete-project
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id id)
     (db/update! conn :project
                 {:deleted-at (dt/now)}
-                {:id id})
+                {:id id :is-default false})
     nil))
