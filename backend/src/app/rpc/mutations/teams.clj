@@ -125,6 +125,10 @@
 (s/def ::delete-team
   (s/keys :req-un [::profile-id ::id]))
 
+;; TODO: right now just don't allow delete default team, in future it
+;; should raise a speific exception for signal that this acction is
+;; not allowed.
+
 (sv/defmethod ::delete-team
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
@@ -135,7 +139,7 @@
 
       (db/update! conn :team
                   {:deleted-at (dt/now)}
-                  {:id id})
+                  {:id id :is-default false})
       nil)))
 
 
