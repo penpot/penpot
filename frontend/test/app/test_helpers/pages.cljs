@@ -10,6 +10,7 @@
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]))
 
@@ -79,7 +80,7 @@
                :obj shape}]))))
 
 (defn group-shapes
-  ([state label ids] (group-shapes state label ids "Group-"))
+  ([state label ids] (group-shapes state label ids "Group"))
   ([state label ids prefix]
    (let [page  (current-page state)
          shapes (dwg/shapes-for-grouping (:objects page) ids)]
@@ -94,9 +95,9 @@
 
 (defn make-component
   [state label ids]
-  (let [page (current-page state)
-        objects  (wsh/lookup-page-objects state page-id)
-        shapes (dwg/shapes-for-grouping objects ids)
+  (let [page    (current-page state)
+        objects (wsh/lookup-page-objects state (:id page))
+        shapes  (dwg/shapes-for-grouping objects ids)
 
         [group rchanges uchanges]
         (dwlh/generate-add-component shapes

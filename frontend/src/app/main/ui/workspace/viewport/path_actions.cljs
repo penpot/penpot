@@ -108,14 +108,14 @@
       ;; Draw Mode
       [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when (= edit-mode :draw) "is-toggled")
-        :alt (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
+        :alt (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
         :on-click on-select-draw-mode}
        i/pen]
 
       ;; Edit mode
       [:div.viewport-actions-entry.tooltip.tooltip-bottom
        {:class (when (= edit-mode :move) "is-toggled")
-        :alt (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
+        :alt (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
         :on-click on-select-edit-mode}
        i/pointer-inner]]
 

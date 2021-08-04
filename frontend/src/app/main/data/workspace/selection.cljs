@@ -257,8 +257,6 @@
 (declare prepare-duplicate-frame-change)
 (declare prepare-duplicate-shape-change)
 
-(def ^:private change->name #(get-in % [:obj :name]))
-
 (defn update-indices
   "Fixes the indices for a set of changes after a duplication. We need to
   fix the indices to take into the account the movement of indices.
@@ -290,19 +288,19 @@
   "Prepare objects to paste: generate new id, give them unique names,
   move to the position of mouse pointer, and find in what frame they
   fit."
-  [objects page-id names ids delta]
-  (loop [names names
-         ids   (seq ids)
-         chgs  []]
-    (if ids
-      (let [id     (first ids)
-            result (prepare-duplicate-change objects page-id names id delta)
-            result (if (vector? result) result [result])]
-        (recur
-         (into names (map change->name) result)
-         (next ids)
-         (into chgs result)))
-      chgs)))
+  [objects page-id unames ids delta]
+  (let [unames         (volatile! unames)
+        update-unames! (fn [new-name] (vswap! unames conj new-name))]
+    (loop [ids   (seq ids)
+           chgs  []]
+      (if ids
+        (let [id     (first ids)
+              result (prepare-duplicate-change objects page-id unames update-unames! id delta)
+              result (if (vector? result) result [result])]
+          (recur
+            (next ids)
+            (into chgs result)))
+        chgs))))
 
 (defn duplicate-changes-update-indices
   "Parses the change set when duplicating to set-up the appropiate indices"
@@ -317,32 +315,32 @@
     (-> changes (update-indices index-map))))
 
 (defn- prepare-duplicate-change
-  [objects page-id names id delta]
+  [objects page-id unames update-unames! id delta]
   (let [obj (get objects id)]
     (if (= :frame (:type obj))
-      (prepare-duplicate-frame-change objects page-id names obj delta)
-      (prepare-duplicate-shape-change objects page-id names obj delta (:frame-id obj) (:parent-id obj)))))
+      (prepare-duplicate-frame-change objects page-id unames update-unames! obj delta)
+      (prepare-duplicate-shape-change objects page-id unames update-unames! obj delta (:frame-id obj) (:parent-id obj)))))
 
 (defn- prepare-duplicate-shape-change
-  [objects page-id names obj delta frame-id parent-id]
+  [objects page-id unames update-unames! obj delta frame-id parent-id]
   (when (some? obj)
     (let [id          (uuid/next)
-          name        (dwc/generate-unique-name names (:name obj))
+          name        (dwc/generate-unique-name @unames (:name obj))
+          _           (update-unames! name)
+
           renamed-obj (assoc obj :id id :name name)
           moved-obj   (geom/move renamed-obj delta)
           parent-id   (or parent-id frame-id)
 
           children-changes
-          (loop [names names
-                 result []
+          (loop [result []
                  cid  (first (:shapes obj))
                  cids (rest (:shapes obj))]
             (if (nil? cid)
               result
               (let [obj (get objects cid)
-                    changes (prepare-duplicate-shape-change objects page-id names obj delta frame-id id)]
+                    changes (prepare-duplicate-shape-change objects page-id unames update-unames! obj delta frame-id id)]
                 (recur
-                 (into names (map change->name changes))
                  (into result changes)
                  (first cids)
                  (rest cids)))))
@@ -361,11 +359,13 @@
             children-changes))))
 
 (defn- prepare-duplicate-frame-change
-  [objects page-id names obj delta]
+  [objects page-id unames update-unames! obj delta]
   (let [frame-id   (uuid/next)
-        frame-name (dwc/generate-unique-name names (:name obj))
+        frame-name (dwc/generate-unique-name @unames (:name obj))
+        _          (update-unames! frame-name)
+
         sch        (->> (map #(get objects %) (:shapes obj))
-                        (mapcat #(prepare-duplicate-shape-change objects page-id names % delta frame-id frame-id)))
+                        (mapcat #(prepare-duplicate-shape-change objects page-id unames update-unames! % delta frame-id frame-id)))
 
         frame     (-> obj
                       (assoc :id frame-id)

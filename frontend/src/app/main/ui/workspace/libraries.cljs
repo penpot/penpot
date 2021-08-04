@@ -75,7 +75,11 @@
         (mf/use-callback (mf/deps file) #(st/emit! (dw/link-file-to-library (:id file) %)))
 
         unlink-library
-        (mf/use-callback (mf/deps file) #(st/emit! (dw/unlink-file-from-library (:id file) %)))]
+        (mf/use-callback
+          (mf/deps file)
+          (fn [library-id]
+            (st/emit! (dw/unlink-file-from-library (:id file) library-id) 
+                      (dwl/sync-file (:id file) library-id))))]
     [:*
      [:div.section
       [:div.section-title (tr "workspace.libraries.in-this-file")]

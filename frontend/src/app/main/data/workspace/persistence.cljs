@@ -326,13 +326,16 @@
 (defn unlink-file-from-library
   [file-id library-id]
   (ptk/reify ::unlink-file-from-library
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/dissoc-in state [:workspace-libraries library-id]))
+
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [unlinked #(d/dissoc-in % [:workspace-libraries library-id])
-            params   {:file-id file-id
-                      :library-id library-id}]
+      (let [params {:file-id file-id
+                    :library-id library-id}]
         (->> (rp/mutation :unlink-file-from-library params)
-             (rx/map (constantly unlinked)))))))
+             (rx/ignore))))))
 
 
 ;; --- Upload File Media objects

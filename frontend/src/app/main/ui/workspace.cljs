@@ -8,6 +8,7 @@
   (:require
    [app.main.data.messages :as dm]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.persistence :as dwp]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -25,6 +26,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
+   [app.util.timers :as ts]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -122,7 +124,10 @@
      (mf/deps project-id file-id)
      (fn []
        (st/emit! (dw/initialize-file project-id file-id))
-       (st/emitf (dw/finalize-file project-id file-id))))
+       (fn []
+         ;; Schedule to 100ms so we can do the update before the file is finalized
+         (st/emit! ::dwp/force-persist)
+         (ts/schedule 100 (st/emitf (dw/finalize-file project-id file-id))))))
 
     (mf/use-effect
      (fn []

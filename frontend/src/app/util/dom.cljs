@@ -98,7 +98,7 @@
 (defn get-attribute
   "Extract the value of one attribute of a dom node."
   [node attr-name]
-  (.getAttribute node attr-name))
+  (.getAttribute ^js node attr-name))
 
 (def get-target-val (comp get-value get-target))
 
@@ -223,11 +223,13 @@
 
 (defn focus!
   [node]
-  (.focus node))
+  (when (some? node)
+    (.focus node)))
 
 (defn blur!
   [node]
-  (.blur node))
+  (when (some? node)
+    (.blur node)))
 
 (defn fullscreen?
   []
@@ -291,8 +293,11 @@
 (defn get-user-agent []
   (.-userAgent globals/navigator))
 
+(defn get-active []
+  (.-activeElement globals/document))
+
 (defn active? [node]
-  (= (.-activeElement globals/document) node))
+  (= (get-active) node))
 
 (defn get-data [^js node ^string attr]
   (.getAttribute node (str "data-" attr)))
@@ -377,5 +382,5 @@
     (trigger-download-uri filename mtype uri)))
 
 (defn left-mouse? [bevent]
-  (let [event  (.-nativeEvent bevent)]
+  (let [event  (.-nativeEvent ^js bevent)]
     (= 1 (.-which event))))

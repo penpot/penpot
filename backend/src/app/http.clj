@@ -136,7 +136,9 @@
     ["/webhooks"
      ["/sns" {:post (:sns-webhook cfg)}]]
 
-    ["/api" {:middleware [[middleware/etag]
+    ["/api" {:middleware [
+                          ;; Temporary disabled
+                          #_[middleware/etag]
                           [middleware/format-response-body]
                           [middleware/params]
                           [middleware/multipart-params]

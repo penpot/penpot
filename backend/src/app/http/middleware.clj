@@ -85,17 +85,22 @@
           (.close ^java.io.OutputStream output-stream))))))
 
 (defn- impl-format-response-body
-  [response request]
+  [response _request]
   (let [body (:body response)
         opts {:type :json-verbose}]
     (cond
       (coll? body)
       (-> response
           (update :headers assoc "content-type" "application/transit+json")
-          (assoc :body
-                 (if (= :post (:request-method request))
-                   (transit-streamable-body body opts)
-                   (t/encode body opts))))
+          (assoc :body (transit-streamable-body body opts)))
+
+      ;; ;; Temporary disabled
+      ;; (-> response
+      ;;     (update :headers assoc "content-type" "application/transit+json")
+      ;;     (assoc :body
+      ;;            (if (= :post (:request-method request))
+      ;;              (transit-streamable-body body opts)
+      ;;              (t/encode body opts))))
 
       (nil? body)
       (assoc response :status 204 :body "")
