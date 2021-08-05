@@ -1094,6 +1094,9 @@
               :group
               (rx/of (dwc/select-shapes (into (d/ordered-set) [(last shapes)])))
 
+              :svg-raw
+              nil
+
               (rx/of (dwc/start-edition-mode id)
                      (dwdp/start-path-edit id)))))))))
 
