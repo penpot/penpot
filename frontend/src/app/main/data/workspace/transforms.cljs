@@ -222,7 +222,7 @@
                                                root
                                                transformed-root)))]
     (reduce set-child
-            (assoc-in modif-tree [(:id shape) :modifiers] modifiers)
+            (update-in modif-tree [(:id shape) :modifiers] #(merge % modifiers))
             children)))
 
 (defn- check-delta
@@ -281,7 +281,7 @@
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize [shape initial layout [point lock? center? point-snap]]
+  (letfn [(resize [shape initial layout [point lock? point-snap]]
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
                   rotation (or rotation 0)
@@ -302,11 +302,6 @@
                   deltav (-> (gpt/to-vec initial (if (= rotation 0) point-snap point))
                              (gpt/transform (gmt/rotate-matrix (- rotation)))
                              (gpt/multiply handler-mult))
-
-                  displacement (when center?
-                                   (-> (gpt/point (/ (:x deltav) (if (neg? (:x handler-mult)) 2 -2))
-                                                  (/ (:y deltav) (if (neg? (:y handler-mult)) 2 -2)))
-                                       (gpt/transform (:transform shape))))
 
                   ;; Resize vector
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)
@@ -330,12 +325,8 @@
                               (gsh/transform-point-center shape-center shape-transform))]
 
               (rx/of (set-modifiers ids
-                                    {:displacement (when displacement
-                                                     (gmt/translate-matrix displacement))
-                                     :resize-vector scalev
-                                     :resize-origin (if displacement
-                                                      (gpt/add origin displacement)
-                                                      origin)
+                                    {:resize-vector scalev
+                                     :resize-origin origin
                                      :resize-transform shape-transform
                                      :resize-scale-text scale-text
                                      :resize-transform-inverse shape-transform-inverse}))))
@@ -343,9 +334,9 @@
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion
           ;; lock flag that can be activated on element options.
-          (normalize-proportion-lock [[point shift? alt?]]
+          (normalize-proportion-lock [[point shift?]]
             (let [proportion-lock? (:proportion-lock shape)]
-              [point (or proportion-lock? shift?) alt?]))]
+              [point (or proportion-lock? shift?)]))]
     (reify
       ptk/UpdateEvent
       (update [_ state]
@@ -367,11 +358,11 @@
           (rx/concat
            (rx/of (dch/update-shapes text-shapes-ids #(assoc % :grow-type :fixed)))
            (->> ms/mouse-position
-                (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
+                (rx/with-latest vector ms/mouse-position-shift)
                 (rx/map normalize-proportion-lock)
-                (rx/switch-map (fn [[point _ _as current]]
-                                 (->> (snap/closest-snap-point page-id resizing-shapes layout zoom point)
-                                      (rx/map #(conj current %)))))
+                (rx/switch-map (fn [[point :as current]]
+                               (->> (snap/closest-snap-point page-id resizing-shapes layout zoom point)
+                                    (rx/map #(conj current %)))))
                 (rx/mapcat (partial resize shape initial-position layout))
                 (rx/take-until stoper))
            (rx/of (apply-modifiers ids)
