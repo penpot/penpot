@@ -303,11 +303,6 @@
                              (gpt/transform (gmt/rotate-matrix (- rotation)))
                              (gpt/multiply handler-mult))
 
-                  displacement (when center?
-                                   (-> (gpt/point (/ (:x deltav) (if (neg? (:x handler-mult)) 2 -2))
-                                                  (/ (:y deltav) (if (neg? (:y handler-mult)) 2 -2)))
-                                       (gpt/transform (:transform shape))))
-
                   ;; Resize vector
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)
 
@@ -320,22 +315,35 @@
 
                            scalev)
 
+                  ;; Resize origin point given the selected handler
+                  origin  (handler-resize-origin (:selrect shape) handler)
+
+                  shape-center (gsh/center-shape shape)
                   shape-transform (:transform shape (gmt/matrix))
                   shape-transform-inverse (:transform-inverse shape (gmt/matrix))
 
-                  shape-center (gsh/center-shape shape)
+                  ;; If we want resize from center, displace the shape
+                  ;; so it is still centered after resize.
+                  displacement (when center?
+                                 (-> shape-center
+                                     (gpt/subtract origin)
+                                     (gpt/multiply scalev)
+                                     (gpt/add origin)
+                                     (gpt/subtract shape-center)
+                                     (gpt/multiply (gpt/point -1 -1))
+                                     (gpt/transform shape-transform)))
 
-                  ;; Resize origin point given the selected handler
-                  origin  (-> (handler-resize-origin (:selrect shape) handler)
-                              (gsh/transform-point-center shape-center shape-transform))]
+                  origin (cond-> (gsh/transform-point-center origin shape-center shape-transform)
+                           (some? displacement)
+                           (gpt/add displacement))
+
+                  displacement (when (some? displacement)
+                                 (gmt/translate-matrix displacement))]
 
               (rx/of (set-modifiers ids
-                                    {:displacement (when displacement
-                                                     (gmt/translate-matrix displacement))
+                                    {:displacement displacement
                                      :resize-vector scalev
-                                     :resize-origin (if displacement
-                                                      (gpt/add origin displacement)
-                                                      origin)
+                                     :resize-origin origin
                                      :resize-transform shape-transform
                                      :resize-scale-text scale-text
                                      :resize-transform-inverse shape-transform-inverse}))))
