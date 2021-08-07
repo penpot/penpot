@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-07-15 14:33+0000\n"
-"Last-Translator: Guilherme Dimas <guilhermedimasrosa@gmail.com>\n"
+"PO-Revision-Date: 2021-08-08 01:35+0000\n"
+"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.7.2-dev\n"
+"X-Generator: Weblate 4.8-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -829,8 +829,9 @@ msgid "labels.send"
 msgstr "Enviar"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "labels.sending"
-msgstr "Enviando..."
+msgstr "Enviando…"
 
 msgid "labels.upload"
 msgstr "Carregar"
@@ -838,8 +839,9 @@ msgstr "Carregar"
 msgid "labels.upload-custom-fonts"
 msgstr "Carregar fontes personalizadas"
 
+#, fuzzy
 msgid "labels.uploading"
-msgstr "Carregando..."
+msgstr "Carregando…"
 
 msgid "modals.delete-font.message"
 msgstr ""
@@ -1758,3 +1760,238 @@ msgstr "HEX"
 #: src/app/main/ui/handoff/attributes/blur.cljs
 msgid "handoff.attributes.blur.value"
 msgstr "Valor"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.message"
+msgstr ""
+"Tem certeza de que deseja excluir esta conversa? Todos os comentários neste "
+"tópico serão excluídos."
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.info"
+msgstr ""
+"Ao remover sua conta, você perderá todos os seus projetos e arquivos atuais."
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.confirm"
+msgstr "Sim, exclua minha conta"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.cancel"
+msgstr "Cancelar e manter minha conta"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.title"
+msgstr "Alterar seu e-mail"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.submit"
+msgstr "Alterar e-mail"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.new-email"
+msgstr "Novo e-mail"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.info"
+msgstr ""
+"Enviaremos a você um e-mail para seu e-mail atual “%s” para verificar sua "
+"identidade."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.confirm-email"
+msgstr "Verificar o novo e-mail"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.message"
+msgstr "Adicionar “%s” como Biblioteca Compartilhada"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.hint"
+msgstr ""
+"Depois de adicionados como Biblioteca Compartilhada, os recursos desta "
+"biblioteca de arquivos estarão disponíveis para serem usados com o restante "
+"de seus arquivos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.accept"
+msgstr "Adicionar como biblioteca compartilhada"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "media.loading"
+msgstr "Carregando imagem…"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.write-new-comment"
+msgstr "Escrever novo comentário"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.viewer"
+msgstr "Visualizador"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.update-team"
+msgstr "Atualizar equipe"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "labels.update"
+msgstr "Atualizar"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.sign-out"
+msgstr "Sair"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-your-comments"
+msgstr "Mostrar apenas os seus comentários"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-all-comments"
+msgstr "Mostrar todos os comentários"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shared-libraries"
+msgstr "Bibliotecas compartilhadas"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.settings"
+msgstr "Configurações"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.main-message"
+msgstr "Serviço indisponível"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.desc-message"
+msgstr "Estamos em manutenção programada de nossos sistemas."
+
+msgid "labels.or"
+msgstr "ou"
+
+msgid "labels.num-of-frames"
+msgid_plural "labels.num-of-frames"
+msgstr[0] "1 prancheta"
+msgstr[1] "%s pranchetas"
+
+msgid "labels.manage-fonts"
+msgstr "Gerenciar fontes"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.hide-resolved-comments"
+msgstr "Ocultar comentários resolvidos"
+
+msgid "labels.font-variants"
+msgstr "Estilos"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "Todos"
+
+msgid "labels.add-custom-font"
+msgstr "Adicionar fonte personalizada"
+
+msgid "handoff.tabs.code.selected.path"
+msgstr "Caminho"
+
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "Title Case"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-transform"
+msgstr "Transformação de texto"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "Decoração de texto"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.letter-spacing"
+msgstr "Espaçamento entre letras"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "Estilo da fonte"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "Tamanho da fonte"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "Família da fonte"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "Tipografia"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "Largura"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Sólido"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "Nenhum"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "Misto"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "Pontilhado"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "Fora"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.inner"
+msgstr "Dentro"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout"
+msgstr "Layout"
+
+#: src/app/main/ui/handoff/attributes/fill.cljs
+msgid "handoff.attributes.fill"
+msgstr "Preencher"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur"
+msgstr "Borrar"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "Excluindo %s arquivos"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "Tem certeza de que deseja excluir %s arquivos?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "Excluir arquivos"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.accept"
+msgstr "Excluir conversa"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.title"
+msgstr "Excluir conversa"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.title"
+msgstr "Tem certeza que deseja excluir sua conta?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.accept"
+msgstr "Excluir arquivo"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.message"
+msgstr "Tem certeza que deseja excluir este arquivo?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.title"
+msgstr "Excluindo arquivo"
