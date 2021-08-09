@@ -66,26 +66,29 @@
                                        (swap! local assoc :edition false))}]
          [:div.dashboard-title
           [:h1 {:on-double-click on-edit}
-           (:name project)]
-          [:& project-menu {:project project
-                            :show? (:menu-open @local)
-                            :left (- (:x (:menu-pos @local)) 180)
-                            :top (:y (:menu-pos @local))
-                            :on-edit on-edit
-                            :on-menu-close on-menu-close
-                            :on-import on-import}]]))
+           (:name project)]]))
+
+     [:& project-menu {:project project
+                       :show? (:menu-open @local)
+                       :left (- (:x (:menu-pos @local)) 180)
+                       :top (:y (:menu-pos @local))
+                       :on-edit on-edit
+                       :on-menu-close on-menu-close
+                       :on-import on-import}]
+
      [:div.dashboard-header-actions
       [:a.btn-secondary.btn-small {:on-click on-create-clicked}
        (tr "dashboard.new-file")]
 
-      [:div.icon.pin-icon.tooltip.tooltip-bottom
-       {:class (when (:is-pinned project) "active")
-       :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
-       (if (:is-pinned project)
-         i/pin-fill
-         i/pin)]
+      (when-not (:is-default project)
+        [:div.icon.pin-icon.tooltip.tooltip-bottom
+         {:class (when (:is-pinned project) "active")
+         :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
+         (if (:is-pinned project)
+           i/pin-fill
+           i/pin)])
 
-      [:div.icon.tooltip.tooltip-bottom
+      [:div.icon.tooltip.tooltip-bottom-left
        {:on-click on-menu-click :alt (tr "dashboard.options")}
        i/actions]]]))
 
