@@ -138,6 +138,7 @@
         [:& editable-select {:value (:size params)
                              :type (when (number? (:size params)) "number" )
                              :class "input-option"
+                             :min 1
                              :options size-options
                              :placeholder "Auto"
                              :on-change handle-change-size}])
