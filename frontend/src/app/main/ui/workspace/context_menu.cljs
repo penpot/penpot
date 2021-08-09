@@ -195,6 +195,7 @@
          [:*
           [:& menu-separator]
           [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
+                          :shortcut (sc/get-tooltip :detach-component)
                           :on-click do-detach-component}]
           [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
                           :on-click do-reset-component}]
@@ -205,6 +206,7 @@
          [:*
           [:& menu-separator]
           [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
+                          :shortcut (sc/get-tooltip :detach-component)
                           :on-click do-detach-component}]
           [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
                           :on-click do-reset-component}]

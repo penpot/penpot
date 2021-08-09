@@ -462,6 +462,31 @@
                                     :undo-changes uchanges
                                     :origin it}))))))
 
+(def detach-selected-components
+  (ptk/reify ::detach-selected-components
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id  (:current-page-id state)
+            objects  (wsh/lookup-page-objects state page-id)
+            local-library (dwlh/get-local-file state)
+            container (cp/get-container page-id :page local-library)
+
+            selected (->> state
+                          (wsh/lookup-selected)
+                          (cp/clean-loops objects))
+
+            [rchanges uchanges]
+            (reduce (fn [changes id]
+                      (dwlh/concat-changes
+                        changes
+                        (dwlh/generate-detach-instance id container)))
+                    dwlh/empty-changes
+                    selected)]
+
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
+
 (defn nav-to-component-file
   [file-id]
   (us/assert ::us/uuid file-id)
