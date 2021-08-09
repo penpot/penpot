@@ -322,6 +322,8 @@
           :options size-options
           :type "number"
           :placeholder "--"
+          :min 3
+          :max 1000
           :on-change on-font-size-change
           :on-blur on-blur}])
 

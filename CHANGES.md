@@ -7,6 +7,7 @@
 - Allow to zoom with ctrl + middle button [Taiga #1428](https://tree.taiga.io/project/penpot/us/1428).
 - Auto placement of duplicated objects [Taiga #1386](https://tree.taiga.io/project/penpot/us/1386).
 - Go to a undo step clicking on a history element of the list [Taiga #1374](https://tree.taiga.io/project/penpot/us/1374).
+- Increment font size by 10 with shift+arrows [1047](https://github.com/penpot/penpot/issues/1047).
 - New shortcut to detach components Ctrl+Shift+K [Taiga #1799](https://tree.taiga.io/project/penpot/us/1799).
 - Set email inputs to type "email", to aid keyboard entry [Taiga #1921](https://tree.taiga.io/project/penpot/issue/1921).
 - Use space + mouse drag to pan, instead of only space [Taiga #1800](https://tree.taiga.io/project/penpot/us/1800).
