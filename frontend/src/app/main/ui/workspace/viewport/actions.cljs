@@ -85,8 +85,7 @@
                (not drawing-tool)
                (st/emit! (when (or shift? (not selected?))
                            (dw/select-shape id shift?))
-                         (when (not shift?)
-                           (dw/start-move-selected)))))))))))
+                         (dw/start-move-selected))))))))))
 
 (defn on-move-selected
   [hover hover-ids selected]

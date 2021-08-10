@@ -10,6 +10,7 @@
 - Increment font size by 10 with shift+arrows [1047](https://github.com/penpot/penpot/issues/1047).
 - New shortcut to detach components Ctrl+Shift+K [Taiga #1799](https://tree.taiga.io/project/penpot/us/1799).
 - Set email inputs to type "email", to aid keyboard entry [Taiga #1921](https://tree.taiga.io/project/penpot/issue/1921).
+- Use shift+move to move element orthogonally [#823](https://github.com/penpot/penpot/issues/823).
 - Use space + mouse drag to pan, instead of only space [Taiga #1800](https://tree.taiga.io/project/penpot/us/1800).
 
 ### :bug: Bugs fixed

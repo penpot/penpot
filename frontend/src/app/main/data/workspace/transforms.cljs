@@ -11,6 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
@@ -538,10 +539,18 @@
              layout  (get state :workspace-layout)
              zoom    (get-in state [:workspace-local :zoom] 1)
 
+             fix-axis (fn [[position shift?]]
+                        (let [delta (gpt/to-vec from-position position)]
+                          (if shift?
+                            (if (> (mth/abs (:x delta)) (mth/abs (:y delta)))
+                              (gpt/point (:x delta) 0)
+                              (gpt/point 0 (:y delta)))
+                            delta)))
 
              position (->> ms/mouse-position
                            (rx/take-until stopper)
-                           (rx/map #(gpt/to-vec from-position %)))
+                           (rx/with-latest-from ms/mouse-position-shift)
+                           (rx/map #(fix-axis %)))
 
              snap-delta (rx/concat
                          ;; We send the nil first so the stream is not waiting for the first value
