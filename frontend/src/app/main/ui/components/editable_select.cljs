@@ -53,7 +53,8 @@
 
         handle-change-input (fn [event]
                               (let [value (-> event dom/get-target dom/get-value)
-                                    value (or (d/parse-double value) value)]
+                                    value (-> (or (d/parse-double value) value)
+                                              (math/precision 2))]
                                 (set-value value)))
 
         on-node-load
@@ -82,7 +83,8 @@
                (when (or up? down?)
                  (dom/prevent-default event)
                  (let [value (-> event dom/get-target dom/get-value)
-                       value (or (d/parse-double value) value)
+                       value (-> (or (d/parse-double value) value)
+                                 (math/precision 2))
 
                        increment (if (kbd/shift? event)
                                    (if up? 10 -10)
