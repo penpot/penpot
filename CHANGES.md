@@ -6,6 +6,7 @@
 
 - Allow to zoom with ctrl + middle button [Taiga #1428](https://tree.taiga.io/project/penpot/us/1428).
 - Auto placement of duplicated objects [Taiga #1386](https://tree.taiga.io/project/penpot/us/1386).
+- Enable penpot SVG metadata only when exporting complete files [Taiga #1914](https://tree.taiga.io/project/penpot/us/1914?milestone=295883).
 - Go to a undo step clicking on a history element of the list [Taiga #1374](https://tree.taiga.io/project/penpot/us/1374).
 - Increment font size by 10 with shift+arrows [1047](https://github.com/penpot/penpot/issues/1047).
 - New shortcut to detach components Ctrl+Shift+K [Taiga #1799](https://tree.taiga.io/project/penpot/us/1799).

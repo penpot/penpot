@@ -14,6 +14,8 @@
   [cuerdas.core :as str]
   [rumext.alpha :as mf]))
 
+(def include-metadata-ctx (mf/create-context false))
+
 (mf/defc render-xml
   [{{:keys [tag attrs content] :as node} :xml}]
 
