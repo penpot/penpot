@@ -38,6 +38,8 @@
         frame? (= :frame type)
         group? (= :group type)
 
+        include-metadata? (mf/use-ctx ed/include-metadata-ctx)
+
         wrapper-props
         (-> (obj/clone props)
             (obj/without ["shape" "children"])
@@ -53,9 +55,11 @@
               (obj/set! "y" y)
               (obj/set! "width" width)
               (obj/set! "height" height)
-              (obj/set! "xmlnsXlink" "http://www.w3.org/1999/xlink")
               (obj/set! "xmlns" "http://www.w3.org/2000/svg")
-              (obj/set! "xmlns:penpot" "https://penpot.app/xmlns")))
+              (obj/set! "xmlnsXlink" "http://www.w3.org/1999/xlink")
+              (cond->
+                include-metadata?
+                (obj/set! "xmlns:penpot" "https://penpot.app/xmlns"))))
 
         wrapper-props
         (cond-> wrapper-props
@@ -66,7 +70,8 @@
 
     [:& (mf/provider muc/render-ctx) {:value render-id}
      [:> wrapper-tag wrapper-props
-      [:& ed/export-data {:shape shape}]
+      (when include-metadata?
+        [:& ed/export-data {:shape shape}])
       [:defs
        [:& defs/svg-defs          {:shape shape :render-id render-id}]
        [:& filters/filters        {:shape shape :filter-id filter-id}]

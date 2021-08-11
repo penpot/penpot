@@ -17,6 +17,7 @@
    [app.main.repo :as repo]
    [app.main.store :as st]
    [app.main.ui.shapes.embed :as embed]
+   [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.util.dom :as dom]
@@ -31,6 +32,8 @@
         frame-id (if (= :frame (:type object))
                    (:id object)
                    (:frame-id object))
+
+        include-metadata? (mf/use-ctx ed/include-metadata-ctx)
 
         modifier (-> (gpt/point (:x object) (:y object))
                      (gpt/negate)
@@ -81,9 +84,9 @@
             :width width
             :height height
             :version "1.1"
-            :xmlnsXlink "http://www.w3.org/1999/xlink"
             :xmlns "http://www.w3.org/2000/svg"
-            :xmlns:penpot "https://penpot.app/xmlns"}
+            :xmlnsXlink "http://www.w3.org/1999/xlink"
+            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")}
 
       (case (:type object)
         :frame [:& frame-wrapper {:shape object :view-box vbox}]
