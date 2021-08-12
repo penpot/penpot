@@ -4,6 +4,7 @@
 
 ### :sparkles: New features
 
+- Add tooltips to color picker tabs [Taiga #1814](https://tree.taiga.io/project/penpot/us/1814).
 - Allow to zoom with ctrl + middle button [Taiga #1428](https://tree.taiga.io/project/penpot/us/1428).
 - Auto placement of duplicated objects [Taiga #1386](https://tree.taiga.io/project/penpot/us/1386).
 - Enable penpot SVG metadata only when exporting complete files [Taiga #1914](https://tree.taiga.io/project/penpot/us/1914?milestone=295883).

@@ -291,12 +291,18 @@
                      :on-select-stop handle-change-stop}]
 
       [:div.colorpicker-tabs
-       [:div.colorpicker-tab {:class (when (= @active-tab :ramp) "active")
-                              :on-click (change-tab :ramp)} i/picker-ramp]
-       [:div.colorpicker-tab {:class (when (= @active-tab :harmony) "active")
-                              :on-click (change-tab :harmony)} i/picker-harmony]
-       [:div.colorpicker-tab {:class (when (= @active-tab :hsva) "active")
-                              :on-click (change-tab :hsva)} i/picker-hsv]]
+       [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
+        {:class (when (= @active-tab :ramp) "active")
+         :alt (t locale "workspace.libraries.colors.rgba")
+         :on-click (change-tab :ramp)} i/picker-ramp]
+       [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
+        {:class (when (= @active-tab :harmony) "active")
+         :alt (t locale "workspace.libraries.colors.rgb-complementary")
+         :on-click (change-tab :harmony)} i/picker-harmony]
+       [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
+        {:class (when (= @active-tab :hsva) "active")
+         :alt (t locale "workspace.libraries.colors.hsv")
+         :on-click (change-tab :hsva)} i/picker-hsv]]
 
       (if picking-color?
         [:div.picker-detail-wrapper
