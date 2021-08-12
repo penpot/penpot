@@ -68,19 +68,17 @@
 
 (defn generate-unique-name
   "A unique name generator"
-  ([used basename]
-   (generate-unique-name used basename false))
-  ([used basename prefix-first?]
-   (s/assert ::set-of-string used)
-   (s/assert ::us/string basename)
-   (let [[prefix initial] (extract-numeric-suffix basename)]
-     (loop [counter initial]
-       (let [candidate (if (and (= 1 counter) prefix-first?)
-                         (str prefix)
-                         (str prefix "-" counter))]
-         (if (contains? used candidate)
-           (recur (inc counter))
-           candidate))))))
+  [used basename]
+  (s/assert ::set-of-string used)
+  (s/assert ::us/string basename)
+  (if-not (contains? used basename)
+    basename
+    (let [[prefix initial] (extract-numeric-suffix basename)]
+      (loop [counter initial]
+        (let [candidate (str prefix "-" counter)]
+          (if (contains? used candidate)
+            (recur (inc counter))
+            candidate))))))
 
 ;; --- Shape attrs (Layers Sidebar)
 
