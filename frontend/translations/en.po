@@ -1849,6 +1849,18 @@ msgstr "Recent colors"
 msgid "workspace.libraries.colors.save-color"
 msgstr "Save color style"
 
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "RGB Complementary"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
 #: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.small-thumbnails"
 msgstr "Small thumbnails"

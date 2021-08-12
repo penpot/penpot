@@ -975,6 +975,14 @@ input[type=range]:focus::-ms-fill-upper {
     }
   }
 
+  &.tooltip-expand {
+    &:hover {
+      &::after {
+        min-width: 100%;
+      }
+    }
+  }
+
   &.tooltip-bottom-left {
     &:hover {
       &::after {
