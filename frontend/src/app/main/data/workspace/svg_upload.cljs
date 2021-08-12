@@ -331,7 +331,7 @@
   (let [{:keys [tag attrs]} element-data
         attrs (usvg/format-styles attrs)
         element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
-        name (dwc/generate-unique-name unames (or (:id attrs) (tag->name tag)) true)
+        name (dwc/generate-unique-name unames (or (:id attrs) (tag->name tag)))
         att-refs (usvg/find-attr-references attrs)
         references (usvg/find-def-references (:defs svg-data) att-refs)
 

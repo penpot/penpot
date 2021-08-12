@@ -182,7 +182,7 @@
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group rchanges uchanges]
-                (prepare-create-group objects page-id shapes "Group" false)]
+                (prepare-create-group objects page-id shapes "Group-1" false)]
             (rx/of (dch/commit-changes {:redo-changes rchanges
                                         :undo-changes uchanges
                                         :origin it})
@@ -221,7 +221,7 @@
                 (if (and (= (count shapes) 1)
                          (= (:type (first shapes)) :group))
                   [(first shapes) [] []]
-                  (prepare-create-group objects page-id shapes "Group" true))
+                  (prepare-create-group objects page-id shapes "Group-1" true))
 
                 rchanges (d/concat rchanges
                                    [{:type :mod-obj
