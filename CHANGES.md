@@ -17,6 +17,7 @@
 
 ### :bug: Bugs fixed
 
+- Prevent adding numeric suffix to layer names when not needed [Taiga #1929](https://tree.taiga.io/project/penpot/us/1929).
 - Prevent deleting or moving the drafts project [Taiga #1935](https://tree.taiga.io/project/penpot/issue/1935).
 
 ### :arrow_up: Deps updates
