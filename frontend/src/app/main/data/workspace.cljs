@@ -274,7 +274,7 @@
       (watch [it state _]
         (let [pages   (get-in state [:workspace-data :pages-index])
               unames  (dwc/retrieve-used-names pages)
-              name    (dwc/generate-unique-name unames "Page")
+              name    (dwc/generate-unique-name unames "Page-1")
 
               rchange {:type :add-page
                        :id id
