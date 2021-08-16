@@ -92,12 +92,16 @@
 
     profile))
 
+(def ^:private sql:profile-by-email
+  "select p.* from profile as p
+    where p.email = ?
+      and (p.deleted_at is null or
+           p.deleted_at > now())")
+
 (defn retrieve-profile-data-by-email
   [conn email]
-  (try
-    (db/get-by-params conn :profile {:email (str/lower email)
-                                     :deleted-at nil})
-    (catch Exception _e)))
+  (ex/ignoring
+   (db/exec-one! conn [sql:profile-by-email (str/lower email)])))
 
 ;; --- Attrs Helpers
 
