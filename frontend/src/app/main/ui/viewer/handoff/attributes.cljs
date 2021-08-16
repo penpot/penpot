@@ -4,18 +4,18 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.attributes
+(ns app.main.ui.viewer.handoff.attributes
   (:require
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.handoff.attributes.blur :refer [blur-panel]]
-   [app.main.ui.handoff.attributes.fill :refer [fill-panel]]
-   [app.main.ui.handoff.attributes.image :refer [image-panel]]
-   [app.main.ui.handoff.attributes.layout :refer [layout-panel]]
-   [app.main.ui.handoff.attributes.shadow :refer [shadow-panel]]
-   [app.main.ui.handoff.attributes.stroke :refer [stroke-panel]]
-   [app.main.ui.handoff.attributes.svg :refer [svg-panel]]
-   [app.main.ui.handoff.attributes.text :refer [text-panel]]
-   [app.main.ui.handoff.exports :refer [exports]]
+   [app.main.ui.viewer.handoff.attributes.blur :refer [blur-panel]]
+   [app.main.ui.viewer.handoff.attributes.fill :refer [fill-panel]]
+   [app.main.ui.viewer.handoff.attributes.image :refer [image-panel]]
+   [app.main.ui.viewer.handoff.attributes.layout :refer [layout-panel]]
+   [app.main.ui.viewer.handoff.attributes.shadow :refer [shadow-panel]]
+   [app.main.ui.viewer.handoff.attributes.stroke :refer [stroke-panel]]
+   [app.main.ui.viewer.handoff.attributes.svg :refer [svg-panel]]
+   [app.main.ui.viewer.handoff.attributes.text :refer [text-panel]]
+   [app.main.ui.viewer.handoff.exports :refer [exports]]
    [app.util.i18n :as i18n]
    [rumext.alpha :as mf]))
 

@@ -20,7 +20,6 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.cursors :as c]
    [app.main.ui.dashboard :refer [dashboard]]
-   [app.main.ui.handoff :refer [handoff]]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.main.ui.onboarding]
@@ -41,16 +40,17 @@
 
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
-(s/def ::viewer-path-params
-  (s/keys :req-un [::file-id ::page-id]))
-
 (s/def ::section ::us/keyword)
 (s/def ::index ::us/integer)
-(s/def ::token (s/nilable ::us/string))
+(s/def ::token (s/nilable ::us/not-empty-string))
+(s/def ::share-id ::us/uuid)
+
+(s/def ::viewer-path-params
+  (s/keys :req-un [::file-id]))
 
 (s/def ::viewer-query-params
   (s/keys :req-un [::index]
-          :opt-un [::token ::section]))
+          :opt-un [::share-id ::section ::page-id]))
 
 (def routes
   [["/auth"
@@ -71,7 +71,7 @@
     ["/feedback" :settings-feedback]
     ["/options"  :settings-options]]
 
-   ["/view/:file-id/:page-id"
+   ["/view/:file-id"
     {:name :viewer
      :conform
      {:path-params ::viewer-path-params
@@ -147,22 +147,15 @@
         [:& dashboard {:route route}]]
 
        :viewer
-       (let [index   (get-in route [:query-params :index])
-             token   (get-in route [:query-params :token])
-             section (get-in route [:query-params :section] :interactions)
-             file-id (get-in route [:path-params :file-id])
-             page-id (get-in route [:path-params :page-id])]
+       (let [{:keys [query-params path-params]} route
+             {:keys [index share-id section page-id] :or {section :interactions}} query-params
+             {:keys [file-id]} path-params]
          [:& fs/fullscreen-wrapper {}
-          (if (= section :handoff)
-            [:& handoff {:page-id page-id
-                         :file-id file-id
-                         :index index
-                         :token token}]
-            [:& viewer-page {:page-id page-id
-                             :file-id file-id
-                             :section section
-                             :index index
-                             :token token}])])
+          [:& viewer-page {:page-id page-id
+                           :file-id file-id
+                           :section section
+                           :index index
+                           :share-id share-id}]])
 
        :render-object
        (do

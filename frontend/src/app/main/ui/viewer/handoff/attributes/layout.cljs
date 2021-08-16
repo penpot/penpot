@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.attributes.layout
+(ns app.main.ui.viewer.handoff.attributes.layout
   (:require
    [app.common.math :as mth]
    [app.main.ui.components.copy-button :refer [copy-button]]

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.code
+(ns app.main.ui.viewer.handoff.code
   (:require
    ["js-beautify" :as beautify]
    [app.common.geom.shapes :as gsh]

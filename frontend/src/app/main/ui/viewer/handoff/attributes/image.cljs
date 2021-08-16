@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.attributes.image
+(ns app.main.ui.viewer.handoff.attributes.image
   (:require
    [app.config :as cfg]
    [app.main.ui.components.copy-button :refer [copy-button]]

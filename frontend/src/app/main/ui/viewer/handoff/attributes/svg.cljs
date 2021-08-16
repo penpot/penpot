@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.attributes.svg
+(ns app.main.ui.viewer.handoff.attributes.svg
   (:require
    #_[app.common.math :as mth]
    #_[app.main.ui.icons :as i]

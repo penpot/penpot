@@ -108,13 +108,29 @@
     (let [router (:router state)
           path   (resolve router id params qparams)
           uri    (-> (u/uri cfg/public-uri)
-                     (assoc :fragment path))]
-      (js/window.open (str uri) "_blank"))))
+                     (assoc :fragment path))
+          name   (str (name id) "-" (:file-id params))]
+      (js/window.open (str uri) name))))
 
 (defn nav-new-window
   ([id] (nav-new-window id nil nil))
   ([id params] (nav-new-window id params nil))
   ([id params qparams] (NavigateNewWindow. id params qparams)))
+
+
+(defn nav-new-window*
+  [{:keys [rname path-params query-params name]}]
+  (ptk/reify ::nav-new-window
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [router (:router state)
+            path   (resolve router rname path-params query-params)
+            uri    (-> (u/uri cfg/public-uri)
+                       (assoc :fragment path))]
+
+
+
+        (js/window.open (str uri) name)))))
 
 ;; --- History API
 
