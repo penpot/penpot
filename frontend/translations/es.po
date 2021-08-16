@@ -1517,7 +1517,7 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "No mostrar interacciones"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-file"
+msgid "labels.edit-file"
 msgstr "Editar archivo"
 
 #: src/app/main/ui/viewer/header.cljs
@@ -1549,7 +1549,7 @@ msgid "viewer.header.share.subtitle"
 msgstr "Cualquiera con el enlace podrá acceder"
 
 #: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.title"
+msgid "labels.share-prototype"
 msgstr "Compartir prototipo"
 
 #: src/app/main/ui/viewer/header.cljs
@@ -2758,3 +2758,60 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+
+
+
+msgid "viewer.header.interactions-section"
+msgstr "Interacciones"
+
+msgid "viewer.header.comments-section"
+msgstr "Comentarios"
+
+msgid "viewer.header.handsoff-section"
+msgstr "Handsoff"
+
+msgid "common.share-link.title"
+msgstr "Compartir prototipos"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Cualquiera con el enlace puede acceder"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "Puede acceder a"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Puede ver"
+
+msgid "common.share-link.view-all-pages"
+msgstr "Todas las paginas"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Paginas seleccionadas"
+
+msgid "common.share-link.view-current-page"
+msgstr "Solo esta pagina"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr "¿Estas seguro que quieres eliminar el enlace? Si lo haces, el enlace dejara de funcionar para todos"
+
+msgid "common.share-link.remove-link"
+msgstr "Eliminar enlace"
+
+msgid "common.share-link.get-link"
+msgstr "Obtener enlace"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Enlace copiado satisfactoriamente"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Enlace eliminado correctamente"
+
+msgid "labels.workspace"
+msgstr  "Espacio de trabajo"
+
+msgid "labels.default"
+msgstr "por defecto"
+
+msgid "labels.link"
+msgstr "Enlace"

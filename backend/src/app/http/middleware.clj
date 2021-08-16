@@ -81,6 +81,9 @@
       (try
         (let [tw (t/writer output-stream opts)]
           (t/write! tw data))
+        (catch Throwable e
+          (l/error :hint "exception on writting data to response"
+                   :cause e))
         (finally
           (.close ^java.io.OutputStream output-stream))))))
 

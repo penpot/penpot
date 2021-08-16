@@ -1524,8 +1524,7 @@ msgstr "Artboard not found."
 msgid "viewer.header.dont-show-interactions"
 msgstr "Don't show interactions"
 
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-file"
+msgid "labels.edit-file"
 msgstr "Edit file"
 
 #: src/app/main/ui/viewer/header.cljs
@@ -1556,8 +1555,7 @@ msgstr "Remove link"
 msgid "viewer.header.share.subtitle"
 msgstr "Anyone with the link will have access"
 
-#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.title"
+msgid "labels.share-prototype"
 msgstr "Share prototype"
 
 #: src/app/main/ui/viewer/header.cljs
@@ -2762,3 +2760,57 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "viewer.header.interactions-section"
+msgstr "Interactions"
+
+msgid "viewer.header.comments-section"
+msgstr "Comments"
+
+msgid "viewer.header.handsoff-section"
+msgstr "Handsoff"
+
+msgid "common.share-link.title"
+msgstr "Share prototypes"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Anyone with link will have access"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "Can access"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Can view"
+
+msgid "common.share-link.view-all-pages"
+msgstr "All pages"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Selected pages"
+
+msgid "common.share-link.view-current-page"
+msgstr "Only this page"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr "Are you sure you want to remove this link? If you do it, it's no longer be available for anyone"
+
+msgid "common.share-link.remove-link"
+msgstr "Remove link"
+
+msgid "common.share-link.get-link"
+msgstr "Get link"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Link copied successfully"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Link deleted successfully"
+
+msgid "labels.workspace"
+msgstr  "Workspace"
+
+msgid "labels.default"
+msgstr "default"
+
+msgid "labels.link"
+msgstr "Link"

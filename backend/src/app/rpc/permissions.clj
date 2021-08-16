@@ -37,6 +37,41 @@
            :is-admin false
            :can-edit false)))
 
+(defn make-edition-predicate-fn
+  "A simple factory for edition permission predicate functions."
+  [qfn]
+  (us/assert fn? qfn)
+  (fn [& args]
+    (let [rows (apply qfn args)]
+      (when-not (or (empty? rows)
+                    (not (or (some :can-edit rows)
+                             (some :is-admin rows)
+                             (some :is-owner rows))))
+        rows))))
+
+(defn make-read-predicate-fn
+  "A simple factory for read permission predicate functions."
+  [qfn]
+  (us/assert fn? qfn)
+  (fn [& args]
+    (let [rows (apply qfn args)]
+      (when (seq rows)
+        rows))))
+
+(defn make-check-fn
+  "Helper that converts a predicate permission function to a check
+  function (function that raises an exception)."
+  [pred]
+  (fn [& args]
+    (when-not (seq (apply pred args))
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "not found"))))
+
+
+;; TODO: the following functions are deprecated and replaced with the
+;; new ones. Should not be used.
+
 (defn make-edition-check-fn
   "A simple factory for edition permission check functions."
   [qfn]

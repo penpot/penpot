@@ -37,6 +37,7 @@
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
+   [app.util.globals :as ug]
    [app.util.http :as http]
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
@@ -171,7 +172,12 @@
                           (->> stream
                                (rx/filter #(= ::dwc/index-initialized %))
                                (rx/first)
-                               (rx/map #(file-initialized bundle)))))))))))
+                               (rx/map #(file-initialized bundle)))))))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (let [name (str "workspace-" file-id)]
+        (unchecked-set ug/global "name" name)))))
 
 (defn- file-initialized
   [{:keys [file users project libraries] :as bundle}]
@@ -1273,10 +1279,14 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [{:keys [current-file-id current-page-id]} state
-             params {:file-id (or file-id current-file-id)
-                     :page-id (or page-id current-page-id)}]
+             pparams {:file-id (or file-id current-file-id)}
+             qparams {:page-id (or page-id current-page-id)
+                      :index 0}]
          (rx/of ::dwp/force-persist
-                (rt/nav-new-window :viewer params {:index 0})))))))
+                (rt/nav-new-window* {:rname :viewer
+                                     :path-params pparams
+                                     :query-params qparams
+                                     :name (str "viewer-" (:file-id pparams))})))))))
 
 (defn go-to-dashboard
   ([] (go-to-dashboard nil))

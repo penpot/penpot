@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.attributes.blur
+(ns app.main.ui.viewer.handoff.attributes.blur
   (:require
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.util.code-gen :as cg]

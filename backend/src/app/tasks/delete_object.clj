@@ -60,7 +60,7 @@
 
 (defmethod handle-deletion :team-font-variant
   [{:keys [conn storage]} {:keys [id] :as props}]
-  (let [font    (db/get-by-id conn :team-font-variant id {:uncheked true})
+  (let [font    (db/get-by-id conn :team-font-variant id {:check-not-found false})
         storage (assoc storage :conn conn)]
     (when (:deleted-at font)
       (db/delete! conn :team-font-variant {:id id})

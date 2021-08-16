@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.attributes.common
+(ns app.main.ui.viewer.handoff.attributes.common
   (:require
    [app.common.math :as mth]
    [app.main.store :as st]

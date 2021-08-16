@@ -10,11 +10,11 @@
    [app.main.data.viewer :as dv]
    [app.main.exports :as exports]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown :refer [dropdown']]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [goog.object :as gobj]
+   [app.util.object :as obj]
+   [app.util.timers :as ts]
    [rumext.alpha :as mf]))
 
 (mf/defc thumbnails-content
@@ -50,7 +50,7 @@
         on-mount
         (fn []
           (let [dom (mf/ref-val container)]
-            (reset! width (gobj/get dom "clientWidth"))))]
+            (reset! width (obj/get dom "clientWidth"))))]
 
     (mf/use-effect on-mount)
     (if expanded?
@@ -72,7 +72,8 @@
     [:span.btn-close {:on-click on-close} i/close]]])
 
 (mf/defc thumbnail-item
-  [{:keys [selected? frame on-click index objects] :as props}]
+  {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
+  [{:keys [selected? frame on-click index objects]}]
   [:div.thumbnail-item {:on-click #(on-click % index)}
    [:div.thumbnail-preview
     {:class (dom/classnames :selected selected?)}
@@ -81,42 +82,39 @@
     [:span.name {:title (:name frame)} (:name frame)]]])
 
 (mf/defc thumbnails-panel
-  [{:keys [data index] :as props}]
+  [{:keys [frames page index show?] :as props}]
   (let [expanded? (mf/use-state false)
         container (mf/use-ref)
 
-        on-close #(st/emit! dv/toggle-thumbnails-panel)
-        selected (mf/use-var false)
+        objects   (:objects page)
 
-        on-mouse-leave
-        (fn [_]
-          (when @selected
-            (on-close)))
+        on-close  #(st/emit! dv/toggle-thumbnails-panel)
+        selected  (mf/use-var false)
 
         on-item-click
-        (fn [_ index]
-          (compare-and-set! selected false true)
-          (st/emit! (dv/go-to-frame-by-index index))
-          (when @expanded?
-            (on-close)))]
+        (mf/use-callback
+         (mf/deps @expanded?)
+         (fn [_ index]
+           (compare-and-set! selected false true)
+           (st/emit! (dv/go-to-frame-by-index index))
+           (when @expanded?
+             (on-close))))]
 
-    [:& dropdown' {:on-close on-close
-                   :container container
-                   :show true}
-     [:section.viewer-thumbnails
-      {:class (dom/classnames :expanded @expanded?)
-       :ref container
-       :on-mouse-leave on-mouse-leave}
+    [:section.viewer-thumbnails
+     {:class (dom/classnames :expanded @expanded?
+                             :invisible (not show?))
 
-      [:& thumbnails-summary {:on-toggle-expand #(swap! expanded? not)
-                              :on-close on-close
-                              :total (count (:frames data))}]
-      [:& thumbnails-content {:expanded? @expanded?
-                              :total (count (:frames data))}
-       (for [[i frame] (d/enumerate (:frames data))]
-         [:& thumbnail-item {:key i
-                             :index i
-                             :frame frame
-                             :objects (:objects data)
-                             :on-click on-item-click
-                             :selected? (= i index)}])]]]))
+      :ref container
+      }
+
+     [:& thumbnails-summary {:on-toggle-expand #(swap! expanded? not)
+                             :on-close on-close
+                             :total (count frames)}]
+     [:& thumbnails-content {:expanded? @expanded?
+                              :total (count frames)}
+      (for [[i frame] (d/enumerate frames)]
+        [:& thumbnail-item {:index i
+                            :frame frame
+                            :objects objects
+                            :on-click on-item-click
+                            :selected? (= i index)}])]]))

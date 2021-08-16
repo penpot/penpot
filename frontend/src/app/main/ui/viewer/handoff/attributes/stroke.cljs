@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.attributes.stroke
+(ns app.main.ui.viewer.handoff.attributes.stroke
   (:require
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.handoff.attributes.common :refer [color-row]]
+   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
    [app.util.color :as uc]
    [app.util.i18n :refer [t]]
