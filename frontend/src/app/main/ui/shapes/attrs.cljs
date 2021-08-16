@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.attrs
   (:require
+   [app.common.pages.spec :as spec]
    [app.main.ui.context :as muc]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
@@ -117,7 +118,29 @@
               (assoc :strokeOpacity (:stroke-opacity shape nil))
 
               (not= stroke-style :svg)
-              (assoc :strokeDasharray (stroke-type->dasharray stroke-style)))]
+              (assoc :strokeDasharray (stroke-type->dasharray stroke-style))
+
+              ;; For simple line caps we use svg stroke-line-cap attribute. This
+              ;; only works if all caps are the same and we are not using the tricks
+              ;; for inner or outer strokes.
+              (and (spec/stroke-caps-line (:stroke-cap-start shape))
+                   (= (:stroke-cap-start shape) (:stroke-cap-end shape))
+                   (= (:stroke-alignment shape) :center))
+              (assoc :strokeLinecap (:stroke-cap-start shape))
+
+              ;; For other cap types we use markers.
+              (and (or (spec/stroke-caps-marker (:stroke-cap-start shape))
+                       (and (spec/stroke-caps-line (:stroke-cap-start shape))
+                            (not= (:stroke-cap-start shape) (:stroke-cap-end shape))))
+                   (= (:stroke-alignment shape) :center))
+              (assoc :markerStart (str "url(#marker-" render-id "-" (name (:stroke-cap-start shape))))
+
+              (and (or (spec/stroke-caps-marker (:stroke-cap-end shape))
+                       (and (spec/stroke-caps-line (:stroke-cap-end shape))
+                            (not= (:stroke-cap-start shape) (:stroke-cap-end shape))))
+                   (= (:stroke-alignment shape) :center))
+              (assoc :markerEnd (str "url(#marker-" render-id "-" (name (:stroke-cap-end shape)))))]
+
         (obj/merge! attrs (clj->js stroke-attrs)))
       attrs)))
 
