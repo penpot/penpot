@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [clojure.set :as set]
    [clojure.spec.alpha :as s]))
 
 ;; --- Specs
@@ -254,6 +255,17 @@
 (s/def :internal.shape/stroke-color-ref-id (s/nilable uuid?))
 (s/def :internal.shape/stroke-opacity ::safe-number)
 (s/def :internal.shape/stroke-style #{:solid :dotted :dashed :mixed :none :svg})
+
+(def stroke-caps-line #{:round :square})
+(def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})
+(def stroke-caps (set/union stroke-caps-line stroke-caps-marker))
+(s/def :internal.shape/stroke-cap-start stroke-caps)
+(s/def :internal.shape/stroke-cap-end stroke-caps)
+
+(defn has-caps?
+  [shape]
+  (= (:type shape) :path))
+
 (s/def :internal.shape/stroke-width ::safe-number)
 (s/def :internal.shape/stroke-alignment #{:center :inner :outer})
 (s/def :internal.shape/text-align #{"left" "right" "center" "justify"})
@@ -342,6 +354,8 @@
                    :internal.shape/stroke-style
                    :internal.shape/stroke-width
                    :internal.shape/stroke-alignment
+                   :internal.shape/stroke-cap-start
+                   :internal.shape/stroke-cap-end
                    :internal.shape/text-align
                    :internal.shape/transform
                    :internal.shape/transform-inverse

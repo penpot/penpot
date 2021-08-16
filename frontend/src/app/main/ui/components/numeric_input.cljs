@@ -31,7 +31,7 @@
         local-ref (mf/use-ref)
         ref (or external-ref local-ref)
 
-        value (d/parse-integer value-str)
+        value (d/parse-integer value-str 0)
 
         min-val (when (string? min-val-str)
                   (d/parse-integer min-val-str))
