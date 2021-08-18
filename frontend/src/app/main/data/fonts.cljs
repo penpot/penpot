@@ -111,10 +111,13 @@
                                            (:data content)})
                              (dissoc :content)))))))
 
-          (parse-mtype [mtype]
-            (case mtype
-              "application/vnd.oasis.opendocument.formula-template" "font/otf"
-              mtype))
+          (parse-mtype [ba]
+            (let [u8 (js/Uint8Array. ba 0 4)
+                  sg (areduce u8 i ret "" (str ret (if (zero? i) "" " ") (.toString (aget u8 i) 8)))]
+              (case sg
+                "117 124 124 117" "font/otf"
+                "0 1 0 0"         "font/ttf"
+                "167 117 106 106" "font/woff")))
 
           (parse-font [{:keys [data] :as params}]
             (try
@@ -128,7 +131,11 @@
                  (rx/map (fn [data]
                            {:data data
                             :name (.-name blob)
-                            :type (parse-mtype (.-type blob))}))))]
+                            :type (parse-mtype data)}))
+                 (rx/mapcat (fn [{:keys [type] :as font}]
+                              (if type
+                                (rx/of font)
+                                (rx/empty))))))]
 
     (->> (rx/from blobs)
          (rx/mapcat read-blob)
