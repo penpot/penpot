@@ -86,11 +86,19 @@
                        value (-> (or (d/parse-double value) value)
                                  (math/precision 2))
 
-                       increment (if (kbd/shift? event)
+                       increment (cond
+                                   (kbd/shift? event)
                                    (if up? 10 -10)
+
+                                   (kbd/alt? event)
+                                   (if up? 0.1 -0.1)
+
+                                   :else
                                    (if up? 1 -1))
 
-                       new-value (+ value increment)
+                       new-value (-> (+ value increment)
+                                     (math/precision 2))
+
                        new-value (cond
                                    (and (num? min-val) (< new-value min-val)) min-val
                                    (and (num? max-val) (> new-value max-val)) max-val
