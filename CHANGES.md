@@ -1,8 +1,5 @@
 # CHANGELOG #
 
-
-
-
 ## :rocket: Next
 
 ### :sparkles: New features
@@ -11,6 +8,13 @@
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
+
+
+## 1.7.3-alpha
+
+### :bug: Bugs fixed
+
+- Fix font uploading issue on Windows.
 
 
 ## 1.7.2-alpha
