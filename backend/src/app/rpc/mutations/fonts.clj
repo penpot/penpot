@@ -6,6 +6,7 @@
 
 (ns app.rpc.mutations.fonts
   (:require
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -49,6 +50,7 @@
   (let [data    (media/run cfg {:cmd :generate-fonts :input data :rlimit :font})
         storage (media/configure-assets-storage storage conn)
 
+
         otf     (when-let [fdata (get data "font/otf")]
                   (sto/put-object storage {:content (sto/content fdata)
                                            :content-type "font/otf"}))
@@ -64,6 +66,13 @@
         woff2   (when-let [fdata (get data "font/woff2")]
                   (sto/put-object storage {:content (sto/content fdata)
                                            :content-type "font/woff2"}))]
+
+    (when (and (nil? otf)
+               (nil? ttf)
+               (nil? woff1)
+               (nil? woff2))
+      (ex/raise :type :validation
+                :code :invalid-font-upload))
 
     (db/insert! conn :team-font-variant
                 {:id (uuid/next)
