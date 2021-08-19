@@ -114,7 +114,7 @@
 
 
 (defn- render-object
-  [browser {:keys [page-id file-id object-id token scale suffix type]}]
+  [{:keys [page-id file-id object-id token scale suffix type]}]
   (letfn [(convert-to-ppm [pngpath]
             (log/trace :fn :convert-to-ppm)
             (let [basepath (path/dirname pngpath)
@@ -279,7 +279,7 @@
           rctx   {:cookie cookie
                   :uri (str uri)}]
       (log/info :uri (:uri rctx))
-      (bw/exec! browser (partial handle rctx)))))
+      (bw/exec! (partial handle rctx)))))
 
 (s/def ::name ::us/string)
 (s/def ::suffix ::us/string)
@@ -298,18 +298,11 @@
 (defn render
   [params]
   (us/assert ::render-params params)
-  (let [browser @bw/instance]
-    (when-not browser
-      (ex/raise :type :internal
-                :code :browser-not-ready
-                :hint "browser cluster is not initialized yet"))
-
-
-    (p/let [content (render-object browser params)]
-      {:content content
-       :filename (or (:filename params)
-                     (str (:name params)
-                          (:suffix params "")
-                          ".svg"))
-       :length (alength content)
-       :mime-type "image/svg+xml"})))
+  (p/let [content (render-object params)]
+    {:content content
+     :filename (or (:filename params)
+                   (str (:name params)
+                        (:suffix params "")
+                        ".svg"))
+     :length (alength content)
+     :mime-type "image/svg+xml"}))

@@ -26,7 +26,7 @@
      :value token}))
 
 (defn pdf-from-object
-  [browser {:keys [file-id page-id object-id token scale type]}]
+  [{:keys [file-id page-id object-id token scale type]}]
   (letfn [(handle [page]
             (let [path   (str "/render-object/" file-id "/" page-id "/" object-id)
                   uri    (-> (u/uri (cf/get :public-uri))
@@ -44,7 +44,7 @@
                (bw/wait-for page "#screenshot")
                (bw/pdf page))))]
 
-    (bw/exec! browser handle)))
+    (bw/exec! handle)))
 
 (s/def ::name ::us/string)
 (s/def ::suffix ::us/string)
@@ -62,18 +62,12 @@
 (defn render
   [params]
   (us/assert ::render-params params)
-  (let [browser @bw/instance]
-    (when-not browser
-      (ex/raise :type :internal
-                :code :browser-not-ready
-                :hint "browser cluster is not initialized yet"))
-
-    (p/let [content (pdf-from-object browser params)]
-      {:content content
-       :filename (or (:filename params)
-                     (str (:name params)
-                          (:suffix params "")
-                          ".pdf"))
-       :length (alength content)
-       :mime-type "application/pdf"})))
+  (p/let [content (pdf-from-object params)]
+    {:content content
+     :filename (or (:filename params)
+                   (str (:name params)
+                        (:suffix params "")
+                        ".pdf"))
+     :length (alength content)
+     :mime-type "application/pdf"}))
 

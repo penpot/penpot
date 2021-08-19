@@ -9,18 +9,18 @@
   "author": "UXBOX LABS SL",
   "license": "SEE LICENSE IN <LICENSE>",
   "dependencies": {
+    "generic-pool": "^3.8.2",
     "inflation": "^2.0.0",
-    "jszip": "^3.6.0",
+    "jszip": "^3.7.0",
     "koa": "^2.13.0",
-    "luxon": "^1.27.0",
-    "puppeteer": "^10.0.0",
-    "puppeteer-cluster": "^0.22.0",
+    "luxon": "^2.0.1",
+    "puppeteer-core": "^10.1.0",
     "raw-body": "^2.4.1",
     "xml-js": "^1.6.11",
     "xregexp": "^5.0.2"
   },
   "devDependencies": {
-    "shadow-cljs": "^2.14.2",
+    "shadow-cljs": "^2.15.2",
     "source-map-support": "^0.5.19"
   }
 }
