@@ -86,6 +86,12 @@
   [event]
   (.-target event))
 
+(defn get-current-target
+  "Extract the current target from event instance (different from target
+   when event triggered in a child of the suscribing element)."
+  [event]
+  (.-currentTarget event))
+
 (defn get-parent
   [dom]
   (.-parentElement ^js dom))
