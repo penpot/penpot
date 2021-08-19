@@ -9,6 +9,13 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+## 1.7.4-alpha
+
+### :bug: Bugs fixed
+
+- Fix demo user creation (self-hosted only)
+- Add better ldap response validation and reporting (self-hosted only)
+
 
 ## 1.7.3-alpha
 
