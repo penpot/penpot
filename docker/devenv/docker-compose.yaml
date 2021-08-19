@@ -92,6 +92,7 @@ services:
     ports:
       - "1080:1080"
 
+  # https://github.com/rroemhild/docker-test-openldap
   ldap:
     image: rroemhild/test-openldap:2.1
     expose:
