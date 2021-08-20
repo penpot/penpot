@@ -125,20 +125,20 @@
               ;; for inner or outer strokes.
               (and (spec/stroke-caps-line (:stroke-cap-start shape))
                    (= (:stroke-cap-start shape) (:stroke-cap-end shape))
-                   (= (:stroke-alignment shape) :center))
+                   (not (#{:inner :outer} (:stroke-alignment shape))))
               (assoc :strokeLinecap (:stroke-cap-start shape))
 
               ;; For other cap types we use markers.
               (and (or (spec/stroke-caps-marker (:stroke-cap-start shape))
                        (and (spec/stroke-caps-line (:stroke-cap-start shape))
                             (not= (:stroke-cap-start shape) (:stroke-cap-end shape))))
-                   (= (:stroke-alignment shape) :center))
+                   (not (#{:inner :outer} (:stroke-alignment shape))))
               (assoc :markerStart (str "url(#marker-" render-id "-" (name (:stroke-cap-start shape))))
 
               (and (or (spec/stroke-caps-marker (:stroke-cap-end shape))
                        (and (spec/stroke-caps-line (:stroke-cap-end shape))
                             (not= (:stroke-cap-start shape) (:stroke-cap-end shape))))
-                   (= (:stroke-alignment shape) :center))
+                   (not (#{:inner :outer} (:stroke-alignment shape))))
               (assoc :markerEnd (str "url(#marker-" render-id "-" (name (:stroke-cap-end shape)))))]
 
         (obj/merge! attrs (clj->js stroke-attrs)))

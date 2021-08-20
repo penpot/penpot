@@ -74,7 +74,8 @@
                 (tr "workspace.options.stroke"))
 
         show-options (not= (:stroke-style values :none) :none)
-        show-caps    (and show-caps (= (:stroke-alignment values) :center))
+        show-caps    (and show-caps
+                          (not (#{:inner :outer} (:stroke-alignment values))))
 
         start-caps-state (mf/use-state {:open? false
                                         :top 0
