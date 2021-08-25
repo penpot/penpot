@@ -164,7 +164,7 @@
 (defn- persist-events
   [events]
   (if (seq events)
-    (let [uri    (u/join cf/public-uri "events")
+    (let [uri    (u/join cf/public-uri "api/audit/events")
           params {:events events}]
       (->> (http/send! {:uri uri
                         :method :post

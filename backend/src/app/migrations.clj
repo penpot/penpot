@@ -199,6 +199,9 @@
 
    {:name "0063-add-share-link-table"
     :fn (mg/resource "app/migrations/sql/0063-add-share-link-table.sql")}
+
+   {:name "0064-mod-audit-log-table"
+    :fn (mg/resource "app/migrations/sql/0064-mod-audit-log-table.sql")}
    ])
 
 

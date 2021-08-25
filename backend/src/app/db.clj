@@ -300,7 +300,6 @@
       (.createArrayOf conn ^String type (into-array Object objects))
       (.createArrayOf conn ^String type objects))))
 
-
 (defn decode-pgpoint
   [^PGpoint v]
   (gpt/point (.-x v) (.-y v)))

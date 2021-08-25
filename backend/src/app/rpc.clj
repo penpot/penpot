@@ -117,14 +117,14 @@
                 profile-id (or (:profile-id params')
                                (:profile-id result)
                                (::audit/profile-id resultm))
-                props      (d/merge params (::audit/props resultm))]
+                props      (d/merge params' (::audit/props resultm))]
             (audit :cmd :submit
                    :type (::type cfg)
                    :name (or (::audit/name resultm)
                              (::sv/name mdata))
                    :profile-id profile-id
                    :ip-addr (audit/parse-client-ip request)
-                   :props (audit/profile->props props))))
+                   :props props)))
 
         result))))
 

@@ -95,6 +95,7 @@
     :storage     (ig/ref :app.storage/storage)
     :sns-webhook (ig/ref :app.http.awsns/handler)
     :feedback    (ig/ref :app.http.feedback/handler)
+    :audit-http-handler   (ig/ref :app.loggers.audit/http-handler)
     :error-report-handler (ig/ref :app.loggers.mattermost/handler)}
 
    :app.http.assets/handlers
@@ -288,6 +289,11 @@
 
    :app.loggers.zmq/receiver
    {:endpoint (cf/get :loggers-zmq-uri)}
+
+   :app.loggers.audit/http-handler
+   {:enabled  (cf/get :audit-enabled false)
+    :pool     (ig/ref :app.db/pool)
+    :executor (ig/ref :app.worker/executor)}
 
    :app.loggers.audit/collector
    {:enabled  (cf/get :audit-enabled false)
