@@ -208,8 +208,11 @@
 (defmethod ig/init-key ::archive-task
   [_ {:keys [uri enabled] :as cfg}]
   (fn [props]
+    ;; NOTE: this let allows overwrite default configured values from
+    ;; the repl, when manually invoking the task.
     (let [enabled (or enabled (:enabled props false))
-          uri     (or uri (:uri props))]
+          uri     (or uri (:uri props))
+          cfg     (assoc cfg :uri uri)]
       (when (and enabled (not uri))
         (ex/raise :type :internal
                   :code :task-not-configured
