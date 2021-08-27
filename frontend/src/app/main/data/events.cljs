@@ -242,6 +242,6 @@
 
 (defmethod ptk/resolve ::initialize
   [_ params]
-  (if cf/analytics
+  (if (contains? @cf/flags :audit-log)
     (initialize)
     (ptk/data-event ::initialize params)))

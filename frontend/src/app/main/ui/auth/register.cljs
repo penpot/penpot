@@ -116,7 +116,7 @@
    [:h1 (tr "auth.register-title")]
    [:div.subtitle (tr "auth.register-subtitle")]
 
-   (when cf/demo-warning
+   (when (contains? @cf/flags :demo-warning)
      [:& demo-warning])
 
    [:& register-form {:params params}]
@@ -135,7 +135,7 @@
           :tab-index "4"}
       (tr "auth.login-here")]]
 
-    (when cf/allow-demo-users
+    (when (contains? @cf/flags :demo-users)
       [:div.link-entry
        [:span (tr "auth.create-demo-profile") " "]
        [:a {:on-click #(st/emit! (du/create-demo-profile))
@@ -216,7 +216,7 @@
                     :label (tr "auth.terms-privacy-agreement")
                     :type "checkbox"}]]
 
-     (when (contains? @cf/flags :show-newsletter-check-on-register-validation)
+     (when (contains? @cf/flags :newsletter-registration-check)
        [:div.fields-row
         [:& fm/input {:name :accept-newsletter-subscription
                       :class "check-primary"

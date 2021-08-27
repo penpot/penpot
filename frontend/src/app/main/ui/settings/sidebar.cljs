@@ -87,7 +87,7 @@
         i/pencil
         [:span.element-title (tr "labels.release-notes")]]
 
-       (when cf/feedback-enabled
+       (when (contains? @cf/flags :user-feedback)
          [:li {:class (when feedback? "current")
                :on-click go-settings-feedback}
           i/msg-info

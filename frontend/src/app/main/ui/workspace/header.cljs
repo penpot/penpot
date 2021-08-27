@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.math :as mth]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
@@ -259,7 +259,7 @@
        [:li.export-file {:on-click on-export-files}
         [:span (tr "dashboard.export-single")]]
 
-       (when cfg/feedback-enabled
+       (when (contains? @cf/flags :user-feedback)
          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
           [:span (tr "labels.give-feedback")]
           [:span.primary-badge "ALPHA"]])

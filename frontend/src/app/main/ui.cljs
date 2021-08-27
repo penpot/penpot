@@ -55,11 +55,11 @@
 (def routes
   [["/auth"
     ["/login"            :auth-login]
-    (when cf/registration-enabled
+    (when (contains? @cf/flags :registration)
       ["/register"         :auth-register])
-    (when cf/registration-enabled
+    (when (contains? @cf/flags :registration)
       ["/register/validate" :auth-register-validate])
-    (when cf/registration-enabled
+    (when (contains? @cf/flags :registration)
       ["/register/success" :auth-register-success])
     ["/recovery/request" :auth-recovery-request]
     ["/recovery"         :auth-recovery]
