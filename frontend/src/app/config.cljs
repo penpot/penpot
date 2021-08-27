@@ -6,10 +6,10 @@
 
 (ns app.config
   (:require
+   [app.common.flags :as flags]
    [app.common.spec :as us]
    [app.common.uri :as u]
    [app.common.version :as v]
-   [app.common.flags :as flags]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
    [app.util.globals :refer [global location]]
