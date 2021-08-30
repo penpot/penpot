@@ -373,7 +373,9 @@
         stroke-alignment (get-meta node :stroke-alignment keyword)
         stroke (:stroke svg-data)
         gradient (when (str/starts-with? stroke "url")
-                   (parse-gradient node stroke))]
+                   (parse-gradient node stroke))
+        stroke-cap-start (get-meta node :stroke-cap-start keyword)
+        stroke-cap-end (get-meta node :stroke-cap-end keyword)]
 
     (cond-> props
       :always
@@ -389,7 +391,13 @@
              :stroke-opacity nil)
 
       (= stroke-alignment :inner)
-      (update :stroke-width / 2))))
+      (update :stroke-width / 2)
+
+      (some? stroke-cap-start)
+      (assoc :stroke-cap-start stroke-cap-start)
+
+      (some? stroke-cap-end)
+      (assoc :stroke-cap-end stroke-cap-end))))
 
 (defn add-rect-data
   [props node svg-data]

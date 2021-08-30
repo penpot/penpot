@@ -62,6 +62,7 @@
         group? (= :group (:type shape))
         rect?  (= :rect (:type shape))
         text?  (= :text (:type shape))
+        path?  (= :path (:type shape))
         mask?  (and group? (:masked-group? shape))
         center (gsh/center-shape shape)]
     (-> props
@@ -91,6 +92,10 @@
               (add! :r2)
               (add! :r3)
               (add! :r4)))
+
+        (cond-> path?
+          (-> (add! :stroke-cap-start)
+              (add! :stroke-cap-end)))
 
         (cond-> text?
           (-> (add! :grow-type)
