@@ -201,6 +201,19 @@
           :width (- x2 x1)
           :height (- y2 y1)})))))
 
+(defn calculate-padding [shape]
+  (let [{:keys [stroke-style stroke-alignment stroke-width]} shape]
+    (cond
+      (and (not= stroke-style :none)
+           (= stroke-alignment :outer))
+      stroke-width
+
+      (and (not= stroke-style :none)
+           (= stroke-alignment :center))
+      (mth/ceil (/ stroke-width 2))
+
+      :else 0)))
+
 (mf/defc filters
   [{:keys [filter-id shape]}]
 
@@ -209,15 +222,17 @@
         ;; Adds the previous filter as `filter-in` parameter
         filters (map #(assoc %1 :filter-in %2) filters (cons nil (map :id filters)))
 
-        bounds (get-filters-bounds shape filters (or (-> shape :blur :value) 0))]
+        bounds (get-filters-bounds shape filters (or (-> shape :blur :value) 0))
+
+        padding (calculate-padding shape)]
 
     [:*
      (when (> (count filters) 2)
        [:filter {:id filter-id
-                 :x (:x bounds)
-                 :y (:y bounds)
-                 :width (:width bounds)
-                 :height (:height bounds)
+                 :x (- (:x bounds) padding)
+                 :y (- (:y bounds) padding)
+                 :width (+ (:width bounds) (* 2 padding))
+                 :height (+ (:height bounds) (* 2 padding))
                  :filterUnits "userSpaceOnUse"
                  :color-interpolation-filters "sRGB"}
 

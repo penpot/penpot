@@ -55,7 +55,12 @@
         width    (* width zoom)
         height   (* height zoom)
 
-        vbox     (str/join " " [x y width height])
+        padding (* (filters/calculate-padding object) zoom)
+
+        vbox     (str/join " " [(- x padding)
+                                (- y padding)
+                                (+ width padding padding)
+                                (+ height padding padding)])
 
         frame-wrapper
         (mf/use-memo
@@ -81,8 +86,8 @@
     [:& (mf/provider embed/context) {:value true}
      [:svg {:id "screenshot"
             :view-box vbox
-            :width width
-            :height height
+            :width (+ width padding padding)
+            :height (+ height padding padding)
             :version "1.1"
             :xmlns "http://www.w3.org/2000/svg"
             :xmlnsXlink "http://www.w3.org/1999/xlink"
