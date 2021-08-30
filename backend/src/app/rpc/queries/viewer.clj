@@ -90,7 +90,8 @@
         (some? slink)
         (assoc :share slink)
 
-        (not (contains? (:flags slink) "view-all-pages"))
+        (and (some? slink)
+             (not (contains? (:flags slink) "view-all-pages")))
         (update-in [:file :data] (fn [data]
                                    (let [allowed-pages (:pages slink)]
                                      (-> data
