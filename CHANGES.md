@@ -20,6 +20,7 @@
 - Prevent adding numeric suffix to layer names when not needed [Taiga #1929](https://tree.taiga.io/project/penpot/us/1929).
 - Prevent deleting or moving the drafts project [Taiga #1935](https://tree.taiga.io/project/penpot/issue/1935).
 - Fix problem with zoom and selection [Taiga #1919](https://tree.taiga.io/project/penpot/issue/1919)
+- Fix problem with borders on shape export [#1092](https://github.com/penpot/penpot/issues/1092)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
