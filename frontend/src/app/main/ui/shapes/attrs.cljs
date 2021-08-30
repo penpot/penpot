@@ -133,13 +133,15 @@
                        (and (spec/stroke-caps-line (:stroke-cap-start shape))
                             (not= (:stroke-cap-start shape) (:stroke-cap-end shape))))
                    (not (#{:inner :outer} (:stroke-alignment shape))))
-              (assoc :markerStart (str "url(#marker-" render-id "-" (name (:stroke-cap-start shape))))
+              (assoc :markerStart
+                     (str/format "url(#marker-%s-%s)" render-id (name (:stroke-cap-start shape))))
 
               (and (or (spec/stroke-caps-marker (:stroke-cap-end shape))
                        (and (spec/stroke-caps-line (:stroke-cap-end shape))
                             (not= (:stroke-cap-start shape) (:stroke-cap-end shape))))
                    (not (#{:inner :outer} (:stroke-alignment shape))))
-              (assoc :markerEnd (str "url(#marker-" render-id "-" (name (:stroke-cap-end shape)))))]
+              (assoc :markerEnd
+                     (str/format "url(#marker-%s-%s)" render-id (name (:stroke-cap-end shape)))))]
 
         (obj/merge! attrs (clj->js stroke-attrs)))
       attrs)))
