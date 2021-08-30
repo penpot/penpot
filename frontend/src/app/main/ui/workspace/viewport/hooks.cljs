@@ -91,11 +91,16 @@
 
 ;; TODO: revisit the arguments, looks like `selected` is not necessary here
 (defn setup-hover-shapes [page-id move-stream _selected objects transform selected ctrl? hover hover-ids zoom]
-  (let [query-point
+  (let [;; We use ref so we don't recreate the stream on a change
+        zoom-ref (mf/use-ref zoom)
+        transform-ref (mf/use-ref nil)
+
+        query-point
         (mf/use-callback
          (mf/deps page-id)
          (fn [point]
-           (let [rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
+           (let [zoom (mf/ref-val zoom-ref)
+                 rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
              (uw/ask-buffered!
               {:cmd :selection/query
                :page-id page-id
@@ -103,19 +108,24 @@
                :include-frames? true
                :reverse? true})))) ;; we want the topmost shape to be selected first
 
-        ;; We use ref so we don't recreate the stream on a change
-        transform-ref (mf/use-ref nil)
-
         over-shapes-stream
-        (->> move-stream
-             ;; When transforming shapes we stop querying the worker
-             (rx/filter #(not (some? (mf/ref-val transform-ref))))
-             (rx/switch-map query-point))
+        (mf/use-memo
+         (fn []
+           (->> move-stream
+                ;; When transforming shapes we stop querying the worker
+                (rx/filter #(not (some? (mf/ref-val transform-ref))))
+                (rx/switch-map query-point))))
         ]
+
+    ;; Refresh the refs on a value change
 
     (mf/use-effect
      (mf/deps transform)
      #(mf/set-ref-val! transform-ref transform))
+
+    (mf/use-effect
+     (mf/deps zoom)
+     #(mf/set-ref-val! zoom-ref zoom))
 
     (hooks/use-stream
      over-shapes-stream
