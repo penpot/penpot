@@ -44,6 +44,7 @@ RUN set -ex; \
         python \
         build-essential \
         imagemagick \
+        ghostscript \
         netpbm \
         potrace \
         webp \

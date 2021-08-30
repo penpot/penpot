@@ -212,6 +212,9 @@ msgstr "Export %s files"
 msgid "dashboard.export-single"
 msgstr "Export file"
 
+msgid "dashboard.export-frames"
+msgstr "Export artboards to PDF..."
+
 msgid "dashboard.export.detail"
 msgstr "* Might include components, graphics, colors and/or typographies."
 

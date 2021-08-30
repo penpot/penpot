@@ -26,7 +26,7 @@
      :value token}))
 
 (defn pdf-from-object
-  [{:keys [file-id page-id object-id token scale type]}]
+  [{:keys [file-id page-id object-id token scale type save-path]}]
   (letfn [(handle [page]
             (let [path   (str "/render-object/" file-id "/" page-id "/" object-id)
                   uri    (-> (u/uri (cf/get :public-uri))
@@ -39,10 +39,12 @@
             (log/info :uri uri)
             (let [options {:cookie cookie}]
               (p/do!
-               (bw/configure-page! page options)
-               (bw/navigate! page uri)
-               (bw/wait-for page "#screenshot")
-               (bw/pdf page))))]
+                (bw/configure-page! page options)
+                (bw/navigate! page uri)
+                (bw/wait-for page "#screenshot")
+                (if save-path
+                  (bw/pdf page {:save-path save-path})
+                  (bw/pdf page)))))]
 
     (bw/exec! handle)))
 
@@ -54,10 +56,11 @@
 (s/def ::scale ::us/number)
 (s/def ::token ::us/string)
 (s/def ::filename ::us/string)
+(s/def ::save-path ::us/string)
 
 (s/def ::render-params
   (s/keys :req-un [::name ::suffix ::object-id ::page-id ::scale ::token ::file-id]
-          :opt-un [::filename]))
+          :opt-un [::filename ::save-path]))
 
 (defn render
   [params]

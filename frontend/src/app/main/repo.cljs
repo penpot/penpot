@@ -107,6 +107,14 @@
                     :response-type :blob})
        (rx/mapcat handle-response)))
 
+(defmethod query :export-frames
+  [_ params]
+  (->> (http/send! {:method :post
+                    :uri (u/join base-uri "export-frames")
+                    :body (http/transit-data params)
+                    :response-type :blob})
+       (rx/mapcat handle-response)))
+
 (derive :upload-file-media-object ::multipart-upload)
 (derive :update-profile-photo ::multipart-upload)
 (derive :update-team-photo ::multipart-upload)

@@ -210,6 +210,15 @@ msgstr "Duplicar %s archivos"
 msgid "dashboard.empty-files"
 msgstr "Todavía no hay ningún archivo aquí"
 
+msgid "dashboard.export-multi"
+msgstr "Exportar %s archivos"
+
+msgid "dashboard.export-single"
+msgstr "Exportar archivo"
+
+msgid "dashboard.export-frames"
+msgstr "Exportar tableros a PDF..."
+
 msgid "dashboard.export.detail"
 msgstr "* Pueden incluir components, gráficos, colores y/o tipografias."
 
