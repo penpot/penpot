@@ -44,7 +44,8 @@
 
 (defn- calculate-dimensions
   [{:keys [objects] :as data} vport]
-  (let [shapes (cp/select-toplevel-shapes objects {:include-frames? true})
+  (let [shapes (cp/select-toplevel-shapes objects {:include-frames? true
+                                                   :include-frame-children? false})
         to-finite (fn [val fallback] (if (not (mth/finite? val)) fallback val))
         rect (cond->> (gsh/selection-rect shapes)
                (some? vport)
