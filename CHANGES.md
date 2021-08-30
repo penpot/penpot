@@ -21,6 +21,7 @@
 - Prevent deleting or moving the drafts project [Taiga #1935](https://tree.taiga.io/project/penpot/issue/1935).
 - Fix problem with zoom and selection [Taiga #1919](https://tree.taiga.io/project/penpot/issue/1919)
 - Fix problem with borders on shape export [#1092](https://github.com/penpot/penpot/issues/1092)
+- Fix thumbnail cropping issue [#Taiga 1964](https://tree.taiga.io/project/penpot/issue/1964)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
