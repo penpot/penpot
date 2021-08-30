@@ -89,7 +89,7 @@
 
 (defmethod ig/init-key ::http-handler
   [_  {:keys [executor enabled] :as cfg}]
-  (fn [{:keys [params headers cookies profile-id] :as request}]
+  (fn [{:keys [params _headers _cookies profile-id] :as request}]
     (when enabled
       (let [events  (->> (:events params)
                          (remove #(not= profile-id (:profile-id %)))
