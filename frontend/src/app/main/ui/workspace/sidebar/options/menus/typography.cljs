@@ -437,6 +437,8 @@
         hover-detach   (mf/use-state false)
         name-input-ref (mf/use-ref)
 
+        name-ref (mf/use-ref (:name typography))
+
         on-name-blur
         (fn [event]
           (let [content (dom/get-target-val event)]
@@ -447,7 +449,12 @@
         (fn []
           (let [pparams {:project-id (:project-id file)
                          :file-id (:id file)}]
-            (st/emit! (rt/nav :workspace pparams))))]
+            (st/emit! (rt/nav :workspace pparams))))
+
+        on-name-change
+        (mf/use-callback
+         (fn [event]
+           (mf/set-ref-val! name-ref (dom/get-target-val event))))]
 
     (mf/use-effect
      (mf/deps editting?)
@@ -463,6 +470,14 @@
           #(when-let [node (mf/ref-val name-input-ref)]
              (dom/focus! node)
              (dom/select-text! node))))))
+
+    (mf/use-effect
+     (fn []
+       (fn []
+         (let [content (mf/ref-val name-ref)]
+           ;; On destroy we check if it changed
+           (when (and (some? content) (not= content (:name typography)))
+             (on-change {:name content}))))))
 
     [:*
      [:div.element-set-options-group.typography-entry
@@ -536,7 +551,8 @@
             {:type "text"
              :ref name-input-ref
              :default-value (cp/merge-path-item (:path typography) (:name typography))
-             :on-blur on-name-blur}]
+             :on-blur on-name-blur
+             :on-change on-name-change}]
 
              [:div.element-set-actions-button
               {:on-click #(reset! open? false)}
