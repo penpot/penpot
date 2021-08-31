@@ -256,7 +256,8 @@
            :xmlns "http://www.w3.org/2000/svg"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")}
-     [:& wrapper {:shape group :view-box vbox}]]))
+     [:> shape-container {:shape group}
+      [:& wrapper {:shape group :view-box vbox}]]]))
 
 (mf/defc component-symbol
   [{:keys [id data] :as props}]
