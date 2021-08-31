@@ -175,10 +175,12 @@
                       :files files})))))))]
 
     (mf/use-effect
+     (mf/deps show?)
      (fn []
-       (->> (rp/query! :all-projects)
-            (rx/map group-by-team)
-            (rx/subs #(reset! teams %)))))
+       (when show?
+         (->> (rp/query! :all-projects)
+              (rx/map group-by-team)
+              (rx/subs #(reset! teams %))))))
 
     (when current-team
       (let [sub-options (conj (vec (for [project current-projects]

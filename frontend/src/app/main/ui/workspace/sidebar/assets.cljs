@@ -65,17 +65,21 @@
                 'subgroup12': {'': [{asset12A}]}}
      'group2': {'subgroup21': {'': [{asset21A}}}}
   "
-  [assets]
-  (when-not (empty? assets)
-    (reduce (fn [groups asset]
-              (let [path-vector (cp/split-path (or (:path asset) ""))]
-                (update-in groups (conj path-vector "")
-                           (fn [group]
-                             (if-not group
-                               [asset]
-                               (conj group asset))))))
-            {}
-            assets)))
+  [assets reverse-sort?]
+  (letfn [(sort-key [key1 key2]
+            (if reverse-sort?
+              (compare (d/name key2) (d/name key1))
+              (compare (d/name key1) (d/name key2))))]
+    (when-not (empty? assets)
+      (reduce (fn [groups asset]
+                (let [path-vector (cp/split-path (or (:path asset) ""))]
+                  (update-in groups (conj path-vector "")
+                             (fn [group]
+                               (if-not group
+                                 [asset]
+                                 (conj group asset))))))
+              (sorted-map-by sort-key)
+              assets))))
 
 (defn add-group
   [asset group-name]
@@ -337,7 +341,7 @@
                                   :on-context-menu on-context-menu}]))])]))
 
 (mf/defc components-box
-  [{:keys [file-id local? components listing-thumbs? open? open-groups selected-assets
+  [{:keys [file-id local? components listing-thumbs? open? reverse-sort? open-groups selected-assets
            on-asset-click on-assets-delete on-clear-selection] :as props}]
   (let [state (mf/use-state {:renaming nil
                              :component-id nil})
@@ -350,7 +354,7 @@
                                 (seq (:colors selected-assets))
                                 (seq (:typographies selected-assets)))
 
-        groups              (group-assets components)
+        groups              (group-assets components reverse-sort?)
 
         on-duplicate
         (mf/use-callback
@@ -589,7 +593,7 @@
                                 :on-context-menu on-context-menu}]))])]))
 
 (mf/defc graphics-box
-  [{:keys [file-id local? objects listing-thumbs? open? open-groups selected-assets
+  [{:keys [file-id local? objects listing-thumbs? open? open-groups selected-assets reverse-sort?
            on-asset-click on-assets-delete on-clear-selection] :as props}]
   (let [input-ref  (mf/use-ref nil)
         state      (mf/use-state {:renaming nil
@@ -603,7 +607,7 @@
                                 (seq (:colors selected-assets))
                                 (seq (:typographies selected-assets)))
 
-        groups (group-assets objects)
+        groups (group-assets objects reverse-sort?)
 
         add-graphic
         (mf/use-callback
@@ -937,6 +941,7 @@
           (when-not (empty? path-item)
             [:& colors-group {:file-id file-id
                               :prefix (cp/merge-path-item prefix path-item)
+                              :key (str "group-" path-item)
                               :groups content
                               :open-groups open-groups
                               :local? local?
@@ -952,7 +957,7 @@
                               :colors colors}]))])]))
 
 (mf/defc colors-box
-  [{:keys [file-id local? colors open? open-groups selected-assets
+  [{:keys [file-id local? colors open? open-groups selected-assets reverse-sort?
            on-asset-click on-assets-delete on-clear-selection] :as props}]
   (let [selected-colors     (:colors selected-assets)
         multi-colors?       (> (count selected-colors) 1)
@@ -960,7 +965,7 @@
                                 (seq (:graphics selected-assets))
                                 (seq (:typographies selected-assets)))
 
-        groups              (group-assets colors)
+        groups              (group-assets colors reverse-sort?)
 
         add-color
         (mf/use-callback
@@ -1124,7 +1129,7 @@
                                     :on-context-menu on-context-menu}]))])]))
 
 (mf/defc typographies-box
-  [{:keys [file file-id local? typographies open? open-groups selected-assets
+  [{:keys [file file-id local? typographies open? open-groups selected-assets reverse-sort?
            on-asset-click on-assets-delete on-clear-selection] :as props}]
   (let [state (mf/use-state {:detail-open? false
                              :id nil})
@@ -1133,7 +1138,7 @@
 
         local    (deref refs/workspace-local)
 
-        groups        (group-assets typographies)
+        groups        (group-assets typographies reverse-sort?)
 
         selected-typographies (:typographies selected-assets)
         multi-typographies?   (> (count selected-typographies) 1)
@@ -1560,8 +1565,8 @@
               (tr "workspace.assets.selected-count" (i18n/c selected-count))])
            [:div.listing-option-btn.first {:on-click toggle-sort}
             (if @reverse-sort?
-              i/sort-descending
-              i/sort-ascending)]
+              i/sort-ascending
+              i/sort-descending)]
            [:div.listing-option-btn {:on-click toggle-listing}
             (if @listing-thumbs?
               i/listing-enum
@@ -1574,6 +1579,7 @@
                                 :listing-thumbs? listing-thumbs?
                                 :open? (open-box? :components)
                                 :open-groups (open-groups :components)
+                                :reverse-sort? @reverse-sort?
                                 :selected-assets @selected-assets
                                 :on-asset-click (partial on-asset-click :components)
                                 :on-assets-delete on-assets-delete
@@ -1586,6 +1592,7 @@
                               :listing-thumbs? listing-thumbs?
                               :open? (open-box? :graphics)
                               :open-groups (open-groups :graphics)
+                              :reverse-sort? @reverse-sort?
                               :selected-assets @selected-assets
                               :on-asset-click (partial on-asset-click :graphics)
                               :on-assets-delete on-assets-delete
@@ -1596,6 +1603,7 @@
                             :colors colors
                             :open? (open-box? :colors)
                             :open-groups (open-groups :colors)
+                            :reverse-sort? @reverse-sort?
                             :selected-assets @selected-assets
                             :on-asset-click (partial on-asset-click :colors)
                             :on-assets-delete on-assets-delete
@@ -1608,6 +1616,7 @@
                                   :typographies typographies
                                   :open? (open-box? :typographies)
                                   :open-groups (open-groups :typographies)
+                                  :reverse-sort? @reverse-sort?
                                   :selected-assets @selected-assets
                                   :on-asset-click (partial on-asset-click :typographies)
                                   :on-assets-delete on-assets-delete
