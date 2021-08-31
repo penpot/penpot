@@ -82,5 +82,5 @@
      (->> (rx/of data)
           (rx/map
            (fn [data]
-             (let [elem (mf/element exports/components-sprite-svg #js {:data data :embed? true})]
+             (let [elem (mf/element exports/components-sprite-svg #js {:data data :embed? true :include-metadata? true})]
                (rds/renderToStaticMarkup elem))))))))

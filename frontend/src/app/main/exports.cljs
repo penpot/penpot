@@ -295,19 +295,20 @@
   (let [data (obj/get props "data")
         children (obj/get props "children")
         embed? (obj/get props "embed?")
-        include-metadata? (mf/use-ctx use/include-metadata-ctx)]
+        include-metadata? (obj/get props "include-metadata?")]
     [:& (mf/provider embed/context) {:value embed?}
-     [:svg {:version "1.1"
-            :xmlns "http://www.w3.org/2000/svg"
-            :xmlnsXlink "http://www.w3.org/1999/xlink"
-            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
-            :style {:width "100vw"
-                    :height "100vh"
-                    :display (when-not (some? children) "none")}}
-      [:defs
-       (for [[component-id component-data] (:components data)]
-         [:& component-symbol {:id component-id
-                               :key (str component-id)
-                               :data component-data}])]
+     [:& (mf/provider use/include-metadata-ctx) {:value include-metadata?}
+      [:svg {:version "1.1"
+             :xmlns "http://www.w3.org/2000/svg"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+             :style {:width "100vw"
+                     :height "100vh"
+                     :display (when-not (some? children) "none")}}
+       [:defs
+        (for [[component-id component-data] (:components data)]
+          [:& component-symbol {:id component-id
+                                :key (str component-id)
+                                :data component-data}])]
 
-      children]]))
+       children]]]))

@@ -358,7 +358,7 @@
     (let [resolve (:resolve context)]
       (->> (get-file context :media-list)
            (rx/flat-map (comp d/kebab-keys cip/string->uuid))
-           (rx/flat-map
+           (rx/mapcat
             (fn [[id media]]
               (let [media (assoc media :id (resolve id))]
                 (->> (get-file context :media id media)
