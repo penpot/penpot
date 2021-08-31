@@ -16,8 +16,9 @@
 (defn generate-root-styles
   [shape node]
   (let [valign (:vertical-align node "top")
+        width  (some-> (:width shape) (+ 1))
         base   #js {:height (or (:height shape) "100%")
-                    :width  (or (:width shape) "100%")}]
+                    :width  (or width "100%")}]
     (cond-> base
       (= valign "top")     (obj/set! "justifyContent" "flex-start")
       (= valign "center")  (obj/set! "justifyContent" "center")
