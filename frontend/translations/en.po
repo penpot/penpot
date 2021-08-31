@@ -1160,6 +1160,12 @@ msgstr "Show only yours comments"
 msgid "labels.sign-out"
 msgstr "Sign out"
 
+msgid "labels.skip"
+msgstr "Skip"
+
+msgid "labels.start"
+msgstr "Start"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
 msgstr "Update"
@@ -1443,6 +1449,118 @@ msgstr "Profile saved successfully!"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "notifications.validation-email-sent"
 msgstr "Verification email sent to %s. Check your email!"
+
+msgid "onboarding.contrib.alt"
+msgstr "Open Source"
+
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot is Open Source, made by and for the community. If you want to "
+"collaborate, you are more than welcome!"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "You can access the"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "and follow the contribution instructions :)"
+
+msgid "onboarding.contrib.link"
+msgstr "project on github"
+
+msgid "onboarding.contrib.title"
+msgstr "Open Source Contributor?"
+
+msgid "onboarding.slide.0.alt"
+msgstr "Create designs"
+
+msgid "onboarding.slide.0.desc1"
+msgstr "Create beautiful user interfaces in collaboration with all team members."
+
+msgid "onboarding.slide.0.desc2"
+msgstr "Maintain consistency at scale with components, libraries and design systems."
+
+msgid "onboarding.slide.0.title"
+msgstr "Design libraries, styles and components"
+
+msgid "onboarding.slide.1.alt"
+msgstr "Interactive prototypes"
+
+msgid "onboarding.slide.1.desc1"
+msgstr "Create rich interactions to mimic the product behaviour."
+
+msgid "onboarding.slide.1.desc2"
+msgstr ""
+"Share to stakeholders, present proposals to your team and start user "
+"testing with your designs, all in one place."
+
+msgid "onboarding.slide.1.title"
+msgstr "Bring your designs to life with interactions"
+
+msgid "onboarding.slide.2.alt"
+msgstr "Get feedback"
+
+msgid "onboarding.slide.2.desc1"
+msgstr ""
+"All team members working simultaneously with real time design multiplayer "
+"and centralised comments, ideas and feedback right over the designs."
+
+msgid "onboarding.slide.2.title"
+msgstr "Get feedback, present and share your work"
+
+msgid "onboarding.slide.3.alt"
+msgstr "Handoff and lowcode"
+
+msgid "onboarding.slide.3.desc1"
+msgstr ""
+"Sync the design and code of all your components and styles and get code "
+"snippets."
+
+msgid "onboarding.slide.3.desc2"
+msgstr ""
+"Get and provide code specifications like markup (SVG, HTML) or styles (CSS, "
+"Less, Stylus…)."
+
+msgid "onboarding.slide.3.title"
+msgstr "One shared source of truth"
+
+msgid "onboarding.team.create.button"
+msgstr "Create a team"
+
+msgid "onboarding.team.create.desc1"
+msgstr ""
+"Are you working with someone? Create a team to work together on projects "
+"and share design assets."
+
+msgid "onboarding.team.create.input-placeholder"
+msgstr "Enter new team name"
+
+msgid "onboarding.team.create.title"
+msgstr "Create team"
+
+msgid "onboarding.team.start.button"
+msgstr "Start right away"
+
+msgid "onboarding.team.start.desc1"
+msgstr ""
+"Jump right away into Penpot and start designing by your own. You will still "
+"have the chance to create teams later."
+
+msgid "onboarding.team.start.title"
+msgstr "Start designing"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+msgid "onboarding.welcome.desc1"
+msgstr "We are very happy to introduce you to the very first Alpha release."
+
+msgid "onboarding.welcome.desc2"
+msgstr ""
+"Penpot is still at development stage and there will be constant updates. We "
+"hope you enjoy the first stable version."
+
+msgid "onboarding.welcome.title"
+msgstr "Welcome to Penpot!"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
