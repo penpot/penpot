@@ -59,7 +59,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [wsession (get-in state [:ws file-id])
-            stoper   (rx/filter #(= ::finalize %) stream)
+            stoper   (->> stream
+                          (rx/filter (ptk/type? ::finalize)))
             interval (* 1000 60)]
         (->> (rx/merge
               ;; Each 60 seconds send a keepalive message for maintain
@@ -122,11 +123,10 @@
 (defn finalize
   [file-id]
   (ptk/reify ::finalize
-    ptk/WatchEvent
-    (watch [_ state _]
+    ptk/EffectEvent
+    (effect [_ state _]
       (when-let [ws (get-in state [:ws file-id])]
-        (ws/-close ws))
-      (rx/of ::finalize))))
+        (ws/-close ws)))))
 
 ;; --- Handle: Presence
 

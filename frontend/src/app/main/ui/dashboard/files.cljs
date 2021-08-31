@@ -101,12 +101,17 @@
                        (reverse))]
 
     (mf/use-effect
-     (mf/deps (:id project))
+     (mf/deps project)
      (fn []
-       (dom/set-html-title (tr "title.dashboard.files"
-                              (if (:is-default project)
-                                (tr "labels.drafts")
-                                (:name project))))
+       (when project
+         (let [pname (if (:is-default project)
+                       (tr "labels.drafts")
+                       (:name project))]
+           (dom/set-html-title (tr "title.dashboard.files" pname))))))
+
+    (mf/use-effect
+     (mf/deps project)
+     (fn []
        (st/emit! (dd/fetch-files {:project-id (:id project)})
                  (dd/clear-selected-files))))
 

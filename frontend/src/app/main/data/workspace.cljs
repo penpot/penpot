@@ -49,7 +49,6 @@
    [potok.core :as ptk]))
 
 ;; (log/set-level! :trace)
-;; --- Specs
 
 (s/def ::shape-attrs ::cp/shape-attrs)
 (s/def ::set-of-string
@@ -88,7 +87,7 @@
     :snap-grid
     :dynamic-alignment})
 
-(def layout-names
+(def layout-presets
   {:assets
    {:del #{:sitemap :layers :document-history }
     :add #{:assets}}
@@ -122,22 +121,31 @@
    :picked-color nil
    :picked-color-select false})
 
-(declare ensure-layout)
-
-(defn initialize-layout
-  [layout-name]
-  (us/verify (s/nilable ::us/keyword) layout-name)
-  (ptk/reify ::initialize-layout
+(defn ensure-layout
+  [lname]
+  (ptk/reify ::ensure-layout
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-layout
-              (fn [layout]
-                (or layout default-layout))))
+              (fn [stored]
+                (let [todel (get-in layout-presets [lname :del] #{})
+                      toadd (get-in layout-presets [lname :add] #{})]
+                  (-> stored
+                      (set/difference todel)
+                      (set/union toadd))))))))
+
+(defn setup-layout
+  [lname]
+  (us/verify (s/nilable ::us/keyword) lname)
+  (ptk/reify ::setup-layout
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-layout #(or % default-layout)))
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (if (and layout-name (contains? layout-names layout-name))
-        (rx/of (ensure-layout layout-name))
+      (if (and lname (contains? layout-presets lname))
+        (rx/of (ensure-layout lname))
         (rx/of (ensure-layout :layers))))))
 
 (defn initialize-file
@@ -225,8 +233,10 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dwn/finalize file-id)
-             ::dwp/finalize))))
+      (rx/merge
+       (rx/of (dwn/finalize file-id))
+       (->> (rx/of ::dwp/finalize)
+            (rx/observe-on :async))))))
 
 (defn initialize-page
   [page-id]
@@ -518,21 +528,6 @@
 
 
 ;; --- Toggle layout flag
-
-(defn ensure-layout
-  [layout-name]
-  (assert (contains? layout-names layout-name)
-          (str "unexpected layout name: " layout-name))
-  (ptk/reify ::ensure-layout
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-layout
-              (fn [stored]
-                (let [todel (get-in layout-names [layout-name :del] #{})
-                      toadd (get-in layout-names [layout-name :add] #{})]
-                  (-> stored
-                      (set/difference todel)
-                      (set/union toadd))))))))
 
 (defn toggle-layout-flags
   [& flags]

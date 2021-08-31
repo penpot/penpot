@@ -163,14 +163,16 @@
     (mf/use-effect
      (mf/deps team)
      (fn []
-       (dom/set-html-title (tr "title.dashboard.projects"
-                              (if (:is-default team)
-                                (tr "dashboard.your-penpot")
-                                (:name team))))))
+       (when team
+         (let [tname (if (:is-default team)
+                       (tr "dashboard.your-penpot")
+                       (:name team))]
+           (dom/set-html-title (tr "title.dashboard.projects" tname))))))
 
     (mf/use-effect
-     (st/emitf (dd/fetch-recent-files)
-               (dd/clear-selected-files)))
+     (fn []
+       (st/emit! (dd/fetch-recent-files)
+                 (dd/clear-selected-files))))
 
     (when (seq projects)
       [:*

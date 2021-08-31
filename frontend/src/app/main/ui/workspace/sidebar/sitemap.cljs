@@ -28,8 +28,7 @@
   (let [local       (mf/use-state {})
         input-ref   (mf/use-ref)
         id          (:id page)
-
-        state (mf/use-state {:menu-open false})
+        state       (mf/use-state {:menu-open false})
 
         delete-fn   (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
         navigate-fn (mf/use-callback (mf/deps id) #(st/emit! (dw/go-to-page id)))
@@ -199,8 +198,9 @@
   (let [file        (mf/deref refs/workspace-file)
         create      (mf/use-callback
                      (mf/deps file)
-                     (st/emitf (dw/create-page {:file-id (:id file)
-                                                :project-id (:project-id file)})))
+                     (fn []
+                       (st/emit! (dw/create-page {:file-id (:id file)
+                                                  :project-id (:project-id file)}))))
         show-pages? (mf/use-state true)
 
         toggle-pages

@@ -40,11 +40,13 @@
         (when (.isOpen ^js ws)
           (.send ^js ws msg)))
       (-close [_]
-        (.close ws)
         (rx/end! sb)
         (ev/unlistenByKey lk1)
         (ev/unlistenByKey lk2)
-        (ev/unlistenByKey lk3)))))
+        (ev/unlistenByKey lk3)
+        (.close ^js ws)
+        (.dispose ^js ws)))))
+
 
 (defn message?
   [msg]

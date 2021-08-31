@@ -172,7 +172,10 @@
                      {:type :export
                       :team-id current-team-id
                       :has-libraries? (->> files (some :has-libraries?))
-                      :files files})))))))]
+                      :files files})))))))
+
+        ;; NOTE: this is used for detect if component is still mounted
+        mounted-ref (mf/use-ref true)]
 
     (mf/use-effect
      (mf/deps show?)
@@ -180,7 +183,8 @@
        (when show?
          (->> (rp/query! :all-projects)
               (rx/map group-by-team)
-              (rx/subs #(reset! teams %))))))
+              (rx/subs #(when (mf/ref-val mounted-ref)
+                          (reset! teams %)))))))
 
     (when current-team
       (let [sub-options (conj (vec (for [project current-projects]
