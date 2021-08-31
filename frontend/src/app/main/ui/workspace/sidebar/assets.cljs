@@ -941,6 +941,7 @@
           (when-not (empty? path-item)
             [:& colors-group {:file-id file-id
                               :prefix (cp/merge-path-item prefix path-item)
+                              :key (str "group-" path-item)
                               :groups content
                               :open-groups open-groups
                               :local? local?

@@ -26,6 +26,7 @@
 - Fix rename typography on text options [Taiga #1963](https://tree.taiga.io/project/penpot/issue/1963)
 - Fix problems with order in groups [Taiga #1960](https://tree.taiga.io/project/penpot/issue/1960)
 - Fix SVG components preview [#1134](https://github.com/penpot/penpot/issues/1134)
+- Fix group renaming problem [Taiga #1969](https://tree.taiga.io/project/penpot/issue/1969)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
