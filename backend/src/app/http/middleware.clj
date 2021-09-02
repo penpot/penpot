@@ -13,7 +13,6 @@
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
    [clojure.java.io :as io]
-   [ring.core.protocols :as rp]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
@@ -73,19 +72,6 @@
 (def parse-request-body
   {:name ::parse-request-body
    :compile (constantly wrap-parse-request-body)})
-
-(defn- transit-streamable-body
-  [data opts]
-  (reify rp/StreamableResponseBody
-    (write-body-to-stream [_ response output-stream]
-      (try
-        (let [tw (t/writer output-stream opts)]
-          (t/write! tw data))
-        (catch Throwable e
-          (l/error :hint "exception on writting data to response"
-                   :cause e))
-        (finally
-          (.close ^java.io.OutputStream output-stream))))))
 
 (defn- impl-format-response-body
   [response _request]
