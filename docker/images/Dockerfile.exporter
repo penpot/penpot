@@ -20,6 +20,7 @@ RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy install \
         imagemagick \
+        ghostscript \
         netpbm \
         potrace \
         gconf-service \

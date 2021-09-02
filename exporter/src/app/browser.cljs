@@ -69,12 +69,14 @@
 
 (defn pdf
   ([page] (pdf page nil))
-  ([page {:keys [viewport omit-background? prefer-css-page-size?]
+  ([page {:keys [viewport omit-background? prefer-css-page-size? save-path]
           :or {viewport {}
                omit-background? true
-               prefer-css-page-size? true}}]
+               prefer-css-page-size? true
+               save-path nil}}]
    (let [viewport (d/merge default-viewport viewport)]
-     (.pdf ^js page #js {:width (:width viewport)
+     (.pdf ^js page #js {:path save-path
+                         :width (:width viewport)
                          :height (:height viewport)
                          :scale (:scale viewport)
                          :omitBackground omit-background?
