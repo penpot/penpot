@@ -95,15 +95,7 @@
       (coll? body)
       (-> response
           (update :headers assoc "content-type" "application/transit+json")
-          (assoc :body (transit-streamable-body body opts)))
-
-      ;; ;; Temporary disabled
-      ;; (-> response
-      ;;     (update :headers assoc "content-type" "application/transit+json")
-      ;;     (assoc :body
-      ;;            (if (= :post (:request-method request))
-      ;;              (transit-streamable-body body opts)
-      ;;              (t/encode body opts))))
+          (assoc :body (t/encode body opts)))
 
       (nil? body)
       (assoc response :status 204 :body "")
