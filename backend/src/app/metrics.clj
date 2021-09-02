@@ -92,18 +92,14 @@
         _        (when (seq labels)
                    (.labelNames instance (into-array String labels)))
         instance (.register instance registry)]
-    (reify
-      clojure.lang.IDeref
-      (deref [_] instance)
 
-      clojure.lang.IFn
-      (invoke [_ cmd]
-        (.inc ^Counter instance))
-
-      (invoke [_ cmd labels]
-        (.. ^Counter instance
-            (labels (into-array String labels))
-            (inc))))))
+    {::instance instance
+     ::fn (fn [{:keys [by labels] :or {by 1}}]
+            (if labels
+              (.. ^Counter instance
+                  (labels (into-array String labels))
+                  (inc by))
+              (.inc ^Counter instance by)))}))
 
 (defn make-gauge
   [{:keys [name help registry reg labels] :as props}]
@@ -115,21 +111,16 @@
                    (.labelNames instance (into-array String labels)))
         instance (.register instance registry)]
 
-    (reify
-      clojure.lang.IDeref
-      (deref [_] instance)
-
-      clojure.lang.IFn
-      (invoke [_ cmd]
-        (case cmd
-          :inc (.inc ^Gauge instance)
-          :dec (.dec ^Gauge instance)))
-
-      (invoke [_ cmd labels]
-        (let [labels (into-array String [labels])]
-          (case cmd
-            :inc (.. ^Gauge instance (labels labels) (inc))
-            :dec (.. ^Gauge instance (labels labels) (dec))))))))
+    {::instance instance
+     ::fn (fn [{:keys [cmd by labels] :or {by 1}}]
+            (if labels
+              (let [labels (into-array String [labels])]
+                (case cmd
+                  :inc (.. ^Gauge instance (labels labels) (inc by))
+                  :dec (.. ^Gauge instance (labels labels) (dec by))))
+              (case cmd
+                :inc (.inc ^Gauge instance by)
+                :dec (.dec ^Gauge instance by))))}))
 
 (def default-quantiles
   [[0.75 0.02]
@@ -150,18 +141,14 @@
         _        (when (seq labels)
                    (.labelNames instance (into-array String labels)))
         instance (.register instance registry)]
-    (reify
-      clojure.lang.IDeref
-      (deref [_] instance)
 
-      clojure.lang.IFn
-      (invoke [_ cmd val]
-        (.observe ^Summary instance val))
-
-      (invoke [_ cmd val labels]
-        (.. ^Summary instance
-            (labels (into-array String labels))
-            (observe val))))))
+    {::instance instance
+     ::fn (fn [{:keys [val labels]}]
+            (if labels
+              (.. ^Summary instance
+                  (labels (into-array String labels))
+                  (observe val))
+              (.observe ^Summary instance val)))}))
 
 (def default-histogram-buckets
   [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500])
@@ -177,18 +164,14 @@
         _        (when (seq labels)
                    (.labelNames instance (into-array String labels)))
         instance (.register instance registry)]
-    (reify
-      clojure.lang.IDeref
-      (deref [_] instance)
 
-      clojure.lang.IFn
-      (invoke [_ cmd val]
-        (.observe ^Histogram instance val))
-
-      (invoke [_ cmd val labels]
-        (.. ^Histogram instance
-            (labels (into-array String labels))
-            (observe val))))))
+    {::instance instance
+     ::fn (fn [{:keys [val labels]}]
+            (if labels
+              (.. ^Histogram instance
+                  (labels (into-array String labels))
+                  (observe val))
+              (.observe ^Histogram instance val)))}))
 
 (defn create
   [{:keys [type] :as props}]
@@ -205,19 +188,19 @@
      (with-meta
        (fn
          ([a]
-          (mobj :inc)
+          ((::fn mobj) nil)
           (origf a))
          ([a b]
-          (mobj :inc)
+          ((::fn mobj) nil)
           (origf a b))
          ([a b c]
-          (mobj :inc)
+          ((::fn mobj) nil)
           (origf a b c))
          ([a b c d]
-          (mobj :inc)
+          ((::fn mobj) nil)
           (origf a b c d))
          ([a b c d & more]
-          (mobj :inc)
+          ((::fn mobj) nil)
           (apply origf a b c d more)))
        (assoc mdata ::original origf))))
   ([rootf mobj labels]
@@ -226,13 +209,13 @@
      (with-meta
        (fn
          ([a]
-          (mobj :inc labels)
+          ((::fn mobj) {:labels labels})
           (origf a))
          ([a b]
-          (mobj :inc labels)
+          ((::fn mobj) {:labels labels})
           (origf a b))
          ([a b & more]
-          (mobj :inc labels)
+          ((::fn mobj) {:labels labels})
           (apply origf a b more)))
        (assoc mdata ::original origf)))))
 
@@ -245,15 +228,15 @@
          ([a]
          (with-measure
            :expr (origf a)
-           :cb   #(mobj :observe %)))
+           :cb   #((::fn mobj) {:val %})))
          ([a b]
           (with-measure
             :expr (origf a b)
-            :cb   #(mobj :observe %)))
+            :cb   #((::fn mobj) {:val %})))
          ([a b & more]
           (with-measure
             :expr (apply origf a b more)
-            :cb   #(mobj :observe %))))
+            :cb   #((::fn mobj) {:val %}))))
        (assoc mdata ::original origf))))
 
   ([rootf mobj labels]
@@ -264,26 +247,26 @@
          ([a]
          (with-measure
            :expr (origf a)
-           :cb   #(mobj :observe % labels)))
+           :cb   #((::fn mobj) {:val % :labels labels})))
          ([a b]
           (with-measure
             :expr (origf a b)
-            :cb   #(mobj :observe % labels)))
+            :cb   #((::fn mobj) {:val % :labels labels})))
          ([a b & more]
           (with-measure
             :expr (apply origf a b more)
-            :cb   #(mobj :observe % labels))))
+            :cb   #((::fn mobj) {:val % :labels labels}))))
        (assoc mdata ::original origf)))))
 
 (defn instrument-vars!
   [vars {:keys [wrap] :as props}]
   (let [obj (create props)]
     (cond
-      (instance? Counter @obj)
+      (instance? Counter (::instance obj))
       (doseq [var vars]
         (alter-var-root var (or wrap wrap-counter) obj))
 
-      (instance? Summary @obj)
+      (instance? Summary (::instance obj))
       (doseq [var vars]
         (alter-var-root var (or wrap wrap-summary) obj))
 
@@ -294,13 +277,13 @@
   [f {:keys [wrap] :as props}]
   (let [obj (create props)]
     (cond
-      (instance? Counter @obj)
+      (instance? Counter (::instance obj))
       ((or wrap wrap-counter) f obj)
 
-      (instance? Summary @obj)
+      (instance? Summary (::instance obj))
       ((or wrap wrap-summary) f obj)
 
-      (instance? Histogram @obj)
+      (instance? Histogram (::instance obj))
       ((or wrap wrap-summary) f obj)
 
       :else

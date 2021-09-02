@@ -28,10 +28,23 @@
      {:name "actions_profile_register_count"
       :help "A global counter of user registrations."
       :type :counter}
+
      :profile-activation
      {:name "actions_profile_activation_count"
       :help "A global counter of profile activations"
+      :type :counter}
+
+     :update-file-changes
+     {:name "rpc_update_file_changes_total"
+      :help "A total number of changes submitted to update-file."
+      :type :counter}
+
+     :update-file-bytes-processed
+     {:name "rpc_update_file_bytes_processed_total"
+      :help "A total number of bytes processed by update-file."
       :type :counter}}}
+
+
 
    :app.migrations/all
    {:main (ig/ref :app.migrations/migrations)}

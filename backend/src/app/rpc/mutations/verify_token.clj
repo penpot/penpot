@@ -9,6 +9,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.metrics :as mtx]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.util.services :as sv]
@@ -42,7 +43,8 @@
   transaction is completed."
   [metrics]
   (fn []
-    ((get-in metrics [:definitions :profile-activation]) :inc)))
+    (let [mobj (get-in metrics [:definitions :profile-activation])]
+      ((::mtx/fn mobj) {:by 1}))))
 
 (defmethod process-token :verify-email
   [{:keys [conn session metrics] :as cfg} _ {:keys [profile-id] :as claims}]
