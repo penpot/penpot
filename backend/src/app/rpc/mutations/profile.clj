@@ -15,6 +15,7 @@
    [app.http.oauth :refer [extract-props]]
    [app.loggers.audit :as audit]
    [app.media :as media]
+   [app.metrics :as mtx]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
@@ -150,7 +151,8 @@
   transaction is completed."
   [metrics]
   (fn []
-    ((get-in metrics [:definitions :profile-register]) :inc)))
+    (let [mobj (get-in metrics [:definitions :profile-register])]
+      ((::mtx/fn mobj) {:by 1}))))
 
 (defn register-profile
   [{:keys [conn tokens session metrics] :as cfg} {:keys [token] :as params}]
