@@ -90,7 +90,7 @@
 (defn- impl-format-response-body
   [response _request]
   (let [body (:body response)
-        opts {:type :json-verbose}]
+        opts {:type :json}]
     (cond
       (coll? body)
       (-> response
