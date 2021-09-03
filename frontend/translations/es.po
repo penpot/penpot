@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-06-18 09:19+0000\n"
-"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"PO-Revision-Date: 2021-09-04 15:33+0000\n"
+"Last-Translator: Rubén <rubnx@protonmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.7\n"
+"X-Generator: Weblate 4.8.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2689,3 +2689,6 @@ msgstr "Ir al login"
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team.placeholder"
 msgstr "Introduce un nuevo nombre de equipo"
+
+msgid "dashboard.export-multi"
+msgstr "Exportar %s archivos"
