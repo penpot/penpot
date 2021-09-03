@@ -89,11 +89,11 @@
   (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %))
   (hooks/use-stream ms/keyboard-space #(reset! space? %)))
 
-;; TODO: revisit the arguments, looks like `selected` is not necessary here
-(defn setup-hover-shapes [page-id move-stream _selected objects transform selected ctrl? hover hover-ids zoom]
+(defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         transform-ref (mf/use-ref nil)
+        selected-ref (mf/use-ref selected)
 
         query-point
         (mf/use-callback
@@ -127,11 +127,16 @@
      (mf/deps zoom)
      #(mf/set-ref-val! zoom-ref zoom))
 
+    (mf/use-effect
+     (mf/deps selected)
+     #(mf/set-ref-val! selected-ref selected))
+
     (hooks/use-stream
      over-shapes-stream
-     (mf/deps page-id objects selected @ctrl?)
+     (mf/deps page-id objects @ctrl?)
      (fn [ids]
-       (let [remove-id? (into #{} (mapcat #(cp/get-parents % objects)) selected)
+       (let [selected (mf/ref-val selected-ref)
+             remove-id? (into #{} (mapcat #(cp/get-parents % objects)) selected)
              remove-id? (if @ctrl?
                           (d/concat remove-id?
                                     (->> ids

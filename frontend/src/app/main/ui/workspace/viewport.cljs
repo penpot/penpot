@@ -153,7 +153,7 @@
     (hooks/setup-cursor cursor alt? panning drawing-tool drawing-path? node-editing?)
     (hooks/setup-resize layout viewport-ref)
     (hooks/setup-keyboard alt? ctrl? space?)
-    (hooks/setup-hover-shapes page-id move-stream selected objects transform selected ctrl? hover hover-ids zoom)
+    (hooks/setup-hover-shapes page-id move-stream objects transform selected ctrl? hover hover-ids zoom)
     (hooks/setup-viewport-modifiers modifiers selected objects render-ref)
     (hooks/setup-shortcuts node-editing? drawing-path?)
     (hooks/setup-active-frames objects vbox hover active-frames)

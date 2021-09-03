@@ -219,17 +219,15 @@
                           lks/empty-linked-set)
             selrect (get-in state [:workspace-local :selrect])
             blocked? (fn [id] (get-in objects [id :blocked] false))]
-        (rx/merge
-
-          (when selrect
-            (->> (uw/ask! {:cmd :selection/query
-                           :page-id page-id
-                           :rect selrect
-                           :include-frames? true
-                           :full-frame? true})
-                 (rx/map #(cp/clean-loops objects %))
-                 (rx/map #(into initial-set (filter (comp not blocked?)) %))
-                 (rx/map select-shapes))))))))
+        (when selrect
+          (->> (uw/ask! {:cmd :selection/query
+                         :page-id page-id
+                         :rect selrect
+                         :include-frames? true
+                         :full-frame? true})
+               (rx/map #(cp/clean-loops objects %))
+               (rx/map #(into initial-set (filter (comp not blocked?)) %))
+               (rx/map select-shapes)))))))
 
 (defn select-inside-group
   [group-id position]
