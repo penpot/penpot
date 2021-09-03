@@ -62,7 +62,7 @@
   [path on-error]
   (let [instance (js/Worker. path)
         bus     (rx/subject)
-        worker  (Worker. instance bus)
+        worker  (Worker. instance (rx/to-observable bus))
 
         handle-message
         (fn [event]
