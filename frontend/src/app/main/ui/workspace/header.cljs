@@ -170,6 +170,7 @@
           (fn [_]
             (let [filename  (str (:name file) ".pdf")
                   frame-ids (mapv :id frames)]
+              (st/emit! (dm/info (tr "workspace.options.exporting-object")))
               (->> (rp/query! :export-frames
                               {:name     (:name file)
                                :file-id  (:id file)
@@ -179,7 +180,8 @@
                      (fn [body]
                        (dom/trigger-download filename body))
                      (fn [_error]
-                       (st/emit! (dm/error (tr "errors.unexpected-error")))))))))]
+                       (st/emit! (dm/error (tr "errors.unexpected-error"))))
+                     (st/emitf dm/hide))))))]
 
     (mf/use-effect
      (mf/deps @editing?)
