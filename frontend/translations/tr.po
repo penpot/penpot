@@ -2029,14 +2029,6 @@ msgstr "Katman grubu"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Seçili katmanlar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.navigate-to"
-msgstr "Git"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.none"
-msgstr "Hiç biri"
-
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
 msgstr "Konum"

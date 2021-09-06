@@ -2152,14 +2152,6 @@ msgstr "Agrupa les capes"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Capes seleccionades"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.navigate-to"
-msgstr "Vés a"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.none"
-msgstr "Cap"
-
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
 msgstr "Posició"
