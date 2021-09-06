@@ -226,6 +226,10 @@
     color: $color-gray-20;
     font-size: $fs11;
     width: 64px;
+
+    &.wide {
+      width: 110px;
+    }
   }
 
   .lock-size {

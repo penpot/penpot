@@ -109,7 +109,7 @@
    :selected (d/ordered-set)
    :expanded {}
    :tooltip nil
-   :options-mode :design
+   :options-mode :prototype ; OJOOOOOOOOOOOOOOOOOOOOOO============== :design
    :draw-interaction-to nil
    :left-sidebar? true
    :right-sidebar? true
@@ -1804,16 +1804,19 @@
             shape-id (-> state wsh/lookup-selected first)
             shape    (get objects shape-id)]
 
-        (when-not (= position initial-pos)
-          (if (and frame shape-id
-                   (not= (:id frame) (:id shape))
-                   (not= (:id frame) (:frame-id shape)))
-            (rx/of (update-shape shape-id
-                                 {:interactions [{:event-type :click
-                                                  :action-type :navigate
-                                                  :destination (:id frame)}]}))
-            (rx/of (update-shape shape-id
-                                 {:interactions []}))))))))
+        (when (and shape (not (= position initial-pos)))
+          (rx/of (dch/update-shapes [shape-id]
+                   (fn [shape]
+                     (update shape :interactions
+                             (fn [interactions]
+                               (if (and frame
+                                        (not= (:id frame) (:id shape))
+                                        (not= (:id frame) (:frame-id shape)))
+                                 (conj interactions
+                                       (assoc spec/default-interaction
+                                              :destination (:id frame)))
+                                 (vec (remove #(= (:action-type %) :navigate)
+                                              interactions)))))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CANVAS OPTIONS
