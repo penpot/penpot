@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.files
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
@@ -62,7 +63,8 @@
        (if (:edition @local)
          [:& inline-edition {:content (:name project)
                              :on-end (fn [name]
-                                       (st/emit! (dd/rename-project (assoc project :name name)))
+                                       (st/emit! (-> (dd/rename-project (assoc project :name name))
+                                                     (with-meta {::ev/origin "project"})))
                                        (swap! local assoc :edition false))}]
          [:div.dashboard-title
           [:h1 {:on-double-click on-edit}

@@ -12,6 +12,7 @@
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.config :as cfg]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
@@ -39,6 +40,7 @@
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [okulary.core :as l]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 ; TODO: refactor to remove duplicate code and less parameter passing.
@@ -621,7 +623,9 @@
          (fn [blobs]
            (let [params {:file-id file-id
                          :blobs (seq blobs)}]
-             (st/emit! (dw/upload-media-asset params)))))
+             (st/emit! (dw/upload-media-asset params)
+                       (ptk/event ::ev/event {::ev/name "add-asset-to-library"
+                                              :asset-type "graphics"})))))
 
         on-delete
         (mf/use-callback
@@ -977,7 +981,9 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [event]
-           (st/emitf (dwl/set-assets-box-open file-id :colors true))
+           (st/emit! (dwl/set-assets-box-open file-id :colors true)
+                     (ptk/event ::ev/event {::ev/name "add-asset-to-library"
+                                            :asset-type "color"}))
            (modal/show! :colorpicker
                         {:x (.-clientX event)
                          :y (.-clientY event)
@@ -1150,7 +1156,9 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [_]
-           (st/emit! (dwl/add-typography txt/default-typography))))
+           (st/emit! (dwl/add-typography txt/default-typography)
+                     (ptk/event ::ev/event {::ev/name "add-asset-to-library"
+                                            :asset-type "typography"}))))
 
         handle-change
         (mf/use-callback

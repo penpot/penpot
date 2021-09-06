@@ -187,6 +187,9 @@
 (defn add-font
   [font]
   (ptk/reify ::add-font
+    IDeref
+    (-deref [_] (select-keys font [:font-family :font-style :font-weight]))
+
     ptk/UpdateEvent
     (update [_ state]
       (update state :dashboard-fonts assoc (:id font) font))))

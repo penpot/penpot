@@ -70,7 +70,7 @@
         do-unmask-group (st/emitf dw/unmask-group)
         do-flip-vertical (st/emitf (dw/flip-vertical-selected))
         do-flip-horizontal (st/emitf (dw/flip-horizontal-selected))
-        do-add-component (st/emitf dwl/add-component)
+        do-add-component (st/emitf (dwl/add-component))
         do-detach-component (st/emitf (dwl/detach-component id))
         do-reset-component (st/emitf (dwl/reset-component id))
         do-start-editing (fn []

@@ -11,6 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.main.data.comments :as dcm]
+   [app.main.data.events :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
@@ -20,7 +21,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
-
 
 (mf/defc comments-menu
   []
@@ -105,7 +105,8 @@
          (fn [thread]
            (if (= (:open cstate) (:id thread))
              (st/emit! (dcm/close-thread))
-             (st/emit! (dcm/open-thread thread)))))
+             (st/emit! (-> (dcm/open-thread thread)
+                           (with-meta {::ev/origin "viewer"}))))))
 
         on-click
         (mf/use-callback

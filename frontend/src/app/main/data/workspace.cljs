@@ -20,6 +20,7 @@
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -373,6 +374,10 @@
   [id name]
   {:pre [(uuid? id) (string? name)]}
   (ptk/reify ::rename-file
+    IDeref
+    (-deref [_]
+      {:ev/origin "workspace" :id id :name name})
+
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-file :name] name))
@@ -1247,7 +1252,10 @@
 (defn go-to-layout
   [layout]
   (us/verify ::layout-flag layout)
-  (ptk/reify ::go-to-layout
+  (ptk/reify ::set-workspace-layout
+    IDeref
+    (-deref [_] {:layout layout})
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [project-id (get-in state [:workspace-project :id])

@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.comments
   (:require
    [app.main.data.comments :as dcm]
+   [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
@@ -77,8 +78,10 @@
            (when (not= page-id (:page-id thread))
              (st/emit! (dw/go-to-page (:page-id thread))))
            (tm/schedule
-            (st/emitf (dwcm/center-to-comment-thread thread)
-                      (dcm/open-thread thread)))))]
+            (fn []
+              (st/emit! (dwcm/center-to-comment-thread thread)
+                        (-> (dcm/open-thread thread)
+                            (with-meta {::ev/origin "workspace"})))))))]
 
     [:div.comments-section.comment-threads-section
      [:div.workspace-comment-threads-sidebar-header
