@@ -10,7 +10,6 @@
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]

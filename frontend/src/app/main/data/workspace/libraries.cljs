@@ -295,7 +295,7 @@
   []
   (ptk/reify ::add-component
     ptk/WatchEvent
-    (watch [it state _]
+    (watch [_ state _]
       (let [objects  (wsh/lookup-page-objects state)
             selected (->> (wsh/lookup-selected state)
                           (cp/clean-loops objects))]

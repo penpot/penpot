@@ -9,7 +9,6 @@
    [app.common.math :as mth]
    [app.common.spec :as us]
    [app.main.data.comments :as dcm]
-   [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.streams :as ms]
@@ -72,7 +71,7 @@
 (defn center-to-comment-thread
   [{:keys [position] :as thread}]
   (us/assert ::dcm/comment-thread thread)
-  (ptk/reify :center-to-comment-thread
+  (ptk/reify ::center-to-comment-thread
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local

@@ -365,7 +365,6 @@
                (when (= id (:current-page-id state))
                  go-to-file))))))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WORKSPACE File Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -376,7 +375,7 @@
   (ptk/reify ::rename-file
     IDeref
     (-deref [_]
-      {:ev/origin "workspace" :id id :name name})
+      {::ev/origin "workspace" :id id :name name})
 
     ptk/UpdateEvent
     (update [_ state]
@@ -1134,7 +1133,7 @@
 (defn align-objects
   [axis]
   (us/verify ::gal/align-axis axis)
-  (ptk/reify :align-objects
+  (ptk/reify ::align-objects
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id  (:current-page-id state)
@@ -1165,7 +1164,7 @@
 (defn distribute-objects
   [axis]
   (us/verify ::gal/dist-axis axis)
-  (ptk/reify :align-objects
+  (ptk/reify ::distribute-objects
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id  (:current-page-id state)
@@ -1240,7 +1239,7 @@
          (rx/of (rt/nav' :workspace pparams qparams))))))
   ([page-id]
    (us/verify ::us/uuid page-id)
-   (ptk/reify ::go-to-page
+   (ptk/reify ::go-to-page-2
      ptk/WatchEvent
      (watch [_ state _]
        (let [project-id (:current-project-id state)
@@ -1303,7 +1302,7 @@
 
 (defn go-to-dashboard-fonts
   []
-   (ptk/reify ::go-to-dashboard
+   (ptk/reify ::go-to-dashboard-fonts
      ptk/WatchEvent
      (watch [_ state _]
        (let [team-id (:current-team-id state)]

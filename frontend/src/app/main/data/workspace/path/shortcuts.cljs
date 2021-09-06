@@ -20,7 +20,7 @@
 ;; Shortcuts format https://github.com/ccampbell/mousetrap
 
 (defn esc-pressed []
-  (ptk/reify :esc-pressed
+  (ptk/reify ::esc-pressed
     ptk/WatchEvent
     (watch [_ state _]
       ;;  Not interrupt when we're editing a path

@@ -114,7 +114,7 @@
 (defn deselect-shape
   [id]
   (us/verify ::us/uuid id)
-  (ptk/reify ::select-shape
+  (ptk/reify ::deselect-shape
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-local :selected] disj id))))

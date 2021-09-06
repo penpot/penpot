@@ -179,7 +179,7 @@
     :right (gpt/point 1 0)))
 
 (defn finish-move-selected []
-  (ptk/reify ::move-selected
+  (ptk/reify ::finish-move-selected
     ptk/UpdateEvent
     (update [_ state]
       (let [id (get-in state [:workspace-local :edition])]

@@ -107,7 +107,7 @@
 
 (defn- handle-pointer-send
   [file-id point]
-  (ptk/reify ::handle-pointer-update
+  (ptk/reify ::handle-pointer-send
     ptk/EffectEvent
     (effect [_ state _]
       (let [ws (get-in state [:ws file-id])

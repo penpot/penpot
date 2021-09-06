@@ -232,7 +232,7 @@
            (rt/nav :viewer pparams (assoc qparams :index (dec index)))))))))
 
 (def select-next-frame
-  (ptk/reify ::select-prev-frame
+  (ptk/reify ::select-next-frame
     ptk/WatchEvent
     (watch [_ state _]
       (prn "select-next-frame")
@@ -290,7 +290,7 @@
 
 (defn go-to-frame-by-index
   [index]
-  (ptk/reify ::go-to-frame
+  (ptk/reify ::go-to-frame-by-index
     ptk/WatchEvent
     (watch [_ state _]
       (let [route   (:route state)
