@@ -10,15 +10,34 @@
                   sname])]
     {:node result}))
 
+(def registry (atom {}))
+
 (defn potok-reify
-  [{:keys [:node]}]
+  [{:keys [:node :filename] :as params}]
   (let [[rnode rtype & other] (:children node)
-        result  (api/list-node
-                 (into [(api/token-node (symbol "deftype"))
-                        (api/token-node (gensym (name (:k rtype))))
-                        (api/vector-node [])]
-                       other))]
-    {:node result}))
+        rsym (symbol (str "event-type-" (name (:k rtype))))
+        reg  (get @registry filename #{})]
+    (when-not (:namespaced? rtype)
+      (let [{:keys [:row :col]} (meta rtype)]
+        (api/reg-finding! {:message "ptk/reify type should be namespaced"
+                           :type :potok/reify-type
+                           :row row
+                           :col col})))
+
+    (if (contains? reg rsym)
+      (let [{:keys [:row :col]} (meta rtype)]
+        (api/reg-finding! {:message (str "duplicate type: " (name (:k rtype)))
+                           :type :potok/reify-type
+                           :row row
+                           :col col}))
+      (swap! registry update filename (fnil conj #{}) rsym))
+
+    (let [result  (api/list-node
+                   (into [(api/token-node (symbol "deftype"))
+                          (api/token-node rsym)
+                          (api/vector-node [])]
+                         other))]
+      {:node result})))
 
 (defn clojure-specify
   [{:keys [:node]}]

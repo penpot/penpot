@@ -7,16 +7,16 @@
 (ns app.main.ui.viewer.handoff.code
   (:require
    ["js-beautify" :as beautify]
-   [app.main.data.events :as ev]
    [app.common.geom.shapes :as gsh]
+   [app.main.data.events :as ev]
+   [app.main.store :as st]
    [app.main.ui.components.code-block :refer [code-block]]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.icons :as i]
-   [app.main.store :as st]
-   [potok.core :as ptk]
    [app.util.code-gen :as cg]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 (defn generate-markup-code [_type shapes]

@@ -69,7 +69,7 @@
 (defn show-palette
   "Show the palette tool and change the library it uses"
   [selected]
-  (ptk/reify ::change-palette-selected
+  (ptk/reify ::show-palette
     ptk/UpdateEvent
     (update [_ state]
       (-> state

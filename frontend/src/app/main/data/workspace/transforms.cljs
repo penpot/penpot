@@ -511,7 +511,7 @@
 
 (defn- start-move-duplicate
   [from-position]
-  (ptk/reify ::start-move-selected
+  (ptk/reify ::start-move-duplicate
     ptk/WatchEvent
     (watch [_ _ stream]
       (->> stream

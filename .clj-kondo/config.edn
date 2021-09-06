@@ -23,6 +23,9 @@
  {:unsorted-required-namespaces
   {:level :warning}
 
+  :potok/reify-type
+  {:level :error}
+
   :unresolved-namespace
   {:level :warning
    :exclude [data_readers]}

@@ -54,7 +54,7 @@
 
 (defn remove-frame-grid
   [frame-id index]
-  (ptk/reify ::set-frame-grid
+  (ptk/reify ::remove-frame-grid
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dch/update-shapes [frame-id] (fn [o] (update o :grids (fnil #(d/remove-at-index % index) []))))))))

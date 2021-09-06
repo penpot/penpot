@@ -710,14 +710,14 @@
 
 (defn go-to-files
   ([project-id]
-   (ptk/reify ::go-to-files
+   (ptk/reify ::go-to-files-1
      ptk/WatchEvent
      (watch [_ state _]
        (let [team-id (:current-team-id state)]
          (rx/of (rt/nav :dashboard-files {:team-id team-id
                                           :project-id project-id}))))))
   ([team-id project-id]
-   (ptk/reify ::go-to-files
+   (ptk/reify ::go-to-files-2
      ptk/WatchEvent
      (watch [_ _ _]
        (rx/of (rt/nav :dashboard-files {:team-id team-id
@@ -739,13 +739,13 @@
 
 (defn go-to-projects
   ([]
-   (ptk/reify ::go-to-projects
+   (ptk/reify ::go-to-projects-0
      ptk/WatchEvent
      (watch [_ state _]
        (let [team-id (:current-team-id state)]
          (rx/of (rt/nav :dashboard-projects {:team-id team-id}))))))
   ([team-id]
-   (ptk/reify ::go-to-projects
+   (ptk/reify ::go-to-projects-1
      ptk/WatchEvent
      (watch [_ _ _]
        (du/set-current-team! team-id)
