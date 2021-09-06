@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.projects
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [line-grid]]
@@ -74,7 +75,8 @@
         (mf/use-callback
          (mf/deps project)
          (fn [name]
-           (st/emit! (dd/rename-project (assoc project :name name)))
+           (st/emit! (-> (dd/rename-project (assoc project :name name))
+                         (with-meta {::ev/origin "dashboard"})))
            (swap! local assoc :edition? false)))
 
         on-file-created

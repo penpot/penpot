@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
@@ -159,6 +160,8 @@
         (mf/use-callback
          (mf/deps files current-team-id)
          (fn [_]
+           (st/emit! (ptk/event ::ev/event {::ev/name "export-files"
+                                            :num-files (count files)}))
            (->> (rx/from files)
                 (rx/flat-map
                  (fn [file]

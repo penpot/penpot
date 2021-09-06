@@ -15,7 +15,7 @@
    [app.main.ui.icons :as i]
    [app.util.data :refer [matches-search]]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -78,7 +78,7 @@
         (mf/use-callback
           (mf/deps file)
           (fn [library-id]
-            (st/emit! (dw/unlink-file-from-library (:id file) library-id) 
+            (st/emit! (dw/unlink-file-from-library (:id file) library-id)
                       (dwl/sync-file (:id file) library-id))))]
     [:*
      [:div.section
@@ -151,8 +151,6 @@
    ::mf/register-as :libraries-dialog}
   [{:keys [] :as ctx}]
   (let [selected-tab (mf/use-state :libraries)
-
-        locale       (mf/deref i18n/locale)
         project      (mf/deref refs/workspace-project)
         file         (mf/deref workspace-file)
         libraries    (->> (mf/deref refs/workspace-libraries)
@@ -176,11 +174,11 @@
         [:div.header-item
          {:class (dom/classnames :active (= @selected-tab :libraries))
           :on-click #(change-tab :libraries)}
-         (t locale "workspace.libraries.libraries")]
+         (tr "workspace.libraries.libraries")]
         [:div.header-item
          {:class (dom/classnames :active (= @selected-tab :updates))
           :on-click #(change-tab :updates)}
-         (t locale "workspace.libraries.updates")]]
+         (tr "workspace.libraries.updates")]]
        [:div.libraries-content
         (case @selected-tab
           :libraries

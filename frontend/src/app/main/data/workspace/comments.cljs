@@ -9,6 +9,7 @@
    [app.common.math :as mth]
    [app.common.spec :as us]
    [app.main.data.comments :as dcm]
+   [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.streams :as ms]
@@ -89,7 +90,7 @@
 (defn navigate
   [thread]
   (us/assert ::dcm/comment-thread thread)
-  (ptk/reify ::navigate
+  (ptk/reify ::open-comment-thread
     ptk/WatchEvent
     (watch [_ _ stream]
       (let [pparams {:project-id (:project-id thread)

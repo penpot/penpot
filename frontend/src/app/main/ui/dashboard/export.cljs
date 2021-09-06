@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.export
   (:require
    [app.common.data :as d]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -14,6 +15,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.core :as rx]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 (def ^:const options [:all :merge :detach])
@@ -58,6 +60,10 @@
 
         start-export
         (fn []
+          (st/emit! (ptk/event ::ev/event {::ev/name "export-files"
+                                           :num-files (count (:files @state))
+                                           :option @selected-option}))
+
           (swap! state assoc :status :exporting)
           (->> (uw/ask-many!
                 {:cmd :export-file
@@ -117,7 +123,7 @@
             (let [selected? (= @selected-option type)]
               [:div.export-option {:class (when selected? "selected")}
                [:label.option-container
-                [:h3 (tr (str "dashboard.export.options." (d/name type) ".title"))] 
+                [:h3 (tr (str "dashboard.export.options." (d/name type) ".title"))]
                 [:p  (tr (str "dashboard.export.options." (d/name type) ".message"))]
                 [:input {:type "radio"
                          :checked selected?

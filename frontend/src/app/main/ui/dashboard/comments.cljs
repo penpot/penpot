@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.comments
   (:require
    [app.main.data.comments :as dcm]
+   [app.main.data.events :as ev]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -15,13 +16,18 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 (mf/defc comments-section
   [{:keys [profile team]}]
+
   (mf/use-effect
    (mf/deps team)
-   (st/emitf (dcm/retrieve-unread-comment-threads (:id team))))
+   (fn []
+     (st/emit! (dcm/retrieve-unread-comment-threads (:id team))
+               (ptk/event ::ev/event {::ev/name "open-comment-notifications"
+                                      ::ev/origin "dashboard"}))))
 
   (let [show-dropdown? (mf/use-state false)
         show-dropdown  (mf/use-fn #(reset! show-dropdown? true))
@@ -38,7 +44,8 @@
         on-navigate
         (mf/use-callback
          (fn [thread]
-           (st/emit! (dwcm/navigate thread))))]
+           (st/emit! (-> (dwcm/navigate thread)
+                         (with-meta {::ev/origin "dashboard"})))))]
 
     [:div.dashboard-comments-section
      [:div.button
