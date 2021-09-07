@@ -55,7 +55,7 @@
     :webworker))
 
 (def default-flags
-  #{:registration})
+  #{:registration :demo-users})
 
 (defn- parse-flags
   [global]
