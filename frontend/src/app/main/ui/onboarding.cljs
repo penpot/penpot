@@ -19,6 +19,7 @@
    [app.main.ui.releases.v1-5]
    [app.main.ui.releases.v1-6]
    [app.main.ui.releases.v1-7]
+   [app.main.ui.releases.v1-8]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.router :as rt]
@@ -297,5 +298,5 @@
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "1.6")))
+  (rc/render-release-notes (assoc params :version "1.8")))
 

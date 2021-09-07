@@ -143,7 +143,7 @@
         :dashboard-team-settings)
        [:*
         #_[:div.modal-wrapper
-           [:& app.main.ui.onboarding/release-notes-modal {:version "1.7"}]]
+           [:& app.main.ui.onboarding/release-notes-modal {:version "1.8"}]]
         [:& dashboard {:route route}]]
 
        :viewer
