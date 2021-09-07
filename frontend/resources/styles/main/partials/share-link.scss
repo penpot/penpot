@@ -1,5 +1,6 @@
 .share-link-dialog {
   width: 475px;
+  background-color: $color-white;
 
   .modal-footer {
     display: flex;
@@ -41,6 +42,10 @@
   .modal-content {
     padding: 26px;
 
+    &:first-child {
+      border-top: 0px;
+    }
+
     .title {
       display: flex;
       justify-content: space-between;
@@ -65,7 +70,8 @@
 
       .hint {
         padding-top: 10px;
-        font-size: $fs11;
+        font-size: $fs14;
+        color: $color-gray-40;
       }
 
       .help-icon {
