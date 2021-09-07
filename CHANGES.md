@@ -2,6 +2,13 @@
 
 ## :rocket: Next
 
+### :boom: Breaking changes
+
+- This release includes a new approach for handling share links, and
+  this feature is incompatible with the previous one. This means that
+  all the public share links generated previously will stop working.
+
+
 ### :sparkles: New features
 
 - Add tooltips to color picker tabs [Taiga #1814](https://tree.taiga.io/project/penpot/us/1814).
@@ -15,6 +22,9 @@
 - Set email inputs to type "email", to aid keyboard entry [Taiga #1921](https://tree.taiga.io/project/penpot/issue/1921).
 - Use shift+move to move element orthogonally [#823](https://github.com/penpot/penpot/issues/823).
 - Use space + mouse drag to pan, instead of only space [Taiga #1800](https://tree.taiga.io/project/penpot/us/1800).
+- Allow navigate through pages on the viewer [Taiga #1550](https://tree.taiga.io/project/penpot/us/1550).
+- Allow create share links with specific pages [Taiga #1844](https://tree.taiga.io/project/penpot/us/1844).
+
 
 ### :bug: Bugs fixed
 
