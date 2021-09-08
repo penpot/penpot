@@ -12,82 +12,68 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.i18n :refer [tr]]
+   [app.util.object :as obj]
    [app.util.router :as rt]
    [rumext.alpha :as mf]))
 
-(defn- go-to-dashboard
-  [profile]
-  (let [team-id (du/get-current-team-id profile)]
-    (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))
+(mf/defc static-header
+  {::mf/wrap-props false}
+  [props]
+  (let [children (obj/get props "children")
+        on-click (mf/use-callback
+                  (fn []
+                    (let [profile (deref refs/profile)]
+                      (if (du/is-authenticated? profile)
+                        (let [team-id (du/get-current-team-id profile)]
+                          (st/emit! (rt/nav :dashboard-projects {:team-id team-id})))
+                        (st/emit! (rt/nav :auth-login {}))))))]
+
+    [:section.exception-layout
+     [:div.exception-header
+      {:on-click on-click}
+      i/logo]
+     [:div.exception-content
+      [:div.container children]]]))
 
 (mf/defc not-found
   []
-  (let [profile (mf/deref refs/profile)]
-    [:section.exception-layout
-     [:div.exception-header
-      {:on-click (partial go-to-dashboard profile)}
-      i/logo]
-     [:div.exception-content
-      [:div.container
-       [:div.image i/icon-empty]
-       [:div.main-message (tr "labels.not-found.main-message")]
-       [:div.desc-message (tr "labels.not-found.desc-message")]
-       [:div.sign-info
-        [:span (tr "labels.not-found.auth-info") " " [:b (:email profile)]]
-        [:a.btn-primary.btn-small
-         {:on-click (st/emitf (du/logout))}
-         (tr "labels.sign-out")]]]]]))
+  [:> static-header {}
+   [:div.image i/icon-empty]
+   [:div.main-message (tr "labels.not-found.main-message")]
+   [:div.desc-message (tr "labels.not-found.desc-message")]])
 
 (mf/defc bad-gateway
   []
-  (let [profile (mf/deref refs/profile)]
-    [:section.exception-layout
-     [:div.exception-header
-      {:on-click (partial go-to-dashboard profile)}
-      i/logo]
-     [:div.exception-content
-      [:div.container
-       [:div.image i/icon-empty]
-       [:div.main-message (tr "labels.bad-gateway.main-message")]
-       [:div.desc-message (tr "labels.bad-gateway.desc-message")]
-       [:div.sign-info
-        [:a.btn-primary.btn-small
-         {:on-click (st/emitf #(dissoc % :exception))}
-         (tr "labels.retry")]]]]]))
+  [:> static-header {}
+   [:div.image i/icon-empty]
+   [:div.main-message (tr "labels.bad-gateway.main-message")]
+   [:div.desc-message (tr "labels.bad-gateway.desc-message")]
+   [:div.sign-info
+    [:a.btn-primary.btn-small
+     {:on-click (st/emitf #(dissoc % :exception))}
+     (tr "labels.retry")]]])
 
 (mf/defc service-unavailable
   []
-  (let [profile (mf/deref refs/profile)]
-    [:section.exception-layout
-     [:div.exception-header
-      {:on-click (partial go-to-dashboard profile)}
-      i/logo]
-     [:div.exception-content
-      [:div.container
-       [:div.image i/icon-empty]
-       [:div.main-message (tr "labels.service-unavailable.main-message")]
-       [:div.desc-message (tr "labels.service-unavailable.desc-message")]
-       [:div.sign-info
-        [:a.btn-primary.btn-small
-         {:on-click (st/emitf #(dissoc % :exception))}
-         (tr "labels.retry")]]]]]))
+  [:> static-header {}
+   [:div.image i/icon-empty]
+   [:div.main-message (tr "labels.service-unavailable.main-message")]
+   [:div.desc-message (tr "labels.service-unavailable.desc-message")]
+   [:div.sign-info
+    [:a.btn-primary.btn-small
+     {:on-click (st/emitf #(dissoc % :exception))}
+     (tr "labels.retry")]]])
 
 (mf/defc internal-error
   []
-  (let [profile (mf/deref refs/profile)]
-    [:section.exception-layout
-     [:div.exception-header
-      {:on-click (partial go-to-dashboard profile)}
-      i/logo]
-     [:div.exception-content
-      [:div.container
-       [:div.image i/icon-empty]
-       [:div.main-message (tr "labels.internal-error.main-message")]
-       [:div.desc-message (tr "labels.internal-error.desc-message")]
-       [:div.sign-info
-        [:a.btn-primary.btn-small
-         {:on-click (st/emitf (dm/assign-exception nil))}
-         (tr "labels.retry")]]]]]))
+  [:> static-header {}
+   [:div.image i/icon-empty]
+   [:div.main-message (tr "labels.internal-error.main-message")]
+   [:div.desc-message (tr "labels.internal-error.desc-message")]
+   [:div.sign-info
+    [:a.btn-primary.btn-small
+     {:on-click (st/emitf (dm/assign-exception nil))}
+     (tr "labels.retry")]]])
 
 (mf/defc exception-page
   [{:keys [data] :as props}]

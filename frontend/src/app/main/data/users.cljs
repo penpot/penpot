@@ -24,6 +24,10 @@
 
 ;; --- COMMON SPECS
 
+(defn is-authenticated?
+  [{:keys [id]}]
+  (and (uuid? id) (not= id uuid/zero)))
+
 (s/def ::id ::us/uuid)
 (s/def ::fullname ::us/string)
 (s/def ::email ::us/email)
