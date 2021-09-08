@@ -25,7 +25,7 @@
   (s/keys :req-un [::file-id ::page-id ::frame-ids]))
 
 (defn- export-frame
-  [tdpath file-id page-id token frame-id]
+  [tdpath file-id page-id token frame-id spaths]
   (p/let [spath  (path/join tdpath (str frame-id ".pdf"))
           result (rp/render {:name (str frame-id)
                              :suffix ""
@@ -35,7 +35,7 @@
                              :object-id frame-id
                              :scale 1
                              :save-path spath})]
-    spath))
+    (cons spath spaths)))
 
 (defn- join-files
   [tdpath file-id paths]
@@ -55,10 +55,13 @@
   (let [{:keys [name file-id page-id frame-ids]} (us/conform ::handler-params params)
         token  (.get ^js cookies "auth-token")]
     (p/let [tdpath (sh/create-tmpdir! "pdfexport-")
-            data (-> (p/all  (map (partial export-frame tdpath file-id page-id token) frame-ids))
-                     (p/then (partial join-files tdpath file-id))
-                     (p/then sh/read-file)
-                     (p/then (partial clean-tmp-data tdpath)))]
+            data (-> (reduce (fn [promis frame-id]
+                               (p/then promis (partial export-frame tdpath file-id page-id token frame-id)))
+                       (p/future [])
+                       frame-ids)
+                     (p/then  (partial join-files tdpath file-id))
+                     (p/then  sh/read-file)
+                     (p/then  (partial clean-tmp-data tdpath)))]
       {:status 200
        :body data
        :headers {"content-type" "application/pdf"
