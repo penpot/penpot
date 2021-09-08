@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-09-04 15:33+0000\n"
 "Last-Translator: Rubén <rubnx@protonmail.com>\n"
-"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
-"es/>\n"
+"Language-Team: Spanish "
+"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -171,6 +171,44 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Hemos enviado un email de verificación a"
 
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"¿Estas seguro que quieres eliminar el enlace? Si lo haces, el enlace dejara "
+"de funcionar para todos"
+
+msgid "common.share-link.get-link"
+msgstr "Obtener enlace"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Enlace copiado satisfactoriamente"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Enlace eliminado correctamente"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "Puede acceder a"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Puede ver"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Cualquiera con el enlace puede acceder"
+
+msgid "common.share-link.remove-link"
+msgstr "Eliminar enlace"
+
+msgid "common.share-link.title"
+msgstr "Compartir prototipos"
+
+msgid "common.share-link.view-all-pages"
+msgstr "Todas las paginas"
+
+msgid "common.share-link.view-current-page"
+msgstr "Solo esta pagina"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Paginas seleccionadas"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Añadir como Biblioteca Compartida"
@@ -210,14 +248,14 @@ msgstr "Duplicar %s archivos"
 msgid "dashboard.empty-files"
 msgstr "Todavía no hay ningún archivo aquí"
 
+msgid "dashboard.export-frames"
+msgstr "Exportar tableros a PDF..."
+
 msgid "dashboard.export-multi"
 msgstr "Exportar %s archivos"
 
 msgid "dashboard.export-single"
 msgstr "Exportar archivo"
-
-msgid "dashboard.export-frames"
-msgstr "Exportar tableros a PDF..."
 
 msgid "dashboard.export.detail"
 msgstr "* Pueden incluir components, gráficos, colores y/o tipografias."
@@ -864,9 +902,6 @@ msgstr "Estás viendo la versión %s"
 msgid "labels.accept"
 msgstr "Aceptar"
 
-msgid "labels.close"
-msgstr "Cerrar"
-
 msgid "labels.add-custom-font"
 msgstr "Añadir fuentes personalizada"
 
@@ -895,6 +930,9 @@ msgstr "Cancelar"
 msgid "labels.centered"
 msgstr "Centrado"
 
+msgid "labels.close"
+msgstr "Cerrar"
+
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.comments"
 msgstr "Comentarios"
@@ -917,7 +955,6 @@ msgstr "Crear"
 msgid "labels.create-team"
 msgstr "Crea un nuevo equipo"
 
-#: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team.placeholder"
 msgstr "Introduce un nuevo nombre de equipo"
 
@@ -927,6 +964,9 @@ msgstr "Fuentes personalizadas"
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
 msgstr "Panel"
+
+msgid "labels.default"
+msgstr "por defecto"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
@@ -951,6 +991,10 @@ msgstr "Borradores"
 #: src/app/main/ui/comments.cljs
 msgid "labels.edit"
 msgstr "Editar"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "labels.edit-file"
+msgstr "Editar archivo"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
@@ -1016,6 +1060,9 @@ msgstr "Error interno"
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
 msgstr "Idioma"
+
+msgid "labels.link"
+msgstr "Enlace"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -1153,6 +1200,10 @@ msgstr "El servicio no está disponible"
 msgid "labels.settings"
 msgstr "Configuración"
 
+#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.share-prototype"
+msgstr "Compartir prototipo"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
 msgstr "Bibliotecas Compartidas"
@@ -1189,6 +1240,9 @@ msgstr "Subiendo…"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "Visualizador"
+
+msgid "labels.workspace"
+msgstr "Espacio de trabajo"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
@@ -1521,20 +1575,25 @@ msgstr "No se ha encontrado ningún tablero."
 msgid "viewer.frame-not-found"
 msgstr "No se encuentra el tablero."
 
+msgid "viewer.header.comments-section"
+msgstr "Comentarios"
+
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
 msgstr "No mostrar interacciones"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "labels.edit-file"
-msgstr "Editar archivo"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Pantalla completa"
 
+msgid "viewer.header.handsoff-section"
+msgstr "Handsoff"
+
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
+msgstr "Interacciones"
+
+msgid "viewer.header.interactions-section"
 msgstr "Interacciones"
 
 #: src/app/main/ui/viewer/header.cljs
@@ -1556,10 +1615,6 @@ msgstr "Eliminar enlace"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Cualquiera con el enlace podrá acceder"
-
-#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
-msgid "labels.share-prototype"
-msgstr "Compartir prototipo"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
@@ -1844,25 +1899,25 @@ msgstr "Miniaturas grandes"
 msgid "workspace.libraries.colors.file-library"
 msgstr "Biblioteca del archivo"
 
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
 #: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "Colores recientes"
-
-#: src/app/main/ui/workspace/colorpicker.cljs
-msgid "workspace.libraries.colors.save-color"
-msgstr "Guardar estilo de color"
-
-#: src/app/main/ui/workspace/colorpicker.cljs
-msgid "workspace.libraries.colors.rgba"
-msgstr "RGBA"
 
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.rgb-complementary"
 msgstr "RGB Complementario"
 
 #: src/app/main/ui/workspace/colorpicker.cljs
-msgid "workspace.libraries.colors.hsv"
-msgstr "HSV"
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.save-color"
+msgstr "Guardar estilo de color"
 
 #: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.small-thumbnails"
@@ -2300,6 +2355,38 @@ msgid "workspace.options.stroke"
 msgstr "Borde"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "Marcador círculo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "Marcador diamante"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "Flecha de línea"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "Ninguno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "Redondo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "Cuadrado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "Marcador cuadrado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Flecha triángulo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.center"
 msgstr "Centro"
 
@@ -2326,38 +2413,6 @@ msgstr "Exterior"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.solid"
 msgstr "Sólido"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.none"
-msgstr "Ninguno"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.line-arrow"
-msgstr "Flecha de línea"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.triangle-arrow"
-msgstr "Flecha triángulo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.square-marker"
-msgstr "Marcador cuadrado"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.circle-marker"
-msgstr "Marcador círculo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.diamond-marker"
-msgstr "Marcador diamante"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.round"
-msgstr "Redondo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.square"
-msgstr "Cuadrado"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-bottom"
@@ -2799,64 +2854,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-
-msgid "viewer.header.interactions-section"
-msgstr "Interacciones"
-
-msgid "viewer.header.comments-section"
-msgstr "Comentarios"
-
-msgid "viewer.header.handsoff-section"
-msgstr "Handsoff"
-
-msgid "common.share-link.title"
-msgstr "Compartir prototipos"
-
-msgid "common.share-link.permissions-hint"
-msgstr "Cualquiera con el enlace puede acceder"
-
-msgid "common.share-link.permissions-can-access"
-msgstr "Puede acceder a"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "Puede ver"
-
-msgid "common.share-link.view-all-pages"
-msgstr "Todas las paginas"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "Paginas seleccionadas"
-
-msgid "common.share-link.view-current-page"
-msgstr "Solo esta pagina"
-
-msgid "common.share-link.confirm-deletion-link-description"
-msgstr "¿Estas seguro que quieres eliminar el enlace? Si lo haces, el enlace dejara de funcionar para todos"
-
-msgid "common.share-link.remove-link"
-msgstr "Eliminar enlace"
-
-msgid "common.share-link.get-link"
-msgstr "Obtener enlace"
-
-msgid "common.share-link.link-copied-success"
-msgstr "Enlace copiado satisfactoriamente"
-
-msgid "common.share-link.link-deleted-success"
-msgstr "Enlace eliminado correctamente"
-
-msgid "labels.workspace"
-msgstr  "Espacio de trabajo"
-
-msgid "labels.default"
-msgstr "por defecto"
-
-msgid "labels.link"
-msgstr "Enlace"
-
-msgid "labels.create-team.placeholder"
-msgstr "Introduce un nuevo nombre de equipo"
-
-msgid "dashboard.export-multi"
-msgstr "Exportar %s archivos"
