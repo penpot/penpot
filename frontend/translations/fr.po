@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-13 08:47+0000\n"
-"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2021-08-10 23:33+0000\n"
+"Last-Translator: Voxybuns <fossati.val@gmail.com>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: Weblate 4.8-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -926,8 +926,8 @@ msgstr "Vérifier la nouvelle adresse e‑mail"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"Nous enverrons un e‑mail à votre adresse actuelle « %s » pour vérifier "
-"votre identité."
+"Nous enverrons un e‑mail à votre adresse actuelle « %s » pour vérifier votre "
+"identité."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1183,11 +1183,11 @@ msgstr "%s - Mode spectateur - Penpot"
 
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.empty-state"
-msgstr "Aucun cadre trouvé sur la page."
+msgstr "Aucun plan de travail trouvé sur la page."
 
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.frame-not-found"
-msgstr "Cadre introuvable."
+msgstr "Plan de travail introuvable."
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
@@ -1604,7 +1604,7 @@ msgstr "Suffixe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.exporting-object"
-msgstr "Export en cours…"
+msgstr "Exportation…"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"
@@ -2199,3 +2199,528 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+msgid "workspace.path.actions.move-nodes"
+msgstr "Déplacer les nœuds (%s)"
+
+msgid "workspace.path.actions.merge-nodes"
+msgstr "Fusionner les nœuds (%s)"
+
+msgid "workspace.path.actions.make-curve"
+msgstr "Convertir en courbe (%s)"
+
+msgid "workspace.path.actions.make-corner"
+msgstr "Convertir en coin (%s)"
+
+msgid "workspace.path.actions.join-nodes"
+msgstr "Joindre les nœuds (%s)"
+
+msgid "workspace.path.actions.draw-nodes"
+msgstr "Dessiner des nœuds (%s)"
+
+msgid "workspace.path.actions.delete-node"
+msgstr "Supprimer le nœud (%s)"
+
+msgid "workspace.path.actions.add-node"
+msgstr "Ajouter un nœud (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.preset"
+msgstr "Préréglage"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.google"
+msgstr "Google"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-rtl"
+msgstr "Droite à gauche"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-ltr"
+msgstr "Gauche à droite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.single-corners"
+msgstr "Coins individuels"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.all-corners"
+msgstr "Tous les coins"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title.multiple"
+msgstr "Calques sélectionnés"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title.group"
+msgstr "Grouper les calques"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title"
+msgstr "Calque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.soft-light"
+msgstr "Lumière tamisée"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.overlay"
+msgstr "Incrustation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.screen"
+msgstr "Superposition"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.saturation"
+msgstr "Saturation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.normal"
+msgstr "Normal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.multiply"
+msgstr "Produit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.luminosity"
+msgstr "Luminosité"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.lighten"
+msgstr "Éclaircir"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.hue"
+msgstr "Teinte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.hard-light"
+msgstr "Lumière crue"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.exclusion"
+msgstr "Exclusion"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.difference"
+msgstr "Différence"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.darken"
+msgstr "Assombrir"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color-dodge"
+msgstr "Densité plus faible"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color-burn"
+msgstr "Densité plus forte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color"
+msgstr "Couleur"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "Activer le redimensionnement du texte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.topbottom"
+msgstr "Haut & bas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.top"
+msgstr "Haut"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.scale"
+msgstr "Redimensionner"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.right"
+msgstr "Droite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.leftright"
+msgstr "Gauche & droite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.left"
+msgstr "Gauche"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.fix-when-scrolling"
+msgstr "Fixe lors du défilement"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.center"
+msgstr "Centre"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.bottom"
+msgstr "Bas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints"
+msgstr "Contraintes"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "Désactiver la mise à l'échelle du texte"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "Dissocier"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s élément sélectionné"
+msgstr[1] "%s éléments sélectionnés"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename-group"
+msgstr "Renommer le groupe"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group-name"
+msgstr "Nom du groupe"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group"
+msgstr "Grouper"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group-hint"
+msgstr ""
+"Vos éléments seront automatiquement nommées comme tels : « nom du groupe / "
+"nom de l'élément »"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group"
+msgstr "Créer un groupe"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.edit-file"
+msgstr "Modifier le fichier"
+
+#: src/app/main/ui/workspace.cljs
+msgid "title.workspace"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
+msgid "title.default"
+msgstr "Penpot - Liberté de conception pour les équipes"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Polices - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Fournisseurs de polices - %s - Penpot"
+
+#: src/app/main/ui/dashboard/files.cljs
+msgid "title.dashboard.files"
+msgstr "%s - Penpot"
+
+msgid "modals.leave-and-reassign.forbiden"
+msgstr ""
+"Vous ne pouvez pas quitter l'équipe si il n'y a aucun membre à promouvoir "
+"comme propriétaire. Vous pourriez plutôt supprimer l'équipe."
+
+msgid "modals.delete-font.title"
+msgstr "Suppression de la police"
+
+msgid "modals.delete-font.message"
+msgstr ""
+"Êtes-vous sûr de vouloir supprimer cette police ? Elle ne se chargera pas si "
+"elle est utilisée dans un fichier."
+
+msgid "modals.delete-font-variant.title"
+msgstr "Suppression du style de police"
+
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"Êtes-vous sûr de vouloir supprimer ce style de police ? Il ne sera pas "
+"chargé si il est utilisé dans un fichier."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "Suppression de %s fichiers"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "Êtes-vous sûr de vouloir supprimer %s fichiers ?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "Supprimer les fichiers"
+
+msgid "labels.uploading"
+msgstr "Téléchargement…"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Télécharger des polices personnalisées"
+
+msgid "labels.upload"
+msgstr "Télécharger"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.update-team"
+msgstr "Mettre à jour l'équipe"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.sending"
+msgstr "Envoi…"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.send"
+msgstr "Envoyer"
+
+msgid "labels.search-font"
+msgstr "Rechercher une police"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.rename-team"
+msgstr "Renommer l'équipe"
+
+msgid "labels.or"
+msgstr "ou"
+
+msgid "labels.num-of-frames"
+msgid_plural "labels.num-of-frames"
+msgstr[0] "1 plan de travail"
+msgstr[1] "%s plans de travail"
+
+msgid "labels.manage-fonts"
+msgstr "Gérer les polices"
+
+msgid "labels.installed-fonts"
+msgstr "Polices installées"
+
+msgid "labels.fonts"
+msgstr "Polices"
+
+msgid "labels.font-variants"
+msgstr "Styles"
+
+msgid "labels.font-providers"
+msgstr "Fournisseurs de polices"
+
+msgid "labels.font-family"
+msgstr "Famille de polices"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-sent"
+msgstr "Avis envoyé"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-disabled"
+msgstr "Avis désactivés"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "Supprimer %s fichiers"
+
+msgid "labels.custom-fonts"
+msgstr "Polices personnalisées"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "Entrer le nom de la nouvelle équipe"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Créer"
+
+msgid "labels.add-custom-font"
+msgstr "Ajouter police personnalisée"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "Jeton inconnu"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.token-expired"
+msgstr "Jeton expiré"
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr ""
+"Vous devez accepter nos conditions générales d'utilisation et notre "
+"politique de confidentialité."
+
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.profile-is-muted"
+msgstr ""
+"L'adresse e-mail de votre profil est ignorée (signalée comme spam ou taux de "
+"rebond élevé)."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "errors.member-is-muted"
+msgstr ""
+"L'adresse e-mail du profil que vous invitez est ignorée (signalée comme spam "
+"ou taux de rebond élevé)."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "Authentification LDAP désactivée."
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Couleur invalide"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.google-auth-not-enabled"
+msgstr "Authentification via Google désactivée dans le backend"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.email-has-permanent-bounces"
+msgstr "L'adresse e-mail « %s » a un taux de rebond trop élevé."
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "Votre projet a été déplacé avec succès"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "Vos fichiers ont été déplacés avec succès"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "Votre fichier a été déplacé avec succès"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "Votre projet a été dupliqué avec succès"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "Votre fichier a été dupliqué avec succès"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "Votre projet a été supprimé avec succès"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "Votre fichier a été supprimé avec succès"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Épingler/Désépingler"
+
+msgid "dashboard.options"
+msgstr "Options"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Ouvrir fichier dans un nouvel onglet"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Nouveau projet"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Nouveau fichier"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Déplacer vers une autre équipe"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Déplacer %s fichiers vers"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Déplacer vers"
+
+msgid "dashboard.loading-fonts"
+msgstr "chargement de vos polices…"
+
+msgid "dashboard.import"
+msgstr "Importer fichiers"
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Ne téléchargez que des polices que vous possédez ou dont la license vous "
+"permet de les utiliser dans Penpot. Vous trouverez plus d'informations dans "
+"la section Propriété des Contenus des [conditions générales d'utilisation de "
+"Penpot](https://penpot.app/terms.html). Vous pouvez également vous "
+"renseigner sur les [licenses de polices](https://www.typography.com/faq)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Toute police Web que vous téléchargez sera ajoutée à la liste de polices de "
+"caractères disponible dans les propriétés de texte des fichiers de cette "
+"équipe. Les polices du même nom de famille de polices seront groupées en **"
+"une seule famille de polices**. Vous pouvez télécharger les polices au "
+"formats suivants : **TTF, OTF et WOFF** (un seul format est nécessaire)."
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Vous n'avez installé aucune police personnalisée."
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Police supprimée"
+
+msgid "dashboard.export-single"
+msgstr "Exporter le fichier"
+
+msgid "dashboard.export-multi"
+msgstr "Exporter %s fichiers"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Dupliquer %s fichiers"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Dupliquer"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(copie)"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"En créant un compte, vous acceptez nos conditions générales d'utilisation et "
+"notre politique de confidentialité."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "Se connecter via OpenID (SSO)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Se connecter via Google"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "Attributs SVG importés"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "Retourner verticalement"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "Retourner horizontalement"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.edit"
+msgstr "Modifier"
+
+msgid "workspace.path.actions.snap-nodes"
+msgstr "Aligner les nœuds (%s)"
+
+msgid "workspace.path.actions.separate-nodes"
+msgstr "Dissocier les nœuds (%s)"

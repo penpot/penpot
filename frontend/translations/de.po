@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-25 12:31+0000\n"
-"Last-Translator: Yannik Rödel <weblate@yannik.info>\n"
+"PO-Revision-Date: 2021-06-27 08:33+0000\n"
+"Last-Translator: nautilusx <translate@disroot.org>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: Weblate 4.7.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2440,3 +2440,85 @@ msgstr "Einloggen mit OpenID (SSO)"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
 msgstr "Einloggen mit Google"
+
+msgid "modals.delete-font.title"
+msgstr "Schriftart löschen"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "Lösche %s Dateien"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "Sind Sie sicher, dass Sie %s Dateien löschen möchten?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "Dateien löschen"
+
+msgid "labels.search-font"
+msgstr "Schriftart suchen"
+
+msgid "labels.or"
+msgstr "oder"
+
+msgid "labels.manage-fonts"
+msgstr "Schriftarten verwalten"
+
+msgid "labels.installed-fonts"
+msgstr "Installierte Schriftarten"
+
+msgid "labels.fonts"
+msgstr "Schriftarten"
+
+msgid "labels.font-variants"
+msgstr "Stile"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "%s Dateien löschen"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "Neuen Teamnamen eingeben"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Erstellen"
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr ""
+"Sie müssen unsere Nutzungsbedingungen und Datenschutzrichtlinien akzeptieren."
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Ungültige Farbe"
+
+msgid "dashboard.options"
+msgstr "Optionen"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Neues Projekt"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Neue Datei"
+
+msgid "dashboard.loading-fonts"
+msgstr "laden Ihrer Schriftarten …"
+
+msgid "dashboard.import"
+msgstr "Dateien importieren"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Sie haben noch keine benutzerdefinierten Schriftarten installiert."
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Schriftart gelöscht"
+
+msgid "dashboard.export-single"
+msgstr "Datei exportieren"
+
+msgid "dashboard.export-multi"
+msgstr "%s Dateien exportieren"
