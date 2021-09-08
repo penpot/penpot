@@ -12,7 +12,9 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.icons :as i]
    [app.main.ui.share-link]
+   [app.main.ui.static :as static]
    [app.main.ui.viewer.comments :refer [comments-layer]]
    [app.main.ui.viewer.handoff :as handoff]
    [app.main.ui.viewer.header :refer [header]]
@@ -150,3 +152,10 @@
   (when-let [data (mf/deref refs/viewer-data)]
     (let [key (str (get-in data [:file :id]))]
       [:& viewer {:params props :data data :key key}])))
+
+(mf/defc breaking-change-notice
+  []
+  [:> static/static-header {}
+   [:div.image i/unchain]
+   [:div.main-message (tr "viewer.breaking-change.message")]
+   [:div.desc-message (tr "viewer.breaking-change.description")]])

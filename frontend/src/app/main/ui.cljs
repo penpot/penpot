@@ -26,7 +26,7 @@
    [app.main.ui.render :as render]
    [app.main.ui.settings :as settings]
    [app.main.ui.static :as static]
-   [app.main.ui.viewer :refer [viewer-page]]
+   [app.main.ui.viewer :as viewer]
    [app.main.ui.workspace :as workspace]
    [app.util.timers :as ts]
    [cljs.pprint :refer [pprint]]
@@ -151,11 +151,13 @@
              {:keys [index share-id section page-id] :or {section :interactions}} query-params
              {:keys [file-id]} path-params]
          [:& fs/fullscreen-wrapper {}
-          [:& viewer-page {:page-id page-id
-                           :file-id file-id
-                           :section section
-                           :index index
-                           :share-id share-id}]])
+          (if (:token query-params)
+            [:& viewer/breaking-change-notice]
+            [:& viewer/viewer-page {:page-id page-id
+                                    :file-id file-id
+                                    :section section
+                                    :index index
+                                    :share-id share-id}])])
 
        :render-object
        (do
