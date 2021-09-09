@@ -260,6 +260,11 @@
                         :command ["alt" "."]
                         :type "keyup"
                         :fn #(st/emit! (dw/toggle-distances-display false))}
+
+   :create-union       {:tooltip (ds/alt "U")
+                        :command ["alt" "u"]
+                        :fn #(st/emit! (dw/create-bool :union))}
+
    })
 
 (defn get-tooltip [shortcut]

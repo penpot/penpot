@@ -98,8 +98,14 @@
                                                  :on-accept confirm-update-remote-component}))
         do-show-component (st/emitf (dw/go-to-layout :assets))
         do-navigate-component-file (st/emitf (dwl/nav-to-component-file
-                                              (:component-file shape)))]
+                                              (:component-file shape)))
+
+        do-create-bool-shape (st/emitf (dw/create-bool :union))]
     [:*
+     ;;
+     [:& menu-entry {:title ">BOOL"
+                     :on-click do-create-bool-shape}]
+     ;;
      [:& menu-entry {:title (tr "workspace.shape.menu.copy")
                      :shortcut (sc/get-tooltip :copy)
                      :on-click do-copy}]
