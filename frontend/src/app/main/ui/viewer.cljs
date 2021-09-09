@@ -86,6 +86,7 @@
                    :handoff-layout (= section :handoff))}
 
      [:& header {:project project
+                 :index index
                  :file file
                  :page page
                  :frame frame
