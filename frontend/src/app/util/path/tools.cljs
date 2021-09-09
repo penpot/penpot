@@ -210,7 +210,7 @@
           (case (:command cmd)
             :line-to [index (upg/split-line-to start cmd value)]
             :curve-to [index (upg/split-curve-to start cmd value)]
-            :close-path [index [(upc/make-line-to (gpt/line-val start end value)) cmd]]
+            :close-path [index [(upc/make-line-to (gpt/lerp start end value)) cmd]]
             nil))
 
         cmd-changes

@@ -156,7 +156,6 @@
 (d/export gtr/calc-child-modifiers)
 
 ;; PATHS
-(d/export gsp/content->points)
 (d/export gsp/content->selrect)
 (d/export gsp/transform-content)
 
