@@ -80,8 +80,8 @@
 
     (mf/use-effect
      (mf/deps width height)
-     #(dom/set-page-style {:size (str (mth/round width) "px "
-                                      (mth/round height) "px")}))
+     #(dom/set-page-style {:size (str (mth/ceil (+ width padding padding)) "px "
+                                      (mth/ceil (+ height padding padding)) "px")}))
 
     [:& (mf/provider embed/context) {:value true}
      [:svg {:id "screenshot"
