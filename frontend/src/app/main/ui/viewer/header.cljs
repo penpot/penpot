@@ -71,11 +71,12 @@
        [:span.btn-text-dark {:on-click go-to-workspace} (tr "labels.edit-file")])]))
 
 (mf/defc header-sitemap
-  [{:keys [project file page frame] :as props}]
+  [{:keys [project file page frame index] :as props}]
   (let [project-name (:name project)
         file-name    (:name file)
         page-name    (:name page)
         frame-name   (:name frame)
+        total        (count (:frames page))
 
         toggle-thumbnails
         (fn []
@@ -111,10 +112,12 @@
        {:on-click toggle-thumbnails}
        [:span.label "/"]
        [:span.label frame-name]
-       [:span.icon i/arrow-down]]]))
+       [:span.icon i/arrow-down]
+       [:span.counters (str (inc index) " / " total)]]]))
+
 
 (mf/defc header
-  [{:keys [project file page frame zoom section permissions]}]
+  [{:keys [project file page frame zoom section permissions index]}]
   (let [go-to-dashboard
         (st/emitf (dv/go-to-dashboard))
 
@@ -129,7 +132,7 @@
            ;; If the user doesn't have permission we disable the link
            :style {:pointer-events (when-not permissions "none")}} i/logo-icon]]
 
-     [:& header-sitemap {:project project :file file :page page :frame frame}]
+     [:& header-sitemap {:project project :file file :page page :frame frame :index index}]
 
      [:div.mode-zone
       [:button.mode-zone-button.tooltip.tooltip-bottom

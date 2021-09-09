@@ -240,7 +240,7 @@
             pparams (:path-params route)
             qparams (:query-params route)
 
-            page-id (:page-id pparams)
+            page-id (:page-id qparams)
             index   (:index qparams)
 
             total   (count (get-in state [:viewer :pages page-id :frames]))]

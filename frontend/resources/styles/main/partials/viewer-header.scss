@@ -123,7 +123,7 @@
       }
     }
 
-    .breadcrumb {
+    .breadcrumb, .current-frame {
       display: flex;
       position: relative;
 
@@ -147,6 +147,10 @@
       span {
         color: $color-white;
         margin-right: $x-small;
+      }
+
+      .counters {
+        color: $color-gray-20;
       }
     }
   }
