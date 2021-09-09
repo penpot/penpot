@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-09-04 15:33+0000\n"
+"PO-Revision-Date: 2021-09-11 09:32+0000\n"
 "Last-Translator: Rubén <rubnx@protonmail.com>\n"
-"Language-Team: Catalan "
-"<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
+"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
+"ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.8.1-dev\n"
+"X-Generator: Weblate 4.9-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1111,7 +1111,7 @@ msgstr "Mostra tots els comentaris"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
-msgstr "Mostra només els vostres comentaris"
+msgstr "Mostra només els meus comentaris"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.sign-out"
@@ -2073,8 +2073,9 @@ msgid "workspace.options.group-fill"
 msgstr "Emplenament de grup"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, fuzzy
 msgid "workspace.options.group-stroke"
-msgstr "Vora del grup"
+msgstr "Traç del grup"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.color"
@@ -2198,8 +2199,9 @@ msgid "workspace.options.selection-fill"
 msgstr "Emplenament de selecció"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, fuzzy
 msgid "workspace.options.selection-stroke"
-msgstr "Vora de selecció"
+msgstr "Traç de la selecció"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.blur"
@@ -2247,11 +2249,11 @@ msgstr "Mides predefinides"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke"
-msgstr "Vora"
+msgstr "Traç"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.center"
-msgstr "Centre"
+msgstr "Centrat"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.dashed"
@@ -2720,3 +2722,293 @@ msgstr "Actualitza"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Feu clic per a tancar el camí"
+
+msgid "viewer.header.handsoff-section"
+msgstr "Lliurament"
+
+msgid "onboarding.slide.3.alt"
+msgstr "Lliurament i codi baix"
+
+msgid "onboarding.slide.2.alt"
+msgstr "Obteniu opinions"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "Marcador quadrat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "Redó"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "Quadrat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "Cap"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, fuzzy
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "Fletxa de línia"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "Marcador circular"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "Marcador de diamant"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "Complementari d'RGB"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
+msgid "viewer.header.interactions-section"
+msgstr "Interaccions"
+
+msgid "viewer.header.comments-section"
+msgstr "Comentaris"
+
+msgid "onboarding.welcome.desc2"
+msgstr ""
+"Penpot encara està en fase de desenvolupament i hi haurà actualitzacions "
+"constants. Esperem que gaudiu de la primera versió estable."
+
+msgid "onboarding.welcome.desc1"
+msgstr "Estem molt contents de presentar-vos la primera versió alfa."
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+msgid "onboarding.team.start.title"
+msgstr "Comenceu a dissenyar"
+
+msgid "onboarding.team.start.desc1"
+msgstr ""
+"Salteu ara al Penpot i comenceu a dissenyar pel vostre compte. Tindreu "
+"l'oportunitat de crear més equips després."
+
+msgid "onboarding.team.start.button"
+msgstr "Comenceu de seguida"
+
+#, fuzzy
+msgid "onboarding.team.create.title"
+msgstr "Creeu un equip"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "Podeu accedir al"
+
+msgid "onboarding.slide.0.desc2"
+msgstr ""
+"Manteniu la consistència a escala amb components, biblioteques i sistemes de "
+"disseny."
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"els fitxers amb biblioteques compartides s’inclouran a l’exportació, "
+"mantenint la vinculació."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Un o més fitxers que voleu exportar utilitzen biblioteques compartides. Què "
+"voleu fer amb els seus recursos*?"
+
+msgid "dashboard.export.detail"
+msgstr "* Pot incloure components, gràfics, colors i/o tipografies."
+
+msgid "common.share-link.view-all-pages"
+msgstr "Totes les pàgines"
+
+msgid "common.share-link.title"
+msgstr "Compartiu prototips"
+
+msgid "common.share-link.remove-link"
+msgstr "Elimina l'enllaç"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Qualsevol persona amb l'enllaç hi tindrà accés"
+
+msgid "onboarding.welcome.title"
+msgstr "Vos donem la benvinguda a Penpot!"
+
+msgid "onboarding.team.create.input-placeholder"
+msgstr "Introduïu el nom de l'equip nou"
+
+msgid "onboarding.team.create.desc1"
+msgstr ""
+"Esteu treballant amb algú? Creeu un equip per a treballar junts en projectes "
+"i compartir recursos de disseny."
+
+msgid "onboarding.team.create.button"
+msgstr "Crea un equip"
+
+msgid "onboarding.slide.3.title"
+msgstr "Una font compartida de veritat"
+
+msgid "onboarding.slide.3.desc2"
+msgstr ""
+"Obteniu i proporcioneu especificacions de codi d'etiquetatge (SVG, HTML) o "
+"d'estils (CSS, Less, Stylus...)."
+
+msgid "onboarding.slide.3.desc1"
+msgstr ""
+"Sincronitzeu el disseny i el codi de tots els components i estils i obteniu "
+"fragments de codi."
+
+msgid "onboarding.slide.2.title"
+msgstr "Obteniu opinions, presenteu i compartiu el vostre treball"
+
+msgid "onboarding.slide.2.desc1"
+msgstr ""
+"Tot l'equip treballant simultàniament amb disseny en temps real i "
+"comentaris, idees i opinions sobre els dissenys de forma centralitzada."
+
+msgid "onboarding.slide.1.title"
+msgstr "Doneu vida als vostres dissenys amb interaccions"
+
+msgid "onboarding.slide.1.desc2"
+msgstr ""
+"Compartiu amb els grups d'interés, presenteu propostes a l'equip i comenceu "
+"a provar els usuaris amb els vostres dissenys, tot en un sol lloc."
+
+msgid "onboarding.slide.1.desc1"
+msgstr ""
+"Creeu interaccions enriquides per a imitar el comportament del producte."
+
+msgid "onboarding.slide.1.alt"
+msgstr "Prototips interactius"
+
+msgid "onboarding.slide.0.desc1"
+msgstr ""
+"Creeu interfícies d'usuari boniques en col·laboració amb tots els membres de "
+"l'equip."
+
+msgid "onboarding.slide.0.alt"
+msgstr "Crea dissenys"
+
+msgid "onboarding.contrib.title"
+msgstr "Ets contribuïdor de codi obert?"
+
+msgid "onboarding.contrib.link"
+msgstr "projecte a github"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "i seguir les instruccions de contribució :)"
+
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot és de codi obert, fet per i per a la comunitat. Si voleu col·laborar, "
+"sou més que benvinguts!"
+
+msgid "onboarding.contrib.alt"
+msgstr "Codi obert"
+
+msgid "labels.workspace"
+msgstr "Espai de treball"
+
+msgid "labels.start"
+msgstr "Inicia"
+
+msgid "labels.skip"
+msgstr "Omet"
+
+msgid "labels.share-prototype"
+msgstr "Comparteix el prototip"
+
+msgid "labels.link"
+msgstr "Enllaç"
+
+msgid "labels.export"
+msgstr "Exporta"
+
+msgid "labels.edit-file"
+msgstr "Edita el fitxer"
+
+msgid "labels.default"
+msgstr "predeterminat"
+
+msgid "labels.continue"
+msgstr "Continua"
+
+msgid "labels.close"
+msgstr "Tanca"
+
+msgid "dashboard.import.import-message"
+msgstr "S'han importat %s fitxers correctament."
+
+msgid "dashboard.import.import-error"
+msgstr "S'ha produït un problema en importar el fitxer i no s'ha importat."
+
+msgid "dashboard.import.analyze-error"
+msgstr "Vaja! No s'ha pogut importar aquest fitxer"
+
+msgid "dashboard.export.title"
+msgstr "Exporta els fitxers"
+
+msgid "dashboard.export.options.merge.title"
+msgstr ""
+"Inclou els recursos de les biblioteques compartides a les biblioteques del "
+"fitxer"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"El fitxer s'exportarà amb tots els recursos externs fusionats a la "
+"biblioteca de fitxers."
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Tracta els recursos de la biblioteca compartida com a objectes bàsics"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Les biblioteques compartides no s'inclouran a l'exportació i no s'afegiran "
+"recursos a la biblioteca. "
+
+msgid "dashboard.export.options.all.title"
+msgstr "Exporta les biblioteques compartides"
+
+msgid "dashboard.export-frames"
+msgstr "Exporta les taules de treball a PDF..."
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Pàgines seleccionades"
+
+msgid "common.share-link.view-current-page"
+msgstr "Només aquesta pàgina"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "Pot accedir"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Lector"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "S'ha eliminat l'enllaç correctament"
+
+msgid "common.share-link.link-copied-success"
+msgstr "S'ha copiat l'enllaç correctament"
+
+msgid "common.share-link.get-link"
+msgstr "Obtén l'enllaç"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Segur que voleu eliminar l'enllaç? Si ho feu, ja no estarà disponible per a "
+"ningú"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Accepto subscriure'm a la llista de correu de Penpot."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Fletxa triangular"
