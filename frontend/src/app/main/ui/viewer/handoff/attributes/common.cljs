@@ -19,7 +19,7 @@
 
 
 (def file-colors-ref
-  (l/derived (l/in [:viewer-data :file :colors]) st/state))
+  (l/derived (l/in [:viewer :file :data :colors]) st/state))
 
 (defn make-colors-library-ref [file-id]
   (let [get-library

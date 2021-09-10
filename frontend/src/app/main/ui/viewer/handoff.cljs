@@ -51,8 +51,7 @@
     (mf/use-effect
      (mf/deps (:id frame))
      (fn []
-       (st/emit! (dv/set-current-frame (:id frame))
-                 (dv/select-shape (:id frame)))))
+       (st/emit! (dv/select-shape (:id frame)))))
 
     [:*
      [:& left-sidebar {:frame frame
