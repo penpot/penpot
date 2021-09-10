@@ -22,7 +22,7 @@
   (:content shape))
 
 (def file-typographies-ref
-  (l/derived (l/in [:viewer-data :file :typographies]) st/state))
+  (l/derived (l/in [:viewer :file :data :typographies]) st/state))
 
 (defn make-typographies-library-ref [file-id]
   (let [get-library

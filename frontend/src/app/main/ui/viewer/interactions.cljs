@@ -49,7 +49,7 @@
                        (prepare-objects page frame))
 
         wrapper       (mf/use-memo
-                       (mf/deps objects)
+                       (mf/deps objects interactions?)
                        #(shapes/frame-container-factory objects interactions?))
 
         ;; Retrieve frame again with correct modifier
@@ -77,16 +77,17 @@
             (st/emit! (dcm/close-thread))))]
 
     (mf/use-effect
-     (fn []
-       ;; bind with passive=false to allow the event to be cancelled
-       ;; https://stackoverflow.com/a/57582286/3219895
-       (let [key1 (events/listen goog/global "wheel" on-mouse-wheel #js {"passive" false})
-             key2 (events/listen js/window "keydown" on-key-down)
-             key3 (events/listen js/window "click" on-click)]
-         (fn []
-           (events/unlistenByKey key1)
-           (events/unlistenByKey key2)
-           (events/unlistenByKey key3)))))
+      (mf/deps local) ;; on-click event depends on local
+      (fn []
+        ;; bind with passive=false to allow the event to be cancelled
+        ;; https://stackoverflow.com/a/57582286/3219895
+        (let [key1 (events/listen goog/global "wheel" on-mouse-wheel #js {"passive" false})
+              key2 (events/listen js/window "keydown" on-key-down)
+              key3 (events/listen js/window "click" on-click)]
+          (fn []
+            (events/unlistenByKey key1)
+            (events/unlistenByKey key2)
+            (events/unlistenByKey key3)))))
 
     [:svg {:view-box (:vbox size)
            :width (:width size)
