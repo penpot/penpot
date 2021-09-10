@@ -32,14 +32,13 @@
   (dom/stop-propagation event))
 
 (mf/defc menu-entry
-  [{:keys [title shortcut submenu-ref on-click children] :as props}]
-  (let [entry-ref (mf/use-ref nil)
-        submenu-ref (mf/use-ref nil)
+  [{:keys [title shortcut on-click children] :as props}]
+  (let [submenu-ref (mf/use-ref nil)
         hovering? (mf/use-ref false)
 
         on-pointer-enter
         (mf/use-callback
-         (fn [event]
+         (fn []
            (mf/set-ref-val! hovering? true)
            (let [submenu-node (mf/ref-val submenu-ref)]
              (when (some? submenu-node)
@@ -47,7 +46,7 @@
 
         on-pointer-leave
         (mf/use-callback
-         (fn [event]
+         (fn []
            (mf/set-ref-val! hovering? false)
            (let [submenu-node (mf/ref-val submenu-ref)]
              (when (some? submenu-node)
@@ -227,7 +226,12 @@
                       :on-click do-boolean-intersection}]
       [:& menu-entry {:title (tr "workspace.shape.menu.exclude")
                       :shortcut (sc/get-tooltip :boolean-exclude)
-                      :on-click do-boolean-exclude}]]
+                      :on-click do-boolean-exclude}]
+
+      [:& menu-separator]
+      ;; TODO
+      [:& menu-entry {:title "Flatten"}]
+      [:& menu-entry {:title "Transform to path"}]]
 
      (if (:hidden shape)
        [:& menu-entry {:title (tr "workspace.shape.menu.show")

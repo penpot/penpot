@@ -16,6 +16,7 @@
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu]]
    [app.main.ui.workspace.sidebar.options.page :as page]
+   [app.main.ui.workspace.sidebar.options.shapes.bool :as bool]
    [app.main.ui.workspace.sidebar.options.shapes.circle :as circle]
    [app.main.ui.workspace.sidebar.options.shapes.frame :as frame]
    [app.main.ui.workspace.sidebar.options.shapes.group :as group]
@@ -44,6 +45,7 @@
      :path    [:& path/options {:shape shape}]
      :image   [:& image/options {:shape shape}]
      :svg-raw [:& svg-raw/options {:shape shape}]
+     :bool    [:& bool/options {:shape shape}]
      nil)
    [:& exports-menu
     {:shape shape

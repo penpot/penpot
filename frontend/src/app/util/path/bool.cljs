@@ -14,7 +14,7 @@
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
    [app.util.path.geom :as upg]
-   [cuerdas.core :as str]))
+   [app.util.path.subpaths :as ups]))
 
 (def ^:const curve-curve-precision 0.1)
 
@@ -267,3 +267,39 @@
                    (rest new-pending)
                    new-content-b
                    (conj new-content-a new-current))))))))
+
+
+(defn create-union [content-a content-b]
+  (d/concat
+   []
+   content-a
+   (ups/reverse-content content-b)))
+
+(defn create-difference [content-a content-b]
+  (d/concat
+   []
+   content-a
+   (ups/reverse-content content-b)))
+
+(defn create-intersection [content-a content-b]
+  (d/concat
+   []
+   content-a
+   (ups/reverse-content content-b)))
+
+
+(defn create-exclusion [content-a content-b]
+  (d/concat
+   []
+   content-a
+   (ups/reverse-content content-b)))
+
+(defn content-bool
+  [bool-type content-a content-b]
+
+  (let [[content-a' content-b'] (content-intersect-split content-a content-b)]
+    (case bool-type
+      :union        (create-union        content-a' content-b')
+      :difference   (create-difference   content-a' content-b')
+      :intersection (create-intersection content-a' content-b')
+      :exclusion    (create-exclusion    content-a' content-b'))))

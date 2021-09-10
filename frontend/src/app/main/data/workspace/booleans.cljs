@@ -18,6 +18,24 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
+(def ^:const style-properties
+  [:fill-color
+   :fill-opacity
+   :fill-color-gradient
+   :fill-color-ref-file
+   :fill-color-ref-id
+   :stroke-color
+   :stroke-color-ref-file
+   :stroke-color-ref-id
+   :stroke-opacity
+   :stroke-style
+   :stroke-width
+   :stroke-alignment
+   :stroke-cap-start
+   :stroke-cap-end
+   :shadow
+   :blur])
+
 (defn selected-shapes
   [state]
   (let [objects  (wsh/lookup-page-objects state)]
@@ -31,6 +49,7 @@
 (defn create-bool-data
   [type name shapes]
   (let [head (first shapes)
+        head-data (select-keys head style-properties)
         selrect (gsh/selection-rect shapes)]
     (-> {:id (uuid/next)
          :type :bool
@@ -40,6 +59,7 @@
          :name name
          ::index (::index head)
          :shapes []}
+        (merge head-data)
         (gsh/setup selrect))))
 
 (defn create-bool

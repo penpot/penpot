@@ -199,3 +199,4 @@
   (if (= prefix :c1)
     (command->point (get content (dec index)))
     (command->point (get content index))))
+

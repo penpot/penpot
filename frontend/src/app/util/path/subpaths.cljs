@@ -134,3 +134,14 @@
     (->> closed-subpaths
          (mapcat :data)
          (into []))))
+
+(defn reverse-content
+  "Given a content reverse the order of the commands"
+  [content]
+
+  (->> content
+       (get-subpaths)
+       (mapv reverse-subpath)
+       (reverse)
+       (mapcat :data)
+       (into [])))
