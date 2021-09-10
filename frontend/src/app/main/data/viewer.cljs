@@ -305,7 +305,11 @@
   (ptk/reify ::go-to-frame
     ptk/WatchEvent
     (watch [_ state _]
-      (let [frames  (get-in state [:viewer-data :frames])
+      (let [route   (:route state)
+            qparams (:query-params route)
+            page-id (:page-id qparams)
+
+            frames  (get-in state [:viewer :pages page-id :frames])
             index   (d/index-of-pred frames #(= (:id %) frame-id))]
         (when index
           (rx/of (go-to-frame-by-index index)))))))
@@ -319,12 +323,6 @@
             pparams (:path-params route)
             qparams (:query-params route)]
         (rx/of (rt/nav :viewer pparams (assoc qparams :section section)))))))
-
-(defn set-current-frame [frame-id]
-  (ptk/reify ::set-current-frame
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:viewer-data :current-frame-id] frame-id))))
 
 (defn deselect-all []
   (ptk/reify ::deselect-all
@@ -355,7 +353,10 @@
   (ptk/reify ::shift-select-to
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (get-in state [:viewer-data :objects])
+      (let [route     (:route state)
+            qparams   (:query-params route)
+            page-id   (:page-id qparams)
+            objects   (get-in state [:viewer :pages page-id :objects])
             selection (-> state
                           (get-in [:viewer-local :selected] #{})
                           (conj id))]
@@ -368,8 +369,13 @@
   (ptk/reify ::select-all
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (get-in state [:viewer-data :objects])
-            frame-id (get-in state [:viewer-data :current-frame-id])
+      (let [route     (:route state)
+            qparams   (:query-params route)
+            page-id   (:page-id qparams)
+            index     (:index qparams)
+            objects   (get-in state [:viewer :pages page-id :objects])
+            frame-id  (get-in state [:viewer :pages page-id :frames index :id])
+
             selection (->> objects
                            (filter #(= (:frame-id (second %)) frame-id))
                            (map first)
