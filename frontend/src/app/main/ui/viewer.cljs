@@ -13,6 +13,7 @@
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
+   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.share-link]
    [app.main.ui.static :as static]
    [app.main.ui.viewer.comments :refer [comments-layer]]
@@ -27,9 +28,15 @@
 
 (defn- calculate-size
   [frame zoom]
-  {:width  (* (:width frame) zoom)
-   :height (* (:height frame) zoom)
-   :vbox   (str "0 0 " (:width frame 0) " " (:height frame 0))})
+  (let [{:keys [_ _ width height]} (filters/get-filters-bounds frame)]
+    {:width  (* width zoom)
+     :height (* height zoom)
+     :vbox   (str "0 0 " width " " height)}))
+
+(defn- position-overlay
+  [size size-over]
+  {:x (/ (- (:width size) (:width size-over)) 2)
+   :y (/ (- (:height size) (:height size-over)) 2)})
 
 (mf/defc viewer
   [{:keys [params data]}]
@@ -137,7 +144,24 @@
               :page page
               :file file
               :users users
-              :local local}]]))]]]))
+              :local local}]
+
+            (for [overlay (:overlays local)]
+              (let [size-over (calculate-size overlay zoom)
+                    pos-over  (position-overlay size size-over)]
+                [:div.viewport-container
+                 {:style {:width (:width size-over)
+                          :height (:height size-over)
+                          :position "absolute"
+                          :left (:x pos-over)
+                          :top (:y pos-over)}}
+                 [:& interactions/viewport
+                  {:frame overlay
+                   :size size-over
+                   :page page
+                   :file file
+                   :users users
+                   :local local}]]))]))]]]))
 
 ;; --- Component: Viewer Page
 

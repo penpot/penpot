@@ -109,7 +109,7 @@
    :selected (d/ordered-set)
    :expanded {}
    :tooltip nil
-   :options-mode :prototype ; OJOOOOOOOOOOOOOOOOOOOOOO============== :design
+   :options-mode :design
    :draw-interaction-to nil
    :left-sidebar? true
    :right-sidebar? true
@@ -1751,12 +1751,16 @@
 ;; Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare move-create-interaction)
-(declare finish-create-interaction)
+(declare move-edit-interaction)
+(declare finish-edit-interaction)
 
-(defn start-create-interaction
-  []
-  (ptk/reify ::start-create-interaction
+(defn start-edit-interaction
+  [index]
+  (ptk/reify ::start-edit-interaction
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :editing-interaction-index] index))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [initial-pos @ms/mouse-position
@@ -1766,12 +1770,12 @@
           (rx/concat
             (->> ms/mouse-position
                  (rx/take-until stopper)
-                 (rx/map #(move-create-interaction initial-pos %)))
-            (rx/of (finish-create-interaction initial-pos))))))))
+                 (rx/map #(move-edit-interaction initial-pos %)))
+            (rx/of (finish-edit-interaction index initial-pos))))))))
 
-(defn move-create-interaction
+(defn move-edit-interaction
   [initial-pos position]
-  (ptk/reify ::move-create-interaction
+  (ptk/reify ::move-edit-interaction
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)
@@ -1785,12 +1789,13 @@
           (not= position initial-pos) (assoc-in [:workspace-local :draw-interaction-to] position)
           (not= start-frame end-frame) (assoc-in [:workspace-local :draw-interaction-to-frame] end-frame))))))
 
-(defn finish-create-interaction
-  [initial-pos]
-  (ptk/reify ::finish-create-interaction
+(defn finish-edit-interaction
+  [index initial-pos]
+  (ptk/reify ::finish-edit-interaction
     ptk/UpdateEvent
     (update [_ state]
       (-> state
+          (assoc-in [:workspace-local :editing-interaction-index] nil)
           (assoc-in [:workspace-local :draw-interaction-to] nil)
           (assoc-in [:workspace-local :draw-interaction-to-frame] nil)))
 
@@ -1809,14 +1814,22 @@
                    (fn [shape]
                      (update shape :interactions
                              (fn [interactions]
-                               (if (and frame
-                                        (not= (:id frame) (:id shape))
-                                        (not= (:id frame) (:frame-id shape)))
-                                 (conj interactions
-                                       (assoc spec/default-interaction
-                                              :destination (:id frame)))
-                                 (vec (remove #(= (:action-type %) :navigate)
-                                              interactions)))))))))))))
+                               (if-not frame
+                                 ;; Drop in an empty space -> remove interaction
+                                 (if index
+                                   (into (subvec interactions 0 index)
+                                         (subvec interactions (inc index)))
+                                   interactions)
+                                 (let [frame (if (or (= (:id frame) (:id shape))
+                                                     (= (:id frame) (:frame-id shape)))
+                                               nil ;; Drop onto self frame -> set destination to none
+                                               frame)]
+                                   ;; Update or create interaction
+                                   (if index
+                                     (assoc-in interactions [index :destination] (:id frame))
+                                     (conj (or interactions [])
+                                           (assoc spec/default-interaction
+                                                  :destination (:id frame))))))))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CANVAS OPTIONS

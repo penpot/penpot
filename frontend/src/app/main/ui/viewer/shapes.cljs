@@ -28,13 +28,26 @@
    [rumext.alpha :as mf]))
 
 (defn on-mouse-down
-  [event interactions]
-  (let [interaction (first (filter #(= (:event-type %) :click) interactions))]
+  [event shape]
+  (doseq [interaction (->> (:interactions shape)
+                           (filter #(= (:event-type %) :click)))]
+
     (case (:action-type interaction)
       :navigate
       (let [frame-id (:destination interaction)]
         (dom/stop-propagation event)
         (st/emit! (dv/go-to-frame frame-id)))
+
+      :open-overlay
+      (let [frame-id (:destination interaction)]
+        (dom/stop-propagation event)
+        (st/emit! (dv/open-overlay frame-id)))
+
+      :close-overlay
+      (let [frame-id (or (:destination interaction)
+                         (:frame-id shape))]
+        (dom/stop-propagation event)
+        (st/emit! (dv/close-overlay frame-id)))
 
       nil)))
 
@@ -61,17 +74,15 @@
     {::mf/wrap-props false}
     [props]
     (let [shape   (unchecked-get props "shape")
-          objects (unchecked-get props "objects")
           childs  (unchecked-get props "childs")
           frame   (unchecked-get props "frame")
 
-          interactions (->> (:interactions shape)
-                            (filter #(contains? objects (:destination %))))
+          interactions (:interactions shape)
 
           on-mouse-down (mf/use-callback
-                         (mf/deps interactions)
+                         (mf/deps shape)
                          (fn [event]
-                           (on-mouse-down event interactions)))
+                           (on-mouse-down event shape)))
 
           svg-element? (and (= :svg-raw (:type shape))
                             (not= :svg (get-in shape [:content :tag])))]
