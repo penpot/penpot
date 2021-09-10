@@ -47,6 +47,17 @@
     &:hover {
       background-color: $color-primary-lighter;
     }
+
+    .submenu-icon {
+      position: absolute;
+      right: 1rem;
+
+      svg {
+        width: 10px;
+        height: 10px;
+      }
+    }
+
   }
 }
 

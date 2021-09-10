@@ -42,7 +42,6 @@
          :shapes []}
         (gsh/setup selrect))))
 
-
 (defn create-bool
   [bool-type]
   (ptk/reify ::create-bool-union

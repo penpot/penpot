@@ -3000,3 +3000,18 @@ msgstr "¡Lo sentimos!"
 
 msgid "viewer.breaking-change.description"
 msgstr "Este link compartido ya no funciona. Crea uno nuevo o pídelo a la persona que lo creó."
+
+msgid "workspace.shape.menu.path"
+msgstr "Path"
+
+msgid "workspace.shape.menu.union"
+msgstr "Unión"
+
+msgid "workspace.shape.menu.difference"
+msgstr "Diferencia"
+
+msgid "workspace.shape.menu.intersection"
+msgstr "Intersección"
+
+msgid "workspace.shape.menu.exclude"
+msgstr "Exclusión"

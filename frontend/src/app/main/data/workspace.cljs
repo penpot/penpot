@@ -49,8 +49,7 @@
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
-   ))
+   [potok.core :as ptk]))
 
 ;; (log/set-level! :trace)
 

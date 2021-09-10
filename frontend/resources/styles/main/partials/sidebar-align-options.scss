@@ -14,7 +14,7 @@
   .align-group {
     display: flex;
     justify-content: space-evenly;
-    width: 100%;
+    width: 50%;
 
     &:not(:last-child) {
       border-right: solid 1px $color-gray-60;

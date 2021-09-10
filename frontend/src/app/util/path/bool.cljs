@@ -16,7 +16,7 @@
    [app.util.path.geom :as upg]
    [cuerdas.core :as str]))
 
-(def ^:const curve-curve-precision 0.001)
+(def ^:const curve-curve-precision 0.1)
 
 (defn curve->rect
   [[from-p to-p :as curve]]
@@ -133,10 +133,9 @@
                   r2 (curve-range->rect c2 c2-from c2-to)]
 
               (when (gsi/overlaps-rects? r1 r2)
-
-                (if (and (< (mth/abs (- c1-from c1-to)) curve-curve-precision)
-                         (< (mth/abs (- c2-from c2-to)) curve-curve-precision))
-
+                (if (< (gpt/distance (gpp/curve-values c1 c1-from)
+                                     (gpp/curve-values c2 c2-from))
+                       curve-curve-precision)
                   [(sorted-set (mth/precision c1-from 4))
                    (sorted-set (mth/precision c2-from 4))]
 

@@ -3114,4 +3114,19 @@ msgid "viewer.breaking-change.message"
 msgstr "Sorry!"
 
 msgid "viewer.breaking-change.description"
-msgstr "This shareable link is no longer valid. Create a new one or ask the owner for a new one.
+msgstr "This shareable link is no longer valid. Create a new one or ask the owner for a new one."
+
+msgid "workspace.shape.menu.path"
+msgstr "Path"
+
+msgid "workspace.shape.menu.union"
+msgstr "Union"
+
+msgid "workspace.shape.menu.difference"
+msgstr "Difference"
+
+msgid "workspace.shape.menu.intersection"
+msgstr "Intersection"
+
+msgid "workspace.shape.menu.exclude"
+msgstr "Exclude"

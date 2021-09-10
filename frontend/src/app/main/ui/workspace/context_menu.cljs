@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
    [app.util.timers :as timers]
@@ -31,10 +32,53 @@
   (dom/stop-propagation event))
 
 (mf/defc menu-entry
-  [{:keys [title shortcut on-click] :as props}]
-  [:li {:on-click on-click}
-   [:span.title title]
-   [:span.shortcut (or shortcut "")]])
+  [{:keys [title shortcut submenu-ref on-click children] :as props}]
+  (let [entry-ref (mf/use-ref nil)
+        submenu-ref (mf/use-ref nil)
+        hovering? (mf/use-ref false)
+
+        on-pointer-enter
+        (mf/use-callback
+         (fn [event]
+           (mf/set-ref-val! hovering? true)
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (some? submenu-node)
+               (dom/set-css-property! submenu-node "display" "block")))))
+
+        on-pointer-leave
+        (mf/use-callback
+         (fn [event]
+           (mf/set-ref-val! hovering? false)
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (some? submenu-node)
+               (timers/schedule
+                200
+                #(when-not (mf/ref-val hovering?)
+                   (dom/set-css-property! submenu-node "display" "none")))))))
+
+        set-dom-node
+        (mf/use-callback
+         (fn [dom]
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (and (some? dom) (some? submenu-node))
+               (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
+
+    [:li {:ref set-dom-node
+          :on-click on-click
+          :on-pointer-enter on-pointer-enter
+          :on-pointer-leave on-pointer-leave}
+     [:span.title title]
+     [:span.shortcut (or shortcut "")]
+
+     (when (> (count children) 1)
+       [:span.submenu-icon i/arrow-slide])
+
+     (when (> (count children) 1)
+       [:ul.workspace-context-menu
+        {:ref submenu-ref
+         :style {:display "none" :left 250}
+         :on-context-menu prevent-default}
+        children])]))
 
 (mf/defc menu-separator
   []
@@ -100,12 +144,12 @@
         do-navigate-component-file (st/emitf (dwl/nav-to-component-file
                                               (:component-file shape)))
 
-        do-create-bool-shape (st/emitf (dw/create-bool :union))]
+        do-boolean-union (st/emitf (dw/create-bool :union))
+        do-boolean-difference (st/emitf (dw/create-bool :difference))
+        do-boolean-intersection (st/emitf (dw/create-bool :intersection))
+        do-boolean-exclude (st/emitf (dw/create-bool :exclude))
+        ]
     [:*
-     ;;
-     [:& menu-entry {:title ">BOOL"
-                     :on-click do-create-bool-shape}]
-     ;;
      [:& menu-entry {:title (tr "workspace.shape.menu.copy")
                      :shortcut (sc/get-tooltip :copy)
                      :on-click do-copy}]
@@ -170,6 +214,20 @@
        [:& menu-entry {:title (tr "workspace.shape.menu.edit")
                        :shortcut (sc/get-tooltip :start-editing)
                        :on-click do-start-editing}])
+
+     [:& menu-entry {:title (tr "workspace.shape.menu.path")}
+      [:& menu-entry {:title (tr "workspace.shape.menu.union")
+                      :shortcut (sc/get-tooltip :boolean-union)
+                      :on-click do-boolean-union}]
+      [:& menu-entry {:title (tr "workspace.shape.menu.difference")
+                      :shortcut (sc/get-tooltip :boolean-difference)
+                      :on-click do-boolean-difference}]
+      [:& menu-entry {:title (tr "workspace.shape.menu.intersection")
+                      :shortcut (sc/get-tooltip :boolean-intersection)
+                      :on-click do-boolean-intersection}]
+      [:& menu-entry {:title (tr "workspace.shape.menu.exclude")
+                      :shortcut (sc/get-tooltip :boolean-exclude)
+                      :on-click do-boolean-exclude}]]
 
      (if (:hidden shape)
        [:& menu-entry {:title (tr "workspace.shape.menu.show")
@@ -246,7 +304,7 @@
          (when dropdown
            (let [bounding-rect (dom/get-bounding-rect dropdown)
                  window-size (dom/get-window-size)
-                 delta-x (max (- (:right bounding-rect) (:width window-size)) 0)
+                 delta-x (max (- (+ (:right bounding-rect) 250) (:width window-size)) 0)
                  delta-y (max (- (:bottom bounding-rect) (:height window-size)) 0)
                  new-style (str "top: " (- top delta-y) "px; "
                                 "left: " (- left delta-x) "px;")]

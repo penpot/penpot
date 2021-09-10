@@ -281,7 +281,7 @@
 (defn set-text! [node text]
   (set! (.-textContent node) text))
 
-(defn set-css-property [node property value]
+(defn set-css-property! [node property value]
   (.setProperty (.-style ^js node) property value))
 
 (defn capture-pointer [event]
