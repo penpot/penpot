@@ -170,7 +170,8 @@
           (fn [_]
             (let [filename  (str (:name file) ".pdf")
                   frame-ids (mapv :id frames)]
-              (st/emit! (dm/info (tr "workspace.options.exporting-object")))
+              (st/emit! (dm/info (tr "workspace.options.exporting-object")
+                                 {:timeout nil}))
               (->> (rp/query! :export-frames
                               {:name     (:name file)
                                :file-id  (:id file)
