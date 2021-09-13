@@ -71,18 +71,84 @@
 
 ;; --- EVENT TRANSLATION
 
-(defmulti ^:private process-event ptk/type)
+(derive :app.main.data.comments/create-comment ::generic-action)
+(derive :app.main.data.comments/create-comment-thread ::generic-action)
+(derive :app.main.data.comments/delete-comment ::generic-action)
+(derive :app.main.data.comments/delete-comment-thread ::generic-action)
+(derive :app.main.data.comments/open-comment-thread ::generic-action)
+(derive :app.main.data.comments/update-comment ::generic-action)
+(derive :app.main.data.comments/update-comment-thread ::generic-action)
+(derive :app.main.data.comments/update-comment-thread-status ::generic-action)
+(derive :app.main.data.dashboard/delete-team-member ::generic-action)
+(derive :app.main.data.dashboard/duplicate-project ::generic-action)
+(derive :app.main.data.dashboard/file-created ::generic-action)
+(derive :app.main.data.dashboard/invite-team-member ::generic-action)
+(derive :app.main.data.dashboard/leave-team ::generic-action)
+(derive :app.main.data.dashboard/move-files ::generic-action)
+(derive :app.main.data.dashboard/move-project ::generic-action)
+(derive :app.main.data.dashboard/project-created ::generic-action)
+(derive :app.main.data.dashboard/rename-file ::generic-action)
+(derive :app.main.data.dashboard/set-file-shared ::generic-action)
+(derive :app.main.data.dashboard/update-team-member-role ::generic-action)
+(derive :app.main.data.dashboard/update-team-photo ::generic-action)
+(derive :app.main.data.fonts/add-font ::generic-action)
+(derive :app.main.data.fonts/delete-font ::generic-action)
+(derive :app.main.data.fonts/delete-font-variant ::generic-action)
+(derive :app.main.data.users/logout ::generic-action)
+(derive :app.main.data.users/request-email-change ::generic-action)
+(derive :app.main.data.users/update-password ::generic-action)
+(derive :app.main.data.users/update-photo ::generic-action)
+(derive :app.main.data.workspace.comments/open-comment-thread ::generic-action)
+(derive :app.main.data.workspace.libraries/add-color ::generic-action)
+(derive :app.main.data.workspace.libraries/add-media ::generic-action)
+(derive :app.main.data.workspace.libraries/add-typography ::generic-action)
+(derive :app.main.data.workspace.libraries/delete-color ::generic-action)
+(derive :app.main.data.workspace.libraries/delete-media ::generic-action)
+(derive :app.main.data.workspace.libraries/delete-typography ::generic-action)
+(derive :app.main.data.workspace.persistence/attach-library ::generic-action)
+(derive :app.main.data.workspace.persistence/detach-library ::generic-action)
+(derive :app.main.data.workspace.persistence/set-file-shard ::generic-action)
+(derive :app.main.data.workspace/create-page ::generic-action)
+(derive :app.main.data.workspace/set-workspace-layout ::generic-action)
+
+
+(defmulti process-event ptk/type)
 (defmethod process-event :default [_] nil)
 
 (defmethod process-event ::event
   [event]
-  (let [data (deref event)]
+  (let [data   (deref event)
+        origin (::origin data)]
     (when (::name data)
       (d/without-nils
        {:type    (::type data "action")
         :name    (::name data)
         :context (::context data)
-        :props   (dissoc data ::name ::type ::context)}))))
+        :props   (-> data
+                     (dissoc ::name)
+                     (dissoc ::type)
+                     (dissoc ::origin)
+                     (dissoc ::context)
+                     (cond-> origin (assoc :origin origin)))}))))
+
+(defmethod process-event ::generic-action
+  [event]
+  (let [type  (ptk/type event)
+        mdata (meta event)
+        data  (if (satisfies? IDeref event)
+                (deref event)
+                {})
+
+        name  (or (::name mdata)
+                  (name type))]
+
+    {:type    "action"
+     :name    (name type)
+     :props   (merge data (d/without-nils (::props mdata)))
+     :context (d/without-nils
+               {:event-origin (::origin mdata)
+                :event-namespace (namespace type)
+                :event-symbol (name type)})}))
 
 (defmethod process-event :app.util.router/navigated
   [event]
@@ -113,42 +179,6 @@
      :profile-id (:id data)
      :props (d/without-nils props)}))
 
-(defmethod process-event :app.main.data.dashboard/project-created
-  [event]
-  (let [data (deref event)]
-    {:type "action"
-     :name "create-project"
-     :props {:id (:id data)
-             :team-id (:team-id data)}}))
-
-(defmethod process-event :app.main.data.dashboard/file-created
-  [event]
-  (let [data (deref event)]
-    {:type "action"
-     :name "create-file"
-     :props {:id (:id data)
-             :project-id (:project-id data)}}))
-
-(defmethod process-event :app.main.data.workspace/create-page
-  [event]
-  (let [data (deref event)]
-    {:type "action"
-     :name "create-page"
-     :props {:id (:id data)
-             :file-id (:file-id data)
-             :project-id (:project-id data)}}))
-
-(defn- event->generic-action
-  [_ name]
-  {:type "action"
-   :name name
-   :props {}})
-
-(defmethod process-event :app.main.data.users/logout
-  [event]
-  (event->generic-action event "signout"))
-
-
 ;; --- MAIN LOOP
 
 (defn- append-to-buffer
@@ -164,7 +194,7 @@
 (defn- persist-events
   [events]
   (if (seq events)
-    (let [uri    (u/join cf/public-uri "events")
+    (let [uri    (u/join cf/public-uri "api/audit/events")
           params {:events events}]
       (->> (http/send! {:uri uri
                         :method :post
@@ -203,8 +233,7 @@
 
       ptk/EffectEvent
       (effect [_ _ stream]
-        (let [events  (methods process-event)
-              session (atom nil)
+        (let [session (atom nil)
 
               profile (->> (rx/from-atom storage {:emit-current-value? true})
                            (rx/map :profile)
@@ -215,12 +244,9 @@
                            (rx/with-latest-from profile)
                            (rx/map (fn [result]
                                      (let [event      (aget result 0)
-                                           profile-id (aget result 1)
-                                           type       (ptk/type event)
-                                           impl-fn    (get events type)]
-                                       (when (fn? impl-fn)
-                                         (some-> (impl-fn event)
-                                                 (update :profile-id #(or % profile-id)))))))
+                                           profile-id (aget result 1)]
+                                       (some-> (process-event event)
+                                               (update :profile-id #(or % profile-id))))))
                            (rx/filter :profile-id)
                            (rx/map (fn [event]
                                      (let [session* (or @session (dt/now))
@@ -242,6 +268,6 @@
 
 (defmethod ptk/resolve ::initialize
   [_ params]
-  (if cf/analytics
+  (if (contains? @cf/flags :audit-log)
     (initialize)
     (ptk/data-event ::initialize params)))

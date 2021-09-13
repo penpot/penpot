@@ -72,7 +72,7 @@
                 (update :workspace-drawing dissoc :comment)
                 (update-in [:comments id] assoc (:id comment) comment)))]
 
-    (ptk/reify ::create-thread
+    (ptk/reify ::create-comment-thread
       ptk/WatchEvent
       (watch [_ _ _]
         (->> (rp/mutation :create-comment-thread params)
@@ -94,6 +94,8 @@
   [{:keys [id is-resolved] :as thread}]
   (us/assert ::comment-thread thread)
   (ptk/reify ::update-comment-thread
+    IDeref
+    (-deref [_] {:is-resolved is-resolved})
 
     ptk/UpdateEvent
     (update [_ state]
@@ -122,7 +124,7 @@
 (defn update-comment
   [{:keys [id content thread-id] :as comment}]
   (us/assert ::comment comment)
-  (ptk/reify :update-comment
+  (ptk/reify ::update-comment
     ptk/UpdateEvent
     (update [_ state]
       (d/update-in-when state [:comments thread-id id] assoc :content content))
@@ -135,7 +137,7 @@
 (defn delete-comment-thread
   [{:keys [id] :as thread}]
   (us/assert ::comment-thread thread)
-  (ptk/reify :delete-comment-thread
+  (ptk/reify ::delete-comment-thread
     ptk/UpdateEvent
     (update [_ state]
       (-> state
@@ -150,7 +152,7 @@
 (defn delete-comment
   [{:keys [id thread-id] :as comment}]
   (us/assert ::comment comment)
-  (ptk/reify :delete-comment
+  (ptk/reify ::delete-comment
     ptk/UpdateEvent
     (update [_ state]
       (d/update-in-when state [:comments thread-id] dissoc id))
@@ -212,7 +214,7 @@
 (defn open-thread
   [{:keys [id] :as thread}]
   (us/assert ::comment-thread thread)
-  (ptk/reify ::open-thread
+  (ptk/reify ::open-comment-thread
     ptk/UpdateEvent
     (update [_ state]
       (-> state
@@ -221,7 +223,7 @@
 
 (defn close-thread
   []
-  (ptk/reify ::close-thread
+  (ptk/reify ::close-comment-thread
     ptk/UpdateEvent
     (update [_ state]
       (-> state

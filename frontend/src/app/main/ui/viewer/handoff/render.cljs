@@ -4,17 +4,12 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.render
+(ns app.main.ui.viewer.handoff.render
   "The main container for a frame in handoff mode"
   (:require
-   [app.common.data :as d]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
-   [app.common.pages :as cp]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
-   [app.main.ui.handoff.selection-feedback :refer [selection-feedback]]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
@@ -24,17 +19,21 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
+   [app.main.ui.viewer.handoff.selection-feedback :refer [selection-feedback]]
+   [app.main.ui.viewer.interactions :refer [prepare-objects]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
 (declare shape-container-factory)
 
-(defn handle-hover-shape [{:keys [type id]} hover?]
-  #(when-not (#{:group :frame} type)
-     (dom/prevent-default %)
-     (dom/stop-propagation %)
-     (st/emit! (dv/hover-shape id hover?))))
+(defn handle-hover-shape
+  [{:keys [type id]} hover?]
+  (fn [event]
+    (when-not (#{:group :frame} type)
+      (dom/prevent-default event)
+      (dom/stop-propagation event)
+      (st/emit! (dv/hover-shape id hover?)))))
 
 (defn select-shape [{:keys [type id]}]
   (fn [event]
@@ -42,7 +41,7 @@
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (cond
-        (.-shiftKey event)
+        (.-shiftKey ^js event)
         (st/emit! (dv/toggle-selection id))
 
         :else
@@ -154,42 +153,37 @@
               :group   [:> group-container opts]
               :svg-raw [:> svg-raw-container opts])))))))
 
-(defn adjust-frame-position [frame-id objects]
-  (let [frame        (get objects frame-id)
-        modifier     (-> (gpt/point (:x frame) (:y frame))
-                         (gpt/negate)
-                         (gmt/translate-matrix))
-
-        update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)
-        modifier-ids (d/concat [frame-id] (cp/get-children frame-id objects))]
-    (reduce update-fn objects modifier-ids)))
-
-(defn make-vbox [frame]
-  (str "0 0 " (:width frame 0) " " (:height frame 0)))
-
 (mf/defc render-frame-svg
-  {::mf/wrap [mf/memo]}
-  [{:keys [objects frame-id zoom] :or {zoom 1} :as props}]
+  [{:keys [page frame local]}]
+  (let [objects (mf/use-memo
+                 (mf/deps page frame)
+                 (prepare-objects page frame))
 
-  (let [objects      (adjust-frame-position frame-id objects)
-        frame        (get objects frame-id)
-        width        (* (:width frame) zoom)
-        height       (* (:height frame) zoom)
-        vbox         (make-vbox frame)
-        render-frame (mf/use-memo
-                      (mf/deps objects)
-                      #(frame-container-factory objects))]
 
-    [:svg {:id "svg-frame"
-           :view-box vbox
-           :width width
-           :height height
-           :version "1.1"
-           :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns "http://www.w3.org/2000/svg"}
+        ;; Retrieve frame again with correct modifier
+        frame   (get objects (:id frame))
 
-     [:& render-frame {:shape frame
-                       :view-box vbox}]
+        zoom    (:zoom local 1)
+        width   (* (:width frame) zoom)
+        height  (* (:height frame) zoom)
+        vbox    (str "0 0 " (:width frame 0) " " (:height frame 0))
 
-     [:& selection-feedback {:frame frame}]]))
+        render  (mf/use-memo
+                 (mf/deps objects)
+                 #(frame-container-factory objects))]
+
+    [:svg
+     {:id "svg-frame"
+      :view-box vbox
+      :width width
+      :height height
+      :version "1.1"
+      :xmlnsXlink "http://www.w3.org/1999/xlink"
+      :xmlns "http://www.w3.org/2000/svg"}
+
+     [:& render {:shape frame :view-box vbox}]
+     [:& selection-feedback
+      {:frame frame
+       :objects objects
+       :local local}]]))
 

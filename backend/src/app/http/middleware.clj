@@ -13,7 +13,6 @@
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
    [clojure.java.io :as io]
-   [ring.core.protocols :as rp]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
@@ -74,33 +73,15 @@
   {:name ::parse-request-body
    :compile (constantly wrap-parse-request-body)})
 
-(defn- transit-streamable-body
-  [data opts]
-  (reify rp/StreamableResponseBody
-    (write-body-to-stream [_ response output-stream]
-      (try
-        (let [tw (t/writer output-stream opts)]
-          (t/write! tw data))
-        (finally
-          (.close ^java.io.OutputStream output-stream))))))
-
 (defn- impl-format-response-body
   [response _request]
   (let [body (:body response)
-        opts {:type :json-verbose}]
+        opts {:type :json}]
     (cond
       (coll? body)
       (-> response
           (update :headers assoc "content-type" "application/transit+json")
-          (assoc :body (transit-streamable-body body opts)))
-
-      ;; ;; Temporary disabled
-      ;; (-> response
-      ;;     (update :headers assoc "content-type" "application/transit+json")
-      ;;     (assoc :body
-      ;;            (if (= :post (:request-method request))
-      ;;              (transit-streamable-body body opts)
-      ;;              (t/encode body opts))))
+          (assoc :body (t/encode body opts)))
 
       (nil? body)
       (assoc response :status 204 :body "")

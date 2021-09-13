@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.exports
+(ns app.main.ui.viewer.handoff.exports
   (:require
    [app.common.data :as d]
    [app.main.data.messages :as dm]

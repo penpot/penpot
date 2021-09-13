@@ -12,12 +12,14 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
-(mf/defc copy-button [{:keys [data]}]
+(mf/defc copy-button [{:keys [data on-copied]}]
   (let [just-copied (mf/use-state false)]
     (mf/use-effect
      (mf/deps @just-copied)
      (fn []
        (when @just-copied
+         (when (fn? on-copied)
+           (on-copied))
          (let [sub (timers/schedule 1000 #(reset! just-copied false))]
            ;; On unmount we dispose the timer
            #(rx/-dispose sub)))))

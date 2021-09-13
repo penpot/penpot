@@ -37,6 +37,8 @@
    :stroke-style          :stroke-group
    :stroke-width          :stroke-group
    :stroke-alignment      :stroke-group
+   :stroke-cap-start      :stroke-group
+   :stroke-cap-end        :stroke-group
    :rx                    :radius-group
    :ry                    :radius-group
    :r1                    :radius-group

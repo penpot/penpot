@@ -1060,6 +1060,10 @@ msgstr "Serviciul nu este disponibil"
 msgid "labels.settings"
 msgstr "Setări"
 
+#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.share-prototype"
+msgstr "Distribuie link"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
 msgstr "Colecții distribuite"
@@ -1463,10 +1467,6 @@ msgstr "Elimină link"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Prin acest link se permite accesul public"
-
-#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.title"
-msgstr "Distribuie link"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"

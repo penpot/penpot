@@ -20,7 +20,7 @@
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.util.color :as uc]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -113,7 +113,6 @@
   [{:keys [data disable-gradient disable-opacity on-change on-accept]}]
   (let [state (mf/use-state (data->state data))
         active-tab (mf/use-state :ramp #_:harmony #_:hsva)
-        locale (mf/deref i18n/locale)
 
         ref-picker (mf/use-ref)
 
@@ -291,12 +290,18 @@
                      :on-select-stop handle-change-stop}]
 
       [:div.colorpicker-tabs
-       [:div.colorpicker-tab {:class (when (= @active-tab :ramp) "active")
-                              :on-click (change-tab :ramp)} i/picker-ramp]
-       [:div.colorpicker-tab {:class (when (= @active-tab :harmony) "active")
-                              :on-click (change-tab :harmony)} i/picker-harmony]
-       [:div.colorpicker-tab {:class (when (= @active-tab :hsva) "active")
-                              :on-click (change-tab :hsva)} i/picker-hsv]]
+       [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
+        {:class (when (= @active-tab :ramp) "active")
+         :alt (tr "workspace.libraries.colors.rgba")
+         :on-click (change-tab :ramp)} i/picker-ramp]
+       [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
+        {:class (when (= @active-tab :harmony) "active")
+         :alt (tr "workspace.libraries.colors.rgb-complementary")
+         :on-click (change-tab :harmony)} i/picker-harmony]
+       [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
+        {:class (when (= @active-tab :hsva) "active")
+         :alt (tr "workspace.libraries.colors.hsv")
+         :on-click (change-tab :hsva)} i/picker-hsv]]
 
       (if picking-color?
         [:div.picker-detail-wrapper
@@ -331,7 +336,7 @@
           {:on-click (fn []
                        (on-accept (state->data @state))
                        (modal/hide!))}
-          (t locale "workspace.libraries.colors.save-color")]])]]))
+          (tr "workspace.libraries.colors.save-color")]])]]))
 
 (defn calculate-position
   "Calculates the style properties for the given coordinates and position"

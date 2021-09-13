@@ -1,0 +1,141 @@
+.share-link-dialog {
+  width: 475px;
+  background-color: $color-white;
+
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: unset;
+    padding: 16px 26px;
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-warning {
+      width: 126px;
+      margin-bottom: 0px;
+
+      &:not(:last-child) {
+        margin-right: 10px;
+      }
+    }
+
+    .confirm-dialog {
+      display: flex;
+      flex-direction: column;
+      background-color: unset;
+
+      .description {
+        font-size: $fs14;
+
+        margin-bottom: 16px;
+
+      }
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+    }
+  }
+
+
+  .modal-content {
+    padding: 26px;
+
+    &:first-child {
+      border-top: 0px;
+    }
+
+    .title {
+      display: flex;
+      justify-content: space-between;
+
+      h2 {
+        font-size: $fs18;
+        color: $color-black;
+      }
+
+      .modal-close-button {
+        margin-right: 0px;
+      }
+    }
+
+
+    .share-link-section {
+      margin-top: 12px;
+      label {
+        font-size: $fs11;
+        color: $color-black;
+      }
+
+      .hint {
+        padding-top: 10px;
+        font-size: $fs14;
+        color: $color-gray-40;
+      }
+
+      .help-icon {
+        cursor: pointer;
+      }
+    }
+
+    .view-mode,
+    .access-mode {
+      display: flex;
+      flex-direction: column;
+
+      .title {
+        color: $color-black;
+        font-weight: 400;
+      }
+
+      .items {
+        padding-left: 20px;
+        display: flex;
+
+        > .input-checkbox, > .input-radio {
+          display: flex;
+          user-select: none;
+
+          /* input { */
+          /*   appearance: checkbox; */
+          /* } */
+
+          label {
+            display: flex;
+            align-items: center;
+            color: $color-black;
+
+            .hint {
+              margin-left: 5px;
+              color: $color-gray-30;
+            }
+          }
+
+          &.disabled {
+            label {
+              color: $color-gray-30;
+            }
+          }
+        }
+      }
+    }
+
+    .pages-selection {
+      padding-left: 20px;
+      max-height: 200px;
+      overflow-y: scroll;
+      user-select: none;
+
+      label {
+        color: $color-black;
+      }
+    }
+
+    .custom-input {
+      input {
+        padding: 0 40px 0 15px;
+      }
+    }
+  }
+}

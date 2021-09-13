@@ -966,6 +966,10 @@ msgstr "Η υπηρεσία δεν είναι διαθέσιμη"
 msgid "labels.settings"
 msgstr "Σύνθεση"
 
+#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.share-prototype"
+msgstr "Μοιραστείτε το link"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
 msgstr "Κοινόχρηστες βιβλιοθήκες"
@@ -1278,10 +1282,6 @@ msgstr "Κατάργηση link"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Όποιος έχει τον link θα έχει πρόσβαση"
-
-#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.title"
-msgstr "Μοιραστείτε το link"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"

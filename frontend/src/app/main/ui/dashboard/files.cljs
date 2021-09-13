@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.files
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
@@ -62,30 +63,34 @@
        (if (:edition @local)
          [:& inline-edition {:content (:name project)
                              :on-end (fn [name]
-                                       (st/emit! (dd/rename-project (assoc project :name name)))
+                                       (st/emit! (-> (dd/rename-project (assoc project :name name))
+                                                     (with-meta {::ev/origin "project"})))
                                        (swap! local assoc :edition false))}]
          [:div.dashboard-title
           [:h1 {:on-double-click on-edit}
-           (:name project)]
-          [:& project-menu {:project project
-                            :show? (:menu-open @local)
-                            :left (- (:x (:menu-pos @local)) 180)
-                            :top (:y (:menu-pos @local))
-                            :on-edit on-edit
-                            :on-menu-close on-menu-close
-                            :on-import on-import}]]))
+           (:name project)]]))
+
+     [:& project-menu {:project project
+                       :show? (:menu-open @local)
+                       :left (- (:x (:menu-pos @local)) 180)
+                       :top (:y (:menu-pos @local))
+                       :on-edit on-edit
+                       :on-menu-close on-menu-close
+                       :on-import on-import}]
+
      [:div.dashboard-header-actions
       [:a.btn-secondary.btn-small {:on-click on-create-clicked}
        (tr "dashboard.new-file")]
 
-      [:div.icon.pin-icon.tooltip.tooltip-bottom
-       {:class (when (:is-pinned project) "active")
-       :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
-       (if (:is-pinned project)
-         i/pin-fill
-         i/pin)]
+      (when-not (:is-default project)
+        [:div.icon.pin-icon.tooltip.tooltip-bottom
+         {:class (when (:is-pinned project) "active")
+         :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
+         (if (:is-pinned project)
+           i/pin-fill
+           i/pin)])
 
-      [:div.icon.tooltip.tooltip-bottom
+      [:div.icon.tooltip.tooltip-bottom-left
        {:on-click on-menu-click :alt (tr "dashboard.options")}
        i/actions]]]))
 
@@ -98,12 +103,17 @@
                        (reverse))]
 
     (mf/use-effect
-     (mf/deps (:id project))
+     (mf/deps project)
      (fn []
-       (dom/set-html-title (tr "title.dashboard.files"
-                              (if (:is-default project)
-                                (tr "labels.drafts")
-                                (:name project))))
+       (when project
+         (let [pname (if (:is-default project)
+                       (tr "labels.drafts")
+                       (:name project))]
+           (dom/set-html-title (tr "title.dashboard.files" pname))))))
+
+    (mf/use-effect
+     (mf/deps project)
+     (fn []
        (st/emit! (dd/fetch-files {:project-id (:id project)})
                  (dd/clear-selected-files))))
 

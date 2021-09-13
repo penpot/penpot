@@ -18,7 +18,7 @@
 
 (defn end-path-event? [event]
   (or (= (ptk/type event) ::common/finish-path)
-      (= (ptk/type event) :esc-pressed)
+      (= (ptk/type event) :app.main.data.workspace.path.shortcuts/esc-pressed)
       (= :app.main.data.workspace.common/clear-edition-mode (ptk/type event))
       (= :app.main.data.workspace/finalize-page (ptk/type event))
       (= event :interrupt) ;; ESC

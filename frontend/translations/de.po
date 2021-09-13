@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-25 12:31+0000\n"
-"Last-Translator: Yannik Rödel <weblate@yannik.info>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
-"de/>\n"
+"PO-Revision-Date: 2021-06-27 08:33+0000\n"
+"Last-Translator: nautilusx <translate@disroot.org>\n"
+"Language-Team: German "
+"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: Weblate 4.7.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -76,8 +76,16 @@ msgid "auth.login-with-gitlab-submit"
 msgstr "Einloggen mit Gitlab"
 
 #: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Einloggen mit Google"
+
+#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
 msgstr "Anmelden mit LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "Einloggen mit OpenID (SSO)"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -150,6 +158,12 @@ msgid "auth.sidebar-tagline"
 msgstr "Die Open-Source-Lösung für Design und Prototyping."
 
 #: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Wenn Sie ein neues Konto erstellen, stimmen Sie unseren Nutzungsbedingungen "
+"und Datenschutzrichtlinien zu."
+
+#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Wir haben eine Bestätigungs-E-Mail gesendet an"
 
@@ -184,9 +198,38 @@ msgstr "Entwurf"
 msgid "dashboard.duplicate"
 msgstr "Duplizieren"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "%s Dateien duplizieren"
+
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
 msgstr "Sie haben hier noch keine Dateien"
+
+msgid "dashboard.export-multi"
+msgstr "%s Dateien exportieren"
+
+msgid "dashboard.export-single"
+msgstr "Datei exportieren"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Schriftart gelöscht"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Sie haben noch keine benutzerdefinierten Schriftarten installiert."
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Jede Webschriftart, die Sie hier hochladen, wird der Liste der Schriftarten "
+"hinzugefügt, die in den Texteigenschaften der Dateien dieses Teams "
+"verfügbar ist. Schriftarten mit dem gleichen Schriftfamilien-Namen werden "
+"als **eine einzige Schriftfamilie** gruppiert. Sie können Schriftarten in "
+"den folgenden Formaten hochladen: **TTF, OTF und WOFF** (nur eine wird "
+"benötigt)."
+
+msgid "dashboard.import"
+msgstr "Dateien importieren"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -204,6 +247,9 @@ msgstr "Gemeinsam genutzte Bibliotheken"
 msgid "dashboard.loading-files"
 msgstr "laden Ihrer Dateien …"
 
+msgid "dashboard.loading-fonts"
+msgstr "laden Ihrer Schriftarten …"
+
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
 msgstr "Verschieben nach"
@@ -216,9 +262,17 @@ msgstr "Zu anderem Team verschieben"
 msgid "dashboard.new-file"
 msgstr "+ Neue Datei"
 
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Neue Datei"
+
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.new-project"
 msgstr "+ Neues Projekt"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Neues Projekt"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -247,6 +301,9 @@ msgstr "%s Mitglieder"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.open-in-new-tab"
 msgstr "Datei in neuem Tab öffnen"
+
+msgid "dashboard.options"
+msgstr "Optionen"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.password-change"
@@ -408,6 +465,10 @@ msgstr "Etwas ist schief gelaufen."
 msgid "errors.google-auth-not-enabled"
 msgstr "Die Authentifizierung mit Google ist im Backend deaktiviert"
 
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Ungültige Farbe"
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "Die LDAP-Authentifizierung ist deaktiviert."
@@ -455,6 +516,11 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "Die Registrierung ist derzeit deaktiviert."
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr ""
+"Sie müssen unsere Nutzungsbedingungen und Datenschutzrichtlinien "
+"akzeptieren."
 
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
@@ -771,9 +837,17 @@ msgstr "Passwort bestätigen"
 msgid "labels.content"
 msgstr "Inhalt"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Erstellen"
+
 #: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "Neues Team erstellen"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "Neuen Teamnamen eingeben"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
@@ -790,6 +864,10 @@ msgstr "Kommentar löschen"
 #: src/app/main/ui/comments.cljs
 msgid "labels.delete-comment-thread"
 msgstr "Thread löschen"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "%s Dateien löschen"
 
 #: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.drafts"
@@ -815,6 +893,12 @@ msgstr "Feedback deaktiviert"
 msgid "labels.feedback-sent"
 msgstr "Feedback gesendet"
 
+msgid "labels.font-variants"
+msgstr "Stile"
+
+msgid "labels.fonts"
+msgstr "Schriftarten"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Feedback geben"
@@ -831,6 +915,9 @@ msgstr "Icons"
 
 msgid "labels.images"
 msgstr "Bilder"
+
+msgid "labels.installed-fonts"
+msgstr "Installierte Schriftarten"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
@@ -849,6 +936,9 @@ msgstr "Sprache"
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "Abmelden"
+
+msgid "labels.manage-fonts"
+msgstr "Schriftarten verwalten"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
@@ -900,6 +990,9 @@ msgstr "Altes Passwort"
 msgid "labels.only-yours"
 msgstr "Nur Ihre"
 
+msgid "labels.or"
+msgstr "oder"
+
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.owner"
 msgstr "Eigentümer"
@@ -950,6 +1043,9 @@ msgstr "Rolle"
 msgid "labels.save"
 msgstr "Speichern"
 
+msgid "labels.search-font"
+msgstr "Schriftart suchen"
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.send"
 msgstr "Senden"
@@ -969,6 +1065,10 @@ msgstr "Service nicht verfügbar"
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Einstellungen"
+
+#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.share-prototype"
+msgstr "Prototyp teilen"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
@@ -1085,6 +1185,21 @@ msgstr "Sind Sie sicher, dass Sie diese Datei löschen wollen?"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.title"
 msgstr "Datei löschen"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "Dateien löschen"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "Sind Sie sicher, dass Sie %s Dateien löschen möchten?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "Lösche %s Dateien"
+
+msgid "modals.delete-font.title"
+msgstr "Schriftart löschen"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "modals.delete-page.body"
@@ -1328,10 +1443,6 @@ msgstr "Link entfernen"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Jeder mit dem Link hat Zugriff"
-
-#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.title"
-msgstr "Prototyp teilen"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
@@ -2413,30 +2524,3 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
-
-#, markdown
-msgid "dashboard.fonts.hero-text1"
-msgstr ""
-"Jede Webschriftart, die Sie hier hochladen, wird der Liste der Schriftarten "
-"hinzugefügt, die in den Texteigenschaften der Dateien dieses Teams verfügbar "
-"ist. Schriftarten mit dem gleichen Schriftfamilien-Namen werden als **eine "
-"einzige Schriftfamilie** gruppiert. Sie können Schriftarten in den folgenden "
-"Formaten hochladen: **TTF, OTF und WOFF** (nur eine wird benötigt)."
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.duplicate-multi"
-msgstr "%s Dateien duplizieren"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"Wenn Sie ein neues Konto erstellen, stimmen Sie unseren Nutzungsbedingungen "
-"und Datenschutzrichtlinien zu."
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-oidc-submit"
-msgstr "Einloggen mit OpenID (SSO)"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-google-submit"
-msgstr "Einloggen mit Google"

@@ -8,13 +8,15 @@
   (:require
    [app.config :as cf]
    [app.http.export :refer [export-handler]]
+   [app.http.export-frames :refer [export-frames-handler]]
    [app.http.impl :as impl]
    [lambdaisland.glogi :as log]
    [promesa.core :as p]
    [reitit.core :as r]))
 
 (def routes
-  [["/export" {:handler export-handler}]])
+  [["/export-frames" {:handler export-frames-handler}]
+   ["/export" {:handler export-handler}]])
 
 (def instance (atom nil))
 

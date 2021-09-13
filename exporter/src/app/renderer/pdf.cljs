@@ -26,7 +26,7 @@
      :value token}))
 
 (defn pdf-from-object
-  [browser {:keys [file-id page-id object-id token scale type]}]
+  [{:keys [file-id page-id object-id token scale type save-path]}]
   (letfn [(handle [page]
             (let [path   (str "/render-object/" file-id "/" page-id "/" object-id)
                   uri    (-> (u/uri (cf/get :public-uri))
@@ -39,12 +39,14 @@
             (log/info :uri uri)
             (let [options {:cookie cookie}]
               (p/do!
-               (bw/configure-page! page options)
-               (bw/navigate! page uri)
-               (bw/wait-for page "#screenshot")
-               (bw/pdf page))))]
+                (bw/configure-page! page options)
+                (bw/navigate! page uri)
+                (bw/wait-for page "#screenshot")
+                (if save-path
+                  (bw/pdf page {:save-path save-path})
+                  (bw/pdf page)))))]
 
-    (bw/exec! browser handle)))
+    (bw/exec! handle)))
 
 (s/def ::name ::us/string)
 (s/def ::suffix ::us/string)
@@ -54,26 +56,21 @@
 (s/def ::scale ::us/number)
 (s/def ::token ::us/string)
 (s/def ::filename ::us/string)
+(s/def ::save-path ::us/string)
 
 (s/def ::render-params
   (s/keys :req-un [::name ::suffix ::object-id ::page-id ::scale ::token ::file-id]
-          :opt-un [::filename]))
+          :opt-un [::filename ::save-path]))
 
 (defn render
   [params]
   (us/assert ::render-params params)
-  (let [browser @bw/instance]
-    (when-not browser
-      (ex/raise :type :internal
-                :code :browser-not-ready
-                :hint "browser cluster is not initialized yet"))
-
-    (p/let [content (pdf-from-object browser params)]
-      {:content content
-       :filename (or (:filename params)
-                     (str (:name params)
-                          (:suffix params "")
-                          ".pdf"))
-       :length (alength content)
-       :mime-type "application/pdf"})))
+  (p/let [content (pdf-from-object params)]
+    {:content content
+     :filename (or (:filename params)
+                   (str (:name params)
+                        (:suffix params "")
+                        ".pdf"))
+     :length (alength content)
+     :mime-type "application/pdf"}))
 

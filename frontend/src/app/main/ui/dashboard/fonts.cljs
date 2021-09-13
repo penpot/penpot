@@ -19,7 +19,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.logging :as log]
-   ;; [app.util.router :as rt]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))

@@ -70,6 +70,7 @@
         ;; STATE
         alt?              (mf/use-state false)
         ctrl?             (mf/use-state false)
+        space?            (mf/use-state false)
         cursor            (mf/use-state (utils/get-cursor :pointer-inner))
         hover-ids         (mf/use-state nil)
         hover             (mf/use-state nil)
@@ -113,7 +114,8 @@
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file viewport-ref zoom)
-        on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment?)
+        on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing?
+                                                 drawing-path? create-comment? space? viewport-ref zoom)
         on-mouse-up       (actions/on-mouse-up disable-paste)
         on-pointer-down   (actions/on-pointer-down)
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
@@ -150,8 +152,8 @@
     (hooks/setup-viewport-size viewport-ref)
     (hooks/setup-cursor cursor alt? panning drawing-tool drawing-path? node-editing?)
     (hooks/setup-resize layout viewport-ref)
-    (hooks/setup-keyboard alt? ctrl?)
-    (hooks/setup-hover-shapes page-id move-stream selected objects transform selected ctrl? hover hover-ids zoom)
+    (hooks/setup-keyboard alt? ctrl? space?)
+    (hooks/setup-hover-shapes page-id move-stream objects transform selected ctrl? hover hover-ids zoom)
     (hooks/setup-viewport-modifiers modifiers selected objects render-ref)
     (hooks/setup-shortcuts node-editing? drawing-path?)
     (hooks/setup-active-frames objects vbox hover active-frames)

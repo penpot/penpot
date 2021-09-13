@@ -38,6 +38,7 @@
                     :values (select-keys shape fill-attrs)}]
      [:& stroke-menu {:ids ids
                       :type type
+                      :show-caps true
                       :values stroke-values}]
      [:& shadow-menu {:ids ids
                       :values (select-keys shape [:shadow])}]

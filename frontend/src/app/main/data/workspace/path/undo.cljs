@@ -90,7 +90,7 @@
   "Joins the head with the previous undo in one. This is done so when the user changes a
   node handlers after adding it the undo merges both in one operation only"
   []
-  (ptk/reify ::add-undo-entry
+  (ptk/reify ::merge-head
     ptk/UpdateEvent
     (update [_ state]
       (let [id    (st/get-path-id state)

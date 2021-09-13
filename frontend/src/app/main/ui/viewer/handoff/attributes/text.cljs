@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.attributes.text
+(ns app.main.ui.viewer.handoff.attributes.text
   (:require
    [app.common.text :as txt]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.handoff.attributes.common :refer [color-row]]
+   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
@@ -22,7 +22,7 @@
   (:content shape))
 
 (def file-typographies-ref
-  (l/derived (l/in [:viewer-data :file :typographies]) st/state))
+  (l/derived (l/in [:viewer :file :data :typographies]) st/state))
 
 (defn make-typographies-library-ref [file-id]
   (let [get-library

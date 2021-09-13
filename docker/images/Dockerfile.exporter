@@ -1,11 +1,11 @@
-FROM ubuntu:20.04
+FROM debian:bullseye
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v14.16.0
+    NODE_VERSION=v14.17.5
 
 RUN set -ex; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
@@ -20,6 +20,7 @@ RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy install \
         imagemagick \
+        ghostscript \
         netpbm \
         potrace \
         gconf-service \
@@ -55,9 +56,9 @@ RUN set -ex; \
         libxss1 \
         libxtst6 \
         fonts-liberation \
-        libappindicator1 \
         libnss3 \
         libgbm1 \
+        chromium \
     ; \
     rm -rf /var/lib/apt/lists/*;
 

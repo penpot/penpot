@@ -11,6 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
@@ -222,7 +223,7 @@
                                                root
                                                transformed-root)))]
     (reduce set-child
-            (update-in modif-tree [(:id shape) :modifiers] #(merge % modifiers))
+            (assoc-in modif-tree [(:id shape) :modifiers] modifiers)
             children)))
 
 (defn- check-delta
@@ -281,7 +282,7 @@
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize [shape initial layout [point lock? point-snap]]
+  (letfn [(resize [shape initial layout [point lock? center? point-snap]]
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
                   rotation (or rotation 0)
@@ -315,17 +316,34 @@
 
                            scalev)
 
+                  ;; Resize origin point given the selected handler
+                  origin  (handler-resize-origin (:selrect shape) handler)
+
+                  shape-center (gsh/center-shape shape)
                   shape-transform (:transform shape (gmt/matrix))
                   shape-transform-inverse (:transform-inverse shape (gmt/matrix))
 
-                  shape-center (gsh/center-shape shape)
+                  ;; If we want resize from center, displace the shape
+                  ;; so it is still centered after resize.
+                  displacement (when center?
+                                 (-> shape-center
+                                     (gpt/subtract origin)
+                                     (gpt/multiply scalev)
+                                     (gpt/add origin)
+                                     (gpt/subtract shape-center)
+                                     (gpt/multiply (gpt/point -1 -1))
+                                     (gpt/transform shape-transform)))
 
-                  ;; Resize origin point given the selected handler
-                  origin  (-> (handler-resize-origin (:selrect shape) handler)
-                              (gsh/transform-point-center shape-center shape-transform))]
+                  origin (cond-> (gsh/transform-point-center origin shape-center shape-transform)
+                           (some? displacement)
+                           (gpt/add displacement))
+
+                  displacement (when (some? displacement)
+                                 (gmt/translate-matrix displacement))]
 
               (rx/of (set-modifiers ids
-                                    {:resize-vector scalev
+                                    {:displacement displacement
+                                     :resize-vector scalev
                                      :resize-origin origin
                                      :resize-transform shape-transform
                                      :resize-scale-text scale-text
@@ -334,9 +352,9 @@
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion
           ;; lock flag that can be activated on element options.
-          (normalize-proportion-lock [[point shift?]]
+          (normalize-proportion-lock [[point shift? alt?]]
             (let [proportion-lock? (:proportion-lock shape)]
-              [point (or proportion-lock? shift?)]))]
+              [point (or proportion-lock? shift?) alt?]))]
     (reify
       ptk/UpdateEvent
       (update [_ state]
@@ -358,11 +376,11 @@
           (rx/concat
            (rx/of (dch/update-shapes text-shapes-ids #(assoc % :grow-type :fixed)))
            (->> ms/mouse-position
-                (rx/with-latest vector ms/mouse-position-shift)
+                (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
                 (rx/map normalize-proportion-lock)
-                (rx/switch-map (fn [[point :as current]]
-                               (->> (snap/closest-snap-point page-id resizing-shapes layout zoom point)
-                                    (rx/map #(conj current %)))))
+                (rx/switch-map (fn [[point _ _ :as current]]
+                                 (->> (snap/closest-snap-point page-id resizing-shapes layout zoom point)
+                                      (rx/map #(conj current %)))))
                 (rx/mapcat (partial resize shape initial-position layout))
                 (rx/take-until stoper))
            (rx/of (apply-modifiers ids)
@@ -493,7 +511,7 @@
 
 (defn- start-move-duplicate
   [from-position]
-  (ptk/reify ::start-move-selected
+  (ptk/reify ::start-move-duplicate
     ptk/WatchEvent
     (watch [_ _ stream]
       (->> stream
@@ -521,10 +539,18 @@
              layout  (get state :workspace-layout)
              zoom    (get-in state [:workspace-local :zoom] 1)
 
+             fix-axis (fn [[position shift?]]
+                        (let [delta (gpt/to-vec from-position position)]
+                          (if shift?
+                            (if (> (mth/abs (:x delta)) (mth/abs (:y delta)))
+                              (gpt/point (:x delta) 0)
+                              (gpt/point 0 (:y delta)))
+                            delta)))
 
              position (->> ms/mouse-position
                            (rx/take-until stopper)
-                           (rx/map #(gpt/to-vec from-position %)))
+                           (rx/with-latest-from ms/mouse-position-shift)
+                           (rx/map #(fix-axis %)))
 
              snap-delta (rx/concat
                          ;; We send the nil first so the stream is not waiting for the first value

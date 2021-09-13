@@ -14,23 +14,11 @@
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
    [app.main.repo :as rp]
+   [app.util.globals :as ug]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
-
-;; --- General Specs
-
-(s/def ::id ::us/uuid)
-(s/def ::name ::us/string)
-
-(s/def ::project (s/keys :req-un [::id ::name]))
-(s/def ::file (s/keys :req-un [::id ::name]))
-(s/def ::page ::cp/page)
-
-(s/def ::bundle
-  (s/keys :req-un [::project ::file ::page]))
-
 
 ;; --- Local State Initialization
 
@@ -49,25 +37,24 @@
 (declare fetch-bundle)
 (declare bundle-fetched)
 
-(s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::index ::us/integer)
-(s/def ::token (s/nilable ::us/string))
+(s/def ::page-id (s/nilable ::us/uuid))
+(s/def ::share-id (s/nilable ::us/uuid))
 (s/def ::section ::us/string)
 
 (s/def ::initialize-params
-  (s/keys :req-un [::page-id ::file-id]
-          :opt-un [::token]))
+  (s/keys :req-un [::file-id]
+          :opt-un [::share-id ::page-id]))
 
 (defn initialize
-  [{:keys [page-id file-id] :as params}]
+  [{:keys [file-id] :as params}]
   (us/assert ::initialize-params params)
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc :current-file-id file-id)
-          (assoc :current-page-id page-id)
           (update :viewer-local
                   (fn [lstate]
                     (if (nil? lstate)
@@ -77,55 +64,72 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (fetch-bundle params)
-             (fetch-comment-threads params)))))
+             (fetch-comment-threads params)))
 
-;; --- Data Fetching
+    ptk/EffectEvent
+    (effect [_ _ _]
+      ;; Set the window name, the window name is used on inter-tab
+      ;; navigation; in other words: when a user opens a tab with a
+      ;; name, if there are already opened tab with that name, the
+      ;; browser just focus the opened tab instead of creating new
+      ;; tab.
+      (let [name (str "viewer-" file-id)]
+        (unchecked-set ug/global "name" name)))))
 
-(s/def ::fetch-bundle-params
-  (s/keys :req-un [::page-id ::file-id]
-          :opt-un [::token]))
+(defn finalize
+  [_]
+  (ptk/reify ::finalize
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :viewer))))
 
-(defn fetch-bundle
-  [{:keys [page-id file-id token] :as params}]
-  (us/assert ::fetch-bundle-params params)
-  (ptk/reify ::fetch-file
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [params (cond-> {:page-id page-id
-                            :file-id file-id}
-                     (string? token) (assoc :token token))]
-        (->> (rp/query :viewer-bundle params)
-             (rx/mapcat
-              (fn [{:keys [fonts] :as bundle}]
-                (rx/of (df/fonts-fetched fonts)
-                       (bundle-fetched bundle)))))))))
-
-(defn- extract-frames
-  [objects]
+(defn select-frames
+  [{:keys [objects] :as page}]
   (let [root (get objects uuid/zero)]
     (into [] (comp (map #(get objects %))
                    (filter #(= :frame (:type %))))
           (reverse (:shapes root)))))
 
+;; --- Data Fetching
+
+(s/def ::fetch-bundle-params
+  (s/keys :req-un [::page-id ::file-id]
+          :opt-un [::share-id]))
+
+(defn fetch-bundle
+  [{:keys [file-id share-id] :as params}]
+  (us/assert ::fetch-bundle-params params)
+  (ptk/reify ::fetch-file
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [params' (cond-> {:file-id file-id}
+                      (uuid? share-id) (assoc :share-id share-id))]
+        (->> (rp/query :view-only-bundle params')
+             (rx/mapcat
+              (fn [{:keys [fonts] :as bundle}]
+                (rx/of (df/fonts-fetched fonts)
+                       (bundle-fetched (merge bundle params))))))))))
+
+
 (defn bundle-fetched
-  [{:keys [project file page share-token token libraries users] :as bundle}]
-  (us/verify ::bundle bundle)
-  (ptk/reify ::bundle-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [objects (:objects page)
-            frames  (extract-frames objects)]
+  [{:keys [project file share-links libraries users permissions] :as bundle}]
+  (let [pages (->> (get-in file [:data :pages])
+                   (map (fn [page-id]
+                          (let [data (get-in file [:data :pages-index page-id])]
+                            [page-id (assoc data :frames (select-frames data))])))
+                   (into {}))]
+
+    (ptk/reify ::bundle-fetched
+      ptk/UpdateEvent
+      (update [_ state]
         (-> state
-            (assoc :viewer-libraries (d/index-by :id libraries))
-            (update :viewer-data assoc
-                    :project project
-                    :objects objects
-                    :users (d/index-by :id users)
-                    :file file
-                    :page page
-                    :frames frames
-                    :token token
-                    :share-token share-token))))))
+            (assoc :share-links share-links)
+            (assoc :viewer {:libraries (d/index-by :id libraries)
+                            :users (d/index-by :id users)
+                            :permissions permissions
+                            :project project
+                            :pages pages
+                            :file file}))))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id] :as params}]
@@ -167,32 +171,6 @@
       (watch [_ _ _]
         (->> (rp/query :comments {:thread-id thread-id})
              (rx/map #(partial fetched %)))))))
-
-(defn create-share-link
-  []
-  (ptk/reify ::create-share-link
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [file-id (:current-file-id state)
-            page-id (:current-page-id state)]
-        (->> (rp/mutation! :create-file-share-token {:file-id file-id
-                                                     :page-id page-id})
-             (rx/map (fn [{:keys [token]}]
-                       #(assoc-in % [:viewer-data :token] token))))))))
-
-(defn delete-share-link
-  []
-  (ptk/reify ::delete-share-link
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [file-id (:current-file-id state)
-            page-id (:current-page-id state)
-            token   (get-in state [:viewer-data :token])
-            params  {:file-id file-id
-                     :page-id page-id
-                     :token token}]
-        (->> (rp/mutation :delete-file-share-token params)
-             (rx/map (fn [_] #(update % :viewer-data dissoc :token))))))))
 
 ;; --- Zoom Management
 
@@ -245,29 +223,32 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [route   (:route state)
-            screen  (-> route :data :name keyword)
             qparams (:query-params route)
             pparams (:path-params route)
             index   (:index qparams)]
         (when (pos? index)
           (rx/of
            (dcm/close-thread)
-           (rt/nav screen pparams (assoc qparams :index (dec index)))))))))
+           (rt/nav :viewer pparams (assoc qparams :index (dec index)))))))))
 
 (def select-next-frame
-  (ptk/reify ::select-prev-frame
+  (ptk/reify ::select-next-frame
     ptk/WatchEvent
     (watch [_ state _]
+      (prn "select-next-frame")
       (let [route   (:route state)
-            screen  (-> route :data :name keyword)
-            qparams (:query-params route)
             pparams (:path-params route)
+            qparams (:query-params route)
+
+            page-id (:page-id qparams)
             index   (:index qparams)
-            total   (count (get-in state [:viewer-data :frames]))]
+
+            total   (count (get-in state [:viewer :pages page-id :frames]))]
+
         (when (< index (dec total))
           (rx/of
            (dcm/close-thread)
-           (rt/nav screen pparams (assoc qparams :index (inc index)))))))))
+           (rt/nav :viewer pparams (assoc qparams :index (inc index)))))))))
 
 (s/def ::interactions-mode #{:hide :show :show-on-click})
 
@@ -309,7 +290,7 @@
 
 (defn go-to-frame-by-index
   [index]
-  (ptk/reify ::go-to-frame
+  (ptk/reify ::go-to-frame-by-index
     ptk/WatchEvent
     (watch [_ state _]
       (let [route   (:route state)
@@ -324,11 +305,14 @@
   (ptk/reify ::go-to-frame
     ptk/WatchEvent
     (watch [_ state _]
-      (let [frames  (get-in state [:viewer-data :frames])
+      (let [route   (:route state)
+            qparams (:query-params route)
+            page-id (:page-id qparams)
+
+            frames  (get-in state [:viewer :pages page-id :frames])
             index   (d/index-of-pred frames #(= (:id %) frame-id))]
         (when index
           (rx/of (go-to-frame-by-index index)))))))
-
 
 (defn go-to-section
   [section]
@@ -339,13 +323,6 @@
             pparams (:path-params route)
             qparams (:query-params route)]
         (rx/of (rt/nav :viewer pparams (assoc qparams :section section)))))))
-
-
-(defn set-current-frame [frame-id]
-  (ptk/reify ::set-current-frame
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:viewer-data :current-frame-id] frame-id))))
 
 (defn deselect-all []
   (ptk/reify ::deselect-all
@@ -376,7 +353,10 @@
   (ptk/reify ::shift-select-to
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (get-in state [:viewer-data :objects])
+      (let [route     (:route state)
+            qparams   (:query-params route)
+            page-id   (:page-id qparams)
+            objects   (get-in state [:viewer :pages page-id :objects])
             selection (-> state
                           (get-in [:viewer-local :selected] #{})
                           (conj id))]
@@ -389,8 +369,13 @@
   (ptk/reify ::select-all
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (get-in state [:viewer-data :objects])
-            frame-id (get-in state [:viewer-data :current-frame-id])
+      (let [route     (:route state)
+            qparams   (:query-params route)
+            page-id   (:page-id qparams)
+            index     (:index qparams)
+            objects   (get-in state [:viewer :pages page-id :objects])
+            frame-id  (get-in state [:viewer :pages page-id :frames index :id])
+
             selection (->> objects
                            (filter #(= (:frame-id (second %)) frame-id))
                            (map first)
@@ -405,18 +390,50 @@
       (let [toggled? (contains? (get-in state [:viewer-local :collapsed]) id)]
         (update-in state [:viewer-local :collapsed] (if toggled? disj conj) id)))))
 
-(defn hover-shape [id hover?]
+(defn hover-shape
+  [id hover?]
   (ptk/reify ::hover-shape
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:viewer-local :hover] (when hover? id)))))
 
+;; --- NAV
 
 (defn go-to-dashboard
-  ([] (go-to-dashboard nil))
-  ([{:keys [team-id]}]
-   (ptk/reify ::go-to-dashboard
-     ptk/WatchEvent
+  []
+  (ptk/reify ::go-to-dashboard
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (get-in state [:viewer :project :team-id])
+            params  {:team-id team-id}]
+        (rx/of (rt/nav :dashboard-projects params))))))
+
+(defn go-to-page
+  [page-id]
+  (ptk/reify ::go-to-page
+    ptk/WatchEvent
      (watch [_ state _]
-       (let [team-id (or team-id (get-in state [:viewer-data :project :team-id]))]
-         (rx/of (rt/nav :dashboard-projects {:team-id team-id})))))))
+       (let [route   (:route state)
+             pparams (:path-params route)
+             qparams (-> (:query-params route)
+                         (assoc :index 0)
+                         (assoc :page-id page-id))
+             rname   (get-in route [:data :name])]
+         (rx/of (rt/nav rname pparams qparams))))))
+
+(defn go-to-workspace
+  [page-id]
+  (ptk/reify ::go-to-workspace
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [project-id (get-in state [:viewer :project :id])
+            file-id    (get-in state [:viewer :file :id])
+            pparams    {:project-id project-id :file-id file-id}
+            qparams    {:page-id page-id}]
+         (rx/of (rt/nav-new-window*
+                 {:rname :workspace
+                  :path-params pparams
+                  :query-params qparams
+                  :name (str "workspace-" file-id)}))))))
+
+

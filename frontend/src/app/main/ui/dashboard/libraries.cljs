@@ -23,10 +23,11 @@
     (mf/use-effect
      (mf/deps team)
      (fn []
-       (dom/set-html-title (tr "title.dashboard.shared-libraries"
-                               (if (:is-default team)
-                                 (tr "dashboard.your-penpot")
-                                 (:name team))))))
+       (when team
+         (let [tname (if (:is-default team)
+                       (tr "dashboard.your-penpot")
+                       (:name team))]
+           (dom/set-html-title (tr "title.dashboard.shared-libraries" tname))))))
 
     (mf/use-effect
      (st/emitf (dd/fetch-shared-files)

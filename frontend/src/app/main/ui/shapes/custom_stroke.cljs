@@ -42,6 +42,107 @@
      [:use {:xlinkHref (str "#" shape-id)
             :style #js {:fill "black"}}]]))
 
+(mf/defc cap-markers
+  [{:keys [shape render-id]}]
+  (let [marker-id-prefix (str "marker-" render-id)
+        cap-start (:stroke-cap-start shape)
+        cap-end   (:stroke-cap-end shape)
+
+        stroke-color (if (:stroke-color-gradient shape)
+                       (str/format "url(#%s)" (str "stroke-color-gradient_" render-id))
+                       (:stroke-color shape))
+
+        stroke-opacity (when-not (:stroke-color-gradient shape)
+                         (:stroke-opacity shape))]
+    [:*
+      (when (or (= cap-start :line-arrow) (= cap-end :line-arrow))
+        [:marker {:id (str marker-id-prefix "-line-arrow")
+                  :viewBox "0 0 3 6"
+                  :refX "2"
+                  :refY "3"
+                  :markerWidth "3"
+                  :markerHeight "6"
+                  :orient "auto-start-reverse"
+                  :fill stroke-color
+                  :fillOpacity stroke-opacity}
+         [:path {:d "M 0.5 0.5 L 3 3 L 0.5 5.5 L 0 5 L 2 3 L 0 1 z"}]])
+
+      (when (or (= cap-start :triangle-arrow) (= cap-end :triangle-arrow))
+        [:marker {:id (str marker-id-prefix "-triangle-arrow")
+                  :viewBox "0 0 3 6"
+                  :refX "2"
+                  :refY "3"
+                  :markerWidth "3"
+                  :markerHeight "6"
+                  :orient "auto-start-reverse"
+                  :fill stroke-color
+                  :fillOpacity stroke-opacity}
+         [:path {:d "M 0 0 L 3 3 L 0 6 z"}]])
+
+      (when (or (= cap-start :square-marker) (= cap-end :square-marker))
+        [:marker {:id (str marker-id-prefix "-square-marker")
+                  :viewBox "0 0 6 6"
+                  :refX "5"
+                  :refY "3"
+                  :markerWidth "6"
+                  :markerHeight "6"
+                  :orient "auto-start-reverse"
+                  :fill stroke-color
+                  :fillOpacity stroke-opacity}
+         [:rect {:x 0 :y 0 :width 6 :height 6}]])
+
+      (when (or (= cap-start :circle-marker) (= cap-end :circle-marker))
+        [:marker {:id (str marker-id-prefix "-circle-marker")
+                  :viewBox "0 0 6 6"
+                  :refX "5"
+                  :refY "3"
+                  :markerWidth "6"
+                  :markerHeight "6"
+                  :orient "auto-start-reverse"
+                  :fill stroke-color
+                  :fillOpacity stroke-opacity}
+         [:circle {:cx "3" :cy "3" :r "3"}]])
+
+      (when (or (= cap-start :diamond-marker) (= cap-end :diamond-marker))
+        [:marker {:id (str marker-id-prefix "-diamond-marker")
+                  :viewBox "0 0 6 6"
+                  :refX "5"
+                  :refY "3"
+                  :markerWidth "6"
+                  :markerHeight "6"
+                  :orient "auto-start-reverse"
+                  :fill stroke-color
+                  :fillOpacity stroke-opacity}
+         [:path {:d "M 3 0 L 6 3 L 3 6 L 0 3 z"}]])
+
+      ;; If the user wants line caps but different in each end,
+      ;; simulate it with markers.
+      (when (and (or (= cap-start :round) (= cap-end :round))
+                 (not= cap-start cap-end))
+        [:marker {:id (str marker-id-prefix "-round")
+                  :viewBox "0 0 6 6"
+                  :refX "3"
+                  :refY "3"
+                  :markerWidth "6"
+                  :markerHeight "6"
+                  :orient "auto-start-reverse"
+                  :fill stroke-color
+                  :fillOpacity stroke-opacity}
+         [:path {:d "M 3 2.5 A 0.5 0.5 0 0 1 3 3.5 "}]])
+
+      (when (and (or (= cap-start :square) (= cap-end :square))
+                 (not= cap-start cap-end))
+        [:marker {:id (str marker-id-prefix "-square")
+                  :viewBox "0 0 6 6"
+                  :refX "3"
+                  :refY "3"
+                  :markerWidth "6"
+                  :markerHeight "6"
+                  :orient "auto-start-reverse"
+                  :fill stroke-color
+                  :fillOpacity stroke-opacity}
+         [:rect {:x 3 :y 2.5 :width 0.5 :height 1}]])]))
+
 (mf/defc stroke-defs
   [{:keys [shape render-id]}]
   (cond
@@ -53,7 +154,13 @@
     (and (= :outer (:stroke-alignment shape :center))
          (> (:stroke-width shape 0) 0))
     [:& outer-stroke-mask {:shape shape
-                           :render-id render-id}]))
+                           :render-id render-id}]
+
+    (and (or (some? (:stroke-cap-start shape))
+             (some? (:stroke-cap-end shape)))
+         (= (:stroke-alignment shape) :center))
+    [:& cap-markers {:shape shape
+                     :render-id render-id}]))
 
 ;; Outer alingmnent: display the shape in two layers. One
 ;; without stroke (only fill), and another one only with stroke

@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.projects
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [line-grid]]
@@ -74,7 +75,8 @@
         (mf/use-callback
          (mf/deps project)
          (fn [name]
-           (st/emit! (dd/rename-project (assoc project :name name)))
+           (st/emit! (-> (dd/rename-project (assoc project :name name))
+                         (with-meta {::ev/origin "dashboard"})))
            (swap! local assoc :edition? false)))
 
         on-file-created
@@ -163,14 +165,16 @@
     (mf/use-effect
      (mf/deps team)
      (fn []
-       (dom/set-html-title (tr "title.dashboard.projects"
-                              (if (:is-default team)
-                                (tr "dashboard.your-penpot")
-                                (:name team))))))
+       (when team
+         (let [tname (if (:is-default team)
+                       (tr "dashboard.your-penpot")
+                       (:name team))]
+           (dom/set-html-title (tr "title.dashboard.projects" tname))))))
 
     (mf/use-effect
-     (st/emitf (dd/fetch-recent-files)
-               (dd/clear-selected-files)))
+     (fn []
+       (st/emit! (dd/fetch-recent-files)
+                 (dd/clear-selected-files))))
 
     (when (seq projects)
       [:*

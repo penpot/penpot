@@ -61,16 +61,23 @@
 
 (defn- retrieve-file-permissions
   [conn profile-id file-id]
-  (db/exec! conn [sql:file-permissions
-                  file-id profile-id
-                  file-id profile-id
-                  file-id profile-id]))
+  (when (and profile-id file-id)
+    (db/exec! conn [sql:file-permissions
+                    file-id profile-id
+                    file-id profile-id
+                    file-id profile-id])))
+
+(def has-edit-permissions?
+  (perms/make-edition-predicate-fn retrieve-file-permissions))
+
+(def has-read-permissions?
+  (perms/make-read-predicate-fn retrieve-file-permissions))
 
 (def check-edition-permissions!
-  (perms/make-edition-check-fn retrieve-file-permissions))
+  (perms/make-check-fn has-edit-permissions?))
 
 (def check-read-permissions!
-  (perms/make-read-check-fn retrieve-file-permissions))
+  (perms/make-check-fn has-read-permissions?))
 
 
 ;; --- Query: Files search

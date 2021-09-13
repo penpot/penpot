@@ -7,6 +7,7 @@
 (ns app.main.ui.settings.sidebar
   (:require
    [app.config :as cf]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
@@ -14,6 +15,7 @@
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 (mf/defc sidebar-content
@@ -52,6 +54,7 @@
         (mf/use-callback
          (fn [event]
            (let [version (:main @cf/version)]
+             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
              (if (and (.-ctrlKey ^js event)
                       (.-altKey ^js event))
                (st/emit! (modal/show {:type :onboarding}))
@@ -87,7 +90,7 @@
         i/pencil
         [:span.element-title (tr "labels.release-notes")]]
 
-       (when cf/feedback-enabled
+       (when (contains? @cf/flags :user-feedback)
          [:li {:class (when feedback? "current")
                :on-click go-settings-feedback}
           i/msg-info

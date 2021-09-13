@@ -154,6 +154,10 @@
   .modal-footer .action-buttons {
     justify-content: space-around;
   }
+
+  .fields-container {
+    margin-top: 1rem;
+  }
 }
 
 .confirm-dialog {
@@ -807,7 +811,7 @@
         border-top-left-radius: 5px;
         border-bottom-left-radius: 5px;
         height: 100%;
-        width: 106%;
+        width: 115%;
       }
     }
   }

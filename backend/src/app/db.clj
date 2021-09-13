@@ -231,9 +231,9 @@
 (defn get-by-params
   ([ds table params]
    (get-by-params ds table params nil))
-  ([ds table params {:keys [uncheked] :or {uncheked false} :as opts}]
+  ([ds table params {:keys [check-not-found] :or {check-not-found true} :as opts}]
    (let [res (exec-one! ds (sql/select table params opts))]
-     (when (and (not uncheked) (or (not res) (is-deleted? res)))
+     (when (and check-not-found (or (not res) (is-deleted? res)))
        (ex/raise :type :not-found
                  :table table
                  :hint "database object not found"))
@@ -267,12 +267,27 @@
   (instance? PGpoint v))
 
 (defn pgarray?
-  [v]
-  (instance? PgArray v))
+  ([v] (instance? PgArray v))
+  ([v type]
+   (and (instance? PgArray v)
+        (= type (.getBaseTypeName ^PgArray v)))))
 
 (defn pgarray-of-uuid?
   [v]
   (and (pgarray? v) (= "uuid" (.getBaseTypeName ^PgArray v))))
+
+(defn decode-pgarray
+  ([v] (into [] (.getArray ^PgArray v)))
+  ([v in] (into in (.getArray ^PgArray v)))
+  ([v in xf] (into in xf (.getArray ^PgArray v))))
+
+(defn pgarray->set
+  [v]
+  (set (.getArray ^PgArray v)))
+
+(defn pgarray->vector
+  [v]
+  (vec (.getArray ^PgArray v)))
 
 (defn pgpoint
   [p]
@@ -284,7 +299,6 @@
     (if (coll? objects)
       (.createArrayOf conn ^String type (into-array Object objects))
       (.createArrayOf conn ^String type objects))))
-
 
 (defn decode-pgpoint
   [^PGpoint v]
@@ -368,15 +382,6 @@
   (doto (org.postgresql.util.PGobject.)
     (.setType "jsonb")
     (.setValue (json/encode-str data))))
-
-(defn pgarray->set
-  [v]
-  (set (.getArray ^PgArray v)))
-
-(defn pgarray->vector
-  [v]
-  (vec (.getArray ^PgArray v)))
-
 
 ;; --- Locks
 

@@ -124,6 +124,7 @@
 (def sort-descending (icon-xref :sort-descending))
 (def strikethrough (icon-xref :strikethrough))
 (def stroke (icon-xref :stroke))
+(def switch (icon-xref :switch))
 (def text (icon-xref :text))
 (def text-align-center (icon-xref :text-align-center))
 (def text-align-justify (icon-xref :text-align-justify))

@@ -6,8 +6,10 @@
 
 (ns app.browser
   (:require
-   ["puppeteer-cluster" :as ppc]
+   ["puppeteer-core" :as pp]
+   ["generic-pool" :as gp]
    [app.common.data :as d]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [lambdaisland.glogi :as log]
    [promesa.core :as p]))
@@ -19,12 +21,6 @@
 (def default-user-agent
   (str "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
        "(KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"))
-
-(defn exec!
-  [browser f]
-  (.execute ^js browser (fn [props]
-                          (let [page (unchecked-get props "page")]
-                            (f page)))))
 
 (defn set-cookie!
   [page {:keys [key value domain]}]
@@ -73,12 +69,14 @@
 
 (defn pdf
   ([page] (pdf page nil))
-  ([page {:keys [viewport omit-background? prefer-css-page-size?]
+  ([page {:keys [viewport omit-background? prefer-css-page-size? save-path]
           :or {viewport {}
                omit-background? true
-               prefer-css-page-size? true}}]
+               prefer-css-page-size? true
+               save-path nil}}]
    (let [viewport (d/merge default-viewport viewport)]
-     (.pdf ^js page #js {:width (:width viewport)
+     (.pdf ^js page #js {:path save-path
+                         :width (:width viewport)
                          :height (:height viewport)
                          :scale (:scale viewport)
                          :omitBackground omit-background?
@@ -100,36 +98,76 @@
 
 ;; --- BROWSER STATE
 
-(def instance (atom nil))
+(defonce pool (atom nil))
+(defonce pool-browser-id (atom 1))
 
-(defn- create-browser
-  [concurrency strategy]
-  (let [strategy (case strategy
-                   :browser (.-CONCURRENCY_BROWSER ^js ppc/Cluster)
-                   :incognito (.-CONCURRENCY_CONTEXT ^js ppc/Cluster)
-                   :page (.-CONCURRENCY_PAGE ^js ppc/Cluster))
-        opts #js {:concurrency strategy
-                  :maxConcurrency concurrency
-                  :puppeteerOptions #js {:args #js ["--no-sandbox"]}}]
-    (.launch ^js ppc/Cluster opts)))
+(def browser-pool-factory
+  (letfn [(create []
+            (let [path (cf/get :browser-executable-path "/usr/bin/google-chrome")]
+              (-> (pp/launch #js {:executablePath path :args #js ["--no-sandbox"]})
+                  (p/then (fn [browser]
+                            (let [id (deref pool-browser-id)]
+                              (log/info :origin "factory" :action "create" :browser-id id)
+                              (unchecked-set browser "__num_use" 0)
+                              (unchecked-set browser "__id" id)
+                              (swap! pool-browser-id inc)
+                              browser))))))
+          (destroy [obj]
+            (let [id (unchecked-get obj "__id")]
+              (log/info :origin "factory" :action "destroy" :browser-id id)
+              (.close ^js obj)))
 
+          (validate [obj]
+            (let [max-use (cf/get :browser-max-usage 10)
+                  num-use (unchecked-get obj "__num_use")
+                  id      (unchecked-get obj "__id")]
+
+              (log/info :origin "factory" :action "validate" :browser-id id :max-use max-use :num-use num-use :obj obj)
+              (if (> num-use max-use)
+                (p/resolved false)
+                (do
+                  (unchecked-set obj "__num_use" (inc num-use))
+                  (p/resolved (.isConnected ^js obj))))))]
+
+    #js {:create create
+         :destroy destroy
+         :validate validate}))
 
 (defn init
   []
-  (let [concurrency (cf/get :browser-concurrency)
-        strategy    (cf/get :browser-strategy)]
-    (-> (create-browser concurrency strategy)
-        (p/then #(reset! instance %))
-        (p/catch (fn [error]
-                   (log/error :msg "failed to initialize browser")
-                   (js/console.error error))))))
+  (log/info :msg "initializing browser pool")
+  (let [opts #js {:max (cf/get :browser-pool-max 3)
+                  :min (cf/get :browser-pool-min 0)
+                  :testOnBorrow true
+                  :evictionRunIntervalMillis 30000
+                  :numTestsPerEvictionRun 5
+                  :acquireTimeoutMillis 120000 ; 2min
+                  :idleTimeoutMillis 30000}]
 
+    (reset! pool (gp/createPool browser-pool-factory opts))
+    (p/resolved nil)))
 
 (defn stop
   []
-  (if-let [instance @instance]
-    (p/do!
-     (.idle ^js instance)
-     (.close ^js instance)
-     (log/info :msg "shutdown headless browser"))
-    (p/resolved nil)))
+  (when-let [pool (deref pool)]
+    (log/info :msg "finalizing browser pool")
+    (-> (.drain ^js pool)
+        (p/then (fn [] (.clear ^js pool))))))
+
+(defn exec!
+  [f]
+  (letfn [(on-acquire [pool browser]
+            (p/let [ctx  (.createIncognitoBrowserContext ^js browser)
+                    page (.newPage ^js ctx)]
+              (-> (p/do! (f page))
+                  (p/handle
+                    (fn [result error]
+                      (-> (p/do! (.close ^js ctx)
+                                 (.release ^js pool browser))
+                          (p/handle (fn [_ _]
+                                      (if result
+                                        (p/resolved result)
+                                        (p/rejected error))))))))))]
+    (when-let [pool (deref pool)]
+      (-> (.acquire ^js pool)
+          (p/then (partial on-acquire pool))))))

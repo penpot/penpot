@@ -28,10 +28,23 @@
      {:name "actions_profile_register_count"
       :help "A global counter of user registrations."
       :type :counter}
+
      :profile-activation
      {:name "actions_profile_activation_count"
       :help "A global counter of profile activations"
+      :type :counter}
+
+     :update-file-changes
+     {:name "rpc_update_file_changes_total"
+      :help "A total number of changes submitted to update-file."
+      :type :counter}
+
+     :update-file-bytes-processed
+     {:name "rpc_update_file_bytes_processed_total"
+      :help "A total number of bytes processed by update-file."
       :type :counter}}}
+
+
 
    :app.migrations/all
    {:main (ig/ref :app.migrations/migrations)}
@@ -95,6 +108,7 @@
     :storage     (ig/ref :app.storage/storage)
     :sns-webhook (ig/ref :app.http.awsns/handler)
     :feedback    (ig/ref :app.http.feedback/handler)
+    :audit-http-handler   (ig/ref :app.loggers.audit/http-handler)
     :error-report-handler (ig/ref :app.loggers.mattermost/handler)}
 
    :app.http.assets/handlers
@@ -288,6 +302,11 @@
 
    :app.loggers.zmq/receiver
    {:endpoint (cf/get :loggers-zmq-uri)}
+
+   :app.loggers.audit/http-handler
+   {:enabled  (cf/get :audit-enabled false)
+    :pool     (ig/ref :app.db/pool)
+    :executor (ig/ref :app.worker/executor)}
 
    :app.loggers.audit/collector
    {:enabled  (cf/get :audit-enabled false)

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.attributes.common
+(ns app.main.ui.viewer.handoff.attributes.common
   (:require
    [app.common.math :as mth]
    [app.main.store :as st]
@@ -19,7 +19,7 @@
 
 
 (def file-colors-ref
-  (l/derived (l/in [:viewer-data :file :colors]) st/state))
+  (l/derived (l/in [:viewer :file :data :colors]) st/state))
 
 (defn make-colors-library-ref [file-id]
   (let [get-library

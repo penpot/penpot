@@ -70,7 +70,7 @@
         do-unmask-group (st/emitf dw/unmask-group)
         do-flip-vertical (st/emitf (dw/flip-vertical-selected))
         do-flip-horizontal (st/emitf (dw/flip-horizontal-selected))
-        do-add-component (st/emitf dwl/add-component)
+        do-add-component (st/emitf (dwl/add-component))
         do-detach-component (st/emitf (dwl/detach-component id))
         do-reset-component (st/emitf (dwl/reset-component id))
         do-start-editing (fn []
@@ -195,6 +195,7 @@
          [:*
           [:& menu-separator]
           [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
+                          :shortcut (sc/get-tooltip :detach-component)
                           :on-click do-detach-component}]
           [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
                           :on-click do-reset-component}]
@@ -205,6 +206,7 @@
          [:*
           [:& menu-separator]
           [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
+                          :shortcut (sc/get-tooltip :detach-component)
                           :on-click do-detach-component}]
           [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
                           :on-click do-reset-component}]

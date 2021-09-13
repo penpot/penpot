@@ -114,7 +114,7 @@
 (defn deselect-shape
   [id]
   (us/verify ::us/uuid id)
-  (ptk/reify ::select-shape
+  (ptk/reify ::deselect-shape
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-local :selected] disj id))))
@@ -219,17 +219,15 @@
                           lks/empty-linked-set)
             selrect (get-in state [:workspace-local :selrect])
             blocked? (fn [id] (get-in objects [id :blocked] false))]
-        (rx/merge
-
-          (when selrect
-            (->> (uw/ask! {:cmd :selection/query
-                           :page-id page-id
-                           :rect selrect
-                           :include-frames? true
-                           :full-frame? true})
-                 (rx/map #(cp/clean-loops objects %))
-                 (rx/map #(into initial-set (filter (comp not blocked?)) %))
-                 (rx/map select-shapes))))))))
+        (when selrect
+          (->> (uw/ask! {:cmd :selection/query
+                         :page-id page-id
+                         :rect selrect
+                         :include-frames? true
+                         :full-frame? true})
+               (rx/map #(cp/clean-loops objects %))
+               (rx/map #(into initial-set (filter (comp not blocked?)) %))
+               (rx/map select-shapes)))))))
 
 (defn select-inside-group
   [group-id position]
@@ -383,6 +381,53 @@
 
     (into [fch] sch)))
 
+(defn clear-memorize-duplicated
+  []
+  (ptk/reify ::clear-memorize-duplicated
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/dissoc-in state [:workspace-local :duplicated]))))
+
+(defn memorize-duplicated
+  "When duplicate an object, remember the operation during the following seconds.
+  If the user moves the duplicated object, and then duplicates it again, check
+  the displacement and apply it to the third copy. This is useful for doing
+  grids or cascades of cloned objects."
+  [id-original id-duplicated]
+  (ptk/reify ::memorize-duplicated
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :duplicated] {:id-original id-original
+                                                      :id-duplicated id-duplicated}))
+
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [stoper (rx/filter (ptk/type? ::memorize-duplicated) stream)]
+        (->> (rx/timer 10000) ;; This time may be adjusted after some user testing.
+             (rx/take-until stoper)
+             (rx/map clear-memorize-duplicated))))))
+
+(defn calc-duplicate-delta
+  [obj state objects]
+  (let [{:keys [id-original id-duplicated]}
+        (get-in state [:workspace-local :duplicated])]
+    (if (and (not= id-original (:id obj))
+             (not= id-duplicated (:id obj)))
+
+      ;; The default is leave normal shapes in place, but put
+      ;; new frames to the right of the original.
+      (if (= (:type obj) :frame)
+        (gpt/point (+ (:width obj) 50) 0)
+        (gpt/point 0 0))
+
+      (let [obj-original   (get objects id-original)
+            obj-duplicated (get objects id-duplicated)
+            distance       (gpt/subtract (gpt/point obj-duplicated)
+                                         (gpt/point obj-original))
+            new-pos        (gpt/add (gpt/point obj-duplicated) distance)
+            delta          (gpt/subtract new-pos (gpt/point obj))]
+        delta))))
+
 (def duplicate-selected
   (ptk/reify ::duplicate-selected
     ptk/WatchEvent
@@ -390,7 +435,10 @@
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
-            delta    (gpt/point 0 0)
+            delta    (if (= (count selected) 1)
+                       (let [obj (get objects (first selected))]
+                         (calc-duplicate-delta obj state objects))
+                       (gpt/point 0 0))
 
             unames   (dwc/retrieve-used-names objects)
 
@@ -400,15 +448,20 @@
             uchanges (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))
                            (reverse rchanges))
 
+            id-original (when (= (count selected) 1) (first selected))
+
             selected (->> rchanges
                           (filter #(selected (:old-id %)))
                           (map #(get-in % [:obj :id]))
-                          (into (d/ordered-set)))]
+                          (into (d/ordered-set)))
+
+            id-duplicated (when (= (count selected) 1) (first selected))]
 
         (rx/of (dch/commit-changes {:redo-changes rchanges
                                     :undo-changes uchanges
                                     :origin it})
-               (select-shapes selected))))))
+               (select-shapes selected)
+               (memorize-duplicated id-original id-duplicated))))))
 
 (defn change-hover-state
   [id value]

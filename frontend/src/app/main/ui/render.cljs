@@ -17,6 +17,7 @@
    [app.main.repo :as repo]
    [app.main.store :as st]
    [app.main.ui.shapes.embed :as embed]
+   [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.util.dom :as dom]
@@ -31,6 +32,8 @@
         frame-id (if (= :frame (:type object))
                    (:id object)
                    (:frame-id object))
+
+        include-metadata? (mf/use-ctx ed/include-metadata-ctx)
 
         modifier (-> (gpt/point (:x object) (:y object))
                      (gpt/negate)
@@ -52,7 +55,12 @@
         width    (* width zoom)
         height   (* height zoom)
 
-        vbox     (str/join " " [x y width height])
+        padding (* (filters/calculate-padding object) zoom)
+
+        vbox     (str/join " " [(- x padding)
+                                (- y padding)
+                                (+ width padding padding)
+                                (+ height padding padding)])
 
         frame-wrapper
         (mf/use-memo
@@ -72,18 +80,21 @@
 
     (mf/use-effect
      (mf/deps width height)
-     #(dom/set-page-style {:size (str (mth/round width) "px "
-                                      (mth/round height) "px")}))
+     #(dom/set-page-style {:size (str (mth/ceil (+ width padding padding)) "px "
+                                      (mth/ceil (+ height padding padding)) "px")}))
 
     [:& (mf/provider embed/context) {:value true}
      [:svg {:id "screenshot"
             :view-box vbox
-            :width width
-            :height height
+            :width (+ width padding padding)
+            :height (+ height padding padding)
             :version "1.1"
-            :xmlnsXlink "http://www.w3.org/1999/xlink"
             :xmlns "http://www.w3.org/2000/svg"
-            :xmlns:penpot "https://penpot.app/xmlns"}
+            :xmlnsXlink "http://www.w3.org/1999/xlink"
+            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+            ;; Fix Chromium bug about color of html texts
+            ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
+            :style {:-webkit-print-color-adjust :exact}}
 
       (case (:type object)
         :frame [:& frame-wrapper {:shape object :view-box vbox}]

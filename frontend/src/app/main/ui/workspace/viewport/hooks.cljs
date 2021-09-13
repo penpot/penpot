@@ -84,17 +84,23 @@
   (let [on-resize (actions/on-resize viewport-ref)]
     (mf/use-layout-effect (mf/deps layout) on-resize)))
 
-(defn setup-keyboard [alt? ctrl?]
+(defn setup-keyboard [alt? ctrl? space?]
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
-  (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %)))
+  (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %))
+  (hooks/use-stream ms/keyboard-space #(reset! space? %)))
 
-;; TODO: revisit the arguments, looks like `selected` is not necessary here
-(defn setup-hover-shapes [page-id move-stream _selected objects transform selected ctrl? hover hover-ids zoom]
-  (let [query-point
+(defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids zoom]
+  (let [;; We use ref so we don't recreate the stream on a change
+        zoom-ref (mf/use-ref zoom)
+        transform-ref (mf/use-ref nil)
+        selected-ref (mf/use-ref selected)
+
+        query-point
         (mf/use-callback
          (mf/deps page-id)
          (fn [point]
-           (let [rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
+           (let [zoom (mf/ref-val zoom-ref)
+                 rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
              (uw/ask-buffered!
               {:cmd :selection/query
                :page-id page-id
@@ -102,25 +108,35 @@
                :include-frames? true
                :reverse? true})))) ;; we want the topmost shape to be selected first
 
-        ;; We use ref so we don't recreate the stream on a change
-        transform-ref (mf/use-ref nil)
-
         over-shapes-stream
-        (->> move-stream
-             ;; When transforming shapes we stop querying the worker
-             (rx/filter #(not (some? (mf/ref-val transform-ref))))
-             (rx/switch-map query-point))
+        (mf/use-memo
+         (fn []
+           (->> move-stream
+                ;; When transforming shapes we stop querying the worker
+                (rx/filter #(not (some? (mf/ref-val transform-ref))))
+                (rx/switch-map query-point))))
         ]
+
+    ;; Refresh the refs on a value change
 
     (mf/use-effect
      (mf/deps transform)
      #(mf/set-ref-val! transform-ref transform))
 
+    (mf/use-effect
+     (mf/deps zoom)
+     #(mf/set-ref-val! zoom-ref zoom))
+
+    (mf/use-effect
+     (mf/deps selected)
+     #(mf/set-ref-val! selected-ref selected))
+
     (hooks/use-stream
      over-shapes-stream
-     (mf/deps page-id objects selected @ctrl?)
+     (mf/deps page-id objects @ctrl?)
      (fn [ids]
-       (let [remove-id? (into #{} (mapcat #(cp/get-parents % objects)) selected)
+       (let [selected (mf/ref-val selected-ref)
+             remove-id? (into #{} (mapcat #(cp/get-parents % objects)) selected)
              remove-id? (if @ctrl?
                           (d/concat remove-id?
                                     (->> ids

@@ -27,9 +27,11 @@
   (:import goog.events.WheelEvent))
 
 (defn on-mouse-down
-  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment?]
+  [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
+   node-editing? drawing-path? create-comment? space? viewport-ref zoom]
   (mf/use-callback
-   (mf/deps id blocked hidden type selected edition drawing-tool text-editing? node-editing? drawing-path? create-comment?)
+   (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
+            node-editing? drawing-path? create-comment? space? viewport-ref zoom)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
                (dom/class? (dom/get-target bevent) "viewport-selrect"))
@@ -48,7 +50,12 @@
 
          (when middle-click?
            (dom/prevent-default bevent)
-           (st/emit! (dw/start-panning)))
+           (if ctrl?
+             (let [raw-pt   (dom/get-client-position event)
+                   viewport (mf/ref-val viewport-ref)
+                   pt       (utils/translate-point-to-viewport viewport zoom raw-pt)]
+               (st/emit! (dw/start-zooming pt)))
+             (st/emit! (dw/start-panning))))
 
          (when left-click?
            (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
@@ -69,14 +76,16 @@
                ;; Handle path node area selection
                (st/emit! (dwdp/handle-area-selection shift?))
 
+               @space?
+               (st/emit! (dw/start-panning))
+
                (or (not id) (and frame? (not selected?)))
                (st/emit! (dw/handle-area-selection shift?))
 
                (not drawing-tool)
                (st/emit! (when (or shift? (not selected?))
                            (dw/select-shape id shift?))
-                         (when (not shift?)
-                           (dw/start-move-selected)))))))))))
+                         (dw/start-move-selected))))))))))
 
 (defn on-move-selected
   [hover hover-ids selected]
@@ -209,7 +218,8 @@
            middle-click? (= 2 (.-which event))]
 
        (when left-click?
-         (st/emit! (ms/->MouseEvent :up ctrl? shift? alt?)))
+         (st/emit! (dw/finish-panning)
+                   (ms/->MouseEvent :up ctrl? shift? alt?)))
 
        (when middle-click?
          (dom/prevent-default event)
@@ -217,7 +227,8 @@
          ;; We store this so in Firefox the middle button won't do a paste of the content
          (reset! disable-paste true)
          (timers/schedule #(reset! disable-paste false))
-         (st/emit! (dw/finish-panning)))))))
+         (st/emit! (dw/finish-panning)
+                   (dw/finish-zooming)))))))
 
 (defn on-pointer-enter [in-viewport?]
   (mf/use-callback
@@ -253,23 +264,20 @@
 (defn on-key-down []
  (mf/use-callback
   (fn [event]
-    (let [bevent  (.getBrowserEvent ^js event)
-          key     (.-key ^js event)
-          ctrl?   (kbd/ctrl? event)
-          shift?  (kbd/shift? event)
-          alt?    (kbd/alt? event)
-          meta?   (kbd/meta? event)
-          target  (dom/get-target event)
-          editor? (some? (.closest ^js target ".public-DraftEditor-content"))]
+    (let [bevent   (.getBrowserEvent ^js event)
+          key      (.-key ^js event)
+          ctrl?    (kbd/ctrl? event)
+          shift?   (kbd/shift? event)
+          alt?     (kbd/alt? event)
+          meta?    (kbd/meta? event)
+          target   (dom/get-target event)
+          editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
+                       (= "rich-text" (obj/get target "className"))
+                       (= "INPUT" (obj/get target "tagName"))
+                       (= "TEXTAREA" (obj/get target "tagName")))]
 
       (when-not (.-repeat bevent)
-        (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta?))
-        (when (and (kbd/space? event)
-                   (not editor?)
-                   (not= "rich-text" (obj/get target "className"))
-                   (not= "INPUT" (obj/get target "tagName"))
-                   (not= "TEXTAREA" (obj/get target "tagName")))
-          (st/emit! (dw/start-panning))))))))
+        (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta? editing?)))))))
 
 (defn on-key-up []
  (mf/use-callback
@@ -278,10 +286,13 @@
           ctrl?  (kbd/ctrl? event)
           shift? (kbd/shift? event)
           alt?   (kbd/alt? event)
-          meta?  (kbd/meta? event)]
-      (when (kbd/space? event)
-        (st/emit! (dw/finish-panning)))
-      (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta?))))))
+          meta?  (kbd/meta? event)
+          target   (dom/get-target event)
+          editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
+                       (= "rich-text" (obj/get target "className"))
+                       (= "INPUT" (obj/get target "tagName"))
+                       (= "TEXTAREA" (obj/get target "tagName")))]
+      (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta? editing?))))))
 
 (defn on-mouse-move [viewport-ref zoom]
   (let [last-position (mf/use-var nil)]

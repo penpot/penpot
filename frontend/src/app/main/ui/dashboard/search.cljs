@@ -17,20 +17,23 @@
 
 (mf/defc search-page
   [{:keys [team search-term] :as props}]
-  (let [result (mf/deref refs/dashboard-search-result)]
-    (mf/use-effect
-     (mf/deps team)
-     (fn []
-       (dom/set-html-title (tr "title.dashboard.search"
-                              (if (:is-default team)
-                                (tr "dashboard.your-penpot")
-                                (:name team))))))
-    (mf/use-effect
-     (mf/deps search-term)
-     (fn []
-       (st/emit! (dd/search {:search-term search-term})
-                 (dd/clear-selected-files))))
 
+  (mf/use-effect
+   (mf/deps team)
+   (fn []
+     (when team
+       (let [tname (if (:is-default team)
+                     (tr "dashboard.your-penpot")
+                     (:name team))]
+         (dom/set-html-title (tr "title.dashboard.search" tname))))))
+
+  (mf/use-effect
+   (mf/deps search-term)
+   (fn []
+     (st/emit! (dd/search {:search-term search-term})
+               (dd/clear-selected-files))))
+
+  (let [result (mf/deref refs/dashboard-search-result)]
     [:*
      [:header.dashboard-header
       [:div.dashboard-title

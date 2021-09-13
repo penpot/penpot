@@ -215,7 +215,7 @@
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
 
      (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
+       [:& stroke-menu {:type type :ids stroke-ids :show-caps true :values stroke-values}])
 
      (when-not (empty? text-ids)
        [:& ot/text-menu {:type type :ids text-ids :values text-values}])]))

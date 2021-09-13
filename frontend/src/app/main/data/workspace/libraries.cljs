@@ -83,12 +83,15 @@
 
 (defn add-color
   [color]
-  (let [id   (uuid/next)
-        color (assoc color
-                     :id id
-                     :name (default-color-name color))]
+  (let [id    (uuid/next)
+        color (-> color
+                  (assoc :id id)
+                  (assoc :name (default-color-name color)))]
     (us/assert ::cp/color color)
     (ptk/reify ::add-color
+      IDeref
+      (-deref [_] color)
+
       ptk/WatchEvent
       (watch [it _ _]
         (let [rchg {:type :add-color
@@ -211,6 +214,9 @@
    (let [typography (update typography :id #(or % (uuid/next)))]
      (us/assert ::cp/typography typography)
      (ptk/reify ::add-typography
+       IDeref
+       (-deref [_] typography)
+
        ptk/WatchEvent
        (watch [it _ _]
          (let [rchg {:type :add-typography
@@ -258,17 +264,20 @@
                                     :undo-changes [uchg]
                                     :origin it}))))))
 
-(def add-component
-  "Add a new component to current file library, from the currently selected shapes."
-  (ptk/reify ::add-component
+
+(defn- add-component2
+  "This is the second step of the component creation."
+  [selected]
+  (ptk/reify ::add-component2
+    IDeref
+    (-deref [_] {:num-shapes (count selected)})
+
     ptk/WatchEvent
     (watch [it state _]
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (wsh/lookup-selected state)
-            selected (cp/clean-loops objects selected)
-            shapes (dwg/shapes-for-grouping objects selected)]
+            shapes   (dwg/shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group rchanges uchanges]
                 (dwlh/generate-add-component shapes objects page-id file-id)]
@@ -277,6 +286,20 @@
                                           :undo-changes uchanges
                                           :origin it})
                      (dwc/select-shapes (d/ordered-set (:id group)))))))))))
+
+(defn add-component
+  "Add a new component to current file library, from the currently selected shapes.
+  This operation is made in two steps, first one for calculate the
+  shapes that will be part of the component and the second one with
+  the component creation."
+  []
+  (ptk/reify ::add-component
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects  (wsh/lookup-page-objects state)
+            selected (->> (wsh/lookup-selected state)
+                          (cp/clean-loops objects))]
+        (rx/of (add-component2 selected))))))
 
 (defn rename-component
   "Rename the component with the given id, in the current file library."
@@ -457,6 +480,31 @@
 
             [rchanges uchanges]
             (dwlh/generate-detach-instance id container)]
+
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
+
+(def detach-selected-components
+  (ptk/reify ::detach-selected-components
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id  (:current-page-id state)
+            objects  (wsh/lookup-page-objects state page-id)
+            local-library (dwlh/get-local-file state)
+            container (cp/get-container page-id :page local-library)
+
+            selected (->> state
+                          (wsh/lookup-selected)
+                          (cp/clean-loops objects))
+
+            [rchanges uchanges]
+            (reduce (fn [changes id]
+                      (dwlh/concat-changes
+                        changes
+                        (dwlh/generate-detach-instance id container)))
+                    dwlh/empty-changes
+                    selected)]
 
         (rx/of (dch/commit-changes {:redo-changes rchanges
                                     :undo-changes uchanges

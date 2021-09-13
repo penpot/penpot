@@ -28,6 +28,8 @@
                            :class "input-option"
                            :options options
                            :type (when (number? value) "number")
+                           :min min
+                           :max max
                            :placeholder placeholder
                            :on-change on-change}]
 

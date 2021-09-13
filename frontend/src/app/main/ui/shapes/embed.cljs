@@ -12,7 +12,7 @@
    [rumext.alpha :as mf]))
 
 (def context (mf/create-context false))
-      
+
 (defn use-data-uris [urls]
   (let [embed? (mf/use-ctx context)
         urls (hooks/use-equal-memo urls)

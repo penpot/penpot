@@ -16,18 +16,18 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest retrieve-bundle
-  (let [prof    (th/create-profile* 1 {:is-active true})
-        prof2   (th/create-profile* 2 {:is-active true})
-        team-id (:default-team-id prof)
-        proj-id (:default-project-id prof)
+  (let [prof     (th/create-profile* 1 {:is-active true})
+        prof2    (th/create-profile* 2 {:is-active true})
+        team-id  (:default-team-id prof)
+        proj-id  (:default-project-id prof)
 
-        file    (th/create-file* 1 {:profile-id (:id prof)
-                                    :project-id proj-id
-                                    :is-shared false})
-        token   (atom nil)]
+        file     (th/create-file* 1 {:profile-id (:id prof)
+                                     :project-id proj-id
+                                     :is-shared false})
+        share-id (atom nil)]
 
     (t/testing "authenticated with page-id"
-      (let [data {::th/type :viewer-bundle
+      (let [data {::th/type :view-only-bundle
                   :profile-id (:id prof)
                   :file-id (:id file)
                   :page-id (get-in file [:data :pages 0])}
@@ -38,64 +38,67 @@
         (t/is (nil? (:error out)))
 
         (let [result (:result out)]
-          (t/is (contains? result :token))
-          (t/is (contains? result :page))
+          (t/is (contains? result :share-links))
+          (t/is (contains? result :permissions))
+          (t/is (contains? result :libraries))
           (t/is (contains? result :file))
           (t/is (contains? result :project)))))
 
     (t/testing "generate share token"
-      (let [data {::th/type :create-file-share-token
+      (let [data {::th/type :create-share-link
                   :profile-id (:id prof)
                   :file-id (:id file)
-                  :page-id (get-in file [:data :pages 0])}
+                  :pages #{(get-in file [:data :pages 0])}
+                  :flags #{}}
             out  (th/mutation! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (let [result (:result out)]
-          (t/is (string? (:token result)))
-          (reset! token (:token result)))))
+          (t/is (uuid? (:id result)))
+          (reset! share-id (:id result)))))
 
     (t/testing "not authenticated with page-id"
-      (let [data {::th/type :viewer-bundle
+      (let [data {::th/type :view-only-bundle
                   :profile-id (:id prof2)
                   :file-id (:id file)
                   :page-id (get-in file [:data :pages 0])}
             out  (th/query! data)]
 
         ;; (th/print-result! out)
-        (let [error (:error out)
+        (let [error      (:error out)
               error-data (ex-data error)]
           (t/is (th/ex-info? error))
           (t/is (= (:type error-data) :not-found))
           (t/is (= (:code error-data) :object-not-found)))))
 
-    ;; (t/testing "authenticated with token & profile"
-    ;;   (let [data {::sq/type :viewer-bundle
-    ;;               :profile-id (:id prof2)
-    ;;               :token @token
-    ;;               :file-id (:id file)
-    ;;               :page-id (get-in file [:data :pages 0])}
-    ;;         out  (th/try-on! (sq/handle data))]
+    (t/testing "authenticated with token & profile"
+      (let [data {::th/type :view-only-bundle
+                  :profile-id (:id prof2)
+                  :share-id @share-id
+                  :file-id (:id file)
+                  :page-id (get-in file [:data :pages 0])}
+            out  (th/query! data)]
 
-    ;;     ;; (th/print-result! out)
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
 
-    ;;     (let [result (:result out)]
-    ;;       (t/is (contains? result :page))
-    ;;       (t/is (contains? result :file))
-    ;;       (t/is (contains? result :project)))))
+        (let [result (:result out)]
+          (t/is (contains? result :share))
+          (t/is (contains? result :file))
+          (t/is (contains? result :project)))))
 
-    ;; (t/testing "authenticated with token"
-    ;;   (let [data {::sq/type :viewer-bundle
-    ;;               :token @token
-    ;;               :file-id (:id file)
-    ;;               :page-id (get-in file [:data :pages 0])}
-    ;;         out  (th/try-on! (sq/handle data))]
+    (t/testing "authenticated with token"
+      (let [data {::th/type :view-only-bundle
+                  :share-id @share-id
+                  :file-id (:id file)
+                  :page-id (get-in file [:data :pages 0])}
+            out  (th/query! data)]
 
-    ;;     ;; (th/print-result! out)
+        ;; (th/print-result! out)
+        (let [result (:result out)]
+          (t/is (contains? result :file))
+          (t/is (contains? result :share))
+          (t/is (contains? result :project)))))
 
-    ;;     (let [result (:result out)]
-    ;;       (t/is (contains? result :page))
-    ;;       (t/is (contains? result :file))
-    ;;       (t/is (contains? result :project)))))
     ))

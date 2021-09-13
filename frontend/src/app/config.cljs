@@ -6,6 +6,7 @@
 
 (ns app.config
   (:require
+   [app.common.flags :as flags]
    [app.common.spec :as us]
    [app.common.uri :as u]
    [app.common.version :as v]
@@ -53,10 +54,14 @@
     :browser
     :webworker))
 
+(def default-flags
+  #{:registration :demo-users})
+
 (defn- parse-flags
   [global]
-  (let [flags (obj/get global "penpotFlags" "")]
-    (into #{} (map keyword) (str/words flags))))
+  (let [flags (obj/get global "penpotFlags" "")
+        flags (into #{} (map keyword) (str/words flags))]
+    (flags/parse default-flags flags)))
 
 (defn- parse-version
   [global]
@@ -68,26 +73,27 @@
 (def default-theme  "default")
 (def default-language "en")
 
-(def demo-warning         (obj/get global "penpotDemoWarning" false))
-(def feedback-enabled     (obj/get global "penpotFeedbackEnabled" false))
-(def allow-demo-users     (obj/get global "penpotAllowDemoUsers" true))
 (def google-client-id     (obj/get global "penpotGoogleClientID" nil))
 (def gitlab-client-id     (obj/get global "penpotGitlabClientID" nil))
 (def github-client-id     (obj/get global "penpotGithubClientID" nil))
 (def oidc-client-id       (obj/get global "penpotOIDCClientID" nil))
-(def login-with-ldap      (obj/get global "penpotLoginWithLDAP" false))
-(def registration-enabled (obj/get global "penpotRegistrationEnabled" true))
 (def worker-uri           (obj/get global "penpotWorkerURI" "/js/worker.js"))
 (def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
-(def analytics            (obj/get global "penpotAnalyticsEnabled" false))
 
-(def flags                (delay (parse-flags global)))
+(def flags                (atom (parse-flags global)))
+(def version              (atom (parse-version global)))
+(def target               (atom (parse-target global)))
+(def browser              (atom (parse-browser)))
+(def platform             (atom (parse-platform)))
 
-(def version              (delay (parse-version global)))
-(def target               (delay (parse-target global)))
-(def browser              (delay (parse-browser)))
-(def platform             (delay (parse-platform)))
+;; mantain for backward compatibility
+(let [login-with-ldap (obj/get global "penpotLoginWithLDAP" false)
+      registration    (obj/get global "penpotRegistrationEnabled" true)]
+  (when login-with-ldap
+    (swap! flags conj :login-with-ldap))
+  (when (false? registration)
+    (swap! flags disj :registration)))
 
 (def public-uri
   (let [uri (u/uri (or (obj/get global "penpotPublicURI")

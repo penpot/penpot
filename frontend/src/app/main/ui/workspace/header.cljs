@@ -8,7 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.math :as mth]
-   [app.config :as cfg]
+   [app.config :as cf]
+   [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
@@ -64,15 +65,16 @@
            on-decrease
            on-zoom-reset
            on-zoom-fit
-           on-zoom-selected]
+           on-zoom-selected
+           on-fullscreen]
     :as props}]
   (let [show-dropdown? (mf/use-state false)]
     [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
-     [:span {} (str (mth/round (* 100 zoom)) "%")]
-     [:span.dropdown-button i/arrow-down]
+     [:span.label {} (str (mth/round (* 100 zoom)) "%")]
+     [:span.icon i/arrow-down]
      [:& dropdown {:show @show-dropdown?
                    :on-close #(reset! show-dropdown? false)}
-      [:ul.zoom-dropdown
+      [:ul.dropdown
        [:li {:on-click on-increase}
         "Zoom in" [:span (sc/get-tooltip :increase-zoom)]]
        [:li {:on-click on-decrease}
@@ -82,14 +84,20 @@
        [:li {:on-click on-zoom-fit}
         "Zoom to fit all" [:span (sc/get-tooltip :fit-all)]]
        [:li {:on-click on-zoom-selected}
-        "Zoom to selected" [:span (sc/get-tooltip :zoom-selected)]]]]]))
+        "Zoom to selected" [:span (sc/get-tooltip :zoom-selected)]]
+       (when on-fullscreen
+         [:li {:on-click on-fullscreen}
+          "Full screen"])]]]))
+
 
 ;; --- Header Users
 
 (mf/defc menu
-  [{:keys [layout project file team-id] :as props}]
+  [{:keys [layout project file team-id page-id] :as props}]
   (let [show-menu? (mf/use-state false)
         editing? (mf/use-state false)
+
+        frames   (mf/deref refs/workspace-frames)
 
         edit-input-ref (mf/use-ref nil)
 
@@ -137,7 +145,7 @@
                              (dom/prevent-default event)
                              (reset! editing? true))
 
-        on-export-files
+        on-export-file
         (mf/use-callback
          (mf/deps file team-id)
          (fn [_]
@@ -154,7 +162,27 @@
                      {:type :export
                       :team-id team-id
                       :has-libraries? (->> files (some :has-libraries?))
-                      :files files})))))))]
+                      :files files})))))))
+
+        on-export-frames
+        (mf/use-callback
+          (mf/deps file)
+          (fn [_]
+            (let [filename  (str (:name file) ".pdf")
+                  frame-ids (mapv :id frames)]
+              (st/emit! (dm/info (tr "workspace.options.exporting-object")
+                                 {:timeout nil}))
+              (->> (rp/query! :export-frames
+                              {:name     (:name file)
+                               :file-id  (:id file)
+                               :page-id   page-id
+                               :frame-ids frame-ids})
+                   (rx/subs
+                     (fn [body]
+                       (dom/trigger-download filename body))
+                     (fn [_error]
+                       (st/emit! (dm/error (tr "errors.unexpected-error"))))
+                     (st/emitf dm/hide))))))]
 
     (mf/use-effect
      (mf/deps @editing?)
@@ -251,10 +279,13 @@
          [:li {:on-click on-add-shared}
           [:span (tr "dashboard.add-shared")]])
 
-       [:li.export-file {:on-click on-export-files}
+       [:li.export-file {:on-click on-export-file}
         [:span (tr "dashboard.export-single")]]
 
-       (when cfg/feedback-enabled
+       [:li.export-file {:on-click on-export-frames}
+        [:span (tr "dashboard.export-frames")]]
+
+       (when (contains? @cf/flags :user-feedback)
          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
           [:span (tr "labels.give-feedback")]
           [:span.primary-badge "ALPHA"]])
@@ -285,7 +316,8 @@
      [:& menu {:layout layout
                :project project
                :file file
-               :team-id team-id}]
+               :team-id team-id
+               :page-id page-id}]
 
      [:div.users-section
       [:& active-sessions]]

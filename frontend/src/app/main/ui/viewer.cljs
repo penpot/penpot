@@ -6,276 +6,157 @@
 
 (ns app.main.ui.viewer
   (:require
-   [app.common.data :as d]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
-   [app.common.pages :as cp]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.comments :as cmt]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.icons :as i]
+   [app.main.ui.share-link]
+   [app.main.ui.static :as static]
+   [app.main.ui.viewer.comments :refer [comments-layer]]
+   [app.main.ui.viewer.handoff :as handoff]
    [app.main.ui.viewer.header :refer [header]]
-   [app.main.ui.viewer.shapes :as shapes]
+   [app.main.ui.viewer.interactions :as interactions]
    [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
-   [app.util.keyboard :as kbd]
+   [app.util.i18n :as i18n :refer [tr]]
    [goog.events :as events]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
-(defn- frame-contains?
-  [{:keys [x y width height]} {px :x py :y}]
-  (let [x2 (+ x width)
-        y2 (+ y height)]
-    (and (<= x px x2)
-         (<= y py y2))))
+(defn- calculate-size
+  [frame zoom]
+  {:width  (* (:width frame) zoom)
+   :height (* (:height frame) zoom)
+   :vbox   (str "0 0 " (:width frame 0) " " (:height frame 0))})
 
-(def threads-ref
-  (l/derived :comment-threads st/state))
+(mf/defc viewer
+  [{:keys [params data]}]
 
-(def comments-local-ref
-  (l/derived :comments-local st/state))
+  (let [{:keys [page-id section index]} params
 
-(mf/defc comments-layer
-  [{:keys [zoom frame data] :as props}]
-  (let [profile     (mf/deref refs/profile)
+        local   (mf/deref refs/viewer-local)
 
-        modifier1   (-> (gpt/point (:x frame) (:y frame))
-                        (gpt/negate)
-                        (gmt/translate-matrix))
+        file    (:file data)
+        users   (:users data)
+        project (:project data)
+        perms   (:permissions data)
 
-        modifier2   (-> (gpt/point (:x frame) (:y frame))
-                        (gmt/translate-matrix))
+        page-id (or page-id (-> file :data :pages first))
 
-        threads-map (->> (mf/deref threads-ref)
-                         (d/mapm #(update %2 :position gpt/transform modifier1)))
+        page    (mf/use-memo
+                 (mf/deps data page-id)
+                 (fn []
+                   (get-in data [:pages page-id])))
 
-        cstate      (mf/deref refs/comments-local)
+        zoom    (:zoom local)
+        frames  (:frames page)
+        frame   (get frames index)
 
-        mframe      (geom/transform-shape frame)
-        threads     (->> (vals threads-map)
-                         (dcm/apply-filters cstate profile)
-                         (filter (fn [{:keys [position]}]
-                                   (frame-contains? mframe position))))
-
-        on-bubble-click
-        (mf/use-callback
-         (mf/deps cstate)
-         (fn [thread]
-           (if (= (:open cstate) (:id thread))
-             (st/emit! (dcm/close-thread))
-             (st/emit! (dcm/open-thread thread)))))
+        size    (mf/use-memo
+                 (mf/deps frame zoom)
+                 (fn [] (calculate-size frame zoom)))
 
         on-click
         (mf/use-callback
-         (mf/deps cstate data frame)
-         (fn [event]
-           (dom/stop-propagation event)
-           (if (some? (:open cstate))
-             (st/emit! (dcm/close-thread))
-             (let [event    (.-nativeEvent ^js event)
-                   position (-> (dom/get-offset-position event)
-                                (gpt/transform modifier2))
-                   params   {:position position
-                             :page-id (get-in data [:page :id])
-                             :file-id (get-in data [:file :id])}]
-               (st/emit! (dcm/create-draft params))))))
+         (mf/deps section)
+         (fn [_]
+           (when (= section :comments)
+             (st/emit! (dcm/close-thread)))))]
 
-        on-draft-cancel
-        (mf/use-callback
-         (mf/deps cstate)
-         (st/emitf (dcm/close-thread)))
-
-        on-draft-submit
-        (mf/use-callback
-         (mf/deps frame)
-         (fn [draft]
-           (let [params (update draft :position gpt/transform modifier2)]
-             (st/emit! (dcm/create-thread params)
-                       (dcm/close-thread)))))]
-
-    [:div.comments-section {:on-click on-click}
-     [:div.viewer-comments-container
-      [:div.threads
-       (for [item threads]
-         [:& cmt/thread-bubble {:thread item
-                                :zoom zoom
-                                :on-click on-bubble-click
-                                :open? (= (:id item) (:open cstate))
-                                :key (:seqn item)}])
-
-       (when-let [id (:open cstate)]
-         (when-let [thread (get threads-map id)]
-           [:& cmt/thread-comments {:thread thread
-                                    :users (:users data)
-                                    :zoom zoom}]))
-
-       (when-let [draft (:draft cstate)]
-         [:& cmt/draft-thread {:draft (update draft :position gpt/transform modifier1)
-                               :on-cancel on-draft-cancel
-                               :on-submit on-draft-submit
-                               :zoom zoom}])]]]))
-
-
-
-(mf/defc viewport
-  {::mf/wrap [mf/memo]}
-  [{:keys [state data index section] :as props}]
-  (let [zoom          (:zoom state)
-        objects       (:objects data)
-
-        frame         (get-in data [:frames index])
-        frame-id      (:id frame)
-
-        modifier      (-> (gpt/point (:x frame) (:y frame))
-                          (gpt/negate)
-                          (gmt/translate-matrix))
-
-        update-fn     #(d/update-when %1 %2 assoc-in [:modifiers :displacement] modifier)
-
-        objects       (->> (d/concat [frame-id] (cp/get-children frame-id objects))
-                           (reduce update-fn objects))
-
-        interactions? (:interactions-show? state)
-        wrapper       (mf/use-memo (mf/deps objects) #(shapes/frame-container-factory objects interactions?))
-
-        ;; Retrieve frame again with correct modifier
-        frame         (get objects frame-id)
-
-        width         (* (:width frame) zoom)
-        height        (* (:height frame) zoom)
-        vbox          (str "0 0 " (:width frame 0) " " (:height frame 0))]
-
-    [:div.viewport-container
-     {:style {:width width
-              :height height
-              :state state
-              :position "relative"}}
-
-     (when (= section :comments)
-       [:& comments-layer {:width width
-                           :height height
-                           :frame frame
-                           :data data
-                           :zoom zoom}])
-
-     [:svg {:view-box vbox
-            :width width
-            :height height
-            :version "1.1"
-            :xmlnsXlink "http://www.w3.org/1999/xlink"
-            :xmlns "http://www.w3.org/2000/svg"}
-      [:& wrapper {:shape frame
-                   :show-interactions? interactions?
-                   :view-box vbox}]]]))
-
-(mf/defc main-panel
-  [{:keys [data state index section]}]
-  (let [locale  (mf/deref i18n/locale)
-        frames  (:frames data)
-        frame   (get frames index)]
-    [:section.viewer-preview
-     (cond
-       (empty? frames)
-       [:section.empty-state
-        [:span (t locale "viewer.empty-state")]]
-
-       (nil? frame)
-       [:section.empty-state
-        [:span (t locale "viewer.frame-not-found")]]
-
-       (some? state)
-       [:& viewport
-        {:data data
-         :section section
-         :index index
-         :state state
-         }])]))
-
-(mf/defc viewer-content
-  [{:keys [data state index section] :as props}]
-  (let [on-click
-        (fn [event]
-          (dom/stop-propagation event)
-          (st/emit! (dcm/close-thread))
-          (let [mode (get state :interactions-mode)]
-            (when (= mode :show-on-click)
-              (st/emit! dv/flash-interactions))))
-
-        on-mouse-wheel
-        (fn [event]
-          (when (or (kbd/ctrl? event) (kbd/meta? event))
-            (dom/prevent-default event)
-            (let [event (.getBrowserEvent ^js event)
-                  delta (+ (.-deltaY ^js event) (.-deltaX ^js event))]
-              (if (pos? delta)
-                (st/emit! dv/decrease-zoom)
-                (st/emit! dv/increase-zoom)))))
-
-        on-key-down
-        (fn [event]
-          (when (kbd/esc? event)
-            (st/emit! (dcm/close-thread))))
-
-        on-mount
-        (fn []
-          ;; bind with passive=false to allow the event to be cancelled
-          ;; https://stackoverflow.com/a/57582286/3219895
-          (let [key1 (events/listen goog/global "wheel" on-mouse-wheel #js {"passive" false})
-                key2 (events/listen js/window "keydown" on-key-down)
-                key3 (events/listen js/window "click" on-click)]
-            (fn []
-              (events/unlistenByKey key1)
-              (events/unlistenByKey key2)
-              (events/unlistenByKey key3))))]
-
-    (mf/use-effect on-mount)
     (hooks/use-shortcuts ::viewer sc/shortcuts)
 
-    [:div.viewer-layout {:class (dom/classnames :force-visible
-                                                (:show-thumbnails state))}
-     [:& header
-      {:data data
-       :state state
-       :section section
-       :index index}]
+    ;; Set the page title
+    (mf/use-effect
+     (mf/deps (:name file))
+     (fn []
+       (let [name (:name file)]
+         (dom/set-html-title (str "\u25b6 " (tr "title.viewer" name))))))
 
-     [:div.viewer-content {:on-click on-click}
-      (when (:show-thumbnails state)
-        [:& thumbnails-panel {:screen :viewer
-                              :index index
-                              :data data}])
-      [:& main-panel {:data data
-                      :section section
-                      :state state
-                      :index index}]]]))
+    (mf/use-effect
+     (fn []
+       (let [key1 (events/listen js/window "click" on-click)]
+         (fn []
+           (events/unlistenByKey key1)))))
 
+    [:div {:class (dom/classnames
+                   :force-visible (:show-thumbnails local)
+                   :viewer-layout (not= section :handoff)
+                   :handoff-layout (= section :handoff))}
+
+     [:& header {:project project
+                 :index index
+                 :file file
+                 :page page
+                 :frame frame
+                 :permissions perms
+                 :zoom (:zoom local)
+                 :section section}]
+
+     [:div.viewer-content
+      [:& thumbnails-panel {:frames frames
+                            :show? (:show-thumbnails local false)
+                            :page page
+                            :index index}]
+      [:section.viewer-preview
+       (cond
+         (empty? frames)
+         [:section.empty-state
+          [:span (tr "viewer.empty-state")]]
+
+         (nil? frame)
+         [:section.empty-state
+          [:span (tr "viewer.frame-not-found")]]
+
+         (some? frame)
+         (if (= :handoff section)
+           [:& handoff/viewport
+            {:frame frame
+             :page page
+             :file file
+             :section section
+             :local local}]
+
+
+           [:div.viewport-container
+            {:style {:width (:width size)
+                     :height (:height size)
+                     :position "relative"}}
+
+            (when (= section :comments)
+              [:& comments-layer {:file file
+                                  :users users
+                                  :frame frame
+                                  :page page
+                                  :zoom zoom}])
+
+            [:& interactions/viewport
+             {:frame frame
+              :size size
+              :page page
+              :file file
+              :users users
+              :local local}]]))]]]))
 
 ;; --- Component: Viewer Page
 
 (mf/defc viewer-page
-  [{:keys [file-id page-id index token section] :as props}]
-  (let [data  (mf/deref refs/viewer-data)
-        state (mf/deref refs/viewer-local)]
-
-    (mf/use-effect
-     (mf/deps file-id page-id token)
+  [{:keys [file-id] :as props}]
+  (mf/use-effect
+   (mf/deps file-id)
+   (fn []
+     (st/emit! (dv/initialize props))
      (fn []
-       (st/emit! (dv/initialize props))))
+       (st/emit! (dv/finalize props)))))
 
-    (mf/use-effect
-      (mf/deps (:file data))
-      #(when-let [name (get-in data [:file :name])]
-         (dom/set-html-title (str "\u25b6 " (tr "title.viewer" name)))))
+  (when-let [data (mf/deref refs/viewer-data)]
+    (let [key (str (get-in data [:file :id]))]
+      [:& viewer {:params props :data data :key key}])))
 
-    (when (and data state)
-      [:& viewer-content
-       {:index index
-        :section section
-        :state state
-        :data data}])))
+(mf/defc breaking-change-notice
+  []
+  [:> static/static-header {}
+   [:div.image i/unchain]
+   [:div.main-message (tr "viewer.breaking-change.message")]
+   [:div.desc-message (tr "viewer.breaking-change.description")]])

@@ -12,6 +12,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.media :as di]
    [app.main.data.messages :as dm]
@@ -275,6 +276,10 @@
   [id is-shared]
   {:pre [(uuid? id) (boolean? is-shared)]}
   (ptk/reify ::set-file-shared
+    IDeref
+    (-deref [_]
+      {::ev/origin "workspace" :id id :shared is-shared})
+
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-file :is-shared] is-shared))
@@ -313,7 +318,7 @@
 
 (defn link-file-to-library
   [file-id library-id]
-  (ptk/reify ::link-file-to-library
+  (ptk/reify ::attach-library
     ptk/WatchEvent
     (watch [_ _ _]
       (let [fetched #(assoc-in %2 [:workspace-libraries (:id %1)] %1)
@@ -325,7 +330,7 @@
 
 (defn unlink-file-from-library
   [file-id library-id]
-  (ptk/reify ::unlink-file-from-library
+  (ptk/reify ::detach-library
     ptk/UpdateEvent
     (update [_ state]
       (d/dissoc-in state [:workspace-libraries library-id]))

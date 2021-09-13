@@ -99,14 +99,18 @@
        :left left
        :options [(when-not (:is-default project)
                    [(tr "labels.rename") on-edit])
-                 [(tr "dashboard.duplicate") on-duplicate]
-                 [(tr "dashboard.pin-unpin") toggle-pin]
-                 (when (seq teams)
+                 (when-not (:is-default project)
+                   [(tr "dashboard.duplicate") on-duplicate])
+                 (when-not (:is-default project)
+                   [(tr "dashboard.pin-unpin") toggle-pin])
+                 (when (and (seq teams) (not (:is-default project)))
                    [(tr "dashboard.move-to") nil
                     (for [team teams]
                       [(:name team) (on-move (:id team))])])
                  (when (some? on-import)
                    [(tr "dashboard.import") on-import-files])
-                 [:separator]
-                 [(tr "labels.delete") on-delete]]}]]))
+                 (when-not (:is-default project)
+                   [:separator])
+                 (when-not (:is-default project)
+                   [(tr "labels.delete") on-delete])]}]]))
 

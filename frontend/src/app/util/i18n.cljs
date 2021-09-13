@@ -19,6 +19,7 @@
 (def supported-locales
   [{:label "English" :value "en"}
    {:label "Español" :value "es"}
+   {:label "Català" :value "ca"}
    {:label "Français (community)" :value "fr"}
    {:label "Deutsch (community)" :value "de"}
    {:label "Русский (community)" :value "ru"}

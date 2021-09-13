@@ -167,6 +167,44 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "We've sent a verification email to"
 
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Are you sure you want to remove this link? If you do it, it's no longer be "
+"available for anyone"
+
+msgid "common.share-link.get-link"
+msgstr "Get link"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Link copied successfully"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Link deleted successfully"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "Can access"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Can view"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Anyone with link will have access"
+
+msgid "common.share-link.remove-link"
+msgstr "Remove link"
+
+msgid "common.share-link.title"
+msgstr "Share prototypes"
+
+msgid "common.share-link.view-all-pages"
+msgstr "All pages"
+
+msgid "common.share-link.view-current-page"
+msgstr "Only this page"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Selected pages"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Add as Shared Library"
@@ -205,6 +243,9 @@ msgstr "Duplicate %s files"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
 msgstr "You still have no files here"
+
+msgid "dashboard.export-frames"
+msgstr "Export artboards to PDF..."
 
 msgid "dashboard.export-multi"
 msgstr "Export %s files"
@@ -855,9 +896,6 @@ msgstr "You are seeing version %s"
 msgid "labels.accept"
 msgstr "Accept"
 
-msgid "labels.close"
-msgstr "Close"
-
 msgid "labels.add-custom-font"
 msgstr "Add custom font"
 
@@ -885,6 +923,9 @@ msgstr "Cancel"
 
 msgid "labels.centered"
 msgstr "Center"
+
+msgid "labels.close"
+msgstr "Close"
 
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.comments"
@@ -919,6 +960,9 @@ msgstr "Custom fonts"
 msgid "labels.dashboard"
 msgstr "Dashboard"
 
+msgid "labels.default"
+msgstr "default"
+
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
 msgstr "Delete"
@@ -942,6 +986,9 @@ msgstr "Drafts"
 #: src/app/main/ui/comments.cljs
 msgid "labels.edit"
 msgstr "Edit"
+
+msgid "labels.edit-file"
+msgstr "Edit file"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
@@ -1007,6 +1054,9 @@ msgstr "Internal Error"
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
 msgstr "Language"
+
+msgid "labels.link"
+msgstr "Link"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -1144,6 +1194,9 @@ msgstr "Service Unavailable"
 msgid "labels.settings"
 msgstr "Settings"
 
+msgid "labels.share-prototype"
+msgstr "Share prototype"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
 msgstr "Shared Libraries"
@@ -1159,6 +1212,12 @@ msgstr "Show only yours comments"
 #: src/app/main/ui/static.cljs
 msgid "labels.sign-out"
 msgstr "Sign out"
+
+msgid "labels.skip"
+msgstr "Skip"
+
+msgid "labels.start"
+msgstr "Start"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
@@ -1180,6 +1239,9 @@ msgstr "Uploading…"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "Viewer"
+
+msgid "labels.workspace"
+msgstr "Workspace"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
@@ -1444,6 +1506,118 @@ msgstr "Profile saved successfully!"
 msgid "notifications.validation-email-sent"
 msgstr "Verification email sent to %s. Check your email!"
 
+msgid "onboarding.contrib.alt"
+msgstr "Open Source"
+
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot is Open Source, made by and for the community. If you want to "
+"collaborate, you are more than welcome!"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "You can access the"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "and follow the contribution instructions :)"
+
+msgid "onboarding.contrib.link"
+msgstr "project on github"
+
+msgid "onboarding.contrib.title"
+msgstr "Open Source Contributor?"
+
+msgid "onboarding.slide.0.alt"
+msgstr "Create designs"
+
+msgid "onboarding.slide.0.desc1"
+msgstr "Create beautiful user interfaces in collaboration with all team members."
+
+msgid "onboarding.slide.0.desc2"
+msgstr "Maintain consistency at scale with components, libraries and design systems."
+
+msgid "onboarding.slide.0.title"
+msgstr "Design libraries, styles and components"
+
+msgid "onboarding.slide.1.alt"
+msgstr "Interactive prototypes"
+
+msgid "onboarding.slide.1.desc1"
+msgstr "Create rich interactions to mimic the product behaviour."
+
+msgid "onboarding.slide.1.desc2"
+msgstr ""
+"Share to stakeholders, present proposals to your team and start user "
+"testing with your designs, all in one place."
+
+msgid "onboarding.slide.1.title"
+msgstr "Bring your designs to life with interactions"
+
+msgid "onboarding.slide.2.alt"
+msgstr "Get feedback"
+
+msgid "onboarding.slide.2.desc1"
+msgstr ""
+"All team members working simultaneously with real time design multiplayer "
+"and centralised comments, ideas and feedback right over the designs."
+
+msgid "onboarding.slide.2.title"
+msgstr "Get feedback, present and share your work"
+
+msgid "onboarding.slide.3.alt"
+msgstr "Handoff and lowcode"
+
+msgid "onboarding.slide.3.desc1"
+msgstr ""
+"Sync the design and code of all your components and styles and get code "
+"snippets."
+
+msgid "onboarding.slide.3.desc2"
+msgstr ""
+"Get and provide code specifications like markup (SVG, HTML) or styles (CSS, "
+"Less, Stylus…)."
+
+msgid "onboarding.slide.3.title"
+msgstr "One shared source of truth"
+
+msgid "onboarding.team.create.button"
+msgstr "Create a team"
+
+msgid "onboarding.team.create.desc1"
+msgstr ""
+"Are you working with someone? Create a team to work together on projects "
+"and share design assets."
+
+msgid "onboarding.team.create.input-placeholder"
+msgstr "Enter new team name"
+
+msgid "onboarding.team.create.title"
+msgstr "Create team"
+
+msgid "onboarding.team.start.button"
+msgstr "Start right away"
+
+msgid "onboarding.team.start.desc1"
+msgstr ""
+"Jump right away into Penpot and start designing by your own. You will still "
+"have the chance to create teams later."
+
+msgid "onboarding.team.start.title"
+msgstr "Start designing"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+msgid "onboarding.welcome.desc1"
+msgstr "We are very happy to introduce you to the very first Alpha release."
+
+msgid "onboarding.welcome.desc2"
+msgstr ""
+"Penpot is still at development stage and there will be constant updates. We "
+"hope you enjoy the first stable version."
+
+msgid "onboarding.welcome.title"
+msgstr "Welcome to Penpot!"
+
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
 msgstr "Go to login"
@@ -1520,20 +1694,25 @@ msgstr "No artboards found on the page."
 msgid "viewer.frame-not-found"
 msgstr "Artboard not found."
 
+msgid "viewer.header.comments-section"
+msgstr "Comments"
+
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
 msgstr "Don't show interactions"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-file"
-msgstr "Edit file"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Full Screen"
 
+msgid "viewer.header.handsoff-section"
+msgstr "Handsoff"
+
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
+msgstr "Interactions"
+
+msgid "viewer.header.interactions-section"
 msgstr "Interactions"
 
 #: src/app/main/ui/viewer/header.cljs
@@ -1555,10 +1734,6 @@ msgstr "Remove link"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Anyone with the link will have access"
-
-#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.title"
-msgstr "Share prototype"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
@@ -1841,9 +2016,21 @@ msgstr "Big thumbnails"
 msgid "workspace.libraries.colors.file-library"
 msgstr "File library"
 
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
 #: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "Recent colors"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "RGB Complementary"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
 
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.save-color"
@@ -2281,6 +2468,38 @@ msgstr "Size presets"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke"
 msgstr "Stroke"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "Circle marker"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "Diamond marker"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "Line arrow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "Round"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "Square"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "Square marker"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Triangle arrow"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.center"
@@ -2750,3 +2969,9 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "viewer.breaking-change.message"
+msgstr "Sorry!"
+
+msgid "viewer.breaking-change.description"
+msgstr "This shareable link is no longer valid. Create a new one or ask the owner for a new one.

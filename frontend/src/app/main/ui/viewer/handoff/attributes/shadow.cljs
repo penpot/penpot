@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.handoff.attributes.shadow
+(ns app.main.ui.viewer.handoff.attributes.shadow
   (:require
    [app.common.data :as d]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.handoff.attributes.common :refer [color-row]]
+   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]

@@ -1,13 +1,61 @@
-# CHANGELOG #
+# CHANGELOG
 
 ## :rocket: Next
 
+### :boom: Breaking changes
 ### :sparkles: New features
-
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
+
+
+## 1.8.0-alpha
+
+### :boom: Breaking changes
+
+- This release includes a new approach for handling share links, and
+  this feature is incompatible with the previous one. This means that
+  all the public share links generated previously will stop working.
+
+### :sparkles: New features
+
+- Add tooltips to color picker tabs [Taiga #1814](https://tree.taiga.io/project/penpot/us/1814).
+- Add styling to the end point of any open paths [Taiga #1107](https://tree.taiga.io/project/penpot/us/1107).
+- Allow to zoom with ctrl + middle button [Taiga #1428](https://tree.taiga.io/project/penpot/us/1428).
+- Auto placement of duplicated objects [Taiga #1386](https://tree.taiga.io/project/penpot/us/1386).
+- Enable penpot SVG metadata only when exporting complete files [Taiga #1914](https://tree.taiga.io/project/penpot/us/1914?milestone=295883).
+- Export to PDF all artboards of one page [Taiga #1895](https://tree.taiga.io/project/penpot/us/1895).
+- Go to a undo step clicking on a history element of the list [Taiga #1374](https://tree.taiga.io/project/penpot/us/1374).
+- Increment font size by 10 with shift+arrows [1047](https://github.com/penpot/penpot/issues/1047).
+- New shortcut to detach components Ctrl+Shift+K [Taiga #1799](https://tree.taiga.io/project/penpot/us/1799).
+- Set email inputs to type "email", to aid keyboard entry [Taiga #1921](https://tree.taiga.io/project/penpot/issue/1921).
+- Use shift+move to move element orthogonally [#823](https://github.com/penpot/penpot/issues/823).
+- Use space + mouse drag to pan, instead of only space [Taiga #1800](https://tree.taiga.io/project/penpot/us/1800).
+- Allow navigate through pages on the viewer [Taiga #1550](https://tree.taiga.io/project/penpot/us/1550).
+- Allow create share links with specific pages [Taiga #1844](https://tree.taiga.io/project/penpot/us/1844).
+
+### :bug: Bugs fixed
+
+- Prevent adding numeric suffix to layer names when not needed [Taiga #1929](https://tree.taiga.io/project/penpot/us/1929).
+- Prevent deleting or moving the drafts project [Taiga #1935](https://tree.taiga.io/project/penpot/issue/1935).
+- Fix problem with zoom and selection [Taiga #1919](https://tree.taiga.io/project/penpot/issue/1919)
+- Fix problem with borders on shape export [#1092](https://github.com/penpot/penpot/issues/1092)
+- Fix thumbnail cropping issue [Taiga #1964](https://tree.taiga.io/project/penpot/issue/1964)
+- Fix repeated fetch on file selection [Taiga #1933](https://tree.taiga.io/project/penpot/issue/1933)
+- Fix rename typography on text options [Taiga #1963](https://tree.taiga.io/project/penpot/issue/1963)
+- Fix problems with order in groups [Taiga #1960](https://tree.taiga.io/project/penpot/issue/1960)
+- Fix SVG components preview [#1134](https://github.com/penpot/penpot/issues/1134)
+- Fix group renaming problem [Taiga #1969](https://tree.taiga.io/project/penpot/issue/1969)
+- Fix problem with import broken images links [#1197](https://github.com/penpot/penpot/issues/1197)
+- Fix problem while moving imported SVG's [#1199](https://github.com/penpot/penpot/issues/1199)
+
+### :arrow_up: Deps updates
+### :boom: Breaking changes
+### :heart: Community contributions by (Thank you!)
+
+- eduayme [#1129](https://github.com/penpot/penpot/pull/1129).
+
 
 ## 1.7.4-alpha
 
@@ -43,7 +91,6 @@
 
 - Update frontend build tooling.
 
-### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
 - soultipsy [#1100](https://github.com/penpot/penpot/pull/1100)
@@ -93,10 +140,6 @@
 - Fix header partialy visible on fullscreen viewer mode [Taiga #1875](https://tree.taiga.io/project/penpot/issue/1875)
 - Fix dynamic alignment enabled with hidden objects [#1063](https://github.com/penpot/penpot/issues/1063)
 
-
-### :arrow_up: Deps updates
-### :boom: Breaking changes
-### :heart: Community contributions by (Thank you!)
 
 ## 1.6.5-alpha
 

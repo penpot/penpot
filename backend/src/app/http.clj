@@ -114,9 +114,14 @@
 (s/def ::storage map?)
 (s/def ::assets map?)
 (s/def ::feedback fn?)
+(s/def ::error-report-handler fn?)
+(s/def ::audit-http-handler fn?)
 
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::rpc ::session ::mtx/metrics ::oauth ::storage ::assets ::feedback]))
+  (s/keys :req-un [::rpc ::session ::mtx/metrics
+                   ::oauth ::storage ::assets ::feedback
+                   ::error-report-handler
+                   ::audit-http-handler]))
 
 (defmethod ig/init-key ::router
   [_ {:keys [session rpc oauth metrics assets feedback] :as cfg}]
@@ -136,9 +141,7 @@
     ["/webhooks"
      ["/sns" {:post (:sns-webhook cfg)}]]
 
-    ["/api" {:middleware [
-                          ;; Temporary disabled
-                          #_[middleware/etag]
+    ["/api" {:middleware [[middleware/etag]
                           [middleware/format-response-body]
                           [middleware/params]
                           [middleware/multipart-params]
@@ -149,9 +152,11 @@
 
      ["/feedback" {:middleware [(:middleware session)]
                    :post feedback}]
-
      ["/auth/oauth/:provider" {:post (:handler oauth)}]
      ["/auth/oauth/:provider/callback" {:get (:callback-handler oauth)}]
+
+     ["/audit/events" {:middleware [(:middleware session)]
+                       :post (:audit-http-handler cfg)}]
 
      ["/rpc" {:middleware [(:middleware session)]}
       ["/query/:type" {:get (:query-handler rpc)

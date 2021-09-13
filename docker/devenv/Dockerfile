@@ -3,10 +3,10 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v14.17.3 \
-    CLOJURE_VERSION=1.10.3.929 \
-    CLJKONDO_VERSION=2021.06.18 \
-    BABASHKA_VERSION=0.5.0 \
+ENV NODE_VERSION=v14.17.5 \
+    CLOJURE_VERSION=1.10.3.933 \
+    CLJKONDO_VERSION=2021.07.28 \
+    BABASHKA_VERSION=0.5.1 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -44,6 +44,7 @@ RUN set -ex; \
         python \
         build-essential \
         imagemagick \
+        ghostscript \
         netpbm \
         potrace \
         webp \
@@ -96,6 +97,15 @@ RUN set -ex; \
         libgbm1 \
     ; \
     rm -rf /var/lib/apt/lists/*;
+
+RUN set -x; \
+    apt-get -qq update; \
+    curl -LfsSo /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb; \
+    dpkg -i /tmp/chrome.deb; \
+    apt-get -fy install; \
+    rm -rf /var/lib/apt/lists/*; \
+    rm -rf /tmp/chrome.deb;
+
 
 RUN set -ex; \
     curl -LfsSo /tmp/openjdk.tar.gz https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9/OpenJDK16U-jdk_x64_linux_hotspot_16.0.1_9.tar.gz; \

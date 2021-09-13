@@ -15,7 +15,7 @@
 
 (def empty-page-data
   {:options {}
-   :name "Page"
+   :name "Page-1"
    :objects
    {root
     {:id root
@@ -38,7 +38,7 @@
 
 (def ^:private minimal-shapes
   [{:type :rect
-    :name "Rect"
+    :name "Rect-1"
     :fill-color default-color
     :fill-opacity 1
     :stroke-style :none
@@ -52,7 +52,7 @@
    {:type :image}
 
    {:type :circle
-    :name "Circle"
+    :name "Circle-1"
     :fill-color default-color
     :fill-opacity 1
     :stroke-style :none
@@ -62,7 +62,7 @@
     :stroke-opacity 0}
 
    {:type :path
-    :name "Path"
+    :name "Path-1"
     :stroke-style :solid
     :stroke-alignment :center
     :stroke-width 2
@@ -70,7 +70,7 @@
     :stroke-opacity 1}
 
    {:type :frame
-    :name "Artboard"
+    :name "Artboard-1"
     :fill-color "#ffffff"
     :fill-opacity 1
     :stroke-style :none
@@ -80,7 +80,7 @@
     :stroke-opacity 0}
 
    {:type :text
-    :name "Text"
+    :name "Text-1"
     :content nil}
 
    {:type :svg-raw}])

@@ -91,7 +91,11 @@
 
    :create-component   {:tooltip (ds/meta "K")
                         :command (ds/c-mod "k")
-                        :fn #(st/emit! dwl/add-component)}
+                        :fn #(st/emit! (dwl/add-component))}
+
+   :detach-component   {:tooltip (ds/meta-shift "K")
+                        :command (ds/c-mod "shift+k")
+                        :fn #(st/emit! dwl/detach-selected-components)}
 
    :flip-vertical      {:tooltip (ds/shift "V")
                         :command "shift+v"

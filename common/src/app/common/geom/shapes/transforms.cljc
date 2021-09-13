@@ -487,6 +487,7 @@
                                             (d/parse-double)
                                             (* (get-in modifiers [:resize-vector :x] 1))
                                             (* (get-in modifiers [:resize-vector-2 :x] 1))
+                                            (mth/precision 2)
                                             (str))]
                           (attrs/merge attrs {:font-size font-size})))]
       (update shape :content #(txt/transform-nodes

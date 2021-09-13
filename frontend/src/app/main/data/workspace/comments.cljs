@@ -71,7 +71,7 @@
 (defn center-to-comment-thread
   [{:keys [position] :as thread}]
   (us/assert ::dcm/comment-thread thread)
-  (ptk/reify :center-to-comment-thread
+  (ptk/reify ::center-to-comment-thread
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
@@ -89,7 +89,7 @@
 (defn navigate
   [thread]
   (us/assert ::dcm/comment-thread thread)
-  (ptk/reify ::navigate
+  (ptk/reify ::open-comment-thread
     ptk/WatchEvent
     (watch [_ _ stream]
       (let [pparams {:project-id (:project-id thread)

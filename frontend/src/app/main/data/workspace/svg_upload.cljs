@@ -95,7 +95,11 @@
                                  (d/parse-double))))))
 
 (defn setup-stroke [shape]
-  (let [shape
+  (let [stroke-linecap (-> (or (get-in shape [:svg-attrs :stroke-linecap])
+                               (get-in shape [:svg-attrs :style :stroke-linecap]))
+                           ((d/nilf str/trim))
+                           ((d/nilf keyword)))
+        shape
         (cond-> shape
           (uc/color? (get-in shape [:svg-attrs :stroke]))
           (-> (update :svg-attrs dissoc :stroke)
@@ -113,8 +117,16 @@
           (get-in shape [:svg-attrs :style :stroke-width])
           (-> (update-in [:svg-attrs :style] dissoc :stroke-width)
               (assoc :stroke-width (-> (get-in shape [:svg-attrs :style :stroke-width])
-                                       (d/parse-double)))))]
-    (if (d/any-key? shape :stroke-color :stroke-opacity :stroke-width)
+                                       (d/parse-double))))
+
+          (and stroke-linecap (= (:type shape) :path))
+          (-> (update-in [:svg-attrs :style] dissoc :stroke-linecap)
+              (cond->
+                (#{:round :square} stroke-linecap)
+                (assoc :stroke-cap-start stroke-linecap
+                       :stroke-cap-end   stroke-linecap))))]
+
+    (if (d/any-key? shape :stroke-color :stroke-opacity :stroke-width :stroke-cap-start :stroke-cap-end)
       (merge {:stroke-style :svg} shape)
       shape)))
 
@@ -331,7 +343,7 @@
   (let [{:keys [tag attrs]} element-data
         attrs (usvg/format-styles attrs)
         element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
-        name (dwc/generate-unique-name unames (or (:id attrs) (tag->name tag)) true)
+        name (dwc/generate-unique-name unames (or (:id attrs) (tag->name tag)))
         att-refs (usvg/find-attr-references attrs)
         references (usvg/find-def-references (:defs svg-data) att-refs)
 

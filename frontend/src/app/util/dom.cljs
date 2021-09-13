@@ -55,6 +55,10 @@
     (.insertAdjacentHTML head "beforeend"
                          (str "<style>"
                               "  @page {" style-str "}"
+                              "  html, body {"            ; Fix issue having Chromium to add random 1px marging at the bottom
+                              "    overflow: hidden;"     ; https://github.com/puppeteer/puppeteer/issues/2278#issuecomment-410381934
+                              "    font-size: 0;"
+                              "  }"
                               "</style>"))))
 
 (defn get-element-by-class
@@ -85,6 +89,12 @@
   "Extract the target from event instance."
   [event]
   (.-target event))
+
+(defn get-current-target
+  "Extract the current target from event instance (different from target
+   when event triggered in a child of the suscribing element)."
+  [event]
+  (.-currentTarget event))
 
 (defn get-parent
   [dom]

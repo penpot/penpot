@@ -38,6 +38,9 @@
 (def threads-ref
   (l/derived :comment-threads st/state))
 
+(def share-links
+  (l/derived :share-links st/state))
+
 ;; ---- Dashboard refs
 
 (def dashboard-local
@@ -110,6 +113,7 @@
                               :edit-path
                               :tooltip
                               :panning
+                              :zooming
                               :picking-color?
                               :transform
                               :hover
@@ -286,8 +290,17 @@
 
 ;; ---- Viewer refs
 
+(def viewer-file
+  (l/derived :viewer-file st/state))
+
+(def viewer-project
+  (l/derived :viewer-file st/state))
+
 (def viewer-data
-  (l/derived :viewer-data st/state))
+  (l/derived :viewer st/state))
+
+(def viewer-state
+  (l/derived :viewer st/state))
 
 (def viewer-local
   (l/derived :viewer-local st/state))

@@ -42,10 +42,13 @@
     (if-let [conform (get-in match [:data :conform])]
       (let [spath  (get conform :path-params ::any)
             squery (get conform :query-params ::any)]
-        (-> (dissoc match :params)
-            (assoc :path-params (us/conform spath (get match :path-params))
-                   :query-params (us/conform squery (get match :query-params)))))
-      match)))
+        (try
+          (-> (dissoc match :params)
+              (assoc :path-params (us/conform spath (get match :path-params))
+                     :query-params (us/conform squery (get match :query-params))))
+          (catch :default _
+            nil)))
+        match)))
 
 (defn on-navigate
   [router path]

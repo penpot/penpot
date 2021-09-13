@@ -7,7 +7,7 @@
 (ns app.main.ui.auth.login
   (:require
    [app.common.spec :as us]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
@@ -23,10 +23,10 @@
    [rumext.alpha :as mf]))
 
 (def show-alt-login-buttons?
-  (or cfg/google-client-id
-      cfg/gitlab-client-id
-      cfg/github-client-id
-      cfg/oidc-client-id))
+  (or cf/google-client-id
+      cf/gitlab-client-id
+      cf/github-client-id
+      cf/oidc-client-id))
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)
@@ -97,7 +97,7 @@
       [:div.fields-row
        [:& fm/input
         {:name :email
-         :type "text"
+         :type "email"
          :tab-index "2"
          :help-icon i/at
          :label (tr "auth.email")}]]
@@ -113,7 +113,7 @@
        [:& fm/submit-button
         {:label (tr "auth.login-submit")}]
 
-       (when cfg/login-with-ldap
+       (when (contains? @cf/flags :login-with-ldap)
          [:& fm/submit-button
           {:label (tr "auth.login-with-ldap-submit")
            :on-click on-submit-ldap}])]]]))
@@ -121,26 +121,26 @@
 (mf/defc login-buttons
   [{:keys [params] :as props}]
   [:div.auth-buttons
-   (when cfg/google-client-id
+   (when cf/google-client-id
      [:a.btn-ocean.btn-large.btn-google-auth
       {:on-click #(login-with-oauth % :google params)}
       (tr "auth.login-with-google-submit")])
 
-   (when cfg/gitlab-client-id
+   (when cf/gitlab-client-id
      [:a.btn-ocean.btn-large.btn-gitlab-auth
       {:on-click #(login-with-oauth % :gitlab params)}
       [:img.logo
        {:src "/images/icons/brand-gitlab.svg"}]
       (tr "auth.login-with-gitlab-submit")])
 
-   (when cfg/github-client-id
+   (when cf/github-client-id
      [:a.btn-ocean.btn-large.btn-github-auth
       {:on-click #(login-with-oauth % :github params)}
       [:img.logo
        {:src "/images/icons/brand-github.svg"}]
       (tr "auth.login-with-github-submit")])
 
-   (when cfg/oidc-client-id
+   (when cf/oidc-client-id
      [:a.btn-ocean.btn-large.btn-github-auth
       {:on-click #(login-with-oauth % :oidc params)}
       (tr "auth.login-with-oidc-submit")])])
@@ -166,14 +166,13 @@
       [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))}
        (tr "auth.forgot-password")]]
 
-     (when cfg/registration-enabled
+     (when (contains? @cf/flags :registration)
        [:div.link-entry
         [:span (tr "auth.register") " "]
         [:a {:on-click #(st/emit! (rt/nav :auth-register {} params))}
          (tr "auth.register-submit")]])]
 
-
-    (when cfg/allow-demo-users
+    (when (contains? @cf/flags :demo-users)
       [:div.links.demo
        [:div.link-entry
         [:span (tr "auth.create-demo-profile") " "]
