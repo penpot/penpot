@@ -159,7 +159,8 @@
                        id))
         svg-attrs (-> svg-attrs
                       (usvg/clean-attrs)
-                      (usvg/update-attr-ids replace-id))
+                      (usvg/update-attr-ids replace-id)
+                      (dissoc :id))
 
         attrs  (-> svg-attrs (dissoc :style) (clj->js))
         styles (-> svg-attrs (:style {}) (clj->js))]

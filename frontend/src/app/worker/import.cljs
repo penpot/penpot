@@ -255,7 +255,7 @@
     (let [name     (cip/get-image-name node)
           data-uri (cip/get-image-data node)]
       (->> (upload-media-files file-id name data-uri)
-           (rx/catch #(do (.error js/console %)
+           (rx/catch #(do (.error js/console "Error uploading media: " name)
                           (rx/of node)))
            (rx/map
             (fn [media]
@@ -370,7 +370,9 @@
                                   :content content
                                   :is-local false})))
                      (rx/flat-map #(rp/mutation! :upload-file-media-object %))
-                     (rx/map (constantly media))))))
+                     (rx/map (constantly media))
+                     (rx/catch #(do (.error js/console (str "Error uploading media: " (:name media)) )
+                                    (rx/empty)))))))
            (rx/reduce fb/add-library-media file)))
 
     (rx/of file)))

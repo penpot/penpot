@@ -3,11 +3,20 @@
 ## :rocket: Next
 
 ### :boom: Breaking changes
+### :sparkles: New features
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :boom: Breaking changes
+### :heart: Community contributions by (Thank you!)
+
+
+## 1.8.0-alpha
+
+### :boom: Breaking changes
 
 - This release includes a new approach for handling share links, and
   this feature is incompatible with the previous one. This means that
   all the public share links generated previously will stop working.
-
 
 ### :sparkles: New features
 
@@ -26,7 +35,6 @@
 - Allow navigate through pages on the viewer [Taiga #1550](https://tree.taiga.io/project/penpot/us/1550).
 - Allow create share links with specific pages [Taiga #1844](https://tree.taiga.io/project/penpot/us/1844).
 
-
 ### :bug: Bugs fixed
 
 - Prevent adding numeric suffix to layer names when not needed [Taiga #1929](https://tree.taiga.io/project/penpot/us/1929).
@@ -39,12 +47,29 @@
 - Fix problems with order in groups [Taiga #1960](https://tree.taiga.io/project/penpot/issue/1960)
 - Fix SVG components preview [#1134](https://github.com/penpot/penpot/issues/1134)
 - Fix group renaming problem [Taiga #1969](https://tree.taiga.io/project/penpot/issue/1969)
+- Fix problem with import broken images links [#1197](https://github.com/penpot/penpot/issues/1197)
+- Fix problem while moving imported SVG's [#1199](https://github.com/penpot/penpot/issues/1199)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
 - eduayme [#1129](https://github.com/penpot/penpot/pull/1129).
+
+
+## 1.7.4-alpha
+
+### :bug: Bugs fixed
+
+- Fix demo user creation (self-hosted only)
+- Add better ldap response validation and reporting (self-hosted only)
+
+
+## 1.7.3-alpha
+
+### :bug: Bugs fixed
+
+- Fix font uploading issue on Windows.
 
 
 ## 1.7.2-alpha
