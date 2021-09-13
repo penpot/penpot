@@ -122,6 +122,10 @@
                               :show-distances?])
              workspace-local =))
 
+(def local-displacement
+  (l/derived #(select-keys % [:modifiers :selected])
+             workspace-local =))
+
 (def selected-zoom
   (l/derived :zoom workspace-local))
 

@@ -26,18 +26,26 @@
         (let [shape-1 (stp/convert-to-path (nth childs 0))
               shape-2 (stp/convert-to-path (nth childs 1))
 
-              content-1 (use-equal-memo (-> shape-1 :content gsh/transform-shape))
-              content-2 (use-equal-memo (-> shape-2 :content gsh/transform-shape))
+              content-1 (use-equal-memo (-> shape-1 gsh/transform-shape :content))
+              content-2 (use-equal-memo (-> shape-2 gsh/transform-shape :content))
 
               content
               (mf/use-memo
                (mf/deps content-1 content-2)
                #(pb/content-bool (:bool-type shape) content-1 content-2))]
 
-          [:& shape-wrapper {:shape (-> shape
-                                        (assoc :type :path)
-                                        (assoc :content content))
-                             :frame frame}])))))
+          [:*
+           [:& shape-wrapper {:shape (-> shape
+                                         (assoc :type :path)
+                                         (assoc :content content))
+                              :frame frame}]
+
+           #_[:g
+            (for [point (app.util.path.geom/content->points content)]
+              [:circle {:cx (:x point)
+                        :cy (:y point)
+                        :r 1
+                        :style {:fill "blue"}}])]])))))
 
 
 

@@ -7,9 +7,27 @@
 (ns app.common.geom.shapes.path
   (:require
    [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]))
+
+(def ^:const curve-curve-precision 0.1)
+
+(defn line-values
+  [[from-p to-p] t]
+  (let [move-v (-> (gpt/to-vec from-p to-p)
+                   (gpt/scale t))]
+    (gpt/add from-p move-v)))
+
+(defn line-windup
+  [[_ to-p :as l] t]
+  (let [p (line-values l t)
+        v (gpt/to-vec p to-p)]
+    (cond
+      (> (:y v) 0)  1
+      (< (:y v) 0) -1
+      :else         0)))
 
 ;; https://medium.com/@Acegikmo/the-ever-so-lovely-b%C3%A9zier-curve-eb27514da3bf
 ;; https://en.wikipedia.org/wiki/Bernstein_polynomial
@@ -36,6 +54,39 @@
                       (* (coord end)   end-v)))]
 
      (gpt/point (coord-v :x) (coord-v :y)))))
+
+(defn curve-tangent
+  "Retrieve the tangent vector to the curve in the point `t`"
+  [[start end h1 h2] t]
+  
+  (let [coords [[(:x start) (:x h1) (:x h2) (:x end)]
+                [(:y start) (:y h1) (:y h2) (:y end)]]
+
+        solve-derivative
+        (fn [[c0 c1 c2 c3]]
+          ;; Solve B'(t) given t to retrieve the value for the
+          ;; first derivative
+          (let [t2 (* t t)]
+            (+ (* c0 (+ (* -3 t2) (*   6 t) -3))
+               (* c1 (+ (*  9 t2) (* -12 t)  3))
+               (* c2 (+ (* -9 t2) (*   6 t)))
+               (* c3 (* 3 t2)))))
+
+        [x y] (->> coords (mapv solve-derivative))
+
+        ;; normalize value
+        d (mth/sqrt (+ (* x x) (* y y)))]
+
+    (gpt/point (/ x d) (/ y d))))
+
+(defn curve-windup
+  [curve t]
+
+  (let [tangent (curve-tangent curve t)]
+    (cond
+      (> (:y tangent) 0)  1
+      (< (:y tangent) 0) -1
+      :else               0)))
 
 (defn curve-split
   "Splits a curve into two at the given parametric value `t`.
@@ -184,7 +235,8 @@
           (mapcat coord->tvalue)
 
           ;; Only values in the range [0, 1] are valid
-          (filterv #(and (> % 0.01) (< % 0.99)))))))
+          #_(filterv #(and (> % 0.01) (< % 0.99)))
+          (filterv #(and (>= % 0) (<= % 1)))))))
 
 (defn command->point
   ([command] (command->point command nil))
@@ -195,6 +247,21 @@
          x (get params xkey)
          y (get params ykey)]
      (gpt/point x y))))
+
+(defn command->line
+  ([cmd]
+   (command->line cmd (:prev cmd)))
+  ([cmd prev]
+   [prev (command->point cmd)]))
+
+(defn command->bezier
+  ([cmd]
+   (command->bezier cmd (:prev cmd)))
+  ([cmd prev]
+   [prev
+    (command->point cmd)
+    (gpt/point (-> cmd :params :c1x) (-> cmd :params :c1y))
+    (gpt/point (-> cmd :params :c2x) (-> cmd :params :c2y))]))
 
 (defn content->selrect [content]
   (let [calc-extremities
@@ -422,3 +489,184 @@
          (reduce find-min-point)
          (first))))
 
+(defn- get-line-tval
+  [[{x1 :x y1 :y} {x2 :x y2 :y}] {:keys [x y]}]
+  (if (mth/almost-zero? (- x2 x1))
+    (/ (- y y1) (- y2 y1))
+    (/ (- x x1) (- x2 x1))))
+
+(defn- curve-range->rect
+  [curve from-t to-t]
+
+  (let [[from-p to-p :as curve] (subcurve-range curve from-t to-t)
+        extremes (->> (curve-extremities curve)
+                      (mapv #(curve-values curve %)))]
+    (gpr/points->rect (into [from-p to-p] extremes))))
+
+
+(defn line-line-crossing
+  [[from-p1 to-p1 :as l1] [from-p2 to-p2 :as l2]]
+
+  (let [{x1 :x y1 :y} from-p1
+        {x2 :x y2 :y} to-p1
+
+        {x3 :x y3 :y} from-p2
+        {x4 :x y4 :y} to-p2
+
+        nx (- (* (- x3 x4) (- (* x1 y2) (* y1 x2)))
+              (* (- x1 x2) (- (* x3 y4) (* y3 x4))))
+
+        ny (- (* (- y3 y4) (- (* x1 y2) (* y1 x2)))
+              (* (- y1 y2) (- (* x3 y4) (* y3 x4))))
+
+        d  (- (* (- x1 x2) (- y3 y4))
+              (* (- y1 y2) (- x3 x4)))]
+
+    (when-not (mth/almost-zero? d)
+      ;; Coordinates in the line. We calculate the tvalue that will
+      ;; return 0-1 as a percentage in the segment
+      (let [cross-p (gpt/point (/ nx d) (/ ny d))
+            t1 (get-line-tval l1 cross-p)
+            t2 (get-line-tval l2 cross-p)]
+        [t1 t2]))))
+
+(defn line-curve-crossing
+  [[from-p1 to-p1]
+   [from-p2 to-p2 h1-p2 h2-p2]]
+
+  (let [theta (-> (mth/atan2 (- (:y to-p1) (:y from-p1))
+                             (- (:x to-p1) (:x from-p1)))
+                  (mth/degrees))
+
+        transform (-> (gmt/matrix)
+                      (gmt/rotate (- theta))
+                      (gmt/translate (gpt/negate from-p1)))
+
+        c2' [(gpt/transform from-p2 transform)
+             (gpt/transform to-p2 transform)
+             (gpt/transform h1-p2 transform)
+             (gpt/transform h2-p2 transform)]]
+
+    (curve-roots c2' :y)))
+
+(defn ray-line-intersect
+  [point line]
+
+  (let [ray-line [point (gpt/point (inc (:x point)) (:y point))]
+        [ray-t line-t] (line-line-crossing ray-line line)]
+
+    (when (and (some? line-t) (> ray-t 0) (>= line-t 0) (< line-t 1))
+      [[(line-values line line-t)
+        (line-windup line line-t)]])))
+
+(defn line-line-intersect
+  [l1 l2]
+
+  (let [[l1-t l2-t] (line-line-crossing l1 l2)]
+    (when (and (some? l1-t) (some? l2-t)
+               (> l1-t 0.01) (< l1-t 0.99)
+               (> l2-t 0.01) (< l2-t 0.99))
+      [[l1-t] [l2-t]])))
+
+(defn ray-curve-intersect
+  [ray-line c2]
+
+  (let [;; ray-line [point (gpt/point (inc (:x point)) (:y point))]
+        curve-ts (->> (line-curve-crossing ray-line c2)
+                      (filterv #(let [curve-v (curve-values c2 %)
+                                      curve-tg (curve-tangent c2 %)
+                                      curve-tg-angle (gpt/angle curve-tg)
+                                      ray-t (get-line-tval ray-line curve-v)]
+                                  (and (> ray-t 0)
+                                       (> (mth/abs (- curve-tg-angle 180)) 0.01)
+                                       (> (mth/abs (- curve-tg-angle 0)) 0.01)) )))]
+    (->> curve-ts
+         (mapv #(vector (curve-values c2 %)
+                        (curve-windup c2 %))))))
+
+(defn line-curve-intersect
+  [l1 c2]
+  (let [curve-ts (->> (line-curve-crossing l1 c2)
+                      (filterv #(let [curve-v (curve-values c2 %)
+                                      line-t (get-line-tval l1 curve-v)]
+                                  (and (> line-t 0.001) (< line-t 0.999)))))
+        ;; Intersection line-curve points
+        intersect-ps (->> curve-ts
+                          (mapv #(curve-values c2 %)))
+        
+        line-ts (->> intersect-ps
+                     (mapv #(get-line-tval l1 %)))]
+    [line-ts curve-ts]))
+
+(defn curve-curve-intersect
+  [c1 c2]
+
+  (letfn [(remove-close-ts [ts]
+            (loop [current (first ts)
+                   pending (rest ts)
+                   acc     nil
+                   result  []]
+              (if (nil? current)
+                result
+                (if (and (some? acc)
+                         (< (mth/abs (- current acc)) 0.01))
+                  (recur (first pending)
+                         (rest pending)
+                         acc
+                         result)
+
+                  (recur (first pending)
+                         (rest pending)
+                         current
+                         (conj result current))))))
+
+          (check-range [c1-from c1-to c2-from c2-to]
+            (let [r1 (curve-range->rect c1 c1-from c1-to)
+                  r2 (curve-range->rect c2 c2-from c2-to)]
+
+              (when (gpr/overlaps-rects? r1 r2)
+                (if (< (gpt/distance (curve-values c1 c1-from)
+                                     (curve-values c2 c2-from))
+                       curve-curve-precision)
+                  [(sorted-set (mth/precision c1-from 4))
+                   (sorted-set (mth/precision c2-from 4))]
+
+                  (let [c1-half (+ c1-from (/ (- c1-to c1-from) 2))
+                        c2-half (+ c2-from (/ (- c2-to c2-from) 2))
+
+                        [c1-ts-1 c2-ts-1] (check-range c1-from c1-half c2-from c2-half)
+                        [c1-ts-2 c2-ts-2] (check-range c1-from c1-half c2-half c2-to)
+                        [c1-ts-3 c2-ts-3] (check-range c1-half c1-to c2-from c2-half)
+                        [c1-ts-4 c2-ts-4] (check-range c1-half c1-to c2-half c2-to)]
+
+                    [(into (sorted-set) (d/concat [] c1-ts-1 c1-ts-2 c1-ts-3 c1-ts-4))
+                     (into (sorted-set) (d/concat [] c2-ts-1 c2-ts-2 c2-ts-3 c2-ts-4))])))))]
+
+    (let [[c1-ts c2-ts] (check-range 0.005 0.995 0.005 0.995)
+          c1-ts (remove-close-ts c1-ts)
+          c2-ts (remove-close-ts c2-ts)]
+      [c1-ts c2-ts])))
+
+(defn curve->rect
+  [[from-p to-p :as curve]]
+  (let [extremes (->> (curve-extremities curve)
+                      (mapv #(curve-values curve %)))]
+    (gpr/points->rect (into [from-p to-p] extremes))))
+
+
+(defn is-point-in-content?
+  [point content]
+
+  (letfn [(cast-ray [[cmd prev]]
+            (let [ray-line [point (gpt/point (inc (:x point)) (:y point))]]
+              (case (:command cmd)
+                :line-to  (ray-line-intersect  point (command->line cmd (command->point prev)))
+                :curve-to (ray-curve-intersect ray-line (command->bezier cmd (command->point prev)))
+                #_:else   [])))]
+
+    ;; non-zero windup rule
+    (->> (d/with-prev content)
+         (mapcat cast-ray)
+         (map second)
+         (reduce +)
+         (not= 0))))

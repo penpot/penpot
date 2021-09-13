@@ -46,24 +46,29 @@
   (let [to-p (upc/command->point cmd)]
     (->> (conj values 1)
          (mapv (fn [val]
-                 (upc/make-line-to (gpt/lerp from-p to-p val)))))))
+                 (-> (gpt/lerp from-p to-p val)
+                     #_(gpt/round 2)
+                     (upc/make-line-to)))))))
 
 (defn split-curve-to-ranges
   "Splits a curve into several curves given the points in `values`
   for example (split-curve-to-ranges p c [0 0.25 0.5 0.75 1] will split
   the curve into 4 curves that draw the same curve"
   [from-p cmd values]
-  (let [to-p (upc/command->point cmd)
-        params (:params cmd)
-        h1 (gpt/point (:c1x params) (:c1y params))
-        h2 (gpt/point (:c2x params) (:c2y params))]
+  (if (empty? values)
+    [cmd]
+    (let [to-p (upc/command->point cmd)
+          params (:params cmd)
+          h1 (gpt/point (:c1x params) (:c1y params))
+          h2 (gpt/point (:c2x params) (:c2y params))
 
-    (->> (d/with-prev (conj values 1))
-         (mapv
-          (fn [[t1 t0]]
-            (let [t0 (if (nil? t0) 0 t0)
-                  [_ to-p h1' h2'] (gshp/subcurve-range from-p to-p h1 h2 t0 t1)]
-              (upc/make-curve-to to-p h1' h2')))))))
+          values-set (->> (conj values 1) (into (sorted-set)))]
+      (->> (d/with-prev values-set)
+           (mapv
+            (fn [[t1 t0]]
+              (let [t0 (if (nil? t0) 0 t0)
+                    [_ to-p h1' h2'] (gshp/subcurve-range from-p to-p h1 h2 t0 t1)]
+                (upc/make-curve-to (-> to-p #_(gpt/round 2)) h1' h2'))))))))
 
 (defn opposite-handler
   "Calculates the coordinates of the opposite handler"

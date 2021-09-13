@@ -7,7 +7,13 @@
 (ns app.util.path.subpaths
   (:require
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.util.path.commands :as upc]))
+
+(defn pt=
+  "Check if two points are close"
+  [p1 p2]
+  (< (gpt/distance p1 p2) 0.1))
 
 (defn make-subpath
   "Creates a subpath either from a single command or with all the data"
@@ -76,7 +82,7 @@
 (defn subpaths-join
   "Join two subpaths together when the first finish where the second starts"
   [subpath other]
-  (assert (= (:to subpath) (:from other)))
+  (assert (pt= (:to subpath) (:from other)))
   (-> subpath
       (update :data d/concat (rest (:data other)))
       (assoc :to (:to other))))
@@ -88,14 +94,21 @@
   (let [merge-with-candidate
         (fn [[candidate result] current]
           (cond
-            (= (:to current) (:from current))
+            (pt= (:to current) (:from current))
+            ;; Subpath is already a closed path
             [candidate (conj result current)]
 
-            (= (:to candidate) (:from current))
+            (pt= (:to candidate) (:from current))
             [(subpaths-join candidate current) result]
 
-            (= (:to candidate) (:to current))
+            (pt= (:from candidate) (:to current))
+            [(subpaths-join current candidate) result]
+
+            (pt= (:to candidate) (:to current))
             [(subpaths-join candidate (reverse-subpath current)) result]
+
+            (pt= (:from candidate) (:from current))
+            [(subpaths-join (reverse-subpath current) candidate) result]
 
             :else
             [candidate (conj result current)]))]
@@ -114,7 +127,7 @@
 
           (if (some? current)
             (let [[new-current new-subpaths]
-                  (if (= (:from current) (:to current))
+                  (if (pt= (:from current) (:to current))
                     [current subpaths]
                     (merge-paths current subpaths))]
 

@@ -70,3 +70,23 @@
    :y (- (:y center) (/ height 2))
    :width width
    :height height})
+
+(defn overlaps-rects?
+  "Check for two rects to overlap. Rects won't overlap only if
+   one of them is fully to the left or the top"
+  [rect-a rect-b]
+
+  (let [x1a (:x rect-a)
+        y1a (:y rect-a)
+        x2a (+ (:x rect-a) (:width rect-a))
+        y2a (+ (:y rect-a) (:height rect-a))
+
+        x1b (:x rect-b)
+        y1b (:y rect-b)
+        x2b (+ (:x rect-b) (:width rect-b))
+        y2b (+ (:y rect-b) (:height rect-b))]
+
+    (and (> x2a x1b)
+         (> x2b x1a)
+         (> y2a y1b)
+         (> y2b y1a))))
