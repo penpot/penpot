@@ -40,6 +40,7 @@
 - Fix SVG components preview [#1134](https://github.com/penpot/penpot/issues/1134)
 - Fix group renaming problem [Taiga #1969](https://tree.taiga.io/project/penpot/issue/1969)
 - Fix problem with import broken images links [#1197](https://github.com/penpot/penpot/issues/1197)
+- Fix problem while moving imported SVG's [#1199](https://github.com/penpot/penpot/issues/1199)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
