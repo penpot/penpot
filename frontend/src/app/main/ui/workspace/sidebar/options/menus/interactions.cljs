@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.pages :as cp]
-   [app.common.pages.spec :as spec]
+   [app.common.types.interactions :as cti]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -21,7 +21,7 @@
 (defn- event-type-names
   []
   {:click (tr "workspace.options.interaction-on-click")
-   :hover (tr "workspace.options.interaction-while-hovering")})
+   :mouse-over (tr "workspace.options.interaction-while-hovering")})
 
 (defn- event-type-name
   [interaction]
@@ -56,18 +56,18 @@
         change-event-type
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value d/read-string)]
-            (update-interaction index #(assoc % :event-type value))))
+            (update-interaction index #(cti/set-event-type % value))))
 
         change-action-type
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value d/read-string)]
-            (update-interaction index #(assoc % :action-type value))))
+            (update-interaction index #(cti/set-action-type % value))))
 
         change-destination
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value)
                 value (when (not= value "") (uuid/uuid value))]
-            (update-interaction index #(assoc % :destination value))))]
+            (update-interaction index #(cti/set-destination % value shape objects))))]
 
     [:*
      [:div.element-set-options-group
@@ -84,21 +84,21 @@
          [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-trigger")]
             [:select.input-select
-             {:default-value (str (:event-type interaction))
+             {:value (str (:event-type interaction))
               :on-change change-event-type}
              (for [[value name] (event-type-names)]
                [:option {:value (str value)} name])]]
          [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-action")]
             [:select.input-select
-             {:default-value (str (:action-type interaction))
+             {:value (str (:action-type interaction))
               :on-change change-action-type}
              (for [[value name] (action-type-names)]
                [:option {:value (str value)} name])]]
          [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-destination")]
             [:select.input-select
-             {:default-value (str (:destination interaction))
+             {:value (str (:destination interaction))
               :on-change change-destination}
              [:option {:value ""} (tr "workspace.options.interaction-none")]
              (for [frame frames]
@@ -112,8 +112,7 @@
 
         add-interaction
         (fn [_]
-          (let [new-interactions
-                (conj interactions (update spec/default-interaction :event-type identity))]
+          (let [new-interactions (conj interactions cti/default-interaction)]
             (st/emit! (dw/update-shape (:id shape) {:interactions new-interactions}))))
 
         remove-interaction

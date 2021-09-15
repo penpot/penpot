@@ -9,6 +9,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
+   [app.common.types.interactions :as cti]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]))
@@ -183,25 +184,6 @@
 (s/def :internal.page/options
   (s/keys :opt-un [:internal.page.options/background]))
 
-;; Interactions
-
-(s/def :internal.shape.interaction/event-type #{:click :hover})
-(s/def :internal.shape.interaction/action-type #{:navigate :open-overlay :close-overlay})
-(s/def :internal.shape.interaction/destination (s/nilable ::uuid))
-
-(s/def :internal.shape/interaction
-  (s/keys :req-un [:internal.shape.interaction/event-type
-                   :internal.shape.interaction/action-type
-                   :internal.shape.interaction/destination]))
-
-(s/def :internal.shape/interactions
-  (s/coll-of :internal.shape/interaction :kind vector?))
-
-(def default-interaction
-  {:event-type :click
-   :action-type :navigate
-   :destination nil})
-
 ;; Size constraints
 
 (s/def :internal.shape/constraints-h #{:left :right :leftright :center :scale})
@@ -366,7 +348,7 @@
                    :internal.shape/transform-inverse
                    :internal.shape/width
                    :internal.shape/height
-                   :internal.shape/interactions
+                   ::cti/interactions
                    :internal.shape/masked-group?
                    :internal.shape/shadow
                    :internal.shape/blur]))

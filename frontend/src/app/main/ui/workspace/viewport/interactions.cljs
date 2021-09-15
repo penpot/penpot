@@ -8,6 +8,7 @@
   "Visually show shape interactions in workspace"
   (:require
    [app.common.data :as d]
+   [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -86,11 +87,8 @@
                                  :right "M -5 0 l 8 0 l -4 -4 m 4 4 l -4 4"
                                  :left "M 5 0 l -8 0 l 4 -4 m -4 4 l 4 4"
                                  nil)
-                     :open-overlay (case arrow-dir
-                                     ;; TODO: have a different icon for open overlay?
-                                     :right "M -5 0 l 8 0 l -4 -4 m 4 4 l -4 4"
-                                     :left "M 5 0 l -8 0 l 4 -4 m -4 4 l 4 4"
-                                     nil)
+
+                     :open-overlay "M-4 -4 h6 v6 h-6 z M2 -2 h2.5 v6.5 h-6.5 v-2.5"
 
                      :close-overlay "M -4 -4 L 4 4 M -4 4 L 4 -4"
 
@@ -162,6 +160,11 @@
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
                :d pdata}]
+
+       (when dest-shape
+         [:& outline {:shape dest-shape
+                      :color "#31EFB8"}])
+
        [:& interaction-marker {:index index
                                :x orig-x
                                :y orig-y
@@ -173,11 +176,7 @@
                                :stroke "#31EFB8"
                                :action-type action-type
                                :arrow-dir arrow-dir
-                               :zoom zoom}]
-
-       (when dest-shape
-         [:& outline {:shape dest-shape
-                      :color "#31EFB8"}])])))
+                               :zoom zoom}]])))
 
 
 (mf/defc interaction-handle
@@ -194,6 +193,37 @@
                              :zoom zoom}]]))
 
 
+(mf/defc overlay-marker
+  [{:keys [index orig-shape dest-shape position objects zoom] :as props}]
+  (let [start-move-position
+        (fn [event]
+          (st/emit! (dw/start-move-overlay-pos index)))]
+
+    (when dest-shape
+      (let [orig-frame (cph/get-frame orig-shape objects)
+            marker-x   (+ (:x orig-frame) (:x position))
+            marker-y   (+ (:y orig-frame) (:y position))
+            width      (:width dest-shape)
+            height     (:height dest-shape)]
+        [:g {:on-mouse-down start-move-position}
+         [:path {:stroke "#31EFB8"
+                 :fill "#000000"
+                 :fill-opacity 0.3
+                 :stroke-width 1
+                 :d (str "M" marker-x " " marker-y " "
+                         "h " width " "
+                         "v " height " "
+                         "h -" width " z"
+                         "M" marker-x " " marker-y " "
+                         "l " width " " height " "
+                         "M" marker-x " " (+ marker-y height) " "
+                         "l " width " -" height " ")}]
+         [:circle {:cx (+ marker-x (/ width 2))
+                   :cy (+ marker-y (/ height 2))
+                   :r 8
+                   :fill "#31EFB8"}]
+         ]))))
+
 (mf/defc interactions
   [{:keys [selected] :as props}]
   (let [local (mf/deref refs/workspace-local)
@@ -205,6 +235,8 @@
         editing-interaction-index (:editing-interaction-index local)
         draw-interaction-to (:draw-interaction-to local)
         draw-interaction-to-frame (:draw-interaction-to-frame local)
+        move-overlay-to (:move-overlay-to local)
+        move-overlay-index (:move-overlay-index local)
         first-selected (first selected-shapes)]
 
     [:g.interactions
@@ -238,14 +270,32 @@
           (for [[index interaction] (d/enumerate (:interactions shape))]
             (when-not (= index editing-interaction-index)
               (let [dest-shape (get objects (:destination interaction))]
-                [:& interaction-path {:key (str (:id shape) "-" index)
-                                      :index index
-                                      :orig-shape shape
-                                      :dest-shape dest-shape
-                                      :selected selected
-                                      :selected? true
-                                      :action-type (:action-type interaction)
-                                      :zoom zoom}])))
+                [:*
+                  [:& interaction-path {:key (str (:id shape) "-" index)
+                                        :index index
+                                        :orig-shape shape
+                                        :dest-shape dest-shape
+                                        :selected selected
+                                        :selected? true
+                                        :action-type (:action-type interaction)
+                                        :zoom zoom}]
+                  (when (= (:action-type interaction) :open-overlay)
+                    (if (and (some? move-overlay-to)
+                             (= move-overlay-index index))
+                      [:& overlay-marker {:key (str "pos" (:id shape) "-" index)
+                                          :index index
+                                          :orig-shape shape
+                                          :dest-shape dest-shape
+                                          :position move-overlay-to
+                                          :objects objects
+                                          :zoom zoom}]
+                      [:& overlay-marker {:key (str "pos" (:id shape) "-" index)
+                                          :index index
+                                          :orig-shape shape
+                                          :dest-shape dest-shape
+                                          :position (:overlay-position interaction)
+                                          :objects objects
+                                          :zoom zoom}]))])))
           (when (not (#{:move :rotate} current-transform))
             [:& interaction-handle {:key (:id shape)
                                     :index nil

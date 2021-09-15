@@ -18,6 +18,7 @@
    [app.common.pages.spec :as spec]
    [app.common.spec :as us]
    [app.common.transit :as t]
+   [app.common.types.interactions :as cti]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.events :as ev]
@@ -1826,10 +1827,93 @@
                                                frame)]
                                    ;; Update or create interaction
                                    (if index
-                                     (assoc-in interactions [index :destination] (:id frame))
+                                     (update-in interactions [index]
+                                                #(cti/set-destination % (:id frame) shape objects))
                                      (conj (or interactions [])
-                                           (assoc spec/default-interaction
-                                                  :destination (:id frame))))))))))))))))
+                                           (cti/set-destination cti/default-interaction
+                                                                (:id frame)
+                                                                shape
+                                                                objects)))))))))))))))
+
+(declare move-overlay-pos)
+(declare finish-move-overlay-pos)
+
+(defn start-move-overlay-pos
+  [index]
+  (ptk/reify ::start-move-overlay-pos
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :move-overlay-to] nil)
+          (assoc-in [:workspace-local :move-overlay-index] index)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [initial-pos @ms/mouse-position
+            selected (wsh/lookup-selected state)
+            stopper (rx/filter ms/mouse-up? stream)]
+        (when (= 1 (count selected))
+          (let [page-id     (:current-page-id state)
+                objects     (wsh/lookup-page-objects state page-id)
+                shape       (->> state
+                                 wsh/lookup-selected
+                                 first
+                                 (get objects))
+                overlay-pos (-> shape
+                                (get-in [:interactions index])
+                                :overlay-position)
+                orig-frame  (cph/get-frame shape objects)
+                frame-pos   (gpt/point (:x orig-frame) (:y orig-frame))
+                offset      (-> initial-pos
+                                (gpt/subtract overlay-pos)
+                                (gpt/subtract frame-pos))]
+            (rx/concat
+              (->> ms/mouse-position
+                   (rx/take-until stopper)
+                   (rx/map #(move-overlay-pos % overlay-pos frame-pos offset)))
+              (rx/of (finish-move-overlay-pos index overlay-pos frame-pos offset)))))))))
+
+(defn move-overlay-pos
+  [pos overlay-pos frame-pos offset]
+  (ptk/reify ::move-overlay-pos
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pos (-> pos
+                    (gpt/subtract frame-pos)
+                    (gpt/subtract offset))]
+        (assoc-in state [:workspace-local :move-overlay-to] pos)))))
+
+(defn finish-move-overlay-pos
+ [index overlay-pos frame-pos offset]
+ (ptk/reify ::finish-move-overlay-pos
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (d/dissoc-in [:workspace-local :move-overlay-to])
+          (d/dissoc-in [:workspace-local :move-overlay-index])))
+
+   ptk/WatchEvent
+   (watch [_ state _]
+     (let [pos         @ms/mouse-position
+           overlay-pos (-> pos
+                           (gpt/subtract frame-pos)
+                           (gpt/subtract offset))
+
+           page-id     (:current-page-id state)
+           objects     (wsh/lookup-page-objects state page-id)
+           shape       (->> state
+                            wsh/lookup-selected
+                            first
+                            (get objects))
+
+           interactions (:interactions shape)
+
+           new-interactions
+           (update interactions index
+                   #(cti/set-overlay-position % overlay-pos))]
+
+       (rx/of (update-shape (:id shape) {:interactions new-interactions}))))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CANVAS OPTIONS

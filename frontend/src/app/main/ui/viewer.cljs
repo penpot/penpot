@@ -33,11 +33,6 @@
      :height (* height zoom)
      :vbox   (str "0 0 " width " " height)}))
 
-(defn- position-overlay
-  [size size-over]
-  {:x (/ (- (:width size) (:width size-over)) 2)
-   :y (/ (- (:height size) (:height size-over)) 2)})
-
 (mf/defc viewer
   [{:keys [params data]}]
 
@@ -125,7 +120,6 @@
              :section section
              :local local}]
 
-
            [:div.viewport-container
             {:style {:width (:width size)
                      :height (:height size)
@@ -147,16 +141,15 @@
               :local local}]
 
             (for [overlay (:overlays local)]
-              (let [size-over (calculate-size overlay zoom)
-                    pos-over  (position-overlay size size-over)]
+              (let [size-over (calculate-size (:frame overlay) zoom)]
                 [:div.viewport-container
                  {:style {:width (:width size-over)
                           :height (:height size-over)
                           :position "absolute"
-                          :left (:x pos-over)
-                          :top (:y pos-over)}}
+                          :left (:x (:position overlay))
+                          :top (:y (:position overlay))}}
                  [:& interactions/viewport
-                  {:frame overlay
+                  {:frame (:frame overlay)
                    :size size-over
                    :page page
                    :file file

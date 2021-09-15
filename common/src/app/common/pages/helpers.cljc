@@ -161,6 +161,12 @@
     (when parent-id
       (lazy-seq (cons parent-id (get-parents parent-id objects))))))
 
+(defn get-frame
+  "Get the frame that contains the shape. If the shape is already a frame, get itself."
+  [shape objects]
+  (if (= (:type shape) :frame)
+    shape
+    (get objects (:frame-id shape))))
 
 (defn clean-loops
   "Clean a list of ids from circular references."
