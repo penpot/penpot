@@ -7,31 +7,49 @@
 (ns app.http.errors
   "A errors handling for the http server."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.util.logging :as l]
-   [cuerdas.core :as str]
-   [expound.alpha :as expound]))
+   [clojure.pprint]
+   [cuerdas.core :as str]))
 
-(defn- explain-error
-  [error]
-  (with-out-str
-    (expound/printer (:data error))))
+(defn- parse-client-ip
+  [{:keys [headers] :as request}]
+  (or (some-> (get headers "x-forwarded-for") (str/split ",") first)
+      (get headers "x-real-ip")
+      (get request :remote-addr)))
+
+(defn- stringify-data
+  [data]
+  (binding [clojure.pprint/*print-right-margin* 200]
+    (let [result (with-out-str (clojure.pprint/pprint data))]
+      (str/prune result (* 1024 1024) "[...]"))))
 
 (defn get-error-context
   [request error]
-  (let [edata (ex-data error)]
-    (merge
-     {:id      (uuid/next)
-      :path    (:uri request)
-      :method  (:request-method request)
-      :params  (:params request)
-      :data    edata}
+  (let [data (ex-data error)]
+    (d/without-nils
+     (merge
+      {:id      (str (uuid/next))
+       :path    (str (:uri request))
+       :method  (name (:request-method request))
+       :hint    (or (:hint data) (ex-message error))
+       :params  (stringify-data (:params request))
+       :data    (stringify-data (dissoc data :explain))
+       :ip-addr (parse-client-ip request)
+       :explain (str/prune (:explain data) (* 1024 1024) "[...]")}
+
+     (when-let [id (:profile-id request)]
+       {:profile-id id})
+
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
         :frontend-version (get headers "x-frontend-version" "unknown")})
-     (when (and (map? edata) (:data edata))
-       {:explain (explain-error edata)}))))
+
+     (when (map? data)
+       {:error-type (:type data)
+        :error-code (:code data)})))))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -42,7 +60,6 @@
 (defmethod handle-exception :authentication
   [err _]
   {:status 401 :body (ex-data err)})
-
 
 (defmethod handle-exception :restriction
   [err _]
@@ -57,13 +74,10 @@
       {:status 400
        :headers {"content-type" "text/html"}
        :body (str "<pre style='font-size:16px'>"
-                  (explain-error edata)
+                  (:explain edata)
                   "</pre>\n")}
       {:status 400
-       :body   (cond-> edata
-                 (map? (:data edata))
-                 (-> (assoc :explain (explain-error edata))
-                     (dissoc :data)))})))
+       :body   (dissoc edata :data)})))
 
 (defmethod handle-exception :assertion
   [error request]
@@ -77,9 +91,7 @@
     {:status 500
      :body {:type :server-error
             :code :assertion
-            :data (-> edata
-                      (assoc :explain (explain-error edata))
-                      (dissoc :data))}}))
+            :data (dissoc edata :data)}}))
 
 (defmethod handle-exception :not-found
   [err _]

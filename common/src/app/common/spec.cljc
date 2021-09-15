@@ -206,7 +206,7 @@
                      :name (pr-str spec)
                      :line (:line &env)
                      :file (:file (:meta nsdata))})
-          message (str "Spec Assertion: '" (pr-str spec) "'")]
+          message (str "spec assert: '" (pr-str spec) "'")]
       `(spec-assert* ~spec ~x ~message ~context))))
 
 (defmacro verify
@@ -218,7 +218,7 @@
                    :name (pr-str spec)
                    :line (:line &env)
                    :file (:file (:meta nsdata))})
-        message (str "Spec Assertion: '" (pr-str spec) "'")]
+        message (str "spec verify: '" (pr-str spec) "'")]
     `(spec-assert* ~spec ~x ~message ~context)))
 
 ;; --- Public Api

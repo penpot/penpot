@@ -27,7 +27,10 @@
   [& {:keys [message hint cause] :as params}]
   (s/assert ::error-params params)
   (let [message (or message hint "")
-        payload (dissoc params :cause)]
+        payload (-> params
+                    (dissoc :cause)
+                    (dissoc :message)
+                    (assoc :hint message))]
     (ex-info message payload cause)))
 
 (defmacro raise

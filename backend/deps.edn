@@ -46,6 +46,8 @@
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
   integrant/integrant {:mvn/version "0.8.0"}
 
+  io.sentry/sentry {:mvn/version "5.1.2"}
+
   software.amazon.awssdk/s3 {:mvn/version "2.17.40"}}
 
  :paths ["src" "resources"]
