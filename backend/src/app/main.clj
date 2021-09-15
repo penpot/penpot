@@ -109,7 +109,7 @@
     :sns-webhook (ig/ref :app.http.awsns/handler)
     :feedback    (ig/ref :app.http.feedback/handler)
     :audit-http-handler   (ig/ref :app.loggers.audit/http-handler)
-    :error-report-handler (ig/ref :app.loggers.mattermost/handler)}
+    :error-report-handler (ig/ref :app.loggers.database/handler)}
 
    :app.http.assets/handlers
    {:metrics           (ig/ref :app.metrics/metrics)
@@ -331,8 +331,22 @@
     :pool     (ig/ref :app.db/pool)
     :executor (ig/ref :app.worker/executor)}
 
-   :app.loggers.mattermost/handler
+   :app.loggers.database/reporter
+   {:receiver (ig/ref :app.loggers.zmq/receiver)
+    :pool     (ig/ref :app.db/pool)
+    :executor (ig/ref :app.worker/executor)}
+
+   :app.loggers.database/handler
    {:pool (ig/ref :app.db/pool)}
+
+   :app.loggers.sentry/reporter
+   {:dsn                (cf/get :sentry-dsn)
+    :trace-sample-rate  (cf/get :sentry-trace-sample-rate 1.0)
+    :attach-stack-trace (cf/get :sentry-attach-stack-trace false)
+    :debug              (cf/get :sentry-debug false)
+    :receiver (ig/ref :app.loggers.zmq/receiver)
+    :pool     (ig/ref :app.db/pool)
+    :executor (ig/ref :app.worker/executor)}
 
    :app.storage/storage
    {:pool     (ig/ref :app.db/pool)
