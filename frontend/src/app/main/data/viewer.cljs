@@ -31,6 +31,7 @@
    :comments-show :unresolved
    :selected #{}
    :collapsed #{}
+   :overlays []
    :hover nil})
 
 (declare fetch-comment-threads)
@@ -286,7 +287,7 @@
     (update [_ state]
       (assoc-in state [:viewer-local :interactions-show?] false))))
 
-;; --- Navigation
+;; --- Navigation inside page
 
 (defn go-to-frame-by-index
   [index]
@@ -323,6 +324,35 @@
             pparams (:path-params route)
             qparams (:query-params route)]
         (rx/of (rt/nav :viewer pparams (assoc qparams :section section)))))))
+
+;; --- Overlays
+
+(defn open-overlay
+  [frame-id]
+  (us/verify ::us/uuid frame-id)
+  (ptk/reify ::open-overlay
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [route    (:route state)
+            qparams  (:query-params route)
+            page-id  (:page-id qparams)
+            frames   (get-in state [:viewer :pages page-id :frames])
+            frame    (d/seek #(= (:id %) frame-id) frames)
+            overlays (get-in state [:viewer-local :overlays])]
+        (if-not (some #(= % frame) overlays)
+          (update-in state [:viewer-local :overlays] conj frame)
+          state)))))
+
+(defn close-overlay
+  [frame-id]
+  (ptk/reify ::close-overlay
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:viewer-local :overlays]
+                 (fn [overlays]
+                   (remove #(= (:id %) frame-id) overlays))))))
+
+;; --- Objects selection
 
 (defn deselect-all []
   (ptk/reify ::deselect-all
@@ -397,7 +427,7 @@
     (update [_ state]
       (assoc-in state [:viewer-local :hover] (when hover? id)))))
 
-;; --- NAV
+;; --- Navigation outside page
 
 (defn go-to-dashboard
   []

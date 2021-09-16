@@ -22,3 +22,28 @@
     width: 32px;
   }
 }
+
+.interactions-summary {
+  width: 100%;
+
+  .trigger-name {
+    font-size: $fs12;
+    color: $color-white;
+  }
+
+  .action-summary {
+    font-size: $fs11;
+    color: $color-gray-20;
+  }
+}
+
+.interactions-element {
+  display: flex;
+  align-items: center;
+
+  .element-label {
+    color: $color-gray-20;
+    font-size: $fs11;
+    width: 64px;
+  }
+}

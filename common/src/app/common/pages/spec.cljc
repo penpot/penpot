@@ -185,9 +185,9 @@
 
 ;; Interactions
 
-(s/def :internal.shape.interaction/event-type #{:click}) ; In the future we will have more options
-(s/def :internal.shape.interaction/action-type #{:navigate})
-(s/def :internal.shape.interaction/destination ::uuid)
+(s/def :internal.shape.interaction/event-type #{:click :hover})
+(s/def :internal.shape.interaction/action-type #{:navigate :open-overlay :close-overlay})
+(s/def :internal.shape.interaction/destination (s/nilable ::uuid))
 
 (s/def :internal.shape/interaction
   (s/keys :req-un [:internal.shape.interaction/event-type
@@ -196,6 +196,11 @@
 
 (s/def :internal.shape/interactions
   (s/coll-of :internal.shape/interaction :kind vector?))
+
+(def default-interaction
+  {:event-type :click
+   :action-type :navigate
+   :destination nil})
 
 ;; Size constraints
 
