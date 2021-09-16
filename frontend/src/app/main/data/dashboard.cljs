@@ -67,6 +67,7 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
+      (du/set-current-team! id)
       (let [prev-team-id (:current-team-id state)]
         (cond-> state
           (not= prev-team-id id)
@@ -748,7 +749,6 @@
    (ptk/reify ::go-to-projects-1
      ptk/WatchEvent
      (watch [_ _ _]
-       (du/set-current-team! team-id)
        (rx/of (rt/nav :dashboard-projects {:team-id team-id}))))))
 
 (defn go-to-team-members
