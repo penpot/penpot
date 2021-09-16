@@ -59,7 +59,6 @@
     :audit-log
     :demo-users
     :user-feedback
-    :demo-users
     :demo-warning
     :login-with-ldap})
 
