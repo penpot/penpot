@@ -100,10 +100,9 @@
 
 (sv/defmethod ::prepare-register-profile {:auth false}
   [{:keys [pool tokens] :as cfg} params]
-  (when-not (cf/get :registration-enabled)
+  (when-not (contains? cf/flags :registration)
     (ex/raise :type :restriction
               :code :registration-disabled))
-
   (when-let [domains (cf/get :registration-domain-whitelist)]
     (when-not (email-domain-in-whitelist? domains (:email params))
       (ex/raise :type :validation
@@ -458,7 +457,8 @@
           params  (assoc params
                          :profile profile
                          :email (str/lower email))]
-      (if (cf/get :smtp-enabled)
+      (if (or (cf/get :smtp-enabled)
+              (contains? cf/flags :smtp))
         (request-email-change cfg params)
         (change-email-inmediatelly cfg params)))))
 

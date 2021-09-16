@@ -211,10 +211,7 @@
     ))
 
 (t/deftest prepare-register-with-registration-disabled
-  (with-mocks [mock {:target 'app.config/get
-                     :return (th/mock-config-get-with
-                              {:registration-enabled false})}]
-
+  (th/with-mocks {#'app.config/flags nil}
     (let [data  {::th/type :prepare-register-profile
                  :email "user@example.com"
                  :password "foobar"}]

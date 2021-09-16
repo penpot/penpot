@@ -111,6 +111,16 @@
 (s/def ::point gpt/point?)
 (s/def ::id ::uuid)
 
+(s/def ::words
+  (s/conformer
+   (fn [s]
+     (cond
+       (set? s)    s
+       (string? s) (into #{} (map keyword) (str/words s))
+       :else       ::s/invalid))
+   (fn [s]
+     (str/join " " (map name s)))))
+
 (defn bytes?
   "Test if a first parameter is a byte
   array or not."

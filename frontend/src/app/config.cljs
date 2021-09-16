@@ -54,22 +54,11 @@
     :browser
     :webworker))
 
-(def available-flags
-  #{:registration
-    :audit-log
-    :demo-users
-    :user-feedback
-    :demo-warning
-    :login-with-ldap})
-
-(def default-flags
-  #{:registration :demo-users})
-
 (defn- parse-flags
   [global]
   (let [flags (obj/get global "penpotFlags" "")
         flags (into #{} (map keyword) (str/words flags))]
-    (flags/parse default-flags flags)))
+    (flags/parse flags flags/default)))
 
 (defn- parse-version
   [global]

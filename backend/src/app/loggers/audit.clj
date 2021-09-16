@@ -88,9 +88,9 @@
 (s/def ::events (s/every ::event))
 
 (defmethod ig/init-key ::http-handler
-  [_  {:keys [executor enabled] :as cfg}]
-  (fn [{:keys [params _headers _cookies profile-id] :as request}]
-    (when enabled
+  [_  {:keys [executor] :as cfg}]
+  (fn [{:keys [params profile-id] :as request}]
+    (when (contains? cf/flags :audit-log)
       (let [events  (->> (:events params)
                          (remove #(not= profile-id (:profile-id %)))
                          (us/conform ::events))
@@ -136,10 +136,9 @@
 ;; an external storage and data cleared.
 
 (declare persist-events)
-(s/def ::enabled ::us/boolean)
 
 (defmethod ig/pre-init-spec ::collector [_]
-  (s/keys :req-un [::db/pool ::wrk/executor ::enabled]))
+  (s/keys :req-un [::db/pool ::wrk/executor]))
 
 (def event-xform
   (comp
@@ -147,9 +146,9 @@
    (map clean-props)))
 
 (defmethod ig/init-key ::collector
-  [_ {:keys [enabled] :as cfg}]
-  (when enabled
-    (l/info :msg "intializing audit collector")
+  [_ cfg]
+  (when (contains? cf/flags :audit-log)
+    (l/info :msg "intializing audit log collector")
     (let [input  (a/chan 512 event-xform)
           buffer (aa/batch input {:max-batch-size 100
                                   :max-batch-age (* 10 1000) ; 10s
@@ -202,15 +201,16 @@
 (s/def ::tokens fn?)
 
 (defmethod ig/pre-init-spec ::archive-task [_]
-  (s/keys :req-un [::db/pool ::tokens ::enabled]
+  (s/keys :req-un [::db/pool ::tokens]
           :opt-un [::uri]))
 
 (defmethod ig/init-key ::archive-task
-  [_ {:keys [uri enabled] :as cfg}]
+  [_ {:keys [uri] :as cfg}]
   (fn [props]
     ;; NOTE: this let allows overwrite default configured values from
     ;; the repl, when manually invoking the task.
-    (let [enabled (or enabled (:enabled props false))
+    (let [enabled (or (contains? cf/flags :audit-log-archive)
+                      (:enabled props false))
           uri     (or uri (:uri props))
           cfg     (assoc cfg :uri uri)]
       (when (and enabled (not uri))
@@ -298,18 +298,6 @@
 ;; GC Task
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare clean-archived)
-
-(s/def ::max-age ::cf/audit-archive-gc-max-age)
-
-(defmethod ig/pre-init-spec ::archive-gc-task [_]
-  (s/keys :req-un [::db/pool ::enabled ::max-age]))
-
-(defmethod ig/init-key ::archive-gc-task
-  [_ cfg]
-  (fn [_]
-    (clean-archived cfg)))
-
 (def sql:clean-archived
   "delete from audit_log
     where archived_at is not null
@@ -322,3 +310,13 @@
         result   (:next.jdbc/update-count result)]
     (l/debug :action "clean archived audit log" :removed result)
     result))
+
+(s/def ::max-age ::cf/audit-log-gc-max-age)
+
+(defmethod ig/pre-init-spec ::gc-task [_]
+  (s/keys :req-un [::db/pool ::max-age]))
+
+(defmethod ig/init-key ::gc-task
+  [_ cfg]
+  (fn [_]
+    (clean-archived cfg)))
