@@ -9,7 +9,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.rpc.mutations.profile :as profile]
@@ -35,11 +35,11 @@
                   :email email
                   :fullname fullname
                   :is-demo true
-                  :deleted-at (dt/in-future cfg/deletion-delay)
+                  :deleted-at (dt/in-future cf/deletion-delay)
                   :password password
                   :props {:onboarding-viewed true}}]
 
-    (when-not (cfg/get :allow-demo-users)
+    (when-not (contains? cf/flags :demo-users)
       (ex/raise :type :validation
                 :code :demo-users-not-allowed
                 :hint "Demo users are disabled by config."))

@@ -210,15 +210,16 @@
        {:cron #app/cron "0 0 * * * ?"  ;; hourly
         :task :file-offload})
 
-     (when (cf/get :audit-archive-enabled)
+     (when (contains? cf/flags :audit-log-archive)
        {:cron #app/cron "0 0 * * * ?" ;; every 1h
-        :task :audit-archive})
+        :task :audit-log-archive})
 
-     (when (cf/get :audit-archive-gc-enabled)
+     (when (contains? cf/flags :audit-log-gc)
        {:cron #app/cron "0 0 * * * ?" ;; every 1h
-        :task :audit-archive-gc})
+        :task :audit-log-gc})
 
-     (when (cf/get :telemetry-enabled)
+     (when (or (contains? cf/flags :telemetry)
+               (cf/get :telemetry-enabled))
        {:cron #app/cron "0 0 */6 * * ?" ;; every 6h
         :task :telemetry})]}
 
@@ -238,15 +239,14 @@
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
      :session-gc         (ig/ref :app.http.session/gc-task)
      :file-offload       (ig/ref :app.tasks.file-offload/handler)
-     :audit-archive      (ig/ref :app.loggers.audit/archive-task)
-     :audit-archive-gc   (ig/ref :app.loggers.audit/archive-gc-task)}}
+     :audit-log-archive  (ig/ref :app.loggers.audit/archive-task)
+     :audit-log-gc       (ig/ref :app.loggers.audit/gc-task)}}
 
    :app.emails/sendmail-handler
    {:host             (cf/get :smtp-host)
     :port             (cf/get :smtp-port)
     :ssl              (cf/get :smtp-ssl)
     :tls              (cf/get :smtp-tls)
-    :enabled          (cf/get :smtp-enabled)
     :username         (cf/get :smtp-username)
     :password         (cf/get :smtp-password)
     :metrics          (ig/ref :app.metrics/metrics)
@@ -304,24 +304,20 @@
    {:endpoint (cf/get :loggers-zmq-uri)}
 
    :app.loggers.audit/http-handler
-   {:enabled  (cf/get :audit-enabled false)
-    :pool     (ig/ref :app.db/pool)
+   {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref :app.worker/executor)}
 
    :app.loggers.audit/collector
-   {:enabled  (cf/get :audit-enabled false)
-    :pool     (ig/ref :app.db/pool)
+   {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref :app.worker/executor)}
 
    :app.loggers.audit/archive-task
-   {:uri      (cf/get :audit-archive-uri)
-    :enabled  (cf/get :audit-archive-enabled false)
+   {:uri      (cf/get :audit-log-archive-uri)
     :tokens   (ig/ref :app.tokens/tokens)
     :pool     (ig/ref :app.db/pool)}
 
-   :app.loggers.audit/archive-gc-task
-   {:enabled  (cf/get :audit-archive-gc-enabled false)
-    :max-age  (cf/get :audit-archive-gc-max-age cf/deletion-delay)
+   :app.loggers.audit/gc-task
+   {:max-age  (cf/get :audit-log-gc-max-age cf/deletion-delay)
     :pool     (ig/ref :app.db/pool)}
 
    :app.loggers.loki/reporter

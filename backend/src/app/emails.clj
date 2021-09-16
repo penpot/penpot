@@ -8,7 +8,7 @@
   "Main api for send emails."
   (:require
    [app.common.spec :as us]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.util.emails :as emails]
@@ -54,10 +54,10 @@
 (defn allow-send-emails?
   [conn profile]
   (when-not (:is-muted profile false)
-    (let [complaint-threshold (cfg/get :profile-complaint-threshold)
-          complaint-max-age   (cfg/get :profile-complaint-max-age)
-          bounce-threshold    (cfg/get :profile-bounce-threshold)
-          bounce-max-age      (cfg/get :profile-bounce-max-age)
+    (let [complaint-threshold (cf/get :profile-complaint-threshold)
+          complaint-max-age   (cf/get :profile-complaint-max-age)
+          bounce-threshold    (cf/get :profile-bounce-threshold)
+          bounce-max-age      (cf/get :profile-bounce-max-age)
 
           {:keys [complaints bounces] :as result}
           (db/exec-one! conn [sql:profile-complaint-report
@@ -140,19 +140,17 @@
 
 (declare send-console!)
 
-(s/def ::username ::cfg/smtp-username)
-(s/def ::password ::cfg/smtp-password)
-(s/def ::tls ::cfg/smtp-tls)
-(s/def ::ssl ::cfg/smtp-ssl)
-(s/def ::host ::cfg/smtp-host)
-(s/def ::port ::cfg/smtp-port)
-(s/def ::default-reply-to ::cfg/smtp-default-reply-to)
-(s/def ::default-from ::cfg/smtp-default-from)
-(s/def ::enabled ::cfg/smtp-enabled)
+(s/def ::username ::cf/smtp-username)
+(s/def ::password ::cf/smtp-password)
+(s/def ::tls ::cf/smtp-tls)
+(s/def ::ssl ::cf/smtp-ssl)
+(s/def ::host ::cf/smtp-host)
+(s/def ::port ::cf/smtp-port)
+(s/def ::default-reply-to ::cf/smtp-default-reply-to)
+(s/def ::default-from ::cf/smtp-default-from)
 
 (defmethod ig/pre-init-spec ::sendmail-handler [_]
-  (s/keys :req-un [::enabled]
-          :opt-un [::username
+  (s/keys :opt-un [::username
                    ::password
                    ::tls
                    ::ssl
@@ -164,9 +162,12 @@
 (defmethod ig/init-key ::sendmail-handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (if (:enabled cfg)
-      (emails/send! cfg props)
-      (send-console! cfg props))))
+    (let [enabled? (or (contains? cf/flags :smtp)
+                       (cf/get :smtp-enabled)
+                       (:enabled task))]
+      (if enabled?
+        (emails/send! cfg props)
+        (send-console! cfg props)))))
 
 (defn- send-console!
   [cfg email]
