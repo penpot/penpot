@@ -68,9 +68,9 @@ update_registration_enabled() {
 }
 
 update_flags() {
-  if [ -n "$PENPOT_FRONTEND_FLAGS" ]; then
+  if [ -n "$PENPOT_FLAGS" ]; then
     sed -i \
-      -e "s|^//var penpotFlags = .*;|var penpotFlags = \"$PENPOT_FRONTEND_FLAGS\";|g" \
+      -e "s|^//var penpotFlags = .*;|var penpotFlags = \"$PENPOT_FLAGS\";|g" \
       "$1"
   fi
 }
