@@ -135,7 +135,7 @@
         ws-send      (mtx/wrap-counter ws-send mtx-messages ["send"])]
 
     (letfn [(on-connect [conn]
-              (mtx-aconn :inc)
+              ((::mtx/fn mtx-aconn) {:cmd :inc :by 1})
               ;; A subscription channel should use a lossy buffer
               ;; because we can't penalize normal clients when one
               ;; slow client is connected to the room.
@@ -162,8 +162,8 @@
                   (a/<! (handle-connect cfg))
 
                   ;; when connection is closed
-                  (mtx-aconn :dec)
-                  (mtx-sessions :observe (/ (inst-ms (dt/diff created-at (dt/now))) 1000.0))
+                  ((::mtx/fn mtx-aconn) {:cmd :dec :by 1})
+                  ((::mtx/fn mtx-sessions) {:val (/ (inst-ms (dt/diff created-at (dt/now))) 1000.0)})
 
                   ;; close subscription
                   (a/close! sub-ch))))

@@ -9,26 +9,6 @@ log() {
 ## App Frontend config
 #########################################
 
-update_demo_warning() {
-  if [ -n "$PENPOT_DEMO_WARNING" ]; then
-    log "Updating Demo Warning: $PENPOT_DEMO_WARNING"
-    sed -i \
-      -e "s|^//var penpotDemoWarning = .*;|var penpotDemoWarning = $PENPOT_DEMO_WARNING;|g" \
-      "$1"
-  fi
-}
-
-
-update_allow_demo_users() {
-  if [ -n "$PENPOT_ALLOW_DEMO_USERS" ]; then
-    log "Updating Allow Demo Users: $PENPOT_ALLOW_DEMO_USERS"
-    sed -i \
-      -e "s|^//var penpotAllowDemoUsers = .*;|var penpotAllowDemoUsers = $PENPOT_ALLOW_DEMO_USERS;|g" \
-      "$1"
-  fi
-}
-
-
 update_google_client_id() {
   if [ -n "$PENPOT_GOOGLE_CLIENT_ID" ]; then
     log "Updating Google Client Id: $PENPOT_GOOGLE_CLIENT_ID"
@@ -67,6 +47,7 @@ update_oidc_client_id() {
   fi
 }
 
+# DEPRECATED
 update_login_with_ldap() {
   if [ -n "$PENPOT_LOGIN_WITH_LDAP" ]; then
     log "Updating Login with LDAP: $PENPOT_LOGIN_WITH_LDAP"
@@ -76,20 +57,12 @@ update_login_with_ldap() {
   fi
 }
 
-
+# DEPRECATED
 update_registration_enabled() {
   if [ -n "$PENPOT_REGISTRATION_ENABLED" ]; then
     log "Updating Registration Enabled: $PENPOT_REGISTRATION_ENABLED"
     sed -i \
       -e "s|^//var penpotRegistrationEnabled = .*;|var penpotRegistrationEnabled = $PENPOT_REGISTRATION_ENABLED;|g" \
-      "$1"
-  fi
-}
-
-update_analytics_enabled() {
-  if [ -n "$PENPOT_ANALYTICS_ENABLED" ]; then
-    sed -i \
-      -e "s|^//var penpotAnalyticsEnabled = .*;|var penpotAnalyticsEnabled = $PENPOT_ANALYTICS_ENABLED;|g" \
       "$1"
   fi
 }
@@ -102,14 +75,11 @@ update_flags() {
   fi
 }
 
-update_demo_warning /var/www/app/js/config.js
-update_allow_demo_users /var/www/app/js/config.js
 update_google_client_id /var/www/app/js/config.js
 update_gitlab_client_id /var/www/app/js/config.js
 update_github_client_id /var/www/app/js/config.js
 update_oidc_client_id /var/www/app/js/config.js
 update_login_with_ldap /var/www/app/js/config.js
 update_registration_enabled /var/www/app/js/config.js
-update_analytics_enabled /var/www/app/js/config.js
 update_flags /var/www/app/js/config.js
 exec "$@";

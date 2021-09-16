@@ -7,13 +7,13 @@
 (ns app.config
   (:refer-clojure :exclude [get])
   (:require
-   [app.common.data :as d]
    ["process" :as process]
-   [cljs.pprint]
-   [cuerdas.core :as str]
+   [app.common.data :as d]
    [app.common.spec :as us]
-   [cljs.spec.alpha :as s]
    [cljs.core :as c]
+   [cljs.pprint]
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [lambdaisland.uri :as u]))
 
 (def defaults
@@ -22,6 +22,7 @@
    :browser-concurrency 5
    :browser-strategy :incognito})
 
+(s/def ::browser-executable-path ::us/string)
 (s/def ::public-uri ::us/string)
 (s/def ::http-server-port ::us/integer)
 (s/def ::browser-concurrency ::us/integer)
@@ -31,7 +32,8 @@
   (s/keys :opt-un [::public-uri
                    ::http-server-port
                    ::browser-concurrency
-                   ::browser-strategy]))
+                   ::browser-strategy
+                   ::browser-executable-path]))
 (defn- read-env
   [prefix]
   (let [env    (unchecked-get process "env")

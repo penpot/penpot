@@ -54,6 +54,14 @@
     :browser
     :webworker))
 
+(def available-flags
+  #{:registration
+    :audit-log
+    :demo-users
+    :user-feedback
+    :demo-warning
+    :login-with-ldap})
+
 (def default-flags
   #{:registration :demo-users})
 
