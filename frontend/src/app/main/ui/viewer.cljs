@@ -146,8 +146,8 @@
                  {:style {:width (:width size-over)
                           :height (:height size-over)
                           :position "absolute"
-                          :left (:x (:position overlay))
-                          :top (:y (:position overlay))}}
+                          :left (* (:x (:position overlay)) zoom)
+                          :top (* (:y (:position overlay)) zoom)}}
                  [:& interactions/viewport
                   {:frame (:frame overlay)
                    :size size-over

@@ -194,9 +194,9 @@
 
 
 (mf/defc overlay-marker
-  [{:keys [index orig-shape dest-shape position objects zoom] :as props}]
+  [{:keys [index orig-shape dest-shape position objects] :as props}]
   (let [start-move-position
-        (fn [event]
+        (fn [_]
           (st/emit! (dw/start-move-overlay-pos index)))]
 
     (when dest-shape
@@ -287,15 +287,13 @@
                                           :orig-shape shape
                                           :dest-shape dest-shape
                                           :position move-overlay-to
-                                          :objects objects
-                                          :zoom zoom}]
+                                          :objects objects}]
                       [:& overlay-marker {:key (str "pos" (:id shape) "-" index)
                                           :index index
                                           :orig-shape shape
                                           :dest-shape dest-shape
                                           :position (:overlay-position interaction)
-                                          :objects objects
-                                          :zoom zoom}]))])))
+                                          :objects objects}]))])))
           (when (not (#{:move :rotate} current-transform))
             [:& interaction-handle {:key (:id shape)
                                     :index nil

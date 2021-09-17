@@ -31,7 +31,8 @@
   []
   {:navigate (tr "workspace.options.interaction-navigate-to")
    :open-overlay (tr "workspace.options.interaction-open-overlay")
-   :close-overlay (tr "workspace.options.interaction-close-overlay")})
+   :close-overlay (tr "workspace.options.interaction-close-overlay")
+   :prev-screen (tr "workspace.options.interaction-prev-screen")})
 
 (defn- action-summary
   [interaction destination]
@@ -44,12 +45,26 @@
                        (get destination :name (tr "workspace.options.interaction-self")))
     "--"))
 
+(defn- overlay-pos-type-names
+  []
+  {:manual (tr "workspace.options.interaction-pos-manual")
+   :center (tr "workspace.options.interaction-pos-center")
+   :top-left (tr "workspace.options.interaction-pos-top-left")
+   :top-right (tr "workspace.options.interaction-pos-top-right")
+   :top-center (tr "workspace.options.interaction-pos-top-center")
+   :bottom-left (tr "workspace.options.interaction-pos-bottom-left")
+   :bottom-right (tr "workspace.options.interaction-pos-bottom-right")
+   :bottom-center (tr "workspace.options.interaction-pos-bottom-center")})
+
 (mf/defc interaction-entry
   [{:keys [index shape interaction update-interaction remove-interaction]}]
   (let [objects     (deref refs/workspace-page-objects)
         destination (get objects (:destination interaction))
         frames      (mf/use-memo (mf/deps objects)
                                  #(cp/select-frames objects))
+
+        action-type      (:action-type interaction)
+        overlay-pos-type (:overlay-pos-type interaction)
 
         extended-open? (mf/use-state false)
 
@@ -61,13 +76,22 @@
         change-action-type
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value d/read-string)]
-            (update-interaction index #(cti/set-action-type % value))))
+            (update-interaction index #(cti/set-action-type % value shape objects))))
 
         change-destination
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value)
                 value (when (not= value "") (uuid/uuid value))]
-            (update-interaction index #(cti/set-destination % value shape objects))))]
+            (update-interaction index #(cti/set-destination % value shape objects))))
+
+        change-overlay-pos-type
+        (fn [event]
+          (let [value (-> event dom/get-target dom/get-value d/read-string)]
+            (update-interaction index #(cti/set-overlay-pos-type % value shape objects))))
+
+        toggle-overlay-pos-type
+        (fn [pos-type]
+          (update-interaction index #(cti/toggle-overlay-pos-type % pos-type shape objects)))]
 
     [:*
      [:div.element-set-options-group
@@ -95,7 +119,8 @@
               :on-change change-action-type}
              (for [[value name] (action-type-names)]
                [:option {:value (str value)} name])]]
-         [:div.interactions-element
+         (when (#{:navigate :open-overlay :close-overlay} action-type)
+           [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-destination")]
             [:select.input-select
              {:value (str (:destination interaction))
@@ -104,7 +129,45 @@
              (for [frame frames]
                (when (and (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
                           (not= (:id frame) (:frame-id shape))) ; nor a shape to its container frame
-                 [:option {:value (str (:id frame))} (:name frame)]))]]]])]))
+                 [:option {:value (str (:id frame))} (:name frame)]))]])
+         (when (= action-type :open-overlay)
+           [:*
+            [:div.interactions-element
+             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-position")]
+             [:select.input-select
+              {:value (str (:overlay-pos-type interaction))
+               :on-change change-overlay-pos-type}
+              (for [[value name] (overlay-pos-type-names)]
+                [:option {:value (str value)} name])]]
+            [:div.interactions-element.interactions-pos-buttons
+             [:div.element-set-actions-button
+              {:class (dom/classnames :active (= overlay-pos-type :center))
+               :on-click #(toggle-overlay-pos-type :center)}
+              i/position-center]
+             [:div.element-set-actions-button
+              {:class (dom/classnames :active (= overlay-pos-type :top-left))
+               :on-click #(toggle-overlay-pos-type :top-left)}
+              i/position-top-left]
+             [:div.element-set-actions-button
+              {:class (dom/classnames :active (= overlay-pos-type :top-right))
+               :on-click #(toggle-overlay-pos-type :top-right)}
+              i/position-top-right]
+             [:div.element-set-actions-button
+              {:class (dom/classnames :active (= overlay-pos-type :top-center))
+               :on-click #(toggle-overlay-pos-type :top-center)}
+              i/position-top-center]
+             [:div.element-set-actions-button
+              {:class (dom/classnames :active (= overlay-pos-type :bottom-left))
+               :on-click #(toggle-overlay-pos-type :bottom-left)}
+              i/position-bottom-left]
+             [:div.element-set-actions-button
+              {:class (dom/classnames :active (= overlay-pos-type :bottom-right))
+               :on-click #(toggle-overlay-pos-type :bottom-right)}
+              i/position-bottom-right]
+             [:div.element-set-actions-button
+              {:class (dom/classnames :active (= overlay-pos-type :bottom-center))
+               :on-click #(toggle-overlay-pos-type :bottom-center)}
+              i/position-bottom-center]]])]])]))
 
 (mf/defc interactions-menu
   [{:keys [shape] :as props}]

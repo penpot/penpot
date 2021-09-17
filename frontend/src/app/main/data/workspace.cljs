@@ -1827,8 +1827,8 @@
                                                frame)]
                                    ;; Update or create interaction
                                    (if index
-                                     (update-in interactions [index]
-                                                #(cti/set-destination % (:id frame) shape objects))
+                                     (update interactions index
+                                             #(cti/set-destination % (:id frame) shape objects))
                                      (conj (or interactions [])
                                            (cti/set-destination cti/default-interaction
                                                                 (:id frame)
@@ -1870,11 +1870,11 @@
             (rx/concat
               (->> ms/mouse-position
                    (rx/take-until stopper)
-                   (rx/map #(move-overlay-pos % overlay-pos frame-pos offset)))
-              (rx/of (finish-move-overlay-pos index overlay-pos frame-pos offset)))))))))
+                   (rx/map #(move-overlay-pos % frame-pos offset)))
+              (rx/of (finish-move-overlay-pos index frame-pos offset)))))))))
 
 (defn move-overlay-pos
-  [pos overlay-pos frame-pos offset]
+  [pos frame-pos offset]
   (ptk/reify ::move-overlay-pos
     ptk/UpdateEvent
     (update [_ state]
@@ -1884,7 +1884,7 @@
         (assoc-in state [:workspace-local :move-overlay-to] pos)))))
 
 (defn finish-move-overlay-pos
- [index overlay-pos frame-pos offset]
+ [index frame-pos offset]
  (ptk/reify ::finish-move-overlay-pos
     ptk/UpdateEvent
     (update [_ state]

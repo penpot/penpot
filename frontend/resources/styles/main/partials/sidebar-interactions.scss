@@ -47,3 +47,13 @@
     width: 64px;
   }
 }
+
+.interactions-pos-buttons {
+  margin-top: $small;
+  justify-content: space-around;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
