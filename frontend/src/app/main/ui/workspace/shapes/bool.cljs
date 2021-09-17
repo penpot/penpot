@@ -33,17 +33,11 @@
       (let [shape      (unchecked-get props "shape")
             frame      (unchecked-get props "frame")
 
-            childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape) {:with-modifiers? true}))
-            {:keys [selected modifiers]} (mf/deref refs/local-displacement)
+            childs-ref (mf/use-memo
+                        (mf/deps (:id shape))
+                        #(refs/select-children (:id shape)))
 
-            add-modifiers
-            (fn [{:keys [id] :as shape}]
-              (cond-> shape
-                (contains? selected id)
-                (update :modifiers merge modifiers)))
-
-            childs (->> (mf/deref childs-ref)
-                        (mapv add-modifiers))]
+            childs (mf/deref childs-ref)]
 
         [:> shape-container {:shape shape}
          [:& shape-component

@@ -4,22 +4,46 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.util.path.shapes-to-path
+(ns app.common.path.shapes-to-path
   (:require
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.common :as gsc]
    [app.common.geom.shapes.path :as gsp]
-   [app.util.path.commands :as pc]))
+   [app.common.path.commands :as pc]))
 
-(def bezier-circle-c 0.551915024494)
-(def dissoc-attrs [:x :y :width :height
-                   :rx :ry :r1 :r2 :r3 :r4
-                   :medata])
-(def allowed-transform-types #{:rect
-                               :circle
-                               :image})
+(def ^:const bezier-circle-c 0.551915024494)
+
+(def ^:const dissoc-attrs
+  [:x :y :width :height
+   :rx :ry :r1 :r2 :r3 :r4
+   :metadata :shapes])
+
+(def ^:const allowed-transform-types
+  #{:rect
+    :circle
+    :image
+    :group})
+
+(def ^:const style-properties
+  [:fill-color
+   :fill-opacity
+   :fill-color-gradient
+   :fill-color-ref-file
+   :fill-color-ref-id
+   :fill-image
+   :stroke-color
+   :stroke-color-ref-file
+   :stroke-color-ref-id
+   :stroke-opacity
+   :stroke-style
+   :stroke-width
+   :stroke-alignment
+   :stroke-cap-start
+   :stroke-cap-end
+   :shadow
+   :blur])
 
 (defn make-corner-arc
   "Creates a curvle corner for border radius"
@@ -86,8 +110,9 @@
 
 (defn rect->path
   "Creates a bezier curve that approximates a rounded corner rectangle"
-  [x y width height r1 r2 r3 r4]
-  (let [p1 (gpt/point x (+ y r1))
+  [x y width height r1 r2 r3 r4 rx]
+  (let [[r1 r2 r3 r4] (->> [r1 r2 r3 r4] (mapv #(or % rx 0)))
+        p1 (gpt/point x (+ y r1))
         p2 (gpt/point (+ x r1) y)
 
         p3 (gpt/point (+ width x (- r2)) y)
@@ -113,34 +138,51 @@
           (conj (make-corner-arc p7 p8 :bottom-left r4)))
         (conj (pc/make-line-to p1)))))
 
+(declare convert-to-path)
+
+(defn group-to-path
+  [group objects]
+
+  (let [xform (comp (map #(get objects %))
+                    (map #(-> (convert-to-path % objects))))
+
+        child-as-paths (into [] xform (:shapes group))
+        head (first child-as-paths)
+        head-data (select-keys head style-properties)
+        content (into [] (mapcat :content) child-as-paths)]
+
+    (-> group
+        (assoc :type :path)
+        (assoc :content content)
+        (merge head-data)
+        (d/without-keys dissoc-attrs))))
+
 (defn convert-to-path
   "Transforms the given shape to a path"
-  [{:keys [type x y width height r1 r2 r3 r4 rx metadata] :as shape}]
+  [{:keys [type x y width height r1 r2 r3 r4 rx metadata] :as shape} objects]
+  (assert (map? objects))
+  (cond
+    (= (:type shape) :group)
+    (group-to-path shape objects)
 
-  (if (contains? allowed-transform-types type)
-    (let [r1 (or r1 rx 0)
-          r2 (or r2 rx 0)
-          r3 (or r3 rx 0)
-          r4 (or r4 rx 0)
-
-          new-content
+    (contains? allowed-transform-types type)
+    (let [new-content
           (case type
-            :circle
-            (circle->path x y width height)
-            (rect->path x y width height r1 r2 r3 r4))
+            :circle (circle->path x y width height)
+            #_:else (rect->path x y width height r1 r2 r3 r4 rx))
 
           ;; Apply the transforms that had the shape
           transform (:transform shape)
           new-content (cond-> new-content
                         (some? transform)
-                        (gsp/transform-content (gmt/transform-in (gsh/center-shape shape) transform)))]
+                        (gsp/transform-content (gmt/transform-in (gsc/center-shape shape) transform)))]
 
       (-> shape
-          (d/without-keys dissoc-attrs)
           (assoc :type :path)
           (assoc :content new-content)
-          (cond-> (= :image type) (-> (assoc :fill-image metadata)
-                                      (dissoc :metadata)))))
+          (cond-> (= :image type)
+            (assoc :fill-image metadata))
+          (d/without-keys dissoc-attrs)))
+    :else
     ;; Do nothing if the shape is not of a correct type
     shape))
-

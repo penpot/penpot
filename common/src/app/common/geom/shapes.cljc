@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.bool :as gsb]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.intersect :as gin]
    [app.common.geom.shapes.path :as gsp]
@@ -164,3 +165,6 @@
 (d/export gin/has-point?)
 (d/export gin/has-point-rect?)
 (d/export gin/rect-contains-shape?)
+
+;; Bool
+(d/export gsb/update-bool-selrect)

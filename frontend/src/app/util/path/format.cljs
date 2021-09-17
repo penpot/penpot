@@ -6,8 +6,8 @@
 
 (ns app.util.path.format
   (:require
-   [app.util.path.commands :as upc]
-   [app.util.path.subpaths :refer [pt=]]
+   [app.common.path.commands :as upc]
+   [app.common.path.subpaths :refer [pt=]]
    [cuerdas.core :as str]))
 
 (defn command->param-list [command]

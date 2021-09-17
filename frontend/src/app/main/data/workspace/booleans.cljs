@@ -10,6 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as cb]
+   [app.common.path.shapes-to-path :as stp]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -17,24 +18,6 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]))
-
-(def ^:const style-properties
-  [:fill-color
-   :fill-opacity
-   :fill-color-gradient
-   :fill-color-ref-file
-   :fill-color-ref-id
-   :stroke-color
-   :stroke-color-ref-file
-   :stroke-color-ref-id
-   :stroke-opacity
-   :stroke-style
-   :stroke-width
-   :stroke-alignment
-   :stroke-cap-start
-   :stroke-cap-end
-   :shadow
-   :blur])
 
 (defn selected-shapes
   [state]
@@ -47,10 +30,10 @@
          (sort-by ::index))))
 
 (defn create-bool-data
-  [type name shapes]
-  (let [head (first shapes)
-        head-data (select-keys head style-properties)
-        selrect (gsh/selection-rect shapes)]
+  [type name shapes objects]
+  (let [shapes (mapv #(stp/convert-to-path % objects) shapes)
+        head (first shapes)
+        head-data (select-keys head stp/style-properties)]
     (-> {:id (uuid/next)
          :type :bool
          :bool-type type
@@ -60,7 +43,7 @@
          ::index (::index head)
          :shapes []}
         (merge head-data)
-        (gsh/setup selrect))))
+        (gsh/update-bool-selrect shapes objects))))
 
 (defn create-bool
   [bool-type]
@@ -69,14 +52,14 @@
     
     (watch [it state _]
       (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
+            objects (wsh/lookup-page-objects state)
             base-name (-> bool-type d/name str/capital (str "-1"))
             name (-> (dwc/retrieve-used-names objects)
                      (dwc/generate-unique-name base-name))
             shapes  (selected-shapes state)]
 
         (when-not (empty? shapes)
-          (let [boolean-data (create-bool-data bool-type name shapes)
+          (let [boolean-data (create-bool-data bool-type name shapes objects)
                 shape-id (:id boolean-data)
                 changes (-> (cb/empty-changes it page-id)
                             (cb/add-obj boolean-data)

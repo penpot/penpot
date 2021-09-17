@@ -4,20 +4,19 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.util.path.bool
+(ns app.common.path.bool
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gsp]
-   [app.util.path.commands :as upc]
-   [app.util.path.geom :as upg]
-   [app.util.path.subpaths :as ups]))
+   [app.common.path.commands :as upc]
+   [app.common.path.subpaths :as ups]))
 
 (defn- split-command
   [cmd values]
   (case (:command cmd)
-    :line-to  (upg/split-line-to-ranges (:prev cmd) cmd values)
-    :curve-to (upg/split-curve-to-ranges (:prev cmd) cmd values)
+    :line-to  (gsp/split-line-to-ranges (:prev cmd) cmd values)
+    :curve-to (gsp/split-curve-to-ranges (:prev cmd) cmd values)
     [cmd]))
 
 (defn split [seg-1 seg-2]
@@ -198,7 +197,7 @@
                (gsp/command->point current)
                (conj result (dissoc current :prev)))))))
 
-(defn content-bool
+(defn content-bool-pair
   [bool-type content-a content-b]
 
   (let [content-a (add-previous content-a)
@@ -218,3 +217,11 @@
 
     (->> (fix-move-to bool-content)
          (ups/close-subpaths))))
+
+(defn content-bool
+  [bool-type contents]
+  ;; We apply the boolean operation in to each pair and the result to the next
+  ;; element
+  (->> contents
+       (reduce (partial content-bool-pair bool-type))
+       (into [])))

@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.path.state
   (:require
    [app.common.data :as d]
-   [app.util.path.shapes-to-path :as upsp]))
+   [app.common.path.shapes-to-path :as upsp]))
 
 (defn get-path-id
   "Retrieves the currently editing path id"
@@ -31,7 +31,8 @@
   [state & ks]
   (let [path-loc (get-path-location state)
         shape (-> (get-in state path-loc)
-                  (upsp/convert-to-path))]
+                  ;; Empty map because we know the current shape will not have children
+                  (upsp/convert-to-path {}))]
 
     (if (empty? ks)
       shape

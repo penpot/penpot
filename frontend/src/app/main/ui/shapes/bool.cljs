@@ -6,11 +6,10 @@
 
 (ns app.main.ui.shapes.bool
   (:require
-   [app.common.geom.shapes :as gsh]
+   [app.common.path.bool :as pb]
+   [app.common.path.shapes-to-path :as stp]
    [app.main.ui.hooks :refer [use-equal-memo]]
    [app.util.object :as obj]
-   [app.util.path.bool :as pb]
-   [app.util.path.shapes-to-path :as stp]
    [rumext.alpha :as mf]))
 
 (defn bool-shape
@@ -20,32 +19,25 @@
     [props]
     (let [frame  (obj/get props "frame")
           shape  (obj/get props "shape")
-          childs (obj/get props "childs")]
+          childs (obj/get props "childs")
 
-      (when (> (count childs) 1)
-        (let [shape-1 (stp/convert-to-path (nth childs 0))
-              shape-2 (stp/convert-to-path (nth childs 1))
+          childs (use-equal-memo childs)
 
-              content-1 (use-equal-memo (-> shape-1 gsh/transform-shape :content))
-              content-2 (use-equal-memo (-> shape-2 gsh/transform-shape :content))
+          bool-content
+          (mf/use-memo
+           (mf/deps childs)
+           (fn []
+             (->> shape
+                  :shapes
+                  (map #(get childs %))
+                  (map #(stp/convert-to-path % childs))
+                  (mapv :content)
+                  (pb/content-bool (:bool-type shape)))))]
 
-              content
-              (mf/use-memo
-               (mf/deps content-1 content-2)
-               #(pb/content-bool (:bool-type shape) content-1 content-2))]
-
-          [:*
-           [:& shape-wrapper {:shape (-> shape
-                                         (assoc :type :path)
-                                         (assoc :content content))
-                              :frame frame}]
-
-           #_[:g
-            (for [point (app.util.path.geom/content->points content)]
-              [:circle {:cx (:x point)
-                        :cy (:y point)
-                        :r 1
-                        :style {:fill "blue"}}])]])))))
+      [:& shape-wrapper {:shape (-> shape
+                                    (assoc :type :path)
+                                    (assoc :content bool-content))
+                         :frame frame}])))
 
 
 

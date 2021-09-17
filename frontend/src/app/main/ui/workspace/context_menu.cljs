@@ -10,6 +10,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.path.shapes-to-path :as dwpe]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
@@ -147,6 +148,7 @@
         do-boolean-difference (st/emitf (dw/create-bool :difference))
         do-boolean-intersection (st/emitf (dw/create-bool :intersection))
         do-boolean-exclude (st/emitf (dw/create-bool :exclude))
+        do-transform-to-path (st/emitf (dwpe/convert-selected-to-path))
         ]
     [:*
      [:& menu-entry {:title (tr "workspace.shape.menu.copy")
@@ -214,6 +216,9 @@
                        :shortcut (sc/get-tooltip :start-editing)
                        :on-click do-start-editing}])
 
+     [:& menu-entry {:title "Transform to path"
+                     :on-click do-transform-to-path}]
+
      [:& menu-entry {:title (tr "workspace.shape.menu.path")}
       [:& menu-entry {:title (tr "workspace.shape.menu.union")
                       :shortcut (sc/get-tooltip :boolean-union)
@@ -230,8 +235,7 @@
 
       [:& menu-separator]
       ;; TODO
-      [:& menu-entry {:title "Flatten"}]
-      [:& menu-entry {:title "Transform to path"}]]
+      [:& menu-entry {:title "Flatten"}]]
 
      (if (:hidden shape)
        [:& menu-entry {:title (tr "workspace.shape.menu.show")

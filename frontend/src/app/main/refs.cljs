@@ -243,16 +243,34 @@
 
   ([ids {:keys [with-modifiers?]
          :or { with-modifiers? false }}]
-   (l/derived (fn [state]
-                (let [objects (wsh/lookup-page-objects state)
-                      modifiers (:workspace-modifiers state)
-                      objects (cond-> objects
-                                with-modifiers?
-                                (gsh/merge-modifiers modifiers))
-                      xform (comp (map #(get objects %))
-                                  (remove nil?))]
-                  (into [] xform ids)))
-              st/state =)))
+   (let [selector
+         (fn [state]
+           (let [objects (wsh/lookup-page-objects state)
+                 modifiers (:workspace-modifiers state)
+                 objects (cond-> objects
+                           with-modifiers?
+                           (gsh/merge-modifiers modifiers))
+                 xform (comp (map #(get objects %))
+                             (remove nil?))]
+             (into [] xform ids)))]
+     (l/derived selector st/state =))))
+
+(defn select-children [id]
+  (let [selector
+        (fn [state]
+          (let [objects (wsh/lookup-page-objects state)
+                children (cp/select-children id objects)
+                modifiers (-> (:workspace-modifiers state))
+
+                {selected :selected disp-modifiers :modifiers}
+                (-> (:workspace-local state)
+                    (select-keys [:modifiers :selected]))
+
+                modifiers (merge modifiers
+                                 (into #{} (map #(vector % disp-modifiers)) selected))]
+
+            (gsh/merge-modifiers children modifiers)))]
+    (l/derived selector st/state =)))
 
 (def selected-data
   (l/derived #(let [selected (wsh/lookup-selected %)

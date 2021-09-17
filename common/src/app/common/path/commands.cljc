@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.util.path.commands
+(ns app.common.path.commands
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]))

@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.util.path.subpaths
+(ns app.common.path.subpaths
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.util.path.commands :as upc]))
+   [app.common.path.commands :as upc]))
 
 (defn pt=
   "Check if two points are close"
