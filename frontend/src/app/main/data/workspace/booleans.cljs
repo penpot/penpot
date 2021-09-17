@@ -45,11 +45,36 @@
         (merge head-data)
         (gsh/update-bool-selrect shapes objects))))
 
+(defn group->bool
+  [group bool-type objects]
+
+  (let [shapes (->> (:shapes group)
+                    (map #(get objects %))
+                    (mapv #(stp/convert-to-path % objects)))
+        head (first shapes)
+        head-data (select-keys head stp/style-properties)]
+
+    (-> group
+        (assoc :type :bool)
+        (assoc :bool-type bool-type)
+        (merge head-data)
+        (gsh/update-bool-selrect shapes objects))))
+
+(defn bool->group
+  [shape objects]
+
+  (let [children (->> (:shapes shape)
+                      (mapv #(get objects %)))]
+    (-> shape
+        (assoc :type :group)
+        (dissoc :bool-type)
+        (d/without-keys stp/style-group-properties)
+        (gsh/update-group-selrect children))))
+
 (defn create-bool
   [bool-type]
   (ptk/reify ::create-bool-union
     ptk/WatchEvent
-    
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state)
@@ -66,3 +91,29 @@
                             (cb/change-parent shape-id shapes))]
             (rx/of (dch/commit-changes changes)
                    (dwc/select-shapes (d/ordered-set shape-id)))))))))
+
+(defn group-to-bool
+  [shape-id bool-type]
+  (ptk/reify ::group-to-bool
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)]
+        (rx/of (dch/update-shapes [shape-id] #(group->bool % bool-type objects)))))))
+
+(defn bool-to-group
+  [shape-id]
+  (ptk/reify ::bool-to-group
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)]
+        (rx/of (dch/update-shapes [shape-id] #(bool->group % objects)))))))
+
+
+(defn change-bool-type
+  [shape-id bool-type]
+  (ptk/reify ::change-bool-type
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dch/update-shapes
+              [shape-id]
+              #(assoc % :bool-type bool-type))))))

@@ -266,8 +266,10 @@
                 (-> (:workspace-local state)
                     (select-keys [:modifiers :selected]))
 
-                modifiers (merge modifiers
-                                 (into #{} (map #(vector % disp-modifiers)) selected))]
+                modifiers
+                (d/deep-merge
+                 modifiers
+                 (into {} (map #(vector % {:modifiers disp-modifiers})) selected))]
 
             (gsh/merge-modifiers children modifiers)))]
     (l/derived selector st/state =)))

@@ -6,6 +6,8 @@
 
 (ns app.main.ui.shapes.bool
   (:require
+   [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.common.path.bool :as pb]
    [app.common.path.shapes-to-path :as stp]
    [app.main.ui.hooks :refer [use-equal-memo]]
@@ -27,12 +29,12 @@
           (mf/use-memo
            (mf/deps childs)
            (fn []
-             (->> shape
-                  :shapes
-                  (map #(get childs %))
-                  (map #(stp/convert-to-path % childs))
-                  (mapv :content)
-                  (pb/content-bool (:bool-type shape)))))]
+             (let [childs (d/mapm #(gsh/transform-shape %2) childs)]
+               (->> (:shapes shape)
+                    (map #(get childs %))
+                    (map #(stp/convert-to-path % childs))
+                    (mapv :content)
+                    (pb/content-bool (:bool-type shape))))))]
 
       [:& shape-wrapper {:shape (-> shape
                                     (assoc :type :path)

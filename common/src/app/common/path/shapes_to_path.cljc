@@ -11,6 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gsc]
    [app.common.geom.shapes.path :as gsp]
+   [app.common.path.bool :as pb]
    [app.common.path.commands :as pc]))
 
 (def ^:const bezier-circle-c 0.551915024494)
@@ -24,26 +25,31 @@
   #{:rect
     :circle
     :image
-    :group})
+    :group
+    :bool})
+
+(def ^:const style-group-properties
+  [:shadow
+   :blur])
 
 (def ^:const style-properties
-  [:fill-color
-   :fill-opacity
-   :fill-color-gradient
-   :fill-color-ref-file
-   :fill-color-ref-id
-   :fill-image
-   :stroke-color
-   :stroke-color-ref-file
-   :stroke-color-ref-id
-   :stroke-opacity
-   :stroke-style
-   :stroke-width
-   :stroke-alignment
-   :stroke-cap-start
-   :stroke-cap-end
-   :shadow
-   :blur])
+  (d/concat
+   style-group-properties
+   [:fill-color
+    :fill-opacity
+    :fill-color-gradient
+    :fill-color-ref-file
+    :fill-color-ref-id
+    :fill-image
+    :stroke-color
+    :stroke-color-ref-file
+    :stroke-color-ref-id
+    :stroke-opacity
+    :stroke-style
+    :stroke-width
+    :stroke-alignment
+    :stroke-cap-start
+    :stroke-cap-end]))
 
 (defn make-corner-arc
   "Creates a curvle corner for border radius"
@@ -142,7 +148,6 @@
 
 (defn group-to-path
   [group objects]
-
   (let [xform (comp (map #(get objects %))
                     (map #(-> (convert-to-path % objects))))
 
@@ -157,6 +162,22 @@
         (merge head-data)
         (d/without-keys dissoc-attrs))))
 
+(defn bool-to-path
+  [shape objects]
+
+  (let [children (->> (:shapes shape)
+                      (map #(get objects %))
+                      (map #(convert-to-path % objects)))
+        head (first children)
+        head-data (select-keys head style-properties)
+        content (pb/content-bool (:bool-type shape) (mapv :content children))]
+
+    (-> shape
+        (assoc :type :path)
+        (assoc :content content)
+        (merge head-data)
+        (d/without-keys dissoc-attrs))))
+
 (defn convert-to-path
   "Transforms the given shape to a path"
   [{:keys [type x y width height r1 r2 r3 r4 rx metadata] :as shape} objects]
@@ -164,6 +185,9 @@
   (cond
     (= (:type shape) :group)
     (group-to-path shape objects)
+
+    (= (:type shape) :bool)
+    (bool-to-path shape objects)
 
     (contains? allowed-transform-types type)
     (let [new-content

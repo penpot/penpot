@@ -46,5 +46,13 @@
         fill: $color-gray-40;
       }
     }
+
+    &.selected svg {
+      fill: $color-primary;
+    }
+
+    &.selected:hover svg {
+      fill: $color-white;
+    }
   }
 }
