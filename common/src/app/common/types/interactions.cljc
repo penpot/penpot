@@ -10,11 +10,6 @@
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
-;; TODO: Move this to other place to avoid duplication with common.pages.spec
-(s/def ::string string?)
-(s/def ::safe-integer ::us/safe-integer)
-(s/def ::uuid uuid?)
-
 (s/def ::point
   (s/and (s/keys :req-un [::x ::y])
          gpt/point?))
@@ -28,7 +23,7 @@
                       :mouse-leave
                       :after-delay})
 
-(s/def ::delay ::safe-integer)
+(s/def ::delay ::us/safe-integer)
 
 (defmulti event-opts-spec :event-type)
 
@@ -49,9 +44,9 @@
                        :prev-screen
                        :open-url})
 
-(s/def ::destination (s/nilable ::uuid))
+(s/def ::destination (s/nilable ::us/uuid))
 (s/def ::overlay-position ::point)
-(s/def ::url ::string)
+(s/def ::url ::us/string)
 
 (defmulti action-opts-spec :action-type)
 
