@@ -9,6 +9,15 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+## 1.8.1-alpha
+
+### :bug: Bugs fixed
+
+- Fix project renaming issue (and some other related to the same underlying bug).
+- Fix internal exception on audit log persistence layer.
+- Set proper environment variable on docker images for chrome executable.
+- Fix internal metrics on websocket connections.
+
 
 ## 1.8.0-alpha
 
