@@ -65,7 +65,12 @@
          (mf/deps section)
          (fn [_]
            (when (= section :comments)
-             (st/emit! (dcm/close-thread)))))]
+             (st/emit! (dcm/close-thread)))))
+
+        close-overlay
+        (mf/use-callback
+          (fn [frame]
+            (st/emit! (dv/close-overlay (:id frame)))))]
 
     (hooks/use-shortcuts ::viewer sc/shortcuts)
 
@@ -142,19 +147,31 @@
 
             (for [overlay (:overlays local)]
               (let [size-over (calculate-size (:frame overlay) zoom)]
-                [:div.viewport-container
-                 {:style {:width (:width size-over)
-                          :height (:height size-over)
-                          :position "absolute"
-                          :left (* (:x (:position overlay)) zoom)
-                          :top (* (:y (:position overlay)) zoom)}}
-                 [:& interactions/viewport
-                  {:frame (:frame overlay)
-                   :size size-over
-                   :page page
-                   :file file
-                   :users users
-                   :local local}]]))]))]]]))
+                [:*
+                 (when (or (:close-click-outside overlay)
+                           (:background-overlay  overlay))
+                   [:div.viewer-overlay-background
+                    {:class (dom/classnames
+                              :visible (:background-overlay overlay))
+                     :style {:width (:width frame)
+                             :height (:height frame)
+                             :position "absolute"
+                             :left 0
+                             :top 0}
+                     :on-click #(when (:close-click-outside overlay)
+                                  (close-overlay (:frame overlay)))}])
+                 [:div.viewport-container.viewer-overlay
+                  {:style {:width (:width size-over)
+                           :height (:height size-over)
+                           :left (* (:x (:position overlay)) zoom)
+                           :top (* (:y (:position overlay)) zoom)}}
+                  [:& interactions/viewport
+                   {:frame (:frame overlay)
+                    :size size-over
+                    :page page
+                    :file file
+                    :users users
+                    :local local}]]]))]))]]]))
 
 ;; --- Component: Viewer Page
 

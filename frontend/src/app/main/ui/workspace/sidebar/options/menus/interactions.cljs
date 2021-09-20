@@ -63,8 +63,10 @@
         frames      (mf/use-memo (mf/deps objects)
                                  #(cp/select-frames objects))
 
-        action-type      (:action-type interaction)
-        overlay-pos-type (:overlay-pos-type interaction)
+        action-type          (:action-type interaction)
+        overlay-pos-type     (:overlay-pos-type interaction)
+        close-click-outside? (:close-click-outside interaction)
+        background-overlay?  (:background-overlay interaction)
 
         extended-open? (mf/use-state false)
 
@@ -91,7 +93,17 @@
 
         toggle-overlay-pos-type
         (fn [pos-type]
-          (update-interaction index #(cti/toggle-overlay-pos-type % pos-type shape objects)))]
+          (update-interaction index #(cti/toggle-overlay-pos-type % pos-type shape objects)))
+
+        change-close-click-outside
+        (fn [event]
+          (let [value (-> event dom/get-target dom/checked?)]
+            (update-interaction index #(cti/set-close-click-outside % value))))
+
+        change-background-overlay
+        (fn [event]
+          (let [value (-> event dom/get-target dom/checked?)]
+            (update-interaction index #(cti/set-background-overlay % value))))]
 
     [:*
      [:div.element-set-options-group
@@ -167,7 +179,23 @@
              [:div.element-set-actions-button
               {:class (dom/classnames :active (= overlay-pos-type :bottom-center))
                :on-click #(toggle-overlay-pos-type :bottom-center)}
-              i/position-bottom-center]]])]])]))
+              i/position-bottom-center]]
+            [:div.interactions-element
+             [:div.input-checkbox
+              [:input {:type "checkbox"
+                       :id (str "close-" index)
+                       :checked close-click-outside?
+                       :on-change change-close-click-outside}]
+              [:label {:for (str "close-" index)}
+               (tr "workspace.options.interaction-close-outside")]]]
+            [:div.interactions-element
+             [:div.input-checkbox
+              [:input {:type "checkbox"
+                       :id (str "background-" index)
+                       :checked background-overlay?
+                       :on-change change-background-overlay}]
+              [:label {:for (str "background-" index)}
+               (tr "workspace.options.interaction-background")]]]])]])]))
 
 (mf/defc interactions-menu
   [{:keys [shape] :as props}]

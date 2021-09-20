@@ -328,9 +328,11 @@
 ;; --- Overlays
 
 (defn open-overlay
-  [frame-id position]
+  [frame-id position close-click-outside background-overlay]
   (us/verify ::us/uuid frame-id)
   (us/verify ::us/point position)
+  (us/verify (s/nilable ::us/boolean) close-click-outside)
+  (us/verify (s/nilable ::us/boolean) background-overlay)
   (ptk/reify ::open-overlay
     ptk/UpdateEvent
     (update [_ state]
@@ -343,7 +345,9 @@
         (if-not (some #(= % frame) overlays)
           (update-in state [:viewer-local :overlays] conj 
                      {:frame frame
-                      :position position})
+                      :position position
+                      :close-click-outside close-click-outside
+                      :background-overlay background-overlay})
           state)))))
 
 (defn close-overlay

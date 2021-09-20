@@ -2289,6 +2289,14 @@ msgid "workspace.options.interaction-action"
 msgstr "Acción"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-background"
+msgstr "Añadir sombreado de fondo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-outside"
+msgstr "Cerrar al pulsar fuera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-close-overlay"
 msgstr "Close overlay"
 

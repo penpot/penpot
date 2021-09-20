@@ -55,6 +55,8 @@
                             :bottom-center})
 (s/def ::overlay-position ::point)
 (s/def ::url ::us/string)
+(s/def ::close-click-outside ::us/boolean)
+(s/def ::background-overlay ::us/boolean)
 
 (defmulti action-opts-spec :action-type)
 
@@ -64,7 +66,9 @@
 (defmethod action-opts-spec :open-overlay [_]
   (s/keys :req-un [::destination
                    ::overlay-position
-                   ::overlay-pos-type]))
+                   ::overlay-pos-type]
+          :opt-un [::close-click-outside
+                   ::background-overlay]))
 
 (defmethod action-opts-spec :close-overlay [_]
   (s/keys :req-un [::destination]))
@@ -220,6 +224,20 @@
   (assoc interaction
          :overlay-pos-type :manual
          :overlay-position overlay-position))
+
+(defn set-close-click-outside
+  [interaction close-click-outside]
+  (us/verify ::interaction interaction)
+  (us/verify ::us/boolean close-click-outside)
+  (assert #(= :open-overlay (:action-type interaction)))
+  (assoc interaction :close-click-outside close-click-outside))
+
+(defn set-background-overlay
+  [interaction background-overlay]
+  (us/verify ::interaction interaction)
+  (us/verify ::us/boolean background-overlay)
+  (assert #(= :open-overlay (:action-type interaction)))
+  (assoc interaction :background-overlay background-overlay))
 
 (defn- calc-overlay-position
   [destination interaction shape objects overlay-pos-type]

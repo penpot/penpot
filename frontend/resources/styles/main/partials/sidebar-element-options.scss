@@ -222,6 +222,31 @@
     }
   }
 
+  .input-checkbox {
+    label {
+      color: $color-gray-20;
+    }
+
+    label::before {
+      background-color: transparent;
+      width: 16px;
+      height: 16px;
+    }
+
+    label::after {
+      width: 16px;
+      height: 16px;
+    }
+
+    input:checked + label::before {
+      border-width: 1px;
+    }
+
+    input:checked + label::after {
+      font-size: 0.8rem;
+    }
+  }
+
   .element-set-subtitle {
     color: $color-gray-20;
     font-size: $fs11;
