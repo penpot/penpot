@@ -98,7 +98,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)]
-        (rx/of (dch/update-shapes [shape-id] #(group->bool % bool-type objects)))))))
+        (let [change-to-bool
+              (fn [shape] (group->bool shape bool-type objects))]
+          (rx/of (dch/update-shapes [shape-id] change-to-bool {:reg-objects? true})))))))
 
 (defn bool-to-group
   [shape-id]
@@ -106,7 +108,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)]
-        (rx/of (dch/update-shapes [shape-id] #(bool->group % objects)))))))
+        (let [change-to-group
+              (fn [shape] (bool->group shape objects))]
+          (rx/of (dch/update-shapes [shape-id] change-to-group {:reg-objects? true})))))))
 
 
 (defn change-bool-type
@@ -114,6 +118,6 @@
   (ptk/reify ::change-bool-type
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes
-              [shape-id]
-              #(assoc % :bool-type bool-type))))))
+      (let [change-type
+            (fn [shape] (assoc shape :bool-type bool-type))]
+        (rx/of (dch/update-shapes [shape-id] change-type {:reg-objects? true}))))))

@@ -12,6 +12,23 @@
    [app.common.path.commands :as upc]
    [app.common.path.subpaths :as ups]))
 
+(defn- reverse-command
+  "Reverses a single command"
+  [command]
+
+  (let [{old-x :x old-y :y} (:params command)
+        {:keys [x y]} (:prev command)
+        {:keys [c1x c1y c2x c2y]} (:params command)]
+
+    (-> command
+        (assoc :prev (gpt/point old-x old-y))
+        (update :params assoc :x x :y y)
+
+        (cond-> (= :curve-to (:command command))
+          (update :params assoc
+                  :c1x c2x :c1y c2y
+                  :c2x c1x :c2y c1y)))))
+
 (defn- split-command
   [cmd values]
   (case (:command cmd)
@@ -142,7 +159,12 @@
   (d/concat
    []
    (->> content-a-split (filter #(not (contains-segment? % content-b))))
-   (->> content-b-split (filter #(contains-segment? % content-a)))))
+
+   ;; Reverse second content so we can have holes inside other shapes
+   (->> content-b-split
+        (reverse)
+        (mapv reverse-command)
+        (filter #(contains-segment? % content-a)))))
 
 (defn create-intersection [content-a content-a-split content-b content-b-split]
   ;; Pick all segments in content-a that are inside content-b
@@ -152,22 +174,6 @@
    (->> content-a-split (filter #(contains-segment? % content-b)))
    (->> content-b-split (filter #(contains-segment? % content-a)))))
 
-(defn reverse-command
-  "Reverses a single command"
-  [command]
-
-  (let [{old-x :x old-y :y} (:params command)
-        {:keys [x y]} (:prev command)
-        {:keys [c1x c1y c2x c2y]} (:params command)]
-
-    (-> command
-        (assoc :prev (gpt/point old-x old-y))
-        (update :params assoc :x x :y y)
-
-        (cond-> (= :curve-to (:command command))
-          (update :params assoc
-                  :c1x c2x :c1y c2y
-                  :c2x c1x :c2y c1y)))))
 
 (defn create-exclusion [content-a content-b]
   ;; Pick all segments but reverse content-b (so it makes an exclusion)

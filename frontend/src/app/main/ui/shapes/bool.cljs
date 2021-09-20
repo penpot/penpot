@@ -27,7 +27,7 @@
 
           bool-content
           (mf/use-memo
-           (mf/deps childs)
+           (mf/deps shape childs)
            (fn []
              (let [childs (d/mapm #(gsh/transform-shape %2) childs)]
                (->> (:shapes shape)
@@ -40,6 +40,3 @@
                                     (assoc :type :path)
                                     (assoc :content bool-content))
                          :frame frame}])))
-
-
-

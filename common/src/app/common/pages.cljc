@@ -73,7 +73,7 @@
 (d/export indices/update-z-index)
 (d/export indices/generate-child-all-parents-index)
 (d/export indices/generate-child-parent-index)
-(d/export indices/create-mask-index)
+(d/export indices/create-clip-index)
 
 ;; Process changes
 (d/export changes/process-changes)

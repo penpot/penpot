@@ -92,6 +92,7 @@
 (defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids hover-disabled? zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
+        ctrl-ref (mf/use-ref @ctrl?)
         transform-ref (mf/use-ref nil)
         selected-ref (mf/use-ref selected)
         hover-disabled-ref (mf/use-ref hover-disabled?)
@@ -101,6 +102,7 @@
          (mf/deps page-id)
          (fn [point]
            (let [zoom (mf/ref-val zoom-ref)
+                 ctrl? (mf/ref-val ctrl-ref)
                  rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
              (if (mf/ref-val hover-disabled-ref)
                (rx/of nil)
@@ -109,6 +111,7 @@
                   :page-id page-id
                   :rect rect
                   :include-frames? true
+                  :clip-children? (not ctrl?)
                   :reverse? true}))))) ;; we want the topmost shape to be selected first
 
         over-shapes-stream
@@ -120,7 +123,6 @@
                  (rx/switch-map query-point))))]
 
     ;; Refresh the refs on a value change
-
     (mf/use-effect
      (mf/deps transform)
      #(mf/set-ref-val! transform-ref transform))
@@ -128,6 +130,10 @@
     (mf/use-effect
      (mf/deps zoom)
      #(mf/set-ref-val! zoom-ref zoom))
+
+    (mf/use-effect
+     (mf/deps @ctrl?)
+     #(mf/set-ref-val! ctrl-ref @ctrl?))
 
     (mf/use-effect
      (mf/deps selected)
@@ -143,11 +149,15 @@
      (fn [ids]
        (let [selected (mf/ref-val selected-ref)
              remove-id? (into #{} (mapcat #(cp/get-parents % objects)) selected)
-             remove-id? (if @ctrl?
-                          (d/concat remove-id?
-                                    (->> ids
-                                         (filterv #(= :group (get-in objects [% :type])))))
-                          remove-id?)
+
+             is-group?
+             (fn [id]
+               (contains? #{:group :bool} (get-in objects [id :type])))
+
+             remove-id?
+             (if @ctrl?
+               (d/concat remove-id? (filterv is-group? ids))
+               remove-id?)
              ids (->> ids (filterv (comp not remove-id?)))]
          (reset! hover (get objects (first ids)))
          (reset! hover-ids ids))))))
