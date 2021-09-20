@@ -9,11 +9,11 @@
   display: flex;
   border-bottom: solid 1px $color-gray-60;
   height: 40px;
-  padding: 0 $x-small;
 
   .align-group {
+    padding: 0 $x-small;
     display: flex;
-    justify-content: space-evenly;
+    justify-content: start;
     width: 50%;
 
     &:not(:last-child) {
@@ -25,7 +25,12 @@
     align-items: center;
     cursor: pointer;
     display: flex;
+    height: 30px;
+    justify-content: center;
+    margin: 5px 0;
     padding: $small $x-small;
+    width: 25%;
+
     svg {
       height: 16px;
       width: 16px;

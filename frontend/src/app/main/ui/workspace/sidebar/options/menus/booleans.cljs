@@ -17,9 +17,14 @@
 (mf/defc booleans-options
   []
   (let [selected (mf/deref refs/selected-objects)
-        disabled (or (empty? selected)
-                     (and (<= (count selected) 1)
-                          (not (contains? #{:group :bool} (:type (first selected))))))
+
+        disabled-bool-btns
+        (or (empty? selected)
+            (and (<= (count selected) 1)
+                 (not (contains? #{:group :bool} (:type (first selected))))))
+
+        disabled-flatten
+        (empty? selected)
 
         head (first selected)
         is-group? (and (some? head) (= :group (:type head)))
@@ -44,29 +49,36 @@
      [:div.align-group
       [:div.align-button.tooltip.tooltip-bottom
        {:alt (tr "workspace.shape.menu.union")
-        :class (dom/classnames :disabled disabled
+        :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :union))
         :on-click (set-bool :union)}
        i/boolean-union]
 
       [:div.align-button.tooltip.tooltip-bottom
        {:alt (tr "workspace.shape.menu.difference")
-        :class (dom/classnames :disabled disabled
+        :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :difference))
         :on-click (set-bool :difference)}
        i/boolean-difference]
 
       [:div.align-button.tooltip.tooltip-bottom
        {:alt (tr "workspace.shape.menu.intersection")
-        :class (dom/classnames :disabled disabled
+        :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :intersection))
         :on-click (set-bool :intersection)}
        i/boolean-intersection]
 
       [:div.align-button.tooltip.tooltip-bottom
        {:alt (tr "workspace.shape.menu.exclude")
-        :class (dom/classnames :disabled disabled
+        :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :exclude))
         :on-click (set-bool :exclude)}
-       i/boolean-exclude]]]))
+       i/boolean-exclude]]
+
+     [:div.align-group
+      [:div.align-button.tooltip.tooltip-bottom
+       {:alt (tr "workspace.shape.menu.flatten")
+        :class (dom/classnames :disabled disabled-flatten)
+        :on-click (st/emitf (dw/convert-selected-to-path))}
+       i/boolean-flatten]]]))
 

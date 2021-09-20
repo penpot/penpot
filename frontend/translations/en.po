@@ -3130,3 +3130,9 @@ msgstr "Intersection"
 
 msgid "workspace.shape.menu.exclude"
 msgstr "Exclude"
+
+msgid "workspace.shape.menu.flatten"
+msgstr "Flatten"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Transform to path"

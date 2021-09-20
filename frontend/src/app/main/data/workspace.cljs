@@ -31,6 +31,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.path :as dwdp]
+   [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -1994,3 +1995,6 @@
 (d/export dwb/group-to-bool)
 (d/export dwb/bool-to-group)
 (d/export dwb/change-bool-type)
+
+;; Shapes to path
+(d/export dwps/convert-selected-to-path)

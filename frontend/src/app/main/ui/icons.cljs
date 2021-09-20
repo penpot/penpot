@@ -27,6 +27,7 @@
 (def auto-width (icon-xref :auto-width))
 (def boolean-difference (icon-xref :boolean-difference))
 (def boolean-exclude (icon-xref :boolean-exclude))
+(def boolean-flatten (icon-xref :boolean-flatten))
 (def boolean-intersection (icon-xref :boolean-intersection))
 (def boolean-union (icon-xref :boolean-union))
 (def box (icon-xref :box))

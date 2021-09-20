@@ -10,7 +10,6 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.path.shapes-to-path :as dwpe]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
@@ -93,6 +92,21 @@
         multiple? (> (count selected) 1)
         editable-shape? (#{:group :text :path} (:type shape))
 
+        is-group? (and (some? shape) (= :group (:type shape)))
+        is-bool?  (and (some? shape) (= :bool (:type shape)))
+
+        set-bool
+        (fn [bool-type]
+          #(cond
+             (> (count selected) 1)
+             (st/emit! (dw/create-bool bool-type))
+
+             (and (= (count selected) 1) is-group?)
+             (st/emit! (dw/group-to-bool (:id shape) bool-type))
+
+             (and (= (count selected) 1) is-bool?)
+             (st/emit! (dw/change-bool-type (:id shape) bool-type))))
+
         current-file-id (mf/use-ctx ctx/current-file-id)
 
         do-duplicate (st/emitf dw/duplicate-selected)
@@ -144,12 +158,8 @@
         do-navigate-component-file (st/emitf (dwl/nav-to-component-file
                                               (:component-file shape)))
 
-        do-boolean-union (st/emitf (dw/create-bool :union))
-        do-boolean-difference (st/emitf (dw/create-bool :difference))
-        do-boolean-intersection (st/emitf (dw/create-bool :intersection))
-        do-boolean-exclude (st/emitf (dw/create-bool :exclude))
-        do-transform-to-path (st/emitf (dwpe/convert-selected-to-path))
-        ]
+        do-transform-to-path (st/emitf (dw/convert-selected-to-path))
+        do-flatten (st/emitf (dw/convert-selected-to-path))]
     [:*
      [:& menu-entry {:title (tr "workspace.shape.menu.copy")
                      :shortcut (sc/get-tooltip :copy)
@@ -198,7 +208,7 @@
                         :on-click do-flip-horizontal}]
         [:& menu-separator]])
 
-     (when (and single? (= (:type shape) :group))
+     (when (and single? (or is-bool? is-group?))
        [:*
          [:& menu-entry {:title (tr "workspace.shape.menu.ungroup")
                          :shortcut (sc/get-tooltip :ungroup)
@@ -216,26 +226,29 @@
                        :shortcut (sc/get-tooltip :start-editing)
                        :on-click do-start-editing}])
 
-     [:& menu-entry {:title "Transform to path"
+     [:& menu-entry {:title (tr "workspace.shape.menu.transform-to-path")
                      :on-click do-transform-to-path}]
 
-     [:& menu-entry {:title (tr "workspace.shape.menu.path")}
-      [:& menu-entry {:title (tr "workspace.shape.menu.union")
-                      :shortcut (sc/get-tooltip :boolean-union)
-                      :on-click do-boolean-union}]
-      [:& menu-entry {:title (tr "workspace.shape.menu.difference")
-                      :shortcut (sc/get-tooltip :boolean-difference)
-                      :on-click do-boolean-difference}]
-      [:& menu-entry {:title (tr "workspace.shape.menu.intersection")
-                      :shortcut (sc/get-tooltip :boolean-intersection)
-                      :on-click do-boolean-intersection}]
-      [:& menu-entry {:title (tr "workspace.shape.menu.exclude")
-                      :shortcut (sc/get-tooltip :boolean-exclude)
-                      :on-click do-boolean-exclude}]
+     (when (or multiple? (and single? (or is-group? is-bool?)))
+       [:& menu-entry {:title (tr "workspace.shape.menu.path")}
+        [:& menu-entry {:title (tr "workspace.shape.menu.union")
+                        :shortcut (sc/get-tooltip :boolean-union)
+                        :on-click (set-bool :union)}]
+        [:& menu-entry {:title (tr "workspace.shape.menu.difference")
+                        :shortcut (sc/get-tooltip :boolean-difference)
+                        :on-click (set-bool :difference)}]
+        [:& menu-entry {:title (tr "workspace.shape.menu.intersection")
+                        :shortcut (sc/get-tooltip :boolean-intersection)
+                        :on-click (set-bool :intersection)}]
+        [:& menu-entry {:title (tr "workspace.shape.menu.exclude")
+                        :shortcut (sc/get-tooltip :boolean-exclude)
+                        :on-click (set-bool :exclude)}]
 
-      [:& menu-separator]
-      ;; TODO
-      [:& menu-entry {:title "Flatten"}]]
+        (when (and single? is-bool?)
+          [:*
+           [:& menu-separator]
+           [:& menu-entry {:title (tr "workspace.shape.menu.flatten")
+                           :on-click do-flatten}]])])
 
      (if (:hidden shape)
        [:& menu-entry {:title (tr "workspace.shape.menu.show")

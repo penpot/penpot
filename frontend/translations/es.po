@@ -3015,3 +3015,9 @@ msgstr "Intersección"
 
 msgid "workspace.shape.menu.exclude"
 msgstr "Exclusión"
+
+msgid "workspace.shape.menu.flatten"
+msgstr "Aplanar"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Convertir en vector"
