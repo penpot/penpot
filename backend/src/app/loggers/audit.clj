@@ -184,10 +184,11 @@
              (db/tjson (:props event))
              "backend"])]
     (aa/with-thread executor
-      (db/with-atomic [conn pool]
-        (db/insert-multi! conn :audit-log
-                          [:id :name :type :profile-id :tracked-at :ip-addr :props :source]
-                          (sequence (map event->row) events))))))
+      (when (seq events)
+        (db/with-atomic [conn pool]
+          (db/insert-multi! conn :audit-log
+                            [:id :name :type :profile-id :tracked-at :ip-addr :props :source]
+                            (sequence (map event->row) events)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Archive Task
