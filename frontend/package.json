@@ -36,6 +36,8 @@
     "shadow-cljs": "2.15.9"
   },
   "dependencies": {
+    "@sentry/browser": "^6.12.0",
+    "@sentry/tracing": "^6.12.0",
     "date-fns": "^2.22.1",
     "draft-js": "^0.11.7",
     "highlight.js": "^11.0.1",

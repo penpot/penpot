@@ -12,6 +12,7 @@
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
+   [app.main.sentry :as sentry]
    [app.main.store :as st]
    [app.main.ui :as ui]
    [app.main.ui.confirm]
@@ -103,6 +104,7 @@
 
 (defn ^:export init
   []
+  (sentry/init!)
   (i18n/init! cfg/translations)
   (theme/init! cfg/themes)
   (init-ui)
