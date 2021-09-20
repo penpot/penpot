@@ -7,19 +7,19 @@
 (ns app.common.geom.shapes.bool
   (:require
    [app.common.geom.shapes.path :as gsp]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.path.bool :as pb]
    [app.common.path.shapes-to-path :as stp]))
 
 (defn update-bool-selrect
+  "Calculates the selrect+points for the boolean shape"
   [shape children objects]
 
-  (let [selrect (->> children
+  (let [content (->> children
                      (map #(stp/convert-to-path % objects))
                      (mapv :content)
-                     (pb/content-bool (:bool-type shape))
-                     (gsp/content->selrect))
-        points (gpr/rect->points selrect)]
+                     (pb/content-bool (:bool-type shape)))
+
+        [points selrect] (gsp/content->points+selrect shape content)]
     (-> shape
         (assoc :selrect selrect)
         (assoc :points points))))

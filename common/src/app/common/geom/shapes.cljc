@@ -134,6 +134,7 @@
 (d/export gco/center-rect)
 (d/export gco/center-points)
 (d/export gco/make-centered-rect)
+(d/export gco/transform-points)
 
 (d/export gpr/rect->selrect)
 (d/export gpr/rect->points)
@@ -146,7 +147,6 @@
 (d/export gtr/transform-matrix)
 (d/export gtr/inverse-transform-matrix)
 (d/export gtr/transform-point-center)
-(d/export gtr/transform-points)
 (d/export gtr/transform-rect)
 (d/export gtr/calculate-adjust-matrix)
 (d/export gtr/update-group-selrect)

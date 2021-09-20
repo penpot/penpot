@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.common :as gsc]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
    [app.common.path.commands :as upc]))
@@ -756,3 +757,45 @@
                     [_ to-p h1' h2'] (subcurve-range from-p to-p h1 h2 t0 t1)]
                 (upc/make-curve-to (-> to-p #_(gpt/round 2)) h1' h2'))))))))
 
+
+(defn content-center
+  [content]
+  (-> content
+      content->selrect
+      gsc/center-selrect))
+
+(defn content->points+selrect
+  "Given the content of a shape, calculate its points and selrect"
+  [shape content]
+  (let [{:keys [flip-x flip-y]} shape
+        transform
+        (cond-> (:transform shape (gmt/matrix))
+          flip-x (gmt/scale (gpt/point -1 1))
+          flip-y (gmt/scale (gpt/point 1 -1)))
+
+        transform-inverse
+        (cond-> (gmt/matrix)
+          flip-x (gmt/scale (gpt/point -1 1))
+          flip-y (gmt/scale (gpt/point 1 -1))
+          :always (gmt/multiply (:transform-inverse shape (gmt/matrix))))
+
+        center (or (gsc/center-shape shape)
+                   (content-center content))
+
+        base-content (transform-content
+                      content
+                      (gmt/transform-in center transform-inverse))
+
+        ;; Calculates the new selrect with points given the old center
+        points (-> (content->selrect base-content)
+                   (gpr/rect->points)
+                   (gsc/transform-points center transform))
+
+        points-center (gsc/center-points points)
+
+        ;; Points is now the selrect but the center is different so we can create the selrect
+        ;; through points
+        selrect (-> points
+                    (gsc/transform-points points-center transform-inverse)
+                    (gpr/points->selrect))]
+    [points selrect]))

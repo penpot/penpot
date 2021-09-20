@@ -158,7 +158,7 @@
 
 (defmethod impl/handler :selection/query
   [{:keys [page-id rect frame-id reverse? full-frame? include-frames? clip-children?]
-    :or {reverse? false full-frame? false include-frames? false include-booleans? true include-groups? true} :as message}]
+    :or {reverse? false full-frame? false include-frames? false clip-children? true} :as message}]
   (when-let [index (get @state page-id)]
     (query-index index rect frame-id full-frame? include-frames? clip-children? reverse?)))
 

@@ -7,6 +7,7 @@
 (ns app.common.geom.shapes.common
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.geom.matrix :as gmt]
    [app.common.math :as mth]))
 
 (defn center-rect
@@ -48,3 +49,14 @@
    :y (- (:y center) (/ height 2.0))
    :width width
    :height height})
+
+(defn transform-points
+  ([points matrix]
+   (transform-points points nil matrix))
+  ([points center matrix]
+   (let [prev (if center (gmt/translate-matrix center) (gmt/matrix))
+         post (if center (gmt/translate-matrix (gpt/negate center)) (gmt/matrix))
+
+         tr-point (fn [point]
+                    (gpt/transform point (gmt/multiply prev matrix post)))]
+     (mapv tr-point points))))
