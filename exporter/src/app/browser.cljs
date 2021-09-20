@@ -139,10 +139,10 @@
   (let [opts #js {:max (cf/get :browser-pool-max 3)
                   :min (cf/get :browser-pool-min 0)
                   :testOnBorrow true
-                  :evictionRunIntervalMillis 30000
+                  :evictionRunIntervalMillis 5000
                   :numTestsPerEvictionRun 5
                   :acquireTimeoutMillis 120000 ; 2min
-                  :idleTimeoutMillis 30000}]
+                  :idleTimeoutMillis 10000}]
 
     (reset! pool (gp/createPool browser-pool-factory opts))
     (p/resolved nil)))
