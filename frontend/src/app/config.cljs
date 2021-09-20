@@ -77,6 +77,7 @@
 (def worker-uri           (obj/get global "penpotWorkerURI" "/js/worker.js"))
 (def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
+(def sentry-dsn           (obj/get global "penpotSentryDsn"))
 
 (def flags                (atom (parse-flags global)))
 (def version              (atom (parse-version global)))
