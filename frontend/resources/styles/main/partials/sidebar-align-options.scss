@@ -13,7 +13,7 @@
   .align-group {
     padding: 0 $x-small;
     display: flex;
-    justify-content: start;
+    justify-content: flex-start;
     width: 50%;
 
     &:not(:last-child) {

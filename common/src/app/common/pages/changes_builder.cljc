@@ -4,7 +4,10 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.pages.changes-builder)
+(ns app.common.pages.changes-builder
+  (:require
+   [app.common.data :as d]
+   [app.common.pages.helpers :as h]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
@@ -14,6 +17,12 @@
      :undo-changes []
      :origin origin}
     {::page-id page-id}))
+
+(defn with-objects [changes objects]
+  (with-meta
+    changes
+    (-> (meta changes)
+        (assoc ::objects objects))))
 
 (defn add-obj
   [changes obj]
@@ -33,7 +42,7 @@
 
     (-> changes
         (update :redo-changes conj add-change)
-        (update :undo-changes #(into [del-change] %)))))
+        (update :undo-changes d/preconj del-change))))
 
 (defn change-parent
   [changes parent-id shapes]
@@ -44,16 +53,99 @@
          :shapes (->> shapes (mapv :id))}
 
         mk-undo-change
-        (fn [shape]
-          {:type :mov-objects
-           :page-id (::page-id (meta changes))
-           :parent-id (:parent-id shape)
-           :shapes [(:id shape)]
-           :index (::index shape)})
-
-        undo-moves
-        (->> shapes (mapv mk-undo-change))]
+        (fn [change-set shape]
+          (d/preconj
+           change-set
+           {:type :mov-objects
+            :page-id (::page-id (meta changes))
+            :parent-id (:parent-id shape)
+            :shapes [(:id shape)]
+            :index (::index shape)}))]
 
     (-> changes
         (update :redo-changes conj set-parent-change)
-        (update :undo-changes #(into undo-moves %)))))
+        (update :undo-changes #(reduce mk-undo-change % shapes)))))
+
+(defn- generate-operation
+  "Given an object old and new versions and an attribute will append into changes
+  the set and undo operations"
+  [changes attr old new ignore-geometry?]
+  (let [old-val (get old attr)
+        new-val (get new attr)]
+    (if (= old-val new-val)
+      changes
+      (-> changes
+          (update :rops conj {:type :set :attr attr :val new-val :ignore-geometry ignore-geometry?})
+          (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
+
+(defn update-shapes
+  "Calculate the changes and undos to be done when a function is applied to a
+  single object"
+  ([changes ids update-fn]
+   (update-shapes changes ids update-fn nil))
+
+  ([changes ids update-fn {:keys [attrs ignore-geometry?] :or {attrs nil ignore-geometry? false}}]
+   (assert (contains? (meta changes) ::objects) "Call (with-objects) first to use this function")
+   (let [objects (::objects (meta changes))
+
+         update-shape
+         (fn [changes id]
+           (let [old-obj (get objects id)
+                 new-obj (update-fn old-obj)
+
+                 attrs (or attrs (d/concat #{} (keys old-obj) (keys new-obj)))
+
+                 {rops :rops uops :uops}
+                 (reduce #(generate-operation %1 %2 old-obj new-obj ignore-geometry?)
+                         {:rops [] :uops []}
+                         attrs)
+
+                 uops (cond-> uops
+                        (seq uops)
+                        (conj {:type :set-touched :touched (:touched old-obj)}))
+
+                 change {:type :mod-obj
+                         :page-id (::page-id (meta changes))
+                         :id id}]
+
+             (cond-> changes
+               (seq rops)
+               (update :redo-changes conj (assoc change :operations rops))
+
+               (seq uops)
+               (update :undo-changes d/preconj (assoc change :operations uops)))))]
+
+     (reduce update-shape changes ids))))
+
+(defn remove-objects
+  [changes ids]
+  (assert (contains? (meta changes) ::objects) "Call (with-objects) first to use this function")
+  (let [page-id (::page-id (meta changes))
+        objects (::objects (meta changes))
+
+        add-redo-change
+        (fn [change-set id]
+          (conj change-set
+                {:type :del-obj
+                 :page-id page-id
+                 :id id}))
+
+        add-undo-change
+        (fn [change-set id]
+          (let [shape (get objects id)]
+            (d/preconj
+             change-set
+             {:type :add-obj
+              :page-id page-id
+              :parent-id (:parent-id shape)
+              :frame-id (:frame-id shape)
+              :id id
+              :obj (cond-> shape
+                     (contains? shape :shapes)
+                     (assoc :shapes []))
+              :index (h/position-on-parent id objects)})))]
+
+
+    (-> changes
+        (update :redo-changes #(reduce add-redo-change % ids))
+        (update :undo-changes #(reduce add-undo-change % ids)))))

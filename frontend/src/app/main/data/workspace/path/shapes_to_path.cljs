@@ -6,6 +6,8 @@
 
 (ns app.main.data.workspace.path.shapes-to-path
   (:require
+   [app.common.pages :as cp]
+   [app.common.pages.changes-builder :as cb]
    [app.common.path.shapes-to-path :as upsp]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -15,7 +17,20 @@
 (defn convert-selected-to-path []
   (ptk/reify ::convert-selected-to-path
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects  (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state)]
-        (rx/of (dch/update-shapes selected #(upsp/convert-to-path % objects)))))))
+    (watch [it state _]
+      (let [page-id  (:current-page-id state)
+            objects  (wsh/lookup-page-objects state)
+            selected (wsh/lookup-selected state)
+
+            children-ids
+            (into #{}
+                  (mapcat #(cp/get-children % objects))
+                  selected)
+
+            changes
+            (-> (cb/empty-changes it page-id)
+                (cb/with-objects objects)
+                (cb/remove-objects children-ids)
+                (cb/update-shapes selected #(upsp/convert-to-path % objects)))]
+
+        (rx/of (dch/commit-changes changes))))))

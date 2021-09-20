@@ -69,6 +69,11 @@
              (next colls))
       (persistent! result))))
 
+(defn preconj
+  [coll elem]
+  (assert (vector? coll))
+  (concat [elem] coll))
+
 (defn enumerate
   ([items] (enumerate items 0))
   ([items start]
