@@ -7,8 +7,14 @@
 
 .interactions-help {
   font-size: $fs12;
-  margin: 0 $medium;
+  padding: 7px $medium;
+  margin: 0 -7px;
   text-align: center;
+
+  &.separator {
+    padding-bottom: $medium;
+    border-bottom: 1px solid $color-black;
+  }
 }
 
 .interactions-help-icon {
@@ -24,7 +30,9 @@
 }
 
 .interactions-summary {
-  width: 100%;
+  cursor: pointer;
+  flex-basis: 0;
+  flex-grow: 1;
 
   .trigger-name {
     font-size: $fs12;
@@ -40,17 +48,31 @@
 .interactions-element {
   display: flex;
   align-items: center;
+  margin: 0 -7px;
+  padding: 0 7px;
 
   .element-label {
     color: $color-gray-20;
     font-size: $fs11;
     width: 64px;
   }
+
+  &.separator {
+    border-top: 1px solid $color-black;
+    margin-top: $x-small;
+  }
 }
 
 .interactions-pos-buttons {
   margin-top: $small;
-  justify-content: space-around;
+  padding-top: $small;
+  padding-bottom: $small;
+  justify-content: space-between;
+
+  .element-set-actions-button {
+    min-width: 18px;
+    min-height: 18px;
+  }
 
   svg {
     width: 18px;

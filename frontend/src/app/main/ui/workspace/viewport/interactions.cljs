@@ -97,17 +97,15 @@
     [:*
       [:circle {:cx 0
                 :cy 0
-                :r 8
-                :stroke stroke
-                :stroke-width 2
-                :fill "#FFFFFF"
+                :r (if (some? action-type) 8 4)
+                :fill stroke
                 :transform (str
                              "scale(" inv-zoom ", " inv-zoom ") "
                              "translate(" (* zoom x) ", " (* zoom y) ")")}]
       (when icon-pdata
-        [:path {:stroke stroke
-                :fill "none"
-                :stroke-width 2
+        [:path {:fill stroke
+                :stroke-width 1
+                :stroke "#FFFFFF"
                 :d icon-pdata
                 :transform (str
                              "scale(" inv-zoom ", " inv-zoom ") "
@@ -115,7 +113,7 @@
 
 
 (mf/defc interaction-path
-  [{:keys [index orig-shape dest-shape dest-point selected? action-type zoom] :as props}]
+  [{:keys [index level orig-shape dest-shape dest-point selected? action-type zoom] :as props}]
   (let [[orig-pos orig-x orig-y dest-pos dest-x dest-y]
         (cond
           dest-shape
@@ -127,7 +125,8 @@
           :else
           (connect-to-point orig-shape
                             {:x (+ (:x2 (:selrect orig-shape)) 100)
-                             :y (- (:y1 (:selrect orig-shape)) 50)}))
+                             :y (+ (- (:y1 (:selrect orig-shape)) 50)
+                                   (* level 16))}))
 
         orig-dx (if (= orig-pos :right) 100 -100)
         dest-dx (if (= dest-pos :right) 100 -100)
@@ -144,8 +143,7 @@
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
                :d pdata}]
-       (when (and (not dest-shape)
-                  (= action-type :close-overlay))
+       (when (not dest-shape)
          [:& interaction-marker {:index index
                                  :x dest-x
                                  :y dest-y
@@ -237,17 +235,24 @@
         draw-interaction-to-frame (:draw-interaction-to-frame local)
         move-overlay-to (:move-overlay-to local)
         move-overlay-index (:move-overlay-index local)
-        first-selected (first selected-shapes)]
+        first-selected (first selected-shapes)
+
+        calc-level (fn [index interactions]
+                     (->> (subvec interactions 0 index)
+                          (filter #(nil? (:destination %)))
+                          (count)))]
 
     [:g.interactions
      [:g.non-selected
       (for [shape active-shapes]
         (for [[index interaction] (d/enumerate (:interactions shape))]
           (let [dest-shape (get objects (:destination interaction))
-                selected? (contains? selected (:id shape))]
+                selected? (contains? selected (:id shape))
+                level (calc-level index (:interactions shape))]
             (when-not selected?
               [:& interaction-path {:key (str (:id shape) "-" index)
                                     :index index
+                                    :level level
                                     :orig-shape shape
                                     :dest-shape dest-shape
                                     :selected selected
@@ -269,10 +274,12 @@
         (if (seq (:interactions shape))
           (for [[index interaction] (d/enumerate (:interactions shape))]
             (when-not (= index editing-interaction-index)
-              (let [dest-shape (get objects (:destination interaction))]
+              (let [dest-shape (get objects (:destination interaction))
+                    level (calc-level index (:interactions shape))]
                 [:*
                   [:& interaction-path {:key (str (:id shape) "-" index)
                                         :index index
+                                        :level level
                                         :orig-shape shape
                                         :dest-shape dest-shape
                                         :selected selected

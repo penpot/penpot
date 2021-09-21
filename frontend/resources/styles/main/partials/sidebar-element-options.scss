@@ -908,12 +908,31 @@
   &.selected {
     border: 1px solid $color-primary;
   }
+
+  &:not(:first-child) {
+    margin-top: 7px;
+  }
+
+  &.open {
+    &:hover {
+      background: unset;
+    }
+  }
+}
+
+.interactions-options {
+  &.element-set {
+    border-bottom: 0;
+  }
+
+  .element-set-options-group {
+    flex-wrap: wrap;
+  }
 }
 
 .exports-options,
-.shadow-options{
+.shadow-options {
   .element-set-options-group {
-    justify-content: space-between;
     .delete-icon {
       display: flex;
       min-width: 40px;
@@ -926,10 +945,6 @@
         height: 12px;
         fill: $color-gray-20;
       }
-    }
-
-    &:not(:first-child) {
-      margin-top: 7px;
     }
   }
 

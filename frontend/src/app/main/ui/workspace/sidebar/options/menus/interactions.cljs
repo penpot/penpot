@@ -65,8 +65,8 @@
 
         action-type          (:action-type interaction)
         overlay-pos-type     (:overlay-pos-type interaction)
-        close-click-outside? (:close-click-outside interaction)
-        background-overlay?  (:background-overlay interaction)
+        close-click-outside? (:close-click-outside interaction false)
+        background-overlay?  (:background-overlay interaction false)
 
         extended-open? (mf/use-state false)
 
@@ -106,31 +106,31 @@
             (update-interaction index #(cti/set-background-overlay % value))))]
 
     [:*
-     [:div.element-set-options-group
+     [:div.element-set-options-group {:class (dom/classnames
+                                               :open @extended-open?)}
       [:div.element-set-actions-button {:on-click #(swap! extended-open? not)}
        i/actions]
-      [:div.interactions-summary
+      [:div.interactions-summary {:on-click #(swap! extended-open? not)}
        [:div.trigger-name (event-type-name interaction)]
        [:div.action-summary (action-summary interaction destination)]]
       [:div.elemen-set-actions {:on-click #(remove-interaction index)}
-       [:div.element-set-actions-button i/minus]]]
-     (when @extended-open?
-       [:div.element-set
+       [:div.element-set-actions-button i/minus]]
+      (when @extended-open?
         [:div.element-set-content
-         [:div.interactions-element
-            [:span.element-set-subtitle.wide (tr "workspace.options.interaction-trigger")]
-            [:select.input-select
-             {:value (str (:event-type interaction))
-              :on-change change-event-type}
-             (for [[value name] (event-type-names)]
-               [:option {:value (str value)} name])]]
-         [:div.interactions-element
-            [:span.element-set-subtitle.wide (tr "workspace.options.interaction-action")]
-            [:select.input-select
-             {:value (str (:action-type interaction))
-              :on-change change-action-type}
-             (for [[value name] (action-type-names)]
-               [:option {:value (str value)} name])]]
+         [:div.interactions-element.separator
+          [:span.element-set-subtitle.wide (tr "workspace.options.interaction-trigger")]
+          [:select.input-select
+           {:value (str (:event-type interaction))
+            :on-change change-event-type}
+           (for [[value name] (event-type-names)]
+             [:option {:value (str value)} name])]]
+         [:div.interactions-element.separator
+          [:span.element-set-subtitle.wide (tr "workspace.options.interaction-action")]
+          [:select.input-select
+           {:value (str (:action-type interaction))
+            :on-change change-action-type}
+           (for [[value name] (action-type-names)]
+             [:option {:value (str value)} name])]]
          (when (#{:navigate :open-overlay :close-overlay} action-type)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-destination")]
@@ -195,7 +195,7 @@
                        :checked background-overlay?
                        :on-change change-background-overlay}]
               [:label {:for (str "background-" index)}
-               (tr "workspace.options.interaction-background")]]]])]])]))
+               (tr "workspace.options.interaction-background")]]]])])]]))
 
 (mf/defc interactions-menu
   [{:keys [shape] :as props}]
@@ -218,7 +218,7 @@
           (let [new-interactions (update interactions index update-fn)]
             (st/emit! (dw/update-shape (:id shape) {:interactions new-interactions})))) ]
 
-    [:div.element-set
+    [:div.element-set.interactions-options
      (when shape
        [:div.element-set-title
         [:span (tr "workspace.options.interactions")]
@@ -231,15 +231,16 @@
          (when shape
            [:*
             [:div.interactions-help-icon i/plus]
-            [:div.interactions-help (tr "workspace.options.add-interaction")]])
+            [:div.interactions-help.separator (tr "workspace.options.add-interaction")]])
          [:div.interactions-help-icon i/interaction]
          [:div.interactions-help (tr "workspace.options.select-a-shape")]
          [:div.interactions-help-icon i/play]
          [:div.interactions-help (tr "workspace.options.use-play-button")]])]
-     (for [[index interaction] (d/enumerate interactions)]
-       [:& interaction-entry {:index index
-                              :shape shape
-                              :interaction interaction
-                              :update-interaction update-interaction
-                              :remove-interaction remove-interaction}])]))
+     [:div.groups
+      (for [[index interaction] (d/enumerate interactions)]
+        [:& interaction-entry {:index index
+                               :shape shape
+                               :interaction interaction
+                               :update-interaction update-interaction
+                               :remove-interaction remove-interaction}])]]))
 
