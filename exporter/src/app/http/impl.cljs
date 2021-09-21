@@ -63,7 +63,9 @@
                    :query (:query uri)
                    :url uri
                    :headers headers
-                   :cookies cookies}]
+                   :cookies cookies
+                   :internal-request req
+                   :internal-response res}]
       (-> (parse-body req)
           (p/then (fn [body]
                     (let [request (assoc request :body body)]

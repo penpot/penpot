@@ -21,6 +21,8 @@
 
 (def defaults
   {:public-uri "http://localhost:3449"
+   :tenant "dev"
+   :host "devenv"
    :http-server-port 6061
    :browser-concurrency 5
    :browser-strategy :incognito})
@@ -30,9 +32,15 @@
 (s/def ::browser-strategy ::us/keyword)
 (s/def ::http-server-port ::us/integer)
 (s/def ::public-uri ::us/string)
+(s/def ::sentry-dsn ::us/string)
+(s/def ::tenant ::us/string)
+(s/def ::host ::us/string)
 
 (s/def ::config
   (s/keys :opt-un [::public-uri
+                   ::sentry-dsn
+                   ::host
+                   ::tenant
                    ::http-server-port
                    ::browser-concurrency
                    ::browser-strategy
@@ -62,11 +70,10 @@
 (def config
   (atom (prepare-config)))
 
-
 (def version
-  (v/parse (or (some-> (ex/ignoring (fs/readFileSync "version.txt"))
-                       (str/trim))
-               "%version%")))
+  (atom (v/parse (or (some-> (ex/ignoring (fs/readFileSync "version.txt"))
+                             (str/trim))
+                     "%version%"))))
 
 (defn get
   "A configuration getter."
