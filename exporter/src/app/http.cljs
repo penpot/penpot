@@ -10,6 +10,8 @@
    [app.http.export :refer [export-handler]]
    [app.http.export-frames :refer [export-frames-handler]]
    [app.http.impl :as impl]
+   [app.util.transit :as t]
+   [cuerdas.core :as str]
    [lambdaisland.glogi :as log]
    [promesa.core :as p]
    [reitit.core :as r]))
@@ -20,13 +22,45 @@
 
 (def instance (atom nil))
 
+(defn- on-error
+  [error request]
+  (let [{:keys [type message code] :as data} (ex-data error)]
+    (cond
+      (= :validation type)
+      (let [header (get-in request [:headers "accept"])]
+        (if (and (str/starts-with? header "text/html")
+                 (= :spec-validation (:code data)))
+          {:status 400
+           :headers {"content-type" "text/html"}
+           :body (str "<pre style='font-size:16px'>" (:explain data) "</pre>\n")}
+          {:status 400
+           :headers {"content-type" "text/html"}
+           :body (str "<pre style='font-size:16px'>" (:explain data) "</pre>\n")}))
+
+      (and (= :internal type)
+           (= :browser-not-ready code))
+      {:status 503
+         :headers {"x-error" (t/encode data)}
+       :body ""}
+
+      :else
+      (do
+        (log/error :msg "Unexpected error" :error error)
+        (js/console.error error)
+        {:status 500
+         :headers {"x-error" (t/encode data)}
+         :body ""}))))
+
 (defn init
   []
   (let [router  (r/router routes)
-        handler (impl/handler router)
-        server  (impl/server handler)
+        handler (impl/router-handler router)
+        server  (impl/server handler on-error)
         port    (cf/get :http-server-port 6061)]
     (.listen server port)
+    (log/info :msg "welcome to penpot"
+              :module "exporter"
+              :version (:full cf/version))
     (log/info :msg "starting http server" :port port)
     (reset! instance server)))
 
