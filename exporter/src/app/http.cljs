@@ -11,6 +11,7 @@
    [app.http.export-frames :refer [export-frames-handler]]
    [app.http.impl :as impl]
    [app.util.transit :as t]
+   [app.sentry :as sentry]
    [cuerdas.core :as str]
    [lambdaisland.glogi :as log]
    [promesa.core :as p]
@@ -25,6 +26,9 @@
 (defn- on-error
   [error request]
   (let [{:keys [type message code] :as data} (ex-data error)]
+    (sentry/capture-exception error {::sentry/request request
+                                     :ex-data data})
+
     (cond
       (= :validation type)
       (let [header (get-in request [:headers "accept"])]
@@ -60,7 +64,7 @@
     (.listen server port)
     (log/info :msg "welcome to penpot"
               :module "exporter"
-              :version (:full cf/version))
+              :version (:full @cf/version))
     (log/info :msg "starting http server" :port port)
     (reset! instance server)))
 
