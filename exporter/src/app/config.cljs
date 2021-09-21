@@ -7,9 +7,12 @@
 (ns app.config
   (:refer-clojure :exclude [get])
   (:require
+   ["fs" :as fs]
    ["process" :as process]
+   [app.common.exceptions :as ex]
    [app.common.data :as d]
    [app.common.spec :as us]
+   [app.common.version :as v]
    [cljs.core :as c]
    [cljs.pprint]
    [cljs.spec.alpha :as s]
@@ -22,11 +25,11 @@
    :browser-concurrency 5
    :browser-strategy :incognito})
 
-(s/def ::browser-executable-path ::us/string)
-(s/def ::public-uri ::us/string)
-(s/def ::http-server-port ::us/integer)
 (s/def ::browser-concurrency ::us/integer)
+(s/def ::browser-executable-path ::us/string)
 (s/def ::browser-strategy ::us/keyword)
+(s/def ::http-server-port ::us/integer)
+(s/def ::public-uri ::us/string)
 
 (s/def ::config
   (s/keys :opt-un [::public-uri
@@ -59,6 +62,11 @@
 (def config
   (atom (prepare-config)))
 
+
+(def version
+  (v/parse (or (some-> (ex/ignoring (fs/readFileSync "version.txt"))
+                       (str/trim))
+               "%version%")))
 
 (defn get
   "A configuration getter."
