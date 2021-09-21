@@ -97,10 +97,10 @@
   (ptk/reify ::group-to-bool
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)]
-        (let [change-to-bool
-              (fn [shape] (group->bool shape bool-type objects))]
-          (rx/of (dch/update-shapes [shape-id] change-to-bool {:reg-objects? true})))))))
+      (let [objects (wsh/lookup-page-objects state)
+            change-to-bool
+            (fn [shape] (group->bool shape bool-type objects))]
+        (rx/of (dch/update-shapes [shape-id] change-to-bool {:reg-objects? true}))))))
 
 (defn bool-to-group
   [shape-id]

@@ -32,6 +32,7 @@
              (let [childs (d/mapm #(gsh/transform-shape %2) childs)]
                (->> (:shapes shape)
                     (map #(get childs %))
+                    (filter #(not (:hidden %)))
                     (map #(stp/convert-to-path % childs))
                     (mapv :content)
                     (pb/content-bool (:bool-type shape))))))]

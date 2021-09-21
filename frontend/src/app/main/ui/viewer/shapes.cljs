@@ -15,6 +15,7 @@
    [app.common.types.interactions :as cti]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
+   [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
@@ -229,6 +230,10 @@
   [shape-container show-interactions?]
   (generic-wrapper-factory (group/group-shape shape-container) show-interactions?))
 
+(defn bool-wrapper
+  [shape-container show-interactions?]
+  (generic-wrapper-factory (bool/bool-shape shape-container) show-interactions?))
+
 (defn svg-raw-wrapper
   [shape-container show-interactions?]
   (generic-wrapper-factory (svg-raw/svg-raw-shape shape-container) show-interactions?))
@@ -287,6 +292,21 @@
                                     :show-interactions? show-interactions?})]
         [:> group-wrapper props]))))
 
+(defn bool-container-factory
+  [objects show-interactions?]
+  (let [shape-container (shape-container-factory objects show-interactions?)
+        bool-wrapper (bool-wrapper shape-container show-interactions?)]
+    (mf/fnc bool-container
+      {::mf/wrap-props false}
+      [props]
+      (let [shape  (unchecked-get props "shape")
+            childs (select-keys objects (cp/get-children (:id shape) objects))
+            props  (obj/merge! #js {} props
+                               #js {:childs childs
+                                    :objects objects
+                                    :show-interactions? show-interactions?})]
+        [:> bool-wrapper props]))))
+
 (defn svg-raw-container-factory
   [objects show-interactions?]
   (let [shape-container (shape-container-factory objects show-interactions?)
@@ -312,12 +332,17 @@
     (mf/fnc shape-container
       {::mf/wrap-props false}
       [props]
-      (let [group-container (mf/use-memo
-                             (mf/deps objects)
-                             #(group-container-factory objects show-interactions?))
-            svg-raw-container (mf/use-memo
-                               (mf/deps objects)
-                               #(svg-raw-container-factory objects show-interactions?))
+      (let [group-container
+            (mf/use-memo (mf/deps objects)
+                         #(group-container-factory objects show-interactions?))
+
+            bool-container
+            (mf/use-memo (mf/deps objects)
+                         #(bool-container-factory objects show-interactions?))
+
+            svg-raw-container
+            (mf/use-memo (mf/deps objects)
+                         #(svg-raw-container-factory objects show-interactions?))
             shape (unchecked-get props "shape")
             frame (unchecked-get props "frame")]
         (when (and shape (not (:hidden shape)))
@@ -333,6 +358,7 @@
               :image   [:> image-wrapper opts]
               :circle  [:> circle-wrapper opts]
               :group   [:> group-container {:shape shape :frame frame :objects objects}]
+              :bool    [:> bool-container {:shape shape :frame frame :objects objects}]
               :svg-raw [:> svg-raw-container {:shape shape :frame frame :objects objects}])))))))
 
 (mf/defc frame-svg

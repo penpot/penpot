@@ -6,8 +6,8 @@
 
 (ns app.common.geom.shapes.common
   (:require
-   [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.math :as mth]))
 
 (defn center-rect
