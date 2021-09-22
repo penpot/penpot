@@ -74,6 +74,7 @@
         cursor            (mf/use-state (utils/get-cursor :pointer-inner))
         hover-ids         (mf/use-state nil)
         hover             (mf/use-state nil)
+        hover-disabled?   (mf/use-state false)
         frame-hover       (mf/use-state nil)
         active-frames     (mf/use-state {})
 
@@ -153,7 +154,7 @@
     (hooks/setup-cursor cursor alt? panning drawing-tool drawing-path? node-editing?)
     (hooks/setup-resize layout viewport-ref)
     (hooks/setup-keyboard alt? ctrl? space?)
-    (hooks/setup-hover-shapes page-id move-stream objects transform selected ctrl? hover hover-ids zoom)
+    (hooks/setup-hover-shapes page-id move-stream objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
     (hooks/setup-viewport-modifiers modifiers selected objects render-ref)
     (hooks/setup-shortcuts node-editing? drawing-path?)
     (hooks/setup-active-frames objects vbox hover active-frames)
@@ -320,7 +321,8 @@
 
        (when show-prototypes?
          [:& interactions/interactions
-          {:selected selected}])
+          {:selected selected
+           :hover-disabled? hover-disabled?}])
 
        (when show-selrect?
          [:& widgets/selection-rect {:data selrect

@@ -192,7 +192,7 @@
 
 
 (mf/defc overlay-marker
-  [{:keys [index orig-shape dest-shape position objects] :as props}]
+  [{:keys [index orig-shape dest-shape position objects hover-disabled?] :as props}]
   (let [start-move-position
         (fn [_]
           (st/emit! (dw/start-move-overlay-pos index)))]
@@ -203,7 +203,9 @@
             marker-y   (+ (:y orig-frame) (:y position))
             width      (:width dest-shape)
             height     (:height dest-shape)]
-        [:g {:on-mouse-down start-move-position}
+        [:g {:on-mouse-down start-move-position
+             :on-mouse-enter #(reset! hover-disabled? true)
+             :on-mouse-leave #(reset! hover-disabled? false)}
          [:path {:stroke "#31EFB8"
                  :fill "#000000"
                  :fill-opacity 0.3
@@ -223,7 +225,7 @@
          ]))))
 
 (mf/defc interactions
-  [{:keys [selected] :as props}]
+  [{:keys [selected hover-disabled?] :as props}]
   (let [local (mf/deref refs/workspace-local)
         zoom (mf/deref refs/selected-zoom)
         current-transform (:transform local)
@@ -294,13 +296,15 @@
                                           :orig-shape shape
                                           :dest-shape dest-shape
                                           :position move-overlay-to
-                                          :objects objects}]
+                                          :objects objects
+                                          :hover-disabled? hover-disabled?}]
                       [:& overlay-marker {:key (str "pos" (:id shape) "-" index)
                                           :index index
                                           :orig-shape shape
                                           :dest-shape dest-shape
                                           :position (:overlay-position interaction)
-                                          :objects objects}]))])))
+                                          :objects objects
+                                          :hover-disabled? hover-disabled?}]))])))
           (when (not (#{:move :rotate} current-transform))
             [:& interaction-handle {:key (:id shape)
                                     :index nil
