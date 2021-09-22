@@ -17,8 +17,8 @@
 ;; -- Options depending on event type
 
 (s/def ::event-type #{:click
-                      :mouse-over
                       :mouse-press
+                      :mouse-over
                       :mouse-enter
                       :mouse-leave
                       :after-delay})
@@ -111,7 +111,7 @@
 
 (def default-delay 100)
 
-;; -- Helpers
+;; -- Helpers for interaction
 
 (declare calc-overlay-position)
 
@@ -289,4 +289,11 @@
 
         :manual
         (:overlay-position interaction)))))
+
+
+;; -- Helpers for interactions
+
+(defn actionable?
+  [interactions]
+  (some #(= (:event-type %) :click) interactions))
 

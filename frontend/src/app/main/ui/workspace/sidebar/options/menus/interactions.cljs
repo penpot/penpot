@@ -21,7 +21,10 @@
 (defn- event-type-names
   []
   {:click (tr "workspace.options.interaction-on-click")
-   :mouse-over (tr "workspace.options.interaction-while-hovering")})
+   :mouse-over (tr "workspace.options.interaction-while-hovering")
+   :mouse-press (tr "workspace.options.interaction-while-pressing")
+   :mouse-enter (tr "workspace.options.interaction-mouse-enter")
+   :mouse-leave (tr "workspace.options.interaction-mouse-leave")})
 
 (defn- event-type-name
   [interaction]

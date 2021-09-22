@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
+   [app.common.types.interactions :as cti]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
    [app.main.ui.shapes.circle :as circle]
@@ -27,51 +28,119 @@
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
-(defn on-mouse-down
-  [event shape]
-  (doseq [interaction (->> (:interactions shape)
-                           (filter #(= (:event-type %) :click)))]
+(defn activate-interaction
+  [interaction shape]
+  (case (:action-type interaction)
+    :navigate
+    (when-let [frame-id (:destination interaction)]
+      (st/emit! (dv/go-to-frame frame-id)))
 
-    (case (:action-type interaction)
-      :navigate
-      (let [frame-id (:destination interaction)]
-        (dom/stop-propagation event)
-        (when frame-id
-          (st/emit! (dv/go-to-frame frame-id))))
+    :open-overlay
+    (let [frame-id            (:destination interaction)
+          position            (:overlay-position interaction)
+          close-click-outside (:close-click-outside interaction)
+          background-overlay  (:background-overlay interaction)]
+      (when frame-id
+        (st/emit! (dv/open-overlay frame-id
+                                   position
+                                   close-click-outside
+                                   background-overlay))))
 
-      :open-overlay
-      (let [frame-id            (:destination interaction)
-            position            (:overlay-position interaction)
-            close-click-outside (:close-click-outside interaction)
-            background-overlay  (:background-overlay interaction)]
-        (dom/stop-propagation event)
-        (when frame-id
-          (st/emit! (dv/open-overlay frame-id
+    :toggle-overlay
+    (let [frame-id            (:destination interaction)
+          position            (:overlay-position interaction)
+          close-click-outside (:close-click-outside interaction)
+          background-overlay  (:background-overlay interaction)]
+      (when frame-id
+        (st/emit! (dv/toggle-overlay frame-id
                                      position
                                      close-click-outside
                                      background-overlay))))
 
-      :toggle-overlay
-      (let [frame-id            (:destination interaction)
-            position            (:overlay-position interaction)
-            close-click-outside (:close-click-outside interaction)
-            background-overlay  (:background-overlay interaction)]
-        (dom/stop-propagation event)
-        (when frame-id
-          (st/emit! (dv/toggle-overlay frame-id
-                                       position
-                                       close-click-outside
-                                       background-overlay))))
+    :close-overlay
+    (let [frame-id (or (:destination interaction)
+                       (if (= (:type shape) :frame)
+                         (:id shape)
+                         (:frame-id shape)))]
+      (st/emit! (dv/close-overlay frame-id)))
 
-      :close-overlay
-      (let [frame-id (or (:destination interaction)
-                         (if (= (:type shape) :frame)
-                           (:id shape)
-                           (:frame-id shape)))]
-        (dom/stop-propagation event)
-        (st/emit! (dv/close-overlay frame-id)))
+    nil))
 
-      nil)))
+;; Perform the opposite action of an interaction, if possible
+(defn deactivate-interaction
+  [interaction shape]
+  (case (:action-type interaction)
+    :open-overlay
+    (let [frame-id (or (:destination interaction)
+                       (if (= (:type shape) :frame)
+                         (:id shape)
+                         (:frame-id shape)))]
+      (st/emit! (dv/close-overlay frame-id)))
+
+    :toggle-overlay
+    (let [frame-id            (:destination interaction)
+          position            (:overlay-position interaction)
+          close-click-outside (:close-click-outside interaction)
+          background-overlay  (:background-overlay interaction)]
+      (when frame-id
+        (st/emit! (dv/toggle-overlay frame-id
+                                     position
+                                     close-click-outside
+                                     background-overlay))))
+
+    :close-overlay
+    (let [frame-id            (:destination interaction)
+          position            (:overlay-position interaction)
+          close-click-outside (:close-click-outside interaction)
+          background-overlay  (:background-overlay interaction)]
+      (when frame-id
+        (st/emit! (dv/open-overlay frame-id
+                                   position
+                                   close-click-outside
+                                   background-overlay))))
+    nil))
+
+(defn on-mouse-down
+  [event shape]
+  (let [interactions (->> (:interactions shape)
+                          (filter #(or (= (:event-type %) :click)
+                                       (= (:event-type %) :mouse-press))))]
+    (when (seq interactions)
+      (dom/stop-propagation event)
+      (doseq [interaction interactions]
+        (activate-interaction interaction shape)))))
+
+(defn on-mouse-up
+  [event shape]
+  (let [interactions (->> (:interactions shape)
+                          (filter #(= (:event-type %) :mouse-press)))]
+    (when (seq interactions)
+      (dom/stop-propagation event)
+      (doseq [interaction interactions]
+        (deactivate-interaction interaction shape)))))
+
+(defn on-mouse-enter
+  [event shape]
+  (let [interactions (->> (:interactions shape)
+                          (filter #(or (= (:event-type %) :mouse-enter)
+                                       (= (:event-type %) :mouse-over))))]
+    (when (seq interactions)
+      (dom/stop-propagation event)
+      (doseq [interaction interactions]
+        (activate-interaction interaction shape)))))
+
+(defn on-mouse-leave
+  [event shape]
+  (let [interactions     (->> (:interactions shape)
+                              (filter #(= (:event-type %) :mouse-leave)))
+        interactions-inv (->> (:interactions shape)
+                              (filter #(= (:event-type %) :mouse-over)))]
+    (when (or (seq interactions) (seq interactions-inv))
+      (dom/stop-propagation event)
+      (doseq [interaction interactions]
+        (activate-interaction interaction shape))
+      (doseq [interaction interactions-inv]
+        (deactivate-interaction interaction shape)))))
 
 (mf/defc interaction
   [{:keys [shape interactions show-interactions?]}]
@@ -101,18 +170,16 @@
 
           interactions (:interactions shape)
 
-          on-mouse-down (mf/use-callback
-                         (mf/deps shape)
-                         (fn [event]
-                           (on-mouse-down event shape)))
-
           svg-element? (and (= :svg-raw (:type shape))
                             (not= :svg (get-in shape [:content :tag])))]
 
       (if-not svg-element?
         [:> shape-container {:shape shape
-                             :cursor (when-not (empty? interactions) "pointer")
-                             :on-mouse-down on-mouse-down}
+                             :cursor (when (cti/actionable? interactions) "pointer")
+                             :on-mouse-down #(on-mouse-down % shape)
+                             :on-mouse-up #(on-mouse-up % shape)
+                             :on-mouse-enter #(on-mouse-enter % shape)
+                             :on-mouse-leave #(on-mouse-leave % shape)}
 
          [:& component {:shape shape
                         :frame frame
