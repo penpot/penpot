@@ -292,6 +292,10 @@
 (defn go-to-frame-by-index
   [index]
   (ptk/reify ::go-to-frame-by-index
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :overlays] []))
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [route   (:route state)
@@ -304,6 +308,10 @@
   [frame-id]
   (us/verify ::us/uuid frame-id)
   (ptk/reify ::go-to-frame
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :overlays] []))
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [route   (:route state)
@@ -318,6 +326,10 @@
 (defn go-to-section
   [section]
   (ptk/reify ::go-to-section
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :overlays] []))
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [route   (:route state)
@@ -342,13 +354,38 @@
             frames   (get-in state [:viewer :pages page-id :frames])
             frame    (d/seek #(= (:id %) frame-id) frames)
             overlays (get-in state [:viewer-local :overlays])]
-        (if-not (some #(= % frame) overlays)
+        (if-not (some #(= (:frame %) frame) overlays)
           (update-in state [:viewer-local :overlays] conj 
                      {:frame frame
                       :position position
                       :close-click-outside close-click-outside
                       :background-overlay background-overlay})
           state)))))
+
+(defn toggle-overlay
+  [frame-id position close-click-outside background-overlay]
+  (us/verify ::us/uuid frame-id)
+  (us/verify ::us/point position)
+  (us/verify (s/nilable ::us/boolean) close-click-outside)
+  (us/verify (s/nilable ::us/boolean) background-overlay)
+  (ptk/reify ::toggle-overlay
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [route    (:route state)
+            qparams  (:query-params route)
+            page-id  (:page-id qparams)
+            frames   (get-in state [:viewer :pages page-id :frames])
+            frame    (d/seek #(= (:id %) frame-id) frames)
+            overlays (get-in state [:viewer-local :overlays])]
+        (if-not (some #(= (:frame %) frame) overlays)
+          (update-in state [:viewer-local :overlays] conj 
+                     {:frame frame
+                      :position position
+                      :close-click-outside close-click-outside
+                      :background-overlay background-overlay})
+          (update-in state [:viewer-local :overlays]
+                     (fn [overlays]
+                       (remove #(= (:id (:frame %)) frame-id) overlays))))))))
 
 (defn close-overlay
   [frame-id]
@@ -448,6 +485,10 @@
 (defn go-to-page
   [page-id]
   (ptk/reify ::go-to-page
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :overlays] []))
+
     ptk/WatchEvent
      (watch [_ state _]
        (let [route   (:route state)

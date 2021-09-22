@@ -40,6 +40,7 @@
 
 (s/def ::action-type #{:navigate
                        :open-overlay
+                       :toggle-overlay
                        :close-overlay
                        :prev-screen
                        :open-url})
@@ -64,6 +65,13 @@
   (s/keys :req-un [::destination]))
 
 (defmethod action-opts-spec :open-overlay [_]
+  (s/keys :req-un [::destination
+                   ::overlay-position
+                   ::overlay-pos-type]
+          :opt-un [::close-click-outside
+                   ::background-overlay]))
+
+(defmethod action-opts-spec :toggle-overlay [_]
   (s/keys :req-un [::destination
                    ::overlay-position
                    ::overlay-pos-type]
@@ -137,7 +145,7 @@
              :action-type action-type
              :destination (get interaction :destination))
 
-      :open-overlay
+      (:open-overlay :toggle-overlay)
       (let [destination (get interaction :destination)
             overlay-pos-type (get interaction :overlay-pos-type :center)
             overlay-position (get interaction
@@ -174,12 +182,13 @@
   (us/verify ::destination destination)
   (assert (or (nil? destination)
               (some? (get objects destination))))
-  (assert #(:navigate :open-overlay :close-overlay) (:action-type interaction))
+  (assert (#{:navigate :open-overlay :toggle-overlay :close-overlay} (:action-type interaction)))
   (cond-> interaction
     :always
     (assoc :destination destination)
 
-    (= (:action-type interaction) :open-overlay)
+    (or (= (:action-type interaction) :open-overlay)
+        (= (:action-type interaction) :toggle-overlay))
     (assoc :overlay-pos-type :center
            :overlay-position (calc-overlay-position destination
                                                     interaction
@@ -191,7 +200,7 @@
   [interaction overlay-pos-type shape objects]
   (us/verify ::interaction interaction)
   (us/verify ::overlay-pos-type overlay-pos-type)
-  (assert #(= :open-overlay (:action-type interaction)))
+  (assert (#{:open-overlay :toggle-overlay} (:action-type interaction)))
   (assoc interaction
          :overlay-pos-type overlay-pos-type
          :overlay-position (calc-overlay-position (:destination interaction)
@@ -204,7 +213,7 @@
   [interaction overlay-pos-type shape objects]
   (us/verify ::interaction interaction)
   (us/verify ::overlay-pos-type overlay-pos-type)
-  (assert #(= :open-overlay (:action-type interaction)))
+  (assert (#{:open-overlay :toggle-overlay} (:action-type interaction)))
   (let [new-pos-type (if (= (:overlay-pos-type interaction) overlay-pos-type)
                        :manual
                        overlay-pos-type)]
@@ -220,7 +229,7 @@
   [interaction overlay-position]
   (us/verify ::interaction interaction)
   (us/verify ::overlay-position overlay-position)
-  (assert #(= :open-overlay (:action-type interaction)))
+  (assert (#{:open-overlay :toggle-overlay} (:action-type interaction)))
   (assoc interaction
          :overlay-pos-type :manual
          :overlay-position overlay-position))
@@ -229,14 +238,14 @@
   [interaction close-click-outside]
   (us/verify ::interaction interaction)
   (us/verify ::us/boolean close-click-outside)
-  (assert #(= :open-overlay (:action-type interaction)))
+  (assert (#{:open-overlay :toggle-overlay} (:action-type interaction)))
   (assoc interaction :close-click-outside close-click-outside))
 
 (defn set-background-overlay
   [interaction background-overlay]
   (us/verify ::interaction interaction)
   (us/verify ::us/boolean background-overlay)
-  (assert #(= :open-overlay (:action-type interaction)))
+  (assert (#{:open-overlay :toggle-overlay} (:action-type interaction)))
   (assoc interaction :background-overlay background-overlay))
 
 (defn- calc-overlay-position

@@ -90,6 +90,8 @@
 
                      :open-overlay "M-5 -5 h7 v7 h-7 z M2 -2 h3.5 v7 h-7 v-2.5"
 
+                     :toggle-overlay "M-5 -5 h7 v7 h-7 z M2 -2 h3.5 v7 h-7 v-2.5"
+
                      :close-overlay "M -5 -5 L 5 5 M -5 5 L 5 -5"
 
                      nil)
@@ -288,7 +290,8 @@
                                         :selected? true
                                         :action-type (:action-type interaction)
                                         :zoom zoom}]
-                  (when (= (:action-type interaction) :open-overlay)
+                  (when (or (= (:action-type interaction) :open-overlay)
+                            (= (:action-type interaction) :toggle-overlay))
                     (if (and (some? move-overlay-to)
                              (= move-overlay-index index))
                       [:& overlay-marker {:key (str "pos" (:id shape) "-" index)

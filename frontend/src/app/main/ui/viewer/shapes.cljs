@@ -36,7 +36,8 @@
       :navigate
       (let [frame-id (:destination interaction)]
         (dom/stop-propagation event)
-        (st/emit! (dv/go-to-frame frame-id)))
+        (when frame-id
+          (st/emit! (dv/go-to-frame frame-id))))
 
       :open-overlay
       (let [frame-id            (:destination interaction)
@@ -44,14 +45,29 @@
             close-click-outside (:close-click-outside interaction)
             background-overlay  (:background-overlay interaction)]
         (dom/stop-propagation event)
-        (st/emit! (dv/open-overlay frame-id
-                                   position
-                                   close-click-outside
-                                   background-overlay)))
+        (when frame-id
+          (st/emit! (dv/open-overlay frame-id
+                                     position
+                                     close-click-outside
+                                     background-overlay))))
+
+      :toggle-overlay
+      (let [frame-id            (:destination interaction)
+            position            (:overlay-position interaction)
+            close-click-outside (:close-click-outside interaction)
+            background-overlay  (:background-overlay interaction)]
+        (dom/stop-propagation event)
+        (when frame-id
+          (st/emit! (dv/toggle-overlay frame-id
+                                       position
+                                       close-click-outside
+                                       background-overlay))))
 
       :close-overlay
       (let [frame-id (or (:destination interaction)
-                         (:frame-id shape))]
+                         (if (= (:type shape) :frame)
+                           (:id shape)
+                           (:frame-id shape)))]
         (dom/stop-propagation event)
         (st/emit! (dv/close-overlay frame-id)))
 

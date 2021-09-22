@@ -31,6 +31,7 @@
   []
   {:navigate (tr "workspace.options.interaction-navigate-to")
    :open-overlay (tr "workspace.options.interaction-open-overlay")
+   :toggle-overlay (tr "workspace.options.interaction-toggle-overlay")
    :close-overlay (tr "workspace.options.interaction-close-overlay")
    :prev-screen (tr "workspace.options.interaction-prev-screen")})
 
@@ -40,6 +41,8 @@
     :navigate (tr "workspace.options.interaction-navigate-to-dest"
                   (get destination :name (tr "workspace.options.interaction-none")))
     :open-overlay (tr "workspace.options.interaction-open-overlay-dest"
+                      (get destination :name (tr "workspace.options.interaction-none")))
+    :toggle-overlay (tr "workspace.options.interaction-toggle-overlay-dest"
                       (get destination :name (tr "workspace.options.interaction-none")))
     :close-overlay (tr "workspace.options.interaction-close-overlay-dest"
                        (get destination :name (tr "workspace.options.interaction-self")))
@@ -131,7 +134,7 @@
             :on-change change-action-type}
            (for [[value name] (action-type-names)]
              [:option {:value (str value)} name])]]
-         (when (#{:navigate :open-overlay :close-overlay} action-type)
+         (when (#{:navigate :open-overlay :toggle-overlay :close-overlay} action-type)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-destination")]
             [:select.input-select
@@ -142,7 +145,8 @@
                (when (and (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
                           (not= (:id frame) (:frame-id shape))) ; nor a shape to its container frame
                  [:option {:value (str (:id frame))} (:name frame)]))]])
-         (when (= action-type :open-overlay)
+         (when (or (= action-type :open-overlay)
+                   (= action-type :toggle-overlay))
            [:*
             [:div.interactions-element
              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-position")]
