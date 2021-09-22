@@ -15,6 +15,7 @@
    [app.common.path.commands :as upc]))
 
 (def ^:const curve-curve-precision 0.1)
+(def ^:const curve-range-precision 2)
 
 (defn calculate-opposite-handler
   "Given a point and its handler, gives the symetric handler"
@@ -54,13 +55,18 @@
     (gpt/add from-p move-v)))
 
 (defn line-windup
-  [[_ to-p :as l] t]
+  [[from-p to-p :as l] t]
   (let [p (line-values l t)
-        v (gpt/to-vec p to-p)]
+        cy (:y p)
+        ay (:y to-p)
+        by (:y from-p)]
+
     (cond
-      (> (:y v) 0)  1
-      (< (:y v) 0) -1
-      :else         0)))
+      (> (- cy ay) 0)  1
+      (< (- cy ay) 0) -1
+      (< (- cy by) 0)  1
+      (> (- cy by) 0) -1
+      :else            0)))
 
 ;; https://medium.com/@Acegikmo/the-ever-so-lovely-b%C3%A9zier-curve-eb27514da3bf
 ;; https://en.wikipedia.org/wiki/Bernstein_polynomial
@@ -208,7 +214,7 @@
 
              [root1 root2 root3])
 
-           (= discriminant 0)
+           (mth/almost-zero? discriminant)
            (let [u1 (if (< q2 0) (mth/cubicroot (- q2)) (- (mth/cubicroot q2)))
                  root1 (- (* 2 u1) (/ a 3))
                  root2 (- (- u1) (/ a 3))]
@@ -266,9 +272,7 @@
              (solve-roots a b c d)))]
      (->> coords
           (mapcat coord->tvalue)
-
           ;; Only values in the range [0, 1] are valid
-          #_(filterv #(and (> % 0.01) (< % 0.99)))
           (filterv #(and (>= % 0) (<= % 1)))))))
 
 (defn command->point
@@ -295,6 +299,33 @@
     (command->point cmd)
     (gpt/point (-> cmd :params :c1x) (-> cmd :params :c1y))
     (gpt/point (-> cmd :params :c2x) (-> cmd :params :c2y))]))
+
+(defn command->selrect
+  ([command]
+   (command->selrect command (:prev command)))
+
+  ([command prev-point]
+   (let [points (case (:command command)
+                  :move-to [(command->point command)]
+
+                  ;; If it's a line we add the beginning point and endpoint
+                  :line-to [prev-point (command->point command)]
+
+                  ;; We return the bezier extremities
+                  :curve-to (d/concat
+                             [prev-point
+                              (command->point command)]
+                             (let [curve [prev-point
+                                          (command->point command)
+                                          (command->point command :c1)
+                                          (command->point command :c2)]]
+                               (->> (curve-extremities curve)
+                                    (mapv #(curve-values curve %)))))
+                  [])
+         selrect (gpr/points->selrect points)]
+     (-> selrect
+         (update :width #(if (mth/almost-zero? %) 1 %))
+         (update :height #(if (mth/almost-zero? %) 1 %))))))
 
 (defn content->selrect [content]
   (let [calc-extremities
@@ -583,22 +614,25 @@
     (curve-roots c2' :y)))
 
 (defn ray-line-intersect
-  [point line]
+  [point [from-p to-p :as line]]
 
-  (let [ray-line [point (gpt/point (inc (:x point)) (:y point))]
-        [ray-t line-t] (line-line-crossing ray-line line)]
-
-    (when (and (some? line-t) (> ray-t 0) (>= line-t 0) (< line-t 1))
-      [[(line-values line line-t)
-        (line-windup line line-t)]])))
+  (let [ray-line-angle (gpt/angle (gpt/to-vec from-p to-p) (gpt/point 1 0))]
+    ;; If the ray is paralell to the line there will be no crossings
+    (when (and (> (mth/abs (- ray-line-angle 180)) 0.01)
+               (> (mth/abs (- ray-line-angle 0)) 0.01))
+      (let [ray-line [point (gpt/point (inc (:x point)) (:y point))]
+            [ray-t line-t] (line-line-crossing ray-line line)]
+        (when (and (some? line-t) (> ray-t 0) (>= line-t 0) (<= line-t 1))
+          [[(line-values line line-t)
+            (line-windup line line-t)]])))))
 
 (defn line-line-intersect
   [l1 l2]
 
   (let [[l1-t l2-t] (line-line-crossing l1 l2)]
     (when (and (some? l1-t) (some? l2-t)
-               (> l1-t 0.01) (< l1-t 0.99)
-               (> l2-t 0.01) (< l2-t 0.99))
+               (>= l1-t 0) (<= l1-t 1)
+               (>= l2-t 0) (<= l2-t 1))
       [[l1-t] [l2-t]])))
 
 (defn ray-curve-intersect
@@ -619,16 +653,23 @@
 
 (defn line-curve-intersect
   [l1 c2]
+
   (let [curve-ts (->> (line-curve-crossing l1 c2)
-                      (filterv #(let [curve-v (curve-values c2 %)
-                                      line-t (get-line-tval l1 curve-v)]
-                                  (and (> line-t 0.001) (< line-t 0.999)))))
+                      (filterv
+                       (fn [curve-t]
+                         (let [curve-t (if (mth/almost-zero? curve-t) 0 curve-t)
+                               curve-v (curve-values c2 curve-t)
+                               line-t (get-line-tval l1 curve-v)]
+                           (and (>= curve-t 0) (<= curve-t 1)
+                                (>= line-t 0) (<= line-t 1))))))
+
         ;; Intersection line-curve points
         intersect-ps (->> curve-ts
                           (mapv #(curve-values c2 %)))
-        
+
         line-ts (->> intersect-ps
                      (mapv #(get-line-tval l1 %)))]
+
     [line-ts curve-ts]))
 
 (defn curve-curve-intersect
@@ -658,27 +699,51 @@
                   r2 (curve-range->rect c2 c2-from c2-to)]
 
               (when (gpr/overlaps-rects? r1 r2)
-                (if (< (gpt/distance (curve-values c1 c1-from)
-                                     (curve-values c2 c2-from))
-                       curve-curve-precision)
-                  [(sorted-set (mth/precision c1-from 4))
-                   (sorted-set (mth/precision c2-from 4))]
+                (let [p1 (curve-values c1 c1-from)
+                      p2 (curve-values c2 c2-from)]
 
-                  (let [c1-half (+ c1-from (/ (- c1-to c1-from) 2))
-                        c2-half (+ c2-from (/ (- c2-to c2-from) 2))
+                  (if (< (gpt/distance p1 p2) curve-curve-precision)
+                    [{:p1 p1
+                      :p2 p2
+                      :d  (gpt/distance p1 p2)
+                      :t1 (mth/precision c1-from 4)
+                      :t2 (mth/precision c2-from 4)}]
 
-                        [c1-ts-1 c2-ts-1] (check-range c1-from c1-half c2-from c2-half)
-                        [c1-ts-2 c2-ts-2] (check-range c1-from c1-half c2-half c2-to)
-                        [c1-ts-3 c2-ts-3] (check-range c1-half c1-to c2-from c2-half)
-                        [c1-ts-4 c2-ts-4] (check-range c1-half c1-to c2-half c2-to)]
+                    (let [c1-half (+ c1-from (/ (- c1-to c1-from) 2))
+                          c2-half (+ c2-from (/ (- c2-to c2-from) 2))
 
-                    [(into (sorted-set) (d/concat [] c1-ts-1 c1-ts-2 c1-ts-3 c1-ts-4))
-                     (into (sorted-set) (d/concat [] c2-ts-1 c2-ts-2 c2-ts-3 c2-ts-4))])))))]
+                          ts-1 (check-range c1-from c1-half c2-from c2-half)
+                          ts-2 (check-range c1-from c1-half c2-half c2-to)
+                          ts-3 (check-range c1-half c1-to c2-from c2-half)
+                          ts-4 (check-range c1-half c1-to c2-half c2-to)]
 
-    (let [[c1-ts c2-ts] (check-range 0.005 0.995 0.005 0.995)
-          c1-ts (remove-close-ts c1-ts)
-          c2-ts (remove-close-ts c2-ts)]
-      [c1-ts c2-ts])))
+                      (d/concat [] ts-1 ts-2 ts-3 ts-4)))))))
+
+          (remove-close-ts [{cp1 :p1 cp2 :p2}]
+            (fn [{:keys [p1 p2]}]
+              (and (>= (gpt/distance p1 cp1) curve-range-precision)
+                   (>= (gpt/distance p2 cp2) curve-range-precision))))
+
+          (process-ts [ts]
+            (loop [current (first ts)
+                   pending (rest ts)
+                   c1-ts   []
+                   c2-ts   []]
+
+              (if (nil? current)
+                [c1-ts c2-ts]
+
+                (let [pending (->> pending (filter (remove-close-ts current)))
+                      c1-ts (conj c1-ts (:t1 current))
+                      c2-ts (conj c2-ts (:t2 current))]
+                  (recur (first pending)
+                         (rest pending)
+                         c1-ts
+                         c2-ts)))))]
+
+    (->> (check-range 0 1 0 1)
+         (sort-by :d)
+         (process-ts))))
 
 (defn curve->rect
   [[from-p to-p :as curve]]
@@ -730,33 +795,39 @@
   for example (split-line-to-ranges p c [0 0.25 0.5 0.75 1] will split
   the line into 4 lines"
   [from-p cmd values]
-  (let [to-p (upc/command->point cmd)]
-    (->> (conj values 1)
-         (mapv (fn [val]
-                 (-> (gpt/lerp from-p to-p val)
-                     #_(gpt/round 2)
-                     (upc/make-line-to)))))))
+  (let [values (->> values (filter #(and (> % 0) (< % 1))))]
+    (if (empty? values)
+      [cmd]
+      (let [to-p (upc/command->point cmd)
+            values-set (->> (conj values 1) (into (sorted-set)))]
+        (->> values-set
+             (mapv (fn [val]
+                     (-> (gpt/lerp from-p to-p val)
+                         #_(gpt/round 2)
+                         (upc/make-line-to)))))))))
 
 (defn split-curve-to-ranges
   "Splits a curve into several curves given the points in `values`
   for example (split-curve-to-ranges p c [0 0.25 0.5 0.75 1] will split
   the curve into 4 curves that draw the same curve"
   [from-p cmd values]
-  (if (empty? values)
-    [cmd]
-    (let [to-p (upc/command->point cmd)
-          params (:params cmd)
-          h1 (gpt/point (:c1x params) (:c1y params))
-          h2 (gpt/point (:c2x params) (:c2y params))
 
-          values-set (->> (conj values 1) (into (sorted-set)))]
-      (->> (d/with-prev values-set)
-           (mapv
-            (fn [[t1 t0]]
-              (let [t0 (if (nil? t0) 0 t0)
-                    [_ to-p h1' h2'] (subcurve-range from-p to-p h1 h2 t0 t1)]
-                (upc/make-curve-to (-> to-p #_(gpt/round 2)) h1' h2'))))))))
+  (let [values (->> values (filter #(and (> % 0) (< % 1))))]
+    (if (empty? values)
+      [cmd]
+      (let [to-p (upc/command->point cmd)
+            params (:params cmd)
+            h1 (gpt/point (:c1x params) (:c1y params))
+            h2 (gpt/point (:c2x params) (:c2y params))
 
+            values-set (->> (conj values 0 1) (into (sorted-set)))]
+
+        (->> (d/with-prev values-set)
+             (rest)
+             (mapv
+              (fn [[t1 t0]]
+                (let [[_ to-p h1' h2'] (subcurve-range from-p to-p h1 h2 t0 t1)]
+                  (upc/make-curve-to (-> to-p #_(gpt/round 2)) h1' h2')))))))))
 
 (defn content-center
   [content]

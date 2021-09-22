@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gsp]
+   [app.common.geom.shapes.rect :as gpr]
    [app.common.path.commands :as upc]
    [app.common.path.subpaths :as ups]))
 
@@ -29,41 +30,6 @@
                   :c1x c2x :c1y c2y
                   :c2x c1x :c2y c1y)))))
 
-(defn- split-command
-  [cmd values]
-  (case (:command cmd)
-    :line-to  (gsp/split-line-to-ranges (:prev cmd) cmd values)
-    :curve-to (gsp/split-curve-to-ranges (:prev cmd) cmd values)
-    [cmd]))
-
-(defn split [seg-1 seg-2]
-  (let [[ts-seg-1 ts-seg-2]
-        (cond
-          (and (= :line-to (:command seg-1))
-               (= :line-to (:command seg-2)))
-          (gsp/line-line-intersect (gsp/command->line seg-1) (gsp/command->line seg-2))
-
-          (and (= :line-to (:command seg-1))
-               (= :curve-to (:command seg-2)))
-          (gsp/line-curve-intersect (gsp/command->line seg-1) (gsp/command->bezier seg-2))
-          
-          (and (= :curve-to (:command seg-1))
-               (= :line-to (:command seg-2)))
-          (let [[seg-2' seg-1']
-                (gsp/line-curve-intersect (gsp/command->line seg-2) (gsp/command->bezier seg-1))]
-            ;; Need to reverse because we send the arguments reversed
-            [seg-1' seg-2'])
-          
-          (and (= :curve-to (:command seg-1))
-               (= :curve-to (:command seg-2)))
-          (gsp/curve-curve-intersect (gsp/command->bezier seg-1) (gsp/command->bezier seg-2))
-
-          :else
-          [[] []])]
-
-    [(split-command seg-1 ts-seg-1)
-     (split-command seg-2 ts-seg-2)]))
-
 (defn add-previous
   ([content]
    (add-previous content nil))
@@ -77,57 +43,86 @@
                   (some? prev)
                   (assoc :prev (gsp/command->point prev))))))))
 
+(defn- split-command
+  [cmd values]
+  (case (:command cmd)
+    :line-to  (gsp/split-line-to-ranges (:prev cmd) cmd values)
+    :curve-to (gsp/split-curve-to-ranges (:prev cmd) cmd values)
+    [cmd]))
+
+(defn split-ts [seg-1 seg-2]
+  (cond
+    (and (= :line-to (:command seg-1))
+         (= :line-to (:command seg-2)))
+    (gsp/line-line-intersect (gsp/command->line seg-1) (gsp/command->line seg-2))
+
+    (and (= :line-to (:command seg-1))
+         (= :curve-to (:command seg-2)))
+    (gsp/line-curve-intersect (gsp/command->line seg-1) (gsp/command->bezier seg-2))
+
+    (and (= :curve-to (:command seg-1))
+         (= :line-to (:command seg-2)))
+    (let [[seg-2' seg-1']
+          (gsp/line-curve-intersect (gsp/command->line seg-2) (gsp/command->bezier seg-1))]
+      ;; Need to reverse because we send the arguments reversed
+      [seg-1' seg-2'])
+
+    (and (= :curve-to (:command seg-1))
+         (= :curve-to (:command seg-2)))
+    (gsp/curve-curve-intersect (gsp/command->bezier seg-1) (gsp/command->bezier seg-2))
+
+    :else
+    [[] []]))
+
+(defn split
+  [seg-1 seg-2]
+  (let [r1 (gsp/command->selrect seg-1)
+        r2 (gsp/command->selrect seg-2)]
+    (if (not (gpr/overlaps-rects? r1 r2))
+      [[seg-1] [seg-2]]
+      (let [[ts-seg-1 ts-seg-2] (split-ts seg-1 seg-2)]
+        [(-> (split-command seg-1 ts-seg-1) (add-previous (:prev seg-1)))
+         (-> (split-command seg-2 ts-seg-2) (add-previous (:prev seg-2)))]))))
+
 (defn content-intersect-split
-  "Given two path contents will return the intersect between them"
   [content-a content-b]
 
-  (if (or (empty? content-a) (empty? content-b))
-    [content-a content-b]
+  (let [cache (atom {})]
+    (letfn [(split-cache [seg-1 seg-2]
+              (cond
+                (contains? @cache [seg-1 seg-2])
+                (first (get @cache [seg-1 seg-2]))
 
-    (loop [current       (first content-a)
-           pending       (rest content-a)
-           content-b     content-b
-           new-content-a []]
+                (contains? @cache [seg-2 seg-1])
+                (second (get @cache [seg-2 seg-1]))
 
-      (if (not (some? current))
-        [new-content-a content-b]
+                :else
+                (let [value (split seg-1 seg-2)]
+                  (swap! cache assoc [seg-1 seg-2] value)
+                  (first value))))
 
-        (let [[new-current new-pending new-content-b]
+            (split-segment-on-content
+              [segment content]
 
-              (loop [current      current
-                     pending      pending
-                     other        (first content-b)
-                     head-content []
-                     tail-content (rest content-b)]
+              (loop [current (first content)
+                     content (rest content)
+                     result [segment]]
 
-                (if (not (some? other))
-                  ;; Finished recorring second content
-                  [current pending head-content]
+                (if (nil? current)
+                  result
+                  (let [result (->> result (into [] (mapcat #(split-cache % current))))]
+                    (recur (first content)
+                           (rest content)
+                           result)))))
 
-                  ;; We split the current
-                  (let [[new-as new-bs] (split current other)
-                        new-as (add-previous new-as (:prev current))
-                        new-bs (add-previous new-bs (:prev other))]
+            (split-content
+              [content-a content-b]
+              (into []
+                    (mapcat #(split-segment-on-content % content-b))
+                    content-a))]
 
-                    (if (> (count new-as) 1)
-                      ;; We add the new-a's to the stack and change the b then we iterate to the top
-                      (recur (first new-as)
-                             (d/concat [] (rest new-as) pending)
-                             (first tail-content)
-                             (d/concat [] head-content new-bs)
-                             (rest tail-content))
-
-                      ;; No current segment-segment split we continue searching
-                      (recur current
-                             pending
-                             (first tail-content)
-                             (conj head-content other)
-                             (rest tail-content))))))]
-
-          (recur (first new-pending)
-                 (rest new-pending)
-                 new-content-b
-                 (conj new-content-a new-current)))))))
+      [(split-content content-a content-b)
+       (split-content content-b content-a)])))
 
 (defn is-segment?
   [cmd]
@@ -145,6 +140,40 @@
                               (gsp/curve-values 0.5)))]
     (gsp/is-point-in-content? point content)))
 
+(defn overlap-segment?
+  "Finds if the current segment is overlapping against other
+  segment meaning they have the same coordinates"
+  [segment content]
+
+  (letfn [(overlap-single?
+            [other]
+            (when (and (= (:command segment) (:command other))
+                       (contains? #{:line-to :curve-to} (:command segment)))
+
+              (case (:command segment)
+
+                :line-to (let [[p1 q1] (gsp/command->line segment)
+                               [p2 q2] (gsp/command->line other)]
+
+                           (or (and (< (gpt/distance p1 p2) 0.1)
+                                    (< (gpt/distance q1 q2) 0.1))
+                               (and (< (gpt/distance p1 q2) 0.1)
+                                    (< (gpt/distance q1 p2) 0.1))))
+
+                :curve-to (let [[p1 q1 h11 h21] (gsp/command->bezier segment)
+                                [p2 q2 h12 h22] (gsp/command->bezier other)]
+
+                            (or (and (< (gpt/distance p1 p2) 0.1)
+                                     (< (gpt/distance q1 q2) 0.1)
+                                     (< (gpt/distance h11 h12) 0.1)
+                                     (< (gpt/distance h21 h22) 0.1))
+
+                                (and (< (gpt/distance p1 q2) 0.1)
+                                     (< (gpt/distance q1 p2) 0.1)
+                                     (< (gpt/distance h11 h22) 0.1)
+                                     (< (gpt/distance h21 h12) 0.1)))))))]
+    (some? (d/seek overlap-single? content))))
+
 (defn create-union [content-a content-a-split content-b content-b-split]
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content-b that are not inside content-a
@@ -156,6 +185,7 @@
 (defn create-difference [content-a content-a-split content-b content-b-split]
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content b that are inside content-a
+  ;;  removing overlapping
   (d/concat
    []
    (->> content-a-split (filter #(not (contains-segment? % content-b))))
@@ -164,7 +194,8 @@
    (->> content-b-split
         (reverse)
         (mapv reverse-command)
-        (filter #(contains-segment? % content-a)))))
+        (filter #(contains-segment? % content-a))
+        (filter #(not (overlap-segment? % content-a-split))))))
 
 (defn create-intersection [content-a content-a-split content-b content-b-split]
   ;; Pick all segments in content-a that are inside content-b
