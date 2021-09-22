@@ -84,27 +84,27 @@
   [{:keys [x y stroke action-type arrow-dir zoom] :as props}]
   (let [icon-pdata (case action-type
                      :navigate (case arrow-dir
-                                 :right "M -5 0 l 8 0 l -4 -4 m 4 4 l -4 4"
-                                 :left "M 5 0 l -8 0 l 4 -4 m -4 4 l 4 4"
+                                 :right "M -6.5 0 l 12 0 l -6 -6 m 6 6 l -6 6"
+                                 :left "M 6.5 0 l -12 0 l 6 -6 m -6 6 l 6 6"
                                  nil)
 
-                     :open-overlay "M-4 -4 h6 v6 h-6 z M2 -2 h2.5 v6.5 h-6.5 v-2.5"
+                     :open-overlay "M-5 -5 h7 v7 h-7 z M2 -2 h3.5 v7 h-7 v-2.5"
 
-                     :close-overlay "M -4 -4 L 4 4 M -4 4 L 4 -4"
+                     :close-overlay "M -5 -5 L 5 5 M -5 5 L 5 -5"
 
                      nil)
         inv-zoom (/ 1 zoom)]
     [:*
       [:circle {:cx 0
                 :cy 0
-                :r (if (some? action-type) 8 4)
+                :r (if (some? action-type) 11 4)
                 :fill stroke
                 :transform (str
                              "scale(" inv-zoom ", " inv-zoom ") "
                              "translate(" (* zoom x) ", " (* zoom y) ")")}]
       (when icon-pdata
         [:path {:fill stroke
-                :stroke-width 1
+                :stroke-width 2
                 :stroke "#FFFFFF"
                 :d icon-pdata
                 :transform (str
@@ -126,7 +126,7 @@
           (connect-to-point orig-shape
                             {:x (+ (:x2 (:selrect orig-shape)) 100)
                              :y (+ (- (:y1 (:selrect orig-shape)) 50)
-                                   (* level 16))}))
+                                   (* level 32))}))
 
         orig-dx (if (= orig-pos :right) 100 -100)
         dest-dx (if (= dest-pos :right) 100 -100)
