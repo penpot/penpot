@@ -328,8 +328,11 @@
 ;; --- Overlays
 
 (defn open-overlay
-  [frame-id]
+  [frame-id position close-click-outside background-overlay]
   (us/verify ::us/uuid frame-id)
+  (us/verify ::us/point position)
+  (us/verify (s/nilable ::us/boolean) close-click-outside)
+  (us/verify (s/nilable ::us/boolean) background-overlay)
   (ptk/reify ::open-overlay
     ptk/UpdateEvent
     (update [_ state]
@@ -340,7 +343,11 @@
             frame    (d/seek #(= (:id %) frame-id) frames)
             overlays (get-in state [:viewer-local :overlays])]
         (if-not (some #(= % frame) overlays)
-          (update-in state [:viewer-local :overlays] conj frame)
+          (update-in state [:viewer-local :overlays] conj 
+                     {:frame frame
+                      :position position
+                      :close-click-outside close-click-outside
+                      :background-overlay background-overlay})
           state)))))
 
 (defn close-overlay
@@ -350,7 +357,7 @@
     (update [_ state]
       (update-in state [:viewer-local :overlays]
                  (fn [overlays]
-                   (remove #(= (:id %) frame-id) overlays))))))
+                   (remove #(= (:id (:frame %)) frame-id) overlays))))))
 
 ;; --- Objects selection
 

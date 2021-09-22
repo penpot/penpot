@@ -39,9 +39,15 @@
         (st/emit! (dv/go-to-frame frame-id)))
 
       :open-overlay
-      (let [frame-id (:destination interaction)]
+      (let [frame-id            (:destination interaction)
+            position            (:overlay-position interaction)
+            close-click-outside (:close-click-outside interaction)
+            background-overlay  (:background-overlay interaction)]
         (dom/stop-propagation event)
-        (st/emit! (dv/open-overlay frame-id)))
+        (st/emit! (dv/open-overlay frame-id
+                                   position
+                                   close-click-outside
+                                   background-overlay)))
 
       :close-overlay
       (let [frame-id (or (:destination interaction)
