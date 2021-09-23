@@ -25,7 +25,7 @@
 
     [:div.auth
      [:section.auth-sidebar
-      [:a.logo {:href "https://penpot.app"} i/logo]
+      [:a.logo {:href "#/"} i/logo]
       [:span.tagline (tr "auth.sidebar-tagline")]]
 
      [:section.auth-content
