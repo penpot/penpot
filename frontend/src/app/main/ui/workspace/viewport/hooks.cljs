@@ -89,11 +89,12 @@
   (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %))
   (hooks/use-stream ms/keyboard-space #(reset! space? %)))
 
-(defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids zoom]
+(defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids hover-disabled? zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         transform-ref (mf/use-ref nil)
         selected-ref (mf/use-ref selected)
+        hover-disabled-ref (mf/use-ref hover-disabled?)
 
         query-point
         (mf/use-callback
@@ -101,21 +102,22 @@
          (fn [point]
            (let [zoom (mf/ref-val zoom-ref)
                  rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
-             (uw/ask-buffered!
-              {:cmd :selection/query
-               :page-id page-id
-               :rect rect
-               :include-frames? true
-               :reverse? true})))) ;; we want the topmost shape to be selected first
+             (if (mf/ref-val hover-disabled-ref)
+               (rx/of nil)
+               (uw/ask-buffered!
+                 {:cmd :selection/query
+                  :page-id page-id
+                  :rect rect
+                  :include-frames? true
+                  :reverse? true}))))) ;; we want the topmost shape to be selected first
 
         over-shapes-stream
         (mf/use-memo
-         (fn []
-           (->> move-stream
-                ;; When transforming shapes we stop querying the worker
-                (rx/filter #(not (some? (mf/ref-val transform-ref))))
-                (rx/switch-map query-point))))
-        ]
+          (fn []
+            (->> move-stream
+                 ;; When transforming shapes we stop querying the worker
+                 (rx/filter #(not (some? (mf/ref-val transform-ref))))
+                 (rx/switch-map query-point))))]
 
     ;; Refresh the refs on a value change
 
@@ -130,6 +132,10 @@
     (mf/use-effect
      (mf/deps selected)
      #(mf/set-ref-val! selected-ref selected))
+
+    (mf/use-effect
+     (mf/deps hover-disabled?)
+     #(mf/set-ref-val! hover-disabled-ref hover-disabled?))
 
     (hooks/use-stream
      over-shapes-stream
