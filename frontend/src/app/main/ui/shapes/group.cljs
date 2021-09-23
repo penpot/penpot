@@ -6,7 +6,8 @@
 
 (ns app.main.ui.shapes.group
   (:require
-   [app.main.ui.shapes.mask :refer [mask-str clip-str mask-factory]]
+   [app.main.ui.context :as muc]
+   [app.main.ui.shapes.mask :refer [mask-url clip-url mask-factory]]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
@@ -19,7 +20,7 @@
       (let [frame          (unchecked-get props "frame")
             shape          (unchecked-get props "shape")
             childs         (unchecked-get props "childs")
-
+            render-id      (mf/use-ctx muc/render-ctx)
             masked-group?  (:masked-group? shape)
 
             [mask childs]  (if masked-group?
@@ -29,8 +30,8 @@
             [mask-wrapper mask-props]
             (if masked-group?
               ["g" (-> (obj/new)
-                       (obj/set! "clipPath" (clip-str mask))
-                       (obj/set! "mask"     (mask-str mask)))]
+                       (obj/set! "clipPath" (clip-url render-id mask))
+                       (obj/set! "mask"     (mask-url render-id mask)))]
               [mf/Fragment nil])]
 
         [:> mask-wrapper mask-props

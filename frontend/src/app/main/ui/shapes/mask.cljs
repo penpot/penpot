@@ -7,27 +7,42 @@
 (ns app.main.ui.shapes.mask
   (:require
    [app.common.geom.shapes :as gsh]
+   [app.main.ui.context :as muc]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
-(defn mask-str [mask]
-  (str/fmt "url(#%s)" (str (:id mask) "-mask")))
+(defn mask-id [render-id mask]
+  (str render-id "-" (:id mask) "-mask"))
 
-(defn clip-str [mask]
-  (str/fmt "url(#%s)" (str (:id mask) "-clip")))
+(defn mask-url [render-id mask]
+  (str "url(#" (mask-id render-id mask) ")"))
+
+(defn clip-id [render-id mask]
+  (str render-id "-" (:id mask) "-clip"))
+
+(defn clip-url [render-id mask]
+  (str "url(#" (clip-id render-id mask) ")"))
+
+(defn filter-id [render-id mask]
+  (str render-id "-" (:id mask) "-filter"))
+
+(defn filter-url [render-id mask]
+  (str "url(#" (filter-id render-id mask) ")"))
 
 (defn mask-factory
   [shape-wrapper]
   (mf/fnc mask-shape
     {::mf/wrap-props false}
     [props]
-    (let [frame (unchecked-get props "frame")
-          mask (unchecked-get props "mask")
+    (let [frame     (unchecked-get props "frame")
+          mask      (unchecked-get props "mask")
+          render-id (mf/use-ctx muc/render-ctx)
+
           mask' (-> mask
                     (gsh/transform-shape)
                     (gsh/translate-to-frame frame))]
       [:defs
-       [:filter {:id (str (:id mask) "-filter")}
+       [:filter {:id (filter-id render-id mask)}
         [:feFlood {:flood-color "white"
                    :result "FloodResult"}]
         [:feComposite {:in "FloodResult"
@@ -37,12 +52,12 @@
        ;; Clip path is necesary so the elements inside the mask won't affect
        ;; the events outside. Clip hides the elements but mask doesn't (like display vs visibility)
        ;; we cannot use clips instead of mask because clips can only be simple shapes
-       [:clipPath {:id (str (:id mask) "-clip")}
+       [:clipPath {:id (clip-id render-id mask)}
         [:polyline {:points (->> (:points mask')
                                  (map #(str (:x %) "," (:y %)))
                                  (str/join " "))}]]
-       [:mask {:id (str (:id mask) "-mask")}
-        [:g {:filter (str/fmt "url(#%s)" (str (:id mask) "-filter"))}
+       [:mask {:id (mask-id render-id mask)}
+        [:g {:filter (filter-url render-id mask)}
          [:& shape-wrapper {:frame frame
                             :shape (-> mask
                                        (dissoc :shadow :blur))}]]]])))
