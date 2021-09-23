@@ -9,6 +9,12 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+## 1.8.2-alpha
+
+### :bug: Bugs fixed
+
+- Fix problem with masking images in viewer [#1238](https://github.com/penpot/penpot/issues/1238)
+
 ## 1.8.1-alpha
 
 ### :bug: Bugs fixed
