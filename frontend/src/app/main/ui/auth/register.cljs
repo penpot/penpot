@@ -184,12 +184,8 @@
 
 (mf/defc register-validate-form
   [{:keys [params] :as props}]
-  (let [initial (mf/use-memo
-                 (mf/deps params)
-                 (fn []
-                   (assoc params :accept-newsletter-subscription false)))
-        form    (fm/use-form :spec ::register-validate-form
-                             :initial initial)
+  (let [form       (fm/use-form :spec ::register-validate-form
+                                :initial params)
         submitted? (mf/use-state false)
 
         on-submit
@@ -210,18 +206,19 @@
                     :tab-index "1"
                     :label (tr "auth.fullname")
                     :type "text"}]]
+
      [:div.fields-row
       [:& fm/input {:name :accept-terms-and-privacy
                     :class "check-primary"
                     :label (tr "auth.terms-privacy-agreement")
                     :type "checkbox"}]]
 
-     (when (contains? @cf/flags :newsletter-registration-check)
-       [:div.fields-row
-        [:& fm/input {:name :accept-newsletter-subscription
-                      :class "check-primary"
-                      :label (tr "auth.newsletter-subscription")
-                      :type "checkbox"}]])
+     ;; (when (contains? @cf/flags :newsletter-registration-check)
+     ;;   [:div.fields-row
+     ;;    [:& fm/input {:name :accept-newsletter-subscription
+     ;;                  :class "check-primary"
+     ;;                  :label (tr "auth.newsletter-subscription")
+     ;;                  :type "checkbox"}]])
 
      [:& fm/submit-button
       {:label (tr "auth.register-submit")
