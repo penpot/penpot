@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-09-11 09:32+0000\n"
+"PO-Revision-Date: 2021-09-24 13:39+0000\n"
 "Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
@@ -65,7 +65,7 @@ msgstr "Introduce tus datos aquí"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
-msgstr "¡Encantados de verte de nuevo!"
+msgstr "¡Un placer verte de nuevo!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
