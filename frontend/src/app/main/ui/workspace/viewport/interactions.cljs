@@ -128,7 +128,7 @@
           (connect-to-point orig-shape
                             {:x (+ (:x2 (:selrect orig-shape)) 100)
                              :y (+ (- (:y1 (:selrect orig-shape)) 50)
-                                   (* level 32))}))
+                                   (/ (* level 32) zoom))}))
 
         orig-dx (if (= orig-pos :right) 100 -100)
         dest-dx (if (= dest-pos :right) 100 -100)
