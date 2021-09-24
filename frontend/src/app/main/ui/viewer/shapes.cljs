@@ -26,6 +26,7 @@
    [app.main.ui.shapes.text :as text]
    [app.util.dom :as dom]
    [app.util.object :as obj]
+   [app.util.router :as rt]
    [app.util.timers :as tm]
    [rumext.alpha :as mf]))
 
@@ -64,6 +65,10 @@
                          (:id shape)
                          (:frame-id shape)))]
       (st/emit! (dv/close-overlay frame-id)))
+
+    :prev-screen
+    (do
+      (st/emit! (rt/nav-back-local)))
 
     nil))
 

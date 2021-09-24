@@ -94,6 +94,14 @@
 
                      :close-overlay "M -5 -5 L 5 5 M -5 5 L 5 -5"
 
+                     :prev-screen (case arrow-dir
+                                    :left "M -6.5 0 l 12 0 l -6 -6 m 6 6 l -6 6"
+                                    :right "M 6.5 0 l -12 0 l 6 -6 m -6 6 l 6 6"
+                                    nil)
+
+                     :open-url (str "M1 -5 L 3 -7 L 7 -3 L 1 3 L -1 1"
+                                    "M-1 5 L -3 7 L -7 3 L -1 -3 L 1 -1")
+
                      nil)
         inv-zoom (/ 1 zoom)]
     [:*
