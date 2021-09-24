@@ -109,16 +109,18 @@
    :action-type :navigate
    :destination nil})
 
-(def default-delay 100)
+(def default-delay 600)
 
 ;; -- Helpers for interaction
 
 (declare calc-overlay-position)
 
 (defn set-event-type
-  [interaction event-type]
+  [interaction event-type shape]
   (us/verify ::interaction interaction)
   (us/verify ::event-type event-type)
+  (assert (or (not= event-type :after-delay)
+              (= (:type shape) :frame)))
   (if (= (:event-type interaction) event-type)
     interaction
     (case event-type
@@ -175,6 +177,13 @@
       (assoc interaction
              :action-type action-type
              :url (get interaction :url "")))))
+
+(defn set-delay
+  [interaction delay]
+  (us/verify ::interaction interaction)
+  (us/verify ::delay delay)
+  (assert (= (:event-type interaction) :after-delay))
+  (assoc interaction :delay delay))
 
 (defn set-destination
   [interaction destination shape objects]

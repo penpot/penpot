@@ -13,6 +13,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -21,10 +22,12 @@
 (defn- event-type-names
   []
   {:click (tr "workspace.options.interaction-on-click")
-   :mouse-over (tr "workspace.options.interaction-while-hovering")
-   :mouse-press (tr "workspace.options.interaction-while-pressing")
+   ; TODO: need more UX research
+   ;; :mouse-over (tr "workspace.options.interaction-while-hovering")
+   ;; :mouse-press (tr "workspace.options.interaction-while-pressing")
    :mouse-enter (tr "workspace.options.interaction-mouse-enter")
-   :mouse-leave (tr "workspace.options.interaction-mouse-leave")})
+   :mouse-leave (tr "workspace.options.interaction-mouse-leave")
+   :after-delay (tr "workspace.options.interaction-after-delay")})
 
 (defn- event-type-name
   [interaction]
@@ -69,6 +72,7 @@
         frames      (mf/use-memo (mf/deps objects)
                                  #(cp/select-frames objects))
 
+        event-type           (:event-type interaction)
         action-type          (:action-type interaction)
         overlay-pos-type     (:overlay-pos-type interaction)
         close-click-outside? (:close-click-outside interaction false)
@@ -76,15 +80,24 @@
 
         extended-open? (mf/use-state false)
 
+        ext-delay-ref (mf/use-ref nil)
+
+        select-text
+        (fn [ref] (fn [_] (dom/select-text! (mf/ref-val ref))))
+
         change-event-type
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value d/read-string)]
-            (update-interaction index #(cti/set-event-type % value))))
+            (update-interaction index #(cti/set-event-type % value shape))))
 
         change-action-type
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value d/read-string)]
             (update-interaction index #(cti/set-action-type % value shape objects))))
+
+        change-delay
+        (fn [value]
+          (update-interaction index #(cti/set-delay % value)))
 
         change-destination
         (fn [event]
@@ -114,6 +127,8 @@
     [:*
      [:div.element-set-options-group {:class (dom/classnames
                                                :open @extended-open?)}
+
+      ; Summary
       [:div.element-set-actions-button {:on-click #(swap! extended-open? not)}
        i/actions]
       [:div.interactions-summary {:on-click #(swap! extended-open? not)}
@@ -121,15 +136,34 @@
        [:div.action-summary (action-summary interaction destination)]]
       [:div.elemen-set-actions {:on-click #(remove-interaction index)}
        [:div.element-set-actions-button i/minus]]
+
       (when @extended-open?
         [:div.element-set-content
+
+         ; Trigger select
          [:div.interactions-element.separator
           [:span.element-set-subtitle.wide (tr "workspace.options.interaction-trigger")]
           [:select.input-select
            {:value (str (:event-type interaction))
             :on-change change-event-type}
            (for [[value name] (event-type-names)]
-             [:option {:value (str value)} name])]]
+             [:option {:value (str value)
+                       :disabled (and (= value :after-delay)
+                                      (not= (:type shape) :frame))}
+              name])]]
+
+         ; Delay
+         (when (= event-type :after-delay)
+           [:div.interactions-element
+            [:span.element-set-subtitle.wide (tr "workspace.options.interaction-delay")]
+            [:div.input-element
+             [:> numeric-input {:ref ext-delay-ref
+                                :on-click (select-text ext-delay-ref)
+                                :on-change change-delay
+                                :value (:delay interaction)}]
+             [:span.after (tr "workspace.options.interaction-ms")]]])
+
+         ; Action select
          [:div.interactions-element.separator
           [:span.element-set-subtitle.wide (tr "workspace.options.interaction-action")]
           [:select.input-select
@@ -137,6 +171,8 @@
             :on-change change-action-type}
            (for [[value name] (action-type-names)]
              [:option {:value (str value)} name])]]
+
+         ; Destination
          (when (#{:navigate :open-overlay :toggle-overlay :close-overlay} action-type)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-destination")]
@@ -148,9 +184,11 @@
                (when (and (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
                           (not= (:id frame) (:frame-id shape))) ; nor a shape to its container frame
                  [:option {:value (str (:id frame))} (:name frame)]))]])
+
          (when (or (= action-type :open-overlay)
                    (= action-type :toggle-overlay))
            [:*
+            ; Overlay position (select)
             [:div.interactions-element
              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-position")]
              [:select.input-select
@@ -158,6 +196,8 @@
                :on-change change-overlay-pos-type}
               (for [[value name] (overlay-pos-type-names)]
                 [:option {:value (str value)} name])]]
+
+            ; Overlay position (buttons)
             [:div.interactions-element.interactions-pos-buttons
              [:div.element-set-actions-button
               {:class (dom/classnames :active (= overlay-pos-type :center))
@@ -187,6 +227,8 @@
               {:class (dom/classnames :active (= overlay-pos-type :bottom-center))
                :on-click #(toggle-overlay-pos-type :bottom-center)}
               i/position-bottom-center]]
+
+            ; Overlay click outside
             [:div.interactions-element
              [:div.input-checkbox
               [:input {:type "checkbox"
@@ -195,6 +237,8 @@
                        :on-change change-close-click-outside}]
               [:label {:for (str "close-" index)}
                (tr "workspace.options.interaction-close-outside")]]]
+
+            ; Overlay background
             [:div.interactions-element
              [:div.input-checkbox
               [:input {:type "checkbox"
