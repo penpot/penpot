@@ -116,9 +116,10 @@
                              (db/inet ip-addr)
                              (db/tjson (:props event))
                              (db/tjson (d/without-nils (:context event)))]))
-          events     (us/conform ::events events)
-          rows       (into [] prepare-xf events)]
-      (db/insert-multi! pool :audit-log columns rows))
+          events     (us/conform ::events events)]
+      (when (seq events)
+        (->> (into [] prepare-xf events)
+             (db/insert-multi! pool :audit-log columns))))
     (catch Throwable e
       (let [xdata (ex-data e)]
         (if (= :spec-validation (:code xdata))
