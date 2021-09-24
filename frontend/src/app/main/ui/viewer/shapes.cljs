@@ -26,6 +26,7 @@
    [app.main.ui.shapes.text :as text]
    [app.util.dom :as dom]
    [app.util.object :as obj]
+   [app.util.timers :as tm]
    [rumext.alpha :as mf]))
 
 (defn activate-interaction
@@ -142,6 +143,19 @@
       (doseq [interaction interactions-inv]
         (deactivate-interaction interaction shape)))))
 
+(defn on-load
+  [shape]
+  (let [interactions (->> (:interactions shape)
+                          (filter #(= (:event-type %) :after-delay)))]
+    (loop [interactions (seq interactions)
+           sems []]
+      (if-let [interaction (first interactions)]
+        (let [sem (tm/schedule (:delay interaction)
+                               #(activate-interaction interaction shape))]
+          (recur (next interactions)
+                 (conj sems sem)))
+        sems))))
+
 (mf/defc interaction
   [{:keys [shape interactions show-interactions?]}]
   (let [{:keys [x y width height]} (:selrect shape)
@@ -172,6 +186,11 @@
 
           svg-element? (and (= :svg-raw (:type shape))
                             (not= :svg (get-in shape [:content :tag])))]
+
+      (mf/use-effect
+        (fn []
+          (let [sems (on-load shape)]
+            #(run! tm/dispose! sems))))
 
       (if-not svg-element?
         [:> shape-container {:shape shape

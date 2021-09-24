@@ -2289,6 +2289,10 @@ msgid "workspace.options.interaction-action"
 msgstr "Acción"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-after-delay"
+msgstr "Tiempo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
 msgstr "Añadir sombreado de fondo"
 
@@ -2298,55 +2302,67 @@ msgstr "Cerrar al pulsar fuera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-close-overlay"
-msgstr "Close overlay"
+msgstr "Cerrar superposición"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-close-overlay-dest"
-msgstr "Close overlay: %s"
+msgstr "Cerrar superposición: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-destination"
 msgstr "Destino"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-delay"
+msgstr "Tiempo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-enter"
-msgstr "Mouse enter"
+msgstr "Pasar encima"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-leave"
-msgstr "Mouse leave"
+msgstr "Retirar encima"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "ms"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-navigate-to"
-msgstr "Navigate to"
+msgstr "Navegar a"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-navigate-to-dest"
-msgstr "Navigate to: %s"
+msgstr "Navegar a: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-none"
-msgstr "none"
+msgstr "(sin definir)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-on-click"
-msgstr "On Click"
+msgstr "En click"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-overlay"
-msgstr "Open overlay"
+msgstr "Superposición"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-prev-screen"
+msgstr "Pantalla anterior"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-toggle-overlay"
-msgstr "Toggle overlay"
+msgstr "Alternar superpos."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-overlay-dest"
-msgstr "Open overlay: %s"
+msgstr "Superposición: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-toggle-overlay-dest"
-msgstr "Toggle overlay: %s"
+msgstr "Alternar superpos.: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-manual"
@@ -2386,19 +2402,19 @@ msgstr "Posición"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-self"
-msgstr "self"
+msgstr "mismo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-trigger"
-msgstr "Trigger"
+msgstr "Disparador"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-while-hovering"
-msgstr "While Hovering"
+msgstr "Mientras pasa encima"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-while-pressing"
-msgstr "While Pressing"
+msgstr "Mientras pulsa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interactions"
