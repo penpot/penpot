@@ -7,6 +7,7 @@
 (ns app.common.pages.changes-builder
   (:require
    [app.common.data :as d]
+   [app.common.pages :as cp]
    [app.common.pages.helpers :as h]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
@@ -25,28 +26,34 @@
         (assoc ::objects objects))))
 
 (defn add-obj
-  [changes obj]
-  (let [add-change
-        {:type      :add-obj
-         :id        (:id obj)
-         :page-id   (::page-id (meta changes))
-         :parent-id (:parent-id obj)
-         :frame-id  (:frame-id obj)
-         :index     (::index obj)
-         :obj       (dissoc obj ::index :parent-id)}
+  ([changes obj index]
+   (add-obj changes (assoc obj ::index index)))
 
-        del-change
-        {:type :del-obj
-         :id (:id obj)
-         :page-id (::page-id (meta changes))}]
+  ([changes obj]
+   (let [add-change
+         {:type      :add-obj
+          :id        (:id obj)
+          :page-id   (::page-id (meta changes))
+          :parent-id (:parent-id obj)
+          :frame-id  (:frame-id obj)
+          :index     (::index obj)
+          :obj       (dissoc obj ::index :parent-id)}
 
-    (-> changes
-        (update :redo-changes conj add-change)
-        (update :undo-changes d/preconj del-change))))
+         del-change
+         {:type :del-obj
+          :id (:id obj)
+          :page-id (::page-id (meta changes))}]
+
+     (-> changes
+         (update :redo-changes conj add-change)
+         (update :undo-changes d/preconj del-change)))))
 
 (defn change-parent
   [changes parent-id shapes]
-  (let [set-parent-change
+  (assert (contains? (meta changes) ::objects) "Call (with-objects) first to use this function")
+
+  (let [objects (::objects (meta changes))
+        set-parent-change
         {:type :mov-objects
          :parent-id parent-id
          :page-id (::page-id (meta changes))
@@ -60,7 +67,7 @@
             :page-id (::page-id (meta changes))
             :parent-id (:parent-id shape)
             :shapes [(:id shape)]
-            :index (::index shape)}))]
+            :index (cp/position-on-parent (:id shape) objects)}))]
 
     (-> changes
         (update :redo-changes conj set-parent-change)

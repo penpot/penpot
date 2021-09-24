@@ -30,20 +30,20 @@
          (sort-by ::index))))
 
 (defn create-bool-data
-  [type name shapes objects]
+  [bool-type name shapes objects]
   (let [shapes (mapv #(stp/convert-to-path % objects) shapes)
-        head (first shapes)
+        head (if (= bool-type :difference) (first shapes) (last shapes))
         head-data (select-keys head stp/style-properties)]
-    (-> {:id (uuid/next)
-         :type :bool
-         :bool-type type
-         :frame-id (:frame-id head)
-         :parent-id (:parent-id head)
-         :name name
-         ::index (::index head)
-         :shapes []}
-        (merge head-data)
-        (gsh/update-bool-selrect shapes objects))))
+    [(-> {:id (uuid/next)
+          :type :bool
+          :bool-type bool-type
+          :frame-id (:frame-id head)
+          :parent-id (:parent-id head)
+          :name name
+          :shapes []}
+         (merge head-data)
+         (gsh/update-bool-selrect shapes objects))
+     (cp/position-on-parent (:id head) objects)]))
 
 (defn group->bool
   [group bool-type objects]
@@ -84,10 +84,11 @@
             shapes  (selected-shapes state)]
 
         (when-not (empty? shapes)
-          (let [boolean-data (create-bool-data bool-type name shapes objects)
+          (let [[boolean-data index] (create-bool-data bool-type name shapes objects)
                 shape-id (:id boolean-data)
                 changes (-> (cb/empty-changes it page-id)
-                            (cb/add-obj boolean-data)
+                            (cb/with-objects objects)
+                            (cb/add-obj boolean-data index)
                             (cb/change-parent shape-id shapes))]
             (rx/of (dch/commit-changes changes)
                    (dwc/select-shapes (d/ordered-set shape-id)))))))))
