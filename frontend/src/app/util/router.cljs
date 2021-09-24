@@ -132,6 +132,22 @@
 
         (js/window.open (str uri) name)))))
 
+(defn nav-back
+  []
+  (ptk/reify ::nav-back
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (ts/asap #(.back (.-history js/window))))))
+
+(defn nav-back-local
+  "Navigate back only if the previous page is in penpot app."
+  []
+  (let [location (.-location js/document)
+        referrer (u/uri (.-referrer js/document))]
+    (when (or (nil? (:host referrer))
+              (= (.-hostname location) (:host referrer)))
+      (nav-back))))
+
 ;; --- History API
 
 (defn initialize-history

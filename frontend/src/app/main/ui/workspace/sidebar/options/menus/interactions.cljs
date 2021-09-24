@@ -52,6 +52,7 @@
                       (get destination :name (tr "workspace.options.interaction-none")))
     :close-overlay (tr "workspace.options.interaction-close-overlay-dest"
                        (get destination :name (tr "workspace.options.interaction-self")))
+    :prev-screen (tr "workspace.options.interaction-prev-screen")
     "--"))
 
 (defn- overlay-pos-type-names
