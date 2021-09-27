@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
+   [app.common.types.interactions :as cti]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -231,8 +232,7 @@
          [:circle {:cx (+ marker-x (/ width 2))
                    :cy (+ marker-y (/ height 2))
                    :r 8
-                   :fill "#31EFB8"}]
-         ]))))
+                   :fill "#31EFB8"}]]))))
 
 (mf/defc interactions
   [{:keys [selected hover-disabled?] :as props}]
@@ -258,7 +258,8 @@
      [:g.non-selected
       (for [shape active-shapes]
         (for [[index interaction] (d/enumerate (:interactions shape))]
-          (let [dest-shape (get objects (:destination interaction))
+          (let [dest-shape (when (cti/destination? interaction)
+                             (get objects (:destination interaction)))
                 selected? (contains? selected (:id shape))
                 level (calc-level index (:interactions shape))]
             (when-not selected?
@@ -286,7 +287,8 @@
         (if (seq (:interactions shape))
           (for [[index interaction] (d/enumerate (:interactions shape))]
             (when-not (= index editing-interaction-index)
-              (let [dest-shape (get objects (:destination interaction))
+              (let [dest-shape (when (cti/destination? interaction)
+                                 (get objects (:destination interaction)))
                     level (calc-level index (:interactions shape))]
                 [:*
                   [:& interaction-path {:key (str (:id shape) "-" index)
@@ -298,8 +300,9 @@
                                         :selected? true
                                         :action-type (:action-type interaction)
                                         :zoom zoom}]
-                  (when (or (= (:action-type interaction) :open-overlay)
-                            (= (:action-type interaction) :toggle-overlay))
+                  (when (and (or (= (:action-type interaction) :open-overlay)
+                                 (= (:action-type interaction) :toggle-overlay))
+                             (= (:overlay-pos-type interaction) :manual))
                     (if (and (some? move-overlay-to)
                              (= move-overlay-index index))
                       [:& overlay-marker {:key (str "pos" (:id shape) "-" index)

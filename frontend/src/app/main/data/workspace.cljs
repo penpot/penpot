@@ -1828,14 +1828,12 @@
                                                nil ;; Drop onto self frame -> set destination to none
                                                frame)]
                                    ;; Update or create interaction
-                                   (if index
+                                   (if (and index (cti/has-destination (get interactions index)))
                                      (update interactions index
-                                             #(cti/set-destination % (:id frame) shape objects))
+                                             #(cti/set-destination % (:id frame)))
                                      (conj (or interactions [])
                                            (cti/set-destination cti/default-interaction
-                                                                (:id frame)
-                                                                shape
-                                                                objects)))))))))))))))
+                                                                (:id frame))))))))))))))))
 
 (declare move-overlay-pos)
 (declare finish-move-overlay-pos)

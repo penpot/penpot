@@ -338,6 +338,9 @@
 (def viewer-local
   (l/derived :viewer-local st/state))
 
+(def viewer-interactions-show?
+  (l/derived :interactions-show? viewer-local))
+
 (def comment-threads
   (l/derived :comment-threads st/state))
 

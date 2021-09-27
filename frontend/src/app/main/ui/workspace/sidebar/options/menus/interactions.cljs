@@ -75,8 +75,6 @@
         frames      (mf/use-memo (mf/deps objects)
                                  #(cp/select-frames objects))
 
-        event-type           (:event-type interaction)
-        action-type          (:action-type interaction)
         overlay-pos-type     (:overlay-pos-type interaction)
         close-click-outside? (:close-click-outside interaction false)
         background-overlay?  (:background-overlay interaction false)
@@ -96,7 +94,7 @@
         change-action-type
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value d/read-string)]
-            (update-interaction index #(cti/set-action-type % value shape objects))))
+            (update-interaction index #(cti/set-action-type % value))))
 
         change-delay
         (fn [value]
@@ -106,7 +104,7 @@
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value)
                 value (when (not= value "") (uuid/uuid value))]
-            (update-interaction index #(cti/set-destination % value shape objects))))
+            (update-interaction index #(cti/set-destination % value))))
 
         change-url
         (fn [event]
@@ -161,7 +159,7 @@
               name])]]
 
          ; Delay
-         (when (= event-type :after-delay)
+         (when (cti/has-delay interaction)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-delay")]
             [:div.input-element
@@ -181,7 +179,7 @@
              [:option {:value (str value)} name])]]
 
          ; Destination
-         (when (#{:navigate :open-overlay :toggle-overlay :close-overlay} action-type)
+         (when (cti/has-destination interaction)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-destination")]
             [:select.input-select
@@ -194,14 +192,13 @@
                  [:option {:value (str (:id frame))} (:name frame)]))]])
 
          ; URL
-         (when (= action-type :open-url)
+         (when (cti/has-url interaction)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-url")]
             [:input.input-text {:default-value (str (:url interaction))
                                 :on-blur change-url}]])
 
-         (when (or (= action-type :open-overlay)
-                   (= action-type :toggle-overlay))
+         (when (cti/has-overlay-opts interaction)
            [:*
             ; Overlay position (select)
             [:div.interactions-element

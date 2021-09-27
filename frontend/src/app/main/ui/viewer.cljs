@@ -6,6 +6,7 @@
 
 (ns app.main.ui.viewer
   (:require
+   [app.common.geom.point :as gpt]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
@@ -60,6 +61,9 @@
                  (mf/deps frame zoom)
                  (fn [] (calculate-size frame zoom)))
 
+        interactions-mode
+        (:interactions-mode local)
+
         on-click
         (mf/use-callback
          (mf/deps section)
@@ -98,7 +102,7 @@
                  :page page
                  :frame frame
                  :permissions perms
-                 :zoom (:zoom local)
+                 :zoom zoom
                  :section section}]
 
      [:div.viewer-content
@@ -139,11 +143,13 @@
 
             [:& interactions/viewport
              {:frame frame
+              :base-frame frame
+              :frame-offset (gpt/point 0 0)
               :size size
               :page page
               :file file
               :users users
-              :local local}]
+              :interactions-mode interactions-mode}]
 
             (for [overlay (:overlays local)]
               (let [size-over (calculate-size (:frame overlay) zoom)]
@@ -167,11 +173,13 @@
                            :top (* (:y (:position overlay)) zoom)}}
                   [:& interactions/viewport
                    {:frame (:frame overlay)
+                    :base-frame frame
+                    :frame-offset (:position overlay)
                     :size size-over
                     :page page
                     :file file
                     :users users
-                    :local local}]]]))]))]]]))
+                    :interactions-mode interactions-mode}]]]))]))]]]))
 
 ;; --- Component: Viewer Page
 
