@@ -67,8 +67,10 @@
       (st/emit! (dv/close-overlay frame-id)))
 
     :prev-screen
-    (do
-      (st/emit! (rt/nav-back-local)))
+    (st/emit! (rt/nav-back-local))
+
+    :open-url
+    (st/emit! (dom/open-new-window (:url interaction)))
 
     nil))
 

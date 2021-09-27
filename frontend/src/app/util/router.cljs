@@ -10,6 +10,7 @@
    [app.common.uri :as u]
    [app.config :as cfg]
    [app.util.browser-history :as bhistory]
+   [app.util.dom :as dom]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [goog.events :as e]
@@ -110,13 +111,12 @@
           uri    (-> (u/uri cfg/public-uri)
                      (assoc :fragment path))
           name   (str (name id) "-" (:file-id params))]
-      (js/window.open (str uri) name))))
+      (dom/open-new-window (str uri) name))))
 
 (defn nav-new-window
   ([id] (nav-new-window id nil nil))
   ([id params] (nav-new-window id params nil))
   ([id params qparams] (NavigateNewWindow. id params qparams)))
-
 
 (defn nav-new-window*
   [{:keys [rname path-params query-params name]}]
@@ -127,17 +127,14 @@
             path   (resolve router rname path-params query-params)
             uri    (-> (u/uri cfg/public-uri)
                        (assoc :fragment path))]
-
-
-
-        (js/window.open (str uri) name)))))
+        (dom/open-new-window (str uri) name)))))
 
 (defn nav-back
   []
   (ptk/reify ::nav-back
     ptk/EffectEvent
     (effect [_ _ _]
-      (ts/asap #(.back (.-history js/window))))))
+      (ts/asap dom/browser-back))))
 
 (defn nav-back-local
   "Navigate back only if the previous page is in penpot app."

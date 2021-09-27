@@ -11,7 +11,6 @@
 goog.provide("app.util.browser_history");
 goog.require("goog.history.Html5History");
 
-
 goog.scope(function() {
   const self = app.util.browser_history;
   const Html5History = goog.history.Html5History;

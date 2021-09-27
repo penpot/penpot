@@ -394,3 +394,14 @@
 (defn left-mouse? [bevent]
   (let [event  (.-nativeEvent ^js bevent)]
     (= 1 (.-which event))))
+
+(defn open-new-window
+  ([uri]
+   (open-new-window uri "_blank"))
+  ([uri name]
+   (js/window.open (str uri) name)))
+
+(defn browser-back
+  []
+  (.back (.-history js/window)))
+
