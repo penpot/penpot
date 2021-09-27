@@ -151,7 +151,6 @@
                        (contains? #{:line-to :curve-to} (:command segment)))
 
               (case (:command segment)
-
                 :line-to (let [[p1 q1] (gsp/command->line segment)
                                [p2 q2] (gsp/command->line other)]
 
@@ -180,7 +179,8 @@
   (d/concat
    []
    (->> content-a-split (filter #(not (contains-segment? % content-b))))
-   (->> content-b-split (filter #(not (contains-segment? % content-a))))))
+   (->> content-b-split (filter #(or (not (contains-segment? % content-a))
+                                     (overlap-segment? % content-a-split))))))
 
 (defn create-difference [content-a content-a-split content-b content-b-split]
   ;; Pick all segments in content-a that are not inside content-b
@@ -194,8 +194,8 @@
    (->> content-b-split
         (reverse)
         (mapv reverse-command)
-        (filter #(contains-segment? % content-a))
-        (filter #(not (overlap-segment? % content-a-split))))))
+        (filter #(and (contains-segment? % content-a)
+                      (not (overlap-segment? % content-a-split)))))))
 
 (defn create-intersection [content-a content-a-split content-b content-b-split]
   ;; Pick all segments in content-a that are inside content-b

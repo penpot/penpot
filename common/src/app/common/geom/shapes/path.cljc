@@ -17,6 +17,9 @@
 (def ^:const curve-curve-precision 0.1)
 (def ^:const curve-range-precision 2)
 
+(defn s= [a b]
+  (mth/almost-zero? (- (mth/abs a) b)))
+
 (defn calculate-opposite-handler
   "Given a point and its handler, gives the symetric handler"
   [point handler]
@@ -567,6 +570,34 @@
                       (mapv #(curve-values curve %)))]
     (gpr/points->rect (into [from-p to-p] extremes))))
 
+(defn line-has-point?
+  "Using the line equation we put the x value and check if matches with
+  the given Y. If it does the point is inside the line"
+  [point [from-p to-p :as line]]
+  (let [{x1 :x y1 :y} from-p
+        {x2 :x y2 :y} to-p
+        {px :x py :y} point
+
+        m (/ (- y2 y1) (- x2 x1))
+        vy (+ (* m px) (* (- m) x1) y1)
+
+        t (get-line-tval line point)]
+
+    ;; If x1 = x2 there is no slope, to see if the point is in the line
+    ;; only needs to check the x is the same
+    (and (or (and (s= x1 x2) (s= px x1))
+             (s= py vy))
+         ;; This will check if is between both segments
+         (or (> t 0) (s= t 0))
+         (or (< t 1) (s= t 1)))))
+
+(defn curve-has-point?
+  [_point _curve]
+  ;; TODO
+  #_(or (< (gpt/distance point from-p) 0.01)
+        (< (gpt/distance point to-p) 0.01))
+  false
+  )
 
 (defn line-line-crossing
   [[from-p1 to-p1 :as l1] [from-p2 to-p2 :as l2]]
@@ -613,26 +644,30 @@
 
     (curve-roots c2' :y)))
 
-(defn ray-line-intersect
-  [point [from-p to-p :as line]]
 
-  (let [ray-line-angle (gpt/angle (gpt/to-vec from-p to-p) (gpt/point 1 0))]
-    ;; If the ray is paralell to the line there will be no crossings
-    (when (and (> (mth/abs (- ray-line-angle 180)) 0.01)
-               (> (mth/abs (- ray-line-angle 0)) 0.01))
-      (let [ray-line [point (gpt/point (inc (:x point)) (:y point))]
-            [ray-t line-t] (line-line-crossing ray-line line)]
-        (when (and (some? line-t) (> ray-t 0) (>= line-t 0) (<= line-t 1))
-          [[(line-values line line-t)
-            (line-windup line line-t)]])))))
+
+(defn ray-line-intersect
+  [point line]
+
+  ;; If the ray is paralell to the line there will be no crossings
+  (let [ray-line [point (gpt/point (inc (:x point)) (:y point))]
+        [ray-t line-t] (line-line-crossing ray-line line)]
+    (when (and (some? line-t)
+               (> ray-t 0)
+               (or (> line-t 0) (s= line-t 0))
+               (or (< line-t 1) (s= line-t 1)))
+      [[(line-values line line-t)
+        (line-windup line line-t)]])))
 
 (defn line-line-intersect
   [l1 l2]
 
   (let [[l1-t l2-t] (line-line-crossing l1 l2)]
     (when (and (some? l1-t) (some? l2-t)
-               (>= l1-t 0) (<= l1-t 1)
-               (>= l2-t 0) (<= l2-t 1))
+               (or (> l1-t 0) (s= l1-t 0))
+               (or (< l1-t 1) (s= l1-t 1))
+               (or (> l2-t 0) (s= l2-t 0))
+               (or (< l2-t 1) (s= l2-t 1)))
       [[l1-t] [l2-t]])))
 
 (defn ray-curve-intersect
@@ -675,26 +710,7 @@
 (defn curve-curve-intersect
   [c1 c2]
 
-  (letfn [(remove-close-ts [ts]
-            (loop [current (first ts)
-                   pending (rest ts)
-                   acc     nil
-                   result  []]
-              (if (nil? current)
-                result
-                (if (and (some? acc)
-                         (< (mth/abs (- current acc)) 0.01))
-                  (recur (first pending)
-                         (rest pending)
-                         acc
-                         result)
-
-                  (recur (first pending)
-                         (rest pending)
-                         current
-                         (conj result current))))))
-
-          (check-range [c1-from c1-to c2-from c2-to]
+  (letfn [(check-range [c1-from c1-to c2-from c2-to]
             (let [r1 (curve-range->rect c1 c1-from c1-to)
                   r2 (curve-range->rect c2 c2-from c2-to)]
 
@@ -760,14 +776,22 @@
               (case (:command cmd)
                 :line-to  (ray-line-intersect  point (command->line cmd (command->point prev)))
                 :curve-to (ray-curve-intersect ray-line (command->bezier cmd (command->point prev)))
-                #_:else   [])))]
+                #_:else   [])))
 
-    ;; non-zero windup rule
-    (->> (d/with-prev content)
-         (mapcat cast-ray)
-         (map second)
-         (reduce +)
-         (not= 0))))
+          (inside-border? [[cmd prev]]
+            (case (:command cmd)
+              :line-to  (line-has-point?  point (command->line cmd (command->point prev)))
+              :curve-to (curve-has-point? point (command->bezier cmd (command->point prev)))
+              #_:else   false)
+            )]
+    (let [content-with-prev (d/with-prev content)]
+      (or (->> content-with-prev
+               (some inside-border?))
+          (->> content-with-prev
+               (mapcat cast-ray)
+               (map second)
+               (reduce +)
+               (not= 0))))))
 
 (defn split-line-to
   "Given a point and a line-to command will create a two new line-to commands

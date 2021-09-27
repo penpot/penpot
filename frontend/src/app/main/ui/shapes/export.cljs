@@ -64,6 +64,7 @@
         text?  (= :text (:type shape))
         path?  (= :path (:type shape))
         mask?  (and group? (:masked-group? shape))
+        bool?  (= :bool (:type shape))
         center (gsh/center-shape shape)]
     (-> props
         (add! :name)
@@ -102,7 +103,10 @@
               (add! :content (comp json/encode uuid->string))))
 
         (cond-> mask?
-          (obj/set! "penpot:masked-group" "true")))))
+          (obj/set! "penpot:masked-group" "true"))
+
+        (cond-> bool?
+          (add! :bool-type)))))
 
 
 (defn add-library-refs [props shape]

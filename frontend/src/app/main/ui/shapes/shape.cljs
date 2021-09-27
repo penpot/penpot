@@ -72,6 +72,7 @@
      [:> wrapper-tag wrapper-props
       (when include-metadata?
         [:& ed/export-data {:shape shape}])
+
       [:defs
        [:& defs/svg-defs          {:shape shape :render-id render-id}]
        [:& filters/filters        {:shape shape :filter-id filter-id}]

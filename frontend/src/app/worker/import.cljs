@@ -202,6 +202,7 @@
       (case type
         :frame    (fb/close-artboard file)
         :group    (fb/close-group file)
+        :bool     (fb/close-bool file)
         :svg-raw  (fb/close-svg-raw file)
         #_default file)
 
@@ -218,6 +219,7 @@
             file (case type
                    :frame    (fb/add-artboard   file data)
                    :group    (fb/add-group      file data)
+                   :bool     (fb/add-bool       file data)
                    :rect     (fb/create-rect    file data)
                    :circle   (fb/create-circle  file data)
                    :path     (fb/create-path    file data)

@@ -81,8 +81,8 @@
               last-move (if current-move? point last-move)]
 
           (if (and (not current-move?) (pt= last-move point))
-            (println (command->string (set-point current last-move)))
-            (println (command->string current)))
+            (print (command->string (set-point current last-move)))
+            (print (command->string current)))
 
           (when (and (not current-move?) (pt= last-move point))
             (print "Z"))

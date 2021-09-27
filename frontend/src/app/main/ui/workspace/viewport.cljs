@@ -201,11 +201,12 @@
 
       [:& use/export-page {:options options}]
 
-      [:& (mf/provider embed/context) {:value true}
-       ;; Render root shape
-       [:& shapes/root-shape {:key page-id
-                              :objects objects
-                              :active-frames @active-frames}]]]
+      [:& (mf/provider use/include-metadata-ctx) {:value true}
+       [:& (mf/provider embed/context) {:value true}
+        ;; Render root shape
+        [:& shapes/root-shape {:key page-id
+                               :objects objects
+                               :active-frames @active-frames}]]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"

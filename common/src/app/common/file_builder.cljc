@@ -278,6 +278,48 @@
     (-> file
         (update :parent-stack pop))))
 
+(defn add-bool [file data]
+  (let [frame-id (:current-frame-id file)
+        name (:name data)
+        obj (-> {:id (uuid/next)
+                 :type :bool
+                 :name name
+                 :shapes []
+                 :frame-id frame-id}
+                (merge data)
+                (check-name file :bool)
+                (d/without-nils))]
+    (-> file
+        (commit-shape obj)
+        (assoc :last-id (:id obj))
+        (add-name (:name obj))
+        (update :parent-stack conjv (:id obj)))))
+
+(defn close-bool [file]
+  (let [bool-id (-> file :parent-stack peek)
+        bool    (lookup-shape file bool-id)
+        children (->> bool :shapes (mapv #(lookup-shape file %)))
+
+        file
+        (let [objects (lookup-objects file)
+              bool' (gsh/update-bool-selrect bool children objects)]
+          (commit-change
+           file
+           {:type :mod-obj
+            :id bool-id
+            :operations
+            [{:type :set :attr :selrect :val (:selrect bool')}
+             {:type :set :attr :points  :val (:points bool')}
+             {:type :set :attr :x       :val (-> bool' :selrect :x)}
+             {:type :set :attr :y       :val (-> bool' :selrect :y)}
+             {:type :set :attr :width   :val (-> bool' :selrect :width)}
+             {:type :set :attr :height  :val (-> bool' :selrect :height)}]}
+
+           {:add-container? true}))]
+
+    (-> file
+        (update :parent-stack pop))))
+
 (defn create-shape [file type data]
   (let [frame-id (:current-frame-id file)
         frame (when-not (= frame-id root-frame)
