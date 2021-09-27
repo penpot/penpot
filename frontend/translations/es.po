@@ -2349,6 +2349,10 @@ msgid "workspace.options.interaction-open-overlay"
 msgstr "Superposición"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-url"
+msgstr "Abrir url"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-prev-screen"
 msgstr "Pantalla anterior"
 
@@ -2363,6 +2367,10 @@ msgstr "Superposición: %s"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-toggle-overlay-dest"
 msgstr "Alternar superpos.: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-manual"

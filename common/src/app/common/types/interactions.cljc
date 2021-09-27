@@ -204,6 +204,12 @@
                                                     shape
                                                     objects
                                                     :center))))
+(defn set-url
+  [interaction url]
+  (us/verify ::interaction interaction)
+  (us/verify ::url url)
+  (assert (= (:action-type interaction) :open-url))
+  (assoc interaction :url url))
 
 (defn set-overlay-pos-type
   [interaction overlay-pos-type shape objects]
@@ -217,7 +223,6 @@
                                                   shape
                                                   objects
                                                   overlay-pos-type)))
-
 (defn toggle-overlay-pos-type
   [interaction overlay-pos-type shape objects]
   (us/verify ::interaction interaction)
@@ -233,7 +238,6 @@
                                                     shape
                                                     objects
                                                     new-pos-type))))
-
 (defn set-overlay-position
   [interaction overlay-position]
   (us/verify ::interaction interaction)

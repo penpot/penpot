@@ -39,7 +39,8 @@
    :open-overlay (tr "workspace.options.interaction-open-overlay")
    :toggle-overlay (tr "workspace.options.interaction-toggle-overlay")
    :close-overlay (tr "workspace.options.interaction-close-overlay")
-   :prev-screen (tr "workspace.options.interaction-prev-screen")})
+   :prev-screen (tr "workspace.options.interaction-prev-screen")
+   :open-url (tr "workspace.options.interaction-open-url")})
 
 (defn- action-summary
   [interaction destination]
@@ -53,6 +54,7 @@
     :close-overlay (tr "workspace.options.interaction-close-overlay-dest"
                        (get destination :name (tr "workspace.options.interaction-self")))
     :prev-screen (tr "workspace.options.interaction-prev-screen")
+    :open-url (tr "workspace.options.interaction-open-url")
     "--"))
 
 (defn- overlay-pos-type-names
@@ -105,6 +107,11 @@
           (let [value (-> event dom/get-target dom/get-value)
                 value (when (not= value "") (uuid/uuid value))]
             (update-interaction index #(cti/set-destination % value shape objects))))
+
+        change-url
+        (fn [event]
+          (let [value (-> event dom/get-target dom/get-value)]
+            (update-interaction index #(cti/set-url % value))))
 
         change-overlay-pos-type
         (fn [event]
@@ -185,6 +192,13 @@
                (when (and (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
                           (not= (:id frame) (:frame-id shape))) ; nor a shape to its container frame
                  [:option {:value (str (:id frame))} (:name frame)]))]])
+
+         ; URL
+         (when (= action-type :open-url)
+           [:div.interactions-element
+            [:span.element-set-subtitle.wide (tr "workspace.options.interaction-url")]
+            [:input.input-text {:default-value (str (:url interaction))
+                                :on-blur change-url}]])
 
          (when (or (= action-type :open-overlay)
                    (= action-type :toggle-overlay))
