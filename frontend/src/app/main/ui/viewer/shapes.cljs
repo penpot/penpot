@@ -30,10 +30,14 @@
    [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.timers :as tm]
+   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (def base-frame-ctx (mf/create-context nil))
 (def frame-offset-ctx (mf/create-context nil))
+
+(def viewer-interactions-show?
+  (l/derived :interactions-show? refs/viewer-local))
 
 (defn activate-interaction
   [interaction shape base-frame frame-offset objects]
@@ -208,7 +212,7 @@
           base-frame    (mf/use-ctx base-frame-ctx)
           frame-offset (mf/use-ctx frame-offset-ctx)
 
-          interactions-show? (mf/deref refs/viewer-interactions-show?)
+          interactions-show? (mf/deref viewer-interactions-show?)
 
           interactions (:interactions shape)
 
