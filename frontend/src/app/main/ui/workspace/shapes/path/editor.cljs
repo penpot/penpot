@@ -272,6 +272,10 @@
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
+     [:path {:d (upf/format-path content)
+             :style {:fill "none"
+                     :stroke pc/primary-color
+                     :strokeWidth (/ 1 zoom)}}]
      (when (and preview (not drag-handler))
        [:& path-preview {:command preview
                          :from last-p

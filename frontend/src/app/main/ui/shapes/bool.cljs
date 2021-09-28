@@ -90,7 +90,7 @@
                 (mf/use-memo
                  (mf/deps shape childs)
                  (fn []
-                   (let [childs (d/mapm #(-> %2 (gsh/translate-to-frame frame) gsh/transform-shape) childs)]
+                   (let [childs (d/mapm #(-> %2 gsh/transform-shape (gsh/translate-to-frame frame)) childs)]
                      (->> (:shapes shape)
                           (map #(get childs %))
                           (filter #(not (:hidden %)))

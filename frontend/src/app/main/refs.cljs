@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.common.path.commands :as upc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [okulary.core :as l]))
@@ -255,13 +256,19 @@
              (into [] xform ids)))]
      (l/derived selector st/state =))))
 
+(defn- set-content-modifiers [state]
+  (fn [id shape]
+    (let [content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])]
+      (if (some? content-modifiers)
+        (update shape :content upc/apply-content-modifiers content-modifiers)
+        shape))))
+
 (defn select-children [id]
   (let [selector
         (fn [state]
           (let [objects (wsh/lookup-page-objects state)
-                children (cp/select-children id objects)
-                modifiers (-> (:workspace-modifiers state))
 
+                modifiers (-> (:workspace-modifiers state))
                 {selected :selected disp-modifiers :modifiers}
                 (-> (:workspace-local state)
                     (select-keys [:modifiers :selected]))
@@ -271,7 +278,9 @@
                  modifiers
                  (into {} (map #(vector % {:modifiers disp-modifiers})) selected))]
 
-            (gsh/merge-modifiers children modifiers)))]
+            (as-> (cp/select-children id objects) $
+              (gsh/merge-modifiers $ modifiers)
+              (d/mapm (set-content-modifiers state) $))))]
     (l/derived selector st/state =)))
 
 (def selected-data
