@@ -4,6 +4,9 @@
 
 ### :boom: Breaking changes
 ### :sparkles: New features
+
+- Adds boolean shapes: intersections, unions, difference and exclusions
+
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
