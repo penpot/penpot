@@ -39,6 +39,11 @@
              (if (:masked-group? shape)
                i/mask
                i/folder))
+    :bool (case (:bool-type shape)
+            :difference   i/boolean-difference
+            :exclude      i/boolean-exclude
+            :intersection i/boolean-intersection
+            #_:default    i/boolean-union)
     :svg-raw i/file-svg
     nil))
 
@@ -292,7 +297,8 @@
                     :shape-ref
                     :touched
                     :metadata
-                    :masked-group?]))
+                    :masked-group?
+                    :bool-type]))
 
 (defn- strip-objects
   [objects]

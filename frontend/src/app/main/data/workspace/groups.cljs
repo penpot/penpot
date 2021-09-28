@@ -198,7 +198,7 @@
             group-id (first selected)
             group    (get objects group-id)]
         (when (and (= 1 (count selected))
-                   (= (:type group) :group))
+                   (contains? #{:group :bool} (:type group)))
           (let [[rchanges uchanges]
                 (prepare-remove-group page-id group objects)]
             (rx/of (dch/commit-changes {:redo-changes rchanges

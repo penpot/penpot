@@ -308,3 +308,4 @@
   (->> shape
        :points
        (every? (partial has-point-rect? rect))))
+

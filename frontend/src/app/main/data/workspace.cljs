@@ -23,6 +23,7 @@
    [app.config :as cfg]
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
+   [app.main.data.workspace.booleans :as dwb]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
@@ -30,6 +31,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.path :as dwdp]
+   [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -1097,7 +1099,7 @@
               :text
               (rx/of (dwc/start-edition-mode id))
 
-              :group
+              (:group :bool)
               (rx/of (dwc/select-shapes (into (d/ordered-set) [(last shapes)])))
 
               :svg-raw
@@ -1987,3 +1989,12 @@
 (d/export dwg/unmask-group)
 (d/export dwg/group-selected)
 (d/export dwg/ungroup-selected)
+
+;; Boolean
+(d/export dwb/create-bool)
+(d/export dwb/group-to-bool)
+(d/export dwb/bool-to-group)
+(d/export dwb/change-bool-type)
+
+;; Shapes to path
+(d/export dwps/convert-selected-to-path)

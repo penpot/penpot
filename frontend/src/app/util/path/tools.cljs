@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.path :as upg]
    [app.common.math :as mth]
-   [app.util.path.commands :as upc]
-   [app.util.path.geom :as upg]
+   [app.common.path.commands :as upc]
    [clojure.set :as set]))
 
 (defn remove-line-curves
@@ -210,7 +210,7 @@
           (case (:command cmd)
             :line-to [index (upg/split-line-to start cmd value)]
             :curve-to [index (upg/split-curve-to start cmd value)]
-            :close-path [index [(upc/make-line-to (gpt/line-val start end value)) cmd]]
+            :close-path [index [(upc/make-line-to (gpt/lerp start end value)) cmd]]
             nil))
 
         cmd-changes

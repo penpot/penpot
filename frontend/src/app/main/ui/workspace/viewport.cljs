@@ -159,8 +159,13 @@
     (hooks/setup-shortcuts node-editing? drawing-path?)
     (hooks/setup-active-frames objects vbox hover active-frames)
 
+    
+
     [:div.viewport
      [:div.viewport-overlays
+
+      
+      
       [:& wtr/frame-renderer {:objects objects
                               :background background}]
 
@@ -196,11 +201,12 @@
 
       [:& use/export-page {:options options}]
 
-      [:& (mf/provider embed/context) {:value true}
-       ;; Render root shape
-       [:& shapes/root-shape {:key page-id
-                              :objects objects
-                              :active-frames @active-frames}]]]
+      [:& (mf/provider use/include-metadata-ctx) {:value true}
+       [:& (mf/provider embed/context) {:value true}
+        ;; Render root shape
+        [:& shapes/root-shape {:key page-id
+                               :objects objects
+                               :active-frames @active-frames}]]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
@@ -229,7 +235,6 @@
        :on-pointer-up    on-pointer-up}
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
-
        (when show-outlines?
          [:& outline/shape-outlines
           {:objects objects

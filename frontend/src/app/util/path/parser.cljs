@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.path :as upg]
+   [app.common.path.commands :as upc]
    [app.util.path.arc-to-curve :refer [a2c]]
-   [app.util.path.commands :as upc]
-   [app.util.path.geom :as upg]
    [app.util.svg :as usvg]
    [cuerdas.core :as str]))
 

@@ -14,6 +14,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
+   [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.export :as use]
@@ -81,6 +82,18 @@
                          :is-child-selected? true
                          :childs childs}]))))
 
+(defn bool-wrapper-factory
+  [objects]
+  (let [shape-wrapper (shape-wrapper-factory objects)
+        bool-shape   (bool/bool-shape shape-wrapper)]
+    (mf/fnc bool-wrapper
+      [{:keys [shape frame] :as props}]
+      (let [childs (->> (cp/get-children (:id shape) objects)
+                        (select-keys objects))]
+        [:& bool-shape {:frame frame
+                        :shape shape
+                        :childs childs}]))))
+
 (defn svg-raw-wrapper-factory
   [objects]
   (let [shape-wrapper (shape-wrapper-factory objects)
@@ -104,9 +117,10 @@
   [objects]
   (mf/fnc shape-wrapper
     [{:keys [frame shape] :as props}]
-    (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))
+    (let [group-wrapper   (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))
           svg-raw-wrapper (mf/use-memo (mf/deps objects) #(svg-raw-wrapper-factory objects))
-          frame-wrapper (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
+          bool-wrapper    (mf/use-memo (mf/deps objects) #(bool-wrapper-factory objects))
+          frame-wrapper   (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
         (let [shape (-> (gsh/transform-shape shape)
                         (gsh/translate-to-frame frame))
@@ -122,6 +136,7 @@
                :circle  [:> circle/circle-shape opts]
                :frame   [:> frame-wrapper {:shape shape}]
                :group   [:> group-wrapper {:shape shape :frame frame}]
+               :bool    [:> bool-wrapper  {:shape shape :frame frame}]
                nil)]
 
             ;; Don't wrap svg elements inside a <g> otherwise some can break

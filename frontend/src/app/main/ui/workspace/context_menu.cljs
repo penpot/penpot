@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
    [app.util.timers :as timers]
@@ -31,10 +32,52 @@
   (dom/stop-propagation event))
 
 (mf/defc menu-entry
-  [{:keys [title shortcut on-click] :as props}]
-  [:li {:on-click on-click}
-   [:span.title title]
-   [:span.shortcut (or shortcut "")]])
+  [{:keys [title shortcut on-click children] :as props}]
+  (let [submenu-ref (mf/use-ref nil)
+        hovering? (mf/use-ref false)
+
+        on-pointer-enter
+        (mf/use-callback
+         (fn []
+           (mf/set-ref-val! hovering? true)
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (some? submenu-node)
+               (dom/set-css-property! submenu-node "display" "block")))))
+
+        on-pointer-leave
+        (mf/use-callback
+         (fn []
+           (mf/set-ref-val! hovering? false)
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (some? submenu-node)
+               (timers/schedule
+                200
+                #(when-not (mf/ref-val hovering?)
+                   (dom/set-css-property! submenu-node "display" "none")))))))
+
+        set-dom-node
+        (mf/use-callback
+         (fn [dom]
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (and (some? dom) (some? submenu-node))
+               (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
+
+    [:li {:ref set-dom-node
+          :on-click on-click
+          :on-pointer-enter on-pointer-enter
+          :on-pointer-leave on-pointer-leave}
+     [:span.title title]
+     [:span.shortcut (or shortcut "")]
+
+     (when (> (count children) 1)
+       [:span.submenu-icon i/arrow-slide])
+
+     (when (> (count children) 1)
+       [:ul.workspace-context-menu
+        {:ref submenu-ref
+         :style {:display "none" :left 250}
+         :on-context-menu prevent-default}
+        children])]))
 
 (mf/defc menu-separator
   []
@@ -48,6 +91,21 @@
         single? (= (count selected) 1)
         multiple? (> (count selected) 1)
         editable-shape? (#{:group :text :path} (:type shape))
+
+        is-group? (and (some? shape) (= :group (:type shape)))
+        is-bool?  (and (some? shape) (= :bool (:type shape)))
+
+        set-bool
+        (fn [bool-type]
+          #(cond
+             (> (count selected) 1)
+             (st/emit! (dw/create-bool bool-type))
+
+             (and (= (count selected) 1) is-group?)
+             (st/emit! (dw/group-to-bool (:id shape) bool-type))
+
+             (and (= (count selected) 1) is-bool?)
+             (st/emit! (dw/change-bool-type (:id shape) bool-type))))
 
         current-file-id (mf/use-ctx ctx/current-file-id)
 
@@ -98,7 +156,10 @@
                                                  :on-accept confirm-update-remote-component}))
         do-show-component (st/emitf (dw/go-to-layout :assets))
         do-navigate-component-file (st/emitf (dwl/nav-to-component-file
-                                              (:component-file shape)))]
+                                              (:component-file shape)))
+
+        do-transform-to-path (st/emitf (dw/convert-selected-to-path))
+        do-flatten (st/emitf (dw/convert-selected-to-path))]
     [:*
      [:& menu-entry {:title (tr "workspace.shape.menu.copy")
                      :shortcut (sc/get-tooltip :copy)
@@ -147,7 +208,7 @@
                         :on-click do-flip-horizontal}]
         [:& menu-separator]])
 
-     (when (and single? (= (:type shape) :group))
+     (when (and single? (or is-bool? is-group?))
        [:*
          [:& menu-entry {:title (tr "workspace.shape.menu.ungroup")
                          :shortcut (sc/get-tooltip :ungroup)
@@ -164,6 +225,30 @@
        [:& menu-entry {:title (tr "workspace.shape.menu.edit")
                        :shortcut (sc/get-tooltip :start-editing)
                        :on-click do-start-editing}])
+
+     [:& menu-entry {:title (tr "workspace.shape.menu.transform-to-path")
+                     :on-click do-transform-to-path}]
+
+     (when (or multiple? (and single? (or is-group? is-bool?)))
+       [:& menu-entry {:title (tr "workspace.shape.menu.path")}
+        [:& menu-entry {:title (tr "workspace.shape.menu.union")
+                        :shortcut (sc/get-tooltip :boolean-union)
+                        :on-click (set-bool :union)}]
+        [:& menu-entry {:title (tr "workspace.shape.menu.difference")
+                        :shortcut (sc/get-tooltip :boolean-difference)
+                        :on-click (set-bool :difference)}]
+        [:& menu-entry {:title (tr "workspace.shape.menu.intersection")
+                        :shortcut (sc/get-tooltip :boolean-intersection)
+                        :on-click (set-bool :intersection)}]
+        [:& menu-entry {:title (tr "workspace.shape.menu.exclude")
+                        :shortcut (sc/get-tooltip :boolean-exclude)
+                        :on-click (set-bool :exclude)}]
+
+        (when (and single? is-bool?)
+          [:*
+           [:& menu-separator]
+           [:& menu-entry {:title (tr "workspace.shape.menu.flatten")
+                           :on-click do-flatten}]])])
 
      (if (:hidden shape)
        [:& menu-entry {:title (tr "workspace.shape.menu.show")
@@ -240,7 +325,7 @@
          (when dropdown
            (let [bounding-rect (dom/get-bounding-rect dropdown)
                  window-size (dom/get-window-size)
-                 delta-x (max (- (:right bounding-rect) (:width window-size)) 0)
+                 delta-x (max (- (+ (:right bounding-rect) 250) (:width window-size)) 0)
                  delta-y (max (- (:bottom bounding-rect) (:height window-size)) 0)
                  new-style (str "top: " (- top delta-y) "px; "
                                 "left: " (- left delta-x) "px;")]

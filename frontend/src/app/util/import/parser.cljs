@@ -209,6 +209,13 @@
                        (->> node :content last))]
         (merge (add-attrs {} (:attrs svg-node)) node-attrs))
 
+      (= type :bool)
+      (->> node
+           (:content)
+           (filter #(= :path (:tag %)))
+           (map #(:attrs %))
+           (reduce add-attrs node-attrs))
+
       :else
       node-attrs)))
 
@@ -442,6 +449,11 @@
     (cond-> props
       mask?
       (assoc :masked-group? true))))
+
+(defn add-bool-data
+  [props node]
+  (-> props
+      (assoc :bool-type (get-meta node :bool-type keyword))))
 
 (defn parse-shadow [node]
   {:id       (uuid/next)
@@ -706,7 +718,10 @@
             (add-image-data type node))
 
           (cond-> (= :text type)
-            (add-text-data node))))))
+            (add-text-data node))
+
+          (cond-> (= :bool type)
+            (add-bool-data node))))))
 
 (defn parse-page-data
   [node]

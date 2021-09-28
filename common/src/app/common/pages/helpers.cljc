@@ -138,6 +138,10 @@
   [id objects]
   (mapv #(get objects %) (cons id (get-children id objects))))
 
+(defn select-children [id objects]
+  (->> (get-children id objects)
+       (select-keys objects)))
+
 (defn is-shape-grouped
   "Checks if a shape is inside a group"
   [shape-id objects]

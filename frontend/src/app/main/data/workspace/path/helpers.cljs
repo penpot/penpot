@@ -10,10 +10,10 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.path.commands :as upc]
+   [app.common.path.subpaths :as ups]
    [app.main.data.workspace.path.common :as common]
    [app.main.streams :as ms]
-   [app.util.path.commands :as upc]
-   [app.util.path.subpaths :as ups]
    [potok.core :as ptk]))
 
 (defn end-path-event? [event]

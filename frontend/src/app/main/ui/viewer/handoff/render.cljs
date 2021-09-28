@@ -8,8 +8,10 @@
   "The main container for a frame in handoff mode"
   (:require
    [app.common.geom.shapes :as geom]
+   [app.common.pages :as cp]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
+   [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
@@ -106,6 +108,22 @@
                       (obj/merge! #js {:childs childs}))]
         [:> group-wrapper props]))))
 
+(defn bool-container-factory
+  [objects]
+  (let [shape-container (shape-container-factory objects)
+        bool-shape     (bool/bool-shape shape-container)
+        bool-wrapper   (shape-wrapper-factory bool-shape)]
+    (mf/fnc bool-container
+      {::mf/wrap-props false}
+      [props]
+      (let [shape  (unchecked-get props "shape")
+            children-ids (cp/get-children (:id shape) objects)
+            childs (select-keys objects children-ids)
+            props (-> (obj/new)
+                      (obj/merge! props)
+                      (obj/merge! #js {:childs childs}))]
+        [:> bool-wrapper props]))))
+
 (defn svg-raw-container-factory
   [objects]
   (let [shape-container (shape-container-factory objects)
@@ -133,12 +151,18 @@
       [props]
       (let [shape (unchecked-get props "shape")
             frame (unchecked-get props "frame")
-            group-container (mf/use-memo
-                             (mf/deps objects)
-                             #(group-container-factory objects))
-            svg-raw-container (mf/use-memo
-                               (mf/deps objects)
-                               #(svg-raw-container-factory objects))]
+
+            group-container
+            (mf/use-memo (mf/deps objects)
+                         #(group-container-factory objects))
+
+            bool-container
+            (mf/use-memo (mf/deps objects)
+                         #(bool-container-factory objects))
+
+            svg-raw-container
+            (mf/use-memo (mf/deps objects)
+                         #(svg-raw-container-factory objects))]
         (when (and shape (not (:hidden shape)))
           (let [shape (-> (geom/transform-shape shape)
                           (geom/translate-to-frame frame))
@@ -151,6 +175,7 @@
               :image   [:> image-wrapper opts]
               :circle  [:> circle-wrapper opts]
               :group   [:> group-container opts]
+              :bool    [:> bool-container opts]
               :svg-raw [:> svg-raw-container opts])))))))
 
 (mf/defc render-frame-svg

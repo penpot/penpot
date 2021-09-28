@@ -161,23 +161,12 @@
                  matrix
                  (gmt/translate-matrix (gpt/negate center)))))
 
-(defn transform-points
-  ([points matrix]
-   (transform-points points nil matrix))
-  ([points center matrix]
-   (let [prev (if center (gmt/translate-matrix center) (gmt/matrix))
-         post (if center (gmt/translate-matrix (gpt/negate center)) (gmt/matrix))
-
-         tr-point (fn [point]
-                    (gpt/transform point (gmt/multiply prev matrix post)))]
-     (mapv tr-point points))))
-
 (defn transform-rect
   "Transform a rectangles and changes its attributes"
   [rect matrix]
 
   (let [points (-> (gpr/rect->points rect)
-                   (transform-points matrix))]
+                   (gco/transform-points matrix))]
     (gpr/points->rect points)))
 
 (defn calculate-adjust-matrix
@@ -201,12 +190,12 @@
          stretch-matrix (gmt/multiply stretch-matrix (gmt/skew-matrix skew-angle 0))
 
          h1 (max 1 (calculate-height points-temp))
-         h2 (max 1 (calculate-height (transform-points points-rec center stretch-matrix)))
+         h2 (max 1 (calculate-height (gco/transform-points points-rec center stretch-matrix)))
          h3 (if-not (mth/almost-zero? h2) (/ h1 h2) 1)
          h3 (if (mth/nan? h3) 1 h3)
 
          w1 (max 1 (calculate-width points-temp))
-         w2 (max 1 (calculate-width (transform-points points-rec center stretch-matrix)))
+         w2 (max 1 (calculate-width (gco/transform-points points-rec center stretch-matrix)))
          w3 (if-not (mth/almost-zero? w2) (/ w1 w2) 1)
          w3 (if (mth/nan? w3) 1 w3)
 
@@ -214,7 +203,7 @@
 
          rotation-angle (calculate-rotation
                          center
-                         (transform-points points-rec (gco/center-points points-rec) stretch-matrix)
+                         (gco/transform-points points-rec (gco/center-points points-rec) stretch-matrix)
                          points-temp
                          flip-x
                          flip-y)
@@ -233,13 +222,13 @@
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform round-coords?]
   ;;
-  (let [points (-> shape :points (transform-points transform))
+  (let [points (-> shape :points (gco/transform-points transform))
         center (gco/center-points points)
 
         ;; Reverse the current transformation stack to get the base rectangle
         tr-inverse      (:transform-inverse shape (gmt/matrix))
 
-        points-temp     (transform-points points center tr-inverse)
+        points-temp     (gco/transform-points points center tr-inverse)
         points-temp-dim (calculate-dimensions points-temp)
 
         ;; This rectangle is the new data for the current rectangle. We want to change our rectangle
@@ -305,12 +294,12 @@
         points (->> children (mapcat :points))
 
         ;; Invert to get the points minus the transforms applied to the group
-        base-points (transform-points points shape-center (:transform-inverse group (gmt/matrix)))
+        base-points (gco/transform-points points shape-center (:transform-inverse group (gmt/matrix)))
 
         ;; Defines the new selection rect with its transformations
         new-points (-> (gpr/points->selrect base-points)
                        (gpr/rect->points)
-                       (transform-points shape-center (:transform group (gmt/matrix))))
+                       (gco/transform-points shape-center (:transform group (gmt/matrix))))
 
         ;; Calculte the new selrect
         new-selrect (gpr/points->selrect base-points)]
@@ -544,9 +533,9 @@
 
         transformed-parent-rect (-> parent-rect
                                     (gpr/rect->points)
-                                    (transform-points parent-displacement)
-                                    (transform-points parent-origin (gmt/scale-matrix parent-vector))
-                                    (transform-points parent-origin-2 (gmt/scale-matrix parent-vector-2))
+                                    (gco/transform-points parent-displacement)
+                                    (gco/transform-points parent-origin (gmt/scale-matrix parent-vector))
+                                    (gco/transform-points parent-origin-2 (gmt/scale-matrix parent-vector-2))
                                     (gpr/points->selrect))
 
         ;; Calculate the modifiers in the horizontal and vertical directions

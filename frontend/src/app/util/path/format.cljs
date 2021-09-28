@@ -6,7 +6,8 @@
 
 (ns app.util.path.format
   (:require
-   [app.util.path.commands :as upc]
+   [app.common.path.commands :as upc]
+   [app.common.path.subpaths :refer [pt=]]
    [cuerdas.core :as str]))
 
 (defn command->param-list [command]
@@ -62,6 +63,12 @@
     (str command-str param-list)))
 
 
+(defn set-point
+  [command point]
+  (-> command
+      (assoc-in [:params :x] (:x point))
+      (assoc-in [:params :y] (:y point))))
+
 (defn format-path [content]
   (with-out-str
     (loop [last-move nil
@@ -72,9 +79,12 @@
         (let [point (upc/command->point current)
               current-move? (= :move-to (:command current))
               last-move (if current-move? point last-move)]
-          (print (command->string current))
 
-          (when (and (not current-move?) (= last-move point))
+          (if (and (not current-move?) (pt= last-move point))
+            (print (command->string (set-point current last-move)))
+            (print (command->string current)))
+
+          (when (and (not current-move?) (pt= last-move point))
             (print "Z"))
 
           (recur last-move

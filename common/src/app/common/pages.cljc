@@ -40,6 +40,7 @@
 (d/export helpers/get-children)
 (d/export helpers/get-children-objects)
 (d/export helpers/get-object-with-children)
+(d/export helpers/select-children)
 (d/export helpers/is-shape-grouped)
 (d/export helpers/get-parent)
 (d/export helpers/get-parents)
@@ -72,7 +73,7 @@
 (d/export indices/update-z-index)
 (d/export indices/generate-child-all-parents-index)
 (d/export indices/generate-child-parent-index)
-(d/export indices/create-mask-index)
+(d/export indices/create-clip-index)
 
 ;; Process changes
 (d/export changes/process-changes)
