@@ -13,23 +13,6 @@
    [app.common.path.commands :as upc]
    [app.common.path.subpaths :as ups]))
 
-(defn- reverse-command
-  "Reverses a single command"
-  [command]
-
-  (let [{old-x :x old-y :y} (:params command)
-        {:keys [x y]} (:prev command)
-        {:keys [c1x c1y c2x c2y]} (:params command)]
-
-    (-> command
-        (assoc :prev (gpt/point old-x old-y))
-        (update :params assoc :x x :y y)
-
-        (cond-> (= :curve-to (:command command))
-          (update :params assoc
-                  :c1x c2x :c1y c2y
-                  :c2x c1x :c2y c1y)))))
-
 (defn add-previous
   ([content]
    (add-previous content nil))
@@ -42,6 +25,37 @@
 
                   (some? prev)
                   (assoc :prev (gsp/command->point prev))))))))
+
+(defn close-paths
+  "Removes the :close-path commands and replace them for line-to so we can calculate
+  the intersections"
+  [content]
+
+  (loop [head (first content)
+         content (rest content)
+         result []
+         last-move nil]
+
+    (if (nil? head)
+      result
+      (let [head-p (gsp/command->point head)
+            head (cond
+                   (and (= :close-path (:command head))
+                        (< (gpt/distance head-p last-move) 0.01))
+                   nil
+
+                   (= :close-path (:command head))
+                   (upc/make-line-to last-move)
+
+                   :else
+                   head)]
+
+        (recur (first content)
+               (rest content)
+               (cond-> result (some? head) (conj head))
+               (if (= :move-to (:command head))
+                 head-p
+                 last-move))))))
 
 (defn- split-command
   [cmd values]
@@ -192,8 +206,6 @@
 
    ;; Reverse second content so we can have holes inside other shapes
    (->> content-b-split
-        (reverse)
-        (mapv reverse-command)
         (filter #(and (contains-segment? % content-a)
                       (not (overlap-segment? % content-a-split)))))))
 
@@ -207,10 +219,8 @@
 
 
 (defn create-exclusion [content-a content-b]
-  ;; Pick all segments but reverse content-b (so it makes an exclusion)
-  (let [content-b' (->> (reverse content-b)
-                        (mapv reverse-command))]
-    (d/concat [] content-a content-b')))
+  ;; Pick all segments
+  (d/concat [] content-a content-b))
 
 
 (defn fix-move-to
@@ -237,8 +247,13 @@
 (defn content-bool-pair
   [bool-type content-a content-b]
 
-  (let [content-a (add-previous content-a)
-        content-b (add-previous content-b)
+  (let [content-a (-> content-a (close-paths) (add-previous))
+
+        content-b (-> content-b
+                      (close-paths)
+                      (cond-> (ups/clockwise? content-b)
+                        (ups/reverse-content))
+                      (add-previous))
 
         ;; Split content in new segments in the intersection with the other path
         [content-a-split content-b-split] (content-intersect-split content-a content-b)

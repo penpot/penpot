@@ -35,8 +35,9 @@
                       (map #(get childs %))
                       (filter #(not (:hidden %)))
                       (map #(stp/convert-to-path % childs))
-                      (mapv :content)
-                      (mapv pb/add-previous))]
+                      (map :content)
+                      (map pb/close-paths)
+                      (map pb/add-previous))]
              (pb/content-intersect-split content-a content-b))))]
     [:g.debug-bool
      [:g.shape-a
@@ -49,7 +50,7 @@
                                  (dissoc :fill-color :fill-opacity)
                                  (assoc :content content-b))
                       :frame frame}]
-      (for [{:keys [x y]} (gsp/content->points content-b)]
+      (for [{:keys [x y]} (gsp/content->points (pb/close-paths content-b))]
         [:circle {:cx x
                   :cy y
                   :r 2.5
@@ -65,7 +66,7 @@
                                  (dissoc :fill-color :fill-opacity)
                                  (assoc :content content-a))
                       :frame frame}]
-      (for [{:keys [x y]} (gsp/content->points content-a)]
+      (for [{:keys [x y]} (gsp/content->points (pb/close-paths content-a))]
         [:circle {:cx x
                   :cy y
                   :r 1.25

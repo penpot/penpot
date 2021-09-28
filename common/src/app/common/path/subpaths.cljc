@@ -158,3 +158,27 @@
        (reverse)
        (mapcat :data)
        (into [])))
+
+;; https://mathworld.wolfram.com/PolygonArea.html
+(defn clockwise?
+  "Check whether the first subpath is clockwise or counter-clock wise"
+  [content]
+  (let [subpath (->> content get-subpaths first :data)]
+    (loop [current (first subpath)
+           subpath (rest subpath)
+           first-point nil
+           signed-area 0]
+
+      (if (nil? current)
+        (> signed-area 0)
+
+        (let [{x1 :x y1 :y :as p} (upc/command->point current)
+              last? (nil? (first subpath))
+              first-point (if (nil? first-point) p first-point)
+              {x2 :x y2 :y} (if last? first-point (upc/command->point (first subpath)))
+              signed-area (+ signed-area (- (* x1 y2) (* x2 y1)))]
+
+          (recur (first subpath)
+                 (rest subpath)
+                 first-point
+                 signed-area))))))
