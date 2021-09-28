@@ -211,7 +211,7 @@
         :task :file-offload})
 
      (when (contains? cf/flags :audit-log-archive)
-       {:cron #app/cron "0 0 * * * ?" ;; every 1h
+       {:cron #app/cron "0 */3 * * * ?" ;; every 3m
         :task :audit-log-archive})
 
      (when (contains? cf/flags :audit-log-gc)
