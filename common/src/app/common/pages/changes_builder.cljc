@@ -13,17 +13,14 @@
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
 (defn empty-changes [origin page-id]
-  (with-meta
-    {:redo-changes []
-     :undo-changes []
-     :origin origin}
-    {::page-id page-id}))
+  (let [changes {:redo-changes []
+                 :undo-changes []
+                 :origin origin}]
+    (with-meta changes
+      {::page-id page-id})))
 
 (defn with-objects [changes objects]
-  (with-meta
-    changes
-    (-> (meta changes)
-        (assoc ::objects objects))))
+  (vary-meta changes assoc ::objects objects))
 
 (defn add-obj
   ([changes obj index]

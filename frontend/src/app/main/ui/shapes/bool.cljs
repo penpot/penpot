@@ -44,7 +44,7 @@
                                  (assoc :type :path)
                                  (assoc :stroke-color "blue")
                                  (assoc :stroke-opacity 1)
-                                 (assoc :stroke-width 0.5)
+                                 (assoc :stroke-width 1)
                                  (assoc :stroke-style :solid)
                                  (dissoc :fill-color :fill-opacity)
                                  (assoc :content content-b))

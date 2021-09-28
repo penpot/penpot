@@ -63,10 +63,9 @@
         cy (:y p)
         ay (:y to-p)
         by (:y from-p)]
-
     (cond
-      (> (- cy ay) 0)  1
-      (< (- cy ay) 0) -1
+      (and (> (- cy ay) 0) (not (s= cy ay)))  1
+      (and (< (- cy ay) 0) (not (s= cy ay))) -1
       (< (- cy by) 0)  1
       (> (- cy by) 0) -1
       :else            0)))
@@ -558,8 +557,14 @@
 
 (defn- get-line-tval
   [[{x1 :x y1 :y} {x2 :x y2 :y}] {:keys [x y]}]
-  (if (mth/almost-zero? (- x2 x1))
+  (cond
+    (and (s= x1 x2) (s= y1 y2))
+    ##Inf
+
+    (s= x1 x2)
     (/ (- y y1) (- y2 y1))
+
+    :else
     (/ (- x x1) (- x2 x1))))
 
 (defn- curve-range->rect
@@ -578,15 +583,16 @@
         {x2 :x y2 :y} to-p
         {px :x py :y} point
 
-        m (/ (- y2 y1) (- x2 x1))
-        vy (+ (* m px) (* (- m) x1) y1)
+        m  (when-not (s= x1 x2) (/ (- y2 y1) (- x2 x1)))
+        vy (when (some? m) (+ (* m px) (* (- m) x1) y1))
 
         t (get-line-tval line point)]
+
 
     ;; If x1 = x2 there is no slope, to see if the point is in the line
     ;; only needs to check the x is the same
     (and (or (and (s= x1 x2) (s= px x1))
-             (s= py vy))
+             (and (some? vy) (s= py vy)))
          ;; This will check if is between both segments
          (or (> t 0) (s= t 0))
          (or (< t 1) (s= t 1)))))

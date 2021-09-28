@@ -16,23 +16,23 @@
 
 (def ^:const bezier-circle-c 0.551915024494)
 
-(def ^:const dissoc-attrs
+(def dissoc-attrs
   [:x :y :width :height
    :rx :ry :r1 :r2 :r3 :r4
    :metadata :shapes])
 
-(def ^:const allowed-transform-types
+(def allowed-transform-types
   #{:rect
     :circle
     :image
     :group
     :bool})
 
-(def ^:const style-group-properties
+(def style-group-properties
   [:shadow
    :blur])
 
-(def ^:const style-properties
+(def style-properties
   (d/concat
    style-group-properties
    [:fill-color
