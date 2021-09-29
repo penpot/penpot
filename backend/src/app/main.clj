@@ -215,7 +215,7 @@
         :task :audit-log-archive})
 
      (when (contains? cf/flags :audit-log-gc)
-       {:cron #app/cron "0 0 * * * ?" ;; every 1h
+       {:cron #app/cron "0 0 0 * * ?" ;; daily
         :task :audit-log-gc})
 
      (when (or (contains? cf/flags :telemetry)
