@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -16,7 +17,6 @@
    [app.storage.fs :as sfs]
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]

@@ -8,8 +8,8 @@
   "A maintenance task that performs a cleanup of already executed tasks
   from the database table."
   (:require
+   [app.common.logging :as l]
    [app.db :as db]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))

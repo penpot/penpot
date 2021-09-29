@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
@@ -16,7 +17,6 @@
    [app.db :as db]
    [app.util.async :as aa]
    [app.util.http :as http]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.core.async :as a]

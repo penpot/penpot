@@ -8,12 +8,12 @@
   "A specific logger impl that persists errors on the database."
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.util.async :as aa]
-   [app.util.logging :as l]
    [app.util.template :as tmpl]
    [app.worker :as wrk]
    [clojure.core.async :as a]

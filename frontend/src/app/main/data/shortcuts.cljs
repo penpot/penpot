@@ -8,9 +8,9 @@
   (:refer-clojure :exclude [meta reset!])
   (:require
    ["mousetrap" :as mousetrap]
+   [app.common.logging :as log]
    [app.common.spec :as us]
-   [app.config :as cfg]
-   [app.util.logging :as log]
+   [app.config :as cf]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
@@ -37,7 +37,7 @@
   "Adds the control/command modifier to a shortcuts depending on the
   operating system for the user"
   [shortcut]
-  (if (cfg/check-platform? :macos)
+  (if (cf/check-platform? :macos)
     (str "command+" shortcut)
     (str "ctrl+" shortcut)))
 
@@ -55,12 +55,12 @@
   [key]
   ;; If the key is "+" we need to surround with quotes
   ;; otherwise will not be very readable
-  (let [key (if (and (not (cfg/check-platform? :macos))
+  (let [key (if (and (not (cf/check-platform? :macos))
                      (= key "+"))
               "\"+\""
               key)]
     (str
-     (if (cfg/check-platform? :macos)
+     (if (cf/check-platform? :macos)
        mac-command
        "Ctrl+")
      key)))
@@ -68,7 +68,7 @@
 (defn shift
   [key]
   (str
-   (if (cfg/check-platform? :macos)
+   (if (cf/check-platform? :macos)
      mac-shift
      "Shift+")
    key))
@@ -76,7 +76,7 @@
 (defn alt
   [key]
   (str
-   (if (cfg/check-platform? :macos)
+   (if (cf/check-platform? :macos)
      mac-option
      "Alt+")
    key))
@@ -91,19 +91,19 @@
 
 (defn supr
   []
-  (if (cfg/check-platform? :macos)
+  (if (cf/check-platform? :macos)
     mac-delete
     "Supr"))
 
 (defn esc
   []
-  (if (cfg/check-platform? :macos)
+  (if (cf/check-platform? :macos)
     mac-esc
     "Escape"))
 
 (defn enter
   []
-  (if (cfg/check-platform? :macos)
+  (if (cf/check-platform? :macos)
     mac-enter
     "Enter"))
 

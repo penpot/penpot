@@ -6,12 +6,12 @@
 
 (ns app.cli.migrate-media
   (:require
+   [app.common.logging :as l]
    [app.common.media :as cm]
    [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
    [app.storage :as sto]
-   [app.util.logging :as l]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [integrant.core :as ig]))

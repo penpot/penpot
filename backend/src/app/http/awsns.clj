@@ -8,10 +8,10 @@
   "AWS SNS webhook handler for bounces."
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.util.http :as http]
-   [app.util.logging :as l]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]

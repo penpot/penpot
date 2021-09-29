@@ -121,7 +121,6 @@
      (fn []
        (st/emit! (dw/setup-layout layout-name))))
 
-
     (mf/use-effect
      (mf/deps project-id file-id)
      (fn []

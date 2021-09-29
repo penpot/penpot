@@ -7,13 +7,13 @@
 (ns app.cli.fixtures
   "A initial fixtures."
   (:require
+   [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.main :as main]
    [app.rpc.mutations.profile :as profile]
    [app.util.blob :as blob]
-   [app.util.logging :as l]
    [buddy.hashers :as hashers]
    [integrant.core :as ig]))
 

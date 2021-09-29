@@ -9,8 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.uuid :as uuid]
-   [app.util.logging :as l]
    [clojure.pprint]
    [cuerdas.core :as str]))
 

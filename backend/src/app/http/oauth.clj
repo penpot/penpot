@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -15,7 +16,6 @@
    [app.loggers.audit :as audit]
    [app.rpc.queries.profile :as profile]
    [app.util.http :as http]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.data.json :as json]
    [clojure.set :as set]

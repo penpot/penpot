@@ -8,12 +8,12 @@
   (:require
    ["opentype.js" :as ot]
    [app.common.data :as d]
+   [app.common.logging :as log]
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
-   [app.util.logging :as log]
    [app.util.webapi :as wa]
    [beicon.core :as rx]
    [cuerdas.core :as str]

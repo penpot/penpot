@@ -6,9 +6,10 @@
 
 (ns app.main
   (:require
+   [app.common.logging :as log]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
@@ -20,7 +21,6 @@
    [app.main.worker]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
-   [app.util.logging :as log]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [app.util.theme :as theme]
@@ -32,6 +32,11 @@
 (log/initialize!)
 (log/set-level! :root :warn)
 (log/set-level! :app :info)
+
+
+(when (= :browser @cf/target)
+  (log/info :message "wecome to penpot" :version (:full @cf/version) :public-uri (str cf/public-uri)))
+
 
 (declare reinit)
 
@@ -105,8 +110,8 @@
 (defn ^:export init
   []
   (sentry/init!)
-  (i18n/init! cfg/translations)
-  (theme/init! cfg/themes)
+  (i18n/init! cf/translations)
+  (theme/init! cf/themes)
   (init-ui)
   (st/emit! (initialize)))
 

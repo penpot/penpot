@@ -7,9 +7,9 @@
 (ns app.loggers.zmq
   "A generic ZMQ listener."
   (:require
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.util.json :as json]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]

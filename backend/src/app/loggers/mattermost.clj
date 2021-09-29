@@ -7,13 +7,13 @@
 (ns app.loggers.mattermost
   "A mattermost integration for error reporting."
   (:require
+   [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.database :as ldb]
    [app.util.async :as aa]
    [app.util.http :as http]
    [app.util.json :as json]
-   [app.util.logging :as l]
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]

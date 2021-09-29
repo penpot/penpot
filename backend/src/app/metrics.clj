@@ -7,7 +7,7 @@
 (ns app.metrics
   (:require
    [app.common.exceptions :as ex]
-   [app.util.logging :as l]
+   [app.common.logging :as l]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig])
   (:import
