@@ -376,7 +376,11 @@
             (not (nil? c1x)) (set-tr :c1x :c1y)
             (not (nil? c2x)) (set-tr :c2x :c2y)))]
 
-    (mapv #(update % :params transform-params) content)))
+    (->> content
+         (mapv (fn [cmd]
+                 (cond-> cmd
+                   (map? cmd)
+                   (update :params transform-params)))))))
 
 (defn transform-content
   [content transform]
