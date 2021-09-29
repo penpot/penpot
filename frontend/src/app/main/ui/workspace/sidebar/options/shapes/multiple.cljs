@@ -100,6 +100,16 @@
     :shadow     :shape
     :blur       :shape
     :stroke     :shape
+    :text       :ignore}
+
+   :bool
+   {:measure    :shape
+    :layer      :shape
+    :constraint :shape
+    :fill       :shape
+    :shadow     :shape
+    :blur       :shape
+    :stroke     :shape
     :text       :ignore}})
 
 (def props->attrs
