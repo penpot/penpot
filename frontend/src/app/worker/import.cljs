@@ -8,6 +8,7 @@
   (:refer-clojure :exclude [resolve])
   (:require
    [app.common.data :as d]
+   [app.common.logging :as log]
    [app.common.file-builder :as fb]
    [app.common.pages :as cp]
    [app.common.text :as ct]
@@ -17,7 +18,6 @@
    [app.util.http :as http]
    [app.util.import.parser :as cip]
    [app.util.json :as json]
-   [app.util.logging :as log]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]

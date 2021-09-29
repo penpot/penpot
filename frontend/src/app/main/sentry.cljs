@@ -10,6 +10,7 @@
    ["@sentry/browser" :as sentry]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
+   [app.common.logging :as log]
    [app.config :as cf]
    [app.main.refs :as refs]))
 

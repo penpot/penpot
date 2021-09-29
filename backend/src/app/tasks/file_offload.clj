@@ -7,11 +7,11 @@
 (ns app.tasks.file-offload
   "A maintenance task that offloads file data to an external storage (S3)."
   (:require
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.db :as db]
    [app.storage :as sto]
    [app.storage.impl :as simpl]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))

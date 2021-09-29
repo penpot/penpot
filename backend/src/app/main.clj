@@ -6,8 +6,8 @@
 
 (ns app.main
   (:require
+   [app.common.logging :as l]
    [app.config :as cf]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [integrant.core :as ig]))
 

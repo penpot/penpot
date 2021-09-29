@@ -9,10 +9,10 @@
   objects from files. A file is ellegible to be garbage collected
   after some period of inactivity (the default threshold is 72h)."
   (:require
+   [app.common.logging :as l]
    [app.common.pages.migrations :as pmg]
    [app.db :as db]
    [app.util.blob :as blob]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))

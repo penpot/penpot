@@ -8,11 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
    [app.metrics :as mtx]
-   [app.util.logging :as l]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [reitit.ring :as rr]

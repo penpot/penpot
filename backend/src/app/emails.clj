@@ -7,12 +7,12 @@
 (ns app.emails
   "Main api for send emails."
   (:require
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.util.emails :as emails]
-   [app.util.logging :as l]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))

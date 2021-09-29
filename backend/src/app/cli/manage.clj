@@ -7,11 +7,11 @@
 (ns app.cli.manage
   "A manage cli api."
   (:require
+   [app.common.logging :as l]
    [app.db :as db]
    [app.main :as main]
    [app.rpc.mutations.profile :as profile]
    [app.rpc.queries.profile :refer [retrieve-profile-data-by-email]]
-   [app.util.logging :as l]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [integrant.core :as ig])

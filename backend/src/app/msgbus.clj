@@ -8,10 +8,10 @@
   "The msgbus abstraction implemented using redis as underlying backend."
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.util.blob :as blob]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]

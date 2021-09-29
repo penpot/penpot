@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.libraries
   (:require
    [app.common.data :as d]
+   [app.common.logging :as log]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
@@ -21,7 +22,6 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
-   [app.util.logging :as log]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]

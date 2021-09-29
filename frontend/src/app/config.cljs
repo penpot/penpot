@@ -10,6 +10,7 @@
    [app.common.spec :as us]
    [app.common.uri :as u]
    [app.common.version :as v]
+   [app.common.logging :as log]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
    [app.util.globals :refer [global location]]
@@ -101,10 +102,6 @@
     (cond-> uri
       (not (str/ends-with? (:path uri) "/"))
       (update :path #(str % "/")))))
-
-(when (= :browser @target)
-  (js/console.log
-   (str/format "Welcome to penpot! version='%s' base-uri='%s'." (:full @version) (str public-uri))))
 
 ;; --- Helper Functions
 

@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.common
   (:require
    [app.common.data :as d]
+   [app.common.logging :as log]
    [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
@@ -17,7 +18,6 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
-   [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))

@@ -8,12 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.metrics :as mtx]
    [app.rlimits :as rlm]
-   [app.util.logging :as l]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]

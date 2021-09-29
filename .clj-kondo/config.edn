@@ -17,6 +17,7 @@
  {:exclude-files
   ["data_readers.clj"
    "app/util/perf.cljs"
+   "app/common/logging.cljc"
    "app/common/exceptions.cljc"]}
 
  :linters

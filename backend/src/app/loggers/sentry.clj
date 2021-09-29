@@ -7,11 +7,11 @@
 (ns app.loggers.sentry
   "A mattermost integration for error reporting."
   (:require
+   [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.util.async :as aa]
-   [app.util.logging :as l]
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]

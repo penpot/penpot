@@ -7,9 +7,9 @@
 (ns app.srepl
   "Server Repl."
   (:require
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.srepl.main]
-   [app.util.logging :as l]
    [clojure.core.server :as ccs]
    [clojure.main :as cm]
    [clojure.spec.alpha :as s]

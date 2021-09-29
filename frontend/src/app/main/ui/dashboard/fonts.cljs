@@ -18,12 +18,9 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.logging :as log]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
-
-(log/set-level! :trace)
 
 (defn- use-set-page-title
   [team section]

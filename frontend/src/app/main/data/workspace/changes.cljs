@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.changes
   (:require
    [app.common.data :as d]
+   [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.spec :as spec]
    [app.common.spec :as us]
@@ -14,7 +15,6 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.main.worker :as uw]
-   [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
