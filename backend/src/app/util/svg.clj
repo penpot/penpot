@@ -4,13 +4,10 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.rpc.queries.svg
+(ns app.util.svg
   (:require
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
-   [app.util.logging :as l]
-   [app.util.services :as sv]
-   [clojure.spec.alpha :as s]
+   [app.common.logging :as l]
    [clojure.xml :as xml]
    [cuerdas.core :as str])
   (:import
@@ -39,14 +36,6 @@
                 :hint "invalid svg file"
                 :cause e))))
 
-(declare pre-process)
-
-(s/def ::data ::us/string)
-(s/def ::parsed-svg (s/keys :req-un [::data]))
-
-(sv/defmethod ::parsed-svg
-  [_ {:keys [data] :as params}]
-  (->> data pre-process parse))
 
 ;; --- PROCESSORS
 

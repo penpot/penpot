@@ -9,14 +9,12 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as wrk]
    [clojure.spec.alpha :as s]))
 
 (declare create-font-variant)
