@@ -399,7 +399,9 @@
   ([uri]
    (open-new-window uri "_blank"))
   ([uri name]
-   (js/window.open (str uri) name)))
+   ;; Warning: need to protect against reverse tabnabbing attack
+   ;; https://www.comparitech.com/blog/information-security/reverse-tabnabbing/
+   (.open js/window (str uri) name "noopener,noreferrer")))
 
 (defn browser-back
   []
