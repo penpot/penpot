@@ -219,6 +219,12 @@
     (update [_ state]
       (update-in state [:viewer-local :show-thumbnails] not))))
 
+(def close-thumbnails-panel
+  (ptk/reify ::close-thumbnails-panel
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :show-thumbnails] false))))
+
 (def select-prev-frame
   (ptk/reify ::select-prev-frame
     ptk/WatchEvent

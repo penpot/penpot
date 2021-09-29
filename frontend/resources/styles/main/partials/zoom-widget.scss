@@ -1,6 +1,7 @@
 .zoom-widget {
   cursor: pointer;
   display: flex;
+  position: relative;
 
   span {
     color: $color-gray-10;
@@ -16,8 +17,10 @@
 
   .dropdown {
     position: absolute;
-    z-index: 12;
+    right: 0;
+    top: 25px;
     width: 210px;
+    z-index: 12;
 
     background-color: $color-white;
     border-radius: $br-small;

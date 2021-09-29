@@ -84,15 +84,23 @@
 
         show-dropdown? (mf/use-state false)
 
+        open-dropdown
+        (fn []
+          (reset! show-dropdown? true)
+          (st/emit! dv/close-thumbnails-panel))
+
+        close-dropdown
+        (fn []
+          (reset! show-dropdown? false))
+
         navigate-to
         (fn [page-id]
           (st/emit! (dv/go-to-page page-id))
-          (reset! show-dropdown? false))
-        ]
+          (reset! show-dropdown? false))]
 
      [:div.sitemap-zone {:alt (tr "viewer.header.sitemap")}
       [:div.breadcrumb
-       {:on-click #(swap! show-dropdown? not)}
+       {:on-click open-dropdown}
        [:span.project-name project-name]
        [:span "/"]
        [:span.file-name file-name]
@@ -101,7 +109,7 @@
        [:span.icon i/arrow-down]
 
        [:& dropdown {:show @show-dropdown?
-                     :on-close #(swap! show-dropdown? not)}
+                     :on-close close-dropdown}
         [:ul.dropdown
          (for [id (get-in file [:data :pages])]
            [:li {:id (str id)
