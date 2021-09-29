@@ -44,7 +44,9 @@
            (:large-arc-flag params) ","
            (:sweep-flag params) ","
            (:x params) ","
-           (:y params)))))
+           (:y params))
+
+      "")))
 
 (defn command->string [{:keys [command relative] :as entry}]
   (let [command-str (case command
@@ -57,7 +59,8 @@
                       :smooth-curve-to "S"
                       :quadratic-bezier-curve-to "Q"
                       :smooth-quadratic-bezier-curve-to "T"
-                      :elliptical-arc "A")
+                      :elliptical-arc "A"
+                      "")
         command-str (if relative (str/lower command-str) command-str)
         param-list (command->param-list entry)]
     (str command-str param-list)))
