@@ -129,13 +129,6 @@
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
 
-    ;; Schedule object deletion
-    (wrk/submit! {::wrk/task :delete-object
-                  ::wrk/delay cf/deletion-delay
-                  ::wrk/conn conn
-                  :id id
-                  :type :team-font-variant})
-
     (db/update! conn :team-font-variant
                 {:deleted-at (dt/now)}
                 {:id id :team-id team-id})

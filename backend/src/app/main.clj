@@ -228,8 +228,6 @@
     :tasks
     {:sendmail           (ig/ref :app.emails/sendmail-handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
-     :delete-object      (ig/ref :app.tasks.delete-object/handler)
-     :delete-profile     (ig/ref :app.tasks.delete-profile/handler)
      :file-media-gc      (ig/ref :app.tasks.file-media-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
      :storage-deleted-gc (ig/ref :app.storage/gc-deleted-task)
@@ -257,17 +255,10 @@
    {:pool    (ig/ref :app.db/pool)
     :max-age cf/deletion-delay}
 
-   :app.tasks.delete-object/handler
-   {:pool    (ig/ref :app.db/pool)
-    :storage (ig/ref :app.storage/storage)}
-
    :app.tasks.objects-gc/handler
    {:pool    (ig/ref :app.db/pool)
     :storage (ig/ref :app.storage/storage)
     :max-age cf/deletion-delay}
-
-   :app.tasks.delete-profile/handler
-   {:pool    (ig/ref :app.db/pool)}
 
    :app.tasks.file-media-gc/handler
    {:pool    (ig/ref :app.db/pool)
