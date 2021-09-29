@@ -131,29 +131,6 @@
                     profile-id team-id
                     search-term])))
 
-
-;; --- Query: Files
-
-;; DEPRECATED: should be removed probably on 1.6.x
-
-(def ^:private sql:files
-  "select f.*
-     from file as f
-    where f.project_id = ?
-      and f.deleted_at is null
-    order by f.modified_at desc")
-
-(s/def ::project-id ::us/uuid)
-(s/def ::files
-  (s/keys :req-un [::profile-id ::project-id]))
-
-(sv/defmethod ::files
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
-  (with-open [conn (db/open pool)]
-    (projects/check-read-permissions! conn profile-id project-id)
-    (into [] decode-row-xf (db/exec! conn [sql:files project-id]))))
-
-
 ;; --- Query: Project Files
 
 (def ^:private sql:project-files
@@ -247,28 +224,6 @@
       (cond-> (get-in file [:data :pages-index page-id])
         strip-thumbnails
         (remove-thumbnails-frames)))))
-
-;; --- Query: Shared Library Files
-
-;; DEPRECATED: and will be removed on 1.6.x
-
-(def ^:private sql:shared-files
-  "select f.*
-     from file as f
-    inner join project as p on (p.id = f.project_id)
-    where f.is_shared = true
-      and f.deleted_at is null
-      and p.deleted_at is null
-      and p.team_id = ?
-    order by f.modified_at desc")
-
-(s/def ::shared-files
-  (s/keys :req-un [::profile-id ::team-id]))
-
-(sv/defmethod ::shared-files
-  [{:keys [pool] :as cfg} {:keys [team-id] :as params}]
-  (into [] decode-row-xf (db/exec! pool [sql:shared-files team-id])))
-
 
 ;; --- Query: Shared Library Files
 
