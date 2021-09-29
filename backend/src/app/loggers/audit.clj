@@ -229,7 +229,7 @@
   "select * from audit_log
     where archived_at is null
     order by created_at asc
-    limit 100
+    limit 1000
       for update skip locked;")
 
 (defn archive-events
@@ -287,13 +287,11 @@
             xform  (comp (map decode-row)
                          (map row->event))
             events (into [] xform rows)]
-        (l/debug :action "archive-events" :uri uri :events (count events))
-        (if (empty? events)
-          :empty
-          (do
-            (send events)
-            (mark-as-archived conn rows)
-            :continue))))))
+        (when-not (empty? events)
+          (l/debug :action "archive-events" :uri uri :events (count events))
+          (send events)
+          (mark-as-archived conn rows)
+          :continue)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GC Task
