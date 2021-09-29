@@ -5,7 +5,8 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 
-- Adds boolean shapes: intersections, unions, difference and exclusions
+- Add boolean shapes: intersections, unions, difference and exclusions.
+- Add advanced prototyping [#244](https://tree.taiga.io/project/penpot/us/244).
 
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
@@ -16,7 +17,7 @@
 
 ### :bug: Bugs fixed
 
-- Fix problem with masking images in viewer [#1238](https://github.com/penpot/penpot/issues/1238)
+- Fix problem with masking images in viewer [#1238](https://github.com/penpot/penpot/issues/1238).
 
 ## 1.8.1-alpha
 
