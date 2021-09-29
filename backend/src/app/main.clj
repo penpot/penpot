@@ -215,7 +215,7 @@
         :task :audit-archive})
 
      (when (cf/get :audit-archive-gc-enabled)
-       {:cron #app/cron "0 0 * * * ?" ;; every 1h
+       {:cron #app/cron "0 */3 * * * ?" ;; every 3m
         :task :audit-archive-gc})
 
      (when (cf/get :telemetry-enabled)
