@@ -13,7 +13,7 @@
    [app.common.spec :as us]
    [app.config :as cf]
    [app.rlimits :as rlm]
-   [app.rpc.queries.svg :as svg]
+   [app.util.svg :as svg]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
    [clojure.java.io :as io]
@@ -180,7 +180,7 @@
   (us/assert ::input input)
   (let [{:keys [path mtype]} input]
     (if (= mtype "image/svg+xml")
-      (let [info (some-> path slurp svg/parse get-basic-info-from-svg)]
+      (let [info (some-> path slurp svg/pre-process svg/parse get-basic-info-from-svg)]
         (when-not info
           (ex/raise :type :validation
                     :code :invalid-svg-file
