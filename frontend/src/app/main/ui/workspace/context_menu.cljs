@@ -7,8 +7,10 @@
 (ns app.main.ui.workspace.context-menu
   "A workspace specific context menu (mouse right click)."
   (:require
+   [app.common.types.page-options :as cto]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.undo :as dwu]
@@ -95,6 +97,11 @@
         is-group? (and (some? shape) (= :group (:type shape)))
         is-bool?  (and (some? shape) (= :bool (:type shape)))
 
+        options (mf/deref refs/workspace-page-options)
+        flows   (:flows options)
+
+        options-mode (mf/deref refs/options-mode)
+
         set-bool
         (fn [bool-type]
           #(cond
@@ -122,6 +129,8 @@
         do-hide-shape (st/emitf (dw/update-shape-flags id {:hidden true}))
         do-lock-shape (st/emitf (dw/update-shape-flags id {:blocked true}))
         do-unlock-shape (st/emitf (dw/update-shape-flags id {:blocked false}))
+        do-add-flow (st/emitf (dwi/add-flow-selected-frame))
+        do-remove-flow #(st/emitf (dwi/remove-flow (:id %)))
         do-create-group (st/emitf dw/group-selected)
         do-remove-group (st/emitf dw/ungroup-selected)
         do-mask-group (st/emitf dw/mask-group)
@@ -261,6 +270,14 @@
                        :on-click do-unlock-shape}]
        [:& menu-entry {:title (tr "workspace.shape.menu.lock")
                        :on-click do-lock-shape}])
+
+     (when (and (= options-mode :prototype) (= (:type shape) :frame))
+       (let [flow (cto/get-frame-flow flows (:id shape))]
+         (if (nil? flow)
+           [:& menu-entry {:title (tr "workspace.shape.menu.flow-start")
+                           :on-click do-add-flow}]
+           [:& menu-entry {:title (tr "workspace.shape.menu.delete-flow-start")
+                           :on-click (do-remove-flow flow)}])))
 
      (when (and (or (nil? (:shape-ref shape))
                     (> (count selected) 1))

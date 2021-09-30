@@ -10,9 +10,14 @@
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
-(s/def ::point
-  (s/and (s/keys :req-un [::x ::y])
-         gpt/point?))
+;; WARNING: options are not deleted when changing event or action type, so it can be
+;;          restored if the user changes it back later.
+;;
+;;          But that means that an interaction may have for example a delay or
+;;          destination, even if its type does not require it (but a previous type did).
+;;
+;;          So make sure to use has-delay/has-destination... functions, or similar,
+;;          before reading them.
 
 ;; -- Options depending on event type
 
@@ -54,7 +59,7 @@
                             :bottom-left
                             :bottom-right
                             :bottom-center})
-(s/def ::overlay-position ::point)
+(s/def ::overlay-position ::us/point)
 (s/def ::url ::us/string)
 (s/def ::close-click-outside ::us/boolean)
 (s/def ::background-overlay ::us/boolean)

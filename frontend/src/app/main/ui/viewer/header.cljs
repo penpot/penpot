@@ -13,14 +13,14 @@
    [app.main.ui.components.fullscreen :as fs]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.comments :refer [comments-menu]]
-   [app.main.ui.viewer.interactions :refer [interactions-menu]]
+   [app.main.ui.viewer.interactions :refer [flows-menu interactions-menu]]
    [app.main.ui.workspace.header :refer [zoom-widget]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
 (mf/defc header-options
-  [{:keys [section zoom page file permissions]}]
+  [{:keys [section zoom page file index permissions]}]
   (let [fullscreen (mf/use-ctx fs/fullscreen-context)
 
         toggle-fullscreen
@@ -43,7 +43,9 @@
 
     [:div.options-zone
      (case section
-       :interactions [:& interactions-menu]
+       :interactions [:*
+                      [:& flows-menu {:page page :index index}]
+                      [:& interactions-menu]]
        :comments [:& comments-menu]
 
        [:div.view-options])
@@ -133,7 +135,6 @@
         (fn [section]
           (st/emit! (dv/go-to-section section)))]
 
-
     [:header.viewer-header
      [:div.main-icon
       [:a {:on-click go-to-dashboard
@@ -167,5 +168,6 @@
                          :permissions permissions
                          :page page
                          :file file
+                         :index index
                          :zoom zoom}]]))
 

@@ -41,8 +41,7 @@
   (s/keys :req-un [::file-id]))
 
 (s/def ::viewer-query-params
-  (s/keys :req-un [::index]
-          :opt-un [::share-id ::section ::page-id]))
+  (s/keys :opt-un [::index ::share-id ::section ::page-id]))
 
 (def routes
   [["/auth"

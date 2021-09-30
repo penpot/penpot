@@ -18,7 +18,6 @@
    [app.common.pages.spec :as spec]
    [app.common.spec :as us]
    [app.common.transit :as t]
-   [app.common.types.interactions :as cti]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.events :as ev]
@@ -28,6 +27,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.path :as dwdp]
@@ -1285,8 +1285,7 @@
      (watch [_ state _]
        (let [{:keys [current-file-id current-page-id]} state
              pparams {:file-id (or file-id current-file-id)}
-             qparams {:page-id (or page-id current-page-id)
-                      :index 0}]
+             qparams {:page-id (or page-id current-page-id)}]
          (rx/of ::dwp/force-persist
                 (rt/nav-new-window* {:rname :viewer
                                      :path-params pparams
@@ -1754,166 +1753,12 @@
 ;; Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare move-edit-interaction)
-(declare finish-edit-interaction)
-
-(defn start-edit-interaction
-  [index]
-  (ptk/reify ::start-edit-interaction
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :editing-interaction-index] index))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [initial-pos @ms/mouse-position
-            selected (wsh/lookup-selected state)
-            stopper (rx/filter ms/mouse-up? stream)]
-        (when (= 1 (count selected))
-          (rx/concat
-            (->> ms/mouse-position
-                 (rx/take-until stopper)
-                 (rx/map #(move-edit-interaction initial-pos %)))
-            (rx/of (finish-edit-interaction index initial-pos))))))))
-
-(defn move-edit-interaction
-  [initial-pos position]
-  (ptk/reify ::move-edit-interaction
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            selected-shape-id (-> state wsh/lookup-selected first)
-            selected-shape (get objects selected-shape-id)
-            selected-shape-frame-id (:frame-id selected-shape)
-            start-frame (get objects selected-shape-frame-id)
-            end-frame   (dwc/get-frame-at-point objects position)]
-        (cond-> state
-          (not= position initial-pos) (assoc-in [:workspace-local :draw-interaction-to] position)
-          (not= start-frame end-frame) (assoc-in [:workspace-local :draw-interaction-to-frame] end-frame))))))
-
-(defn finish-edit-interaction
-  [index initial-pos]
-  (ptk/reify ::finish-edit-interaction
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:workspace-local :editing-interaction-index] nil)
-          (assoc-in [:workspace-local :draw-interaction-to] nil)
-          (assoc-in [:workspace-local :draw-interaction-to-frame] nil)))
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [position @ms/mouse-position
-            page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            frame    (dwc/get-frame-at-point objects position)
-
-            shape-id (-> state wsh/lookup-selected first)
-            shape    (get objects shape-id)]
-
-        (when (and shape (not (= position initial-pos)))
-          (rx/of (dch/update-shapes [shape-id]
-                   (fn [shape]
-                     (update shape :interactions
-                             (fn [interactions]
-                               (if-not frame
-                                 ;; Drop in an empty space -> remove interaction
-                                 (if index
-                                   (into (subvec interactions 0 index)
-                                         (subvec interactions (inc index)))
-                                   interactions)
-                                 (let [frame (if (or (= (:id frame) (:id shape))
-                                                     (= (:id frame) (:frame-id shape)))
-                                               nil ;; Drop onto self frame -> set destination to none
-                                               frame)]
-                                   ;; Update or create interaction
-                                   (if (and index (cti/has-destination (get interactions index)))
-                                     (update interactions index
-                                             #(cti/set-destination % (:id frame)))
-                                     (conj (or interactions [])
-                                           (cti/set-destination cti/default-interaction
-                                                                (:id frame))))))))))))))))
-
-(declare move-overlay-pos)
-(declare finish-move-overlay-pos)
-
-(defn start-move-overlay-pos
-  [index]
-  (ptk/reify ::start-move-overlay-pos
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:workspace-local :move-overlay-to] nil)
-          (assoc-in [:workspace-local :move-overlay-index] index)))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [initial-pos @ms/mouse-position
-            selected (wsh/lookup-selected state)
-            stopper (rx/filter ms/mouse-up? stream)]
-        (when (= 1 (count selected))
-          (let [page-id     (:current-page-id state)
-                objects     (wsh/lookup-page-objects state page-id)
-                shape       (->> state
-                                 wsh/lookup-selected
-                                 first
-                                 (get objects))
-                overlay-pos (-> shape
-                                (get-in [:interactions index])
-                                :overlay-position)
-                orig-frame  (cph/get-frame shape objects)
-                frame-pos   (gpt/point (:x orig-frame) (:y orig-frame))
-                offset      (-> initial-pos
-                                (gpt/subtract overlay-pos)
-                                (gpt/subtract frame-pos))]
-            (rx/concat
-              (->> ms/mouse-position
-                   (rx/take-until stopper)
-                   (rx/map #(move-overlay-pos % frame-pos offset)))
-              (rx/of (finish-move-overlay-pos index frame-pos offset)))))))))
-
-(defn move-overlay-pos
-  [pos frame-pos offset]
-  (ptk/reify ::move-overlay-pos
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pos (-> pos
-                    (gpt/subtract frame-pos)
-                    (gpt/subtract offset))]
-        (assoc-in state [:workspace-local :move-overlay-to] pos)))))
-
-(defn finish-move-overlay-pos
- [index frame-pos offset]
- (ptk/reify ::finish-move-overlay-pos
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (d/dissoc-in [:workspace-local :move-overlay-to])
-          (d/dissoc-in [:workspace-local :move-overlay-index])))
-
-   ptk/WatchEvent
-   (watch [_ state _]
-     (let [pos         @ms/mouse-position
-           overlay-pos (-> pos
-                           (gpt/subtract frame-pos)
-                           (gpt/subtract offset))
-
-           page-id     (:current-page-id state)
-           objects     (wsh/lookup-page-objects state page-id)
-           shape       (->> state
-                            wsh/lookup-selected
-                            first
-                            (get objects))
-
-           interactions (:interactions shape)
-
-           new-interactions
-           (update interactions index
-                   #(cti/set-overlay-position % overlay-pos))]
-
-       (rx/of (update-shape (:id shape) {:interactions new-interactions}))))))
-
+(d/export dwi/start-edit-interaction)
+(d/export dwi/move-edit-interaction)
+(d/export dwi/finish-edit-interaction)
+(d/export dwi/start-move-overlay-pos)
+(d/export dwi/move-overlay-pos)
+(d/export dwi/finish-move-overlay-pos)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CANVAS OPTIONS

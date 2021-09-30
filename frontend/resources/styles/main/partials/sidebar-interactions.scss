@@ -75,7 +75,84 @@
   }
 
   svg {
-    width: 18px;
     height: 18px;
+    width: 18px;
   }
 }
+
+.flow-element {
+  display: flex;
+  align-items: center;
+  padding: $size-1;
+
+  .element-label {
+    font-size: $fs11;
+  }
+
+  .flow-name {
+    cursor: pointer;
+  }
+
+  & input.element-name {
+    background: transparent;
+    border-color: $color-primary;
+    color: $color-white;
+    font-size: $fs11;
+  }
+}
+
+.flow-button {
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: $size-2;
+
+  & svg {
+    height: 12px;
+    width: 12px;
+    fill: $color-gray-20;
+  }
+
+  &:hover svg {
+    fill: $color-primary;
+  }
+}
+
+.flow-badge {
+  display: flex;
+
+  & .content {
+    align-items: center;
+    background-color: $color-gray-50;
+    border-radius: 4px;
+    display: flex;
+    height: 24px;
+
+    & svg {
+      height: 12px;
+      margin: 0 $size-2;
+      width: 12px;
+      fill: $color-gray-20;
+    }
+
+    & span {
+      color: $color-gray-20;
+      font-size: $fs12;
+      margin-right: $size-4;
+    }
+  }
+
+  &.selected .content {
+    background-color: $color-primary;
+
+    & svg {
+      fill: $color-gray-60;
+    }
+
+    & span {
+      color: $color-gray-60;
+    }
+  }
+}
+

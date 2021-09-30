@@ -10,6 +10,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
+   [app.common.types.page-options :as cto]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
@@ -97,6 +98,38 @@
              :xmlns "http://www.w3.org/2000/svg"}
        [:& wrapper {:shape frame
                     :view-box (:vbox size)}]]]]))
+
+
+(mf/defc flows-menu
+  {::mf/wrap [mf/memo]}
+  [{:keys [page index]}]
+  (let [flows        (get-in page [:options :flows])
+        frames       (:frames page)
+        frame        (get frames index)
+        current-flow (cto/get-frame-flow flows (:id frame))
+
+        show-dropdown?  (mf/use-state false)
+        toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
+        hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
+
+        select-flow
+        (mf/use-callback
+         (fn [flow]
+           (st/emit! (dv/go-to-frame (:starting-frame flow)))))]
+
+    (when (seq flows)
+      [:div.view-options {:on-click toggle-dropdown}
+       [:span.icon i/play]
+       [:span.label (:name current-flow)]
+       [:span.icon i/arrow-down]
+       [:& dropdown {:show @show-dropdown?
+                     :on-close hide-dropdown}
+        [:ul.dropdown.with-check
+         (for [flow flows]
+           [:li {:class (dom/classnames :selected (= (:id flow) (:id current-flow)))
+                 :on-click #(select-flow flow)}
+            [:span.icon i/tick]
+            [:span.label (:name flow)]])]]])))
 
 
 (mf/defc interactions-menu

@@ -2309,6 +2309,18 @@ msgid "workspace.options.add-interaction"
 msgstr "Pulsa el botón + para añadir interacciones."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.add-flow-start"
+msgstr "Añadir inicio de flujo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-start"
+msgstr "Inicio de flujo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-starts"
+msgstr "Inicios de flujo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
 msgstr "Acción"
 
@@ -2745,6 +2757,10 @@ msgstr "Cortar"
 msgid "workspace.shape.menu.delete"
 msgstr "Eliminar"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "Eliminar inicio de flujo"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Desacoplar instancia"
@@ -2764,6 +2780,10 @@ msgstr "Voltear horizontal"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Voltear vertical"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flow-start"
+msgstr "Inicio de flujo"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.forward"

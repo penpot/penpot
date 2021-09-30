@@ -19,6 +19,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.timers :as ts]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -68,7 +69,8 @@
                         (on-stop-edit)
                         (swap! local assoc :edition false)
                         (st/emit! (dw/end-rename-shape)
-                                  (dw/update-shape (:id shape) {:name name}))))
+                                  (when-not (str/empty? name)
+                                    (dw/update-shape (:id shape) {:name name})))))
 
         cancel-edit (fn []
                       (on-stop-edit)

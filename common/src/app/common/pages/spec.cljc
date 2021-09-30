@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.common.types.interactions :as cti]
+   [app.common.types.page-options :as cto]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]))
@@ -143,43 +144,6 @@
                    :internal.blur/type
                    :internal.blur/value
                    :internal.blur/hidden]))
-
-;; Page Options
-(s/def :internal.page.grid.color/value string?)
-(s/def :internal.page.grid.color/opacity ::us/safe-number)
-
-(s/def :internal.page.grid/size ::us/safe-integer)
-(s/def :internal.page.grid/color
-  (s/keys :req-un [:internal.page.grid.color/value
-                   :internal.page.grid.color/opacity]))
-
-(s/def :internal.page.grid/type #{:stretch :left :center :right})
-(s/def :internal.page.grid/item-length (s/nilable ::us/safe-integer))
-(s/def :internal.page.grid/gutter (s/nilable ::us/safe-integer))
-(s/def :internal.page.grid/margin (s/nilable ::us/safe-integer))
-
-(s/def :internal.page.grid/square
-  (s/keys :req-un [:internal.page.grid/size
-                   :internal.page.grid/color]))
-
-(s/def :internal.page.grid/column
-  (s/keys :req-un [:internal.page.grid/size
-                   :internal.page.grid/color
-                   :internal.page.grid/type
-                   :internal.page.grid/item-length
-                   :internal.page.grid/gutter
-                   :internal.page.grid/margin]))
-
-(s/def :internal.page.grid/row :internal.page.grid/column)
-
-(s/def :internal.page.options/background string?)
-(s/def :internal.page.options/saved-grids
-  (s/keys :req-un [:internal.page.grid/square
-                   :internal.page.grid/row
-                   :internal.page.grid/column]))
-
-(s/def :internal.page/options
-  (s/keys :opt-un [:internal.page.options/background]))
 
 ;; Size constraints
 
@@ -370,7 +334,7 @@
 (s/def ::page
   (s/keys :req-un [::id
                    ::name
-                   :internal.page/options
+                   ::cto/options
                    :internal.page/objects]))
 
 

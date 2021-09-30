@@ -159,13 +159,9 @@
     (hooks/setup-shortcuts node-editing? drawing-path?)
     (hooks/setup-active-frames objects vbox hover active-frames)
 
-    
-
     [:div.viewport
      [:div.viewport-overlays
 
-      
-      
       [:& wtr/frame-renderer {:objects objects
                               :background background}]
 
@@ -272,6 +268,17 @@
          :on-frame-enter on-frame-enter
          :on-frame-leave on-frame-leave
          :on-frame-select on-frame-select}]
+
+       (when show-prototypes?
+         [:& widgets/frame-flows
+          {:flows (:flows options)
+           :objects objects
+           :selected selected
+           :zoom zoom
+           :modifiers modifiers
+           :on-frame-enter on-frame-enter
+           :on-frame-leave on-frame-leave
+           :on-frame-select on-frame-select}])
 
        (when show-gradient-handlers?
          [:& gradients/gradient-handlers
