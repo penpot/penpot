@@ -8,8 +8,8 @@
   (:refer-clojure :exclude [resolve])
   (:require
    [app.common.data :as d]
-   [app.common.logging :as log]
    [app.common.file-builder :as fb]
+   [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.text :as ct]
    [app.common.uuid :as uuid]
