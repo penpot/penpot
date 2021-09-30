@@ -17,11 +17,15 @@
 
 (enable-console-print!)
 
-(def ^:dynamic *on-error* identity)
-
 (defonce loader (l/atom false))
-(defonce state  (ptk/store {:resolve ptk/resolve}))
-(defonce stream (ptk/input-stream state))
+(defonce on-error (l/atom identity))
+
+(defonce state
+  (ptk/store {:resolve ptk/resolve
+              :on-error (fn [e] (@on-error e))}))
+
+(defonce stream
+  (ptk/input-stream state))
 
 (defonce last-events
   (let [buffer (atom #queue [])

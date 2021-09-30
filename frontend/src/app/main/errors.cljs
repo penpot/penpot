@@ -4,8 +4,8 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.errors
-  "Error handling"
+(ns app.main.errors
+  "Generic error handling"
   (:require
    [app.common.exceptions :as ex]
    [app.config :as cf]
@@ -20,7 +20,36 @@
    [expound.alpha :as expound]
    [potok.core :as ptk]))
 
-;; --- Error Handling
+(defn on-error
+  "A general purpose error handler."
+  [error]
+  (cond
+    (instance? ExceptionInfo error)
+    (-> error sentry/capture-exception ex-data ptk/handle-error)
+
+    (map? error)
+    (ptk/handle-error error)
+
+    :else
+    (let [hint (ex-message error)
+          msg  (str "Internal Error: " hint)]
+      (sentry/capture-exception error)
+      (ts/schedule (st/emitf (dm/assign-exception error)))
+
+      (js/console.group msg)
+      (ex/ignoring (js/console.error error))
+      (js/console.groupEnd msg))))
+
+;; Set the main potok error handler
+(reset! st/on-error on-error)
+
+;; We receive a explicit authentication error; this explicitly clears
+;; all profile data and redirect the user to the login page. This is
+;; here and not in app.main.errors because of circular dependency.
+(defmethod ptk/handle-error :authentication
+  [_]
+  (ts/schedule (st/emitf (du/logout))))
+
 
 ;; That are special case server-errors that should be treated
 ;; differently.
@@ -32,12 +61,6 @@
   [error]
   (ts/schedule
    (st/emitf (dm/assign-exception error))))
-
-;; We receive a explicit authentication error; this explicitly clears
-;; all profile data and redirect the user to the login page.
-(defmethod ptk/handle-error :authentication
-  [_]
-  (ts/schedule (st/emitf (du/logout))))
 
 ;; Error that happens on an active bussines model validation does not
 ;; passes an validation (example: profile can't leave a team). From
@@ -52,14 +75,15 @@
               :timeout 3000})))
 
   ;; Print to the console some debug info.
-  (js/console.group "Validation Error")
+  (js/console.group "Validation Error:")
   (ex/ignoring
    (js/console.info
     (with-out-str
       (pprint (dissoc error :explain))))
    (when-let [explain (:explain error)]
      (js/console.error explain)))
-  (js/console.groupEnd "Validation Error"))
+  (js/console.groupEnd "Validation Error:"))
+
 
 ;; Error on parsing an SVG
 (defmethod ptk/handle-error :svg-parser
@@ -76,6 +100,7 @@
 (defmethod ptk/handle-error :assertion
   [{:keys [data stack message hint context] :as error}]
   (let [message (or message hint)
+        message (str "Internal Assertion Error: " message)
         context (str/fmt "ns: '%s'\nname: '%s'\nfile: '%s:%s'"
                               (:ns context)
                               (:name context)
@@ -85,13 +110,7 @@
      (st/emitf
       (dm/show {:content "Internal error: assertion."
                 :type :error
-                :timeout 3000})
-      (ptk/event ::ev/event
-                 {::ev/type "exception"
-                  ::ev/name "assertion-error"
-                  :message message
-                  :context context
-                  :trace stack})))
+                :timeout 3000})))
 
     ;; Print to the console some debugging info
     (js/console.group message)
@@ -109,53 +128,31 @@
   [{:keys [data hint] :as error}]
   (let [hint (or hint (:hint data) (:message data))
         info (with-out-str (pprint (dissoc data :explain)))
-        expl (:explain data)]
+        expl (:explain data)
+        msg  (str "Internal Server Error: " hint)]
+
     (ts/schedule
      (st/emitf
       (dm/show {:content "Something wrong has happened (on backend)."
                 :type :error
-                :timeout 3000})
-      (ptk/event ::ev/event
-                 {::ev/type "exception"
-                  ::ev/name "server-error"
-                  :hint hint
-                  :info info
-                  :explain expl})))
+                :timeout 3000})))
 
-    (js/console.group "Internal Server Error:")
-    (js/console.error "hint:" hint)
+    (js/console.group msg)
     (js/console.info info)
     (when expl (js/console.error expl))
-    (js/console.groupEnd "Internal Server Error:")))
-
-(defmethod ptk/handle-error :default
-  [error]
-  (if (instance? ExceptionInfo error)
-    (-> error sentry/capture-exception ex-data ptk/handle-error)
-    (let [stack (.-stack error)
-          hint  (or (ex-message error)
-                    (:hint error)
-                    (:message error))]
-      (ts/schedule
-       (st/emitf
-        (dm/assign-exception error)
-        (ptk/event ::ev/event
-                   {::ev/type "exception"
-                    ::ev/name "unexpected-error"
-                    :message hint
-                    :trace (.-stack error)})))
-
-      (js/console.group "Internal error:")
-      (js/console.log "hint:" hint)
-      (ex/ignoring
-       (js/console.error (clj->js error))
-       (js/console.error "stack:" stack))
-      (js/console.groupEnd "Internal error:"))))
+    (js/console.groupEnd msg)))
 
 (defonce uncaught-error-handler
   (letfn [(on-error [event]
-            (ptk/handle-error (unchecked-get event "error"))
-            (.preventDefault ^js event))]
+            (.preventDefault ^js event)
+            (when-let [error (unchecked-get event "error")]
+              (let [hint (ex-message error)
+                    msg  (str "Unhandled Internal Error: " hint)]
+                (sentry/capture-exception error)
+                (ts/schedule (st/emitf (dm/assign-exception error)))
+                (js/console.group msg)
+                (ex/ignoring (js/console.error error))
+                (js/console.groupEnd msg))))]
     (.addEventListener js/window "error" on-error)
     (fn []
       (.removeEventListener js/window "error" on-error))))
