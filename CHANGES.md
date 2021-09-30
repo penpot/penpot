@@ -9,6 +9,12 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+## 1.8.3-alpha
+
+### :sparkles: New features
+
+- Adds progress report to importing process
+
 ## 1.8.2-alpha
 
 ### :bug: Bugs fixed

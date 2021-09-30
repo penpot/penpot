@@ -323,6 +323,27 @@ msgstr "There was a problem importing the file. The file wasn't imported."
 msgid "dashboard.import.import-message"
 msgstr "%s files have been imported succesfully."
 
+msgid "dashboard.import.progress.upload-data"
+msgstr "Uploading data to server (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Uploading file: %s"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Processing page: %s"
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Processing colors"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Processing typographies"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Processing media"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Processing components"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
 msgstr "Invite to team"
@@ -2975,3 +2996,4 @@ msgstr "Sorry!"
 
 msgid "viewer.breaking-change.description"
 msgstr "This shareable link is no longer valid. Create a new one or ask the owner for a new one.
+

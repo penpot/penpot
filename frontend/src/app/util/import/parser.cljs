@@ -628,7 +628,7 @@
 
 (defn get-image-name
   [node]
-  (get-in node [:attrs :penpot:name]))
+  (get-meta node :name))
 
 (defn get-image-data
   [node]
