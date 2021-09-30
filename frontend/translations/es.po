@@ -325,6 +325,30 @@ msgstr "Hubo un problema importando el fichero. No se ha creado el fichero."
 msgid "dashboard.import.import-message"
 msgstr "%s ficheros han sido importados con éxito."
 
+msgid "dashboard.import.import-message"
+msgstr "%s files have been imported succesfully."
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Enviando datos al servidor (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Enviando fichero: %s"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Procesando página: %s"
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Procesando colores"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Procesando tipografías"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Procesando media"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Procesando componentes"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
 msgstr "Invitar al equipo"
