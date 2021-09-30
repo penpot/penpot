@@ -399,6 +399,13 @@
     font-style: italic;
   }
 
+  .progress-message {
+    margin: 0 2rem;
+    color: $color-info;
+    font-size: $fs12;
+    font-style: italic;
+  }
+
   .linked-libraries {
     display: flex;
     flex-wrap: wrap;
