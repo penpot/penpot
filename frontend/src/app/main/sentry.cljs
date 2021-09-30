@@ -50,9 +50,10 @@
 
 (defn capture-exception
   [err]
-  (when (ex/ex-info? err)
-    (sentry/setContext "ex-data", (clj->js (ex-data err))))
-  (sentry/captureException err)
+  (when cf/sentry-dsn
+    (when (ex/ex-info? err)
+      (sentry/setContext "ex-data", (clj->js (ex-data err))))
+    (sentry/captureException err))
   err)
 
 

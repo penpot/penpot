@@ -19,6 +19,7 @@
    [app.main.ui.confirm]
    [app.main.ui.modal :refer [modal]]
    [app.main.worker]
+   [app.main.errors]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
    [app.util.router :as rt]

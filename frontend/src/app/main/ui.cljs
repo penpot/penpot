@@ -8,14 +8,15 @@
   (:require
    [app.common.spec :as us]
    [app.config :as cf]
+   [app.main.data.messages :as dm]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.auth :refer [auth]]
    [app.main.ui.auth.verify-token :refer [verify-token]]
    [app.main.ui.components.fullscreen :as fs]
    [app.main.ui.context :as ctx]
    [app.main.ui.cursors :as c]
    [app.main.ui.dashboard :refer [dashboard]]
-   [app.main.ui.errors]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.main.ui.onboarding]
@@ -90,7 +91,7 @@
 
 (mf/defc on-main-error
   [{:keys [error] :as props}]
-  (mf/use-effect #(ptk/handle-error error))
+  (mf/use-effect (st/emitf (dm/assign-exception error)))
   [:span "Internal application errror"])
 
 (mf/defc main-page
