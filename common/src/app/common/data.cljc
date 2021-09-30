@@ -159,6 +159,11 @@
   ([mfn coll]
    (into {} (mapm mfn) coll)))
 
+(defn removev
+  "Returns a vector of the items in coll for which (fn item) returns logical false"
+  [fn coll]
+  (filterv (comp not fn) coll))
+
 (defn filterm
   "Filter values of a map that satisfy a predicate"
   [pred coll]

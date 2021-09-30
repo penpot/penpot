@@ -111,6 +111,7 @@
                 (rx/of (df/fonts-fetched fonts)
                        (bundle-fetched (merge bundle params))))))))))
 
+(declare go-to-frame-auto)
 
 (defn bundle-fetched
   [{:keys [project file share-links libraries users permissions] :as bundle}]
@@ -130,7 +131,15 @@
                             :permissions permissions
                             :project project
                             :pages pages
-                            :file file}))))))
+                            :file file})))
+
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [route   (:route state)
+              qparams (:query-params route)
+              index   (:index qparams)]
+          (when (nil? index)
+            (rx/of (go-to-frame-auto))))))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id] :as params}]
@@ -329,6 +338,20 @@
         (when index
           (rx/of (go-to-frame-by-index index)))))))
 
+(defn go-to-frame-auto
+  []
+  (ptk/reify ::go-to-frame-auto
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [route   (:route state)
+            qparams (:query-params route)
+            page-id (:page-id qparams)
+            flows   (get-in state [:viewer :pages page-id :options :flows])]
+        (if (seq flows)
+          (let [frame-id (:starting-frame (first flows))]
+            (rx/of (go-to-frame frame-id)))
+          (rx/of (go-to-frame-by-index 0)))))))
+
 (defn go-to-section
   [section]
   (ptk/reify ::go-to-section
@@ -391,7 +414,7 @@
                       :background-overlay background-overlay})
           (update-in state [:viewer-local :overlays]
                      (fn [overlays]
-                       (remove #(= (:id (:frame %)) frame-id) overlays))))))))
+                       (d/removev #(= (:id (:frame %)) frame-id) overlays))))))))
 
 (defn close-overlay
   [frame-id]
@@ -400,7 +423,7 @@
     (update [_ state]
       (update-in state [:viewer-local :overlays]
                  (fn [overlays]
-                   (remove #(= (:id (:frame %)) frame-id) overlays))))))
+                   (d/removev #(= (:id (:frame %)) frame-id) overlays))))))
 
 ;; --- Objects selection
 

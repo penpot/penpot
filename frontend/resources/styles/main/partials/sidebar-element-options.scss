@@ -937,6 +937,10 @@
   .element-set-options-group {
     flex-wrap: wrap;
   }
+
+  &:not(:first-child) {
+    border-top: 1px solid $color-gray-60;
+  }
 }
 
 .exports-options,

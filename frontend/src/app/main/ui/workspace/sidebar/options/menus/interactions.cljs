@@ -9,14 +9,19 @@
    [app.common.data :as d]
    [app.common.pages :as cp]
    [app.common.types.interactions :as cti]
+   [app.common.types.page-options :as cto]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.interactions :as dwi]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
+   [cuerdas.core :as str]
+   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (defn- event-type-names
@@ -67,6 +72,92 @@
    :bottom-left (tr "workspace.options.interaction-pos-bottom-left")
    :bottom-right (tr "workspace.options.interaction-pos-bottom-right")
    :bottom-center (tr "workspace.options.interaction-pos-bottom-center")})
+
+(def flow-for-rename-ref
+  (l/derived (l/in [:workspace-local :flow-for-rename]) st/state))
+
+(mf/defc flow-item
+  [{:keys [flow]}]
+  (let [editing?         (mf/use-state false)
+        flow-for-rename  (mf/deref flow-for-rename-ref)
+        name-ref         (mf/use-ref)
+
+        start-edit (fn []
+                     (reset! editing? true))
+
+        accept-edit (fn []
+                      (let [name-input (mf/ref-val name-ref)
+                            name       (dom/get-value name-input)]
+                        (reset! editing? false)
+                        (st/emit! (dwi/end-rename-flow)
+                                  (when-not (str/empty? name)
+                                    (dwi/rename-flow (:id flow) name)))))
+
+        cancel-edit (fn []
+                      (reset! editing? false)
+                      (st/emit! (dwi/end-rename-flow)))
+
+        on-key-down (fn [event]
+                      (when (kbd/enter? event) (accept-edit))
+                      (when (kbd/esc? event) (cancel-edit)))]
+
+    (mf/use-effect
+      (fn []
+        #(when editing?
+           (cancel-edit))))
+
+    (mf/use-effect
+      (mf/deps flow-for-rename)
+      #(when (and (= flow-for-rename (:id flow))
+                  (not @editing?))
+         (start-edit)))
+
+    (mf/use-effect
+      (mf/deps @editing?)
+      #(when @editing?
+         (let [name-input (mf/ref-val name-ref)]
+           (dom/select-text! name-input))
+         nil))
+
+    [:div.flow-element
+     [:div.flow-button {:on-click (st/emitf (dw/select-shape (:starting-frame flow)))}
+      i/play]
+     (if @editing?
+       [:input.element-name
+        {:type "text"
+         :ref name-ref
+         :on-blur accept-edit
+         :on-key-down on-key-down
+         :auto-focus true
+         :default-value (:name flow "")}]
+       [:span.element-label.flow-name
+        {:on-double-click (st/emitf (dwi/start-rename-flow (:id flow)))}
+        (:name flow)])
+     [:div.add-page {:on-click (st/emitf (dwi/remove-flow (:id flow)))}
+      i/minus]]))
+
+(mf/defc page-flows
+  [{:keys [flows]}]
+  (when (seq flows)
+    [:div.element-set.interactions-options
+     [:div.element-set-title
+      [:span (tr "workspace.options.flows.flow-starts")]]
+     (for [flow flows]
+       [:& flow-item {:flow flow :key (str (:id flow))}])]))
+
+(mf/defc shape-flows
+  [{:keys [flows shape]}]
+  (when (= (:type shape) :frame)
+    (let [flow (cto/get-frame-flow flows (:id shape))]
+      [:div.element-set.interactions-options
+       [:div.element-set-title
+        [:span (tr "workspace.options.flows.flow-start")]]
+       (if (nil? flow)
+         [:div.flow-element
+          [:span.element-label (tr "workspace.options.flows.add-flow-start")]
+          [:div.add-page {:on-click (st/emitf (dwi/add-flow-selected-frame))}
+           i/plus]]
+         [:& flow-item {:flow flow :key (str (:id flow))}])])))
 
 (mf/defc interaction-entry
   [{:keys [index shape interaction update-interaction remove-interaction]}]
@@ -184,7 +275,9 @@
             [:select.input-select
              {:value (str (:destination interaction))
               :on-change change-destination}
-             [:option {:value ""} (tr "workspace.options.interaction-none")]
+             (if (= (:action-type interaction) :close-overlay)
+               [:option {:value ""} (tr "workspace.options.interaction-self")]
+               [:option {:value ""} (tr "workspace.options.interaction-none")])
              (for [frame frames]
                (when (and (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
                           (not= (:id frame) (:frame-id shape))) ; nor a shape to its container frame
@@ -263,6 +356,9 @@
   [{:keys [shape] :as props}]
   (let [interactions (get shape :interactions [])
 
+        options (mf/deref refs/workspace-page-options)
+        flows   (:flows options)
+
         add-interaction
         (fn [_]
           (let [new-interactions (conj interactions cti/default-interaction)]
@@ -280,29 +376,34 @@
           (let [new-interactions (update interactions index update-fn)]
             (st/emit! (dw/update-shape (:id shape) {:interactions new-interactions})))) ]
 
-    [:div.element-set.interactions-options
-     (when shape
-       [:div.element-set-title
-        [:span (tr "workspace.options.interactions")]
-        [:div.add-page {:on-click add-interaction}
-         i/plus]])
+    [:*
+     (if shape
+       [:& shape-flows {:flows flows
+                        :shape shape}]
+       [:& page-flows {:flows flows}])
 
-     [:div.element-set-content
-      (when (= (count interactions) 0)
-        [:*
-         (when shape
-           [:*
-            [:div.interactions-help-icon i/plus]
-            [:div.interactions-help.separator (tr "workspace.options.add-interaction")]])
-         [:div.interactions-help-icon i/interaction]
-         [:div.interactions-help (tr "workspace.options.select-a-shape")]
-         [:div.interactions-help-icon i/play]
-         [:div.interactions-help (tr "workspace.options.use-play-button")]])]
-     [:div.groups
-      (for [[index interaction] (d/enumerate interactions)]
-        [:& interaction-entry {:index index
-                               :shape shape
-                               :interaction interaction
-                               :update-interaction update-interaction
-                               :remove-interaction remove-interaction}])]]))
+     [:div.element-set.interactions-options
+      (when shape
+        [:div.element-set-title
+         [:span (tr "workspace.options.interactions")]
+         [:div.add-page {:on-click add-interaction}
+          i/plus]])
+      [:div.element-set-content
+       (when (= (count interactions) 0)
+         [:*
+          (when shape
+            [:*
+             [:div.interactions-help-icon i/plus]
+             [:div.interactions-help.separator (tr "workspace.options.add-interaction")]])
+          [:div.interactions-help-icon i/interaction]
+          [:div.interactions-help (tr "workspace.options.select-a-shape")]
+          [:div.interactions-help-icon i/play]
+          [:div.interactions-help (tr "workspace.options.use-play-button")]])]
+      [:div.groups
+       (for [[index interaction] (d/enumerate interactions)]
+         [:& interaction-entry {:index index
+                                :shape shape
+                                :interaction interaction
+                                :update-interaction update-interaction
+                                :remove-interaction remove-interaction}])]]]))
 

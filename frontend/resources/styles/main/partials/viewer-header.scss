@@ -68,7 +68,7 @@
       align-items: center;
       cursor: pointer;
       display: flex;
-      width: 90px;
+      position: relative;
 
       > span {
         color: $color-gray-10;
@@ -96,7 +96,7 @@
       }
 
       .dropdown {
-        min-width: 260px;
+        min-width: 295px;
         top: 45px;
         left: -25px;
       }
