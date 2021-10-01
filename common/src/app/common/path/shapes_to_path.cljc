@@ -24,9 +24,7 @@
 (def allowed-transform-types
   #{:rect
     :circle
-    :image
-    :group
-    :bool})
+    :image})
 
 (def style-group-properties
   [:shadow
@@ -146,16 +144,26 @@
 
 (declare convert-to-path)
 
+(defn fix-first-relative
+  "Fix an issue with the simplify commands not changing the first relative"
+  [content]
+  (let [head (first content)]
+    (cond-> content
+      (and head (:relative head))
+      (update 0 assoc :relative false))))
+
 (defn group-to-path
   [group objects]
   (let [xform (comp (map #(get objects %))
                     (map #(-> (convert-to-path % objects))))
 
         child-as-paths (into [] xform (:shapes group))
-        head (first child-as-paths)
+        head (last child-as-paths)
         head-data (select-keys head style-properties)
-        content (into [] (mapcat :content) child-as-paths)]
-
+        content (into []
+                      (comp (filter #(= :path (:type %)))
+                            (mapcat #(fix-first-relative (:content %))))
+                      child-as-paths)]
     (-> group
         (assoc :type :path)
         (assoc :content content)
@@ -184,14 +192,14 @@
    (convert-to-path shape {}))
   ([{:keys [type x y width height r1 r2 r3 r4 rx metadata] :as shape} objects]
    (assert (map? objects))
-   (cond
-     (= (:type shape) :group)
+   (case (:type shape)
+     :group
      (group-to-path shape objects)
 
-     (= (:type shape) :bool)
+     :bool
      (bool-to-path shape objects)
 
-     (contains? allowed-transform-types type)
+     (:rect :circle :image :text)
      (let [new-content
            (case type
              :circle (circle->path x y width height)
@@ -209,6 +217,6 @@
            (cond-> (= :image type)
              (assoc :fill-image metadata))
            (d/without-keys dissoc-attrs)))
-     :else
-     ;; Do nothing if the shape is not of a correct type
+
+     ;; For the rest return the plain shape
      shape)))

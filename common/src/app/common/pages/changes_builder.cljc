@@ -134,22 +134,34 @@
                  :page-id page-id
                  :id id}))
 
-        add-undo-change
+        add-undo-change-shape
         (fn [change-set id]
           (let [shape (get objects id)]
             (d/preconj
              change-set
              {:type :add-obj
               :page-id page-id
-              :parent-id (:parent-id shape)
+              :parent-id (:frame-id shape)
               :frame-id (:frame-id shape)
               :id id
               :obj (cond-> shape
                      (contains? shape :shapes)
-                     (assoc :shapes []))
-              :index (h/position-on-parent id objects)})))]
+                     (assoc :shapes []))})))
 
+        add-undo-change-parent
+        (fn [change-set id]
+          (let [shape (get objects id)]
+            (d/preconj
+             change-set
+             {:type :mov-objects
+              :page-id page-id
+              :parent-id (:parent-id shape)
+              :shapes [id]
+              :index (h/position-on-parent id objects)
+              :ignore-touched true})))]
 
     (-> changes
         (update :redo-changes #(reduce add-redo-change % ids))
-        (update :undo-changes #(reduce add-undo-change % ids)))))
+        (update :undo-changes #(as-> % $
+                                 (reduce add-undo-change-parent $ ids)
+                                 (reduce add-undo-change-shape $ ids))))))

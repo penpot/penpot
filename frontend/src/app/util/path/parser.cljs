@@ -292,6 +292,10 @@
             [result next-pos next-start next-cc next-qc]))
 
         start (first commands)
+        start (cond-> start
+                (:relative start)
+                (assoc :relative false))
+
         start-pos (gpt/point (:params start))]
 
     (->> (map vector (rest commands) commands)

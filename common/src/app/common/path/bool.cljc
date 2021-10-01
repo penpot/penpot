@@ -34,14 +34,15 @@
   (loop [head (first content)
          content (rest content)
          result []
-         last-move nil]
+         last-move nil
+         last-p nil]
 
     (if (nil? head)
       result
       (let [head-p (gsp/command->point head)
             head (cond
                    (and (= :close-path (:command head))
-                        (< (gpt/distance head-p last-move) 0.01))
+                        (< (gpt/distance last-p last-move) 0.01))
                    nil
 
                    (= :close-path (:command head))
@@ -55,7 +56,8 @@
                (cond-> result (some? head) (conj head))
                (if (= :move-to (:command head))
                  head-p
-                 last-move))))))
+                 last-move)
+               head-p)))))
 
 (defn- split-command
   [cmd values]
@@ -152,6 +154,19 @@
 
                 :curve-to (-> (gsp/command->bezier segment)
                               (gsp/curve-values 0.5)))]
+
+    (or (gsp/is-point-in-content? point content)
+        (gsp/is-point-in-border? point content))))
+
+(defn inside-segment?
+  [segment content]
+  (let [point (case (:command segment)
+                :line-to  (-> (gsp/command->line segment)
+                              (gsp/line-values 0.5))
+
+                :curve-to (-> (gsp/command->bezier segment)
+                              (gsp/curve-values 0.5)))]
+
     (gsp/is-point-in-content? point content)))
 
 (defn overlap-segment?
@@ -159,42 +174,57 @@
   segment meaning they have the same coordinates"
   [segment content]
 
-  (letfn [(overlap-single?
-            [other]
-            (when (and (= (:command segment) (:command other))
-                       (contains? #{:line-to :curve-to} (:command segment)))
+  (let [overlap-single?
+        (fn [other]
+          (when (and (= (:command segment) (:command other))
+                     (contains? #{:line-to :curve-to} (:command segment)))
 
-              (case (:command segment)
-                :line-to (let [[p1 q1] (gsp/command->line segment)
-                               [p2 q2] (gsp/command->line other)]
+            (case (:command segment)
+              :line-to (let [[p1 q1] (gsp/command->line segment)
+                             [p2 q2] (gsp/command->line other)]
 
-                           (or (and (< (gpt/distance p1 p2) 0.1)
-                                    (< (gpt/distance q1 q2) 0.1))
-                               (and (< (gpt/distance p1 q2) 0.1)
-                                    (< (gpt/distance q1 p2) 0.1))))
+                         (when (or (and (< (gpt/distance p1 p2) 0.1)
+                                        (< (gpt/distance q1 q2) 0.1))
+                                   (and (< (gpt/distance p1 q2) 0.1)
+                                        (< (gpt/distance q1 p2) 0.1)))
+                           [segment other]))
 
-                :curve-to (let [[p1 q1 h11 h21] (gsp/command->bezier segment)
-                                [p2 q2 h12 h22] (gsp/command->bezier other)]
+              :curve-to (let [[p1 q1 h11 h21] (gsp/command->bezier segment)
+                              [p2 q2 h12 h22] (gsp/command->bezier other)]
 
-                            (or (and (< (gpt/distance p1 p2) 0.1)
-                                     (< (gpt/distance q1 q2) 0.1)
-                                     (< (gpt/distance h11 h12) 0.1)
-                                     (< (gpt/distance h21 h22) 0.1))
+                          (when (or (and (< (gpt/distance p1 p2) 0.1)
+                                         (< (gpt/distance q1 q2) 0.1)
+                                         (< (gpt/distance h11 h12) 0.1)
+                                         (< (gpt/distance h21 h22) 0.1))
 
-                                (and (< (gpt/distance p1 q2) 0.1)
-                                     (< (gpt/distance q1 p2) 0.1)
-                                     (< (gpt/distance h11 h22) 0.1)
-                                     (< (gpt/distance h21 h12) 0.1)))))))]
-    (some? (d/seek overlap-single? content))))
+                                    (and (< (gpt/distance p1 q2) 0.1)
+                                         (< (gpt/distance q1 p2) 0.1)
+                                         (< (gpt/distance h11 h22) 0.1)
+                                         (< (gpt/distance h21 h12) 0.1)))
+
+                            [segment other])))))]
+
+    (->> content
+         (d/seek overlap-single?)
+         (some?))))
 
 (defn create-union [content-a content-a-split content-b content-b-split]
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content-b that are not inside content-a
-  (d/concat
-   []
-   (->> content-a-split (filter #(not (contains-segment? % content-b))))
-   (->> content-b-split (filter #(or (not (contains-segment? % content-a))
-                                     (overlap-segment? % content-a-split))))))
+  (let [content
+        (d/concat
+         []
+         (->> content-a-split (filter #(not (contains-segment? % content-b))))
+         (->> content-b-split (filter #(not (contains-segment? % content-a)))))
+
+        ;; Overlapping segments should be added when they are part of the border
+        border-content
+        (->> content-b-split
+             (filterv #(and (contains-segment? % content-a)
+                            (overlap-segment? % content-a-split)
+                            (not (inside-segment? % content)))))]
+
+    (d/concat content border-content)))
 
 (defn create-difference [content-a content-a-split content-b content-b-split]
   ;; Pick all segments in content-a that are not inside content-b
