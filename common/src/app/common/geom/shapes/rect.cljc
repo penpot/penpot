@@ -95,3 +95,19 @@
          (or (>= x2b x1a) (s= x2b x1a))
          (or (<= y1b y2a) (s= y1b y2a))
          (or (<= y1a y2b) (s= y1a y2b)))))
+
+(defn contains-point?
+  [rect point]
+  (assert (gpt/point? point))
+  (let [x1 (:x rect)
+        y1 (:y rect)
+        x2 (+ (:x rect) (:width rect))
+        y2 (+ (:y rect) (:height rect))
+
+        px (:x point)
+        py (:y point)]
+
+    (and (or (> px x1) (s= px x1))
+         (or (< px x2) (s= px x2))
+         (or (> py y1) (s= py y1))
+         (or (< py y2) (s= py y2)))))
