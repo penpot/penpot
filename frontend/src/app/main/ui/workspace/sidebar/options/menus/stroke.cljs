@@ -141,7 +141,10 @@
                   target (dom/get-current-target event)
                   rect   (dom/get-bounding-rect target)
 
-                  top (+ (:bottom rect) 5)
+                  top (if (< (+ (:bottom rect) 320) (:height window-size))
+                        (+ (:bottom rect) 5)
+                        (- (:height window-size) 325))
+
                   left (if (< (+ (:left rect) 200) (:width window-size))
                          (:left rect)
                          (- (:width window-size) 205))]

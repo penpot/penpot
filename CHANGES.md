@@ -9,6 +9,9 @@
 - Add advanced prototyping [#244](https://tree.taiga.io/project/penpot/us/244).
 
 ### :bug: Bugs fixed
+
+- Fix problem with overflow dropdown on stroke-cap [#1216](https://github.com/penpot/penpot/issues/1216)
+
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
