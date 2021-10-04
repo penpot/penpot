@@ -153,10 +153,9 @@
            {:value (str (:event-type interaction))
             :on-change change-event-type}
            (for [[value name] (event-type-names)]
-             [:option {:value (str value)
-                       :disabled (and (= value :after-delay)
-                                      (not= (:type shape) :frame))}
-              name])]]
+             (when-not (and (= value :after-delay)
+                            (not= (:type shape) :frame))
+               [:option {:value (str value)} name]))]]
 
          ; Delay
          (when (cti/has-delay interaction)
