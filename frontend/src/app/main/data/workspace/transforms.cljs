@@ -505,7 +505,7 @@
                   (if alt?
                     ;; When alt is down we start a duplicate+move
                     (rx/of (start-move-duplicate initial)
-                           dws/duplicate-selected)
+                           (dws/duplicate-selected false))
                     ;; Otherwise just plain old move
                     (rx/of (start-move initial selected)))))))))))
 

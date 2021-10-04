@@ -117,10 +117,16 @@
         over-shapes-stream
         (mf/use-memo
           (fn []
-            (->> move-stream
-                 ;; When transforming shapes we stop querying the worker
-                 (rx/filter #(not (some? (mf/ref-val transform-ref))))
-                 (rx/switch-map query-point))))]
+            (rx/merge
+             (->> move-stream
+                  ;; When transforming shapes we stop querying the worker
+                  (rx/filter #(not (some? (mf/ref-val transform-ref))))
+                  (rx/switch-map query-point))
+
+             (->> move-stream
+                  ;; When transforming shapes we stop querying the worker
+                  (rx/filter #(some? (mf/ref-val transform-ref)))
+                  (rx/map (constantly nil))))))]
 
     ;; Refresh the refs on a value change
     (mf/use-effect
@@ -147,19 +153,22 @@
      over-shapes-stream
      (mf/deps page-id objects @ctrl?)
      (fn [ids]
-       (let [selected (mf/ref-val selected-ref)
-             remove-id? (into #{} (mapcat #(cp/get-parents % objects)) selected)
-
-             is-group?
+       (let [is-group?
              (fn [id]
                (contains? #{:group :bool} (get-in objects [id :type])))
 
-             remove-id?
-             (if @ctrl?
-               (d/concat remove-id? (filterv is-group? ids))
-               remove-id?)
-             ids (->> ids (filterv (comp not remove-id?)))]
-         (reset! hover (get objects (first ids)))
+             selected (mf/ref-val selected-ref)
+
+             remove-xfm (mapcat #(cp/get-parents % objects))
+             remove-id? (cond-> (into #{} remove-xfm selected)
+                          @ctrl?
+                          (d/concat (filterv is-group? ids)))
+
+             ids (->> ids (filterv (comp not remove-id?)))
+
+             hover-shape (get objects (first ids))]
+
+         (reset! hover hover-shape)
          (reset! hover-ids ids))))))
 
 (defn setup-viewport-modifiers [modifiers selected objects render-ref]
