@@ -428,14 +428,14 @@
             delta          (gpt/subtract new-pos (gpt/point obj))]
         delta))))
 
-(def duplicate-selected
+(defn duplicate-selected [move-delta?]
   (ptk/reify ::duplicate-selected
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
-            delta    (if (= (count selected) 1)
+            delta    (if (and move-delta? (= (count selected) 1))
                        (let [obj (get objects (first selected))]
                          (calc-duplicate-delta obj state objects))
                        (gpt/point 0 0))

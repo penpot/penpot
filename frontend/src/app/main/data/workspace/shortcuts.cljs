@@ -119,7 +119,7 @@
 
    :duplicate          {:tooltip (ds/meta "D")
                         :command (ds/c-mod "d")
-                        :fn #(st/emit! dw/duplicate-selected)}
+                        :fn #(st/emit! (dw/duplicate-selected true))}
 
    :undo               {:tooltip (ds/meta "Z")
                         :command (ds/c-mod "z")

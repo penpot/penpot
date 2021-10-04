@@ -109,7 +109,7 @@
 
         current-file-id (mf/use-ctx ctx/current-file-id)
 
-        do-duplicate (st/emitf dw/duplicate-selected)
+        do-duplicate (st/emitf (dw/duplicate-selected false))
         do-delete (st/emitf dw/delete-selected)
         do-copy (st/emitf (dw/copy-selected))
         do-cut (st/emitf (dw/copy-selected) dw/delete-selected)
