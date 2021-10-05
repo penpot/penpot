@@ -11,7 +11,6 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.sentry :as sentry]
    [app.main.store :as st]
@@ -75,7 +74,7 @@
       (st/emit! (rt/nav :auth-login))
 
       (nil? match)
-      (st/emit! (dm/assign-exception {:type :not-found}))
+      (st/emit! (rt/assign-exception {:type :not-found}))
 
       :else
       (st/emit! (rt/navigated match)))))

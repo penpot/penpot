@@ -14,6 +14,7 @@
    [app.main.data.users :as du]
    [app.main.sentry :as sentry]
    [app.main.store :as st]
+   [app.util.router :as rt]
    [app.util.timers :as ts]
    [cljs.pprint :refer [pprint]]
    [cuerdas.core :as str]
@@ -34,7 +35,7 @@
     (let [hint (ex-message error)
           msg  (str "Internal Error: " hint)]
       (sentry/capture-exception error)
-      (ts/schedule (st/emitf (dm/assign-exception error)))
+      (ts/schedule (st/emitf (rt/assign-exception error)))
 
       (js/console.group msg)
       (ex/ignoring (js/console.error error))
@@ -60,7 +61,7 @@
 (defmethod ptk/handle-error ::exceptional-state
   [error]
   (ts/schedule
-   (st/emitf (dm/assign-exception error))))
+   (st/emitf (rt/assign-exception error))))
 
 ;; Error that happens on an active bussines model validation does not
 ;; passes an validation (example: profile can't leave a team). From
@@ -149,7 +150,7 @@
               (let [hint (ex-message error)
                     msg  (str "Unhandled Internal Error: " hint)]
                 (sentry/capture-exception error)
-                (ts/schedule (st/emitf (dm/assign-exception error)))
+                (ts/schedule (st/emitf (rt/assign-exception error)))
                 (js/console.group msg)
                 (ex/ignoring (js/console.error error))
                 (js/console.groupEnd msg))))]

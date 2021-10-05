@@ -8,7 +8,6 @@
   (:require
    [app.common.spec :as us]
    [app.config :as cf]
-   [app.main.data.messages :as dm]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.auth :refer [auth]]
@@ -25,6 +24,7 @@
    [app.main.ui.static :as static]
    [app.main.ui.viewer :as viewer]
    [app.main.ui.workspace :as workspace]
+   [app.util.router :as rt]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
@@ -91,7 +91,7 @@
 
 (mf/defc on-main-error
   [{:keys [error] :as props}]
-  (mf/use-effect (st/emitf (dm/assign-exception error)))
+  (mf/use-effect (st/emitf (rt/assign-exception error)))
   [:span "Internal application errror"])
 
 (mf/defc main-page
