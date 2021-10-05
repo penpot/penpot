@@ -14,6 +14,7 @@
 - Fix menu context for single element nested in components [#1186](https://github.com/penpot/penpot/issues/1186)
 - Fix error screen when operations over comments fail [#1219](https://github.com/penpot/penpot/issues/1219)
 - Fix undo problem when changing typography/color from library [#1230](https://github.com/penpot/penpot/issues/1230)
+- Fix problem with text margin while rendering [#1231](https://github.com/penpot/penpot/issues/1231)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes

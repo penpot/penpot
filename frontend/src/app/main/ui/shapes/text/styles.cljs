@@ -40,6 +40,7 @@
          :justifyContent "inherit"
          :minHeight (when-not (or auto-width? auto-height?) "100%")
          :minWidth (when-not auto-width? "100%")
+         :marginRight "1px"
          :verticalAlign "top"}))
 
 (defn generate-paragraph-styles
