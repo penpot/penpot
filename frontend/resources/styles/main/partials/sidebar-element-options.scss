@@ -14,7 +14,7 @@
     border: 1px solid $color-gray-60;
     border-radius: $br-small;
     display: flex;
-    margin: $x-small;
+    margin: $size-1;
 
     li {
       align-items: center;
@@ -24,7 +24,7 @@
       display: flex;
       flex: 1;
       justify-content: center;
-      padding: $small;
+      padding: $size-2;
 
       svg {
         fill: $color-gray-20;
@@ -60,13 +60,13 @@
   .element-set {
     border-bottom: 1px solid $color-gray-60;
     color: $color-gray-20;
-    padding: $small $x-small;
+    padding: $size-2 $size-1;
 
     .element-set-title {
       color: $color-gray-20;
       display: flex;
       font-size: $fs13;
-      padding: $x-small;
+      padding: $size-1;
       width: 100%;
       align-items: center;
     }
@@ -79,14 +79,14 @@
   }
 
   .element-list {
-    margin-bottom: $small;
+    margin-bottom: $size-2;
 
     li {
       align-items: center;
       border-bottom: 1px solid $color-gray-60;
       display: flex;
       flex-direction: row;
-      padding: $small;
+      padding: $size-2;
       width: 100%;
 
       .list-icon {
@@ -94,7 +94,7 @@
         svg {
           fill: $color-gray-30;
           height: 15px;
-          margin-right: $x-small;
+          margin-right: $size-1;
           width: 15px;
         }
 
@@ -120,7 +120,7 @@
           svg {
             fill: $color-gray-60;
             height: 15px;
-            margin-left: $x-small;
+            margin-left: $size-1;
             width: 15px;
 
             &:hover {
@@ -184,7 +184,7 @@
 .element-set-content {
   display: flex;
   flex-direction: column;
-  padding: $x-small;
+  padding: $size-1;
   width: 100%;
 
   .input-text {
@@ -193,9 +193,9 @@
     border-bottom-color: $color-gray-40;
     color: $color-white;
     font-size: $fs12;
-    margin: $x-small;
+    margin: $size-1;
     min-width: 0;
-    padding: $x-small;
+    padding: $size-1;
     width: 100%;
 
     &:focus {
@@ -305,12 +305,12 @@
     border: 1px solid $color-gray-40;
     border-radius: $br-small;
     cursor: pointer;
-    padding: $x-small $big $x-small $x-small;
+    padding: $size-1 $size-5 $size-1 $size-1;
     position: relative;
 
     .dropdown-button {
       position: absolute;
-      right: $x-small;
+      right: $size-1;
       top: 7px;
 
       svg {
@@ -356,7 +356,7 @@
       cursor: pointer;
       font-size: $fs14;
       display: flex;
-      padding: $small;
+      padding: $size-2;
 
       span {
         color: $color-gray-20;
@@ -409,7 +409,7 @@
     border: 1px solid transparent;
     position: relative;
     height: 38px;
-    margin-right: $small;
+    margin-right: $size-2;
     max-height: 30px;
     position: relative;
     width: 60%;
@@ -528,7 +528,7 @@
     fill: $color-gray-20;
     height: 16px;
     width: 16px;
-    margin-right: $small;
+    margin-right: $size-2;
   }
 
   .row-actions {
@@ -538,7 +538,7 @@
     svg {
       fill: $color-gray-20;
       height: 12px;
-      margin-right: $x-small;
+      margin-right: $size-1;
       width: 12px;
     }
 
@@ -577,8 +577,8 @@
   display: flex;
   flex: 1;
   justify-content: flex-end;
-  margin: $small 0 $small $small;
-  padding: 0 $x-small;
+  margin: $size-2 0 $size-2 $size-2;
+  padding: 0 $size-1;
 
   &:first-child {
     justify-content: flex-start;
@@ -590,7 +590,7 @@
     display: flex;
     height: 20px;
     justify-content: center;
-    margin-right: $small;
+    margin-right: $size-2;
     position: relative;
     width: 20px;
 
@@ -679,7 +679,7 @@
 }
 
 .orientation-icon {
-  margin-left: $small;
+  margin-left: $size-2;
   display: flex;
   align-items: center;
 
@@ -700,7 +700,7 @@
 .navigate-icon {
   background-color: $color-gray-60;
   cursor: pointer;
-  margin-left: $small;
+  margin-left: $size-2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -726,7 +726,7 @@
   width: 100%;
 
   &:first-child {
-    margin-right: $small;
+    margin-right: $size-2;
   }
 
   .icon-before {
@@ -1210,7 +1210,7 @@
     position: relative;
 
     .backend-filters {
-      padding: $small $medium;
+      padding: $size-2 $size-4;
       // width: 220px;
       top: 40px;
       right: 20px;
@@ -1218,15 +1218,15 @@
     .backend-filter {
       display: flex;
       align-items: center;
-      padding: $small 0;
+      padding: $size-2 0;
       cursor: pointer;
 
       .checkbox-icon {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: $medium;
-        height: $medium;
+        width: $size-4;
+        height: $size-4;
         border: 1px solid $color-gray-30;
         border-radius: $br-small;
 
@@ -1239,7 +1239,7 @@
       }
 
       .backend-name {
-        margin-left: $small;
+        margin-left: $size-2;
         color: $color-gray-50;
       }
 
@@ -1271,7 +1271,7 @@
       align-items: center;
       width: 24px;
       height: 24px;
-      margin-left: $small;
+      margin-left: $size-2;
 
       svg {
         width: 16px;
@@ -1303,9 +1303,9 @@
   }
 
   .font-item {
-    padding-left: $big;
-    height: $x-big;
-    max-height: $x-big;
+    padding-left: $size-5;
+    height: $size-6;
+    max-height: $size-6;
     width: 100%;
     display: flex;
     align-items: center;
@@ -1329,7 +1329,7 @@
       // justify-content: center;
       align-items: center;
       // border: 1px solid red;
-      width: $big
+      width: $size-5
     }
 
     .label {
@@ -1458,13 +1458,13 @@
 
   .input-select {
     font-size: $fs11;
-    margin: 0 $x-small;
+    margin: 0 $size-1;
   }
 
   svg {
     width: 15px;
     height: 15px;
-    margin-left: $medium;
+    margin-left: $size-4;
     fill: $color-gray-20;
   }
 
@@ -1481,7 +1481,7 @@
     cursor: pointer;
 
     span {
-      margin-left: $small;
+      margin-left: $size-2;
     }
 
     &:hover,
@@ -1502,9 +1502,9 @@
   color: $color-gray-10;
   cursor: pointer;
   font-size: $fs11;
-  margin: $x-small;
+  margin: $size-1;
   overflow: hidden;
-  padding: $x-small;
+  padding: $size-1;
   padding-right: 20px;
   position: relative;
   text-overflow: ellipsis;
@@ -1544,6 +1544,6 @@
 
   & li img {
     width: 16px;
-    margin-right: $small;
+    margin-right: $size-2;
   }
 }

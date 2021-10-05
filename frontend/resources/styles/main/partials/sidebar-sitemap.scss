@@ -21,7 +21,7 @@
         svg {
           fill: $color-gray-30;
           height: 13px;
-          margin-right: $x-small;
+          margin-right: $size-1;
           width: 13px;
         }
 
@@ -46,7 +46,7 @@
           svg {
             fill: $color-gray-60;
             height: 15px;
-            margin-left: $x-small;
+            margin-left: $size-1;
             width: 15px;
           }
 
@@ -110,7 +110,7 @@
     .element-list-body {
       align-items: center;
       display: flex;
-      padding: $x-small $small;
+      padding: $size-1 $size-2;
       transition: none;
       width: 100%;
 
@@ -146,7 +146,7 @@
   display: flex;
   justify-content: center;
   margin-left: auto;
-  padding: $x-small;
+  padding: $size-1;
 
   svg {
     fill: $color-gray-20;
@@ -175,7 +175,7 @@
 }
 
 .collapse-pages {
-  margin-left: $small;
+  margin-left: $size-2;
 
   svg {
     transform: rotate(90deg);

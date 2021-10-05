@@ -30,7 +30,7 @@
       border-bottom: 1px solid $color-gray-10;
       font-size: $fs14;
       font-weight: bold;
-      padding: 0 $small;
+      padding: 0 $size-2;
       width: 100%;
     }
 
@@ -38,7 +38,7 @@
     .btn-warning {
       font-size: $fs13;
       margin-bottom: .5rem;
-      padding: 8px $small;
+      padding: 8px $size-2;
       width: 90%;
     }
 
@@ -53,13 +53,13 @@
     align-items: center;
     cursor: pointer;
     display: flex;
-    padding: $x-small $small;
+    padding: $size-1 $size-2;
     position: relative;
 
     svg {
       fill: $color-gray-20;
       height: 12px;
-      margin-right: $x-small;
+      margin-right: $size-1;
       width: 12px;
     }
 
@@ -86,7 +86,7 @@
       svg {
         fill: $color-gray-20;
         height: 12px;
-        margin-right: $small;
+        margin-right: $size-2;
         width: 12px;
 
         &:hover {

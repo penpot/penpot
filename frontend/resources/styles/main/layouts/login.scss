@@ -64,7 +64,7 @@
     width: 100%;
 
     *:not(:last-child) {
-      margin-bottom: $medium;
+      margin-bottom: $size-4;
     }
   }
 
@@ -72,7 +72,7 @@
     width: 412px;
 
     .auth-buttons {
-      margin-top: $x-big;
+      margin-top: $size-6;
     }
 
     form {
@@ -81,12 +81,12 @@
   }
 
   .btn-google-auth {
-    margin-bottom: $medium;
+    margin-bottom: $size-4;
     text-decoration: none;
   }
 
   .btn-gitlab-auth {
-    margin-bottom: $medium;
+    margin-bottom: $size-4;
     text-decoration: none;
 
     .logo {
@@ -97,7 +97,7 @@
   }
 
   .btn-github-auth {
-    margin-bottom: $medium;
+    margin-bottom: $size-4;
     text-decoration: none;
 
     .logo {
@@ -119,13 +119,13 @@
     font-size: $fs14;
     flex-direction: column;
     justify-content: space-between;
-    margin-top: $medium;
-    margin-bottom: $medium;
+    margin-top: $size-4;
+    margin-bottom: $size-4;
 
 
     &.demo {
       justify-content: center;
-      margin-top: $big;
+      margin-top: $size-5;
     }
 
     .link-entry {
@@ -141,11 +141,11 @@
 }
 
 .terms-login {
-  bottom: $big;
+  bottom: $size-5;
   font-size: $fs14;
   position: absolute;
 
   span {
-    margin: 0 $small;
+    margin: 0 $size-2;
   }
 }
