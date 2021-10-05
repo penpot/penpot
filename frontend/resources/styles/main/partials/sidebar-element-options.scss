@@ -65,7 +65,7 @@
     .element-set-title {
       color: $color-gray-20;
       display: flex;
-      font-size: $fs13;
+      font-size: $fs14;
       padding: $size-1;
       width: 100%;
       align-items: center;
@@ -254,7 +254,7 @@
 
   .element-set-subtitle {
     color: $color-gray-20;
-    font-size: $fs11;
+    font-size: $fs12;
     width: 64px;
 
     &.wide {
@@ -562,7 +562,7 @@
       font-size: $fs12;
 
       span {
-        font-size: $fs11;
+        font-size: $fs12;
       }
     }
   }
@@ -1010,7 +1010,7 @@
 }
 
 .element-set-label {
-  font-size: $fs11;
+  font-size: $fs12;
   padding: 0.5rem;
   color: $color-gray-10;
 }
@@ -1157,7 +1157,7 @@
 
   .multiple-typography-text,
   .multiple-typography-button {
-    font-size: $fs13;
+    font-size: $fs12;
     display: flex;
     align-items: center;
   }
@@ -1457,7 +1457,7 @@
   justify-content: flex-start;
 
   .input-select {
-    font-size: $fs11;
+    font-size: $fs12;
     margin: 0 $size-1;
   }
 
@@ -1477,7 +1477,7 @@
   }
 
   .fix-when {
-    font-size: $fs11;
+    font-size: $fs12;
     cursor: pointer;
 
     span {
@@ -1501,7 +1501,7 @@
   border-bottom-color: $color-gray-40;
   color: $color-gray-10;
   cursor: pointer;
-  font-size: $fs11;
+  font-size: $fs12;
   margin: $size-1;
   overflow: hidden;
   padding: $size-1;

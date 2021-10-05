@@ -40,7 +40,7 @@
 
     h2 {
       cursor: pointer;
-      font-size: 15px;
+      font-size: $fs14;
       line-height: 1rem;
       font-weight: 500;
       color: $color-black;
@@ -52,7 +52,7 @@
     }
 
     .info {
-      font-size: 15px;
+      font-size: $fs14;
       line-height: 1rem;
       font-weight: unset;
       color: $color-gray-30;
@@ -78,7 +78,7 @@
 }
 
 .recent-files-row-title-info {
-  font-size: $fs15;
+  font-size: $fs14;
 }
 
 .dashboard-table {

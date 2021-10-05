@@ -126,7 +126,7 @@
 
     .selected-count {
       color: $color-primary;
-      font-size: $fs11;
+      font-size: $fs12;
     }
 
     .listing-option-btn {
@@ -164,7 +164,7 @@
     .asset-title {
       display: flex;
       cursor: pointer;
-      font-size: $fs11;
+      font-size: $fs12;
       text-transform: uppercase;
 
       & .num-assets {
@@ -291,7 +291,7 @@
       .editable-label-input {
         border: 1px solid $color-gray-20;
         border-radius: 3px;
-        font-size: $fs11;
+        font-size: $fs12;
         padding: 2px;
         margin: 0;
         height: unset;
