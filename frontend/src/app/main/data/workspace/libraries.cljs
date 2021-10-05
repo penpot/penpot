@@ -516,12 +516,14 @@
   (ptk/reify ::nav-to-component-file
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file    (get-in state [:workspace-libraries file-id])
-            pparams {:project-id (:project-id file)
-                     :file-id (:id file)}
-            qparams {:page-id (first (get-in file [:data :pages]))
-                     :layout :assets}]
-        (rx/of (rt/nav-new-window :workspace pparams qparams))))))
+      (let [file         (get-in state [:workspace-libraries file-id])
+            path-params  {:project-id (:project-id file)
+                          :file-id (:id file)}
+            query-params {:page-id (first (get-in file [:data :pages]))
+                          :layout :assets}]
+        (rx/of (rt/nav-new-window* {:rname :workspace
+                                    :path-params path-params
+                                    :query-params query-params}))))))
 
 (defn ext-library-changed
   [file-id modified-at revn changes]
