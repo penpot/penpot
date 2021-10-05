@@ -6,7 +6,6 @@
 
 (ns app.main.ui.static
   (:require
-   [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -72,7 +71,7 @@
    [:div.desc-message (tr "labels.internal-error.desc-message")]
    [:div.sign-info
     [:a.btn-primary.btn-small
-     {:on-click (st/emitf (dm/assign-exception nil))}
+     {:on-click (st/emitf (rt/assign-exception nil))}
      (tr "labels.retry")]]])
 
 (mf/defc exception-page
