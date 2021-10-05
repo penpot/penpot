@@ -74,10 +74,12 @@
 
         on-new-tab
         (fn [_]
-          (let [pparams {:project-id (:project-id file)
-                         :file-id (:id file)}
-                qparams {:page-id (first (get-in file [:data :pages]))}]
-            (st/emit! (rt/nav-new-window :workspace pparams qparams))))
+          (let [path-params  {:project-id (:project-id file)
+                              :file-id (:id file)}
+                query-params {:page-id (first (get-in file [:data :pages]))}]
+            (st/emit! (rt/nav-new-window* {:rname :workspace
+                                           :path-params path-params
+                                           :query-params query-params}))))
 
         on-duplicate
         (fn [_]

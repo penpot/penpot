@@ -110,21 +110,6 @@
 
 (def navigate nav)
 
-(deftype NavigateNewWindow [id path-params query-params]
-  ptk/EffectEvent
-  (effect [_ state _]
-    (let [router (:router state)
-          path   (resolve router id path-params query-params)
-          uri    (-> (u/uri cfg/public-uri)
-                     (assoc :fragment path))
-          name   (str (name id) "-" (:file-id path-params))]
-      (dom/open-new-window (str uri) name))))
-
-(defn nav-new-window
-  ([id] (nav-new-window id nil nil))
-  ([id path-params] (nav-new-window id path-params nil))
-  ([id path-params query-params] (NavigateNewWindow. id path-params query-params)))
-
 (defn nav-new-window*
   [{:keys [rname path-params query-params name]}]
   (ptk/reify ::nav-new-window
