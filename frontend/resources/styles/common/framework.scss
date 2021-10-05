@@ -14,7 +14,7 @@
   border-radius: 3px;
   cursor: pointer;
   display: flex;
-  font-size: $fs13;
+  font-size: $fs12;
   height: 30px;
   justify-content: center;
   min-width: 25px;
@@ -555,7 +555,7 @@ input.element-name {
   border: 1px solid $color-gray-40;
   border-radius: $br-small;
   color: $color-gray-60;
-  font-size: $fs13;
+  font-size: $fs12;
   margin: 0px;
   padding: 3px;
   width: 100%;
@@ -713,7 +713,7 @@ input[type=radio]:checked + label:before{
       position: absolute;
       left: 3.2px;
       top: 0;
-      font-size: $fs11;
+      font-size: $fs12;
       transition: border 0.2s linear 0s, color 0.2s linear 0s;
     }
 
@@ -969,7 +969,7 @@ input[type=range]:focus::-ms-fill-upper {
       border-radius: $br-small;
       color: $color-gray-60;
       content: attr(alt);
-      font-size: $fs11;
+      font-size: $fs12;
       font-weight: bold;
       padding: $size-1;
       position: absolute;
@@ -1175,7 +1175,7 @@ input[type=range]:focus::-ms-fill-upper {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: $fs15;
+        font-size: $fs14;
       }
     }
   }

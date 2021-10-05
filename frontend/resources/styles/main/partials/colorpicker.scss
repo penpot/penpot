@@ -280,14 +280,14 @@
       margin: 0;
       border: 1px solid $color-gray-10;
       border-radius: 2px;
-      font-size: $fs11;
+      font-size: $fs12;
       height: 1.5rem;
       padding: 0 $size-1;
       color: $color-gray-40;
     }
 
     label {
-      font-size: $fs11;
+      font-size: $fs12;
     }
   }
 
@@ -434,7 +434,7 @@
 
     .input-text {
       color: $color-gray-60;
-      font-size: $fs13;
+      font-size: $fs12;
       margin: 5px;
       padding: 5px;
       width: 100%;
@@ -484,7 +484,7 @@
   position: relative;
 
   .color-name {
-    font-size: $fs13;
+    font-size: $fs12;
     margin: 5px 6px 0px 6px;
   }
 
@@ -500,7 +500,7 @@
       margin: 5px 0 0 0;
       padding: 0 $size-1;
       width: 84px;
-      font-size: $fs13;
+      font-size: $fs12;
 
       &:focus {
         border-color: $color-primary !important;

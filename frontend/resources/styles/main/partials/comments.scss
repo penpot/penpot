@@ -12,7 +12,7 @@
     box-sizing: border-box;
     box-shadow: 0px 4px 4px rgba($color-black, 0.25);
 
-    font-size: $fs13;
+    font-size: $fs12;
     width: 30px;
     height: 30px;
     border-radius: 50%;
@@ -69,7 +69,7 @@
 
     textarea {
       font-family: "worksans", sans-serif;
-      font-size: $fs13;
+      font-size: $fs12;
       min-height: 32px;
       outline: none;
       overflow: hidden;
@@ -120,7 +120,7 @@
         .fullname {
           font-weight: 700;
           color: $color-gray-60;
-          font-size: $fs13;
+          font-size: $fs12;
 
           @include text-ellipsis;
           width: 174px;
