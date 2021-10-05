@@ -8,6 +8,7 @@
   (:require
    ["ua-parser-js" :as UAParser]
    [app.common.data :as d]
+   [app.common.logging :as log]
    [app.config :as cf]
    [app.main.repo :as rp]
    [app.util.globals :as g]
@@ -137,13 +138,10 @@
         mdata (meta event)
         data  (if (satisfies? IDeref event)
                 (deref event)
-                {})
-
-        name  (or (::name mdata)
-                  (name type))]
+                {})]
 
     {:type    "action"
-     :name    (name type)
+     :name    (or (::name mdata) (name type))
      :props   (merge data (d/without-nils (::props mdata)))
      :context (d/without-nils
                {:event-origin (::origin mdata)
@@ -195,33 +193,26 @@
   [events]
   (if (seq events)
     (let [uri    (u/join cf/public-uri "api/audit/events")
-          params {:events events}]
-      (->> (http/send! {:uri uri
-                        :method :post
-                        :body (http/transit-data params)})
+          params {:uri uri
+                  :method :post
+                  :body (http/transit-data {:events events})}]
+      (->> (http/send! params)
            (rx/mapcat rp/handle-response)))
     (rx/of nil)))
 
-(defmethod ptk/resolve ::persistence
-  [_ {:keys [buffer] :as params}]
-  (ptk/reify ::persistence
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [profile-id (:profile-id state)
-            events     (into [] (take max-buffer-size) @buffer)]
-        (when (seq events)
-          (->> events
-               (filterv #(= profile-id (:profile-id %)))
-               (persist-events)
-               (rx/subs (fn [_]
-                          (swap! buffer remove-from-buffer (count events))))))))))
-
 (defn initialize
   []
-  (let [buffer (atom #queue [])]
-    (ptk/reify ::initialize
-      ptk/WatchEvent
-      (watch [_ _ stream]
+  (log/info :msg "initialize audit log")
+  (ptk/reify ::initialize
+    ptk/EffectEvent
+    (effect [_ _ stream]
+      (let [session (atom nil)
+            buffer  (atom #queue [])
+            profile (->> (rx/from-atom storage {:emit-current-value? true})
+                         (rx/map :profile)
+                         (rx/map :id)
+                         (rx/dedupe))]
+
         (->> (rx/merge
               (->> (rx/from-atom buffer)
                    (rx/filter #(pos? (count %)))
@@ -229,42 +220,40 @@
               (->> stream
                    (rx/filter (ptk/type? :app.main.data.users/logout))
                    (rx/observe-on :async)))
-             (rx/map #(ptk/event ::persistence {:buffer buffer}))))
+             (rx/map (fn [_]
+                       (into [] (take max-buffer-size) @buffer)))
+             (rx/with-latest-from profile)
+             (rx/mapcat (fn [[chunk profile-id]]
+                          (let [events (filterv #(= profile-id (:profile-id %)) chunk)]
+                            (->> (persist-events events)
+                                 (rx/map (constantly chunk))))))
+             (rx/subs (fn [chunk]
+                        (swap! buffer remove-from-buffer (count chunk)))))
 
-      ptk/EffectEvent
-      (effect [_ _ stream]
-        (let [session (atom nil)
 
-              profile (->> (rx/from-atom storage {:emit-current-value? true})
-                           (rx/map :profile)
-                           (rx/map :id)
-                           (rx/dedupe))
+        (->> stream
+             (rx/with-latest-from profile)
+             (rx/map (fn [result]
+                       (let [event      (aget result 0)
+                             profile-id (aget result 1)]
+                         (some-> (process-event event)
+                                 (update :profile-id #(or % profile-id))))))
+             (rx/filter :profile-id)
+             (rx/map (fn [event]
+                       (let [session* (or @session (dt/now))
+                             context  (-> @context
+                                          (d/merge (:context event))
+                                          (assoc :session session*))]
+                         (reset! session session*)
+                         (-> event
+                             (assoc :timestamp (dt/now))
+                             (assoc :context context)))))
 
-              source  (->> stream
-                           (rx/with-latest-from profile)
-                           (rx/map (fn [result]
-                                     (let [event      (aget result 0)
-                                           profile-id (aget result 1)]
-                                       (some-> (process-event event)
-                                               (update :profile-id #(or % profile-id))))))
-                           (rx/filter :profile-id)
-                           (rx/map (fn [event]
-                                     (let [session* (or @session (dt/now))
-                                           context  (-> @context
-                                                        (d/merge (:context event))
-                                                        (assoc :session session*))]
-                                       (reset! session session*)
-                                       (-> event
-                                           (assoc :timestamp (dt/now))
-                                           (assoc :context context)))))
-                           (rx/share))]
-          (->> source
-               (rx/switch-map #(rx/timer (inst-ms session-timeout)))
-               (rx/subs #(reset! session nil)))
+             (rx/tap (fn [event]
+                       (swap! buffer append-to-buffer event)))
 
-          (->> source
-               (rx/subs (fn [event]
-                          (swap! buffer append-to-buffer event)))))))))
+             (rx/switch-map #(rx/timer (inst-ms session-timeout)))
+             (rx/subs #(reset! session nil)))))))
 
 (defmethod ptk/resolve ::initialize
   [_ params]
