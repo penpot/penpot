@@ -9,7 +9,6 @@
   (:require
    [app.common.exceptions :as ex]
    [app.config :as cf]
-   [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.sentry :as sentry]
