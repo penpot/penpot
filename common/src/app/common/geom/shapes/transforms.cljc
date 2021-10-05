@@ -18,7 +18,6 @@
    [app.common.spec :as us]
    [app.common.text :as txt]))
 
-
 ;; --- Relative Movement
 
 (defn- move-selrect [selrect {dx :x dy :y}]
@@ -681,3 +680,12 @@
       (assoc :resize-transform (:resize-transform parent-modifiers)
              :resize-transform-inverse (:resize-transform-inverse parent-modifiers)))))
 
+
+(defn selection-rect
+  "Returns a rect that contains all the shapes and is aware of the
+  rotation of each shape. Mainly used for multiple selection."
+  [shapes]
+  (->> shapes
+       (transform-shape)
+       (map (comp gpr/points->selrect :points))
+       (gpr/join-selrects)))

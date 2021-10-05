@@ -79,7 +79,7 @@
 
         text-shapes
         (->> objects
-             (filter (fn [[id shape]] (= :text (:type shape))))
+             (filter (fn [[_ shape]] (= :text (:type shape))))
              (mapv second))]
 
     (mf/use-effect
