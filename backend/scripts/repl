@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export PENPOT_FLAGS="enable-asserts $PENPOT_FLAGS"
+export PENPOT_FLAGS="enable-asserts enable-audit-log $PENPOT_FLAGS"
 
 export OPTIONS="-A:jmx-remote:dev -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -J-Dlog4j2.configurationFile=log4j2-devenv.xml -J-Djdk.attach.allowAttachSelf -J-XX:+UseZGC -J-XX:ConcGCThreads=1 -J-XX:-OmitStackTraceInFastThrow -J-Xms50m -J-Xmx512m";
 # export OPTIONS="$OPTIONS -J-XX:+UnlockDiagnosticVMOptions";
