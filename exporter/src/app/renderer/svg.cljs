@@ -210,11 +210,10 @@
                    :height (.. attrs -height -value)
                    :colors (.split colors ",")}))
 
-          (extract-single-node [node]
+          (extract-single-node [[shot node]]
             (log/trace :fn :extract-single-node)
 
-            (p/let [attrs (bw/eval! node extract-element-attrs)
-                    shot  (bw/screenshot node {:omit-background? true :type "png"})]
+            (p/let [attrs (bw/eval! node extract-element-attrs)]
               {:id     (unchecked-get attrs "id")
                :x      (unchecked-get attrs "x")
                :y      (unchecked-get attrs "y")
@@ -223,13 +222,21 @@
                :colors (vec (unchecked-get attrs "colors"))
                :data   shot}))
 
+          (resolve-text-node [page node]
+            (p/let [attrs (bw/eval! node extract-element-attrs)
+                    id (unchecked-get attrs "id")
+                    text-node (bw/select page (str "#screenshot-text-" id " foreignObject"))
+                    shot (bw/screenshot text-node {:omit-background? true :type "png"})]
+              [shot node]))
+
           (clean-temp-data [{:keys [tempdir] :as node}]
             (p/do!
              (sh/rmdir! tempdir)
              (dissoc node :tempdir)))
 
-          (process-text-node [item]
+          (process-text-node [page item]
             (-> (p/resolved item)
+                (p/then (partial resolve-text-node page))
                 (p/then extract-single-node)
                 (p/then trace-node)
                 (p/then clean-temp-data)))
@@ -237,7 +244,7 @@
           (process-text-nodes [page]
             (log/trace :fn :process-text-nodes)
             (-> (bw/select-all page "#screenshot foreignObject")
-                (p/then (fn [nodes] (p/all (map process-text-node nodes))))))
+                (p/then (fn [nodes] (p/all (map (partial process-text-node page) nodes))))))
 
           (extract-svg [page]
             (p/let [dom     (bw/select page "#screenshot")
@@ -271,7 +278,7 @@
             (p/let [page (render-in-page page rctx)]
               (extract-svg page)))]
 
-    (let [path   (str "/render-object/" file-id "/" page-id "/" object-id)
+    (let [path   (str "/render-object/" file-id "/" page-id "/" object-id "?render-texts=true")
           uri    (-> (u/uri (cf/get :public-uri))
                      (assoc :path "/")
                      (assoc :fragment path))

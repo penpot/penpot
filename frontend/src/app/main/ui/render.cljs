@@ -27,7 +27,7 @@
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects object-id zoom] :or {zoom 1} :as props}]
+  [{:keys [objects object-id zoom render-texts?] :or {zoom 1} :as props}]
   (let [object   (get objects object-id)
         frame-id (if (= :frame (:type object))
                    (:id object)
@@ -76,7 +76,11 @@
         (mf/use-memo
          (mf/deps objects)
          #(exports/shape-wrapper-factory objects))
-        ]
+
+        text-shapes
+        (->> objects
+             (filter (fn [[id shape]] (= :text (:type shape))))
+             (mapv second))]
 
     (mf/use-effect
      (mf/deps width height)
@@ -100,7 +104,19 @@
         :frame [:& frame-wrapper {:shape object :view-box vbox}]
         :group [:> shape-container {:shape object}
                 [:& group-wrapper {:shape object}]]
-        [:& shape-wrapper {:shape object}])]]))
+        [:& shape-wrapper {:shape object}])]
+
+     ;; Auxiliary SVG for rendering text-shapes
+     (when render-texts?
+       (for [object text-shapes]
+         [:svg {:id (str "screenshot-text-" (:id object))
+                :view-box (str "0 0 " (:width object) " " (:height object))
+                :width (:width object)
+                :height (:height object)
+                :version "1.1"
+                :xmlns "http://www.w3.org/2000/svg"
+                :xmlnsXlink "http://www.w3.org/1999/xlink"}
+          [:& shape-wrapper {:shape (-> object (assoc :x 0 :y 0))}]]))]))
 
 (defn- adapt-root-frame
   [objects object-id]
@@ -120,7 +136,7 @@
 ;; backend entry point for download only the data of single page.
 
 (mf/defc render-object
-  [{:keys [file-id page-id object-id] :as props}]
+  [{:keys [file-id page-id object-id render-texts?] :as props}]
   (let [objects (mf/use-state nil)]
     (mf/use-effect
      (mf/deps file-id page-id object-id)
@@ -140,6 +156,7 @@
     (when @objects
       [:& object-svg {:objects @objects
                       :object-id object-id
+                      :render-texts? render-texts?
                       :zoom 1}])))
 
 (mf/defc render-sprite
