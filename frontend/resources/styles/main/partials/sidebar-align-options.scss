@@ -11,7 +11,7 @@
   height: 40px;
 
   .align-group {
-    padding: 0 $x-small;
+    padding: 0 $size-1;
     display: flex;
     justify-content: flex-start;
     width: 50%;
@@ -28,7 +28,7 @@
     height: 30px;
     justify-content: center;
     margin: 5px 0;
-    padding: $small $x-small;
+    padding: $size-2 $size-1;
     width: 25%;
 
     svg {

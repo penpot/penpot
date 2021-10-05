@@ -7,12 +7,12 @@
 
 .interactions-help {
   font-size: $fs12;
-  padding: 7px $medium;
+  padding: 7px $size-4;
   margin: 0 -7px;
   text-align: center;
 
   &.separator {
-    padding-bottom: $medium;
+    padding-bottom: $size-4;
     border-bottom: 1px solid $color-black;
   }
 }
@@ -20,7 +20,7 @@
 .interactions-help-icon {
   height: 32px;
   width: 32px;
-  margin: $medium auto;
+  margin: $size-4 auto;
 
   svg {
     fill: $color-gray-40;
@@ -59,14 +59,14 @@
 
   &.separator {
     border-top: 1px solid $color-black;
-    margin-top: $x-small;
+    margin-top: $size-1;
   }
 }
 
 .interactions-pos-buttons {
-  margin-top: $small;
-  padding-top: $small;
-  padding-bottom: $small;
+  margin-top: $size-2;
+  padding-top: $size-2;
+  padding-bottom: $size-2;
   justify-content: space-between;
 
   .element-set-actions-button {

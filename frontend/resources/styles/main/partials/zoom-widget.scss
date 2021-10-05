@@ -6,7 +6,7 @@
   span {
     color: $color-gray-10;
     font-size: $fs14;
-    margin-left: $x-small;
+    margin-left: $size-1;
   }
 
   .icon svg {
@@ -31,7 +31,7 @@
       cursor: pointer;
       font-size: $fs14;
       display: flex;
-      padding: $small;
+      padding: $size-2;
 
       span {
         color: $color-gray-20;
