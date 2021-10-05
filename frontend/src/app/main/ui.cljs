@@ -26,7 +26,6 @@
    [app.main.ui.workspace :as workspace]
    [app.util.router :as rt]
    [cljs.spec.alpha :as s]
-   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 ;; --- Routes
