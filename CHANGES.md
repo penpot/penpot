@@ -12,6 +12,7 @@
 
 - Fix problem with overflow dropdown on stroke-cap [#1216](https://github.com/penpot/penpot/issues/1216)
 - Fix menu context for single element nested in components [#1186](https://github.com/penpot/penpot/issues/1186)
+- Fix error screen when operations over comments fail [#1219](https://github.com/penpot/penpot/issues/1219)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
