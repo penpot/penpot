@@ -19,6 +19,7 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
@@ -134,10 +135,12 @@
                   :color color}
             uchg {:type :mod-color
                   :color prev}]
-        (rx/of (dch/commit-changes {:redo-changes [rchg]
+        (rx/of (dwu/start-undo-transaction)
+               (dch/commit-changes {:redo-changes [rchg]
                                     :undo-changes [uchg]
                                     :origin it})
-               (sync-file (:current-file-id state) file-id))))))
+               (sync-file (:current-file-id state) file-id)
+               (dwu/commit-undo-transaction))))))
 
 (defn delete-color
   [{:keys [id] :as params}]
@@ -244,10 +247,12 @@
                   :typography typography}
             uchg {:type :mod-typography
                   :typography prev}]
-        (rx/of (dch/commit-changes {:redo-changes [rchg]
+        (rx/of (dwu/start-undo-transaction)
+               (dch/commit-changes {:redo-changes [rchg]
                                     :undo-changes [uchg]
                                     :origin it})
-               (sync-file (:current-file-id state) file-id))))))
+               (sync-file (:current-file-id state) file-id)
+               (dwu/commit-undo-transaction))))))
 
 (defn delete-typography
   [id]
