@@ -119,7 +119,8 @@
                            (render-template))]
         (if result
           {:status 200
-           :headers {"content-type" "text/html; charset=utf-8"}
+           :headers {"content-type" "text/html; charset=utf-8"
+                     "x-robots-tag" "noindex"}
            :body result}
           {:status 404
            :body "not found"})))))
