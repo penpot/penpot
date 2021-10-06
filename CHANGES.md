@@ -21,6 +21,7 @@
 - Add links for terms of service and privacy policy in register checkbox [Taiga #2020](https://tree.taiga.io/project/penpot/issue/2020)
 - Allow three character hex and web colors in color picker hex input [#1184](https://github.com/penpot/penpot/issues/1184)
 - Allow lowercase search for fonts [#1180](https://github.com/penpot/penpot/issues/1180)
+- Fix group renaming problem [Taiga #1969](https://tree.taiga.io/project/penpot/issue/1969)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes

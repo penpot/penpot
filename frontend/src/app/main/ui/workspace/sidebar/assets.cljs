@@ -230,7 +230,7 @@
 
           on-fold-group
           (mf/use-callback
-            (mf/deps group-open?)
+            (mf/deps file-id box path group-open?)
             (fn [event]
               (dom/stop-propagation event)
               (st/emit! (dwl/set-assets-group-open file-id
