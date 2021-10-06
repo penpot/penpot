@@ -6,6 +6,7 @@
 
 (ns app.main.ui.viewer
   (:require
+   [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
@@ -38,13 +39,9 @@
   [{:keys [params data]}]
 
   (let [{:keys [page-id section index]} params
+        {:keys [file users project perms]} data
 
         local   (mf/deref refs/viewer-local)
-
-        file    (:file data)
-        users   (:users data)
-        project (:project data)
-        perms   (:permissions data)
 
         page-id (or page-id (-> file :data :pages first))
 
@@ -77,6 +74,9 @@
             (st/emit! (dv/close-overlay (:id frame)))))]
 
     (hooks/use-shortcuts ::viewer sc/shortcuts)
+
+    (when (nil? page)
+      (ex/raise :type :not-found))
 
     ;; Set the page title
     (mf/use-effect
