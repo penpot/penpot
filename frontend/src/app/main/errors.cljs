@@ -142,17 +142,23 @@
     (when expl (js/console.error expl))
     (js/console.groupEnd msg)))
 
+(defn on-unhandled-error
+  [error]
+  (if (instance? ExceptionInfo error)
+    (-> error sentry/capture-exception ex-data ptk/handle-error)
+    (let [hint (ex-message error)
+          msg  (str "Unhandled Internal Error: " hint)]
+      (sentry/capture-exception error)
+      (ts/schedule (st/emitf (rt/assign-exception error)))
+      (js/console.group msg)
+      (ex/ignoring (js/console.error error))
+      (js/console.groupEnd msg))))
+
 (defonce uncaught-error-handler
   (letfn [(on-error [event]
             (.preventDefault ^js event)
-            (when-let [error (unchecked-get event "error")]
-              (let [hint (ex-message error)
-                    msg  (str "Unhandled Internal Error: " hint)]
-                (sentry/capture-exception error)
-                (ts/schedule (st/emitf (rt/assign-exception error)))
-                (js/console.group msg)
-                (ex/ignoring (js/console.error error))
-                (js/console.groupEnd msg))))]
+            (some-> (unchecked-get event "error")
+                    (on-unhandled-error)))]
     (.addEventListener js/window "error" on-error)
     (fn []
       (.removeEventListener js/window "error" on-error))))
