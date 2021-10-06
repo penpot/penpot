@@ -12,7 +12,8 @@
    [app.common.geom.shapes.common :as gsc]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
-   [app.common.path.commands :as upc]))
+   [app.common.path.commands :as upc]
+   [app.common.path.subpaths :as sp]))
 
 (def ^:const curve-curve-precision 0.1)
 (def ^:const curve-range-precision 2)
@@ -818,19 +819,33 @@
 
 (defn is-point-in-content?
   [point content]
+  (let [selrect (content->selrect content)
+        ray-line [point (gpt/point (inc (:x point)) (:y point))]
 
-  (letfn [(cast-ray [cmd]
-            (let [ray-line [point (gpt/point (inc (:x point)) (:y point))]]
-              (case (:command cmd)
-                :line-to  (ray-line-intersect  point (command->line cmd))
-                :curve-to (ray-curve-intersect ray-line (command->bezier cmd))
-                #_:else   [])))]
+        closed-subpaths
+        (->> content
+             (sp/close-subpaths)
+             (sp/get-subpaths)
+             (filterv sp/is-closed?))
 
-    (->> content
-         (mapcat cast-ray)
-         (map second)
-         (reduce +)
-         (not= 0))))
+        cast-ray
+        (fn [cmd]
+          (case (:command cmd)
+            :line-to  (ray-line-intersect  point (command->line cmd))
+            :curve-to (ray-curve-intersect ray-line (command->bezier cmd))
+            #_:else   []))
+
+        is-point-in-subpath?
+        (fn [subpath]
+          (and (gpr/contains-point? (content->selrect (:data subpath)) point)
+               (->> (:data subpath)
+                    (mapcat cast-ray)
+                    (map second)
+                    (reduce +)
+                    (not= 0))))]
+
+    (and (gpr/contains-point? selrect point)
+         (some is-point-in-subpath? closed-subpaths))))
 
 (defn split-line-to
   "Given a point and a line-to command will create a two new line-to commands

@@ -116,6 +116,9 @@
     (->> subpaths
          (reduce merge-with-candidate [candidate []]))))
 
+(defn is-closed? [subpath]
+  (pt= (:from subpath) (:to subpath)))
+
 (defn close-subpaths
   "Searches a path for posible supaths that can create closed loops and merge them"
   [content]
@@ -127,7 +130,7 @@
 
           (if (some? current)
             (let [[new-current new-subpaths]
-                  (if (pt= (:from current) (:to current))
+                  (if (is-closed? current)
                     [current subpaths]
                     (merge-paths current subpaths))]
 
