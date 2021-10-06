@@ -25,6 +25,23 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
+(defn bounds
+  [object objects]
+  (if (= :group (:type object))
+    (let [children-bounds
+          (into []
+                (comp  (map #(get objects %))
+                       (map #(bounds % objects)))
+                (:shapes object))]
+      (gsh/join-rects children-bounds))
+
+    (let [padding (filters/calculate-padding object)]
+      (-> (filters/get-filters-bounds object)
+          (update :x - padding)
+          (update :y - padding)
+          (update :width + (* 2 padding))
+          (update :height + (* 2 padding))))))
+
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
   [{:keys [objects object-id zoom render-texts?] :or {zoom 1} :as props}]
@@ -47,20 +64,10 @@
         objects  (reduce updt-fn objects mod-ids)
         object   (get objects object-id)
 
-        ;; We need to get the shadows/blurs paddings to create the viewbox properly
-        {:keys [x y width height]} (filters/get-filters-bounds object)
+        {:keys [x y width height] :as bs} (bounds object objects)
+        [_ _ width height :as coords] (->> [x y width height] (map #(* % zoom)))
 
-        x        (* x zoom)
-        y        (* y zoom)
-        width    (* width zoom)
-        height   (* height zoom)
-
-        padding (* (filters/calculate-padding object) zoom)
-
-        vbox     (str/join " " [(- x padding)
-                                (- y padding)
-                                (+ width padding padding)
-                                (+ height padding padding)])
+        vbox (str/join " " coords)
 
         frame-wrapper
         (mf/use-memo
@@ -84,14 +91,14 @@
 
     (mf/use-effect
      (mf/deps width height)
-     #(dom/set-page-style {:size (str (mth/ceil (+ width padding padding)) "px "
-                                      (mth/ceil (+ height padding padding)) "px")}))
+     #(dom/set-page-style {:size (str (mth/ceil width) "px "
+                                      (mth/ceil height) "px")}))
 
     [:& (mf/provider embed/context) {:value true}
      [:svg {:id "screenshot"
             :view-box vbox
-            :width (+ width padding padding)
-            :height (+ height padding padding)
+            :width width
+            :height height
             :version "1.1"
             :xmlns "http://www.w3.org/2000/svg"
             :xmlnsXlink "http://www.w3.org/1999/xlink"
