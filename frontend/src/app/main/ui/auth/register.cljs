@@ -210,8 +210,13 @@
      [:div.fields-row
       [:& fm/input {:name :accept-terms-and-privacy
                     :class "check-primary"
-                    :label (tr "auth.terms-privacy-agreement")
-                    :type "checkbox"}]]
+                    :type "checkbox"}
+       [:span
+        (tr "auth.terms-privacy-agreement")
+        [:div
+         [:a {:href "https://penpot.app/terms.html" :target "_blank"} (tr "auth.terms-of-service")]
+         [:span ",\u00A0"]
+         [:a {:href "https://penpot.app/privacy.html" :target "_blank"} (tr "auth.privacy-policy")]]]]]
 
      ;; (when (contains? @cf/flags :newsletter-registration-check)
      ;;   [:div.fields-row

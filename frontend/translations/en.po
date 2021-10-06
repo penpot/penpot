@@ -163,6 +163,12 @@ msgstr ""
 "When creating a new account, you agree to our terms of service and privacy "
 "policy."
 
+msgid "auth.terms-of-service"
+msgstr "Terms of service"
+
+msgid "auth.privacy-policy"
+msgstr "Privacy policy"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "We've sent a verification email to"
