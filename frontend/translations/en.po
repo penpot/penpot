@@ -3183,3 +3183,6 @@ msgstr "Flatten"
 
 msgid "workspace.shape.menu.transform-to-path"
 msgstr "Transform to path"
+
+msgid "workspace.options.search-font"
+msgstr "Search font"

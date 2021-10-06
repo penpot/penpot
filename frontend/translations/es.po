@@ -3071,3 +3071,6 @@ msgstr "Aplanar"
 
 msgid "workspace.shape.menu.transform-to-path"
 msgstr "Convertir en vector"
+
+msgid "workspace.options.search-font"
+msgstr "Buscar fuente"

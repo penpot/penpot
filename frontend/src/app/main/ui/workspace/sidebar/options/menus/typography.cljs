@@ -74,7 +74,8 @@
 
 (defn filter-fonts
   [{:keys [term backends]} fonts]
-  (let [xform (cond-> (map identity)
+  (let [term (str/lower term)
+        xform (cond-> (map identity)
                 (seq term)
                 (comp (filter #(str/includes? (str/lower (:name %)) term)))
 
@@ -175,7 +176,7 @@
     [:div.font-selector
      [:div.font-selector-dropdown
       [:header
-       [:input {:placeholder "Search font"
+       [:input {:placeholder (tr "workspace.options.search-font")
                 :value (:term @state)
                 :ref input
                 :spell-check false
