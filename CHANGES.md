@@ -19,6 +19,7 @@
 - Fix text editor enter behaviour with centered texts [Taiga #2126](https://tree.taiga.io/project/penpot/issue/2126)
 - Fix residual stroke on imported svg [Taiga #2125](https://tree.taiga.io/project/penpot/issue/2125)
 - Add links for terms of service and privacy policy in register checkbox [Taiga #2020](https://tree.taiga.io/project/penpot/issue/2020)
+- Allow three character hex and web colors in color picker hex input [#1184](https://github.com/penpot/penpot/issues/1184)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes

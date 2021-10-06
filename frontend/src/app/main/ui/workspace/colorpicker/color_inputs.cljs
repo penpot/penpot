@@ -27,15 +27,27 @@
               :v     (mf/use-ref nil)
               :alpha (mf/use-ref nil)}
 
+        setup-hex-color
+        (fn [hex]
+          (let [[r g b] (uc/hex->rgb hex)
+                [h s v] (uc/hex->hsv hex)]
+            (on-change {:hex hex
+                        :h h :s s :v v
+                        :r r :g g :b b})))
         on-change-hex
         (fn [e]
           (let [val (-> e dom/get-target-val parse-hex)]
             (when (uc/hex? val)
-              (let [[r g b] (uc/hex->rgb val)
-                    [h s v] (uc/hex->hsv hex)]
-                (on-change {:hex val
-                            :h h :s s :v v
-                            :r r :g g :b b})))))
+              (setup-hex-color val))))
+
+        on-blur-hex
+        (fn [e]
+          (let [val (-> e dom/get-target-val)
+                val (cond
+                      (uc/color? val) (uc/parse-color val)
+                      (uc/hex? (parse-hex val)) (parse-hex val))]
+            (when (some? val)
+              (setup-hex-color val))))
 
         on-change-property
         (fn [property max-value]
@@ -81,9 +93,10 @@
     [:div.color-values
      {:class (when disable-opacity "disable-opacity")}
      [:input {:id "hex-value"
-                        :ref (:hex refs)
-                        :default-value hex
-                        :on-change on-change-hex}]
+              :ref (:hex refs)
+              :default-value hex
+              :on-change on-change-hex
+              :on-blur on-blur-hex}]
 
      (if (= type :rgb)
        [:*
