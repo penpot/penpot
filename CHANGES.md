@@ -17,6 +17,7 @@
 - Fix problem with text margin while rendering [#1231](https://github.com/penpot/penpot/issues/1231)
 - Fix problem with masked texts on exporting [Taiga #2116](https://tree.taiga.io/project/penpot/issue/2116)
 - Fix text editor enter behaviour with centered texts [Taiga #2126](https://tree.taiga.io/project/penpot/issue/2126)
+- Fix residual stroke on imported svg [Taiga #2125](https://tree.taiga.io/project/penpot/issue/2125)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes

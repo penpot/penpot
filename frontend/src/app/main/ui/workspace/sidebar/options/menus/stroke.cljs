@@ -73,7 +73,7 @@
                 :group (tr "workspace.options.group-stroke")
                 (tr "workspace.options.stroke"))
 
-        show-options (not= (:stroke-style values :none) :none)
+        show-options (not= (or (:stroke-style values) :none) :none)
         show-caps    (and show-caps
                           (not (#{:inner :outer} (:stroke-alignment values))))
 
