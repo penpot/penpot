@@ -1324,10 +1324,33 @@
   (ptk/reify ::show-context-menu
     ptk/UpdateEvent
     (update [_ state]
-      (let [mdata (cond-> params
-                    (some? shape)
-                    (assoc :selected
-                           (wsh/lookup-selected state)))]
+      (let [selected (wsh/lookup-selected state)
+            objects (wsh/lookup-page-objects state)
+
+            selected-with-children
+            (into []
+                  (mapcat #(cp/get-object-with-children % objects))
+                  selected)
+
+            head (get objects (first selected))
+
+            first-not-group-like?
+            (and (= (count selected) 1)
+                 (not (contains? #{:group :bool} (:type head))))
+
+            has-invalid-shapes? (->> selected-with-children
+                                     (some (comp #{:frame :text} :type)))
+
+            disable-booleans? (or (empty? selected) has-invalid-shapes? first-not-group-like?)
+            disable-flatten? (or (empty? selected) has-invalid-shapes?)
+
+            mdata
+            (-> params
+                (assoc :disable-booleans? disable-booleans?)
+                (assoc :disable-flatten? disable-flatten?)
+                (cond-> (some? shape)
+                  (assoc :selected selected)))]
+
         (assoc-in state [:workspace-local :context-menu] mdata)))))
 
 (defn show-shape-context-menu
