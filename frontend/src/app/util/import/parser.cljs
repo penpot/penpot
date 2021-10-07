@@ -477,7 +477,6 @@
    :suffix (get-meta node :suffix)
    :scale  (get-meta node :scale d/parse-double)})
 
-
 (defn parse-grid-node [node]
   (let [attrs (-> node :attrs remove-penpot-prefix)
         color {:color (:color attrs)
@@ -494,8 +493,18 @@
      :params  params}))
 
 (defn parse-grids [node]
-  (let [grid-node (get-data node :penpot:grids)]
-    (->> grid-node :content (mapv parse-grid-node))))
+  (let [grids-node (get-data node :penpot:grids)]
+    (->> grids-node :content (mapv parse-grid-node))))
+
+(defn parse-flow-node [node]
+  (let [attrs (-> node :attrs remove-penpot-prefix)]
+    {:id             (uuid/next)
+     :name           (-> attrs :name)
+     :starting-frame (-> attrs :starting-frame uuid)}))
+
+(defn parse-flows [node]
+  (let [flows-node (get-data node :penpot:flows)]
+    (->> flows-node :content (mapv parse-flow-node))))
 
 (defn extract-from-data
   ([node tag]
@@ -725,24 +734,35 @@
 
 (defn parse-page-data
   [node]
-  (let [style (parse-style (get-in node [:attrs :style]))
+  (let [style      (parse-style (get-in node [:attrs :style]))
         background (:background style)
-        grids  (->> (parse-grids node)
-                    (group-by :type)
-                    (d/mapm (fn [_ v] (-> v first :params))))]
+        grids      (->> (parse-grids node)
+                        (group-by :type)
+                        (d/mapm (fn [_ v] (-> v first :params))))
+        flows      (parse-flows node)]
     (cond-> {}
       (some? background)
       (assoc-in [:options :background] background)
 
       (d/not-empty? grids)
-      (assoc-in [:options :saved-grids] grids))))
+      (assoc-in [:options :saved-grids] grids)
+
+      (d/not-empty? flows)
+      (assoc-in [:options :flows] flows))))
 
 (defn parse-interactions
   [node]
   (let [interactions-node (get-data node :penpot:interactions)]
     (->> (find-all-nodes interactions-node :penpot:interaction)
          (mapv (fn [node]
-                 {:destination (get-meta node :destination uuid/uuid)
-                  :action-type (get-meta node :action-type keyword)
-                  :event-type  (get-meta node :event-type keyword)})))))
+                 {:event-type          (get-meta node :event-type keyword)
+                  :action-type         (get-meta node :action-type keyword)
+                  :delay               (get-meta node :delay d/parse-double)
+                  :destination         (get-meta node :destination uuid/uuid)
+                  :overlay-pos-type    (get-meta node :overlay-pos-type keyword)
+                  :overlay-position-x  (get-meta node :overlay-position-x d/parse-double)
+                  :overlay-position-y  (get-meta node :overlay-position-x d/parse-double)
+                  :url                 (get-meta node :url str)
+                  :close-click-outside (get-meta node :close-click-outside str->bool)
+                  :background-overlay  (get-meta node :background-overlay str->bool)})))))
 
