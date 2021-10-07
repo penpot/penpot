@@ -315,7 +315,10 @@
         page-data (-> (cip/parse-page-data content)
                       (assoc :name page-name)
                       (assoc :id (resolve page-id)))
-        file (-> file (fb/add-page page-data))]
+        flows     (->> (get-in page-data [:options :flows])
+                       (mapv #(update % :starting-frame resolve)))
+        page-data (d/assoc-in-when page-data [:options :flows] flows)
+        file      (-> file (fb/add-page page-data))]
     (->> (rx/from nodes)
          (rx/filter cip/shape?)
          (rx/mapcat (partial resolve-media context file-id))
