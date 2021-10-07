@@ -25,22 +25,24 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
-(defn bounds
+(defn calc-bounds
   [object objects]
-  (if (= :group (:type object))
-    (let [children-bounds
-          (into []
-                (comp  (map #(get objects %))
-                       (map #(bounds % objects)))
-                (:shapes object))]
-      (gsh/join-rects children-bounds))
 
-    (let [padding (filters/calculate-padding object)]
-      (-> (filters/get-filters-bounds object)
-          (update :x - padding)
-          (update :y - padding)
-          (update :width + (* 2 padding))
-          (update :height + (* 2 padding))))))
+  (let [xf-get-bounds (comp  (map #(get objects %)) (map #(calc-bounds % objects)))
+        padding (filters/calculate-padding object)
+        obj-bounds
+        (-> (filters/get-filters-bounds object)
+            (update :x - padding)
+            (update :y - padding)
+            (update :width + (* 2 padding))
+            (update :height + (* 2 padding)))]
+
+    (if (= :group (:type object))
+      (->> (:shapes object)
+           (into [obj-bounds] xf-get-bounds)
+           (gsh/join-rects))
+
+      obj-bounds)))
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
@@ -64,7 +66,7 @@
         objects  (reduce updt-fn objects mod-ids)
         object   (get objects object-id)
 
-        {:keys [x y width height] :as bs} (bounds object objects)
+        {:keys [x y width height] :as bs} (calc-bounds object objects)
         [_ _ width height :as coords] (->> [x y width height] (map #(* % zoom)))
 
         vbox (str/join " " coords)
