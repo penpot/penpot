@@ -60,8 +60,8 @@
                   :viewBox "0 0 3 6"
                   :refX "2"
                   :refY "3"
-                  :markerWidth "3"
-                  :markerHeight "6"
+                  :markerWidth "8.5"
+                  :markerHeight "8.5"
                   :orient "auto-start-reverse"
                   :fill stroke-color
                   :fillOpacity stroke-opacity}
@@ -72,8 +72,8 @@
                   :viewBox "0 0 3 6"
                   :refX "2"
                   :refY "3"
-                  :markerWidth "3"
-                  :markerHeight "6"
+                  :markerWidth "8.5"
+                  :markerHeight "8.5"
                   :orient "auto-start-reverse"
                   :fill stroke-color
                   :fillOpacity stroke-opacity}
@@ -82,10 +82,10 @@
       (when (or (= cap-start :square-marker) (= cap-end :square-marker))
         [:marker {:id (str marker-id-prefix "-square-marker")
                   :viewBox "0 0 6 6"
-                  :refX "5"
+                  :refX "3"
                   :refY "3"
-                  :markerWidth "6"
-                  :markerHeight "6"
+                  :markerWidth "4.2426" ;; diagonal length of a 3x3 square
+                  :markerHeight "4.2426"
                   :orient "auto-start-reverse"
                   :fill stroke-color
                   :fillOpacity stroke-opacity}
@@ -94,10 +94,10 @@
       (when (or (= cap-start :circle-marker) (= cap-end :circle-marker))
         [:marker {:id (str marker-id-prefix "-circle-marker")
                   :viewBox "0 0 6 6"
-                  :refX "5"
+                  :refX "3"
                   :refY "3"
-                  :markerWidth "6"
-                  :markerHeight "6"
+                  :markerWidth "4"
+                  :markerHeight "4"
                   :orient "auto-start-reverse"
                   :fill stroke-color
                   :fillOpacity stroke-opacity}
@@ -106,7 +106,7 @@
       (when (or (= cap-start :diamond-marker) (= cap-end :diamond-marker))
         [:marker {:id (str marker-id-prefix "-diamond-marker")
                   :viewBox "0 0 6 6"
-                  :refX "5"
+                  :refX "3"
                   :refY "3"
                   :markerWidth "6"
                   :markerHeight "6"

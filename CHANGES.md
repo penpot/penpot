@@ -24,9 +24,14 @@
 - Fix group renaming problem [Taiga #1969](https://tree.taiga.io/project/penpot/issue/1969)
 - Fix export group with shadows on children [Taiga #2036](https://tree.taiga.io/project/penpot/issue/2036)
 - Fix zoom context menu in viewer [Taiga #2041](https://tree.taiga.io/project/penpot/issue/2041)
+- Fix stroke caps adjustments in relation with stroke size [Taiga #2123](https://tree.taiga.io/project/penpot/issue/2123)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
+
+- Some stroke-caps can change behaviour
+- Text display bug fix could potentialy make some texts jump a line
+
 ### :heart: Community contributions by (Thank you!)
 
 ## 1.8.3-alpha
