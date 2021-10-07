@@ -420,13 +420,13 @@
         (gpt/point (+ (:width obj) 50) 0)
         (gpt/point 0 0))
 
-      (let [obj-original   (get objects id-original)
-            obj-duplicated (get objects id-duplicated)
-            distance       (gpt/subtract (gpt/point obj-duplicated)
-                                         (gpt/point obj-original))
-            new-pos        (gpt/add (gpt/point obj-duplicated) distance)
-            delta          (gpt/subtract new-pos (gpt/point obj))]
-        delta))))
+      (let [pt-original   (-> (get objects id-original) :selrect gpt/point)
+            pt-duplicated (-> (get objects id-duplicated) :selrect gpt/point)
+            pt-obj        (-> obj :selrect gpt/point)
+            distance       (gpt/subtract pt-duplicated pt-original)
+            new-pos        (gpt/add pt-duplicated distance)]
+
+        (gpt/subtract new-pos pt-obj)))))
 
 (defn duplicate-selected [move-delta?]
   (ptk/reify ::duplicate-selected

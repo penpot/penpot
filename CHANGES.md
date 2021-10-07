@@ -25,6 +25,7 @@
 - Fix export group with shadows on children [Taiga #2036](https://tree.taiga.io/project/penpot/issue/2036)
 - Fix zoom context menu in viewer [Taiga #2041](https://tree.taiga.io/project/penpot/issue/2041)
 - Fix stroke caps adjustments in relation with stroke size [Taiga #2123](https://tree.taiga.io/project/penpot/issue/2123)
+- Fix problem duplicating paths [Taiga #2147](https://tree.taiga.io/project/penpot/issue/2147)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
