@@ -23,6 +23,7 @@
 - Allow lowercase search for fonts [#1180](https://github.com/penpot/penpot/issues/1180)
 - Fix group renaming problem [Taiga #1969](https://tree.taiga.io/project/penpot/issue/1969)
 - Fix export group with shadows on children [Taiga #2036](https://tree.taiga.io/project/penpot/issue/2036)
+- Fix zoom context menu in viewer [Taiga #2041](https://tree.taiga.io/project/penpot/issue/2041)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
