@@ -197,7 +197,6 @@
               ptoken (tokens :generate-predefined
                              {:iss :profile-identity
                               :profile-id (:id profile)})]
-
           (eml/send! {::eml/conn conn
                       ::eml/factory eml/register
                       :public-uri (:public-uri cfg)
@@ -351,11 +350,14 @@
 
 (defn- update-profile
   [conn {:keys [id fullname lang theme] :as params}]
-  (db/update! conn :profile
-              {:fullname fullname
-               :lang lang
-               :theme theme}
-              {:id id}))
+  (let [profile (db/update! conn :profile
+                            {:fullname fullname
+                             :lang lang
+                             :theme theme}
+                            {:id id})]
+    (-> profile
+        (profile/decode-profile-row)
+        (profile/strip-private-attrs))))
 
 (s/def ::update-profile
   (s/keys :req-un [::id ::fullname]
@@ -364,8 +366,9 @@
 (sv/defmethod ::update-profile
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
-    (update-profile conn params)
-    nil))
+    (let [profile (update-profile conn params)]
+      (with-meta profile
+        {::audit/props (audit/profile->props profile)}))))
 
 ;; --- MUTATION: Update Password
 

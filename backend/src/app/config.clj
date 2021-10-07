@@ -270,8 +270,9 @@
                    ::tenant]))
 
 (defn- parse-flags
-  [{:keys [flags]}]
-  (flags/parse flags flags/default))
+  [config]
+  (-> (:flags config)
+      (flags/parse flags/default)))
 
 (defn read-env
   [prefix]

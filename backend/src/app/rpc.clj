@@ -119,7 +119,8 @@
                                (::audit/profile-id resultm))
                 props      (d/merge params' (::audit/props resultm))]
             (audit :cmd :submit
-                   :type (::type cfg)
+                   :type (or (::audit/type resultm)
+                             (::type cfg))
                    :name (or (::audit/name resultm)
                              (::sv/name mdata))
                    :profile-id profile-id
