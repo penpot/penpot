@@ -89,7 +89,7 @@
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))))
+        (t/is (map? (:result out)))))
 
     (t/testing "query profile after update"
       (let [data {::th/type :profile
