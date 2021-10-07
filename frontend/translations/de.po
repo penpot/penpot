@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-06-27 08:33+0000\n"
-"Last-Translator: nautilusx <translate@disroot.org>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"PO-Revision-Date: 2021-10-08 20:58+0000\n"
+"Last-Translator: Marius <hi@mariusscheel.de>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.7.1-dev\n"
+"X-Generator: Weblate 4.9-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2524,3 +2524,463 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.token-expired"
+msgstr "Token abgelaufen"
+
+#: src/app/main/ui/workspace.cljs
+msgid "title.workspace"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group"
+msgstr "Gruppieren"
+
+msgid "workspace.path.actions.snap-nodes"
+msgstr "An Ankerpunkten ausrichten (%s)"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Ich bin damit einverstanden, die Penpot-Mailingliste zu abonnieren."
+
+msgid "dashboard.export-frames"
+msgstr "Zeichenflächen als PDF exportieren…"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Geteilte Bibliotheken werden nicht exportiert und der Bibliothek werden "
+"keine Assets hinzugefügt. "
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Sie sollten nur Schriftarten hochladen, die Sie besitzen oder für die Sie "
+"eine Lizenz zur Verwendung in Penpot verfügen. Weitere Informationen finden "
+"Sie im Abschnitt über Inhaltsrechte in den [Nutzungsbedingungen von "
+"Penpot](https://penpot.app/terms.html). Mehr über die [Lizenzierung von "
+"Schriftarten erfahren Sie hier](https://www.typography.com/faq)."
+
+msgid "labels.export"
+msgstr "Exportieren"
+
+msgid "onboarding.slide.0.desc1"
+msgstr ""
+"Erstellen Sie ansprechende Benutzeroberflächen gemeinsam mit anderen "
+"Teammitgliedern."
+
+msgid "onboarding.slide.0.desc2"
+msgstr ""
+"Schaffen Sie ein einheitliches Erscheinungsbild mit Hilfe von Komponenten, "
+"Bibliotheken und Design-Systemen."
+
+msgid "onboarding.slide.0.title"
+msgstr "Design-Bibliotheken, Stile und Komponenten"
+
+msgid "onboarding.team.start.title"
+msgstr "Mit der Gestaltung beginnen"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+msgid "onboarding.welcome.desc1"
+msgstr ""
+"Wir freuen uns sehr, Ihnen die erste Alpha-Version vorstellen zu können."
+
+msgid "onboarding.welcome.title"
+msgstr "Willkommen bei Penpot!"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "Punkt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "Diamant"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "Pfeil"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "Keine"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "Rund"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "Quadrat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "Rechteckig"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Jeder mit dem Link kann auf die Datei zugreifen"
+
+msgid "common.share-link.title"
+msgstr "Prototypen teilen"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Sind Sie sicher, dass Sie diesen Link löschen möchten? Wenn Sie das tun, "
+"wird er für niemanden mehr verfügbar sein"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Link wurde erfolgreich kopiert"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "Freigabe für"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Sichtbar"
+
+msgid "common.share-link.remove-link"
+msgstr "Link entfernen"
+
+msgid "common.share-link.view-all-pages"
+msgstr "Alle Seiten"
+
+msgid "common.share-link.view-current-page"
+msgstr "Nur diese Seite"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Ausgewählte Seiten"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Ihre Datei wird exportiert, und alle externen Assets werden der "
+"Dateibibliothek hinzugefügt."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Assets aus geteilten Bibliotheken in die Dateibibliothek aufnehmen"
+
+msgid "dashboard.import.import-error"
+msgstr ""
+"Beim Importieren der Datei ist ein Fehler aufgetreten. Die Datei wurde nicht "
+"importiert."
+
+msgid "dashboard.import.import-message"
+msgstr "%s Dateien wurden erfolgreich importiert."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Eine oder mehrere Dateien, die Sie exportieren möchten, verwenden geteilte "
+"Bibliotheken. Was möchten Sie mit den Assets* aus diesen Bibliotheken machen?"
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Assets aus geteilten Bibliotheken als gewöhnliche Objekte behandeln"
+
+msgid "labels.close"
+msgstr "Schließen"
+
+msgid "labels.continue"
+msgstr "Weiter"
+
+msgid "labels.link"
+msgstr "Link"
+
+msgid "labels.start"
+msgstr "Start"
+
+msgid "onboarding.slide.1.alt"
+msgstr "Interaktive Prototypen"
+
+msgid "onboarding.slide.1.title"
+msgstr "Hauchen Sie Ihren Entwürfen mit Interaktionen Leben ein"
+
+msgid "onboarding.slide.3.desc1"
+msgstr ""
+"Synchronisieren Sie das Design und den Code all Ihrer Komponenten und Stile "
+"und nutzen Sie Code-Snippets."
+
+msgid "onboarding.team.create.button"
+msgstr "Team erstellen"
+
+msgid "onboarding.team.create.desc1"
+msgstr ""
+"Arbeiten Sie mit jemandem zusammen? Erstellen Sie ein Team, um gemeinsam an "
+"Projekten zu arbeiten und Design-Assets zu teilen."
+
+msgid "onboarding.team.create.input-placeholder"
+msgstr "Neuen Teamnamen eingeben"
+
+msgid "onboarding.team.create.title"
+msgstr "Team erstellen"
+
+msgid "viewer.header.handsoff-section"
+msgstr "Übergabe"
+
+msgid "viewer.header.interactions-section"
+msgstr "Interaktionen"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s Element ausgewählt"
+msgstr[1] "%s Elemente ausgewählt"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "Textskalierung ausschalten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.center"
+msgstr "Mittig"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints"
+msgstr "Constraints"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.left"
+msgstr "Links"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.leftright"
+msgstr "Links & Rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.right"
+msgstr "Rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.scale"
+msgstr "Skalieren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.top"
+msgstr "Oben"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.topbottom"
+msgstr "Oben & Unten"
+
+msgid "workspace.path.actions.make-curve"
+msgstr "in Kurve umwandeln (%s)"
+
+msgid "workspace.path.actions.make-corner"
+msgstr "in Ecke umwandeln (%s)"
+
+msgid "workspace.path.actions.separate-nodes"
+msgstr "Ankerpunkte trennen (%s)"
+
+msgid "workspace.path.actions.draw-nodes"
+msgstr "Ankerpunkte zeichnen (%s)"
+
+msgid "workspace.path.actions.join-nodes"
+msgstr "Ankerpunkte verbinden (%s)"
+
+msgid "labels.font-providers"
+msgstr "Schriftenhersteller"
+
+msgid "labels.num-of-frames"
+msgid_plural "labels.num-of-frames"
+msgstr[0] "1 Zeichenfläche"
+msgstr[1] "%s Zeichenflächen"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Eigene Schriftarten hochladen"
+
+msgid "modals.delete-font.message"
+msgstr ""
+"Sind Sie sicher, dass Sie diese Schriftart löschen möchten? Sie wird nicht "
+"mehr geladen, wenn sie bereits in einer Datei verwendet wird."
+
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"Sind Sie sicher, dass Sie diesen Schriftschnitt löschen möchten? Sie wird "
+"nicht mehr geladen, wenn sie bereits in einer Datei verwendet wird."
+
+msgid "modals.delete-font-variant.title"
+msgstr "Schriftschnitt löschen"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "Gruppierung aufheben"
+
+msgid "common.share-link.get-link"
+msgstr "Link erstellen"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Link wurde erfolgreich gelöscht"
+
+msgid "dashboard.export.detail"
+msgstr "* kann Komponenten, Grafiken, Farben und/oder Textstile enthalten."
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group"
+msgstr "Gruppe erstellen"
+
+msgid "dashboard.export.options.all.title"
+msgstr "Geteilte Bibliotheken exportieren"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"Dateien mit geteilten Bibliotheken werden exportiert, und ihre Verknüpfungen "
+"bleiben erhalten."
+
+msgid "labels.edit-file"
+msgstr "Datei bearbeiten"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Huch! Wir konnten diese Datei nicht importieren"
+
+msgid "labels.upload"
+msgstr "Hochladen"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "%s Dateien verschieben"
+
+msgid "dashboard.export.title"
+msgstr "Dateien exportieren"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "Ihre Dateien wurden erfolgreich verschoben"
+
+msgid "labels.add-custom-font"
+msgstr "Eigene Schriftart hinzufügen"
+
+msgid "labels.custom-fonts"
+msgstr "Eigene Schriftarten"
+
+msgid "labels.default"
+msgstr "Standardeinstellung"
+
+msgid "labels.font-family"
+msgstr "Schriftfamilie"
+
+msgid "labels.skip"
+msgstr "Überspringen"
+
+msgid "labels.workspace"
+msgstr "Arbeitsbereich"
+
+msgid "labels.uploading"
+msgstr "Lädt hoch…"
+
+msgid "onboarding.contrib.alt"
+msgstr "Open Source"
+
+msgid "onboarding.slide.3.desc2"
+msgstr ""
+"Erstellen und erhalten Sie Spezifikationen in Auszeichnungs- (SVG, HTML) "
+"oder Stylesheet-Sprachen (CSS, Less, Stylus…)."
+
+msgid "onboarding.slide.3.title"
+msgstr "Eine zentrale Anlaufstelle für alle"
+
+msgid "onboarding.slide.1.desc1"
+msgstr ""
+"Erstellen Sie umfangreiche Interaktionen, um das reale Verhalten ihres "
+"Produktes zu simulieren."
+
+msgid "onboarding.slide.2.alt"
+msgstr "Erhalten Sie Feedback"
+
+msgid "onboarding.team.start.button"
+msgstr "Gleich loslegen"
+
+msgid "onboarding.slide.1.desc2"
+msgstr ""
+"Teilen Sie Ihre Vorschläge mit allen Beteiligten und testen Sie Entwürfe "
+"direkt mit Ihren Nutzern - alles an einem Ort."
+
+msgid "onboarding.slide.2.desc1"
+msgstr ""
+"Alle Teammitglieder können in Echtzeit an Entwürfen arbeiten – und erhalten "
+"direktes Feedback über die integrierte Kommentarfunktion."
+
+msgid "onboarding.slide.2.title"
+msgstr "Holen Sie sich Feedback, präsentieren und teilen Sie Ihre Entwürfe"
+
+msgid "onboarding.team.start.desc1"
+msgstr ""
+"Legen Sie gleich los und gestalten Sie erstmal alleine. Sie können später "
+"immer noch Teams erstellen."
+
+msgid "onboarding.welcome.desc2"
+msgstr ""
+"Penpot befindet sich noch in der Entwicklungsphase und wird ständig "
+"aktualisiert. Wir hoffen, dass Ihnen die erste stabile Version gefällt."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "Schriftarten - %s - Penpot"
+
+msgid "viewer.header.comments-section"
+msgstr "Kommentare"
+
+#: src/app/main/ui/dashboard/files.cljs
+msgid "title.dashboard.files"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Schriftenhersteller - %s - Penpot"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "Textskalierung einschalten"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
+msgid "title.default"
+msgstr "Penpot - Gestaltungsfreiheit für Teams"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group-name"
+msgstr "Name der Gruppe"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename-group"
+msgstr "Gruppe umbenennen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.bottom"
+msgstr "Unten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.fix-when-scrolling"
+msgstr "Beim Scrollen fixieren"
+
+msgid "workspace.path.actions.add-node"
+msgstr "Ankerpunkt hinzufügen (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Dreieckiger Pfeil"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-ltr"
+msgstr "von links nach rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-rtl"
+msgstr "von rechts nach links"
+
+msgid "workspace.path.actions.move-nodes"
+msgstr "Ankerpunkte verschieben (%s)"
+
+msgid "workspace.path.actions.delete-node"
+msgstr "Ankerpunkt entfernen (%s)"
+
+msgid "workspace.path.actions.merge-nodes"
+msgstr "Ankerpunkte zusammenlegen (%s)"
+
+msgid "modals.leave-and-reassign.forbiden"
+msgstr ""
+"Sie können das Team nicht verlassen, wenn es kein anderes Mitglied gibt, das "
+"Sie zum Besitzer ernennen können. Sie können das Team jedoch löschen."
