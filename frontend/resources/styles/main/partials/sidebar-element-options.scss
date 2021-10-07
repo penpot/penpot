@@ -874,7 +874,6 @@
   position: relative;
   top: 2px;
   width: 100%;
-  z-index: 20;
 }
 
 .btn-options {
@@ -1539,7 +1538,8 @@
   right: 5px;
   top: 30px;
   z-index: 12;
-  min-width: 200px;
+  width: 200px;
+  height: 320px;
   position: fixed;
 
   & li.separator {

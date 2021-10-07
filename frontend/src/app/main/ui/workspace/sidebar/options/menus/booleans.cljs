@@ -17,19 +17,22 @@
 (mf/defc booleans-options
   []
   (let [selected (mf/deref refs/selected-objects)
+        selected-with-children (mf/deref refs/selected-objects-with-children)
 
-        disabled-bool-btns
-        (or (empty? selected)
-            (and (<= (count selected) 1)
-                 (not (contains? #{:group :bool} (:type (first selected))))))
+        has-invalid-shapes? (->> selected-with-children
+                                 (some (comp #{:frame :text} :type)))
 
-        disabled-flatten
-        (empty? selected)
+        first-not-group-like?
+        (and (= (count selected) 1)
+             (not (contains? #{:group :bool} (:type (first selected)))))
+
+        disabled-bool-btns (or (empty? selected) has-invalid-shapes? first-not-group-like?)
+        disabled-flatten (or (empty? selected) has-invalid-shapes?)
 
         head (first selected)
         is-group? (and (some? head) (= :group (:type head)))
         is-bool?  (and (some? head) (= :bool (:type head)))
-        head-bool-type (and (some? head) (:bool-type head))
+        head-bool-type (and (some? head) is-bool? (:bool-type head))
 
         set-bool
         (fn [bool-type]

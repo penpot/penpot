@@ -94,6 +94,14 @@
               :type :error
               :timeout 3000}))))
 
+(defmethod ptk/handle-error :comment-error
+  [_]
+  (ts/schedule
+   (st/emitf
+    (dm/show {:content "There was an error with the comment"
+              :type :error
+              :timeout 3000}))))
+
 ;; This is a pure frontend error that can be caused by an active
 ;; assertion (assertion that is preserved on production builds). From
 ;; the user perspective this should be treated as internal error.

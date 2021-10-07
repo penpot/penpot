@@ -19,7 +19,7 @@
 (def use-form fm/use-form)
 
 (mf/defc input
-  [{:keys [label help-icon disabled form hint trim] :as props}]
+  [{:keys [label help-icon disabled form hint trim children] :as props}]
   (let [input-type   (get props :type "text")
         input-name   (get props :name)
         more-classes (get props :class)
@@ -82,7 +82,7 @@
             (swap! form assoc-in [:touched input-name] true)))
 
         props (-> props
-                  (dissoc :help-icon :form :trim)
+                  (dissoc :help-icon :form :trim :children)
                   (assoc :id (name input-name)
                          :value value
                          :auto-focus auto-focus?
@@ -97,7 +97,13 @@
      {:class klass}
      [:*
       [:> :input props]
-      [:label {:for (name input-name)} label]
+      (cond
+        (some? label)
+        [:label {:for (name input-name)} label]
+
+        (some? children)
+        [:label {:for (name input-name)} children])
+
       (when help-icon'
         [:div.help-icon
          {:style {:cursor "pointer"}

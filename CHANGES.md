@@ -9,8 +9,30 @@
 - Add advanced prototyping [#244](https://tree.taiga.io/project/penpot/us/244).
 
 ### :bug: Bugs fixed
+
+- Fix problem with overflow dropdown on stroke-cap [#1216](https://github.com/penpot/penpot/issues/1216)
+- Fix menu context for single element nested in components [#1186](https://github.com/penpot/penpot/issues/1186)
+- Fix error screen when operations over comments fail [#1219](https://github.com/penpot/penpot/issues/1219)
+- Fix undo problem when changing typography/color from library [#1230](https://github.com/penpot/penpot/issues/1230)
+- Fix problem with text margin while rendering [#1231](https://github.com/penpot/penpot/issues/1231)
+- Fix problem with masked texts on exporting [Taiga #2116](https://tree.taiga.io/project/penpot/issue/2116)
+- Fix text editor enter behaviour with centered texts [Taiga #2126](https://tree.taiga.io/project/penpot/issue/2126)
+- Fix residual stroke on imported svg [Taiga #2125](https://tree.taiga.io/project/penpot/issue/2125)
+- Add links for terms of service and privacy policy in register checkbox [Taiga #2020](https://tree.taiga.io/project/penpot/issue/2020)
+- Allow three character hex and web colors in color picker hex input [#1184](https://github.com/penpot/penpot/issues/1184)
+- Allow lowercase search for fonts [#1180](https://github.com/penpot/penpot/issues/1180)
+- Fix group renaming problem [Taiga #1969](https://tree.taiga.io/project/penpot/issue/1969)
+- Fix export group with shadows on children [Taiga #2036](https://tree.taiga.io/project/penpot/issue/2036)
+- Fix zoom context menu in viewer [Taiga #2041](https://tree.taiga.io/project/penpot/issue/2041)
+- Fix stroke caps adjustments in relation with stroke size [Taiga #2123](https://tree.taiga.io/project/penpot/issue/2123)
+- Fix problem duplicating paths [Taiga #2147](https://tree.taiga.io/project/penpot/issue/2147)
+
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
+
+- Some stroke-caps can change behaviour
+- Text display bug fix could potentialy make some texts jump a line
+
 ### :heart: Community contributions by (Thank you!)
 
 ## 1.8.3-alpha

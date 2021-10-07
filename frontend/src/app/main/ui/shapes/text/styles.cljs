@@ -18,7 +18,8 @@
   (let [valign (:vertical-align node "top")
         width  (some-> (:width shape) (+ 1))
         base   #js {:height (or (:height shape) "100%")
-                    :width  (or width "100%")}]
+                    :width  (or width "100%")
+                    :fontFamily "sourcesanspro"}]
     (cond-> base
       (= valign "top")     (obj/set! "justifyContent" "flex-start")
       (= valign "center")  (obj/set! "justifyContent" "center")
@@ -40,6 +41,7 @@
          :justifyContent "inherit"
          :minHeight (when-not (or auto-width? auto-height?) "100%")
          :minWidth (when-not auto-width? "100%")
+         :marginRight "1px"
          :verticalAlign "top"}))
 
 (defn generate-paragraph-styles

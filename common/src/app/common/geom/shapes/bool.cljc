@@ -7,6 +7,8 @@
 (ns app.common.geom.shapes.bool
   (:require
    [app.common.geom.shapes.path :as gsp]
+   [app.common.geom.shapes.rect :as gpr]
+   [app.common.geom.shapes.transforms :as gtr]
    [app.common.path.bool :as pb]
    [app.common.path.shapes-to-path :as stp]))
 
@@ -19,7 +21,12 @@
                      (mapv :content)
                      (pb/content-bool (:bool-type shape)))
 
-        [points selrect] (gsp/content->points+selrect shape content)]
+        [points selrect]
+        (if (empty? content)
+          (let [selrect (gtr/selection-rect children)
+                points (gpr/rect->points selrect)]
+            [points selrect])
+          (gsp/content->points+selrect shape content))]
     (-> shape
         (assoc :selrect selrect)
         (assoc :points points))))

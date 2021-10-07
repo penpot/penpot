@@ -197,7 +197,7 @@
 
       [:& use/export-page {:options options}]
 
-      [:& (mf/provider use/include-metadata-ctx) {:value true}
+      [:& (mf/provider use/include-metadata-ctx) {:value false}
        [:& (mf/provider embed/context) {:value true}
         ;; Render root shape
         [:& shapes/root-shape {:key page-id

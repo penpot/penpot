@@ -87,15 +87,15 @@
 
 (mf/defc shape-context-menu
   [{:keys [mdata] :as props}]
-  (let [{:keys [id] :as shape} (:shape mdata)
-        selected (:selected mdata)
+  (let [{:keys [shape selected disable-booleans? disable-flatten?]} mdata
+        {:keys [id type]} shape
 
         single? (= (count selected) 1)
         multiple? (> (count selected) 1)
-        editable-shape? (#{:group :text :path} (:type shape))
+        editable-shape? (#{:group :text :path} type)
 
-        is-group? (and (some? shape) (= :group (:type shape)))
-        is-bool?  (and (some? shape) (= :bool (:type shape)))
+        is-group? (and (some? shape) (= :group type))
+        is-bool?  (and (some? shape) (= :bool type))
 
         options (mf/deref refs/workspace-page-options)
         flows   (:flows options)
@@ -235,10 +235,12 @@
                        :shortcut (sc/get-tooltip :start-editing)
                        :on-click do-start-editing}])
 
-     [:& menu-entry {:title (tr "workspace.shape.menu.transform-to-path")
-                     :on-click do-transform-to-path}]
+     (when-not disable-flatten?
+       [:& menu-entry {:title (tr "workspace.shape.menu.transform-to-path")
+                       :on-click do-transform-to-path}])
 
-     (when (or multiple? (and single? (or is-group? is-bool?)))
+     (when (and (not disable-booleans?)
+                (or multiple? (and single? (or is-group? is-bool?))))
        [:& menu-entry {:title (tr "workspace.shape.menu.path")}
         [:& menu-entry {:title (tr "workspace.shape.menu.union")
                         :shortcut (sc/get-tooltip :boolean-union)
@@ -253,7 +255,7 @@
                         :shortcut (sc/get-tooltip :boolean-exclude)
                         :on-click (set-bool :exclude)}]
 
-        (when (and single? is-bool?)
+        (when (and single? is-bool? (not disable-flatten?))
           [:*
            [:& menu-separator]
            [:& menu-entry {:title (tr "workspace.shape.menu.flatten")
@@ -279,9 +281,7 @@
            [:& menu-entry {:title (tr "workspace.shape.menu.delete-flow-start")
                            :on-click (do-remove-flow flow)}])))
 
-     (when (and (or (nil? (:shape-ref shape))
-                    (> (count selected) 1))
-                (not= (:type shape) :frame))
+     (when (not= (:type shape) :frame)
        [:*
         [:& menu-separator]
         [:& menu-entry {:title (tr "workspace.shape.menu.create-component")

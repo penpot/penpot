@@ -141,6 +141,7 @@
 (d/export gpr/points->selrect)
 (d/export gpr/points->rect)
 (d/export gpr/center->rect)
+(d/export gpr/join-rects)
 
 (d/export gtr/move)
 (d/export gtr/absolute-move)
