@@ -948,3 +948,14 @@
                     (gsc/transform-points points-center transform-inverse)
                     (gpr/points->selrect))]
     [points selrect]))
+
+
+(defn open-path?
+  [shape]
+
+  (and (= :path (:type shape))
+       (not (->> shape
+                 :content
+                 (sp/close-subpaths)
+                 (sp/get-subpaths)
+                 (every? sp/is-closed?)))))

@@ -160,6 +160,7 @@
 ;; PATHS
 (d/export gsp/content->selrect)
 (d/export gsp/transform-content)
+(d/export gsp/open-path?)
 
 ;; Intersection
 (d/export gin/overlaps?)

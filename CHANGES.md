@@ -27,6 +27,7 @@
 - Fix stroke caps adjustments in relation with stroke size [Taiga #2123](https://tree.taiga.io/project/penpot/issue/2123)
 - Fix problem duplicating paths [Taiga #2147](https://tree.taiga.io/project/penpot/issue/2147)
 - Fix problem inheriting attributes from SVG root when importing [Taiga #2124](https://tree.taiga.io/project/penpot/issue/2124)
+- Fix problem with lines and inside/outside stroke [Taiga #2146](https://tree.taiga.io/project/penpot/issue/2146)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
