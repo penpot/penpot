@@ -9,6 +9,12 @@
 ### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
 
+## 1.8.4-alpha
+
+### :bug: Bugs fixed
+
+- Fix problem importing components [Taiga #2151](https://tree.taiga.io/project/penpot/issue/2151)
+
 ## 1.8.3-alpha
 
 ### :sparkles: New features

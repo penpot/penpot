@@ -338,7 +338,7 @@
          (rx/filter cip/shape?)
          (rx/skip 1)
          (rx/skip-last 1)
-         (rx/mapcat (partial resolve-media file-id))
+         (rx/mapcat (partial resolve-media context file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map fb/finish-component))))
 
