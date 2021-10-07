@@ -26,6 +26,7 @@
 - Fix zoom context menu in viewer [Taiga #2041](https://tree.taiga.io/project/penpot/issue/2041)
 - Fix stroke caps adjustments in relation with stroke size [Taiga #2123](https://tree.taiga.io/project/penpot/issue/2123)
 - Fix problem duplicating paths [Taiga #2147](https://tree.taiga.io/project/penpot/issue/2147)
+- Fix problem inheriting attributes from SVG root when importing [Taiga #2124](https://tree.taiga.io/project/penpot/issue/2124)
 
 ### :arrow_up: Deps updates
 ### :boom: Breaking changes
