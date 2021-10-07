@@ -39,7 +39,7 @@
   [{:keys [params data]}]
 
   (let [{:keys [page-id section index]} params
-        {:keys [file users project perms]} data
+        {:keys [file users project permissions]} data
 
         local   (mf/deref refs/viewer-local)
 
@@ -101,7 +101,7 @@
                  :file file
                  :page page
                  :frame frame
-                 :permissions perms
+                 :permissions permissions
                  :zoom zoom
                  :section section}]
 
