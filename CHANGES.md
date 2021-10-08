@@ -3,10 +3,15 @@
 ## :rocket: Next
 
 ### :boom: Breaking changes
+
+- Some stroke-caps can change behaviour
+- Text display bug fix could potentialy make some texts jump a line
+
 ### :sparkles: New features
 
 - Add boolean shapes: intersections, unions, difference and exclusions.
 - Add advanced prototyping [#244](https://tree.taiga.io/project/penpot/us/244).
+- Change order of the teams menu so it's in the joined time order
 
 ### :bug: Bugs fixed
 
@@ -32,10 +37,6 @@
 - Fix shift+wheel to horizontal scrolling in MacOS [#1217](https://github.com/penpot/penpot/issues/1217)
 
 ### :arrow_up: Deps updates
-### :boom: Breaking changes
-
-- Some stroke-caps can change behaviour
-- Text display bug fix could potentialy make some texts jump a line
 
 ### :heart: Community contributions by (Thank you!)
 

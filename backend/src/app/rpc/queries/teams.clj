@@ -58,7 +58,7 @@
      join team as t on (t.id = tp.team_id)
     where t.deleted_at is null
       and tp.profile_id = ?
-    order by t.created_at asc")
+    order by tp.created_at asc")
 
 (defn retrieve-teams
   [conn profile-id]
