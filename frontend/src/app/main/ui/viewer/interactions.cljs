@@ -106,7 +106,8 @@
   (let [flows        (get-in page [:options :flows])
         frames       (:frames page)
         frame        (get frames index)
-        current-flow (cto/get-frame-flow flows (:id frame))
+        current-flow (mf/use-state
+                       (cto/get-frame-flow flows (:id frame)))
 
         show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
@@ -115,18 +116,19 @@
         select-flow
         (mf/use-callback
          (fn [flow]
+           (reset! current-flow flow)
            (st/emit! (dv/go-to-frame (:starting-frame flow)))))]
 
     (when (seq flows)
       [:div.view-options {:on-click toggle-dropdown}
        [:span.icon i/play]
-       [:span.label (:name current-flow)]
+       [:span.label (:name @current-flow)]
        [:span.icon i/arrow-down]
        [:& dropdown {:show @show-dropdown?
                      :on-close hide-dropdown}
         [:ul.dropdown.with-check
          (for [flow flows]
-           [:li {:class (dom/classnames :selected (= (:id flow) (:id current-flow)))
+           [:li {:class (dom/classnames :selected (= (:id flow) (:id @current-flow)))
                  :on-click #(select-flow flow)}
             [:span.icon i/tick]
             [:span.label (:name flow)]])]]])))
