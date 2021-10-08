@@ -360,22 +360,16 @@
         flows   (:flows options)
 
         add-interaction
-        (fn [_]
-          (let [new-interactions (conj interactions cti/default-interaction)]
-            (st/emit! (dw/update-shape (:id shape) {:interactions new-interactions}))))
+        (fn []
+          (st/emit! (dwi/add-new-interaction shape)))
 
         remove-interaction
         (fn [index]
-          (let [new-interactions
-                (into (subvec interactions 0 index)
-                      (subvec interactions (inc index)))]
-            (st/emit! (dw/update-shape (:id shape) {:interactions new-interactions}))))
+          (st/emit! (dwi/remove-interaction shape index)))
 
         update-interaction
         (fn [index update-fn]
-          (let [new-interactions (update interactions index update-fn)]
-            (st/emit! (dw/update-shape (:id shape) {:interactions new-interactions})))) ]
-
+          (st/emit! (dwi/update-interaction shape index update-fn)))]
     [:*
      (if shape
        [:& shape-flows {:flows flows
@@ -383,7 +377,7 @@
        [:& page-flows {:flows flows}])
 
      [:div.element-set.interactions-options
-      (when shape
+      (when (and shape (not= (:frame-id shape) uuid/zero))
         [:div.element-set-title
          [:span (tr "workspace.options.interactions")]
          [:div.add-page {:on-click add-interaction}
@@ -391,7 +385,7 @@
       [:div.element-set-content
        (when (= (count interactions) 0)
          [:*
-          (when shape
+          (when (and shape (not= (:frame-id shape) uuid/zero))
             [:*
              [:div.interactions-help-icon i/plus]
              [:div.interactions-help.separator (tr "workspace.options.add-interaction")]])

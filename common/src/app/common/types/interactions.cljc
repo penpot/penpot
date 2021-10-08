@@ -326,7 +326,35 @@
 
 ;; -- Helpers for interactions
 
+(defn add-interaction
+  [interactions interaction]
+  (conj (or interactions []) interaction))
+
+(defn remove-interaction
+  [interactions index]
+  (let [interactions (or interactions [])]
+    (into (subvec interactions 0 index)
+          (subvec interactions (inc index)))))
+
+(defn update-interaction
+  [interactions index update-fn]
+  (update interactions index update-fn))
+
 (defn actionable?
+  "Check if there is any interaction that is clickable by the user"
   [interactions]
   (some #(= (:event-type %) :click) interactions))
 
+(defn flow-origin?
+  "Check if there is any interaction of type :navigate that goes outside"
+  [interactions]
+  (some #(and (= (:action-type %) :navigate)
+              (some? (:destination %)))
+        interactions))
+
+(defn flow-to?
+  "Check if there is any interaction of type :navigate that goes to the given frame"
+  [interactions frame-id]
+  (some #(and (= (:action-type %) :navigate)
+              (= (:destination %) frame-id))
+        interactions))
