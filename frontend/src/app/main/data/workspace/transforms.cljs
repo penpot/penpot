@@ -70,23 +70,19 @@
 (defn- fix-init-point
   "Fix the initial point so the resizes are accurate"
   [initial handler shape]
-  (let [{:keys [x y width height]} (:selrect shape)
-        {:keys [rotation]} shape
-        rotation (or rotation 0)]
-    (if (= rotation 0)
-      (cond-> initial
-        (contains? #{:left :top-left :bottom-left} handler)
-        (assoc :x x)
+  (let [{:keys [x y width height]} (:selrect shape)]
+    (cond-> initial
+      (contains? #{:left :top-left :bottom-left} handler)
+      (assoc :x x)
 
-        (contains? #{:right :top-right :bottom-right} handler)
-        (assoc :x (+ x width))
+      (contains? #{:right :top-right :bottom-right} handler)
+      (assoc :x (+ x width))
 
-        (contains? #{:top :top-right :top-left} handler)
-        (assoc :y y)
+      (contains? #{:top :top-right :top-left} handler)
+      (assoc :y y)
 
-        (contains? #{:bottom :bottom-right :bottom-left} handler)
-        (assoc :y (+ y height)))
-      initial)))
+      (contains? #{:bottom :bottom-right :bottom-left} handler)
+      (assoc :y (+ y height)))))
 
 (defn finish-transform []
   (ptk/reify ::finish-transform
@@ -285,9 +281,18 @@
   (letfn [(resize [shape initial layout [point lock? center? point-snap]]
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
+
+                  shape-center (gsh/center-shape shape)
+                  shape-transform (:transform shape (gmt/matrix))
+                  shape-transform-inverse (:transform-inverse shape (gmt/matrix))
+
                   rotation (or rotation 0)
 
+                  initial (gsh/transform-point-center initial shape-center shape-transform-inverse)
                   initial (fix-init-point initial handler shape)
+
+                  point (gsh/transform-point-center (if (= rotation 0) point-snap point)
+                                                    shape-center shape-transform-inverse)
 
                   shapev (-> (gpt/point width height))
 
@@ -300,8 +305,7 @@
                   handler-mult (let [[x y] (handler-multipliers handler)] (gpt/point x y))
 
                   ;; Difference between the origin point in the coordinate system of the rotation
-                  deltav (-> (gpt/to-vec initial (if (= rotation 0) point-snap point))
-                             (gpt/transform (gmt/rotate-matrix (- rotation)))
+                  deltav (-> (gpt/to-vec initial point)
                              (gpt/multiply handler-mult))
 
                   ;; Resize vector
@@ -317,26 +321,25 @@
                            scalev)
 
                   ;; Resize origin point given the selected handler
-                  origin  (handler-resize-origin (:selrect shape) handler)
+                  handler-origin  (handler-resize-origin (:selrect shape) handler)
 
-                  shape-center (gsh/center-shape shape)
-                  shape-transform (:transform shape (gmt/matrix))
-                  shape-transform-inverse (:transform-inverse shape (gmt/matrix))
 
                   ;; If we want resize from center, displace the shape
                   ;; so it is still centered after resize.
-                  displacement (when center?
-                                 (-> shape-center
-                                     (gpt/subtract origin)
-                                     (gpt/multiply scalev)
-                                     (gpt/add origin)
-                                     (gpt/subtract shape-center)
-                                     (gpt/multiply (gpt/point -1 -1))
-                                     (gpt/transform shape-transform)))
+                  displacement
+                  (when center?
+                    (-> shape-center
+                        (gpt/subtract handler-origin)
+                        (gpt/multiply scalev)
+                        (gpt/add handler-origin)
+                        (gpt/subtract shape-center)
+                        (gpt/multiply (gpt/point -1 -1))
+                        (gpt/transform shape-transform)))
 
-                  origin (cond-> (gsh/transform-point-center origin shape-center shape-transform)
-                           (some? displacement)
-                           (gpt/add displacement))
+                  resize-origin
+                  (cond-> (gsh/transform-point-center handler-origin shape-center shape-transform)
+                    (some? displacement)
+                    (gpt/add displacement))
 
                   displacement (when (some? displacement)
                                  (gmt/translate-matrix displacement))]
@@ -344,7 +347,7 @@
               (rx/of (set-modifiers ids
                                     {:displacement displacement
                                      :resize-vector scalev
-                                     :resize-origin origin
+                                     :resize-origin resize-origin
                                      :resize-transform shape-transform
                                      :resize-scale-text scale-text
                                      :resize-transform-inverse shape-transform-inverse}))))
