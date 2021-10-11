@@ -35,6 +35,7 @@
 - Fix problem with lines and inside/outside stroke [Taiga #2146](https://tree.taiga.io/project/penpot/issue/2146)
 - Add stroke width in selection calculation [Taiga #2146](https://tree.taiga.io/project/penpot/issue/2146)
 - Fix shift+wheel to horizontal scrolling in MacOS [#1217](https://github.com/penpot/penpot/issues/1217)
+- Fix path stroke is not working properly with high thickness [Taiga #2154](https://tree.taiga.io/project/penpot/issue/2154)
 
 ### :arrow_up: Deps updates
 
