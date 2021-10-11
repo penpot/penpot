@@ -21,7 +21,7 @@
    [app.util.webapi :as wapi]
    [rumext.alpha :as mf]))
 
-(log/set-level! :debug)
+(log/set-level! :warn)
 
 (defn prepare-params
   [{:keys [sections pages pages-mode]}]

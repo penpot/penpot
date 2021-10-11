@@ -21,7 +21,7 @@
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
-(log/set-level! :debug)
+(log/set-level! :warn)
 
 (def ^:const emit-delay 1000)
 

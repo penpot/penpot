@@ -24,7 +24,7 @@
    [cuerdas.core :as str]
    [tubax.core :as tubax]))
 
-(log/set-level! :trace)
+(log/set-level! :warn)
 
 ;; Upload changes batches size
 (def ^:const change-batch-size 100)

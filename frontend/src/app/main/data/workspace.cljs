@@ -52,8 +52,6 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
-;; (log/set-level! :trace)
-
 (s/def ::shape-attrs ::cp/shape-attrs)
 (s/def ::set-of-string
   (s/every string? :kind set?))
