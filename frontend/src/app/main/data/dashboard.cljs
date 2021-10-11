@@ -626,7 +626,8 @@
   (us/verify ::file file)
   (ptk/reify ::file-created
     IDeref
-    (-deref [_] file)
+    (-deref [_] {:file-id id
+                 :file-name (:name file)})
 
     ptk/UpdateEvent
     (update [_ state]
