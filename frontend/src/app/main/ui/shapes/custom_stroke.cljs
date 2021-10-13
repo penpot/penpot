@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.custom-stroke
   (:require
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -145,22 +146,24 @@
 
 (mf/defc stroke-defs
   [{:keys [shape render-id]}]
-  (cond
-    (and (= :inner (:stroke-alignment shape :center))
-         (> (:stroke-width shape 0) 0))
-    [:& inner-stroke-clip-path {:shape shape
-                                :render-id render-id}]
+  (when (and (= (:type shape) :path)
+             (gsh/open-path? shape))
+    (cond
+      (and (= :inner (:stroke-alignment shape :center))
+           (> (:stroke-width shape 0) 0))
+      [:& inner-stroke-clip-path {:shape shape
+                                  :render-id render-id}]
 
-    (and (= :outer (:stroke-alignment shape :center))
-         (> (:stroke-width shape 0) 0))
-    [:& outer-stroke-mask {:shape shape
-                           :render-id render-id}]
+      (and (= :outer (:stroke-alignment shape :center))
+           (> (:stroke-width shape 0) 0))
+      [:& outer-stroke-mask {:shape shape
+                             :render-id render-id}]
 
-    (and (or (some? (:stroke-cap-start shape))
-             (some? (:stroke-cap-end shape)))
-         (= (:stroke-alignment shape) :center))
-    [:& cap-markers {:shape shape
-                     :render-id render-id}]))
+      (and (or (some? (:stroke-cap-start shape))
+               (some? (:stroke-cap-end shape)))
+           (= (:stroke-alignment shape) :center))
+      [:& cap-markers {:shape shape
+                       :render-id render-id}])))
 
 ;; Outer alingmnent: display the shape in two layers. One
 ;; without stroke (only fill), and another one only with stroke
@@ -253,15 +256,17 @@
         stroke-position (:stroke-alignment shape :center)
         has-stroke? (and (> stroke-width 0)
                          (not= stroke-style :none))
-        inner? (= :inner stroke-position)
-        outer? (= :outer stroke-position)]
+        closed? (or (not= :path (:type shape))
+                    (not (gsh/open-path? shape)))
+        inner?  (= :inner stroke-position)
+        outer?  (= :outer stroke-position)]
 
     (cond
-      (and has-stroke? inner?)
+      (and has-stroke? inner? closed?)
       [:& inner-stroke {:shape shape}
        child]
 
-      (and has-stroke? outer?)
+      (and has-stroke? outer? closed?)
       [:& outer-stroke {:shape shape}
        child]
 

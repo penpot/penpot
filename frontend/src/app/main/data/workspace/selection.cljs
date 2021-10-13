@@ -432,36 +432,37 @@
   (ptk/reify ::duplicate-selected
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            selected (wsh/lookup-selected state)
-            delta    (if (and move-delta? (= (count selected) 1))
-                       (let [obj (get objects (first selected))]
-                         (calc-duplicate-delta obj state objects))
-                       (gpt/point 0 0))
+      (when (nil? (get-in state [:workspace-local :transform]))
+        (let [page-id  (:current-page-id state)
+              objects  (wsh/lookup-page-objects state page-id)
+              selected (wsh/lookup-selected state)
+              delta    (if (and move-delta? (= (count selected) 1))
+                         (let [obj (get objects (first selected))]
+                           (calc-duplicate-delta obj state objects))
+                         (gpt/point 0 0))
 
-            unames   (dwc/retrieve-used-names objects)
+              unames   (dwc/retrieve-used-names objects)
 
-            rchanges (->> (prepare-duplicate-changes objects page-id unames selected delta)
-                          (duplicate-changes-update-indices objects selected))
+              rchanges (->> (prepare-duplicate-changes objects page-id unames selected delta)
+                            (duplicate-changes-update-indices objects selected))
 
-            uchanges (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))
-                           (reverse rchanges))
+              uchanges (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))
+                             (reverse rchanges))
 
-            id-original (when (= (count selected) 1) (first selected))
+              id-original (when (= (count selected) 1) (first selected))
 
-            selected (->> rchanges
-                          (filter #(selected (:old-id %)))
-                          (map #(get-in % [:obj :id]))
-                          (into (d/ordered-set)))
+              selected (->> rchanges
+                            (filter #(selected (:old-id %)))
+                            (map #(get-in % [:obj :id]))
+                            (into (d/ordered-set)))
 
-            id-duplicated (when (= (count selected) 1) (first selected))]
+              id-duplicated (when (= (count selected) 1) (first selected))]
 
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it})
-               (select-shapes selected)
-               (memorize-duplicated id-original id-duplicated))))))
+          (rx/of (dch/commit-changes {:redo-changes rchanges
+                                      :undo-changes uchanges
+                                      :origin it})
+                 (select-shapes selected)
+                 (memorize-duplicated id-original id-duplicated)))))))
 
 (defn change-hover-state
   [id value]

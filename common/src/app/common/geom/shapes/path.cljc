@@ -126,8 +126,8 @@
 
   (let [tangent (curve-tangent curve t)]
     (cond
-      (> (:y tangent) 0)  1
-      (< (:y tangent) 0) -1
+      (> (:y tangent) 0) -1
+      (< (:y tangent) 0)  1
       :else               0)))
 
 (defn curve-split
@@ -822,30 +822,27 @@
   (let [selrect (content->selrect content)
         ray-line [point (gpt/point (inc (:x point)) (:y point))]
 
-        closed-subpaths
-        (->> content
-             (sp/close-subpaths)
-             (sp/get-subpaths)
-             (filterv sp/is-closed?))
+        closed-content
+        (into []
+              (comp  (filter sp/is-closed?)
+                     (mapcat :data))
+              (->> content
+                   (sp/close-subpaths)
+                   (sp/get-subpaths)))
 
         cast-ray
         (fn [cmd]
           (case (:command cmd)
             :line-to  (ray-line-intersect  point (command->line cmd))
             :curve-to (ray-curve-intersect ray-line (command->bezier cmd))
-            #_:else   []))
-
-        is-point-in-subpath?
-        (fn [subpath]
-          (and (gpr/contains-point? (content->selrect (:data subpath)) point)
-               (->> (:data subpath)
-                    (mapcat cast-ray)
-                    (map second)
-                    (reduce +)
-                    (not= 0))))]
+            #_:else   []))]
 
     (and (gpr/contains-point? selrect point)
-         (some is-point-in-subpath? closed-subpaths))))
+         (->> closed-content
+              (mapcat cast-ray)
+              (map second)
+              (reduce +)
+              (not= 0)))))
 
 (defn split-line-to
   "Given a point and a line-to command will create a two new line-to commands
@@ -948,3 +945,14 @@
                     (gsc/transform-points points-center transform-inverse)
                     (gpr/points->selrect))]
     [points selrect]))
+
+
+(defn open-path?
+  [shape]
+
+  (and (= :path (:type shape))
+       (not (->> shape
+                 :content
+                 (sp/close-subpaths)
+                 (sp/get-subpaths)
+                 (every? sp/is-closed?)))))

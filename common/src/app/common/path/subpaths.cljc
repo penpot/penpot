@@ -73,9 +73,15 @@
         (fn [subpaths current]
           (let [is-move? (= :move-to (:command current))
                 last-idx (dec (count subpaths))]
-            (if is-move?
+            (cond
+              is-move?
               (conj subpaths (make-subpath current))
-              (update subpaths last-idx add-subpath-command current))))]
+
+              (>= last-idx 0)
+              (update subpaths last-idx add-subpath-command current)
+
+              :else
+              subpaths)))]
     (->> content
          (reduce reduce-subpath []))))
 

@@ -27,21 +27,31 @@
                              [(first childs) (rest childs)]
                              [nil childs])
 
+            ;; We need to separate mask and clip into two because a bug in Firefox
+            ;; breaks when the group has clip+mask+foreignObject
+            ;; Clip and mask separated will work in every platform
+            ;  Firefox bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1734805
+            [clip-wrapper clip-props]
+            (if masked-group?
+              ["g" (-> (obj/new)
+                       (obj/set! "clipPath" (clip-url render-id mask)))]
+              [mf/Fragment nil])
+
             [mask-wrapper mask-props]
             (if masked-group?
               ["g" (-> (obj/new)
-                       (obj/set! "clipPath" (clip-url render-id mask))
                        (obj/set! "mask"     (mask-url render-id mask)))]
               [mf/Fragment nil])]
 
-        [:> mask-wrapper mask-props
-         (when masked-group?
-           [:> render-mask #js {:frame frame :mask mask}])
+        [:> clip-wrapper clip-props
+         [:> mask-wrapper mask-props
+          (when masked-group?
+            [:> render-mask #js {:frame frame :mask mask}])
 
-         (for [item childs]
-           [:& shape-wrapper {:frame frame
-                              :shape item
-                              :key (:id item)}])]))))
+          (for [item childs]
+            [:& shape-wrapper {:frame frame
+                               :shape item
+                               :key (:id item)}])]]))))
 
 
 

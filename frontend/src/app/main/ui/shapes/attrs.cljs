@@ -14,12 +14,14 @@
    [rumext.alpha :as mf]))
 
 (defn- stroke-type->dasharray
-  [style]
-  (case style
-    :mixed "5,5,1,5"
-    :dotted "5,5"
-    :dashed "10,10"
-    nil))
+  [width style]
+  (let [values (case style
+                 :mixed [5 5 1 5]
+                 :dotted [5 5]
+                 :dashed [10 10]
+                 nil)]
+
+    (->> values (map #(+ % width)) (str/join ","))))
 
 (defn- truncate-side
   [shape ra-attr rb-attr dimension-attr]
@@ -102,10 +104,11 @@
 
 (defn add-stroke [attrs shape render-id]
   (let [stroke-style (:stroke-style shape :none)
-        stroke-color-gradient-id (str "stroke-color-gradient_" render-id)]
+        stroke-color-gradient-id (str "stroke-color-gradient_" render-id)
+        stroke-width (:stroke-width shape 1)]
     (if (not= stroke-style :none)
       (let [stroke-attrs
-            (cond-> {:strokeWidth (:stroke-width shape 1)}
+            (cond-> {:strokeWidth stroke-width}
               (:stroke-color-gradient shape)
               (assoc :stroke (str/format "url(#%s)" stroke-color-gradient-id))
 
@@ -118,7 +121,7 @@
               (assoc :strokeOpacity (:stroke-opacity shape nil))
 
               (not= stroke-style :svg)
-              (assoc :strokeDasharray (stroke-type->dasharray stroke-style))
+              (assoc :strokeDasharray (stroke-type->dasharray stroke-width stroke-style))
 
               ;; For simple line caps we use svg stroke-line-cap attribute. This
               ;; only works if all caps are the same and we are not using the tricks

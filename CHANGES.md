@@ -3,10 +3,15 @@
 ## :rocket: Next
 
 ### :boom: Breaking changes
+
+- Some stroke-caps can change behaviour
+- Text display bug fix could potentialy make some texts jump a line
+
 ### :sparkles: New features
 
 - Add boolean shapes: intersections, unions, difference and exclusions.
 - Add advanced prototyping [#244](https://tree.taiga.io/project/penpot/us/244).
+- Change order of the teams menu so it's in the joined time order
 
 ### :bug: Bugs fixed
 
@@ -26,12 +31,15 @@
 - Fix zoom context menu in viewer [Taiga #2041](https://tree.taiga.io/project/penpot/issue/2041)
 - Fix stroke caps adjustments in relation with stroke size [Taiga #2123](https://tree.taiga.io/project/penpot/issue/2123)
 - Fix problem duplicating paths [Taiga #2147](https://tree.taiga.io/project/penpot/issue/2147)
+- Fix problem inheriting attributes from SVG root when importing [Taiga #2124](https://tree.taiga.io/project/penpot/issue/2124)
+- Fix problem with lines and inside/outside stroke [Taiga #2146](https://tree.taiga.io/project/penpot/issue/2146)
+- Add stroke width in selection calculation [Taiga #2146](https://tree.taiga.io/project/penpot/issue/2146)
+- Fix shift+wheel to horizontal scrolling in MacOS [#1217](https://github.com/penpot/penpot/issues/1217)
+- Fix path stroke is not working properly with high thickness [Taiga #2154](https://tree.taiga.io/project/penpot/issue/2154)
+- Fix bug with transformation operations [Taiga #2155](https://tree.taiga.io/project/penpot/issue/2155)
+- Fix bug in firefox when a text box is inside a mask [Taiga #2152](https://tree.taiga.io/project/penpot/issue/2152)
 
 ### :arrow_up: Deps updates
-### :boom: Breaking changes
-
-- Some stroke-caps can change behaviour
-- Text display bug fix could potentialy make some texts jump a line
 
 ### :heart: Community contributions by (Thank you!)
 
