@@ -44,7 +44,8 @@
     [:div.options-zone
      (case section
        :interactions [:*
-                      [:& flows-menu {:page page :index index}]
+                      (when index
+                        [:& flows-menu {:page page :index index}])
                       [:& interactions-menu]]
        :comments [:& comments-menu]
 
