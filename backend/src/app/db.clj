@@ -54,7 +54,8 @@
 (s/def ::migrations map?)
 
 (defmethod ig/pre-init-spec ::pool [_]
-  (s/keys :req-un [::uri ::name ::min-pool-size ::max-pool-size ::migrations ::mtx/metrics]))
+  (s/keys :req-un [::uri ::name ::min-pool-size ::max-pool-size ::mtx/metrics]
+          :opt-un [::migrations]))
 
 (defmethod ig/init-key ::pool
   [_ {:keys [migrations metrics] :as cfg}]
@@ -89,8 +90,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def initsql
-  (str "SET statement_timeout = 120000;\n"
-       "SET idle_in_transaction_session_timeout = 120000;"))
+  (str "SET statement_timeout = 200000;\n"
+       "SET idle_in_transaction_session_timeout = 200000;"))
 
 (defn- create-datasource-config
   [{:keys [metrics] :as cfg}]
@@ -104,10 +105,10 @@
       (.setPoolName (d/name (:name cfg)))
       (.setAutoCommit true)
       (.setReadOnly false)
-      (.setConnectionTimeout 8000)  ;; 8seg
-      (.setValidationTimeout 8000)  ;; 8seg
-      (.setIdleTimeout 120000)      ;; 2min
-      (.setMaxLifetime 1800000)     ;; 30min
+      (.setConnectionTimeout 10000)  ;; 10seg
+      (.setValidationTimeout 10000)  ;; 10seg
+      (.setIdleTimeout 120000)       ;; 2min
+      (.setMaxLifetime 1800000)      ;; 30min
       (.setMinimumIdle (:min-pool-size cfg 0))
       (.setMaximumPoolSize (:max-pool-size cfg 30))
       (.setMetricsTrackerFactory mtf)
@@ -127,7 +128,7 @@
   [pool]
   (.isClosed ^HikariDataSource pool))
 
-(defn- create-pool
+(defn create-pool
   [cfg]
   (let [dsc (create-datasource-config cfg)]
     (jdbc-dt/read-as-instant)
