@@ -22,9 +22,9 @@
 
 ;; --- Flows
 
-(defn add-flow-selected-frame
-  []
-  (ptk/reify ::add-flow-selected-frame
+(defn add-flow
+  [starting-frame]
+  (ptk/reify ::add-flow
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id (:current-page-id state)
@@ -34,14 +34,12 @@
                                    :options
                                    :flows] [])
 
-            selected (wsh/lookup-selected state)
-
             unames  (into #{} (map :name flows))
             name    (dwc/generate-unique-name unames "Flow-1")
 
             new-flow {:id (uuid/next)
                       :name name
-                      :starting-frame (first selected)}]
+                      :starting-frame starting-frame}]
 
         (rx/of (dch/commit-changes
                 {:redo-changes [{:type :set-option
@@ -53,6 +51,14 @@
                                  :option :flows
                                  :value flows}]
                  :origin it}))))))
+
+(defn add-flow-selected-frame
+  []
+  (ptk/reify ::add-flow-selected-frame
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected (wsh/lookup-selected state)]
+        (rx/of (add-flow (first selected)))))))
 
 (defn remove-flow
   [flow-id]
@@ -120,6 +126,53 @@
 
 ;; --- Interactions
 
+(defn add-new-interaction
+  ([shape] (add-new-interaction shape nil))
+  ([shape destination]
+   (ptk/reify ::add-new-interaction
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [page-id  (:current-page-id state)
+             objects  (wsh/lookup-page-objects state page-id)
+             frame    (cph/get-frame shape objects)
+             flows    (get-in state [:workspace-data
+                                     :pages-index
+                                     page-id
+                                     :options
+                                     :flows] [])
+             flow     (cto/get-frame-flow flows (:id frame))]
+         (rx/concat
+           (rx/of (dch/update-shapes [(:id shape)]
+                    (fn [shape]
+                      (let [new-interaction (cti/set-destination
+                                              cti/default-interaction
+                                              destination)]
+                        (update shape :interactions
+                                cti/add-interaction new-interaction)))))
+           (when (and (not (cph/connected-frame? (:id frame) objects))
+                      (nil? flow))
+             (rx/of (add-flow (:id frame))))))))))
+
+(defn remove-interaction
+  [shape index]
+  (ptk/reify ::remove-interaction
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dch/update-shapes [(:id shape)]
+               (fn [shape]
+                 (update shape :interactions
+                         cti/remove-interaction index)))))))
+
+(defn update-interaction
+  [shape index update-fn]
+  (ptk/reify ::update-interaction
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dch/update-shapes [(:id shape)]
+               (fn [shape]
+                 (update shape :interactions
+                        cti/update-interaction index update-fn)))))))
+
 (declare move-edit-interaction)
 (declare finish-edit-interaction)
 
@@ -179,28 +232,23 @@
             shape    (get objects shape-id)]
 
         (when (and shape (not (= position initial-pos)))
-          (rx/of (dch/update-shapes [shape-id]
-                   (fn [shape]
-                     (update shape :interactions
-                             (fn [interactions]
-                               (if-not frame
-                                 ;; Drop in an empty space -> remove interaction
-                                 (if index
-                                   (into (subvec interactions 0 index)
-                                         (subvec interactions (inc index)))
-                                   interactions)
-                                 (let [frame (if (or (= (:id frame) (:id shape))
-                                                     (= (:id frame) (:frame-id shape)))
-                                               nil ;; Drop onto self frame -> set destination to none
-                                               frame)]
-                                   ;; Update or create interaction
-                                   (if (and index (cti/has-destination (get interactions index)))
-                                     (update interactions index
-                                             #(cti/set-destination % (:id frame)))
-                                     (conj (or interactions [])
-                                           (cti/set-destination cti/default-interaction
-                                                                (:id frame))))))))))))))))
+          (if (nil? frame)
+            (when index
+              (rx/of (remove-interaction shape index)))
+            (let [frame (if (or (= (:id frame) (:id shape))
+                                (= (:id frame) (:frame-id shape)))
+                          nil ;; Drop onto self frame -> set destination to none
+                          frame)]
+              (if (nil? index)
+                (rx/of (add-new-interaction shape (:id frame)))
+                (rx/of (update-interaction shape index
+                                           (fn [interaction]
+                                             (cond-> interaction
+                                               (not (cti/has-destination interaction))
+                                               (cti/set-action-type :navigate)
 
+                                               :always
+                                               (cti/set-destination (:id frame))))))))))))))
 ;; --- Overlays
 
 (declare move-overlay-pos)

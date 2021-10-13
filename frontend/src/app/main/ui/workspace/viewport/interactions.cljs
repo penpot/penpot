@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
    [app.common.types.interactions :as cti]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -319,7 +320,8 @@
                                           :position (:overlay-position interaction)
                                           :objects objects
                                           :hover-disabled? hover-disabled?}]))])))
-          (when (not (#{:move :rotate} current-transform))
+          (when (and (not= (:frame-id shape) uuid/zero)
+                     (not (#{:move :rotate} current-transform)))
             [:& interaction-handle {:key (:id shape)
                                     :index nil
                                     :shape shape

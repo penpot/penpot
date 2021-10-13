@@ -77,11 +77,11 @@
 
 (defn add-flow
   [flows flow]
-  (conj flows flow))
+  (conj (or flows []) flow))
 
 (defn remove-flow
   [flows flow-id]
-  (vec (remove #(= (:id %) flow-id) flows)))
+  (d/removev #(= (:id %) flow-id) flows))
 
 (defn update-flow
   [flows flow-id update-fn]

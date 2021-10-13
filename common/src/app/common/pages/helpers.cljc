@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.spec :as us]
+   [app.common.types.interactions :as cti]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -476,3 +477,10 @@
   (let [path-split (split-path path)]
     (merge-path-item (first path-split) name)))
 
+(defn connected-frame?
+  "Check if some frame is origin or destination of any navigate interaction
+  in the page"
+  [frame-id objects]
+  (let [children (get-object-with-children frame-id objects)]
+    (or (some cti/flow-origin? (map :interactions children))
+        (some #(cti/flow-to? % frame-id) (map :interactions (vals objects))))))
