@@ -44,8 +44,6 @@
       :help "A total number of bytes processed by update-file."
       :type :counter}}}
 
-
-
    :app.migrations/all
    {:main (ig/ref :app.migrations/migrations)}
 

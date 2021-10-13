@@ -69,6 +69,7 @@
                    :mtx-messages mtx-messages
                    :mtx-sessions mtx-sessions
                    )]
+
     (-> #(handler cfg %)
         (wrap-session)
         (wrap-keyword-params)
