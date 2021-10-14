@@ -5,7 +5,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.177.09.0/24
+        - subnet: 172.177.9.0/24
 
 volumes:
   postgres_data:
