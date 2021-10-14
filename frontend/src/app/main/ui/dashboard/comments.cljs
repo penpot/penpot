@@ -25,9 +25,7 @@
   (mf/use-effect
    (mf/deps team)
    (fn []
-     (st/emit! (dcm/retrieve-unread-comment-threads (:id team))
-               (ptk/event ::ev/event {::ev/name "open-comment-notifications"
-                                      ::ev/origin "dashboard"}))))
+     (st/emit! (dcm/retrieve-unread-comment-threads (:id team)))))
 
   (let [show-dropdown? (mf/use-state false)
         show-dropdown  (mf/use-fn #(reset! show-dropdown? true))
@@ -46,6 +44,13 @@
          (fn [thread]
            (st/emit! (-> (dwcm/navigate thread)
                          (with-meta {::ev/origin "dashboard"})))))]
+
+    (mf/use-effect
+     (mf/deps @show-dropdown?)
+     (fn []
+       (when @show-dropdown?
+         (st/emit! (ptk/event ::ev/event {::ev/name "open-comment-notifications"
+                                          ::ev/origin "dashboard"})))))
 
     [:div.dashboard-comments-section
      [:div.button
