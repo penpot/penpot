@@ -1,2 +1,1196 @@
 msgid ""
-msgstr "X-Generator: Weblate\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit"
+msgstr ""
+"PO-Revision-Date: 2021-10-15 20:36+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
+"Language: he\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
+"n % 10 == 0) ? 2 : 3));\n"
+"X-Generator: Weblate 4.9-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "כבר יש לך חשבון?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"נא לחפש בדוא״ל הנכנס שלך וללחוץ על הקישור כדי לאמת ולהתחיל להשתמש ב־Penpot."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "אישור הסיסמה"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "יצירת חשבון הדגמה"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "דוא״ל"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "שם מלא"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "כניסה מכאן"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "כניסה"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "ההרשמה לרשימת הדיוור של Penpot מקובלת עלי."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "אסימון השחזור שגוי."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "הפרופיל לא עבר אימות, נא לאמת את הפרופיל לפני המשך התהליך."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "קישור לשחזור סיסמה נשלח לתיבת הדוא״ל הנכנס שלך."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "אין לך חשבון עדיין?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "יצירת חשבון"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "זה חינם, בקוד פתוח"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "הוספת ספריה משותפת"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "החלפת דוא״ל"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(עותק)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ יצירת צוות חדש"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "ה־Penpot שלך"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "מחיקת צוות"
+
+msgid "dashboard.draft-title"
+msgstr "טיוטה"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "שכפול"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "שכפול %s קבצים"
+
+msgid "dashboard.export-multi"
+msgstr "ייצוא קובצי %s"
+
+msgid "dashboard.export.detail"
+msgstr "* עשוי לכלול רכיבים, גרפיקה, צבעים ו/או טיפוגרפיות."
+
+msgid "dashboard.export.options.all.message"
+msgstr "קבצים עם ספריות משותפות יצורפו לייצוא, תוך שימור הקישוריות שלהם."
+
+msgid "dashboard.export.options.all.title"
+msgstr "ייצוא ספריות משותפות"
+
+msgid "dashboard.export.options.merge.title"
+msgstr "לכלול משאבי ספריה משותפת בספריות הקבצים"
+
+#: src/app/main/ui/handoff/attributes/fill.cljs
+msgid "handoff.attributes.fill"
+msgstr "מילוי"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "הורדת תמונת מקור"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "סיבוב"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "רוחב"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout"
+msgstr "פריסה"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "גובה"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "עליון"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.spread"
+msgstr "פ"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke"
+msgstr "מתאר"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "מעורב"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "ללא"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "אחיד"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "גודל גופן"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.letter-spacing"
+msgstr "ריווח תווים"
+
+msgid "handoff.attributes.typography.text-decoration.none"
+msgstr "ללא"
+
+msgid "handoff.attributes.typography.text-transform.lowercase"
+msgstr "אותיות קטנות"
+
+msgid "handoff.attributes.typography.text-transform.none"
+msgstr "ללא"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "ריבוע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.message"
+msgstr "עדכון רכיב בספריה משותפת"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-email-sent"
+msgstr "ההזמנה נשלחה בהצלחה"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "notifications.profile-deletion-not-allowed"
+msgstr ""
+"אין אפשר למחוק את הפרופיל שלך. יש להקצות את הצוותים שלך מחדש בטרם המשך "
+"בתהליך."
+
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot הוא בקוד פתוח, נוצר על ידי הקהילה ועבורה. אנו מזמינים אותך לקחת חלק, "
+"בשמחה!"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "ולעקוב אחר הנחיות ההתנדבות :)"
+
+msgid "onboarding.contrib.link"
+msgstr "מיזם ב־github"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "אפשר לגשת אל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.navigate-to"
+msgstr "ניווט אל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsety"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.spread"
+msgstr "פיזור"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dotted"
+msgstr "מנוקד"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.inner"
+msgstr "בפנים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.mixed"
+msgstr "מעורב"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.outer"
+msgstr "בחוץ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-top"
+msgstr "יישור לראש"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title-group"
+msgstr "קיבוץ טקסט"
+
+msgid "workspace.path.actions.add-node"
+msgstr "הוספת מפרק (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.backward"
+msgstr "הרחקה לאחור"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy"
+msgstr "העתקה"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-component"
+msgstr "יצירת רכיב"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.rect"
+msgstr "ריבוע (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text"
+msgstr "טקסט (%s)"
+
+msgid "workspace.undo.entry.multiple.circle"
+msgstr "עיגולים"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.empty"
+msgstr "אין שינויים היסטוריים עד כה"
+
+msgid "workspace.undo.entry.single.frame"
+msgstr "לוח אומנות"
+
+msgid "workspace.undo.entry.single.group"
+msgstr "קבוצה"
+
+msgid "workspace.undo.entry.multiple.color"
+msgstr "משאבי צבע"
+
+msgid "workspace.undo.entry.multiple.component"
+msgstr "רכיבים"
+
+msgid "workspace.undo.entry.multiple.curve"
+msgstr "עיקולים"
+
+msgid "workspace.undo.entry.multiple.frame"
+msgstr "לוח אומנות"
+
+msgid "workspace.undo.entry.multiple.text"
+msgstr "טקסטים"
+
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "משאבים טיפוגרפיים"
+
+msgid "workspace.undo.entry.single.rect"
+msgstr "ריבוע"
+
+msgid "workspace.undo.entry.single.shape"
+msgstr "צורה"
+
+msgid "workspace.undo.entry.single.text"
+msgstr "טקסט"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.update"
+msgstr "עדכון"
+
+msgid "workspace.viewport.click-to-close-path"
+msgstr "לחיצה תסגור את הנתיב"
+
+msgid "workspace.undo.entry.single.typography"
+msgstr "משאב טיפוגרפי"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.unknown"
+msgstr "פעולה על %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.title"
+msgstr "היסטוריה"
+
+msgid "dashboard.export.title"
+msgstr "ייצוא קבצים"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "הגופן נמחק"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "עדיין לא מותקנים אצלך גופנים משלך."
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.dismiss"
+msgstr "התעלמות"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.there-are-updates"
+msgstr "יש עדכונים בספריות המשותפות"
+
+msgid "workspace.undo.entry.single.circle"
+msgstr "עיגול"
+
+msgid "workspace.undo.entry.single.color"
+msgstr "משאב צבע"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.new"
+msgstr "%s חדש"
+
+msgid "workspace.undo.entry.single.component"
+msgstr "רכיב"
+
+msgid "workspace.undo.entry.single.curve"
+msgstr "עיקול"
+
+msgid "workspace.undo.entry.single.image"
+msgstr "תמונה"
+
+msgid "workspace.undo.entry.single.media"
+msgstr "משאב גרפי"
+
+msgid "workspace.undo.entry.single.multiple"
+msgstr "פריט"
+
+msgid "workspace.undo.entry.single.page"
+msgstr "עמוד"
+
+msgid "workspace.undo.entry.single.path"
+msgstr "נתיב"
+
+msgid "workspace.undo.entry.multiple.group"
+msgstr "קבוצות"
+
+msgid "workspace.undo.entry.multiple.media"
+msgstr "משאבים גרפיים"
+
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "פריטים"
+
+msgid "workspace.undo.entry.multiple.rect"
+msgstr "ריבועים"
+
+msgid "workspace.undo.entry.multiple.page"
+msgstr "עמודים"
+
+msgid "workspace.undo.entry.multiple.path"
+msgstr "נתיבים"
+
+msgid "workspace.undo.entry.multiple.shape"
+msgstr "צורות"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.edit"
+msgstr "עריכה"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "היפוך אופקי"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "היפוך אנכי"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.forward"
+msgstr "קידום"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.front"
+msgstr "קידום לחזית"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.go-main"
+msgstr "מעבר לקובץ הרכיב הראשי"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.group"
+msgstr "קבוצה"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.hide"
+msgstr "הסתרה"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show"
+msgstr "הצגה"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.lock"
+msgstr "נעילה"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.mask"
+msgstr "מסכה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.reset-overrides"
+msgstr "איפוס מעקפים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-main"
+msgstr "הצגת הרכיב הראשי"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.ungroup"
+msgstr "פירוק קבוצה"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unlock"
+msgstr "שחרור נעילה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "מאפייני SVG יובאו"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "workspace.sidebar.sitemap"
+msgstr "עמודים"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.assets"
+msgstr "משאבים (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unmask"
+msgstr "ביטול מסכה"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.ellipse"
+msgstr "אליפסה (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-main"
+msgstr "עדכון הרכיב הראשי"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.layers"
+msgstr "שכבות (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.sitemap"
+msgstr "מפת אתר"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.curve"
+msgstr "עיקול (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.path"
+msgstr "נתיב (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.delete"
+msgstr "%s נמחק"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.modify"
+msgstr "%s נערך"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.color-palette"
+msgstr "ערכת צבעים (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.center"
+msgstr "מרכז"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.comments"
+msgstr "הערות (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.frame"
+msgstr "לוח אומנות (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.image"
+msgstr "תמונה (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.move"
+msgstr "העברה"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+msgid "labels.no-comments-available"
+msgstr "אין לך התראות ממתינות על הערות"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.move"
+msgstr "פריטים שהועברו"
+
+msgid "workspace.options.text-options.vertical-align"
+msgstr "יישור אנכי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.use-play-button"
+msgstr "ניתן להשתמש בכפתור הנגינה שבכותרת כדי להריץ את תצוגת האבטיפוס."
+
+msgid "workspace.path.actions.draw-nodes"
+msgstr "ציור מפרקים (%s)"
+
+msgid "workspace.path.actions.separate-nodes"
+msgstr "הפרדת מפרקים (%s)"
+
+msgid "workspace.path.actions.snap-nodes"
+msgstr "הצמדת מפרקים (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.back"
+msgstr "הרחקה"
+
+msgid "workspace.path.actions.join-nodes"
+msgstr "צירוף מפרקים (%s)"
+
+msgid "workspace.path.actions.make-corner"
+msgstr "לפינה (%s)"
+
+msgid "workspace.path.actions.delete-node"
+msgstr "מחיקת מפרק (%s)"
+
+msgid "workspace.path.actions.merge-nodes"
+msgstr "מיזוג מפרקים (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.titlecase"
+msgstr "רישיות כותרת"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "ריבוע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title"
+msgstr "טקסט"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.uppercase"
+msgstr "אותיות גדולות"
+
+msgid "workspace.path.actions.make-curve"
+msgstr "לעיקול (%s)"
+
+msgid "workspace.path.actions.move-nodes"
+msgstr "העברת מפרקים (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.cut"
+msgstr "גזירה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.normal"
+msgstr "רגיל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.saturation"
+msgstr "רוויה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.screen"
+msgstr "מסך"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.soft-light"
+msgstr "אור רך"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title"
+msgstr "שכבה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.none"
+msgstr "ללא"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.new-password"
+msgstr "סיסמה חדשה"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.position"
+msgstr "מיקום"
+
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.logout"
+msgstr "יציאה"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.name"
+msgstr "שם"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.auth-info"
+msgstr "נכנסת בשם"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.line-height"
+msgstr "גובה שורה"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.desc-message"
+msgstr "יכול להיות שהעמוד לא קיים או שאין לך הרשאות לגשת אליו."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.accept"
+msgstr "הסרה כספריה משותפת"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete"
+msgstr "מחיקה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instance"
+msgstr "ניתוק מופע"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.duplicate"
+msgstr "שכפול"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title"
+msgstr "צל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.group"
+msgstr "צל של קבוצה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.multiple"
+msgstr "צללים של בחירה"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.size"
+msgstr "גודל"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs
+msgid "workspace.options.size-presets"
+msgstr "תבניות גודל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "סמן עגול"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "סמן יהלום"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke"
+msgstr "מתאר"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "ללא"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.luminosity"
+msgstr "תאורה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "חץ קו"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-auto-height"
+msgstr "גובה אוטומטי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "עגול"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.difference"
+msgstr "הבדל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "סמן ריבוע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "חץ משולש"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dashed"
+msgstr "מקווקוו"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.solid"
+msgstr "אחיד"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-bottom"
+msgstr "יישור לתחתית"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-center"
+msgstr "יישור למרכז"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-justify"
+msgstr "יישור לשני הצדדים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-left"
+msgstr "יישור שמאלה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-middle"
+msgstr "יישור לאמצע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-right"
+msgstr "יישור ימינה"
+
+msgid "workspace.options.text-options.decoration"
+msgstr "עיטור"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-ltr"
+msgstr "משמאל לימין"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-rtl"
+msgstr "מימין לשמאל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.google"
+msgstr "Google"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-auto-width"
+msgstr "רוחב אוטומטי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-fixed"
+msgstr "קבוע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.letter-spacing"
+msgstr "ריווח תווים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.lowercase"
+msgstr "אותיות קטנות"
+
+msgid "labels.manage-fonts"
+msgstr "ניהול גופנים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.none"
+msgstr "ללא"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.preset"
+msgstr "תבנית"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.all-corners"
+msgstr "כל הפינות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.rotation"
+msgstr "סיבוב"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.strikethrough"
+msgstr "קו חוצה"
+
+msgid "workspace.options.text-options.text-case"
+msgstr "גדול/קטן"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.row"
+msgstr "שורות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title-selection"
+msgstr "טקסט בחירה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.group-fill"
+msgstr "מילוי קבוצה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.underline"
+msgstr "קו תחתי"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "מעניין אותך רק להתנסות?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"זה שירות ניסיוני, לא להשתמש בו לעבודה אמתית, המיזמים יימחקו מדי פעם בפעם."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "שכחת סיסמה?"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-subtitle"
+msgstr "נא למלא את הפרטים שלך להלן"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "שמחים לראות אותך שוב!"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.paste"
+msgstr "הדבקה"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "כניסה עם GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "כניסה עם GitLab"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.square"
+msgstr "ריבוע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.title"
+msgstr "רשת ופריסות"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "כניסה עם LDAP"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.group-stroke"
+msgstr "מתאר קבוצה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color"
+msgstr "צבע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color-burn"
+msgstr "צריבת צבע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title.group"
+msgstr "קיבוץ שכבות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color-dodge"
+msgstr "בריחת צבע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.darken"
+msgstr "החשכה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.exclusion"
+msgstr "הדרה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.hard-light"
+msgstr "אור קשיח"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "כניסה עם Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "כניסה עם OpenID ‏(SSO)"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "נא להקליד סיסמה חדשה"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-succesfully"
+msgstr "הסיסמה הוחלפה בהצלחה"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "הצטרפת לצוות בהצלחה"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "סיסמה"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "8 תווים לפחות"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "שחזור סיסמה"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "נשלח לך הודעה בדוא״ל עם ההנחיות"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "שכחת סיסמה?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "החלפת הסיסמה שלך"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "יצירת חשבון"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "הפתרון בקוד פתוח לעיצוב ויצירת אבטיפוס."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.hue"
+msgstr "גוון"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr "יצירת חשבון חדש מהווה את הסכמתך לתנאי השירות ולמדיניות הפרטיות."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "שלחנו הודעת דוא״ל לאימות אל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.lighten"
+msgstr "הבהרה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.multiply"
+msgstr "הכפלה"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr "להסיר את הקישור הזה? ביצוע פעולה זו תמנע מכולם לגשת אליו"
+
+msgid "common.share-link.get-link"
+msgstr "קבלת קישור"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "אפשר לצפות"
+
+msgid "common.share-link.link-copied-success"
+msgstr "הקישור הועתק בהצלחה"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "הקישור נמחק בהצלחה"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "יש גישה"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.history"
+msgstr "היסטוריה (%s)"
+
+msgid "common.share-link.permissions-hint"
+msgstr "כל מי שיש לו את הקישור יכול לגשת"
+
+msgid "common.share-link.remove-link"
+msgstr "הסרת קישור"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "עמודים נבחרים"
+
+msgid "common.share-link.title"
+msgstr "שיתוף אבות טיפוס"
+
+msgid "common.share-link.view-all-pages"
+msgstr "כל העמודים"
+
+msgid "common.share-link.view-current-page"
+msgstr "רק העמוד הזה"
+
+msgid "dashboard.export-single"
+msgstr "ייצוא קובץ"
+
+msgid "dashboard.export.explain"
+msgstr ""
+"אחד או יותר מהקבצים שברצונך לייצא משתמשים בספריות משותפות. מה לעשות עם "
+"המשאבים שלהן*?"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.empty-files"
+msgstr "עדיין אין לך כאן קבצים"
+
+msgid "dashboard.export-frames"
+msgstr "ייצוא לוחות אומנות ל־PDF…"
+
+msgid "dashboard.export.options.detach.message"
+msgstr "ספריות משותפות לא יצורפו לייצוא ואף משאב לא יתווסף לספריה. "
+
+msgid "dashboard.export.options.detach.title"
+msgstr "להתייחס למשאבים בספריות משותפות כעצמים בסיסיים"
+
+msgid "dashboard.export.options.merge.message"
+msgstr "הקובץ שלך ייוצא כשכל המשאבים החיצוניים ממוזגים לספריית הקבצים."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title.multiple"
+msgstr "שכבות נבחרות"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.prototype"
+msgstr "אבטיפוס"
+
+msgid "workspace.options.radius"
+msgstr "רדיוס"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.single-corners"
+msgstr "פינות בודדות"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "חברים"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.main-message"
+msgstr "אופס!"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.cancel"
+msgstr "ביטול"
+
+msgid "onboarding.contrib.alt"
+msgstr "קוד פתוח"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.inner"
+msgstr "בפנים"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "בחוץ"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.hint"
+msgstr ""
+"לאחר הסרה כספריה משותפת, ספריית הקבצים של הקובץ הזה לא תהיה זמינה עוד לשימוש "
+"בקרב שאר הקבצים שלך."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.message"
+msgstr "הסרת „%s” כספריה משותפת"
+
+#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
+msgid "notifications.profile-saved"
+msgstr "הפרופיל נשמר בהצלחה!"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.accept"
+msgstr "עדכון רכיב"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.hint"
+msgstr ""
+"פעולה זו תעדכן רכיב בספריה משותפת. זה עשוי להשפיע על הקבצים האחרים שמשתמשים "
+"בה."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "notifications.validation-email-sent"
+msgstr "הודעת האימות נשלחה בדוא״ל אל %s. נא לבדוק את הדוא״ל שלך!"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.blur"
+msgstr "ט"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "גובה"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "שמאל"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "רדיוס"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "צל"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-x"
+msgstr "X"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "מנוקד"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "רוחב"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "טיפוגרפיה"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "רוחב"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "מרכז"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "קו תחתי"
+
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "רישיות כותרת"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "משפחת גופנים"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "סגנון גופן"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "עיטור טקסט"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-transform"
+msgstr "התמרת טקסט"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "גובה שורה"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "קו חוצה"
