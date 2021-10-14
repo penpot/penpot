@@ -272,11 +272,12 @@
                            :headers headers
                            :body body}
                   resp    (http/send! params)]
-              (when (not= (:status resp) 204)
-                (ex/raise :type :internal
-                          :code :unable-to-send-events
-                          :hint "unable to send events"
-                          :context resp))))
+              (if (= (:status resp) 204)
+                true
+                (do
+                  (l/warn :hint "unable to archive events"
+                          :resp-status (:status resp))
+                  false))))
 
           (mark-as-archived [conn rows]
             (db/exec-one! conn ["update audit_log set archived_at=now() where id = ANY(?)"
@@ -291,9 +292,9 @@
             events (into [] xform rows)]
         (when-not (empty? events)
           (l/debug :action "archive-events" :uri uri :events (count events))
-          (send events)
-          (mark-as-archived conn rows)
-          :continue)))))
+          (when (send events)
+            (mark-as-archived conn rows)
+            :continue))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GC Task
