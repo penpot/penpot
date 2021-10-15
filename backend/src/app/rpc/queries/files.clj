@@ -12,6 +12,7 @@
    [app.db :as db]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as projects]
+   [app.rpc.queries.share-link :refer [retrieve-share-link]]
    [app.rpc.queries.teams :as teams]
    [app.storage.impl :as simpl]
    [app.util.blob :as blob]
@@ -59,7 +60,7 @@
     where f.id = ?
       and ppr.profile_id = ?")
 
-(defn- retrieve-file-permissions
+(defn retrieve-file-permissions
   [conn profile-id file-id]
   (when (and profile-id file-id)
     (db/exec! conn [sql:file-permissions
@@ -67,18 +68,43 @@
                     file-id profile-id
                     file-id profile-id])))
 
+(defn get-permissions
+  ([conn profile-id file-id]
+   (let [rows     (retrieve-file-permissions conn profile-id file-id)
+         is-owner (boolean (some :is-owner rows))
+         is-admin (boolean (some :is-admin rows))
+         can-edit (boolean (some :can-edit rows))]
+     (when (seq rows)
+       {:type :membership
+        :is-owner is-owner
+        :is-admin (or is-owner is-admin)
+        :can-edit (or is-owner is-admin can-edit)
+        :can-read true})))
+  ([conn profile-id file-id share-id]
+   (let [perms  (get-permissions conn profile-id file-id)
+         ldata  (retrieve-share-link conn file-id share-id)]
+
+     ;; NOTE: in a future when share-link becomes more powerfull and
+     ;; will allow us specify which parts of the app is availabel, we
+     ;; will probably need to tweak this function in order to expose
+     ;; this flags to the frontend.
+     (cond
+       (some? perms) perms
+       (some? ldata) {:type :share-link
+                      :can-read true
+                      :flags (:flags ldata)}))))
+
 (def has-edit-permissions?
-  (perms/make-edition-predicate-fn retrieve-file-permissions))
+  (perms/make-edition-predicate-fn get-permissions))
 
 (def has-read-permissions?
-  (perms/make-read-predicate-fn retrieve-file-permissions))
+  (perms/make-read-predicate-fn get-permissions))
 
 (def check-edition-permissions!
   (perms/make-check-fn has-edit-permissions?))
 
 (def check-read-permissions!
   (perms/make-check-fn has-read-permissions?))
-
 
 ;; --- Query: Files search
 
@@ -180,9 +206,12 @@
 (sv/defmethod ::file
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
   (db/with-atomic [conn pool]
-    (let [cfg (assoc cfg :conn conn)]
-      (check-edition-permissions! conn profile-id id)
-      (retrieve-file cfg id))))
+    (let [cfg   (assoc cfg :conn conn)
+          perms (get-permissions conn profile-id id)]
+
+      (check-read-permissions! perms)
+      (some-> (retrieve-file cfg id)
+              (assoc :permissions perms)))))
 
 (s/def ::page
   (s/keys :req-un [::profile-id ::file-id]))
@@ -217,7 +246,8 @@
 (sv/defmethod ::page
   [{:keys [pool] :as cfg} {:keys [profile-id file-id strip-thumbnails]}]
   (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id file-id)
+    (check-read-permissions! conn profile-id file-id)
+
     (let [cfg     (assoc cfg :conn conn)
           file    (retrieve-file cfg file-id)
           page-id (get-in file [:data :pages 0])]
@@ -291,7 +321,7 @@
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (let [cfg (assoc cfg :conn conn)]
-      (check-edition-permissions! conn profile-id file-id)
+      (check-read-permissions! conn profile-id file-id)
       (retrieve-file-libraries cfg false file-id))))
 
 ;; --- QUERY: team-recent-files

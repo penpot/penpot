@@ -67,10 +67,10 @@
         i/full-screen-off
         i/full-screen)]
 
-     (when (:edit permissions)
+     (when (:is-admin permissions)
        [:span.btn-primary {:on-click open-share-dialog} (tr "labels.share-prototype")])
 
-     (when (:edit permissions)
+     (when (:can-edit permissions)
        [:span.btn-text-dark {:on-click go-to-workspace} (tr "labels.edit-file")])]))
 
 (mf/defc header-sitemap
@@ -151,14 +151,16 @@
         :alt (tr "viewer.header.interactions-section")}
        i/play]
 
-      (when (:edit permissions)
+      (when (:can-edit permissions)
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :comments)
           :class (dom/classnames :active (= section :comments))
           :alt (tr "viewer.header.comments-section")}
          i/chat])
 
-      (when (:read permissions)
+      (when (or (= (:type permissions) :membership)
+                (and (= (:type permissions) :share-link)
+                     (contains? (:flags permissions) :section-handoff)))
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :handoff)
           :class (dom/classnames :active (= section :handoff))

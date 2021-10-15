@@ -26,12 +26,13 @@
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
-  [{:keys [section] :as props}]
+  [{:keys [section team] :as props}]
   (let [go-members        (st/emitf (dd/go-to-team-members))
         go-settings       (st/emitf (dd/go-to-team-settings))
-        invite-member     (st/emitf (modal/show {:type ::invite-member}))
+        invite-member     (st/emitf (modal/show {:type ::invite-member :team team}))
         members-section?  (= section :dashboard-team-members)
-        settings-section? (= section :dashboard-team-settings)]
+        settings-section? (= section :dashboard-team-settings)
+        permissions       (:permissions team)]
 
     [:header.dashboard-header
      [:div.dashboard-title
@@ -46,20 +47,21 @@
        [:li {:class (when settings-section? "active")}
         [:a {:on-click go-settings} (tr "labels.settings")]]]]
 
-     (if members-section?
+     (if (and members-section? (:is-admin permissions))
        [:a.btn-secondary.btn-small {:on-click invite-member}
         (tr "dashboard.invite-profile")]
        [:div])]))
 
 (defn get-available-roles
-  []
-  [{:value "" :label (tr "labels.role")}
-   {:value "admin" :label (tr "labels.admin")}
-   {:value "editor" :label (tr "labels.editor")}
-   ;; Temporarily disabled viewer role
-   ;; https://tree.taiga.io/project/uxboxproject/issue/1083
-   ;; {:value "viewer" :label (tr "labels.viewer")}
-   ])
+  [permissions]
+  (->> [{:value "editor" :label (tr "labels.editor")}
+        (when (:is-admin permissions)
+          {:value "admin" :label (tr "labels.admin")})
+        ;; Temporarily disabled viewer role
+        ;; https://tree.taiga.io/project/uxboxproject/issue/1083
+        ;; {:value "viewer" :label (tr "labels.viewer")}
+        ]
+       (filterv identity)))
 
 (s/def ::email ::us/email)
 (s/def ::role  ::us/keyword)
@@ -69,8 +71,9 @@
 (mf/defc invite-member-modal
   {::mf/register modal/components
    ::mf/register-as ::invite-member}
-  []
-  (let [roles   (mf/use-memo get-available-roles)
+  [{:keys [team]}]
+  (let [perms   (:permissions team)
+        roles   (mf/use-memo (mf/deps perms) #(get-available-roles perms))
         initial (mf/use-memo (constantly {:role "editor"}))
         form    (fm/use-form :spec ::invite-member-form
                              :initial initial)
@@ -261,6 +264,7 @@
                                (if (:is-default team)
                                  (tr "dashboard.your-penpot")
                                  (:name team))))))
+
 
     (mf/use-effect
      (st/emitf (dd/fetch-team-members)
