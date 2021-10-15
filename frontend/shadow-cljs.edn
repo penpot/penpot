@@ -29,7 +29,9 @@
     :warnings {:fn-deprecated false}}
 
    :release
-   {:compiler-options
+   {:closure-defines {goog.DEBUG false
+                      goog.debug.LOGGING_ENABLED true}
+    :compiler-options
     {:fn-invoke-direct true
      :source-map true
      :elide-asserts true
