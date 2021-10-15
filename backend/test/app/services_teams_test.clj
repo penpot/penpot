@@ -33,11 +33,13 @@
                     :role :editor
                     :profile-id (:id profile1)}]
 
-      ;; (th/print-result! out)
 
       ;; invite external user without complaints
       (let [data (assoc data :email "foo@bar.com")
             out  (th/mutation! data)]
+
+        ;; (th/print-result! out)
+
         (t/is (nil? (:result out)))
         (t/is (= 1 (:call-count (deref mock)))))
 
@@ -111,6 +113,7 @@
                   :id (:id team)
                   :profile-id (:id profile1)}
           out    (th/mutation! params)]
+      ;; (th/print-result! out)
       (t/is (nil? (:error out))))
 
     ;; query the list of teams after soft deletion
@@ -133,7 +136,6 @@
                 :profile-id (:id profile1)}
           out  (th/query! data)]
       ;; (th/print-result! out)
-
       (t/is (nil? (:error out)))
       (let [result (:result out)]
         (t/is (= 0 (count result)))))

@@ -132,8 +132,8 @@
 (sv/defmethod ::delete-team
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [perms (teams/check-edition-permissions! conn profile-id id)]
-      (when-not (some :is-owner perms)
+    (let [perms (teams/get-permissions conn profile-id id)]
+      (when-not (:is-owner perms)
         (ex/raise :type :validation
                   :code :only-owner-can-delete-team))
 
@@ -300,7 +300,7 @@
 (sv/defmethod ::invite-team-member
   [{:keys [pool tokens] :as cfg} {:keys [profile-id team-id email role] :as params}]
   (db/with-atomic [conn pool]
-    (let [perms    (teams/check-edition-permissions! conn profile-id team-id)
+    (let [perms    (teams/get-permissions conn profile-id team-id)
           profile  (db/get-by-id conn :profile profile-id)
           member   (profile/retrieve-profile-data-by-email conn email)
           team     (db/get-by-id conn :team team-id)
@@ -316,7 +316,7 @@
                            {:iss :profile-identity
                             :profile-id (:id profile)})]
 
-      (when-not (some :is-admin perms)
+      (when-not (:is-admin perms)
         (ex/raise :type :validation
                   :code :insufficient-permissions))
 
