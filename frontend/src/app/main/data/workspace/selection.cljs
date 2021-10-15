@@ -12,6 +12,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.common.types.interactions :as cti]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
@@ -288,12 +289,17 @@
   fit."
   [objects page-id unames ids delta]
   (let [unames         (volatile! unames)
-        update-unames! (fn [new-name] (vswap! unames conj new-name))]
+        update-unames! (fn [new-name] (vswap! unames conj new-name))
+        all-ids        (reduce (fn [ids-set id]
+                                 (into ids-set (cons id (cp/get-children id objects))))
+                               #{}
+                               ids)
+        ids-map        (into {} (map #(vector % (uuid/next)) all-ids))]
     (loop [ids   (seq ids)
            chgs  []]
       (if ids
         (let [id     (first ids)
-              result (prepare-duplicate-change objects page-id unames update-unames! id delta)
+              result (prepare-duplicate-change objects page-id unames update-unames! ids-map id delta)
               result (if (vector? result) result [result])]
           (recur
             (next ids)
@@ -313,22 +319,27 @@
     (-> changes (update-indices index-map))))
 
 (defn- prepare-duplicate-change
-  [objects page-id unames update-unames! id delta]
+  [objects page-id unames update-unames! ids-map id delta]
   (let [obj (get objects id)]
     (if (= :frame (:type obj))
-      (prepare-duplicate-frame-change objects page-id unames update-unames! obj delta)
-      (prepare-duplicate-shape-change objects page-id unames update-unames! obj delta (:frame-id obj) (:parent-id obj)))))
+      (prepare-duplicate-frame-change objects page-id unames update-unames! ids-map obj delta)
+      (prepare-duplicate-shape-change objects page-id unames update-unames! ids-map obj delta (:frame-id obj) (:parent-id obj)))))
 
 (defn- prepare-duplicate-shape-change
-  [objects page-id unames update-unames! obj delta frame-id parent-id]
+  [objects page-id unames update-unames! ids-map obj delta frame-id parent-id]
   (when (some? obj)
-    (let [id          (uuid/next)
+    (let [new-id      (ids-map (:id obj))
+          parent-id   (or parent-id frame-id)
           name        (dwc/generate-unique-name @unames (:name obj))
           _           (update-unames! name)
 
-          renamed-obj (assoc obj :id id :name name)
-          moved-obj   (geom/move renamed-obj delta)
-          parent-id   (or parent-id frame-id)
+          new-obj     (-> obj
+                          (assoc :id new-id
+                                 :name name
+                                 :frame-id frame-id)
+                          (dissoc :shapes)
+                          (geom/move delta)
+                          (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
           children-changes
           (loop [result []
@@ -337,47 +348,45 @@
             (if (nil? cid)
               result
               (let [obj (get objects cid)
-                    changes (prepare-duplicate-shape-change objects page-id unames update-unames! obj delta frame-id id)]
+                    changes (prepare-duplicate-shape-change objects page-id unames update-unames! ids-map obj delta frame-id new-id)]
                 (recur
                  (into result changes)
                  (first cids)
-                 (rest cids)))))
+                 (rest cids)))))]
 
-          reframed-obj (-> moved-obj
-                           (assoc  :frame-id frame-id)
-                           (dissoc :shapes))]
       (into [{:type :add-obj
-              :id id
+              :id new-id
               :page-id page-id
               :old-id (:id obj)
               :frame-id frame-id
               :parent-id parent-id
               :ignore-touched true
-              :obj (dissoc reframed-obj :shapes)}]
+              :obj new-obj}]
             children-changes))))
 
 (defn- prepare-duplicate-frame-change
-  [objects page-id unames update-unames! obj delta]
-  (let [frame-id   (uuid/next)
+  [objects page-id unames update-unames! ids-map obj delta]
+  (let [new-id   (ids-map (:id obj))
         frame-name (dwc/generate-unique-name @unames (:name obj))
         _          (update-unames! frame-name)
 
         sch        (->> (map #(get objects %) (:shapes obj))
-                        (mapcat #(prepare-duplicate-shape-change objects page-id unames update-unames! % delta frame-id frame-id)))
+                        (mapcat #(prepare-duplicate-shape-change objects page-id unames update-unames! ids-map % delta new-id new-id)))
 
-        frame     (-> obj
-                      (assoc :id frame-id)
-                      (assoc :name frame-name)
-                      (assoc :frame-id uuid/zero)
-                      (assoc :shapes [])
-                      (geom/move delta))
+        new-frame  (-> obj
+                      (assoc :id new-id
+                             :name frame-name
+                             :frame-id uuid/zero
+                             :shapes [])
+                      (geom/move delta)
+                      (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
         fch {:type :add-obj
              :old-id (:id obj)
              :page-id page-id
-             :id frame-id
+             :id new-id
              :frame-id uuid/zero
-             :obj frame}]
+             :obj new-frame}]
 
     (into [fch] sch)))
 

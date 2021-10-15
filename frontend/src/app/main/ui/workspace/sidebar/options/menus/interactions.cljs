@@ -377,7 +377,7 @@
        [:& page-flows {:flows flows}])
 
      [:div.element-set.interactions-options
-      (when (and shape (not= (:frame-id shape) uuid/zero))
+      (when (and shape (not (cp/unframed-shape? shape)))
         [:div.element-set-title
          [:span (tr "workspace.options.interactions")]
          [:div.add-page {:on-click add-interaction}
@@ -385,7 +385,7 @@
       [:div.element-set-content
        (when (= (count interactions) 0)
          [:*
-          (when (and shape (not= (:frame-id shape) uuid/zero))
+          (when (and shape (not (cp/unframed-shape? shape)))
             [:*
              [:div.interactions-help-icon i/plus]
              [:div.interactions-help.separator (tr "workspace.options.add-interaction")]])

@@ -6,6 +6,7 @@
 
 (ns app.common.types.interactions
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
@@ -339,6 +340,21 @@
 (defn update-interaction
   [interactions index update-fn]
   (update interactions index update-fn))
+
+(defn remap-interactions
+  "Update all interactions whose destination points to a shape in the
+  map to the new id. And remove the ones whose destination does not exist
+  in the map nor in the objects tree."
+  [interactions ids-map objects]
+  (when (some? interactions)
+    (->> interactions
+         (filterv (fn [interaction]
+                    (let [destination (:destination interaction)]
+                      (or (nil? destination)
+                          (contains? ids-map destination)
+                          (contains? objects destination)))))
+         (mapv (fn [interaction]
+                 (d/update-when interaction :destination #(get ids-map % %)))))))
 
 (defn actionable?
   "Check if there is any interaction that is clickable by the user"
