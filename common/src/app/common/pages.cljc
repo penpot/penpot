@@ -44,6 +44,7 @@
 (d/export helpers/is-shape-grouped)
 (d/export helpers/get-parent)
 (d/export helpers/get-parents)
+(d/export helpers/get-frame)
 (d/export helpers/clean-loops)
 (d/export helpers/calculate-invalid-targets)
 (d/export helpers/valid-frame-target)
@@ -67,6 +68,7 @@
 (d/export helpers/merge-path-item)
 (d/export helpers/compact-path)
 (d/export helpers/compact-name)
+(d/export helpers/unframed-shape?)
 
 ;; Indices
 (d/export indices/calculate-z-index)

@@ -8,9 +8,8 @@
   "Visually show shape interactions in workspace"
   (:require
    [app.common.data :as d]
-   [app.common.pages.helpers :as cph]
+   [app.common.pages :as cp]
    [app.common.types.interactions :as cti]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -210,7 +209,7 @@
           (st/emit! (dw/start-move-overlay-pos index)))]
 
     (when dest-shape
-      (let [orig-frame (cph/get-frame orig-shape objects)
+      (let [orig-frame (cp/get-frame orig-shape objects)
             marker-x   (+ (:x orig-frame) (:x position))
             marker-y   (+ (:y orig-frame) (:y position))
             width      (:width dest-shape)
@@ -320,7 +319,8 @@
                                           :position (:overlay-position interaction)
                                           :objects objects
                                           :hover-disabled? hover-disabled?}]))])))
-          (when (and (not= (:frame-id shape) uuid/zero)
+          (when (and shape
+                     (not (cp/unframed-shape? shape))
                      (not (#{:move :rotate} current-transform)))
             [:& interaction-handle {:key (:id shape)
                                     :index nil

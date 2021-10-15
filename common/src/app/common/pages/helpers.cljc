@@ -484,3 +484,10 @@
   (let [children (get-object-with-children frame-id objects)]
     (or (some cti/flow-origin? (map :interactions children))
         (some #(cti/flow-to? % frame-id) (map :interactions (vals objects))))))
+
+(defn unframed-shape?
+  "Checks if it's a non-frame shape in the top level."
+  [shape]
+  (and (not= (:type shape) :frame)
+       (= (:frame-id shape) uuid/zero)))
+
