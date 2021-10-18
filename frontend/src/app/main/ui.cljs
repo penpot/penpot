@@ -6,8 +6,6 @@
 
 (ns app.main.ui
   (:require
-   [app.common.spec :as us]
-   [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.auth :refer [auth]]
@@ -25,67 +23,7 @@
    [app.main.ui.viewer :as viewer]
    [app.main.ui.workspace :as workspace]
    [app.util.router :as rt]
-   [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
-
-;; --- Routes
-
-(s/def ::page-id ::us/uuid)
-(s/def ::file-id ::us/uuid)
-(s/def ::section ::us/keyword)
-(s/def ::index ::us/integer)
-(s/def ::token (s/nilable ::us/not-empty-string))
-(s/def ::share-id ::us/uuid)
-
-(s/def ::viewer-path-params
-  (s/keys :req-un [::file-id]))
-
-(s/def ::viewer-query-params
-  (s/keys :opt-un [::index ::share-id ::section ::page-id]))
-
-(def routes
-  [["/auth"
-    ["/login"            :auth-login]
-    (when (contains? @cf/flags :registration)
-      ["/register"         :auth-register])
-    (when (contains? @cf/flags :registration)
-      ["/register/validate" :auth-register-validate])
-    (when (contains? @cf/flags :registration)
-      ["/register/success" :auth-register-success])
-    ["/recovery/request" :auth-recovery-request]
-    ["/recovery"         :auth-recovery]
-    ["/verify-token"     :auth-verify-token]]
-
-   ["/settings"
-    ["/profile"  :settings-profile]
-    ["/password" :settings-password]
-    ["/feedback" :settings-feedback]
-    ["/options"  :settings-options]]
-
-   ["/view/:file-id"
-    {:name :viewer
-     :conform
-     {:path-params ::viewer-path-params
-      :query-params ::viewer-query-params}}]
-
-   (when *assert*
-     ["/debug/icons-preview" :debug-icons-preview])
-
-   ;; Used for export
-   ["/render-object/:file-id/:page-id/:object-id" :render-object]
-   ["/render-sprite/:file-id" :render-sprite]
-
-   ["/dashboard/team/:team-id"
-    ["/members"              :dashboard-team-members]
-    ["/settings"             :dashboard-team-settings]
-    ["/projects"             :dashboard-projects]
-    ["/search"               :dashboard-search]
-    ["/fonts"                :dashboard-fonts]
-    ["/fonts/providers"      :dashboard-font-providers]
-    ["/libraries"            :dashboard-libraries]
-    ["/projects/:project-id" :dashboard-files]]
-
-   ["/workspace/:project-id/:file-id" :workspace]])
 
 (mf/defc on-main-error
   [{:keys [error] :as props}]

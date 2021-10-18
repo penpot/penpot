@@ -93,6 +93,9 @@
 
 ;; --- EVENT: fetch-profile
 
+(def profile-fetched?
+  (ptk/type? ::profile-fetched))
+
 (defn profile-fetched
   [{:keys [id] :as profile}]
   (us/verify ::profile profile)
