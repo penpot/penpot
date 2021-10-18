@@ -36,9 +36,6 @@
 (def picked-color-select
   (l/derived :picked-color-select refs/workspace-local))
 
-(def picked-shift?
-  (l/derived :picked-shift? refs/workspace-local))
-
 (def viewport
   (l/derived (l/in [:workspace-local :vport]) st/state))
 
