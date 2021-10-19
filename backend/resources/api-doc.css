@@ -1,0 +1,101 @@
+* {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+}
+
+pre {
+  margin: 0px;
+}
+
+body {
+  margin: 0px;
+  padding: 0px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 900px;
+  width: 900px;
+}
+
+header {
+  border-bottom: 1px solid #c0c0c0;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.rpc-doc-content {
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* border: 1px solid red; */
+  padding: 5px;
+}
+
+.rpc-doc-content > h2:not(:first-child) {
+  margin-top: 30px;
+}
+
+
+.rpc-items {
+  list-style: none;
+  padding: 0px;
+  margin: 0px;
+}
+
+.rpc-item {
+  /* border: 1px solid red; */
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.rpc-item:not(:last-child) {
+  margin-bottom: 3px;
+}
+
+.rpc-row-info {
+  cursor: pointer;
+  display: flex;
+  background-color: #eeeeee;
+  padding: 5px 10px;
+}
+
+.rpc-row-info > *:not(:last-child) {
+  margin-right: 10px;
+}
+
+.rpc-row-info > * {
+  /* border: 1px solid green; */
+}
+
+.rpc-row-info > .type {
+  font-weight: bold;
+  width: 70px;
+}
+
+.rpc-row-info > .name {
+  width: 280px;
+  /* font-weight: bold; */
+}
+
+.rpc-row-info > .tags > .tag > span:first-child {
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
+}
+
+.rpc-row-detail {
+  padding: 5px 10px;
+  padding-bottom: 20px;
+}

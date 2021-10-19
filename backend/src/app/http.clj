@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
+   [app.http.doc :as doc]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
    [app.metrics :as mtx]
@@ -150,6 +151,8 @@
                           [middleware/parse-request-body]
                           [middleware/errors errors/handle]
                           [middleware/cookies]]}
+
+     ["/_doc" {:get (doc/handler rpc)}]
 
      ["/feedback" {:middleware [(:middleware session)]
                    :post feedback}]

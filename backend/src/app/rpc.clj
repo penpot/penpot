@@ -97,37 +97,39 @@
         auth?  (:auth mdata true)]
 
     (l/trace :action "register" :name (::sv/name mdata))
-    (fn [params]
+    (with-meta
+      (fn [params]
 
-      ;; Raise authentication error when rpc method requires auth but
-      ;; no profile-id is found in the request.
-      (when (and auth? (not (uuid? (:profile-id params))))
-        (ex/raise :type :authentication
-                  :code :authentication-required
-                  :hint "authentication required for this endpoint"))
+        ;; Raise authentication error when rpc method requires auth but
+        ;; no profile-id is found in the request.
+        (when (and auth? (not (uuid? (:profile-id params))))
+          (ex/raise :type :authentication
+                    :code :authentication-required
+                    :hint "authentication required for this endpoint"))
 
-      (let [params' (dissoc params ::request)
-            params' (us/conform spec params')
-            result  (f cfg params')]
+        (let [params' (dissoc params ::request)
+              params' (us/conform spec params')
+              result  (f cfg params')]
 
-        ;; When audit log is enabled (default false).
-        (when (fn? audit)
-          (let [resultm    (meta result)
-                request    (::request params)
-                profile-id (or (:profile-id params')
-                               (:profile-id result)
-                               (::audit/profile-id resultm))
-                props      (d/merge params' (::audit/props resultm))]
-            (audit :cmd :submit
-                   :type (or (::audit/type resultm)
-                             (::type cfg))
-                   :name (or (::audit/name resultm)
-                             (::sv/name mdata))
-                   :profile-id profile-id
-                   :ip-addr (audit/parse-client-ip request)
-                   :props props)))
+          ;; When audit log is enabled (default false).
+          (when (fn? audit)
+            (let [resultm    (meta result)
+                  request    (::request params)
+                  profile-id (or (:profile-id params')
+                                 (:profile-id result)
+                                 (::audit/profile-id resultm))
+                  props      (d/merge params' (::audit/props resultm))]
+              (audit :cmd :submit
+                     :type (or (::audit/type resultm)
+                               (::type cfg))
+                     :name (or (::audit/name resultm)
+                               (::sv/name mdata))
+                     :profile-id profile-id
+                     :ip-addr (audit/parse-client-ip request)
+                     :props props)))
 
-        result))))
+          result))
+      mdata)))
 
 (defn- process-method
   [cfg vfn]
