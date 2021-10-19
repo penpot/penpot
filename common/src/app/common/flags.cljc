@@ -11,6 +11,7 @@
 
 (def default
   #{:backend-asserts
+    :api-doc
     :registration
     :demo-users})
 

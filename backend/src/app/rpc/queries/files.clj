@@ -204,6 +204,7 @@
   (s/keys :req-un [::profile-id ::id]))
 
 (sv/defmethod ::file
+  "Retrieve a file by its ID. Only authenticated users."
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [cfg   (assoc cfg :conn conn)

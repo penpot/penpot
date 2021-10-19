@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow">
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Builtin API Documentation - Penpot</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono">
+    <style>
+      {% include "api-doc.css" %}
+    </style>
+    <script>
+      {% include "api-doc.js" %}
+    </script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Penpot API Documentation</h1>
+      </header>
+      <section class="rpc-doc-content">
+
+        <h2>RPC QUERY METHODS:</h2>
+        <ul class="rpc-items">
+          {% for item in query-methods %}
+            <li class="rpc-item">
+              <div class="rpc-row-info">
+                {# <div class="type">{{item.type}}</div> #}
+                <div class="name">{{item.name}}</div>
+                <div class="tags">
+                  <span class="tag">
+                    <span>Auth:</span>
+                    <span>{% if item.auth %}YES{% else %}NO{% endif %}</span>
+                  </span>
+                </div>
+              </div>
+              <div class="rpc-row-detail hidden">
+                {% if item.docs %}
+                  <h3>DOCSTRING:</h3>
+                  <p>{{item.docs}}</p>
+                {% endif %}
+
+                <h3>SPEC EXPLAIN:</h3>
+                <pre>{{item.spec}}</pre>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <h2>RPC MUTATION METHODS:</h2>
+        <ul class="rpc-items">
+          {% for item in mutation-methods %}
+            <li class="rpc-item">
+              <div class="rpc-row-info">
+                {# <div class="type">{{item.type}}</div> #}
+                <div class="name">{{item.name}}</div>
+                <div class="tags">
+                  <span class="tag">
+                    <span>Auth:</span>
+                    <span>{% if item.auth %}YES{% else %}NO{% endif %}</span>
+                  </span>
+                </div>
+              </div>
+              <div class="rpc-row-detail hidden">
+                {% if item.docs %}
+                  <h3>DOCSTRING:</h3>
+                  <p>{{item.docs}}</p>
+                {% endif %}
+
+                <h3>SPEC EXPLAIN:</h3>
+                <pre>{{item.spec}}</pre>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
+
