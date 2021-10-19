@@ -347,14 +347,14 @@
   in the map nor in the objects tree."
   [interactions ids-map objects]
   (when (some? interactions)
-    (->> interactions
-         (filterv (fn [interaction]
-                    (let [destination (:destination interaction)]
-                      (or (nil? destination)
-                          (contains? ids-map destination)
-                          (contains? objects destination)))))
-         (mapv (fn [interaction]
-                 (d/update-when interaction :destination #(get ids-map % %)))))))
+    (let [xform (comp (filter (fn [interaction]
+                                (let [destination (:destination interaction)]
+                                  (or (nil? destination)
+                                      (contains? ids-map destination)
+                                      (contains? objects destination)))))
+                      (map (fn [interaction]
+                             (d/update-when interaction :destination #(get ids-map % %)))))]
+      (into [] xform interactions))))
 
 (defn actionable?
   "Check if there is any interaction that is clickable by the user"
