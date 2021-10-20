@@ -9,8 +9,9 @@
 
 ### :sparkles: New features
 
-- Add boolean shapes: intersections, unions, difference and exclusions.
-- Add advanced prototyping [#244](https://tree.taiga.io/project/penpot/us/244).
+- Add boolean shapes: intersections, unions, difference and exclusions[Taiga #748](https://tree.taiga.io/project/penpot/us/748).
+- Add advanced prototyping [Taiga #244](https://tree.taiga.io/project/penpot/us/244).
+- Add multiple flows [Taiga #2091](https://tree.taiga.io/project/penpot/us/2091).
 - Change order of the teams menu so it's in the joined time order.
 
 ### :bug: Bugs fixed
