@@ -362,15 +362,15 @@
   (some #(= (:event-type %) :click) interactions))
 
 (defn flow-origin?
-  "Check if there is any interaction of type :navigate that goes outside"
+  "Check if there is any interaction that is the start or the continuation of a flow"
   [interactions]
-  (some #(and (= (:action-type %) :navigate)
+  (some #(and (#{:navigate :open-overlay :toggle-overlay :close-overlay} (:action-type %))
               (some? (:destination %)))
         interactions))
 
 (defn flow-to?
-  "Check if there is any interaction of type :navigate that goes to the given frame"
+  "Check if there is any interaction that flows into the given frame"
   [interactions frame-id]
-  (some #(and (= (:action-type %) :navigate)
+  (some #(and (#{:navigate :open-overlay :toggle-overlay :close-overlay} (:action-type %))
               (= (:destination %) frame-id))
         interactions))
