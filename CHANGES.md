@@ -41,6 +41,7 @@
 - Fix path stroke is not working properly with high thickness [Taiga #2154](https://tree.taiga.io/project/penpot/issue/2154).
 - Fix bug with transformation operations [Taiga #2155](https://tree.taiga.io/project/penpot/issue/2155).
 - Fix bug in firefox when a text box is inside a mask [Taiga #2152](https://tree.taiga.io/project/penpot/issue/2152).
+- Fix paste in place in arboards [Taiga #2188](https://tree.taiga.io/project/penpot/issue/2188)
 
 ### :arrow_up: Deps updates
 
