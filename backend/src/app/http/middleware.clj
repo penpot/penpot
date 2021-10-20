@@ -8,6 +8,7 @@
   (:require
    [app.common.logging :as l]
    [app.common.transit :as t]
+   [app.config :as cf]
    [app.metrics :as mtx]
    [app.util.json :as json]
    [buddy.core.codecs :as bc]
@@ -176,3 +177,29 @@
                 :uri (str (:uri request) (when qstring (str "?" qstring)))
                 :method (name (:request-method request)))
         (handler request)))))
+
+(defn- wrap-cors
+  [handler]
+  (if-not (contains? cf/flags :cors)
+    handler
+    (letfn [(add-cors-headers [response request]
+              (-> response
+                  (update
+                   :headers
+                   (fn [headers]
+                     (-> headers
+                         (assoc "access-control-allow-origin" (get-in request [:headers "origin"]))
+                         (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
+                         (assoc "access-control-allow-credentials" "true")
+                         (assoc "access-control-expose-headers" "x-requested-with, content-type, cookie")
+                         (assoc "access-control-allow-headers" "x-frontend-version, content-type, accept, x-requested-width"))))))]
+      (fn [request]
+        (if (= (:request-method request) :options)
+          (-> {:status 200 :body ""}
+              (add-cors-headers request))
+          (let [response (handler request)]
+            (add-cors-headers response request)))))))
+
+(def cors
+  {:name ::cors
+   :compile (constantly wrap-cors)})

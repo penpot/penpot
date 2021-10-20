@@ -83,8 +83,7 @@
    :ldap-attrs-photo "jpegPhoto"
 
    ;; a server prop key where initial project is stored.
-   :initial-project-skey "initial-project"
-   })
+   :initial-project-skey "initial-project"})
 
 (s/def ::flags ::us/words)
 

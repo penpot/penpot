@@ -93,7 +93,8 @@
   (when (false? registration)
     (swap! flags disj :registration)))
 
-(def public-uri
+(defn get-public-uri
+  []
   (let [uri (u/uri (or (obj/get global "penpotPublicURI")
                        (.-origin ^js location)))]
     ;; Ensure that the path always ends with "/"; this ensures that
@@ -101,6 +102,8 @@
     (cond-> uri
       (not (str/ends-with? (:path uri) "/"))
       (update :path #(str % "/")))))
+
+(def public-uri (get-public-uri))
 
 ;; --- Helper Functions
 
