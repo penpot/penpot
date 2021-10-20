@@ -9,6 +9,8 @@
   (:require
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
+   [app.util.globals :refer [global]]
+   [app.util.object :as obj]
    [beicon.core :as rx]))
 
 (declare handle-response)
@@ -28,11 +30,13 @@
          data (t/encode-str message)
          instance (:instance worker)]
 
-     (.postMessage instance data)
-     (->> (:stream worker)
-          (rx/filter #(= (:reply-to %) sender-id))
-          (take-messages)
-          (rx/map handle-response)))))
+     (if (some? instance)
+       (do (.postMessage instance data)
+           (->> (:stream worker)
+                (rx/filter #(= (:reply-to %) sender-id))
+                (take-messages)
+                (rx/map handle-response)))
+       (rx/empty)))))
 
 (defn ask!
   [worker message]
@@ -78,6 +82,11 @@
 
     (.addEventListener instance "message" handle-message)
     (.addEventListener instance "error" handle-error)
+
+    (ask! worker
+          {:cmd :configure
+           :params
+           {"penpotPublicURI" (obj/get global "penpotPublicURI")}})
 
     worker))
 

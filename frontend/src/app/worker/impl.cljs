@@ -7,6 +7,8 @@
 (ns app.worker.impl
   (:require
    [app.common.pages.changes :as ch]
+   [app.util.globals :refer [global]]
+   [app.util.object :as obj]
    [okulary.core :as l]))
 
 (enable-console-print!)
@@ -50,3 +52,8 @@
                    (assoc :cmd :selection/update-index)))
       (handler (-> message
                    (assoc :cmd :snaps/update-index))))))
+
+(defmethod handler :configure
+  [{:keys [params]}]
+  (doseq [[param-key param-value] params]
+    (obj/set! global param-key param-value)))

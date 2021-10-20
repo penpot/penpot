@@ -44,15 +44,32 @@ function pull-devenv-if-not-exists {
 
 function start-devenv {
     pull-devenv-if-not-exists $@;
-    docker-compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml up -d;
+
+    # Check if the "backend-only" container is running. If it is, we need tot stop it first
+    if [[ ! $(docker ps -f "name=penpot-backend" -q) ]]; then
+        docker-compose -p $DEVENV_PNAME --profile backend -f docker/devenv/docker-compose.yaml stop -t 2 backend;
+    fi
+
+    docker-compose -p $DEVENV_PNAME --profile full -f docker/devenv/docker-compose.yaml up -d;
+}
+
+function start-backend {
+    pull-devenv-if-not-exists $@;
+
+    # Check if the "devenv" container is running. If it is, we need tot stop it first because conflicts with the backend
+    if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
+        docker-compose -p $DEVENV_PNAME --profile full -f docker/devenv/docker-compose.yaml stop -t 2 main;
+    fi
+
+    docker-compose -p $DEVENV_PNAME --profile backend -f docker/devenv/docker-compose.yaml up -d;
 }
 
 function stop-devenv {
-    docker-compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml stop -t 2;
+    docker-compose -p $DEVENV_PNAME --profile full --profile backend -f docker/devenv/docker-compose.yaml stop -t 2;
 }
 
 function drop-devenv {
-    docker-compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml down -t 2 -v;
+    docker-compose -p $DEVENV_PNAME --profile full --profile backend -f docker/devenv/docker-compose.yaml down -t 2 -v;
 
     echo "Clean old development image $DEVENV_IMGNAME..."
     docker images $DEVENV_IMGNAME -q | awk '{print $3}' | xargs --no-run-if-empty docker rmi
@@ -68,6 +85,14 @@ function run-devenv {
     fi
 
     docker exec -ti penpot-devenv-main sudo -EH -u penpot /home/start-tmux.sh
+}
+
+function run-backend {
+    if [[ ! $(docker ps -f "name=penpot-backend" -q) ]]; then
+        start-backend
+    fi
+
+    docker exec -ti penpot-backend sudo -EH -u penpot /home/start-tmux-back.sh
 }
 
 function build {
@@ -175,6 +200,8 @@ function usage {
     echo "- stop-devenv                      Stops the development oriented docker-compose service."
     echo "- drop-devenv                      Remove the development oriented docker-compose containers, volumes and clean images."
     echo "- run-devenv                       Attaches to the running devenv container and starts development environment"
+    echo "- start-backend                    Start the backend only service."
+    echo "- run-backend                      Starts a backend-only instance and attach tmux to it"
     echo "                                   based on tmux (frontend at localhost:3449, backend at localhost:6060)."
     echo ""
 }
@@ -196,8 +223,14 @@ case $1 in
     start-devenv)
         start-devenv ${@:2}
         ;;
+    start-backend)
+        start-backend ${@:2}
+        ;;
     run-devenv)
         run-devenv ${@:2}
+        ;;
+    run-backend)
+        run-backend ${@:2}
         ;;
     stop-devenv)
         stop-devenv ${@:2}

@@ -10,6 +10,23 @@ if [ ! -e ~/.fixtures-loaded ]; then
     touch ~/.fixtures-loaded
 fi
 
-clojure -A:dev -M -m app.main
+if [ "$1" = "--watch" ]; then
+    echo "Start Watch..."
+
+    clojure -A:dev -M -m app.main &
+    PID=$!
+
+    npx nodemon \
+        --watch src \
+        --watch ../common \
+        --ext "clj" \
+        --signal SIGKILL \
+        --exec 'echo "(user/restart)" | nc -N localhost 6062'
+
+    kill -9 $PID
+else
+    clojure -A:dev -M -m app.main
+fi
+
 
 
