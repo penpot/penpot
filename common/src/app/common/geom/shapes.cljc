@@ -13,7 +13,8 @@
    [app.common.geom.shapes.intersect :as gin]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
-   [app.common.geom.shapes.transforms :as gtr]))
+   [app.common.geom.shapes.transforms :as gtr]
+   [app.common.math :as mth]))
 
 ;; --- Setup (Initialize)
 ;; FIXME: Is this the correct place for these functions?
@@ -126,6 +127,13 @@
     (-> shape
         (assoc :selrect selrect
                :points points))))
+
+(defn shape-stroke-margin
+  [shape stroke-width]
+  (if (= (:type shape) :path)
+    ;; TODO: Calculate with the stroke offset (not implemented yet
+    (mth/sqrt (* 2 stroke-width stroke-width))
+    (- (mth/sqrt (* 2 stroke-width stroke-width)) stroke-width)))
 
 
 ;; EXPORTS
