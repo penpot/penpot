@@ -53,7 +53,12 @@
 
 (defn- add-cookies
   [response {:keys [id] :as session}]
-  (assoc response :cookies {cookie-name {:path "/" :http-only true :value id}}))
+  (let [cors? (contains? cfg/flags :cors)]
+    (assoc response :cookies {cookie-name {:path "/"
+                                           :http-only true
+                                           :value id
+                                           :same-site (if cors? :none :strict)
+                                           :secure true}})))
 
 (defn- clear-cookies
   [response]
