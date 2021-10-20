@@ -37,11 +37,17 @@
             (update :width + (* 2 padding))
             (update :height + (* 2 padding)))]
 
-    (if (= :group (:type object))
+    (cond
+      (and (= :group (:type object))
+           (:masked-group? object))
+      (calc-bounds (get objects (first (:shapes object))) objects)
+
+      (= :group (:type object))
       (->> (:shapes object)
            (into [obj-bounds] xf-get-bounds)
            (gsh/join-rects))
 
+      :else
       obj-bounds)))
 
 (mf/defc object-svg

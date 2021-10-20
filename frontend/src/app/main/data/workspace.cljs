@@ -1648,7 +1648,6 @@
           ;; Procceed with the standard shape paste procediment.
           (do-paste [it state mouse-pos media]
             (let [page-objects  (wsh/lookup-page-objects state)
-                  all-objects   (merge page-objects paste-objects)
                   media-idx     (d/index-by :prev-id media)
 
                   ;; Calculate position for the pasted elements
@@ -1669,6 +1668,8 @@
                                                                :remote-synced?
                                                                :shape-ref
                                                                :touched))))))
+
+                  all-objects   (merge page-objects paste-objects)
 
                   page-id   (:current-page-id state)
                   unames    (-> (wsh/lookup-page-objects state page-id)
