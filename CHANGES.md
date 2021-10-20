@@ -46,6 +46,7 @@
 - Fix paste in place in arboards [Taiga #2188](https://tree.taiga.io/project/penpot/issue/2188)
 - Fix font size input stuck on selection change [Taiga #2184](https://tree.taiga.io/project/penpot/issue/2184)
 - Fix stroke cut on shapes export [Taiga #2171](https://tree.taiga.io/project/penpot/issue/2171)
+- Fix no color when boolean with an SVG [Taiga #2193](https://tree.taiga.io/project/penpot/issue/2193)
 
 ### :arrow_up: Deps updates
 

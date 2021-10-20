@@ -33,6 +33,10 @@
   [bool-type name shapes objects]
   (let [shapes (mapv #(stp/convert-to-path % objects) shapes)
         head (if (= bool-type :difference) (first shapes) (last shapes))
+        head (cond-> head
+               (and (contains? head :svg-attrs) (nil? (:fill-color head)))
+               (assoc :fill-color "#000000"))
+
         head-data (select-keys head stp/style-properties)]
     [(-> {:id (uuid/next)
           :type :bool
@@ -51,7 +55,10 @@
   (let [shapes (->> (:shapes group)
                     (map #(get objects %))
                     (mapv #(stp/convert-to-path % objects)))
-        head (first shapes)
+        head (if (= bool-type :difference) (first shapes) (last shapes))
+        head (cond-> head
+               (and (contains? head :svg-attrs) (nil? (:fill-color head)))
+               (assoc :fill-color "#000000"))
         head-data (select-keys head stp/style-properties)]
 
     (-> group
