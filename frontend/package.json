@@ -12,7 +12,15 @@
     "defaults"
   ],
   "scripts": {
-    "validate-translations": "node ./scripts/validate-translations.js"
+    "validate-translations": "node ./scripts/validate-translations.js",
+    "watch-main": "shadow-cljs watch main",
+    "watch-gulp": "gulp watch",
+    "test-watch-compile": "shadow-cljs watch test",
+    "test-run": "node target/tests.js",
+    "test-watch-run": "nodemon --signal SIGKILL --watch target --exec npm run test-run",
+    "test-watch": "npm-run-all --parallel test-watch-compile test-watch-run",
+    "test": "npm run test-watch",
+    "start": "npm-run-all --parallel watch-gulp watch-main"
   },
   "devDependencies": {
     "autoprefixer": "^10.2.4",
@@ -29,6 +37,8 @@
     "map-stream": "0.0.7",
     "marked": "^3.0.4",
     "mkdirp": "^1.0.4",
+    "nodemon": "^2.0.13",
+    "npm-run-all": "^4.1.5",
     "postcss": "^8.3.5",
     "postcss-clean": "^1.2.2",
     "rimraf": "^3.0.0",
