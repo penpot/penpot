@@ -39,10 +39,10 @@
          [:img {:src "images/features/advanced-proto.gif" :border "0" :alt "Advanced interactions"}]]
         [:div.modal-right
          [:div.modal-title
-          [:h2 "Advanced interactions"]]
+          [:h2 "Prototyping triggers and actions"]]
          [:div.modal-content
-          [:p "Now you can navigate through prototype pages of the same file at the view mode."]
-          [:p "You can also create a shareable link deciding which pages will be available for the visitors. Sharing is caring!"]]
+          [:p "Prototyping options at last! Different triggers (like mouse events or time delays) and actions allow you to add complexity to the interactions of your prototypes."]
+          [:p "Create overlays, back buttons or links to URLs to mimic the behavior of the product you’re designing."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
@@ -60,8 +60,8 @@
          [:div.modal-title
           [:h2 "Multiple flows"]]
          [:div.modal-content
-          [:p "Ever needed an arrow to point something? Style the ends of any open paths."]
-          [:p "You can select different styles for each end of an open path: arrows, square, circle, diamond or just a round ending are the available options."]]
+          [:p "Design projects usually need to define multiple casuistics for different devices and user journeys."]
+          [:p "Flows allow you to define multiple starting points within the same page so you can better organize and present your prototypes."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
@@ -77,10 +77,10 @@
          [:img {:src "images/features/booleans.gif" :border "0" :alt "Boolean shapes"}]]
         [:div.modal-right
          [:div.modal-title
-          [:h2 "Boolean shapes"]]
+          [:h2 "Boolean operations"]]
          [:div.modal-content
-          [:p "Click on a change of the history of a file to get the file to this very point without ctrl+z all the way."]
-          [:p "Quick and easy :)"]]
+          [:p "Now in Penpot you can combine shapes in different ways. There are five options: Union, difference, intersection, exclusion and flatten."]
+          [:p "Using boolean operations will lead to countless graphic possibilities for your designs."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
@@ -98,8 +98,8 @@
          [:div.modal-title
           [:h2 "Libraries & templates"]]
          [:div.modal-content
-          [:p "If you have a presentation made at Penpot you might want to create a document that can be shared with anyone, regardless of having a Penpot account, or just to be able to use your presentation offline (essential for talks and classes)."]
-          [:p "Now you can easily export all the artboards of a page to a single pdf file."]]
+          [:p "We’ve created a new space on Penpot where you can share your libraries and templates and download the ones you like.   Material Design, Cocomaterial or Penpot’s Design System are among them (and a lot more to come!)."]
+          [:p [:a {:alt "Explore libraries & templates" :target "_blank" :href "https://penpot.app/libraries-templates.html"} "Explore libraries & templates"]]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& c/navigation-bullets
