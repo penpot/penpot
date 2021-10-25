@@ -220,7 +220,6 @@
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform round-coords?]
-  ;;
   (let [points (-> shape :points (gco/transform-points transform))
         center (gco/center-points points)
 
@@ -445,8 +444,10 @@
     transform))
 
 (defn- set-flip [shape modifiers]
-  (let [rx (get-in modifiers [:resize-vector :x])
-        ry (get-in modifiers [:resize-vector :y])]
+  (let [rx (or (get-in modifiers [:resize-vector :x])
+               (get-in modifiers [:resize-vector-2 :x]))
+        ry (or (get-in modifiers [:resize-vector :y])
+               (get-in modifiers [:resize-vector-2 :y]))]
     (cond-> shape
       (and rx (< rx 0)) (-> (update :flip-x not)
                             (update :rotation -))
