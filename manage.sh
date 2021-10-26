@@ -47,10 +47,10 @@ function start-devenv {
 
     # Check if the "backend-only" container is running. If it is, we need tot stop it first
     if [[ ! $(docker ps -f "name=penpot-backend" -q) ]]; then
-        docker-compose -p $DEVENV_PNAME --profile backend -f docker/devenv/docker-compose.yaml stop -t 2 backend;
+        docker compose -p $DEVENV_PNAME --profile backend -f docker/devenv/docker-compose.yaml stop -t 2 backend;
     fi
 
-    docker-compose -p $DEVENV_PNAME --profile full -f docker/devenv/docker-compose.yaml up -d;
+    docker compose -p $DEVENV_PNAME --profile full -f docker/devenv/docker-compose.yaml up -d;
 }
 
 function start-backend {
@@ -58,25 +58,25 @@ function start-backend {
 
     # Check if the "devenv" container is running. If it is, we need tot stop it first because conflicts with the backend
     if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
-        docker-compose -p $DEVENV_PNAME --profile full -f docker/devenv/docker-compose.yaml stop -t 2 main;
+        docker compose -p $DEVENV_PNAME --profile full -f docker/devenv/docker-compose.yaml stop -t 2 main;
     fi
 
-    docker-compose -p $DEVENV_PNAME --profile backend -f docker/devenv/docker-compose.yaml up -d;
+    docker compose -p $DEVENV_PNAME --profile backend -f docker/devenv/docker-compose.yaml up -d;
 }
 
 function stop-devenv {
-    docker-compose -p $DEVENV_PNAME --profile full --profile backend -f docker/devenv/docker-compose.yaml stop -t 2;
+    docker compose -p $DEVENV_PNAME --profile full --profile backend -f docker/devenv/docker-compose.yaml stop -t 2;
 }
 
 function drop-devenv {
-    docker-compose -p $DEVENV_PNAME --profile full --profile backend -f docker/devenv/docker-compose.yaml down -t 2 -v;
+    docker compose -p $DEVENV_PNAME --profile full --profile backend -f docker/devenv/docker-compose.yaml down -t 2 -v;
 
     echo "Clean old development image $DEVENV_IMGNAME..."
     docker images $DEVENV_IMGNAME -q | awk '{print $3}' | xargs --no-run-if-empty docker rmi
 }
 
 function log-devenv {
-    docker-compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml logs -f --tail=50
+    docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml logs -f --tail=50
 }
 
 function run-devenv {
@@ -196,9 +196,9 @@ function usage {
     echo "Options:"
     echo "- pull-devenv                      Pulls docker development oriented image"
     echo "- build-devenv                     Build docker development oriented image"
-    echo "- start-devenv                     Start the development oriented docker-compose service."
-    echo "- stop-devenv                      Stops the development oriented docker-compose service."
-    echo "- drop-devenv                      Remove the development oriented docker-compose containers, volumes and clean images."
+    echo "- start-devenv                     Start the development oriented docker compose service."
+    echo "- stop-devenv                      Stops the development oriented docker compose service."
+    echo "- drop-devenv                      Remove the development oriented docker compose containers, volumes and clean images."
     echo "- run-devenv                       Attaches to the running devenv container and starts development environment"
     echo "- start-backend                    Start the backend only service."
     echo "- run-backend                      Starts a backend-only instance and attach tmux to it"
