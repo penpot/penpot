@@ -102,7 +102,10 @@
         (mf/use-callback
           (mf/deps ids)
           (fn []
-            (st/emit! (dc/change-stroke ids (dissoc current-stroke-color :id :file-id)))))
+            (let [remove-multiple (fn [[_ value]] (not= value :multiple))
+                  current-stroke-color (-> (into {} (filter remove-multiple) current-stroke-color)
+                                           (assoc :id nil :file-id nil))]
+              (st/emit! (dc/change-stroke ids current-stroke-color)))))
 
         on-stroke-style-change
         (fn [event]
