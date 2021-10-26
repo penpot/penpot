@@ -17,6 +17,7 @@
 ### :bug: Bugs fixed
 
 - Enhance duplicating prototype connections behaviour [Taiga #2093](https://tree.taiga.io/project/penpot/us/2093).
+- Ignore constraints in horizontal or vertical flip [Taiga #2038](https://tree.taiga.io/project/penpot/issue/2038).
 - Fix color and typographies refs lost when duplicated file [Taiga #2165](https://tree.taiga.io/project/penpot/issue/2165).
 - Fix problem with overflow dropdown on stroke-cap [#1216](https://github.com/penpot/penpot/issues/1216).
 - Fix menu context for single element nested in components [#1186](https://github.com/penpot/penpot/issues/1186).
