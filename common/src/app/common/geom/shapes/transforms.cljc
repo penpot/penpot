@@ -506,7 +506,7 @@
 (defn calc-child-modifiers
   "Given the modifiers to apply to the parent, calculate the corresponding
   modifiers for the child, depending on the child constraints."
-  [parent child parent-modifiers]
+  [parent child parent-modifiers ignore-constraints]
   (let [parent-rect             (:selrect parent)
         child-rect              (:selrect child)
 
@@ -540,8 +540,12 @@
 
         ;; Calculate the modifiers in the horizontal and vertical directions
         ;; depending on the child constraints.
-        constraints-h (get child :constraints-h (spec/default-constraints-h child))
-        constraints-v (get child :constraints-v (spec/default-constraints-v child))
+        constraints-h (if-not ignore-constraints
+                        (get child :constraints-h (spec/default-constraints-h child))
+                        :scale)
+        constraints-v (if-not ignore-constraints
+                        (get child :constraints-v (spec/default-constraints-v child))
+                        :scale)
 
         modifiers-h (case constraints-h
                       :left

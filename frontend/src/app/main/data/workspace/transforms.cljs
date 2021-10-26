@@ -113,8 +113,9 @@
 (declare clear-local-transform)
 
 (defn- set-modifiers
-  ([ids] (set-modifiers ids nil))
-  ([ids modifiers]
+  ([ids] (set-modifiers ids nil false))
+  ([ids modifiers] (set-modifiers ids modifiers false))
+  ([ids modifiers ignore-constraints]
    (us/verify (s/coll-of uuid?) ids)
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
@@ -132,7 +133,8 @@
                                                        (get objects id)
                                                        modifiers
                                                        nil
-                                                       nil)))
+                                                       nil
+                                                       ignore-constraints)))
                  state
                  ids))))))
 
@@ -197,7 +199,7 @@
                (dwu/commit-undo-transaction))))))
 
 (defn- set-modifiers-recursive
-  [modif-tree objects shape modifiers root transformed-root]
+  [modif-tree objects shape modifiers root transformed-root ignore-constraints]
   (let [children (->> (get shape :shapes [])
                       (map #(get objects %)))
 
@@ -211,13 +213,15 @@
         set-child (fn [modif-tree child]
                     (let [child-modifiers (gsh/calc-child-modifiers shape
                                                                     child
-                                                                    modifiers)]
+                                                                    modifiers
+                                                                    ignore-constraints)]
                       (set-modifiers-recursive modif-tree
                                                objects
                                                child
                                                child-modifiers
                                                root
-                                               transformed-root)))]
+                                               transformed-root
+                                               ignore-constraints)))]
     (reduce set-child
             (assoc-in modif-tree [(:id shape) :modifiers] modifiers)
             children)))
@@ -410,7 +414,8 @@
                                                       shape
                                                       modifiers
                                                       nil
-                                                      nil))))
+                                                      nil
+                                                      false))))
                 state
                 ids)))
 
@@ -715,7 +720,8 @@
         (rx/of (set-modifiers selected
                               {:resize-vector (gpt/point -1.0 1.0)
                                :resize-origin origin
-                               :displacement (gmt/translate-matrix (gpt/point (- (:width selrect)) 0))})
+                               :displacement (gmt/translate-matrix (gpt/point (- (:width selrect)) 0))}
+                              true)
                (apply-modifiers selected))))))
 
 (defn flip-vertical-selected []
@@ -731,7 +737,8 @@
         (rx/of (set-modifiers selected
                               {:resize-vector (gpt/point 1.0 -1.0)
                                :resize-origin origin
-                               :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))})
+                               :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))}
+                              true)
                (apply-modifiers selected))))))
 
 
