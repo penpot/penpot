@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-09-10 10:57+0000\n"
+"PO-Revision-Date: 2021-11-01 03:34+0000\n"
 "Last-Translator: Oğuz Ersen <oguzersen@protonmail.com>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.8.1-dev\n"
+"X-Generator: Weblate 4.9-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2954,3 +2954,265 @@ msgstr "Güncelle"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "Çizgi oku"
+
+msgid "auth.privacy-policy"
+msgstr "Gizlilik politikası"
+
+msgid "auth.terms-of-service"
+msgstr "Hizmet şartları"
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Renkler işleniyor"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Bileşenler işleniyor"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Ortam işleniyor"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Sayfa işleniyor: %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Tipografiler işleniyor"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Veriler sunucuya yükleniyor (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Dosya yükleniyor: %s"
+
+msgid "onboarding.slide.3.title"
+msgstr "Paylaşılan bir doğruluk kaynağı"
+
+msgid "viewer.breaking-change.description"
+msgstr ""
+"Bu paylaşılabilir bağlantı artık geçerli değil. Yeni bir tane oluşturun veya "
+"sahibinden yeni bir tane isteyin."
+
+msgid "viewer.breaking-change.message"
+msgstr "Üzgünüm!"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.add-interaction"
+msgstr "Etkileşimler eklemek için + düğmesine tıklayın."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.add-flow-start"
+msgstr "Akış başlangıcı ekle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-start"
+msgstr "Akış başlangıcı"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-starts"
+msgstr "Akış başlar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-action"
+msgstr "Eylem"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-after-delay"
+msgstr "Gecikmeden sonra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.group-fill"
+msgstr "Grubu doldur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.group-stroke"
+msgstr "Grubu çiz"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-background"
+msgstr "Arka plan üst katmanı ekle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-outside"
+msgstr "Dışarıya tıklandığında kapat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay"
+msgstr "Üst katmanı kapat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "Üst katmanı kapat: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-delay"
+msgstr "Gecikme"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-destination"
+msgstr "Hedef"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "Fare girişi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "Fare çıkışı"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "ms"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to"
+msgstr "Git"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "Şuraya gidin: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-none"
+msgstr "(ayarlanmadı)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-on-click"
+msgstr "Tıklandığında"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay"
+msgstr "Üst katmanı aç"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "Üst katmanı aç: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-url"
+msgstr "URL'yi aç"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "Alt orta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "Sol alt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "Sağ alt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-center"
+msgstr "Merkez"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-manual"
+msgstr "El ile"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "Üst orta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-left"
+msgstr "Sol üst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "Sağ üst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-position"
+msgstr "Konum"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-prev-screen"
+msgstr "Önceki ekran"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-self"
+msgstr "kendi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "Üst katmanı değiştir"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "Üst katmanı değiştir: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-trigger"
+msgstr "Tetikle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "URL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-hovering"
+msgstr "Üzerinde Gezinirken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-pressing"
+msgstr "Basarken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions"
+msgstr "Etkileşimler"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color-dodge"
+msgstr "Renk atlatması"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.exclusion"
+msgstr "Dışla"
+
+msgid "workspace.options.search-font"
+msgstr "Yazı tipi ara"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.selection-fill"
+msgstr "Seçimi doldur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.selection-stroke"
+msgstr "Seçimi çiz"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Üçgen ok"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "Akış başlangıcını sil"
+
+msgid "workspace.shape.menu.difference"
+msgstr "Fark"
+
+msgid "workspace.shape.menu.exclude"
+msgstr "Dışla"
+
+msgid "workspace.shape.menu.flatten"
+msgstr "Düzleştir"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flow-start"
+msgstr "Akış başlangıcı"
+
+msgid "workspace.shape.menu.intersection"
+msgstr "Kesişme"
+
+msgid "workspace.shape.menu.path"
+msgstr "Yol"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Yola dönüştür"
+
+msgid "workspace.shape.menu.union"
+msgstr "Birleşim"
