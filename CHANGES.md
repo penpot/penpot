@@ -6,6 +6,9 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 ### :bug: Bugs fixed
+
+- Fix problem with exporting before the document is saved [Taiga #2189](https://tree.taiga.io/project/penpot/issue/2189)
+
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
