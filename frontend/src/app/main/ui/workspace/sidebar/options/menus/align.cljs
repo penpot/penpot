@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.align
+(ns app.main.ui.workspace.sidebar.options.menus.align
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]

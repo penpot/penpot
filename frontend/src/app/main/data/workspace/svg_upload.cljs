@@ -178,7 +178,8 @@
          :y (+ y offset-y)}
         (gsh/setup-selrect)
         (assoc :svg-attrs (-> (:attrs svg-data)
-                              (dissoc :viewBox :xmlns))))))
+                              (dissoc :viewBox :xmlns)
+                              (d/without-keys usvg/inheritable-props))))))
 
 (defn create-group [name frame-id svg-data {:keys [attrs]}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
@@ -368,16 +369,16 @@
       ;; SVG graphic elements
       ;; :circle :ellipse :image :line :path :polygon :polyline :rect :text :use
       (let [shape (-> (case tag
-                        (:g :a :svg)    (create-group name frame-id svg-data element-data)
-                        :rect      (create-rect-shape name frame-id svg-data element-data)
+                        (:g :a :svg) (create-group name frame-id svg-data element-data)
+                        :rect        (create-rect-shape name frame-id svg-data element-data)
                         (:circle
-                         :ellipse) (create-circle-shape name frame-id svg-data element-data)
-                        :path      (create-path-shape name frame-id svg-data element-data)
-                        :polyline  (create-path-shape name frame-id svg-data (-> element-data usvg/polyline->path))
-                        :polygon   (create-path-shape name frame-id svg-data (-> element-data usvg/polygon->path))
-                        :line      (create-path-shape name frame-id svg-data (-> element-data usvg/line->path))
-                        :image     (create-image-shape name frame-id svg-data element-data)
-                        #_other    (create-raw-svg name frame-id svg-data element-data))
+                         :ellipse)   (create-circle-shape name frame-id svg-data element-data)
+                        :path        (create-path-shape name frame-id svg-data element-data)
+                        :polyline    (create-path-shape name frame-id svg-data (-> element-data usvg/polyline->path))
+                        :polygon     (create-path-shape name frame-id svg-data (-> element-data usvg/polygon->path))
+                        :line        (create-path-shape name frame-id svg-data (-> element-data usvg/line->path))
+                        :image       (create-image-shape name frame-id svg-data element-data)
+                        #_other      (create-raw-svg name frame-id svg-data element-data))
 
                       )
             shape (when (some? shape)
@@ -387,7 +388,7 @@
                         (setup-stroke)))
 
             children (cond->> (:content element-data)
-                       (= tag :g)
+                       (or (= tag :g) (= tag :svg))
                        (mapv #(usvg/inherit-attributes attrs %)))]
         [shape children]))))
 
@@ -487,11 +488,15 @@
               ;; Creates the root shape
               changes (dwc/add-shape-changes page-id objects selected root-shape false)
 
+              root-attrs (-> (:attrs svg-data)
+                             (usvg/format-styles))
+
               ;; Reduces the children to create the changes to add the children shapes
               [_ [rchanges uchanges]]
               (reduce (partial add-svg-child-changes page-id objects selected frame-id root-id svg-data)
                       [unames changes]
-                      (d/enumerate (:content svg-data)))
+                      (d/enumerate (->> (:content svg-data)
+                                        (mapv #(usvg/inherit-attributes root-attrs %)))))
 
               reg-objects-action {:type :reg-objects
                                   :page-id page-id

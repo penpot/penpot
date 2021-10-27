@@ -8,11 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
+   [app.http.doc :as doc]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
    [app.metrics :as mtx]
-   [app.util.logging :as l]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [reitit.ring :as rr]
@@ -141,7 +142,8 @@
     ["/webhooks"
      ["/sns" {:post (:sns-webhook cfg)}]]
 
-    ["/api" {:middleware [[middleware/etag]
+    ["/api" {:middleware [[middleware/cors]
+                          [middleware/etag]
                           [middleware/format-response-body]
                           [middleware/params]
                           [middleware/multipart-params]
@@ -149,6 +151,8 @@
                           [middleware/parse-request-body]
                           [middleware/errors errors/handle]
                           [middleware/cookies]]}
+
+     ["/_doc" {:get (doc/handler rpc)}]
 
      ["/feedback" {:middleware [(:middleware session)]
                    :post feedback}]

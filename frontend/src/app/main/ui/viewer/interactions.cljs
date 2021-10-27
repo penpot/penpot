@@ -10,6 +10,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
+   [app.common.types.page-options :as cto]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
@@ -41,25 +42,23 @@
 
 (mf/defc viewport
   {::mf/wrap [mf/memo]}
-  [{:keys [local page frame size]}]
-  (let [interactions? (:interactions-show? local)
-
-        objects       (mf/use-memo
+  [{:keys [page interactions-mode frame base-frame frame-offset size]}]
+  (let [objects       (mf/use-memo
                        (mf/deps page frame)
                        (prepare-objects page frame))
 
         wrapper       (mf/use-memo
-                       (mf/deps objects interactions?)
-                       #(shapes/frame-container-factory objects interactions?))
+                       (mf/deps objects)
+                       #(shapes/frame-container-factory objects))
 
-        ;; Retrieve frame again with correct modifier
+        ;; Retrieve frames again with correct modifier
         frame         (get objects (:id frame))
+        base-frame    (get objects (:id base-frame))
 
         on-click
         (fn [_]
-          (let [mode (:interactions-mode local)]
-            (when (= mode :show-on-click)
-              (st/emit! dv/flash-interactions))))
+          (when (= interactions-mode :show-on-click)
+            (st/emit! dv/flash-interactions)))
 
         on-mouse-wheel
         (fn [event]
@@ -77,7 +76,7 @@
             (st/emit! (dcm/close-thread))))]
 
     (mf/use-effect
-      (mf/deps local) ;; on-click event depends on local
+      (mf/deps interactions-mode) ;; on-click event depends on interactions-mode
       (fn []
         ;; bind with passive=false to allow the event to be cancelled
         ;; https://stackoverflow.com/a/57582286/3219895
@@ -89,15 +88,50 @@
             (events/unlistenByKey key2)
             (events/unlistenByKey key3)))))
 
-    [:svg {:view-box (:vbox size)
-           :width (:width size)
-           :height (:height size)
-           :version "1.1"
-           :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns "http://www.w3.org/2000/svg"}
-     [:& wrapper {:shape frame
-                  :show-interactions? interactions?
-                  :view-box (:vbox size)}]]))
+    [:& (mf/provider shapes/base-frame-ctx) {:value base-frame}
+     [:& (mf/provider shapes/frame-offset-ctx) {:value frame-offset}
+      [:svg {:view-box (:vbox size)
+             :width (:width size)
+             :height (:height size)
+             :version "1.1"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :xmlns "http://www.w3.org/2000/svg"}
+       [:& wrapper {:shape frame
+                    :view-box (:vbox size)}]]]]))
+
+
+(mf/defc flows-menu
+  {::mf/wrap [mf/memo]}
+  [{:keys [page index]}]
+  (let [flows        (get-in page [:options :flows])
+        frames       (:frames page)
+        frame        (get frames index)
+        current-flow (mf/use-state
+                       (cto/get-frame-flow flows (:id frame)))
+
+        show-dropdown?  (mf/use-state false)
+        toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
+        hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
+
+        select-flow
+        (mf/use-callback
+         (fn [flow]
+           (reset! current-flow flow)
+           (st/emit! (dv/go-to-frame (:starting-frame flow)))))]
+
+    (when (seq flows)
+      [:div.view-options {:on-click toggle-dropdown}
+       [:span.icon i/play]
+       [:span.label (:name @current-flow)]
+       [:span.icon i/arrow-down]
+       [:& dropdown {:show @show-dropdown?
+                     :on-close hide-dropdown}
+        [:ul.dropdown.with-check
+         (for [flow flows]
+           [:li {:class (dom/classnames :selected (= (:id flow) (:id @current-flow)))
+                 :on-click #(select-flow flow)}
+            [:span.icon i/tick]
+            [:span.label (:name flow)]])]]])))
 
 
 (mf/defc interactions-menu

@@ -54,22 +54,11 @@
     :browser
     :webworker))
 
-(def available-flags
-  #{:registration
-    :audit-log
-    :demo-users
-    :user-feedback
-    :demo-warning
-    :login-with-ldap})
-
-(def default-flags
-  #{:registration :demo-users})
-
 (defn- parse-flags
   [global]
   (let [flags (obj/get global "penpotFlags" "")
         flags (into #{} (map keyword) (str/words flags))]
-    (flags/parse default-flags flags)))
+    (flags/parse flags flags/default)))
 
 (defn- parse-version
   [global]
@@ -88,6 +77,7 @@
 (def worker-uri           (obj/get global "penpotWorkerURI" "/js/worker.js"))
 (def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
+(def sentry-dsn           (obj/get global "penpotSentryDsn"))
 
 (def flags                (atom (parse-flags global)))
 (def version              (atom (parse-version global)))
@@ -103,7 +93,8 @@
   (when (false? registration)
     (swap! flags disj :registration)))
 
-(def public-uri
+(defn get-public-uri
+  []
   (let [uri (u/uri (or (obj/get global "penpotPublicURI")
                        (.-origin ^js location)))]
     ;; Ensure that the path always ends with "/"; this ensures that
@@ -112,9 +103,7 @@
       (not (str/ends-with? (:path uri) "/"))
       (update :path #(str % "/")))))
 
-(when (= :browser @target)
-  (js/console.log
-   (str/format "Welcome to penpot! version='%s' base-uri='%s'." (:full @version) (str public-uri))))
+(def public-uri (get-public-uri))
 
 ;; --- Helper Functions
 

@@ -14,7 +14,7 @@
   border-radius: 3px;
   cursor: pointer;
   display: flex;
-  font-size: $fs13;
+  font-size: $fs12;
   height: 30px;
   justify-content: center;
   min-width: 25px;
@@ -84,7 +84,7 @@
   @extend %btn;
   background: $color-gray-60;
   color: $color-gray-20;
-  padding: $x-small;
+  padding: $size-1;
   svg {
     fill: $color-gray-20;
   }
@@ -102,7 +102,7 @@
   background: $color-white;
   border: 1px solid $color-gray-20;
   color: $color-black;
-  padding: $x-small;
+  padding: $size-1;
   svg {
     fill: $color-black;
   }
@@ -119,7 +119,7 @@
   @extend %btn;
   background: transparent;
   color: $color-gray-20;
-  padding: $x-small;
+  padding: $size-1;
   svg {
     fill: $color-gray-20;
   }
@@ -280,7 +280,7 @@ ul.slider-dots {
   li {
     align-items: center;
     display: flex;
-    padding: $small 0;
+    padding: $size-2 0;
 
     &::before {
       background-color: $color-complete;
@@ -317,7 +317,7 @@ ul.slider-dots {
     cursor: pointer;
     font-size: $fs14;
     font-weight: bold;
-    margin: 0 $small $small 0;
+    margin: 0 $size-2 $size-2 0;
     padding: 4px 8px;
     text-transform: uppercase;
 
@@ -392,7 +392,7 @@ ul.slider-dots {
     font-size: $fs12;
     height: 20px;
     position: absolute;
-    right: $small;
+    right: $size-2;
     text-align: right;
     top: 26%;
     width: 18px;
@@ -480,7 +480,7 @@ select {
   color: $color-gray-60;
   font-family: "worksans", sans-serif;
   font-size: $fs14;
-  margin-bottom: $medium;
+  margin-bottom: $size-4;
   -webkit-appearance: none;
   -moz-appearance: none;
 }
@@ -515,7 +515,7 @@ input[type="checkbox"]:focus {
   background-color: $color-white;
   box-shadow: none;
   outline: none;
-  padding: $small $big $small $small;
+  padding: $size-2 $size-5 $size-2 $size-2;
   position: relative;
 
   @include placeholder {
@@ -555,7 +555,7 @@ input.element-name {
   border: 1px solid $color-gray-40;
   border-radius: $br-small;
   color: $color-gray-60;
-  font-size: $fs13;
+  font-size: $fs12;
   margin: 0px;
   padding: 3px;
   width: 100%;
@@ -572,7 +572,7 @@ input.element-name {
   cursor: pointer;
 
   &.small {
-    padding: $x-small $big $x-small $x-small;
+    padding: $size-1 $size-5 $size-1 $size-1;
   }
 
 }
@@ -713,7 +713,7 @@ input[type=radio]:checked + label:before{
       position: absolute;
       left: 3.2px;
       top: 0;
-      font-size: $fs11;
+      font-size: $fs12;
       transition: border 0.2s linear 0s, color 0.2s linear 0s;
     }
 
@@ -969,9 +969,9 @@ input[type=range]:focus::-ms-fill-upper {
       border-radius: $br-small;
       color: $color-gray-60;
       content: attr(alt);
-      font-size: $fs11;
+      font-size: $fs12;
       font-weight: bold;
-      padding: $x-small;
+      padding: $size-1;
       position: absolute;
       left: 130%;
       text-align: center;
@@ -1098,7 +1098,7 @@ input[type=range]:focus::-ms-fill-upper {
       flex-direction: column;
 
       .actions {
-        margin-top: $medium;
+        margin-top: $size-4;
         display: flex;
         justify-content: flex-start;
       }
@@ -1114,7 +1114,7 @@ input[type=range]:focus::-ms-fill-upper {
         justify-content: flex-start;
 
         .btn-secondary {
-          margin-left: $medium;
+          margin-left: $size-4;
         }
       }
     }
@@ -1167,7 +1167,7 @@ input[type=range]:focus::-ms-fill-upper {
       padding-right: 64px;
 
       .icon {
-        margin-right: $medium;
+        margin-right: $size-4;
       }
 
       .content {
@@ -1175,7 +1175,7 @@ input[type=range]:focus::-ms-fill-upper {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: $fs15;
+        font-size: $fs14;
       }
     }
   }
@@ -1187,7 +1187,7 @@ input[type=range]:focus::-ms-fill-upper {
       display: flex;
 
       .icon {
-        padding: $small;
+        padding: $size-2;
         width: 48px;
         height: 48px;
         justify-content: center;
@@ -1198,7 +1198,7 @@ input[type=range]:focus::-ms-fill-upper {
         color: $color-black;
         display: flex;
         font-size: $fs14;
-        padding: $small;
+        padding: $size-2;
         width: 100%;
         align-items: center;
       }

@@ -8,7 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as gshp]
+   [app.common.geom.shapes.path :as gsp]
+   [app.common.path.commands :as upc]
+   [app.common.path.shapes-to-path :as ups]
    [app.main.data.workspace.path :as drp]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -18,10 +20,7 @@
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
-   [app.util.path.commands :as upc]
    [app.util.path.format :as upf]
-   [app.util.path.geom :as upg]
-   [app.util.path.shapes-to-path :as ups]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
    [rumext.alpha :as mf])
@@ -217,16 +216,16 @@
 
         shape (cond-> shape
                 (not= :path (:type shape))
-                ups/convert-to-path
+                (ups/convert-to-path {})
 
                 :always
                 hooks/use-equal-memo)
 
         base-content (:content shape)
-        base-points (mf/use-memo (mf/deps base-content) #(->> base-content upg/content->points))
+        base-points (mf/use-memo (mf/deps base-content) #(->> base-content gsp/content->points))
 
         content (upc/apply-content-modifiers base-content content-modifiers)
-        content-points (mf/use-memo (mf/deps content) #(->> content upg/content->points))
+        content-points (mf/use-memo (mf/deps content) #(->> content gsp/content->points))
 
         point->base (->> (map hash-map content-points base-points) (reduce merge))
         base->point (map-invert point->base)
@@ -269,10 +268,14 @@
      ms/mouse-position
      (mf/deps shape zoom)
      (fn [position]
-       (when-let [point (gshp/path-closest-point shape position)]
+       (when-let [point (gsp/path-closest-point shape position)]
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
+     [:path {:d (upf/format-path content)
+             :style {:fill "none"
+                     :stroke pc/primary-color
+                     :strokeWidth (/ 1 zoom)}}]
      (when (and preview (not drag-handler))
        [:& path-preview {:command preview
                          :from last-p

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-08-10 23:33+0000\n"
-"Last-Translator: Mahmoud A. Rabo <Mahmoud@s3geeks.com>\n"
+"PO-Revision-Date: 2021-09-14 13:35+0000\n"
+"Last-Translator: Amine Gdoura <amine2gdoura@gmail.com>\n"
 "Language-Team: Arabic "
 "<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
 "Language: ar\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 4.8-dev\n"
+"X-Generator: Weblate 4.9-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -88,6 +88,10 @@ msgstr "تسجيل الدخول باستخدام OpenID (SSO)"
 msgid "auth.new-password"
 msgstr "اكتب كلمة مرور جديدة"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "أوافق على الاشتراك في قائمة Penpot البريدية."
+
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "رمز الاسترداد غير صالح."
@@ -160,6 +164,20 @@ msgstr "عند إنشاء حساب جديد ، فإنك توافق على شرو
 msgid "auth.verification-email-sent"
 msgstr "لقد أرسلنا رسالة تحقق إلى بريدك الالكتروني"
 
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي "
+"شخص"
+
+msgid "common.share-link.get-link"
+msgstr "خذ رابطا إلكتروني"
+
+msgid "common.share-link.link-copied-success"
+msgstr "تم نسخ الرابط بنجاح"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "تم حذف الرابط بنجاح"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "أضف كمكتبة مشتركة"
@@ -193,7 +211,7 @@ msgstr "تكرير"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
-msgstr "تكرير ٪s الملفات"
+msgstr "تكرير %s الملفات"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
@@ -255,7 +273,7 @@ msgstr "الانتقال إلى"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to-multi"
-msgstr "أنقل ٪s الملفات إلى"
+msgstr "أنقل %s الملفات إلى"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to-other-team"
@@ -279,7 +297,7 @@ msgstr "مشروع جديد"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
-msgstr "لم يتم العثور على مطابقات ل \"٪s\""
+msgstr "لم يتم العثور على مطابقات ل \"%s\""
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.no-projects-placeholder"
@@ -299,7 +317,7 @@ msgstr "تم حفظ كلمة المرور بنجاح!"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.num-of-members"
-msgstr "٪s الأعضاء"
+msgstr "%s الأعضاء"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.open-in-new-tab"
@@ -338,7 +356,7 @@ msgstr "بحث…"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.searching-for"
-msgstr "البحث عن \"٪s\"…"
+msgstr "البحث عن \"%s\"…"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.select-ui-language"
@@ -442,7 +460,7 @@ msgstr "هل أنت متأكد؟"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "ds.updated-at"
-msgstr "محدث: ٪s"
+msgstr "محدث: %s"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
@@ -802,7 +820,7 @@ msgid "handoff.tabs.info"
 msgstr "معلومات"
 
 msgid "history.alert-message"
-msgstr "أنت ترى الإصدار٪ s"
+msgstr "أنت ترى الإصدار %s"
 
 msgid "labels.accept"
 msgstr "إقبل"
@@ -1228,7 +1246,7 @@ msgstr "حذف الملفات"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.message"
-msgstr "هل تريد بالتأكيد حذف ٪s من الملفات؟"
+msgstr "هل تريد بالتأكيد حذف %s من الملفات؟"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.title"
@@ -1417,7 +1435,7 @@ msgstr "موفرو الخطوط - %s - Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.fonts"
-msgstr "الخطوط -٪ s - Penpot"
+msgstr "الخطوط - %s - Penpot"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "title.dashboard.projects"
@@ -1425,11 +1443,11 @@ msgstr "المشاريع - %s - Penpot"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "title.dashboard.search"
-msgstr "بحث - ٪s - بينبوت"
+msgstr "بحث - %s - بينبوت"
 
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "title.dashboard.shared-libraries"
-msgstr "المكتبات المشتركة - ٪s - Penpot"
+msgstr "المكتبات المشتركة - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
 msgid "title.default"
@@ -1453,15 +1471,15 @@ msgstr "الملف الشخصي - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-members"
-msgstr "الأعضاء - ٪s - Penpot"
+msgstr "الأعضاء - %s - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-settings"
-msgstr "الإعدادات - ٪s - Penpot"
+msgstr "الإعدادات - %s - Penpot"
 
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
-msgstr "٪s - وضع العرض - Penpot"
+msgstr "%s - وضع العرض - Penpot"
 
 #: src/app/main/ui/workspace.cljs
 msgid "title.workspace"
@@ -1782,7 +1800,7 @@ msgstr "التغييرات غير المحفوظة"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.viewer"
-msgstr "عرض الوضع (٪s)"
+msgstr "عرض الوضع (%s)"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -1790,7 +1808,7 @@ msgstr "أضف"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.colors"
-msgstr "٪s الألوان"
+msgstr "%s الألوان"
 
 #: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.big-thumbnails"
@@ -1814,7 +1832,7 @@ msgstr "صور مصغرة صغيرة"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.components"
-msgstr "٪s المكونات"
+msgstr "%s المكونات"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.file-library"
@@ -1822,7 +1840,7 @@ msgstr "مكتبة الملف"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.graphics"
-msgstr "٪s الرسومات"
+msgstr "%s الرسومات"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.in-this-file"
@@ -1866,7 +1884,7 @@ msgstr "قم بفك ارتباط كافة الأنماط المطبعية"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.typography"
-msgstr "٪s الطباعة"
+msgstr "%s الطباعة"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"

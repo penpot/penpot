@@ -1,11 +1,12 @@
 .zoom-widget {
   cursor: pointer;
   display: flex;
+  position: relative;
 
   span {
     color: $color-gray-10;
     font-size: $fs14;
-    margin-left: $x-small;
+    margin-left: $size-1;
   }
 
   .icon svg {
@@ -16,8 +17,10 @@
 
   .dropdown {
     position: absolute;
-    z-index: 12;
+    right: 0;
+    top: 25px;
     width: 210px;
+    z-index: 12;
 
     background-color: $color-white;
     border-radius: $br-small;
@@ -28,7 +31,7 @@
       cursor: pointer;
       font-size: $fs14;
       display: flex;
-      padding: $small;
+      padding: $size-2;
 
       span {
         color: $color-gray-20;

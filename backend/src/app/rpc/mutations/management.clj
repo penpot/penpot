@@ -39,10 +39,22 @@
   [file index]
   (letfn [(process-form [form]
             (cond-> form
-              ;; Relink Components
+              ;; Relink library items
               (and (map? form)
                    (uuid? (:component-file form)))
               (update :component-file #(get index % %))
+
+              (and (map? form)
+                   (uuid? (:fill-color-ref-file form)))
+              (update :fill-color-ref-file #(get index % %))
+
+              (and (map? form)
+                   (uuid? (:stroke-color-ref-file form)))
+              (update :stroke-color-ref-file #(get index % %))
+
+              (and (map? form)
+                   (uuid? (:typography-ref-file form)))
+              (update :typography-ref-file #(get index % %))
 
               ;; Relink Image Shapes
               (and (map? form)

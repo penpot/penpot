@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.file-builder :as fb]
+   [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.text :as ct]
    [app.common.uuid :as uuid]
@@ -17,14 +18,13 @@
    [app.util.http :as http]
    [app.util.import.parser :as cip]
    [app.util.json :as json]
-   [app.util.logging :as log]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [tubax.core :as tubax]))
 
-(log/set-level! :trace)
+(log/set-level! :warn)
 
 ;; Upload changes batches size
 (def ^:const change-batch-size 100)
@@ -238,6 +238,7 @@
       (case type
         :frame    (fb/close-artboard file)
         :group    (fb/close-group file)
+        :bool     (fb/close-bool file)
         :svg-raw  (fb/close-svg-raw file)
         #_default file)
 
@@ -254,6 +255,7 @@
             file (case type
                    :frame    (fb/add-artboard   file data)
                    :group    (fb/add-group      file data)
+                   :bool     (fb/add-bool       file data)
                    :rect     (fb/create-rect    file data)
                    :circle   (fb/create-circle  file data)
                    :path     (fb/create-path    file data)
@@ -313,7 +315,10 @@
         page-data (-> (cip/parse-page-data content)
                       (assoc :name page-name)
                       (assoc :id (resolve page-id)))
-        file (-> file (fb/add-page page-data))]
+        flows     (->> (get-in page-data [:options :flows])
+                       (mapv #(update % :starting-frame resolve)))
+        page-data (d/assoc-in-when page-data [:options :flows] flows)
+        file      (-> file (fb/add-page page-data))]
     (->> (rx/from nodes)
          (rx/filter cip/shape?)
          (rx/mapcat (partial resolve-media context file-id))

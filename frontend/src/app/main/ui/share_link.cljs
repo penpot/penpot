@@ -7,6 +7,7 @@
 (ns app.main.ui.share-link
   (:require
    [app.common.data :as d]
+   [app.common.logging :as log]
    [app.config :as cf]
    [app.main.data.common :as dc]
    [app.main.data.messages :as dm]
@@ -16,12 +17,11 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.logging :as log]
    [app.util.router :as rt]
    [app.util.webapi :as wapi]
    [rumext.alpha :as mf]))
 
-(log/set-level! :debug)
+(log/set-level! :warn)
 
 (defn prepare-params
   [{:keys [sections pages pages-mode]}]

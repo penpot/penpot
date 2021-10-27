@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -15,7 +16,6 @@
    [app.loggers.audit :as audit]
    [app.rpc.queries.profile :as profile]
    [app.util.http :as http]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.data.json :as json]
    [clojure.set :as set]
@@ -62,6 +62,13 @@
                :cause e)
       nil)))
 
+(defn- qualify-props
+  [provider props]
+  (reduce-kv (fn [result k v]
+               (assoc result (keyword (:name provider) (name k)) v))
+             {}
+             props))
+
 (defn- retrieve-user-info
   [{:keys [provider] :as cfg} tdata]
   (try
@@ -76,8 +83,8 @@
           {:backend (:name provider)
            :email (:email info)
            :fullname (:name info)
-           :props (dissoc info :name :email)})))
-
+           :props (->> (dissoc info :name :email)
+                       (qualify-props provider))})))
     (catch Exception e
       (l/error :hint "unexpected exception on retrieve-user-info"
                :cause e)
@@ -138,15 +145,14 @@
 
 ;; --- HTTP HANDLERS
 
-(defn extract-props
+(defn extract-utm-props
+  "Extracts additional data from user params."
   [params]
   (reduce-kv (fn [params k v]
                (let [sk (name k)]
                  (cond-> params
-                   (or (str/starts-with? sk "pm_")
-                       (str/starts-with? sk "pm-")
-                       (str/starts-with? sk "utm_"))
-                   (assoc (-> sk str/kebab keyword) v))))
+                   (str/starts-with? sk "utm_")
+                   (assoc (->> sk str/kebab (keyword "penpot")) v))))
              {}
              params))
 
@@ -210,7 +216,7 @@
 (defn- auth-handler
   [{:keys [tokens] :as cfg} {:keys [params] :as request}]
   (let [invitation (:invitation-token params)
-        props      (extract-props params)
+        props      (extract-utm-props params)
         state      (tokens :generate
                            {:iss :oauth
                             :invitation-token invitation

@@ -6,7 +6,8 @@
 
 (ns app.util.path.format
   (:require
-   [app.util.path.commands :as upc]
+   [app.common.path.commands :as upc]
+   [app.common.path.subpaths :refer [pt=]]
    [cuerdas.core :as str]))
 
 (defn command->param-list [command]
@@ -43,7 +44,9 @@
            (:large-arc-flag params) ","
            (:sweep-flag params) ","
            (:x params) ","
-           (:y params)))))
+           (:y params))
+
+      "")))
 
 (defn command->string [{:keys [command relative] :as entry}]
   (let [command-str (case command
@@ -56,11 +59,18 @@
                       :smooth-curve-to "S"
                       :quadratic-bezier-curve-to "Q"
                       :smooth-quadratic-bezier-curve-to "T"
-                      :elliptical-arc "A")
+                      :elliptical-arc "A"
+                      "")
         command-str (if relative (str/lower command-str) command-str)
         param-list (command->param-list entry)]
     (str command-str param-list)))
 
+
+(defn set-point
+  [command point]
+  (-> command
+      (assoc-in [:params :x] (:x point))
+      (assoc-in [:params :y] (:y point))))
 
 (defn format-path [content]
   (with-out-str
@@ -72,9 +82,12 @@
         (let [point (upc/command->point current)
               current-move? (= :move-to (:command current))
               last-move (if current-move? point last-move)]
-          (print (command->string current))
 
-          (when (and (not current-move?) (= last-move point))
+          (if (and (not current-move?) (pt= last-move point))
+            (print (command->string (set-point current last-move)))
+            (print (command->string current)))
+
+          (when (and (not current-move?) (pt= last-move point))
             (print "Z"))
 
           (recur last-move

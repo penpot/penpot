@@ -54,8 +54,10 @@
   {"x-frontend-version" (:full @cfg/version)})
 
 (defn fetch
-  [{:keys [method uri query headers body mode omit-default-headers]
-    :or {mode :cors headers {}}}]
+  [{:keys [method uri query headers body mode omit-default-headers credentials]
+    :or {mode :cors
+         headers {}
+         credentials "same-origin"}}]
   (rx/Observable.create
    (fn [subscriber]
      (let [controller    (js/AbortController.)
@@ -83,7 +85,7 @@
                               :body body
                               :mode (d/name mode)
                               :redirect "follow"
-                              :credentials "same-origin"
+                              :credentials credentials
                               :referrerPolicy "no-referrer"
                               :signal signal}]
        (-> (js/fetch (str uri) params)
@@ -165,7 +167,6 @@
                  :uri uri
                  :response-type :blob
                  :omit-default-headers true})
-
          (rx/filter #(= 200 (:status %)))
          (rx/map :body)
          (rx/mapcat wapi/read-file-as-data-url)

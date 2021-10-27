@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.bool :as gshb]
    [app.common.pages.common :refer [component-sync-attrs]]
    [app.common.pages.helpers :as cph]
    [app.common.pages.init :as init]
@@ -156,7 +157,7 @@
                     (sequence (comp
                                (mapcat #(cons % (cph/get-parents % objects)))
                                (map #(get objects %))
-                               (filter #(= (:type %) :group))
+                               (filter #(contains? #{:group :bool} (:type %)))
                                (map :id)
                                (distinct))
                               shapes)))
@@ -176,6 +177,9 @@
                 ;; If the group is empty we don't make any changes. Should be removed by a later process
                 (empty? children)
                 group
+
+                (= :bool (:type group))
+                (gshb/update-bool-selrect group children objects)
 
                 (:masked-group? group)
                 (set-mask-selrect group children)

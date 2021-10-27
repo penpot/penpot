@@ -363,12 +363,14 @@
                delta-y (-> (.-deltaY ^js event)
                            (* unit)
                            (/ zoom))
+
                delta-x (-> (.-deltaX ^js event)
                            (* unit)
                            (/ zoom))]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (if (kbd/shift? event)
+           (if (and (not (cfg/check-platform? :macos)) ;; macos sends delta-x automaticaly, don't need to do it
+                    (kbd/shift? event))
              (st/emit! (dw/update-viewport-position {:x #(+ % delta-y)}))
              (st/emit! (dw/update-viewport-position {:x #(+ % delta-x)
                                                      :y #(+ % delta-y)})))))))))

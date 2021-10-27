@@ -281,7 +281,7 @@
 (defn set-text! [node text]
   (set! (.-textContent node) text))
 
-(defn set-css-property [node property value]
+(defn set-css-property! [node property value]
   (.setProperty (.-style ^js node) property value))
 
 (defn capture-pointer [event]
@@ -394,3 +394,16 @@
 (defn left-mouse? [bevent]
   (let [event  (.-nativeEvent ^js bevent)]
     (= 1 (.-which event))))
+
+(defn open-new-window
+  ([uri]
+   (open-new-window uri "_blank"))
+  ([uri name]
+   ;; Warning: need to protect against reverse tabnabbing attack
+   ;; https://www.comparitech.com/blog/information-security/reverse-tabnabbing/
+   (.open js/window (str uri) name "noopener,noreferrer")))
+
+(defn browser-back
+  []
+  (.back (.-history js/window)))
+

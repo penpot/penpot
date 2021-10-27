@@ -18,13 +18,13 @@
 (defonce state (l/atom {}))
 
 (defn index-shape
-  [objects parents-index masks-index]
+  [objects parents-index clip-parents-index]
   (fn [index shape]
     (let [{:keys [x y width height]} (gsh/points->selrect (:points shape))
           shape-bound #js {:x x :y y :width width :height height}
 
-          parents (get parents-index (:id shape))
-          masks   (get masks-index (:id shape))
+          parents      (get parents-index (:id shape))
+          clip-parents (get clip-parents-index (:id shape))
 
           frame   (when (and (not= :frame (:type shape))
                              (not= (:frame-id shape) uuid/zero))
@@ -32,19 +32,22 @@
       (qdt/insert index
                   (:id shape)
                   shape-bound
-                  (assoc shape :frame frame :masks masks :parents parents)))))
+                  (assoc shape
+                         :frame frame
+                         :clip-parents clip-parents
+                         :parents parents)))))
 
 (defn- create-index
   [objects]
-  (let [shapes        (-> objects (dissoc uuid/zero) (vals))
-        parents-index (cp/generate-child-all-parents-index objects)
-        masks-index   (cp/create-mask-index objects parents-index)
+  (let [shapes             (-> objects (dissoc uuid/zero) (vals))
+        parents-index      (cp/generate-child-all-parents-index objects)
+        clip-parents-index (cp/create-clip-index objects parents-index)
         bounds #js {:x (int -0.5e7)
                     :y (int -0.5e7)
                     :width (int 1e7)
                     :height (int 1e7)}
 
-        index (reduce (index-shape objects parents-index masks-index)
+        index (reduce (index-shape objects parents-index clip-parents-index)
                       (qdt/create bounds)
                       shapes)
 
@@ -61,18 +64,19 @@
                            (get new-objects id)))
 
           changed-ids (into #{}
-                            (comp (filter changes?)
-                                  (filter #(not= % uuid/zero)))
+                            (comp (filter #(not= % uuid/zero))
+                                  (filter changes?)
+                                  (mapcat #(d/concat [%] (cp/get-children % new-objects))))
                             (set/union (set (keys old-objects))
                                        (set (keys new-objects))))
 
-          shapes (->> changed-ids (mapv #(get new-objects %)) (filterv (comp not nil?)))
-          parents-index (cp/generate-child-all-parents-index new-objects shapes)
-          masks-index   (cp/create-mask-index new-objects parents-index)
+          shapes             (->> changed-ids (mapv #(get new-objects %)) (filterv (comp not nil?)))
+          parents-index      (cp/generate-child-all-parents-index new-objects shapes)
+          clip-parents-index (cp/create-clip-index new-objects parents-index)
 
           new-index (qdt/remove-all index changed-ids)
 
-          index (reduce (index-shape new-objects parents-index masks-index)
+          index (reduce (index-shape new-objects parents-index clip-parents-index)
                         new-index
                         shapes)
 
@@ -84,7 +88,7 @@
     (create-index new-objects)))
 
 (defn- query-index
-  [{index :index z-index :z-index} rect frame-id include-frames? full-frame? include-groups? reverse?]
+  [{index :index z-index :z-index} rect frame-id full-frame? include-frames? clip-children? reverse?]
   (let [result (-> (qdt/search index (clj->js rect))
                    (es6-iterator-seq))
 
@@ -96,7 +100,6 @@
                (or (not frame-id) (= frame-id (:frame-id shape)))
                (case (:type shape)
                  :frame   include-frames?
-                 :group   include-groups?
                  true)
 
                (or (not full-frame?)
@@ -107,11 +110,9 @@
         (fn [shape]
           (gsh/overlaps? shape rect))
 
-        overlaps-masks?
-        (fn [masks]
-          (->> masks
-               (some (comp not overlaps?))
-               not))
+        overlaps-parent?
+        (fn [clip-parents]
+          (->> clip-parents (some (comp not overlaps?)) not))
 
         add-z-index
         (fn [{:keys [id frame-id] :as shape}]
@@ -125,7 +126,9 @@
                     (filter match-criteria?)
                     (filter overlaps?)
                     (filter (comp overlaps? :frame))
-                    (filter (comp overlaps-masks? :masks))
+                    (filter (if clip-children?
+                              (comp overlaps-parent? :clip-parents)
+                              (constantly true)))
                     (map add-z-index))
               result)
 
@@ -155,10 +158,10 @@
   nil)
 
 (defmethod impl/handler :selection/query
-  [{:keys [page-id rect frame-id include-frames? full-frame? include-groups? reverse?]
-    :or {include-groups? true reverse? false include-frames? false full-frame? false} :as message}]
+  [{:keys [page-id rect frame-id reverse? full-frame? include-frames? clip-children?]
+    :or {reverse? false full-frame? false include-frames? false clip-children? true} :as message}]
   (when-let [index (get @state page-id)]
-    (query-index index rect frame-id include-frames? full-frame? include-groups? reverse?)))
+    (query-index index rect frame-id full-frame? include-frames? clip-children? reverse?)))
 
 (defmethod impl/handler :selection/query-z-index
   [{:keys [page-id objects ids]}]

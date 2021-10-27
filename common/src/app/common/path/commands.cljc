@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.util.path.commands
+(ns app.common.path.commands
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]))
@@ -199,3 +199,4 @@
   (if (= prefix :c1)
     (command->point (get content (dec index)))
     (command->point (get content index))))
+

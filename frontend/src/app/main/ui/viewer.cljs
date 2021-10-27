@@ -6,6 +6,8 @@
 
 (ns app.main.ui.viewer
   (:require
+   [app.common.exceptions :as ex]
+   [app.common.geom.point :as gpt]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
@@ -13,6 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
+   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.share-link]
    [app.main.ui.static :as static]
    [app.main.ui.viewer.comments :refer [comments-layer]]
@@ -27,21 +30,18 @@
 
 (defn- calculate-size
   [frame zoom]
-  {:width  (* (:width frame) zoom)
-   :height (* (:height frame) zoom)
-   :vbox   (str "0 0 " (:width frame 0) " " (:height frame 0))})
+  (let [{:keys [_ _ width height]} (filters/get-filters-bounds frame)]
+    {:width  (* width zoom)
+     :height (* height zoom)
+     :vbox   (str "0 0 " width " " height)}))
 
 (mf/defc viewer
   [{:keys [params data]}]
 
   (let [{:keys [page-id section index]} params
+        {:keys [file users project permissions]} data
 
         local   (mf/deref refs/viewer-local)
-
-        file    (:file data)
-        users   (:users data)
-        project (:project data)
-        perms   (:permissions data)
 
         page-id (or page-id (-> file :data :pages first))
 
@@ -58,14 +58,25 @@
                  (mf/deps frame zoom)
                  (fn [] (calculate-size frame zoom)))
 
+        interactions-mode
+        (:interactions-mode local)
+
         on-click
         (mf/use-callback
          (mf/deps section)
          (fn [_]
            (when (= section :comments)
-             (st/emit! (dcm/close-thread)))))]
+             (st/emit! (dcm/close-thread)))))
+
+        close-overlay
+        (mf/use-callback
+          (fn [frame]
+            (st/emit! (dv/close-overlay (:id frame)))))]
 
     (hooks/use-shortcuts ::viewer sc/shortcuts)
+
+    (when (nil? page)
+      (ex/raise :type :not-found))
 
     ;; Set the page title
     (mf/use-effect
@@ -90,8 +101,8 @@
                  :file file
                  :page page
                  :frame frame
-                 :permissions perms
-                 :zoom (:zoom local)
+                 :permissions permissions
+                 :zoom zoom
                  :section section}]
 
      [:div.viewer-content
@@ -118,7 +129,6 @@
              :section section
              :local local}]
 
-
            [:div.viewport-container
             {:style {:width (:width size)
                      :height (:height size)
@@ -133,11 +143,43 @@
 
             [:& interactions/viewport
              {:frame frame
+              :base-frame frame
+              :frame-offset (gpt/point 0 0)
               :size size
               :page page
               :file file
               :users users
-              :local local}]]))]]]))
+              :interactions-mode interactions-mode}]
+
+            (for [overlay (:overlays local)]
+              (let [size-over (calculate-size (:frame overlay) zoom)]
+                [:*
+                 (when (or (:close-click-outside overlay)
+                           (:background-overlay  overlay))
+                   [:div.viewer-overlay-background
+                    {:class (dom/classnames
+                              :visible (:background-overlay overlay))
+                     :style {:width (:width frame)
+                             :height (:height frame)
+                             :position "absolute"
+                             :left 0
+                             :top 0}
+                     :on-click #(when (:close-click-outside overlay)
+                                  (close-overlay (:frame overlay)))}])
+                 [:div.viewport-container.viewer-overlay
+                  {:style {:width (:width size-over)
+                           :height (:height size-over)
+                           :left (* (:x (:position overlay)) zoom)
+                           :top (* (:y (:position overlay)) zoom)}}
+                  [:& interactions/viewport
+                   {:frame (:frame overlay)
+                    :base-frame frame
+                    :frame-offset (:position overlay)
+                    :size size-over
+                    :page page
+                    :file file
+                    :users users
+                    :interactions-mode interactions-mode}]]]))]))]]]))
 
 ;; --- Component: Viewer Page
 

@@ -7,7 +7,8 @@
 (ns app.common.geom.shapes.rect
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.common :as gco]))
+   [app.common.geom.shapes.common :as gco]
+   [app.common.math :as mth]))
 
 (defn rect->points [{:keys [x y width height]}]
   ;; (assert (number? x))
@@ -47,6 +48,16 @@
 (defn rect->selrect [rect]
   (-> rect rect->points points->selrect))
 
+(defn join-rects [rects]
+  (let [minx (transduce (comp (map :x) (remove nil?)) min ##Inf rects)
+        miny (transduce (comp (map :y) (remove nil?)) min ##Inf rects)
+        maxx (transduce (comp (map #(+ (:x %) (:width %))) (remove nil?)) max ##-Inf rects)
+        maxy (transduce (comp (map #(+ (:y %) (:height %))) (remove nil?)) max ##-Inf rects)]
+    {:x minx
+     :y miny
+     :width (- maxx minx)
+     :height (- maxy miny)}))
+
 (defn join-selrects [selrects]
   (let [minx (transduce (comp (map :x1) (remove nil?)) min ##Inf selrects)
         miny (transduce (comp (map :y1) (remove nil?)) min ##Inf selrects)
@@ -70,3 +81,43 @@
    :y (- (:y center) (/ height 2))
    :width width
    :height height})
+
+(defn s=
+  [a b]
+  (mth/almost-zero? (- a b)))
+
+(defn overlaps-rects?
+  "Check for two rects to overlap. Rects won't overlap only if
+   one of them is fully to the left or the top"
+  [rect-a rect-b]
+
+  (let [x1a (:x rect-a)
+        y1a (:y rect-a)
+        x2a (+ (:x rect-a) (:width rect-a))
+        y2a (+ (:y rect-a) (:height rect-a))
+
+        x1b (:x rect-b)
+        y1b (:y rect-b)
+        x2b (+ (:x rect-b) (:width rect-b))
+        y2b (+ (:y rect-b) (:height rect-b))]
+
+    (and (or (> x2a x1b)  (s= x2a x1b))
+         (or (>= x2b x1a) (s= x2b x1a))
+         (or (<= y1b y2a) (s= y1b y2a))
+         (or (<= y1a y2b) (s= y1a y2b)))))
+
+(defn contains-point?
+  [rect point]
+  (assert (gpt/point? point))
+  (let [x1 (:x rect)
+        y1 (:y rect)
+        x2 (+ (:x rect) (:width rect))
+        y2 (+ (:y rect) (:height rect))
+
+        px (:x point)
+        py (:y point)]
+
+    (and (or (> px x1) (s= px x1))
+         (or (< px x2) (s= px x2))
+         (or (> py y1) (s= py y1))
+         (or (< py y2) (s= py y2)))))

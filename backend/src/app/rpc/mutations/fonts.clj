@@ -9,14 +9,12 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as wrk]
    [clojure.spec.alpha :as s]))
 
 (declare create-font-variant)
@@ -128,13 +126,6 @@
   [{:keys [pool] :as cfg} {:keys [id team-id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
-
-    ;; Schedule object deletion
-    (wrk/submit! {::wrk/task :delete-object
-                  ::wrk/delay cf/deletion-delay
-                  ::wrk/conn conn
-                  :id id
-                  :type :team-font-variant})
 
     (db/update! conn :team-font-variant
                 {:deleted-at (dt/now)}

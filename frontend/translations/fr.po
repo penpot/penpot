@@ -119,6 +119,9 @@ msgstr "Mot de passe"
 msgid "auth.password-length-hint"
 msgstr "Au moins 8 caractères"
 
+msgid "auth.privacy-policy"
+msgstr "Politique de confidentialité"
+
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
 msgstr "Récupérer le mot de passe"
@@ -154,6 +157,9 @@ msgstr "Créer un compte"
 #: src/app/main/ui/auth.cljs
 msgid "auth.sidebar-tagline"
 msgstr "La solution Open Source pour la conception et le prototypage."
+
+msgid "auth.terms-of-service"
+msgstr "Conditions générales d'utilisation"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
@@ -2156,14 +2162,6 @@ msgstr "Grouper les calques"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Calques sélectionnés"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.navigate-to"
-msgstr "Naviguer vers"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.none"
-msgstr "Aucun"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"

@@ -229,7 +229,12 @@
         current-transform (mf/deref refs/current-transform)
 
         selrect (:selrect shape)
-        transform (geom/transform-matrix shape {:no-flip true})]
+        transform (geom/transform-matrix shape {:no-flip true})
+
+        rotation (-> (gpt/point 1 0)
+                     (gpt/transform (:transform shape))
+                     (gpt/angle)
+                     (mod 360))]
 
     (when (not (#{:move :rotate} current-transform))
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
@@ -249,7 +254,7 @@
                              :on-rotate on-rotate
                              :on-resize (partial on-resize position)
                              :transform transform
-                             :rotation (:rotation shape)
+                             :rotation rotation
                              :color color
                              :overflow-text overflow-text}
                props (map->obj (merge common-props props))]

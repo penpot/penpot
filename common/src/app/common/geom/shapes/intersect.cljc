@@ -284,12 +284,19 @@
 (defn overlaps?
   "General case to check for overlaping between shapes and a rectangle"
   [shape rect]
-  (or (not shape)
-      (let [path? (= :path (:type shape))
-            circle? (= :circle (:type shape))]
-        (and (overlaps-rect-points? rect (:points shape))
-             (or (not path?)   (overlaps-path? shape rect))
-             (or (not circle?) (overlaps-ellipse? shape rect))))))
+  (let [stroke-width (/ (or (:stroke-width shape) 0) 2)
+        rect (-> rect
+                 (update :x - stroke-width)
+                 (update :y - stroke-width)
+                 (update :width + (* 2 stroke-width))
+                 (update :height + (* 2 stroke-width))
+                 )]
+    (or (not shape)
+        (let [path? (= :path (:type shape))
+              circle? (= :circle (:type shape))]
+          (and (overlaps-rect-points? rect (:points shape))
+               (or (not path?)   (overlaps-path? shape rect))
+               (or (not circle?) (overlaps-ellipse? shape rect)))))))
 
 (defn has-point-rect?
   [rect point]
@@ -308,3 +315,4 @@
   (->> shape
        :points
        (every? (partial has-point-rect? rect))))
+

@@ -6,11 +6,11 @@
 
 (ns app.main.ui.workspace.shapes.path
   (:require
+   [app.common.path.commands :as upc]
    [app.main.refs :as refs]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.path.common :as pc]
-   [app.util.path.commands :as upc]
    [rumext.alpha :as mf]))
 
 (mf/defc path-wrapper

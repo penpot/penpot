@@ -8,11 +8,11 @@
   "A maintenance task that performs a general purpose garbage collection
   of deleted objects."
   (:require
+   [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as db]
    [app.storage :as sto]
    [app.storage.impl :as simpl]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]

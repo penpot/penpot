@@ -119,7 +119,7 @@
 
    :duplicate          {:tooltip (ds/meta "D")
                         :command (ds/c-mod "d")
-                        :fn #(st/emit! dw/duplicate-selected)}
+                        :fn #(st/emit! (dw/duplicate-selected true))}
 
    :undo               {:tooltip (ds/meta "Z")
                         :command (ds/c-mod "z")
@@ -260,6 +260,23 @@
                         :command ["alt" "."]
                         :type "keyup"
                         :fn #(st/emit! (dw/toggle-distances-display false))}
+
+   :boolean-union        {:tooltip (ds/alt "U")
+                          :command "alt+u"
+                          :fn #(st/emit! (dw/create-bool :union))}
+
+   :boolean-difference   {:tooltip (ds/alt "D")
+                          :command "alt+d"
+                          :fn #(st/emit! (dw/create-bool :difference))}
+
+   :boolean-intersection {:tooltip (ds/alt "I")
+                          :command "alt+i"
+                          :fn #(st/emit! (dw/create-bool :intersection))}
+
+   :boolean-exclude      {:tooltip (ds/alt "E")
+                          :command "alt+e"
+                          :fn #(st/emit! (dw/create-bool :exclude))}
+
    })
 
 (defn get-tooltip [shortcut]

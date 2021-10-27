@@ -7,12 +7,12 @@
 (ns app.loggers.loki
   "A Loki integration."
   (:require
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.util.async :as aa]
    [app.util.http :as http]
    [app.util.json :as json]
-   [app.util.logging :as l]
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]

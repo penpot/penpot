@@ -9,7 +9,7 @@
   border-top-right-radius: $br-huge;
   border-top-left-radius: $br-huge;
   flex: 1 0 0;
-  margin-right: $medium;
+  margin-right: $size-4;
   overflow-y: auto;
   user-select: none;
 
@@ -19,7 +19,7 @@
 }
 
 .dashboard-project-row {
-  margin-bottom: $medium;
+  margin-bottom: $size-4;
 
   .project {
     align-items: center;
@@ -27,9 +27,9 @@
     border-radius: $br-small;
     display: flex;
     flex-direction: row;
-    margin-left: $medium;
-    margin-top: $medium;
-    padding: $x-small $x-small $x-small $small;
+    margin-left: $size-4;
+    margin-top: $size-4;
+    padding: $size-1 $size-1 $size-1 $size-2;
     width: fit-content;
     height: 40px;
 
@@ -40,19 +40,19 @@
 
     h2 {
       cursor: pointer;
-      font-size: 15px;
+      font-size: $fs14;
       line-height: 1rem;
       font-weight: 500;
       color: $color-black;
-      margin-right: $medium;
+      margin-right: $size-4;
     }
 
     .edit-wrapper {
-      margin-right: $medium;
+      margin-right: $size-4;
     }
 
     .info {
-      font-size: 15px;
+      font-size: $fs14;
       line-height: 1rem;
       font-weight: unset;
       color: $color-gray-30;
@@ -78,7 +78,7 @@
 }
 
 .recent-files-row-title-info {
-  font-size: $fs15;
+  font-size: $fs14;
 }
 
 .dashboard-table {
@@ -138,7 +138,7 @@
   border: 1px solid $color-gray-10;
   border-radius: $br-small;
   display: flex;
-  padding-right: $big;
+  padding-right: $size-5;
   position: relative;
 
   input.element-title {

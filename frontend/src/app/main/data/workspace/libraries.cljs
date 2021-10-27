@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
+   [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -18,10 +19,10 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
-   [app.util.logging :as log]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
@@ -134,10 +135,12 @@
                   :color color}
             uchg {:type :mod-color
                   :color prev}]
-        (rx/of (dch/commit-changes {:redo-changes [rchg]
+        (rx/of (dwu/start-undo-transaction)
+               (dch/commit-changes {:redo-changes [rchg]
                                     :undo-changes [uchg]
                                     :origin it})
-               (sync-file (:current-file-id state) file-id))))))
+               (sync-file (:current-file-id state) file-id)
+               (dwu/commit-undo-transaction))))))
 
 (defn delete-color
   [{:keys [id] :as params}]
@@ -244,10 +247,12 @@
                   :typography typography}
             uchg {:type :mod-typography
                   :typography prev}]
-        (rx/of (dch/commit-changes {:redo-changes [rchg]
+        (rx/of (dwu/start-undo-transaction)
+               (dch/commit-changes {:redo-changes [rchg]
                                     :undo-changes [uchg]
                                     :origin it})
-               (sync-file (:current-file-id state) file-id))))))
+               (sync-file (:current-file-id state) file-id)
+               (dwu/commit-undo-transaction))))))
 
 (defn delete-typography
   [id]
@@ -516,12 +521,14 @@
   (ptk/reify ::nav-to-component-file
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file    (get-in state [:workspace-libraries file-id])
-            pparams {:project-id (:project-id file)
-                     :file-id (:id file)}
-            qparams {:page-id (first (get-in file [:data :pages]))
-                     :layout :assets}]
-        (rx/of (rt/nav-new-window :workspace pparams qparams))))))
+      (let [file         (get-in state [:workspace-libraries file-id])
+            path-params  {:project-id (:project-id file)
+                          :file-id (:id file)}
+            query-params {:page-id (first (get-in file [:data :pages]))
+                          :layout :assets}]
+        (rx/of (rt/nav-new-window* {:rname :workspace
+                                    :path-params path-params
+                                    :query-params query-params}))))))
 
 (defn ext-library-changed
   [file-id modified-at revn changes]

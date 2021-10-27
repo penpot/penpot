@@ -62,14 +62,26 @@
 
 (defn teams-fetched
   [teams]
-  (let [teams (d/index-by :id teams)]
+  (let [teams (d/index-by :id teams)
+        ids   (into #{} (keys teams))]
+
     (ptk/reify ::teams-fetched
       IDeref
       (-deref [_] teams)
 
       ptk/UpdateEvent
       (update [_ state]
-        (assoc state :teams teams)))))
+        (assoc state :teams teams))
+
+      ptk/EffectEvent
+      (effect [_ _ _]
+        ;; Check if current team-id is part of available teams
+        ;; if not, dissoc it from storage.
+        (when-let [ctid (::current-team-id @storage)]
+          (when-not (contains? ids ctid)
+            (swap! storage dissoc ::current-team-id)))))))
+
+
 
 (defn fetch-teams
   []
@@ -80,6 +92,9 @@
            (rx/map teams-fetched)))))
 
 ;; --- EVENT: fetch-profile
+
+(def profile-fetched?
+  (ptk/type? ::profile-fetched))
 
 (defn profile-fetched
   [{:keys [id] :as profile}]

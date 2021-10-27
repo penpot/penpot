@@ -1,4 +1,3 @@
-
 ;; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -11,6 +10,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.common.path.commands :as upc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [okulary.core :as l]))
@@ -120,6 +120,10 @@
                               :modifiers
                               :selrect
                               :show-distances?])
+             workspace-local =))
+
+(def local-displacement
+  (l/derived #(select-keys % [:modifiers :selected])
              workspace-local =))
 
 (def selected-zoom
@@ -239,16 +243,44 @@
 
   ([ids {:keys [with-modifiers?]
          :or { with-modifiers? false }}]
-   (l/derived (fn [state]
-                (let [objects (wsh/lookup-page-objects state)
-                      modifiers (:workspace-modifiers state)
-                      objects (cond-> objects
-                                with-modifiers?
-                                (gsh/merge-modifiers modifiers))
-                      xform (comp (map #(get objects %))
-                                  (remove nil?))]
-                  (into [] xform ids)))
-              st/state =)))
+   (let [selector
+         (fn [state]
+           (let [objects (wsh/lookup-page-objects state)
+                 modifiers (:workspace-modifiers state)
+                 objects (cond-> objects
+                           with-modifiers?
+                           (gsh/merge-modifiers modifiers))
+                 xform (comp (map #(get objects %))
+                             (remove nil?))]
+             (into [] xform ids)))]
+     (l/derived selector st/state =))))
+
+(defn- set-content-modifiers [state]
+  (fn [id shape]
+    (let [content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])]
+      (if (some? content-modifiers)
+        (update shape :content upc/apply-content-modifiers content-modifiers)
+        shape))))
+
+(defn select-children [id]
+  (let [selector
+        (fn [state]
+          (let [objects (wsh/lookup-page-objects state)
+
+                modifiers (-> (:workspace-modifiers state))
+                {selected :selected disp-modifiers :modifiers}
+                (-> (:workspace-local state)
+                    (select-keys [:modifiers :selected]))
+
+                modifiers
+                (d/deep-merge
+                 modifiers
+                 (into {} (map #(vector % {:modifiers disp-modifiers})) selected))]
+
+            (as-> (cp/select-children id objects) $
+              (gsh/merge-modifiers $ modifiers)
+              (d/mapm (set-content-modifiers state) $))))]
+    (l/derived selector st/state =)))
 
 (def selected-data
   (l/derived #(let [selected (wsh/lookup-selected %)

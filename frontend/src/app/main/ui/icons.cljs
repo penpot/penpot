@@ -9,6 +9,8 @@
   (:require-macros [app.main.ui.icons :refer [icon-xref]])
   (:require [rumext.alpha :as mf]))
 
+;; Keep the list of icons sorted
+
 (def action (icon-xref :action))
 (def actions (icon-xref :actions))
 (def align-bottom (icon-xref :align-bottom))
@@ -23,6 +25,11 @@
 (def auto-fix (icon-xref :auto-fix))
 (def auto-height (icon-xref :auto-height))
 (def auto-width (icon-xref :auto-width))
+(def boolean-difference (icon-xref :boolean-difference))
+(def boolean-exclude (icon-xref :boolean-exclude))
+(def boolean-flatten (icon-xref :boolean-flatten))
+(def boolean-intersection (icon-xref :boolean-intersection))
+(def boolean-union (icon-xref :boolean-union))
 (def box (icon-xref :box))
 (def chain (icon-xref :chain))
 (def chat (icon-xref :chat))
@@ -67,8 +74,8 @@
 (def listing-thumbs (icon-xref :listing-thumbs))
 (def loader (icon-xref :loader))
 (def lock (icon-xref :lock))
-(def logo (icon-xref :uxbox-logo))
-(def logo-icon (icon-xref :uxbox-logo-icon))
+(def logo (icon-xref :penpot-logo))
+(def logo-icon (icon-xref :penpot-logo-icon))
 (def logout (icon-xref :logout))
 (def lowercase (icon-xref :lowercase))
 (def mail (icon-xref :mail))
@@ -101,6 +108,13 @@
 (def play (icon-xref :play))
 (def plus (icon-xref :plus))
 (def pointer-inner (icon-xref :pointer-inner))
+(def position-bottom-center (icon-xref :position-bottom-center))
+(def position-bottom-left (icon-xref :position-bottom-left))
+(def position-bottom-right (icon-xref :position-bottom-right))
+(def position-center (icon-xref :position-center))
+(def position-top-center (icon-xref :position-top-center))
+(def position-top-left (icon-xref :position-top-left))
+(def position-top-right (icon-xref :position-top-right))
 (def radius (icon-xref :radius))
 (def radius-1 (icon-xref :radius-1))
 (def radius-4 (icon-xref :radius-4))
@@ -144,6 +158,7 @@
 (def unlock (icon-xref :unlock))
 (def uppercase (icon-xref :uppercase))
 (def user (icon-xref :user))
+
 
 (def loader-pencil
   (mf/html

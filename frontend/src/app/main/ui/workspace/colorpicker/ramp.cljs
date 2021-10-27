@@ -26,7 +26,8 @@
      {:on-mouse-down #(reset! dragging? true)
       :on-mouse-up #(reset! dragging? false)
       :on-pointer-down (partial dom/capture-pointer)
-      :on-pointer-up (partial dom/release-pointer)
+      :on-lost-pointer-capture #(do (dom/release-pointer %)
+                                    (reset! dragging? false))
       :on-click calculate-pos
       :on-mouse-move #(when @dragging? (calculate-pos %))}
      [:div.handler {:style {:pointer-events "none"

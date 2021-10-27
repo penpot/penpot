@@ -12,7 +12,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
-   [app.http.oauth :refer [extract-props]]
+   [app.http.oauth :refer [extract-utm-props]]
    [app.loggers.audit :as audit]
    [app.media :as media]
    [app.metrics :as mtx]
@@ -100,10 +100,9 @@
 
 (sv/defmethod ::prepare-register-profile {:auth false}
   [{:keys [pool tokens] :as cfg} params]
-  (when-not (cf/get :registration-enabled)
+  (when-not (contains? cf/flags :registration)
     (ex/raise :type :restriction
               :code :registration-disabled))
-
   (when-let [domains (cf/get :registration-domain-whitelist)]
     (when-not (email-domain-in-whitelist? domains (:email params))
       (ex/raise :type :validation
@@ -128,23 +127,16 @@
 ;; --- MUTATION: Register Profile
 
 (s/def ::accept-terms-and-privacy ::us/boolean)
-(s/def ::accept-newsletter-subscription ::us/boolean)
 (s/def ::token ::us/not-empty-string)
 
 (s/def ::register-profile
-  (s/keys :req-un [::token ::fullname
-                   ::accept-terms-and-privacy]
-          :opt-un [::accept-newsletter-subscription]))
+  (s/keys :req-un [::token ::fullname]))
 
 (sv/defmethod ::register-profile {:auth false :rlimit :password}
   [{:keys [pool] :as cfg} params]
-  (when-not (:accept-terms-and-privacy params)
-    (ex/raise :type :validation
-              :code :invalid-terms-and-privacy))
-
   (db/with-atomic [conn pool]
-    (let [cfg     (assoc cfg :conn conn)]
-      (register-profile cfg params))))
+    (-> (assoc cfg :conn conn)
+        (register-profile params))))
 
 (defn- annotate-profile-register
   "A helper for properly increase the profile-register metric once the
@@ -163,6 +155,7 @@
                        (create-profile conn)
                        (create-profile-relations conn)
                        (decode-profile-row))]
+
       (sid/load-initial-project! conn profile)
 
       (cond
@@ -204,7 +197,6 @@
               ptoken (tokens :generate-predefined
                              {:iss :profile-identity
                               :profile-id (:id profile)})]
-
           (eml/send! {::eml/conn conn
                       ::eml/factory eml/register
                       :public-uri (:public-uri cfg)
@@ -224,18 +216,17 @@
   [conn params]
   (let [id        (or (:id params) (uuid/next))
 
-        props     (-> (extract-props params)
+        props     (-> (extract-utm-props params)
                       (merge (:props params))
-                      (assoc :accept-terms-and-privacy (:accept-terms-and-privacy params true))
-                      (assoc :accept-newsletter-subscription (:accept-newsletter-subscription params false))
                       (db/tjson))
 
         password  (if-let [password (:password params)]
                     (derive-password password)
                     "!")
 
-        locale    (as-> (:locale params) locale
-                    (and (string? locale) (not (str/blank? locale)) locale))
+        locale    (:locale params)
+        locale    (when (and (string? locale) (not (str/blank? locale)))
+                    locale)
 
         backend   (:backend params "penpot")
         is-demo   (:is-demo params false)
@@ -359,11 +350,14 @@
 
 (defn- update-profile
   [conn {:keys [id fullname lang theme] :as params}]
-  (db/update! conn :profile
-              {:fullname fullname
-               :lang lang
-               :theme theme}
-              {:id id}))
+  (let [profile (db/update! conn :profile
+                            {:fullname fullname
+                             :lang lang
+                             :theme theme}
+                            {:id id})]
+    (-> profile
+        (profile/decode-profile-row)
+        (profile/strip-private-attrs))))
 
 (s/def ::update-profile
   (s/keys :req-un [::id ::fullname]
@@ -372,8 +366,9 @@
 (sv/defmethod ::update-profile
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
-    (update-profile conn params)
-    nil))
+    (let [profile (update-profile conn params)]
+      (with-meta profile
+        {::audit/props (audit/profile->props profile)}))))
 
 ;; --- MUTATION: Update Password
 
@@ -458,7 +453,8 @@
           params  (assoc params
                          :profile profile
                          :email (str/lower email))]
-      (if (cf/get :smtp-enabled)
+      (if (or (cf/get :smtp-enabled)
+              (contains? cf/flags :smtp))
         (request-email-change cfg params)
         (change-email-inmediatelly cfg params)))))
 
@@ -591,11 +587,15 @@
   (db/with-atomic [conn pool]
     (let [profile (profile/retrieve-profile-data conn profile-id)
           props   (reduce-kv (fn [props k v]
-                               (if (nil? v)
-                                 (dissoc props k)
-                                 (assoc props k v)))
+                               ;; We don't accept namespaced keys
+                               (if (simple-ident? k)
+                                 (if (nil? v)
+                                   (dissoc props k)
+                                   (assoc props k v))
+                                 props))
                              (:props profile)
                              props)]
+
       (db/update! conn :profile
                   {:props (db/tjson props)}
                   {:id profile-id})

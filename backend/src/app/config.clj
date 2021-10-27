@@ -10,6 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.flags :as flags]
    [app.common.spec :as us]
    [app.common.version :as v]
    [app.util.time :as dt]
@@ -50,8 +51,6 @@
    :default-blob-version 3
    :loggers-zmq-uri "tcp://localhost:45556"
 
-   :asserts-enabled false
-
    :public-uri "http://localhost:3449"
    :redis-uri "redis://redis/0"
 
@@ -61,15 +60,11 @@
    :assets-storage-backend :assets-fs
    :storage-assets-fs-directory "assets"
 
-   :feedback-destination "info@example.com"
-   :feedback-enabled false
-
    :assets-path "/internal/assets/"
 
    :rlimits-password 10
    :rlimits-image 2
 
-   :smtp-enabled false
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
    :smtp-default-from "Penpot <no-reply@example.com>"
 
@@ -79,10 +74,6 @@
    :profile-bounce-max-age (dt/duration {:days 7})
    :profile-bounce-threshold 10
 
-   :allow-demo-users true
-   :registration-enabled true
-
-   :telemetry-enabled false
    :telemetry-uri "https://telemetry.penpot.app/"
 
    :ldap-user-query "(|(uid=:username)(mail=:username))"
@@ -92,27 +83,29 @@
    :ldap-attrs-photo "jpegPhoto"
 
    ;; a server prop key where initial project is stored.
-   :initial-project-skey "initial-project"
-   })
+   :initial-project-skey "initial-project"})
 
-(s/def ::audit-enabled ::us/boolean)
-(s/def ::audit-archive-enabled ::us/boolean)
-(s/def ::audit-archive-uri ::us/string)
-(s/def ::audit-archive-gc-enabled ::us/boolean)
-(s/def ::audit-archive-gc-max-age ::dt/duration)
+(s/def ::flags ::us/words)
+
+;; DEPRECATED PROPERTIES: should be removed in 1.10
+(s/def ::registration-enabled ::us/boolean)
+(s/def ::smtp-enabled ::us/boolean)
+(s/def ::telemetry-enabled ::us/boolean)
+(s/def ::asserts-enabled ::us/boolean)
+;; END DEPRECATED
+
+(s/def ::audit-log-archive-uri ::us/string)
+(s/def ::audit-log-gc-max-age ::dt/duration)
 
 (s/def ::secret-key ::us/string)
 (s/def ::allow-demo-users ::us/boolean)
-(s/def ::asserts-enabled ::us/boolean)
 (s/def ::assets-path ::us/string)
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
 (s/def ::database-username (s/nilable ::us/string))
 (s/def ::default-blob-version ::us/integer)
 (s/def ::error-report-webhook ::us/string)
-(s/def ::feedback-destination ::us/string)
-(s/def ::feedback-enabled ::us/boolean)
-(s/def ::feedback-token ::us/string)
+(s/def ::user-feedback-destination ::us/string)
 (s/def ::github-client-id ::us/string)
 (s/def ::github-client-secret ::us/string)
 (s/def ::gitlab-base-uri ::us/string)
@@ -158,12 +151,10 @@
 (s/def ::public-uri ::us/string)
 (s/def ::redis-uri ::us/string)
 (s/def ::registration-domain-whitelist ::us/set-of-str)
-(s/def ::registration-enabled ::us/boolean)
 (s/def ::rlimits-image ::us/integer)
 (s/def ::rlimits-password ::us/integer)
 (s/def ::smtp-default-from ::us/string)
 (s/def ::smtp-default-reply-to ::us/string)
-(s/def ::smtp-enabled ::us/boolean)
 (s/def ::smtp-host ::us/string)
 (s/def ::smtp-password (s/nilable ::us/string))
 (s/def ::smtp-port ::us/integer)
@@ -180,28 +171,27 @@
 (s/def ::storage-fdata-s3-bucket ::us/string)
 (s/def ::storage-fdata-s3-region ::us/keyword)
 (s/def ::storage-fdata-s3-prefix ::us/string)
-(s/def ::telemetry-enabled ::us/boolean)
 (s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-with-taiga ::us/boolean)
 (s/def ::tenant ::us/string)
 
+(s/def ::sentry-trace-sample-rate ::us/number)
+(s/def ::sentry-attach-stack-trace ::us/boolean)
+(s/def ::sentry-debug ::us/boolean)
+(s/def ::sentry-dsn ::us/string)
+
 (s/def ::config
   (s/keys :opt-un [::secret-key
+                   ::flags
                    ::allow-demo-users
-                   ::audit-enabled
-                   ::audit-archive-enabled
-                   ::audit-archive-uri
-                   ::audit-archive-gc-enabled
-                   ::audit-archive-gc-max-age
-                   ::asserts-enabled
+                   ::audit-log-archive-uri
+                   ::audit-log-gc-max-age
                    ::database-password
                    ::database-uri
                    ::database-username
                    ::default-blob-version
                    ::error-report-webhook
-                   ::feedback-destination
-                   ::feedback-enabled
-                   ::feedback-token
+                   ::user-feedback-destination
                    ::github-client-id
                    ::github-client-secret
                    ::gitlab-base-uri
@@ -249,6 +239,10 @@
                    ::registration-enabled
                    ::rlimits-image
                    ::rlimits-password
+                   ::sentry-dsn
+                   ::sentry-debug
+                   ::sentry-attach-stack-trace
+                   ::sentry-trace-sample-rate
                    ::smtp-default-from
                    ::smtp-default-reply-to
                    ::smtp-enabled
@@ -258,25 +252,26 @@
                    ::smtp-ssl
                    ::smtp-tls
                    ::smtp-username
-
                    ::srepl-host
                    ::srepl-port
-
                    ::assets-storage-backend
                    ::storage-assets-fs-directory
                    ::storage-assets-s3-bucket
                    ::storage-assets-s3-region
-
                    ::fdata-storage-backend
                    ::storage-fdata-s3-bucket
                    ::storage-fdata-s3-region
                    ::storage-fdata-s3-prefix
-
                    ::telemetry-enabled
                    ::telemetry-uri
                    ::telemetry-referer
                    ::telemetry-with-taiga
                    ::tenant]))
+
+(defn- parse-flags
+  [config]
+  (-> (:flags config)
+      (flags/parse flags/default)))
 
 (defn read-env
   [prefix]
@@ -304,11 +299,14 @@
         (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")))
       (throw e))))
 
-(def version (v/parse (or (some-> (io/resource "version.txt")
-                                  (slurp)
-                                  (str/trim))
-                          "%version%")))
-(def config (atom (read-config)))
+(def version
+  (v/parse (or (some-> (io/resource "version.txt")
+                       (slurp)
+                       (str/trim))
+               "%version%")))
+
+(def ^:dynamic config (read-config))
+(def ^:dynamic flags  (parse-flags config))
 
 (def deletion-delay
   (dt/duration {:days 7}))
@@ -316,9 +314,9 @@
 (defn get
   "A configuration getter. Helps code be more testable."
   ([key]
-   (c/get @config key))
+   (c/get config key))
   ([key default]
-   (c/get @config key default)))
+   (c/get config key default)))
 
 ;; Set value for all new threads bindings.
-(alter-var-root #'*assert* (constantly (get :asserts-enabled)))
+(alter-var-root #'*assert* (constantly (contains? flags :backend-asserts)))

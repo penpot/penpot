@@ -5,7 +5,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.177.09.0/24
+        - subnet: 172.177.9.0/24
 
 volumes:
   postgres_data:
@@ -13,6 +13,7 @@ volumes:
 
 services:
   main:
+    profiles: ["full"]
     privileged: true
     image: "penpotapp/devenv:latest"
     build:
@@ -49,6 +50,57 @@ services:
       - PENPOT_SMTP_PASSWORD=
       - PENPOT_SMTP_SSL=false
       - PENPOT_SMTP_TLS=false
+      - PENPOT_FLAGS="enable-cors"
+
+      # LDAP setup
+      - PENPOT_LDAP_HOST=ldap
+      - PENPOT_LDAP_PORT=10389
+      - PENPOT_LDAP_SSL=false
+      - PENPOT_LDAP_STARTTLS=false
+      - PENPOT_LDAP_BASE_DN=ou=people,dc=planetexpress,dc=com
+      - PENPOT_LDAP_BIND_DN=cn=admin,dc=planetexpress,dc=com
+      - PENPOT_LDAP_BIND_PASSWORD=GoodNewsEveryone
+      - PENPOT_LDAP_ATTRS_USERNAME=uid
+      - PENPOT_LDAP_ATTRS_EMAIL=mail
+      - PENPOT_LDAP_ATTRS_FULLNAME=cn
+      - PENPOT_LDAP_ATTRS_PHOTO=jpegPhoto
+
+  backend:
+    profiles: ["backend"]
+    privileged: true
+    image: "penpotapp/devenv:latest"
+    build:
+      context: "."
+    container_name: "penpot-backend"
+    stop_signal: SIGINT
+
+    depends_on:
+      - postgres
+      - redis
+
+    volumes:
+      - "user_data:/home/penpot/"
+      - "${PWD}:/home/penpot/penpot"
+
+    ports:
+      - 6060:6060
+      - 6061:6061
+      - 9090:9090
+
+    environment:
+      - EXTERNAL_UID=${CURRENT_USER_ID}
+      - PENPOT_SECRET_KEY=super-secret-devenv-key
+      # STMP setup
+      - PENPOT_SMTP_ENABLED=true
+      - PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com
+      - PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com
+      - PENPOT_SMTP_HOST=mailer
+      - PENPOT_SMTP_PORT=1025
+      - PENPOT_SMTP_USERNAME=
+      - PENPOT_SMTP_PASSWORD=
+      - PENPOT_SMTP_SSL=false
+      - PENPOT_SMTP_TLS=false
+      - PENPOT_FLAGS="enable-cors"
 
       # LDAP setup
       - PENPOT_LDAP_HOST=ldap

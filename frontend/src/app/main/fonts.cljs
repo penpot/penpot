@@ -9,11 +9,11 @@
   (:require-macros [app.main.fonts :refer [preload-gfonts]])
   (:require
    [app.common.data :as d]
+   [app.common.logging :as log]
    [app.common.text :as txt]
    [app.config :as cf]
    [app.util.dom :as dom]
    [app.util.http :as http]
-   [app.util.logging :as log]
    [app.util.object :as obj]
    [beicon.core :as rx]
    [clojure.set :as set]
@@ -23,7 +23,7 @@
    [okulary.core :as l]
    [promesa.core :as p]))
 
-(log/set-level! :trace)
+(log/set-level! :warn)
 
 (def google-fonts
   (preload-gfonts "fonts/gfonts.2020.04.23.json"))

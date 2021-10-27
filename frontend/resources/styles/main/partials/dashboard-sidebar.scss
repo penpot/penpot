@@ -141,7 +141,7 @@
       }
     }
     .text {
-      font-size: $fs13;
+      font-size: $fs12;
     }
   }
 
@@ -188,7 +188,7 @@
         border-radius: $br-small;
         content: "";
         height: 26px;
-        margin-right: $small;
+        margin-right: $size-2;
         width: 4px;
       }
 
@@ -284,7 +284,7 @@
       display: flex;
       height: 22px;
       margin-left: auto;
-      padding: 0 $small;
+      padding: 0 $size-2;
       width: 32px;
 
       svg {
@@ -390,7 +390,7 @@
     svg {
       height: 10px;
       margin-left: auto;
-      margin-right: $small;
+      margin-right: $size-2;
       width: 10px;
     }
   }
@@ -409,7 +409,7 @@
 
       svg {
         fill: $color-gray-20;
-        margin-right: $small;
+        margin-right: $size-2;
 
         height: 12px;
         width: 12px;

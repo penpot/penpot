@@ -9,13 +9,13 @@
   background-color: $color-white;
   display: flex;
   height: 63px;
-  padding: $x-small $medium $x-small $small;
+  padding: $size-1 $size-4 $size-1 $size-2;
   position: relative;
   z-index: 10;
   justify-content: space-between;
 
   .element-name {
-    margin-right: $small;
+    margin-right: $size-2;
   }
 
   .btn-secondary {
@@ -27,7 +27,7 @@
   svg {
     fill: $color-black;
     height: 14px;
-    margin-right: $x-small;
+    margin-right: $size-1;
     width: 14px;
   }
 
@@ -41,7 +41,7 @@
     ul {
       display: flex;
       align-items: center;
-      font-size: $fs15;
+      font-size: $fs14;
       justify-content: center;
     }
 
@@ -52,7 +52,7 @@
         color: $color-gray-30;
         display: flex;
         height: 40px;
-        padding: $x-small $big;
+        padding: $size-1 $size-5;
         flex-basis: 140px;
 
         &:hover {
@@ -90,7 +90,7 @@
     display: flex;
     align-items: center;
     cursor: pointer;
-    margin-left: $small;
+    margin-left: $size-2;
     z-index: 10;
 
     svg {
@@ -109,7 +109,7 @@
   }
 
   .pin-icon {
-    margin: 0 $small 0 $big;
+    margin: 0 $size-2 0 $size-5;
     svg {
       fill: $color-gray-20;
     }

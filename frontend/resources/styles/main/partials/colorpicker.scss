@@ -13,7 +13,7 @@
 .colorpicker-content {
   display: flex;
   flex-direction: column;
-  padding: $small;
+  padding: $size-2;
 
   & > * {
     width: 200px;
@@ -21,7 +21,7 @@
 
   .top-actions {
     display: flex;
-    margin-bottom: $x-small;
+    margin-bottom: $size-1;
     justify-content: space-between;
 
     .picker-btn {
@@ -50,7 +50,7 @@
       margin: 0;
       border: 1px solid $color-gray-20;
       border-radius: 2px;
-      margin-left: $x-small;
+      margin-left: $size-1;
     }
 
     .active {
@@ -69,8 +69,8 @@
   .gradient-stops {
     height: 10px;
     display: flex;
-    margin-top: $small;
-    margin-bottom: $medium;
+    margin-top: $size-2;
+    margin-bottom: $size-4;
 
     .gradient-background-wrapper {
       height: 100%;
@@ -280,14 +280,14 @@
       margin: 0;
       border: 1px solid $color-gray-10;
       border-radius: 2px;
-      font-size: $fs11;
+      font-size: $fs12;
       height: 1.5rem;
-      padding: 0 $x-small;
+      padding: 0 $size-1;
       color: $color-gray-40;
     }
 
     label {
-      font-size: $fs11;
+      font-size: $fs12;
     }
   }
 
@@ -303,9 +303,9 @@
       background-position: 95% 48%;
       background-size: 10px;
       margin: 0;
-      margin-bottom: $small;
+      margin-bottom: $size-2;
       width: 100%;
-      padding: $x-small 0.25rem;
+      padding: $size-1 0.25rem;
       font-size: 0.75rem;
       color: $color-gray-40;
       cursor: pointer;
@@ -434,7 +434,7 @@
 
     .input-text {
       color: $color-gray-60;
-      font-size: $fs13;
+      font-size: $fs12;
       margin: 5px;
       padding: 5px;
       width: 100%;
@@ -444,7 +444,7 @@
 
   .colorpicker-tabs {
     display: flex;
-    margin-bottom: $small;
+    margin-bottom: $size-2;
     border-radius: 5px;
     border: 1px solid $color-gray-10;
     height: 2rem;
@@ -480,11 +480,11 @@
 .color-data {
   align-items: center;
   display: flex;
-  margin-bottom: $small;
+  margin-bottom: $size-2;
   position: relative;
 
   .color-name {
-    font-size: $fs13;
+    font-size: $fs12;
     margin: 5px 6px 0px 6px;
   }
 
@@ -498,9 +498,9 @@
       color: $color-white;
       height: 20px;
       margin: 5px 0 0 0;
-      padding: 0 $x-small;
+      padding: 0 $size-1;
       width: 84px;
-      font-size: $fs13;
+      font-size: $fs12;
 
       &:focus {
         border-color: $color-primary !important;
@@ -523,7 +523,7 @@
 
   .type {
     color: $color-gray-10;
-    margin-right: $x-small;
+    margin-right: $size-1;
   }
 
   .number {

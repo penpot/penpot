@@ -3,10 +3,10 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v14.17.5 \
-    CLOJURE_VERSION=1.10.3.933 \
-    CLJKONDO_VERSION=2021.07.28 \
-    BABASHKA_VERSION=0.5.1 \
+ENV NODE_VERSION=v14.17.6 \
+    CLOJURE_VERSION=1.10.3.967 \
+    CLJKONDO_VERSION=2021.09.15 \
+    BABASHKA_VERSION=0.6.1 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -28,6 +28,7 @@ RUN set -ex; \
         rlwrap \
         unzip \
         fakeroot \
+        netcat \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
@@ -172,9 +173,10 @@ COPY files/vimrc          /root/.vimrc
 COPY files/tmux.conf      /root/.tmux.conf
 COPY files/sudoers        /etc/sudoers
 
-COPY files/start-tmux.sh  /home/start-tmux.sh
-COPY files/entrypoint.sh  /home/entrypoint.sh
-COPY files/init.sh        /home/init.sh
+COPY files/start-tmux.sh       /home/start-tmux.sh
+COPY files/start-tmux-back.sh  /home/start-tmux-back.sh
+COPY files/entrypoint.sh       /home/entrypoint.sh
+COPY files/init.sh             /home/init.sh
 
 ENTRYPOINT ["/home/entrypoint.sh"]
 CMD ["/home/init.sh"]

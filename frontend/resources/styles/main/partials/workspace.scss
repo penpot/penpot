@@ -18,12 +18,12 @@
   top: 40px;
   width: 240px;
   z-index: 12;
-  padding: $x-small 0;
+  padding: $size-1 0;
 
   li {
     align-items: center;
     font-size: $fs14;
-    padding: $x-small $medium;
+    padding: $size-1 $size-4;
     cursor: pointer;
 
     display: flex;
@@ -47,6 +47,17 @@
     &:hover {
       background-color: $color-primary-lighter;
     }
+
+    .submenu-icon {
+      position: absolute;
+      right: 1rem;
+
+      svg {
+        width: 10px;
+        height: 10px;
+      }
+    }
+
   }
 }
 
@@ -227,10 +238,6 @@
   font-size: $fs12;
 }
 
-.selected .workspace-frame-label {
-  fill: $color-primary-dark;
-}
-
 .multiuser-cursor {
   align-items: center;
   display: flex;
@@ -250,8 +257,8 @@
     border-radius: $br-small;
     color: $color-black;
     font-size: $fs12;
-    margin-left: $small;
-    padding: $x-small;
+    margin-left: $size-2;
+    padding: $size-1;
   }
 }
 

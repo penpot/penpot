@@ -24,7 +24,7 @@
     color: $color-gray-40;
     font-size: $fs16;
     font-weight: bold;
-    margin-bottom: $x-small;
+    margin-bottom: $size-1;
   }
 
   .date-ribbon {
@@ -40,15 +40,15 @@
   .activity-input {
     border-bottom: 1px solid $color-gray-10;
     display: flex;
-    font-size: $fs13;
-    padding: $small;
+    font-size: $fs12;
+    padding: $size-2;
     width: 100%;
 
     img.activity-author {
       border-radius: 50%;
       flex-shrink: 0;
       height: 30px;
-      margin-right: $medium;
+      margin-right: $size-4;
       width: 30px;
     }
 
@@ -70,7 +70,7 @@
 
       .activity-time {
         color: $color-gray-20;
-        font-size: $fs11;
+        font-size: $fs12;
         font-style: italic;
       }
     }

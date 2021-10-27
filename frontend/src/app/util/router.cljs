@@ -10,6 +10,7 @@
    [app.common.uri :as u]
    [app.config :as cfg]
    [app.util.browser-history :as bhistory]
+   [app.util.dom :as dom]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [goog.events :as e]
@@ -20,12 +21,12 @@
 
 (defn resolve
   ([router id] (resolve router id {} {}))
-  ([router id params] (resolve router id params {}))
-  ([router id params qparams]
-   (when-let [match (r/match-by-name router id params)]
-     (if (empty? qparams)
+  ([router id path-params] (resolve router id path-params {}))
+  ([router id path-params query-params]
+   (when-let [match (r/match-by-name router id path-params)]
+     (if (empty? query-params)
        (r/match->path match)
-       (let [query (u/map->query-string qparams)]
+       (let [query (u/map->query-string query-params)]
          (-> (u/uri (r/match->path match))
              (assoc :query query)
              (str)))))))
@@ -47,12 +48,12 @@
   [router path]
   (let [uri (u/uri path)]
     (when-let [match (r/match-by-path router (:path uri))]
-      (let [qparams (u/query-string->map (:query uri))
-            params  {:path (:path-params match)
-                     :query qparams}]
+      (let [query-params (u/query-string->map (:query uri))
+            params       {:path (:path-params match)
+                          :query query-params}]
         (-> match
             (assoc :params params)
-            (assoc :query-params qparams))))))
+            (assoc :query-params query-params))))))
 
 ;; --- Navigate (Event)
 
@@ -64,59 +65,50 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :route match))))
+      (-> state
+          (assoc :route match)
+          (dissoc :exception)))))
 
 (defn navigate*
-  [id params qparams replace]
+  [id path-params query-params replace]
   (ptk/reify ::navigate
     IDeref
     (-deref [_]
       {:id id
-       :path-params params
-       :query-params qparams
+       :path-params path-params
+       :query-params query-params
        :replace replace})
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (dissoc state :exception))
 
     ptk/EffectEvent
     (effect [_ state _]
-      (ts/asap
-       #(let [router  (:router state)
-              history (:history state)
-              path    (resolve router id params qparams)]
-          (if ^boolean replace
+      (let [router  (:router state)
+            history (:history state)
+            path    (resolve router id path-params query-params)]
+        (ts/asap
+         #(if ^boolean replace
             (bhistory/replace-token! history path)
             (bhistory/set-token! history path)))))))
 
+(defn assign-exception
+  [error]
+  (ptk/reify ::assign-exception
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (nil? error)
+        (dissoc state :exception)
+        (assoc state :exception error)))))
+
 (defn nav
   ([id] (nav id nil nil))
-  ([id params] (nav id params nil))
-  ([id params qparams] (navigate* id params qparams false)))
+  ([id path-params] (nav id path-params nil))
+  ([id path-params query-params] (navigate* id path-params query-params false)))
 
 (defn nav'
   ([id] (nav id nil nil))
-  ([id params] (nav id params nil))
-  ([id params qparams] (navigate* id params qparams true)))
+  ([id path-params] (nav id path-params nil))
+  ([id path-params query-params] (navigate* id path-params query-params true)))
 
 (def navigate nav)
-
-(deftype NavigateNewWindow [id params qparams]
-  ptk/EffectEvent
-  (effect [_ state _]
-    (let [router (:router state)
-          path   (resolve router id params qparams)
-          uri    (-> (u/uri cfg/public-uri)
-                     (assoc :fragment path))
-          name   (str (name id) "-" (:file-id params))]
-      (js/window.open (str uri) name))))
-
-(defn nav-new-window
-  ([id] (nav-new-window id nil nil))
-  ([id params] (nav-new-window id params nil))
-  ([id params qparams] (NavigateNewWindow. id params qparams)))
-
 
 (defn nav-new-window*
   [{:keys [rname path-params query-params name]}]
@@ -127,10 +119,23 @@
             path   (resolve router rname path-params query-params)
             uri    (-> (u/uri cfg/public-uri)
                        (assoc :fragment path))]
+        (dom/open-new-window (str uri) name)))))
 
+(defn nav-back
+  []
+  (ptk/reify ::nav-back
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (ts/asap dom/browser-back))))
 
-
-        (js/window.open (str uri) name)))))
+(defn nav-back-local
+  "Navigate back only if the previous page is in penpot app."
+  []
+  (let [location (.-location js/document)
+        referrer (u/uri (.-referrer js/document))]
+    (when (or (nil? (:host referrer))
+              (= (.-hostname location) (:host referrer)))
+      (nav-back))))
 
 ;; --- History API
 

@@ -9,13 +9,13 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.db.sql :as sql]
    [app.metrics :as mtx]
    [app.util.json :as json]
-   [app.util.logging :as l]
    [app.util.migrations :as mg]
    [app.util.time :as dt]
    [clojure.java.io :as io]
@@ -46,28 +46,26 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare instrument-jdbc!)
+(declare apply-migrations!)
 
 (s/def ::name keyword?)
 (s/def ::uri ::us/not-empty-string)
 (s/def ::min-pool-size ::us/integer)
 (s/def ::max-pool-size ::us/integer)
 (s/def ::migrations map?)
+(s/def ::read-only ::us/boolean)
 
 (defmethod ig/pre-init-spec ::pool [_]
-  (s/keys :req-un [::uri ::name ::min-pool-size ::max-pool-size ::migrations ::mtx/metrics]))
+  (s/keys :req-un [::uri ::name ::min-pool-size ::max-pool-size]
+          :opt-un [::migrations ::mtx/metrics ::read-only]))
 
 (defmethod ig/init-key ::pool
-  [_ {:keys [migrations metrics] :as cfg}]
-  (l/info :action "initialize connection pool"
-          :name (d/name (:name cfg))
-          :uri (:uri cfg))
-  (instrument-jdbc! (:registry metrics))
+  [_ {:keys [migrations metrics name] :as cfg}]
+  (l/info :action "initialize connection pool" :name (d/name name) :uri (:uri cfg))
+  (some-> metrics :registry instrument-jdbc!)
+
   (let [pool (create-pool cfg)]
-    (when (seq migrations)
-      (with-open [conn ^AutoCloseable (open pool)]
-        (mg/setup! conn)
-        (doseq [[name steps] migrations]
-          (mg/migrate! conn {:name (d/name name) :steps steps}))))
+    (some->> (seq migrations) (apply-migrations! pool))
     pool))
 
 (defmethod ig/halt-key! ::pool
@@ -84,37 +82,50 @@
     :name "database_query_total"
     :help "An absolute counter of database queries."}))
 
+(defn- apply-migrations!
+  [pool migrations]
+  (with-open [conn ^AutoCloseable (open pool)]
+    (mg/setup! conn)
+    (doseq [[name steps] migrations]
+      (mg/migrate! conn {:name (d/name name) :steps steps}))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API & Impl
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def initsql
-  (str "SET statement_timeout = 120000;\n"
-       "SET idle_in_transaction_session_timeout = 120000;"))
+  (str "SET statement_timeout = 200000;\n"
+       "SET idle_in_transaction_session_timeout = 200000;"))
 
 (defn- create-datasource-config
-  [{:keys [metrics] :as cfg}]
+  [{:keys [metrics read-only] :or {read-only false} :as cfg}]
   (let [dburi    (:uri cfg)
         username (:username cfg)
         password (:password cfg)
-        config   (HikariConfig.)
-        mtf      (PrometheusMetricsTrackerFactory. (:registry metrics))]
+        config   (HikariConfig.)]
     (doto config
       (.setJdbcUrl (str "jdbc:" dburi))
       (.setPoolName (d/name (:name cfg)))
       (.setAutoCommit true)
-      (.setReadOnly false)
-      (.setConnectionTimeout 8000)  ;; 8seg
-      (.setValidationTimeout 8000)  ;; 8seg
-      (.setIdleTimeout 120000)      ;; 2min
-      (.setMaxLifetime 1800000)     ;; 30min
+      (.setReadOnly read-only)
+      (.setConnectionTimeout 10000)  ;; 10seg
+      (.setValidationTimeout 10000)  ;; 10seg
+      (.setIdleTimeout 120000)       ;; 2min
+      (.setMaxLifetime 1800000)      ;; 30min
       (.setMinimumIdle (:min-pool-size cfg 0))
       (.setMaximumPoolSize (:max-pool-size cfg 30))
-      (.setMetricsTrackerFactory mtf)
       (.setConnectionInitSql initsql)
       (.setInitializationFailTimeout -1))
+
+    ;; When metrics namespace is provided
+    (when metrics
+      (->> (:registry metrics)
+           (PrometheusMetricsTrackerFactory.)
+           (.setMetricsTrackerFactory config)))
+
     (when username (.setUsername config username))
     (when password (.setPassword config password))
+
     config))
 
 (defn pool?
@@ -127,7 +138,7 @@
   [pool]
   (.isClosed ^HikariDataSource pool))
 
-(defn- create-pool
+(defn create-pool
   [cfg]
   (let [dsc (create-datasource-config cfg)]
     (jdbc-dt/read-as-instant)

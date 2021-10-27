@@ -4,10 +4,16 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.util.path.subpaths
+(ns app.common.path.subpaths
   (:require
    [app.common.data :as d]
-   [app.util.path.commands :as upc]))
+   [app.common.geom.point :as gpt]
+   [app.common.path.commands :as upc]))
+
+(defn pt=
+  "Check if two points are close"
+  [p1 p2]
+  (< (gpt/distance p1 p2) 0.1))
 
 (defn make-subpath
   "Creates a subpath either from a single command or with all the data"
@@ -67,16 +73,22 @@
         (fn [subpaths current]
           (let [is-move? (= :move-to (:command current))
                 last-idx (dec (count subpaths))]
-            (if is-move?
+            (cond
+              is-move?
               (conj subpaths (make-subpath current))
-              (update subpaths last-idx add-subpath-command current))))]
+
+              (>= last-idx 0)
+              (update subpaths last-idx add-subpath-command current)
+
+              :else
+              subpaths)))]
     (->> content
          (reduce reduce-subpath []))))
 
 (defn subpaths-join
   "Join two subpaths together when the first finish where the second starts"
   [subpath other]
-  (assert (= (:to subpath) (:from other)))
+  (assert (pt= (:to subpath) (:from other)))
   (-> subpath
       (update :data d/concat (rest (:data other)))
       (assoc :to (:to other))))
@@ -88,20 +100,30 @@
   (let [merge-with-candidate
         (fn [[candidate result] current]
           (cond
-            (= (:to current) (:from current))
+            (pt= (:to current) (:from current))
+            ;; Subpath is already a closed path
             [candidate (conj result current)]
 
-            (= (:to candidate) (:from current))
+            (pt= (:to candidate) (:from current))
             [(subpaths-join candidate current) result]
 
-            (= (:to candidate) (:to current))
+            (pt= (:from candidate) (:to current))
+            [(subpaths-join current candidate) result]
+
+            (pt= (:to candidate) (:to current))
             [(subpaths-join candidate (reverse-subpath current)) result]
+
+            (pt= (:from candidate) (:from current))
+            [(subpaths-join (reverse-subpath current) candidate) result]
 
             :else
             [candidate (conj result current)]))]
 
     (->> subpaths
          (reduce merge-with-candidate [candidate []]))))
+
+(defn is-closed? [subpath]
+  (pt= (:from subpath) (:to subpath)))
 
 (defn close-subpaths
   "Searches a path for posible supaths that can create closed loops and merge them"
@@ -114,7 +136,7 @@
 
           (if (some? current)
             (let [[new-current new-subpaths]
-                  (if (= (:from current) (:to current))
+                  (if (is-closed? current)
                     [current subpaths]
                     (merge-paths current subpaths))]
 
@@ -134,3 +156,38 @@
     (->> closed-subpaths
          (mapcat :data)
          (into []))))
+
+(defn reverse-content
+  "Given a content reverse the order of the commands"
+  [content]
+
+  (->> content
+       (get-subpaths)
+       (mapv reverse-subpath)
+       (reverse)
+       (mapcat :data)
+       (into [])))
+
+;; https://mathworld.wolfram.com/PolygonArea.html
+(defn clockwise?
+  "Check whether the first subpath is clockwise or counter-clock wise"
+  [content]
+  (let [subpath (->> content get-subpaths first :data)]
+    (loop [current (first subpath)
+           subpath (rest subpath)
+           first-point nil
+           signed-area 0]
+
+      (if (nil? current)
+        (> signed-area 0)
+
+        (let [{x1 :x y1 :y :as p} (upc/command->point current)
+              last? (nil? (first subpath))
+              first-point (if (nil? first-point) p first-point)
+              {x2 :x y2 :y} (if last? first-point (upc/command->point (first subpath)))
+              signed-area (+ signed-area (- (* x1 y2) (* x2 y1)))]
+
+          (recur (first subpath)
+                 (rest subpath)
+                 first-point
+                 signed-area))))))

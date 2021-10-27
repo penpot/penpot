@@ -31,18 +31,31 @@
     where ppr.project_id = ?
       and ppr.profile_id = ?")
 
-(defn- retrieve-project-permissions
+(defn- get-permissions
   [conn profile-id project-id]
-  (db/exec! conn [sql:project-permissions
-                  project-id profile-id
-                  project-id profile-id]))
+  (let [rows     (db/exec! conn [sql:project-permissions
+                                 project-id profile-id
+                                 project-id profile-id])
+        is-owner (boolean (some :is-owner rows))
+        is-admin (boolean (some :is-admin rows))
+        can-edit (boolean (some :can-edit rows))]
+     (when (seq rows)
+       {:is-owner is-owner
+        :is-admin (or is-owner is-admin)
+        :can-edit (or is-owner is-admin can-edit)
+        :can-read true})))
+
+(def has-edit-permissions?
+  (perms/make-edition-predicate-fn get-permissions))
+
+(def has-read-permissions?
+  (perms/make-read-predicate-fn get-permissions))
 
 (def check-edition-permissions!
-  (perms/make-edition-check-fn retrieve-project-permissions))
+  (perms/make-check-fn has-edit-permissions?))
 
 (def check-read-permissions!
-  (perms/make-read-check-fn retrieve-project-permissions))
-
+  (perms/make-check-fn has-read-permissions?))
 
 ;; --- Query: Projects
 

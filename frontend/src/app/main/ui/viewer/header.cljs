@@ -13,14 +13,14 @@
    [app.main.ui.components.fullscreen :as fs]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.comments :refer [comments-menu]]
-   [app.main.ui.viewer.interactions :refer [interactions-menu]]
+   [app.main.ui.viewer.interactions :refer [flows-menu interactions-menu]]
    [app.main.ui.workspace.header :refer [zoom-widget]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
 (mf/defc header-options
-  [{:keys [section zoom page file permissions]}]
+  [{:keys [section zoom page file index permissions]}]
   (let [fullscreen (mf/use-ctx fs/fullscreen-context)
 
         toggle-fullscreen
@@ -43,7 +43,10 @@
 
     [:div.options-zone
      (case section
-       :interactions [:& interactions-menu]
+       :interactions [:*
+                      (when index
+                        [:& flows-menu {:page page :index index}])
+                      [:& interactions-menu]]
        :comments [:& comments-menu]
 
        [:div.view-options])
@@ -64,10 +67,10 @@
         i/full-screen-off
         i/full-screen)]
 
-     (when (:edit permissions)
+     (when (:is-admin permissions)
        [:span.btn-primary {:on-click open-share-dialog} (tr "labels.share-prototype")])
 
-     (when (:edit permissions)
+     (when (:can-edit permissions)
        [:span.btn-text-dark {:on-click go-to-workspace} (tr "labels.edit-file")])]))
 
 (mf/defc header-sitemap
@@ -84,15 +87,23 @@
 
         show-dropdown? (mf/use-state false)
 
+        open-dropdown
+        (fn []
+          (reset! show-dropdown? true)
+          (st/emit! dv/close-thumbnails-panel))
+
+        close-dropdown
+        (fn []
+          (reset! show-dropdown? false))
+
         navigate-to
         (fn [page-id]
           (st/emit! (dv/go-to-page page-id))
-          (reset! show-dropdown? false))
-        ]
+          (reset! show-dropdown? false))]
 
      [:div.sitemap-zone {:alt (tr "viewer.header.sitemap")}
       [:div.breadcrumb
-       {:on-click #(swap! show-dropdown? not)}
+       {:on-click open-dropdown}
        [:span.project-name project-name]
        [:span "/"]
        [:span.file-name file-name]
@@ -101,7 +112,7 @@
        [:span.icon i/arrow-down]
 
        [:& dropdown {:show @show-dropdown?
-                     :on-close #(swap! show-dropdown? not)}
+                     :on-close close-dropdown}
         [:ul.dropdown
          (for [id (get-in file [:data :pages])]
            [:li {:id (str id)
@@ -125,7 +136,6 @@
         (fn [section]
           (st/emit! (dv/go-to-section section)))]
 
-
     [:header.viewer-header
      [:div.main-icon
       [:a {:on-click go-to-dashboard
@@ -141,14 +151,16 @@
         :alt (tr "viewer.header.interactions-section")}
        i/play]
 
-      (when (:edit permissions)
+      (when (:can-edit permissions)
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :comments)
           :class (dom/classnames :active (= section :comments))
           :alt (tr "viewer.header.comments-section")}
          i/chat])
 
-      (when (:read permissions)
+      (when (or (= (:type permissions) :membership)
+                (and (= (:type permissions) :share-link)
+                     (contains? (:flags permissions) :section-handoff)))
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :handoff)
           :class (dom/classnames :active (= section :handoff))
@@ -159,5 +171,6 @@
                          :permissions permissions
                          :page page
                          :file file
+                         :index index
                          :zoom zoom}]]))
 

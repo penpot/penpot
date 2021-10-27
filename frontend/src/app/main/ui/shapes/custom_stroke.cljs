@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.custom-stroke
   (:require
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -34,8 +35,22 @@
   [{:keys [shape render-id]}]
   (let [stroke-mask-id (str "outer-stroke-" render-id)
         shape-id (str "stroke-shape-" render-id)
-        stroke-width (:stroke-width shape 0)]
-    [:mask {:id stroke-mask-id}
+        stroke-width (case (:stroke-alignment shape :center)
+                       :center (/ (:stroke-width shape 0) 2)
+                       :outer (:stroke-width shape 0)
+                       0)
+        margin (gsh/shape-stroke-margin shape stroke-width)
+        bounding-box (-> (gsh/points->selrect (:points shape))
+                         (update :x - (+ stroke-width margin))
+                         (update :y - (+ stroke-width margin))
+                         (update :width + (* 2 (+ stroke-width margin)))
+                         (update :height + (* 2 (+ stroke-width margin))))]
+    [:mask {:id stroke-mask-id
+            :x (:x bounding-box)
+            :y (:y bounding-box)
+            :width (:width bounding-box)
+            :height (:height bounding-box)
+            :maskUnits "userSpaceOnUse"}
      [:use {:xlinkHref (str "#" shape-id)
             :style #js {:fill "none" :stroke "white" :strokeWidth (* stroke-width 2)}}]
 
@@ -60,8 +75,8 @@
                   :viewBox "0 0 3 6"
                   :refX "2"
                   :refY "3"
-                  :markerWidth "3"
-                  :markerHeight "6"
+                  :markerWidth "8.5"
+                  :markerHeight "8.5"
                   :orient "auto-start-reverse"
                   :fill stroke-color
                   :fillOpacity stroke-opacity}
@@ -72,8 +87,8 @@
                   :viewBox "0 0 3 6"
                   :refX "2"
                   :refY "3"
-                  :markerWidth "3"
-                  :markerHeight "6"
+                  :markerWidth "8.5"
+                  :markerHeight "8.5"
                   :orient "auto-start-reverse"
                   :fill stroke-color
                   :fillOpacity stroke-opacity}
@@ -82,10 +97,10 @@
       (when (or (= cap-start :square-marker) (= cap-end :square-marker))
         [:marker {:id (str marker-id-prefix "-square-marker")
                   :viewBox "0 0 6 6"
-                  :refX "5"
+                  :refX "3"
                   :refY "3"
-                  :markerWidth "6"
-                  :markerHeight "6"
+                  :markerWidth "4.2426" ;; diagonal length of a 3x3 square
+                  :markerHeight "4.2426"
                   :orient "auto-start-reverse"
                   :fill stroke-color
                   :fillOpacity stroke-opacity}
@@ -94,10 +109,10 @@
       (when (or (= cap-start :circle-marker) (= cap-end :circle-marker))
         [:marker {:id (str marker-id-prefix "-circle-marker")
                   :viewBox "0 0 6 6"
-                  :refX "5"
+                  :refX "3"
                   :refY "3"
-                  :markerWidth "6"
-                  :markerHeight "6"
+                  :markerWidth "4"
+                  :markerHeight "4"
                   :orient "auto-start-reverse"
                   :fill stroke-color
                   :fillOpacity stroke-opacity}
@@ -106,7 +121,7 @@
       (when (or (= cap-start :diamond-marker) (= cap-end :diamond-marker))
         [:marker {:id (str marker-id-prefix "-diamond-marker")
                   :viewBox "0 0 6 6"
-                  :refX "5"
+                  :refX "3"
                   :refY "3"
                   :markerWidth "6"
                   :markerHeight "6"
@@ -145,22 +160,24 @@
 
 (mf/defc stroke-defs
   [{:keys [shape render-id]}]
-  (cond
-    (and (= :inner (:stroke-alignment shape :center))
-         (> (:stroke-width shape 0) 0))
-    [:& inner-stroke-clip-path {:shape shape
-                                :render-id render-id}]
+  (when (or (not= (:type shape) :path)
+            (not (gsh/open-path? shape)))
+    (cond
+      (and (= :inner (:stroke-alignment shape :center))
+           (> (:stroke-width shape 0) 0))
+      [:& inner-stroke-clip-path {:shape shape
+                                  :render-id render-id}]
 
-    (and (= :outer (:stroke-alignment shape :center))
-         (> (:stroke-width shape 0) 0))
-    [:& outer-stroke-mask {:shape shape
-                           :render-id render-id}]
+      (and (= :outer (:stroke-alignment shape :center))
+           (> (:stroke-width shape 0) 0))
+      [:& outer-stroke-mask {:shape shape
+                             :render-id render-id}]
 
-    (and (or (some? (:stroke-cap-start shape))
-             (some? (:stroke-cap-end shape)))
-         (= (:stroke-alignment shape) :center))
-    [:& cap-markers {:shape shape
-                     :render-id render-id}]))
+      (and (or (some? (:stroke-cap-start shape))
+               (some? (:stroke-cap-end shape)))
+           (= (:stroke-alignment shape) :center))
+      [:& cap-markers {:shape shape
+                       :render-id render-id}])))
 
 ;; Outer alingmnent: display the shape in two layers. One
 ;; without stroke (only fill), and another one only with stroke
@@ -253,15 +270,17 @@
         stroke-position (:stroke-alignment shape :center)
         has-stroke? (and (> stroke-width 0)
                          (not= stroke-style :none))
-        inner? (= :inner stroke-position)
-        outer? (= :outer stroke-position)]
+        closed? (or (not= :path (:type shape))
+                    (not (gsh/open-path? shape)))
+        inner?  (= :inner stroke-position)
+        outer?  (= :outer stroke-position)]
 
     (cond
-      (and has-stroke? inner?)
+      (and has-stroke? inner? closed?)
       [:& inner-stroke {:shape shape}
        child]
 
-      (and has-stroke? outer?)
+      (and has-stroke? outer? closed?)
       [:& outer-stroke {:shape shape}
        child]
 

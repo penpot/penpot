@@ -69,6 +69,11 @@
              (next colls))
       (persistent! result))))
 
+(defn preconj
+  [coll elem]
+  (assert (vector? coll))
+  (concat [elem] coll))
+
 (defn enumerate
   ([items] (enumerate items 0))
   ([items start]
@@ -153,6 +158,11 @@
    (map (fn [[key val]] [key (mfn key val)])))
   ([mfn coll]
    (into {} (mapm mfn) coll)))
+
+(defn removev
+  "Returns a vector of the items in coll for which (fn item) returns logical false"
+  [fn coll]
+  (filterv (comp not fn) coll))
 
 (defn filterm
   "Filter values of a map that satisfy a predicate"

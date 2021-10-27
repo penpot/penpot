@@ -7,7 +7,10 @@
 (ns app.main.data.workspace.path.drawing
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.path :as upg]
    [app.common.pages :as cp]
+   [app.common.path.commands :as upc]
+   [app.common.path.shapes-to-path :as upsp]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -21,9 +24,6 @@
    [app.main.data.workspace.path.undo :as undo]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
-   [app.util.path.commands :as upc]
-   [app.util.path.geom :as upg]
-   [app.util.path.shapes-to-path :as upsp]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 

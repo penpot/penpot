@@ -48,7 +48,7 @@
     justify-content: space-between;
 
     > button {
-      font-size: $fs13;
+      font-size: $fs12;
     }
     > button:not(:first-child) {
       margin-left: 25px;
@@ -562,7 +562,7 @@
     .header-item {
       cursor: pointer;
       color: $color-gray-40;
-      font-size: $fs15;
+      font-size: $fs14;
 
       &.active {
         color: $color-gray-60;
@@ -597,7 +597,7 @@
 
     .section-title {
       color: $color-black;
-      font-size: $fs15;
+      font-size: $fs14;
       padding: 0 $size-4;
       font-weight: 500;
     }
@@ -664,7 +664,7 @@
     .libraries-search {
       border: 1px solid $color-gray-20;
       margin: $size-4;
-      padding: $x-small $small;
+      padding: $size-1 $size-2;
       display: flex;
       align-items: center;
 
@@ -720,7 +720,7 @@
     flex-shrink: 0;
     justify-content: center;
     overflow: hidden;
-    padding: $x-big;
+    padding: $size-6;
     width: 230px;
 
     &.welcome {
@@ -733,11 +733,11 @@
     border-bottom-right-radius: 5px;
     display: flex;
     flex-direction: column;
-    padding: $x-big;
+    padding: $size-6;
 
     .modal-title h2 {
       color: $color-black;
-      font-size: $fs28;
+      font-size: $fs24;
       font-weight: 900;
     }
 
@@ -746,19 +746,19 @@
       color: $color-black;
       font-size: $fs12;
       font-weight: bold;
-      margin-top: $small;
-      padding: 2px $x-small;
+      margin-top: $size-2;
+      padding: 2px $size-1;
       width: max-content;
     }
 
     .modal-content {
       border: none;
-      padding: $big 0;
+      padding: $size-5 0;
 
       p {
         color: $color-black;
         font-size: 16px;
-        margin-top: $small;
+        margin-top: $size-2;
       }
     }
 
@@ -770,8 +770,8 @@
       .skip {
         cursor: pointer;
         font-family: "worksans", sans-serif;
-        font-size: $fs13;
-        margin-left: $big;
+        font-size: $fs12;
+        margin-left: $size-5;
 
         &:hover {
           color: $color-black;
@@ -789,9 +789,9 @@
         background-color: $color-gray-10;
         border-radius: 50%;
         cursor: pointer;
-        height: $small;
-        margin-left: $small;
-        width: $small;
+        height: $size-2;
+        margin-left: $size-2;
+        width: $size-2;
 
         &.current {
           background-color: $color-primary;
@@ -824,7 +824,7 @@
   }
 
   &.final {
-    padding: $big 0 0 0;
+    padding: $size-5 0 0 0;
 
     .modal-left,
     .modal-right {
@@ -834,12 +834,12 @@
       flex: 1;
       flex-direction: column;
       overflow: visible;
-      padding: $x-big 40px;
+      padding: $size-6 40px;
       text-align: center;
 
       h2 {
         font-weight: 900;
-        margin-bottom: $big;
+        margin-bottom: $size-5;
         font-size: $fs24;
       }
 
@@ -856,7 +856,7 @@
       img {
         box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.25);
         border-radius: $br-medium;
-        margin-bottom: $x-big;
+        margin-bottom: $size-6;
         margin-top: -90px;
         width: 150px;
       }
@@ -872,7 +872,7 @@
         margin-top: auto;
 
         .custom-input {
-          margin-bottom: $medium;
+          margin-bottom: $size-4;
 
           input {
             width: 200px;

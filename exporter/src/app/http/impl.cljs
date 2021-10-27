@@ -7,8 +7,8 @@
 (ns app.http.impl
   (:require
    ["http" :as http]
+   ["cookies" :as Cookies]
    ["inflation" :as inflate]
-   ["koa" :as koa]
    ["raw-body" :as raw-body]
    [app.util.transit :as t]
    [cuerdas.core :as str]
@@ -17,94 +17,66 @@
    [promesa.core :as p]
    [reitit.core :as r]))
 
+(def methods-with-body
+  #{"POST" "PUT" "DELETE"})
+
 (defn- match
-  [router ctx]
-  (let [uri (u/uri (unchecked-get ctx "originalUrl"))]
-    (when-let [match (r/match-by-path router (:path uri))]
-      (assoc match :query-params (u/query-string->map (:query uri))))))
-
-(defn- handle-error
-  [error request]
-  (let [{:keys [type message code] :as data} (ex-data error)]
-    (cond
-      (= :validation type)
-      (let [header (get-in request [:headers "accept"])]
-        (if (and (str/starts-with? header "text/html")
-                 (= :spec-validation (:code data)))
-          {:status 400
-           :headers {"content-type" "text/html"}
-           :body (str "<pre style='font-size:16px'>" (:explain data) "</pre>\n")}
-          {:status 400
-           :headers {"content-type" "text/html"}
-           :body (str "<pre style='font-size:16px'>" (:explain data) "</pre>\n")}))
-
-      (and (= :internal type)
-           (= :browser-not-ready code))
-      {:status 503
-       :headers {"x-error" (t/encode data)}
-       :body ""}
-
-      :else
-      (do
-        (log/error :msg "Unexpected error"
-                   :error error)
-        (js/console.error error)
-        {:status 500
-         :headers {"x-error" (t/encode data)}
-         :body ""}))))
+  [router {:keys [path query] :as request}]
+  (when-let [match (r/match-by-path router path)]
+    (assoc match :query-params (u/query-string->map query))))
 
 (defn- handle-response
-  [ctx {:keys [body headers status] :or {headers {} status 200}}]
-  (run! (fn [[k v]] (.set ^js ctx k v)) headers)
-  (set! (.-body ^js ctx) body)
-  (set! (.-status ^js ctx) status)
-  nil)
+  [req res]
+  (fn [{:keys [body headers status] :or {headers {} status 200}}]
+    (.writeHead ^js res status (clj->js headers))
+    (.end ^js res body)))
 
 (defn- parse-headers
-  [ctx]
-  (let [orig (unchecked-get ctx "headers")]
+  [req]
+  (let [orig (unchecked-get req "headers")]
     (persistent!
      (reduce #(assoc! %1 %2 (unchecked-get orig %2))
              (transient {})
              (js/Object.keys orig)))))
 
-(def parse-body? #{"POST" "PUT" "DELETE"})
-
 (defn- parse-body
-  [ctx]
-  (let [headers (unchecked-get ctx "headers")
-        ctype   (unchecked-get headers "content-type")]
-    (when (parse-body? (.-method ^js ctx))
-      (-> (inflate (.-req ^js ctx))
-          (raw-body #js {:limit "5mb" :encoding "utf8"})
+  [req]
+  (let [headers (unchecked-get req "headers")
+        method  (unchecked-get req "method")
+        ctype   (unchecked-get headers "content-type")
+        opts     #js {:limit "5mb" :encoding "utf8"}]
+    (when (contains? methods-with-body method)
+      (-> (raw-body (inflate req) opts)
           (p/then (fn [data]
-                  (cond-> data
-                    (= ctype "application/transit+json")
-                    (t/decode))))))))
+                    (cond-> data
+                      (= ctype "application/transit+json")
+                      (t/decode))))))))
 
-(defn- wrap-handler
-  [f]
-  (fn [ctx]
-    (p/let [cookies (unchecked-get ctx "cookies")
-            headers (parse-headers ctx)
-            body    (parse-body ctx)
-            request {:method (str/lower (unchecked-get ctx "method"))
-                     :body body
-                     :ctx ctx
-                     :headers headers
-                     :cookies cookies}]
-      (-> (p/do! (f request))
-          (p/then  (fn [rsp]
-                     (when (map? rsp)
-                       (handle-response ctx rsp))))
-          (p/catch (fn [err]
-                     (->> (handle-error err request)
-                          (handle-response ctx))))))))
+(defn- handler-adapter
+  [handler on-error]
+  (fn [req res]
+    (let [cookies (new Cookies req res)
+          headers (parse-headers req)
+          uri     (u/uri (unchecked-get req "url"))
+          request {:method (str/lower (unchecked-get req "method"))
+                   :path (:path uri)
+                   :query (:query uri)
+                   :url uri
+                   :headers headers
+                   :cookies cookies
+                   :internal-request req
+                   :internal-response res}]
+      (-> (parse-body req)
+          (p/then (fn [body]
+                    (let [request (assoc request :body body)]
+                      (handler request))))
+          (p/catch (fn [error] (on-error error request)))
+          (p/then (handle-response req res))))))
 
-(defn- router-handler
+(defn router-handler
   [router]
-  (fn [{:keys [ctx body] :as request}]
-    (let [route   (match router ctx)
+  (fn [{:keys [body] :as request}]
+    (let [route   (match router request)
           params  (merge {}
                          (:query-params route)
                          (:path-params route)
@@ -120,16 +92,5 @@
          :body "Not found"}))))
 
 (defn server
-  [handler]
-  (.createServer http @handler))
-
-(defn handler
-  [router]
-  (let [instance (doto (new koa)
-                   (.use (-> (router-handler router)
-                             (wrap-handler))))]
-    (specify! instance
-      cljs.core/IDeref
-      (-deref [_]
-        (.callback instance)))))
-
+  [handler on-error]
+  (.createServer ^js http (handler-adapter handler on-error)))

@@ -7,14 +7,20 @@
 
 .interactions-help {
   font-size: $fs12;
-  margin: 0 $medium;
+  padding: 7px $size-4;
+  margin: 0 -7px;
   text-align: center;
+
+  &.separator {
+    padding-bottom: $size-4;
+    border-bottom: 1px solid $color-black;
+  }
 }
 
 .interactions-help-icon {
   height: 32px;
   width: 32px;
-  margin: $medium auto;
+  margin: $size-4 auto;
 
   svg {
     fill: $color-gray-40;
@@ -22,3 +28,131 @@
     width: 32px;
   }
 }
+
+.interactions-summary {
+  cursor: pointer;
+  flex-basis: 0;
+  flex-grow: 1;
+
+  .trigger-name {
+    font-size: $fs12;
+    color: $color-white;
+  }
+
+  .action-summary {
+    font-size: $fs12;
+    color: $color-gray-20;
+  }
+}
+
+.interactions-element {
+  display: flex;
+  align-items: center;
+  margin: 0 -7px;
+  padding: 0 7px;
+
+  .element-label {
+    color: $color-gray-20;
+    font-size: $fs12;
+    width: 64px;
+  }
+
+  &.separator {
+    border-top: 1px solid $color-black;
+    margin-top: $size-1;
+  }
+}
+
+.interactions-pos-buttons {
+  margin-top: $size-2;
+  padding-top: $size-2;
+  padding-bottom: $size-2;
+  justify-content: space-between;
+
+  .element-set-actions-button {
+    min-width: 18px;
+    min-height: 18px;
+  }
+
+  svg {
+    height: 18px;
+    width: 18px;
+  }
+}
+
+.flow-element {
+  display: flex;
+  align-items: center;
+  padding: $size-1;
+
+  .element-label {
+    font-size: $fs11;
+  }
+
+  .flow-name {
+    cursor: pointer;
+  }
+
+  & input.element-name {
+    background: transparent;
+    border-color: $color-primary;
+    color: $color-white;
+    font-size: $fs11;
+  }
+}
+
+.flow-button {
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: $size-2;
+
+  & svg {
+    height: 12px;
+    width: 12px;
+    fill: $color-gray-20;
+  }
+
+  &:hover svg {
+    fill: $color-primary;
+  }
+}
+
+.flow-badge {
+  display: flex;
+
+  & .content {
+    align-items: center;
+    background-color: $color-gray-50;
+    border-radius: 4px;
+    display: flex;
+    height: 24px;
+
+    & svg {
+      height: 12px;
+      margin: 0 $size-2;
+      width: 12px;
+      fill: $color-gray-20;
+    }
+
+    & span {
+      color: $color-gray-20;
+      font-size: $fs12;
+      margin-right: $size-4;
+    }
+  }
+
+  &.selected .content {
+    background-color: $color-primary;
+
+    & svg {
+      fill: $color-gray-60;
+    }
+
+    & span {
+      color: $color-gray-60;
+    }
+  }
+}
+

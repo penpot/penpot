@@ -8,12 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.metrics :as mtx]
    [app.rlimits :as rlm]
-   [app.util.logging :as l]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -97,36 +97,39 @@
         auth?  (:auth mdata true)]
 
     (l/trace :action "register" :name (::sv/name mdata))
-    (fn [params]
+    (with-meta
+      (fn [params]
 
-      ;; Raise authentication error when rpc method requires auth but
-      ;; no profile-id is found in the request.
-      (when (and auth? (not (uuid? (:profile-id params))))
-        (ex/raise :type :authentication
-                  :code :authentication-required
-                  :hint "authentication required for this endpoint"))
+        ;; Raise authentication error when rpc method requires auth but
+        ;; no profile-id is found in the request.
+        (when (and auth? (not (uuid? (:profile-id params))))
+          (ex/raise :type :authentication
+                    :code :authentication-required
+                    :hint "authentication required for this endpoint"))
 
-      (let [params' (dissoc params ::request)
-            params' (us/conform spec params')
-            result  (f cfg params')]
+        (let [params' (dissoc params ::request)
+              params' (us/conform spec params')
+              result  (f cfg params')]
 
-        ;; When audit log is enabled (default false).
-        (when (fn? audit)
-          (let [resultm    (meta result)
-                request    (::request params)
-                profile-id (or (:profile-id params')
-                               (:profile-id result)
-                               (::audit/profile-id resultm))
-                props      (d/merge params' (::audit/props resultm))]
-            (audit :cmd :submit
-                   :type (::type cfg)
-                   :name (or (::audit/name resultm)
-                             (::sv/name mdata))
-                   :profile-id profile-id
-                   :ip-addr (audit/parse-client-ip request)
-                   :props props)))
+          ;; When audit log is enabled (default false).
+          (when (fn? audit)
+            (let [resultm    (meta result)
+                  request    (::request params)
+                  profile-id (or (:profile-id params')
+                                 (:profile-id result)
+                                 (::audit/profile-id resultm))
+                  props      (d/merge params' (::audit/props resultm))]
+              (audit :cmd :submit
+                     :type (or (::audit/type resultm)
+                               (::type cfg))
+                     :name (or (::audit/name resultm)
+                               (::sv/name mdata))
+                     :profile-id profile-id
+                     :ip-addr (audit/parse-client-ip request)
+                     :props props)))
 
-        result))))
+          result))
+      mdata)))
 
 (defn- process-method
   [cfg vfn]
@@ -148,10 +151,8 @@
                      'app.rpc.queries.teams
                      'app.rpc.queries.comments
                      'app.rpc.queries.profile
-                     'app.rpc.queries.recent-files
                      'app.rpc.queries.viewer
-                     'app.rpc.queries.fonts
-                     'app.rpc.queries.svg)
+                     'app.rpc.queries.fonts)
          (map (partial process-method cfg))
          (into {}))))
 
@@ -170,7 +171,6 @@
                      'app.rpc.mutations.files
                      'app.rpc.mutations.comments
                      'app.rpc.mutations.projects
-                     'app.rpc.mutations.viewer
                      'app.rpc.mutations.teams
                      'app.rpc.mutations.management
                      'app.rpc.mutations.ldap

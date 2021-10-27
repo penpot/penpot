@@ -7,10 +7,9 @@
 (ns app.loggers.zmq
   "A generic ZMQ listener."
   (:require
-   [app.common.data :as d]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.util.json :as json]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
@@ -74,7 +73,7 @@
 
 (defn- prepare
   [event]
-  (d/merge
+  (merge
    {:logger     (:loggerName event)
     :level      (str/lower (:level event))
     :thread     (:thread event)

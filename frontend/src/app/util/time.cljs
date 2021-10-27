@@ -7,6 +7,8 @@
 (ns app.util.time
   (:require
    ["date-fns/formatDistanceToNowStrict" :default dateFnsFormatDistanceToNowStrict]
+   ["date-fns/locale/ar-SA" :default dateFnsLocalesAr]
+   ["date-fns/locale/he" :default dateFnsLocalesHe]
    ["date-fns/locale/ca" :default dateFnsLocalesCa]
    ["date-fns/locale/de" :default dateFnsLocalesDe]
    ["date-fns/locale/el" :default dateFnsLocalesEl]
@@ -202,6 +204,8 @@
 
 (def ^:private locales
   #js {:en dateFnsLocalesEnUs
+       :ar dateFnsLocalesAr
+       :he dateFnsLocalesHe
        :fr dateFnsLocalesFr
        :tr dateFnsLocalesTr
        :es dateFnsLocalesEs

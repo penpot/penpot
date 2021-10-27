@@ -64,6 +64,7 @@
         text?  (= :text (:type shape))
         path?  (= :path (:type shape))
         mask?  (and group? (:masked-group? shape))
+        bool?  (= :bool (:type shape))
         center (gsh/center-shape shape)]
     (-> props
         (add! :name)
@@ -102,7 +103,10 @@
               (add! :content (comp json/encode uuid->string))))
 
         (cond-> mask?
-          (obj/set! "penpot:masked-group" "true")))))
+          (obj/set! "penpot:masked-group" "true"))
+
+        (cond-> bool?
+          (add! :bool-type)))))
 
 
 (defn add-library-refs [props shape]
@@ -127,30 +131,41 @@
 
 (mf/defc export-grid-data
   [{:keys [grids]}]
-  (when-not  (empty? grids)
-    [:> "penpot:grids" #js {}
-     (for [{:keys [type display params]} grids]
-       (let [props (->> (d/without-keys params [:color])
-                        (prefix-keys)
-                        (clj->js))]
-         [:> "penpot:grid"
-          (-> props
-              (obj/set! "penpot:color" (get-in params [:color :color]))
-              (obj/set! "penpot:opacity" (get-in params [:color :opacity]))
-              (obj/set! "penpot:type" (d/name type))
-              (cond-> (some? display)
-                (obj/set! "penpot:display" (str display))))]))]))
+  [:> "penpot:grids" #js {}
+   (for [{:keys [type display params]} grids]
+     (let [props (->> (d/without-keys params [:color])
+                      (prefix-keys)
+                      (clj->js))]
+       [:> "penpot:grid"
+        (-> props
+            (obj/set! "penpot:color" (get-in params [:color :color]))
+            (obj/set! "penpot:opacity" (get-in params [:color :opacity]))
+            (obj/set! "penpot:type" (d/name type))
+            (cond-> (some? display)
+              (obj/set! "penpot:display" (str display))))]))])
+
+(mf/defc export-flows
+  [{:keys [flows]}]
+  [:> "penpot:flows" #js {}
+    (for [{:keys [id name starting-frame]} flows]
+      [:> "penpot:flow" #js {:id id
+                             :name name
+                             :starting-frame starting-frame}])])
 
 (mf/defc export-page
   [{:keys [options]}]
-  (let [saved-grids (get options :saved-grids)]
-    (when-not (empty? saved-grids)
-      (let [parse-grid
-            (fn [[type params]]
-              {:type type :params params})
-            grids (->> saved-grids (mapv parse-grid))]
-        [:> "penpot:page" #js {}
-         [:& export-grid-data {:grids grids}]]))))
+  (let [saved-grids (get options :saved-grids)
+        flows       (get options :flows)]
+    (when (or (seq saved-grids) (seq flows))
+       (let [parse-grid
+             (fn [[type params]]
+               {:type type :params params})
+             grids (->> saved-grids (mapv parse-grid))]
+         [:> "penpot:page" #js {}
+          (when (seq saved-grids)
+            [:& export-grid-data {:grids grids}])
+          (when (seq flows)
+            [:& export-flows {:flows flows}])]))))
 
 (mf/defc export-shadow-data
   [{:keys [shadow]}]
@@ -216,11 +231,18 @@
   [{:keys [interactions]}]
   (when-not (empty? interactions)
     [:> "penpot:interactions" #js {}
-     (for [{:keys [action-type destination event-type]} interactions]
+     (for [interaction interactions]
        [:> "penpot:interaction"
-        #js {:penpot:action-type (d/name action-type)
-             :penpot:destination (str destination)
-             :penpot:event-type (d/name event-type)}])]))
+        #js {:penpot:event-type (d/name (:event-type interaction))
+             :penpot:action-type (d/name (:action-type interaction))
+             :penpot:delay ((d/nilf str) (:delay interaction))
+             :penpot:destination ((d/nilf str) (:destination interaction))
+             :penpot:overlay-pos-type ((d/nilf d/name) (:overlay-pos-type interaction))
+             :penpot:overlay-position-x ((d/nilf get-in) interaction [:overlay-position :x])
+             :penpot:overlay-position-y ((d/nilf get-in) interaction [:overlay-position :y])
+             :penpot:url (:url interaction)
+             :penpot:close-click-outside ((d/nilf str) (:close-click-outside interaction))
+             :penpot:background-overlay ((d/nilf str) (:background-overlay interaction))}])]))
 
 (mf/defc export-data
   [{:keys [shape]}]

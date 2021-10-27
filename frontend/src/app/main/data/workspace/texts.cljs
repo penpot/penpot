@@ -180,12 +180,10 @@
                 shape     (get objects id)
 
                 merge-fn  (fn [node attrs]
-                            (reduce-kv (fn [node k v]
-                                         (if (= (get node k) v)
-                                           (dissoc node k)
-                                           (assoc node k v)))
-                                       node
-                                       attrs))
+                            (reduce-kv
+                             (fn [node k v] (assoc node k v))
+                             node
+                             attrs))
 
                 update-fn #(update-shape % txt/is-paragraph-node? merge-fn attrs)
                 shape-ids (cond (= (:type shape) :text)  [id]

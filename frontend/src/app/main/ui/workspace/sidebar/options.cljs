@@ -11,10 +11,12 @@
    [app.main.store :as st]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.workspace.sidebar.align :refer [align-options]]
+   [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options]]
+   [app.main.ui.workspace.sidebar.options.menus.booleans :refer [booleans-options]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu]]
    [app.main.ui.workspace.sidebar.options.page :as page]
+   [app.main.ui.workspace.sidebar.options.shapes.bool :as bool]
    [app.main.ui.workspace.sidebar.options.shapes.circle :as circle]
    [app.main.ui.workspace.sidebar.options.shapes.frame :as frame]
    [app.main.ui.workspace.sidebar.options.shapes.group :as group]
@@ -43,6 +45,7 @@
      :path    [:& path/options {:shape shape}]
      :image   [:& image/options {:shape shape}]
      :svg-raw [:& svg-raw/options {:shape shape}]
+     :bool    [:& bool/options {:shape shape}]
      nil)
    [:& exports-menu
     {:shape shape
@@ -60,6 +63,7 @@
                       :title (tr "workspace.options.design")}
       [:div.element-options
        [:& align-options]
+       [:& booleans-options]
        (case (count selected)
          0 [:& page/options]
          1 [:& shape-options {:shape (first shapes)

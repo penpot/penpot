@@ -11,12 +11,9 @@
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.logging :as log]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
-
-(log/set-level! :warn)
 
 (defn use-rxsub
   [ob]
@@ -101,7 +98,6 @@
         subscribe-to-drag-end
         (fn []
           (when (nil? (:subscr @state))
-            ;; (js/console.log "subscribing" (:name data))
             (swap! state
                    #(assoc % :subscr (rx/sub! global-drag-end cleanup)))))
 

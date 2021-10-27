@@ -18,6 +18,11 @@ popd
 
 tmux -2 new-session -d -s penpot
 
+tmux rename-window -t penpot:0 'gulp'
+tmux select-window -t penpot:0
+tmux send-keys -t penpot 'cd penpot/frontend' enter C-l
+tmux send-keys -t penpot 'npx gulp watch' enter
+
 tmux new-window -t penpot:1 -n 'shadow watch'
 tmux select-window -t penpot:1
 tmux send-keys -t penpot 'cd penpot/frontend' enter C-l
@@ -37,10 +42,5 @@ tmux new-window -t penpot:3 -n 'backend'
 tmux select-window -t penpot:3
 tmux send-keys -t penpot 'cd penpot/backend' enter C-l
 tmux send-keys -t penpot './scripts/start-dev' enter
-
-tmux rename-window -t penpot:0 'gulp'
-tmux select-window -t penpot:0
-tmux send-keys -t penpot 'cd penpot/frontend' enter C-l
-tmux send-keys -t penpot 'npx gulp watch' enter
 
 tmux -2 attach-session -t penpot

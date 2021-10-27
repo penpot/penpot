@@ -82,7 +82,7 @@ $width-settings-bar: 16rem;
         align-items: center;
         display: flex;
         flex-shrink: 0;
-        padding: $small;
+        padding: $size-2;
         overflow: hidden;
 
         svg {
@@ -93,7 +93,7 @@ $width-settings-bar: 16rem;
 
         span {
           color: $color-gray-10;
-          font-size: $fs13;
+          font-size: $fs14;
         }
 
         span.tool-badge {
@@ -141,7 +141,7 @@ $width-settings-bar: 16rem;
         }
 
         .tool-window-icon {
-          margin-right: $small;
+          margin-right: $size-2;
           display: none;
         }
 

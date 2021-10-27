@@ -6,25 +6,23 @@
 
 (ns app.main
   (:require
-   [app.common.spec :as us]
+   [app.common.logging :as log]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
    [app.main.data.users :as du]
+   [app.main.errors]
+   [app.main.sentry :as sentry]
    [app.main.store :as st]
    [app.main.ui :as ui]
    [app.main.ui.confirm]
    [app.main.ui.modal :refer [modal]]
+   [app.main.ui.routes :as rt]
    [app.main.worker]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
-   [app.util.logging :as log]
-   [app.util.router :as rt]
-   [app.util.storage :refer [storage]]
    [app.util.theme :as theme]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
@@ -32,79 +30,38 @@
 (log/set-level! :root :warn)
 (log/set-level! :app :info)
 
+(when (= :browser @cf/target)
+  (log/info :message "Welcome to penpot" :version (:full @cf/version) :public-uri (str cf/public-uri)))
+
 (declare reinit)
-
-(s/def ::any any?)
-
-(defn match-path
-  [router path]
-  (when-let [match (rt/match router path)]
-    (if-let [conform (get-in match [:data :conform])]
-      (let [spath  (get conform :path-params ::any)
-            squery (get conform :query-params ::any)]
-        (try
-          (-> (dissoc match :params)
-              (assoc :path-params (us/conform spath (get match :path-params))
-                     :query-params (us/conform squery (get match :query-params))))
-          (catch :default _
-            nil)))
-        match)))
-
-(defn on-navigate
-  [router path]
-  (let [match   (match-path router path)
-        profile (:profile @storage)
-        nopath? (or (= path "") (= path "/"))
-        authed? (and (not (nil? profile))
-                     (not= (:id profile) uuid/zero))]
-
-    (cond
-      (and nopath? authed? (nil? match))
-      (if (not= uuid/zero profile)
-        (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)}))
-        (st/emit! (rt/nav :auth-login)))
-
-      (and (not authed?) (nil? match))
-      (st/emit! (rt/nav :auth-login))
-
-      (nil? match)
-      (st/emit! (dm/assign-exception {:type :not-found}))
-
-      :else
-      (st/emit! (rt/navigated match)))))
 
 (defn init-ui
   []
   (mf/mount (mf/element ui/app) (dom/get-element "app"))
   (mf/mount (mf/element modal)  (dom/get-element "modal")))
 
-
 (defn initialize
   []
-  (letfn [(on-profile [_profile]
-            (rx/of (rt/initialize-router ui/routes)
-                   (rt/initialize-history on-navigate)))]
-    (ptk/reify ::initialize
-      ptk/UpdateEvent
-      (update [_ state]
-        (assoc state :session-id (uuid/next)))
+  (ptk/reify ::initialize
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :session-id (uuid/next)))
 
-      ptk/WatchEvent
-      (watch [_ _ stream]
-        (rx/merge
-         (rx/of
-          (ptk/event ::ev/initialize)
-          (du/initialize-profile))
-         (->> stream
-              (rx/filter (ptk/type? ::du/profile-fetched))
-              (rx/take 1)
-              (rx/map deref)
-              (rx/mapcat on-profile)))))))
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (rx/merge
+       (rx/of (ptk/event ::ev/initialize)
+              (du/initialize-profile))
+       (->> stream
+            (rx/filter du/profile-fetched?)
+            (rx/take 1)
+            (rx/map #(rt/init-routes)))))))
 
 (defn ^:export init
   []
-  (i18n/init! cfg/translations)
-  (theme/init! cfg/themes)
+  (sentry/init!)
+  (i18n/init! cf/translations)
+  (theme/init! cf/themes)
   (init-ui)
   (st/emit! (initialize)))
 
@@ -114,11 +71,14 @@
   (mf/unmount (dom/get-element "modal"))
   (init-ui))
 
-(add-watch i18n/locale "locale" (fn [_ _ o v]
-                                  (when (not= o v)
-                                    (reinit))))
-
 (defn ^:dev/after-load after-load
   []
   (reinit))
+
+;; Reload the UI when the language changes
+(add-watch
+ i18n/locale "locale"
+ (fn [_ _ old-value current-value]
+   (when (not= old-value current-value)
+     (reinit))))
 

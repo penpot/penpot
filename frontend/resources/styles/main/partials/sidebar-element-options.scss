@@ -14,7 +14,7 @@
     border: 1px solid $color-gray-60;
     border-radius: $br-small;
     display: flex;
-    margin: $x-small;
+    margin: $size-1;
 
     li {
       align-items: center;
@@ -24,7 +24,7 @@
       display: flex;
       flex: 1;
       justify-content: center;
-      padding: $small;
+      padding: $size-2;
 
       svg {
         fill: $color-gray-20;
@@ -60,13 +60,13 @@
   .element-set {
     border-bottom: 1px solid $color-gray-60;
     color: $color-gray-20;
-    padding: $small $x-small;
+    padding: $size-2 $size-1;
 
     .element-set-title {
       color: $color-gray-20;
       display: flex;
-      font-size: $fs13;
-      padding: $x-small;
+      font-size: $fs14;
+      padding: $size-1;
       width: 100%;
       align-items: center;
     }
@@ -79,14 +79,14 @@
   }
 
   .element-list {
-    margin-bottom: $small;
+    margin-bottom: $size-2;
 
     li {
       align-items: center;
       border-bottom: 1px solid $color-gray-60;
       display: flex;
       flex-direction: row;
-      padding: $small;
+      padding: $size-2;
       width: 100%;
 
       .list-icon {
@@ -94,7 +94,7 @@
         svg {
           fill: $color-gray-30;
           height: 15px;
-          margin-right: $x-small;
+          margin-right: $size-1;
           width: 15px;
         }
 
@@ -120,7 +120,7 @@
           svg {
             fill: $color-gray-60;
             height: 15px;
-            margin-left: $x-small;
+            margin-left: $size-1;
             width: 15px;
 
             &:hover {
@@ -184,7 +184,8 @@
 .element-set-content {
   display: flex;
   flex-direction: column;
-  padding: $x-small;
+  padding: $size-1;
+  width: 100%;
 
   .input-text {
     background-color: $color-gray-50;
@@ -192,9 +193,9 @@
     border-bottom-color: $color-gray-40;
     color: $color-white;
     font-size: $fs12;
-    margin: $x-small;
+    margin: $size-1;
     min-width: 0;
-    padding: $x-small;
+    padding: $size-1;
     width: 100%;
 
     &:focus {
@@ -219,13 +220,46 @@
       color: $color-gray-60;
       background: $color-white;
       font-size: $fs12;
+
+      &:disabled {
+        color: $color-gray-20;
+      }
+    }
+  }
+
+  .input-checkbox {
+    label {
+      color: $color-gray-20;
+    }
+
+    label::before {
+      background-color: transparent;
+      width: 16px;
+      height: 16px;
+    }
+
+    label::after {
+      width: 16px;
+      height: 16px;
+    }
+
+    input:checked + label::before {
+      border-width: 1px;
+    }
+
+    input:checked + label::after {
+      font-size: 0.8rem;
     }
   }
 
   .element-set-subtitle {
     color: $color-gray-20;
-    font-size: $fs11;
+    font-size: $fs12;
     width: 64px;
+
+    &.wide {
+      min-width: 75px;
+    }
   }
 
   .lock-size {
@@ -271,12 +305,12 @@
     border: 1px solid $color-gray-40;
     border-radius: $br-small;
     cursor: pointer;
-    padding: $x-small $big $x-small $x-small;
+    padding: $size-1 $size-5 $size-1 $size-1;
     position: relative;
 
     .dropdown-button {
       position: absolute;
-      right: $x-small;
+      right: $size-1;
       top: 7px;
 
       svg {
@@ -322,7 +356,7 @@
       cursor: pointer;
       font-size: $fs14;
       display: flex;
-      padding: $small;
+      padding: $size-2;
 
       span {
         color: $color-gray-20;
@@ -375,7 +409,7 @@
     border: 1px solid transparent;
     position: relative;
     height: 38px;
-    margin-right: $small;
+    margin-right: $size-2;
     max-height: 30px;
     position: relative;
     width: 60%;
@@ -412,6 +446,10 @@
         color: $color-gray-60;
         background: $color-white;
         font-size: $fs12;
+
+        &:disabled {
+          color: $color-gray-20;
+        }
       }
     }
 
@@ -490,7 +528,7 @@
     fill: $color-gray-20;
     height: 16px;
     width: 16px;
-    margin-right: $small;
+    margin-right: $size-2;
   }
 
   .row-actions {
@@ -500,7 +538,7 @@
     svg {
       fill: $color-gray-20;
       height: 12px;
-      margin-right: $x-small;
+      margin-right: $size-1;
       width: 12px;
     }
 
@@ -524,7 +562,7 @@
       font-size: $fs12;
 
       span {
-        font-size: $fs11;
+        font-size: $fs12;
       }
     }
   }
@@ -539,8 +577,8 @@
   display: flex;
   flex: 1;
   justify-content: flex-end;
-  margin: $small 0 $small $small;
-  padding: 0 $x-small;
+  margin: $size-2 0 $size-2 $size-2;
+  padding: 0 $size-1;
 
   &:first-child {
     justify-content: flex-start;
@@ -552,7 +590,7 @@
     display: flex;
     height: 20px;
     justify-content: center;
-    margin-right: $small;
+    margin-right: $size-2;
     position: relative;
     width: 20px;
 
@@ -641,7 +679,7 @@
 }
 
 .orientation-icon {
-  margin-left: $small;
+  margin-left: $size-2;
   display: flex;
   align-items: center;
 
@@ -662,7 +700,7 @@
 .navigate-icon {
   background-color: $color-gray-60;
   cursor: pointer;
-  margin-left: $small;
+  margin-left: $size-2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -688,7 +726,7 @@
   width: 100%;
 
   &:first-child {
-    margin-right: $small;
+    margin-right: $size-2;
   }
 
   .icon-before {
@@ -836,7 +874,6 @@
   position: relative;
   top: 2px;
   width: 100%;
-  z-index: 20;
 }
 
 .btn-options {
@@ -879,12 +916,35 @@
   &.selected {
     border: 1px solid $color-primary;
   }
+
+  &:not(:first-child) {
+    margin-top: 7px;
+  }
+
+  &.open {
+    &:hover {
+      background: unset;
+    }
+  }
+}
+
+.interactions-options {
+  &.element-set {
+    border-bottom: 0;
+  }
+
+  .element-set-options-group {
+    flex-wrap: wrap;
+  }
+
+  &:not(:first-child) {
+    border-top: 1px solid $color-gray-60;
+  }
 }
 
 .exports-options,
-.shadow-options{
+.shadow-options {
   .element-set-options-group {
-    justify-content: space-between;
     .delete-icon {
       display: flex;
       min-width: 40px;
@@ -897,10 +957,6 @@
         height: 12px;
         fill: $color-gray-20;
       }
-    }
-
-    &:not(:first-child) {
-      margin-top: 7px;
     }
   }
 
@@ -941,11 +997,15 @@
         width: 12px;
         height: 12px;
         fill: $color-gray-20;
+        stroke: $color-gray-20;
     }
 
-    &:hover svg {
+    &:hover svg,
+    &.active svg {
         fill: $color-primary;
+        stroke: $color-primary;
     }
+
     &.actions-inside {
       position: absolute;
       right: 0;
@@ -953,7 +1013,7 @@
 }
 
 .element-set-label {
-  font-size: $fs11;
+  font-size: $fs12;
   padding: 0.5rem;
   color: $color-gray-10;
 }
@@ -1100,7 +1160,7 @@
 
   .multiple-typography-text,
   .multiple-typography-button {
-    font-size: $fs13;
+    font-size: $fs12;
     display: flex;
     align-items: center;
   }
@@ -1153,7 +1213,7 @@
     position: relative;
 
     .backend-filters {
-      padding: $small $medium;
+      padding: $size-2 $size-4;
       // width: 220px;
       top: 40px;
       right: 20px;
@@ -1161,15 +1221,15 @@
     .backend-filter {
       display: flex;
       align-items: center;
-      padding: $small 0;
+      padding: $size-2 0;
       cursor: pointer;
 
       .checkbox-icon {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: $medium;
-        height: $medium;
+        width: $size-4;
+        height: $size-4;
         border: 1px solid $color-gray-30;
         border-radius: $br-small;
 
@@ -1182,7 +1242,7 @@
       }
 
       .backend-name {
-        margin-left: $small;
+        margin-left: $size-2;
         color: $color-gray-50;
       }
 
@@ -1214,7 +1274,7 @@
       align-items: center;
       width: 24px;
       height: 24px;
-      margin-left: $small;
+      margin-left: $size-2;
 
       svg {
         width: 16px;
@@ -1246,9 +1306,9 @@
   }
 
   .font-item {
-    padding-left: $big;
-    height: $x-big;
-    max-height: $x-big;
+    padding-left: $size-5;
+    height: $size-6;
+    max-height: $size-6;
     width: 100%;
     display: flex;
     align-items: center;
@@ -1272,7 +1332,7 @@
       // justify-content: center;
       align-items: center;
       // border: 1px solid red;
-      width: $big
+      width: $size-5
     }
 
     .label {
@@ -1400,14 +1460,14 @@
   justify-content: flex-start;
 
   .input-select {
-    font-size: $fs11;
-    margin: 0 $x-small;
+    font-size: $fs12;
+    margin: 0 $size-1;
   }
 
   svg {
     width: 15px;
     height: 15px;
-    margin-left: $medium;
+    margin-left: $size-4;
     fill: $color-gray-20;
   }
 
@@ -1420,11 +1480,11 @@
   }
 
   .fix-when {
-    font-size: $fs11;
+    font-size: $fs12;
     cursor: pointer;
 
     span {
-      margin-left: $small;
+      margin-left: $size-2;
     }
 
     &:hover,
@@ -1444,10 +1504,10 @@
   border-bottom-color: $color-gray-40;
   color: $color-gray-10;
   cursor: pointer;
-  font-size: $fs11;
-  margin: $x-small;
+  font-size: $fs12;
+  margin: $size-1;
   overflow: hidden;
-  padding: $x-small;
+  padding: $size-1;
   padding-right: 20px;
   position: relative;
   text-overflow: ellipsis;
@@ -1478,7 +1538,8 @@
   right: 5px;
   top: 30px;
   z-index: 12;
-  min-width: 200px;
+  width: 200px;
+  height: 320px;
   position: fixed;
 
   & li.separator {
@@ -1487,6 +1548,6 @@
 
   & li img {
     width: 16px;
-    margin-right: $small;
+    margin-right: $size-2;
   }
 }

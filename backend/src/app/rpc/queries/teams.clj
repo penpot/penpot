@@ -24,16 +24,29 @@
     where tpr.profile_id = ?
       and tpr.team_id = ?")
 
-(defn- retrieve-team-permissions
+(defn get-permissions
   [conn profile-id team-id]
-  (db/exec! conn [sql:team-permissions profile-id team-id]))
+  (let [rows     (db/exec! conn [sql:team-permissions profile-id team-id])
+        is-owner (boolean (some :is-owner rows))
+        is-admin (boolean (some :is-admin rows))
+        can-edit (boolean (some :can-edit rows))]
+     (when (seq rows)
+       {:is-owner is-owner
+        :is-admin (or is-owner is-admin)
+        :can-edit (or is-owner is-admin can-edit)
+        :can-read true})))
+
+(def has-edit-permissions?
+  (perms/make-edition-predicate-fn get-permissions))
+
+(def has-read-permissions?
+  (perms/make-read-predicate-fn get-permissions))
 
 (def check-edition-permissions!
-  (perms/make-edition-check-fn retrieve-team-permissions))
+  (perms/make-check-fn has-edit-permissions?))
 
 (def check-read-permissions!
-  (perms/make-read-check-fn retrieve-team-permissions))
-
+  (perms/make-check-fn has-read-permissions?))
 
 ;; --- Query: Teams
 
@@ -58,12 +71,26 @@
      join team as t on (t.id = tp.team_id)
     where t.deleted_at is null
       and tp.profile_id = ?
-    order by t.created_at asc")
+    order by tp.created_at asc")
+
+(defn process-permissions
+  [team]
+  (let [is-owner    (:is-owner team)
+        is-admin    (:is-admin team)
+        can-edit    (:can-edit team)
+        permissions {:type :membership
+                     :is-owner is-owner
+                     :is-admin (or is-owner is-admin)
+                     :can-edit (or is-owner is-admin can-edit)}]
+    (-> team
+        (dissoc :is-owner :is-admin :can-edit)
+        (assoc :permissions permissions))))
 
 (defn retrieve-teams
   [conn profile-id]
   (let [defaults (profile/retrieve-additional-data conn profile-id)]
-    (db/exec! conn [sql:teams (:default-team-id defaults) profile-id])))
+    (->> (db/exec! conn [sql:teams (:default-team-id defaults) profile-id])
+         (mapv process-permissions))))
 
 ;; --- Query: Team (by ID)
 
@@ -86,7 +113,7 @@
     (when-not result
       (ex/raise :type :not-found
                 :code :team-does-not-exist))
-    result))
+    (process-permissions result)))
 
 
 ;; --- Query: Team Members

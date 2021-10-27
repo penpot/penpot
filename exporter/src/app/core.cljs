@@ -10,11 +10,13 @@
    [lambdaisland.glogi.console :as glogi-console]
    [promesa.core :as p]
    [app.http :as http]
+   [app.sentry :as sentry]
    [app.config]
    [app.browser :as bwr]))
 
 (glogi-console/install!)
 (enable-console-print!)
+(sentry/init!)
 
 (defonce state (atom nil))
 

@@ -278,6 +278,48 @@
     (-> file
         (update :parent-stack pop))))
 
+(defn add-bool [file data]
+  (let [frame-id (:current-frame-id file)
+        name (:name data)
+        obj (-> {:id (uuid/next)
+                 :type :bool
+                 :name name
+                 :shapes []
+                 :frame-id frame-id}
+                (merge data)
+                (check-name file :bool)
+                (d/without-nils))]
+    (-> file
+        (commit-shape obj)
+        (assoc :last-id (:id obj))
+        (add-name (:name obj))
+        (update :parent-stack conjv (:id obj)))))
+
+(defn close-bool [file]
+  (let [bool-id (-> file :parent-stack peek)
+        bool    (lookup-shape file bool-id)
+        children (->> bool :shapes (mapv #(lookup-shape file %)))
+
+        file
+        (let [objects (lookup-objects file)
+              bool' (gsh/update-bool-selrect bool children objects)]
+          (commit-change
+           file
+           {:type :mod-obj
+            :id bool-id
+            :operations
+            [{:type :set :attr :selrect :val (:selrect bool')}
+             {:type :set :attr :points  :val (:points bool')}
+             {:type :set :attr :x       :val (-> bool' :selrect :x)}
+             {:type :set :attr :y       :val (-> bool' :selrect :y)}
+             {:type :set :attr :width   :val (-> bool' :selrect :width)}
+             {:type :set :attr :height  :val (-> bool' :selrect :height)}]}
+
+           {:add-container? true}))]
+
+    (-> file
+        (update :parent-stack pop))))
+
 (defn create-shape [file type data]
   (let [frame-id (:current-frame-id file)
         frame (when-not (= frame-id root-frame)
@@ -332,21 +374,76 @@
   (-> file
       (update :parent-stack pop)))
 
+(defn- read-classifier
+  [interaction-src]
+  (select-keys interaction-src [:event-type :action-type]))
+
+(defmulti read-event-opts :event-type)
+
+(defmethod read-event-opts :after-delay
+  [interaction-src]
+  (select-keys interaction-src [:delay]))
+
+(defmethod read-event-opts :default
+  [_]
+  {})
+
+(defmulti read-action-opts :action-type)
+
+(defmethod read-action-opts :navigate
+  [interaction-src]
+  (select-keys interaction-src [:destination]))
+
+(defmethod read-action-opts :open-overlay
+  [interaction-src]
+  (select-keys interaction-src [:destination
+                                :overlay-position
+                                :overlay-pos-type
+                                :close-click-outside
+                                :background-overlay]))
+
+(defmethod read-action-opts :toggle-overlay
+  [interaction-src]
+  (select-keys interaction-src [:destination
+                                :overlay-position
+                                :overlay-pos-type
+                                :close-click-outside
+                                :background-overlay]))
+
+(defmethod read-action-opts :close-overlay
+  [interaction-src]
+  (select-keys interaction-src [:destination]))
+
+(defmethod read-action-opts :prev-screen
+  [_]
+  {})
+
+(defmethod read-action-opts :open-url
+  [interaction-src]
+  (select-keys interaction-src [:url]))
+
 (defn add-interaction
-  [file from-id {:keys [action-type event-type destination]}]
+  [file from-id interaction-src]
 
   (assert (some? (lookup-shape file from-id)) (str "Cannot locate shape with id " from-id))
-  (assert (some? (lookup-shape file destination)) (str "Cannot locate shape with id " destination))
 
-  (let [interactions (->> (lookup-shape file from-id)
-                          :interactions
-                          (filterv #(or (not= (:action-type %) action-type)
-                                        (not= (:event-type %) event-type))))
-        interactions (-> interactions
+  (let [{:keys [event-type action-type]} (read-classifier interaction-src)
+        {:keys [delay]} (read-event-opts interaction-src)
+        {:keys [destination overlay-pos-type overlay-position url
+                close-click-outside background-overlay]} (read-action-opts interaction-src)
+
+        interactions (-> (lookup-shape file from-id)
+                         :interactions
                          (conjv
-                          {:action-type action-type
-                           :event-type event-type
-                           :destination destination}))]
+                          (d/without-nils {:event-type event-type
+                                           :action-type action-type
+                                           :delay delay
+                                           :destination destination
+                                           :overlay-pos-type overlay-pos-type
+                                           :overlay-position overlay-position
+                                           :url url
+                                           :close-click-outside close-click-outside
+                                           :background-overlay background-overlay})))]
     (commit-change
      file
      {:type :mod-obj

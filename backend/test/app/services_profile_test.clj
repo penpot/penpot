@@ -89,7 +89,7 @@
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))))
+        (t/is (map? (:result out)))))
 
     (t/testing "query profile after update"
       (let [data {::th/type :profile
@@ -136,7 +136,7 @@
       (t/is (nil? (:error out))))
 
     ;; query files after profile soft deletion
-    (let [params {::th/type :files
+    (let [params {::th/type :project-files
                   :project-id (:default-project-id prof)
                   :profile-id (:id prof)}
           out    (th/query! params)]
@@ -177,17 +177,6 @@
     (t/is (string? token))
 
 
-    ;; try register without accepting terms
-    (let [data  {::th/type :register-profile
-                 :token token
-                 :fullname "foobar"
-                 :accept-terms-and-privacy false}
-          out   (th/mutation! data)]
-      (let [error (:error out)]
-        (t/is (th/ex-info? error))
-        (t/is (th/ex-of-type? error :validation))
-        (t/is (th/ex-of-code? error :invalid-terms-and-privacy))))
-
     ;; try register without token
     (let [data  {::th/type :register-profile
                  :fullname "foobar"
@@ -205,16 +194,11 @@
                  :accept-terms-and-privacy true
                  :accept-newsletter-subscription true}]
       (let [{:keys [result error]} (th/mutation! data)]
-        (t/is (nil? error))
-        (t/is (true? (get-in result [:props :accept-newsletter-subscription])))
-        (t/is (true? (get-in result [:props :accept-terms-and-privacy])))))
+        (t/is (nil? error))))
     ))
 
 (t/deftest prepare-register-with-registration-disabled
-  (with-mocks [mock {:target 'app.config/get
-                     :return (th/mock-config-get-with
-                              {:registration-enabled false})}]
-
+  (th/with-mocks {#'app.config/flags nil}
     (let [data  {::th/type :prepare-register-profile
                  :email "user@example.com"
                  :password "foobar"}]

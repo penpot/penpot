@@ -72,17 +72,24 @@
   [v]
   (* v v))
 
+(defn pow
+  "Returns the base to the exponent power."
+  [b e]
+  #?(:cljs (js/Math.pow b e)
+     :clj (Math/pow b e)))
+
 (defn sqrt
   "Returns the square root of a number."
   [v]
   #?(:cljs (js/Math.sqrt v)
      :clj (Math/sqrt v)))
 
-(defn pow
-  "Returns the base to the exponent power."
-  [b e]
-  #?(:cljs (js/Math.pow b e)
-     :clj (Math/pow b e)))
+(defn cubicroot
+  "Returns the cubic root of a number"
+  [v]
+  (if (pos? v)
+    (pow v (/ 1 3))
+    (- (pow (- v) (/ 1 3)))))
 
 (defn floor
   "Returns the largest integer less than or
@@ -143,7 +150,7 @@
     (if (> num to) to num)))
 
 (defn almost-zero? [num]
-  (< (abs num) 1e-8))
+  (< (abs (double num)) 1e-5))
 
 (defonce float-equal-precision 0.001)
 
@@ -151,3 +158,9 @@
   "Equality for float numbers. Check if the difference is within a range"
   [num1 num2]
   (<= (abs (- num1 num2)) float-equal-precision))
+
+(defn lerp
+  "Calculates a the linear interpolation between two values and a given percent"
+  [v0 v1 t]
+  (+ (* (- 1 t) v0)
+     (* t       v1)))

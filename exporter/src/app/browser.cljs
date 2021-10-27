@@ -108,7 +108,6 @@
                   (p/then (fn [browser]
                             (let [id (deref pool-browser-id)]
                               (log/info :origin "factory" :action "create" :browser-id id)
-                              (unchecked-set browser "__num_use" 0)
                               (unchecked-set browser "__id" id)
                               (swap! pool-browser-id inc)
                               browser))))))
@@ -118,16 +117,9 @@
               (.close ^js obj)))
 
           (validate [obj]
-            (let [max-use (cf/get :browser-max-usage 10)
-                  num-use (unchecked-get obj "__num_use")
-                  id      (unchecked-get obj "__id")]
-
-              (log/info :origin "factory" :action "validate" :browser-id id :max-use max-use :num-use num-use :obj obj)
-              (if (> num-use max-use)
-                (p/resolved false)
-                (do
-                  (unchecked-set obj "__num_use" (inc num-use))
-                  (p/resolved (.isConnected ^js obj))))))]
+            (let [id (unchecked-get obj "__id")]
+              (log/info :origin "factory" :action "validate" :browser-id id :obj obj)
+              (p/resolved (.isConnected ^js obj))))]
 
     #js {:create create
          :destroy destroy
@@ -139,10 +131,10 @@
   (let [opts #js {:max (cf/get :browser-pool-max 3)
                   :min (cf/get :browser-pool-min 0)
                   :testOnBorrow true
-                  :evictionRunIntervalMillis 30000
+                  :evictionRunIntervalMillis 5000
                   :numTestsPerEvictionRun 5
                   :acquireTimeoutMillis 120000 ; 2min
-                  :idleTimeoutMillis 30000}]
+                  :idleTimeoutMillis 10000}]
 
     (reset! pool (gp/createPool browser-pool-factory opts))
     (p/resolved nil)))
@@ -155,19 +147,29 @@
         (p/then (fn [] (.clear ^js pool))))))
 
 (defn exec!
-  [f]
-  (letfn [(on-acquire [pool browser]
-            (p/let [ctx  (.createIncognitoBrowserContext ^js browser)
-                    page (.newPage ^js ctx)]
-              (-> (p/do! (f page))
-                  (p/handle
-                    (fn [result error]
-                      (-> (p/do! (.close ^js ctx)
-                                 (.release ^js pool browser))
-                          (p/handle (fn [_ _]
-                                      (if result
-                                        (p/resolved result)
-                                        (p/rejected error))))))))))]
+  [callback]
+  (letfn [(on-release [pool browser ctx result error]
+            (-> (p/do! (.close ^js ctx))
+                (p/handle
+                 (fn [_ _]
+                   (.release ^js pool browser)))
+                (p/handle
+                 (fn [_ _]
+                   (let [id (unchecked-get browser "__id")]
+                     (log/info :origin "exec" :action "release" :browser-id id))
+                   (if result
+                     (p/resolved result)
+                     (p/rejected error))))))
+
+          (on-context [pool browser ctx]
+            (-> (p/do! (.newPage ^js ctx))
+                (p/then callback)
+                (p/handle #(on-release pool browser ctx %1 %2))))
+
+          (on-acquire [pool browser]
+            (-> (.createIncognitoBrowserContext ^js browser)
+                (p/then #(on-context pool browser %))))]
+
     (when-let [pool (deref pool)]
-      (-> (.acquire ^js pool)
+      (-> (p/do! (.acquire ^js pool))
           (p/then (partial on-acquire pool))))))

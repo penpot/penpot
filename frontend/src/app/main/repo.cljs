@@ -48,6 +48,7 @@
   [id params]
   (->> (http/send! {:method :get
                     :uri (u/join base-uri "api/rpc/query/" (name id))
+                    :credentials "include"
                     :query params})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
@@ -58,6 +59,7 @@
   [id params]
   (->> (http/send! {:method :post
                     :uri (u/join base-uri "api/rpc/mutation/" (name id))
+                    :credentials "include"
                     :body (http/transit-data params)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
@@ -87,7 +89,10 @@
   [_ {:keys [provider] :as params}]
   (let [uri    (u/join base-uri "api/auth/oauth/" (d/name provider))
         params (dissoc params :provider)]
-    (->> (http/send! {:method :post :uri uri :query params})
+    (->> (http/send! {:method :post
+                      :uri uri
+                      :credentials "include"
+                      :query params})
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
@@ -95,6 +100,7 @@
   [_ params]
   (->> (http/send! {:method :post
                     :uri (u/join base-uri "api/feedback")
+                    :credentials "include"
                     :body (http/transit-data params)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
@@ -104,6 +110,7 @@
   (->> (http/send! {:method :post
                     :uri (u/join base-uri "export")
                     :body (http/transit-data params)
+                    :credentials "include"
                     :response-type :blob})
        (rx/mapcat handle-response)))
 
@@ -112,6 +119,7 @@
   (->> (http/send! {:method :post
                     :uri (u/join base-uri "export-frames")
                     :body (http/transit-data params)
+                    :credentials "include"
                     :response-type :blob})
        (rx/mapcat handle-response)))
 
@@ -123,6 +131,7 @@
   [id params]
   (->> (http/send! {:method :post
                     :uri  (u/join base-uri "api/rpc/mutation/" (name id))
+                    :credentials "include"
                     :body (http/form-data params)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))

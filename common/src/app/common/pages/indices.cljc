@@ -95,16 +95,24 @@
           (map #(vector (:id %) (shape->parents %)))
           (into {})))))
 
-(defn create-mask-index
+(defn create-clip-index
   "Retrieves the mask information for an object"
   [objects parents-index]
-  (let [retrieve-masks
+  (let [retrieve-clips
         (fn [_ parents]
-          ;; TODO: use transducers?
-          (->> parents
-               (map #(get objects %))
-               (filter #(:masked-group? %))
-               ;; Retrieve the masking element
-               (mapv #(get objects (->> % :shapes first)))))]
+          (let [lookup-object (fn [id] (get objects id))
+                get-clip-parents
+                (fn [shape]
+                  (cond-> []
+                    (:masked-group? shape)
+                    (conj (get objects (->> shape :shapes first)))
+
+                    (= :bool (:type shape))
+                    (conj shape)))]
+
+            (into []
+                  (comp (map lookup-object)
+                        (mapcat get-clip-parents))
+                  parents)))]
     (->> parents-index
-         (d/mapm retrieve-masks))))
+         (d/mapm retrieve-clips))))

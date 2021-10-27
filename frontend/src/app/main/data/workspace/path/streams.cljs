@@ -7,12 +7,12 @@
 (ns app.main.data.workspace.path.streams
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.path :as upg]
    [app.common.math :as mth]
    [app.main.data.workspace.path.state :as state]
    [app.main.snap :as snap]
    [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.util.path.geom :as upg]
    [beicon.core :as rx]
    [okulary.core :as l]
    [potok.core :as ptk]))

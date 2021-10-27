@@ -9,15 +9,17 @@
    [app.common.data :as d]
    [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
+   [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.common.types.interactions :as cti]
+   [app.common.types.page-options :as cto]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
-   [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -379,8 +381,10 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
+            options (wsh/lookup-page-options state page-id)
 
             ids     (cp/clean-loops objects ids)
+            flows   (:flows options)
 
             groups-to-unmask
             (reduce (fn [group-ids id]
@@ -399,8 +403,13 @@
             interacting-shapes
             (filter (fn [shape]
                       (let [interactions (:interactions shape)]
-                        (some ids (map :destination interactions))))
+                        (some #(and (cti/has-destination %)
+                                    (contains? ids (:destination %)))
+                              interactions)))
                     (vals objects))
+
+            starting-flows
+            (filter #(contains? ids (:starting-frame %)) flows)
 
             empty-parents-xform
             (comp
@@ -467,7 +476,8 @@
                           :operations [{:type :set
                                         :attr :interactions
                                         :val (vec (remove (fn [interaction]
-                                                            (contains? ids (:destination interaction)))
+                                                            (and (cti/has-destination interaction)
+                                                                 (contains? ids (:destination interaction))))
                                                           (:interactions obj)))}]})))
             mk-mod-int-add-xf
             (comp (filter some?)
@@ -478,6 +488,22 @@
                           :operations [{:type :set
                                         :attr :interactions
                                         :val (:interactions obj)}]})))
+
+            mk-mod-del-flow-xf
+            (comp (filter some?)
+                  (map (fn [flow]
+                         {:type :set-option
+                          :page-id page-id
+                          :option :flows
+                          :value (cto/remove-flow flows (:id flow))})))
+
+            mk-mod-add-flow-xf
+            (comp (filter some?)
+                  (map (fn [_]
+                         {:type :set-option
+                          :page-id page-id
+                          :option :flows
+                          :value flows})))
 
             mk-mod-unmask-xf
             (comp (filter (partial contains? objects))
@@ -508,7 +534,8 @@
                        :page-id page-id
                        :shapes (vec all-parents)})
                 (into mk-mod-unmask-xf groups-to-unmask)
-                (into mk-mod-int-del-xf interacting-shapes))
+                (into mk-mod-int-del-xf interacting-shapes)
+                (into mk-mod-del-flow-xf starting-flows))
 
             uchanges
             (-> []
@@ -520,8 +547,8 @@
                        :shapes (vec all-parents)})
                 (into mk-mod-touched-xf (reverse all-parents))
                 (into mk-mod-mask-xf groups-to-unmask)
-                (into mk-mod-int-add-xf interacting-shapes))
-            ]
+                (into mk-mod-int-add-xf interacting-shapes)
+                (into mk-mod-add-flow-xf starting-flows))]
 
         ;; (println "================ rchanges")
         ;; (cljs.pprint/pprint rchanges)

@@ -70,6 +70,10 @@
   [conn profile]
   (merge profile (retrieve-additional-data conn (:id profile))))
 
+(defn- filter-profile-props
+  [props]
+  (into {} (filter (fn [[k _]] (simple-ident? k))) props))
+
 (defn decode-profile-row
   [{:keys [props] :as row}]
   (cond-> row
@@ -90,7 +94,7 @@
       (ex/raise :type :not-found
                 :hint "Object doest not exists."))
 
-    profile))
+    (update profile :props filter-profile-props)))
 
 (def ^:private sql:profile-by-email
   "select p.* from profile as p

@@ -31,6 +31,11 @@
           :opt-un [::pages]))
 
 (sv/defmethod ::create-share-link
+  "Creates a share-link object.
+
+  Share links are resources that allows external users access to
+  specific files with specific permissions (flags)."
+
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)

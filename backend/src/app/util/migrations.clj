@@ -6,7 +6,7 @@
 
 (ns app.util.migrations
   (:require
-   [app.util.logging :as l]
+   [app.common.logging :as l]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [next.jdbc :as jdbc]))

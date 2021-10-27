@@ -73,7 +73,7 @@
                 :group (tr "workspace.options.group-stroke")
                 (tr "workspace.options.stroke"))
 
-        show-options (not= (:stroke-style values :none) :none)
+        show-options (not= (or (:stroke-style values) :none) :none)
         show-caps    (and show-caps
                           (not (#{:inner :outer} (:stroke-alignment values))))
 
@@ -102,7 +102,10 @@
         (mf/use-callback
           (mf/deps ids)
           (fn []
-            (st/emit! (dc/change-stroke ids (dissoc current-stroke-color :id :file-id)))))
+            (let [remove-multiple (fn [[_ value]] (not= value :multiple))
+                  current-stroke-color (-> (into {} (filter remove-multiple) current-stroke-color)
+                                           (assoc :id nil :file-id nil))]
+              (st/emit! (dc/change-stroke ids current-stroke-color)))))
 
         on-stroke-style-change
         (fn [event]
@@ -141,7 +144,10 @@
                   target (dom/get-current-target event)
                   rect   (dom/get-bounding-rect target)
 
-                  top (+ (:bottom rect) 5)
+                  top (if (< (+ (:bottom rect) 320) (:height window-size))
+                        (+ (:bottom rect) 5)
+                        (- (:height window-size) 325))
+
                   left (if (< (+ (:left rect) 200) (:width window-size))
                          (:left rect)
                          (- (:width window-size) 205))]

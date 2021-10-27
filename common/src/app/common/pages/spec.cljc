@@ -9,6 +9,8 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
+   [app.common.types.interactions :as cti]
+   [app.common.types.page-options :as cto]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]))
@@ -29,9 +31,6 @@
 (s/def ::component-file uuid?)
 (s/def ::component-root? boolean?)
 (s/def ::shape-ref uuid?)
-
-(s/def ::safe-integer ::us/safe-integer)
-(s/def ::safe-number ::us/safe-number)
 
 (s/def :internal.matrix/a ::us/safe-number)
 (s/def :internal.matrix/b ::us/safe-number)
@@ -61,15 +60,15 @@
 ;; GRADIENTS
 
 (s/def :internal.gradient.stop/color ::string)
-(s/def :internal.gradient.stop/opacity ::safe-number)
-(s/def :internal.gradient.stop/offset ::safe-number)
+(s/def :internal.gradient.stop/opacity ::us/safe-number)
+(s/def :internal.gradient.stop/offset ::us/safe-number)
 
 (s/def :internal.gradient/type #{:linear :radial})
-(s/def :internal.gradient/start-x ::safe-number)
-(s/def :internal.gradient/start-y ::safe-number)
-(s/def :internal.gradient/end-x ::safe-number)
-(s/def :internal.gradient/end-y ::safe-number)
-(s/def :internal.gradient/width ::safe-number)
+(s/def :internal.gradient/start-x ::us/safe-number)
+(s/def :internal.gradient/start-y ::us/safe-number)
+(s/def :internal.gradient/end-x ::us/safe-number)
+(s/def :internal.gradient/end-y ::us/safe-number)
+(s/def :internal.gradient/width ::us/safe-number)
 
 (s/def :internal.gradient/stop
   (s/keys :req-un [:internal.gradient.stop/color
@@ -95,7 +94,7 @@
 (s/def :internal.color/path (s/nilable ::string))
 (s/def :internal.color/value (s/nilable ::string))
 (s/def :internal.color/color (s/nilable ::string))
-(s/def :internal.color/opacity (s/nilable ::safe-number))
+(s/def :internal.color/opacity (s/nilable ::us/safe-number))
 (s/def :internal.color/gradient (s/nilable ::gradient))
 
 (s/def ::color
@@ -113,10 +112,10 @@
 (s/def :internal.shadow/id uuid?)
 (s/def :internal.shadow/style #{:drop-shadow :inner-shadow})
 (s/def :internal.shadow/color ::color)
-(s/def :internal.shadow/offset-x ::safe-number)
-(s/def :internal.shadow/offset-y ::safe-number)
-(s/def :internal.shadow/blur ::safe-number)
-(s/def :internal.shadow/spread ::safe-number)
+(s/def :internal.shadow/offset-x ::us/safe-number)
+(s/def :internal.shadow/offset-y ::us/safe-number)
+(s/def :internal.shadow/blur ::us/safe-number)
+(s/def :internal.shadow/spread ::us/safe-number)
 (s/def :internal.shadow/hidden boolean?)
 
 (s/def :internal.shadow/shadow
@@ -137,7 +136,7 @@
 
 (s/def :internal.blur/id uuid?)
 (s/def :internal.blur/type #{:layer-blur})
-(s/def :internal.blur/value ::safe-number)
+(s/def :internal.blur/value ::us/safe-number)
 (s/def :internal.blur/hidden boolean?)
 
 (s/def ::blur
@@ -145,57 +144,6 @@
                    :internal.blur/type
                    :internal.blur/value
                    :internal.blur/hidden]))
-
-;; Page Options
-(s/def :internal.page.grid.color/value string?)
-(s/def :internal.page.grid.color/opacity ::safe-number)
-
-(s/def :internal.page.grid/size ::safe-integer)
-(s/def :internal.page.grid/color
-  (s/keys :req-un [:internal.page.grid.color/value
-                   :internal.page.grid.color/opacity]))
-
-(s/def :internal.page.grid/type #{:stretch :left :center :right})
-(s/def :internal.page.grid/item-length (s/nilable ::safe-integer))
-(s/def :internal.page.grid/gutter (s/nilable ::safe-integer))
-(s/def :internal.page.grid/margin (s/nilable ::safe-integer))
-
-(s/def :internal.page.grid/square
-  (s/keys :req-un [:internal.page.grid/size
-                   :internal.page.grid/color]))
-
-(s/def :internal.page.grid/column
-  (s/keys :req-un [:internal.page.grid/size
-                   :internal.page.grid/color
-                   :internal.page.grid/type
-                   :internal.page.grid/item-length
-                   :internal.page.grid/gutter
-                   :internal.page.grid/margin]))
-
-(s/def :internal.page.grid/row :internal.page.grid/column)
-
-(s/def :internal.page.options/background string?)
-(s/def :internal.page.options/saved-grids
-  (s/keys :req-un [:internal.page.grid/square
-                   :internal.page.grid/row
-                   :internal.page.grid/column]))
-
-(s/def :internal.page/options
-  (s/keys :opt-un [:internal.page.options/background]))
-
-;; Interactions
-
-(s/def :internal.shape.interaction/event-type #{:click}) ; In the future we will have more options
-(s/def :internal.shape.interaction/action-type #{:navigate})
-(s/def :internal.shape.interaction/destination ::uuid)
-
-(s/def :internal.shape/interaction
-  (s/keys :req-un [:internal.shape.interaction/event-type
-                   :internal.shape.interaction/action-type
-                   :internal.shape.interaction/destination]))
-
-(s/def :internal.shape/interactions
-  (s/coll-of :internal.shape/interaction :kind vector?))
 
 ;; Size constraints
 
@@ -227,33 +175,33 @@
 (s/def :internal.shape/content any?)
 
 (s/def :internal.shape/fill-color string?)
-(s/def :internal.shape/fill-opacity ::safe-number)
+(s/def :internal.shape/fill-opacity ::us/safe-number)
 (s/def :internal.shape/fill-color-gradient (s/nilable ::gradient))
 (s/def :internal.shape/fill-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/fill-color-ref-id (s/nilable uuid?))
 
 (s/def :internal.shape/font-family string?)
-(s/def :internal.shape/font-size ::safe-integer)
+(s/def :internal.shape/font-size ::us/safe-integer)
 (s/def :internal.shape/font-style string?)
 (s/def :internal.shape/font-weight string?)
 (s/def :internal.shape/hidden boolean?)
-(s/def :internal.shape/letter-spacing ::safe-number)
-(s/def :internal.shape/line-height ::safe-number)
+(s/def :internal.shape/letter-spacing ::us/safe-number)
+(s/def :internal.shape/line-height ::us/safe-number)
 (s/def :internal.shape/locked boolean?)
 (s/def :internal.shape/page-id uuid?)
-(s/def :internal.shape/proportion ::safe-number)
+(s/def :internal.shape/proportion ::us/safe-number)
 (s/def :internal.shape/proportion-lock boolean?)
-(s/def :internal.shape/rx ::safe-number)
-(s/def :internal.shape/ry ::safe-number)
-(s/def :internal.shape/r1 ::safe-number)
-(s/def :internal.shape/r2 ::safe-number)
-(s/def :internal.shape/r3 ::safe-number)
-(s/def :internal.shape/r4 ::safe-number)
+(s/def :internal.shape/rx ::us/safe-number)
+(s/def :internal.shape/ry ::us/safe-number)
+(s/def :internal.shape/r1 ::us/safe-number)
+(s/def :internal.shape/r2 ::us/safe-number)
+(s/def :internal.shape/r3 ::us/safe-number)
+(s/def :internal.shape/r4 ::us/safe-number)
 (s/def :internal.shape/stroke-color string?)
 (s/def :internal.shape/stroke-color-gradient (s/nilable ::gradient))
 (s/def :internal.shape/stroke-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/stroke-color-ref-id (s/nilable uuid?))
-(s/def :internal.shape/stroke-opacity ::safe-number)
+(s/def :internal.shape/stroke-opacity ::us/safe-number)
 (s/def :internal.shape/stroke-style #{:solid :dotted :dashed :mixed :none :svg})
 
 (def stroke-caps-line #{:round :square})
@@ -266,26 +214,26 @@
   [shape]
   (= (:type shape) :path))
 
-(s/def :internal.shape/stroke-width ::safe-number)
+(s/def :internal.shape/stroke-width ::us/safe-number)
 (s/def :internal.shape/stroke-alignment #{:center :inner :outer})
 (s/def :internal.shape/text-align #{"left" "right" "center" "justify"})
-(s/def :internal.shape/x ::safe-number)
-(s/def :internal.shape/y ::safe-number)
-(s/def :internal.shape/cx ::safe-number)
-(s/def :internal.shape/cy ::safe-number)
-(s/def :internal.shape/width ::safe-number)
-(s/def :internal.shape/height ::safe-number)
+(s/def :internal.shape/x ::us/safe-number)
+(s/def :internal.shape/y ::us/safe-number)
+(s/def :internal.shape/cx ::us/safe-number)
+(s/def :internal.shape/cy ::us/safe-number)
+(s/def :internal.shape/width ::us/safe-number)
+(s/def :internal.shape/height ::us/safe-number)
 (s/def :internal.shape/index integer?)
 (s/def :internal.shape/shadow ::shadow)
 (s/def :internal.shape/blur ::blur)
 
-(s/def :internal.shape/x1 ::safe-number)
-(s/def :internal.shape/y1 ::safe-number)
-(s/def :internal.shape/x2 ::safe-number)
-(s/def :internal.shape/y2 ::safe-number)
+(s/def :internal.shape/x1 ::us/safe-number)
+(s/def :internal.shape/y1 ::us/safe-number)
+(s/def :internal.shape/x2 ::us/safe-number)
+(s/def :internal.shape/y2 ::us/safe-number)
 
 (s/def :internal.shape.export/suffix string?)
-(s/def :internal.shape.export/scale ::safe-number)
+(s/def :internal.shape.export/scale ::us/safe-number)
 (s/def :internal.shape/export
   (s/keys :req-un [::type
                    :internal.shape.export/suffix
@@ -361,7 +309,7 @@
                    :internal.shape/transform-inverse
                    :internal.shape/width
                    :internal.shape/height
-                   :internal.shape/interactions
+                   ::cti/interactions
                    :internal.shape/masked-group?
                    :internal.shape/shadow
                    :internal.shape/blur]))
@@ -386,7 +334,7 @@
 (s/def ::page
   (s/keys :req-un [::id
                    ::name
-                   :internal.page/options
+                   ::cto/options
                    :internal.page/objects]))
 
 
@@ -397,8 +345,8 @@
                    :internal.color/gradient]))
 
 (s/def :internal.media-object/name ::string)
-(s/def :internal.media-object/width ::safe-integer)
-(s/def :internal.media-object/height ::safe-integer)
+(s/def :internal.media-object/width ::us/safe-integer)
+(s/def :internal.media-object/height ::us/safe-integer)
 (s/def :internal.media-object/mtype ::string)
 
 (s/def ::media-object

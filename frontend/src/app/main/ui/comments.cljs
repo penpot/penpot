@@ -302,21 +302,22 @@
        (when-let [node (mf/ref-val ref)]
          (.scrollIntoViewIfNeeded ^js node))))
 
-    [:div.thread-content
-     {:style {:top (str pos-y "px")
-              :left (str pos-x "px")}
-      :on-click dom/stop-propagation}
+    (when (some? comment)
+      [:div.thread-content
+       {:style {:top (str pos-y "px")
+                :left (str pos-x "px")}
+        :on-click dom/stop-propagation}
 
-     [:div.comments
-      [:& comment-item {:comment comment
-                        :users users
-                        :thread thread}]
-      (for [item (rest comments)]
-        [:*
-         [:hr]
-         [:& comment-item {:comment item :users users}]])
-      [:div {:ref ref}]]
-     [:& reply-form {:thread thread}]]))
+       [:div.comments
+        [:& comment-item {:comment comment
+                          :users users
+                          :thread thread}]
+        (for [item (rest comments)]
+          [:*
+           [:hr]
+           [:& comment-item {:comment item :users users}]])
+        [:div {:ref ref}]]
+       [:& reply-form {:thread thread}]])))
 
 (mf/defc thread-bubble
   {::mf/wrap [mf/memo]}

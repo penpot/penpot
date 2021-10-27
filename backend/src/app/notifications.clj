@@ -7,12 +7,12 @@
 (ns app.notifications
   "A websocket based notifications mechanism."
   (:require
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.async :as aa]
-   [app.util.logging :as l]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.core.async :as a]
@@ -69,6 +69,7 @@
                    :mtx-messages mtx-messages
                    :mtx-sessions mtx-sessions
                    )]
+
     (-> #(handler cfg %)
         (wrap-session)
         (wrap-keyword-params)

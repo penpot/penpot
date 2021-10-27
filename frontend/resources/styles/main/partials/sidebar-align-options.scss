@@ -9,12 +9,12 @@
   display: flex;
   border-bottom: solid 1px $color-gray-60;
   height: 40px;
-  padding: 0 $x-small;
 
   .align-group {
+    padding: 0 $size-1;
     display: flex;
-    justify-content: space-evenly;
-    width: 100%;
+    justify-content: flex-start;
+    width: 50%;
 
     &:not(:last-child) {
       border-right: solid 1px $color-gray-60;
@@ -25,7 +25,12 @@
     align-items: center;
     cursor: pointer;
     display: flex;
-    padding: $small $x-small;
+    height: 30px;
+    justify-content: center;
+    margin: 5px 0;
+    padding: $size-2 $size-1;
+    width: 25%;
+
     svg {
       height: 16px;
       width: 16px;
@@ -45,6 +50,14 @@
       svg {
         fill: $color-gray-40;
       }
+    }
+
+    &.selected svg {
+      fill: $color-primary;
+    }
+
+    &.selected:hover svg {
+      fill: $color-white;
     }
   }
 }

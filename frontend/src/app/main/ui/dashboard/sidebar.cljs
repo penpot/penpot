@@ -10,6 +10,7 @@
    [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
@@ -69,7 +70,8 @@
         (mf/use-callback
          (mf/deps item)
          (fn [name]
-           (st/emit! (dd/rename-project (assoc item :name name)))
+           (st/emit! (-> (dd/rename-project (assoc item :name name))
+                         (with-meta {::ev/origin "dashboard:sidebar"})))
            (swap! local assoc :edition? false)))
 
         on-drag-enter

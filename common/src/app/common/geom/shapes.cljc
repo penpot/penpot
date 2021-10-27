@@ -8,11 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.bool :as gsb]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.intersect :as gin]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
-   [app.common.geom.shapes.transforms :as gtr]))
+   [app.common.geom.shapes.transforms :as gtr]
+   [app.common.math :as mth]))
 
 ;; --- Setup (Initialize)
 ;; FIXME: Is this the correct place for these functions?
@@ -126,6 +128,13 @@
         (assoc :selrect selrect
                :points points))))
 
+(defn shape-stroke-margin
+  [shape stroke-width]
+  (if (= (:type shape) :path)
+    ;; TODO: Calculate with the stroke offset (not implemented yet
+    (mth/sqrt (* 2 stroke-width stroke-width))
+    (- (mth/sqrt (* 2 stroke-width stroke-width)) stroke-width)))
+
 
 ;; EXPORTS
 (d/export gco/center-shape)
@@ -133,19 +142,20 @@
 (d/export gco/center-rect)
 (d/export gco/center-points)
 (d/export gco/make-centered-rect)
+(d/export gco/transform-points)
 
 (d/export gpr/rect->selrect)
 (d/export gpr/rect->points)
 (d/export gpr/points->selrect)
 (d/export gpr/points->rect)
 (d/export gpr/center->rect)
+(d/export gpr/join-rects)
 
 (d/export gtr/move)
 (d/export gtr/absolute-move)
 (d/export gtr/transform-matrix)
 (d/export gtr/inverse-transform-matrix)
 (d/export gtr/transform-point-center)
-(d/export gtr/transform-points)
 (d/export gtr/transform-rect)
 (d/export gtr/calculate-adjust-matrix)
 (d/export gtr/update-group-selrect)
@@ -156,12 +166,15 @@
 (d/export gtr/calc-child-modifiers)
 
 ;; PATHS
-(d/export gsp/content->points)
 (d/export gsp/content->selrect)
 (d/export gsp/transform-content)
+(d/export gsp/open-path?)
 
 ;; Intersection
 (d/export gin/overlaps?)
 (d/export gin/has-point?)
 (d/export gin/has-point-rect?)
 (d/export gin/rect-contains-shape?)
+
+;; Bool
+(d/export gsb/update-bool-selrect)

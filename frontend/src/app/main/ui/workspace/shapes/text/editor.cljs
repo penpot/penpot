@@ -174,7 +174,7 @@
         handle-return
         (mf/use-callback
          (fn [_ state]
-           (let [style (ted/get-editor-current-inline-styles state)
+           (let [style (ted/get-editor-current-block-data state)
                  state (-> (ted/insert-text state "\n" style)
                            (handle-change))]
              (st/emit! (dwt/update-editor-state shape state)))

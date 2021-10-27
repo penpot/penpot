@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.spec :as us]
+   [app.common.types.interactions :as cti]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -138,6 +139,10 @@
   [id objects]
   (mapv #(get objects %) (cons id (get-children id objects))))
 
+(defn select-children [id objects]
+  (->> (get-children id objects)
+       (select-keys objects)))
+
 (defn is-shape-grouped
   "Checks if a shape is inside a group"
   [shape-id objects]
@@ -161,6 +166,12 @@
     (when parent-id
       (lazy-seq (cons parent-id (get-parents parent-id objects))))))
 
+(defn get-frame
+  "Get the frame that contains the shape. If the shape is already a frame, get itself."
+  [shape objects]
+  (if (= (:type shape) :frame)
+    shape
+    (get objects (:frame-id shape))))
 
 (defn clean-loops
   "Clean a list of ids from circular references."
@@ -465,4 +476,18 @@
   [path name]
   (let [path-split (split-path path)]
     (merge-path-item (first path-split) name)))
+
+(defn connected-frame?
+  "Check if some frame is origin or destination of any navigate interaction
+  in the page"
+  [frame-id objects]
+  (let [children (get-object-with-children frame-id objects)]
+    (or (some cti/flow-origin? (map :interactions children))
+        (some #(cti/flow-to? % frame-id) (map :interactions (vals objects))))))
+
+(defn unframed-shape?
+  "Checks if it's a non-frame shape in the top level."
+  [shape]
+  (and (not= (:type shape) :frame)
+       (= (:frame-id shape) uuid/zero)))
 

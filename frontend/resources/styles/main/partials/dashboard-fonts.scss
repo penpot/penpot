@@ -7,13 +7,13 @@
     max-width: 1000px;
     width: 100%;
     display: flex;
-    margin-top: $big;
+    margin-top: $size-5;
     flex-direction: column;
 
     h3 {
       font-size: $fs14;
       color: $color-gray-30;
-      margin: $x-small;
+      margin: $size-1;
     }
 
     .font-item {
@@ -28,7 +28,7 @@
     font-size: $fs12;
     background-color: $color-white;
     align-items: center;
-    padding: 0px $big;
+    padding: 0px $size-5;
 
     > .family {
       min-width: 200px;
@@ -49,14 +49,14 @@
         border: 1px solid $color-gray-30;
         border-radius: $br-small;
         width: 130px;
-        padding: $x-small;
+        padding: $size-1;
         margin: 0px;
       }
     }
   }
 
   .font-item {
-    margin-top: $big;
+    margin-top: $size-5;
     color: $color-gray-40;
     font-size: $fs14;
     background-color: $color-white;
@@ -65,7 +65,7 @@
     width: 100%;
     min-height: 97px;
     align-items: center;
-    padding: $big;
+    padding: $size-5;
     justify-content: space-between;
 
     &:not(:first-child) {
@@ -76,7 +76,7 @@
       border: 1px solid $color-gray-30;
       border-radius: $br-small;
       margin: 0px;
-      padding: $small;
+      padding: $size-2;
       font-size: $fs12;
     }
 
@@ -135,7 +135,7 @@
       justify-content: flex-end;
 
       .icon {
-        width: $big;
+        width: $size-5;
         cursor: pointer;
         display: flex;
         margin-left: 10px;
@@ -169,9 +169,9 @@
   .dashboard-fonts-hero {
     font-size: $fs14;
 
-    padding: $x-big;
+    padding: $size-6;
     background-color: $color-white;
-    margin-top: $x-big;
+    margin-top: $size-6;
     display: flex;
     justify-content: space-between;
 
@@ -193,7 +193,7 @@
 
     .desc {
       h2 {
-        margin-bottom: $medium;
+        margin-bottom: $size-4;
         color: $color-black;
       }
       width: 80%;

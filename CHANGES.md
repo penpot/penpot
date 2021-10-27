@@ -1,31 +1,91 @@
 # CHANGELOG
 
+
 ## :rocket: Next
 
 ### :boom: Breaking changes
 ### :sparkles: New features
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
-### :boom: Breaking changes
 ### :heart: Community contributions by (Thank you!)
+
+
+## 1.9.0-alpha
+
+### :boom: Breaking changes
+
+- Some stroke-caps can change behaviour.
+- Text display bug fix could potentialy make some texts jump a line.
+
+### :sparkles: New features
+
+- Add boolean shapes: intersections, unions, difference and exclusions[Taiga #748](https://tree.taiga.io/project/penpot/us/748).
+- Add advanced prototyping [Taiga #244](https://tree.taiga.io/project/penpot/us/244).
+- Add multiple flows [Taiga #2091](https://tree.taiga.io/project/penpot/us/2091).
+- Change order of the teams menu so it's in the joined time order.
+
+### :bug: Bugs fixed
+
+- Enhance duplicating prototype connections behaviour [Taiga #2093](https://tree.taiga.io/project/penpot/us/2093).
+- Ignore constraints in horizontal or vertical flip [Taiga #2038](https://tree.taiga.io/project/penpot/issue/2038).
+- Fix color and typographies refs lost when duplicated file [Taiga #2165](https://tree.taiga.io/project/penpot/issue/2165).
+- Fix problem with overflow dropdown on stroke-cap [#1216](https://github.com/penpot/penpot/issues/1216).
+- Fix menu context for single element nested in components [#1186](https://github.com/penpot/penpot/issues/1186).
+- Fix error screen when operations over comments fail [#1219](https://github.com/penpot/penpot/issues/1219).
+- Fix undo problem when changing typography/color from library [#1230](https://github.com/penpot/penpot/issues/1230).
+- Fix problem with text margin while rendering [#1231](https://github.com/penpot/penpot/issues/1231).
+- Fix problem with masked texts on exporting [Taiga #2116](https://tree.taiga.io/project/penpot/issue/2116).
+- Fix text editor enter behaviour with centered texts [Taiga #2126](https://tree.taiga.io/project/penpot/issue/2126).
+- Fix residual stroke on imported svg [Taiga #2125](https://tree.taiga.io/project/penpot/issue/2125).
+- Add links for terms of service and privacy policy in register checkbox [Taiga #2020](https://tree.taiga.io/project/penpot/issue/2020).
+- Allow three character hex and web colors in color picker hex input [#1184](https://github.com/penpot/penpot/issues/1184).
+- Allow lowercase search for fonts [#1180](https://github.com/penpot/penpot/issues/1180).
+- Fix group renaming problem [Taiga #1969](https://tree.taiga.io/project/penpot/issue/1969).
+- Fix export group with shadows on children [Taiga #2036](https://tree.taiga.io/project/penpot/issue/2036).
+- Fix zoom context menu in viewer [Taiga #2041](https://tree.taiga.io/project/penpot/issue/2041).
+- Fix stroke caps adjustments in relation with stroke size [Taiga #2123](https://tree.taiga.io/project/penpot/issue/2123).
+- Fix problem duplicating paths [Taiga #2147](https://tree.taiga.io/project/penpot/issue/2147).
+- Fix problem inheriting attributes from SVG root when importing [Taiga #2124](https://tree.taiga.io/project/penpot/issue/2124).
+- Fix problem with lines and inside/outside stroke [Taiga #2146](https://tree.taiga.io/project/penpot/issue/2146).
+- Add stroke width in selection calculation [Taiga #2146](https://tree.taiga.io/project/penpot/issue/2146).
+- Fix shift+wheel to horizontal scrolling in MacOS [#1217](https://github.com/penpot/penpot/issues/1217).
+- Fix path stroke is not working properly with high thickness [Taiga #2154](https://tree.taiga.io/project/penpot/issue/2154).
+- Fix bug with transformation operations [Taiga #2155](https://tree.taiga.io/project/penpot/issue/2155).
+- Fix bug in firefox when a text box is inside a mask [Taiga #2152](https://tree.taiga.io/project/penpot/issue/2152).
+- Fix problem with stroke inside/outside [Taiga #2186](https://tree.taiga.io/project/penpot/issue/2186)
+- Fix masks export area [Taiga #2189](https://tree.taiga.io/project/penpot/issue/2189)
+- Fix paste in place in arboards [Taiga #2188](https://tree.taiga.io/project/penpot/issue/2188)
+- Fix font size input stuck on selection change [Taiga #2184](https://tree.taiga.io/project/penpot/issue/2184)
+- Fix stroke cut on shapes export [Taiga #2171](https://tree.taiga.io/project/penpot/issue/2171)
+- Fix no color when boolean with an SVG [Taiga #2193](https://tree.taiga.io/project/penpot/issue/2193)
+- Fix unlink color styles at strokes [Taiga #2206](https://tree.taiga.io/project/penpot/issue/2206).
+
+### :arrow_up: Deps updates
+
+### :heart: Community contributions by (Thank you!)
+
+- To the translation community for the hard work on making penpot
+  available on so many languages.
+
+
 
 ## 1.8.4-alpha
 
 ### :bug: Bugs fixed
 
-- Fix problem importing components [Taiga #2151](https://tree.taiga.io/project/penpot/issue/2151)
+- Fix problem importing components [Taiga #2151](https://tree.taiga.io/project/penpot/issue/2151).
 
 ## 1.8.3-alpha
 
 ### :sparkles: New features
 
-- Adds progress report to importing process
+- Adds progress report to importing process.
 
 ## 1.8.2-alpha
 
 ### :bug: Bugs fixed
 
-- Fix problem with masking images in viewer [#1238](https://github.com/penpot/penpot/issues/1238)
+- Fix problem with masking images in viewer [#1238](https://github.com/penpot/penpot/issues/1238).
 
 ## 1.8.1-alpha
 

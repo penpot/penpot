@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
    [app.rpc.queries.profile :as profile]
@@ -24,8 +24,8 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as scfg}]
-  (let [ftoken   (cfg/get :feedback-token ::no-token)
-        enabled  (cfg/get :feedback-enabled)]
+  (let [ftoken   (cf/get :feedback-token ::no-token)
+        enabled  (contains? cf/flags :user-feedback)]
     (fn [{:keys [profile-id] :as request}]
       (let [token  (get-in request [:headers "x-feedback-token"])
             params (d/merge (:params request)
@@ -58,7 +58,7 @@
 (defn send-feedback
   [pool profile params]
   (let [params      (us/conform ::feedback params)
-        destination (cfg/get :feedback-destination)]
+        destination (cf/get :feedback-destination)]
     (eml/send! {::eml/conn pool
                 ::eml/factory eml/feedback
                 :to       destination

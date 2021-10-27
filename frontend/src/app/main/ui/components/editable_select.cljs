@@ -76,6 +76,7 @@
 
         handle-key-down
         (mf/use-callback
+         (mf/deps set-value)
          (fn [event]
            (when (= type "number")
              (let [up?    (kbd/up-arrow? event)

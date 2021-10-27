@@ -36,9 +36,6 @@
 (def picked-color-select
   (l/derived :picked-color-select refs/workspace-local))
 
-(def picked-shift?
-  (l/derived :picked-shift? refs/workspace-local))
-
 (def viewport
   (l/derived (l/in [:workspace-local :vport]) st/state))
 
@@ -202,10 +199,10 @@
                                         h
                                         (str (* s 100) "%")
                                         (str (* l 100) "%")))]
-              (dom/set-css-property node "--color" (str/join ", " rgb))
-              (dom/set-css-property node "--hue-rgb" (str/join ", " hue-rgb))
-              (dom/set-css-property node "--saturation-grad-from" (format-hsl hsl-from))
-              (dom/set-css-property node "--saturation-grad-to" (format-hsl hsl-to)))))
+              (dom/set-css-property! node "--color" (str/join ", " rgb))
+              (dom/set-css-property! node "--hue-rgb" (str/join ", " hue-rgb))
+              (dom/set-css-property! node "--saturation-grad-from" (format-hsl hsl-from))
+              (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to)))))
 
     ;; When closing the modal we update the recent-color list
     (mf/use-effect

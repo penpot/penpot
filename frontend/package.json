@@ -12,7 +12,15 @@
     "defaults"
   ],
   "scripts": {
-    "validate-translations": "node ./scripts/validate-translations.js"
+    "validate-translations": "node ./scripts/validate-translations.js",
+    "watch-main": "shadow-cljs watch main",
+    "watch-gulp": "gulp watch",
+    "test-watch-compile": "shadow-cljs watch test",
+    "test-run": "node target/tests.js",
+    "test-watch-run": "nodemon --signal SIGKILL --watch target --exec npm run test-run",
+    "test-watch": "npm-run-all --parallel test-watch-compile test-watch-run",
+    "test": "npm run test-watch",
+    "start": "npm-run-all --parallel watch-gulp watch-main"
   },
   "devDependencies": {
     "autoprefixer": "^10.2.4",
@@ -27,21 +35,25 @@
     "gulp-sourcemaps": "^3.0.0",
     "gulp-svg-sprite": "^1.5.0",
     "map-stream": "0.0.7",
-    "marked": "^2.1.1",
+    "marked": "^3.0.4",
     "mkdirp": "^1.0.4",
+    "nodemon": "^2.0.13",
+    "npm-run-all": "^4.1.5",
     "postcss": "^8.3.5",
     "postcss-clean": "^1.2.2",
     "rimraf": "^3.0.0",
     "sass": "^1.35.1",
-    "shadow-cljs": "2.15.2"
+    "shadow-cljs": "2.15.9"
   },
   "dependencies": {
+    "@sentry/browser": "^6.12.0",
+    "@sentry/tracing": "^6.12.0",
     "date-fns": "^2.22.1",
     "draft-js": "^0.11.7",
     "highlight.js": "^11.0.1",
     "js-beautify": "^1.14.0",
     "jszip": "^3.6.0",
-    "luxon": "^1.26.0",
+    "luxon": "^2.0.2",
     "mousetrap": "^1.6.5",
     "opentype.js": "^1.3.3",
     "randomcolor": "^0.6.2",

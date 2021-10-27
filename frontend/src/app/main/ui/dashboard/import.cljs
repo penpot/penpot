@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.import
   (:require
    [app.common.data :as d]
+   [app.common.logging :as log]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
@@ -16,12 +17,11 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.logging :as log]
    [beicon.core :as rx]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
-(log/set-level! :debug)
+(log/set-level! :warn)
 
 (def ^:const emit-delay 1000)
 

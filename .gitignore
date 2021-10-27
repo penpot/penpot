@@ -39,3 +39,7 @@ node_modules
 /web
 /_dump
 /vendor/svgclean/bundle*.js
+
+.calva
+.clj-kondo
+.lsp

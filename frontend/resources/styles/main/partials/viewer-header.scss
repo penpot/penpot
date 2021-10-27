@@ -4,13 +4,13 @@
   border-bottom: 1px solid  $color-gray-60;
   display: flex;
   height: 48px;
-  padding: 0 $medium 0 55px;
+  padding: 0 $size-4 0 55px;
   position: relative;
   z-index: 12;
   justify-content: space-between;
 
   a {
-    font-size: $fs13;
+    font-size: $fs12;
   }
 
   .main-icon {
@@ -50,30 +50,23 @@
     position: relative;
 
     > * {
-      margin-left: $big;
+      margin-left: $size-5;
     }
 
     .btn-primary {
       flex-shrink: 0;
     }
 
-    .zoom-widget {
-      .dropdown {
-        top: 45px;
-        left: 25px;
-      }
-    }
-
     .view-options {
       align-items: center;
       cursor: pointer;
       display: flex;
-      width: 90px;
+      position: relative;
 
       > span {
         color: $color-gray-10;
-        font-size: $fs13;
-        margin-right: $x-small;
+        font-size: $fs14;
+        margin-right: $size-1;
       }
 
       > .icon {
@@ -96,7 +89,7 @@
       }
 
       .dropdown {
-        min-width: 260px;
+        min-width: 295px;
         top: 45px;
         left: -25px;
       }
@@ -107,7 +100,7 @@
     align-items: center;
     cursor: pointer;
     display: flex;
-    padding: $x-small;
+    padding: $size-1;
     position: relative;
 
     .icon {
@@ -118,7 +111,7 @@
       svg {
         fill: $color-gray-20;
         height: 12px;
-        margin-right: $small;
+        margin-right: $size-2;
         width: 12px;
       }
     }
@@ -129,7 +122,7 @@
 
       > span {
         color: $color-gray-20;
-        margin-right: $x-small;
+        margin-right: $size-1;
         font-size: $fs14;
         overflow-x: hidden;
         text-overflow: ellipsis;
@@ -146,7 +139,7 @@
       display: flex;
       span {
         color: $color-white;
-        margin-right: $x-small;
+        margin-right: $size-1;
       }
 
       .counters {
@@ -192,7 +185,7 @@
     margin: 0;
 
     li {
-      margin-left: $small;
+      margin-left: $size-2;
       position: relative;
 
       img {

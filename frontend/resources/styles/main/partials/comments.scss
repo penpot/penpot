@@ -12,7 +12,7 @@
     box-sizing: border-box;
     box-shadow: 0px 4px 4px rgba($color-black, 0.25);
 
-    font-size: $fs13;
+    font-size: $fs12;
     width: 30px;
     height: 30px;
     border-radius: 50%;
@@ -69,11 +69,11 @@
 
     textarea {
       font-family: "worksans", sans-serif;
-      font-size: $fs13;
+      font-size: $fs12;
       min-height: 32px;
       outline: none;
       overflow: hidden;
-      padding: $small;
+      padding: $size-2;
       resize: none;
       width: 100%;
       border-radius: 2px;
@@ -104,7 +104,7 @@
   .comment {
     display: flex;
     flex-direction: column;
-    padding: $medium $small;
+    padding: $size-4 $size-2;
 
     .author {
       display: flex;
@@ -120,7 +120,7 @@
         .fullname {
           font-weight: 700;
           color: $color-gray-60;
-          font-size: $fs13;
+          font-size: $fs12;
 
           @include text-ellipsis;
           width: 174px;
@@ -183,11 +183,11 @@
     }
 
     .content {
-      margin: $medium 0;
+      margin: $size-4 0;
       font-size: $fs14;
       color: $color-black;
       .text {
-        margin: 0 $small 0 26px;
+        margin: 0 $size-2 0 26px;
         white-space: pre-wrap;
         display: inline-block;
       }
@@ -295,7 +295,7 @@
   .comment {
     cursor: pointer;
     .author {
-      margin-bottom: $medium;
+      margin-bottom: $size-4;
       .name {
         display: flex;
 
@@ -317,7 +317,7 @@
       color: $color-white;
 
       &.replies {
-        margin: 0 $small 0 26px;
+        margin: 0 $size-2 0 26px;
         display: flex;
         .total-replies {
           margin-right: 9px;
@@ -455,13 +455,13 @@
   display: flex;
   flex-direction: column;
   font-size: $fs12;
-  padding: $big;
+  padding: $size-5;
   text-align: center;
 
   svg {
     fill: $color-gray-20;
     height: 24px;
-    margin-bottom: $big;
+    margin-bottom: $size-5;
     width: 24px;
   }
 }

@@ -28,7 +28,7 @@
     flex-direction: column;
     flex-shrink: 0;
     height: 200px;
-    margin: $medium;
+    margin: $size-4;
     max-width: 260px;
     min-width: 260px;
     position: relative;
@@ -85,7 +85,7 @@
     &.small-item {
       max-width: 12%;
       min-width: 190px;
-      padding: $medium;
+      padding: $size-4;
       justify-content: center;
     }
 
@@ -97,19 +97,19 @@
     .item-info {
       display: flex;
       flex-direction: column;
-      padding: $small;
+      padding: $size-2;
       text-align: left;
       width: 100%;
 
       h3 {
         border: 1px solid transparent;
         color: $color-gray-60;
-        font-size: $fs15;
+        font-size: $fs14;
         font-weight: 400;
         overflow: hidden;
         padding: 0;
         height: 27px;
-        padding-right: $small;
+        padding-right: $size-2;
         text-overflow: ellipsis;
         width: 100%;
         white-space: nowrap;
@@ -129,7 +129,7 @@
           padding: 0px;
           height: 25px;
           color: $color-gray-60;
-          font-size: $fs15;
+          font-size: $fs14;
           font-weight: 400;
         }
       }
@@ -141,8 +141,8 @@
       border: 1px solid $color-gray-20;
       border-radius: 4px;
       position: absolute;
-      top: $x-small;
-      right: $x-small;
+      top: $size-1;
+      right: $size-1;
       height: 32px;
       width: 32px;
       display: flex;
@@ -163,7 +163,7 @@
 
       span {
         color: $color-gray-60;
-        font-size: $fs15;
+        font-size: $fs14;
       }
 
       &:hover {
@@ -205,7 +205,7 @@
         .project-th-icon {
           align-items: center;
           display: flex;
-          margin-right: $small;
+          margin-right: $size-2;
 
           &.menu {
             margin-right: 0;
@@ -296,7 +296,7 @@
 
   // STYLES FOR LIBRARIES
   &.library {
-    padding: $medium;
+    padding: $size-4;
   }
 
   .grid-item-th {

@@ -12,7 +12,7 @@
   org.zeromq/jeromq {:mvn/version "0.5.2"}
 
   com.taoensso/nippy {:mvn/version "3.1.1"}
-  com.github.luben/zstd-jni {:mvn/version "1.4.9-5"}
+  com.github.luben/zstd-jni {:mvn/version "1.5.0-4"}
 
   ;; NOTE: don't upgrade to latest version, breaking change is
   ;; introduced on 0.10.0 that suffixes counters with _total if they
@@ -24,14 +24,14 @@
                                                  org.eclipse.jetty/jetty-servlet]}
   io.prometheus/simpleclient_httpserver {:mvn/version "0.9.0"}
 
-  io.lettuce/lettuce-core {:mvn/version "6.1.2.RELEASE"}
-  java-http-clj/java-http-clj {:mvn/version "0.4.2"}
+  io.lettuce/lettuce-core {:mvn/version "6.1.5.RELEASE"}
+  java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
-  info.sunng/ring-jetty9-adapter {:mvn/version "0.15.1"}
-  com.github.seancorfield/next.jdbc {:mvn/version "1.2.659"}
-  metosin/reitit-ring {:mvn/version "0.5.13"}
-  org.postgresql/postgresql {:mvn/version "42.2.20"}
-  com.zaxxer/HikariCP {:mvn/version "4.0.3"}
+  info.sunng/ring-jetty9-adapter {:mvn/version "0.15.2"}
+  com.github.seancorfield/next.jdbc {:mvn/version "1.2.709"}
+  metosin/reitit-ring {:mvn/version "0.5.15"}
+  org.postgresql/postgresql {:mvn/version "42.2.23"}
+  com.zaxxer/HikariCP {:mvn/version "5.0.0"}
 
   funcool/datoteka {:mvn/version "2.0.0"}
 
@@ -39,14 +39,20 @@
   buddy/buddy-hashers {:mvn/version "1.8.1"}
   buddy/buddy-sign {:mvn/version "3.4.1"}
 
-  org.jsoup/jsoup {:mvn/version "1.13.1"}
+  org.jsoup/jsoup {:mvn/version "1.14.2"}
   org.im4java/im4java {:mvn/version "1.4.0"}
-  org.lz4/lz4-java {:mvn/version "1.7.1"}
+  org.lz4/lz4-java {:mvn/version "1.8.0"}
 
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
   integrant/integrant {:mvn/version "0.8.0"}
 
-  software.amazon.awssdk/s3 {:mvn/version "2.16.62"}}
+  io.sentry/sentry {:mvn/version "5.1.2"}
+
+  ;; Pretty Print specs
+  fipp/fipp {:mvn/version "0.6.24"}
+  pretty-spec/pretty-spec {:mvn/version "0.1.4"}
+
+  software.amazon.awssdk/s3 {:mvn/version "2.17.40"}}
 
  :paths ["src" "resources"]
  :aliases
@@ -55,7 +61,8 @@
    {com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
     org.clojure/test.check {:mvn/version "RELEASE"}
-    com.clojure-goes-fast/clj-async-profiler {:mvn/version "0.5.0"}
+    org.clojure/data.csv {:mvn/version "1.0.0"}
+    com.clojure-goes-fast/clj-async-profiler {:mvn/version "0.5.1"}
 
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}
@@ -66,13 +73,13 @@
    :args {}}
 
   :kaocha
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.829"}}
+  {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.887"}}
    :main-opts ["-m" "kaocha.runner"]}
 
   :test
   {:extra-deps {io.github.cognitect-labs/test-runner
                 {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                 :sha "705ad25bbf0228b1c38d0244a36001c2987d7337"}}
+                 :git/sha "dd6da11611eeb87f08780a30ac8ea6012d4c05ce"}}
    :exec-fn cognitect.test-runner.api/test}
 
   :outdated

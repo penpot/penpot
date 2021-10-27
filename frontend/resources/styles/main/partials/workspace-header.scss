@@ -10,7 +10,7 @@
   border-bottom: 1px solid  $color-gray-60;
   display: flex;
   height: 48px;
-  padding: $x-small $medium $x-small 55px;
+  padding: $size-1 $size-4 $size-1 55px;
   position: relative;
   z-index: 12;
   justify-content: space-between;
@@ -56,7 +56,7 @@
   }
 
   .shared-badge {
-    margin-left: $x-small;
+    margin-left: $size-1;
     height: 16px;
     width: 16px;
     display: flex;
@@ -81,7 +81,7 @@
     position: relative;
 
     > * {
-      margin-left: $big;
+      margin-left: $size-5;
     }
 
     .zoom-dropdown {
@@ -93,13 +93,13 @@
   .project-tree {
     align-items: center;
     display: flex;
-    margin-left: $x-small;
-    padding: $x-small;
+    margin-left: $size-1;
+    padding: $size-1;
 
     svg {
       fill: $color-gray-20;
       height: 20px;
-      margin-right: $small;
+      margin-right: $size-2;
       width: 20px;
     }
 
@@ -112,7 +112,7 @@
 
       &.project-name {
         color: $color-gray-20;
-        margin-right: $x-small;
+        margin-right: $size-1;
         cursor: pointer;
 
         &:hover {
@@ -147,7 +147,7 @@
     li {
       cursor: pointer;
       font-size: $fs14;
-      padding: $small;
+      padding: $size-2;
       display: flex;
       justify-content: space-between;
 
@@ -159,7 +159,7 @@
 
       span {
         color: $color-gray-60;
-        margin: 0 $x-small;
+        margin: 0 $size-1;
       }
 
       .shortcut {
@@ -183,7 +183,7 @@
     margin: 0;
 
     li {
-      margin-left: $small;
+      margin-left: $size-2;
       position: relative;
 
       img {

@@ -7,13 +7,13 @@
 (ns app.rpc.mutations.ldap
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.rpc.mutations.profile :as profile-m]
    [app.rpc.queries.profile :as profile-q]
-   [app.util.logging :as l]
    [app.util.services :as sv]
    [clj-ldap.client :as ldap]
    [clojure.spec.alpha :as s]

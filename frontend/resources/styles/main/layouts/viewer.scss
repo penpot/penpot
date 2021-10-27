@@ -43,3 +43,19 @@
     grid-row: 1 / span 2;
   }
 }
+
+.viewer-overlay {
+  position: absolute;
+}
+
+.viewer-overlay-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  &.visible {
+    background-color: rgb(0, 0, 0, 0.2);
+  }
+}
+
+
