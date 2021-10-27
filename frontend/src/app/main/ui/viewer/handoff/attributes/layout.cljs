@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.handoff.attributes.layout
   (:require
    [app.common.math :as mth]
+   [app.common.types.radius :as ctr]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.util.code-gen :as cg]
    [app.util.i18n :refer [t]]
@@ -58,20 +59,17 @@
         [:div.attributes-value (mth/precision y 2) "px"]
         [:& copy-button {:data (copy-data selrect :y)}]])
 
-     (when (and (:rx shape) (not= (:rx shape) 0))
+     (when (ctr/radius-1? shape)
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
         [:div.attributes-value (mth/precision (:rx shape) 2) "px"]
         [:& copy-button {:data (copy-data shape :rx)}]])
 
-     (when (and (:r1 shape)
-                (or (not= (:r1 shape) 0)
-                    (not= (:r2 shape) 0)
-                    (not= (:r3 shape) 0)
-                    (not= (:r4 shape) 0)))
+     (when (ctr/radius-4? shape)
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
-        [:div.attributes-value (mth/precision (:r1 shape) 2) ", "
+        [:div.attributes-value
+         (mth/precision (:r1 shape) 2) ", "
          (mth/precision (:r2 shape) 2) ", "
          (mth/precision (:r3 shape) 2) ", "
          (mth/precision (:r4 shape) 2) "px"]

@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.attrs
   (:require
    [app.common.pages.spec :as spec]
+   [app.common.types.radius :as ctr]
    [app.main.ui.context :as muc]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
@@ -53,7 +54,13 @@
      (min r-bottom-left r-left-bottom)]))
 
 (defn add-border-radius [attrs shape]
-  (if (or (:r1 shape) (:r2 shape) (:r3 shape) (:r4 shape))
+  (case (ctr/radius-mode shape)
+
+    :radius-1
+    (obj/merge! attrs #js {:rx (:rx shape)
+                           :ry (:ry shape)})
+
+    :radius-4
     (let [[r1 r2 r3 r4] (truncate-radius shape)
           top    (- (:width shape) r1 r2)
           right  (- (:height shape) r2 r3)
@@ -69,10 +76,7 @@
                                      "v" (- left) " "
                                      "a" r1 "," r1 " 0 0 1 " r1 "," (- r1) " "
                                      "z")}))
-    (if (or (:rx shape) (:ry shape))
-      (obj/merge! attrs #js {:rx (:rx shape)
-                             :ry (:ry shape)})
-      attrs)))
+    attrs))
 
 (defn add-fill [attrs shape render-id]
   (let [fill-attrs (cond

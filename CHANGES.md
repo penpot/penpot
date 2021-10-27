@@ -5,6 +5,9 @@
 
 ### :boom: Breaking changes
 ### :sparkles: New features
+
+- Enhance corner radius behavior [Taiga #2190](https://tree.taiga.io/project/penpot/issue/2190).
+
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
