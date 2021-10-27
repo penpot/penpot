@@ -121,6 +121,9 @@ msgstr "Password"
 msgid "auth.password-length-hint"
 msgstr "At least 8 characters"
 
+msgid "auth.privacy-policy"
+msgstr "Privacy policy"
+
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
 msgstr "Recover Password"
@@ -157,17 +160,14 @@ msgstr "Create an account"
 msgid "auth.sidebar-tagline"
 msgstr "The open-source solution for design and prototyping."
 
+msgid "auth.terms-of-service"
+msgstr "Terms of service"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr ""
 "When creating a new account, you agree to our terms of service and privacy "
 "policy."
-
-msgid "auth.terms-of-service"
-msgstr "Terms of service"
-
-msgid "auth.privacy-policy"
-msgstr "Privacy policy"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -329,26 +329,26 @@ msgstr "There was a problem importing the file. The file wasn't imported."
 msgid "dashboard.import.import-message"
 msgstr "%s files have been imported succesfully."
 
+msgid "dashboard.import.progress.process-colors"
+msgstr "Processing colors"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Processing components"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Processing media"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Processing page: %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Processing typographies"
+
 msgid "dashboard.import.progress.upload-data"
 msgstr "Uploading data to server (%s/%s)"
 
 msgid "dashboard.import.progress.upload-media"
 msgstr "Uploading file: %s"
-
-msgid "dashboard.import.progress.process-page"
-msgstr "Processing page: %s"
-
-msgid "dashboard.import.progress.process-colors"
-msgstr "Processing colors"
-
-msgid "dashboard.import.progress.process-typographies"
-msgstr "Processing typographies"
-
-msgid "dashboard.import.progress.process-media"
-msgstr "Processing media"
-
-msgid "dashboard.import.progress.process-components"
-msgstr "Processing components"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -1713,6 +1713,14 @@ msgstr "%s - View mode - Penpot"
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
+msgid "viewer.breaking-change.description"
+msgstr ""
+"This shareable link is no longer valid. Create a new one or ask the owner "
+"for a new one."
+
+msgid "viewer.breaking-change.message"
+msgstr "Sorry!"
+
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.empty-state"
 msgstr "No artboards found on the page."
@@ -2143,6 +2151,10 @@ msgstr "My libraries"
 msgid "workspace.library.store"
 msgstr "Store libraries"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.add-interaction"
+msgstr "Click the + button to add interactions."
+
 msgid "workspace.options.blur-options.background-blur"
 msgstr "Background"
 
@@ -2232,6 +2244,18 @@ msgstr "Exporting…"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"
 msgstr "Fill"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.add-flow-start"
+msgstr "Add flow start"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-start"
+msgstr "Flow start"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-starts"
+msgstr "Flow starts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.auto"
@@ -2324,6 +2348,150 @@ msgstr "Group fill"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Group stroke"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-action"
+msgstr "Action"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-after-delay"
+msgstr "After delay"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-background"
+msgstr "Add background overlay"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-outside"
+msgstr "Close when clicking outside"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay"
+msgstr "Close overlay"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "Close overlay: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-delay"
+msgstr "Delay"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-destination"
+msgstr "Destination"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "Mouse enter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "Mouse leave"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "ms"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to"
+msgstr "Navigate to"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "Navigate to: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-none"
+msgstr "(not set)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-on-click"
+msgstr "On Click"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay"
+msgstr "Open overlay"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "Open overlay: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-url"
+msgstr "Open url"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "Bottom center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "Bottom left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "Bottom right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-center"
+msgstr "Center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-manual"
+msgstr "Manual"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "Top center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-left"
+msgstr "Top left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "Top right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-position"
+msgstr "Position"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-prev-screen"
+msgstr "Previous screen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-self"
+msgstr "self"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "Toggle overlay"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "Toggle overlay: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-trigger"
+msgstr "Trigger"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "URL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-hovering"
+msgstr "While Hovering"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-pressing"
+msgstr "While Pressing"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions"
+msgstr "Interactions"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.color"
@@ -2424,165 +2592,8 @@ msgstr "Single corners"
 msgid "workspace.options.rotation"
 msgstr "Rotation"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.add-interaction"
-msgstr "Click the + button to add interactions."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.flows.add-flow-start"
-msgstr "Add flow start"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.flows.flow-start"
-msgstr "Flow start"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.flows.flow-starts"
-msgstr "Flow starts"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-action"
-msgstr "Action"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-after-delay"
-msgstr "After delay"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-background"
-msgstr "Add background overlay"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-close-outside"
-msgstr "Close when clicking outside"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-close-overlay"
-msgstr "Close overlay"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-close-overlay-dest"
-msgstr "Close overlay: %s"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-destination"
-msgstr "Destination"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-delay"
-msgstr "Delay"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-mouse-enter"
-msgstr "Mouse enter"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-mouse-leave"
-msgstr "Mouse leave"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-ms"
-msgstr "ms"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-navigate-to"
-msgstr "Navigate to"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-navigate-to-dest"
-msgstr "Navigate to: %s"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-none"
-msgstr "(not set)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-on-click"
-msgstr "On Click"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-open-overlay"
-msgstr "Open overlay"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-open-url"
-msgstr "Open url"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-prev-screen"
-msgstr "Previous screen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-toggle-overlay"
-msgstr "Toggle overlay"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-open-overlay-dest"
-msgstr "Open overlay: %s"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-toggle-overlay-dest"
-msgstr "Toggle overlay: %s"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-url"
-msgstr "URL"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-manual"
-msgstr "Manual"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-center"
-msgstr "Center"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-top-left"
-msgstr "Top left"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-top-right"
-msgstr "Top right"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-top-center"
-msgstr "Top center"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-bottom-left"
-msgstr "Bottom left"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-bottom-right"
-msgstr "Bottom right"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-bottom-center"
-msgstr "Bottom center"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-position"
-msgstr "Position"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-self"
-msgstr "self"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-trigger"
-msgstr "Trigger"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-while-hovering"
-msgstr "While Hovering"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-while-pressing"
-msgstr "While Pressing"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interactions"
-msgstr "Interactions"
+msgid "workspace.options.search-font"
+msgstr "Search font"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
@@ -2883,6 +2894,9 @@ msgstr "Delete flow start"
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Detach instance"
 
+msgid "workspace.shape.menu.difference"
+msgstr "Difference"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.duplicate"
 msgstr "Duplicate"
@@ -2890,6 +2904,12 @@ msgstr "Duplicate"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.edit"
 msgstr "Edit"
+
+msgid "workspace.shape.menu.exclude"
+msgstr "Exclude"
+
+msgid "workspace.shape.menu.flatten"
+msgstr "Flatten"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flip-horizontal"
@@ -2923,6 +2943,9 @@ msgstr "Group"
 msgid "workspace.shape.menu.hide"
 msgstr "Hide"
 
+msgid "workspace.shape.menu.intersection"
+msgstr "Intersection"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.lock"
 msgstr "Lock"
@@ -2934,6 +2957,9 @@ msgstr "Mask"
 #: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.paste"
 msgstr "Paste"
+
+msgid "workspace.shape.menu.path"
+msgstr "Path"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
@@ -2947,9 +2973,15 @@ msgstr "Show"
 msgid "workspace.shape.menu.show-main"
 msgstr "Show main component"
 
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Transform to path"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.ungroup"
 msgstr "Ungroup"
+
+msgid "workspace.shape.menu.union"
+msgstr "Union"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.unlock"
@@ -3156,33 +3188,3 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
-
-msgid "viewer.breaking-change.message"
-msgstr "Sorry!"
-
-msgid "viewer.breaking-change.description"
-msgstr "This shareable link is no longer valid. Create a new one or ask the owner for a new one."
-
-msgid "workspace.shape.menu.path"
-msgstr "Path"
-
-msgid "workspace.shape.menu.union"
-msgstr "Union"
-
-msgid "workspace.shape.menu.difference"
-msgstr "Difference"
-
-msgid "workspace.shape.menu.intersection"
-msgstr "Intersection"
-
-msgid "workspace.shape.menu.exclude"
-msgstr "Exclude"
-
-msgid "workspace.shape.menu.flatten"
-msgstr "Flatten"
-
-msgid "workspace.shape.menu.transform-to-path"
-msgstr "Transform to path"
-
-msgid "workspace.options.search-font"
-msgstr "Search font"

@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-09-14 13:35+0000\n"
 "Last-Translator: Amine Gdoura <amine2gdoura@gmail.com>\n"
-"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
-"ar/>\n"
+"Language-Team: Arabic "
+"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -88,6 +88,10 @@ msgstr "تسجيل الدخول باستخدام OpenID (SSO)"
 msgid "auth.new-password"
 msgstr "اكتب كلمة مرور جديدة"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "أوافق على الاشتراك في قائمة Penpot البريدية."
+
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "رمز الاسترداد غير صالح."
@@ -159,6 +163,20 @@ msgstr "عند إنشاء حساب جديد ، فإنك توافق على شرو
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "لقد أرسلنا رسالة تحقق إلى بريدك الالكتروني"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي "
+"شخص"
+
+msgid "common.share-link.get-link"
+msgstr "خذ رابطا إلكتروني"
+
+msgid "common.share-link.link-copied-success"
+msgstr "تم نسخ الرابط بنجاح"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "تم حذف الرابط بنجاح"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -2088,21 +2106,3 @@ msgstr "اختلاف"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لإغلاق المسار"
-
-msgid "common.share-link.link-deleted-success"
-msgstr "تم حذف الرابط بنجاح"
-
-msgid "common.share-link.link-copied-success"
-msgstr "تم نسخ الرابط بنجاح"
-
-msgid "common.share-link.get-link"
-msgstr "خذ رابطا إلكتروني"
-
-msgid "common.share-link.confirm-deletion-link-description"
-msgstr ""
-"هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي "
-"شخص"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "أوافق على الاشتراك في قائمة Penpot البريدية."

@@ -119,6 +119,9 @@ msgstr "Mot de passe"
 msgid "auth.password-length-hint"
 msgstr "Au moins 8 caractères"
 
+msgid "auth.privacy-policy"
+msgstr "Politique de confidentialité"
+
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
 msgstr "Récupérer le mot de passe"
@@ -155,17 +158,14 @@ msgstr "Créer un compte"
 msgid "auth.sidebar-tagline"
 msgstr "La solution Open Source pour la conception et le prototypage."
 
+msgid "auth.terms-of-service"
+msgstr "Conditions générales d'utilisation"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr ""
 "En créant un compte, vous acceptez nos conditions générales d'utilisation "
 "et notre politique de confidentialité."
-
-msgid "auth.terms-of-service"
-msgstr "Conditions générales d'utilisation"
-
-msgid "auth.privacy-policy"
-msgstr "Politique de confidentialité"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
