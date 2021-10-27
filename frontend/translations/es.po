@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-09-04 15:33+0000\n"
-"Last-Translator: Rubén <rubnx@protonmail.com>\n"
-"Language-Team: Spanish "
-"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
+"PO-Revision-Date: 2021-09-24 13:39+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
+"es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.8.1-dev\n"
+"X-Generator: Weblate 4.9-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -65,7 +65,7 @@ msgstr "Introduce tus datos aquí"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
-msgstr "¡Encantados de verte de nuevo!"
+msgstr "¡Un placer verte de nuevo!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -93,7 +93,7 @@ msgstr "Introduce la nueva contraseña"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.newsletter-subscription"
-msgstr "Estoy de acuerdo en suscribirme a la lista de correo de Penpot"
+msgstr "Estoy de acuerdo en suscribirme a la lista de correo de Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
@@ -180,7 +180,7 @@ msgstr "Hemos enviado un email de verificación a"
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "¿Estas seguro que quieres eliminar el enlace? Si lo haces, el enlace dejara "
-"de funcionar para todos"
+"de funcionar para cualquiera"
 
 msgid "common.share-link.get-link"
 msgstr "Obtener enlace"
@@ -281,11 +281,11 @@ msgstr "Exportar librerias compartidas"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"Las librerias compartidas no se incluirán en la exportación y ningún "
-"recurso será incluido en la librería."
+"Las librerias compartidas no se incluirán en la exportación y ningún recurso "
+"será incluido en la librería. "
 
 msgid "dashboard.export.options.detach.title"
-msgstr "Usar los recursos como objetos básicos."
+msgstr "Usar los recursos como objetos básicos"
 
 msgid "dashboard.export.options.merge.message"
 msgstr ""
@@ -293,7 +293,7 @@ msgstr ""
 "propio fichero."
 
 msgid "dashboard.export.options.merge.title"
-msgstr "Incluir librerias compartidas dentro de las librerias del fichero."
+msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 
 msgid "dashboard.export.title"
 msgstr "Exportar ficheros"
@@ -323,10 +323,10 @@ msgstr ""
 "licensing](2)."
 
 msgid "dashboard.import.analyze-error"
-msgstr "¡Vaya! No hemos podido importar el fichero."
+msgstr "¡Vaya! No hemos podido importar el fichero"
 
 msgid "dashboard.import.import-error"
-msgstr "Hubo un problema importando el fichero. No se ha creado el fichero."
+msgstr "Hubo un problema importando el fichero. No ha podido ser importado."
 
 msgid "dashboard.import.import-message"
 msgstr "%s ficheros han sido importados con éxito."
@@ -933,7 +933,7 @@ msgid "labels.accept"
 msgstr "Aceptar"
 
 msgid "labels.add-custom-font"
-msgstr "Añadir fuentes personalizada"
+msgstr "Añadir fuente personalizada"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
@@ -1617,7 +1617,7 @@ msgid "viewer.header.fullscreen"
 msgstr "Pantalla completa"
 
 msgid "viewer.header.handsoff-section"
-msgstr "Handsoff"
+msgstr "Handoff"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
@@ -3074,3 +3074,129 @@ msgstr "Convertir en vector"
 
 msgid "workspace.options.search-font"
 msgstr "Buscar fuente"
+
+msgid "onboarding.welcome.title"
+msgstr "Te damos la bienvenida a Penpot!"
+
+msgid "onboarding.welcome.desc2"
+msgstr ""
+"Penpot está en fase de desarrollo y tendrá actualizaciones constantes. "
+"Esperamos que disfrutes esta version."
+
+msgid "onboarding.welcome.desc1"
+msgstr "Estamos felices de presentarte la primera Alpha release."
+
+msgid "onboarding.team.start.title"
+msgstr "Comienza a diseñar"
+
+msgid "onboarding.team.start.desc1"
+msgstr ""
+"Entra directamente a Penpot y comienza a diseñar individualmente. Siempre "
+"tendrás la opción de crear equipos más adelante."
+
+msgid "onboarding.team.start.button"
+msgstr "Comenzar directamente"
+
+msgid "onboarding.team.create.title"
+msgstr "Crear equipo"
+
+msgid "onboarding.team.create.input-placeholder"
+msgstr "Introduce el nombre del equipo"
+
+msgid "onboarding.team.create.desc1"
+msgstr ""
+"¿Trabajando con alguien más? Crea un equipo donde compartir proyectos y "
+"elementos de diseño."
+
+msgid "onboarding.team.create.button"
+msgstr "Crea un equipo"
+
+msgid "onboarding.slide.3.title"
+msgstr "Una \"fuente de la verdad\" compartida"
+
+msgid "onboarding.slide.3.desc2"
+msgstr ""
+"Obtén y entrega especificaciones de código para marcado (SVG, HTML) y "
+"estilos (CSS, Less, Stylus…)."
+
+msgid "onboarding.slide.3.desc1"
+msgstr ""
+"Sincroniza diseño y código de todos tus estilos y componentes con a snippets "
+"de código."
+
+msgid "onboarding.slide.3.alt"
+msgstr "Especificaciones de código"
+
+msgid "onboarding.slide.2.title"
+msgstr "Obtén feedback, presenta y comparte tu trabajo"
+
+msgid "onboarding.slide.2.desc1"
+msgstr ""
+"Todas las personas del equipo trabajando simultáneamente en archivos de "
+"diseño con edición conjunta en tiempo real y herramientas para comentar "
+"directamente sobre los diseños."
+
+msgid "onboarding.slide.2.alt"
+msgstr "Obtén feedback"
+
+msgid "onboarding.slide.1.title"
+msgstr "Lleva tus diseños a la vida con interacciones"
+
+msgid "onboarding.slide.1.desc2"
+msgstr ""
+"Comparte con stakeholders, presenta propuestas a tu equipo y realiza tests "
+"de usabilidad sobre tus diseños, todo en uno."
+
+msgid "onboarding.slide.1.desc1"
+msgstr ""
+"Crea interacciones completas para imitar el comportamiento del producto."
+
+msgid "onboarding.slide.1.alt"
+msgstr "Prototipos interactivos"
+
+msgid "onboarding.slide.0.title"
+msgstr "Bibliotecas de diseño, estilos y componentes"
+
+msgid "onboarding.slide.0.desc2"
+msgstr ""
+"Mantén consistencia a escala usando componentes, bibliotecas y sistemas de "
+"diseño."
+
+msgid "onboarding.slide.0.desc1"
+msgstr ""
+"Crea bellos interfaces en colaboración con todas las personas del equipo."
+
+msgid "onboarding.slide.0.alt"
+msgstr "Crea diseños"
+
+msgid "onboarding.contrib.title"
+msgstr "Contribuyes en Open Source?"
+
+msgid "onboarding.contrib.link"
+msgstr "proyecto en github"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "Puedes acceder al"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "y seguir las instrucciones de contribución :)"
+
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot es Open Source, hecho por y para la comunidad. Si decides colaborar "
+"nos encantará :)"
+
+msgid "onboarding.contrib.alt"
+msgstr "Código Abierto"
+
+msgid "labels.start"
+msgstr "Comenzar"
+
+msgid "labels.skip"
+msgstr "Omitir"
+
+msgid "dashboard.options"
+msgstr "Opciones"
+
+msgid "dashboard.import"
+msgstr "Importar archivos"
