@@ -27,6 +27,7 @@
    {:label "Rumanian (communit)" :value "ro"}
    {:label "Portuguese (Brazil, community)" :value "pt_br"}
    {:label "Ελληνική γλώσσα (community)" :value "el"}
+   {:label "עִבְרִית (community)" :value "he"}
    {:label "简体中文 (community)" :value "zh_cn"}])
 
 (defn- parse-locale
