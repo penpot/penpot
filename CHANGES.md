@@ -1,6 +1,16 @@
 # CHANGELOG
 
+
 ## :rocket: Next
+
+### :boom: Breaking changes
+### :sparkles: New features
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :heart: Community contributions by (Thank you!)
+
+
+## 1.9.0-alpha
 
 ### :boom: Breaking changes
 
@@ -53,6 +63,11 @@
 ### :arrow_up: Deps updates
 
 ### :heart: Community contributions by (Thank you!)
+
+- To the translation community for the hard work on making penpot
+  available on so many languages.
+
+
 
 ## 1.8.4-alpha
 
