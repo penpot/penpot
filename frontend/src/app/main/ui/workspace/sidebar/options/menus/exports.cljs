@@ -20,22 +20,15 @@
 
 (defn request-export
   [shape exports]
-  (let [result-stream
-        (->> st/stream
-             (rx/filter dwp/shapes-persited-event?)
-             (rx/take 1)
-             (rx/flat-map
-              #(rp/query!
-                :export
-                {:page-id (:page-id shape)
-                 :file-id  (:file-id shape)
-                 :object-id (:id shape)
-                 :name (:name shape)
-                 :exports exports})))]
-
-    ;; Force a persist before exporting otherwise the exported shape could be outdated
-    (st/emit! ::dwp/force-persist)
-    result-stream))
+  ;; Force a persist before exporting otherwise the exported shape could be outdated
+  (st/emit! ::dwp/force-persist)
+  (rp/query!
+   :export
+   {:page-id (:page-id shape)
+    :file-id  (:file-id shape)
+    :object-id (:id shape)
+    :name (:name shape)
+    :exports exports}))
 
 (mf/defc exports-menu
   [{:keys [shape page-id file-id] :as props}]
