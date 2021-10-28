@@ -75,31 +75,33 @@
 
 (mf/defc header-sitemap
   [{:keys [project file page frame index] :as props}]
-  (let [project-name (:name project)
-        file-name    (:name file)
-        page-name    (:name page)
-        frame-name   (:name frame)
-        total        (count (:frames page))
-
-        toggle-thumbnails
-        (fn []
-          (st/emit! dv/toggle-thumbnails-panel))
-
+  (let [project-name   (:name project)
+        file-name      (:name file)
+        page-name      (:name page)
+        frame-name     (:name frame)
+        total          (count (:frames page))
         show-dropdown? (mf/use-state false)
 
+        toggle-thumbnails
+        (mf/use-callback
+         (fn []
+           (st/emit! dv/toggle-thumbnails-panel)))
+
         open-dropdown
-        (fn []
-          (reset! show-dropdown? true)
-          (st/emit! dv/close-thumbnails-panel))
+        (mf/use-callback
+         (fn []
+           (reset! show-dropdown? true)))
 
         close-dropdown
-        (fn []
-          (reset! show-dropdown? false))
+        (mf/use-callback
+         (fn []
+           (reset! show-dropdown? false)))
 
         navigate-to
-        (fn [page-id]
-          (st/emit! (dv/go-to-page page-id))
-          (reset! show-dropdown? false))]
+        (mf/use-callback
+         (fn [page-id]
+           (st/emit! (dv/go-to-page page-id))
+           (reset! show-dropdown? false)))]
 
      [:div.sitemap-zone {:alt (tr "viewer.header.sitemap")}
       [:div.breadcrumb
@@ -108,6 +110,7 @@
        [:span "/"]
        [:span.file-name file-name]
        [:span "/"]
+
        [:span.page-name page-name]
        [:span.icon i/arrow-down]
 

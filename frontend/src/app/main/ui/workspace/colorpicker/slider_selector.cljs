@@ -12,10 +12,29 @@
    [rumext.alpha :as mf]))
 
 (mf/defc slider-selector
-  [{:keys [value class min-value max-value vertical? reverse? on-change]}]
+  [{:keys [value class min-value max-value vertical? reverse? on-change on-start-drag on-finish-drag]}]
   (let [min-value (or min-value 0)
         max-value (or max-value 1)
         dragging? (mf/use-state false)
+
+        handle-start-drag
+        (mf/use-callback
+         (mf/deps on-start-drag)
+         (fn [event]
+           (dom/capture-pointer event)
+           (reset! dragging? true)
+           (when on-start-drag
+             (on-start-drag))))
+
+        handle-stop-drag
+        (mf/use-callback
+         (mf/deps on-finish-drag)
+         (fn [event]
+           (dom/release-pointer event)
+           (reset! dragging? false)
+           (when on-finish-drag
+             (on-finish-drag))))
+
         calculate-pos
         (fn [ev]
           (when on-change
@@ -32,11 +51,8 @@
 
     [:div.slider-selector
      {:class (str (if vertical? "vertical " "") class)
-      :on-mouse-down #(reset! dragging? true)
-      :on-mouse-up #(reset! dragging? false)
-      :on-pointer-down (partial dom/capture-pointer)
-      :on-lost-pointer-capture #(do (dom/release-pointer %)
-                                    (reset! dragging? false))
+      :on-pointer-down handle-start-drag
+      :on-lost-pointer-capture handle-stop-drag
       :on-click calculate-pos
       :on-mouse-move #(when @dragging? (calculate-pos %))}
 

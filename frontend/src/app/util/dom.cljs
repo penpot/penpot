@@ -288,7 +288,8 @@
   (-> event get-target (.setPointerCapture (.-pointerId event))))
 
 (defn release-pointer [event]
-  (-> event get-target (.releasePointerCapture (.-pointerId event))))
+  (when (.-pointerId event)
+    (-> event get-target (.releasePointerCapture (.-pointerId event)))))
 
 (defn get-root []
   (query globals/document "#app"))
