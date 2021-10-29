@@ -6,6 +6,7 @@
 
 (ns app.main.ui.viewer
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.main.data.comments :as dcm]
@@ -31,9 +32,22 @@
 (defn- calculate-size
   [frame zoom]
   (let [{:keys [_ _ width height]} (filters/get-filters-bounds frame)]
-    {:width  (* width zoom)
-     :height (* height zoom)
-     :vbox   (str "0 0 " width " " height)}))
+    {:base-width  width
+     :base-height height
+     :width       (* width zoom)
+     :height      (* height zoom)
+     :vbox        (str "0 0 " width " " height)}))
+
+(defn- calculate-wrapper
+  [size1 size2 zoom]
+  (cond
+    (nil? size1) size2
+    (nil? size2) size1
+    :else (let [width  (max (:base-width size1) (:base-width size2))
+                height (max (:base-height size1) (:base-height size2))]
+            {:width  (* width zoom)
+             :height (* height zoom)
+             :vbox   (str "0 0 " width " " height)})))
 
 (mf/defc viewer
   [{:keys [params data]}]
@@ -41,24 +55,41 @@
   (let [{:keys [page-id section index]} params
         {:keys [file users project permissions]} data
 
-        local   (mf/deref refs/viewer-local)
+        local (mf/deref refs/viewer-local)
 
         nav-scroll (:nav-scroll local)
+        orig-viewport-ref (mf/use-ref nil)
+        current-viewport-ref (mf/use-ref nil)
+        current-animation (:current-animation local)
 
         page-id (or page-id (-> file :data :pages first))
 
-        page    (mf/use-memo
-                 (mf/deps data page-id)
-                 (fn []
-                   (get-in data [:pages page-id])))
+        page (mf/use-memo
+              (mf/deps data page-id)
+              (fn []
+                (get-in data [:pages page-id])))
 
-        zoom    (:zoom local)
-        frames  (:frames page)
-        frame   (get frames index)
+        zoom   (:zoom local)
+        frames (:frames page)
+        frame  (get frames index)
 
-        size    (mf/use-memo
-                 (mf/deps frame zoom)
-                 (fn [] (calculate-size frame zoom)))
+        overlays (:overlays local)
+
+        orig-frame
+        (when (:orig-frame-id current-animation)
+          (d/seek #(= (:id %) (:orig-frame-id current-animation)) frames))
+
+        size (mf/use-memo
+              (mf/deps frame zoom)
+              (fn [] (calculate-size frame zoom)))
+
+        orig-size (mf/use-memo
+                    (mf/deps orig-frame zoom)
+                    (fn [] (when orig-frame (calculate-size orig-frame zoom))))
+
+        wrapper-size (mf/use-memo
+                       (mf/deps size orig-size zoom)
+                       (fn [] (calculate-wrapper size orig-size zoom)))
 
         interactions-mode
         (:interactions-mode local)
@@ -96,10 +127,66 @@
     (mf/use-layout-effect
       (mf/deps nav-scroll)
       (fn []
+        ;; Set scroll position after navigate
         (when (number? nav-scroll)
           (let [viewer-section (dom/get-element "viewer-section")]
             (st/emit! (dv/reset-nav-scroll))
             (dom/set-scroll-pos! viewer-section nav-scroll)))))
+
+    (mf/use-layout-effect
+      (mf/deps index)
+      (fn []
+        ;; Navigate animation needs to be started after navigation
+        ;; is complete, and we have the next page index.
+        (when (and current-animation
+                   (= (:kind current-animation) :go-to-frame))
+          (let [orig-viewport    (mf/ref-val orig-viewport-ref)
+                current-viewport (mf/ref-val current-viewport-ref)]
+            (interactions/animate-go-to-frame
+              (:animation current-animation)
+              current-viewport
+              orig-viewport
+              size
+              orig-size
+              wrapper-size)))))
+
+    (mf/use-layout-effect
+      (mf/deps current-animation)
+      (fn []
+        ;; Overlay animations may be started when needed.
+        (when current-animation
+          (case (:kind current-animation)
+
+            :open-overlay
+            (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id current-animation))))
+                  overlay (d/seek #(= (:id (:frame %)) (:overlay-id current-animation))
+                                  overlays)
+                  overlay-size (calculate-size (:frame overlay) zoom)
+                  overlay-position {:x (* (:x (:position overlay)) zoom)
+                                    :y (* (:y (:position overlay)) zoom)}]
+              (interactions/animate-open-overlay
+                (:animation current-animation)
+                overlay-viewport
+                wrapper-size
+                overlay-size
+                overlay-position))
+
+            :close-overlay
+            (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id current-animation))))
+                  overlay (d/seek #(= (:id (:frame %)) (:overlay-id current-animation))
+                                  overlays)
+                  overlay-size (calculate-size (:frame overlay) zoom)
+                  overlay-position {:x (* (:x (:position overlay)) zoom)
+                                    :y (* (:y (:position overlay)) zoom)}]
+              (interactions/animate-close-overlay
+                (:animation current-animation)
+                overlay-viewport
+                wrapper-size
+                overlay-size
+                overlay-position
+                (:id (:frame overlay))))
+
+            nil))))
 
     [:div {:class (dom/classnames
                    :force-visible (:show-thumbnails local)
@@ -139,57 +226,81 @@
              :section section
              :local local}]
 
-           [:div.viewport-container
-            {:style {:width (:width size)
-                     :height (:height size)
-                     :position "relative"}}
+           [:*
+            [:div.viewer-wrapper
+             {:style {:width (:width wrapper-size)
+                      :height (:height wrapper-size)}}
 
-            (when (= section :comments)
-              [:& comments-layer {:file file
-                                  :users users
-                                  :frame frame
-                                  :page page
-                                  :zoom zoom}])
+             (when orig-frame
+               [:div.viewport-container
+                {:ref orig-viewport-ref
+                 :style {:width (:width orig-size)
+                         :height (:height orig-size)
+                         :position "relative"}}
 
-            [:& interactions/viewport
-             {:frame frame
-              :base-frame frame
-              :frame-offset (gpt/point 0 0)
-              :size size
-              :page page
-              :file file
-              :users users
-              :interactions-mode interactions-mode}]
+                [:& interactions/viewport
+                 {:frame orig-frame
+                  :base-frame orig-frame
+                  :frame-offset (gpt/point 0 0)
+                  :size orig-size
+                  :page page
+                  :file file
+                  :users users
+                  :interactions-mode :hide}]])
 
-            (for [overlay (:overlays local)]
-              (let [size-over (calculate-size (:frame overlay) zoom)]
-                [:*
-                 (when (or (:close-click-outside overlay)
-                           (:background-overlay  overlay))
-                   [:div.viewer-overlay-background
-                    {:class (dom/classnames
-                              :visible (:background-overlay overlay))
-                     :style {:width (:width frame)
-                             :height (:height frame)
-                             :position "absolute"
-                             :left 0
-                             :top 0}
-                     :on-click #(when (:close-click-outside overlay)
-                                  (close-overlay (:frame overlay)))}])
-                 [:div.viewport-container.viewer-overlay
-                  {:style {:width (:width size-over)
-                           :height (:height size-over)
-                           :left (* (:x (:position overlay)) zoom)
-                           :top (* (:y (:position overlay)) zoom)}}
-                  [:& interactions/viewport
-                   {:frame (:frame overlay)
-                    :base-frame frame
-                    :frame-offset (:position overlay)
-                    :size size-over
-                    :page page
-                    :file file
-                    :users users
-                    :interactions-mode interactions-mode}]]]))]))]]]))
+             [:div.viewport-container
+              {:ref current-viewport-ref
+               :style {:width (:width size)
+                       :height (:height size)
+                       :position "relative"}
+               }
+              (when (= section :comments)
+                [:& comments-layer {:file file
+                                    :users users
+                                    :frame frame
+                                    :page page
+                                    :zoom zoom}])
+
+              [:& interactions/viewport
+               {:frame frame
+                :base-frame frame
+                :frame-offset (gpt/point 0 0)
+                :size size
+                :page page
+                :file file
+                :users users
+                :interactions-mode interactions-mode}]
+
+              (for [overlay overlays]
+                (let [size-over (calculate-size (:frame overlay) zoom)]
+                  [:*
+                   (when (or (:close-click-outside overlay)
+                             (:background-overlay  overlay))
+                     [:div.viewer-overlay-background
+                      {:class (dom/classnames
+                                :visible (:background-overlay overlay))
+                       :style {:width (:width wrapper-size)
+                               :height (:height wrapper-size)
+                               :position "absolute"
+                               :left 0
+                               :top 0}
+                       :on-click #(when (:close-click-outside overlay)
+                                    (close-overlay (:frame overlay)))}])
+                   [:div.viewport-container.viewer-overlay
+                    {:id (str "overlay-" (str (:id (:frame overlay))))
+                     :style {:width (:width size-over)
+                             :height (:height size-over)
+                             :left (* (:x (:position overlay)) zoom)
+                             :top (* (:y (:position overlay)) zoom)}}
+                    [:& interactions/viewport
+                     {:frame (:frame overlay)
+                      :base-frame frame
+                      :frame-offset (:position overlay)
+                      :size size-over
+                      :page page
+                      :file file
+                      :users users
+                      :interactions-mode interactions-mode}]]]))]]]))]]]))
 
 ;; --- Component: Viewer Page
 

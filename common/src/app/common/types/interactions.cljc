@@ -42,6 +42,46 @@
 (s/def ::event-opts
   (s/multi-spec event-opts-spec ::event-type))
 
+;; -- Animation options
+
+(s/def ::animation-type #{:dissolve
+                          :slide
+                          :push})
+(s/def ::duration ::us/safe-integer)
+(s/def ::easing #{:linear
+                  :ease
+                  :ease-in
+                  :ease-out
+                  :ease-in-out})
+(s/def ::way #{:in
+               :out})
+(s/def ::direction #{:right
+                     :left
+                     :up
+                     :down})
+(s/def ::offset-effect ::us/boolean)
+
+(defmulti animation-spec :animation-type)
+
+(defmethod animation-spec :dissolve [_]
+  (s/keys :req-un [::duration
+                   ::easing]))
+
+(defmethod animation-spec :slide [_]
+  (s/keys :req-un [::duration
+                   ::easing
+                   ::way
+                   ::direction
+                   ::offset-effect]))
+
+(defmethod animation-spec :push [_]
+  (s/keys :req-un [::duration
+                   ::easing
+                   ::direction]))
+
+(s/def ::animation
+  (s/multi-spec animation-spec ::animation-type))
+
 ;; -- Options depending on action type
 
 (s/def ::action-type #{:navigate
@@ -69,24 +109,29 @@
 (defmulti action-opts-spec :action-type)
 
 (defmethod action-opts-spec :navigate [_]
-  (s/keys :opt-un [::destination ::preserve-scroll]))
+  (s/keys :opt-un [::destination
+                   ::preserve-scroll
+                     ::animation]))
 
 (defmethod action-opts-spec :open-overlay [_]
   (s/keys :req-un [::overlay-position
                    ::overlay-pos-type]
           :opt-un [::destination
                    ::close-click-outside
-                   ::background-overlay]))
+                   ::background-overlay
+                   ::animation]))
 
 (defmethod action-opts-spec :toggle-overlay [_]
   (s/keys :req-un [::overlay-position
                    ::overlay-pos-type]
           :opt-un [::destination
                    ::close-click-outside
-                   ::background-overlay]))
+                   ::background-overlay
+                   ::animation]))
 
 (defmethod action-opts-spec :close-overlay [_]
-  (s/keys :opt-un [::destination]))
+  (s/keys :opt-un [::destination
+                   ::animation]))
 
 (defmethod action-opts-spec :prev-screen [_]
   (s/keys :req-un []))
@@ -122,6 +167,7 @@
 ;; -- Helpers for interaction
 
 (declare calc-overlay-pos-initial)
+(declare allowed-animation?)
 
 (defn set-event-type
   [interaction event-type shape]
@@ -141,42 +187,46 @@
       (assoc interaction
              :event-type event-type))))
 
-
 (defn set-action-type
   [interaction action-type]
   (us/verify ::interaction interaction)
   (us/verify ::action-type action-type)
-  (if (= (:action-type interaction) action-type)
-    interaction
-    (case action-type
+  (let [new-interaction
+        (if (= (:action-type interaction) action-type)
+          interaction
+          (case action-type
+            :navigate
+            (assoc interaction
+                   :action-type action-type
+                   :destination (get interaction :destination)
+                   :preserve-scroll (get interaction :preserve-scroll false))
 
-      :navigate
-      (assoc interaction
-             :action-type action-type
-             :destination (get interaction :destination)
-             :preserve-scroll (get interaction :preserve-scroll false))
+            (:open-overlay :toggle-overlay)
+            (let [overlay-pos-type (get interaction :overlay-pos-type :center)
+                  overlay-position (get interaction :overlay-position (gpt/point 0 0))]
+              (assoc interaction
+                     :action-type action-type
+                     :overlay-pos-type overlay-pos-type
+                     :overlay-position overlay-position))
 
-      (:open-overlay :toggle-overlay)
-      (let [overlay-pos-type (get interaction :overlay-pos-type :center)
-            overlay-position (get interaction :overlay-position (gpt/point 0 0))]
-        (assoc interaction
-               :action-type action-type
-               :overlay-pos-type overlay-pos-type
-               :overlay-position overlay-position))
+            :close-overlay
+            (assoc interaction
+                   :action-type action-type
+                   :destination (get interaction :destination))
 
-      :close-overlay
-      (assoc interaction
-             :action-type action-type
-             :destination (get interaction :destination))
+            :prev-screen
+            (assoc interaction
+                   :action-type action-type)
 
-      :prev-screen
-      (assoc interaction
-             :action-type action-type)
+            :open-url
+            (assoc interaction
+                   :action-type action-type
+                   :url (get interaction :url ""))))]
 
-      :open-url
-      (assoc interaction
-             :action-type action-type
-             :url (get interaction :url "")))))
+    (cond-> new-interaction
+      (not (allowed-animation? action-type
+                               (-> new-interaction :animation :animation-type)))
+      (dissoc :animation-type :animation))))
 
 (defn has-delay
   [interaction]
@@ -338,6 +388,129 @@
 
         :manual
         (gpt/add (:overlay-position interaction) frame-offset)))))
+
+(defn has-animation?
+  [interaction]
+  (#{:navigate :open-overlay :close-overlay :toggle-overlay} (:action-type interaction)))
+
+(defn allow-push?
+  [action-type]
+  ; Push animation is not allowed for overlay actions
+  (= :navigate action-type))
+
+(defn allowed-animation?
+  [action-type animation-type]
+  ; Some specific combinations are forbidden, but may occur if the action type
+  ; is changed from a type that allows the animation to another one that doesn't.
+  ; Currently the only case is an overlay action with push animation.
+  (or (not= animation-type :push)
+      (allow-push? action-type)))
+
+(defn set-animation-type
+  [interaction animation-type]
+  (us/verify ::interaction interaction)
+  (us/verify (s/nilable ::animation-type) animation-type)
+  (assert (has-animation? interaction))
+  (assert (allowed-animation? (:action-type interaction) animation-type))
+  (if (= (-> interaction :animation :animation-type) animation-type)
+    interaction
+    (if (nil? animation-type)
+      (dissoc interaction :animation)
+      (cond-> interaction
+        :always
+        (update :animation assoc :animation-type animation-type)
+
+        (= animation-type :dissolve)
+        (update :animation assoc
+                :duration (get-in interaction [:animation :duration] 300)
+                :easing (get-in interaction [:animation :easing] :linear))
+
+        (= animation-type :slide)
+        (update :animation assoc
+                :duration (get-in interaction [:animation :duration] 300)
+                :easing (get-in interaction [:animation :easing] :linear)
+                :way (get-in interaction [:animation :way] :in)
+                :direction (get-in interaction [:animation :direction] :right)
+                :offset-effect (get-in interaction [:animation :offset-effect] false))
+
+        (= animation-type :push)
+        (update :animation assoc
+                :duration (get-in interaction [:animation :duration] 300)
+                :easing (get-in interaction [:animation :easing] :linear)
+                :direction (get-in interaction [:animation :direction] :right))))))
+
+(defn has-duration?
+  [interaction]
+  (#{:dissolve :slide :push} (-> interaction :animation :animation-type)))
+
+(defn set-duration
+  [interaction duration]
+  (us/verify ::interaction interaction)
+  (us/verify ::duration duration)
+  (assert (has-duration? interaction))
+  (update interaction :animation assoc :duration duration))
+
+(defn has-easing?
+  [interaction]
+  (#{:dissolve :slide :push} (-> interaction :animation :animation-type)))
+
+(defn set-easing
+  [interaction easing]
+  (us/verify ::interaction interaction)
+  (us/verify ::easing easing)
+  (assert (has-easing? interaction))
+  (update interaction :animation assoc :easing easing))
+
+(defn has-way?
+  [interaction]
+  ; Way is ignored in slide animations of overlay actions
+  (and (= (:action-type interaction) :navigate)
+       (= (-> interaction :animation :animation-type) :slide)))
+
+(defn set-way
+  [interaction way]
+  (us/verify ::interaction interaction)
+  (us/verify ::way way)
+  (assert (has-way? interaction))
+  (update interaction :animation assoc :way way))
+
+(defn has-direction?
+  [interaction]
+  (#{:slide :push} (-> interaction :animation :animation-type)))
+
+(defn set-direction
+  [interaction direction]
+  (us/verify ::interaction interaction)
+  (us/verify ::direction direction)
+  (assert (has-direction? interaction))
+  (update interaction :animation assoc :direction direction))
+
+(defn invert-direction
+  [animation]
+  (us/verify (s/nilable ::animation) animation)
+  (case (:direction animation)
+    :right
+    (assoc animation :direction :left)
+    :left
+    (assoc animation :direction :right)
+    :up
+    (assoc animation :direction :down)
+    :down
+    (assoc animation :direction :up)
+    animation))
+
+(defn has-offset-effect?
+  [interaction]
+  ; Offset-effect is ignored in slide animations of overlay actions
+  (and (= (:action-type interaction) :navigate)
+       (= (-> interaction :animation :animation-type) :slide)))
+
+(defn set-offset-effect
+  [interaction offset-effect]
+  (us/verify ::interaction interaction)
+  (us/verify ::offset-effect offset-effect)
+  (assert (has-offset-effect? interaction))
+  (update interaction :animation assoc :offset-effect offset-effect))
 
 ;; -- Helpers for interactions
 

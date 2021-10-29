@@ -425,3 +425,10 @@
   []
   (.back (.-history js/window)))
 
+(defn animate!
+  ([item keyframes duration] (animate! item keyframes duration nil))
+  ([item keyframes duration onfinish]
+    (let [animation (.animate item keyframes duration)]
+      (when onfinish
+        (set! (.-onfinish animation) onfinish)))))
+
