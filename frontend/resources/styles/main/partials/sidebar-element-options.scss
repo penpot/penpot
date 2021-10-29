@@ -207,6 +207,9 @@
       border-color: $color-gray-40;
     }
 
+    &.error {
+      border-color: $color-danger;
+    }
   }
 
   .input-select {

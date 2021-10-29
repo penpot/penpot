@@ -199,8 +199,20 @@
 
         change-url
         (fn [event]
-          (let [value (-> event dom/get-target dom/get-value)]
-            (update-interaction index #(cti/set-url % value))))
+          (let [target      (dom/get-target event)
+                value       (dom/get-value target)
+                has-prefix? (or (str/starts-with? value "http://")
+                                (str/starts-with? value "https://"))
+                value       (if has-prefix?
+                              value
+                              (str "http://" value))]
+            (when-not has-prefix?
+              (dom/set-value! target value))
+            (if (dom/valid? target)
+              (do
+                (dom/remove-class! target "error")
+                (update-interaction index #(cti/set-url % value)))
+              (dom/add-class! target "error"))))
 
         change-overlay-pos-type
         (fn [event]
@@ -287,7 +299,9 @@
          (when (cti/has-url interaction)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-url")]
-            [:input.input-text {:default-value (str (:url interaction))
+            [:input.input-text {:type "url"
+                                :placeholder "http://example.com"
+                                :default-value (str (:url interaction))
                                 :on-blur change-url}]])
 
          (when (cti/has-overlay-opts interaction)
