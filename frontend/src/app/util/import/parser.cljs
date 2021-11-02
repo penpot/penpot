@@ -763,7 +763,8 @@
                      (assoc :delay (get-meta node :delay d/parse-double))
 
                      (cti/has-destination interaction)
-                     (assoc :destination (get-meta node :destination uuid/uuid))
+                     (assoc :destination     (get-meta node :destination uuid/uuid)
+                            :preserve-scroll (get-meta node :preserve-scroll str->bool))
 
                      (cti/has-url interaction)
                      (assoc :url (get-meta node :url str))

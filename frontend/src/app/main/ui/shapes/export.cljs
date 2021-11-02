@@ -242,7 +242,8 @@
              :penpot:overlay-position-y ((d/nilf get-in) interaction [:overlay-position :y])
              :penpot:url (:url interaction)
              :penpot:close-click-outside ((d/nilf str) (:close-click-outside interaction))
-             :penpot:background-overlay ((d/nilf str) (:background-overlay interaction))}])]))
+             :penpot:background-overlay ((d/nilf str) (:background-overlay interaction))
+             :penpot:preserve-scroll ((d/nilf str) (:preserve-scroll interaction))}])]))
 
 (mf/defc export-data
   [{:keys [shape]}]

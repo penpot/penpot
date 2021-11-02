@@ -2465,6 +2465,10 @@ msgid "workspace.options.interaction-position"
 msgstr "Posición"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "Conservar posición de desplazamiento"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-prev-screen"
 msgstr "Pantalla anterior"
 

@@ -64,11 +64,13 @@
 (s/def ::url ::us/string)
 (s/def ::close-click-outside ::us/boolean)
 (s/def ::background-overlay ::us/boolean)
+(s/def ::preserve-scroll ::us/boolean)
 
 (defmulti action-opts-spec :action-type)
 
 (defmethod action-opts-spec :navigate [_]
-  (s/keys :req-un [::destination]))
+  (s/keys :req-un [::destination]
+          :opt-un [::preserve-scroll]))
 
 (defmethod action-opts-spec :open-overlay [_]
   (s/keys :req-un [::destination
@@ -151,7 +153,8 @@
       :navigate
       (assoc interaction
              :action-type action-type
-             :destination (get interaction :destination))
+             :destination (get interaction :destination)
+             :preserve-scroll false)
 
       (:open-overlay :toggle-overlay)
       (let [overlay-pos-type (get interaction :overlay-pos-type :center)
@@ -196,6 +199,10 @@
   (and (has-destination interaction)
        (some? (:destination interaction))))
 
+(defn has-preserve-scroll
+  [interaction]
+  (= (:action-type interaction) :navigate))
+
 (defn set-destination
   [interaction destination]
   (us/verify ::interaction interaction)
@@ -209,6 +216,13 @@
         (= (:action-type interaction) :toggle-overlay))
     (assoc :overlay-pos-type :center
            :overlay-position (gpt/point 0 0))))
+
+(defn set-preserve-scroll
+  [interaction preserve-scroll]
+  (us/verify ::interaction interaction)
+  (us/verify ::us/boolean preserve-scroll)
+  (assert (has-preserve-scroll interaction))
+  (assoc interaction :preserve-scroll preserve-scroll))
 
 (defn has-url
   [interaction]

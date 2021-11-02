@@ -44,7 +44,12 @@
   (case (:action-type interaction)
     :navigate
     (when-let [frame-id (:destination interaction)]
-      (st/emit! (dv/go-to-frame frame-id)))
+      (let [viewer-section (dom/get-element "viewer-section")
+            scroll (if (:preserve-scroll interaction)
+                     (dom/get-scroll-pos viewer-section)
+                     0)]
+        (st/emit! (dv/set-nav-scroll scroll)
+                  (dv/go-to-frame frame-id))))
 
     :open-overlay
     (let [dest-frame-id       (:destination interaction)
