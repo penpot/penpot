@@ -28,17 +28,6 @@
   [e]
   (.-target e))
 
-(defn classnames
-  [& params]
-  (assert (even? (count params)))
-  (str/join " " (reduce (fn [acc [k v]]
-                          (if (true? (boolean v))
-                            (conj acc (name k))
-                            acc))
-                        []
-                        (partition 2 params))))
-
-
 ;; --- New methods
 
 (defn set-html-title
@@ -294,9 +283,27 @@
 (defn get-root []
   (query globals/document "#app"))
 
+(defn classnames
+  [& params]
+  (assert (even? (count params)))
+  (str/join " " (reduce (fn [acc [k v]]
+                          (if (true? (boolean v))
+                            (conj acc (name k))
+                            acc))
+                        []
+                        (partition 2 params))))
+
 (defn ^boolean class? [node class-name]
   (let [class-list (.-classList ^js node)]
     (.contains ^js class-list class-name)))
+
+(defn add-class! [node class-name]
+  (let [class-list (.-classList ^js node)]
+    (.add ^js class-list class-name)))
+
+(defn remove-class! [node class-name]
+  (let [class-list (.-classList ^js node)]
+    (.remove ^js class-list class-name)))
 
 (defn child? [node1 node2]
   (.contains ^js node2 ^js node1))
