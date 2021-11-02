@@ -16,6 +16,7 @@
    [app.main.exports :as exports]
    [app.main.repo :as repo]
    [app.main.store :as st]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.filters :as filters]
@@ -124,14 +125,15 @@
      ;; Auxiliary SVG for rendering text-shapes
      (when render-texts?
        (for [object text-shapes]
-         [:svg {:id (str "screenshot-text-" (:id object))
-                :view-box (str "0 0 " (:width object) " " (:height object))
-                :width (:width object)
-                :height (:height object)
-                :version "1.1"
-                :xmlns "http://www.w3.org/2000/svg"
-                :xmlnsXlink "http://www.w3.org/1999/xlink"}
-          [:& shape-wrapper {:shape (-> object (assoc :x 0 :y 0))}]]))]))
+         [:& (mf/provider muc/text-plain-colors-ctx) {:value true}
+          [:svg {:id (str "screenshot-text-" (:id object))
+                 :view-box (str "0 0 " (:width object) " " (:height object))
+                 :width (:width object)
+                 :height (:height object)
+                 :version "1.1"
+                 :xmlns "http://www.w3.org/2000/svg"
+                 :xmlnsXlink "http://www.w3.org/1999/xlink"}
+           [:& shape-wrapper {:shape (-> object (assoc :x 0 :y 0))}]]]))]))
 
 (defn- adapt-root-frame
   [objects object-id]

@@ -10,23 +10,9 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
+   [app.main.ui.shapes.export :as ed]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
-
-(mf/defc linear-gradient [{:keys [id gradient shape]}]
-  (let [transform (when (= :path (:type shape)) (gsh/transform-matrix shape nil (gpt/point 0.5 0.5)))]
-    [:> :linearGradient #js {:id id
-                             :x1 (:start-x gradient)
-                             :y1 (:start-y gradient)
-                             :x2 (:end-x gradient)
-                             :y2 (:end-y gradient)
-                             :gradientTransform transform
-                             :penpot:gradient "true"}
-     (for [{:keys [offset color opacity]} (:stops gradient)]
-       [:stop {:key (str id "-stop-" offset)
-               :offset (or offset 0)
-               :stop-color color
-               :stop-opacity opacity}])]))
 
 (defn add-metadata [props gradient]
   (-> props
@@ -37,6 +23,30 @@
       (obj/set! "penpot:end-x"   (:end-x gradient))
       (obj/set! "penpot:end-y"   (:end-y gradient))
       (obj/set! "penpot:width"   (:width gradient))))
+
+(mf/defc linear-gradient [{:keys [id gradient shape]}]
+  (let [transform (when (= :path (:type shape)) (gsh/transform-matrix shape nil (gpt/point 0.5 0.5)))
+        base-props #js {:id id
+                        :x1 (:start-x gradient)
+                        :y1 (:start-y gradient)
+                        :x2 (:end-x gradient)
+                        :y2 (:end-y gradient)
+                        :gradientTransform transform}
+
+        include-metadata? (mf/use-ctx ed/include-metadata-ctx)
+
+        props (cond-> base-props
+          include-metadata?
+          (add-metadata gradient))]
+
+    [:> :linearGradient props
+     (for [{:keys [offset color opacity]} (:stops gradient)]
+       [:stop {:key (str id "-stop-" offset)
+               :offset (or offset 0)
+               :stop-color color
+               :stop-opacity opacity}])]))
+
+
 
 (mf/defc radial-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} (:selrect shape)
@@ -73,7 +83,11 @@
                         :gradientUnits "userSpaceOnUse"
                         :gradientTransform transform}
 
-        props (-> base-props (add-metadata gradient))]
+        include-metadata? (mf/use-ctx ed/include-metadata-ctx)
+
+        props (cond-> base-props
+                include-metadata?
+                (add-metadata gradient))]
     [:> :radialGradient props
      (for [{:keys [offset color opacity]} (:stops gradient)]
        [:stop {:key (str id "-stop-" offset)
