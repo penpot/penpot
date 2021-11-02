@@ -8,9 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
+   [app.util.color :as uc]
    [app.util.object :as obj]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (mf/defc render-text
@@ -73,12 +76,111 @@
                              (obj/set! "key" index))]
                [:> render-node props]))])))))
 
+(defn- next-color
+  "Given a set of colors try to get a color not yet used"
+  [colors]
+  (assert (set? colors))
+  (loop [current-rgb [0 0 0]]
+    (let [current-hex (uc/rgb->hex current-rgb)]
+      (if (contains? colors current-hex)
+        (recur (uc/next-rgb current-rgb))
+        current-hex))))
+
+(defn- remap-colors
+  "Returns a new content replacing the original colors by their mapped 'simple color'"
+  [content color-mapping]
+
+  (cond-> content
+    (and (:fill-opacity content) (< (:fill-opacity content) 1.0))
+    (-> (assoc :fill-color (get color-mapping [(:fill-color content) (:fill-opacity content)]))
+        (assoc :fill-opacity 1.0))
+
+    (some? (:fill-color-gradient content))
+    (-> (assoc :fill-color (get color-mapping (:fill-color-gradient content)))
+        (assoc :fill-opacity 1.0)
+        (dissoc :fill-color-gradient))
+
+    (contains? content :children)
+    (update :children #(mapv (fn [node] (remap-colors node color-mapping)) %))))
+
+(defn- fill->color
+  "Given a content node returns the information about that node fill color"
+  [{:keys [fill-color fill-opacity fill-color-gradient]}]
+
+  (cond
+    (some? fill-color-gradient)
+    {:type :gradient
+     :gradient fill-color-gradient}
+
+    (and (string? fill-color) (some? fill-opacity) (not= fill-opacity 1))
+    {:type :transparent
+     :hex fill-color
+     :opacity fill-opacity}
+
+    (string? fill-color)
+    {:type :solid
+     :hex fill-color
+     :map-to fill-color}))
+
 (defn- retrieve-colors
+  "Given a text shape returns a triple with the values:
+    - colors used as fills
+    - a mapping from simple solid colors to complex ones (transparents/gradients)
+    - the inverse of the previous mapping (to restore the value in the SVG)"
   [shape]
-  (let [colors (->> (:content shape)
-                    (tree-seq map? :children)
-                    (into #{"#000000"} (comp (map :fill-color) (filter string?))))]
-    (apply str (interpose "," colors))))
+  (let [color-data
+        (->> (:content shape)
+             (tree-seq map? :children)
+             (map fill->color)
+             (filter some?))
+
+        colors (->> color-data
+                    (into #{"#000000"}
+                          (comp (filter #(= :solid (:type %)))
+                                (map :hex))))
+
+        [colors color-data]
+        (loop [colors colors
+               head (first color-data)
+               tail (rest color-data)
+               result []]
+
+          (if (nil? head)
+            [colors result]
+
+            (if (= :solid (:type head))
+              (recur colors
+                     (first tail)
+                     (rest tail)
+                     (conj result head))
+
+              (let [next-color (next-color colors)
+                    head (assoc head :map-to next-color)
+                    colors (conj colors next-color)]
+                (recur colors
+                       (first tail)
+                       (rest tail)
+                       (conj result head))))))
+
+        color-mapping-inverse
+        (->> color-data
+             (remove #(= :solid (:type %)))
+             (group-by :map-to)
+             (d/mapm #(first %2)))
+
+        color-mapping
+        (merge
+         (->> color-data
+              (filter #(= :transparent (:type %)))
+              (map #(vector [(:hex %) (:opacity %)] (:map-to %)))
+              (into {}))
+
+         (->> color-data
+              (filter #(= :gradient (:type %)))
+              (map #(vector (:gradient %) (:map-to %)))
+              (into {})))]
+
+    [colors color-mapping color-mapping-inverse]))
 
 (mf/defc text-shape
   {::mf/wrap-props false
@@ -88,11 +190,19 @@
         grow-type (obj/get props "grow-type") ;; This is only needed in workspace
         ;; We add 8px to add a padding for the exporter
         ;; width (+ width 8)
-        ]
+        [colors color-mapping color-mapping-inverse] (retrieve-colors shape)
+
+        plain-colors? (mf/use-ctx muc/text-plain-colors-ctx)
+
+        content (cond-> content
+                  plain-colors?
+                  (remap-colors color-mapping))]
+
     [:foreignObject {:x x
                      :y y
                      :id id
-                     :data-colors (retrieve-colors shape)
+                     :data-colors (->> colors (str/join ","))
+                     :data-mapping (-> color-mapping-inverse (clj->js) (js/JSON.stringify))
                      :transform (geom/transform-matrix shape)
                      :width  (if (#{:auto-width} grow-type) 100000 width)
                      :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
