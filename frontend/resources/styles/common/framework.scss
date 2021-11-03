@@ -396,6 +396,11 @@ ul.slider-dots {
     text-align: right;
     top: 26%;
     width: 18px;
+
+    pointer-events: none;
+    max-width: 4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .after {

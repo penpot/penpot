@@ -24,6 +24,7 @@
         max-val-str (obj/get props "max")
         wrap-value? (obj/get props "data-wrap")
         on-change   (obj/get props "onChange")
+        title       (obj/get props "title")
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -144,6 +145,7 @@
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
                   (obj/set! "defaultValue" value-str)
+                  (obj/set! "title" title)
                   (obj/set! "onWheel" handle-mouse-wheel)
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur))]

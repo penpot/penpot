@@ -3204,3 +3204,31 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "workspace.options.grid.params.color"
+msgstr "Color"
+
+msgid "workspace.options.height"
+msgstr "Height"
+
+msgid "workspace.options.opacity"
+msgstr "Opacity"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Shadow color"
+
+msgid "workspace.options.stroke-color"
+msgstr "Stroke color"
+
+msgid "workspace.options.stroke-width"
+msgstr "Stroke width"
+
+msgid "workspace.options.width"
+msgstr "Width"
+
+msgid "workspace.options.x"
+msgstr "X"
+
+msgid "workspace.options.y"
+msgstr "Y"
+

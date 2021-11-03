@@ -165,7 +165,7 @@
        (when (options :size)
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.size")]
-          [:div.input-element.width
+          [:div.input-element.width {:title (tr "workspace.options.width")}
            [:> numeric-input {:min 1
                               :no-validate true
                               :placeholder "--"
@@ -173,7 +173,7 @@
                               :on-change on-width-change
                               :value (attr->string :width values)}]]
 
-          [:div.input-element.height
+          [:div.input-element.height {:title (tr "workspace.options.height")}
            [:> numeric-input {:min 1
                               :no-validate true
                               :placeholder "--"
@@ -193,13 +193,13 @@
        (when (options :position)
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.position")]
-          [:div.input-element.Xaxis
+          [:div.input-element.Xaxis {:title (tr "workspace.options.x")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-pos-x-change
                               :value (attr->string :x values)}]]
-          [:div.input-element.Yaxis
+          [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
                               :on-click select-all
@@ -210,7 +210,7 @@
        (when (options :rotation)
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.rotation")]
-          [:div.input-element.degrees
+          [:div.input-element.degrees {:title (tr "workspace.options.rotation")}
            [:> numeric-input
             {:no-validate true
              :min 0
@@ -247,9 +247,8 @@
             i/radius-4]]
 
           (cond
-
             (= radius-mode :radius-1)
-            [:div.input-element.mini
+            [:div.input-element.mini {:title (tr "workspace.options.radius")}
              [:> numeric-input
               {:placeholder "--"
                :ref radius-input-ref
@@ -259,7 +258,7 @@
                :value (attr->string :rx values)}]]
 
             @radius-multi?
-            [:div.input-element.mini
+            [:div.input-element.mini {:title (tr "workspace.options.radius")}
              [:input.input-text
               {:type "number"
                :placeholder "--"
@@ -269,28 +268,31 @@
 
             (= radius-mode :radius-4)
             [:*
-             [:div.input-element.mini
+             [:div.input-element.mini {:title (tr "workspace.options.radius")}
               [:> numeric-input
                {:placeholder "--"
                 :min 0
                 :on-click select-all
                 :on-change on-radius-r1-change
                 :value (attr->string :r1 values)}]]
-             [:div.input-element.mini
+
+             [:div.input-element.mini {:title (tr "workspace.options.radius")}
               [:> numeric-input
                {:placeholder "--"
                 :min 0
                 :on-click select-all
                 :on-change on-radius-r2-change
                 :value (attr->string :r2 values)}]]
-             [:div.input-element.mini
+
+             [:div.input-element.mini {:title (tr "workspace.options.radius")}
               [:> numeric-input
                {:placeholder "--"
                 :min 0
                 :on-click select-all
                 :on-change on-radius-r3-change
                 :value (attr->string :r3 values)}]]
-             [:div.input-element.mini
+
+             [:div.input-element.mini {:title (tr "workspace.options.radius")}
               [:> numeric-input
                {:placeholder "--"
                 :min 0

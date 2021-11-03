@@ -79,6 +79,7 @@
 
        [:div.element-set-content
         [:& color-row {:color color
+                       :title (tr "workspace.options.fill")
                        :on-change on-change
                        :on-detach on-detach}]]]
 

@@ -198,13 +198,15 @@
        [:div.element-set-content
         ;; Stroke Color
         [:& color-row {:color current-stroke-color
+                       :title (tr "workspace.options.stroke-color")
                        :on-change handle-change-stroke-color
                        :on-detach handle-detach}]
 
         ;; Stroke Width, Alignment & Style
         [:div.row-flex
          [:div.input-element
-          {:class (dom/classnames :pixels (not= (:stroke-width values) :multiple))}
+          {:class (dom/classnames :pixels (not= (:stroke-width values) :multiple))
+           :title (tr "workspace.options.stroke-width")}
           [:input.input-text {:type "number"
                               :min "0"
                               :value (-> (:stroke-width values) width->string)

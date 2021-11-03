@@ -146,7 +146,7 @@
         [:option {:value ":inner-shadow"} (tr "workspace.options.shadow-options.inner-shadow")]]]
 
       [:div.row-grid-2
-       [:div.input-element
+       [:div.input-element {:title (tr "workspace.options.shadow-options.offsetx")}
         [:> numeric-input {:ref adv-offset-x-ref
                            :no-validate true
                            :placeholder "--"
@@ -155,7 +155,7 @@
                            :value (:offset-x value)}]
         [:span.after (tr "workspace.options.shadow-options.offsetx")]]
 
-       [:div.input-element
+       [:div.input-element {:title (tr "workspace.options.shadow-options.offsety")}
         [:> numeric-input {:ref adv-offset-y-ref
                            :no-validate true
                            :placeholder "--"
@@ -165,7 +165,7 @@
         [:span.after (tr "workspace.options.shadow-options.offsety")]]]
 
       [:div.row-grid-2
-       [:div.input-element
+       [:div.input-element {:title (tr "workspace.options.shadow-options.blur")}
         [:> numeric-input {:ref adv-blur-ref
                            :no-validate true
                            :placeholder "--"
@@ -175,7 +175,7 @@
                            :value (:blur value)}]
         [:span.after (tr "workspace.options.shadow-options.blur")]]
 
-       [:div.input-element
+       [:div.input-element {:title (tr "workspace.options.shadow-options.spread")}
         [:> numeric-input {:ref adv-spread-ref
                            :no-validate true
                            :placeholder "--"
@@ -190,6 +190,7 @@
                                ;; Support for old format colors
                                {:color (:color value) :opacity (:opacity value)}
                                (:color value))
+                      :title (tr "workspace.options.shadow-options.color")
                       :disable-gradient true
                       :on-change (update-color index)
                       :on-detach (detach-color index)

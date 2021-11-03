@@ -270,11 +270,12 @@
          (when (cti/has-delay interaction)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-delay")]
-            [:div.input-element
+            [:div.input-element {:title (tr "workspace.options.interaction-ms")}
              [:> numeric-input {:ref ext-delay-ref
                                 :on-click (select-text ext-delay-ref)
                                 :on-change change-delay
-                                :value (:delay interaction)}]
+                                :value (:delay interaction)
+                                :title (tr "workspace.options.interaction-ms")}]
              [:span.after (tr "workspace.options.interaction-ms")]]])
 
          ; Action select

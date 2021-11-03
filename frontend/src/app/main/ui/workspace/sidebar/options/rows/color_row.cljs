@@ -61,7 +61,7 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [color disable-gradient disable-opacity on-change on-detach on-open on-close]}]
+  [{:keys [color disable-gradient disable-opacity on-change on-detach on-open on-close title]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         file-colors     (mf/deref refs/workspace-file-colors)
         shared-libs     (mf/deref refs/workspace-libraries)
@@ -123,7 +123,7 @@
        (when (not= prev-color color)
          (modal/update-props! :colorpicker {:data (parse-color color)}))))
 
-    [:div.row-flex.color-data
+    [:div.row-flex.color-data {:title title}
      [:& cb/color-bullet {:color color
                           :on-click handle-click-color}]
 
