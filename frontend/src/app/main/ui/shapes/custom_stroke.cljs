@@ -69,6 +69,7 @@
 
         stroke-opacity (when-not (:stroke-color-gradient shape)
                          (:stroke-opacity shape))]
+
     [:*
       (when (or (= cap-start :line-arrow) (= cap-end :line-arrow))
         [:marker {:id (str marker-id-prefix "-line-arrow")
@@ -160,8 +161,8 @@
 
 (mf/defc stroke-defs
   [{:keys [shape render-id]}]
-  (when (or (not= (:type shape) :path)
-            (not (gsh/open-path? shape)))
+  (when (and (= (:type shape) :path)
+             (gsh/open-path? shape))
     (cond
       (and (= :inner (:stroke-alignment shape :center))
            (> (:stroke-width shape 0) 0))
