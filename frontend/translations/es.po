@@ -3201,3 +3201,30 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "workspace.options.grid.params.color"
+msgstr "Color"
+
+msgid "workspace.options.height"
+msgstr "Altura"
+
+msgid "workspace.options.opacity"
+msgstr "Opacidad"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Color de sombra"
+
+msgid "workspace.options.stroke-color"
+msgstr "Color del trazo"
+
+msgid "workspace.options.stroke-width"
+msgstr "Ancho del trazo"
+
+msgid "workspace.options.width"
+msgstr "Ancho"
+
+msgid "workspace.options.x"
+msgstr "X"
+
+msgid "workspace.options.y"
+msgstr "Y"

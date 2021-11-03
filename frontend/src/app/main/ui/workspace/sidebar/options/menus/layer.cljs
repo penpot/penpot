@@ -112,8 +112,7 @@
         [:option {:value "color"} (tr "workspace.options.layer-options.blend-mode.color")]
         [:option {:value "luminosity"} (tr "workspace.options.layer-options.blend-mode.luminosity")]]
 
-       [:div.input-element
-        {:class "percentail"}
+       [:div.input-element {:title (tr "workspace.options.opacity") :class "percentail"}
         [:> numeric-input {:value (-> values :opacity opacity->string)
                            :placeholder (tr "settings.multiple")
                            :on-click select-all
