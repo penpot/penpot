@@ -104,11 +104,11 @@
          (when (and (:onboarding-viewed props)
                     (not= version (:main @cf/version))
                     (not= "0.0" (:main @cf/version)))
-           (tm/schedule 1000 #(st/emit! (modal/show {:type :release-notes :version (:main @cf/version)})))))))
+           (tm/schedule 1000 #(st/emit! (modal/show {:type :release-notes
+                                                     :version (:main @cf/version)})))))))
 
     [:& (mf/provider ctx/current-team-id) {:value team-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}
-
       ;; NOTE: dashboard events and other related functions assumes
       ;; that the team is a implicit context variable that is
       ;; available using react context or accessing

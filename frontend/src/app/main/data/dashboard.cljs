@@ -300,6 +300,28 @@
              (rx/map team-created)
              (rx/catch on-error))))))
 
+;; --- EVENT: create-team-with-invitations
+
+;; NOTE: right now, it only handles a single email, in a near future
+;; this will be changed to the ability to specify multiple emails.
+
+(defn create-team-with-invitations
+  [{:keys [name email role] :as params}]
+  (us/assert string? name)
+  (ptk/reify ::create-team-with-invitations
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)
+            params {:name name
+                    :emails #{email}
+                    :role role}]
+        (->> (rp/mutation! :create-team-and-invite-members params)
+             (rx/tap on-success)
+             (rx/map team-created)
+             (rx/catch on-error))))))
+
 ;; --- EVENT: update-team
 
 (defn update-team

@@ -169,7 +169,7 @@
                   (rx/tap #(do (swap! current inc)
                                (progress! context
                                           :upload-data @current total))))))
-          
+
           (rx/map first)
           (rx/tap #(reset! revn (:revn %)))
           (rx/ignore))

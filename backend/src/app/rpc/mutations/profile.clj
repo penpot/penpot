@@ -16,7 +16,6 @@
    [app.loggers.audit :as audit]
    [app.media :as media]
    [app.metrics :as mtx]
-   [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.setup.initial-data :as sid]
@@ -256,28 +255,15 @@
                       :code :email-already-exists
                       :cause e)))))))
 
-
 (defn create-profile-relations
   [conn profile]
-  (let [team    (teams/create-team conn {:profile-id (:id profile)
-                                         :name "Default"
-                                         :is-default true})
-        project (projects/create-project conn {:profile-id (:id profile)
-                                               :team-id (:id team)
-                                               :name "Drafts"
-                                               :is-default true})
-        params  {:team-id (:id team)
-                 :profile-id (:id profile)
-                 :project-id (:id project)
-                 :role :owner}]
-
-    (teams/create-team-role conn params)
-    (projects/create-project-role conn params)
-
+  (let [team (teams/create-team conn {:profile-id (:id profile)
+                                      :name "Default"
+                                      :is-default true})]
     (-> profile
         (profile/strip-private-attrs)
         (assoc :default-team-id (:id team))
-        (assoc :default-project-id (:id project)))))
+        (assoc :default-project-id (:default-project-id team)))))
 
 ;; --- MUTATION: Login
 

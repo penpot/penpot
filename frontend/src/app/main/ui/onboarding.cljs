@@ -12,8 +12,10 @@
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.icons :as i]
    [app.main.ui.releases.common :as rc]
    [app.main.ui.releases.v1-4]
    [app.main.ui.releases.v1-5]
@@ -21,10 +23,13 @@
    [app.main.ui.releases.v1-7]
    [app.main.ui.releases.v1-8]
    [app.main.ui.releases.v1-9]
+   [app.util.dom :as dom]
+   [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.timers :as tm]
+   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
@@ -159,7 +164,7 @@
         skip
         (mf/use-callback
          (st/emitf (modal/hide)
-                   (modal/show {:type :onboarding-team})
+                   (modal/show {:type :onboarding-choice})
                    (du/mark-onboarding-as-viewed)))]
 
     (mf/use-layout-effect
@@ -187,56 +192,231 @@
 (s/def ::team-form
   (s/keys :req-un [::name]))
 
+(mf/defc onboarding-choice-modal
+  {::mf/register modal/components
+   ::mf/register-as :onboarding-choice}
+  []
+  (let [;; When user choices the option of `fly solo`, we proceed to show
+        ;; the onboarding templates modal.
+        on-fly-solo
+        (fn []
+          (tm/schedule 400  #(st/emit! (modal/show {:type :onboarding-templates}))))
+
+        ;; When user choices the option of `team up`, we proceed to show
+        ;; the team creation modal.
+        on-team-up
+        (fn []
+          (st/emit! (modal/show {:type :onboarding-team})))
+        ]
+
+    [:div.modal-overlay
+     [:div.modal-container.onboarding.final.animated.fadeInUp
+      [:div.modal-top
+       [:h1 (tr "onboarding.welcome.title")]
+       [:p (tr "onboarding.welcome.desc3")]]
+      [:div.modal-columns
+       [:div.modal-left
+        [:div.content-button {:on-click on-fly-solo}
+         [:h2 (tr "onboarding.choice.fly-solo")]
+         [:p (tr "onboarding.choice.fly-solo-desc")]]]
+       [:div.modal-right
+        [:div.content-button {:on-click on-team-up}
+         [:h2 (tr "onboarding.choice.team-up")]
+         [:p (tr "onboarding.choice.team-up-desc")]]]]
+      [:img.deco {:src "images/deco-left.png" :border "0"}]
+      [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]))
+
 (mf/defc onboarding-team-modal
   {::mf/register modal/components
    ::mf/register-as :onboarding-team}
   []
-  (let [close (mf/use-fn (st/emitf (modal/hide)))
-        form  (fm/use-form :spec ::team-form
+  (let [form  (fm/use-form :spec ::team-form
                            :initial {})
+        on-submit
+        (mf/use-callback
+         (fn [form _]
+           (let [tname (get-in @form [:clean-data :name])]
+             (st/emit! (modal/show {:type :onboarding-team-invitations :name tname})))))]
+
+    [:div.modal-overlay
+     [:div.modal-container.onboarding-team
+      [:div.title
+       [:h2 (tr "onboarding.choice.team-up")]
+       [:p (tr "onboarding.choice.team-up-desc")]]
+
+      [:& fm/form {:form form
+                   :on-submit on-submit}
+
+       [:div.team-row
+        [:& fm/input {:type "text"
+                      :name :name
+                      :label (tr "onboarding.team-input-placeholder")}]]
+
+       [:div.buttons
+        [:button.btn-secondary.btn-large
+         {:on-click #(st/emit! (modal/show {:type :onboarding-choice}))}
+         (tr "labels.cancel")]
+        [:& fm/submit-button
+         {:label (tr "labels.next")}]]]
+
+      [:img.deco {:src "images/deco-left.png" :border "0"}]
+      [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]))
+
+(defn get-available-roles
+  []
+  [{:value "editor" :label (tr "labels.editor")}
+   {:value "admin" :label (tr "labels.admin")}])
+
+(s/def ::email ::us/email)
+(s/def ::role  ::us/keyword)
+(s/def ::invite-form
+  (s/keys :req-un [::role ::email]))
+
+;; This is the final step of team creation, consists in provide a
+;; shortcut for invite users.
+
+(mf/defc onboarding-team-invitations-modal
+  {::mf/register modal/components
+   ::mf/register-as :onboarding-team-invitations}
+  [{:keys [name] :as props}]
+  (let [initial (mf/use-memo (constantly
+                              {:role "editor"
+                               :name name}))
+        form    (fm/use-form :spec ::invite-form
+                             :initial initial)
+
+        roles   (mf/use-memo #(get-available-roles))
+
         on-success
         (mf/use-callback
          (fn [_form response]
-           (st/emit! (modal/hide)
-                     (rt/nav :dashboard-projects {:team-id (:id response)}))))
+           (let [project-id (:default-project-id response)
+                 team-id    (:id response)]
+             (st/emit!
+              (modal/hide)
+              (rt/nav :dashboard-projects {:team-id team-id}))
+             (tm/schedule 400 #(st/emit!
+                                (modal/show {:type :onboarding-templates
+                                             :project-id project-id}))))))
 
         on-error
         (mf/use-callback
          (fn [_form _response]
            (st/emit! (dm/error "Error on creating team."))))
 
-        on-submit
+        ;; The SKIP branch only creates the team, without invitations
+        on-skip
         (mf/use-callback
-         (fn [form _event]
+         (fn [_]
            (let [mdata  {:on-success (partial on-success form)
                          :on-error   (partial on-error form)}
-                 params {:name (get-in @form [:clean-data :name])}]
-             (st/emit! (dd/create-team (with-meta params mdata))))))]
+                 params {:name name}]
+             (st/emit! (dd/create-team (with-meta params mdata))))))
+
+        ;; The SUBMIT branch creates the team with the invitations
+        on-submit
+        (mf/use-callback
+         (fn [form _]
+           (let [mdata  {:on-success (partial on-success form)
+                         :on-error   (partial on-error form)}
+                 params (:clean-data @form)]
+             (st/emit! (dd/create-team-with-invitations (with-meta params mdata))))))]
 
     [:div.modal-overlay
-     [:div.modal-container.onboarding.final.animated.fadeInUp
-      [:div.modal-left
-       [:img {:src "images/onboarding-team.jpg" :border "0" :alt (tr "onboarding.team.create.title")}]
-       [:h2 (tr "onboarding.team.create.title")]
-       [:p (tr "onboarding.team.create.desc1")]
+     [:div.modal-container.onboarding-team
+      [:div.title
+       [:h2 (tr "onboarding.choice.team-up")]
+       [:p (tr "onboarding.choice.team-up-desc")]]
 
-       [:& fm/form {:form form
-                    :on-submit on-submit}
-        [:& fm/input {:type "text"
-                   :name :name
-                   :label (tr "onboarding.team.create.input-placeholder")}]
+      [:& fm/form {:form form
+                   :on-submit on-submit}
+
+      [:div.invite-row
+       [:& fm/input {:name :email
+                     :label (tr "labels.email")}]
+       [:& fm/select {:name :role
+                      :options roles}]]
+
+       [:div.buttons
+        [:button.btn-secondary.btn-large
+         {:on-click #(st/emit! (modal/show {:type :onboarding-choice}))}
+         (tr "labels.cancel")]
         [:& fm/submit-button
-         {:label (tr "onboarding.team.create.button")}]]]
-
-      [:div.modal-right
-       [:img {:src "images/onboarding-start.jpg" :border "0" :alt (tr "onboarding.team.start.title")}]
-       [:h2 (tr "onboarding.team.start.title")]
-       [:p (tr "onboarding.team.start.desc1")]
-       [:button.btn-primary.btn-large {:on-click close} (tr "onboarding.team.start.button")]]
-
-
+         {:label (tr "labels.create")}]]
+       [:div.skip-action
+        {:on-click on-skip}
+        [:div.action "Skip and invite later"]]]
       [:img.deco {:src "images/deco-left.png" :border "0"}]
       [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]))
+
+(mf/defc template-item
+  [{:keys [name path image project-id]}]
+  (let [downloading? (mf/use-state false)
+        link         (str (assoc cf/public-uri :path path))
+
+        on-finish-import
+        (fn []
+          (st/emit! (dd/fetch-recent-files)))
+
+        open-import-modal
+        (fn [file]
+          (st/emit! (modal/show
+                     {:type :import
+                      :project-id project-id
+                      :files [file]
+                      :on-finish-import on-finish-import})))
+        on-click
+        (fn []
+          (reset! downloading? true)
+          (->> (http/send! {:method :get :uri link :response-type :blob :mode :no-cors})
+               (rx/subs (fn [{:keys [body] :as response}]
+                          (open-import-modal {:name name :uri (dom/create-uri body)}))
+                        (fn [error]
+                          (js/console.log "error" error))
+                        (fn []
+                          (reset! downloading? false)))))
+        ]
+
+    [:div.template-item
+     [:div.template-item-content
+      [:img {:src image}]]
+     [:div.template-item-title
+      [:div.label name]
+      (if @downloading?
+        [:div.action "Fetching..."]
+        [:div.action {:on-click on-click} "+ Add to drafts"])]]))
+
+(mf/defc onboarding-templates-modal
+  {::mf/wrap-props false
+   ::mf/register modal/components
+   ::mf/register-as :onboarding-templates}
+  ;; NOTE: the project usually comes empty, it only comes fullfilled
+  ;; when a user creates a new team just after signup.
+  [{:keys [project-id] :as props}]
+  (let [close-fn   (mf/use-callback #(st/emit! (modal/hide)))
+        profile    (mf/deref refs/profile)
+        project-id (or project-id (:default-project-id profile))]
+    [:div.modal-overlay
+     [:div.modal-container.onboarding-templates
+      [:div.modal-header
+       [:div.modal-close-button
+        {:on-click close-fn} i/close]]
+
+      [:div.modal-content
+       [:h3 (tr "onboarding.templates.title")]
+       [:p (tr "onboarding.templates.subtitle")]
+
+       [:div.templates
+        [:& template-item
+         {:path "/github/penpot-files/Penpot-Design-system.penpot"
+          :image "https://penpot.app/images/libraries/cover-ds-penpot.jpg"
+          :name "Penpot Design System"
+          :project-id project-id}]
+        [:& template-item
+         {:path "/github/penpot-files/Material-Design-Kit.penpot"
+          :image "https://penpot.app/images/libraries/cover-material.jpg"
+          :name "Material Design Kit"
+          :project-id project-id}]]]]]))
 
 
 ;;; --- RELEASE NOTES MODAL

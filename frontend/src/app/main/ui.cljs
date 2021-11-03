@@ -72,7 +72,10 @@
         :dashboard-team-settings)
        [:*
         #_[:div.modal-wrapper
-           [:& app.main.ui.onboarding/release-notes-modal {:version "1.8"}]]
+           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
+           #_[:& app.main.ui.onboarding/onboarding-modal]
+           #_[:& app.main.ui.onboarding/onboarding-team-modal]
+           ]
         [:& dashboard {:route route}]]
 
        :viewer

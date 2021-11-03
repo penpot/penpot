@@ -250,6 +250,12 @@ msgstr "Duplicate %s files"
 msgid "dashboard.empty-files"
 msgstr "You still have no files here"
 
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr "Oh no! You have no files jet!</br> If you want to try with some templates go to [templates.penpot.app](https://penpot.app/libraries-templates.html)"
+
 msgid "dashboard.export-frames"
 msgstr "Export artboards to PDF..."
 
@@ -1533,6 +1539,13 @@ msgstr "Profile saved successfully!"
 msgid "notifications.validation-email-sent"
 msgstr "Verification email sent to %s. Check your email!"
 
+
+msgid "onboarding.templates.title"
+msgstr "Start designing"
+
+msgid "onboarding.templates.subtitle"
+msgid "Here are some templates."
+
 msgid "onboarding.contrib.alt"
 msgstr "Open Source"
 
@@ -1606,30 +1619,26 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "One shared source of truth"
 
-msgid "onboarding.team.create.button"
-msgstr "Create a team"
+msgid "onboarding.choice.fly-solo"
+msgstr "Fly solo"
 
-msgid "onboarding.team.create.desc1"
-msgstr ""
-"Are you working with someone? Create a team to work together on projects "
-"and share design assets."
+msgid "onboarding.choice.fly-solo-desc"
+msgstr "Jump away into Penpot and start designing by your own."
 
-msgid "onboarding.team.create.input-placeholder"
+msgid "onboarding.choice.team-up"
+msgstr "Team up"
+
+msgid "onboarding.team.skip-and-invite-later"
+msgstr "Skip and invite later"
+
+msgid "onboarding.choice.team-up-desc"
+msgstr "Are you working with someone? Create a team and invite people to work together on projects and share design assets."
+
+msgid "labels.next"
+msgstr "Next"
+
+msgid "onboarding.team-input-placeholder"
 msgstr "Enter new team name"
-
-msgid "onboarding.team.create.title"
-msgstr "Create team"
-
-msgid "onboarding.team.start.button"
-msgstr "Start right away"
-
-msgid "onboarding.team.start.desc1"
-msgstr ""
-"Jump right away into Penpot and start designing by your own. You will still "
-"have the chance to create teams later."
-
-msgid "onboarding.team.start.title"
-msgstr "Start designing"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
@@ -1641,6 +1650,9 @@ msgid "onboarding.welcome.desc2"
 msgstr ""
 "Penpot is still at development stage and there will be constant updates. We "
 "hope you enjoy the first stable version."
+
+msgid "onboarding.welcome.desc3"
+msgstr "How do you want to start?"
 
 msgid "onboarding.welcome.title"
 msgstr "Welcome to Penpot!"
@@ -3188,3 +3200,4 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+

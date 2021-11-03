@@ -79,12 +79,14 @@
             where f.project_id = p.id
               and deleted_at is null) as count
      from project as p
+    inner join team as t on (t.id = p.team_id)
      left join team_project_profile_rel as tpp
             on (tpp.project_id = p.id and
                 tpp.team_id = p.team_id and
                 tpp.profile_id = ?)
     where p.team_id = ?
       and p.deleted_at is null
+      and t.deleted_at is null
     order by p.modified_at desc")
 
 (defn retrieve-projects
@@ -108,26 +110,26 @@
 (def sql:all-projects
   "select p1.*, t.name as team_name, t.is_default as is_default_team
      from project as p1
-    inner join team as t
-            on t.id = p1.team_id
+    inner join team as t on (t.id = p1.team_id)
     where t.id in (select team_id
                      from team_profile_rel as tpr
                     where tpr.profile_id = ?
                       and (tpr.can_edit = true or
                            tpr.is_owner = true or
                            tpr.is_admin = true))
+      and t.deleted_at is null
       and p1.deleted_at is null
    union
    select p2.*, t.name as team_name, t.is_default as is_default_team
      from project as p2
-    inner join team as t
-              on t.id = p2.team_id
+    inner join team as t on (t.id = p2.team_id)
     where p2.id in (select project_id
                      from project_profile_rel as ppr
                     where ppr.profile_id = ?
                       and (ppr.can_edit = true or
                            ppr.is_owner = true or
                            ppr.is_admin = true))
+      and t.deleted_at is null
       and p2.deleted_at is null
     order by team_name, name;")
 

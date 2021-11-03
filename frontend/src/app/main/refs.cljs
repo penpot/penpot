@@ -61,12 +61,6 @@
 (def dashboard-search-result
   (l/derived :dashboard-search-result st/state))
 
-(def dashboard-team
-  (l/derived (fn [state]
-               (let [team-id (:current-team-id state)]
-                 (get-in state [:teams team-id])))
-             st/state))
-
 (def dashboard-team-stats
   (l/derived :dashboard-team-stats st/state))
 

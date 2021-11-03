@@ -73,7 +73,6 @@
            :accept-label (tr "modals.delete-project-confirm.accept")
            :on-accept delete-fn}))
 
-
         file-input (mf/use-ref nil)
 
         on-import-files
