@@ -130,7 +130,7 @@
     (let [result (task {:max-age (dt/duration {:minutes 1})})]
       (t/is (nil? result)))
 
-    ;; query the list of projects of a after hard deletion
+    ;; query the list of projects after hard deletion
     (let [data {::th/type :projects
                 :team-id (:id team)
                 :profile-id (:id profile1)}

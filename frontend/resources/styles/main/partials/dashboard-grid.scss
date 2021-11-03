@@ -335,6 +335,20 @@
   padding: 3rem;
   justify-content: center;
 
+  &.drafts {
+    background-image: url("/images/ph-left.svg"), url("/images/ph-right.svg");
+    background-position: 15% bottom, 85% top;
+    background-repeat: no-repeat;
+    .text {
+      p {
+        max-width: 360px;
+        text-align: center;
+        font-size: $fs16;
+      }
+    }
+  }
+
+
   svg {
     width: 36px;
     height: 36px;
@@ -345,6 +359,11 @@
     margin-top: 10px;
     color: $color-gray-30;
     font-size: $fs16;
+  }
+
+  img.ph-files {
+    height: 150px;
+    margin-right: calc(100% - 148px);
   }
 }
 

@@ -126,7 +126,8 @@
                         :password "123123"
                         :is-demo false}
                        params)]
-     (->> (#'profile/create-profile conn params)
+     (->> params
+          (#'profile/create-profile conn)
           (#'profile/create-profile-relations conn)))))
 
 (defn create-project*
@@ -159,15 +160,10 @@
   ([i params] (create-team* *pool* i params))
   ([conn i {:keys [profile-id] :as params}]
    (us/assert uuid? profile-id)
-   (let [id   (mk-uuid "team" i)
-         team (#'teams/create-team conn {:id id
-                                         :profile-id profile-id
-                                         :name (str "team" i)})]
-     (#'teams/create-team-role conn
-                               {:team-id id
-                                :profile-id profile-id
-                                :role :owner})
-     team)))
+   (let [id   (mk-uuid "team" i)]
+     (teams/create-team conn {:id id
+                              :profile-id profile-id
+                              :name (str "team" i)}))))
 
 (defn create-file-media-object*
   ([params] (create-file-media-object* *pool* params))
@@ -350,3 +346,11 @@
 (defn reset-mock!
   [m]
   (reset! m @(mk/make-mock {})))
+
+(defn pause
+  []
+  (let [^java.io.Console cnsl (System/console)]
+    (println "[waiting RETURN]")
+    (.readLine cnsl)
+    nil))
+
