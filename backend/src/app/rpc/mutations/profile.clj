@@ -18,7 +18,6 @@
    [app.metrics :as mtx]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
-   [app.setup.initial-data :as sid]
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -154,9 +153,6 @@
                        (create-profile conn)
                        (create-profile-relations conn)
                        (decode-profile-row))]
-
-      (sid/load-initial-project! conn profile)
-
       (cond
         ;; If invitation token comes in params, this is because the
         ;; user comes from team-invitation process; in this case,
