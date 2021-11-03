@@ -1,14 +1,8 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-export PENPOT_ASSERTS_ENABLED=true
+export PENPOT_FLAGS="$PENPOT_FLAGS enable-asserts"
 
 set -ex
-
-if [ ! -e ~/.fixtures-loaded ]; then
-    echo "Loading fixtures..."
-    clojure -Adev -X:fn-fixtures
-    touch ~/.fixtures-loaded
-fi
 
 if [ "$1" = "--watch" ]; then
     echo "Start Watch..."
@@ -27,6 +21,3 @@ if [ "$1" = "--watch" ]; then
 else
     clojure -A:dev -M -m app.main
 fi
-
-
-
