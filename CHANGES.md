@@ -14,6 +14,7 @@
 - Fix undo stacking when changing color from color-picker [Taiga #2191](https://tree.taiga.io/project/penpot/issue/2191)
 - Fix pages dropdown in viewer [Taiga #2087](https://tree.taiga.io/project/penpot/issue/2087)
 - Fix problem when exporting texts with gradients or opacity [Taiga #2200](https://tree.taiga.io/project/penpot/issue/2200)
+- Fix problem with view mode comments [Taiga #](https://tree.taiga.io/project/penpot/issue/2226)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
