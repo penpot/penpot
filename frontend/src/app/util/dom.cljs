@@ -340,6 +340,14 @@
 (defn remove-attribute [^js node ^string attr]
   (.removeAttribute node attr))
 
+(defn get-scroll-pos
+  [element]
+  (.-scrollTop ^js element))
+
+(defn set-scroll-pos!
+  [element scroll]
+  (obj/set! ^js element "scrollTop" scroll))
+
 (defn scroll-into-view!
   ([element]
    (.scrollIntoView ^js element false))

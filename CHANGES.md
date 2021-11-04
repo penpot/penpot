@@ -7,6 +7,7 @@
 ### :sparkles: New features
 
 - Enhance corner radius behavior [Taiga #2190](https://tree.taiga.io/project/penpot/issue/2190).
+- Allow preserve scroll position in interactions [Taiga task #1998](https://tree.taiga.io/project/penpot/task/1998).
 
 ### :bug: Bugs fixed
 
