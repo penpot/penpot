@@ -37,10 +37,15 @@
 
 (sv/defmethod ::profile {:auth false}
   [{:keys [pool] :as cfg} {:keys [profile-id] :as params}]
-  (if profile-id
-    (retrieve-profile pool profile-id)
-    {:id uuid/zero
-     :fullname "Anonymous User"}))
+
+  ;; We need to return the anonymous profile object in two cases, when
+  ;; no profile-id is in session, and when db call raises not found. In all other
+  ;; cases we need to reraise the exception.
+  (or (ex/try*
+       #(some->> profile-id (retrieve-profile pool))
+       #(when (not= :not-found (:type (ex-data %))) (throw %)))
+      {:id uuid/zero
+       :fullname "Anonymous User"}))
 
 (def ^:private sql:default-profile-team
   "select t.id, name

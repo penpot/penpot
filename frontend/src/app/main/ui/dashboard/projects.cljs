@@ -97,9 +97,10 @@
 
         on-import
         (mf/use-callback
+         (mf/deps (:id project) (:id team))
          (fn []
            (st/emit! (dd/fetch-files {:project-id (:id project)})
-                     (dd/fetch-recent-files)
+                     (dd/fetch-recent-files (:id team))
                      (dd/clear-selected-files))))]
 
     [:div.dashboard-project-row {:class (when first? "first")}
@@ -163,15 +164,15 @@
     (mf/use-effect
      (mf/deps team)
      (fn []
-       (when team
-         (let [tname (if (:is-default team)
-                       (tr "dashboard.your-penpot")
-                       (:name team))]
-           (dom/set-html-title (tr "title.dashboard.projects" tname))))))
+       (let [tname (if (:is-default team)
+                     (tr "dashboard.your-penpot")
+                     (:name team))]
+         (dom/set-html-title (tr "title.dashboard.projects" tname)))))
 
     (mf/use-effect
+     (mf/deps (:id team))
      (fn []
-       (st/emit! (dd/fetch-recent-files)
+       (st/emit! (dd/fetch-recent-files (:id team))
                  (dd/clear-selected-files))))
 
     (when (seq projects)

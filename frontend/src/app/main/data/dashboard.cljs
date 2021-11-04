@@ -16,6 +16,7 @@
    [app.main.repo :as rp]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
+   [app.util.timers :as tm]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -60,6 +61,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare fetch-projects)
+(declare fetch-team-members)
 
 (defn initialize
   [{:keys [id] :as params}]
@@ -84,6 +86,7 @@
       (rx/merge
        (ptk/watch (df/load-team-fonts id) state stream)
        (ptk/watch (fetch-projects) state stream)
+       (ptk/watch (fetch-team-members) state stream)
        (ptk/watch (du/fetch-teams) state stream)
        (ptk/watch (du/fetch-users {:team-id id}) state stream)))))
 
@@ -237,13 +240,14 @@
             (update :dashboard-files d/merge files))))))
 
 (defn fetch-recent-files
-  []
-  (ptk/reify ::fetch-recent-files
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/query :team-recent-files {:team-id team-id})
-             (rx/map recent-files-fetched))))))
+  ([] (fetch-recent-files nil))
+  ([team-id]
+   (ptk/reify ::fetch-recent-files
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [team-id (or team-id (:current-team-id state))]
+         (->> (rp/query :team-recent-files {:team-id team-id})
+              (rx/map recent-files-fetched)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Selection
@@ -396,16 +400,13 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-            team-id (:current-team-id state)]
-        (rx/concat
-         (when (uuid? reassign-to)
-           (->> (rp/mutation! :update-team-member-role {:team-id team-id
-                                                        :role :owner
-                                                        :member-id reassign-to})
-                (rx/ignore)))
-         (->> (rp/mutation! :leave-team {:id team-id})
-              (rx/tap on-success)
-              (rx/catch on-error)))))))
+            team-id (:current-team-id state)
+            params  (cond-> {:id team-id}
+                      (uuid? reassign-to)
+                      (assoc :reassign-to reassign-to))]
+        (->> (rp/mutation! :leave-team params)
+             (rx/tap #(tm/schedule on-success))
+             (rx/catch on-error))))))
 
 (defn invite-team-member
   [{:keys [email role] :as params}]

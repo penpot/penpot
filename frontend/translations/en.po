@@ -3246,3 +3246,15 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "The member you try to assign does not exist."
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "Owner can't leave team, you must reassign the owner role."
+
+msgid "errors.team-leave.insufficient-members"
+msgstr "Insufficient members to leave team, you probably want to delete it."
+
+msgid "errors.auth.unable-to-login"
+msgstr "Looks like you are not authenticated or session expired."

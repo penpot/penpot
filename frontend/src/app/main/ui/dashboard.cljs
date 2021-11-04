@@ -7,9 +7,7 @@
 (ns app.main.ui.dashboard
   (:require
    [app.common.spec :as us]
-   [app.config :as cf]
    [app.main.data.dashboard :as dd]
-   [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -22,7 +20,6 @@
    [app.main.ui.dashboard.search :refer [search-page]]
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
    [app.main.ui.dashboard.team :refer [team-settings-page team-members-page]]
-   [app.util.timers :as tm]
    [rumext.alpha :as mf]))
 
 (defn ^boolean uuid-str?
@@ -77,9 +74,8 @@
      nil)])
 
 (mf/defc dashboard
-  [{:keys [route] :as props}]
-  (let [profile      (mf/deref refs/profile)
-        section      (get-in route [:data :name])
+  [{:keys [route profile] :as props}]
+  (let [section      (get-in route [:data :name])
         params       (parse-params route)
 
         project-id   (:project-id params)
@@ -94,18 +90,8 @@
 
     (mf/use-effect
      (mf/deps team-id)
-     (st/emitf (dd/initialize {:id team-id})))
-
-    (mf/use-effect
-     (mf/deps)
      (fn []
-       (let [props   (:props profile)
-             version (:release-notes-viewed props)]
-         (when (and (:onboarding-viewed props)
-                    (not= version (:main @cf/version))
-                    (not= "0.0" (:main @cf/version)))
-           (tm/schedule 1000 #(st/emit! (modal/show {:type :release-notes
-                                                     :version (:main @cf/version)})))))))
+       (st/emit! (dd/initialize {:id team-id}))))
 
     [:& (mf/provider ctx/current-team-id) {:value team-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}

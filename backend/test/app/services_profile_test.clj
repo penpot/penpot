@@ -6,6 +6,7 @@
 
 (ns app.services-profile-test
   (:require
+   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc.mutations.profile :as profile]
    [app.test-helpers :as th]
@@ -153,11 +154,8 @@
                   :profile-id (:id prof)}
           out    (th/query! params)]
       ;; (th/print-result! out)
-      (let [error (:error out)
-            error-data (ex-data error)]
-        (t/is (th/ex-info? error))
-        (t/is (= (:type error-data) :not-found))))
-    ))
+      (let [result (:result out)]
+        (t/is (= uuid/zero (:id result)))))))
 
 (t/deftest registration-domain-whitelist
   (let [whitelist #{"gmail.com" "hey.com" "ya.ru"}]
