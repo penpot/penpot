@@ -14,6 +14,7 @@
    [app.loggers.audit :as audit]
    [app.metrics :as mtx]
    [app.rlimits :as rlm]
+   [app.util.retry :as retry]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -92,6 +93,7 @@
 (defn- wrap-impl
   [{:keys [audit] :as cfg} f mdata]
   (let [f      (wrap-with-rlimits cfg f mdata)
+        f      (retry/wrap-retry cfg f mdata)
         f      (wrap-with-metrics cfg f mdata)
         spec   (or (::sv/spec mdata) (s/spec any?))
         auth?  (:auth mdata true)]
@@ -99,7 +101,6 @@
     (l/trace :action "register" :name (::sv/name mdata))
     (with-meta
       (fn [params]
-
         ;; Raise authentication error when rpc method requires auth but
         ;; no profile-id is found in the request.
         (when (and auth? (not (uuid? (:profile-id params))))

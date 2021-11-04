@@ -12,6 +12,9 @@
    [app.rpc.queries.comments :as comments]
    [app.rpc.queries.files :as files]
    [app.util.blob :as blob]
+   #_:clj-kondo/ignore
+   [app.util.retry :as retry]
+
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
@@ -32,6 +35,9 @@
   (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id]))
 
 (sv/defmethod ::create-comment-thread
+  {::retry/enabled true
+   ::retry/max-retries 3
+   ::retry/matches retry/conflict-db-insert?}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-read-permissions! conn profile-id file-id)
@@ -43,7 +49,7 @@
         res (db/exec-one! conn [sql file-id])]
     (:next-seqn res)))
 
-(defn- create-comment-thread*
+(defn- create-comment-thread
   [conn {:keys [profile-id file-id page-id position content] :as params}]
   (let [seqn    (retrieve-next-seqn conn file-id)
         now     (dt/now)
@@ -77,24 +83,6 @@
                 {:id file-id})
 
     (select-keys thread [:id :file-id :page-id])))
-
-(defn- create-comment-thread
-  [conn params]
-  (loop [sp (db/savepoint conn)
-         rc 0]
-    (let [res (ex/try (create-comment-thread* conn params))]
-      (cond
-        (and (instance? Throwable res)
-             (< rc 3))
-        (do
-          (db/rollback! conn sp)
-          (recur (db/savepoint conn)
-                 (inc rc)))
-
-        (instance? Throwable res)
-        (throw res)
-
-        :else res))))
 
 (defn- retrieve-page-name
   [conn {:keys [file-id page-id]}]
