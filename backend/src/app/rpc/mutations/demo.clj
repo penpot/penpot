@@ -36,7 +36,8 @@
                   :is-active true
                   :deleted-at (dt/in-future cf/deletion-delay)
                   :password password
-                  :props {:onboarding-viewed true}}]
+                  :props {}
+                  }]
 
     (when-not (contains? cf/flags :demo-users)
       (ex/raise :type :validation
