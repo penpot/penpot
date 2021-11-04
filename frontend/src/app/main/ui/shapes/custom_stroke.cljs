@@ -161,22 +161,23 @@
 
 (mf/defc stroke-defs
   [{:keys [shape render-id]}]
-  (when (and (= (:type shape) :path)
-             (gsh/open-path? shape))
+
+  (let [open-path? (and (= :path (:type shape)) (gsh/open-path? shape))]
     (cond
-      (and (= :inner (:stroke-alignment shape :center))
+      (and (not open-path?)
+           (= :inner (:stroke-alignment shape :center))
            (> (:stroke-width shape 0) 0))
       [:& inner-stroke-clip-path {:shape shape
                                   :render-id render-id}]
 
-      (and (= :outer (:stroke-alignment shape :center))
+      (and (not open-path?)
+           (= :outer (:stroke-alignment shape :center))
            (> (:stroke-width shape 0) 0))
       [:& outer-stroke-mask {:shape shape
                              :render-id render-id}]
 
-      (and (or (some? (:stroke-cap-start shape))
-               (some? (:stroke-cap-end shape)))
-           (= (:stroke-alignment shape) :center))
+      (or (some? (:stroke-cap-start shape))
+          (some? (:stroke-cap-end shape)))
       [:& cap-markers {:shape shape
                        :render-id render-id}])))
 
