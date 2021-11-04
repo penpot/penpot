@@ -859,23 +859,23 @@
         background-position: left top;
         background-size: 11%;
       }
-      
+
       .modal-left:hover {
         background-image: url("/images/on-solo-hover.svg");
         background-size: 15%;
       }
-      
+
       .modal-right {
         background-image: url("/images/on-teamup.svg");
         background-position: right top;
         background-size: 28%;
       }
-      
+
       .modal-right:hover {
         background-image: url("/images/on-teamup-hover.svg");
         background-size: 32%;
       }
-      
+
       .modal-right,
       .modal-left {
         background-repeat: no-repeat;
@@ -1001,17 +1001,17 @@
     .template-item {
       width: 275px;
       border: 1px solid $color-gray-10;
-      
+
       display: flex;
       flex-direction: column;
       text-align: left;
       border-radius: $br-small;
-      
+
       &:not(:last-child) {
         margin-bottom: 22px;
       }
     }
-    
+
     .template-item-content {
       // height: 144px;
       flex-grow: 1;
@@ -1020,7 +1020,7 @@
         border-radius: $br-small $br-small 0 0;
       }
     }
-    
+
     .template-item-title {
       padding: 6px 12px;
       height: 64px;
@@ -1133,5 +1133,47 @@
       }
     }
 
+  }
+}
+
+
+
+.questions-form {
+  .modal-overlay {
+    z-index: 2001;
+  }
+
+  .modal-container {
+    width: 90vw;
+    height: 90vh;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    .af-form {
+      --primary-color: #00C38B;
+      --input-background-color: #ffffff;
+      --label-font-size: $fs16;
+      --field-error-font-color: #E65244;
+      --message-success-font-color: #49D793;
+      --message-fail-font-color: #E65244;
+      --invalid-field-border-color: #E65244;
+      --dropdown-background-color: #ffffff;
+      --primary-font-color: #000;
+      --input-border-color: rgb(224, 230, 240);
+      --input-border-radius: 3px;
+      --button-border-radius: 3px;
+      --message-border-radius: 3px;
+      --checkbox-border-radius: 3px;
+      --dropdown-option-background-color: rgba(0,195,139,1);
+      --dropdown-option-active-background-color: rgba(0,138,98,1);
+      --invalid-field-background-color: rgba(238.51780000000002,205.7178,204.11780000000002,1);
+      --message-fail-background-color: rgba(238.51780000000002,205.7178,204.11780000000002,1);
+      --message-success-background-color: rgba(171,232,197,1);
+    }
+  }
+
+  .modal-overlay {
+    background-color: rgba(0,0,0,0.9);
   }
 }

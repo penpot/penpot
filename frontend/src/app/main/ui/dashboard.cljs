@@ -96,17 +96,6 @@
      (mf/deps team-id)
      (st/emitf (dd/initialize {:id team-id})))
 
-    (mf/use-effect
-     (mf/deps)
-     (fn []
-       (let [props   (:props profile)
-             version (:release-notes-viewed props)]
-         (when (and (:onboarding-viewed props)
-                    (not= version (:main @cf/version))
-                    (not= "0.0" (:main @cf/version)))
-           (tm/schedule 1000 #(st/emit! (modal/show {:type :release-notes
-                                                     :version (:main @cf/version)})))))))
-
     [:& (mf/provider ctx/current-team-id) {:value team-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}
       ;; NOTE: dashboard events and other related functions assumes

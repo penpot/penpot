@@ -161,14 +161,8 @@
         (->> (rx/concat
               (rx/of (profile-fetched profile)
                      (fetch-teams))
-
               (->> (rx/of (rt/nav' :dashboard-projects {:team-id team-id}))
-                   (rx/delay 1000))
-
-              (when-not (get-in profile [:props :onboarding-viewed])
-                (->> (rx/of (modal/show {:type :onboarding}))
-                     (rx/delay 1000))))
-
+                   (rx/delay 1000)))
              (rx/observe-on :async))))))
 
 (s/def ::login-params
@@ -355,11 +349,25 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [version (or version (:main @cf/version))
-             props   (-> (get-in state [:profile :props])
-                         (assoc :onboarding-viewed true)
-                         (assoc :release-notes-viewed version))]
+             props   {:onboarding-viewed true
+                      :release-notes-viewed version}]
          (->> (rp/mutation :update-profile-props {:props props})
               (rx/map (constantly (fetch-profile)))))))))
+
+
+(defn mark-questions-as-answered
+  []
+  (ptk/reify ::mark-questions-as-answered
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:profile :props] assoc :onboarding-questions-answered true))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [props {:onboarding-questions-answered true}]
+        (->> (rp/mutation :update-profile-props {:props props})
+             (rx/map (constantly (fetch-profile))))))))
+
 
 ;; --- Update Photo
 
