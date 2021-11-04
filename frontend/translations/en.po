@@ -1544,7 +1544,7 @@ msgid "onboarding.templates.title"
 msgstr "Start designing"
 
 msgid "onboarding.templates.subtitle"
-msgid "Here are some templates."
+msgstr "Here are some templates."
 
 msgid "onboarding.contrib.alt"
 msgstr "Open Source"
