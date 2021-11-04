@@ -78,6 +78,7 @@
 (def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
 (def sentry-dsn           (obj/get global "penpotSentryDsn"))
+(def onboarding-form-id   (obj/get global "penpotOnboardingQuestionsFormId"))
 
 (def flags                (atom (parse-flags global)))
 (def version              (atom (parse-version global)))
