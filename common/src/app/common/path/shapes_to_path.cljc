@@ -177,12 +177,7 @@
                       (map #(get objects %))
                       (map #(convert-to-path % objects)))
         bool-type (:bool-type shape)
-        head (if (= bool-type :difference) (first children) (last children))
-        head (cond-> head
-               (and (contains? head :svg-attrs) (nil? (:fill-color head)))
-               (assoc :fill-color "#000000"))
-
-        content (pb/content-bool (:bool-type shape) (mapv :content children))]
+        content (pb/content-bool bool-type (mapv :content children))]
 
     (-> shape
         (assoc :type :path)
