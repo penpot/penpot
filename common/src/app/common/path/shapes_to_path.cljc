@@ -182,13 +182,11 @@
                (and (contains? head :svg-attrs) (nil? (:fill-color head)))
                (assoc :fill-color "#000000"))
 
-        head-data (select-keys head style-properties)
         content (pb/content-bool (:bool-type shape) (mapv :content children))]
 
     (-> shape
         (assoc :type :path)
         (assoc :content content)
-        (merge head-data)
         (d/without-keys dissoc-attrs))))
 
 (defn convert-to-path

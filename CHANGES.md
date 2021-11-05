@@ -19,6 +19,7 @@
 - Disallow to create a component when already has one [Taiga #2237](https://tree.taiga.io/project/penpot/issue/2237).
 - Add ellipsis in long labels for input fields [Taiga #2224](https://tree.taiga.io/project/penpot/issue/2224)
 - Fix problem with text rendering on export [Taiga #2223](https://tree.taiga.io/project/penpot/issue/2223)
+- Fix problem when flattening booleans losing styles [Taiga #2217](https://tree.taiga.io/project/penpot/issue/2217)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
