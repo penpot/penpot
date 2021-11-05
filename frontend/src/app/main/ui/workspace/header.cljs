@@ -95,9 +95,9 @@
 (mf/defc menu
   [{:keys [layout project file team-id page-id] :as props}]
   (let [show-menu? (mf/use-state false)
-        editing? (mf/use-state false)
+        editing?   (mf/use-state false)
 
-        frames   (mf/deref refs/workspace-frames)
+        frames (mf/deref refs/workspace-frames)
 
         edit-input-ref (mf/use-ref nil)
 
@@ -166,23 +166,24 @@
 
         on-export-frames
         (mf/use-callback
-          (mf/deps file)
+          (mf/deps file frames)
           (fn [_]
-            (let [filename  (str (:name file) ".pdf")
-                  frame-ids (mapv :id frames)]
-              (st/emit! (dm/info (tr "workspace.options.exporting-object")
-                                 {:timeout nil}))
-              (->> (rp/query! :export-frames
-                              {:name     (:name file)
-                               :file-id  (:id file)
-                               :page-id   page-id
-                               :frame-ids frame-ids})
-                   (rx/subs
-                     (fn [body]
-                       (dom/trigger-download filename body))
-                     (fn [_error]
-                       (st/emit! (dm/error (tr "errors.unexpected-error"))))
-                     (st/emitf dm/hide))))))]
+            (when (seq frames)
+              (let [filename  (str (:name file) ".pdf")
+                    frame-ids (mapv :id frames)]
+                (st/emit! (dm/info (tr "workspace.options.exporting-object")
+                                   {:timeout nil}))
+                (->> (rp/query! :export-frames
+                                {:name     (:name file)
+                                 :file-id  (:id file)
+                                 :page-id   page-id
+                                 :frame-ids frame-ids})
+                     (rx/subs
+                       (fn [body]
+                         (dom/trigger-download filename body))
+                       (fn [_error]
+                         (st/emit! (dm/error (tr "errors.unexpected-error"))))
+                       (st/emitf dm/hide)))))))]
 
     (mf/use-effect
      (mf/deps @editing?)
@@ -282,8 +283,9 @@
        [:li.export-file {:on-click on-export-file}
         [:span (tr "dashboard.export-single")]]
 
-       [:li.export-file {:on-click on-export-frames}
-        [:span (tr "dashboard.export-frames")]]
+       (when (seq frames)
+         [:li.export-file {:on-click on-export-frames}
+          [:span (tr "dashboard.export-frames")]])
 
        (when (contains? @cf/flags :user-feedback)
          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}

@@ -47,6 +47,7 @@ RUN set -ex; \
         imagemagick \
         ghostscript \
         netpbm \
+        poppler-utils \
         potrace \
         webp \
         nginx \
