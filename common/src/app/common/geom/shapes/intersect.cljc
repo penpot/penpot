@@ -6,6 +6,7 @@
 
 (ns app.common.geom.shapes.intersect
   (:require
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gpp]
@@ -172,22 +173,23 @@
   "Checks if the given rect overlaps with the path in any point"
   [shape rect]
 
-  (let [;; If paths are too complex the intersection is too expensive
-        ;; we fallback to check its bounding box otherwise the performance penalty
-        ;; is too big
-        ;; TODO: Look for ways to optimize this operation
-        simple? (> (count (:content shape)) 100)
+  (when (d/not-empty? (:content shape))
+    (let [ ;; If paths are too complex the intersection is too expensive
+          ;; we fallback to check its bounding box otherwise the performance penalty
+          ;; is too big
+          ;; TODO: Look for ways to optimize this operation
+          simple? (> (count (:content shape)) 100)
 
-        rect-points  (gpr/rect->points rect)
-        rect-lines   (points->lines rect-points)
-        path-lines   (if simple?
-                       (points->lines (:points shape))
-                       (gpp/path->lines shape))
-        start-point (-> shape :content (first) :params (gpt/point))]
+          rect-points  (gpr/rect->points rect)
+          rect-lines   (points->lines rect-points)
+          path-lines   (if simple?
+                         (points->lines (:points shape))
+                         (gpp/path->lines shape))
+          start-point (-> shape :content (first) :params (gpt/point))]
 
-    (or (is-point-inside-nonzero? (first rect-points) path-lines)
-        (is-point-inside-nonzero? start-point rect-lines)
-        (intersects-lines? rect-lines path-lines))))
+      (or (is-point-inside-nonzero? (first rect-points) path-lines)
+          (is-point-inside-nonzero? start-point rect-lines)
+          (intersects-lines? rect-lines path-lines)))))
 
 (defn is-point-inside-ellipse?
   "checks if a point is inside an ellipse"
