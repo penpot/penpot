@@ -5,6 +5,9 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 ### :bug: Bugs fixed
+
+- Fix problems when exporting all artboards [Taiga #2234](https://tree.taiga.io/project/penpot/issue/2234).
+
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
