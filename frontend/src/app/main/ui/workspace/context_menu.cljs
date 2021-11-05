@@ -281,7 +281,8 @@
            [:& menu-entry {:title (tr "workspace.shape.menu.delete-flow-start")
                            :on-click (do-remove-flow flow)}])))
 
-     (when (not= (:type shape) :frame)
+     (when (and (not= (:type shape) :frame)
+                (or multiple? (nil? (:component-id shape))))
        [:*
         [:& menu-separator]
         [:& menu-entry {:title (tr "workspace.shape.menu.create-component")
