@@ -104,7 +104,7 @@
 (def browser-pool-factory
   (letfn [(create []
             (let [path (cf/get :browser-executable-path "/usr/bin/google-chrome")]
-              (-> (pp/launch #js {:executablePath path :args #js ["--no-sandbox"]})
+              (-> (pp/launch #js {:executablePath path :args #js ["--no-sandbox" "--font-render-hinting=none"]})
                   (p/then (fn [browser]
                             (let [id (deref pool-browser-id)]
                               (log/info :origin "factory" :action "create" :browser-id id)
