@@ -23,6 +23,7 @@
 - Add shortcuts to boolean icons popups [Taiga #2220](https://tree.taiga.io/project/penpot/issue/2220)
 - Fix a worker error when transforming a rectangle into path
 - Fix max/min values for opacity fields [Taiga #2183](https://tree.taiga.io/project/penpot/issue/2183)
+- Fix viewer comment position when zoom applied [Taiga #2240](https://tree.taiga.io/project/penpot/issue/2240)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
