@@ -356,7 +356,9 @@
 
         on-finish-import
         (fn []
-          (st/emit! (dd/fetch-recent-files)))
+          (st/emit! (dd/fetch-files {:project-id project-id})
+                    (dd/fetch-recent-files)
+                    (dd/clear-selected-files)))
 
         open-import-modal
         (fn [file]
