@@ -34,9 +34,18 @@
 
         value (d/parse-integer value-str 0)
 
-        min-val (when (string? min-val-str)
+        min-val (cond
+                  (number? min-val-str)
+                  min-val-str
+
+                  (string? min-val-str)
                   (d/parse-integer min-val-str))
-        max-val (when (string? max-val-str)
+
+        max-val (cond
+                  (number? max-val-str)
+                  max-val-str
+
+                  (string? max-val-str)
                   (d/parse-integer max-val-str))
 
         num? (fn [val] (and (number? val)
