@@ -98,7 +98,8 @@
         on-import
         (mf/use-callback
          (fn []
-           (st/emit! (dd/fetch-recent-files)
+           (st/emit! (dd/fetch-files {:project-id (:id project)})
+                     (dd/fetch-recent-files)
                      (dd/clear-selected-files))))]
 
     [:div.dashboard-project-row {:class (when first? "first")}

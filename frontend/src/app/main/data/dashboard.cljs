@@ -187,10 +187,12 @@
     (ptk/reify ::files-fetched
       ptk/UpdateEvent
       (update [_ state]
-        (update state :dashboard-files
-                (fn [state]
-                  (let [state (remove-project-files state)]
-                    (reduce #(assoc %1 (:id %2) %2) state files))))))))
+        (-> state
+            (update :dashboard-files
+                    (fn [state]
+                      (let [state (remove-project-files state)]
+                        (reduce #(assoc %1 (:id %2) %2) state files))))
+            (assoc-in [:dashboard-projects project-id :count] (count files)))))))
 
 (defn fetch-files
   [{:keys [project-id] :as params}]
