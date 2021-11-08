@@ -26,6 +26,7 @@
 - Fix viewer comment position when zoom applied [Taiga #2240](https://tree.taiga.io/project/penpot/issue/2240)
 - Remove change style on hover for options [Taiga #2172](https://tree.taiga.io/project/penpot/issue/2172)
 - Fix problem in viewer with dropdowns when comments active [#1303](https://github.com/penpot/penpot/issues/1303)
+- Add placeholder to create shareable link
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

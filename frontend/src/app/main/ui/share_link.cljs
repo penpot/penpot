@@ -127,10 +127,14 @@
        [:div.share-link-section
         [:label (tr "labels.link")]
         [:div.custom-input.with-icon
-         [:input {:type "text" :value (or @link "") :read-only true}]
-         [:div.help-icon {:title (tr "labels.copy")
-                          :on-click copy-link}
-          i/copy]]
+         [:input {:type "text"
+                  :value (or @link "")
+                  :placeholder (tr "common.share-link.placeholder")
+                  :read-only true}]
+         (when (some? @link)
+           [:div.help-icon {:title (tr "labels.copy")
+                            :on-click copy-link}
+            i/copy])]
 
         [:div.hint (tr "common.share-link.permissions-hint")]]]
 
