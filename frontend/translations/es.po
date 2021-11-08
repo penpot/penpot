@@ -3228,3 +3228,6 @@ msgstr "X"
 
 msgid "workspace.options.y"
 msgstr "Y"
+
+msgid "common.share-link.placeholder"
+msgstr "El enlace para compartir aparecerá aquí"
