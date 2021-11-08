@@ -73,7 +73,7 @@
        [:*
         #_[:div.modal-wrapper
            #_[:& app.main.ui.onboarding/onboarding-templates-modal]
-           #_[:& app.main.ui.onboarding/onboarding-modal]
+           [:& app.main.ui.onboarding/onboarding-modal]
            #_[:& app.main.ui.onboarding/onboarding-team-modal]
            ]
         [:& dashboard {:route route}]]
