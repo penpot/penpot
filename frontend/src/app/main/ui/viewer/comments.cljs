@@ -105,14 +105,15 @@
 
         on-click
         (mf/use-callback
-         (mf/deps cstate frame page file)
+         (mf/deps cstate frame page file zoom)
          (fn [event]
            (dom/stop-propagation event)
            (if (some? (:open cstate))
              (st/emit! (dcm/close-thread))
              (let [event    (.-nativeEvent ^js event)
-                   position (-> (dom/get-offset-position event)
-                                (gpt/transform modifier2))
+                   viewport-point (dom/get-offset-position event)
+                   viewport-point (-> viewport-point (update :x #(/ % zoom)) (update :y #(/ % zoom)))
+                   position (gpt/transform viewport-point modifier2)
                    params   {:position position
                              :page-id (:id page)
                              :file-id (:id file)}]
