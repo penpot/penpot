@@ -4,10 +4,17 @@
 ## :rocket: Next
 
 ### :boom: Breaking changes
+
+- The initial project / data mechanism (not documented) has been
+  disabled. Is the mechanism used for creating initial project on user
+  signup. With the new onboarding approach, this subsystem is no
+  longer needed and is disabled.
+
 ### :sparkles: New features
 
 - Enhance corner radius behavior [Taiga #2190](https://tree.taiga.io/project/penpot/issue/2190).
 - Allow preserve scroll position in interactions [Taiga task #1998](https://tree.taiga.io/project/penpot/task/1998).
+- Add new onboarding modals.
 
 ### :bug: Bugs fixed
 
@@ -32,6 +39,9 @@
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
+
+- To the translation community for the hard work on making penpot
+  available on so many languages.
 
 
 ## 1.9.0-alpha
