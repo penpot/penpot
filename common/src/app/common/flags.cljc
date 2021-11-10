@@ -10,30 +10,28 @@
    [cuerdas.core :as str]))
 
 (def default
-  #{:backend-asserts
-    :api-doc
-    :registration
-    :demo-users})
+  "A common flags that affects both: backend and frontend."
+  [:enable-registration
+   :enable-demo-users])
 
 (defn parse
-  ([flags] (parse flags #{}))
-  ([flags default]
-   (loop [flags  (seq flags)
-          result default]
-     (let [item (first flags)]
-       (if (nil? item)
-         result
-         (let [sname (name item)]
-           (cond
-             (str/starts-with? sname "enable-")
-             (recur (rest flags)
-                    (conj result (keyword (subs sname 7))))
+  [& flags]
+  (loop [flags  (apply concat flags)
+         result #{}]
+    (let [item (first flags)]
+      (if (nil? item)
+        result
+        (let [sname (name item)]
+          (cond
+            (str/starts-with? sname "enable-")
+            (recur (rest flags)
+                   (conj result (keyword (subs sname 7))))
 
-             (str/starts-with? sname "disable-")
-             (recur (rest flags)
-                    (disj result (keyword (subs sname 8))))
+            (str/starts-with? sname "disable-")
+            (recur (rest flags)
+                   (disj result (keyword (subs sname 8))))
 
-             :else
-             (recur (rest flags) result))))))))
+            :else
+            (recur (rest flags) result)))))))
 
 

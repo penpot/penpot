@@ -268,10 +268,17 @@
                    ::telemetry-with-taiga
                    ::tenant]))
 
+(def default-flags
+  [:enable-backend-asserts
+   :enable-backend-api-doc
+   :enable-insecure-register
+   :enable-secure-session-cookies])
+
 (defn- parse-flags
   [config]
-  (-> (:flags config)
-      (flags/parse flags/default)))
+  (flags/parse flags/default
+               default-flags
+               (:flags config)))
 
 (defn read-env
   [prefix]

@@ -169,7 +169,9 @@
     (let [token (:invitation-token data)]
       (st/emit! (rt/nav :auth-verify-token {} {:token token})))
 
-    (not= "penpot" (:auth-backend data))
+    ;; The :is-active flag is true, when insecure-register is enabled
+    ;; or the user used external auth provider.
+    (:is-active data)
     (st/emit! (du/login-from-register))
 
     :else
@@ -178,9 +180,14 @@
 (s/def ::accept-terms-and-privacy (s/and ::us/boolean true?))
 (s/def ::accept-newsletter-subscription ::us/boolean)
 
-(s/def ::register-validate-form
-  (s/keys :req-un [::token ::fullname ::accept-terms-and-privacy]
-          :opt-un [::accept-newsletter-subscription]))
+(if (contains? @cf/flags :terms-and-privacy-checkbox)
+  (s/def ::register-validate-form
+    (s/keys :req-un [::token ::fullname ::accept-terms-and-privacy]
+            :opt-un [::accept-newsletter-subscription]))
+  (s/def ::register-validate-form
+    (s/keys :req-un [::token ::fullname]
+            :opt-un [::accept-terms-and-privacy
+                     ::accept-newsletter-subscription])))
 
 (mf/defc register-validate-form
   [{:keys [params] :as props}]
@@ -207,23 +214,17 @@
                     :label (tr "auth.fullname")
                     :type "text"}]]
 
-     [:div.fields-row
-      [:& fm/input {:name :accept-terms-and-privacy
-                    :class "check-primary"
-                    :type "checkbox"}
-       [:span
-        (tr "auth.terms-privacy-agreement")
-        [:div
-         [:a {:href "https://penpot.app/terms.html" :target "_blank"} (tr "auth.terms-of-service")]
-         [:span ",\u00A0"]
-         [:a {:href "https://penpot.app/privacy.html" :target "_blank"} (tr "auth.privacy-policy")]]]]]
-
-     ;; (when (contains? @cf/flags :newsletter-registration-check)
-     ;;   [:div.fields-row
-     ;;    [:& fm/input {:name :accept-newsletter-subscription
-     ;;                  :class "check-primary"
-     ;;                  :label (tr "auth.newsletter-subscription")
-     ;;                  :type "checkbox"}]])
+     (when (contains? @cf/flags :terms-and-privacy-checkbox)
+       [:div.fields-row
+        [:& fm/input {:name :accept-terms-and-privacy
+                      :class "check-primary"
+                      :type "checkbox"}
+         [:span
+          (tr "auth.terms-privacy-agreement")
+          [:div
+           [:a {:href "https://penpot.app/terms.html" :target "_blank"} (tr "auth.terms-of-service")]
+           [:span ",\u00A0"]
+           [:a {:href "https://penpot.app/privacy.html" :target "_blank"} (tr "auth.privacy-policy")]]]]])
 
      [:& fm/submit-button
       {:label (tr "auth.register-submit")
