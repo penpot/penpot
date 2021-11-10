@@ -124,9 +124,7 @@
 
 ;; --- MUTATION: Register Profile
 
-(s/def ::accept-terms-and-privacy ::us/boolean)
 (s/def ::token ::us/not-empty-string)
-
 (s/def ::register-profile
   (s/keys :req-un [::token ::fullname]))
 
@@ -146,13 +144,17 @@
 
 (defn register-profile
   [{:keys [conn tokens session metrics] :as cfg} {:keys [token] :as params}]
-  (let [claims (tokens :verify {:token token :iss :prepared-register})
-        params (merge params claims)]
+  (let [claims    (tokens :verify {:token token :iss :prepared-register})
+        params    (merge params claims)]
+
     (check-profile-existence! conn params)
-    (let [profile (->> params
-                       (create-profile conn)
-                       (create-profile-relations conn)
-                       (decode-profile-row))]
+
+    (let [is-active (or (:is-active params)
+                        (contains? cf/flags :insecure-register))
+          profile   (->> (assoc params :is-active is-active)
+                         (create-profile conn)
+                         (create-profile-relations conn)
+                         (decode-profile-row))]
       (cond
         ;; If invitation token comes in params, this is because the
         ;; user comes from team-invitation process; in this case,
@@ -176,6 +178,15 @@
         ;; registring using third party auth mechanism; in this case
         ;; we need to mark this session as logged.
         (not= "penpot" (:auth-backend profile))
+        (with-meta (profile/strip-private-attrs profile)
+          {:transform-response ((:create session) (:id profile))
+           :before-complete (annotate-profile-register metrics)
+           ::audit/props (audit/profile->props profile)
+           ::audit/profile-id (:id profile)})
+
+        ;; If the `:enable-insecure-register` flag is set, we proceed
+        ;; to sign in the user directly, without email verification.
+        (true? is-active)
         (with-meta (profile/strip-private-attrs profile)
           {:transform-response ((:create session) (:id profile))
            :before-complete (annotate-profile-register metrics)
@@ -226,7 +237,7 @@
         backend   (:backend params "penpot")
         is-demo   (:is-demo params false)
         is-muted  (:is-muted params false)
-        is-active (:is-active params (or (not= "penpot" backend) is-demo))
+        is-active (:is-active params false)
         email     (str/lower (:email params))
 
         params    {:id id

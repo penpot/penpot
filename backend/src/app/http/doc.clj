@@ -45,7 +45,7 @@
 (defn handler
   [rpc]
   (let [context (prepare-context rpc)]
-    (if (contains? cf/flags :api-doc)
+    (if (contains? cf/flags :backend-api-doc)
       (fn [_]
         {:status 200
          :body (-> (io/resource "api-doc.tmpl")

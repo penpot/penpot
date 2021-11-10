@@ -203,6 +203,7 @@
            (sxf request)))
     (let [info   (assoc info
                         :iss :prepared-register
+                        :is-active true
                         :exp (dt/in-future {:hours 48}))
           token  (tokens :generate info)
           params (d/without-nils
