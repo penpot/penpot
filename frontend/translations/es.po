@@ -257,6 +257,14 @@ msgstr "Duplicar %s archivos"
 msgid "dashboard.empty-files"
 msgstr "Todavía no hay ningún archivo aquí"
 
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Aún no tienes archivos. Si quieres probar alguna plantilla visita nuestra "
+"seccion de [Bibliotecas y "
+"plantillas](https://penpot.app/libraries-templates.html)"
+
 msgid "dashboard.export-frames"
 msgstr "Exportar tableros a PDF..."
 
@@ -1550,6 +1558,9 @@ msgstr "Perfil guardado correctamente!"
 msgid "notifications.validation-email-sent"
 msgstr "Verificación de email enviada a %s. Comprueba tu correo."
 
+msgid "onboarding.choice.title"
+msgstr "Te damos la bienvenida a Penpot"
+
 msgid "onboarding.contrib.alt"
 msgstr "Código Abierto"
 
@@ -1657,8 +1668,8 @@ msgstr "¡Hurra! Ya tienes tu cuenta en Penpot :)"
 msgid "onboarding.welcome.desc2"
 msgstr ""
 "Penpot está en su primera versión beta gracias a una combinación de "
-"funcionalidades, madurez, estabilidad y la fantástica validación de "
-"su comunidad, a la que te damos la bienvenida."
+"funcionalidades, madurez, estabilidad y la fantástica validación de su "
+"comunidad, a la que te damos la bienvenida."
 
 msgid "onboarding.welcome.desc3"
 msgstr ""
@@ -1666,9 +1677,6 @@ msgstr ""
 "iteraciones de nuestros esperanzadores planes."
 
 msgid "onboarding.welcome.title"
-msgstr "Te damos la bienvenida a Penpot"
-
-msgid "onboarding.choice.title"
 msgstr "Te damos la bienvenida a Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs

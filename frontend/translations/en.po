@@ -1547,6 +1547,9 @@ msgstr "Profile saved successfully!"
 msgid "notifications.validation-email-sent"
 msgstr "Verification email sent to %s. Check your email!"
 
+msgid "onboarding.choice.desc"
+msgstr "How do you want to start?"
+
 msgid "onboarding.choice.fly-solo"
 msgstr "Fly solo"
 
@@ -1560,6 +1563,9 @@ msgid "onboarding.choice.team-up-desc"
 msgstr ""
 "Are you working with someone? Create a team and invite people to work "
 "together on projects and share design assets."
+
+msgid "onboarding.choice.title"
+msgstr "Welcome to Penpot"
 
 msgid "onboarding.contrib.alt"
 msgstr "Open Source"
@@ -1646,9 +1652,6 @@ msgstr "Here are some templates."
 msgid "onboarding.templates.title"
 msgstr "Start designing"
 
-msgid "onboarding.welcome.title"
-msgstr "Welcome to Penpot"
-
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
@@ -1657,19 +1660,16 @@ msgstr "Hooray! You are already a Penpot user :)"
 
 msgid "onboarding.welcome.desc2"
 msgstr ""
-"Penpot is in its first beta version thanks to the combination of "
-"core features, maturity, stability and the amazing validation from "
-"the community as a whole, to which you are more than welcome."
+"Penpot is in its first beta version thanks to the combination of core "
+"features, maturity, stability and the amazing validation from the community "
+"as a whole, to which you are more than welcome."
 
 msgid "onboarding.welcome.desc3"
 msgstr ""
-"While you enjoy Penpot for what it is we will keep improving it, "
-"releasing iterations of our hopeful plans."
+"While you enjoy Penpot for what it is we will keep improving it, releasing "
+"iterations of our hopeful plans."
 
-msgid "onboarding.choice.desc"
-msgstr "How do you want to start?"
-
-msgid "onboarding.choice.title"
+msgid "onboarding.welcome.title"
 msgstr "Welcome to Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs
