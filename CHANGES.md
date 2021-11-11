@@ -4,10 +4,44 @@
 ## :rocket: Next
 
 ### :boom: Breaking changes
+
+- The initial project / data mechanism (not documented) has been
+  disabled. Is the mechanism used for creating initial project on user
+  signup. With the new onboarding approach, this subsystem is no
+  longer needed and is disabled.
+
 ### :sparkles: New features
+
+- Enhance corner radius behavior [Taiga #2190](https://tree.taiga.io/project/penpot/issue/2190).
+- Allow preserve scroll position in interactions [Taiga #2250](https://tree.taiga.io/project/penpot/us/2250).
+- Add new onboarding modals.
+
 ### :bug: Bugs fixed
+
+- Fix problem with exporting before the document is saved [Taiga #2189](https://tree.taiga.io/project/penpot/issue/2189).
+- Fix undo stacking when changing color from color-picker [Taiga #2191](https://tree.taiga.io/project/penpot/issue/2191).
+- Fix pages dropdown in viewer [Taiga #2087](https://tree.taiga.io/project/penpot/issue/2087).
+- Fix problem when exporting texts with gradients or opacity [Taiga #2200](https://tree.taiga.io/project/penpot/issue/2200).
+- Fix problem with view mode comments [Taiga #2226](https://tree.taiga.io/project/penpot/issue/2226).
+- Disallow to create a component when already has one [Taiga #2237](https://tree.taiga.io/project/penpot/issue/2237).
+- Add ellipsis in long labels for input fields [Taiga #2224](https://tree.taiga.io/project/penpot/issue/2224)
+- Fix problem with text rendering on export [Taiga #2223](https://tree.taiga.io/project/penpot/issue/2223)
+- Fix problem when flattening booleans losing styles [Taiga #2217](https://tree.taiga.io/project/penpot/issue/2217)
+- Add shortcuts to boolean icons popups [Taiga #2220](https://tree.taiga.io/project/penpot/issue/2220)
+- Fix a worker error when transforming a rectangle into path
+- Fix max/min values for opacity fields [Taiga #2183](https://tree.taiga.io/project/penpot/issue/2183)
+- Fix viewer comment position when zoom applied [Taiga #2240](https://tree.taiga.io/project/penpot/issue/2240)
+- Remove change style on hover for options [Taiga #2172](https://tree.taiga.io/project/penpot/issue/2172)
+- Fix problem in viewer with dropdowns when comments active [#1303](https://github.com/penpot/penpot/issues/1303)
+- Add placeholder to create shareable link
+- Fix project files count not refreshing correctly after import [Taiga #2216](https://tree.taiga.io/project/penpot/issue/2216)
+- Remove button after import process finish [Taiga #2215](https://tree.taiga.io/project/penpot/issue/2215)
+
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
+
+- To the translation community for the hard work on making penpot
+  available on so many languages.
 
 
 ## 1.9.0-alpha

@@ -33,10 +33,8 @@
       (tr "dashboard.new-project")]]))
 
 (mf/defc project-item
-  [{:keys [project first? files] :as props}]
+  [{:keys [project first? team files] :as props}]
   (let [locale     (mf/deref i18n/locale)
-
-        team-id    (:team-id project)
         file-count (or (:count project) 0)
 
         dstate     (mf/deref refs/dashboard-local)
@@ -100,7 +98,8 @@
         on-import
         (mf/use-callback
          (fn []
-           (st/emit! (dd/fetch-recent-files)
+           (st/emit! (dd/fetch-files {:project-id (:id project)})
+                     (dd/fetch-recent-files)
                      (dd/clear-selected-files))))]
 
     [:div.dashboard-project-row {:class (when first? "first")}
@@ -145,9 +144,8 @@
        i/actions]]
 
      [:& line-grid
-      {:project-id (:id project)
-       :project project
-       :team-id team-id
+      {:project project
+       :team team
        :on-load-more on-nav
        :files files}]]))
 
@@ -186,7 +184,8 @@
                              (filterv #(= id (:project-id %)))
                              (sort-by :modified-at #(compare %2 %1))))]
             [:& project-item {:project project
-                              :files   files
+                              :team team
+                              :files files
                               :first? (= project (first projects))
                               :key (:id project)}]))]])))
 

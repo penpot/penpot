@@ -63,7 +63,7 @@
   display: flex;
   flex-direction: column;
   width: 448px;
-  background-color: $color-dashboard;
+  background-color: $color-white;
 
   .modal-header {
     align-items: center;
@@ -705,7 +705,7 @@
   background-color: $color-white;
   box-shadow: 0 10px 10px rgba(0,0,0,.2);
   display: flex;
-  min-height: 370px;
+  min-height: 420px;
   flex-direction: row;
   font-family: "sourcesanspro", sans-serif;
   min-width: 620px;
@@ -824,33 +824,99 @@
   }
 
   &.final {
+    // TODO: Juan revisa TODA esta parte
+
     padding: $size-5 0 0 0;
+    flex-direction: column;
+
+    .modal-top {
+      padding-top: 40px;
+      color: $color-gray-60;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      h1 {
+        font-family: 'worksans', sans-serif;
+        font-weight: 700;
+        font-size: 27px;
+        margin-bottom: $size-3;
+      }
+      p {
+        font-family: 'worksans', sans-serif;
+        font-weight: 500;
+        font-size: $fs18;
+      }
+
+    }
+
+    .modal-columns {
+      display: flex;
+      margin: 17px;
+
+      .modal-left {
+        background-image: url("/images/on-solo.svg");
+        background-position: left top;
+        background-size: 11%;
+      }
+      
+      .modal-left:hover {
+        background-image: url("/images/on-solo-hover.svg");
+        background-size: 15%;
+      }
+      
+      .modal-right {
+        background-image: url("/images/on-teamup.svg");
+        background-position: right top;
+        background-size: 28%;
+      }
+      
+      .modal-right:hover {
+        background-image: url("/images/on-teamup-hover.svg");
+        background-size: 32%;
+      }
+      
+      .modal-right,
+      .modal-left {
+        background-repeat: no-repeat;
+        border-radius: $br-medium;
+        transition: all ease .3s;
+        &:hover {
+          background-color: $color-primary;
+        }
+      }
+    }
+
+    .modal-left {
+      margin-right: 35px;
+    }
 
     .modal-left,
     .modal-right {
+      justify-content: center;
       align-items: center;
       background-color: $color-white;
       color: $color-black;
       flex: 1;
       flex-direction: column;
-      overflow: visible;
-      padding: $size-6 40px;
+      // overflow: visible;
+      // padding: $size-6 40px;
       text-align: center;
 
+      border: 1px solid $color-gray-10;
+      border-radius: 2px;
+      min-height: 180px;
+      width: 233px;
+      cursor: pointer;
+
       h2 {
-        font-weight: 900;
+        font-weight: 700;
         margin-bottom: $size-5;
         font-size: $fs24;
       }
 
       p {
         font-size: $fs14;
-      }
-
-      .btn-primary {
-        margin-bottom: 0;
-        margin-top: auto;
-        width: 200px;
       }
 
       img {
@@ -861,26 +927,6 @@
         width: 150px;
       }
     }
-
-    .modal-left {
-      border-right: 1px solid $color-gray-10;
-
-      form {
-        align-items: center;
-        display: flex;
-        flex-direction: column;
-        margin-top: auto;
-
-        .custom-input {
-          margin-bottom: $size-4;
-
-          input {
-            width: 200px;
-          }
-        }
-      }
-    }
-
   }
 }
 
@@ -898,4 +944,194 @@
 
 .relnotes .onboarding {
   height: 420px;
+}
+
+.onboarding-templates {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 348px;
+  height: 100vh;
+
+  .modal-close-button {
+    width: 34px;
+    height: 34px;
+    margin-right: 13px;
+    margin-top: 13px;
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .modal-header {
+    height: unset;
+    border-radius: unset;
+    justify-content: flex-end;
+  }
+
+  .modal-content {
+    border: 0px;
+    padding: 0px 25px;
+    background-color: $color-white;
+    flex-grow: 1;
+
+    p, h3 {
+      color: $color-gray-60;
+      text-align: center;
+    }
+
+    h3 {
+      font-size: $fs18;
+      font-weight: bold;
+    }
+
+    p {
+      font-size: $fs16;
+    }
+
+
+    .templates {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 8%;
+    }
+
+    .template-item {
+      width: 275px;
+      border: 1px solid $color-gray-10;
+      
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      border-radius: $br-small;
+      
+      &:not(:last-child) {
+        margin-bottom: 22px;
+      }
+    }
+    
+    .template-item-content {
+      // height: 144px;
+      flex-grow: 1;
+
+      img {
+        border-radius: $br-small $br-small 0 0;
+      }
+    }
+    
+    .template-item-title {
+      padding: 6px 12px;
+      height: 64px;
+      border-top: 1px solid $color-gray-10;
+
+      .label {
+        color: $color-black;
+        padding: 0px 4px;
+        font-size: $fs16;
+        display: flex;
+      }
+
+      .action {
+        color: $color-primary-dark;
+        cursor: pointer;
+        font-size: $fs14;
+        font-weight: 600;
+        display: flex;
+        justify-content: flex-end;
+        margin-top: $size-2;
+      }
+
+    }
+  }
+}
+
+
+.onboarding-team {
+  display: flex;
+  min-width: 620px;
+  min-height: 420px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  .title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 408px;
+
+    color: $color-gray-60;
+    h2 {
+      font-weight: 700;
+      padding-bottom: 10px;
+    }
+
+    p {
+      text-align: center;
+      font-size: $fs18;
+    }
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    margin-top: $size-6;
+
+    .buttons {
+      margin-top: 30px;
+      display: flex;
+      justify-content: flex-end;
+
+      > *:not(:last-child) {
+        margin-right: 13px;
+      }
+
+      input { margin-bottom: unset; }
+      input[type=submit] {
+      }
+
+      .btn-primary {
+        width: 117px;
+      }
+    }
+
+    .team-row {
+      .custom-input {
+        width: 459px;
+      }
+    }
+
+    .invite-row {
+      display: flex;
+      justify-content: space-between;
+
+      > *:not(:last-child) {
+        margin-right: 13px;
+      }
+
+      .custom-input {
+        width: 321px;
+      }
+
+      .custom-select {
+        width: 118px;
+      }
+    }
+
+    .skip-action {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 15px;
+      .action {
+        color: $color-primary-dark;
+        font-weight: 500;
+        font-size: $fs16;
+        cursor: pointer;
+      }
+    }
+
+  }
 }

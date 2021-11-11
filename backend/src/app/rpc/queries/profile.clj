@@ -87,13 +87,9 @@
 
 (defn retrieve-profile
   [conn id]
-  (let [profile (some->> (retrieve-profile-data conn id)
-                         (strip-private-attrs)
-                         (populate-additional-data conn))]
-    (when (nil? profile)
-      (ex/raise :type :not-found
-                :hint "Object doest not exists."))
-
+  (let [profile (->> (retrieve-profile-data conn id)
+                     (strip-private-attrs)
+                     (populate-additional-data conn))]
     (update profile :props filter-profile-props)))
 
 (def ^:private sql:profile-by-email

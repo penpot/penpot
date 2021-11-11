@@ -201,6 +201,9 @@
 (s/def ::shapes-changes-persisted
   (s/keys :req-un [::revn ::cp/changes]))
 
+(defn shapes-persited-event? [event]
+  (= (ptk/type event) ::changes-persisted))
+
 (defn shapes-changes-persisted
   [file-id {:keys [revn changes] :as params}]
   (us/verify ::us/uuid file-id)

@@ -34,10 +34,15 @@
   (when (profile/retrieve-profile-data-by-email conn email)
     (ex/raise :type :validation
               :code :email-already-exists))
+
   (db/update! conn :profile
               {:email email}
               {:id profile-id})
-  claims)
+
+  (with-meta claims
+    {::audit/name "update-profile-email"
+     ::audit/props {:email email}
+     ::audit/profile-id profile-id}))
 
 (defn- annotate-profile-activation
   "A helper for properly increase the profile-activation metric once the

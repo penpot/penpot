@@ -43,6 +43,8 @@
 
         local   (mf/deref refs/viewer-local)
 
+        nav-scroll (:nav-scroll local)
+
         page-id (or page-id (-> file :data :pages first))
 
         page    (mf/use-memo
@@ -91,6 +93,14 @@
          (fn []
            (events/unlistenByKey key1)))))
 
+    (mf/use-layout-effect
+      (mf/deps nav-scroll)
+      (fn []
+        (when (number? nav-scroll)
+          (let [viewer-section (dom/get-element "viewer-section")]
+            (st/emit! (dv/reset-nav-scroll))
+            (dom/set-scroll-pos! viewer-section nav-scroll)))))
+
     [:div {:class (dom/classnames
                    :force-visible (:show-thumbnails local)
                    :viewer-layout (not= section :handoff)
@@ -110,7 +120,7 @@
                             :show? (:show-thumbnails local false)
                             :page page
                             :index index}]
-      [:section.viewer-preview
+      [:section.viewer-section {:id "viewer-section"}
        (cond
          (empty? frames)
          [:section.empty-state

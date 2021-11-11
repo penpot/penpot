@@ -130,7 +130,7 @@
                   :on-change handle-change-type}]
 
       (if (= type :square)
-        [:div.input-element.pixels
+        [:div.input-element.pixels {:title (tr "workspace.options.size")}
          [:> numeric-input {:min 1
                             :no-validate true
                             :value (:size params)
@@ -214,6 +214,7 @@
                         :on-change (handle-change :params :margin)}]])
 
       [:& color-row {:color (:color params)
+                     :title (tr "workspace.options.grid.params.color")
                      :disable-gradient true
                      :on-change handle-change-color
                      :on-detach handle-detach-color}]

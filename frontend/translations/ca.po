@@ -1630,17 +1630,6 @@ msgstr "Comenceu a dissenyar"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "Estem molt contents de presentar-vos la primera versió alfa."
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot encara està en fase de desenvolupament i hi haurà actualitzacions "
-"constants. Esperem que gaudiu de la primera versió estable."
-
-msgid "onboarding.welcome.title"
-msgstr "Vos donem la benvinguda a Penpot!"
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
 msgstr "Vés a l'inici de sessió"

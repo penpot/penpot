@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.main.data.messages :as dm]
    [app.main.data.workspace :as udw]
+   [app.main.data.workspace.persistence :as dwp]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -19,12 +20,15 @@
 
 (defn request-export
   [shape exports]
-  (rp/query! :export
-             {:page-id (:page-id shape)
-              :file-id  (:file-id shape)
-              :object-id (:id shape)
-              :name (:name shape)
-              :exports exports}))
+  ;; Force a persist before exporting otherwise the exported shape could be outdated
+  (st/emit! ::dwp/force-persist)
+  (rp/query!
+   :export
+   {:page-id (:page-id shape)
+    :file-id  (:file-id shape)
+    :object-id (:id shape)
+    :name (:name shape)
+    :exports exports}))
 
 (mf/defc exports-menu
   [{:keys [shape page-id file-id] :as props}]

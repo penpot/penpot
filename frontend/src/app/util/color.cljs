@@ -7,6 +7,7 @@
 (ns app.util.color
   "Color conversion utils."
   (:require
+   [app.common.exceptions :as ex]
    [app.util.object :as obj]
    [cuerdas.core :as str]
    [goog.color :as gcolor]))
@@ -155,3 +156,19 @@
 
 (def empty-color
   (into {} (map #(vector % nil)) [:color :id :file-id :gradient :opacity]))
+
+(defn next-rgb
+  "Given a color in rgb returns the next color"
+  [[r g b]]
+  (cond
+    (and (= 255 r) (= 255 g) (= 255 b))
+    (ex/raise "Cannot get next color")
+
+    (and (= 255 g) (= 255 b))
+    [(inc r) 0 0]
+
+    (= 255 b)
+    [r (inc g) 0]
+
+    :else
+    [r g (inc b)]))

@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.booleans
   (:require
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -51,28 +52,28 @@
     [:div.align-options
      [:div.align-group
       [:div.align-button.tooltip.tooltip-bottom
-       {:alt (tr "workspace.shape.menu.union")
+       {:alt (str (tr "workspace.shape.menu.union") " (" (sc/get-tooltip :boolean-union) ")")
         :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :union))
         :on-click (set-bool :union)}
        i/boolean-union]
 
       [:div.align-button.tooltip.tooltip-bottom
-       {:alt (tr "workspace.shape.menu.difference")
+       {:alt (str (tr "workspace.shape.menu.difference") " (" (sc/get-tooltip :boolean-difference) ")")
         :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :difference))
         :on-click (set-bool :difference)}
        i/boolean-difference]
 
       [:div.align-button.tooltip.tooltip-bottom
-       {:alt (tr "workspace.shape.menu.intersection")
+       {:alt (str (tr "workspace.shape.menu.intersection") " (" (sc/get-tooltip :boolean-intersection) ")")
         :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :intersection))
         :on-click (set-bool :intersection)}
        i/boolean-intersection]
 
       [:div.align-button.tooltip.tooltip-bottom
-       {:alt (tr "workspace.shape.menu.exclude")
+       {:alt (str (tr "workspace.shape.menu.exclude") " (" (sc/get-tooltip :boolean-exclude) ")")
         :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :exclude))
         :on-click (set-bool :exclude)}

@@ -9,6 +9,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -137,12 +138,13 @@
                             editing-stop (update-in [:stops editing-stop] merge changes)))
             (reset! dirty? true)))
 
-        handle-click-picker (fn []
-                              (if picking-color?
-                                (do (modal/disallow-click-outside!)
-                                    (st/emit! (dc/stop-picker)))
-                                (do (modal/allow-click-outside!)
-                                    (st/emit! (dc/start-picker)))))
+        handle-click-picker
+        (fn []
+          (if picking-color?
+            (do (modal/disallow-click-outside!)
+                (st/emit! (dc/stop-picker)))
+            (do (modal/allow-click-outside!)
+                (st/emit! (dc/start-picker)))))
 
         handle-change-stop
         (fn [offset]
@@ -307,13 +309,19 @@
         (case @active-tab
           :ramp [:& ramp-selector {:color current-color
                                    :disable-opacity disable-opacity
-                                   :on-change handle-change-color}]
+                                   :on-change handle-change-color
+                                   :on-start-drag #(st/emit! (dwu/start-undo-transaction))
+                                   :on-finish-drag #(st/emit! (dwu/commit-undo-transaction))}]
           :harmony [:& harmony-selector {:color current-color
                                          :disable-opacity disable-opacity
-                                         :on-change handle-change-color}]
+                                         :on-change handle-change-color
+                                         :on-start-drag #(st/emit! (dwu/start-undo-transaction))
+                                         :on-finish-drag #(st/emit! (dwu/commit-undo-transaction))}]
           :hsva [:& hsva-selector {:color current-color
                                    :disable-opacity disable-opacity
-                                   :on-change handle-change-color}]
+                                   :on-change handle-change-color
+                                   :on-start-drag #(st/emit! (dwu/start-undo-transaction))
+                                   :on-finish-drag #(st/emit! (dwu/commit-undo-transaction))}]
           nil))
 
       [:& color-inputs {:type (if (= @active-tab :hsva) :hsv :rgb)
@@ -363,7 +371,7 @@
         position (or position :left)
         style (calculate-position vport position x y)
 
-        handle-change (fn [new-data _shift-clicked?]
+        handle-change (fn [new-data]
                         (reset! dirty? (not= data new-data))
                         (reset! last-change new-data)
                         (when on-change

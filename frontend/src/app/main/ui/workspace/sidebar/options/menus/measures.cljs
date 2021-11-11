@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as math]
+   [app.common.types.radius :as ctr]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
    [app.main.refs :as refs]
@@ -61,6 +62,11 @@
 
         proportion-lock (:proportion-lock values)
 
+        radius-mode      (ctr/radius-mode values)
+        all-equal?       (ctr/all-equal? values)
+        radius-multi?    (mf/use-state nil)
+        radius-input-ref (mf/use-ref nil)
+
         on-size-change
         (mf/use-callback
          (mf/deps ids)
@@ -97,57 +103,38 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [_value]
-           (let [radius-update
-                 (fn [shape]
-                   (cond-> shape
-                     (:r1 shape)
-                     (-> (assoc :rx 0 :ry 0)
-                         (dissoc :r1 :r2 :r3 :r4))))]
-             (st/emit! (dch/update-shapes ids-with-children radius-update)))))
+           (if all-equal?
+             (st/emit! (dch/update-shapes ids-with-children ctr/switch-to-radius-1))
+             (reset! radius-multi? true))))
 
         on-switch-to-radius-4
         (mf/use-callback
          (mf/deps ids)
          (fn [_value]
-           (let [radius-update
-                 (fn [shape]
-                   (cond-> shape
-                     (:rx shape)
-                     (-> (assoc :r1 0 :r2 0 :r3 0 :r4 0)
-                         (dissoc :rx :ry))))]
-             (st/emit! (dch/update-shapes ids-with-children radius-update)))))
+           (st/emit! (dch/update-shapes ids-with-children ctr/switch-to-radius-4))
+           (reset! radius-multi? false)))
 
         on-radius-1-change
         (mf/use-callback
          (mf/deps ids)
          (fn [value]
-           (let [radius-update
-                 (fn [shape]
-                   (cond-> shape
-                     (:r1 shape)
-                     (-> (dissoc :r1 :r2 :r3 :r4)
-                         (assoc :rx 0 :ry 0))
+           (st/emit! (dch/update-shapes ids-with-children #(ctr/set-radius-1 % value)))))
 
-                     (or (:rx shape) (:r1 shape))
-                     (assoc :rx value :ry value)))]
-
-             (st/emit! (dch/update-shapes ids-with-children radius-update)))))
+        on-radius-multi-change
+        (mf/use-callback
+          (mf/deps ids)
+          (fn [event]
+            (let [value (-> event dom/get-target dom/get-value d/parse-integer)]
+              (when (some? value)
+                (st/emit! (dch/update-shapes ids-with-children ctr/switch-to-radius-1)
+                          (dch/update-shapes ids-with-children #(ctr/set-radius-1 % value)))
+                (reset! radius-multi? false)))))
 
         on-radius-4-change
         (mf/use-callback
          (mf/deps ids)
          (fn [value attr]
-           (let [radius-update
-                 (fn [shape]
-                   (cond-> shape
-                     (:rx shape)
-                     (-> (dissoc :rx :rx)
-                         (assoc :r1 0 :r2 0 :r3 0 :r4 0))
-
-                     (attr shape)
-                     (assoc attr value)))]
-
-             (st/emit! (dch/update-shapes ids-with-children radius-update)))))
+           (st/emit! (dch/update-shapes ids-with-children #(ctr/set-radius-4 % attr value)))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
@@ -160,6 +147,16 @@
 
         select-all #(-> % (dom/get-target) (.select))]
 
+    (mf/use-layout-effect
+      (mf/deps radius-mode @radius-multi?)
+      (fn []
+        (when (and (= radius-mode :radius-1)
+                   (= @radius-multi? false))
+          ;; when going back from radius-multi to normal radius-1,
+          ;; restore focus to the newly created numeric-input
+          (let [radius-input (mf/ref-val radius-input-ref)]
+            (dom/focus! radius-input)))))
+
     [:*
      [:div.element-set
       [:div.element-set-content
@@ -168,7 +165,7 @@
        (when (options :size)
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.size")]
-          [:div.input-element.width
+          [:div.input-element.width {:title (tr "workspace.options.width")}
            [:> numeric-input {:min 1
                               :no-validate true
                               :placeholder "--"
@@ -176,7 +173,7 @@
                               :on-change on-width-change
                               :value (attr->string :width values)}]]
 
-          [:div.input-element.height
+          [:div.input-element.height {:title (tr "workspace.options.height")}
            [:> numeric-input {:min 1
                               :no-validate true
                               :placeholder "--"
@@ -196,13 +193,13 @@
        (when (options :position)
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.position")]
-          [:div.input-element.Xaxis
+          [:div.input-element.Xaxis {:title (tr "workspace.options.x")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-pos-x-change
                               :value (attr->string :x values)}]]
-          [:div.input-element.Yaxis
+          [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
                               :on-click select-all
@@ -213,7 +210,7 @@
        (when (options :rotation)
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.rotation")]
-          [:div.input-element.degrees
+          [:div.input-element.degrees {:title (tr "workspace.options.rotation")}
            [:> numeric-input
             {:no-validate true
              :min 0
@@ -233,60 +230,72 @@
               :value (attr->string :rotation values)}]])
 
        ;; RADIUS
-       (let [radius-1? (some? (:rx values))
-             radius-4? (some? (:r1 values))]
-         (when (and (options :radius) (or radius-1? radius-4?))
-           [:div.row-flex
-            [:div.radius-options
-             [:div.radius-icon.tooltip.tooltip-bottom
-              {:class (dom/classnames
-                       :selected
-                       (and radius-1? (not radius-4?)))
-               :alt (tr "workspace.options.radius.all-corners")
-               :on-click on-switch-to-radius-1}
-              i/radius-1]
-             [:div.radius-icon.tooltip.tooltip-bottom
-              {:class (dom/classnames
-                       :selected
-                       (and radius-4? (not radius-1?)))
-               :alt (tr "workspace.options.radius.single-corners")
-               :on-click on-switch-to-radius-4}
-              i/radius-4]]
-            (if radius-1?
-              [:div.input-element.mini
-               [:> numeric-input
-                {:placeholder "--"
-                 :min 0
-                 :on-click select-all
-                 :on-change on-radius-1-change
-                 :value (attr->string :rx values)}]]
+       (when (and (options :radius) (some? radius-mode))
+         [:div.row-flex
+          [:div.radius-options
+           [:div.radius-icon.tooltip.tooltip-bottom
+            {:class (dom/classnames
+                      :selected (or (= radius-mode :radius-1) @radius-multi?))
+             :alt (tr "workspace.options.radius.all-corners")
+             :on-click on-switch-to-radius-1}
+            i/radius-1]
+           [:div.radius-icon.tooltip.tooltip-bottom
+            {:class (dom/classnames
+                      :selected (and (= radius-mode :radius-4) (not @radius-multi?)))
+             :alt (tr "workspace.options.radius.single-corners")
+             :on-click on-switch-to-radius-4}
+            i/radius-4]]
 
-              [:*
-               [:div.input-element.mini
-                [:> numeric-input
-                 {:placeholder "--"
-                  :min 0
-                  :on-click select-all
-                  :on-change on-radius-r1-change
-                  :value (attr->string :r1 values)}]]
-               [:div.input-element.mini
-                [:> numeric-input
-                 {:placeholder "--"
-                  :min 0
-                  :on-click select-all
-                  :on-change on-radius-r2-change
-                  :value (attr->string :r2 values)}]]
-               [:div.input-element.mini
-                [:> numeric-input
-                 {:placeholder "--"
-                  :min 0
-                  :on-click select-all
-                  :on-change on-radius-r3-change
-                  :value (attr->string :r3 values)}]]
-               [:div.input-element.mini
-                [:> numeric-input
-                 {:placeholder "--"
-                  :min 0
-                  :on-click select-all
-                  :on-change on-radius-r4-change
-                  :value (attr->string :r4 values)}]]])]))]]]))
+          (cond
+            (= radius-mode :radius-1)
+            [:div.input-element.mini {:title (tr "workspace.options.radius")}
+             [:> numeric-input
+              {:placeholder "--"
+               :ref radius-input-ref
+               :min 0
+               :on-click select-all
+               :on-change on-radius-1-change
+               :value (attr->string :rx values)}]]
+
+            @radius-multi?
+            [:div.input-element.mini {:title (tr "workspace.options.radius")}
+             [:input.input-text
+              {:type "number"
+               :placeholder "--"
+               :on-click select-all
+               :on-change on-radius-multi-change
+               :value ""}]]
+
+            (= radius-mode :radius-4)
+            [:*
+             [:div.input-element.mini {:title (tr "workspace.options.radius")}
+              [:> numeric-input
+               {:placeholder "--"
+                :min 0
+                :on-click select-all
+                :on-change on-radius-r1-change
+                :value (attr->string :r1 values)}]]
+
+             [:div.input-element.mini {:title (tr "workspace.options.radius")}
+              [:> numeric-input
+               {:placeholder "--"
+                :min 0
+                :on-click select-all
+                :on-change on-radius-r2-change
+                :value (attr->string :r2 values)}]]
+
+             [:div.input-element.mini {:title (tr "workspace.options.radius")}
+              [:> numeric-input
+               {:placeholder "--"
+                :min 0
+                :on-click select-all
+                :on-change on-radius-r3-change
+                :value (attr->string :r3 values)}]]
+
+             [:div.input-element.mini {:title (tr "workspace.options.radius")}
+              [:> numeric-input
+               {:placeholder "--"
+                :min 0
+                :on-click select-all
+                :on-change on-radius-r4-change
+                :value (attr->string :r4 values)}]]])])]]]))

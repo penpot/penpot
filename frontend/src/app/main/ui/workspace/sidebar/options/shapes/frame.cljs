@@ -87,7 +87,7 @@
       ;; WIDTH & HEIGHT
       [:div.row-flex
        [:span.element-set-subtitle (tr "workspace.options.size")]
-       [:div.input-element.pixels
+       [:div.input-element.pixels {:title (tr "workspace.options.width")}
         [:> numeric-input {:min 1
                            :on-click select-all
                            :on-change on-width-change
@@ -95,7 +95,7 @@
                                       (math/precision 2)
                                       (d/coalesce-str "1"))}]]
 
-       [:div.input-element.pixels
+       [:div.input-element.pixels {:title (tr "workspace.options.height")}
         [:> numeric-input {:min 1
                            :on-click select-all
                            :on-change on-height-change
@@ -112,14 +112,14 @@
       ;; POSITION
       [:div.row-flex
        [:span.element-set-subtitle (tr "workspace.options.position")]
-       [:div.input-element.pixels
+       [:div.input-element.pixels {:title (tr "workspace.options.x")}
         [:> numeric-input {:placeholder "x"
                            :on-click select-all
                            :on-change on-pos-x-change
                            :value (-> (:x shape)
                                       (math/precision 2)
                                       (d/coalesce-str "0"))}]]
-       [:div.input-element.pixels
+       [:div.input-element.pixels {:title (tr "workspace.options.y")}
         [:> numeric-input {:placeholder "y"
                            :on-click select-all
                            :on-change on-pos-y-change

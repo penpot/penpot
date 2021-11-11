@@ -8,7 +8,6 @@
   (:require
    [app.common.pages :as cp]
    [app.main.data.workspace.colors :as dc]
-   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
@@ -70,17 +69,7 @@
                             (assoc :id nil :file-id nil))]
               (st/emit! (dc/change-fill ids color)))))
 
-        on-open-picker
-        (mf/use-callback
-          (mf/deps ids)
-          (fn [_value _opacity _id _file-id]
-            (st/emit! (dwu/start-undo-transaction))))
-
-        on-close-picker
-        (mf/use-callback
-          (mf/deps ids)
-          (fn [_value _opacity _id _file-id]
-            (st/emit! (dwu/commit-undo-transaction))))]
+        ]
 
     (if show?
       [:div.element-set
@@ -90,10 +79,9 @@
 
        [:div.element-set-content
         [:& color-row {:color color
+                       :title (tr "workspace.options.fill")
                        :on-change on-change
-                       :on-detach on-detach
-                       :on-open on-open-picker
-                       :on-close on-close-picker}]]]
+                       :on-detach on-detach}]]]
 
       [:div.element-set
        [:div.element-set-title

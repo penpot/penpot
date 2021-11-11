@@ -302,6 +302,21 @@
     (update [_ state]
       (assoc-in state [:viewer-local :interactions-show?] false))))
 
+(defn set-nav-scroll
+  [scroll]
+  (ptk/reify ::set-nav-scroll
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :nav-scroll] scroll))))
+
+(defn reset-nav-scroll
+  []
+  (ptk/reify ::reset-nav-scroll
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/dissoc-in state [:viewer-local :nav-scroll]))))
+
+
 ;; --- Navigation inside page
 
 (defn go-to-frame-by-index

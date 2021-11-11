@@ -37,6 +37,7 @@
      [:div.element-set-content
       [:& color-row {:disable-gradient true
                      :disable-opacity true
+                     :title (tr "workspace.options.canvas-background")
                      :color {:color (get options :background "#E8E9EA")
                              :opacity 1}
                      :on-change on-change

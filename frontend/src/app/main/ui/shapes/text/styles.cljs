@@ -46,7 +46,7 @@
 
 (defn generate-paragraph-styles
   [shape data]
-  (let [line-height (:line-height data)
+  (let [line-height (:line-height data 1.2)
         text-align  (:text-align data "start")
         grow-type   (:grow-type shape)
 
@@ -60,10 +60,10 @@
 
 (defn generate-text-styles
   [data]
-  (let [letter-spacing  (:letter-spacing data)
+  (let [letter-spacing  (:letter-spacing data 0)
         text-decoration (:text-decoration data)
         text-transform  (:text-transform data)
-        line-height     (:line-height data)
+        line-height     (:line-height data 1.2)
 
         font-id         (:font-id data (:font-id txt/default-text-attrs))
         font-variant-id (:font-variant-id data)

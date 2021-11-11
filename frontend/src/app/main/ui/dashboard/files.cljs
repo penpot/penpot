@@ -120,6 +120,6 @@
     [:*
      [:& header {:team team :project project}]
      [:section.dashboard-container
-      [:& grid {:project-id (:id project)
+      [:& grid {:project project
                 :files files}]]]))
 

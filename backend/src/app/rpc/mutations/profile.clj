@@ -16,10 +16,8 @@
    [app.loggers.audit :as audit]
    [app.media :as media]
    [app.metrics :as mtx]
-   [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
-   [app.setup.initial-data :as sid]
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -126,9 +124,7 @@
 
 ;; --- MUTATION: Register Profile
 
-(s/def ::accept-terms-and-privacy ::us/boolean)
 (s/def ::token ::us/not-empty-string)
-
 (s/def ::register-profile
   (s/keys :req-un [::token ::fullname]))
 
@@ -148,16 +144,17 @@
 
 (defn register-profile
   [{:keys [conn tokens session metrics] :as cfg} {:keys [token] :as params}]
-  (let [claims (tokens :verify {:token token :iss :prepared-register})
-        params (merge params claims)]
+  (let [claims    (tokens :verify {:token token :iss :prepared-register})
+        params    (merge params claims)]
+
     (check-profile-existence! conn params)
-    (let [profile (->> params
-                       (create-profile conn)
-                       (create-profile-relations conn)
-                       (decode-profile-row))]
 
-      (sid/load-initial-project! conn profile)
-
+    (let [is-active (or (:is-active params)
+                        (contains? cf/flags :insecure-register))
+          profile   (->> (assoc params :is-active is-active)
+                         (create-profile conn)
+                         (create-profile-relations conn)
+                         (decode-profile-row))]
       (cond
         ;; If invitation token comes in params, this is because the
         ;; user comes from team-invitation process; in this case,
@@ -181,6 +178,15 @@
         ;; registring using third party auth mechanism; in this case
         ;; we need to mark this session as logged.
         (not= "penpot" (:auth-backend profile))
+        (with-meta (profile/strip-private-attrs profile)
+          {:transform-response ((:create session) (:id profile))
+           :before-complete (annotate-profile-register metrics)
+           ::audit/props (audit/profile->props profile)
+           ::audit/profile-id (:id profile)})
+
+        ;; If the `:enable-insecure-register` flag is set, we proceed
+        ;; to sign in the user directly, without email verification.
+        (true? is-active)
         (with-meta (profile/strip-private-attrs profile)
           {:transform-response ((:create session) (:id profile))
            :before-complete (annotate-profile-register metrics)
@@ -231,7 +237,7 @@
         backend   (:backend params "penpot")
         is-demo   (:is-demo params false)
         is-muted  (:is-muted params false)
-        is-active (:is-active params (or (not= "penpot" backend) is-demo))
+        is-active (:is-active params false)
         email     (str/lower (:email params))
 
         params    {:id id
@@ -256,28 +262,15 @@
                       :code :email-already-exists
                       :cause e)))))))
 
-
 (defn create-profile-relations
   [conn profile]
-  (let [team    (teams/create-team conn {:profile-id (:id profile)
-                                         :name "Default"
-                                         :is-default true})
-        project (projects/create-project conn {:profile-id (:id profile)
-                                               :team-id (:id team)
-                                               :name "Drafts"
-                                               :is-default true})
-        params  {:team-id (:id team)
-                 :profile-id (:id profile)
-                 :project-id (:id project)
-                 :role :owner}]
-
-    (teams/create-team-role conn params)
-    (projects/create-project-role conn params)
-
+  (let [team (teams/create-team conn {:profile-id (:id profile)
+                                      :name "Default"
+                                      :is-default true})]
     (-> profile
         (profile/strip-private-attrs)
         (assoc :default-team-id (:id team))
-        (assoc :default-project-id (:id project)))))
+        (assoc :default-project-id (:default-project-id team)))))
 
 ;; --- MUTATION: Login
 

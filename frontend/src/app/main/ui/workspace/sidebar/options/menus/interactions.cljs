@@ -169,6 +169,7 @@
         overlay-pos-type     (:overlay-pos-type interaction)
         close-click-outside? (:close-click-outside interaction false)
         background-overlay?  (:background-overlay interaction false)
+        preserve-scroll?     (:preserve-scroll interaction false)
 
         extended-open? (mf/use-state false)
 
@@ -196,6 +197,11 @@
           (let [value (-> event dom/get-target dom/get-value)
                 value (when (not= value "") (uuid/uuid value))]
             (update-interaction index #(cti/set-destination % value))))
+
+        change-preserve-scroll
+        (fn [event]
+          (let [value (-> event dom/get-target dom/checked?)]
+            (update-interaction index #(cti/set-preserve-scroll % value))))
 
         change-url
         (fn [event]
@@ -264,11 +270,12 @@
          (when (cti/has-delay interaction)
            [:div.interactions-element
             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-delay")]
-            [:div.input-element
+            [:div.input-element {:title (tr "workspace.options.interaction-ms")}
              [:> numeric-input {:ref ext-delay-ref
                                 :on-click (select-text ext-delay-ref)
                                 :on-change change-delay
-                                :value (:delay interaction)}]
+                                :value (:delay interaction)
+                                :title (tr "workspace.options.interaction-ms")}]
              [:span.after (tr "workspace.options.interaction-ms")]]])
 
          ; Action select
@@ -294,6 +301,17 @@
                (when (and (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
                           (not= (:id frame) (:frame-id shape))) ; nor a shape to its container frame
                  [:option {:value (str (:id frame))} (:name frame)]))]])
+
+         ; Preserve scroll
+         (when (cti/has-preserve-scroll interaction)
+           [:div.interactions-element
+            [:div.input-checkbox
+             [:input {:type "checkbox"
+                      :id (str "preserve-" index)
+                      :checked preserve-scroll?
+                      :on-change change-preserve-scroll}]
+             [:label {:for (str "preserve-" index)}
+              (tr "workspace.options.interaction-preserve-scroll")]]])
 
          ; URL
          (when (cti/has-url interaction)

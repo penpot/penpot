@@ -34,7 +34,7 @@
         params   {:id id
                   :email email
                   :fullname fullname
-                  :is-demo true
+                  :is-active true
                   :deleted-at (dt/in-future cf/deletion-delay)
                   :password password
                   :props {:onboarding-viewed true}}]
@@ -46,8 +46,7 @@
 
     (db/with-atomic [conn pool]
       (->> (#'profile/create-profile conn params)
-           (#'profile/create-profile-relations conn)
-           (sid/load-initial-project! conn))
+           (#'profile/create-profile-relations conn))
 
       (with-meta {:email email
                   :password password}

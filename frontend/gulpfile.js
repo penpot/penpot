@@ -25,6 +25,17 @@ paths.resources = "./resources/";
 paths.output = "./resources/public/";
 paths.dist = "./target/dist/";
 
+/***********************************************
+ * Marked Extensions
+ ***********************************************/
+
+const renderer = {
+  link(href, title, text) {
+    return `<a href="${href}" target="_blank">${text}</a>`;
+  }
+};
+
+marked.use({renderer});
 
 /***********************************************
  * Helpers

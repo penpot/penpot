@@ -1593,17 +1593,6 @@ msgstr "מתחילים לעצב"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "אנו שמחים להציג בפניך את גרסת האלפא הראשונית."
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot עדיין בשלבי פיתוח וייתכנו עדכונים תכופים. אנו מקווים שהגרסה היציבה "
-"הראשונה תשרת אותך כראוי."
-
-msgid "onboarding.welcome.title"
-msgstr "ברוך בואך ל־Penpot!"
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
 msgstr "מעבר למסך הכניסה"

@@ -85,7 +85,7 @@
    ;; a server prop key where initial project is stored.
    :initial-project-skey "initial-project"})
 
-(s/def ::flags ::us/words)
+(s/def ::flags ::us/set-of-keywords)
 
 ;; DEPRECATED PROPERTIES: should be removed in 1.10
 (s/def ::registration-enabled ::us/boolean)
@@ -268,10 +268,16 @@
                    ::telemetry-with-taiga
                    ::tenant]))
 
+(def default-flags
+  [:enable-backend-asserts
+   :enable-backend-api-doc
+   :enable-secure-session-cookies])
+
 (defn- parse-flags
   [config]
-  (-> (:flags config)
-      (flags/parse flags/default)))
+  (flags/parse flags/default
+               default-flags
+               (:flags config)))
 
 (defn read-env
   [prefix]

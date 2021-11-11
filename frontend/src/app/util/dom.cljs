@@ -277,7 +277,8 @@
   (-> event get-target (.setPointerCapture (.-pointerId event))))
 
 (defn release-pointer [event]
-  (-> event get-target (.releasePointerCapture (.-pointerId event))))
+  (when (.-pointerId event)
+    (-> event get-target (.releasePointerCapture (.-pointerId event)))))
 
 (defn get-root []
   (query globals/document "#app"))
@@ -338,6 +339,14 @@
 
 (defn remove-attribute [^js node ^string attr]
   (.removeAttribute node attr))
+
+(defn get-scroll-pos
+  [element]
+  (.-scrollTop ^js element))
+
+(defn set-scroll-pos!
+  [element scroll]
+  (obj/set! ^js element "scrollTop" scroll))
 
 (defn scroll-into-view!
   ([element]

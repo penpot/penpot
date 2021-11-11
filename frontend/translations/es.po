@@ -200,6 +200,9 @@ msgstr "Puede ver"
 msgid "common.share-link.permissions-hint"
 msgstr "Cualquiera con el enlace puede acceder"
 
+msgid "common.share-link.placeholder"
+msgstr "El enlace para compartir aparecerá aquí"
+
 msgid "common.share-link.remove-link"
 msgstr "Eliminar enlace"
 
@@ -253,6 +256,14 @@ msgstr "Duplicar %s archivos"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
 msgstr "Todavía no hay ningún archivo aquí"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Aún no tienes archivos. Si quieres probar alguna plantilla visita nuestra "
+"seccion de [Bibliotecas y "
+"plantillas](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
 msgstr "Exportar tableros a PDF..."
@@ -318,9 +329,10 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sólo deberías cargar fuentes que te pertenecen o de las que tienes una "
 "licencia que te permita usarlas en Penpot. Encuentra más información en la "
-"sección de Derechos de Contenido: [Penpot's Terms of Service](1). También "
-"te puede interesar leer más sobre licencias tipográficas: [font "
-"licensing](2)."
+"sección de Derechos de Contenido: [Penpot's Terms of "
+"Service](https://penpot.app/terms.html). También te puede interesar leer "
+"más sobre licencias tipográficas: [font "
+"licensing](https://www.typography.com/faq)."
 
 msgid "dashboard.import"
 msgstr "Importar archivos"
@@ -771,7 +783,7 @@ msgstr "Izquierda"
 
 #: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.radius"
-msgstr "Derecha"
+msgstr "Radio"
 
 #: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.rotation"
@@ -1546,6 +1558,9 @@ msgstr "Perfil guardado correctamente!"
 msgid "notifications.validation-email-sent"
 msgstr "Verificación de email enviada a %s. Comprueba tu correo."
 
+msgid "onboarding.choice.title"
+msgstr "Te damos la bienvenida a Penpot"
+
 msgid "onboarding.contrib.alt"
 msgstr "Código Abierto"
 
@@ -1648,15 +1663,21 @@ msgid "onboarding.team.start.title"
 msgstr "Comienza a diseñar"
 
 msgid "onboarding.welcome.desc1"
-msgstr "Estamos felices de presentarte la primera Alpha release."
+msgstr "¡Hurra! Ya tienes tu cuenta en Penpot :)"
 
 msgid "onboarding.welcome.desc2"
 msgstr ""
-"Penpot está en fase de desarrollo y tendrá actualizaciones constantes. "
-"Esperamos que disfrutes esta version."
+"Penpot está en su primera versión beta gracias a una combinación de "
+"funcionalidades, madurez, estabilidad y la fantástica validación de su "
+"comunidad, a la que te damos la bienvenida."
+
+msgid "onboarding.welcome.desc3"
+msgstr ""
+"Mientras disfrutas de Penpot seguiremos haciendo mejoras, lanzando "
+"iteraciones de nuestros esperanzadores planes."
 
 msgid "onboarding.welcome.title"
-msgstr "Te damos la bienvenida a Penpot!"
+msgstr "Te damos la bienvenida a Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
@@ -2272,6 +2293,9 @@ msgstr "Automático"
 msgid "workspace.options.grid.column"
 msgstr "Columnas"
 
+msgid "workspace.options.grid.params.color"
+msgstr "Color"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.columns"
 msgstr "Columnas"
@@ -2355,6 +2379,9 @@ msgstr "Relleno de grupo"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Borde de grupo"
+
+msgid "workspace.options.height"
+msgstr "Altura"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
@@ -2463,6 +2490,10 @@ msgstr "Arriba derecha"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-position"
 msgstr "Posición"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "Conservar posición de desplazamiento"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-prev-screen"
@@ -2576,6 +2607,9 @@ msgstr "Capas de grupo"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Capas seleccionadas"
 
+msgid "workspace.options.opacity"
+msgstr "Opacidad"
+
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
 msgstr "Posición"
@@ -2623,6 +2657,9 @@ msgstr "Borde de selección"
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.blur"
 msgstr "Desenfoque"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Color de sombra"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.drop-shadow"
@@ -2699,6 +2736,12 @@ msgstr "Marcador cuadrado"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Flecha triángulo"
+
+msgid "workspace.options.stroke-color"
+msgstr "Color del trazo"
+
+msgid "workspace.options.stroke-width"
+msgstr "Ancho del trazo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.center"
@@ -2840,6 +2883,15 @@ msgstr "Alineación vertical"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
 msgstr "Usa el botón de play de la cabecera para arrancar la vista de prototipo."
+
+msgid "workspace.options.width"
+msgstr "Ancho"
+
+msgid "workspace.options.x"
+msgstr "X"
+
+msgid "workspace.options.y"
+msgstr "Y"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Añadir nodo (%s)"

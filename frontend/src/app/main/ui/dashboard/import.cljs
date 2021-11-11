@@ -331,10 +331,11 @@
 
       [:div.modal-footer
        [:div.action-buttons
-        [:input.cancel-button
-         {:type "button"
-          :value (tr "labels.cancel")
-          :on-click handle-cancel}]
+        (when (or (= :analyzing (:status @state)) pending-import?)
+          [:input.cancel-button
+           {:type "button"
+            :value (tr "labels.cancel")
+            :on-click handle-cancel}])
 
         (when (= :analyzing (:status @state))
           [:input.accept-button

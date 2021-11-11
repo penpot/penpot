@@ -6,8 +6,8 @@
   grid-template-columns: 1fr;
 }
 
-.viewer-preview {
-  height: calc(100vh - 40px);
+.viewer-section {
+  height: calc(100vh - 48px);
 
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;

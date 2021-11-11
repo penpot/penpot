@@ -6,10 +6,8 @@
 
 (ns app.main.ui.viewer.comments
   (:require
-   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
    [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
    [app.main.refs :as refs]
@@ -80,6 +78,7 @@
 (mf/defc comments-layer
   [{:keys [zoom file users frame page] :as props}]
   (let [profile     (mf/deref refs/profile)
+        threads-map (mf/deref threads-ref)
 
         modifier1   (-> (gpt/point (:x frame) (:y frame))
                         (gpt/negate)
@@ -88,16 +87,12 @@
         modifier2   (-> (gpt/point (:x frame) (:y frame))
                         (gmt/translate-matrix))
 
-        threads-map (->> (mf/deref threads-ref)
-                         (d/mapm #(update %2 :position gpt/transform modifier1)))
-
         cstate      (mf/deref refs/comments-local)
 
-        mframe      (geom/transform-shape frame)
         threads     (->> (vals threads-map)
                          (dcm/apply-filters cstate profile)
                          (filter (fn [{:keys [position]}]
-                                   (frame-contains? mframe position))))
+                                   (frame-contains? frame position))))
 
         on-bubble-click
         (mf/use-callback
@@ -110,14 +105,15 @@
 
         on-click
         (mf/use-callback
-         (mf/deps cstate frame page file)
+         (mf/deps cstate frame page file zoom)
          (fn [event]
            (dom/stop-propagation event)
            (if (some? (:open cstate))
              (st/emit! (dcm/close-thread))
              (let [event    (.-nativeEvent ^js event)
-                   position (-> (dom/get-offset-position event)
-                                (gpt/transform modifier2))
+                   viewport-point (dom/get-offset-position event)
+                   viewport-point (-> viewport-point (update :x #(/ % zoom)) (update :y #(/ % zoom)))
+                   position (gpt/transform viewport-point modifier2)
                    params   {:position position
                              :page-id (:id page)
                              :file-id (:id file)}]
@@ -140,14 +136,16 @@
      [:div.viewer-comments-container
       [:div.threads
        (for [item threads]
-         [:& cmt/thread-bubble {:thread item
-                                :zoom zoom
-                                :on-click on-bubble-click
-                                :open? (= (:id item) (:open cstate))
-                                :key (:seqn item)}])
+         (let [item (update item :position gpt/transform modifier1)]
+           [:& cmt/thread-bubble {:thread item
+                                  :zoom zoom
+                                  :on-click on-bubble-click
+                                  :open? (= (:id item) (:open cstate))
+                                  :key (:seqn item)}]))
 
        (when-let [id (:open cstate)]
-         (when-let [thread (get threads-map id)]
+         (when-let [thread (-> (get threads-map id)
+                               (update :position gpt/transform modifier1))]
            [:& cmt/thread-comments {:thread thread
                                     :users users
                                     :zoom zoom}]))

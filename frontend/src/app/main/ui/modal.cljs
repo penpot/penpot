@@ -72,8 +72,9 @@
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
-    [:div.modal-wrapper {:ref wrapper-ref}
-     (mf/element (get components (:type data)) (:props data))]))
+    (when-let [component (get components (:type data))]
+      [:div.modal-wrapper {:ref wrapper-ref}
+       (mf/element component (:props data))])))
 
 
 (def modal-ref

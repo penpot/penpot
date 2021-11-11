@@ -57,8 +57,8 @@
 (defn- parse-flags
   [global]
   (let [flags (obj/get global "penpotFlags" "")
-        flags (into #{} (map keyword) (str/words flags))]
-    (flags/parse flags flags/default)))
+        flags (sequence (map keyword) (str/words flags))]
+    (flags/parse flags/default flags)))
 
 (defn- parse-version
   [global]

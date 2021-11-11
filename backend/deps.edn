@@ -68,10 +68,6 @@
     mockery/mockery {:mvn/version "RELEASE"}}
    :extra-paths ["test" "dev"]}
 
-  :fn-fixtures
-  {:exec-fn app.cli.fixtures/run
-   :args {}}
-
   :kaocha
   {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.887"}}
    :main-opts ["-m" "kaocha.runner"]}

@@ -24,6 +24,7 @@
         max-val-str (obj/get props "max")
         wrap-value? (obj/get props "data-wrap")
         on-change   (obj/get props "onChange")
+        title       (obj/get props "title")
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -33,9 +34,18 @@
 
         value (d/parse-integer value-str 0)
 
-        min-val (when (string? min-val-str)
+        min-val (cond
+                  (number? min-val-str)
+                  min-val-str
+
+                  (string? min-val-str)
                   (d/parse-integer min-val-str))
-        max-val (when (string? max-val-str)
+
+        max-val (cond
+                  (number? max-val-str)
+                  max-val-str
+
+                  (string? max-val-str)
                   (d/parse-integer max-val-str))
 
         num? (fn [val] (and (number? val)
@@ -144,6 +154,7 @@
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
                   (obj/set! "defaultValue" value-str)
+                  (obj/set! "title" title)
                   (obj/set! "onWheel" handle-mouse-wheel)
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur))]

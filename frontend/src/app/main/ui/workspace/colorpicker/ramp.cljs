@@ -13,7 +13,7 @@
    [app.util.dom :as dom]
    [rumext.alpha :as mf]))
 
-(mf/defc value-saturation-selector [{:keys [saturation value on-change]}]
+(mf/defc value-saturation-selector [{:keys [saturation value on-change on-start-drag on-finish-drag]}]
   (let [dragging? (mf/use-state false)
         calculate-pos
         (fn [ev]
@@ -21,13 +21,27 @@
                 {:keys [x y]} (-> ev dom/get-client-position)
                 px (math/clamp (/ (- x left) (- right left)) 0 1)
                 py (* 255 (- 1 (math/clamp (/ (- y top) (- bottom top)) 0 1)))]
-            (on-change px py)))]
+            (on-change px py)))
+
+        handle-start-drag
+        (mf/use-callback
+         (mf/deps on-start-drag)
+         (fn [event]
+           (dom/capture-pointer event)
+           (reset! dragging? true)
+           (on-start-drag)))
+
+        handle-stop-drag
+        (mf/use-callback
+         (mf/deps on-finish-drag)
+         (fn [event]
+           (dom/release-pointer event)
+           (reset! dragging? false)
+           (on-finish-drag)))
+        ]
     [:div.value-saturation-selector
-     {:on-mouse-down #(reset! dragging? true)
-      :on-mouse-up #(reset! dragging? false)
-      :on-pointer-down (partial dom/capture-pointer)
-      :on-lost-pointer-capture #(do (dom/release-pointer %)
-                                    (reset! dragging? false))
+     {:on-pointer-down handle-start-drag
+      :on-lost-pointer-capture handle-stop-drag
       :on-click calculate-pos
       :on-mouse-move #(when @dragging? (calculate-pos %))}
      [:div.handler {:style {:pointer-events "none"
@@ -35,7 +49,7 @@
                             :top (str (* 100 (- 1 (/ value 255))) "%")}}]]))
 
 
-(mf/defc ramp-selector [{:keys [color disable-opacity on-change]}]
+(mf/defc ramp-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
   (let [{hex :hex
          hue :h saturation :s value :v alpha :alpha} color
 
@@ -64,7 +78,9 @@
       {:hue hue
        :saturation saturation
        :value value
-       :on-change on-change-value-saturation}]
+       :on-change on-change-value-saturation
+       :on-start-drag on-start-drag
+       :on-finish-drag on-finish-drag}]
 
      [:div.shade-selector
       [:& color-bullet {:color {:color hex
@@ -72,10 +88,14 @@
       [:& slider-selector {:class "hue"
                            :max-value 360
                            :value hue
-                           :on-change on-change-hue}]
+                           :on-change on-change-hue
+                           :on-start-drag on-start-drag
+                           :on-finish-drag on-finish-drag}]
 
       (when (not disable-opacity)
         [:& slider-selector {:class "opacity"
                              :max-value 1
                              :value alpha
-                             :on-change on-change-opacity}])]]))
+                             :on-change on-change-opacity
+                             :on-start-drag on-start-drag
+                             :on-finish-drag on-finish-drag}])]]))

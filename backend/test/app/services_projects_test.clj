@@ -43,7 +43,7 @@
 
       (t/is (nil? (:error out)))
       (let [result (:result out)]
-        (t/is (= 1 (count result)))
+        (t/is (= 2 (count result)))
         (t/is project-id (get-in result [0 :id]))
         (t/is (= "test project" (get-in result [0 :name])))))
 
@@ -55,15 +55,15 @@
 
       (t/is (nil? (:error out)))
       (let [result (:result out)]
-        (t/is (= 2 (count result)))
+        (t/is (= 3 (count result)))
         (t/is (not= project-id (get-in result [0 :id])))
         (t/is (= "Drafts" (get-in result [0 :name])))
         (t/is (= "Default" (get-in result [0 :team-name])))
         (t/is (= true (get-in result [0 :is-default-team])))
-        (t/is project-id (get-in result [1 :id]))
-        (t/is (= "test project" (get-in result [1 :name])))
-        (t/is (= "team1" (get-in result [1 :team-name])))
-        (t/is (= false (get-in result [1 :is-default-team])))))
+        (t/is project-id (get-in result [2 :id]))
+        (t/is (= "test project" (get-in result [2 :name])))
+        (t/is (= "team1" (get-in result [2 :team-name])))
+        (t/is (= false (get-in result [2 :is-default-team])))))
 
     ;; rename project
     (let [data {::th/type :rename-project
@@ -95,7 +95,7 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
-    ;; query a list of projects after delete"
+    ;; query a list of projects after delete
     (let [data {::th/type :projects
                 :team-id (:id team)
                 :profile-id (:id profile)}
@@ -103,7 +103,7 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
-        (t/is (= 0 (count result)))))
+        (t/is (= 1 (count result)))))
   ))
 
 (t/deftest permissions-checks-create-project

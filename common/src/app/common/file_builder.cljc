@@ -392,7 +392,8 @@
 
 (defmethod read-action-opts :navigate
   [interaction-src]
-  (select-keys interaction-src [:destination]))
+  (select-keys interaction-src [:destination
+                                :preserve-scroll]))
 
 (defmethod read-action-opts :open-overlay
   [interaction-src]
@@ -430,7 +431,8 @@
   (let [{:keys [event-type action-type]} (read-classifier interaction-src)
         {:keys [delay]} (read-event-opts interaction-src)
         {:keys [destination overlay-pos-type overlay-position url
-                close-click-outside background-overlay]} (read-action-opts interaction-src)
+                close-click-outside background-overlay preserve-scroll]}
+        (read-action-opts interaction-src)
 
         interactions (-> (lookup-shape file from-id)
                          :interactions
@@ -443,7 +445,8 @@
                                            :overlay-position overlay-position
                                            :url url
                                            :close-click-outside close-click-outside
-                                           :background-overlay background-overlay})))]
+                                           :background-overlay background-overlay
+                                           :preserve-scroll preserve-scroll})))]
     (commit-change
      file
      {:type :mod-obj

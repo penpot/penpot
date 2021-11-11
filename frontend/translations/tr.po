@@ -1617,17 +1617,6 @@ msgstr "Tasarlamaya başla"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "Sizi ilk Alfa sürümüyle tanıştırmaktan mutluluk duyuyoruz."
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot hala geliştirme aşamasındadır ve sürekli güncellemeler olacaktır. "
-"İlk kararlı sürümü beğeneceğinizi umuyoruz."
-
-msgid "onboarding.welcome.title"
-msgstr "Penpot'a hoş geldiniz!"
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
 msgstr "Giriş yap"
