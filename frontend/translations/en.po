@@ -254,7 +254,7 @@ msgstr "You still have no files here"
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
-msgstr "Oh no! You have no files jet!</br> If you want to try with some templates go to [templates.penpot.app](https://penpot.app/libraries-templates.html)"
+msgstr "There are no files here yet. If you want to try some templates you can go to the [Libraries & templates section](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
 msgstr "Export artboards to PDF..."
