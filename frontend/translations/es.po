@@ -200,6 +200,9 @@ msgstr "Puede ver"
 msgid "common.share-link.permissions-hint"
 msgstr "Cualquiera con el enlace puede acceder"
 
+msgid "common.share-link.placeholder"
+msgstr "El enlace para compartir aparecerá aquí"
+
 msgid "common.share-link.remove-link"
 msgstr "Eliminar enlace"
 
@@ -318,9 +321,10 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sólo deberías cargar fuentes que te pertenecen o de las que tienes una "
 "licencia que te permita usarlas en Penpot. Encuentra más información en la "
-"sección de Derechos de Contenido: [Penpot's Terms of Service](1). También "
-"te puede interesar leer más sobre licencias tipográficas: [font "
-"licensing](2)."
+"sección de Derechos de Contenido: [Penpot's Terms of "
+"Service](https://penpot.app/terms.html). También te puede interesar leer "
+"más sobre licencias tipográficas: [font "
+"licensing](https://www.typography.com/faq)."
 
 msgid "dashboard.import"
 msgstr "Importar archivos"
@@ -2272,6 +2276,9 @@ msgstr "Automático"
 msgid "workspace.options.grid.column"
 msgstr "Columnas"
 
+msgid "workspace.options.grid.params.color"
+msgstr "Color"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.columns"
 msgstr "Columnas"
@@ -2355,6 +2362,9 @@ msgstr "Relleno de grupo"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Borde de grupo"
+
+msgid "workspace.options.height"
+msgstr "Altura"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
@@ -2580,6 +2590,9 @@ msgstr "Capas de grupo"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Capas seleccionadas"
 
+msgid "workspace.options.opacity"
+msgstr "Opacidad"
+
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
 msgstr "Posición"
@@ -2627,6 +2640,9 @@ msgstr "Borde de selección"
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.blur"
 msgstr "Desenfoque"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Color de sombra"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.drop-shadow"
@@ -2703,6 +2719,12 @@ msgstr "Marcador cuadrado"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Flecha triángulo"
+
+msgid "workspace.options.stroke-color"
+msgstr "Color del trazo"
+
+msgid "workspace.options.stroke-width"
+msgstr "Ancho del trazo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.center"
@@ -2844,6 +2866,15 @@ msgstr "Alineación vertical"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
 msgstr "Usa el botón de play de la cabecera para arrancar la vista de prototipo."
+
+msgid "workspace.options.width"
+msgstr "Ancho"
+
+msgid "workspace.options.x"
+msgstr "X"
+
+msgid "workspace.options.y"
+msgstr "Y"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Añadir nodo (%s)"
@@ -3201,33 +3232,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-msgid "workspace.options.grid.params.color"
-msgstr "Color"
-
-msgid "workspace.options.height"
-msgstr "Altura"
-
-msgid "workspace.options.opacity"
-msgstr "Opacidad"
-
-msgid "workspace.options.shadow-options.color"
-msgstr "Color de sombra"
-
-msgid "workspace.options.stroke-color"
-msgstr "Color del trazo"
-
-msgid "workspace.options.stroke-width"
-msgstr "Ancho del trazo"
-
-msgid "workspace.options.width"
-msgstr "Ancho"
-
-msgid "workspace.options.x"
-msgstr "X"
-
-msgid "workspace.options.y"
-msgstr "Y"
-
-msgid "common.share-link.placeholder"
-msgstr "El enlace para compartir aparecerá aquí"

@@ -196,6 +196,9 @@ msgstr "Can view"
 msgid "common.share-link.permissions-hint"
 msgstr "Anyone with link will have access"
 
+msgid "common.share-link.placeholder"
+msgstr "Shareable link will appear here"
+
 msgid "common.share-link.remove-link"
 msgstr "Remove link"
 
@@ -250,11 +253,13 @@ msgstr "Duplicate %s files"
 msgid "dashboard.empty-files"
 msgstr "You still have no files here"
 
-
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
-msgstr "There are no files here yet. If you want to try some templates you can go to the [Libraries & templates section](https://penpot.app/libraries-templates.html)"
+msgstr ""
+"There are no files here yet. If you want to try some templates you can go "
+"to the [Libraries & templates "
+"section](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
 msgstr "Export artboards to PDF..."
@@ -1110,6 +1115,9 @@ msgstr "Name"
 msgid "labels.new-password"
 msgstr "New password"
 
+msgid "labels.next"
+msgstr "Next"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
 msgstr "You have no pending comment notifications"
@@ -1539,12 +1547,19 @@ msgstr "Profile saved successfully!"
 msgid "notifications.validation-email-sent"
 msgstr "Verification email sent to %s. Check your email!"
 
+msgid "onboarding.choice.fly-solo"
+msgstr "Fly solo"
 
-msgid "onboarding.templates.title"
-msgstr "Start designing"
+msgid "onboarding.choice.fly-solo-desc"
+msgstr "Jump away into Penpot and start designing by your own."
 
-msgid "onboarding.templates.subtitle"
-msgstr "Here are some templates."
+msgid "onboarding.choice.team-up"
+msgstr "Team up"
+
+msgid "onboarding.choice.team-up-desc"
+msgstr ""
+"Are you working with someone? Create a team and invite people to work "
+"together on projects and share design assets."
 
 msgid "onboarding.contrib.alt"
 msgstr "Open Source"
@@ -1619,26 +1634,17 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "One shared source of truth"
 
-msgid "onboarding.choice.fly-solo"
-msgstr "Fly solo"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "Jump away into Penpot and start designing by your own."
-
-msgid "onboarding.choice.team-up"
-msgstr "Team up"
+msgid "onboarding.team-input-placeholder"
+msgstr "Enter new team name"
 
 msgid "onboarding.team.skip-and-invite-later"
 msgstr "Skip and invite later"
 
-msgid "onboarding.choice.team-up-desc"
-msgstr "Are you working with someone? Create a team and invite people to work together on projects and share design assets."
+msgid "onboarding.templates.subtitle"
+msgstr "Here are some templates."
 
-msgid "labels.next"
-msgstr "Next"
-
-msgid "onboarding.team-input-placeholder"
-msgstr "Enter new team name"
+msgid "onboarding.templates.title"
+msgstr "Start designing"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
@@ -2277,6 +2283,9 @@ msgstr "Auto"
 msgid "workspace.options.grid.column"
 msgstr "Columns"
 
+msgid "workspace.options.grid.params.color"
+msgstr "Color"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.columns"
 msgstr "Columns"
@@ -2360,6 +2369,9 @@ msgstr "Group fill"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Group stroke"
+
+msgid "workspace.options.height"
+msgstr "Height"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
@@ -2585,6 +2597,9 @@ msgstr "Group layers"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Selected layers"
 
+msgid "workspace.options.opacity"
+msgstr "Opacity"
+
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
 msgstr "Position"
@@ -2630,6 +2645,9 @@ msgstr "Selection stroke"
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.blur"
 msgstr "Blur"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Shadow color"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.drop-shadow"
@@ -2706,6 +2724,12 @@ msgstr "Square marker"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Triangle arrow"
+
+msgid "workspace.options.stroke-color"
+msgstr "Stroke color"
+
+msgid "workspace.options.stroke-width"
+msgstr "Stroke width"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.center"
@@ -2847,6 +2871,15 @@ msgstr "Vertical align"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
 msgstr "Use the play button at the header to run the prototype view."
+
+msgid "workspace.options.width"
+msgstr "Width"
+
+msgid "workspace.options.x"
+msgstr "X"
+
+msgid "workspace.options.y"
+msgstr "Y"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Add node (%s)"
@@ -3204,33 +3237,3 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
-
-msgid "workspace.options.grid.params.color"
-msgstr "Color"
-
-msgid "workspace.options.height"
-msgstr "Height"
-
-msgid "workspace.options.opacity"
-msgstr "Opacity"
-
-msgid "workspace.options.shadow-options.color"
-msgstr "Shadow color"
-
-msgid "workspace.options.stroke-color"
-msgstr "Stroke color"
-
-msgid "workspace.options.stroke-width"
-msgstr "Stroke width"
-
-msgid "workspace.options.width"
-msgstr "Width"
-
-msgid "workspace.options.x"
-msgstr "X"
-
-msgid "workspace.options.y"
-msgstr "Y"
-
-msgid "common.share-link.placeholder"
-msgstr "Shareable link will appear here"

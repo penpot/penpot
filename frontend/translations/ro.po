@@ -221,7 +221,8 @@ msgstr ""
 "Ar trebui să urcați doar fonturi la care aveți drept de folosință sau "
 "fonturi personale. Află mai multe despre Dreptul de conținut la secțiunea "
 "[Termenii și Condițiile Penpot](https://penpot.app/terms.html). De "
-"asemenea, vă recomandăm să citiți și despre [licențierea fonturilor](2)."
+"asemenea, vă recomandăm să citiți și despre [licențierea "
+"fonturilor](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
