@@ -1,7 +1,15 @@
 # CHANGELOG
 
-
 ## :rocket: Next
+
+### :boom: Breaking changes
+### :sparkles: New features
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :heart: Community contributions by (Thank you!)
+
+
+## 1.10.0-beta
 
 ### :boom: Breaking changes
 
@@ -37,12 +45,10 @@
 - Fix project files count not refreshing correctly after import [Taiga #2216](https://tree.taiga.io/project/penpot/issue/2216)
 - Remove button after import process finish [Taiga #2215](https://tree.taiga.io/project/penpot/issue/2215)
 
-### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
 - To the translation community for the hard work on making penpot
   available on so many languages.
-
 
 ## 1.9.0-alpha
 
