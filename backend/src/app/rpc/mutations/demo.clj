@@ -46,8 +46,7 @@
 
     (db/with-atomic [conn pool]
       (->> (#'profile/create-profile conn params)
-           (#'profile/create-profile-relations conn)
-           (sid/load-initial-project! conn))
+           (#'profile/create-profile-relations conn))
 
       (with-meta {:email email
                   :password password}
