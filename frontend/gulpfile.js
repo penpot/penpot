@@ -31,8 +31,7 @@ paths.dist = "./target/dist/";
 
 const renderer = {
   link(href, title, text) {
-    const escapedText = l.escape(text);
-    return `<a href="${href}" target="_blank">${escapedText}</a>`;
+    return `<a href="${href}" target="_blank">${text}</a>`;
   }
 };
 
