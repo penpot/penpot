@@ -43,10 +43,11 @@
    [:div.modal-right
     [:div.modal-title
      [:h2 (tr "onboarding.welcome.title")]]
-    [:span.release "Alpha version " (:main @cf/version)]
+    [:span.release "Beta version " (:main @cf/version)]
     [:div.modal-content
      [:p (tr "onboarding.welcome.desc1")]
-     [:p (tr "onboarding.welcome.desc2")]]
+     [:p (tr "onboarding.welcome.desc2")]
+     [:p (tr "onboarding.welcome.desc3")]]
     [:div.modal-navigation
      [:button.btn-secondary {:on-click next} (tr "labels.continue")]]]
    [:img.deco {:src "images/deco-left.png" :border "0"}]
@@ -212,8 +213,8 @@
     [:div.modal-overlay
      [:div.modal-container.onboarding.final.animated.fadeInUp
       [:div.modal-top
-       [:h1 (tr "onboarding.welcome.title")]
-       [:p (tr "onboarding.welcome.desc3")]]
+       [:h1 (tr "onboarding.choice.title")]
+       [:p (tr "onboarding.choice.desc")]]
       [:div.modal-columns
        [:div.modal-left
         [:div.content-button {:on-click on-fly-solo}

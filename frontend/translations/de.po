@@ -1620,17 +1620,6 @@ msgstr "Mit der Gestaltung beginnen"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "Wir freuen uns sehr, Ihnen die erste Alpha-Version vorstellen zu können."
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot befindet sich noch in der Entwicklungsphase und wird ständig "
-"aktualisiert. Wir hoffen, dass Ihnen die erste stabile Version gefällt."
-
-msgid "onboarding.welcome.title"
-msgstr "Willkommen bei Penpot!"
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
 msgstr "Zur Anmeldung"

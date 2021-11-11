@@ -1652,15 +1652,24 @@ msgid "onboarding.team.start.title"
 msgstr "Comienza a diseñar"
 
 msgid "onboarding.welcome.desc1"
-msgstr "Estamos felices de presentarte la primera Alpha release."
+msgstr "¡Hurra! Ya tienes tu cuenta en Penpot :)"
 
 msgid "onboarding.welcome.desc2"
 msgstr ""
-"Penpot está en fase de desarrollo y tendrá actualizaciones constantes. "
-"Esperamos que disfrutes esta version."
+"Penpot está en su primera versión beta gracias a una combinación de "
+"funcionalidades, madurez, estabilidad y la fantástica validación de "
+"su comunidad, a la que te damos la bienvenida."
+
+msgid "onboarding.welcome.desc3"
+msgstr ""
+"Mientras disfrutas de Penpot seguiremos haciendo mejoras, lanzando "
+"iteraciones de nuestros esperanzadores planes."
 
 msgid "onboarding.welcome.title"
-msgstr "Te damos la bienvenida a Penpot!"
+msgstr "Te damos la bienvenida a Penpot"
+
+msgid "onboarding.choice.title"
+msgstr "Te damos la bienvenida a Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"

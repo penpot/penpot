@@ -1646,22 +1646,31 @@ msgstr "Here are some templates."
 msgid "onboarding.templates.title"
 msgstr "Start designing"
 
+msgid "onboarding.welcome.title"
+msgstr "Welcome to Penpot"
+
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 msgid "onboarding.welcome.desc1"
-msgstr "We are very happy to introduce you to the very first Alpha release."
+msgstr "Hooray! You are already a Penpot user :)"
 
 msgid "onboarding.welcome.desc2"
 msgstr ""
-"Penpot is still at development stage and there will be constant updates. We "
-"hope you enjoy the first stable version."
+"Penpot is in its first beta version thanks to the combination of "
+"core features, maturity, stability and the amazing validation from "
+"the community as a whole, to which you are more than welcome."
 
 msgid "onboarding.welcome.desc3"
+msgstr ""
+"While you enjoy Penpot for what it is we will keep improving it, "
+"releasing iterations of our hopeful plans."
+
+msgid "onboarding.choice.desc"
 msgstr "How do you want to start?"
 
-msgid "onboarding.welcome.title"
-msgstr "Welcome to Penpot!"
+msgid "onboarding.choice.title"
+msgstr "Welcome to Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
