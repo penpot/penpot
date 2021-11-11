@@ -271,7 +271,6 @@
 (def default-flags
   [:enable-backend-asserts
    :enable-backend-api-doc
-   :enable-insecure-register
    :enable-secure-session-cookies])
 
 (defn- parse-flags
