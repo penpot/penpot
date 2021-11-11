@@ -13,7 +13,6 @@
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.rpc.mutations.profile :as profile]
-   [app.setup.initial-data :as sid]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
