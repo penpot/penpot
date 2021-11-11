@@ -389,8 +389,7 @@
         [:div.action {:on-click on-click} "+ Add to drafts"])]]))
 
 (mf/defc onboarding-templates-modal
-  {::mf/wrap-props false
-   ::mf/register modal/components
+  {::mf/register modal/components
    ::mf/register-as :onboarding-templates}
   ;; NOTE: the project usually comes empty, it only comes fullfilled
   ;; when a user creates a new team just after signup.
