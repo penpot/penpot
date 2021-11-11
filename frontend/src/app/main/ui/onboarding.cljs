@@ -23,6 +23,7 @@
    [app.main.ui.releases.v1-7]
    [app.main.ui.releases.v1-8]
    [app.main.ui.releases.v1-9]
+   [app.main.ui.releases.v1-10]
    [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
