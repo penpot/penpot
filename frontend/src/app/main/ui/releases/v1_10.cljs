@@ -10,7 +10,7 @@
    [rumext.alpha :as mf]))
 
 (defmethod c/render-release-notes "1.10"
-  [{:keys [slide klass next finish navigate version]}]
+  [{:keys [klass finish version]}]
   (mf/html
    [:div.modal-overlay
     [:div.animated {:class @klass}
