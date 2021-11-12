@@ -58,8 +58,7 @@
           {:token (get data "access_token")
            :type  (get data "token_type")})))
     (catch Exception e
-      (l/error :hint "unexpected error on retrieve-access-token"
-               :cause e)
+      (l/warn :hint "unexpected error on retrieve-access-token" :cause e)
       nil)))
 
 (defn- qualify-props
@@ -86,8 +85,7 @@
            :props (->> (dissoc info :name :email)
                        (qualify-props provider))})))
     (catch Exception e
-      (l/error :hint "unexpected exception on retrieve-user-info"
-               :cause e)
+      (l/warn :hint "unexpected exception on retrieve-user-info" :cause e)
       nil)))
 
 (s/def ::backend ::us/not-empty-string)
