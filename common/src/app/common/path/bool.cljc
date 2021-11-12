@@ -42,7 +42,8 @@
       (let [head-p (gsp/command->point head)
             head (cond
                    (and (= :close-path (:command head))
-                        (< (gpt/distance last-p last-move) 0.01))
+                        (or (nil? last-p) ;; Ignore consecutive close-paths
+                            (< (gpt/distance last-p last-move) 0.01)))
                    nil
 
                    (= :close-path (:command head))

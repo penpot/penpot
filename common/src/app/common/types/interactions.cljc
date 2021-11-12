@@ -69,8 +69,7 @@
 (defmulti action-opts-spec :action-type)
 
 (defmethod action-opts-spec :navigate [_]
-  (s/keys :req-un [::destination]
-          :opt-un [::preserve-scroll]))
+  (s/keys :opt-un [::destination ::preserve-scroll]))
 
 (defmethod action-opts-spec :open-overlay [_]
   (s/keys :req-un [::destination
@@ -87,7 +86,7 @@
                    ::background-overlay]))
 
 (defmethod action-opts-spec :close-overlay [_]
-  (s/keys :req-un [::destination]))
+  (s/keys :opt-un [::destination]))
 
 (defmethod action-opts-spec :prev-screen [_]
   (s/keys :req-un []))
