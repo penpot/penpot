@@ -94,8 +94,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def initsql
-  (str "SET statement_timeout = 200000;\n"
-       "SET idle_in_transaction_session_timeout = 200000;"))
+  (str "SET statement_timeout = 300000;\n"
+       "SET idle_in_transaction_session_timeout = 300000;"))
 
 (defn- create-datasource-config
   [{:keys [metrics read-only] :or {read-only false} :as cfg}]
