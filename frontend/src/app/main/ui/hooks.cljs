@@ -191,7 +191,7 @@
 
 
 (defn use-stream
-  "Wraps the subscription to a strem into a `use-effect` call"
+  "Wraps the subscription to a stream into a `use-effect` call"
   ([stream on-subscribe]
    (use-stream stream (mf/deps) on-subscribe))
   ([stream deps on-subscribe]

@@ -20,7 +20,7 @@ goog.provide("app.util.globals");
 goog.scope(function() {
   app.util.globals.global = goog.global;
 
-  function createGlobalEventEmiter(k) {
+  function createGlobalEventEmitter(k) {
     /* Allow mocked objects to be event emitters, so other modules
      * may subscribe to them.
      */
@@ -36,7 +36,7 @@ goog.scope(function() {
     if (typeof goog.global.window !== "undefined") {
       return goog.global.window;
     } else {
-      return createGlobalEventEmiter();
+      return createGlobalEventEmitter();
     }
   })();
 
@@ -44,7 +44,7 @@ goog.scope(function() {
     if (typeof goog.global.document !== "undefined") {
       return goog.global.document;
     } else {
-      return createGlobalEventEmiter();
+      return createGlobalEventEmitter();
     }
   })();
 
@@ -52,7 +52,7 @@ goog.scope(function() {
     if (typeof goog.global.location !== "undefined") {
       return goog.global.location;
     } else {
-      return createGlobalEventEmiter();
+      return createGlobalEventEmitter();
     }
   })();
 
@@ -60,7 +60,7 @@ goog.scope(function() {
     if (typeof goog.global.navigator !== "undefined") {
       return goog.global.navigator;
     } else {
-      return createGlobalEventEmiter();
+      return createGlobalEventEmitter();
     }
   })();
 

@@ -37,7 +37,7 @@
                   (wapi/exit-fullscreen)))))))]
 
     ;; NOTE: the user interaction with F11 keyboard hot-key does not
-    ;; emits the `fullscreenchange` event; that event is emmited only
+    ;; emits the `fullscreenchange` event; that event is emitted only
     ;; when API is used. There are no way to detect the F11 behavior
     ;; in a uniform cross browser way.
 
@@ -47,7 +47,7 @@
        (fn []
          (.removeEventListener js/document "fullscreenchange" change))))
 
-    [:div.fulllscreen-wrapper {:ref container :class (dom/classnames :fullscreen @state)}
+    [:div.fullscreen-wrapper {:ref container :class (dom/classnames :fullscreen @state)}
      [:& (mf/provider fullscreen-context) {:value manager}
       children]]))
 

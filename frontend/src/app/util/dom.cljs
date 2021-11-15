@@ -44,7 +44,7 @@
     (.insertAdjacentHTML head "beforeend"
                          (str "<style>"
                               "  @page {" style-str "}"
-                              "  html, body {"            ; Fix issue having Chromium to add random 1px marging at the bottom
+                              "  html, body {"            ; Fix issue having Chromium to add random 1px margin at the bottom
                               "    overflow: hidden;"     ; https://github.com/puppeteer/puppeteer/issues/2278#issuecomment-410381934
                               "    font-size: 0;"
                               "  }"
@@ -81,7 +81,7 @@
 
 (defn get-current-target
   "Extract the current target from event instance (different from target
-   when event triggered in a child of the suscribing element)."
+   when event triggered in a child of the subscribing element)."
   [event]
   (.-currentTarget event))
 
@@ -241,7 +241,7 @@
 
     :else
     (ex/raise :type :not-supported
-              :hint "seems like the current browset does not support fullscreen api.")))
+              :hint "seems like the current browser does not support fullscreen api.")))
 
 (defn ^boolean blob?
   [v]

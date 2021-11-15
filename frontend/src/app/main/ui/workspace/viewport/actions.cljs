@@ -369,7 +369,7 @@
                            (/ zoom))]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (if (and (not (cfg/check-platform? :macos)) ;; macos sends delta-x automaticaly, don't need to do it
+           (if (and (not (cfg/check-platform? :macos)) ;; macos sends delta-x automatically, don't need to do it
                     (kbd/shift? event))
              (st/emit! (dw/update-viewport-position {:x #(+ % delta-y)}))
              (st/emit! (dw/update-viewport-position {:x #(+ % delta-x)

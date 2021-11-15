@@ -78,7 +78,7 @@
         (reply-error err)))))
 
 (defn- drop-message
-  "Sends to the client a notifiction that its messages have been dropped"
+  "Sends to the client a notification that its messages have been dropped"
   [{:keys [sender-id] :as message}]
   (us/assert ::message message)
   (.postMessage js/self (t/encode-str {:reply-to sender-id
@@ -96,7 +96,7 @@
          ;; This scan will store the last message per type in `messages`
          ;; when a previous message is dropped is stored in `dropped`
          ;; we also store the last message processed in order to detect
-         ;; posible infinite loops
+         ;; possible infinite loops
          (rx/scan
           (fn [[messages dropped _last] message]
             (let [cmd (get-in message [:payload :cmd])

@@ -252,7 +252,7 @@
   [objects selected attrs]
 
   (if (= :frame (:type attrs))
-    ;; Frames are alwasy positioned on the root frame
+    ;; Frames are always positioned on the root frame
     [uuid/zero uuid/zero nil]
 
     ;; Calculate the frame over which we're drawing

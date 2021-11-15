@@ -21,7 +21,7 @@
   (l/derived :workspace-undo st/state))
 
 (defn get-object
-  "Searchs for a shape inside the objects list or inside the undo history"
+  "Searches for a shape inside the objects list or inside the undo history"
   [id entries objects]
   (let [search-deleted-shape
         (fn [id entries]
@@ -144,7 +144,7 @@
     maybe-keyword))
 
 (defn select-entry
-  "Selects the entry the user will see inside a list of posible entries.
+  "Selects the entry the user will see inside a list of possible entries.
   Sometimes the result will be a combination."
   [candidates]
   (let [;; Group by id and type

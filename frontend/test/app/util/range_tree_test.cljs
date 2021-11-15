@@ -10,7 +10,7 @@
 
 (defn create-random-tree [num-nodes])
 
-(t/deftest test-insert-and-retrive-data
+(t/deftest test-insert-and-retrieve-data
   (t/testing "Retrieve on empty tree"
       (let [tree (rt/make-tree)]
         (t/is (= (rt/get tree 100) nil))))
@@ -93,7 +93,7 @@
           tree (reduce #(rt/remove %1 %2 :x) tree (range 0 (dec size)))]
       (t/is (rt/empty? tree)))
 
-    ;; Try a decreasing range
+    ;; Try a decreleasing range
     (let [size 10000
           tree (rt/make-tree)
           tree (reduce #(rt/insert %1 %2 :x) tree (range (dec size) -1 -1))

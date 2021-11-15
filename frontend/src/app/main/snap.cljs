@@ -143,7 +143,7 @@
 
         best-snap
         (fn [acc val]
-          ;; Using a number is faster than accesing the variable.
+          ;; Using a number is faster than accessing the variable.
           ;; Keep up to date with `snap-distance-accuracy`
           (if (and (<= val snap-distance-accuracy) (>= val (- snap-distance-accuracy)))
             (min acc val)

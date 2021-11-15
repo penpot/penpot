@@ -300,7 +300,7 @@
             ;; Stop buffering after time without resizes
             stop-buffer (->> resize-events (rx/debounce 100))
 
-            ;; Agregates the resizes so only send the resize when the sizes are stable
+            ;; Aggregates the resizes so only send the resize when the sizes are stable
             resize-batch
             (->> resize-events
                  (rx/take-until stop-buffer)

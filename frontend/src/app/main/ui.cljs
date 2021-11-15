@@ -28,7 +28,7 @@
 (mf/defc on-main-error
   [{:keys [error] :as props}]
   (mf/use-effect (st/emitf (rt/assign-exception error)))
-  [:span "Internal application errror"])
+  [:span "Internal application error"])
 
 (mf/defc main-page
   {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}

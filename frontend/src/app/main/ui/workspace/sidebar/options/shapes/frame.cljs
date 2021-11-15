@@ -280,13 +280,13 @@
    {:name "Twitter post"
     :width 1024
     :height 512}
-   {:name "Youtube profile"
+   {:name "YouTube profile"
     :width 800
     :height 800}
-   {:name "Youtube banner"
+   {:name "YouTube banner"
     :width 2560
     :height 1440}
-   {:name "Youtube thumb"
+   {:name "YouTube thumb"
     :width 1280
     :height 720}
    ])

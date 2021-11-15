@@ -15,7 +15,7 @@
 
 (defn setup!
   "Generate new kd-tree instance with provided generation parameter
-  or just return a prevuously created from internal LRU cache."
+  or just return a previously created from internal LRU cache."
   [t w h ws hs]
   (impl/setup t w h ws hs))
 

@@ -35,7 +35,7 @@ msgstr "Just wanna try it?"
 msgid "auth.demo-warning"
 msgstr ""
 "This is a DEMO service, DO NOT USE for real work, the projects will be "
-"periodicaly wiped."
+"periodically wiped."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
@@ -67,7 +67,7 @@ msgstr "Great to see you again!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Login with Github"
+msgstr "Login with GitHub"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
@@ -98,7 +98,7 @@ msgid "auth.notifications.invalid-token-error"
 msgstr "The recovery token is invalid."
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
+msgid "auth.notifications.password-changed-successfully"
 msgstr "Password successfully changed"
 
 #: src/app/main/ui/auth/recovery_request.cljs
@@ -111,7 +111,7 @@ msgstr "Password recovery link sent to your inbox."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
-msgstr "Joined the team succesfully"
+msgstr "Joined the team successfully"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.password"
@@ -338,7 +338,7 @@ msgid "dashboard.import.import-error"
 msgstr "There was a problem importing the file. The file wasn't imported."
 
 msgid "dashboard.import.import-message"
-msgstr "%s files have been imported succesfully."
+msgstr "%s files have been imported successfully."
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "Processing colors"
@@ -1468,7 +1468,7 @@ msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Promote and leave"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.select-memeber-to-promote"
+msgid "modals.leave-and-reassign.select-member-to-promote"
 msgstr "Select a member to promote"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -1988,7 +1988,7 @@ msgstr "Disable snap to grid"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
-msgstr "Enable dynamic aligment"
+msgstr "Enable dynamic alignment"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-scale-text"
