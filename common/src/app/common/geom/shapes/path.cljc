@@ -22,7 +22,7 @@
   (mth/almost-zero? (- a b)))
 
 (defn calculate-opposite-handler
-  "Given a point and its handler, gives the symetric handler"
+  "Given a point and its handler, gives the symmetric handler"
   [point handler]
   (let [handler-vector (gpt/to-vec point handler)]
     (gpt/add point (gpt/negate handler-vector))))
@@ -179,7 +179,7 @@
        (and (mth/almost-zero? d) (mth/almost-zero? a))
        [(/ (- c) b)]
 
-       ;; Cuadratic
+       ;; Quadratic
        (mth/almost-zero? d)
        [(/ (+ (- b) sqrt-b2-4ac)
            (* 2 a))
@@ -681,7 +681,7 @@
 (defn ray-line-intersect
   [point [a b :as line]]
 
-  ;; If the ray is paralell to the line there will be no crossings
+  ;; If the ray is parallel to the line there will be no crossings
   (let [ray-line [point (gpt/point (inc (:x point)) (:y point))]
         ;; Rays fail when fall just in a vertex so we move a bit upward
         ;; because only want to use this for insideness

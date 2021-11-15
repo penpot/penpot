@@ -175,7 +175,7 @@
             :x :y :width :height :x1 :y1 :x2 :y2))
       :rect :path))
 
-  (t/testing "Transform shape with invalid selrect fails gracefuly"
+  (t/testing "Transform shape with invalid selrect fails gracefully"
     (t/are [type selrect]
         (let [modifiers {:displacement (gmt/matrix)}
               shape-before (-> (create-test-shape type {:modifiers modifiers})

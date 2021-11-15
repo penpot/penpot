@@ -291,7 +291,7 @@
                   (reduce update-parent-id $ shapes)
 
                   ;; Analyze the old parents and clear the old links
-                  ;; only if the new parrent is different form old
+                  ;; only if the new parent is different form old
                   ;; parent.
                   (reduce (partial remove-from-old-parent cpindex) $ shapes)
 

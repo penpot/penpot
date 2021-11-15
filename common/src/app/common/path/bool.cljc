@@ -256,7 +256,7 @@
 
 (defn fix-move-to
   [content]
-  ;; Remove the field `:prev` and makes the necesaries `move-to`
+  ;; Remove the field `:prev` and makes the necessaries `move-to`
   ;; then clean the subpaths
 
   (loop [current (first content)

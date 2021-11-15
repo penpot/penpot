@@ -71,7 +71,7 @@
                  :components {}
                  :version 7}
 
-        expct   (-> data
+        expect   (-> data
                     (update-in [:pages-index page-id :objects] dissoc
                                (uuid/custom 1 2)
                                (uuid/custom 1 3)
@@ -84,8 +84,8 @@
         res     (cpm/migrate-data data)]
 
     ;; (pprint res)
-    ;; (pprint expct)
+    ;; (pprint expect)
 
-    (t/is (= (dissoc expct :version)
+    (t/is (= (dissoc expect :version)
              (dissoc res :version)))
     ))
