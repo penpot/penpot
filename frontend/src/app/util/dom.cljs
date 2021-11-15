@@ -411,13 +411,15 @@
   (let [event  (.-nativeEvent ^js bevent)]
     (= 1 (.-which event))))
 
+;; Warning: need to protect against reverse tabnabbing attack
+;; https://www.comparitech.com/blog/information-security/reverse-tabnabbing/
 (defn open-new-window
   ([uri]
-   (open-new-window uri "_blank"))
+   (open-new-window uri "_blank" "noopener,noreferrer"))
   ([uri name]
-   ;; Warning: need to protect against reverse tabnabbing attack
-   ;; https://www.comparitech.com/blog/information-security/reverse-tabnabbing/
-   (.open js/window (str uri) name "noopener,noreferrer")))
+   (open-new-window uri name "noopener,noreferrer"))
+  ([uri name features]
+   (.open js/window (str uri) name features)))
 
 (defn browser-back
   []
