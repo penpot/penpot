@@ -24,7 +24,7 @@ else
 fi
 
 function command_not_found {
-    >&2 echo "Leiningen coundn't find $1 in your \$PATH ($PATH), which is required."
+    >&2 echo "Leiningen couldn't find $1 in your \$PATH ($PATH), which is required."
     exit 1
 }
 
@@ -224,7 +224,7 @@ fi
 
 if [ ! -x "$JAVA_CMD" ] && ! type -f java >/dev/null
 then
-    >&2 echo "Leiningen coundn't find 'java' executable, which is required."
+    >&2 echo "Leiningen couldn't find 'java' executable, which is required."
     >&2 echo "Please either set JAVA_CMD or put java (>=1.6) in your \$PATH ($PATH)."
     exit 1
 fi

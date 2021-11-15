@@ -206,7 +206,7 @@
 
                 ;; Now we have the result containing the svgdata of a
                 ;; SVG with all text layers. Now we need to transform
-                ;; this SVG to G (Group) and remove unnecesary metada
+                ;; this SVG to G (Group) and remove unnecessary metadata
                 ;; objects.
                 (let [vbox      (-> (get-in result ["attributes" "viewBox"])
                                     (parse-viewbox))

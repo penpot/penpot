@@ -144,7 +144,7 @@ function ImageTracer(){
 			// 3. Batch pathscan
 			var bps = _this.batchpathscan( ls, options.pathomit );
 			
-			// 4. Batch interpollation
+			// 4. Batch interpolation
 			var bis = _this.batchinternodes( bps, options );
 			
 			// 5. Batch tracing and creating tracedata object
@@ -240,7 +240,7 @@ function ImageTracer(){
 	////////////////////////////////////////////////////////////
 	
 	// 1. Color quantization
-	// Using a form of k-means clustering repeatead options.colorquantcycles times. http://en.wikipedia.org/wiki/Color_quantization
+	// Using a form of k-means clustering repeated options.colorquantcycles times. http://en.wikipedia.org/wiki/Color_quantization
 	this.colorquantization = function( imgd, options ){
 		var arr = [], idx=0, cd,cdl,ci, paletteacc = [], pixelnum = imgd.width * imgd.height, i, j, k, cnt, palette;
 		
@@ -300,7 +300,7 @@ function ImageTracer(){
 				}// End of palette loop
 			}// End of Average colors from the second iteration
 			
-			// Reseting palette accumulator for averaging
+			// Resetting palette accumulator for averaging
 			for( i=0; i < palette.length; i++ ){ paletteacc[i] = { r:0, g:0, b:0, a:0, n:0 }; }
 			
 			// loop through all pixels
@@ -322,7 +322,7 @@ function ImageTracer(){
 						
 					}// End of palette loop
 					
-					// add to palettacc
+					// add to paletteacc
 					paletteacc[ci].r += imgd.data[idx  ];
 					paletteacc[ci].g += imgd.data[idx+1];
 					paletteacc[ci].b += imgd.data[idx+2];
@@ -620,7 +620,7 @@ function ImageTracer(){
 		return bpaths;
 	},
 	
-	// 4. interpollating between path points for nodes with 8 directions ( East, SouthEast, S, SW, W, NW, N, NE )
+	// 4. interpolating between path points for nodes with 8 directions ( East, SouthEast, S, SW, W, NW, N, NE )
 	this.internodes = function( paths, options ){
 		var ins = [], palen=0, nextidx=0, nextidx2=0, previdx=0, previdx2=0, pacnt, pcnt;
 		
@@ -718,7 +718,7 @@ function ImageTracer(){
 		return val;
 	},// End of getdirection()
 	
-	// 4. Batch interpollation
+	// 4. Batch interpolation
 	this.batchinternodes = function( bpaths, options ){
 		var binternodes = [];
 		for (var k in bpaths) {
