@@ -107,7 +107,7 @@
                 :code :email-domain-is-not-allowed)))
 
   ;; Don't allow proceed in preparing registration if the profile is
-  ;; already reported as spamer.
+  ;; already reported as spammer.
   (when (eml/has-bounce-reports? pool (:email params))
     (ex/raise :type :validation
               :code :email-has-permanent-bounces
@@ -175,7 +175,7 @@
              ::audit/profile-id (:id profile)}))
 
         ;; If auth backend is different from "penpot" means user is
-        ;; registring using third party auth mechanism; in this case
+        ;; registering using third party auth mechanism; in this case
         ;; we need to mark this session as logged.
         (not= "penpot" (:auth-backend profile))
         (with-meta (profile/strip-private-attrs profile)
@@ -433,7 +433,7 @@
 ;; --- MUTATION: Request Email Change
 
 (declare request-email-change)
-(declare change-email-inmediatelly)
+(declare change-email-immediately)
 
 (s/def ::request-email-change
   (s/keys :req-un [::email]))
@@ -449,9 +449,9 @@
       (if (or (cf/get :smtp-enabled)
               (contains? cf/flags :smtp))
         (request-email-change cfg params)
-        (change-email-inmediatelly cfg params)))))
+        (change-email-immediately cfg params)))))
 
-(defn- change-email-inmediatelly
+(defn- change-email-immediately
   [{:keys [conn]} {:keys [profile email] :as params}]
   (when (not= email (:email profile))
     (check-profile-existence! conn params))
@@ -633,7 +633,7 @@
   (let [rows (db/exec! conn [sql:owned-teams profile-id])]
     ;; If we found owned teams with more than one profile we don't
     ;; allow delete profile until the user properly transfer ownership
-    ;; or explictly removes all participants from the team.
+    ;; or explicitly removes all participants from the team.
     (when (some #(> (:num-profiles %) 1) rows)
       (ex/raise :type :validation
                 :code :owner-teams-with-people

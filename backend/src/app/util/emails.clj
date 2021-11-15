@@ -207,7 +207,7 @@
                 :content html}]))}))
 
 (s/def ::priority #{:high :low})
-(s/def ::to (s/or :sigle ::us/email
+(s/def ::to (s/or :single ::us/email
                   :multi (s/coll-of ::us/email)))
 (s/def ::from ::us/email)
 (s/def ::reply-to ::us/email)

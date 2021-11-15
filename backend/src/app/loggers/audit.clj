@@ -150,7 +150,7 @@
 (defmethod ig/init-key ::collector
   [_ cfg]
   (when (contains? cf/flags :audit-log)
-    (l/info :msg "intializing audit log collector")
+    (l/info :msg "initializing audit log collector")
     (let [input  (a/chan 512 event-xform)
           buffer (aa/batch input {:max-batch-size 100
                                   :max-batch-age (* 10 1000) ; 10s
@@ -159,7 +159,7 @@
         (when-let [[_type events] (a/<! buffer)]
           (let [res (a/<! (persist-events cfg events))]
             (when (ex/exception? res)
-              (l/error :hint "error on persiting events"
+              (l/error :hint "error on persisting events"
                        :cause res)))
           (recur)))
 
@@ -195,7 +195,7 @@
 ;; Archive Task
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; This is a task responsible to send the accomulated events to an
+;; This is a task responsible to send the accumulated events to an
 ;; external service for archival.
 
 (declare archive-events)

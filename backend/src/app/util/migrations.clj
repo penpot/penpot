@@ -20,7 +20,7 @@
 ;; --- Implementation
 
 (defn- registered?
-  "Check if concrete migration is already registred."
+  "Check if concrete migration is already registered."
   [pool modname stepname]
   (let [sql  "select * from migrations where module=? and step=?"
         rows (jdbc/execute! pool [sql modname stepname])]

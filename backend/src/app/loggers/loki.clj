@@ -30,7 +30,7 @@
 (defmethod ig/init-key ::reporter
   [_ {:keys [receiver uri] :as cfg}]
   (when uri
-    (l/info :msg "intializing loki reporter" :uri uri)
+    (l/info :msg "initializing loki reporter" :uri uri)
     (let [input (a/chan (a/dropping-buffer 512))]
       (receiver :sub input)
       (a/go-loop []

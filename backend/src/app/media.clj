@@ -213,7 +213,7 @@
 ;; --- Fonts Generation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def all-fotmats #{"font/woff2", "font/woff", "font/otf", "font/ttf"})
+(def all-formats #{"font/woff2", "font/woff", "font/otf", "font/ttf"})
 
 (defmethod process :generate-fonts
   [{:keys [input] :as params}]
@@ -334,7 +334,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn configure-assets-storage
-  "Given storage map, returns a storage configured with the apropriate
+  "Given storage map, returns a storage configured with the appropriate
   backend for assets."
   [storage conn]
   (-> storage

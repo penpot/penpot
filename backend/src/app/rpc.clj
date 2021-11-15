@@ -75,7 +75,7 @@
   (mtx/wrap-summary f (::mobj cfg) [(::sv/name mdata)]))
 
 ;; Wrap the rpc handler with a semaphore if it is specified in the
-;; metadata asocciated with the handler.
+;; metadata associated with the handler.
 (defn- wrap-with-rlimits
   [cfg f mdata]
   (if-let [key (:rlimit mdata)]

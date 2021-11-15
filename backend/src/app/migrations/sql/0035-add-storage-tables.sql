@@ -22,7 +22,7 @@ CREATE TABLE storage_data (
 CREATE INDEX storage_data__id__idx ON storage_data(id);
 
 -- Table used for store inflight upload ids, for later recheck and
--- delete possible staled files that exists on the phisical storage
+-- delete possible staled files that exists on the physical storage
 -- but does not exists in the 'storage_object' table.
 
 CREATE TABLE storage_pending (

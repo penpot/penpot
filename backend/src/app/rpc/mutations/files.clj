@@ -181,7 +181,7 @@
                :library-file-id library-id}))
 
 
-;; --- Mutation: Update syncrhonization status of a link
+;; --- Mutation: Update synchronization status of a link
 
 (declare update-sync)
 

@@ -106,6 +106,6 @@
 ;; --- Attrs Helpers
 
 (defn strip-private-attrs
-  "Only selects a publicy visible profile attrs."
+  "Only selects a publicly visible profile attrs."
   [row]
   (dissoc row :password :deleted-at))

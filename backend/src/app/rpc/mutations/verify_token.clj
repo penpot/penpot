@@ -134,7 +134,7 @@
 
         ;; If the session does not matches the invited member, replace
         ;; the session with a new one matching the invited member.
-        ;; This techinique should be considered secure because the
+        ;; This technique should be considered secure because the
         ;; user clicking the link he already has access to the email
         ;; account.
         (with-meta
@@ -179,7 +179,7 @@
          ::audit/profile-id member-id}))
 
     ;; In this case, we wait until frontend app redirect user to
-    ;; registeration page, the user is correctly registered and the
+    ;; registration page, the user is correctly registered and the
     ;; register mutation call us again with the same token to finally
     ;; create the corresponding team-profile relation from the first
     ;; condition of this if.

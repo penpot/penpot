@@ -84,8 +84,8 @@
    (let [perms  (get-permissions conn profile-id file-id)
          ldata  (retrieve-share-link conn file-id share-id)]
 
-     ;; NOTE: in a future when share-link becomes more powerfull and
-     ;; will allow us specify which parts of the app is availabel, we
+     ;; NOTE: in a future when share-link becomes more powerful and
+     ;; will allow us specify which parts of the app is available, we
      ;; will probably need to tweak this function in order to expose
      ;; this flags to the frontend.
      (cond
@@ -227,7 +227,7 @@
                 (= frame-id uuid/zero)
                 (not (some? (get-in objects [frame-id :thumbnail]))))))
 
-        ;; We need to remove from the attribute :shapes its childrens because
+        ;; We need to remove from the attribute :shapes its children because
         ;; they will not be sent in the data
         remove-frame-children
         (fn [[id shape]]

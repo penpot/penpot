@@ -176,7 +176,7 @@
                                  :content content})]
 
         ;; NOTE: this is done in SQL instead of using db/update!
-        ;; helper bacause currently the helper does not allow pass raw
+        ;; helper because currently the helper does not allow pass raw
         ;; function call parameters to the underlying prepared
         ;; statement; in a future when we fix/improve it, this can be
         ;; changed to use the helper.

@@ -68,7 +68,7 @@
     (t/is (true? (sto/del-object storage object)))
 
     ;; retrieving the same object should be not nil because the
-    ;; deletion is not inmediate
+    ;; deletion is not immediate
     (t/is (some? (sto/get-object-data storage object)))
     (t/is (some? (sto/get-object-url storage object)))
     (t/is (some? (sto/get-object-path storage object)))
@@ -248,7 +248,7 @@
     (th/sleep 200)
 
     ;; storage_pending table should have the object
-    ;; registred independently of the aborted transaction.
+    ;; registered independently of the aborted transaction.
     (let [rows (db/exec! th/*pool* ["select * from storage_pending"])]
       (t/is (= 1 (count rows))))
 
