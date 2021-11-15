@@ -117,9 +117,10 @@
     (effect [_ state _]
       (let [router (:router state)
             path   (resolve router rname path-params query-params)
+            name   (or name "_blank")
             uri    (-> (u/uri cfg/public-uri)
                        (assoc :fragment path))]
-        (dom/open-new-window (str uri) name)))))
+        (dom/open-new-window uri name nil)))))
 
 (defn nav-back
   []
