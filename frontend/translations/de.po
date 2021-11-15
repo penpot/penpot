@@ -702,7 +702,7 @@ msgstr "Ein Fehler ist aufgetreten"
 
 #: src/app/main/ui/handoff/attributes/blur.cljs
 msgid "handoff.attributes.blur"
-msgstr "Weichzeichnen"
+msgstr "Unschärfe"
 
 #: src/app/main/ui/handoff/attributes/blur.cljs
 msgid "handoff.attributes.blur.value"
@@ -2124,15 +2124,15 @@ msgstr "Ebene"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
-msgstr "Weichzeichnen"
+msgstr "Unschärfe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title.group"
-msgstr "Gruppe weichzeichnen"
+msgstr "Gruppe unschärfe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title.multiple"
-msgstr "Auswahl weichzeichnen"
+msgstr "Auswahl unschärfe"
 
 #: src/app/main/ui/workspace/sidebar/options/page.cljs
 msgid "workspace.options.canvas-background"
@@ -2417,7 +2417,7 @@ msgstr "Auswahl einrahmen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.blur"
-msgstr "Weichzeichnen"
+msgstr "Unschärfe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.drop-shadow"
