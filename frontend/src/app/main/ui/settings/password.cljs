@@ -19,11 +19,10 @@
 (defn- on-error
   [form error]
   (case (:code error)
-    :app.services.mutations.profile/old-password-not-match
+    :old-password-not-match
     (swap! form assoc-in [:errors :password-old]
            {:message (tr "errors.wrong-old-password")})
 
-    :else
     (let [msg (tr "generic.error")]
       (st/emit! (dm/error msg)))))
 

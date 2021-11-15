@@ -72,7 +72,10 @@
       (do
         (a/>!! (::events-ch cfg) id)
         (l/update-thread-context! {:profile-id profile-id})
-        (handler (assoc request :profile-id profile-id)))
+        (-> request
+            (assoc :profile-id profile-id)
+            (assoc :session-id id)
+            (handler)))
       (handler request))))
 
 ;; --- STATE INIT: SESSION

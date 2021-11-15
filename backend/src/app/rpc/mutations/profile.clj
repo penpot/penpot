@@ -367,6 +367,7 @@
 
 (declare validate-password!)
 (declare update-profile-password!)
+(declare invalidate-profile-session!)
 
 (s/def ::update-profile-password
   (s/keys :req-un [::profile-id ::password ::old-password]))
@@ -374,8 +375,10 @@
 (sv/defmethod ::update-profile-password {:rlimit :password}
   [{:keys [pool] :as cfg} {:keys [password] :as params}]
   (db/with-atomic [conn pool]
-    (let [profile (validate-password! conn params)]
+    (let [profile    (validate-password! conn params)
+          session-id (:app.rpc/session-id params)]
       (update-profile-password! conn (assoc profile :password password))
+      (invalidate-profile-session! conn (:id profile) session-id)
       nil)))
 
 (defn- validate-password!
@@ -392,6 +395,11 @@
               {:password (derive-password password)}
               {:id id}))
 
+(defn- invalidate-profile-session!
+  "Removes all sessions except the current one."
+  [conn profile-id session-id]
+  (let [sql "delete from http_session where profile_id = ? and id != ?"]
+    (:next.jdbc/update-count (db/exec-one! conn [sql profile-id session-id]))))
 
 ;; --- MUTATION: Update Photo
 

@@ -48,7 +48,6 @@
   (let [data    (media/run cfg {:cmd :generate-fonts :input data :rlimit :font})
         storage (media/configure-assets-storage storage conn)
 
-
         otf     (when-let [fdata (get data "font/otf")]
                   (sto/put-object storage {:content (sto/content fdata)
                                            :content-type "font/otf"}))
