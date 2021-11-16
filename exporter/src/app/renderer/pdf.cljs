@@ -9,11 +9,11 @@
   (:require
    [app.browser :as bw]
    [app.common.exceptions :as ex :include-macros true]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cf]
    [cljs.spec.alpha :as s]
    [lambdaisland.uri :as u]
-   [lambdaisland.glogi :as log]
    [promesa.core :as p]))
 
 (defn create-cookie
@@ -36,7 +36,7 @@
               (pdf-from page (str uri) cookie)))
 
           (pdf-from [page uri cookie]
-            (log/info :uri uri)
+            (l/info :uri uri)
             (let [options {:cookie cookie}]
               (p/do!
                 (bw/configure-page! page options)

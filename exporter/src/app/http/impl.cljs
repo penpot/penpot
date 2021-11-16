@@ -12,7 +12,6 @@
    ["raw-body" :as raw-body]
    [app.util.transit :as t]
    [cuerdas.core :as str]
-   [lambdaisland.glogi :as log]
    [lambdaisland.uri :as u]
    [promesa.core :as p]
    [reitit.core :as r]))
