@@ -10,13 +10,13 @@
    [app.browser :as bw]
    [app.common.data :as d]
    [app.common.exceptions :as ex :include-macros true]
+   [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.config :as cf]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [lambdaisland.uri :as u]
-   [lambdaisland.glogi :as log]
    [promesa.core :as p]))
 
 (defn create-cookie
@@ -39,7 +39,7 @@
               (screenshot page (str uri) cookie)))
 
           (screenshot [page uri cookie]
-            (log/info :uri uri)
+            (l/info :uri uri)
             (let [viewport {:width 1920
                             :height 1080
                             :scale scale}

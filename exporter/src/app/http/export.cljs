@@ -9,12 +9,11 @@
    [app.common.exceptions :as exc :include-macros true]
    [app.common.spec :as us]
    [app.renderer.bitmap :as rb]
-   [app.renderer.svg :as rs]
    [app.renderer.pdf :as rp]
+   [app.renderer.svg :as rs]
    [app.zipfile :as zip]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [lambdaisland.glogi :as log]
    [promesa.core :as p]))
 
 (s/def ::name ::us/string)

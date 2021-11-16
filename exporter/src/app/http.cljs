@@ -6,16 +6,18 @@
 
 (ns app.http
   (:require
+   [app.common.logging :as l]
    [app.config :as cf]
    [app.http.export :refer [export-handler]]
    [app.http.export-frames :refer [export-frames-handler]]
    [app.http.impl :as impl]
-   [app.util.transit :as t]
    [app.sentry :as sentry]
+   [app.util.transit :as t]
    [cuerdas.core :as str]
-   [lambdaisland.glogi :as log]
    [promesa.core :as p]
    [reitit.core :as r]))
+
+(l/set-level! :info)
 
 (def routes
   [["/export-frames" {:handler export-frames-handler}]
@@ -49,7 +51,7 @@
 
       :else
       (do
-        (log/error :msg "Unexpected error" :error error)
+        (l/error :msg "Unexpected error" :error error)
         (js/console.error error)
         {:status 500
          :headers {"x-error" (t/encode data)}
@@ -62,10 +64,10 @@
         server  (impl/server handler on-error)
         port    (cf/get :http-server-port 6061)]
     (.listen server port)
-    (log/info :msg "welcome to penpot"
+    (l/info :msg "welcome to penpot"
               :module "exporter"
               :version (:full @cf/version))
-    (log/info :msg "starting http server" :port port)
+    (l/info :msg "starting http server" :port port)
     (reset! instance server)))
 
 (defn stop
@@ -73,6 +75,6 @@
   (if-let [server @instance]
     (p/create (fn [resolve]
                 (.close server (fn []
-                                 (log/info :msg "shutdown http server")
+                                 (l/info :msg "shutdown http server")
                                  (resolve)))))
     (p/resolved nil)))

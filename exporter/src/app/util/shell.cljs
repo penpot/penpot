@@ -11,10 +11,10 @@
    ["fs" :as fs]
    ["os" :as os]
    ["path" :as path]
-   [lambdaisland.glogi :as log]
+   [app.common.logging :as l]
    [promesa.core :as p]))
 
-(log/set-level "app.util.shell" :trace)
+(l/set-level! :trace)
 
 (defn create-tmpdir!
   [prefix]
@@ -47,10 +47,10 @@
   [cmd]
   (p/create
    (fn [resolve reject]
-     (log/trace :fn :run-cmd :cmd cmd)
+     (l/trace :fn :run-cmd :cmd cmd)
      (chp/exec cmd #js {:encoding "buffer"}
                (fn [error stdout stderr]
-                 ;; (log/trace :fn :run-cmd :stdout stdout)
+                 ;; (l/trace :fn :run-cmd :stdout stdout)
                  (if error
                    (reject error)
                    (resolve stdout)))))))
