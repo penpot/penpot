@@ -1,0 +1,218 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) UXBOX Labs SL
+
+.af-form {
+  background-color: $color-white;
+  color: $color-gray-60 !important;
+  max-width: 760px !important;
+  overflow-y: auto;
+  padding: 3rem;
+  width: 100% !important;
+  
+  h1, h3 {
+    font-family: 'worksans', sans-serif !important;
+    margin-bottom: .8rem;
+    font-weight: 500 !important;
+  }
+
+  h1 {
+    font-size: $fs38;
+  }
+
+  strong {
+    font-weight: 500;
+  }
+
+  p, label {
+    font-family: 'worksans', sans-serif !important;
+    font-size: $fs14;
+  }
+
+  form {
+    max-width: 760px;
+    width: 100%;
+  }
+
+  button {
+    font-family: 'worksans', sans-serif !important;
+  }
+
+  .af-choice,
+  .af-choice-multiple {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .af-choice-option {
+    max-width: 33%;
+    width: 100%;
+
+    label {
+      font-family: 'worksans', sans-serif !important;
+      font-size: $fs14;
+      padding-left: 0;
+    }
+  }
+
+  .af-choice-multiple {
+    .af-choice-option {
+      max-width: 50%;
+      width: 100%;
+    }
+  }
+
+  .af-divider-block {
+    margin-bottom: 2rem;
+
+    p {
+      &::after,
+      &::before {
+        border-color: transparent;
+      }
+    }
+  }
+
+  .af-dropdown-text,
+  .text {
+    font-family: 'worksans', sans-serif !important;
+  }
+
+  .af-step-next {
+    display: flex;
+    margin-top: 2rem;
+  }
+  
+  .af-step-next button {
+    color: $color-black;
+    background-color: $color-primary;
+    max-width: 180px;
+    margin-left: auto;
+  }
+
+  .af-step-previous {
+    margin-top: -40px;
+  }
+
+  .af-step-button {
+    text-align: left;
+  }
+
+  .af-field-input {
+    margin: 2rem 0;
+  }
+
+  .af-choice-option input:checked+label:before, .af-legal input:checked+label:before {
+    background-color: $color-primary;
+  }
+
+  .af-choice-option input#af-uid-416:checked+label,
+  .af-choice-option input#af-uid-417:checked+label,
+  .af-choice-option input#af-uid-418:checked+label,
+  .af-choice-option input#af-uid-419:checked+label,
+  .af-choice-option input#af-uid-420:checked+label,
+  .af-choice-option input#af-uid-421:checked+label,
+  .af-choice-option input#af-uid-424:checked+label,
+  .af-choice-option input#af-uid-425:checked+label,
+  .af-choice-option input#af-uid-426:checked+label,
+  .af-choice-option input#af-uid-427:checked+label {
+    &::before {
+      background-color: transparent;
+      border: 2px solid $color-primary;
+    }
+  }
+
+  label[for=af-uid-416],
+  label[for=af-uid-417],
+  label[for=af-uid-418],
+  label[for=af-uid-419],
+  label[for=af-uid-420],
+  label[for=af-uid-421],
+  label[for=af-uid-424],
+  label[for=af-uid-425],
+  label[for=af-uid-426],
+  label[for=af-uid-427] {
+    display: flex;
+    padding-top: 5rem;
+    justify-content: center;
+    background-size: 50px;
+    background-repeat: no-repeat;
+    background-position: center 1rem;
+    margin: 1rem !important;
+    min-height: 130px;
+    position: relative;
+    text-align: center;
+
+    &:hover {
+      background-color: transparent;
+      box-shadow: 0px 10px 20px rgba(0,0,0,.2);
+    }
+
+    &::before {
+      background-color: transparent;
+      border-radius: 4px;
+      min-width: 100%;
+      min-height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      margin: 0;
+    }
+    
+    &::after {
+      display: none !important;
+    }
+
+  }
+  
+  label[for=af-uid-424],
+  label[for=af-uid-425],
+  label[for=af-uid-426],
+  label[for=af-uid-427] {
+    padding-top: 6rem;
+    background-size: 120px;
+    min-height: 150px;
+  }
+
+  label[for=af-uid-416] {
+    background-image: url("../images/form/figma.png");
+  }
+
+  label[for=af-uid-417] {
+    background-image: url("../images/form/sketch.png");
+  }
+
+  label[for=af-uid-418] {
+    background-image: url("../images/form/adobe-xd.png");
+  }
+
+  label[for=af-uid-419] {
+    background-image: url("../images/form/uxpin.png");
+  }
+  
+  label[for=af-uid-420] {
+    background-image: url("../images/form/invision.png");
+  }
+  
+  label[for=af-uid-421] {
+    background-image: url("../images/form/never-used.png");
+  }
+  
+  label[for=af-uid-424] {
+    background-image: url("../images/form/use-for-1.jpg");
+  }
+  
+  label[for=af-uid-425] {
+    background-image: url("../images/form/use-for-2.jpg");
+  }
+  
+  label[for=af-uid-426] {
+    background-image: url("../images/form/use-for-3.jpg");
+  }
+  
+  label[for=af-uid-427] {
+    background-image: url("../images/form/use-for-4.jpg");
+  }
+}
