@@ -114,7 +114,8 @@
 (def default-interaction
   {:event-type :click
    :action-type :navigate
-   :destination nil})
+   :destination nil
+   :preserve-scroll false})
 
 (def default-delay 600)
 
@@ -153,7 +154,7 @@
       (assoc interaction
              :action-type action-type
              :destination (get interaction :destination)
-             :preserve-scroll false)
+             :preserve-scroll (get interaction :preserve-scroll false))
 
       (:open-overlay :toggle-overlay)
       (let [overlay-pos-type (get interaction :overlay-pos-type :center)
@@ -198,10 +199,6 @@
   (and (has-destination interaction)
        (some? (:destination interaction))))
 
-(defn has-preserve-scroll
-  [interaction]
-  (= (:action-type interaction) :navigate))
-
 (defn set-destination
   [interaction destination]
   (us/verify ::interaction interaction)
@@ -215,6 +212,10 @@
         (= (:action-type interaction) :toggle-overlay))
     (assoc :overlay-pos-type :center
            :overlay-position (gpt/point 0 0))))
+
+(defn has-preserve-scroll
+  [interaction]
+  (= (:action-type interaction) :navigate))
 
 (defn set-preserve-scroll
   [interaction preserve-scroll]
@@ -288,7 +289,7 @@
 
 (defn- calc-overlay-pos-initial
   [destination shape objects overlay-pos-type]
-  (if (= overlay-pos-type :manual)
+  (if (and (= overlay-pos-type :manual) (some? destination))
     (let [dest-frame   (get objects destination)
           overlay-size (:selrect dest-frame)
           orig-frame   (if (= (:type shape) :frame)
