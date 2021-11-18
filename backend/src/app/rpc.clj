@@ -13,11 +13,10 @@
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.metrics :as mtx]
-   [app.rlimits :as rlm]
    [app.util.retry :as retry]
+   [app.util.rlimit :as rlimit]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
    [integrant.core :as ig]))
 
 (defn- default-handler
@@ -74,29 +73,15 @@
   [cfg f mdata]
   (mtx/wrap-summary f (::mobj cfg) [(::sv/name mdata)]))
 
-;; Wrap the rpc handler with a semaphore if it is specified in the
-;; metadata asocciated with the handler.
-(defn- wrap-with-rlimits
-  [cfg f mdata]
-  (if-let [key (:rlimit mdata)]
-    (let [rlinst (get-in cfg [:rlimits key])]
-      (when-not rlinst
-        (ex/raise :type :internal
-                  :code :rlimit-not-configured
-                  :hint (str/fmt "%s rlimit not configured" key)))
-      (l/trace :action "add rlimit"
-               :handler (::sv/name mdata))
-      (fn [cfg params]
-        (rlm/execute rlinst (f cfg params))))
-    f))
-
 (defn- wrap-impl
   [{:keys [audit] :as cfg} f mdata]
-  (let [f      (wrap-with-rlimits cfg f mdata)
-        f      (retry/wrap-retry cfg f mdata)
-        f      (wrap-with-metrics cfg f mdata)
-        spec   (or (::sv/spec mdata) (s/spec any?))
-        auth?  (:auth mdata true)]
+  (let [f     (as-> f $
+                (rlimit/wrap-rlimit cfg $ mdata)
+                (retry/wrap-retry cfg $ mdata)
+                (wrap-with-metrics cfg $ mdata))
+
+        spec  (or (::sv/spec mdata) (s/spec any?))
+        auth? (:auth mdata true)]
 
     (l/trace :action "register" :name (::sv/name mdata))
     (with-meta
@@ -188,7 +173,7 @@
 
 (defmethod ig/pre-init-spec ::rpc [_]
   (s/keys :req-un [::storage ::session ::tokens ::audit
-                   ::mtx/metrics ::rlm/rlimits ::db/pool]))
+                   ::mtx/metrics ::db/pool]))
 
 (defmethod ig/init-key ::rpc
   [_ cfg]

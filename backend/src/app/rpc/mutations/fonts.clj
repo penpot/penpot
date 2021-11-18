@@ -9,10 +9,12 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
+   [app.util.rlimit :as rlimit]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
@@ -37,6 +39,7 @@
                    ::font-id ::font-family ::font-weight ::font-style]))
 
 (sv/defmethod ::create-font-variant
+  {::rlimit/permits (cf/get :rlimit-font)}
   [{:keys [pool] :as cfg} {:keys [team-id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (let [cfg (assoc cfg :conn conn)]
@@ -45,9 +48,8 @@
 
 (defn create-font-variant
   [{:keys [conn storage] :as cfg} {:keys [data] :as params}]
-  (let [data    (media/run cfg {:cmd :generate-fonts :input data :rlimit :font})
+  (let [data    (media/run {:cmd :generate-fonts :input data})
         storage (media/configure-assets-storage storage conn)
-
 
         otf     (when-let [fdata (get data "font/otf")]
                   (sto/put-object storage {:content (sto/content fdata)

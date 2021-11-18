@@ -12,7 +12,6 @@
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.config :as cf]
-   [app.rlimits :as rlm]
    [app.util.svg :as svg]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
@@ -51,7 +50,6 @@
                :code :media-type-not-allowed
                :hint "Seems like you are uploading an invalid media object"))))
 
-
 (defmulti process :cmd)
 (defmulti process-error class)
 
@@ -66,17 +64,11 @@
   (throw error))
 
 (defn run
-  [{:keys [rlimits] :as cfg} {:keys [rlimit] :or {rlimit :image} :as params}]
-  (us/assert map? rlimits)
-  (let [rlimit (get rlimits rlimit)]
-    (when-not rlimit
-      (ex/raise :type :internal
-                :code :rlimit-not-configured
-                :hint ":image rlimit not configured"))
-    (try
-      (rlm/execute rlimit (process params))
-      (catch Throwable e
-        (process-error e)))))
+  [params]
+  (try
+    (process params)
+    (catch Throwable e
+      (process-error e))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; --- Thumbnails Generation
