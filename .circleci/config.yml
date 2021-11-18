@@ -36,17 +36,23 @@ jobs:
       - run:
           name: common lint
           working_directory: "./common"
-          command: "clj-kondo --parallel --lint src/"
+          command: |
+            clj-kondo --version
+            clj-kondo --parallel --lint src/
 
       - run:
           name: frontend lint
           working_directory: "./frontend"
-          command: "clj-kondo --parallel --lint src/"
+          command: |
+            clj-kondo --version
+            clj-kondo --parallel --lint src/
 
       - run:
           name: backend lint
           working_directory: "./backend"
-          command: "clj-kondo --parallel --lint src/"
+          command: |
+            clj-kondo --version
+            clj-kondo --parallel --lint src/
 
       # run backend test
       - run:
