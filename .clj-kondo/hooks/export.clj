@@ -51,18 +51,28 @@
 
 (defn service-defmethod
   [{:keys [:node]}]
-  (let [[rnode rtype & other] (:children node)
+  (let [[rnode rtype ?meta & other] (:children node)
         rsym    (gensym (name (:k rtype)))
         result  (api/list-node
                  [(api/token-node (symbol "do"))
                   (api/list-node
                    [(api/token-node (symbol "declare"))
                     (api/token-node rsym)])
+                  (if (= :map (:tag ?meta))
+                    (api/list-node
+                     [(api/token-node (symbol "reset-meta!"))
+                      (api/token-node rsym)
+                      ?meta])
+                    (api/list-node
+                     [(api/token-node (symbol "comment"))
+                      (api/token-node rsym)]))
                   (api/list-node
                    (into [(api/token-node (symbol "defmethod"))
                           (api/token-node rsym)
                           rtype]
-                         other))])]
+                         (cons ?meta other)))])]
+    ;; (prn "==============" rtype (into {} ?meta))
+    ;; (prn (api/sexpr result))
     {:node result}))
 
 
