@@ -62,8 +62,9 @@
 
    :assets-path "/internal/assets/"
 
-   :rlimits-password 10
-   :rlimits-image 2
+   :rlimit-password 10
+   :rlimit-image 2
+   :rlimit-font 5
 
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
    :smtp-default-from "Penpot <no-reply@example.com>"
@@ -151,8 +152,9 @@
 (s/def ::public-uri ::us/string)
 (s/def ::redis-uri ::us/string)
 (s/def ::registration-domain-whitelist ::us/set-of-str)
-(s/def ::rlimits-image ::us/integer)
-(s/def ::rlimits-password ::us/integer)
+(s/def ::rlimit-font ::us/integer)
+(s/def ::rlimit-image ::us/integer)
+(s/def ::rlimit-password ::us/integer)
 (s/def ::smtp-default-from ::us/string)
 (s/def ::smtp-default-reply-to ::us/string)
 (s/def ::smtp-host ::us/string)
@@ -237,8 +239,9 @@
                    ::redis-uri
                    ::registration-domain-whitelist
                    ::registration-enabled
-                   ::rlimits-image
-                   ::rlimits-password
+                   ::rlimit-font
+                   ::rlimit-image
+                   ::rlimit-password
                    ::sentry-dsn
                    ::sentry-debug
                    ::sentry-attach-stack-trace

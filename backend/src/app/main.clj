@@ -127,24 +127,6 @@
     :audit         (ig/ref :app.loggers.audit/collector)
     :public-uri    (cf/get :public-uri)}
 
-   ;; RLimit definition for password hashing
-   :app.rlimits/password
-   (cf/get :rlimits-password)
-
-   ;; RLimit definition for image processing
-   :app.rlimits/image
-   (cf/get :rlimits-image)
-
-   ;; RLimit definition for font processing
-   :app.rlimits/font
-   (cf/get :rlimits-font 2)
-
-   ;; A collection of rlimits as hash-map.
-   :app.rlimits/all
-   {:password (ig/ref :app.rlimits/password)
-    :image    (ig/ref :app.rlimits/image)
-    :font     (ig/ref :app.rlimits/font)}
-
    :app.rpc/rpc
    {:pool       (ig/ref :app.db/pool)
     :session    (ig/ref :app.http.session/session)
@@ -152,7 +134,6 @@
     :metrics    (ig/ref :app.metrics/metrics)
     :storage    (ig/ref :app.storage/storage)
     :msgbus     (ig/ref :app.msgbus/msgbus)
-    :rlimits    (ig/ref :app.rlimits/all)
     :public-uri (cf/get :public-uri)
     :audit      (ig/ref :app.loggers.audit/collector)}
 
