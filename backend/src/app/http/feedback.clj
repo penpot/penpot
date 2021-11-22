@@ -61,6 +61,7 @@
         destination (cf/get :feedback-destination)]
     (eml/send! {::eml/conn pool
                 ::eml/factory eml/feedback
+                :from     destination
                 :to       destination
                 :profile  profile
                 :reply-to (:from params)

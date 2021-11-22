@@ -19,6 +19,7 @@
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.storage :as sto]
+   [app.util.rlimit :as rlimit]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
@@ -128,7 +129,8 @@
 (s/def ::register-profile
   (s/keys :req-un [::token ::fullname]))
 
-(sv/defmethod ::register-profile {:auth false :rlimit :password}
+(sv/defmethod ::register-profile
+  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (-> (assoc cfg :conn conn)
@@ -281,7 +283,8 @@
   (s/keys :req-un [::email ::password]
           :opt-un [::scope ::invitation-token]))
 
-(sv/defmethod ::login {:auth false :rlimit :password}
+(sv/defmethod ::login
+  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
   [{:keys [pool session tokens] :as cfg} {:keys [email password] :as params}]
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
@@ -372,7 +375,8 @@
 (s/def ::update-profile-password
   (s/keys :req-un [::profile-id ::password ::old-password]))
 
-(sv/defmethod ::update-profile-password {:rlimit :password}
+(sv/defmethod ::update-profile-password
+  {::rlimit/permits (cf/get :rlimit-password)}
   [{:keys [pool] :as cfg} {:keys [password] :as params}]
   (db/with-atomic [conn pool]
     (let [profile    (validate-password! conn params)
@@ -412,11 +416,12 @@
   (s/keys :req-un [::profile-id ::file]))
 
 (sv/defmethod ::update-profile-photo
+  {::rlimit/permits (cf/get :rlimit-image)}
   [{:keys [pool storage] :as cfg} {:keys [profile-id file] :as params}]
   (db/with-atomic [conn pool]
     (media/validate-media-type (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
-    (media/run cfg {:cmd :info :input {:path (:tempfile file)
-                                       :mtype (:content-type file)}})
+    (media/run {:cmd :info :input {:path (:tempfile file)
+                                   :mtype (:content-type file)}})
 
     (let [profile (db/get-by-id conn :profile profile-id)
           storage (media/configure-assets-storage storage conn)
@@ -562,7 +567,8 @@
 (s/def ::recover-profile
   (s/keys :req-un [::token ::password]))
 
-(sv/defmethod ::recover-profile {:auth false :rlimit :password}
+(sv/defmethod ::recover-profile
+  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
   [{:keys [pool tokens] :as cfg} {:keys [token password]}]
   (letfn [(validate-token [token]
             (let [tdata (tokens :verify {:token token :iss :password-recovery})]

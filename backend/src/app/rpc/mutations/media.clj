@@ -10,11 +10,13 @@
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
    [app.util.http :as http]
+   [app.util.rlimit :as rlimit]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -47,6 +49,7 @@
           :opt-un [::id]))
 
 (sv/defmethod ::upload-file-media-object
+  {::rlimit/permits (cf/get :rlimit-image)}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (let [file (select-file conn file-id)]
@@ -89,21 +92,20 @@
                          :content-type mtype
                          :expired-at (dt/in-future {:minutes 30})}))))
 
-
 (defn create-file-media-object
   [{:keys [conn storage] :as cfg} {:keys [id file-id is-local name content] :as params}]
   (media/validate-media-type (:content-type content))
   (let [storage      (media/configure-assets-storage storage conn)
         source-path  (fs/path (:tempfile content))
         source-mtype (:content-type content)
-        source-info  (media/run cfg {:cmd :info :input {:path source-path :mtype source-mtype}})
+        source-info  (media/run {:cmd :info :input {:path source-path :mtype source-mtype}})
 
         thumb        (when (and (not (svg-image? source-info))
                                 (big-enough-for-thumbnail? source-info))
-                       (media/run cfg (assoc thumbnail-options
-                                             :cmd :generic-thumbnail
-                                             :input {:mtype (:mtype source-info)
-                                                     :path source-path})))
+                       (media/run (assoc thumbnail-options
+                                         :cmd :generic-thumbnail
+                                         :input {:mtype (:mtype source-info)
+                                                 :path source-path})))
 
         image        (if (= (:mtype source-info) "image/svg+xml")
                        (let [data (slurp source-path)]

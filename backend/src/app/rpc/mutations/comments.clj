@@ -12,9 +12,7 @@
    [app.rpc.queries.comments :as comments]
    [app.rpc.queries.files :as files]
    [app.util.blob :as blob]
-   #_:clj-kondo/ignore
    [app.util.retry :as retry]
-
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]))

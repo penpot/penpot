@@ -20,11 +20,19 @@
       (get headers "x-real-ip")
       (get request :remote-addr)))
 
+
+(defn- simple-prune
+  ([s] (simple-prune s (* 1024 1024)))
+  ([s max-length]
+   (if (> (count s) max-length)
+     (str (subs s 0 max-length) " [...]")
+     s)))
+
 (defn- stringify-data
   [data]
   (binding [clojure.pprint/*print-right-margin* 200]
     (let [result (with-out-str (clojure.pprint/pprint data))]
-      (str/prune result (* 1024 1024) "[...]"))))
+      (simple-prune result (* 1024 1024)))))
 
 (defn get-error-context
   [request error]

@@ -113,7 +113,7 @@
       (.setIdleTimeout 120000)       ;; 2min
       (.setMaxLifetime 1800000)      ;; 30min
       (.setMinimumIdle (:min-pool-size cfg 0))
-      (.setMaximumPoolSize (:max-pool-size cfg 30))
+      (.setMaximumPoolSize (:max-pool-size cfg 50))
       (.setConnectionInitSql initsql)
       (.setInitializationFailTimeout -1))
 

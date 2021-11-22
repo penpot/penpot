@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
    [app.media :as media]
@@ -18,6 +19,7 @@
    [app.rpc.queries.profile :as profile]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
+   [app.util.rlimit :as rlimit]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -259,12 +261,13 @@
   (s/keys :req-un [::profile-id ::team-id ::file]))
 
 (sv/defmethod ::update-team-photo
+  {::rlimit/permits (cf/get :rlimit-image)}
   [{:keys [pool storage] :as cfg} {:keys [profile-id file team-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
     (media/validate-media-type (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
-    (media/run cfg {:cmd :info :input {:path (:tempfile file)
-                                       :mtype (:content-type file)}})
+    (media/run {:cmd :info :input {:path (:tempfile file)
+                                   :mtype (:content-type file)}})
 
     (let [team    (teams/retrieve-team conn profile-id team-id)
           storage (media/configure-assets-storage storage conn)
@@ -284,16 +287,13 @@
 
 (defn upload-photo
   [{:keys [storage] :as cfg} {:keys [file]}]
-  (let [thumb  (media/run cfg
-                 {:cmd :profile-thumbnail
-                  :format :jpeg
-                  :quality 85
-                  :width 256
-                  :height 256
-                  :input {:path (fs/path (:tempfile file))
-                          :mtype (:content-type file)}})]
-
-
+  (let [thumb (media/run {:cmd :profile-thumbnail
+                          :format :jpeg
+                          :quality 85
+                          :width 256
+                          :height 256
+                          :input {:path (fs/path (:tempfile file))
+                                  :mtype (:content-type file)}})]
     (sto/put-object storage
                     {:content (sto/content (:data thumb) (:size thumb))
                      :content-type (:mtype thumb)})))
