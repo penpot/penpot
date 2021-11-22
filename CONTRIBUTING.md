@@ -21,7 +21,7 @@ If you found a bug, please report it, as far as possible with:
 
 If you found a bug that you consider better discuse in private (for
 example: security bugs), consider first send an email to
-`info@penpot.app`.
+`support@penpot.app`.
 
 **We don't have formal bug bounty program for security reports; this
 is an open source application and your contribution will be recognized
