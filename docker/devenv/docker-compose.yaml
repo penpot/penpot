@@ -24,6 +24,7 @@ services:
     depends_on:
       - postgres
       - redis
+      # - keycloak
 
     volumes:
       - "user_data:/home/penpot/"
@@ -114,6 +115,22 @@ services:
       - PENPOT_LDAP_ATTRS_EMAIL=mail
       - PENPOT_LDAP_ATTRS_FULLNAME=cn
       - PENPOT_LDAP_ATTRS_PHOTO=jpegPhoto
+
+  # keycloak:
+  #   image: "quay.io/keycloak/keycloak:15.0.2"
+  #   environment:
+  #     - DB_VENDOR=POSTGRES
+  #     - DB_ADDR=postgres
+  #     - DB_DATABASE=keycloak
+  #     - DB_USER=keycloak
+  #     - DB_SCHEMA=public
+  #     - DB_PASSWORD=keycloak
+  #     - KEYCLOAK_USER=admin
+  #     - KEYCLOAK_PASSWORD=admin
+  #   expose:
+  #     - '8080'
+  #   ports:
+  #     - "8080:8080"
 
   postgres:
     image: postgres:13
