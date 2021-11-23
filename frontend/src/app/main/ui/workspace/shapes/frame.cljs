@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text.fontfaces :as ff]
@@ -57,10 +58,21 @@
   (mf/fnc deferred
     {::mf/wrap-props false}
     [props]
-    (let [tmp (mf/useState false)
+    (let [shape (obj/get props "shape")
+          shape (-> (select-keys shape [:selrect])
+                    (hooks/use-equal-memo))
+
+          tmp (mf/useState false)
           ^boolean render? (aget tmp 0)
           ^js set-render (aget tmp 1)]
+
       (mf/use-layout-effect
+       (mf/deps shape)
+       (fn []
+         (set-render false)))
+
+      (mf/use-layout-effect
+       (mf/deps shape)
        (fn []
          (let [sem (ts/schedule-on-idle #(set-render true))]
            #(rx/dispose! sem))))
