@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-11-01 03:34+0000\n"
+"PO-Revision-Date: 2021-11-25 13:50+0000\n"
 "Last-Translator: Oğuz Ersen <oguzersen@protonmail.com>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.9-dev\n"
+"X-Generator: Weblate 4.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -36,8 +36,8 @@ msgstr "Sadece denemek mi istiyorsun?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
 msgstr ""
-"Bu bir DEMO servis, gerçek işleriniz için KULLANMAYIN, projeler periyodik "
-"olarak silinecektir."
+"Bu bir DEMO hizmettir, gerçek işleriniz için KULLANMAYIN, projeler belirli "
+"aralıklarla silinecektir."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
@@ -53,11 +53,11 @@ msgstr "Tam Adın"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
-msgstr "Buradan giriş yap"
+msgstr "Buradan oturum açın"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
-msgstr "Giriş yap"
+msgstr "Oturum aç"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-subtitle"
@@ -69,23 +69,23 @@ msgstr "Seni tekrar görmek süper!"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Github ile giriş yap"
+msgstr "GitHub ile oturum aç"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Gitlab ile giriş yap"
+msgstr "GitLab ile oturum aç"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "Google ile Giriş Yap"
+msgstr "Google ile oturum aç"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "LDAP ile giriş yap"
+msgstr "LDAP ile oturum aç"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "OpenID (SSO) ile Giriş Yap"
+msgstr "OpenID (SSO) ile oturum aç"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -215,7 +215,7 @@ msgstr "Seçili sayfalar"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
-msgstr "Paylaşılan Kitaplık olarak ekle"
+msgstr "Paylaşılan Kütüphane olarak ekle"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.change-email"
@@ -1098,7 +1098,7 @@ msgstr "Bağlantı"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
-msgstr "Çıkış Yap"
+msgstr "Oturumu kapat"
 
 msgid "labels.manage-fonts"
 msgstr "Yazı tiplerini yönet"
@@ -1250,7 +1250,7 @@ msgstr "Yalnızca kendi yorumlarımı göster"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.sign-out"
-msgstr "Çıkış yap"
+msgstr "Oturumu kapat"
 
 msgid "labels.skip"
 msgstr "Atla"
@@ -1649,7 +1649,7 @@ msgstr "Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
-msgstr "Giriş yap"
+msgstr "Oturum açmaya git"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
@@ -1681,7 +1681,7 @@ msgstr "Paylaşılmış Kütüphaneler - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
 msgid "title.default"
-msgstr "Penpot * Takımlar için Özgür Tasarım"
+msgstr "Penpot - Takımlar için Özgür Tasarım"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "title.settings.feedback"
@@ -2674,7 +2674,7 @@ msgstr "Boyut ön ayarları"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke"
-msgstr "Kontur"
+msgstr "Çerçeve"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.circle-marker"
@@ -3205,3 +3205,97 @@ msgstr "Güncelle"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
+
+msgid "onboarding.choice.fly-solo"
+msgstr "Tek başına devam et"
+
+msgid "onboarding.choice.fly-solo-desc"
+msgstr "Penpot dünyasına atlayın ve kendi başınıza tasarlamaya başlayın."
+
+msgid "onboarding.choice.title"
+msgstr "Penpot'a Hoş Geldiniz"
+
+msgid "onboarding.welcome.desc3"
+msgstr ""
+"Siz Penpot'un tadını çıkarırken, biz onu geliştirmeye devam edeceğiz ve "
+"umutlu planlarımızın tekrarlarını yayınlayacağız."
+
+msgid "workspace.options.width"
+msgstr "Genişlik"
+
+msgid "workspace.options.opacity"
+msgstr "Opaklık"
+
+msgid "onboarding.choice.team-up-desc"
+msgstr ""
+"Biriyle mi çalışıyorsunuz? Bir takım oluşturun ve insanları projeler "
+"üzerinde birlikte çalışmaya ve tasarım varlıklarını paylaşmaya davet edin."
+
+msgid "onboarding.templates.subtitle"
+msgstr "İşte bazı şablonlar."
+
+msgid "common.share-link.placeholder"
+msgstr "Paylaşılabilir bağlantı burada görünecek"
+
+msgid "labels.next"
+msgstr "Sonraki"
+
+msgid "onboarding.choice.desc"
+msgstr "Nasıl başlamak istersiniz?"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Burada henüz dosya yok. Bazı şablonları denemek isterseniz [Kütüphaneler ve "
+"şablonlar bölümüne](https://penpot.app/libraries-templates.html) "
+"gidebilirsiniz"
+
+msgid "onboarding.choice.team-up"
+msgstr "Takım oluştur"
+
+msgid "onboarding.team-input-placeholder"
+msgstr "Yeni takım adı gir"
+
+msgid "onboarding.team.skip-and-invite-later"
+msgstr "Atla ve daha sonra davet et"
+
+msgid "onboarding.templates.title"
+msgstr "Tasarlamaya başla"
+
+msgid "workspace.options.height"
+msgstr "Yükseklik"
+
+msgid "workspace.options.y"
+msgstr "Y"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Gölge rengi"
+
+msgid "workspace.options.stroke-color"
+msgstr "Çerçeve rengi"
+
+msgid "workspace.options.x"
+msgstr "X"
+
+msgid "workspace.options.grid.params.color"
+msgstr "Renk"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "Kaydırma konumunu koru"
+
+msgid "workspace.options.stroke-width"
+msgstr "Çerçeve genişliği"
+
+msgid "onboarding.welcome.desc2"
+msgstr ""
+"Penpot temel özelliklerin, olgunluğun, kararlılığın ve bir bütün olarak "
+"topluluktan gelen muhteşem doğrulamanın birleşimi sayesinde ilk beta "
+"sürümündedir ve sizi memnuniyetle karşılıyoruz."
+
+msgid "onboarding.welcome.desc1"
+msgstr "Yaşasın! Artık bir Penpot kullanıcısısınız :)"
+
+msgid "onboarding.welcome.title"
+msgstr "Penpot'a Hoş Geldiniz"
