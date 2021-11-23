@@ -2,18 +2,14 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-11-01 03:34+0000\n"
 "Last-Translator: 曹恩逢 <nelson22768384@gmail.com>\n"
-"Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
-"penpot/frontend/zh_Hant/>\n"
+"Language-Team: Chinese (Traditional) "
+"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 4.9-dev\n"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.demo-warning"
-msgstr "此服務僅用於展示，請勿用於實際工作。專案將被定期清除。"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -30,6 +26,10 @@ msgstr "建立展示帳號"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-profile"
 msgstr "只是想試試看嗎？"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr "此服務僅用於展示，請勿用於實際工作。專案將被定期清除。"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
@@ -91,6 +91,76 @@ msgstr "成功加入團隊"
 msgid "auth.password"
 msgstr "密碼"
 
+msgid "auth.privacy-policy"
+msgstr "隱私權政策"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "修改密碼"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "還沒有帳號嗎？"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "建立帳號"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "建立帳號"
+
+msgid "auth.terms-of-service"
+msgstr "服務條款"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr "建立新帳號即表示您同意我們的服務條款及隱私權政策。"
+
+msgid "common.share-link.get-link"
+msgstr "取得連結"
+
+msgid "common.share-link.link-copied-success"
+msgstr "成功複製連結"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "成功刪除連結"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "能夠存取"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "能夠檢視"
+
+msgid "common.share-link.remove-link"
+msgstr "移除連結"
+
+msgid "common.share-link.view-all-pages"
+msgstr "所有頁面"
+
+msgid "common.share-link.view-current-page"
+msgstr "僅此頁面"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "選擇的頁面"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(複製)"
+
+msgid "dashboard.draft-title"
+msgstr "草稿"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "複製"
+
+msgid "dashboard.export-multi"
+msgstr "匯出 %s 個檔案"
+
+msgid "dashboard.export-single"
+msgstr "匯出檔案"
+
 msgid "dashboard.export.options.all.title"
 msgstr "匯出共享媒體庫"
 
@@ -99,17 +169,6 @@ msgstr "匯出檔案"
 
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "已刪除字型"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.loading-files"
-msgstr "正在載入檔案…"
-
-msgid "dashboard.loading-fonts"
-msgstr "正在載入字型…"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.move-to-multi"
-msgstr "將 %s 個檔案移動至"
 
 msgid "dashboard.import"
 msgstr "匯入檔案"
@@ -123,8 +182,35 @@ msgstr "匯入檔案時發生錯誤。檔案未匯入。"
 msgid "dashboard.import.import-message"
 msgstr "已成功匯入 %s 個檔案。"
 
-msgid "dashboard.options"
-msgstr "選項"
+msgid "dashboard.import.progress.process-colors"
+msgstr "正在處理顏色"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "正在處理元件"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "正在處理媒體"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "正在處理第 %s 頁"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "正在上傳檔案：%s"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "正在載入檔案…"
+
+msgid "dashboard.loading-fonts"
+msgstr "正在載入字型…"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "將 %s 個檔案移動至"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "新專案"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "dashboard.notifications.email-changed-successfully"
@@ -138,9 +224,8 @@ msgstr "已成功驗證您的電子郵件地址"
 msgid "dashboard.open-in-new-tab"
 msgstr "在新分頁開啟檔案"
 
-#: src/app/main/data/dashboard.cljs
-msgid "dashboard.new-project-prefix"
-msgstr "新專案"
+msgid "dashboard.options"
+msgstr "選項"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.password-change"
@@ -158,18 +243,6 @@ msgstr "專案"
 msgid "dashboard.remove-account"
 msgstr "想要移除您的帳號嗎？"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-move-files"
-msgstr "已成功移動您的檔案"
-
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-move-file"
-msgstr "已成功移動您的檔案"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.success-move-project"
-msgstr "已成功移動您的專案"
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.search-placeholder"
 msgstr "搜尋…"
@@ -186,9 +259,17 @@ msgstr "已成功刪除您的檔案"
 msgid "dashboard.success-delete-project"
 msgstr "已成功刪除您的專案"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.your-email"
-msgstr "電子郵件"
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "已成功移動您的檔案"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "已成功移動您的檔案"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "已成功移動您的專案"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.theme-change"
@@ -201,6 +282,10 @@ msgstr "搜尋結果"
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
 msgstr "您的帳號"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "電子郵件"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-cancel"
@@ -229,13 +314,13 @@ msgstr "您必須接受我們的服務條款和隱私權政策。"
 msgid "errors.token-expired"
 msgstr "權杖過期"
 
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.title"
-msgstr "電子郵件"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "舊密碼不正確"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "電子郵件"
 
 #: src/app/main/ui/handoff/attributes/blur.cljs
 msgid "handoff.attributes.blur.value"
@@ -244,6 +329,14 @@ msgstr "數值"
 #: src/app/main/ui/handoff/attributes/common.cljs
 msgid "handoff.attributes.color.hex"
 msgstr "HEX"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.rgba"
+msgstr "RGBA"
 
 #: src/app/main/ui/handoff/attributes/image.cljs
 msgid "handoff.attributes.image.download"
@@ -269,14 +362,6 @@ msgstr "高度"
 msgid "handoff.attributes.layout.left"
 msgstr "左"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hsla"
-msgstr "HSLA"
-
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.rgba"
-msgstr "RGBA"
-
 #: src/app/main/ui/handoff/attributes/shadow.cljs
 msgid "handoff.attributes.shadow.shorthand.blur"
 msgstr "B"
@@ -293,6 +378,16 @@ msgstr "Y"
 msgid "handoff.attributes.shadow.shorthand.spread"
 msgstr "S"
 
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "文字"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "資訊"
+
 msgid "labels.accept"
 msgstr "接受"
 
@@ -303,16 +398,6 @@ msgstr "管理員"
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.all"
 msgstr "全部"
-
-msgid "handoff.tabs.code.selected.svg-raw"
-msgstr "SVG"
-
-msgid "handoff.tabs.code.selected.text"
-msgstr "文字"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.info"
-msgstr "資訊"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.cancel"
@@ -328,10 +413,6 @@ msgstr "繼續"
 msgid "labels.create"
 msgstr "建立"
 
-#: src/app/main/ui/settings/sidebar.cljs
-msgid "labels.dashboard"
-msgstr "控制台"
-
 #: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "建立新團隊"
@@ -339,6 +420,10 @@ msgstr "建立新團隊"
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team.placeholder"
 msgstr "輸入新團隊名稱"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "控制台"
 
 msgid "labels.default"
 msgstr "預設"
@@ -362,20 +447,20 @@ msgstr "編輯者"
 msgid "labels.email"
 msgstr "電子郵件"
 
+msgid "labels.export"
+msgstr "匯出"
+
 msgid "labels.fonts"
 msgstr "字型"
+
+msgid "labels.go-back"
+msgstr "返回"
 
 msgid "labels.icons"
 msgstr "圖示"
 
 msgid "labels.images"
 msgstr "圖片"
-
-msgid "labels.export"
-msgstr "匯出"
-
-msgid "labels.go-back"
-msgstr "返回"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
@@ -384,6 +469,10 @@ msgstr "語言"
 msgid "labels.link"
 msgstr "連結"
 
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.logout"
+msgstr "登出"
+
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "成員"
@@ -391,10 +480,6 @@ msgstr "成員"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.name"
 msgstr "名稱"
-
-#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.logout"
-msgstr "登出"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
@@ -458,9 +543,60 @@ msgstr "傳送"
 msgid "labels.sending"
 msgstr "正在傳送…"
 
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "modals.delete-project-confirm.message"
-msgstr "您確定要刪除這個專案嗎？"
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.settings"
+msgstr "設定"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.sign-out"
+msgstr "登出"
+
+msgid "labels.skip"
+msgstr "跳過"
+
+msgid "labels.start"
+msgstr "開始"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "labels.update"
+msgstr "更新"
+
+msgid "labels.upload"
+msgstr "上傳"
+
+msgid "labels.uploading"
+msgstr "正在上傳…"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.viewer"
+msgstr "檢視者"
+
+msgid "labels.workspace"
+msgstr "工作區"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "media.loading"
+msgstr "正在載入圖片…"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.info"
+msgstr "我們將寄送郵件至您目前的電子郵件信箱 “%s” 以確認身分。"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.confirm"
+msgstr "是的，請刪除我的帳號"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.title"
+msgstr "您確定要刪除您的帳號嗎？"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.message"
+msgstr "您確定要刪除這個檔案嗎？"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "您確定要刪除 %s 個檔案嗎？"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "modals.delete-page.body"
@@ -471,6 +607,10 @@ msgid "modals.delete-project-confirm.accept"
 msgstr "刪除專案"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.message"
+msgstr "您確定要刪除這個專案嗎？"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
 msgid "modals.delete-project-confirm.title"
 msgstr "刪除專案"
 
@@ -478,13 +618,13 @@ msgstr "刪除專案"
 msgid "modals.leave-confirm.message"
 msgstr "您確定要離開這個團隊嗎？"
 
-#: src/app/main/ui/settings/change_email.cljs
-msgid "notifications.validation-email-sent"
-msgstr "已將驗證信傳送至 %s。請查看您的電子郵件信箱！"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
 msgstr "取消"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "notifications.validation-email-sent"
+msgstr "已將驗證信傳送至 %s。請查看您的電子郵件信箱！"
 
 msgid "onboarding.contrib.alt"
 msgstr "開放原始碼"
@@ -495,17 +635,20 @@ msgstr "您能夠存取"
 msgid "onboarding.team.create.desc1"
 msgstr "您正在與他人協作嗎？建立團隊以共同作業和分享設計資源。"
 
-msgid "onboarding.welcome.desc1"
-msgstr ""
-
 msgid "onboarding.team.create.input-placeholder"
 msgstr "輸入新團隊名稱"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
+msgid "onboarding.welcome.desc1"
+msgstr ""
+
 msgid "onboarding.welcome.title"
 msgstr "歡迎使用 Penpot！"
+
+msgid "viewer.breaking-change.message"
+msgstr "抱歉！"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
@@ -582,146 +725,3 @@ msgstr "類型"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.color"
 msgstr "顏色"
-
-msgid "auth.privacy-policy"
-msgstr "隱私權政策"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr "建立新帳號即表示您同意我們的服務條款及隱私權政策。"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.recovery-submit"
-msgstr "修改密碼"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.register"
-msgstr "還沒有帳號嗎？"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.register-submit"
-msgstr "建立帳號"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-title"
-msgstr "建立帳號"
-
-msgid "auth.terms-of-service"
-msgstr "服務條款"
-
-msgid "common.share-link.get-link"
-msgstr "取得連結"
-
-msgid "common.share-link.link-copied-success"
-msgstr "成功複製連結"
-
-msgid "common.share-link.link-deleted-success"
-msgstr "成功刪除連結"
-
-msgid "common.share-link.permissions-can-access"
-msgstr "能夠存取"
-
-msgid "dashboard.draft-title"
-msgstr "草稿"
-
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.duplicate"
-msgstr "複製"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "能夠檢視"
-
-msgid "common.share-link.remove-link"
-msgstr "移除連結"
-
-msgid "common.share-link.view-all-pages"
-msgstr "所有頁面"
-
-msgid "common.share-link.view-current-page"
-msgstr "僅此頁面"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "選擇的頁面"
-
-#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
-msgid "dashboard.copy-suffix"
-msgstr "(複製)"
-
-msgid "dashboard.export-multi"
-msgstr "匯出 %s 個檔案"
-
-msgid "dashboard.export-single"
-msgstr "匯出檔案"
-
-msgid "dashboard.import.progress.process-colors"
-msgstr "正在處理顏色"
-
-msgid "dashboard.import.progress.process-components"
-msgstr "正在處理元件"
-
-msgid "dashboard.import.progress.process-media"
-msgstr "正在處理媒體"
-
-msgid "dashboard.import.progress.upload-media"
-msgstr "正在上傳檔案：%s"
-
-msgid "dashboard.import.progress.process-page"
-msgstr "正在處理第 %s 頁"
-
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.settings"
-msgstr "設定"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.sign-out"
-msgstr "登出"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.viewer"
-msgstr "檢視者"
-
-#: src/app/main/ui/settings/change_email.cljs
-msgid "modals.change-email.info"
-msgstr "我們將寄送郵件至您目前的電子郵件信箱 “%s” 以確認身分。"
-
-msgid "labels.skip"
-msgstr "跳過"
-
-msgid "labels.start"
-msgstr "開始"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "labels.update"
-msgstr "更新"
-
-msgid "labels.upload"
-msgstr "上傳"
-
-msgid "labels.uploading"
-msgstr "正在上傳…"
-
-msgid "labels.workspace"
-msgstr "工作區"
-
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
-msgid "media.loading"
-msgstr "正在載入圖片…"
-
-#: src/app/main/ui/settings/delete_account.cljs
-msgid "modals.delete-account.title"
-msgstr "您確定要刪除您的帳號嗎？"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-confirm.message"
-msgstr "您確定要刪除這個檔案嗎？"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-multi-confirm.message"
-msgstr "您確定要刪除 %s 個檔案嗎？"
-
-#: src/app/main/ui/settings/delete_account.cljs
-msgid "modals.delete-account.confirm"
-msgstr "是的，請刪除我的帳號"
-
-msgid "viewer.breaking-change.message"
-msgstr "抱歉！"
