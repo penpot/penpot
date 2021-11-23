@@ -92,7 +92,7 @@ msgid "auth.notifications.invalid-token-error"
 msgstr "恢复令牌无效。"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
+msgid "auth.notifications.password-changed-successfully"
 msgstr "密码修改成功"
 
 #: src/app/main/ui/auth/recovery_request.cljs
@@ -1283,7 +1283,7 @@ msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "晋升并退出"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.select-memeber-to-promote"
+msgid "modals.leave-and-reassign.select-member-to-promote"
 msgstr "选择一位成员晋升"
 
 #: src/app/main/ui/dashboard/sidebar.cljs

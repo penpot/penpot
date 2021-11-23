@@ -161,7 +161,7 @@
             points (upg/content->points content)]
 
         (rx/concat
-         ;; This stream checks the consecutive mouse positions to do the draging
+         ;; This stream checks the consecutive mouse positions to do the dragging
          (->> points
               (streams/move-points-stream snap-toggled start-position selected-points)
               (rx/take-until stopper)

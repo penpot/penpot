@@ -463,7 +463,7 @@
   #{:mask-type})
 
 ;; Defaults for some tags per spec https://www.w3.org/TR/SVG11/single-page.html
-;; they are basicaly the defaults that can be percents and we need to replace because
+;; they are basically the defaults that can be percents and we need to replace because
 ;; otherwise won't work as expected in the workspace
 (defonce svg-tag-defaults
   (let [filter-default {:units :filterUnits

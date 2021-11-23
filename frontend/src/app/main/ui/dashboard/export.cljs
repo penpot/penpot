@@ -100,7 +100,7 @@
     (mf/use-effect
      (fn []
        (when-not has-libraries?
-         ;; Start download automaticaly
+         ;; Start download automatically
          (start-export))))
 
     [:div.modal-overlay

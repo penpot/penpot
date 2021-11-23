@@ -1645,7 +1645,7 @@
                    (not= root-file-id (:current-file-id state))
                    (nil? (get-in state [:workspace-libraries root-file-id])))))
 
-          ;; Procceed with the standard shape paste procediment.
+          ;; Proceed with the standard shape paste process.
           (do-paste [it state mouse-pos media]
             (let [page-objects  (wsh/lookup-page-objects state)
                   media-idx     (d/index-by :prev-id media)
@@ -1673,7 +1673,7 @@
 
                   page-id   (:current-page-id state)
                   unames    (-> (wsh/lookup-page-objects state page-id)
-                                (dwc/retrieve-used-names)) ;; TODO: move this calculation inside prepare-duplcate-changes?
+                                (dwc/retrieve-used-names)) ;; TODO: move this calculation inside prepare-duplicate-changes?
 
                   rchanges  (->> (dws/prepare-duplicate-changes all-objects page-id unames selected delta)
                                  (mapv (partial process-rchange media-idx))
@@ -1799,7 +1799,7 @@
     (watch [it state _]
       (let [page-id (get state :current-page-id)
             options (wsh/lookup-page-options state page-id)
-            previus-color  (:background options)]
+            previous-color  (:background options)]
         (rx/of (dch/commit-changes
                 {:redo-changes [{:type :set-option
                                  :page-id page-id
@@ -1808,7 +1808,7 @@
                  :undo-changes [{:type :set-option
                                  :page-id page-id
                                  :option :background
-                                 :value previus-color}]
+                                 :value previous-color}]
                  :origin it}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

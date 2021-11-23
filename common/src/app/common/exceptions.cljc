@@ -12,7 +12,7 @@
 
 (s/def ::type keyword?)
 (s/def ::code keyword?)
-(s/def ::mesage string?)
+(s/def ::message string?)
 (s/def ::hint string?)
 (s/def ::cause #?(:clj #(instance? Throwable %)
                   :cljs #(instance? js/Error %)))
@@ -20,7 +20,7 @@
   (s/keys :req-un [::type]
           :opt-un [::code
                    ::hint
-                   ::mesage
+                   ::message
                    ::cause]))
 
 (defn error

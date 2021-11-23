@@ -104,7 +104,7 @@
                              :page-id page-id}))
 
         ;; Look at the `get-empty-groups-after-group-creation`
-        ;; doctring to understand the real purpuse of this code
+        ;; docstring to understand the real purpose of this code
         ids-to-delete (get-empty-groups-after-group-creation objects parent-id shapes)
 
         delete-group

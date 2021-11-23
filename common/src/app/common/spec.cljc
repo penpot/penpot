@@ -14,7 +14,7 @@
 
    ;; NOTE: don't remove this, causes exception on advanced build
    ;; because of some strange interaction with cljs.spec.alpha and
-   ;; modules spliting.
+   ;; modules splitting.
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]

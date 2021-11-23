@@ -147,7 +147,7 @@
                    [])))))
 
 (defn opposite-index
-  "Calculate sthe opposite index given a prefix and an index"
+  "Calculates the opposite index given a prefix and an index"
   [content index prefix]
 
   (let [point (if (= prefix :c2)

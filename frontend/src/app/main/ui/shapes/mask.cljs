@@ -49,7 +49,7 @@
                        :in2 "SourceGraphic"
                        :operator "in"
                        :result "comp"}]]
-       ;; Clip path is necesary so the elements inside the mask won't affect
+       ;; Clip path is necessary so the elements inside the mask won't affect
        ;; the events outside. Clip hides the elements but mask doesn't (like display vs visibility)
        ;; we cannot use clips instead of mask because clips can only be simple shapes
        [:clipPath {:id (clip-id render-id mask)}

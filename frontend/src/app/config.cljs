@@ -85,7 +85,7 @@
 (def browser              (atom (parse-browser)))
 (def platform             (atom (parse-platform)))
 
-;; mantain for backward compatibility
+;; maintain for backward compatibility
 (let [login-with-ldap (obj/get global "penpotLoginWithLDAP" false)
       registration    (obj/get global "penpotRegistrationEnabled" true)]
   (when login-with-ldap

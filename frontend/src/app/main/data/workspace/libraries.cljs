@@ -690,7 +690,7 @@
             ;; update to finish, before marking this file as synced.
             ;; TODO: look for a more precise way of syncing this.
             ;; Maybe by using the stream (second argument passed to watch)
-            ;; to wait for the corresponding changes-commited and then proced
+            ;; to wait for the corresponding changes-committed and then proceed
             ;; with the :update-sync mutation.
             (rx/concat (rx/timer 3000)
                        (rp/mutation :update-sync

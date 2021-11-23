@@ -5,7 +5,7 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.tasks.telemetry
-  "A task that is reponsible to collect anonymous statistical
+  "A task that is responsible to collect anonymous statistical
   information about the current instance and send it to the telemetry
   server."
   (:require

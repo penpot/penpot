@@ -96,7 +96,7 @@ msgid "auth.notifications.invalid-token-error"
 msgstr "Genopretningspoletten er ugyldig."
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
+msgid "auth.notifications.password-changed-successfully"
 msgstr "Adgangskoden er blevet ændret"
 
 #: src/app/main/ui/auth/recovery_request.cljs

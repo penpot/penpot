@@ -26,7 +26,7 @@
      ks)))
 
 (defn get-path
-  "Retrieves the location of the path object and additionaly can pass
+  "Retrieves the location of the path object and additionally can pass
   the arguments. This location can be used in get-in, assoc-in... functions"
   [state & ks]
   (let [path-loc (get-path-location state)

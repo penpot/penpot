@@ -110,7 +110,7 @@
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
-     ;; and updates the selrect acordingly
+     ;; and updates the selrect accordingly
      [:g.text-shape {:opacity (when edition? 0)
                      :pointer-events "none"}
 

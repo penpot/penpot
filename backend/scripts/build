@@ -72,7 +72,7 @@
 ;; Copy run script template
 (-> ($ cp "./scripts/manage.template.sh" "./target/dist/manage.sh") check)
 
-;; Add exec permisions to scripts.
+;; Add exec permissions to scripts.
 (-> ($ chmod +x "./target/dist/run.sh") check)
 (-> ($ chmod +x "./target/dist/manage.sh") check)
 

@@ -202,7 +202,7 @@
             :cause error))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; --- Fonts Generation
+;; Fonts Generation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod process :generate-fonts
@@ -324,7 +324,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn configure-assets-storage
-  "Given storage map, returns a storage configured with the apropriate
+  "Given storage map, returns a storage configured with the appropriate
   backend for assets."
   [storage conn]
   (-> storage

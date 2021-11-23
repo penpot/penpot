@@ -169,7 +169,7 @@ function build-exporter-bundle {
     echo ">> bundle exporter end";
 }
 
-# DEPRECATED: temporary mantained for backward compatibilty.
+# DEPRECATED: temporary maintained for backward compatibility.
 
 function build-app-bundle {
     echo ">> bundle app start";

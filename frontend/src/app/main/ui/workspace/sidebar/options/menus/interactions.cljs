@@ -249,7 +249,7 @@
       [:div.interactions-summary {:on-click #(swap! extended-open? not)}
        [:div.trigger-name (event-type-name interaction)]
        [:div.action-summary (action-summary interaction destination)]]
-      [:div.elemen-set-actions {:on-click #(remove-interaction index)}
+      [:div.element-set-actions {:on-click #(remove-interaction index)}
        [:div.element-set-actions-button i/minus]]
 
       (when @extended-open?

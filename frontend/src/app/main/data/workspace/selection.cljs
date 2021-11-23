@@ -307,7 +307,7 @@
         chgs))))
 
 (defn duplicate-changes-update-indices
-  "Parses the change set when duplicating to set-up the appropiate indices"
+  "Parses the change set when duplicating to set-up the appropriate indices"
   [objects ids changes]
 
   (let [process-id

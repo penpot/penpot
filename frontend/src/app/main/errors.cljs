@@ -62,7 +62,7 @@
   (ts/schedule
    (st/emitf (rt/assign-exception error))))
 
-;; Error that happens on an active bussines model validation does not
+;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From
 ;; the user perspective a error flash message should be visualized but
 ;; user can continue operate on the application.

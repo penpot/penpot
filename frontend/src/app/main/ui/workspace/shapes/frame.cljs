@@ -50,7 +50,7 @@
         ;; :style {:filter "sepia(1)"}
         }])))
 
-;; This custom deffered don't deffer rendering when ghost rendering is
+;; This custom deferred don't defer rendering when ghost rendering is
 ;; used.
 (defn custom-deferred
   [component]

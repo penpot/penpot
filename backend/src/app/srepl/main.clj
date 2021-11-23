@@ -70,7 +70,7 @@
 
 
 (defn duplicate-file
-  "This is a raw version of duplication of file just only for forensic analisys"
+  "This is a raw version of duplication of file just only for forensic analysis"
   [system file-id email]
   (db/with-atomic [conn (:app.db/pool system)]
     (when-let [profile (some->> (prof/retrieve-profile-data-by-email conn (str/lower email))

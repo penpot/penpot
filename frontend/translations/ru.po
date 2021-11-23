@@ -77,7 +77,7 @@ msgid "auth.notifications.invalid-token-error"
 msgstr "Неверный код восстановления."
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
+msgid "auth.notifications.password-changed-successfully"
 msgstr "Пароль изменен успешно"
 
 #: src/app/main/ui/auth/recovery_request.cljs

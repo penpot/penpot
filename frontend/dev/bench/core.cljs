@@ -6,7 +6,7 @@
 
 (enable-console-print!)
 
-;; --- Index Initialization Bechmark
+;; --- Index Initialization Benchmark
 
 (defn- bench-init-10000
   []
@@ -60,9 +60,9 @@
   (bench-knn-160000)
   (bench-knn-360000))
 
-;; --- Accuracity tests
+;; --- Accuracy tests
 
-(defn test-accuracity
+(defn test-accuracy
   []
   (let [tree (k/create)]
     (k/setup tree 4000 4000 20 20)
@@ -101,7 +101,7 @@
     (bench-knn)
 
     (= type "kd-test")
-    (test-accuracity)
+    (test-accuracy)
 
     (= type "interval")
     (test-interval)

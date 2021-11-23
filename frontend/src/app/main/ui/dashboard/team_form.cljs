@@ -25,14 +25,14 @@
 
 (defn- on-create-success
   [_form response]
-  (let [msg "Team created successfuly"]
+  (let [msg "Team created successfully"]
     (st/emit! (dm/success msg)
               (modal/hide)
               (rt/nav :dashboard-projects {:team-id (:id response)}))))
 
 (defn- on-update-success
   [_form _response]
-  (let [msg "Team created successfuly"]
+  (let [msg "Team created successfully"]
     (st/emit! (dm/success msg)
               (modal/hide))))
 

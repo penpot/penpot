@@ -433,8 +433,8 @@
 ;; In summary, this need to a good UX/UI/IMPL rework.
 
 (mf/defc typography-entry
-  [{:keys [typography read-only? selected? on-click on-change on-detach on-context-menu editting? focus-name? file]}]
-  (let [open?          (mf/use-state editting?)
+  [{:keys [typography read-only? selected? on-click on-change on-detach on-context-menu editing? focus-name? file]}]
+  (let [open?          (mf/use-state editing?)
         hover-detach   (mf/use-state false)
         name-input-ref (mf/use-ref)
 
@@ -458,10 +458,10 @@
            (mf/set-ref-val! name-ref (dom/get-target-val event))))]
 
     (mf/use-effect
-     (mf/deps editting?)
+     (mf/deps editing?)
      (fn []
-       (when editting?
-         (reset! open? editting?))))
+       (when editing?
+         (reset! open? editing?))))
 
     (mf/use-effect
      (mf/deps focus-name?)

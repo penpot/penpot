@@ -108,7 +108,7 @@
                    :params position})))
 
 (defn append-node
-  "Creates a new node in the path. Usualy used when drawing."
+  "Creates a new node in the path. Usually used when drawing."
   [shape position prev-point prev-handler]
   (let [command (next-node shape position prev-point prev-handler)]
     (-> shape

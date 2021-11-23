@@ -174,12 +174,12 @@
                             :type :image
                             :metadata {:id (:id fmo1)}}}]})]
 
-      ;; run the task inmediatelly
+      ;; run the task immediately
       (let [task  (:app.tasks.file-media-gc/handler th/*system*)
             res   (task {})]
         (t/is (= 0 (:processed res))))
 
-      ;; make the file ellegible for GC waiting 300ms (configured
+      ;; make the file eligible for GC waiting 300ms (configured
       ;; timeout for testing)
       (th/sleep 300)
 

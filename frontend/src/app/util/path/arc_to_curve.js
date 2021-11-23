@@ -1,7 +1,7 @@
 /**
  * Arc to Bezier curves transformer
  *
- * Is a modified and google closure complatible version of the a2c
+ * Is a modified and google closure compatible version of the a2c
  * functions by https://github.com/fontello/svgpath
  *
  * @author UXBOX Labs SL

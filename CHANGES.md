@@ -11,6 +11,8 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+- Spelling fixes (by @jsoref) [#1340](https://github.com/penpot/penpot/pull/1340).
+
 
 ## 1.10.0-beta
 
@@ -58,7 +60,7 @@
 ### :boom: Breaking changes
 
 - Some stroke-caps can change behaviour.
-- Text display bug fix could potentialy make some texts jump a line.
+- Text display bug fix could potentially make some texts jump a line.
 
 ### :sparkles: New features
 
@@ -97,7 +99,7 @@
 - Fix bug in firefox when a text box is inside a mask [Taiga #2152](https://tree.taiga.io/project/penpot/issue/2152).
 - Fix problem with stroke inside/outside [Taiga #2186](https://tree.taiga.io/project/penpot/issue/2186)
 - Fix masks export area [Taiga #2189](https://tree.taiga.io/project/penpot/issue/2189)
-- Fix paste in place in arboards [Taiga #2188](https://tree.taiga.io/project/penpot/issue/2188)
+- Fix paste in place in artboards [Taiga #2188](https://tree.taiga.io/project/penpot/issue/2188)
 - Fix font size input stuck on selection change [Taiga #2184](https://tree.taiga.io/project/penpot/issue/2184)
 - Fix stroke cut on shapes export [Taiga #2171](https://tree.taiga.io/project/penpot/issue/2171)
 - Fix no color when boolean with an SVG [Taiga #2193](https://tree.taiga.io/project/penpot/issue/2193)
@@ -256,7 +258,7 @@
 ### :bug: Bugs fixed
 
 - Process numeric input changes only if the value actually changed.
-- Remove unnecesary redirect from history when user goes to workspace from dashboard [Taiga #1820](https://tree.taiga.io/project/penpot/issue/1820).
+- Remove unnecessary redirect from history when user goes to workspace from dashboard [Taiga #1820](https://tree.taiga.io/project/penpot/issue/1820).
 - Detach shapes from deleted assets [Taiga #1850](https://tree.taiga.io/project/penpot/issue/1850).
 - Fix tooltip position on view application [Taiga #1819](https://tree.taiga.io/project/penpot/issue/1819).
 - Fix dashboard navigation on moving file to other team [Taiga #1817](https://tree.taiga.io/project/penpot/issue/1817).
@@ -267,7 +269,7 @@
 - Fix negative values in blur [Taiga #1815](https://tree.taiga.io/project/penpot/issue/1815)
 - Fix problem when editing color in group [Taiga #1816](https://tree.taiga.io/project/penpot/issue/1816)
 - Fix resize/rotate with mouse buttons different than left [#1060](https://github.com/penpot/penpot/issues/1060)
-- Fix header partialy visible on fullscreen viewer mode [Taiga #1875](https://tree.taiga.io/project/penpot/issue/1875)
+- Fix header partially visible on fullscreen viewer mode [Taiga #1875](https://tree.taiga.io/project/penpot/issue/1875)
 - Fix dynamic alignment enabled with hidden objects [#1063](https://github.com/penpot/penpot/issues/1063)
 
 
@@ -328,12 +330,12 @@
 ### :bug: Bugs fixed
 
 - Add safety check on reg-objects change impl.
-- Fix custom fonts embbedding issue.
+- Fix custom fonts embedding issue.
 - Fix dashboard ordering issue.
 - Fix problem when creating a component with empty data.
 - Fix problem with moving shapes into frames.
 - Fix problems with mov-objects.
-- Fix unexpected excetion related to rounding integers.
+- Fix unexpected exception related to rounding integers.
 - Fix wrong type usage on libraries changes.
 - Improve editor lifecycle management.
 - Make the navigation async by default.
@@ -536,7 +538,7 @@
 
 - The LDAP configuration variables interpolation starts using `:`
   (example `:username`) instead of `$`. The main reason is avoid
-  unnecesary conflict with bash interpolation.
+  unnecessary conflict with bash interpolation.
 
 
 ### :arrow_up: Deps updates
@@ -559,14 +561,14 @@
 
 - Add emailcatcher and ldap test containers to devenv. [#506](https://github.com/penpot/penpot/pull/506)
 - Add major refactor of internal pubsub/redis code; improves scalability and performance [#640](https://github.com/penpot/penpot/pull/640)
-- Add more chinese transtions [#687](https://github.com/penpot/penpot/pull/687)
+- Add more chinese translations [#687](https://github.com/penpot/penpot/pull/687)
 - Add more presets for artboard [#654](https://github.com/penpot/penpot/pull/654)
 - Add optional loki integration [#645](https://github.com/penpot/penpot/pull/645)
 - Add proper http session lifecycle handling.
 - Allow to set border radius of each rect corner individually
 - Bounce & Complaint handling [#635](https://github.com/penpot/penpot/pull/635)
 - Disable groups interactions when holding "Ctrl" key (deep selection)
-- New action in context menu to "edit" some shapes (binded to key "Enter")
+- New action in context menu to "edit" some shapes (bound to key "Enter")
 
 
 ### :bug: Bugs fixed
