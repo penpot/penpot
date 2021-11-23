@@ -200,6 +200,11 @@
     :width 1368
     :height 912}
 
+   {:name "ReMarkable"}
+   {:name "Remarkable 2"
+    :width 840
+    :height 1120}
+
    {:name "WEB"}
    {:name "Web 1280"
     :width 1280
@@ -313,4 +318,3 @@
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
      [:& frame-grid {:shape shape}]]))
-
