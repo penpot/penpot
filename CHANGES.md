@@ -33,6 +33,7 @@
 
 ### :sparkles: New features
 
+- Allow ungroup groups in bulk [Taiga #2211](https://tree.taiga.io/project/penpot/us/2211).
 - Enhance corner radius behavior [Taiga #2190](https://tree.taiga.io/project/penpot/issue/2190).
 - Allow preserve scroll position in interactions [Taiga #2250](https://tree.taiga.io/project/penpot/us/2250).
 - Add new onboarding modals.
@@ -361,7 +362,7 @@
 - Transform shapes to path on double click
 - Translate automatic names of new files and projects.
 - Use shift instead of ctrl/cmd to keep aspect ratio [Taiga 1697](https://tree.taiga.io/project/penpot/issue/1697).
-- New translations: Portuguese (Brazil) and Romanias. 
+- New translations: Portuguese (Brazil) and Romanias.
 
 
 ### :bug: Bugs fixed
