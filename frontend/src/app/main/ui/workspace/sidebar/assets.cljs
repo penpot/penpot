@@ -1087,7 +1087,7 @@
 
 (mf/defc typographies-group
   [{:keys [file-id prefix groups open-groups file local? selected-typographies local
-           editting-id on-asset-click handle-change apply-typography
+           editing-id on-asset-click handle-change apply-typography
            on-rename-group on-ungroup on-context-menu]}]
   (let [group-open? (get open-groups prefix true)]
 
@@ -1113,7 +1113,7 @@
                :selected? (contains? selected-typographies (:id typography))
                :on-click  #(on-asset-click % (:id typography)
                                            (partial apply-typography typography))
-               :editting? (= editting-id (:id typography))
+               :editing? (= editing-id (:id typography))
                :focus-name? (= (:rename-typography local) (:id typography))}])])
 
         (for [[path-item content] groups]
@@ -1125,7 +1125,7 @@
                                     :file file
                                     :local? local?
                                     :selected-typographies selected-typographies
-                                    :editting-id editting-id
+                                    :editing-id editing-id
                                     :local local
                                     :on-asset-click on-asset-click
                                     :handle-change handle-change
@@ -1272,7 +1272,7 @@
                        (dwl/sync-file file-id file-id)
                        (dwu/commit-undo-transaction)))))
 
-        editting-id (or (:rename-typography local) (:edit-typography local))]
+        editing-id (or (:rename-typography local) (:edit-typography local))]
 
     (mf/use-effect
      (mf/deps local)
@@ -1301,7 +1301,7 @@
                                 :file file
                                 :local? local?
                                 :selected-typographies selected-typographies
-                                :editting-id editting-id
+                                :editing-id editing-id
                                 :local local
                                 :on-asset-click (partial on-asset-click groups)
                                 :handle-change handle-change

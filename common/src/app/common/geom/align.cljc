@@ -78,7 +78,7 @@
   "Distribute equally the space between shapes in the given axis. If
   there is no space enough, it does nothing. It takes into account
   the form of the shape and the rotation, what is distributed is
-  the wrapping recangles of the shapes. If any shape is a group,
+  the wrapping rectangles of the shapes. If any shape is a group,
   move also all of its recursive children."
   [shapes axis objects]
   (let [coord (if (= axis :horizontal) :x :y)
@@ -116,7 +116,7 @@
         (mapcat #(recursive-move %1 {coord %2 other-coord 0} objects)
                 sorted-shapes deltas)))))
 
-;; Adjusto to viewport
+;; Adjust to viewport
 
 (defn adjust-to-viewport
   ([viewport srect] (adjust-to-viewport viewport srect nil))

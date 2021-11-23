@@ -26,7 +26,7 @@
  * Changes to the original code:
  * - Use ES6+.
  * - Add the Node class for manage childs.
- * - Use generators where is posible.
+ * - Use generators where is possible.
  **/
 
 "use strict";

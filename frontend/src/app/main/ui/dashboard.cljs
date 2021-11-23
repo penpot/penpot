@@ -113,8 +113,8 @@
       ;; that the team is a implicit context variable that is
       ;; available using react context or accessing
       ;; the :current-team-id on the state. We set the key to the
-      ;; team-id becase we want to completly refresh all the
-      ;; components on team change. Many components assumess that the
+      ;; team-id because we want to completely refresh all the
+      ;; components on team change. Many components assumes that the
       ;; team is already set so don't put the team into mf/deps.
       (when team
         [:section.dashboard-layout {:key (:id team)}

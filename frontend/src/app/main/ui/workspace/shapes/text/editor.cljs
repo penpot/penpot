@@ -98,7 +98,7 @@
         state         (get state-map id empty-editor-state)
         self-ref      (mf/use-ref)
 
-        blured        (mf/use-var false)
+        blurred        (mf/use-var false)
 
         on-key-up
         (fn [event]
@@ -123,13 +123,13 @@
          (fn [event]
            (dom/stop-propagation event)
            (dom/prevent-default event)
-           (reset! blured true)))
+           (reset! blurred true)))
 
         on-focus
         (mf/use-callback
          (mf/deps shape state)
          (fn [_]
-           (reset! blured false)))
+           (reset! blurred false)))
 
         prev-value (mf/use-ref state)
 
@@ -159,7 +159,7 @@
         (mf/use-callback
          (fn [val]
            (let [val (handle-change val)
-                 val (if (true? @blured)
+                 val (if (true? @blurred)
                        (ted/add-editor-blur-selection val)
                        (ted/remove-editor-blur-selection val))]
              (st/emit! (dwt/update-editor-state shape val)))))

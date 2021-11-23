@@ -15,7 +15,7 @@
 
 (defn remove-line-curves
   "Remove all curves that have both handlers in the same position that the
-  beggining and end points. This makes them really line-to commands"
+  beginning and end points. This makes them really line-to commands"
   [content]
   (let [with-prev (d/enumerate (d/with-prev content))
         process-command
@@ -426,7 +426,7 @@
          (mapv replace-command))))
 
 (defn merge-nodes
-  "Reduces the continguous segments in points to a single point"
+  "Reduces the contiguous segments in points to a single point"
   [content points]
   (let [point->merge-point (-> content
                                (get-segments points)

@@ -159,7 +159,7 @@
               color
               (get-next-color presence)))
 
-          (update-sesion [session presence]
+          (update-session [session presence]
             (-> session
                 (assoc :id session-id)
                 (assoc :profile-id profile-id)
@@ -168,7 +168,7 @@
 
           (update-presence [presence]
             (-> presence
-                (update session-id update-sesion presence)
+                (update session-id update-session presence)
                 (d/without-nils)))
 
           ]

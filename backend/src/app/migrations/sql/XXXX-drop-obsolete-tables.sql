@@ -1,5 +1,5 @@
 --- This is a second migration but it should be applied when manual
---- migration intervention is alteady executed.
+--- migration intervention is already executed.
 
 ALTER TABLE file_media_object ALTER COLUMN media_id SET NOT NULL;
 DROP TABLE file_media_thumbnail;

@@ -38,6 +38,6 @@
          #(when sub
             (rx/dispose! sub)))))
 
-    ;; Use ref so if the urls are cached will return inmediately instead of the
+    ;; Use ref so if the urls are cached will return immediately instead of the
     ;; next render
     (mf/ref-val uri-data)))

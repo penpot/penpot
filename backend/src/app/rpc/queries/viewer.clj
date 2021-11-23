@@ -65,7 +65,7 @@
         (ex/raise :type :not-found
                   :code :object-not-found))
 
-      ;; When we have only profile, we need to check read permissiones
+      ;; When we have only profile, we need to check read permissions
       ;; on file.
       (when (and profile-id (not slink))
         (files/check-read-permissions! conn profile-id file-id))

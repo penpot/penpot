@@ -178,7 +178,7 @@
   "Maps a function to each pair of values that can be combined inside the
   function without repetition.
 
-  Optional parmeters:
+  Optional parameters:
   `pred?`   A predicate that if not satisfied won't process the pair
   `target?` A collection that will be used as seed to be stored
 
@@ -433,8 +433,8 @@
          (str maybe-keyword)))))
 
 (defn with-next
-  "Given a collectin will return a new collection where each element
-  is paried with the next item in the collection
+  "Given a collection will return a new collection where each element
+  is paired with the next item in the collection
   (with-next (range 5)) => [[0 1] [1 2] [2 3] [3 4] [4 nil]"
   [coll]
   (map vector
@@ -442,8 +442,8 @@
        (concat [] (rest coll) [nil])))
 
 (defn with-prev
-  "Given a collectin will return a new collection where each element
-  is paried with the previous item in the collection
+  "Given a collection will return a new collection where each element
+  is paired with the previous item in the collection
   (with-prev (range 5)) => [[0 nil] [1 0] [2 1] [3 2] [4 3]"
   [coll]
   (map vector
@@ -469,7 +469,7 @@
     (keyword (str prefix kw))))
 
 (defn tap
-  "Simpilar to the tap in rxjs but for plain collections"
+  "Similar to the tap in rxjs but for plain collections"
   [f coll]
   (f coll)
   coll)

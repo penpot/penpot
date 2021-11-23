@@ -393,7 +393,7 @@
 (mf/defc onboarding-templates-modal
   {::mf/register modal/components
    ::mf/register-as :onboarding-templates}
-  ;; NOTE: the project usually comes empty, it only comes fullfilled
+  ;; NOTE: the project usually comes empty, it only comes fulfilled
   ;; when a user creates a new team just after signup.
   [{:keys [project-id] :as props}]
   (let [close-fn   (mf/use-callback #(st/emit! (modal/hide)))

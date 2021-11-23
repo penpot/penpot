@@ -206,7 +206,7 @@
 
 (defn login-from-register
   "Event used mainly for mark current session as logged-in in after the
-  user sucessfully registred using third party auth provider (in this
+  user successfully registered using third party auth provider (in this
   case we dont need to verify the email)."
   []
   (ptk/reify ::login-from-register
@@ -351,7 +351,7 @@
 (defn mark-onboarding-as-viewed
   ([] (mark-onboarding-as-viewed nil))
   ([{:keys [version]}]
-   (ptk/reify ::mark-oboarding-as-viewed
+   (ptk/reify ::mark-onboarding-as-viewed
      ptk/WatchEvent
      (watch [_ state _]
        (let [version (or version (:main @cf/version))

@@ -470,7 +470,7 @@
     :type :summary
     :quantiles []
     :name "tasks_checkout_timing"
-    :help "Latency measured between scheduld_at and execution time."
+    :help "Latency measured between scheduled_at and execution time."
     :wrap (fn [rootf mobj]
             (let [mdata (meta rootf)
                   origf (::original mdata rootf)]

@@ -147,7 +147,7 @@
       (not= wn 0))))
 
 ;; A intersects with B
-;; Three posible cases:
+;; Three possible cases:
 ;;   1) A is inside of B
 ;;   2) B is inside of A
 ;;   3) A intersects B
@@ -207,11 +207,11 @@
     (<= v 1)))
 
 (defn intersects-line-ellipse?
-  "Checks wether a single line intersects with the given ellipse"
+  "Checks whether a single line intersects with the given ellipse"
   [[{x1 :x y1 :y} {x2 :x y2 :y}] {:keys [cx cy rx ry]}]
 
   ;; Given the ellipse inequality after inserting the line parametric equations
-  ;; we resolve t and gives us a cuadratic formula
+  ;; we resolve t and gives us a quadratic formula
   ;; The result of this quadratic will give us a value of T that needs to be
   ;; between 0-1 to be in the segment
 
@@ -284,7 +284,7 @@
         (intersects-lines-ellipse? rect-lines ellipse-data))))
 
 (defn overlaps?
-  "General case to check for overlaping between shapes and a rectangle"
+  "General case to check for overlapping between shapes and a rectangle"
   [shape rect]
   (let [stroke-width (/ (or (:stroke-width shape) 0) 2)
         rect (-> rect

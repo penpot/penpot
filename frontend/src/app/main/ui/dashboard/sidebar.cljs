@@ -234,7 +234,7 @@
   (let [form        (fm/use-form :spec ::leave-modal-form :initial {})
         members     (some->> members (filterv #(not= (:id %) (:id profile))))
         options     (into [{:value ""
-                            :label (tr "modals.leave-and-reassign.select-memeber-to-promote")}]
+                            :label (tr "modals.leave-and-reassign.select-member-to-promote")}]
                           (map #(hash-map :label (:name %) :value (str (:id %))) members))
 
         on-cancel   (st/emitf (modal/hide))

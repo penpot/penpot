@@ -15,7 +15,7 @@
    goog.net.WebSocket.EventType))
 
 (defprotocol IWebSocket
-  (-stream [_] "Retrienve the message stream")
+  (-stream [_] "Retrieve the message stream")
   (-send [_ message] "send a message")
   (-close [_] "close websocket"))
 

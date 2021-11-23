@@ -39,7 +39,7 @@
    [tubax.core :as tubax]))
 
 (declare persist-changes)
-(declare persist-sychronous-changes)
+(declare persist-synchronous-changes)
 (declare shapes-changes-persisted)
 (declare update-persistence-status)
 
@@ -99,7 +99,7 @@
                     (rx/map deref)
                     (rx/filter library-file?)
                     (rx/filter (complement #(empty? (:changes %))))
-                    (rx/map persist-sychronous-changes)
+                    (rx/map persist-synchronous-changes)
                     (rx/take-until (rx/delay 100 stoper)))
                (->> stream
                     (rx/filter (ptk/type? ::changes-persisted))
@@ -167,7 +167,7 @@
                (rx/mapcat handle-response)
                (rx/catch on-error)))))))
 
-(defn persist-sychronous-changes
+(defn persist-synchronous-changes
   [{:keys [file-id changes]}]
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-synchronous-changes
@@ -201,7 +201,7 @@
 (s/def ::shapes-changes-persisted
   (s/keys :req-un [::revn ::cp/changes]))
 
-(defn shapes-persited-event? [event]
+(defn shapes-persisted-event? [event]
   (= (ptk/type event) ::changes-persisted))
 
 (defn shapes-changes-persisted
@@ -376,7 +376,7 @@
                 (= (:code error) :media-type-not-allowed)
                 (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
-                (= (:code error) :ubable-to-access-to-url)
+                (= (:code error) :unable-to-access-to-url)
                 (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
                 (= (:code error) :invalid-image)
@@ -486,7 +486,7 @@
               ;; Media objects are blob of data to be upload
               (process-blobs params))
 
-            ;; Every stream has its own sideffect. We need to ignore the result
+            ;; Every stream has its own sideeffect. We need to ignore the result
             (rx/ignore)
             (handle-upload-error on-error)
             (rx/finalize (st/emitf (dm/hide-tag :media-loading))))))))
@@ -566,7 +566,7 @@
   (ptk/event ::update-frame-thumbnail {:frame-id frame-id}))
 
 (defn- extract-frame-changes
-  "Process a changes set in a commit to extract the frames that are channging"
+  "Process a changes set in a commit to extract the frames that are changing"
   [[event [old-objects new-objects]]]
   (let [changes (-> event deref :changes)
 
@@ -643,7 +643,7 @@
          (->> (rx/from no-thumb-frames)
               (rx/map #(update-frame-thumbnail %)))
 
-         ;; We remove the thumbnails inmediately but defer their generation
+         ;; We remove the thumbnails immediately but defer their generation
          (rx/merge
           (->> frame-changes
                (rx/take-until stopper)

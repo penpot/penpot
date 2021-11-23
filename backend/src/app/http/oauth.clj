@@ -130,7 +130,7 @@
         (when-not (set/subset? provider-roles profile-roles)
           (ex/raise :type :internal
                     :code :unable-to-auth
-                    :hint "not enought permissions"))))
+                    :hint "not enough permissions"))))
 
     (cond-> info
       (some? (:invitation-token state))

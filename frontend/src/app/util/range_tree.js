@@ -37,7 +37,7 @@ goog.scope(function() {
 
     // Will store a map from key to list of data
     //   value => [ data ]
-    // The values can be queried in range and the data stored will be retrived whole
+    // The values can be queried in range and the data stored will be retrieved whole
     // but can be removed/updated individually using clojurescript equality
     class RangeTree {
         constructor() {
@@ -151,7 +151,7 @@ goog.scope(function() {
         }
     }
 
-    // Remove the lefmost node of the current branch
+    // Remove the leftmost node of the current branch
     function recRemoveMin(branch) {
         if (!branch.left) {
             return null;

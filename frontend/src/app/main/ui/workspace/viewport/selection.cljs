@@ -179,7 +179,7 @@
        )]))
 
 (mf/defc resize-side-handler
-  "The side handler is always rendered horizontaly and then rotated"
+  "The side handler is always rendered horizontally and then rotated"
   [{:keys [x y length align angle zoom position rotation transform on-resize]}]
   (let [res-point (if (#{:top :bottom} position)
                     {:y y}
