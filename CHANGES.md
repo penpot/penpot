@@ -11,6 +11,8 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+- Spelling fixes (by @jsoref) [#1340](https://github.com/penpot/penpot/pull/1340).
+
 
 ## 1.10.0-beta
 
