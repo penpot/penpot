@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-10-08 20:58+0000\n"
+"PO-Revision-Date: 2021-11-01 03:34+0000\n"
 "Last-Translator: Marius <hi@mariusscheel.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -2965,3 +2965,256 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "Mauszeiger-Austritt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "Mauszeiger-Eintritt"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group-hint"
+msgstr ""
+"Ihre Elemente werden automatisch nach diesem Schema benannt: \"Gruppenname / "
+"Elementname\""
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "Sie können das Projekt"
+
+msgid "auth.privacy-policy"
+msgstr "Datenschutzerklärung"
+
+msgid "auth.terms-of-service"
+msgstr "Nutzungsbedingungen"
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Farben werden verarbeitet"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Komponenten werden verarbeitet"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Medien werden verarbeitet"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Seite %s wird verarbeitet"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Textstile werden verarbeitet"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Daten werden hochgeladen (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Datei %s wird hochgeladen"
+
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot ist Open Source Software, die von und für die Gemeinschaft entwickelt "
+"wurde. Wenn Sie mitarbeiten möchten, sind Sie mehr als willkommen!"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "und mehr über die Richtlinien zum beitragen erfahren :)"
+
+msgid "onboarding.contrib.link"
+msgstr "auf GitHub ansehen"
+
+msgid "onboarding.contrib.title"
+msgstr "Open-Source-Mitwirkende?"
+
+msgid "onboarding.slide.0.alt"
+msgstr "Gestalten Sie"
+
+msgid "viewer.breaking-change.description"
+msgstr ""
+"Dieser geteilte Link ist nicht mehr gültig. Erstellen Sie einen neuen oder "
+"bitten Sie den Eigentümer um einen neuen Link."
+
+msgid "viewer.breaking-change.message"
+msgstr "Entschuldigung!"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.add-interaction"
+msgstr "Klicken Sie auf den + Button um Interaktionen hinzuzufügen."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.add-flow-start"
+msgstr "Flow-Startpunkt hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-start"
+msgstr "Flow-Startpunkt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-starts"
+msgstr "Flow-Startpunkte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-action"
+msgstr "Aktion"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-after-delay"
+msgstr "nach einer Verzögerung"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-background"
+msgstr "Hintergrund hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-outside"
+msgstr "Schließen, wenn außerhalb geklickt wird"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay"
+msgstr "Overlay schließen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "Overlay %s schließen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-delay"
+msgstr "Verzögerung"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-destination"
+msgstr "Ziel"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay"
+msgstr "Overlay öffnen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "Overlay %s öffnen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-url"
+msgstr "Url öffnen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "Unten links"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "Unten mittig"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "Unten rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "ms"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-none"
+msgstr "(nicht festgelegt)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "Navigation zu: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to"
+msgstr "Navigation zu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-on-click"
+msgstr "Beim Klicken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-center"
+msgstr "Zentriert"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-manual"
+msgstr "Manuell"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "Oben mittig"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-left"
+msgstr "Oben links"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "Oben rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-position"
+msgstr "Position"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-prev-screen"
+msgstr "Zum vorherigen Screen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-self"
+msgstr "sich selbst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "Overlay-Sichtbarkeit umschalten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "Overlay-Sichtbarkeit für %s umschalten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-trigger"
+msgstr "Auslöser"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "URL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-hovering"
+msgstr "Beim Überfahren mit dem Mauszeiger"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-pressing"
+msgstr "Bei gedrückter Maustaste"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions"
+msgstr "Interaktionen"
+
+msgid "workspace.options.search-font"
+msgstr "Schriftart suchen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "Startpunkt löschen"
+
+msgid "workspace.shape.menu.exclude"
+msgstr "Ausschließen"
+
+msgid "workspace.shape.menu.difference"
+msgstr "Subtrahieren"
+
+msgid "workspace.shape.menu.flatten"
+msgstr "Pfade reduzieren"
+
+msgid "workspace.shape.menu.union"
+msgstr "Hinzufügen"
+
+msgid "workspace.shape.menu.path"
+msgstr "Pfad"
+
+msgid "workspace.shape.menu.intersection"
+msgstr "Überlappen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flow-start"
+msgstr "Startpunkt"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "In Pfade umwandeln"
