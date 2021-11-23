@@ -100,7 +100,7 @@ msgid "auth.notifications.invalid-token-error"
 msgstr "Token pemulihan tidak valid."
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
+msgid "auth.notifications.password-changed-successfully"
 msgstr "Kata sandi berhasil diubah"
 
 #: src/app/main/ui/auth/recovery_request.cljs

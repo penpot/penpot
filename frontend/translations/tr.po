@@ -100,7 +100,7 @@ msgid "auth.notifications.invalid-token-error"
 msgstr "Kurtarma jetonu geçerli değil."
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
+msgid "auth.notifications.password-changed-successfully"
 msgstr "Parola başarıyla değiştirildi"
 
 #: src/app/main/ui/auth/recovery_request.cljs
@@ -1441,7 +1441,7 @@ msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Terfi ettir ve ayrıl"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.select-memeber-to-promote"
+msgid "modals.leave-and-reassign.select-member-to-promote"
 msgstr "Terfi ettirmek için bir üye seçin"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
