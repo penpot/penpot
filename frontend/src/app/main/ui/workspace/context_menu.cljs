@@ -98,7 +98,12 @@
         is-bool?  (and (some? shape) (= :bool type))
 
         options (mf/deref refs/workspace-page-options)
+        selected-objects (mf/deref refs/selected-objects)
         flows   (:flows options)
+
+        has-group? (some #(= :group (:type %)) selected-objects)
+        has-bool? (some #(= :bool (:type %)) selected-objects)
+        has-mask-group? (some #(:masked-group? %) selected-objects)
 
         options-mode (mf/deref refs/options-mode)
 
@@ -196,6 +201,13 @@
                      :shortcut (sc/get-tooltip :bring-back)
                      :on-click do-send-to-back}]
      [:& menu-separator]
+     [:& menu-entry {:title (tr "workspace.shape.menu.flip-vertical")
+                     :shortcut (sc/get-tooltip :flip-vertical)
+                     :on-click do-flip-vertical}]
+     [:& menu-entry {:title (tr "workspace.shape.menu.flip-horizontal")
+                     :shortcut (sc/get-tooltip :flip-horizontal)
+                     :on-click do-flip-horizontal}]
+     [:& menu-separator]
 
      (when multiple?
        [:*
@@ -204,31 +216,26 @@
                         :on-click do-create-group}]
         [:& menu-entry {:title (tr "workspace.shape.menu.mask")
                         :shortcut (sc/get-tooltip :mask)
-                        :on-click do-mask-group}]
-        [:& menu-separator]])
+                        :on-click do-mask-group}]])
 
-     (when (or single? multiple?)
-       [:*
-        [:& menu-entry {:title (tr "workspace.shape.menu.flip-vertical")
-                        :shortcut (sc/get-tooltip :flip-vertical)
-                        :on-click do-flip-vertical}]
-        [:& menu-entry {:title (tr "workspace.shape.menu.flip-horizontal")
-                        :shortcut (sc/get-tooltip :flip-horizontal)
-                        :on-click do-flip-horizontal}]
-        [:& menu-separator]])
+     (when (and single? (and (not has-mask-group?) (or has-bool? has-group?)))
+       [:& menu-entry {:title (tr "workspace.shape.menu.mask")
+                       :shortcut (sc/get-tooltip :mask)
+                       :on-click do-mask-group}])
 
-     (when (and single? (or is-bool? is-group?))
-       [:*
-         [:& menu-entry {:title (tr "workspace.shape.menu.ungroup")
-                         :shortcut (sc/get-tooltip :ungroup)
-                         :on-click do-remove-group}]
-         (if (:masked-group? shape)
-           [:& menu-entry {:title (tr "workspace.shape.menu.unmask")
-                           :shortcut (sc/get-tooltip :unmask)
-                           :on-click do-unmask-group}]
-           [:& menu-entry {:title (tr "workspace.shape.menu.mask")
-                           :shortcut (sc/get-tooltip :group)
-                           :on-click do-mask-group}])])
+     (when (or has-bool? has-group?)
+       [:& menu-entry {:title (tr "workspace.shape.menu.ungroup")
+                       :shortcut (sc/get-tooltip :ungroup)
+                       :on-click do-remove-group}])
+     
+     (when has-mask-group?
+        [:& menu-entry {:title (tr "workspace.shape.menu.unmask")
+                        :shortcut (sc/get-tooltip :unmask)
+                        :on-click do-unmask-group}]
+       )
+
+     (when (or multiple? has-mask-group? (or is-bool? has-group?) (and single? (or has-bool? has-group?)) )
+       [:& menu-separator])
 
      (when (and single? editable-shape?)
        [:& menu-entry {:title (tr "workspace.shape.menu.edit")

@@ -166,6 +166,28 @@
                    :index index-in-parent}]]
     [rchanges uchanges]))
 
+(defn prepare-remove-mask
+  [page-id mask]
+  (let [rchanges [{:type :mod-obj
+                   :page-id page-id
+                   :id (:id mask)
+                   :operations [{:type :set
+                                 :attr :masked-group?
+                                 :val nil}]}
+                  {:type :reg-objects
+                   :page-id page-id
+                   :shapes [(:id mask)]}]
+        uchanges [{:type :mod-obj
+                   :page-id page-id
+                   :id (:id mask)
+                   :operations [{:type :set
+                                 :attr :masked-group?
+                                 :val (:masked-group? mask)}]}
+                  {:type :reg-objects
+                   :page-id page-id
+                   :shapes [(:id mask)]}]]
+    [rchanges uchanges]))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GROUPS
@@ -194,16 +216,15 @@
     (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (wsh/lookup-selected state)
-            group-id (first selected)
-            group    (get objects group-id)]
-        (when (and (= 1 (count selected))
-                   (contains? #{:group :bool} (:type group)))
-          (let [[rchanges uchanges]
-                (prepare-remove-group page-id group objects)]
-            (rx/of (dch/commit-changes {:redo-changes rchanges
-                                        :undo-changes uchanges
-                                        :origin it}))))))))
+            changes-in-bulk (->> (wsh/lookup-selected state)
+                                 (map  #(get objects %))
+                                 (filter #(or (= :bool (:type %)) (= :group (:type %))))
+                                 (map #(prepare-remove-group page-id % objects)))
+            rchanges-in-bulk (into [] (mapcat first) changes-in-bulk)
+            uchanges-in-bulk (into [] (mapcat second) changes-in-bulk)]
+        (rx/of (dch/commit-changes {:redo-changes rchanges-in-bulk
+                                    :undo-changes uchanges-in-bulk
+                                    :origin it}))))))
 
 (def mask-group
   (ptk/reify ::mask-group
@@ -268,33 +289,15 @@
     (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (wsh/lookup-selected state)]
-        (when (= (count selected) 1)
-          (let [group (get objects (first selected))
 
-                rchanges [{:type :mod-obj
-                           :page-id page-id
-                           :id (:id group)
-                           :operations [{:type :set
-                                         :attr :masked-group?
-                                         :val nil}]}
-                          {:type :reg-objects
-                           :page-id page-id
-                           :shapes [(:id group)]}]
+            changes-in-bulk (->> (wsh/lookup-selected state)
+                                 (map  #(get objects %))
+                                 (filter #(or (= :bool (:type %)) (= :group (:type %))))
+                                 (map #(prepare-remove-mask page-id %)))
+            rchanges-in-bulk (into [] (mapcat first) changes-in-bulk)
+            uchanges-in-bulk (into [] (mapcat second) changes-in-bulk)]
 
-                uchanges [{:type :mod-obj
-                           :page-id page-id
-                           :id (:id group)
-                           :operations [{:type :set
-                                         :attr :masked-group?
-                                         :val (:masked-group? group)}]}
-                          {:type :reg-objects
-                           :page-id page-id
-                           :shapes [(:id group)]}]]
-
-            (rx/of (dch/commit-changes {:redo-changes rchanges
-                                        :undo-changes uchanges
-                                        :origin it})
-                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
-
-
+        (rx/of (dch/commit-changes {:redo-changes rchanges-in-bulk
+                                    :undo-changes uchanges-in-bulk
+                                    :origin it}))))))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
