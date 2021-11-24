@@ -1,10 +1,10 @@
 {:deps
  {org.clojure/clojure {:mvn/version "1.10.3"}
-  org.clojure/data.json {:mvn/version "2.3.1"}
-  org.clojure/core.async {:mvn/version "1.3.618"}
+  org.clojure/data.json {:mvn/version "2.4.0"}
+  org.clojure/core.async {:mvn/version "1.4.627"}
   org.clojure/tools.cli {:mvn/version "1.0.206"}
-  metosin/jsonista {:mvn/version "0.3.3"}
-  org.clojure/clojurescript {:mvn/version "1.10.844"}
+  metosin/jsonista {:mvn/version "0.3.4"}
+  org.clojure/clojurescript {:mvn/version "1.10.891"}
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "1.1.0"}
@@ -15,25 +15,25 @@
   org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.14.1"}
   org.slf4j/slf4j-api {:mvn/version "2.0.0-alpha1"}
 
-  selmer/selmer {:mvn/version "1.12.40"}
-  expound/expound {:mvn/version "0.8.9"}
+  selmer/selmer {:mvn/version "1.12.45"}
+  expound/expound {:mvn/version "0.8.10"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
   com.cognitect/transit-cljs {:mvn/version "0.8.269"}
-  java-http-clj/java-http-clj {:mvn/version "0.4.2"}
+  java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
-  funcool/promesa {:mvn/version "6.0.1"}
+  funcool/promesa {:mvn/version "6.0.2"}
   funcool/cuerdas {:mvn/version "2021.05.29-0"}
 
-  lambdaisland/uri {:mvn/version "1.4.70"
+  lambdaisland/uri {:mvn/version "1.11.86"
                     :exclusions [org.clojure/data.json]}
 
   frankiesardo/linked {:mvn/version "1.3.0"}
   danlentz/clj-uuid {:mvn/version "0.1.9"}
-  commons-io/commons-io {:mvn/version "2.8.0"}
+  commons-io/commons-io {:mvn/version "2.11.0"}
   com.sun.mail/jakarta.mail {:mvn/version "2.0.1"}
 
   ;; exception printing
-  io.aviso/pretty {:mvn/version "0.1.37"}
+  io.aviso/pretty {:mvn/version "1.1"}
   environ/environ {:mvn/version "1.2.0"}}
  :paths ["src"]
  :aliases
@@ -42,15 +42,11 @@
    {org.clojure/tools.namespace {:mvn/version "RELEASE"}
     org.clojure/test.check {:mvn/version "RELEASE"}
     org.clojure/tools.deps.alpha {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.12.6"}
+    com.bhauman/rebel-readline {:mvn/version "RELEASE"}
+    thheller/shadow-cljs {:mvn/version "2.16.6"}
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}
    :extra-paths ["test" "dev"]}
-
-  :repl
-  {:extra-deps
-   {com.bhauman/rebel-readline {:mvn/version "RELEASE"}}
-   :main-opts ["-m" "rebel-readline.main"]}
 
   :kaocha
   {:extra-deps {lambdaisland/kaocha {:mvn/version "RELEASE"}}
@@ -60,7 +56,7 @@
   {:extra-paths ["test"]
    :extra-deps {io.github.cognitect-labs/test-runner
                 {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                 :sha "705ad25bbf0228b1c38d0244a36001c2987d7337"}}
+                 :sha "dd6da11611eeb87f08780a30ac8ea6012d4c05ce"}}
    :exec-fn cognitect.test-runner.api/test}
 
   :shadow-cljs
