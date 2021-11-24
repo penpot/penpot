@@ -70,7 +70,8 @@
         (accumulate-undo-entry state entry)
         (add-undo-entry state entry)))))
 
-(defonce empty-tx {:undo-changes [] :redo-changes []})
+(def empty-tx
+  {:undo-changes [] :redo-changes []})
 
 (defn start-undo-transaction []
   (ptk/reify ::start-undo-transaction

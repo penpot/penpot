@@ -14,6 +14,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages :as cp]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.pages.spec :as spec]
    [app.common.spec :as us]
@@ -350,16 +351,16 @@
 
 ;; TODO: properly handle positioning on undo.
 
+;; TODO: for some reason, the page-id here in some circumstances is `nil`
 (defn delete-page
   [id]
   (ptk/reify ::delete-page
     ptk/WatchEvent
     (watch [it state _]
       (let [page (get-in state [:workspace-data :pages-index id])
-            rchg {:type :del-page
-                  :id id}
-            uchg {:type :add-page
-                  :page page}]
+            rchg {:type :del-page :id id}
+            uchg {:type :add-page :page page}]
+
         (rx/of (dch/commit-changes {:redo-changes [rchg]
                                     :undo-changes [uchg]
                                     :origin it})
@@ -1114,17 +1115,11 @@
   (ptk/reify ::relocate-pages
     ptk/WatchEvent
     (watch [it state _]
-      (let [cidx (-> (get-in state [:workspace-data :pages])
-                     (d/index-of id))
-            rchg {:type :mov-page
-                  :id id
-                  :index index}
-            uchg {:type :mov-page
-                  :id id
-                  :index cidx}]
-        (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-changes [uchg]
-                                    :origin it}))))))
+      (let [prev-index (-> (get-in state [:workspace-data :pages])
+                           (d/index-of id))
+            changes    (-> (pcb/empty-changes it id)
+                           (pcb/move-page index prev-index))]
+        (rx/of (dch/commit-changes changes))))))
 
 ;; --- Shape / Selection Alignment and Distribution
 
