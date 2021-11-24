@@ -110,10 +110,10 @@
 (sv/defmethod ::leave-team
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [perms   (teams/check-read-permissions! conn profile-id id)
+    (let [perms   (teams/get-permissions conn profile-id id)
           members (teams/retrieve-team-members conn id)]
 
-      (when (some :is-owner perms)
+      (when (:is-owner perms)
         (ex/raise :type :validation
                   :code :owner-cant-leave-team
                   :hint "reasing owner before leave"))
@@ -171,8 +171,7 @@
 (sv/defmethod ::update-team-member-role
   [{:keys [pool] :as cfg} {:keys [team-id profile-id member-id role] :as params}]
   (db/with-atomic [conn pool]
-    (let [perms   (teams/check-read-permissions! conn profile-id team-id)
-
+    (let [perms (teams/get-permissions conn profile-id team-id)
           ;; We retrieve all team members instead of query the
           ;; database for a single member. This is just for
           ;; convenience, if this bocomes a bottleneck or problematic,
@@ -180,8 +179,8 @@
           members (teams/retrieve-team-members conn team-id)
           member  (d/seek #(= member-id (:id %)) members)
 
-          is-owner? (some :is-owner perms)
-          is-admin? (some :is-admin perms)]
+          is-owner? (:is-owner perms)
+          is-admin? (:is-admin perms)]
 
       ;; If no member is found, just 404
       (when-not member
@@ -234,9 +233,9 @@
 (sv/defmethod ::delete-team-member
   [{:keys [pool] :as cfg} {:keys [team-id profile-id member-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [perms (teams/check-read-permissions! conn profile-id team-id)]
-      (when-not (or (some :is-owner perms)
-                    (some :is-admin perms))
+    (let [perms (teams/get-permissions conn profile-id team-id)]
+      (when-not (or (:is-owner perms)
+                    (:is-admin perms))
         (ex/raise :type :validation
                   :code :insufficient-permissions))
 
