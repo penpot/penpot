@@ -304,6 +304,11 @@
             (st/emit! (dd/go-to-projects (:default-team-id profile))
                       (dd/leave-team (with-meta params {:on-success on-leaved-success})))))
 
+        delete-fn
+        (fn []
+          (st/emit! (dd/go-to-projects (:default-team-id profile))
+                    (dd/delete-team (with-meta team {:on-success on-leaved-success}))))
+
         on-leave-clicked
         (st/emitf (modal/show
                    {:type :confirm
@@ -320,9 +325,6 @@
                       :profile profile
                       :team team
                       :accept leave-and-reassign-fn})))
-
-        delete-fn
-        (st/emitf (dd/delete-team (with-meta team {:on-success on-leaved-success})))
 
         on-delete-clicked
         (st/emitf
