@@ -7,6 +7,7 @@
 ### :bug: Bugs fixed
 
 - Fix problems when exporting all artboards [Taiga #2234](https://tree.taiga.io/project/penpot/issue/2234).
+- Fix problems with team management [#1353](https://github.com/penpot/penpot/issues/1353)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
