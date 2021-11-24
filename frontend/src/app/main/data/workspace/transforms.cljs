@@ -207,21 +207,26 @@
 
         modifiers (assoc modifiers :ignore-geometry? ignore-geometry?)
 
-        set-child (fn [modif-tree child]
-                    (let [child-modifiers (gsh/calc-child-modifiers shape
-                                                                    child
-                                                                    modifiers
-                                                                    ignore-constraints)]
-                      (set-modifiers-recursive modif-tree
-                                               objects
-                                               child
-                                               child-modifiers
-                                               root
-                                               transformed-root
-                                               ignore-constraints)))]
-    (reduce set-child
-            (assoc-in modif-tree [(:id shape) :modifiers] modifiers)
-            children)))
+        transformed-rect (gsh/calc-transformed-parent-rect shape modifiers)
+
+        set-child
+        (fn [modif-tree child]
+          (let [child-modifiers
+                (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)]
+
+            (set-modifiers-recursive modif-tree
+                                     objects
+                                     child
+                                     child-modifiers
+                                     root
+                                     transformed-root
+                                     ignore-constraints)))
+
+        modif-tree
+        (-> modif-tree
+            (assoc-in [(:id shape) :modifiers] modifiers))]
+
+    (reduce set-child modif-tree children)))
 
 (defn- check-delta
   "If the shape is a component instance, check its relative position respect the

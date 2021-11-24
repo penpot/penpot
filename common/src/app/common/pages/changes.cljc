@@ -40,7 +40,9 @@
 (defmulti process-operation (fn [_ op] (:type op)))
 
 (defn process-changes
-  ([data items] (process-changes data items true))
+  ([data items]
+   (process-changes data items true))
+
   ([data items verify?]
    ;; When verify? false we spec the schema validation. Currently used to make just
    ;; 1 validation even if the changes are applied twice
@@ -152,6 +154,7 @@
 ;; reg-objects operation "regenerates" the geometry and selrect of the parent groups
 (defmethod process-change :reg-objects
   [data {:keys [page-id component-id shapes]}]
+  ;; FIXME: Improve performance
   (letfn [(reg-objects [objects]
             (reduce #(d/update-when %1 %2 update-group %1) objects
                     (sequence (comp
@@ -469,4 +472,3 @@
   (ex/raise :type :not-implemented
             :code :operation-not-implemented
             :context {:type (:type op)}))
-

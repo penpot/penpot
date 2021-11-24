@@ -188,7 +188,7 @@
     (reduce extract-attrs [[] []] shapes)))
 
 (mf/defc options
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "shapes-with-children"]))]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children"]))]
    ::mf/wrap-props false}
   [props]
   (let [shapes (unchecked-get props "shapes")
@@ -203,7 +203,10 @@
         [shadow-ids     shadow-values]     (get-attrs shapes objects :shadow)
         [blur-ids       blur-values]       (get-attrs shapes objects :blur)
         [stroke-ids     stroke-values]     (get-attrs shapes objects :stroke)
-        [text-ids       text-values]       (get-attrs shapes objects :text)]
+
+        ;; FIXME: Improve performance
+        [text-ids       text-values]       (get-attrs shapes objects :text)
+        ]
 
     [:div.options
      (when-not (empty? measure-ids)

@@ -163,6 +163,7 @@
 (d/export gtr/rotation-modifiers)
 (d/export gtr/merge-modifiers)
 (d/export gtr/transform-shape)
+(d/export gtr/calc-transformed-parent-rect)
 (d/export gtr/calc-child-modifiers)
 
 ;; PATHS

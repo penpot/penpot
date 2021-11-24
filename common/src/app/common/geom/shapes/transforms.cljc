@@ -503,19 +503,11 @@
              (dissoc :modifiers)))
        shape))))
 
-(defn calc-child-modifiers
-  "Given the modifiers to apply to the parent, calculate the corresponding
-  modifiers for the child, depending on the child constraints."
-  [parent child parent-modifiers ignore-constraints]
+(defn calc-transformed-parent-rect
+  [parent parent-modifiers]
+  (:selrect parent)
+  ;; FIXME: Improve performance
   (let [parent-rect             (:selrect parent)
-        child-rect              (:selrect child)
-
-        ;; Apply the modifiers to the parent's selrect, to check the difference with
-        ;; the original, and calculate child transformations from this.
-        ;;
-        ;; Note that a shape's selrect is always "horizontal" (i.e. without applying
-        ;; the shape transform, that may include some rotation and skew). Thus, to
-        ;; apply the modifiers, we first apply to them the transform-inverse.
         parent-displacement (-> (gpt/point 0 0)
                                 (gpt/transform (get parent-modifiers :displacement (gmt/matrix)))
                                 (gpt/transform (:resize-transform-inverse parent-modifiers (gmt/matrix)))
@@ -529,161 +521,179 @@
                                  (gco/center-shape parent)
                                  (:resize-transform-inverse parent-modifiers (gmt/matrix))))
         parent-vector       (get parent-modifiers :resize-vector (gpt/point 1 1))
-        parent-vector-2     (get parent-modifiers :resize-vector-2 (gpt/point 1 1))
+        parent-vector-2     (get parent-modifiers :resize-vector-2 (gpt/point 1 1))]
 
-        transformed-parent-rect (-> parent-rect
-                                    (gpr/rect->points)
-                                    (gco/transform-points parent-displacement)
-                                    (gco/transform-points parent-origin (gmt/scale-matrix parent-vector))
-                                    (gco/transform-points parent-origin-2 (gmt/scale-matrix parent-vector-2))
-                                    (gpr/points->selrect))
+    (-> parent-rect
+        (gpr/rect->points)
+        (gco/transform-points parent-displacement)
+        (gco/transform-points parent-origin (gmt/scale-matrix parent-vector))
+        (gco/transform-points parent-origin-2 (gmt/scale-matrix parent-vector-2))
+        (gpr/points->selrect))))
 
-        ;; Calculate the modifiers in the horizontal and vertical directions
-        ;; depending on the child constraints.
-        constraints-h (if-not ignore-constraints
-                        (get child :constraints-h (spec/default-constraints-h child))
-                        :scale)
-        constraints-v (if-not ignore-constraints
-                        (get child :constraints-v (spec/default-constraints-v child))
-                        :scale)
+(defn calc-child-modifiers
+  "Given the modifiers to apply to the parent, calculate the corresponding
+  modifiers for the child, depending on the child constraints."
+  ([parent child parent-modifiers ignore-constraints]
+   (let [transformed-parent-rect (calc-transformed-parent-rect parent parent-modifiers )]
+     (calc-child-modifiers parent child parent-modifiers ignore-constraints transformed-parent-rect)))
 
-        modifiers-h (case constraints-h
-                      :left
-                      (let [delta-left (- (:x1 transformed-parent-rect) (:x1 parent-rect))]
+  ([parent child parent-modifiers ignore-constraints transformed-parent-rect]
+   (let [parent-rect             (:selrect parent)
+         child-rect              (:selrect child)
 
-                        (if-not (mth/almost-zero? delta-left)
-                          {:displacement (gpt/point delta-left 0)} ;; we convert to matrix below
-                          {}))
+         ;; Apply the modifiers to the parent's selrect, to check the difference with
+         ;; the original, and calculate child transformations from this.
+         ;;
+         ;; Note that a shape's selrect is always "horizontal" (i.e. without applying
+         ;; the shape transform, that may include some rotation and skew). Thus, to
+         ;; apply the modifiers, we first apply to them the transform-inverse.
 
-                      :right
-                      (let [delta-right (- (:x2 transformed-parent-rect) (:x2 parent-rect))]
-                        (if-not (mth/almost-zero? delta-right)
-                          {:displacement (gpt/point delta-right 0)}
-                          {}))
+         ;; Calculate the modifiers in the horizontal and vertical directions
+         ;; depending on the child constraints.
+         constraints-h (if-not ignore-constraints
+                         (get child :constraints-h (spec/default-constraints-h child))
+                         :scale)
+         constraints-v (if-not ignore-constraints
+                         (get child :constraints-v (spec/default-constraints-v child))
+                         :scale)
 
-                      :leftright
-                      (let [delta-left (- (:x1 transformed-parent-rect) (:x1 parent-rect))
-                            delta-width (- (:width transformed-parent-rect) (:width parent-rect))]
-                        (if (or (not (mth/almost-zero? delta-left))
-                                (not (mth/almost-zero? delta-width)))
-                          {:displacement (gpt/point delta-left 0)
-                           :resize-origin (-> (gpt/point (+ (:x1 child-rect) delta-left)
-                                                         (:y1 child-rect))
-                                              (transform-point-center
+         modifiers-h (case constraints-h
+                       :left
+                       (let [delta-left (- (:x1 transformed-parent-rect) (:x1 parent-rect))]
+
+                         (if-not (mth/almost-zero? delta-left)
+                           {:displacement (gpt/point delta-left 0)} ;; we convert to matrix below
+                           {}))
+
+                       :right
+                       (let [delta-right (- (:x2 transformed-parent-rect) (:x2 parent-rect))]
+                         (if-not (mth/almost-zero? delta-right)
+                           {:displacement (gpt/point delta-right 0)}
+                           {}))
+
+                       :leftright
+                       (let [delta-left (- (:x1 transformed-parent-rect) (:x1 parent-rect))
+                             delta-width (- (:width transformed-parent-rect) (:width parent-rect))]
+                         (if (or (not (mth/almost-zero? delta-left))
+                                 (not (mth/almost-zero? delta-width)))
+                           {:displacement (gpt/point delta-left 0)
+                            :resize-origin (-> (gpt/point (+ (:x1 child-rect) delta-left)
+                                                          (:y1 child-rect))
+                                               (transform-point-center
                                                 (gco/center-rect child-rect)
                                                 (:transform child (gmt/matrix))))
-                           :resize-vector (gpt/point (/ (+ (:width child-rect) delta-width)
-                                                        (:width child-rect)) 1)}
-                          {}))
+                            :resize-vector (gpt/point (/ (+ (:width child-rect) delta-width)
+                                                         (:width child-rect)) 1)}
+                           {}))
 
-                      :center
-                      (let [parent-center (gco/center-rect parent-rect)
-                            transformed-parent-center (gco/center-rect transformed-parent-rect)
-                            delta-center (- (:x transformed-parent-center) (:x parent-center))]
-                        (if-not (mth/almost-zero? delta-center)
-                          {:displacement (gpt/point delta-center 0)}
-                          {}))
+                       :center
+                       (let [parent-center (gco/center-rect parent-rect)
+                             transformed-parent-center (gco/center-rect transformed-parent-rect)
+                             delta-center (- (:x transformed-parent-center) (:x parent-center))]
+                         (if-not (mth/almost-zero? delta-center)
+                           {:displacement (gpt/point delta-center 0)}
+                           {}))
 
-                      :scale
-                      (cond-> {}
-                        (and (:resize-vector parent-modifiers)
-                             (not (mth/close? (:x (:resize-vector parent-modifiers)) 1)))
-                        (assoc :resize-origin (:resize-origin parent-modifiers)
-                               :resize-vector (gpt/point (:x (:resize-vector parent-modifiers)) 1))
+                       :scale
+                       (cond-> {}
+                         (and (:resize-vector parent-modifiers)
+                              (not (mth/close? (:x (:resize-vector parent-modifiers)) 1)))
+                         (assoc :resize-origin (:resize-origin parent-modifiers)
+                                :resize-vector (gpt/point (:x (:resize-vector parent-modifiers)) 1))
 
-                        ;; resize-vector-2 is always for vertical modifiers, so no need to
-                        ;; check it here.
+                         ;; resize-vector-2 is always for vertical modifiers, so no need to
+                         ;; check it here.
 
-                        (:displacement parent-modifiers)
-                        (assoc :displacement
-                               (gpt/point (-> (gpt/point 0 0)
-                                              (gpt/transform (:displacement parent-modifiers))
-                                              (gpt/transform (:resize-transform-inverse parent-modifiers (gmt/matrix)))
-                                              (:x))
-                                          0)))
-                      {})
+                         (:displacement parent-modifiers)
+                         (assoc :displacement
+                                (gpt/point (-> (gpt/point 0 0)
+                                               (gpt/transform (:displacement parent-modifiers))
+                                               (gpt/transform (:resize-transform-inverse parent-modifiers (gmt/matrix)))
+                                               (:x))
+                                           0)))
+                       {})
 
-        modifiers-v (case constraints-v
-                      :top
-                      (let [delta-top (- (:y1 transformed-parent-rect) (:y1 parent-rect))]
-                        (if-not (mth/almost-zero? delta-top)
-                          {:displacement (gpt/point 0 delta-top)} ;; we convert to matrix below
-                          {}))
+         modifiers-v (case constraints-v
+                       :top
+                       (let [delta-top (- (:y1 transformed-parent-rect) (:y1 parent-rect))]
+                         (if-not (mth/almost-zero? delta-top)
+                           {:displacement (gpt/point 0 delta-top)} ;; we convert to matrix below
+                           {}))
 
-                      :bottom
-                      (let [delta-bottom (- (:y2 transformed-parent-rect) (:y2 parent-rect))]
-                        (if-not (mth/almost-zero? delta-bottom)
-                          {:displacement (gpt/point 0 delta-bottom)}
-                          {}))
+                       :bottom
+                       (let [delta-bottom (- (:y2 transformed-parent-rect) (:y2 parent-rect))]
+                         (if-not (mth/almost-zero? delta-bottom)
+                           {:displacement (gpt/point 0 delta-bottom)}
+                           {}))
 
-                      :topbottom
-                      (let [delta-top (- (:y1 transformed-parent-rect) (:y1 parent-rect))
-                            delta-height (- (:height transformed-parent-rect) (:height parent-rect))]
-                        (if (or (not (mth/almost-zero? delta-top))
-                                (not (mth/almost-zero? delta-height)))
-                          {:displacement (gpt/point 0 delta-top)
-                           :resize-origin (-> (gpt/point (:x1 child-rect)
-                                                         (+ (:y1 child-rect) delta-top))
-                                              (transform-point-center
+                       :topbottom
+                       (let [delta-top (- (:y1 transformed-parent-rect) (:y1 parent-rect))
+                             delta-height (- (:height transformed-parent-rect) (:height parent-rect))]
+                         (if (or (not (mth/almost-zero? delta-top))
+                                 (not (mth/almost-zero? delta-height)))
+                           {:displacement (gpt/point 0 delta-top)
+                            :resize-origin (-> (gpt/point (:x1 child-rect)
+                                                          (+ (:y1 child-rect) delta-top))
+                                               (transform-point-center
                                                 (gco/center-rect child-rect)
                                                 (:transform child (gmt/matrix))))
-                           :resize-vector (gpt/point 1 (/ (+ (:height child-rect) delta-height)
-                                                          (:height child-rect)))}
-                          {}))
+                            :resize-vector (gpt/point 1 (/ (+ (:height child-rect) delta-height)
+                                                           (:height child-rect)))}
+                           {}))
 
-                      :center
-                      (let [parent-center (gco/center-rect parent-rect)
-                            transformed-parent-center (gco/center-rect transformed-parent-rect)
-                            delta-center (- (:y transformed-parent-center) (:y parent-center))]
-                        (if-not (mth/almost-zero? delta-center)
-                          {:displacement (gpt/point 0 delta-center)}
-                          {}))
+                       :center
+                       (let [parent-center (gco/center-rect parent-rect)
+                             transformed-parent-center (gco/center-rect transformed-parent-rect)
+                             delta-center (- (:y transformed-parent-center) (:y parent-center))]
+                         (if-not (mth/almost-zero? delta-center)
+                           {:displacement (gpt/point 0 delta-center)}
+                           {}))
 
-                      :scale
-                      (cond-> {}
-                        (and (:resize-vector parent-modifiers)
-                             (not (mth/close? (:y (:resize-vector parent-modifiers)) 1)))
-                        (assoc :resize-origin (:resize-origin parent-modifiers)
-                               :resize-vector (gpt/point 1 (:y (:resize-vector parent-modifiers))))
+                       :scale
+                       (cond-> {}
+                         (and (:resize-vector parent-modifiers)
+                              (not (mth/close? (:y (:resize-vector parent-modifiers)) 1)))
+                         (assoc :resize-origin (:resize-origin parent-modifiers)
+                                :resize-vector (gpt/point 1 (:y (:resize-vector parent-modifiers))))
 
-                        ;; If there is a resize-vector-2, this means that we come from a recursive
-                        ;; call, and the resize-vector has no vertical data, so we may override it.
-                        (and (:resize-vector-2 parent-modifiers)
-                             (not (mth/close? (:y (:resize-vector-2 parent-modifiers)) 1)))
-                        (assoc :resize-origin (:resize-origin-2 parent-modifiers)
-                               :resize-vector (gpt/point 1 (:y (:resize-vector-2 parent-modifiers))))
+                         ;; If there is a resize-vector-2, this means that we come from a recursive
+                         ;; call, and the resize-vector has no vertical data, so we may override it.
+                         (and (:resize-vector-2 parent-modifiers)
+                              (not (mth/close? (:y (:resize-vector-2 parent-modifiers)) 1)))
+                         (assoc :resize-origin (:resize-origin-2 parent-modifiers)
+                                :resize-vector (gpt/point 1 (:y (:resize-vector-2 parent-modifiers))))
 
-                        (:displacement parent-modifiers)
-                        (assoc :displacement
-                               (gpt/point 0 (-> (gpt/point 0 0)
-                                                (gpt/transform (:displacement parent-modifiers))
-                                                (gpt/transform (:resize-transform-inverse parent-modifiers (gmt/matrix)))
-                                                (:y)))))
-                      {})]
+                         (:displacement parent-modifiers)
+                         (assoc :displacement
+                                (gpt/point 0 (-> (gpt/point 0 0)
+                                                 (gpt/transform (:displacement parent-modifiers))
+                                                 (gpt/transform (:resize-transform-inverse parent-modifiers (gmt/matrix)))
+                                                 (:y)))))
+                       {})]
 
-    ;; Build final child modifiers. Apply transform again to the result, to get the
-    ;; real modifiers that need to be applied to the child, including rotation as needed.
-    (cond-> {}
-      (or (:displacement modifiers-h) (:displacement modifiers-v))
-      (assoc :displacement (gmt/translate-matrix
+     ;; Build final child modifiers. Apply transform again to the result, to get the
+     ;; real modifiers that need to be applied to the child, including rotation as needed.
+     (cond-> {}
+       (or (:displacement modifiers-h) (:displacement modifiers-v))
+       (assoc :displacement (gmt/translate-matrix
                              (-> (gpt/point (get (:displacement modifiers-h) :x 0)
                                             (get (:displacement modifiers-v) :y 0))
                                  (gpt/transform
-                                   (:resize-transform parent-modifiers (gmt/matrix))))))
+                                  (:resize-transform parent-modifiers (gmt/matrix))))))
 
-      (:resize-vector modifiers-h)
-      (assoc :resize-origin (:resize-origin modifiers-h)
-             :resize-vector (gpt/point (get (:resize-vector modifiers-h) :x 1)
-                                       (get (:resize-vector modifiers-h) :y 1)))
+       (:resize-vector modifiers-h)
+       (assoc :resize-origin (:resize-origin modifiers-h)
+              :resize-vector (gpt/point (get (:resize-vector modifiers-h) :x 1)
+                                        (get (:resize-vector modifiers-h) :y 1)))
 
-      (:resize-vector modifiers-v)
-      (assoc :resize-origin-2 (:resize-origin modifiers-v)
-             :resize-vector-2 (gpt/point (get (:resize-vector modifiers-v) :x 1)
-                                         (get (:resize-vector modifiers-v) :y 1)))
+       (:resize-vector modifiers-v)
+       (assoc :resize-origin-2 (:resize-origin modifiers-v)
+              :resize-vector-2 (gpt/point (get (:resize-vector modifiers-v) :x 1)
+                                          (get (:resize-vector modifiers-v) :y 1)))
 
-      (:resize-transform parent-modifiers)
-      (assoc :resize-transform (:resize-transform parent-modifiers)
-             :resize-transform-inverse (:resize-transform-inverse parent-modifiers)))))
+       (:resize-transform parent-modifiers)
+       (assoc :resize-transform (:resize-transform parent-modifiers)
+              :resize-transform-inverse (:resize-transform-inverse parent-modifiers))))))
 
 
 (defn selection-rect

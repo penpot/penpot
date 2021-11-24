@@ -241,6 +241,7 @@
          (fn [state]
            (let [objects (wsh/lookup-page-objects state)
                  modifiers (:workspace-modifiers state)
+                 ;; FIXME: Improve performance
                  objects (cond-> objects
                            with-modifiers?
                            (gsh/merge-modifiers modifiers))
