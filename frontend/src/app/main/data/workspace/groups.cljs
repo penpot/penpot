@@ -244,7 +244,19 @@
                   [(first shapes) [] []]
                   (prepare-create-group objects page-id shapes "Group-1" true))
 
+                children (map #(get objects %) (:shapes group))
+
                 rchanges (d/concat rchanges
+                                   (for [child children]
+                                     {:type :mod-obj
+                                      :page-id page-id
+                                      :id (:id child)
+                                      :operations [{:type :set
+                                                    :attr :constraints-h
+                                                    :val :scale}
+                                                   {:type :set
+                                                    :attr :constraints-v
+                                                    :val :scale}]})
                                    [{:type :mod-obj
                                      :page-id page-id
                                      :id (:id group)
@@ -267,16 +279,26 @@
                                      :page-id page-id
                                      :shapes [(:id group)]}])
 
-                uchanges (conj uchanges
-                               {:type :mod-obj
-                                :page-id page-id
-                                :id (:id group)
-                                :operations [{:type :set
-                                              :attr :masked-group?
-                                              :val nil}]}
-                               {:type :reg-objects
-                                :page-id page-id
-                                :shapes [(:id group)]})]
+                uchanges (d/concat uchanges
+                                   (for [child children]
+                                     {:type :mod-obj
+                                      :page-id page-id
+                                      :id (:id child)
+                                      :operations [{:type :set
+                                                    :attr :constraints-h
+                                                    :val (:constraints-h child)}
+                                                   {:type :set
+                                                    :attr :constraints-v
+                                                    :val (:constraints-v child)}]})
+                                  [{:type :mod-obj
+                                    :page-id page-id
+                                    :id (:id group)
+                                    :operations [{:type :set
+                                                  :attr :masked-group?
+                                                  :val nil}]}
+                                   {:type :reg-objects
+                                    :page-id page-id
+                                    :shapes [(:id group)]}])]
 
             (rx/of (dch/commit-changes {:redo-changes rchanges
                                         :undo-changes uchanges
@@ -300,4 +322,3 @@
         (rx/of (dch/commit-changes {:redo-changes rchanges-in-bulk
                                     :undo-changes uchanges-in-bulk
                                     :origin it}))))))
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
