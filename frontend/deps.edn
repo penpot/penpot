@@ -23,8 +23,8 @@
 
   :dev
   {:extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.15.12"}
-    cider/cider-nrepl {:mvn/version "0.26.0"}}}
+   {thheller/shadow-cljs {:mvn/version "2.16.6"}
+    cider/cider-nrepl {:mvn/version "0.27.2"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
