@@ -124,6 +124,7 @@
 (mf/defc team-member
   {::mf/wrap [mf/memo]}
   [{:keys [team member profile] :as props}]
+
   (let [show? (mf/use-state false)
 
         set-role
@@ -174,8 +175,8 @@
          [:span.label (tr "labels.viewer")])
 
        (when (and (not (:is-owner member))
-                  (or (:is-admin team)
-                      (:is-owner team)))
+                  (or (get-in team [:permissions :is-admin])
+                      (get-in team [:permissions :is-owner])))
          [:span.icon {:on-click #(reset! show? true)} i/arrow-down])]
 
       [:& dropdown {:show @show?
@@ -191,8 +192,8 @@
            [:hr]
            [:li {:on-click set-owner} (tr "dashboard.promote-to-owner")]])
         [:hr]
-        (when (and (or (:is-owner team)
-                       (:is-admin team))
+        (when (and (or (get-in team [:permissions :is-owner])
+                       (get-in team [:permissions :is-admin]))
                    (not= (:id profile)
                          (:id member)))
           [:li {:on-click delete} (tr "labels.remove")])]]]]))

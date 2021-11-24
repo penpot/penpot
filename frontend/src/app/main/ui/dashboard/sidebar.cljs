@@ -230,9 +230,12 @@
 (mf/defc leave-and-reassign-modal
   {::mf/register modal/components
    ::mf/register-as ::leave-and-reassign}
-  [{:keys [members profile team accept]}]
+  [{:keys [team accept]}]
   (let [form        (fm/use-form :spec ::leave-modal-form :initial {})
-        members     (some->> members (filterv #(not= (:id %) (:id profile))))
+
+        members-map (mf/deref refs/dashboard-team-members)
+        members     (vals members-map)
+
         options     (into [{:value ""
                             :label (tr "modals.leave-and-reassign.select-member-to-promote")}]
                           (map #(hash-map :label (:name %) :value (str (:id %))) members))
@@ -290,7 +293,7 @@
         on-leaved-success
         (fn []
           (st/emit! (modal/hide)
-                    (dd/go-to-projects (:default-team-id profile))))
+                    (du/fetch-teams)))
 
         leave-fn
         (st/emitf (dd/leave-team (with-meta {} {:on-success on-leaved-success})))
@@ -298,7 +301,8 @@
         leave-and-reassign-fn
         (fn [member-id]
           (let [params {:reassign-to member-id}]
-            (st/emit! (dd/leave-team (with-meta params {:on-success on-leaved-success})))))
+            (st/emit! (dd/go-to-projects (:default-team-id profile))
+                      (dd/leave-team (with-meta params {:on-success on-leaved-success})))))
 
         on-leave-clicked
         (st/emitf (modal/show
@@ -309,12 +313,13 @@
                     :on-accept leave-fn}))
 
         on-leave-as-owner-clicked
-        (st/emitf (modal/show
-                   {:type ::leave-and-reassign
-                    :profile profile
-                    :team team
-                    :members members
-                    :accept leave-and-reassign-fn}))
+        (fn []
+          (st/emit! (dd/fetch-team-members)
+                    (modal/show
+                     {:type ::leave-and-reassign
+                      :profile profile
+                      :team team
+                      :accept leave-and-reassign-fn})))
 
         delete-fn
         (st/emitf (dd/delete-team (with-meta team {:on-success on-leaved-success})))
@@ -335,14 +340,14 @@
      [:li {:on-click on-rename-clicked} (tr "labels.rename")]
 
      (cond
-       (:is-owner team)
+       (get-in team [:permissions :is-owner])
        [:li {:on-click on-leave-as-owner-clicked} (tr "dashboard.leave-team")]
 
        (> (count members) 1)
        [:li {:on-click on-leave-clicked}  (tr "dashboard.leave-team")])
 
 
-     (when (:is-owner team)
+     (when (get-in team [:permissions :is-owner])
        [:li {:on-click on-delete-clicked} (tr "dashboard.delete-team")])]))
 
 
