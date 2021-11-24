@@ -12,7 +12,8 @@
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
-(defn empty-changes [origin page-id]
+(defn empty-changes
+  [origin page-id]
   (let [changes {:redo-changes []
                  :undo-changes []
                  :origin origin}]
@@ -165,3 +166,11 @@
         (update :undo-changes #(as-> % $
                                  (reduce add-undo-change-parent $ ids)
                                  (reduce add-undo-change-shape $ ids))))))
+
+
+(defn move-page
+  [chdata index prev-index]
+  (let [page-id (::page-id (meta chdata))]
+    (-> chdata
+        (update :redo-changes conj {:type :mov-page :id page-id :index index})
+        (update :undo-changes conj {:type :mov-page :id page-id :index prev-index}))))

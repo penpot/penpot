@@ -213,11 +213,16 @@
 (defn insert-at-index
   [objects index ids]
   (let [[before after] (split-at index objects)
-        p? (set ids)]
-    (d/concat []
-              (remove p? before)
-              ids
-              (remove p? after))))
+        p?      (complement (set ids))
+        before' (filterv p? before)
+        after'  (filterv p? after)]
+
+    (if (and (not= (count before) (count before'))
+             (pos? (count after')))
+      (let [before' (conj before' (first after'))
+            after'  (into [] (rest after'))]
+        (d/concat [] before' ids after'))
+      (d/concat [] before' ids after'))))
 
 (defn append-at-the-end
   [prev-ids ids]

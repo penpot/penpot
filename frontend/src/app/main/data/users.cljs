@@ -81,8 +81,6 @@
           (when-not (contains? ids ctid)
             (swap! storage dissoc ::current-team-id)))))))
 
-
-
 (defn fetch-teams
   []
   (ptk/reify ::fetch-teams
