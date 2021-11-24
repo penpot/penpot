@@ -15,6 +15,13 @@
 - Spelling fixes (by @jsoref) [#1340](https://github.com/penpot/penpot/pull/1340).
 
 
+# 1.10.1-beta
+
+### :bug: Bugs fixed
+
+- Fix problems with team management [#1353](https://github.com/penpot/penpot/issues/1353)
+
+
 ## 1.10.0-beta
 
 ### :boom: Breaking changes
