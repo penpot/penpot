@@ -16,6 +16,7 @@
    [app.main.repo :as rp]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
+   [app.util.timers :as tm]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -402,7 +403,7 @@
                       (uuid? reassign-to)
                       (assoc :reassign-to reassign-to))]
         (->> (rp/mutation! :leave-team params)
-             (rx/tap on-success)
+             (rx/tap #(tm/schedule on-success))
              (rx/catch on-error))))))
 
 (defn invite-team-member

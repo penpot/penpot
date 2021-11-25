@@ -104,6 +104,8 @@
 
 ;; --- Mutation: Leave Team
 
+(declare role->params)
+
 (s/def ::reassign-to ::us/uuid)
 (s/def ::leave-team
   (s/keys :req-un [::profile-id ::id]
@@ -120,7 +122,7 @@
         ;; besides the current profile
         (<= (count members) 1)
         (ex/raise :type :validation
-                  :code :cant-leave-team
+                  :code :no-enough-members-for-leave
                   :context {:members (count members)})
 
         ;; if the `reassign-to` is filled and has a different value
@@ -183,7 +185,6 @@
 ;; --- Mutation: Team Update Role
 
 (declare retrieve-team-member)
-(declare role->params)
 
 (s/def ::team-id ::us/uuid)
 (s/def ::member-id ::us/uuid)
