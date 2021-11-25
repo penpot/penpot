@@ -205,6 +205,7 @@
         (mf/use-callback
          (fn []
            (st/emit! (dd/fetch-files {:project-id project-id})
+                     (dd/fetch-shared-files)
                      (dd/clear-selected-files))))
 
         import-files (use-import-file project-id on-finish-import)
