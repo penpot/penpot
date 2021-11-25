@@ -104,24 +104,51 @@
 
 ;; --- Mutation: Leave Team
 
+(s/def ::reassign-to ::us/uuid)
 (s/def ::leave-team
-  (s/keys :req-un [::profile-id ::id]))
+  (s/keys :req-un [::profile-id ::id]
+          :opt-un [::reassign-to]))
 
 (sv/defmethod ::leave-team
-  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [id profile-id reassign-to]}]
   (db/with-atomic [conn pool]
     (let [perms   (teams/get-permissions conn profile-id id)
           members (teams/retrieve-team-members conn id)]
 
-      (when (:is-owner perms)
+      (cond
+        ;; we can only proceed if there are more members in the team
+        ;; besides the current profile
+        (<= (count members) 1)
+        (ex/raise :type :validation
+                  :code :cant-leave-team
+                  :context {:members (count members)})
+
+        ;; if the `reassign-to` is filled and has a different value
+        ;; than the current profile-id, we proceed to reassing the
+        ;; owner role to profile identified by the `reassign-to`.
+        (and reassign-to (not= reassign-to profile-id))
+        (let [member (d/seek #(= reassign-to (:id %)) members)]
+          (when-not member
+            (ex/raise :type :not-found :code :member-does-not-exist))
+
+          ;; unasign owner role to current profile
+          (db/update! conn :team-profile-rel
+                      {:is-owner false}
+                      {:team-id id
+                       :profile-id profile-id})
+
+          ;; assign owner role to new profile
+          (db/update! conn :team-profile-rel
+                      (role->params :owner)
+                      {:team-id id :profile-id reassign-to}))
+
+        ;; and finally, if all other conditions does not match and the
+        ;; current profile is owner, we dont allow it because there
+        ;; must always be an owner.
+        (:is-owner perms)
         (ex/raise :type :validation
                   :code :owner-cant-leave-team
                   :hint "releasing owner before leave"))
-
-      (when-not (> (count members) 1)
-        (ex/raise :type :validation
-                  :code :cant-leave-team
-                  :context {:members (count members)}))
 
       (db/delete! conn :team-profile-rel
                   {:profile-id profile-id
