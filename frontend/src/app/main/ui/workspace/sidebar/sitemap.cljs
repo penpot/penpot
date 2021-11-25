@@ -83,7 +83,7 @@
         on-drop
         (mf/use-callback
          (mf/deps id index)
-         (fn [side {:keys [id] :as data}]
+         (fn [_side {:keys [id] :as data}]
            (st/emit! (dw/relocate-page id index))))
 
         on-duplicate

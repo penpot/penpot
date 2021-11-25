@@ -7,9 +7,7 @@
 (ns app.main.ui.dashboard
   (:require
    [app.common.spec :as us]
-   [app.config :as cf]
    [app.main.data.dashboard :as dd]
-   [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -22,7 +20,6 @@
    [app.main.ui.dashboard.search :refer [search-page]]
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
    [app.main.ui.dashboard.team :refer [team-settings-page team-members-page]]
-   [app.util.timers :as tm]
    [rumext.alpha :as mf]))
 
 (defn ^boolean uuid-str?

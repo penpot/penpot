@@ -7,7 +7,6 @@
 (ns app.main.ui.onboarding.questions
   "External form for onboarding questions."
   (:require
-   [app.config :as cf]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.util.dom :as dom]
@@ -18,15 +17,12 @@
 (defn load-arengu-sdk
   [container-ref email form-id]
   (letfn [(on-init []
-            (let [container (mf/ref-val container-ref)
-                  params    #js {:email email}]
+            (let [container (mf/ref-val container-ref)]
               (-> (.embed js/ArenguForms form-id container)
-                  (p/then (fn [form]
-                            (.setHiddenField ^js form "email" email))))))
+                  (p/then (fn [form] (.setHiddenField ^js form "email" email))))))
 
-          (on-submit-success [event]
-            (st/emit! (du/mark-questions-as-answered)))
-          ]
+          (on-submit-success [_]
+            (st/emit! (du/mark-questions-as-answered)))]
 
     (let [script (dom/create-element "script")
           head   (unchecked-get js/document "head")

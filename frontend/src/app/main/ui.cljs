@@ -18,6 +18,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.main.ui.onboarding]
+   [app.main.ui.onboarding.questions]
    [app.main.ui.releases]
    [app.main.ui.render :as render]
    [app.main.ui.settings :as settings]

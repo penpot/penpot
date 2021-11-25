@@ -12,7 +12,6 @@
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.media :as di]
-   [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
@@ -345,7 +344,7 @@
   ([{:keys [version]}]
    (ptk/reify ::mark-onboarding-as-viewed
      ptk/WatchEvent
-     (watch [_ state _]
+     (watch [_ _ _]
        (let [version (or version (:main @cf/version))
              props   {:onboarding-viewed true
                       :release-notes-viewed version}]
