@@ -23,7 +23,7 @@
                   (fn []
                     (let [profile (deref refs/profile)]
                       (if (du/is-authenticated? profile)
-                        (let [team-id (du/get-current-team-id profile)]
+                        (let [team-id (:default-team-id profile)]
                           (st/emit! (rt/nav :dashboard-projects {:team-id team-id})))
                         (st/emit! (rt/nav :auth-login {}))))))]
 
