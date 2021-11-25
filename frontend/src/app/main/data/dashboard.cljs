@@ -237,13 +237,14 @@
             (update :dashboard-files d/merge files))))))
 
 (defn fetch-recent-files
-  []
-  (ptk/reify ::fetch-recent-files
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/query :team-recent-files {:team-id team-id})
-             (rx/map recent-files-fetched))))))
+  ([] (fetch-recent-files nil))
+  ([team-id]
+   (ptk/reify ::fetch-recent-files
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [team-id (or team-id (:current-team-id state))]
+         (->> (rp/query :team-recent-files {:team-id team-id})
+              (rx/map recent-files-fetched)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Selection

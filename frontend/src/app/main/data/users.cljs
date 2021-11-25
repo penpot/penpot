@@ -154,7 +154,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [team-id (get-current-team-id profile)]
+      (let [team-id (:default-team-id profile)]
         (->> (rx/concat
               (rx/of (profile-fetched profile)
                      (fetch-teams))
@@ -184,7 +184,12 @@
              (rx/map (fn [profile]
                        (with-meta profile
                          {::ev/source "login"})))
-             (rx/map logged-in))))))
+             (rx/map logged-in)
+             (rx/observe-on :async))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (reset! storage {}))))
 
 (defn login-from-token
   [{:keys [profile] :as tdata}]
