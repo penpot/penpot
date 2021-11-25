@@ -27,8 +27,8 @@
 (def resize-point-circle-radius 10)
 (def resize-point-rect-size 8)
 (def resize-side-height 8)
-(def selection-rect-color-normal "#1FDEA7")
-(def selection-rect-color-component "#00E0FF")
+(def selection-rect-color-normal "var(--color-select)")
+(def selection-rect-color-component "var(--color-component-highlight)")
 (def selection-rect-width 1)
 (def min-selrect-side 10)
 (def small-selrect-side 30)
@@ -149,7 +149,7 @@
                :style {:fillOpacity "1"
                        :strokeWidth "1px"
                        :vectorEffect "non-scaling-stroke"}
-               :fill "#FFFFFF"
+               :fill "var(--color-white)"
                :stroke (if (and (= position :bottom-right) overflow-text) "red" color)
                :cx cx'
                :cy cy'}]

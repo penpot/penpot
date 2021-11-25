@@ -39,7 +39,7 @@
       [:rect.main {:x x :y y
                    :width width
                    :height height
-                   :style {:stroke "#1FDEA7"
+                   :style {:stroke "var(--color-select)"
                            :fill "none"
                            :stroke-width (/ 1 zoom)}}])))
 

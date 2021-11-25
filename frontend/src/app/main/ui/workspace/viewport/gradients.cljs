@@ -22,14 +22,14 @@
    [rumext.alpha :as mf]))
 
 (def gradient-line-stroke-width 2)
-(def gradient-line-stroke-color "white")
+(def gradient-line-stroke-color "var(--color-white)")
 (def gradient-square-width 15)
 (def gradient-square-radius 2)
 (def gradient-square-stroke-width 2)
 (def gradient-width-handler-radius 5)
-(def gradient-width-handler-color "white")
-(def gradient-square-stroke-color "white")
-(def gradient-square-stroke-color-selected "#1FDEA7")
+(def gradient-width-handler-color "var(--color-white)")
+(def gradient-square-stroke-color "var(--color-white)")
+(def gradient-square-stroke-color-selected "var(--color-select)")
 
 (def editing-spot-ref
   (l/derived (l/in [:workspace-local :editing-stop]) st/state))
@@ -115,7 +115,7 @@
            :rx (/ gradient-square-radius zoom)
            :width (/ gradient-square-width zoom)
            :height (/ gradient-square-width zoom)
-           :stroke (if selected "#31EFB8" "white")
+           :stroke (if selected "var(--color-primary)" "var(--color-white)")
            :stroke-width (/ gradient-square-stroke-width zoom)
            :fill (:value color)
            :fill-opacity (:opacity color)

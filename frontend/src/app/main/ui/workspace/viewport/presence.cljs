@@ -22,7 +22,7 @@
   [{:keys [session profile] :as props}]
   (let [zoom      (mf/deref refs/selected-zoom)
         point     (:point session)
-        color     (:color session "#000000")
+        color     (:color session "var(--color-black)")
         transform (str/fmt "translate(%s, %s) scale(%s)" (:x point) (:y point) (/ 4 zoom))]
     [:g.multiuser-cursor {:transform transform}
      [:path {:fill color
@@ -43,7 +43,7 @@
               :width 25
               :height 5
               :overflow "hidden"
-              :fill "#fff"
+              :fill "var(--color-white)"
               :stroke-width 1
               :font-family "Works Sans"
               :font-size 3

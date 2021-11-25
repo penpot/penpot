@@ -47,8 +47,8 @@
         (.translate dctx 0 txfm))
 
       (obj/set! dctx "font" "12px worksans")
-      (obj/set! dctx "fillStyle" "#7B7D85")
-      (obj/set! dctx "strokeStyle" "#7B7D85")
+      (obj/set! dctx "fillStyle" "var(--color-gray-30)")
+      (obj/set! dctx "strokeStyle" "var(--color-gray-30)")
       (obj/set! dctx "textAlign" "center")
 
       (loop [i minv]

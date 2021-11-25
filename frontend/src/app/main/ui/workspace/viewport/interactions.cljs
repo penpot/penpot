@@ -116,7 +116,7 @@
       (when icon-pdata
         [:path {:fill stroke
                 :stroke-width 2
-                :stroke "#FFFFFF"
+                :stroke "var(--color-white)"
                 :d icon-pdata
                 :transform (str
                              "scale(" inv-zoom ", " inv-zoom ") "
@@ -149,7 +149,7 @@
 
     (if-not selected?
       [:g {:on-mouse-down #(on-mouse-down % index orig-shape)}
-       [:path {:stroke "#B1B2B5"
+       [:path {:stroke "var(--color-gray-20)"
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
@@ -158,13 +158,13 @@
          [:& interaction-marker {:index index
                                  :x dest-x
                                  :y dest-y
-                                 :stroke "#B1B2B5"
+                                 :stroke "var(--color-gray-20)"
                                  :action-type action-type
                                  :arrow-dir arrow-dir
                                  :zoom zoom}])]
 
       [:g {:on-mouse-down #(on-mouse-down % index orig-shape)}
-       [:path {:stroke "#31EFB8"
+       [:path {:stroke "var(--color-primary)"
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
@@ -172,17 +172,17 @@
 
        (when dest-shape
          [:& outline {:shape dest-shape
-                      :color "#31EFB8"}])
+                      :color "var(--color-primary)"}])
 
        [:& interaction-marker {:index index
                                :x orig-x
                                :y orig-y
-                               :stroke "#31EFB8"
+                               :stroke "var(--color-primary)"
                                :zoom zoom}]
        [:& interaction-marker {:index index
                                :x dest-x
                                :y dest-y
-                               :stroke "#31EFB8"
+                               :stroke "var(--color-primary)"
                                :action-type action-type
                                :arrow-dir arrow-dir
                                :zoom zoom}]])))
@@ -196,7 +196,7 @@
     [:g {:on-mouse-down #(on-mouse-down % index shape)}
      [:& interaction-marker {:x handle-x
                              :y handle-y
-                             :stroke "#31EFB8"
+                             :stroke "var(--color-primary)"
                              :action-type :navigate
                              :arrow-dir :right
                              :zoom zoom}]]))
@@ -217,8 +217,8 @@
         [:g {:on-mouse-down start-move-position
              :on-mouse-enter #(reset! hover-disabled? true)
              :on-mouse-leave #(reset! hover-disabled? false)}
-         [:path {:stroke "#31EFB8"
-                 :fill "#000000"
+         [:path {:stroke "var(--color-primary)"
+                 :fill "var(--color-black)"
                  :fill-opacity 0.3
                  :stroke-width 1
                  :d (str "M" marker-x " " marker-y " "
@@ -232,7 +232,7 @@
          [:circle {:cx (+ marker-x (/ width 2))
                    :cy (+ marker-y (/ height 2))
                    :r 8
-                   :fill "#31EFB8"}]]))))
+                   :fill "var(--color-primary)"}]]))))
 
 (mf/defc interactions
   [{:keys [selected hover-disabled?] :as props}]
