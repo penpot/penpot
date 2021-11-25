@@ -69,6 +69,7 @@
 (d/export helpers/compact-path)
 (d/export helpers/compact-name)
 (d/export helpers/unframed-shape?)
+(d/export helpers/children-seq)
 
 ;; Indices
 (d/export indices/calculate-z-index)

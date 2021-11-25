@@ -18,7 +18,7 @@
 (mf/defc booleans-options
   []
   (let [selected (mf/deref refs/selected-objects)
-        selected-with-children (mf/deref refs/selected-objects-with-children)
+        selected-with-children (mf/deref refs/selected-shapes-with-children)
 
         has-invalid-shapes? (->> selected-with-children
                                  (some (comp #{:frame :text} :type)))

@@ -220,6 +220,7 @@
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform round-coords?]
+  ;; FIXME: Improve performance
   (let [points (-> shape :points (gco/transform-points transform))
         center (gco/center-points points)
 
@@ -491,17 +492,20 @@
 
   ([shape {:keys [round-coords?]
            :or {round-coords? true}}]
-   (let [shape     (apply-displacement shape)
-         center    (gco/center-shape shape)
-         modifiers (:modifiers shape)]
-     (if (and modifiers center)
-       (let [transform (modifiers->transform center modifiers)]
-         (-> shape
-             (set-flip modifiers)
-             (apply-transform transform round-coords?)
-             (apply-text-resize modifiers)
-             (dissoc :modifiers)))
-       shape))))
+
+   (if (and (contains? shape :modifiers) (empty? (:modifiers shape)))
+     (dissoc shape :modifiers)
+     (let [shape     (apply-displacement shape)
+           center    (gco/center-shape shape)
+           modifiers (:modifiers shape)]
+       (if (and modifiers center)
+         (let [transform (modifiers->transform center modifiers)]
+           (-> shape
+               (set-flip modifiers)
+               (apply-transform transform round-coords?)
+               (apply-text-resize modifiers)
+               (dissoc :modifiers)))
+         shape)))))
 
 (defn calc-transformed-parent-rect
   [parent parent-modifiers]
