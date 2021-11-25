@@ -397,16 +397,13 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-            team-id (:current-team-id state)]
-        (rx/concat
-         (when (uuid? reassign-to)
-           (->> (rp/mutation! :update-team-member-role {:team-id team-id
-                                                        :role :owner
-                                                        :member-id reassign-to})
-                (rx/ignore)))
-         (->> (rp/mutation! :leave-team {:id team-id})
-              (rx/tap on-success)
-              (rx/catch on-error)))))))
+            team-id (:current-team-id state)
+            params  (cond-> {:id team-id}
+                      (uuid? reassign-to)
+                      (assoc :reassign-to reassign-to))]
+        (->> (rp/mutation! :leave-team params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))
 
 (defn invite-team-member
   [{:keys [email role] :as params}]
