@@ -78,7 +78,7 @@
     (re-seq #"(?i)(?:extra\s*bold|ultra\s*bold)" variant)   800
     (re-seq #"(?i)(?:bold)" variant)                        700
     (re-seq #"(?i)(?:extra\s*black|ultra\s*black)" variant) 950
-    (re-seq #"(?i)(?:black|heavy)" variant)                 900
+    (re-seq #"(?i)(?:black|heavy|solid)" variant)           900
     :else                                                   400))
 
 (defn parse-font-style
