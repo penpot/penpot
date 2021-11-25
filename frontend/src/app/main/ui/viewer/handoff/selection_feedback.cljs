@@ -14,7 +14,7 @@
 ;; CONSTANTS
 ;; ------------------------------------------------
 
-(def select-color "#1FDEA7")
+(def select-color "var(--color-select)")
 (def selection-rect-width 1)
 (def select-guide-width 1)
 (def select-guide-dasharray 5)

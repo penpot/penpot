@@ -81,11 +81,11 @@
 
      [:div.selected-colors
       (when (= selected-library :file)
-        [:div.color-bullet.button.plus-button {:style {:background-color "white"}
+        [:div.color-bullet.button.plus-button {:style {:background-color "var(--color-white)"}
                                                :on-click on-add-library-color}
          i/plus])
 
-      [:div.color-bullet.button {:style {:background-color "white"}
+      [:div.color-bullet.button {:style {:background-color "var(--color-white)"}
                                  :on-click #(st/emit! (dc/show-palette selected-library))}
        i/palette]
 

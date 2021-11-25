@@ -65,7 +65,7 @@
              :y (- (:y bounding-box) 5)
              :font-size 10
              :fill line-color
-             :stroke "white"
+             :stroke "var(--color-white)"
              :stroke-width 0.1}
       (str/format "%s - (%s, %s)" (str/slice (str (:id shape)) 0 8) (fixed (:x bounding-box)) (fixed (:y bounding-box)))]
 

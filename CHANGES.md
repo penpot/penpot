@@ -4,6 +4,9 @@
 
 ### :boom: Breaking changes
 ### :sparkles: New features
+
+- Add contrast between component select color and shape select color [Taiga #2121](https://tree.taiga.io/project/penpot/issue/2121).
+
 ### :bug: Bugs fixed
 
 - Fix masked group resize strange behavior [Taiga #2317](https://tree.taiga.io/project/penpot/issue/2317).

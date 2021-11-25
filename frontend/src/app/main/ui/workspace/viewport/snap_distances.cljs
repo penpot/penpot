@@ -17,7 +17,7 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
-(def ^:private line-color "#D383DA")
+(def ^:private line-color "var(--color-snap)")
 (def ^:private segment-gap 2)
 (def ^:private segment-gap-side 5)
 
@@ -79,7 +79,7 @@
         [:text {:x (if (= coord :x) x (+ x (/ width 2)))
                 :y (- (+ y (/ (/ pill-text-height zoom) 2) (- (/ 6 zoom))) (if (= coord :x) (/ 2 zoom) 0))
                 :font-size (/ pill-text-font-size zoom)
-                :fill "white"
+                :fill "var(--color-white)"
                 :text-anchor "middle"}
          (mth/precision distance 0)]])
 

@@ -19,9 +19,9 @@
   "Default data for page metadata."
   {:grid-x-axis grid-x-axis
    :grid-y-axis grid-y-axis
-   :grid-color "#cccccc"
+   :grid-color "var(--color-gray-20)"
    :grid-alignment true
-   :background "#ffffff"})
+   :background "var(--color-white)"})
 
 (def zoom-levels
   [0.01 0.03 0.05 0.07 0.09 0.10 0.11 0.13 0.15 0.18
