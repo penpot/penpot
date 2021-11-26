@@ -74,9 +74,8 @@
      nil)])
 
 (mf/defc dashboard
-  [{:keys [route] :as props}]
-  (let [profile      (mf/deref refs/profile)
-        section      (get-in route [:data :name])
+  [{:keys [route profile] :as props}]
+  (let [section      (get-in route [:data :name])
         params       (parse-params route)
 
         project-id   (:project-id params)
