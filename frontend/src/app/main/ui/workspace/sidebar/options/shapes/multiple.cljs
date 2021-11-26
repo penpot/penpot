@@ -153,7 +153,7 @@
 (defn empty-map [keys]
   (into {} (map #(hash-map % nil)) keys))
 
-(defn get-attrs
+(defn get-attrs*
   "Given a `type` of options that we want to extract and the shapes to extract them from
   returns a list of tuples [id, values] with the extracted properties for the shapes that
   applies (some of them ignore some attributes)"
@@ -182,10 +182,12 @@
                                            (select-keys txt/default-text-attrs attrs)
                                            (attrs/get-attrs-multi (txt/node-seq content) attrs))))]
               :children (let [children (->> (:shapes shape []) (map #(get objects %)))
-                              [new-ids new-values] (get-attrs children objects attr-type)]
+                              [new-ids new-values] (get-attrs* children objects attr-type)]
                           [(into ids new-ids) (merge-attrs values new-values)])
               [])))]
     (reduce extract-attrs [[] []] shapes)))
+
+(def get-attrs (memoize get-attrs*))
 
 (mf/defc options
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children"]))]

@@ -154,11 +154,12 @@
 (defn transform-point-center
   "Transform a point around the shape center"
   [point center matrix]
-  (gpt/transform
-   point
-   (gmt/multiply (gmt/translate-matrix center)
-                 matrix
-                 (gmt/translate-matrix (gpt/negate center)))))
+  (when point
+    (gpt/transform
+     point
+     (gmt/multiply (gmt/translate-matrix center)
+                   matrix
+                   (gmt/translate-matrix (gpt/negate center))))))
 
 (defn transform-rect
   "Transform a rectangles and changes its attributes"
@@ -343,6 +344,10 @@
 ;;   tells if the resize vectors must be applied to text shapes
 ;;   or not.
 
+(defn empty-modifiers? [modifiers]
+  (or (nil? modifiers)
+      (empty? (d/without-keys modifiers [:ignore-geometry?]))))
+
 (defn resize-modifiers
   [shape attr value]
   (us/assert map? shape)
@@ -464,7 +469,7 @@
             modifiers (dissoc modifiers :displacement)]
         (-> shape
             (assoc :modifiers modifiers)
-            (cond-> (empty? modifiers)
+            (cond-> (empty-modifiers? modifiers)
               (dissoc :modifiers))))
       shape)))
 
@@ -492,13 +497,12 @@
 
   ([shape {:keys [round-coords?]
            :or {round-coords? true}}]
-
-   (if (and (contains? shape :modifiers) (empty? (:modifiers shape)))
+   (if (and (contains? shape :modifiers) (empty-modifiers? (:modifiers shape)))
      (dissoc shape :modifiers)
      (let [shape     (apply-displacement shape)
            center    (gco/center-shape shape)
            modifiers (:modifiers shape)]
-       (if (and modifiers center)
+       (if (and (not (empty-modifiers? modifiers)) center)
          (let [transform (modifiers->transform center modifiers)]
            (-> shape
                (set-flip modifiers)
@@ -508,31 +512,43 @@
          shape)))))
 
 (defn calc-transformed-parent-rect
-  [parent parent-modifiers]
-  (:selrect parent)
-  ;; FIXME: Improve performance
-  (let [parent-rect             (:selrect parent)
-        parent-displacement (-> (gpt/point 0 0)
-                                (gpt/transform (get parent-modifiers :displacement (gmt/matrix)))
-                                (gpt/transform (:resize-transform-inverse parent-modifiers (gmt/matrix)))
-                                (gmt/translate-matrix))
-        parent-origin       (-> (:resize-origin parent-modifiers)
-                                ((d/nilf transform-point-center)
-                                 (gco/center-shape parent)
-                                 (:resize-transform-inverse parent-modifiers (gmt/matrix))))
-        parent-origin-2     (-> (:resize-origin-2 parent-modifiers)
-                                ((d/nilf transform-point-center)
-                                 (gco/center-shape parent)
-                                 (:resize-transform-inverse parent-modifiers (gmt/matrix))))
-        parent-vector       (get parent-modifiers :resize-vector (gpt/point 1 1))
-        parent-vector-2     (get parent-modifiers :resize-vector-2 (gpt/point 1 1))]
+  [{:keys [selrect] :as shape} {:keys [displacement resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]
 
-    (-> parent-rect
+  (let [resize-transform-inverse (or resize-transform-inverse (gmt/matrix))
+
+        displacement
+        (when (some? displacement)
+          (-> (gpt/point 0 0)
+              (gpt/transform displacement)
+              (gpt/transform resize-transform-inverse)
+              (gmt/translate-matrix)))
+
+        resize-origin
+        (when (some? resize-origin)
+          (transform-point-center resize-origin (gco/center-shape shape) resize-transform-inverse))
+
+        resize-origin-2
+        (when (some? resize-origin-2)
+          (transform-point-center resize-origin-2 (gco/center-shape shape) resize-transform-inverse))]
+
+    (if (and (nil? displacement) (nil? resize-origin) (nil? resize-origin-2))
+      selrect
+
+      (cond-> selrect
+        :always
         (gpr/rect->points)
-        (gco/transform-points parent-displacement)
-        (gco/transform-points parent-origin (gmt/scale-matrix parent-vector))
-        (gco/transform-points parent-origin-2 (gmt/scale-matrix parent-vector-2))
-        (gpr/points->selrect))))
+
+        (some? displacement)
+        (gco/transform-points displacement)
+
+        (some? resize-origin)
+        (gco/transform-points resize-origin (gmt/scale-matrix resize-vector))
+
+        (some? resize-origin-2)
+        (gco/transform-points resize-origin-2 (gmt/scale-matrix resize-vector-2))
+
+        :always
+        (gpr/points->selrect)))))
 
 (defn calc-child-modifiers
   "Given the modifiers to apply to the parent, calculate the corresponding

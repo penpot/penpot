@@ -56,8 +56,7 @@
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
   (->> shapes
-       (gtr/transform-shape)
-       (map (comp gpr/points->selrect :points))
+       (map (comp gpr/points->selrect :points gtr/transform-shape))
        (gpr/join-selrects)))
 
 (defn translate-to-frame

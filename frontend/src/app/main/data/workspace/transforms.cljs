@@ -248,8 +248,12 @@
 
             (cond-> modif-tree
               (not (empty? (d/without-keys child-modifiers [:ignore-geometry?])))
-              (set-modifiers-new*
-               objects child child-modifiers root transformed-root ignore-constraints))))
+              (set-modifiers-recursive objects
+                                       child
+                                       child-modifiers
+                                       root
+                                       transformed-root
+                                       ignore-constraints))))
 
         modif-tree
         (-> modif-tree
