@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.svg-raw
   (:require
+   [app.common.colors :as clr]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
@@ -64,7 +65,7 @@
                               (get-in shape [:content :attrs :style :stroke]))
                           (parse-color))
 
-        stroke-color (:color color "#000000")
+        stroke-color (:color color clr/black)
         stroke-opacity (:opacity color 1)
         stroke-style (-> (or (get-in shape [:content :attrs :stroke-style])
                              (get-in shape [:content :attrs :style :stroke-style])

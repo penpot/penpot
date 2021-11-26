@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.stroke
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.math :as math]
    [app.common.pages.spec :as spec]
@@ -181,7 +182,7 @@
         (fn [_]
           (st/emit! (dch/update-shapes ids #(assoc %
                                                    :stroke-style :solid
-                                                   :stroke-color "#000000"
+                                                   :stroke-color clr/black
                                                    :stroke-opacity 1
                                                    :stroke-width 1))))
 

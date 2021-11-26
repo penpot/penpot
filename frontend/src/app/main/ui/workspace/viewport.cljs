@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.main.refs :as refs]
@@ -65,7 +66,7 @@
         objects           (mf/use-memo
                            (mf/deps objects object-modifiers)
                            #(gsh/merge-modifiers objects object-modifiers))
-        background        (get options :background "#E8E9EA")
+        background        (get options :background clr/canvas)
 
         ;; STATE
         alt?              (mf/use-state false)

@@ -7,6 +7,7 @@
 (ns app.main.exports
   "The main logic for SVG export functionality."
   (:require
+   [app.common.colors :as clr]
    [app.common.geom.align :as gal]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -32,7 +33,7 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
-(def ^:private default-color "#E8E9EA") ;; $color-canvas
+(def ^:private default-color clr/canvas)
 
 (mf/defc background
   [{:keys [vbox color]}]

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.shadow
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -25,7 +26,7 @@
   (let [id (uuid/next)]
     {:id id
      :style :drop-shadow
-     :color {:color "#000000" :opacity 0.2}
+     :color {:color clr/black :opacity 0.2}
      :offset-x 4
      :offset-y 4
      :blur 4

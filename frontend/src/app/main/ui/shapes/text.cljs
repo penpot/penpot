@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.text
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
    [app.main.ui.context :as muc]
@@ -135,7 +136,7 @@
              (filter some?))
 
         colors (->> color-data
-                    (into #{"#000000"}
+                    (into #{clr/black}
                           (comp (filter #(= :solid (:type %)))
                                 (map :hex))))
 

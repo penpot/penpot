@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.page
   "Page options menu entries."
   (:require
+   [app.common.colors :as clr]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
@@ -38,7 +39,7 @@
       [:& color-row {:disable-gradient true
                      :disable-opacity true
                      :title (tr "workspace.options.canvas-background")
-                     :color {:color (get options :background "#E8E9EA")
+                     :color {:color (get options :background clr/canvas)
                              :opacity 1}
                      :on-change on-change
                      :on-open on-open

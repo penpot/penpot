@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.grid
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
@@ -18,7 +19,7 @@
 
 (defonce ^:private default-square-params
   {:size 16
-   :color {:color "#59B9E2"
+   :color {:color clr/info
            :opacity 0.4}})
 
 (defonce ^:private default-layout-params
@@ -27,7 +28,7 @@
    :item-length nil
    :gutter 8
    :margin 0
-   :color {:color "#DE4762"
+   :color {:color clr/default-layout
            :opacity 0.1}})
 
 (defonce default-grid-params
