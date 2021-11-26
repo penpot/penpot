@@ -1,5 +1,6 @@
 (ns app.components-sync-test
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
@@ -24,7 +25,7 @@
                       (thp/sample-page)
                       (thp/sample-shape :shape1 :rect
                                         {:name "Rect 1"
-                                         :fill-color "#ffffff"
+                                         :fill-color clr/white
                                          :fill-opacity 1})
                       (thp/make-component :instance1
                                           [(thp/id :shape1)]))
@@ -33,7 +34,7 @@
             instance1 (thp/get-shape state :instance1)
 
             update-shape (fn [shape]
-                           (merge shape {:fill-color "#fabada"
+                           (merge shape {:fill-color clr/test
                                          :fill-opacity 0.5}))]
 
         (->> state
@@ -50,10 +51,10 @@
 
                        file (dwlh/get-local-file new-state)]
 
-                   (t/is (= (:fill-color shape1) "#fabada"))
+                   (t/is (= (:fill-color shape1) clr/test))
                    (t/is (= (:fill-opacity shape1) 0.5))
                    (t/is (= (:touched shape1) #{:fill-group}))
-                   (t/is (= (:fill-color c-shape1) "#ffffff"))
+                   (t/is (= (:fill-color c-shape1) clr/white))
                    (t/is (= (:fill-opacity c-shape1) 1))
                    (t/is (= (:touched c-shape1) nil)))))
 
@@ -74,7 +75,7 @@
                       (thp/sample-page)
                       (thp/sample-shape :shape1 :rect
                                         {:name "Rect 1"
-                                         :fill-color "#ffffff"
+                                         :fill-color clr/white
                                          :fill-opacity 1})
                       (thp/make-component :instance1
                                           [(thp/id :shape1)]))
@@ -83,7 +84,7 @@
             instance1 (thp/get-shape state :instance1)
 
             update-shape (fn [shape]
-                           (merge shape {:fill-color "#fabada"
+                           (merge shape {:fill-color clr/test
                                          :fill-opacity 0.5}))]
 
         (->> state
@@ -104,10 +105,10 @@
 
                        file (dwlh/get-local-file new-state)]
 
-                   (t/is (= (:fill-color shape1) "#ffffff"))
+                   (t/is (= (:fill-color shape1) clr/white))
                    (t/is (= (:fill-opacity shape1) 1))
                    (t/is (= (:touched shape1) nil))
-                   (t/is (= (:fill-color c-shape1) "#ffffff"))
+                   (t/is (= (:fill-color c-shape1) clr/white))
                    (t/is (= (:fill-opacity c-shape1) 1))
                    (t/is (= (:touched c-shape1) nil)))))
 

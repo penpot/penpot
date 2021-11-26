@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.colorpicker
   (:require
+   [app.common.colors :as clr]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
@@ -49,7 +50,7 @@
 ;; --- Color Picker Modal
 
 (defn color->components [value opacity]
-  (let [value (if (uc/hex? value) value "#000000")
+  (let [value (if (uc/hex? value) value clr/black)
         [r g b] (uc/hex->rgb value)
         [h s v] (uc/hex->hsv value)]
 

@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.colors
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
@@ -203,7 +204,7 @@
           (-> state
               (assoc-in [:workspace-local :picking-color?] true)
               (assoc ::md/modal {:id (random-uuid)
-                                 :data {:color "#000000" :opacity 1}
+                                 :data {:color clr/black :opacity 1}
                                  :type :colorpicker
                                  :props {:on-change handle-change-color}
                                  :allow-click-outside true})))))))
