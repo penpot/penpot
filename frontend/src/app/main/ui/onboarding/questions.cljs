@@ -17,7 +17,7 @@
 (defn load-arengu-sdk
   [container-ref email form-id]
   (letfn [(on-init []
-            (let [container (mf/ref-val container-ref)]
+            (when-let [container (mf/ref-val container-ref)]
               (-> (.embed js/ArenguForms form-id container)
                   (p/then (fn [form] (.setHiddenField ^js form "email" email))))))
 

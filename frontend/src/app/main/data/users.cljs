@@ -7,6 +7,7 @@
 (ns app.main.data.users
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -90,6 +91,8 @@
 
 ;; --- EVENT: fetch-profile
 
+(declare logout)
+
 (def profile-fetched?
   (ptk/type? ::profile-fetched))
 
@@ -102,18 +105,18 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc :profile-id id)
-          (assoc :profile profile)))
+      (cond-> state
+        (is-authenticated? profile)
+        (-> (assoc :profile-id id)
+            (assoc :profile profile))))
 
     ptk/EffectEvent
     (effect [_ state _]
-      (let [profile (:profile state)]
-        (when (not= uuid/zero (:id profile))
-          (swap! storage assoc :profile profile)
-          (i18n/set-locale! (:lang profile))
-          (some-> (:theme profile)
-                  (theme/set-current-theme!)))))))
+      (when-let [profile (:profile state)]
+        (swap! storage assoc :profile profile)
+        (i18n/set-locale! (:lang profile))
+        (some-> (:theme profile)
+                (theme/set-current-theme!))))))
 
 (defn fetch-profile
   []
@@ -154,38 +157,65 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [team-id (:default-team-id profile)]
-        (->> (rx/concat
-              (rx/of (profile-fetched profile)
-                     (fetch-teams))
-              (->> (rx/of (rt/nav' :dashboard-projects {:team-id team-id}))
-                   (rx/delay 1000)))
-             (rx/observe-on :async))))))
+      (when (is-authenticated? profile)
+        (let [team-id (:default-team-id profile)]
+          (->> (rx/of (profile-fetched profile)
+                      (fetch-teams)
+                      (rt/nav' :dashboard-projects {:team-id team-id}))
+               (rx/observe-on :async)))))))
 
 (s/def ::login-params
   (s/keys :req-un [::email ::password]))
+
+(declare login-from-register)
 
 (defn login
   [{:keys [email password] :as data}]
   (us/verify ::login-params data)
   (ptk/reify ::login
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ _ stream]
       (let [{:keys [on-error on-success]
              :or {on-error rx/throw
                   on-success identity}} (meta data)
             params {:email email
                     :password password
                     :scope "webapp"}]
-        (->> (rx/timer 100)
-             (rx/mapcat #(rp/mutation :login params))
-             (rx/tap on-success)
-             (rx/catch on-error)
-             (rx/map (fn [profile]
-                       (with-meta profile
-                         {::ev/source "login"})))
-             (rx/map logged-in)
-             (rx/observe-on :async))))
+
+        ;; NOTE: We can't take the profile value from login because
+        ;; there are cases when login is successfull but the cookie is
+        ;; not set properly (because of possible misconfiguration).
+        ;; So, we proceed to make an additional call to fetch the
+        ;; profile, and ensure that cookie is set correctly. If
+        ;; profile fetch is successful, we mark the user logged in, if
+        ;; the returned profile is an NOT authenticated profile, we
+        ;; proceed to logout and show an error message.
+
+        (rx/merge
+         (->> (rp/mutation :login params)
+              (rx/map fetch-profile)
+              (rx/catch on-error))
+
+         (->> stream
+              (rx/filter profile-fetched?)
+              (rx/take 1)
+              (rx/map deref)
+              (rx/filter (complement is-authenticated?))
+              (rx/tap on-error)
+              (rx/map #(ex/raise :type :authentication))
+              (rx/observe-on :async))
+
+         (->> stream
+              (rx/filter profile-fetched?)
+              (rx/take 1)
+              (rx/map deref)
+              (rx/filter is-authenticated?)
+              (rx/map (fn [profile]
+                        (with-meta profile
+                          {::ev/source "login"})))
+              (rx/tap on-success)
+              (rx/map logged-in)
+              (rx/observe-on :async)))))
 
     ptk/EffectEvent
     (effect [_ _ _]

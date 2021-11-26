@@ -73,29 +73,30 @@
         :dashboard-font-providers
         :dashboard-team-members
         :dashboard-team-settings)
-       (when profile
-         (let [props (:props profile)]
-           [:*
-            #_[:div.modal-wrapper
-               #_[:& app.main.ui.onboarding/onboarding-templates-modal]
-               [:& app.main.ui.onboarding/onboarding-modal]
-               #_[:& app.main.ui.onboarding/onboarding-team-modal]
-               ]
-            (cond
-              (and cf/onboarding-form-id
-                   (not (:onboarding-questions-answered props false)))
-              [:& app.main.ui.onboarding.questions/questions
-               {:profile profile
-                :form-id cf/onboarding-form-id}]
 
-              (not (:onboarding-viewed props))
-              [:& app.main.ui.onboarding/onboarding-modal {}]
+       [:*
+        #_[:div.modal-wrapper
+           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
+           #_[:& app.main.ui.onboarding/onboarding-modal]
+           #_[:& app.main.ui.onboarding/onboarding-team-modal]
+           ]
+        (when-let [props (some-> profile (get :props {}))]
+          (cond
+            (and cf/onboarding-form-id
+                 (not (:onboarding-questions-answered props false)))
+            [:& app.main.ui.onboarding.questions/questions
+             {:profile profile
+              :form-id cf/onboarding-form-id}]
 
-              (and (:onboarding-viewed props)
-                   (not= (:release-notes-viewed props) (:main @cf/version))
-                   (not= "0.0" (:main @cf/version)))
-              [:& app.main.ui.releases/release-notes-modal {}])
-            [:& dashboard {:route route}]]))
+            (not (:onboarding-viewed props))
+            [:& app.main.ui.onboarding/onboarding-modal {}]
+
+            (and (:onboarding-viewed props)
+                 (not= (:release-notes-viewed props) (:main @cf/version))
+                 (not= "0.0" (:main @cf/version)))
+            [:& app.main.ui.releases/release-notes-modal {}]))
+
+        [:& dashboard {:route route :profile profile}]]
 
        :viewer
        (let [{:keys [query-params path-params]} route

@@ -335,9 +335,9 @@
 ;; --- MUTATION: Logout
 
 (s/def ::logout
-  (s/keys :req-un [::profile-id]))
+  (s/keys :opt-un [::profile-id]))
 
-(sv/defmethod ::logout
+(sv/defmethod ::logout {:auth false}
   [{:keys [session] :as cfg} _]
   (with-meta {}
     {:transform-response (:delete session)}))

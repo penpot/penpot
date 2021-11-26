@@ -88,6 +88,7 @@
                               :credentials credentials
                               :referrerPolicy "no-referrer"
                               :signal signal}]
+
        (-> (js/fetch (str uri) params)
            (p/then (fn [response]
                      (vreset! abortable? false)

@@ -514,7 +514,7 @@
        [:li {:on-click (partial on-click :settings-password)}
         [:span.icon i/lock]
         [:span.text (tr "labels.password")]]
-       [:li {:on-click (partial on-click (du/logout))}
+       [:li {:on-click #(on-click (du/logout) %)}
         [:span.icon i/exit]
         [:span.text (tr "labels.logout")]]
 

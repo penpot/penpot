@@ -3255,3 +3255,6 @@ msgstr "Owner can't leave team, you must reassign the owner role."
 
 msgid "errors.team-leave.insufficient-members"
 msgstr "Insufficient members to leave team, you probably want to delete it."
+
+msgid "errors.auth.unable-to-login"
+msgstr "Unable to login, looks like you are not authenticated."
