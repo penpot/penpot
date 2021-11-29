@@ -9,6 +9,7 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.text :as txt]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
@@ -189,6 +190,14 @@
 
 (def get-attrs (memoize get-attrs*))
 
+(defn basic-shape [_ shape]
+  (cond-> shape
+    :always
+    (dissoc :selrect :points :x :y :width :height :transform :transform-inverse :rotation :svg-transform :svg-viewbox :thumbnail)
+
+    (= (:type shape) :path)
+    (dissoc :content)))
+
 (mf/defc options
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children"]))]
    ::mf/wrap-props false}
@@ -197,18 +206,36 @@
         shapes-with-children (unchecked-get props "shapes-with-children")
         objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
 
-        type :multiple
-        [measure-ids    measure-values]    (get-attrs shapes objects :measure)
-        [layer-ids      layer-values]      (get-attrs shapes objects :layer)
-        [constraint-ids constraint-values] (get-attrs shapes objects :constraint)
-        [fill-ids       fill-values]       (get-attrs shapes objects :fill)
-        [shadow-ids     shadow-values]     (get-attrs shapes objects :shadow)
-        [blur-ids       blur-values]       (get-attrs shapes objects :blur)
-        [stroke-ids     stroke-values]     (get-attrs shapes objects :stroke)
+        ;; Selrect/points only used for measures and it's the one that changes the most. We separate it
+        ;; so we can memoize it
+        objects-no-measures (->> objects (d/mapm basic-shape))
+        objects-no-measures (hooks/use-equal-memo objects-no-measures)
 
-        ;; FIXME: Improve performance
-        [text-ids       text-values]       (get-attrs shapes objects :text)
-        ]
+        type :multiple
+
+        [measure-ids    measure-values]    (get-attrs shapes objects :measure)
+
+        [layer-ids      layer-values
+         constraint-ids constraint-values
+         fill-ids       fill-values
+         shadow-ids     shadow-values
+         blur-ids       blur-values
+         stroke-ids     stroke-values
+         text-ids       text-values]
+
+        (mf/use-memo
+         (mf/deps objects-no-measures)
+         (fn []
+           (into
+            []
+            (mapcat identity)
+            [(get-attrs shapes objects-no-measures :layer)
+             (get-attrs shapes objects-no-measures :constraint)
+             (get-attrs shapes objects-no-measures :fill)
+             (get-attrs shapes objects-no-measures :shadow)
+             (get-attrs shapes objects-no-measures :shadow)
+             (get-attrs shapes objects-no-measures :stroke)
+             (get-attrs shapes objects-no-measures :text)])))]
 
     [:div.options
      (when-not (empty? measure-ids)

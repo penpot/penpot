@@ -59,7 +59,6 @@
       [:& thumbnail {:shape shape}]
       [:rect {:x x :y y :width width :height height :style {:fill (or fill-color "white")}}])))
 
-;; used.
 (defn custom-deferred
   [component]
   (mf/fnc deferred

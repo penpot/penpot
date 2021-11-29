@@ -19,6 +19,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.timers :as ts]
+   [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -205,8 +206,12 @@
     (mf/use-effect
      (mf/deps selected)
      (fn []
-       (when (and (= (count selected) 1) selected?)
-         (.scrollIntoView (mf/ref-val dref) #js {:block "nearest", :behavior "smooth"}))))
+       (let [subid
+             (when (and (= (count selected) 1) selected?)
+               (ts/schedule-on-idle
+                #(.scrollIntoView (mf/ref-val dref) #js {:block "nearest", :behavior "smooth"})))]
+         #(when (some? subid)
+            (rx/dispose! subid)))))
 
     [:li {:on-context-menu on-context-menu
           :ref dref
