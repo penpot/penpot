@@ -83,7 +83,9 @@
         (when-let [props (some-> profile (get :props {}))]
           (cond
             (and cf/onboarding-form-id
-                 (not (:onboarding-questions-answered props false)))
+                 (not (:onboarding-questions-answered props false))
+                 (not (:onboarding-viewed props false)))
+
             [:& app.main.ui.onboarding.questions/questions
              {:profile profile
               :form-id cf/onboarding-form-id}]
