@@ -6,10 +6,9 @@
 
 (ns app.main.ui.static
   (:require
-   [app.main.data.users :as du]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
+   [app.util.globals :as globals]
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.router :as rt]
@@ -19,13 +18,7 @@
   {::mf/wrap-props false}
   [props]
   (let [children (obj/get props "children")
-        on-click (mf/use-callback
-                  (fn []
-                    (let [profile (deref refs/profile)]
-                      (if (du/is-authenticated? profile)
-                        (let [team-id (:default-team-id profile)]
-                          (st/emit! (rt/nav :dashboard-projects {:team-id team-id})))
-                        (st/emit! (rt/nav :auth-login {}))))))]
+        on-click (mf/use-callback #(set! (.-href globals/location) ""))]
 
     [:section.exception-layout
      [:div.exception-header

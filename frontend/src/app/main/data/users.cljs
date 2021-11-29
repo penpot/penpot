@@ -150,18 +150,28 @@
 ;; --- EVENT: login
 
 (defn- logged-in
+  "This is the main event that is executed once we have logged in
+  profile. The profile can proceed from standard login or from
+  accepting invitation, or third party auth signup or singin."
   [profile]
-  (ptk/reify ::logged-in
-    IDeref
-    (-deref [_] profile)
+  (letfn [(get-redirect-event []
+            (if-let [{:keys [data path-params query-params]} (::redirect-to @storage)]
+              (do
+                (swap! storage dissoc ::redirect-to)
+                (rt/nav' (:name data) path-params query-params))
+              (let [team-id (:default-team-id profile)]
+                (rt/nav' :dashboard-projects {:team-id team-id}))))]
 
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (when (is-authenticated? profile)
-        (let [team-id (:default-team-id profile)]
+    (ptk/reify ::logged-in
+      IDeref
+      (-deref [_] profile)
+
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (when (is-authenticated? profile)
           (->> (rx/of (profile-fetched profile)
                       (fetch-teams)
-                      (rt/nav' :dashboard-projects {:team-id team-id}))
+                      (get-redirect-event))
                (rx/observe-on :async)))))))
 
 (s/def ::login-params
@@ -215,11 +225,7 @@
                           {::ev/source "login"})))
               (rx/tap on-success)
               (rx/map logged-in)
-              (rx/observe-on :async)))))
-
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (reset! storage {}))))
+              (rx/observe-on :async)))))))
 
 (defn login-from-token
   [{:keys [profile] :as tdata}]
@@ -247,44 +253,52 @@
             (rx/map (fn [profile]
                       (with-meta profile
                         {::ev/source "register"})))
-            (rx/map logged-in))))))
+            (rx/map logged-in)
+            (rx/observe-on :async))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (swap! storage dissoc ::redirect-to))))
 
 ;; --- EVENT: logout
 
 (defn logged-out
-  []
-  (ptk/reify ::logged-out
-    ptk/UpdateEvent
-    (update [_ state]
-      (select-keys state [:route :router :session-id :history]))
+  ([] (logged-out {}))
+  ([{:keys [capture-redirect?] :or {capture-redirect? false}}]
+   (ptk/reify ::logged-out
+     ptk/UpdateEvent
+     (update [_ state]
+       (select-keys state [:route :router :session-id :history]))
 
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (rt/nav :auth-login)))
+     ptk/WatchEvent
+     (watch [_ _ _]
+       ;; NOTE: We need the `effect` of the current event to be
+       ;; executed before the redirect.
+       (->> (rx/of (rt/nav :auth-login))
+            (rx/observe-on :async)))
 
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (reset! storage {})
-      (i18n/reset-locale))))
+     ptk/EffectEvent
+     (effect [_ state _]
+       (when capture-redirect?
+         (let [route (into {} (:route state))]
+           (reset! storage {::redirect-to route})))
+       (i18n/reset-locale)))))
 
 (defn logout
-  []
-  (ptk/reify ::logout
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/mutation :logout)
-           (rx/delay-at-least 300)
-           (rx/catch (constantly (rx/of 1)))
-           (rx/map logged-out)))))
+  ([] (logout {}))
+  ([params]
+   (ptk/reify ::logout
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (->> (rp/mutation :logout)
+            (rx/delay-at-least 300)
+            (rx/catch (constantly (rx/of 1)))
+            (rx/map #(logged-out params)))))))
 
 ;; --- EVENT: register
 
-;; TODO: remove
-(s/def ::invitation-token ::us/not-empty-string)
-
 (s/def ::register
-  (s/keys :req-un [::fullname ::password ::email]
-          :opt-un [::invitation-token]))
+  (s/keys :req-un [::fullname ::password ::email]))
 
 (defn register
   "Create a register event instance."
@@ -298,7 +312,11 @@
                   on-success identity}} (meta data)]
         (->> (rp/mutation :register-profile data)
              (rx/tap on-success)
-             (rx/catch on-error))))))
+             (rx/catch on-error))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (swap! storage dissoc ::redirect-to))))
 
 ;; --- Update Profile
 

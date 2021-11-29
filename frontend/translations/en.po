@@ -3257,4 +3257,4 @@ msgid "errors.team-leave.insufficient-members"
 msgstr "Insufficient members to leave team, you probably want to delete it."
 
 msgid "errors.auth.unable-to-login"
-msgstr "Unable to login, looks like you are not authenticated."
+msgstr "Looks like you are not authenticated or session expired."
