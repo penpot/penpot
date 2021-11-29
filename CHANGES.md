@@ -18,6 +18,7 @@
 ### :heart: Community contributions by (Thank you!)
 
 - Spelling fixes (by @jsoref) [#1340](https://github.com/penpot/penpot/pull/1340).
+- Explain folders in components (by @candideu) [Penpot-docs #42](https://github.com/penpot/penpot-docs/pull/42).
 
 
 # 1.10.1-beta
@@ -68,6 +69,8 @@
 
 - To the translation community for the hard work on making penpot
   available on so many languages.
+- Guide to integrate with Azure Directory (by @skrzyneckik) [Penpot-docs #33](https://github.com/penpot/penpot-docs/pull/33).
+- Improve libraries section readability (by @PaulSchulz) [Penpot-docs #39](https://github.com/penpot/penpot-docs/pull/39).
 
 ## 1.9.0-alpha
 
