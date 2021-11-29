@@ -37,10 +37,16 @@
   [& {:keys [initial] :as opts}]
   (let [state      (mf/useState 0)
         render     (aget state 1)
-        state-ref  (mf/use-ref {:data (if (fn? initial) (initial) initial)
-                                :errors {}
-                                :touched {}})
-        form       (mf/use-memo #(create-form-mutator state-ref render opts))]
+
+        get-state  (mf/use-callback
+                    (mf/deps initial)
+                    (fn []
+                      {:data (if (fn? initial) (initial) initial)
+                       :errors {}
+                       :touched {}}))
+
+        state-ref  (mf/use-ref (get-state))
+        form       (mf/use-memo (mf/deps initial) #(create-form-mutator state-ref render get-state opts))]
 
     (mf/use-effect
      (mf/deps initial)
@@ -72,7 +78,7 @@
                          (not= cleaned ::s/invalid))))))
 
 (defn- create-form-mutator
-  [state-ref render opts]
+  [state-ref render get-state opts]
   (reify
     IDeref
     (-deref [_]
@@ -80,7 +86,9 @@
 
     IReset
     (-reset! [it new-value]
-      (mf/set-ref-val! state-ref new-value)
+      (if (nil? new-value)
+        (mf/set-ref-val! state-ref (get-state))
+        (mf/set-ref-val! state-ref new-value))
       (render inc))
 
     ISwap

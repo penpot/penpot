@@ -30,8 +30,7 @@
         (mf/use-callback
          (fn [_ _]
            (reset! submitted false)
-           (st/emit! (dm/info (tr "auth.notifications.recovery-token-sent"))
-                     (rt/nav :auth-login))))
+           (st/emit! (dm/info (tr "auth.notifications.recovery-token-sent")))))
 
         on-error
         (mf/use-callback
