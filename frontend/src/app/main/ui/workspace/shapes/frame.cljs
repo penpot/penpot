@@ -14,6 +14,7 @@
    [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.core :as rx]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
 (defn check-frame-props
@@ -47,8 +48,7 @@
         :width (:width shape)
         :height (:height shape)
         ;; DEBUG
-        ;; :style {:filter "sepia(1)"}
-        }])))
+        :style {:filter (when (debug? :thumbnails) "sepia(1)")}}])))
 
 ;; This custom deferred don't defer rendering when ghost rendering is
 ;; used.
