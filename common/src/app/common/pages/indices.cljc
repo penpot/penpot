@@ -12,28 +12,25 @@
    [clojure.set :as set]))
 
 (defn calculate-frame-z-index [z-index frame-id objects]
-  (let [is-frame? (fn [id] (= :frame (get-in objects [id :type])))
+  (let [is-frame?    (fn [id] (= :frame (get-in objects [id :type])))
         frame-shapes (->> objects (vals) (filterv #(= (:frame-id %) frame-id)))
-        children (or (get-in objects [frame-id :shapes]) [])]
+        children     (or (get-in objects [frame-id :shapes]) [])]
 
     (if (empty? children)
       z-index
-
       (loop [current (peek children)
              pending (pop children)
              current-idx (count frame-shapes)
              z-index z-index]
 
-        (let [children (get-in objects [current :shapes])
+        (let [children  (get-in objects [current :shapes])
               is-frame? (is-frame? current)
-              pending (if (not is-frame?)
-                        (d/concat pending children)
-                        pending)]
+              pending   (if (not is-frame?)
+                          (d/concat-vec pending children)
+                          pending)]
 
           (if (empty? pending)
-            (-> z-index
-                (assoc current current-idx))
-
+            (assoc z-index current current-idx)
             (recur (peek pending)
                    (pop pending)
                    (dec current-idx)

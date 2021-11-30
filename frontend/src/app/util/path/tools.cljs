@@ -304,7 +304,7 @@
   [content points]
 
   (let [segments-set (into #{}
-                           (map (fn [{:keys [start end]}] [start end]))
+                           (juxt :start :end)
                            (get-segments content points))
 
         create-line-command (fn [point other]
@@ -318,7 +318,7 @@
                          (flatten)
                          (into []))]
 
-    (d/concat content new-content)))
+    (into content new-content)))
 
 
 (defn separate-nodes

@@ -22,13 +22,11 @@
     (let [points (when-not (:hidden shape) (snap/shape-snap-points shape))
           shape-data (->> points (mapv #(vector % (:id shape))))]
       (if (= (:id shape) frame-id)
-        (d/concat
-         shape-data
+        (into shape-data
 
-         ;; The grid points are only added by the "root" of the coord-dat
-         (->> (gg/grid-snap-points shape coord)
-              (map #(vector % :layout))))
-
+              ;; The grid points are only added by the "root" of the coord-dat
+              (->> (gg/grid-snap-points shape coord)
+                   (map #(vector % :layout))))
         shape-data))))
 
 (defn- add-coord-data

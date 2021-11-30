@@ -53,7 +53,7 @@
          (fn [index]
            (swap! exports (fn [exports]
                             (let [[before after] (split-at index exports)]
-                              (d/concat [] before (rest after)))))))
+                              (d/concat-vec before (rest after)))))))
 
         on-scale-change
         (mf/use-callback

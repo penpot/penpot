@@ -121,7 +121,7 @@
                       (rx/switch-map #(rx/combine-latest (get-snap :x %)
                                                          (get-snap :y %)))
                       (rx/map (fn [result]
-                                (apply d/concat (seq result))))
+                                (apply d/concat-vec (seq result))))
                       (rx/subs #(let [rs (filter (fn [[_ snaps _]] (> (count snaps) 0)) %)]
                                   (reset! state rs))))]
 

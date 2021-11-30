@@ -409,8 +409,10 @@
                    :shapes [shape-id]}]
 
             ;; Careful! the undo changes are concatenated reversed (we undo in reverse order
-            changes [(d/concat rchs rch1 rch2) (d/concat uch1 uchs)]
-            unames (conj unames (:name shape))
+            changes [(d/concat-vec rchs rch1 rch2)
+                     (d/concat-vec uch1 uchs)]
+            unames  (conj unames (:name shape))
+
             reducer-fn (partial add-svg-child-changes page-id objects selected frame-id shape-id svg-data)]
         (reduce reducer-fn [unames changes] (d/enumerate children)))
 

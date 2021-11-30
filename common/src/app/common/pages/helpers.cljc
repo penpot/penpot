@@ -103,7 +103,6 @@
   "Retrieve all children ids recursively for a given object. The
   children's order will be breadth first."
   [id objects]
-
   (loop [result  (transient [])
          pending (transient [])
          next    id]
@@ -221,8 +220,8 @@
              (pos? (count after')))
       (let [before' (conj before' (first after'))
             after'  (into [] (rest after'))]
-        (d/concat [] before' ids after'))
-      (d/concat [] before' ids after'))))
+        (d/concat-vec before' ids after'))
+      (d/concat-vec before' ids after'))))
 
 (defn append-at-the-end
   [prev-ids ids]
@@ -238,24 +237,25 @@
   ([objects {:keys [include-frames? include-frame-children?]
              :or {include-frames? false
                   include-frame-children? true}}]
-   (let [lookup #(get objects %)
-         root   (lookup uuid/zero)
+
+   (let [lookup        #(get objects %)
+         root          (lookup uuid/zero)
          root-children (:shapes root)
 
          lookup-shapes
          (fn [result id]
            (if (nil? id)
              result
-             (let [obj (lookup id)
-                   typ (:type obj)
+             (let [obj      (lookup id)
+                   typ      (:type obj)
                    children (:shapes obj)]
 
                (cond-> result
                  (or (not= :frame typ) include-frames?)
-                 (d/concat [obj])
+                 (conj obj)
 
                  (and (= :frame typ) include-frame-children?)
-                 (d/concat (map lookup children))))))]
+                 (into (map lookup) children)))))]
 
      (reduce lookup-shapes [] root-children))))
 
@@ -304,15 +304,13 @@
                             (some? (:shapes object))
                             (assoc :shapes (mapv :id new-direct-children)))
 
-               new-object (update-new-object new-object object)
+               new-object  (update-new-object new-object object)
+               new-objects (into [new-object] new-children)
 
-               new-objects (d/concat [new-object] new-children)
-
-               updated-object (update-original-object object new-object)
-
+               updated-object  (update-original-object object new-object)
                updated-objects (if (identical? object updated-object)
                                  updated-children
-                                 (d/concat [updated-object] updated-children))]
+                                 (into [updated-object] updated-children))]
 
            [new-object new-objects updated-objects])
 
@@ -325,9 +323,9 @@
 
            (recur
             (next child-ids)
-            (d/concat new-direct-children [new-child])
-            (d/concat new-children new-child-objects)
-            (d/concat updated-children updated-child-objects))))))))
+            (into new-direct-children [new-child])
+            (into new-children new-child-objects)
+            (into updated-children updated-child-objects))))))))
 
 (defn indexed-shapes
   "Retrieves a list with the indexes for each element in the layer tree.
