@@ -75,7 +75,7 @@
          (mf/deps shape)
          (fn [index]
            (let [[before after] (split-at index exports)
-                 exports (d/concat [] before (rest after))]
+                 exports        (d/concat-vec before (rest after))]
              (st/emit! (udw/update-shape (:id shape)
                                          {:exports exports})))))
 

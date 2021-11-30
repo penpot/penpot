@@ -292,7 +292,7 @@
                    :file-id (:component-file shape)})
 
             (= :text (:type shape))
-            (d/concat (get-text-refs (:content shape)))))]
+            (into (get-text-refs (:content shape)))))]
 
     (->> (get-in file [:data :pages-index])
          (vals)

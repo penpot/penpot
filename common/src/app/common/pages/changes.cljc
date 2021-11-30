@@ -214,7 +214,7 @@
                     not-mask-shapes (without-obj shapes mask-id)
                     new-index       (if (nil? index) nil (max (dec index) 0))
                     new-shapes      (insert-items other-ids new-index not-mask-shapes)]
-                (d/concat [mask-id] new-shapes))))
+                (into [mask-id] new-shapes))))
 
           (add-to-parent [parent index shapes]
             (let [parent (-> parent

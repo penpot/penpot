@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.shapes.path.editor
   (:require
-   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gsp]
    [app.common.path.commands :as upc]
@@ -166,9 +165,9 @@
                    :zoom zoom}]])
 
 (mf/defc path-snap [{:keys [selected points zoom]}]
-  (let [ranges (mf/use-memo (mf/deps selected points) #(snap/create-ranges points selected))
+  (let [ranges       (mf/use-memo (mf/deps selected points) #(snap/create-ranges points selected))
         snap-matches (snap/get-snap-delta-match selected ranges (/ 1 zoom))
-        matches (d/concat [] (second (:x snap-matches)) (second (:y snap-matches)))]
+        matches      (concat (second (:x snap-matches)) (second (:y snap-matches)))]
 
     [:g.snap-paths
      (for [[from to] matches]

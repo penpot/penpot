@@ -149,8 +149,7 @@
 
 (defn shape->filters
   [shape]
-  (d/concat
-   []
+  (d/concat-vec
    [{:id "BackgroundImageFix" :type :image-fix}]
 
    ;; Background blur won't work in current SVG specification

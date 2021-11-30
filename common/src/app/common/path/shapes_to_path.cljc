@@ -31,23 +31,22 @@
    :blur])
 
 (def style-properties
-  (d/concat
-   style-group-properties
-   [:fill-color
-    :fill-opacity
-    :fill-color-gradient
-    :fill-color-ref-file
-    :fill-color-ref-id
-    :fill-image
-    :stroke-color
-    :stroke-color-ref-file
-    :stroke-color-ref-id
-    :stroke-opacity
-    :stroke-style
-    :stroke-width
-    :stroke-alignment
-    :stroke-cap-start
-    :stroke-cap-end]))
+  (into style-group-properties
+        [:fill-color
+         :fill-opacity
+         :fill-color-gradient
+         :fill-color-ref-file
+         :fill-color-ref-id
+         :fill-image
+         :stroke-color
+         :stroke-color-ref-file
+         :stroke-color-ref-id
+         :stroke-opacity
+         :stroke-style
+         :stroke-width
+         :stroke-alignment
+         :stroke-cap-start
+         :stroke-cap-end]))
 
 (defn make-corner-arc
   "Creates a curvle corner for border radius"

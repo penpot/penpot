@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.path.state
   (:require
-   [app.common.data :as d]
    [app.common.path.shapes-to-path :as upsp]))
 
 (defn get-path-id
@@ -19,11 +18,10 @@
   [state & ks]
   (let [edit-id  (get-in state [:workspace-local :edition])
         page-id  (:current-page-id state)]
-    (d/concat
-     (if edit-id
-       [:workspace-data :pages-index page-id :objects edit-id]
-       [:workspace-drawing :object])
-     ks)))
+    (into (if edit-id
+            [:workspace-data :pages-index page-id :objects edit-id]
+            [:workspace-drawing :object])
+          ks)))
 
 (defn get-path
   "Retrieves the location of the path object and additionally can pass

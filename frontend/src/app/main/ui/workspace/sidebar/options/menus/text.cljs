@@ -68,17 +68,19 @@
 (def root-attrs text-valign-attrs)
 
 (def paragraph-attrs
-  (d/concat text-align-attrs
-            text-direction-attrs))
+  (d/concat-vec
+   text-align-attrs
+   text-direction-attrs))
 
 (def text-attrs
-  (d/concat text-typography-attrs
-            text-font-attrs
-            text-spacing-attrs
-            text-decoration-attrs
-            text-transform-attrs))
+  (d/concat-vec
+   text-typography-attrs
+   text-font-attrs
+   text-spacing-attrs
+   text-decoration-attrs
+   text-transform-attrs))
 
-(def attrs (d/concat #{} shape-attrs root-attrs paragraph-attrs text-attrs))
+(def attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-attrs))
 
 (mf/defc text-align-options
   [{:keys [values on-change on-blur] :as props}]
@@ -270,10 +272,10 @@
         on-convert-to-typography
         (fn [_]
           (let [set-values (-> (d/without-nils values)
-                                  (select-keys
-                                   (d/concat text-font-attrs
-                                             text-spacing-attrs
-                                             text-transform-attrs)))
+                               (select-keys
+                                (d/concat-vec text-font-attrs
+                                              text-spacing-attrs
+                                              text-transform-attrs)))
                 typography (merge txt/default-typography set-values)
                 typography (generate-typography-name typography)
                 id (uuid/next)]

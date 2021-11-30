@@ -36,7 +36,7 @@
           update-fn #(d/update-when %1 %2 assoc-in [:modifiers :displacement] modifier)]
 
       (->> (cp/get-children frame-id objects)
-           (d/concat [frame-id])
+           (into [frame-id])
            (reduce update-fn objects)))))
 
 
