@@ -25,7 +25,6 @@
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
-
 ;; -- Helpers --------------------------------------------------------
 
 ;; For each of the 8 handlers gives the multiplier for resize
@@ -123,8 +122,7 @@
        (let [modifiers (or modifiers (get-in state [:workspace-local :modifiers] {}))
              page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)
-
-             ids (->> ids (into #{} (remove #(get-in objects [% :blocked] false))))]
+             ids     (into #{} (remove #(get-in objects [% :blocked] false)) ids)]
 
          (reduce (fn [state id]
                      (update state :workspace-modifiers
@@ -148,20 +146,19 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [objects (wsh/lookup-page-objects state)
-             id->obj #(get objects %)
-             get-children (fn [shape] (map id->obj (cp/get-children (:id shape) objects)))
-
-             shapes (->> shapes (into [] (remove #(get % :blocked false))))
-
-             shapes (->> shapes (mapcat get-children) (concat shapes))
+             shapes  (->> shapes
+                          (remove #(get % :blocked false))
+                          (mapcat (fn [shape]
+                                    (->> (cp/get-children (:id shape) objects)
+                                         (map #(get objects %)))))
+                          (concat shapes))
 
              update-shape
              (fn [modifiers shape]
                (let [rotate-modifiers (gsh/rotation-modifiers shape center angle)]
                  (assoc-in modifiers [(:id shape) :modifiers] rotate-modifiers)))]
-         (-> state
-             (update :workspace-modifiers
-                     #(reduce update-shape % shapes))))))))
+
+         (update state :workspace-modifiers #(reduce update-shape % shapes)))))))
 
 (defn- apply-modifiers
   [ids]
@@ -169,11 +166,11 @@
   (ptk/reify ::apply-modifiers
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
-            children-ids (->> ids (mapcat #(cp/get-children % objects)))
-            ids-with-children (d/concat [] children-ids ids)
-            object-modifiers (get state :workspace-modifiers)
-            ignore-tree (d/mapm #(get-in %2 [:modifiers :ignore-geometry?]) object-modifiers)]
+      (let [objects           (wsh/lookup-page-objects state)
+            children-ids      (->> ids (mapcat #(cp/get-children % objects)))
+            ids-with-children (d/concat-vec children-ids ids)
+            object-modifiers  (get state :workspace-modifiers)
+            ignore-tree       (d/mapm #(get-in %2 [:modifiers :ignore-geometry?]) object-modifiers)]
 
         (rx/of (dwu/start-undo-transaction)
                (dch/update-shapes
@@ -423,7 +420,10 @@
     (watch [_ state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            ids (d/concat [] ids (mapcat #(cp/get-children % objects) ids))]
+
+            ;; TODO: looks completly redundant operation because
+            ;; apply-modifiers already finds all children.
+            ids     (d/concat-vec ids (mapcat #(cp/get-children % objects) ids))]
         (rx/of (apply-modifiers ids))))))
 
 

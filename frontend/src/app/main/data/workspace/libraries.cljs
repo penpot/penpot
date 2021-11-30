@@ -666,14 +666,14 @@
                              (dwlh/generate-sync-file file-id :typographies library-id state)]
 
             xf-fcat  (comp (remove nil?) (map first) (mapcat identity))
-            rchanges (d/concat []
-                               (sequence xf-fcat library-changes)
-                               (sequence xf-fcat file-changes))
+            rchanges (d/concat-vec
+                      (sequence xf-fcat library-changes)
+                      (sequence xf-fcat file-changes))
 
             xf-scat  (comp (remove nil?) (map second) (mapcat identity))
-            uchanges (d/concat []
-                               (sequence xf-scat library-changes)
-                               (sequence xf-scat file-changes))]
+            uchanges (d/concat-vec
+                      (sequence xf-scat library-changes)
+                      (sequence xf-scat file-changes))]
 
         (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                             rchanges
@@ -720,8 +720,8 @@
       (let [file                  (dwlh/get-file state file-id)
             [rchanges1 uchanges1] (dwlh/generate-sync-file file-id :components library-id state)
             [rchanges2 uchanges2] (dwlh/generate-sync-library file-id :components library-id state)
-            rchanges (d/concat rchanges1 rchanges2)
-            uchanges (d/concat uchanges1 uchanges2)]
+            rchanges              (d/concat-vec rchanges1 rchanges2)
+            uchanges              (d/concat-vec uchanges1 uchanges2)]
         (when rchanges
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
                                                                           rchanges

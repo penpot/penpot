@@ -97,7 +97,7 @@
            (let [old-obj (get objects id)
                  new-obj (update-fn old-obj)
 
-                 attrs (or attrs (d/concat #{} (keys old-obj) (keys new-obj)))
+                 attrs (or attrs (d/concat-set (keys old-obj) (keys new-obj)))
 
                  {rops :rops uops :uops}
                  (reduce #(generate-operation %1 %2 old-obj new-obj ignore-geometry?)

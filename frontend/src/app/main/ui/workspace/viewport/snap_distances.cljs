@@ -163,12 +163,12 @@
         show-candidate? #(check-in-set % distances)
 
         ;; Checks the distances between elements for distances that match the set of distances
-        distance-coincidences (d/concat (get-shapes-match show-candidate? lt-shapes)
-                                        (get-shapes-match show-candidate? gt-shapes))
+        distance-coincidences (d/concat-vec
+                               (get-shapes-match show-candidate? lt-shapes)
+                               (get-shapes-match show-candidate? gt-shapes))
 
         ;; Stores the distance candidates to be shown
-        distance-candidates (d/concat
-                             #{}
+        distance-candidates (d/concat-set
                              (map first distance-coincidences)
                              (filter #(check-in-set % lt-distances) gt-distances)
                              (filter #(check-in-set % gt-distances) lt-distances))
@@ -194,7 +194,7 @@
                                 (filter #(show-distance? (distance-to-selrect %)))
                                 (map #(vector selrect (:selrect %))))
 
-        segments-to-display (d/concat #{} other-shapes-segments selection-segments)]
+        segments-to-display (d/concat-set other-shapes-segments selection-segments)]
     segments-to-display))
 
 (mf/defc shape-distance

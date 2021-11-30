@@ -6,7 +6,7 @@
 
 (ns app.common.data
   "Data manipulation and query helper functions."
-  (:refer-clojure :exclude [concat read-string hash-map merge name])
+  (:refer-clojure :exclude [read-string hash-map merge name])
   #?(:cljs
      (:require-macros [app.common.data]))
   (:require
@@ -60,19 +60,37 @@
       m)
     (dissoc m k)))
 
-(defn concat
-  [& colls]
-  (loop [result (transient (first colls))
-         colls  (next colls)]
+(defn- transient-concat
+  [c1 colls]
+  (loop [result (transient c1)
+         colls  colls]
     (if colls
       (recur (reduce conj! result (first colls))
              (next colls))
       (persistent! result))))
 
+(defn concat-set
+  ([] #{})
+  ([c1]
+   (if (set? c1) c1 (into #{} c1)))
+  ([c1 & more]
+   (if (set? c1)
+     (transient-concat c1 more)
+     (transient-concat #{} (cons c1 more)))))
+
+(defn concat-vec
+  ([] [])
+  ([c1]
+   (if (vector? c1) c1 (into [] c1)))
+  ([c1 & more]
+   (if (vector? c1)
+     (transient-concat c1 more)
+     (transient-concat [] (cons c1 more)))))
+
 (defn preconj
   [coll elem]
   (assert (vector? coll))
-  (concat [elem] coll))
+  (into [elem] coll))
 
 (defn enumerate
   ([items] (enumerate items 0))
@@ -144,10 +162,15 @@
      (reduce #(dissoc! %1 %2) (transient data) keys))))
 
 (defn remove-at-index
+  "Takes a vector and returns a vector with an element in the
+  specified index removed."
   [v index]
-  (vec (core/concat
-        (subvec v 0 index)
-        (subvec v (inc index)))))
+  ;; The subvec function returns a SubVector type that is an vector
+  ;; but does not have transient impl, because of this, we need to
+  ;; pass an explicit vector as first argument.
+  (concat-vec []
+              (subvec v 0 index)
+              (subvec v (inc index))))
 
 (defn zip [col1 col2]
   (map vector col1 col2))
@@ -433,18 +456,18 @@
          (str maybe-keyword)))))
 
 (defn with-next
-  "Given a collectin will return a new collection where each element
-  is paried with the next item in the collection
-  (with-next (range 5)) => [[0 1] [1 2] [2 3] [3 4] [4 nil]"
+  "Given a collection will return a new collection where each element
+  is paired with the next item in the collection
+  (with-next (range 5)) => [[0 1] [1 2] [2 3] [3 4] [4 nil]]"
   [coll]
   (map vector
        coll
-       (concat [] (rest coll) [nil])))
+       (concat (rest coll) [nil])))
 
 (defn with-prev
-  "Given a collectin will return a new collection where each element
-  is paried with the previous item in the collection
-  (with-prev (range 5)) => [[0 nil] [1 0] [2 1] [3 2] [4 3]"
+  "Given a collection will return a new collection where each element
+  is paired with the previous item in the collection
+  (with-prev (range 5)) => [[0 nil] [1 0] [2 1] [3 2] [4 3]]"
   [coll]
   (map vector
        coll
@@ -453,12 +476,12 @@
 (defn with-prev-next
   "Given a collection will return a new collection where every item is paired
   with the previous and the next item of a collection
-  (with-prev-next (range 5)) => [[0 nil 1] [1 0 2] [2 1 3] [3 2 4] [4 3 nil]"
+  (with-prev-next (range 5)) => [[0 nil 1] [1 0 2] [2 1 3] [3 2 4] [4 3 nil]]"
   [coll]
   (map vector
        coll
        (concat [nil] coll)
-       (concat [] (rest coll) [nil])))
+       (concat (rest coll) [nil])))
 
 (defn prefix-keyword
   "Given a keyword and a prefix will return a new keyword with the prefix attached

@@ -192,7 +192,7 @@
         h-lines (->> (calculate-distance-lines (:x1 from) (:x2 from) (:x1 to) (:x2 to))
                      (map (fn [[start end]] [start fixed-y end fixed-y])))
 
-        lines (d/concat [] v-lines h-lines)
+        lines   (d/concat-vec v-lines h-lines)
 
         distance-line-stroke (/ distance-line-stroke zoom)]
 

@@ -6,7 +6,6 @@
 
 (ns app.common.geom.align
   (:require
-   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [clojure.spec.alpha :as s]))
 
@@ -16,11 +15,15 @@
 
 (declare calc-align-pos)
 
+;; TODO: revisit on how to reuse code and dont have this function
+;; duplicated because the implementation right now differs from the
+;; original function.
+
 ;; Duplicated from pages/helpers to remove cyclic dependencies
 (defn- get-children [id objects]
   (let [shapes (vec (get-in objects [id :shapes]))]
     (if shapes
-      (d/concat shapes (mapcat #(get-children % objects) shapes))
+      (into shapes (mapcat #(get-children % objects)) shapes)
       [])))
 
 (defn- recursive-move

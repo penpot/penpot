@@ -100,7 +100,7 @@
 (defn curve-tangent
   "Retrieve the tangent vector to the curve in the point `t`"
   [[start end h1 h2] t]
-  
+
   (let [coords [[(:x start) (:x h1) (:x h2) (:x end)]
                 [(:y start) (:y h1) (:y h2) (:y end)]]
 
@@ -316,15 +316,13 @@
                   :line-to [prev-point (command->point command)]
 
                   ;; We return the bezier extremities
-                  :curve-to (d/concat
-                             [prev-point
-                              (command->point command)]
-                             (let [curve [prev-point
-                                          (command->point command)
-                                          (command->point command :c1)
-                                          (command->point command :c2)]]
-                               (->> (curve-extremities curve)
-                                    (mapv #(curve-values curve %)))))
+                  :curve-to (into [prev-point (command->point command)]
+                                  (let [curve [prev-point
+                                               (command->point command)
+                                               (command->point command :c1)
+                                               (command->point command :c2)]]
+                                    (->> (curve-extremities curve)
+                                         (map #(curve-values curve %)))))
                   [])
          selrect (gpr/points->selrect points)]
      (-> selrect
@@ -342,20 +340,19 @@
                       (command->point command)]
 
             ;; We return the bezier extremities
-            :curve-to (d/concat
-                       [(command->point prev)
-                        (command->point command)]
-                       (let [curve [(command->point prev)
-                                    (command->point command)
-                                    (command->point command :c1)
-                                    (command->point command :c2)]]
-                         (->> (curve-extremities curve)
-                              (mapv #(curve-values curve %)))))
+            :curve-to (into [(command->point prev)
+                             (command->point command)]
+                            (let [curve [(command->point prev)
+                                         (command->point command)
+                                         (command->point command :c1)
+                                         (command->point command :c2)]]
+                              (->> (curve-extremities curve)
+                                   (map #(curve-values curve %)))))
             []))
 
         extremities (mapcat calc-extremities
                             content
-                            (d/concat [nil] content))
+                            (concat [nil] content))
 
         selrect (gpr/points->selrect extremities)]
 
@@ -410,14 +407,16 @@
    (let [initial (first segments)
          lines (rest segments)]
 
-     (d/concat [{:command :move-to
-                 :params (select-keys initial [:x :y])}]
-               (->> lines
-                    (mapv #(hash-map :command :line-to
-                                     :params (select-keys % [:x :y]))))
+     (d/concat-vec
+      [{:command :move-to
+        :params (select-keys initial [:x :y])}]
 
-               (when closed?
-                 [{:command :close-path}])))))
+      (->> lines
+           (map #(hash-map :command :line-to
+                           :params (select-keys % [:x :y]))))
+
+      (when closed?
+        [{:command :close-path}])))))
 
 (defonce num-segments 10)
 
@@ -770,7 +769,7 @@
                           ts-3 (check-range c1-half c1-to c2-from c2-half)
                           ts-4 (check-range c1-half c1-to c2-half c2-to)]
 
-                      (d/concat [] ts-1 ts-2 ts-3 ts-4)))))))
+                      (d/concat-vec ts-1 ts-2 ts-3 ts-4)))))))
 
           (remove-close-ts [{cp1 :p1 cp2 :p2}]
             (fn [{:keys [p1 p2]}]
