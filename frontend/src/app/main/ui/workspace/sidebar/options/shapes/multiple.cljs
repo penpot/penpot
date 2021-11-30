@@ -183,7 +183,7 @@
                                            (attrs/get-attrs-multi (txt/node-seq content) attrs))))]
               :children (let [children (->> (:shapes shape []) (map #(get objects %)))
                               [new-ids new-values] (get-attrs children objects attr-type)]
-                          [(d/concat ids new-ids) (merge-attrs values new-values)])
+                          [(d/concat-vec ids new-ids) (merge-attrs values new-values)])
               [])))]
     (reduce extract-attrs [[] []] shapes)))
 

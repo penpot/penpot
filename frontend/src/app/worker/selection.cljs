@@ -66,7 +66,7 @@
           changed-ids (into #{}
                             (comp (filter #(not= % uuid/zero))
                                   (filter changes?)
-                                  (mapcat #(d/concat [%] (cp/get-children % new-objects))))
+                                  (mapcat #(into [%] (cp/get-children % new-objects))))
                             (set/union (set (keys old-objects))
                                        (set (keys new-objects))))
 

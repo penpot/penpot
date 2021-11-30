@@ -6,7 +6,6 @@
 
 (ns app.main.ui.settings.options
   (:require
-   [app.common.data :as d]
    [app.common.spec :as us]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
@@ -49,8 +48,8 @@
      [:h2 (t locale "labels.language")]
 
      [:div.fields-row
-      [:& fm/select {:options (d/concat [{:label "Auto (browser)" :value ""}]
-                                        i18n/supported-locales)
+      [:& fm/select {:options (into [{:label "Auto (browser)" :value ""}]
+                                    i18n/supported-locales)
                      :label (t locale "dashboard.select-ui-language")
                      :default ""
                      :name :lang}]]

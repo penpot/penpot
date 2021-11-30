@@ -201,7 +201,7 @@
                 (recur (->> (get svgdata "elements")
                             (filter #(= (get % "name") "g"))
                             (map (partial set-path-color id color mapping))
-                            (update result "elements" d/concat))
+                            (update result "elements" into))
                        (rest layers))
 
                 ;; Now we have the result containing the svgdata of a
@@ -232,8 +232,8 @@
 
                       elements (cond->> elements
                                  (not (empty? gradient-defs))
-                                 (d/concat [{"type" "element" "name" "defs" "attributes" {}
-                                             "elements" gradient-defs}]))]
+                                 (into [{"type" "element" "name" "defs" "attributes" {}
+                                         "elements" gradient-defs}]))]
 
                   (-> result
                       (assoc "name" "g")

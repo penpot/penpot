@@ -90,7 +90,7 @@
   [subpath other]
   (assert (pt= (:to subpath) (:from other)))
   (-> subpath
-      (update :data d/concat (rest (:data other)))
+      (update :data d/concat-vec (rest (:data other)))
       (assoc :to (:to other))))
 
 (defn- merge-paths
