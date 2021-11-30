@@ -10,16 +10,11 @@
    [clojure.test :as t]))
 
 (t/deftest concat-vec
-  (t/is (= [1 2 3]
-           (d/concat-vec [1] #{2} [3])))
-
-  (t/is (= [1 2]
-           (d/concat-vec '(1) [2])))
-
-  (t/is (= [1]
-           (d/concat-vec [1])))
-
-  (t/is (= [] (d/concat-vec))))
+  (t/is (= []    (d/concat-vec)))
+  (t/is (= [1]   (d/concat-vec [1])))
+  (t/is (= [1]   (d/concat-vec #{1})))
+  (t/is (= [1 2] (d/concat-vec [1] #{2})))
+  (t/is (= [1 2] (d/concat-vec '(1) [2]))))
 
 (t/deftest concat-set
   (t/is (= #{} (d/concat-set)))

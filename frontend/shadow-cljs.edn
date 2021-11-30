@@ -65,7 +65,20 @@
    :ns-regexp "^app.*-test$"
    ;; :autorun true
 
-   :compiler-options
-   {:output-feature-set :es8
-    :output-wrapper false
-    :warnings {:fn-deprecated false}}}}}
+   :release
+   {:compiler-options
+    {:pseudo-names true
+     :pretty-print true
+     :source-map true
+     :source-map-include-sources-content true
+     :source-map-detail-level :all
+     :optimizations :whitespace
+     :fn-invoke-direct true}}
+
+   :dev
+   {:compiler-options
+    {:output-feature-set :es8
+     :output-wrapper false}}
+
+   }}}
+

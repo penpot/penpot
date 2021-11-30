@@ -3,10 +3,10 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v14.17.6 \
+ENV NODE_VERSION=v16.13.0 \
     CLOJURE_VERSION=1.10.3.967 \
     CLJKONDO_VERSION=2021.10.19 \
-    BABASHKA_VERSION=0.6.1 \
+    BABASHKA_VERSION=0.6.6 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
