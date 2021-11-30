@@ -35,6 +35,7 @@
            (->> (:stream worker)
                 (rx/filter #(= (:reply-to %) sender-id))
                 (take-messages)
+                (rx/filter (complement :dropped))
                 (rx/map handle-response)))
        (rx/empty)))))
 
@@ -91,9 +92,8 @@
     worker))
 
 (defn- handle-response
-  [{:keys [payload error dropped]}]
-  (when-not dropped
-    (if-let [{:keys [data message]} error]
-      (throw (ex-info message data))
-      payload)))
+  [{:keys [payload error]}]
+  (if-let [{:keys [data message]} error]
+    (throw (ex-info message data))
+    payload))
 

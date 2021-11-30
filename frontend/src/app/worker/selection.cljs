@@ -15,6 +15,8 @@
    [clojure.set :as set]
    [okulary.core :as l]))
 
+(def ^:const padding-percent 0.10)
+
 (defonce state (l/atom {}))
 
 (defn index-shape
@@ -37,55 +39,71 @@
                          :clip-parents clip-parents
                          :parents parents)))))
 
+(defn objects-bounds
+  "Calculates the bounds of the quadtree given a objects map."
+  [objects]
+  (-> objects
+      (dissoc uuid/zero)
+      vals
+      gsh/selection-rect))
+
+(defn add-padding-bounds
+  "Adds a padding to the bounds defined as a percent in the constant `padding-percent`.
+  For a value of 0.1 will add a 20% width increase (2 x padding)"
+  [bounds]
+  (let [width-pad  (* (:width bounds) padding-percent)
+        height-pad (* (:height bounds) padding-percent)]
+    (-> bounds
+        (update :x - width-pad)
+        (update :x1 - width-pad)
+        (update :x2 + width-pad)
+        (update :y1 - height-pad)
+        (update :y2 + height-pad)
+        (update :width + width-pad width-pad)
+        (update :height + height-pad height-pad))))
+
 (defn- create-index
   [objects]
-  (let [shapes             (-> objects (dissoc uuid/zero) (vals))
+  (let [shapes             (-> objects (dissoc uuid/zero) vals)
         parents-index      (cp/generate-child-all-parents-index objects)
         clip-parents-index (cp/create-clip-index objects parents-index)
-        bounds #js {:x (int -0.5e7)
-                    :y (int -0.5e7)
-                    :width (int 1e7)
-                    :height (int 1e7)}
+        bounds             (-> objects objects-bounds add-padding-bounds)
 
         index (reduce (index-shape objects parents-index clip-parents-index)
-                      (qdt/create bounds)
+                      (qdt/create (clj->js bounds))
                       shapes)
 
         z-index (cp/calculate-z-index objects)]
 
-    {:index index :z-index z-index}))
+    {:index index :z-index z-index :bounds bounds}))
 
 (defn- update-index
   [{index :index z-index :z-index :as data} old-objects new-objects]
 
-  (if (some? data)
-    (let [changes? (fn [id]
-                     (not= (get old-objects id)
-                           (get new-objects id)))
+  (let [changes? (fn [id]
+                   (not= (get old-objects id)
+                         (get new-objects id)))
 
-          changed-ids (into #{}
-                            (comp (filter #(not= % uuid/zero))
-                                  (filter changes?)
-                                  (mapcat #(into [%] (cp/get-children % new-objects))))
-                            (set/union (set (keys old-objects))
-                                       (set (keys new-objects))))
+        changed-ids (into #{}
+                          (comp (filter #(not= % uuid/zero))
+                                (filter changes?)
+                                (mapcat #(into [%] (cp/get-children % new-objects))))
+                          (set/union (set (keys old-objects))
+                                     (set (keys new-objects))))
 
-          shapes             (->> changed-ids (mapv #(get new-objects %)) (filterv (comp not nil?)))
-          parents-index      (cp/generate-child-all-parents-index new-objects shapes)
-          clip-parents-index (cp/create-clip-index new-objects parents-index)
+        shapes             (->> changed-ids (mapv #(get new-objects %)) (filterv (comp not nil?)))
+        parents-index      (cp/generate-child-all-parents-index new-objects shapes)
+        clip-parents-index (cp/create-clip-index new-objects parents-index)
 
-          new-index (qdt/remove-all index changed-ids)
+        new-index (qdt/remove-all index changed-ids)
 
-          index (reduce (index-shape new-objects parents-index clip-parents-index)
-                        new-index
-                        shapes)
+        index (reduce (index-shape new-objects parents-index clip-parents-index)
+                      new-index
+                      shapes)
 
-          z-index (cp/update-z-index z-index changed-ids old-objects new-objects)]
+        z-index (cp/update-z-index z-index changed-ids old-objects new-objects)]
 
-      {:index index :z-index z-index})
-
-    ;; If not previous data. We need to create from scratch
-    (create-index new-objects)))
+    (assoc data :index index :z-index z-index)))
 
 (defn- query-index
   [{index :index z-index :z-index} rect frame-id full-frame? include-frames? clip-children? reverse?]
@@ -154,7 +172,19 @@
 
 (defmethod impl/handler :selection/update-index
   [{:keys [page-id old-objects new-objects] :as message}]
-  (swap! state update page-id update-index old-objects new-objects)
+  (let [update-page-index
+        (fn [index]
+          (let [old-bounds (:bounds index)
+                new-bounds (objects-bounds new-objects)]
+
+            ;; If the new bounds are contained within the old bounds we can
+            ;; update the index.
+            ;; Otherwise we need to re-create it
+            (if (and (some? index)
+                     (gsh/contains-selrect? old-bounds new-bounds))
+              (update-index index old-objects new-objects)
+              (create-index new-objects))))]
+    (swap! state update page-id update-page-index))
   nil)
 
 (defmethod impl/handler :selection/query

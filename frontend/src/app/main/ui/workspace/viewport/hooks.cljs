@@ -120,7 +120,7 @@
              (->> move-stream
                   ;; When transforming shapes we stop querying the worker
                   (rx/filter #(not (some? (mf/ref-val transform-ref))))
-                  (rx/switch-map query-point))
+                  (rx/merge-map query-point))
 
              (->> move-stream
                   ;; When transforming shapes we stop querying the worker
