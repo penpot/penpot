@@ -1811,35 +1811,35 @@ msgstr "Sitemap"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "Zentrieren (horizontal)"
+msgstr "Zentrieren (horizontal) (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "Horizontal verteilen"
+msgstr "Horizontal verteilen (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "Linksbündig ausrichten"
+msgstr "Linksbündig ausrichten (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "Rechtsbündig ausrichten"
+msgstr "Rechtsbündig ausrichten (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "Unten ausrichten"
+msgstr "Unten ausrichten (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "Mittig ausrichten (vertikal)"
+msgstr "Mittig ausrichten (vertikal) (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "Vertikal verteilen"
+msgstr "Vertikal verteilen (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "Oben ausrichten"
+msgstr "Oben ausrichten (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"

@@ -1297,35 +1297,35 @@ msgstr "Sitemap"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "Στοίχιση στο κέντρο"
+msgstr "Στοίχιση στο κέντρο (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "Κατανομή οριζόντιου χώρου"
+msgstr "Κατανομή οριζόντιου χώρου (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "Ευθυγράμμιση προς τα αριστερά"
+msgstr "Ευθυγράμμιση προς τα αριστερά (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "Ευθυγράμμιση προς τα δεξιά"
+msgstr "Ευθυγράμμιση προς τα δεξιά (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "Στοίχιση κάτω"
+msgstr "Στοίχιση κάτω (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "Ευθυγραμμίστε το κάθετο κέντρο"
+msgstr "Ευθυγραμμίστε το κάθετο κέντρο (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "Κατανομή κατακόρυφων αποστάσεων"
+msgstr "Κατανομή κατακόρυφων αποστάσεων (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "Ευθυγραμμίστε την κορυφή"
+msgstr "Ευθυγραμμίστε την κορυφή (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"

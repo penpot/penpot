@@ -1759,35 +1759,35 @@ msgstr "מפת אתר"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "יישור למרכז האופקי"
+msgstr "(%s) יישור למרכז האופקי"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "פיזור ריווח אופקי"
+msgstr "(%s) פיזור ריווח אופקי"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "יישור שמאלה"
+msgstr "(%s) יישור שמאלה"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "יישור ימינה"
+msgstr "(%s) יישור ימינה"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "יישור למטה"
+msgstr "(%s) יישור למטה"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "יישור למרכז אנכית"
+msgstr "(%s) יישור למרכז אנכית"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "פיזור בריווח אנכי"
+msgstr "(%s) פיזור בריווח אנכי"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "יישור למעלה"
+msgstr "(%s) יישור למעלה"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"

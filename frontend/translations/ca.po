@@ -1770,35 +1770,35 @@ msgstr "Mapa del lloc"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "Alinea el centre horitzontal"
+msgstr "Alinea el centre horitzontal (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "Distribueix l'espaiat horitzontal"
+msgstr "Distribueix l'espaiat horitzontal (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "Alinea a l'esquerra"
+msgstr "Alinea a l'esquerra (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "Alinea a la dreta"
+msgstr "Alinea a la dreta (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "Alinea la part inferior"
+msgstr "Alinea la part inferior (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "Alinea el centre vertical"
+msgstr "Alinea el centre vertical (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "Distribueix l'espaiat vertical"
+msgstr "Distribueix l'espaiat vertical (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "Alinea la part superior"
+msgstr "Alinea la part superior (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"

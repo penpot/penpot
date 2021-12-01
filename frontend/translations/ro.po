@@ -1483,35 +1483,35 @@ msgstr "Harta site-ului"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "Aliniază orizontal"
+msgstr "Aliniază orizontal (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "Introdu spaţierea orizontală"
+msgstr "Introdu spaţierea orizontală (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "Aliniază la stânga"
+msgstr "Aliniază la stânga (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "Aliniază la dreapta"
+msgstr "Aliniază la dreapta (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "Aliniază jos"
+msgstr "Aliniază jos (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "Aliniază vertical"
+msgstr "Aliniază vertical (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "Introdu spaţierea pe verticală"
+msgstr "Introdu spaţierea pe verticală (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "Aliniază sus"
+msgstr "Aliniază sus (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"

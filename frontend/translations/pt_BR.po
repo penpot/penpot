@@ -1457,35 +1457,35 @@ msgstr "Mapa do site"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "Alinhar no centro horizontalmente"
+msgstr "Alinhar no centro horizontalmente (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "Distribuir espaçamento horizontal"
+msgstr "Distribuir espaçamento horizontal (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "Alinhar à esquerda"
+msgstr "Alinhar à esquerda (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "Alinhar à direita"
+msgstr "Alinhar à direita (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "Alinhar à base"
+msgstr "Alinhar à base (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "Alinhar no centro verticalmente"
+msgstr "Alinhar no centro verticalmente (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "Distribuir espaçamento vertical"
+msgstr "Distribuir espaçamento vertical (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "Alinhar ao topo"
+msgstr "Alinhar ao topo (%s)"
 
 msgid "workspace.assets.box-filter-graphics"
 msgstr "Gráficos"
