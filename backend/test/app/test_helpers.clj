@@ -57,6 +57,7 @@
                            :app.http/server
                            :app.http/router
                            :app.notifications/handler
+                           :app.loggers.sentry/reporter
                            :app.http.oauth/google
                            :app.http.oauth/gitlab
                            :app.http.oauth/github

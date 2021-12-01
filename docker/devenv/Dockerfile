@@ -3,10 +3,10 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v14.17.6 \
+ENV NODE_VERSION=v16.13.0 \
     CLOJURE_VERSION=1.10.3.967 \
     CLJKONDO_VERSION=2021.10.19 \
-    BABASHKA_VERSION=0.6.1 \
+    BABASHKA_VERSION=0.6.6 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -97,6 +97,7 @@ RUN set -ex; \
         libappindicator1 \
         libnss3 \
         libgbm1 \
+        xvfb \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
@@ -108,16 +109,14 @@ RUN set -x; \
     rm -rf /var/lib/apt/lists/*; \
     rm -rf /tmp/chrome.deb;
 
-
 RUN set -ex; \
-    curl -LfsSo /tmp/openjdk.tar.gz https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1%2B9/OpenJDK16U-jdk_x64_linux_hotspot_16.0.1_9.tar.gz; \
-    mkdir -p /usr/lib/jvm/openjdk16; \
-    cd /usr/lib/jvm/openjdk16; \
+    curl -LfsSo /tmp/openjdk.tar.gz https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.1%2B12/OpenJDK17U-jdk_x64_linux_hotspot_17.0.1_12.tar.gz; \
+    mkdir -p /usr/lib/jvm/openjdk17; \
+    cd /usr/lib/jvm/openjdk17; \
     tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
     rm -rf /tmp/openjdk.tar.gz;
 
-ENV PATH="/usr/lib/jvm/openjdk16/bin:/usr/local/nodejs/bin:$PATH" \
-    JAVA_HOME=/usr/lib/jvm/openjdk16
+ENV PATH="/usr/lib/jvm/openjdk17/bin:/usr/local/nodejs/bin:$PATH" JAVA_HOME=/usr/lib/jvm/openjdk17
 
 RUN set -ex; \
     curl -LfsSo /tmp/clojure.sh https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh; \

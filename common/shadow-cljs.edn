@@ -6,12 +6,17 @@
  :builds
  {:test
   {:target :node-test
-   :output-to "target/tests.js"
+   :output-to "target/test.js"
+   :output-dir "target/test/"
    :ns-regexp "^app.common.*-test$"
-   ;; :autorun true
+   :autorun true
 
    :compiler-options
    {:output-feature-set :es-next
     :output-wrapper false
+    :source-map true
+    :source-map-include-sources-content true
+    :source-map-detail-level :all
     :warnings {:fn-deprecated false}}}}}
+
 

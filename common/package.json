@@ -6,6 +6,12 @@
   "dependencies": {
     "luxon": "^1.27.0"
   },
+  "scripts": {
+    "compile-and-watch-test": "clojure -M:dev:shadow-cljs watch test",
+    "compile-test": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
+    "run-test": "node target/test.js",
+    "test": "yarn run compile-test && yarn run run-test"
+  },
   "devDependencies": {
     "source-map-support": "^0.5.19",
     "ws": "^7.4.6"
