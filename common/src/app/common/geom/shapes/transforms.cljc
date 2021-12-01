@@ -391,7 +391,7 @@
     {:rotation angle
      :displacement displacement}))
 
-(defn merge-modifiers
+(defn merge-modifiers*
   [objects modifiers]
 
   (let [set-modifier
@@ -400,6 +400,8 @@
               (d/update-when id merge modifiers)))]
     (->> modifiers
          (reduce set-modifier objects))))
+
+(def merge-modifiers (memoize merge-modifiers*))
 
 (defn- modifiers->transform
   [center modifiers]
@@ -491,25 +493,30 @@
                                 %)))
     shape))
 
+(defn -transform-shape
+  [shape {:keys [round-coords?]
+          :or {round-coords? true}}]
+  (if (and (contains? shape :modifiers) (empty-modifiers? (:modifiers shape)))
+    (dissoc shape :modifiers)
+    (let [shape     (apply-displacement shape)
+          center    (gco/center-shape shape)
+          modifiers (:modifiers shape)]
+      (if (and (not (empty-modifiers? modifiers)) center)
+        (let [transform (modifiers->transform center modifiers)]
+          (-> shape
+              (set-flip modifiers)
+              (apply-transform transform round-coords?)
+              (apply-text-resize modifiers)
+              (dissoc :modifiers)))
+        shape))))
+
+(def transform-shape* (memoize -transform-shape))
+
 (defn transform-shape
   ([shape]
-   (transform-shape shape nil))
-
-  ([shape {:keys [round-coords?]
-           :or {round-coords? true}}]
-   (if (and (contains? shape :modifiers) (empty-modifiers? (:modifiers shape)))
-     (dissoc shape :modifiers)
-     (let [shape     (apply-displacement shape)
-           center    (gco/center-shape shape)
-           modifiers (:modifiers shape)]
-       (if (and (not (empty-modifiers? modifiers)) center)
-         (let [transform (modifiers->transform center modifiers)]
-           (-> shape
-               (set-flip modifiers)
-               (apply-transform transform round-coords?)
-               (apply-text-resize modifiers)
-               (dissoc :modifiers)))
-         shape)))))
+   (transform-shape* shape nil))
+  ([shape options]
+   (transform-shape* shape options)))
 
 (defn calc-transformed-parent-rect
   [{:keys [selrect] :as shape} {:keys [displacement resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]
