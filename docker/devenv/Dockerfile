@@ -97,6 +97,7 @@ RUN set -ex; \
         libappindicator1 \
         libnss3 \
         libgbm1 \
+        xvfb \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
