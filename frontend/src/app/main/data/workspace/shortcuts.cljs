@@ -233,7 +233,7 @@
 
    :open-color-picker  {:tooltip "I"
                         :command "i"
-                        :fn #(st/emit! (mdc/picker-for-selected-shape ))}
+                        :fn #(st/emit! (mdc/picker-for-selected-shape))}
 
    :open-viewer        {:tooltip "G V"
                         :command "g v"
@@ -261,23 +261,53 @@
                         :type "keyup"
                         :fn #(st/emit! (dw/toggle-distances-display false))}
 
-   :boolean-union        {:tooltip (ds/alt "U")
-                          :command "alt+u"
-                          :fn #(st/emit! (dw/create-bool :union))}
+   :boolean-union      {:tooltip (ds/meta (ds/alt "U"))
+                        :command (ds/c-mod "alt+u")
+                        :fn #(st/emit! (dw/create-bool :union))}
 
-   :boolean-difference   {:tooltip (ds/alt "D")
-                          :command "alt+d"
-                          :fn #(st/emit! (dw/create-bool :difference))}
+   :boolean-difference {:tooltip (ds/meta (ds/alt "D"))
+                        :command (ds/c-mod "alt+d")
+                        :fn #(st/emit! (dw/create-bool :difference))}
 
-   :boolean-intersection {:tooltip (ds/alt "I")
-                          :command "alt+i"
+   :boolean-intersection {:tooltip (ds/meta (ds/alt "I"))
+                          :command (ds/c-mod "alt+i")
                           :fn #(st/emit! (dw/create-bool :intersection))}
 
-   :boolean-exclude      {:tooltip (ds/alt "E")
-                          :command "alt+e"
+   :boolean-exclude      {:tooltip (ds/meta (ds/alt "E"))
+                          :command (ds/c-mod "alt+e")
                           :fn #(st/emit! (dw/create-bool :exclude))}
 
-   })
+   :align-left           {:tooltip (ds/alt "A")
+                          :command "alt+a"
+                          :fn #(st/emit! (dw/align-objects :hleft))}
+
+   :align-right          {:tooltip (ds/alt "D")
+                          :command "alt+d"
+                          :fn #(st/emit! (dw/align-objects :hright))}
+
+   :align-top            {:tooltip (ds/alt "W")
+                          :command "alt+w"
+                          :fn #(st/emit! (dw/align-objects :vtop))}
+
+   :align-hcenter        {:tooltip (ds/alt "H")
+                          :command "alt+h"
+                          :fn #(st/emit! (dw/align-objects :hcenter))}
+
+   :align-vcenter        {:tooltip (ds/alt "V")
+                          :command "alt+v"
+                          :fn #(st/emit! (dw/align-objects :vcenter))}
+
+   :align-bottom         {:tooltip (ds/alt "S")
+                          :command "alt+s"
+                          :fn #(st/emit! (dw/align-objects :vbottom))}
+
+   :h-distribute          {:tooltip (ds/meta-shift (ds/alt "H"))
+                           :command (ds/c-mod "shift+alt+h")
+                           :fn #(st/emit! (dw/distribute-objects :horizontal))}
+
+   :v-distribute          {:tooltip (ds/meta-shift (ds/alt "V"))
+                           :command (ds/c-mod "shift+alt+v")
+                           :fn #(st/emit! (dw/distribute-objects :vertical))}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

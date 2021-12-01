@@ -1548,35 +1548,35 @@ msgstr "Plan du site"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "Aligner horizontalement au centre"
+msgstr "Aligner horizontalement au centre (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "Répartir l’espacement horizontal"
+msgstr "Répartir l’espacement horizontal (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "Aligner à gauche"
+msgstr "Aligner à gauche (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "Aligner à droite"
+msgstr "Aligner à droite (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "Aligner en bas"
+msgstr "Aligner en bas (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "Aligner verticalement au centre"
+msgstr "Aligner verticalement au centre (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "Répartir l’espacement vertical"
+msgstr "Répartir l’espacement vertical (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "Aligner en haut"
+msgstr "Aligner en haut (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"

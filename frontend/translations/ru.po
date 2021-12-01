@@ -616,35 +616,35 @@ msgstr "План сайта"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "Выровнять по горизонтали"
+msgstr "Выровнять по горизонтали (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "Распределить горизонтальное пространство"
+msgstr "Распределить горизонтальное пространство (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "Выровнять по левому краю"
+msgstr "Выровнять по левому краю (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "Выровнять по правому краю"
+msgstr "Выровнять по правому краю (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "Выровнять по нижнему краю"
+msgstr "Выровнять по нижнему краю (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "Выровнять по вертикали"
+msgstr "Выровнять по вертикали (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "Распределить вертикальное пространство"
+msgstr "Распределить вертикальное пространство (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "Выровнять по верхнему краю"
+msgstr "Выровнять по верхнему краю (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"
@@ -1137,7 +1137,7 @@ msgstr "Кривая (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.ellipse"
-msgstr ""
+msgstr "Эллипс (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.frame"

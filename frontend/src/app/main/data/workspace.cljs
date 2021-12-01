@@ -1123,6 +1123,13 @@
 (declare align-object-to-frame)
 (declare align-objects-list)
 
+(defn can-align? [selected objects]
+  (cond
+    (empty? selected) false
+    (> (count selected) 1) true
+    :else
+    (not= uuid/zero (:frame-id (get objects (first selected))))))
+
 (defn align-objects
   [axis]
   (us/verify ::gal/align-axis axis)
@@ -1135,12 +1142,11 @@
             moved    (if (= 1 (count selected))
                        (align-object-to-frame objects (first selected) axis)
                        (align-objects-list objects selected axis))
-
             moved-objects (->> moved (group-by :id))
             ids (keys moved-objects)
             update-fn (fn [shape] (first (get moved-objects (:id shape))))]
-
-        (rx/of (dch/update-shapes ids update-fn {:reg-objects? true}))))))
+        (when (can-align? selected objects)
+          (rx/of (dch/update-shapes ids update-fn {:reg-objects? true})))))))
 
 (defn align-object-to-frame
   [objects object-id axis]
@@ -1153,6 +1159,12 @@
   (let [selected-objs (map #(get objects %) selected)
         rect (gsh/selection-rect selected-objs)]
     (mapcat #(gal/align-to-rect % rect axis objects) selected-objs)))
+
+(defn can-distribute? [selected]
+  (cond
+    (empty? selected) false
+    (< (count selected) 2) false
+    :else true))
 
 (defn distribute-objects
   [axis]
@@ -1169,7 +1181,8 @@
             moved-objects (->> moved (group-by :id))
             ids (keys moved-objects)
             update-fn (fn [shape] (first (get moved-objects (:id shape))))]
-        (rx/of (dch/update-shapes ids update-fn {:reg-objects? true}))))))
+        (when (can-distribute? selected)
+          (rx/of (dch/update-shapes ids update-fn {:reg-objects? true})))))))
 
 ;; --- Shape Proportions
 

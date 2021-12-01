@@ -1547,35 +1547,35 @@ msgstr "خريطة الموقع"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "محاذاة الوسط الأفقي"
+msgstr "(%s) محاذاة الوسط الأفقي"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "توزيع التباعد الأفقي"
+msgstr "(%s) توزيع التباعد الأفقي"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "محاذاة لليسار"
+msgstr "(%s) محاذاة لليسار"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "محاذاة لليمين"
+msgstr "(%s) محاذاة لليمين"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "محاذاة للأسفل"
+msgstr "(%s) محاذاة للأسفل"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "محاذاة للوسط عموديًا"
+msgstr "(%s) محاذاة للوسط عموديًا"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "توزيع التباعد عموديًا"
+msgstr "(%s) توزيع التباعد عموديًا"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "محاذاة للأعلى"
+msgstr "(%s) محاذاة للأعلى"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"

@@ -1791,7 +1791,7 @@ msgstr "Site haritası"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "Yatay olarak ortaya hizala"
+msgstr "Yatay olarak ortaya hizala (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
@@ -1799,19 +1799,19 @@ msgstr "Yatayda dağıt"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "Sola hizala"
+msgstr "Sola hizala (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "Sağa hizala"
+msgstr "Sağa hizala (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "Alta hizala"
+msgstr "Alta hizala (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "Dikey olarak ortaya hizala"
+msgstr "Dikey olarak ortaya hizala (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
@@ -1819,7 +1819,7 @@ msgstr "Dikeyde dağıt"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "Üste hizala"
+msgstr "Üste hizala (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"
