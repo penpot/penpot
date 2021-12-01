@@ -133,7 +133,7 @@
   [{:keys [grids]}]
   [:> "penpot:grids" #js {}
    (for [{:keys [type display params]} grids]
-     (let [props (->> (d/without-keys params [:color])
+     (let [props (->> (dissoc params :color)
                       (prefix-keys)
                       (clj->js))]
        [:> "penpot:grid"

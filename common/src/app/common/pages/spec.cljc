@@ -256,6 +256,25 @@
 (s/def :internal.shape/transform ::matrix)
 (s/def :internal.shape/transform-inverse ::matrix)
 
+(s/def :internal.shape/opacity ::us/safe-number)
+(s/def :internal.shape/blend-mode
+  #{:normal
+    :darken
+    :multiply
+    :color-burn
+    :lighten
+    :screen
+    :color-dodge
+    :overlay
+    :soft-light
+    :hard-light
+    :difference
+    :exclusion
+    :hue
+    :saturation
+    :color
+    :luminosity})
+
 (s/def ::shape-attrs
   (s/keys :opt-un [:internal.shape/selrect
                    :internal.shape/points
@@ -307,7 +326,9 @@
                    ::cti/interactions
                    :internal.shape/masked-group?
                    :internal.shape/shadow
-                   :internal.shape/blur]))
+                   :internal.shape/blur
+                   :internal.shape/opacity
+                   :internal.shape/blend-mode]))
 
 
 ;; shapes-group is handled differently
@@ -317,7 +338,8 @@
           :opt-un [::id]))
 
 (s/def ::shape
-  (s/and ::minimal-shape ::shape-attrs
+  (s/and ::minimal-shape
+         ::shape-attrs
          (s/keys :opt-un [::id
                           ::component-id
                           ::component-file

@@ -157,7 +157,7 @@
   "Return a map without the keys provided
   in the `keys` parameter."
   [data keys]
-  (when data
+  (when (map? data)
     (persistent!
      (reduce #(dissoc! %1 %2) (transient data) keys))))
 
@@ -251,6 +251,11 @@
 (def sentinel
   #?(:clj (Object.)
      :cljs (js/Object.)))
+
+(defn getf
+  "Returns a function to access a map"
+  [coll]
+  (partial get coll))
 
 (defn update-in-when
   [m key-seq f & args]

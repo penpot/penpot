@@ -107,7 +107,6 @@
 ;; geometric attributes of the shapes.
 
 (declare set-modifiers-recursive)
-(declare check-delta)
 (declare set-local-displacement)
 (declare clear-local-transform)
 
@@ -195,34 +194,6 @@
                (clear-local-transform)
                (dwu/commit-undo-transaction))))))
 
-(defn- set-modifiers-recursive
-  [modif-tree objects shape modifiers root transformed-root ignore-constraints]
-  (let [children (->> (get shape :shapes [])
-                      (map #(get objects %)))
-
-        transformed-shape (gsh/transform-shape (assoc shape :modifiers modifiers))
-
-        [root transformed-root ignore-geometry?]
-        (check-delta shape root transformed-shape transformed-root objects)
-
-        modifiers (assoc modifiers :ignore-geometry? ignore-geometry?)
-
-        set-child (fn [modif-tree child]
-                    (let [child-modifiers (gsh/calc-child-modifiers shape
-                                                                    child
-                                                                    modifiers
-                                                                    ignore-constraints)]
-                      (set-modifiers-recursive modif-tree
-                                               objects
-                                               child
-                                               child-modifiers
-                                               root
-                                               transformed-root
-                                               ignore-constraints)))]
-    (reduce set-child
-            (assoc-in modif-tree [(:id shape) :modifiers] modifiers)
-            children)))
-
 (defn- check-delta
   "If the shape is a component instance, check its relative position respect the
   root of the component, and see if it changes after applying a transformation."
@@ -256,6 +227,39 @@
         ignore-geometry? (= shape-delta transformed-shape-delta)]
 
     [root transformed-root ignore-geometry?]))
+
+(defn- set-modifiers-recursive
+  [modif-tree objects shape modifiers root transformed-root ignore-constraints]
+  (let [children (map (d/getf objects) (:shapes shape))
+
+        transformed-shape (gsh/transform-shape (assoc shape :modifiers modifiers))
+
+        [root transformed-root ignore-geometry?]
+        (check-delta shape root transformed-shape transformed-root objects)
+
+        modifiers (assoc modifiers :ignore-geometry? ignore-geometry?)
+
+        transformed-rect (gsh/calc-transformed-parent-rect shape modifiers)
+
+        set-child
+        (fn [modif-tree child]
+          (let [child-modifiers
+                (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)]
+
+            (cond-> modif-tree
+              (d/not-empty? (d/without-keys child-modifiers [:ignore-geometry?]))
+              (set-modifiers-recursive objects
+                                       child
+                                       child-modifiers
+                                       root
+                                       transformed-root
+                                       ignore-constraints))))
+
+        modif-tree
+        (-> modif-tree
+            (assoc-in [(:id shape) :modifiers] modifiers))]
+
+    (reduce set-child modif-tree children)))
 
 (defn- set-local-displacement [point]
   (ptk/reify ::start-local-displacement

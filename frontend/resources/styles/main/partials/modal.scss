@@ -334,13 +334,15 @@
     color: $color-black;
 
     .file-name-label {
-      flex: 1;
-      white-space: nowrap;
-      display: flex;
       align-items: center;
+      flex: 1;
       height: 2rem;
       margin-left: -0.25rem;
+      overflow: hidden;
       padding-left: 0.25rem;
+      padding-top: 0.25rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
 
       .icon-library {
         width: 14px;

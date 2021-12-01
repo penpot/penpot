@@ -1172,7 +1172,7 @@
                 attrs (merge
                         {:typography-ref-file file-id
                          :typography-ref-id (:id typography)}
-                        (d/without-keys typography [:id :name]))]
+                        (dissoc typography :id :name))]
             (run! #(st/emit! (dwt/update-text-attrs {:id % :editor (get-in local [:editors %]) :attrs attrs}))
                   ids)))
 

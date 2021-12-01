@@ -9,6 +9,7 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.text :as txt]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
@@ -153,7 +154,7 @@
 (defn empty-map [keys]
   (into {} (map #(hash-map % nil)) keys))
 
-(defn get-attrs
+(defn get-attrs*
   "Given a `type` of options that we want to extract and the shapes to extract them from
   returns a list of tuples [id, values] with the extracted properties for the shapes that
   applies (some of them ignore some attributes)"
@@ -182,28 +183,59 @@
                                            (select-keys txt/default-text-attrs attrs)
                                            (attrs/get-attrs-multi (txt/node-seq content) attrs))))]
               :children (let [children (->> (:shapes shape []) (map #(get objects %)))
-                              [new-ids new-values] (get-attrs children objects attr-type)]
+                              [new-ids new-values] (get-attrs* children objects attr-type)]
                           [(into ids new-ids) (merge-attrs values new-values)])
               [])))]
     (reduce extract-attrs [[] []] shapes)))
 
+(def get-attrs (memoize get-attrs*))
+
+(defn basic-shape [_ shape]
+  (cond-> shape
+    :always
+    (dissoc :selrect :points :x :y :width :height :transform :transform-inverse :rotation :svg-transform :svg-viewbox :thumbnail)
+
+    (= (:type shape) :path)
+    (dissoc :content)))
+
 (mf/defc options
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "shapes-with-children"]))]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children"]))]
    ::mf/wrap-props false}
   [props]
   (let [shapes (unchecked-get props "shapes")
         shapes-with-children (unchecked-get props "shapes-with-children")
         objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
 
+        ;; Selrect/points only used for measures and it's the one that changes the most. We separate it
+        ;; so we can memoize it
+        objects-no-measures (->> objects (d/mapm basic-shape))
+        objects-no-measures (hooks/use-equal-memo objects-no-measures)
+
         type :multiple
+
         [measure-ids    measure-values]    (get-attrs shapes objects :measure)
-        [layer-ids      layer-values]      (get-attrs shapes objects :layer)
-        [constraint-ids constraint-values] (get-attrs shapes objects :constraint)
-        [fill-ids       fill-values]       (get-attrs shapes objects :fill)
-        [shadow-ids     shadow-values]     (get-attrs shapes objects :shadow)
-        [blur-ids       blur-values]       (get-attrs shapes objects :blur)
-        [stroke-ids     stroke-values]     (get-attrs shapes objects :stroke)
-        [text-ids       text-values]       (get-attrs shapes objects :text)]
+
+        [layer-ids      layer-values
+         constraint-ids constraint-values
+         fill-ids       fill-values
+         shadow-ids     shadow-values
+         blur-ids       blur-values
+         stroke-ids     stroke-values
+         text-ids       text-values]
+
+        (mf/use-memo
+         (mf/deps objects-no-measures)
+         (fn []
+           (into
+            []
+            (mapcat identity)
+            [(get-attrs shapes objects-no-measures :layer)
+             (get-attrs shapes objects-no-measures :constraint)
+             (get-attrs shapes objects-no-measures :fill)
+             (get-attrs shapes objects-no-measures :shadow)
+             (get-attrs shapes objects-no-measures :shadow)
+             (get-attrs shapes objects-no-measures :stroke)
+             (get-attrs shapes objects-no-measures :text)])))]
 
     [:div.options
      (when-not (empty? measure-ids)

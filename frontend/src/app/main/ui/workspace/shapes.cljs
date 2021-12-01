@@ -28,8 +28,8 @@
    [app.main.ui.workspace.shapes.path :as path]
    [app.main.ui.workspace.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.shapes.text :as text]
-   [app.util.debug :refer [debug?]]
    [app.util.object :as obj]
+   [debug :refer [debug?]]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 

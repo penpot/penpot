@@ -99,7 +99,7 @@
   (get-in component [:objects (:id component)]))
 
 ;; Implemented with transient for performance
-(defn get-children
+(defn get-children*
   "Retrieve all children ids recursively for a given object. The
   children's order will be breadth first."
   [id objects]
@@ -127,6 +127,8 @@
         (let [next (get pending (dec length))]
           (recur result (pop! pending) next))
         (persistent! result)))))
+
+(def get-children (memoize get-children*))
 
 (defn get-children-objects
   "Retrieve all children objects recursively for a given object"
@@ -172,9 +174,10 @@
     shape
     (get objects (:frame-id shape))))
 
-(defn clean-loops
+(defn clean-loops*
   "Clean a list of ids from circular references."
   [objects ids]
+
   (let [parent-selected?
         (fn [id]
           (let [parents (get-parents id objects)]
@@ -187,6 +190,8 @@
             (conj id)))]
 
     (reduce add-element (d/ordered-set) ids)))
+
+(def clean-loops (memoize clean-loops*))
 
 (defn calculate-invalid-targets
   [shape-id objects]
@@ -494,3 +499,10 @@
   (and (not= (:type shape) :frame)
        (= (:frame-id shape) uuid/zero)))
 
+(defn children-seq
+  "Creates a sequence of shapes through the objects tree"
+  [shape objects]
+  (let [getter (partial get objects)]
+    (tree-seq #(d/not-empty? (get shape :shapes))
+              #(->> (get % :shapes) (map getter))
+              shape)))

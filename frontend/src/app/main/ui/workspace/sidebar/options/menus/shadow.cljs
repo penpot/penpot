@@ -78,7 +78,7 @@
         update-color
         (fn [index]
           (fn [color opacity]
-            (let [color (d/without-keys color [:id :file-id :gradient])]
+            (let [color (dissoc color :id :file-id :gradient)]
               (st/emit! (dch/update-shapes
                          ids
                          #(-> %

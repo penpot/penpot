@@ -8,12 +8,14 @@
   (:require
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text.fontfaces :as ff]
    [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.core :as rx]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
 (defn check-frame-props
@@ -47,24 +49,46 @@
         :width (:width shape)
         :height (:height shape)
         ;; DEBUG
-        ;; :style {:filter "sepia(1)"}
-        }])))
+        :style {:filter (when (debug? :thumbnails) "sepia(1)")}}])))
 
-;; This custom deferred don't defer rendering when ghost rendering is
-;; used.
+(mf/defc frame-placeholder
+  {::mf/wrap-props false}
+  [props]
+  (let [{:keys [x y width height fill-color] :as shape} (obj/get props "shape")]
+    (if (some? (:thumbnail shape))
+      [:& thumbnail {:shape shape}]
+      [:rect {:x x :y y :width width :height height :style {:fill (or fill-color "var(--color-white)")}}])))
+
 (defn custom-deferred
   [component]
   (mf/fnc deferred
     {::mf/wrap-props false}
     [props]
-    (let [tmp (mf/useState false)
+    (let [shape (-> (obj/get props "shape")
+                    (select-keys [:x :y :width :height])
+                    (hooks/use-equal-memo))
+
+          tmp (mf/useState false)
           ^boolean render? (aget tmp 0)
-          ^js set-render (aget tmp 1)]
-      (mf/use-layout-effect
+          ^js set-render (aget tmp 1)
+          prev-shape-ref (mf/use-ref shape)]
+
+      (mf/use-effect
+       (mf/deps shape)
        (fn []
-         (let [sem (ts/schedule-on-idle #(set-render true))]
-           #(rx/dispose! sem))))
-      (when render? (mf/create-element component props)))))
+         (mf/set-ref-val! prev-shape-ref shape)
+         (set-render false)))
+
+      (mf/use-effect
+       (mf/deps render? shape)
+       (fn []
+         (when-not render?
+           (let [sem (ts/schedule-on-idle #(set-render true))]
+             #(rx/dispose! sem)))))
+
+      (if (and render? (= shape (mf/ref-val prev-shape-ref)))
+        (mf/create-element component props)
+        (mf/create-element frame-placeholder props)))))
 
 (defn frame-wrapper-factory
   [shape-wrapper]
@@ -78,9 +102,11 @@
             thumbnail?  (unchecked-get props "thumbnail?")
 
             shape        (gsh/transform-shape shape)
-            children     (mapv #(get objects %) (:shapes shape))
+            children     (-> (mapv #(get objects %) (:shapes shape))
+                             (hooks/use-equal-memo))
 
-            all-children (cp/get-children-objects (:id shape) objects)
+            all-children (-> (cp/get-children-objects (:id shape) objects)
+                             (hooks/use-equal-memo))
 
             rendered?   (mf/use-state false)
 

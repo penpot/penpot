@@ -15,10 +15,10 @@
    [app.main.store :as st]
    [app.main.ui.cursors :as cur]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
-   [app.util.debug :refer [debug?]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [cuerdas.core :as str]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]
    [rumext.util :refer [map->obj]]))
 

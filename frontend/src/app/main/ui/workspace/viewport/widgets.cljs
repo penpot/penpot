@@ -90,6 +90,7 @@
      "translate(" (* zoom x) ", " (* zoom y) ")")))
 
 (mf/defc frame-title
+  {::mf/wrap [mf/memo]}
   [{:keys [frame modifiers selected? zoom on-frame-enter on-frame-leave on-frame-select]}]
   (let [{:keys [width x y]} (gsh/transform-shape frame)
         label-pos (gpt/point x (- y (/ 10 zoom)))

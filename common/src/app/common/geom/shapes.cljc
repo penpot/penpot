@@ -56,8 +56,7 @@
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
   (->> shapes
-       (gtr/transform-shape)
-       (map (comp gpr/points->selrect :points))
+       (map (comp gpr/points->selrect :points gtr/transform-shape))
        (gpr/join-selrects)))
 
 (defn translate-to-frame
@@ -150,6 +149,7 @@
 (d/export gpr/points->rect)
 (d/export gpr/center->rect)
 (d/export gpr/join-rects)
+(d/export gpr/contains-selrect?)
 
 (d/export gtr/move)
 (d/export gtr/absolute-move)
@@ -163,6 +163,7 @@
 (d/export gtr/rotation-modifiers)
 (d/export gtr/merge-modifiers)
 (d/export gtr/transform-shape)
+(d/export gtr/calc-transformed-parent-rect)
 (d/export gtr/calc-child-modifiers)
 
 ;; PATHS

@@ -92,7 +92,7 @@
         page-id              (mf/use-ctx ctx/current-page-id)
         file-id              (mf/use-ctx ctx/current-file-id)
         shapes               (mf/deref refs/selected-objects)
-        shapes-with-children (mf/deref refs/selected-objects-with-children)]
+        shapes-with-children (mf/deref refs/selected-shapes-with-children)]
     [:& options-content {:shapes shapes
                          :selected selected
                          :shapes-with-children shapes-with-children

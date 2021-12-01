@@ -23,6 +23,7 @@
    [app.util.i18n :as i18n]
    [app.util.theme :as theme]
    [beicon.core :as rx]
+   [debug]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
