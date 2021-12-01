@@ -45,3 +45,4 @@ node_modules
 .calva
 .clj-kondo
 .lsp
+/frontend/cypress/videos/*/
