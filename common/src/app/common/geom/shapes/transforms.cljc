@@ -345,8 +345,7 @@
 ;;   or not.
 
 (defn empty-modifiers? [modifiers]
-  (or (nil? modifiers)
-      (empty? (d/without-keys modifiers [:ignore-geometry?]))))
+  (empty? (dissoc modifiers :ignore-geometry?)))
 
 (defn resize-modifiers
   [shape attr value]

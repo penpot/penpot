@@ -483,7 +483,7 @@
         color {:color (:color attrs)
                :opacity (-> attrs :opacity d/parse-double)}
 
-        params (-> (d/without-keys attrs [:color :opacity :display :type])
+        params (-> (dissoc attrs :color :opacity :display :type)
                    (d/update-when :size d/parse-double)
                    (d/update-when :item-length d/parse-double)
                    (d/update-when :gutter d/parse-double)

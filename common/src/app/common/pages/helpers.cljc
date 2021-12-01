@@ -502,6 +502,7 @@
 (defn children-seq
   "Creates a sequence of shapes through the objects tree"
   [shape objects]
-  (tree-seq #(d/not-empty? (get shape :shapes))
-            #(->> (get % :shapes) (map (partial get objects)))
-            shape))
+  (let [getter (partial get objects)]
+    (tree-seq #(d/not-empty? (get shape :shapes))
+              #(->> (get % :shapes) (map getter))
+              shape)))
