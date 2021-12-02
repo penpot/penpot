@@ -15,11 +15,12 @@
 (s/def :artboard-grid.color/color ::us/string)
 (s/def :artboard-grid.color/opacity ::us/safe-number)
 
-(s/def :artboard-grid/size ::us/safe-integer)
+(s/def :artboard-grid/size (s/nilable ::us/safe-integer))
+(s/def :artboard-grid/item-length (s/nilable ::us/safe-number))
+
 (s/def :artboard-grid/color (s/keys :req-un [:artboard-grid.color/color
                                              :artboard-grid.color/opacity]))
 (s/def :artboard-grid/type #{:stretch :left :center :right})
-(s/def :artboard-grid/item-length (s/nilable ::us/safe-integer))
 (s/def :artboard-grid/gutter (s/nilable ::us/safe-integer))
 (s/def :artboard-grid/margin (s/nilable ::us/safe-integer))
 

@@ -16,7 +16,8 @@
    [app.util.timers :as timers]
    [rumext.alpha :as mf]))
 
-(mf/defc editable-select [{:keys [value type options class on-change placeholder on-blur] :as params}]
+(mf/defc editable-select
+  [{:keys [value type options class on-change placeholder on-blur] :as params}]
   (let [state (mf/use-state {:id (uuid/next)
                              :is-open? false
                              :current-value value
@@ -42,20 +43,23 @@
                         (when on-blur (on-blur))))
 
         as-key-value (fn [item] (if (map? item) [(:value item) (:label item)] [item item]))
-
-        labels-map (into {} (->> options (map as-key-value)))
-
+        labels-map   (into {} (map as-key-value) options)
         value->label (fn [value] (get labels-map value value))
 
-        set-value (fn [value]
-                    (swap! state assoc :current-value value)
-                    (when on-change (on-change value)))
+        set-value
+        (fn [value]
+          (swap! state assoc :current-value value)
+          (when on-change (on-change value)))
 
-        handle-change-input (fn [event]
-                              (let [value (-> event dom/get-target dom/get-value)
-                                    value (-> (or (d/parse-double value) value)
-                                              (math/precision 2))]
-                                (set-value value)))
+        ;; TODO: why this method supposes that all editable select
+        ;; works with numbers?
+
+        handle-change-input
+        (fn [event]
+          (let [value (-> event dom/get-target dom/get-value)
+                value (-> (or (d/parse-double value) value)
+                          (math/precision 2))]
+            (set-value value)))
 
         on-node-load
         (fn [node]
@@ -133,7 +137,7 @@
 
     [:div.editable-select {:class class
                            :ref on-node-load}
-     [:input.input-text {:value (or (-> @state :current-value value->label) "")
+     [:input.input-text {:value (or (some-> @state :current-value value->label) "")
                          :on-change handle-change-input
                          :on-key-down handle-key-down
                          :on-focus handle-focus
@@ -149,12 +153,12 @@
                                            :left (:left @state)
                                            :bottom (:bottom @state)}}
        (for [[index item] (map-indexed vector options)]
-         (cond
-           (= :separator item) [:hr {:key (str (:id @state) "-" index)}]
-           :else (let [[value label] (as-key-value item)]
-                   [:li.checked-element
-                    {:key (str (:id @state) "-" index)
-                     :class (when (= value (-> @state :current-value)) "is-selected")
-                     :on-click (select-item value)}
-                    [:span.check-icon i/tick]
-                    [:span label]])))]]]))
+         (if (= :separator item)
+           [:hr {:key (str (:id @state) "-" index)}]
+           (let [[value label] (as-key-value item)]
+             [:li.checked-element
+              {:key (str (:id @state) "-" index)
+               :class (when (= value (-> @state :current-value)) "is-selected")
+               :on-click (select-item value)}
+              [:span.check-icon i/tick]
+              [:span label]])))]]]))

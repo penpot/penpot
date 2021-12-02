@@ -16,8 +16,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
-   [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
-   [app.util.data :as d]
+   [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row input-row-v2]]
    [app.util.geom.grid :as gg]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -27,90 +26,101 @@
   (l/derived :saved-grids refs/workspace-page-options))
 
 (defn- get-size-options []
-  [{:value :auto :label (tr "workspace.options.grid.auto")}
+  [{:value nil :label (tr "workspace.options.grid.auto")}
    :separator
    18 12 10 8 6 4 3 2])
 
 (mf/defc grid-options
-  [{:keys [grid frame default-grid-params on-change on-remove on-save-grid]}]
-  (let [size-options (get-size-options)
-        state (mf/use-state {:show-advanced-options false})
+  {::mf/wrap [mf/memo]}
+  [{:keys [shape-id index grid frame-width frame-height default-grid-params]}]
+  (let [on-change       (mf/use-fn (mf/deps shape-id index) #(st/emit! (dw/set-frame-grid shape-id index %)))
+        on-remove       (mf/use-fn (mf/deps shape-id index) #(st/emit! (dw/remove-frame-grid shape-id index)))
+        on-save-default (mf/use-fn #(st/emit! (dw/set-default-grid (:type %) (:params %))))
+
+        size-options    (mf/use-memo get-size-options)
+        state           (mf/use-state {:show-advanced-options false})
+
         {:keys [type display params]} grid
 
         toggle-advanced-options
-        #(swap! state update :show-advanced-options not)
+        (mf/use-fn #(swap! state update :show-advanced-options not))
 
         handle-toggle-visibility
-        (fn [_]
-          (when on-change
-            (on-change (update grid :display #(if (nil? %) false (not %))))))
-
-        handle-remove-grid
-        (fn [_]
-          (when on-remove (on-remove)))
+        (mf/use-fn
+         (mf/deps grid)
+         (fn [_]
+           (on-change (update grid :display #(if (nil? %) false (not %))))))
 
         handle-change-type
-        (fn [grid-type]
-          (let [defaults (grid-type default-grid-params)]
-            (when on-change
-              (on-change (assoc grid
-                                :type grid-type
-                                :params defaults)))))
-
+        (mf/use-fn
+         (mf/deps grid)
+         (fn [grid-type]
+           (let [defaults (grid-type default-grid-params)]
+             (on-change (assoc grid
+                               :type grid-type
+                               :params defaults)))))
         handle-change
-        (fn [& keys]
+        (fn [& keys-path]
           (fn [value]
-            (when on-change
-              (on-change (assoc-in grid keys value)))))
+            (on-change (assoc-in grid keys-path value))))
 
+        ;; TODO: remove references to :auto
         handle-change-size
-        (fn [size]
-          (let [{:keys [margin gutter item-length]} (:params grid)
-                frame-length (if (= :column (:type grid)) (:width frame) (:height frame))
-                item-length (if (or (nil? size) (= :auto size))
-                              (-> (gg/calculate-default-item-length frame-length margin gutter)
-                                  (mth/precision 2))
-                              item-length)]
-            (when on-change
-              (on-change (-> grid
-                             (assoc-in [:params :size] size)
-                             (assoc-in [:params :item-length] item-length))))))
+        (mf/use-fn
+         (mf/deps grid)
+         (fn [size]
+           (let [{:keys [margin gutter item-length]} (:params grid)
+                 frame-length (if (= :column (:type grid)) frame-width frame-height)
+                 item-length  (if (nil? size)
+                                (-> (gg/calculate-default-item-length frame-length margin gutter)
+                                    (mth/precision 2))
+                                item-length)]
+
+             (-> grid
+                 (update :params assoc :size size :item-length item-length)
+                 (on-change)))))
 
         handle-change-item-length
-        (fn [item-length]
-          (let [size (get-in grid [:params :size])
-                size (if (and (nil? item-length) (or (nil? size) (= :auto size))) 12 size)]
-            (when on-change
-              (on-change (-> grid
-                             (assoc-in [:params :size] size)
-                             (assoc-in [:params :item-length] item-length))))))
+        (mf/use-fn
+         (mf/deps grid)
+         (fn [item-length]
+           (let [item-length (if (zero? item-length) nil item-length)
+                 size (get-in grid [:params :size])
+                 size (if (and (nil? item-length) (nil? size)) 12 size)]
+             (-> grid
+                 (update :params assoc :size size :item-length item-length)
+                 (on-change)))))
 
         handle-change-color
-        (fn [color]
-          (when on-change
-            (on-change (assoc-in grid [:params :color] color))))
+        (mf/use-fn
+         (mf/deps grid)
+         (fn [color]
+           (-> grid
+               (update :params assoc :color color)
+               (on-change))))
 
         handle-detach-color
-        (fn []
-          (when on-change
-            (on-change (-> grid
-                           (d/dissoc-in [:params :color :id])
-                           (d/dissoc-in [:params :color :file-id])))))
+        (mf/use-fn
+         (mf/deps grid)
+         (fn []
+           (-> grid
+               (update-in [:params :color] dissoc :id :file-id)
+               (on-change))))
 
         handle-use-default
-        (fn []
-          (let [params ((:type grid) default-grid-params)
-                color (or (get-in params [:color :value]) (get-in params [:color :color]))
-                params (-> params
-                           (assoc-in [:color :color] color)
-                           (update :color dissoc :value))]
-            (when on-change
-              (on-change (assoc grid :params params)))))
+        (mf/use-fn
+         (mf/deps grid)
+         (fn []
+           (let [params ((:type grid) default-grid-params)
+                 color (or (get-in params [:color :value]) (get-in params [:color :color]))
+                 params (-> params
+                            (assoc-in [:color :color] color)
+                            (update :color dissoc :value))]
+             (when on-change
+               (on-change (assoc grid :params params))))))
 
         handle-set-as-default
-        (fn []
-          (when on-save-grid
-            (on-save-grid grid)))
+        (mf/use-fn (mf/deps grid) #(on-save-default grid))
 
         is-default (= (->> grid :params)
                       (->> grid :type default-grid-params))
@@ -122,21 +132,23 @@
       [:button.custom-button {:class (when open? "is-active")
                               :on-click toggle-advanced-options} i/actions]
 
-      [:& select {:class "flex-grow"
-                  :default-value type
-                  :options [{:value :square :label (tr "workspace.options.grid.square")}
-                            {:value :column :label (tr "workspace.options.grid.column")}
-                            {:value :row :label (tr "workspace.options.grid.row")}]
-                  :on-change handle-change-type}]
+      [:& select
+       {:class "flex-grow"
+        :default-value type
+        :options [{:value :square :label (tr "workspace.options.grid.square")}
+                  {:value :column :label (tr "workspace.options.grid.column")}
+                  {:value :row :label (tr "workspace.options.grid.row")}]
+        :on-change handle-change-type}]
 
       (if (= type :square)
         [:div.input-element.pixels {:title (tr "workspace.options.size")}
          [:> numeric-input {:min 1
+                            :value (or (:size params) "")
                             :no-validate true
-                            :value (:size params)
                             :on-change (handle-change :params :size)}]]
+
         [:& editable-select {:value (:size params)
-                             :type (when (number? (:size params)) "number" )
+                             :type  "number"
                              :class "input-option"
                              :min 1
                              :options size-options
@@ -145,10 +157,9 @@
 
       [:div.grid-option-main-actions
        [:button.custom-button {:on-click handle-toggle-visibility} (if display i/eye i/eye-closed)]
-       [:button.custom-button {:on-click handle-remove-grid} i/minus]]]
+       [:button.custom-button {:on-click on-remove} i/minus]]]
 
-     [:& advanced-options {:visible? open?
-                           :on-close toggle-advanced-options}
+     [:& advanced-options {:visible? open? :on-close toggle-advanced-options}
       [:button.custom-button {:on-click toggle-advanced-options} i/actions]
       (when (= :square type)
         [:& input-row {:label (tr "workspace.options.grid.params.size")
@@ -190,13 +201,16 @@
                        :on-change (handle-change :params :type)}])
 
       (when (#{:row :column} type)
-        [:& input-row {:label (if (= :row type)
-                                (tr "workspace.options.grid.params.height")
-                                (tr "workspace.options.grid.params.width"))
-                       :class "pixels"
-                       :placeholder "Auto"
-                       :value (or (:item-length params) "")
-                       :on-change handle-change-item-length}])
+        [:& input-row-v2
+         {:class "pixels"
+          :label (if (= :row type)
+                   (tr "workspace.options.grid.params.height")
+                   (tr "workspace.options.grid.params.width"))}
+         [:> numeric-input
+          {:placeholder "Auto"
+           :value (or (:item-length params) "")
+           :default nil
+           :on-change handle-change-item-length}]])
 
       (when (#{:row :column} type)
         [:*
@@ -226,11 +240,9 @@
 
 (mf/defc frame-grid [{:keys [shape]}]
   (let [id (:id shape)
-        default-grid-params (merge dw/default-grid-params (mf/deref workspace-saved-grids))
-        handle-create-grid #(st/emit! (dw/add-frame-grid id))
-        handle-remove-grid (fn [index] #(st/emit! (dw/remove-frame-grid id index)))
-        handle-edit-grid (fn [index] #(st/emit! (dw/set-frame-grid id index %)))
-        handle-save-grid (fn [grid] (st/emit! (dw/set-default-grid (:type grid) (:params grid))))]
+        saved-grids         (mf/deref workspace-saved-grids)
+        default-grid-params (mf/use-memo (mf/deps saved-grids) #(merge dw/default-grid-params saved-grids))
+        handle-create-grid  (mf/use-fn (mf/deps id) #(st/emit! (dw/add-frame-grid id)))]
     [:div.element-set
      [:div.element-set-title
       [:span (tr "workspace.options.grid.title")]
@@ -239,12 +251,13 @@
      (when (seq (:grids shape))
        [:div.element-set-content
         (for [[index grid] (map-indexed vector (:grids shape))]
-          [:& grid-options {:key (str (:id shape) "-" index)
-                              :grid grid
-                              :default-grid-params default-grid-params
-                              :frame shape
-                              :on-change (handle-edit-grid index)
-                              :on-remove (handle-remove-grid index)
-                              :on-save-grid handle-save-grid}])])]))
+          [:& grid-options {:key (str id "-" index)
+                            :shape-id id
+                            :grid grid
+                            :index index
+                            :frame-width (:width shape)
+                            :frame-height (:height shape)
+                            :default-grid-params default-grid-params
+                            }])])]))
 
 
