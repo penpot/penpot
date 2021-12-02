@@ -74,8 +74,8 @@ jobs:
             node target/tests.js
 
           environment:
-            JAVA_HOME: /usr/lib/jvm/openjdk16
-            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin:/usr/lib/jvm/openjdk16/bin
+            JAVA_HOME: /usr/lib/jvm/openjdk17
+            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin:/usr/lib/jvm/openjdk17/bin
 
       - run:
           working_directory: "./common"
