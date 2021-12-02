@@ -1198,6 +1198,14 @@
                       (gpr/assign-proportions))))]
         (rx/of (dch/update-shapes [id] assign-proportions))))))
 
+(defn toggle-proportion-lock
+[]
+(ptk/reify ::toggle-propotion-lock
+  ptk/WatchEvent
+  (watch [_ state _]
+         (let [selected (wsh/lookup-selected state)]
+           (rx/of (dch/update-shapes selected #(update % :proportion-lock not)))))))
+
 ;; --- Update Shape Flags
 
 (defn update-shape-flags
@@ -1217,6 +1225,21 @@
             ids     (into [id] (cp/get-children id objects))]
         (rx/of (dch/update-shapes ids update-fn))))))
 
+(defn toggle-visibility-selected
+  []
+  (ptk/reify ::toggle-visibility-selected
+    ptk/WatchEvent
+    (watch [_ state _]
+           (let [selected (wsh/lookup-selected state)]
+             (rx/of (dch/update-shapes selected #(update % :hidden not)))))))
+
+(defn toggle-lock-selected
+  []
+  (ptk/reify ::toggle-lock-selected
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected (wsh/lookup-selected state)]
+        (rx/of (dch/update-shapes selected #(update % :blocked not)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
@@ -1282,13 +1305,13 @@
 
 (defn go-to-viewer
   ([] (go-to-viewer {}))
-  ([{:keys [file-id page-id]}]
+  ([{:keys [file-id page-id section]}]
    (ptk/reify ::go-to-viewer
      ptk/WatchEvent
      (watch [_ state _]
        (let [{:keys [current-file-id current-page-id]} state
              pparams {:file-id (or file-id current-file-id)}
-             qparams {:page-id (or page-id current-page-id)}]
+             qparams {:page-id (or page-id current-page-id) :section section}]
          (rx/of ::dwp/force-persist
                 (rt/nav-new-window* {:rname :viewer
                                      :path-params pparams

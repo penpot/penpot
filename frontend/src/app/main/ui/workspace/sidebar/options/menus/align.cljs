@@ -7,8 +7,8 @@
 (ns app.main.ui.workspace.sidebar.options.menus.align
   (:require
    [app.main.data.workspace :as dw]
-   [app.main.refs :as refs]
    [app.main.data.workspace.shortcuts :as sc]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
