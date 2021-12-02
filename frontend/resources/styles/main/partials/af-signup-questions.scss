@@ -104,6 +104,12 @@
     margin: 0.5rem 0;
   }
 
+  .af-field-input input[type="text"],
+  .af-choice-option label:before,
+  .af-dropdown {
+    border-color: #c5c6c9 !important;
+  }
+
   .af-choice-option input:checked+label:before,
   .af-legal input:checked+label:before {
     background-color: $color-primary;
@@ -113,7 +119,7 @@
   .af-field-previous_design_tool .af-choice-option input:checked+label {
     &::before {
       background-color: transparent;
-      border: 2px solid $color-primary;
+      border: 2px solid $color-primary !important;
     }
   }
 
@@ -193,5 +199,59 @@
 
   .af-field-previous_design_tool .af-choice-option:nth-child(6) label {
     background-image: url("../images/form/never-used.png");
+  }
+
+  .af-field-previous_design_tool .af-choice-option:nth-child(7) label,
+  .af-field-use_of_penpot .af-choice-option:nth-child(5) label {
+    justify-content: flex-start;
+    min-height: auto;
+    padding-left: 1.4rem;
+    padding-top: 0;
+
+    &:hover {
+      box-shadow: none;
+    }
+
+    &::before {
+      content: "";
+      background-color: #fff;
+      border: 1px solid #e0e6f0;
+      border-width: 1px;
+      border-radius: 50%;
+      min-width: 20px;
+      min-height: 20px;
+      box-sizing: border-box;
+      margin-left: 4px;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      opacity: 0;
+      width: 5px;
+      height: 8px;
+      margin-top: -1px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+  }
+
+  .af-field-use_of_penpot .af-choice-option:nth-child(5) label {
+    &::before {
+      border-radius: 3px;
+    }
+  }
+
+  .af-field-previous_design_tool .af-choice-option:nth-child(7) input:checked+label,
+  .af-field-use_of_penpot .af-choice-option:nth-child(5) input:checked+label {
+
+    &::before {
+      background-color: $color-primary;
+    }
+
+    &::after {
+      opacity: 1;
+    }
   }
 }
