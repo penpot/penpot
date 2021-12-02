@@ -144,10 +144,10 @@
 
     ["/api" {:middleware [[middleware/cors]
                           [middleware/etag]
-                          [middleware/format-response-body]
                           [middleware/params]
-                          [middleware/multipart-params]
                           [middleware/keyword-params]
+                          [middleware/format-response-body]
+                          [middleware/multipart-params]
                           [middleware/parse-request-body]
                           [middleware/errors errors/handle]
                           [middleware/cookies]]}

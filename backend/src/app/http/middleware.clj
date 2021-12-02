@@ -75,9 +75,10 @@
    :compile (constantly wrap-parse-request-body)})
 
 (defn- impl-format-response-body
-  [response _request]
-  (let [body (:body response)
-        opts {:type :json}]
+  [response request]
+  (let [body   (:body response)
+        params (:query-params request)
+        opts   {:type (if (contains? params "transit_verbose") :json-verbose :json)}]
     (cond
       (coll? body)
       (-> response
