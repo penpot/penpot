@@ -239,6 +239,14 @@
                         :command "g v"
                         :fn #(st/emit! (dw/go-to-viewer))}
 
+   :open-handoff       {:tooltip "G H"
+                        :command "g h"
+                        :fn #(st/emit! (dw/go-to-viewer {:section :handoff}))}
+
+   :open-comments      {:tooltip "G C"
+                        :command "g c"
+                        :fn #(st/emit! (dw/go-to-viewer {:section :comments}))}
+
    :open-dashboard     {:tooltip "G D"
                         :command "g d"
                         :fn #(st/emit! (dw/go-to-dashboard))}
@@ -301,13 +309,25 @@
                           :command "alt+s"
                           :fn #(st/emit! (dw/align-objects :vbottom))}
 
-   :h-distribute          {:tooltip (ds/meta-shift (ds/alt "H"))
-                           :command (ds/c-mod "shift+alt+h")
-                           :fn #(st/emit! (dw/distribute-objects :horizontal))}
+   :h-distribute         {:tooltip (ds/meta-shift (ds/alt "H"))
+                          :command (ds/c-mod "shift+alt+h")
+                          :fn #(st/emit! (dw/distribute-objects :horizontal))}
 
-   :v-distribute          {:tooltip (ds/meta-shift (ds/alt "V"))
-                           :command (ds/c-mod "shift+alt+v")
-                           :fn #(st/emit! (dw/distribute-objects :vertical))}})
+   :v-distribute         {:tooltip (ds/meta-shift (ds/alt "V"))
+                          :command (ds/c-mod "shift+alt+v")
+                          :fn #(st/emit! (dw/distribute-objects :vertical))}
+
+   :toggle-visibility    {:tooltip (ds/meta-shift "H")
+                          :command (ds/c-mod "shift+h")
+                          :fn #(st/emit! (dw/toggle-visibility-selected))}
+
+   :toggle-lock          {:tooltip (ds/meta-shift "L")
+                          :command (ds/c-mod "shift+l")
+                          :fn #(st/emit! (dw/toggle-lock-selected))}
+
+   :toggle-lock-size     {:tooltip (ds/meta (ds/alt "L"))
+                          :command (ds/c-mod "alt+l")
+                          :fn #(st/emit! (dw/toggle-proportion-lock))}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

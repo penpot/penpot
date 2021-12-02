@@ -41,7 +41,15 @@
 
    :prev-frame    {:tooltip ds/right-arrow
                    :command "right"
-                   :fn (st/emitf dv/select-next-frame)}})
+                   :fn (st/emitf dv/select-next-frame)}
+
+   :open-handoff  {:tooltip "G H"
+                   :command "g h"
+                   :fn #(st/emit! (dv/go-to-section :handoff))}
+
+   :open-comments {:tooltip "G C"
+                   :command "g c"
+                   :fn #(st/emit! (dv/go-to-section :comments))}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))
