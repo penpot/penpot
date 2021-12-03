@@ -1,5 +1,6 @@
 (ns app.common.perf
   (:require
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]))
 
 (defn timestamp []
@@ -25,7 +26,7 @@
      "A helper function for perform a unitari benchmark on JS/CLJS. It
      uses browser native api so it only suitable to be executed in
      browser."
-     [& {:keys [f warmup iterations name]
+     [& {:keys [f iterations name]
          :or {iterations 10000}}]
      (let [end-mark (str name ":end")]
        (println "=> benchmarking:" name)
