@@ -77,13 +77,13 @@
                             :key (:id item)}]))]))
 
 (mf/defc shape-wrapper
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
    ::mf/wrap-props false}
   [props]
   (let [shape  (obj/get props "shape")
         frame  (obj/get props "frame")
-        shape  (-> (geom/transform-shape shape {:round-coords? false})
-                   (geom/translate-to-frame frame))
+        shape  (geom/translate-to-frame shape frame)
+
         opts  #js {:shape shape
                    :frame frame}
 

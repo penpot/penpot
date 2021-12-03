@@ -46,13 +46,14 @@
 (defn get-root-shape
   "Get the root shape linked to a component for this shape, if any"
   [shape objects]
-  (if-not (:shape-ref shape)
-    nil
-    (if (:component-root? shape)
-      shape
-      (if-let [parent-id (:parent-id shape)]
-        (get-root-shape (get objects parent-id) objects)
-        nil))))
+
+  (cond
+    (some? (:component-root? shape))
+    shape
+
+    (some? (:shape-ref shape))
+    (recur (get objects (:parent-id shape))
+           objects)))
 
 (defn make-container
   [page-or-component type]

@@ -5,10 +5,13 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns debug
+  (:import [goog.math AffineTransform])
   (:require
    [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
    [app.common.math :as mth]
    [app.common.pages :as cp]
+   [app.common.perf :as perf]
    [app.main.store :as st]
    [app.util.object :as obj]
    [app.util.timers :as timers]
@@ -209,3 +212,38 @@
                                  (not (debug-exclude-events (ptk/type s))))))
          (rx/subs #(println "[stream]: " (ptk/repr-event %))))))
 
+(defn ^:export bench-matrix
+  []
+  (let [iterations 1000000
+
+        good (gmt/multiply (gmt/matrix 1 2 3 4 5 6)
+                           (gmt/matrix 1 2 3 4 5 6))
+
+        k1 (perf/start)
+        _ (dotimes [_ iterations]
+            (when-not (= good (gmt/-old-multiply (gmt/matrix 1 2 3 4 5 6)
+                                                 (gmt/matrix 1 2 3 4 5 6)))
+              (throw "ERROR")))
+        m1 (perf/measure k1)
+
+        k2 (perf/start)
+        _ (dotimes [_ iterations]
+            (when-not (= good (gmt/multiply (gmt/matrix 1 2 3 4 5 6)
+                                            (gmt/matrix 1 2 3 4 5 6)))
+              (throw "ERROR")))
+        m2 (perf/measure k2)
+
+        k3 (perf/start)
+        _ (dotimes [_ iterations]
+            (let [res (.concatenate (AffineTransform. 1 2 3 4 5 6)
+                                    (AffineTransform. 1 2 3 4 5 6))
+                  res (gmt/matrix (.-m00_ res) (.-m10_ res) (.-m01_ res) (.-m11_ res) (.-m02_ res) (.-m12_ res))]
+              
+              (when-not (= good res)
+                (throw "ERROR"))))
+        m3 (perf/measure k3)
+        ]
+
+    (println "Clojure matrix. Total: " m1 " (" (/ m1 iterations) ")")
+    (println "Clojure matrix (NEW). Total: " m2 " (" (/ m2 iterations) ")")
+    (println "Affine transform (with new). Total: " m3 " (" (/ m3 iterations) ")")))

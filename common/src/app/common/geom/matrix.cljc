@@ -36,6 +36,33 @@
     (apply matrix params)))
 
 (defn multiply
+  ([m1 m2]
+   (let [m1a (.-a m1)
+         m1b (.-b m1)
+         m1c (.-c m1)
+         m1d (.-d m1)
+         m1e (.-e m1)
+         m1f (.-f m1)
+
+         m2a (.-a m2)
+         m2b (.-b m2)
+         m2c (.-c m2)
+         m2d (.-d m2)
+         m2e (.-e m2)
+         m2f (.-f m2)]
+
+     (Matrix.
+      (+ (* m1a m2a) (* m1c m2b))
+      (+ (* m1b m2a) (* m1d m2b))
+      (+ (* m1a m2c) (* m1c m2d))
+      (+ (* m1b m2c) (* m1d m2d))
+      (+ (* m1a m2e) (* m1c m2f) m1e)
+      (+ (* m1b m2e) (* m1d m2f) m1f))))
+
+  ([m1 m2 & others]
+   (reduce multiply (multiply m1 m2) others)))
+
+(defn -old-multiply
   ([{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
     {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f}]
    (Matrix.
@@ -46,20 +73,15 @@
     (+ (* m1a m2e) (* m1c m2f) m1e)
     (+ (* m1b m2e) (* m1d m2f) m1f)))
   ([m1 m2 & others]
-   (reduce multiply (multiply m1 m2) others)))
+   (reduce multiply (-old-multiply m1 m2) others)))
 
 (defn add-translate
   "Given two TRANSLATE matrixes (only e and f have significative
   values), combine them. Quicker than multiplying them, for this
   precise case."
   ([{m1e :e m1f :f} {m2e :e m2f :f}]
-   (Matrix.
-    1
-    0
-    0
-     1
-    (+ m1e m2e)
-    (+ m1f m2f)))
+   (Matrix. 1 0 0 1 (+ m1e m2e) (+ m1f m2f)))
+
   ([m1 m2 & others]
    (reduce add-translate (add-translate m1 m2) others)))
 

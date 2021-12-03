@@ -247,7 +247,7 @@
                 (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)]
 
             (cond-> modif-tree
-              (d/not-empty? (d/without-keys child-modifiers [:ignore-geometry?]))
+              (d/not-empty? (dissoc child-modifiers :ignore-geometry?))
               (set-modifiers-recursive objects
                                        child
                                        child-modifiers

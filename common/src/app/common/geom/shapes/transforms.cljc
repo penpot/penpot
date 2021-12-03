@@ -520,6 +520,7 @@
 (defn calc-transformed-parent-rect
   [{:keys [selrect] :as shape} {:keys [displacement resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]
 
+  ;; FIXME: Improve Performance
   (let [resize-transform-inverse (or resize-transform-inverse (gmt/matrix))
 
         displacement

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.main.ui.hooks :as hooks]
@@ -101,8 +102,7 @@
             objects     (unchecked-get props "objects")
             thumbnail?  (unchecked-get props "thumbnail?")
 
-            shape        (gsh/transform-shape shape)
-            children     (-> (mapv #(get objects %) (:shapes shape))
+            children     (-> (mapv (d/getf objects) (:shapes shape))
                              (hooks/use-equal-memo))
 
             all-children (-> (cp/get-children-objects (:id shape) objects)

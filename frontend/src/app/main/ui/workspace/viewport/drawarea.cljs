@@ -22,7 +22,7 @@
 
   [:g.draw-area
    [:g {:style {:pointer-events "none"}}
-    [:& shapes/shape-wrapper {:shape shape}]]
+    [:& shapes/shape-wrapper {:shape (gsh/transform-shape shape)}]]
 
    (case tool
      :path      [:& path-editor {:shape shape :zoom zoom}]

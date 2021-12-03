@@ -61,11 +61,11 @@
         ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
         options           (mf/deref refs/workspace-page-options)
-        objects           (mf/deref refs/workspace-page-objects)
+        base-objects      (mf/deref refs/workspace-page-objects)
         object-modifiers  (mf/deref refs/workspace-modifiers)
         objects           (mf/use-memo
-                           (mf/deps objects object-modifiers)
-                           #(gsh/merge-modifiers objects object-modifiers))
+                           (mf/deps base-objects object-modifiers)
+                           #(gsh/merge-modifiers base-objects object-modifiers))
         background        (get options :background clr/canvas)
 
         ;; STATE
@@ -163,7 +163,7 @@
     [:div.viewport
      [:div.viewport-overlays
 
-      [:& wtr/frame-renderer {:objects objects
+      [:& wtr/frame-renderer {:objects base-objects
                               :background background}]
 
       (when show-comments?
