@@ -53,9 +53,11 @@
 (declare make-change)
 
 (defn concat-changes
-  [[rchanges1 uchanges1] [rchanges2 uchanges2]]
-  [(d/concat-vec rchanges1 rchanges2)
-   (d/concat-vec uchanges1 uchanges2)])
+  [& rest]
+  (letfn [(concat-changes' [[rchanges1 uchanges1] [rchanges2 uchanges2]]
+            [(d/concat-vec rchanges1 rchanges2)
+             (d/concat-vec uchanges1 uchanges2)])]
+    (transduce (remove nil?) concat-changes' empty-changes rest)))
 
 (defn get-local-file
   [state]
@@ -663,26 +665,22 @@
 
           [rchanges uchanges]
           (concat-changes
-            (update-attrs shape-inst
-                          shape-main
-                          root-inst
-                          root-main
-                          container
-                          omit-touched?)
-            (concat-changes
-              (if reset?
-                (change-touched shape-inst
-                                shape-main
-                                container
-                                {:reset-touched? true})
-                empty-changes)
-              (concat-changes
-                (if clear-remote-synced?
-                  (change-remote-synced shape-inst container nil)
-                  empty-changes)
-                (if set-remote-synced?
-                  (change-remote-synced shape-inst container true)
-                  empty-changes))))
+           (update-attrs shape-inst
+                         shape-main
+                         root-inst
+                         root-main
+                         container
+                         omit-touched?)
+           (when reset?
+             (change-touched shape-inst
+                             shape-main
+                             container
+                             {:reset-touched? true}))
+           (when clear-remote-synced?
+             (change-remote-synced shape-inst container nil))
+
+           (when set-remote-synced?
+             (change-remote-synced shape-inst container true)))
 
           children-inst   (mapv #(cp/get-shape container %)
                                 (:shapes shape-inst))
@@ -792,23 +790,19 @@
                           root-inst
                           component-container
                           omit-touched?)
-            (concat-changes
-              (change-touched shape-inst
-                              shape-main
-                              container
-                              {:reset-touched? true})
-              (concat-changes
-                (change-touched shape-main
-                                shape-inst
-                                component-container
-                                {:copy-touched? true})
-                (concat-changes
-                  (if clear-remote-synced?
-                    (change-remote-synced shape-inst container nil)
-                    empty-changes)
-                  (if set-remote-synced?
-                    (change-remote-synced shape-inst container true)
-                    empty-changes)))))
+            (change-touched shape-inst
+                            shape-main
+                            container
+                            {:reset-touched? true})
+            (change-touched shape-main
+                            shape-inst
+                            component-container
+                            {:copy-touched? true})
+            (when clear-remote-synced?
+              (change-remote-synced shape-inst container nil))
+
+            (when set-remote-synced?
+              (change-remote-synced shape-inst container true)))
 
           children-inst   (mapv #(cp/get-shape container %)
                                 (:shapes shape-inst))
@@ -876,61 +870,50 @@
   [children-inst children-main only-inst-cb only-main-cb both-cb moved-cb inverse?]
   (loop [children-inst (seq (or children-inst []))
          children-main (seq (or children-main []))
-         [rchanges uchanges] [[] []]]
+         changes       [[] []]]
     (let [child-inst (first children-inst)
           child-main (first children-main)]
       (cond
         (and (nil? child-inst) (nil? child-main))
-        [rchanges uchanges]
+        changes
 
         (nil? child-inst)
-        (reduce (fn [changes child]
-                  (concat-changes changes (only-main-cb child)))
-                [rchanges uchanges]
-                children-main)
+        (transduce (map only-main-cb) concat-changes changes children-main)
 
         (nil? child-main)
-        (reduce (fn [changes child]
-                  (concat-changes changes (only-inst-cb child)))
-                [rchanges uchanges]
-                children-inst)
+        (transduce (map only-inst-cb) concat-changes changes children-inst)
 
         :else
         (if (cp/is-main-of child-main child-inst)
           (recur (next children-inst)
                  (next children-main)
-                 (concat-changes [rchanges uchanges]
-                                 (both-cb child-inst child-main)))
+                 (concat-changes changes (both-cb child-inst child-main)))
 
-          (let [child-inst' (d/seek #(cp/is-main-of child-main %)
-                                      children-inst)
-                child-main' (d/seek #(cp/is-main-of % child-inst)
-                                      children-main)]
+          (let [child-inst' (d/seek #(cp/is-main-of child-main %) children-inst)
+                child-main' (d/seek #(cp/is-main-of % child-inst) children-main)]
             (cond
               (nil? child-inst')
               (recur children-inst
                      (next children-main)
-                     (concat-changes [rchanges uchanges]
-                                     (only-main-cb child-main)))
+                     (concat-changes changes (only-main-cb child-main)))
 
               (nil? child-main')
               (recur (next children-inst)
                      children-main
-                     (concat-changes [rchanges uchanges]
-                                     (only-inst-cb child-inst)))
+                     (concat-changes changes (only-inst-cb child-inst)))
 
               :else
               (if inverse?
                 (recur (next children-inst)
                        (remove #(= (:id %) (:id child-main')) children-main)
-                       (-> [rchanges uchanges]
-                           (concat-changes (both-cb child-inst' child-main))
-                           (concat-changes (moved-cb child-inst child-main'))))
+                       (concat-changes changes
+                                       (both-cb child-inst' child-main)
+                                       (moved-cb child-inst child-main')))
                 (recur (remove #(= (:id %) (:id child-inst')) children-inst)
                        (next children-main)
-                       (-> [rchanges uchanges]
-                           (concat-changes (both-cb child-inst child-main'))
-                           (concat-changes (moved-cb child-inst' child-main))))))))))))
+                       (concat-changes changes
+                                       (both-cb child-inst child-main')
+                                       (moved-cb child-inst' child-main)))))))))))
 
 (defn- add-shape-to-instance
   [component-shape index component container root-instance root-main omit-touched? set-remote-synced?]
