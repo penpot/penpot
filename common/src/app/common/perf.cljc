@@ -1,6 +1,6 @@
 (ns app.common.perf
   (:require
-   [app.common.math :as mth]
+   #?(:cljs [app.common.math :as mth])
    [app.common.uuid :as uuid]))
 
 (defn timestamp []
