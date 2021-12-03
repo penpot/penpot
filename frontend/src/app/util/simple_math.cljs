@@ -28,9 +28,8 @@
   (let [token (first tree)
         args  (rest tree)]
     (case token
-
       :opt-expr
-      (if (empty? args) 0 (interpret (first args) init-value))
+      (if (empty? args) nil (interpret (first args) init-value))
 
       :expr
       (if (index-of "+-*/" (first args))
@@ -87,8 +86,9 @@
 (defn expr-eval
   [expr init-value]
   (s/assert string? expr)
-  (s/assert number? init-value)
-  (let [result (parser expr)]
+  (let [result     (parser expr)
+        init-value (or init-value 0)]
+    (s/assert number? init-value)
     (if-not (insta/failure? result)
       (interpret result init-value)
       (let [text (:text result)

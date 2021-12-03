@@ -15,6 +15,11 @@
    [app.util.simple-math :as sm]
    [rumext.alpha :as mf]))
 
+(defn num? [val]
+  (and (number? val)
+       (not (math/nan? val))
+       (math/finite? val)))
+
 (mf/defc numeric-input
   {::mf/wrap-props false
    ::mf/forward-ref true}
@@ -25,32 +30,31 @@
         wrap-value? (obj/get props "data-wrap")
         on-change   (obj/get props "onChange")
         title       (obj/get props "title")
+        default-val (obj/get props "default" 0)
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
         ;; So we use the external ref if provided, and the local one if not.
-        local-ref (mf/use-ref)
-        ref (or external-ref local-ref)
+        local-ref  (mf/use-ref)
+        ref        (or external-ref local-ref)
 
-        value (d/parse-integer value-str 0)
+        ;; This `value` represents the previous value and is used as
+        ;; initil value for the simple math expression evaluation.
+        value      (d/parse-integer value-str default-val)
 
-        min-val (cond
-                  (number? min-val-str)
-                  min-val-str
+        min-val    (cond
+                     (number? min-val-str)
+                     min-val-str
 
-                  (string? min-val-str)
-                  (d/parse-integer min-val-str))
+                     (string? min-val-str)
+                     (d/parse-integer min-val-str))
 
-        max-val (cond
-                  (number? max-val-str)
-                  max-val-str
+        max-val    (cond
+                     (number? max-val-str)
+                     max-val-str
 
-                  (string? max-val-str)
-                  (d/parse-integer max-val-str))
-
-        num? (fn [val] (and (number? val)
-                            (not (math/nan? val))
-                            (math/finite? val)))
+                     (string? max-val-str)
+                     (d/parse-integer max-val-str))
 
         parse-value
         (mf/use-callback
@@ -82,10 +86,9 @@
         (mf/use-callback
           (mf/deps on-change update-input value)
           (fn [new-value]
-            (when (and (some? new-value) (not= new-value value) (some? on-change))
+            (when (and (not= new-value value) (some? on-change))
               (on-change new-value))
-            (when (some? new-value)
-              (update-input new-value))))
+            (update-input new-value)))
 
         set-delta
         (mf/use-callback
@@ -143,10 +146,10 @@
         (mf/use-callback
           (mf/deps parse-value apply-value update-input)
           (fn [_]
-            (let [new-value (parse-value)]
+            (let [new-value (or (parse-value) default-val)]
               (if new-value
                 (apply-value new-value)
-                (update-input value-str)))))
+                (update-input new-value)))))
 
         props (-> props
                   (obj/without ["value" "onChange"])
@@ -158,13 +161,6 @@
                   (obj/set! "onWheel" handle-mouse-wheel)
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur))]
-
-    (mf/use-effect
-     (mf/deps value-str)
-     (fn []
-       (when-let [input-node (mf/ref-val ref)]
-         (when-not (dom/active? input-node)
-           (dom/set-value! input-node value-str)))))
 
     [:> :input props]))
 

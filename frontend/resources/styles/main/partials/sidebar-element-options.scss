@@ -407,7 +407,7 @@
     border: 1px solid transparent;
     position: relative;
     height: 38px;
-    margin-right: $size-2;
+    // margin-left: $size-2;
     max-height: 30px;
     position: relative;
     width: 60%;
@@ -495,12 +495,10 @@
   .editable-select svg {
     fill: $color-gray-40;
   }
-  .dropdown-button {
-    top: 4px;
-  }
   .editable-select.input-option .input-text {
     padding: 0;
     padding-top: 0.18rem;
+    padding-left: 0.25rem;
   }
 
   .input-element {

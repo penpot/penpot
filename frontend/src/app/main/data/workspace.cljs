@@ -1112,7 +1112,7 @@
 
 (defn relocate-page
   [id index]
-  (ptk/reify ::relocate-pages
+  (ptk/reify ::relocate-page
     ptk/WatchEvent
     (watch [it state _]
       (let [prev-index (-> (get-in state [:workspace-data :pages])

@@ -79,7 +79,6 @@
 
 (defn- update-index
   [{index :index z-index :z-index :as data} old-objects new-objects]
-
   (let [changes? (fn [id]
                    (not= (get old-objects id)
                          (get new-objects id)))
