@@ -574,7 +574,7 @@
 
         ;; After
 
-        (t/is (= [shape-4-id group-1-id shape-3-id]
+        (t/is (= [shape-4-id shape-3-id group-1-id]
                  (get-in res [:pages-index page-id :objects cp/root :shapes])))
 
         ;; (pprint (get-in data [:pages-index page-id :objects cp/root]))
