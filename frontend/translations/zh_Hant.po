@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-12-04 02:52+0000\n"
-"Last-Translator: 李安峻 <andyli2456@gmail.com>\n"
+"PO-Revision-Date: 2021-12-07 08:12+0000\n"
+"Last-Translator: Andy Li <andyli2456@gmail.com>\n"
 "Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
@@ -85,7 +85,7 @@ msgstr "成功修改密碼"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
-msgstr "成功加入團隊"
+msgstr "已成功加入團隊"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.password"
@@ -642,10 +642,10 @@ msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 msgid "onboarding.welcome.desc1"
-msgstr ""
+msgstr "萬算！您已經是 Penpot 的使用者 :)"
 
 msgid "onboarding.welcome.title"
-msgstr "歡迎使用 Penpot！"
+msgstr "歡迎使用 Penpot"
 
 msgid "viewer.breaking-change.message"
 msgstr "抱歉！"
@@ -777,3 +777,54 @@ msgstr "設計與原型製作的開源解決方案。"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "我們會寄送一封驗證郵件至"
+
+msgid "common.share-link.placeholder"
+msgstr "可分享的連結將會在此顯示"
+
+msgid "common.share-link.title"
+msgstr "分享原型"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "更改電子郵件"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "你的 Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "刪除團隊"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ 建立新團隊"
+
+msgid "workspace.undo.entry.single.multiple"
+msgstr "物件"
+
+msgid "workspace.undo.entry.single.page"
+msgstr "頁面"
+
+msgid "workspace.undo.entry.single.path"
+msgstr "路徑"
+
+msgid "workspace.undo.entry.single.rect"
+msgstr "矩形"
+
+msgid "workspace.undo.entry.single.shape"
+msgstr "形狀"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.update"
+msgstr "更新"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.title"
+msgstr "歷史"
+
+msgid "workspace.undo.entry.single.text"
+msgstr "文字"
+
+msgid "common.share-link.permissions-hint"
+msgstr "任何有連結的人皆能存取"
