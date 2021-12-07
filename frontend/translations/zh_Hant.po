@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-12-07 08:12+0000\n"
+"PO-Revision-Date: 2021-12-09 04:50+0000\n"
 "Last-Translator: Andy Li <andyli2456@gmail.com>\n"
 "Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hant/>\n"
@@ -828,3 +828,241 @@ msgstr "文字"
 
 msgid "common.share-link.permissions-hint"
 msgstr "任何有連結的人皆能存取"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "dashboard.add-shared"
+msgstr "加入為共享資料庫"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "複製 %s 個檔案"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, fuzzy
+msgid "dashboard.empty-files"
+msgstr "你在這裡還沒有文件"
+
+#, fuzzy
+msgid "dashboard.export-frames"
+msgstr "將 artboards 匯出為 PDF..."
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "上傳資料至伺服器 (%s/%s)"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.promote-to-owner"
+msgstr "提升為擁有者"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, fuzzy, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"這裡還沒有文件，如果你想嘗試一些模板，你可以前往 [資料庫 & 模板區段](https://penpot.app/libraries-templates."
+"html)"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "個人檔案尚未驗證，再繼續之前，請先驗證個人檔案。"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "你尚未安裝任何自訂字型。"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "邀請至團隊"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "離開團隊"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "移至"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "移至其他團隊"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+#, fuzzy
+msgid "dashboard.new-file"
+msgstr "+ 新檔案"
+
+#: src/app/main/data/dashboard.cljs
+#, fuzzy
+msgid "dashboard.new-file-prefix"
+msgstr "新檔案"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dashboard.new-project"
+msgstr "+ 新的專案"
+
+#: src/app/main/ui/dashboard/search.cljs
+#, fuzzy
+msgid "dashboard.no-matches-for"
+msgstr "找不到符合 “%s“ 的項目"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "釘選的專案會在此顯示"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "密碼已儲存成功！"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s 位成員"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "正在搜尋 “%s“…"
+
+#: src/app/main/ui/settings/options.cljs
+#, fuzzy
+msgid "dashboard.select-ui-language"
+msgstr "選擇使用介面的語言"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-theme"
+msgstr "選擇主題"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "你的檔案已成功複製"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "你的專案已成功複製"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.switch-team"
+msgstr "切換團隊"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-info"
+msgstr "團隊資訊"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-members"
+msgstr "團隊成員"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-projects"
+msgstr "團隊專案"
+
+#: src/app/main/ui/dashboard/search.cljs
+#, fuzzy
+msgid "dashboard.type-something"
+msgstr "輸入以搜尋結果"
+
+#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+msgid "dashboard.update-settings"
+msgstr "更新設定"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-name"
+msgstr "你的名字"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "你的 Penpot"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, fuzzy
+msgid "ds.updated-at"
+msgstr "已更新：%s"
+
+#: src/app/main/data/workspace.cljs
+msgid "errors.clipboard-not-implemented"
+msgstr "你的瀏覽器無法執行此作業"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-already-exists"
+msgstr "電子信箱已被使用"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.email-already-validated"
+msgstr "電子信箱已完成驗證。"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.generic"
+msgstr "發生了一些錯誤。"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.google-auth-not-enabled"
+msgstr "Google 驗證功能在後端並未啟用"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.media-too-large"
+msgstr "影像檔案過大，無法插入（須小於 5MB）"
+
+msgid "errors.media-format-unsupported"
+msgstr "不支援此影像格式（必須是 svg，jpg 或者 png）"
+
+msgid "errors.network"
+msgstr "無法連接後端伺服器。"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-invalid-confirmation"
+msgstr "確認密碼必須相符"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-too-short"
+msgstr "密碼至少需有 8 個字元"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "errors.registration-disabled"
+msgstr "目前並不開放註冊。"
+
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "errors.unexpected-error"
+msgstr "發生了預料之外的錯誤。"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "未知的 token"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#, fuzzy
+msgid "errors.media-type-not-allowed"
+msgstr "這好像不是個能用的影像。"
+
+#: src/app/main/ui/auth/login.cljs
+#, fuzzy
+msgid "errors.wrong-credentials"
+msgstr "使用者名稱或密碼似乎有誤。"
+
+#: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
+msgid "feedback.chat-start"
+msgstr "加入聊天"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "狀況描述"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-go-to"
+msgstr "前往討論"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle1"
+msgstr "加入 Penpot 團隊的協作溝通論壇。"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-title"
+msgstr "團隊討論"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr "確定要移除此連結？如果這麼做，它將不再能被任何人存取"
+
+#, fuzzy
+msgid "dashboard.export.detail"
+msgstr "* 可能會包含元件、圖像、顏色及/或文字編排"
+
+#, fuzzy
+msgid "dashboard.export.explain"
+msgstr "你想匯出的單個或多個檔案中使用了共用資料庫，你想要如何處理它們的素材*？"
