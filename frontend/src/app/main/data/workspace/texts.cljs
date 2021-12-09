@@ -54,23 +54,23 @@
   (ptk/reify ::finalize-editor-state
     ptk/WatchEvent
     (watch [_ state _]
-      (let [content (-> (get-in state [:workspace-editor-state id])
-                        (ted/get-editor-current-content))]
+      (when (dwc/initialized? state)
+        (let [content (-> (get-in state [:workspace-editor-state id])
+                          (ted/get-editor-current-content))]
+          (if (ted/content-has-text? content)
+            (let [content (d/merge (ted/export-content content)
+                                   (dissoc (:content shape) :children))]
+              (rx/merge
+               (rx/of (update-editor-state shape nil))
+               (when (and (not= content (:content shape))
+                          (some? (:current-page-id state)))
+                 (rx/of
+                  (dch/update-shapes [id] #(assoc % :content content))
+                  (dwu/commit-undo-transaction)))))
 
-        (if (ted/content-has-text? content)
-          (let [content (d/merge (ted/export-content content)
-                                 (dissoc (:content shape) :children))]
-            (rx/merge
-             (rx/of (update-editor-state shape nil))
-             (when (and (not= content (:content shape))
-                        (some? (:current-page-id state)))
-               (rx/of
-                (dch/update-shapes [id] #(assoc % :content content))
-                (dwu/commit-undo-transaction)))))
-
-          (when (some? id)
-            (rx/of (dws/deselect-shape id)
-                   (dwc/delete-shapes #{id}))))))))
+            (when (some? id)
+              (rx/of (dws/deselect-shape id)
+                     (dwc/delete-shapes #{id})))))))))
 
 (defn initialize-editor-state
   [{:keys [id content] :as shape} decorator]
