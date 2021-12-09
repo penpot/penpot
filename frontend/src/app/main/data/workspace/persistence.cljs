@@ -56,13 +56,14 @@
                           (rx/filter dch/commit-changes?)
                           (rx/debounce 2000)
                           (rx/merge stoper forcer))
-
-            local-file? #(as-> (:file-id %) event-file-id
-                           (or (nil? event-file-id)
-                               (= event-file-id file-id)))
-            library-file? #(as-> (:file-id %) event-file-id
-                             (and (some? event-file-id)
-                                  (not= event-file-id file-id)))
+            local-file?
+            #(as-> (:file-id %) event-file-id
+               (or (nil? event-file-id)
+                   (= event-file-id file-id)))
+            library-file?
+            #(as-> (:file-id %) event-file-id
+               (and (some? event-file-id)
+                    (not= event-file-id file-id)))
 
             on-dirty
             (fn []
@@ -564,6 +565,20 @@
 (defn update-frame-thumbnail
   [frame-id]
   (ptk/event ::update-frame-thumbnail {:frame-id frame-id}))
+
+(defn update-shape-thumbnail
+  "An event that is succeptible to be executed out of the main flow, so
+  it need to correctly handle the situation that there are no page-id
+  or file-is loaded."
+  [shape-id thumbnail-data]
+  (ptk/reify ::update-shape-thumbnail
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (and (dwc/initialized? state)
+                 (uuid? shape-id))
+        (rx/of (dch/update-shapes [shape-id]
+                                  #(assoc % :thumbnail thumbnail-data)
+                                  {:save-undo? false}))))))
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"

@@ -114,7 +114,9 @@
                 :changes changes}))))
 
 (defn commit-changes
-  [{:keys [redo-changes undo-changes origin save-undo? file-id] :or {save-undo? true}}]
+  [{:keys [redo-changes undo-changes
+           origin save-undo? file-id]
+    :or {save-undo? true}}]
   (log/debug :msg "commit-changes"
              :js/redo-changes redo-changes
              :js/undo-changes undo-changes)

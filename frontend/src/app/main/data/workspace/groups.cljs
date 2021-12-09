@@ -137,7 +137,7 @@
 
 (defn prepare-remove-group
   [page-id group objects]
-  (let [shapes    (:shapes group)
+  (let [shapes    (into [] (:shapes group)) ; ensure we always have vector
         parent-id (cp/get-parent (:id group) objects)
         parent    (get objects parent-id)
 

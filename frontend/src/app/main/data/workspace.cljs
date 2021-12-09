@@ -267,12 +267,10 @@
   (ptk/reify ::finalize-page
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (or page-id (get-in state [:workspace-data :pages 0]))
-            local   (-> (:workspace-local state)
-                        (dissoc
-                         :edition
-                         :edit-path
-                         :selected))]
+      (let [local (-> (:workspace-local state)
+                      (dissoc :edition
+                              :edit-path
+                              :selected))]
         (-> state
             (assoc-in [:workspace-cache page-id] local)
             (dissoc :current-page-id :workspace-local :trimmed-page :workspace-drawing))))))
@@ -348,8 +346,6 @@
 
 (declare purge-page)
 (declare go-to-file)
-
-;; TODO: properly handle positioning on undo.
 
 ;; TODO: for some reason, the page-id here in some circumstances is `nil`
 (defn delete-page
@@ -669,6 +665,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dch/update-shapes [id] #(merge % attrs))))))
+
 
 (defn start-rename-shape
   [id]
