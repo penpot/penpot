@@ -48,3 +48,12 @@
            [:a :b :c :d]))
 
   )
+
+
+(t/deftest parse-path-name
+  (t/is (= ["foo" "bar"] (cph/parse-path-name "foo/bar")))
+  (t/is (= ["" "foo"] (cph/parse-path-name "foo")))
+  (t/is (= ["" "foo"] (cph/parse-path-name "/foo")))
+  (t/is (= ["" ""] (cph/parse-path-name "")))
+  (t/is (= ["" ""] (cph/parse-path-name nil)))
+  )
