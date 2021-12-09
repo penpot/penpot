@@ -219,18 +219,24 @@
   (ptk/reify ::ungroup-selected
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            changes-in-bulk (->> (wsh/lookup-selected state)
-                                 (map  #(get objects %))
-                                 (filter #(or (= :bool (:type %)) (= :group (:type %))))
-                                 (map #(prepare-remove-group page-id % objects)))
-            rchanges-in-bulk (into [] (mapcat first) changes-in-bulk)
-            uchanges-in-bulk (into [] (mapcat second) changes-in-bulk)]
-        (rx/of (dch/commit-changes {:redo-changes rchanges-in-bulk
-                                    :undo-changes uchanges-in-bulk
-                                    :origin it}))))))
+      (let [page-id   (:current-page-id state)
+            objects   (wsh/lookup-page-objects state page-id)
+            is-group? #(or (= :bool (:type %)) (= :group (:type %)))
+            lookup    #(get objects %)
+            prepare   #(prepare-remove-group page-id % objects)
 
+            changes   (sequence
+                       (comp (map lookup)
+                             (filter is-group?)
+                             (map prepare))
+                       (wsh/lookup-selected state))
+
+            rchanges (into [] (mapcat first) changes)
+            uchanges (into [] (mapcat second) changes)]
+
+        (rx/of (dch/commit-changes {:redo-changes rchanges
+                                    :undo-changes uchanges
+                                    :origin it}))))))
 (def mask-group
   (ptk/reify ::mask-group
     ptk/WatchEvent
