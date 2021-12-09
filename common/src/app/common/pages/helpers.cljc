@@ -441,7 +441,7 @@
   [path-name]
   (let [path-name-split (split-path path-name)
         path (str/join " / " (butlast path-name-split))
-        name (last path-name-split)]
+        name (or (last path-name-split) "")]
     [path name]))
 
 (defn merge-path-item

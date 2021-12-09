@@ -242,11 +242,11 @@
     (watch [it state _]
       (let [[path name] (cp/parse-path-name (:name typography))
             typography  (assoc typography :path path :name name)
-            prev (get-in state [:workspace-data :typographies (:id typography)])
-            rchg {:type :mod-typography
-                  :typography typography}
-            uchg {:type :mod-typography
-                  :typography prev}]
+            prev        (get-in state [:workspace-data :typographies (:id typography)])
+            rchg        {:type :mod-typography
+                         :typography typography}
+            uchg        {:type :mod-typography
+                         :typography prev}]
         (rx/of (dwu/start-undo-transaction)
                (dch/commit-changes {:redo-changes [rchg]
                                     :undo-changes [uchg]
