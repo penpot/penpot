@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-12-09 04:50+0000\n"
+"PO-Revision-Date: 2021-12-10 08:52+0000\n"
 "Last-Translator: Andy Li <andyli2456@gmail.com>\n"
 "Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hant/>\n"
@@ -1059,10 +1059,27 @@ msgstr "團隊討論"
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr "確定要移除此連結？如果這麼做，它將不再能被任何人存取"
 
-#, fuzzy
 msgid "dashboard.export.detail"
-msgstr "* 可能會包含元件、圖像、顏色及/或文字編排"
+msgstr "* 可能會包含元件、圖像、顏色及／或文字編排。"
 
 #, fuzzy
 msgid "dashboard.export.explain"
 msgstr "你想匯出的單個或多個檔案中使用了共用資料庫，你想要如何處理它們的素材*？"
+
+msgid "workspace.undo.entry.single.group"
+msgstr "群組"
+
+msgid "workspace.undo.entry.single.image"
+msgstr "影像"
+
+msgid "workspace.undo.entry.multiple.shape"
+msgstr "形狀"
+
+msgid "workspace.undo.entry.multiple.rect"
+msgstr "矩形"
+
+msgid "workspace.undo.entry.multiple.text"
+msgstr "文字"
+
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "字元樣式資產"
