@@ -31,6 +31,12 @@
 (s/def ::set-of-string (s/every string? :kind set?))
 (s/def ::ordered-set-of-uuid (s/every uuid? :kind d/ordered-set?))
 
+(defn initialized?
+  "Check if the state is properly intialized in a workspace. This means
+  it has the `:current-page-id` and `:current-file-id` properly set."
+  [state]
+  (and (uuid? (:current-file-id state))
+       (uuid? (:current-page-id state))))
 
 ;; --- Helpers
 

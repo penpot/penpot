@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.viewport.thumbnail-renderer
   (:require
-   [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.store :as st]
    [app.util.dom :as dom]
@@ -80,7 +79,7 @@
   "Component in charge of creating thumbnails and storing them"
   {::mf/wrap-props false}
   [props]
-  (let [objects (obj/get props "objects")
+  (let [objects    (obj/get props "objects")
         background (obj/get props "background")
 
         ;; Id of the current frame being rendered
@@ -97,12 +96,9 @@
 
         updates-stream
         (mf/use-memo
-         (fn []
-           (let [update-events
-                 (->> st/stream
-                      (rx/filter dwp/update-frame-thumbnail?))]
-             (->> (rx/zip update-events next)
-                  (rx/map first)))))
+         #(let [update-events (rx/filter dwp/update-frame-thumbnail? st/stream)]
+            (->> (rx/zip update-events next)
+                 (rx/map first))))
 
         on-thumbnail-data
         (mf/use-callback
@@ -111,9 +107,7 @@
            (reset! shape-id nil)
            (timers/schedule
             (fn []
-              (st/emit! (dwc/update-shapes [@shape-id]
-                                           #(assoc % :thumbnail data)
-                                           {:save-undo? false}))
+              (st/emit! (dwp/update-shape-thumbnail @shape-id data))
               (rx/push! next :next)))))
 
         on-frame-not-found
