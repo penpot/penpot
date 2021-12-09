@@ -24,18 +24,26 @@
   (ptk/input-stream state))
 
 (defonce last-events
-  (let [buffer (atom #queue [])
-        remove #{:potok.core/undefined
-                 :app.main.data.workspace.notifications/handle-pointer-update}]
-    (->> stream
-         (rx/filter ptk/event?)
-         (rx/map ptk/type)
-         (rx/filter (complement remove))
-         (rx/map str)
-         (rx/dedupe)
-         (rx/buffer 20 1)
-         (rx/subs #(reset! buffer %)))
-
+  (let [buffer  (atom [])
+        allowed #{:app.main.data.workspace/initialize-page
+                  :app.main.data.workspace/finalize-page
+                  :app.main.data.workspace/initialize-file
+                  :app.main.data.workspace/finalize-file}]
+    (->> (rx/merge
+          (->> stream
+               (rx/filter (ptk/type? :app.main.data.workspace.changes/commit-changes))
+               (rx/map #(-> % deref :hint-origin str))
+               (rx/dedupe))
+          (->> stream
+               (rx/map ptk/type)
+               (rx/filter #(contains? allowed %))
+               (rx/map str)))
+         (rx/scan (fn [buffer event]
+                    (cond-> (conj buffer event)
+                      (> (count buffer) 20)
+                      (pop)))
+                  #queue [])
+         (rx/subs #(reset! buffer (vec %))))
     buffer))
 
 (defn emit!
