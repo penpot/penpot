@@ -544,18 +544,17 @@
          (rx/of (rt/nav rname pparams qparams))))))
 
 (defn go-to-workspace
-  [page-id]
-  (ptk/reify ::go-to-workspace
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [project-id (get-in state [:viewer :project :id])
-            file-id    (get-in state [:viewer :file :id])
-            pparams    {:project-id project-id :file-id file-id}
-            qparams    {:page-id page-id}]
+  ([] (go-to-workspace nil))
+  ([page-id]
+   (ptk/reify ::go-to-workspace
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [project-id (get-in state [:viewer :project :id])
+             file-id    (get-in state [:viewer :file :id])
+             pparams    {:project-id project-id :file-id file-id}
+             qparams    {:page-id (or page-id (:current-page-id state))}]
          (rx/of (rt/nav-new-window*
                  {:rname :workspace
                   :path-params pparams
                   :query-params qparams
-                  :name (str "workspace-" file-id)}))))))
-
-
+                  :name (str "workspace-" file-id)})))))))
