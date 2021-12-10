@@ -62,23 +62,17 @@
   :test
   {:target :node-test
    :output-to "target/tests.js"
+   :output-dir "target/test/"
    :ns-regexp "^app.*-test$"
-   ;; :autorun true
+   :autorun true
 
-   :release
-   {:compiler-options
-    {:pseudo-names true
-     :pretty-print true
-     :source-map true
-     :source-map-include-sources-content true
-     :source-map-detail-level :all
-     :optimizations :whitespace
-     :fn-invoke-direct true}}
+   :compiler-options
+   {:output-feature-set :es8
+    :output-wrapper false
+    :source-map true
+    :source-map-include-sources-content true
+    :source-map-detail-level :all
+    :warnings {:fn-deprecated false}}}
 
-   :dev
-   {:compiler-options
-    {:output-feature-set :es8
-     :output-wrapper false}}
-
-   }}}
+  }}
 
