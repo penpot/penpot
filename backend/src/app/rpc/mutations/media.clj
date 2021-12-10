@@ -92,6 +92,16 @@
                          :content-type mtype
                          :expired-at (dt/in-future {:minutes 30})}))))
 
+;; NOTE: we use the `on conflict do update` instead of `do nothing`
+;; because postgresql does not returns anything if no update is
+;; performed, the `do update` does the trick.
+
+(def sql:create-file-media-object
+  "insert into file_media_object (id, file_id, is_local, name, media_id, thumbnail_id, width, height, mtype)
+   values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       on conflict (id) do update set created_at=file_media_object.created_at
+       returning *")
+
 (defn create-file-media-object
   [{:keys [conn storage] :as cfg} {:keys [id file-id is-local name content] :as params}]
   (media/validate-media-type (:content-type content))
@@ -117,18 +127,15 @@
         thumb        (when thumb
                        (sto/put-object storage {:content (sto/content (:data thumb) (:size thumb))
                                                 :content-type (:mtype thumb)}))]
-    (db/insert! conn :file-media-object
-                {:id (or id (uuid/next))
-                 :file-id file-id
-                 :is-local is-local
-                 :name name
-                 :media-id (:id image)
-                 :thumbnail-id (:id thumb)
-                 :width  (:width source-info)
-                 :height (:height source-info)
-                 :mtype  source-mtype}
-                {:on-conflict-do-nothing true})))
 
+    (db/exec-one! conn [sql:create-file-media-object
+                        (or id (uuid/next))
+                        file-id is-local name
+                        (:id image)
+                        (:id thumb)
+                        (:width source-info)
+                        (:height source-info)
+                        source-mtype])))
 
 ;; --- Create File Media Object (from URL)
 

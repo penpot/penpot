@@ -86,3 +86,48 @@
         (t/is (= 312043 (:size mobj1)))
         (t/is (= 3887   (:size mobj2)))))
     ))
+
+
+(t/deftest media-object-upload-idempotency
+  (let [prof   (th/create-profile* 1)
+        proj   (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        mfile  {:filename "sample.jpg"
+                :tempfile (th/tempfile "app/test_files/sample.jpg")
+                :content-type "image/jpeg"
+                :size 312043}
+
+        params {::th/type :upload-file-media-object
+                :profile-id (:id prof)
+                :file-id (:id file)
+                :is-local true
+                :name "testfile"
+                :content mfile
+                :id (uuid/next)}]
+
+    ;; First try
+    (let [{:keys [result error] :as out} (th/mutation! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? error))
+      (t/is (= (:id params) (:id result)))
+      (t/is (= (:file-id params) (:file-id result)))
+      (t/is (= 800 (:width result)))
+      (t/is (= 800 (:height result)))
+      (t/is (= "image/jpeg" (:mtype result)))
+      (t/is (uuid? (:media-id result)))
+      (t/is (uuid? (:thumbnail-id result))))
+
+    ;; Second try
+    (let [{:keys [result error] :as out} (th/mutation! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? error))
+      (t/is (= (:id params) (:id result)))
+      (t/is (= (:file-id params) (:file-id result)))
+      (t/is (= 800 (:width result)))
+      (t/is (= 800 (:height result)))
+      (t/is (= "image/jpeg" (:mtype result)))
+      (t/is (uuid? (:media-id result)))
+      (t/is (uuid? (:thumbnail-id result))))))

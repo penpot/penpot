@@ -72,17 +72,17 @@
   (s/keys :opt-un [::destination ::preserve-scroll]))
 
 (defmethod action-opts-spec :open-overlay [_]
-  (s/keys :req-un [::destination
-                   ::overlay-position
+  (s/keys :req-un [::overlay-position
                    ::overlay-pos-type]
-          :opt-un [::close-click-outside
+          :opt-un [::destination
+                   ::close-click-outside
                    ::background-overlay]))
 
 (defmethod action-opts-spec :toggle-overlay [_]
-  (s/keys :req-un [::destination
-                   ::overlay-position
+  (s/keys :req-un [::overlay-position
                    ::overlay-pos-type]
-          :opt-un [::close-click-outside
+          :opt-un [::destination
+                   ::close-click-outside
                    ::background-overlay]))
 
 (defmethod action-opts-spec :close-overlay [_]
