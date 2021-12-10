@@ -32,8 +32,8 @@
           (rx/empty))))))
 
 (def shortcuts
-  {:move-nodes      {:tooltip "V"
-                     :command "v"
+  {:move-nodes      {:tooltip "M"
+                     :command "m"
                      :fn #(st/emit! (drp/change-edit-mode :move))}
 
    :draw-nodes      {:tooltip "P"
@@ -60,12 +60,12 @@
                      :command "k"
                      :fn #(st/emit! (drp/separate-nodes))}
 
-   :make-corner     {:tooltip "B"
-                     :command "b"
+   :make-corner     {:tooltip "X"
+                     :command "x"
                      :fn #(st/emit! (drp/make-corner))}
 
-   :make-curve      {:tooltip (ds/meta "B")
-                     :command (ds/c-mod "b")
+   :make-curve      {:tooltip "C"
+                     :command "c"
                      :fn #(st/emit! (drp/make-curve))}
 
    :snap-nodes      {:tooltip (ds/meta "'")

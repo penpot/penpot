@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace
   (:require
+   [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.geom.align :as gal]
    [app.common.geom.matrix :as gmt]
@@ -1199,12 +1200,19 @@
         (rx/of (dch/update-shapes [id] assign-proportions))))))
 
 (defn toggle-proportion-lock
-[]
-(ptk/reify ::toggle-propotion-lock
-  ptk/WatchEvent
-  (watch [_ state _]
-         (let [selected (wsh/lookup-selected state)]
-           (rx/of (dch/update-shapes selected #(update % :proportion-lock not)))))))
+  []
+  (ptk/reify ::toggle-propotion-lock
+    ptk/WatchEvent
+    (watch [_ state _]
+           (let [page-id       (:current-page-id state)
+                 objects       (wsh/lookup-page-objects state page-id)
+                 selected      (wsh/lookup-selected state)
+                 selected-obj  (-> (map #(get objects %) selected))
+                 multi         (attrs/get-attrs-multi selected-obj [:proportion-lock])
+                 multi?        (= :multiple (:proportion-lock multi))]
+             (if multi?
+               (rx/of (dch/update-shapes selected #(assoc % :proportion-lock true)))
+               (rx/of (dch/update-shapes selected #(update % :proportion-lock not))))))))
 
 ;; --- Update Shape Flags
 
