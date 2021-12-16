@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-12-10 08:52+0000\n"
+"PO-Revision-Date: 2021-12-18 01:51+0000\n"
 "Last-Translator: Andy Li <andyli2456@gmail.com>\n"
 "Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hant/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.10-dev\n"
+"X-Generator: Weblate 4.10\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -921,9 +921,8 @@ msgid "dashboard.searching-for"
 msgstr "正在搜尋 “%s“…"
 
 #: src/app/main/ui/settings/options.cljs
-#, fuzzy
 msgid "dashboard.select-ui-language"
-msgstr "選擇使用介面的語言"
+msgstr "選擇介面語言"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.select-ui-theme"
@@ -956,7 +955,7 @@ msgstr "團隊專案"
 #: src/app/main/ui/dashboard/search.cljs
 #, fuzzy
 msgid "dashboard.type-something"
-msgstr "輸入以搜尋結果"
+msgstr "輸入以搜尋"
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
@@ -971,7 +970,6 @@ msgid "dashboard.your-penpot"
 msgstr "你的 Penpot"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, fuzzy
 msgid "ds.updated-at"
 msgstr "已更新：%s"
 
@@ -1026,17 +1024,14 @@ msgid "errors.unexpected-token"
 msgstr "未知的 token"
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
-#, fuzzy
 msgid "errors.media-type-not-allowed"
 msgstr "這好像不是個能用的影像。"
 
 #: src/app/main/ui/auth/login.cljs
-#, fuzzy
 msgid "errors.wrong-credentials"
 msgstr "使用者名稱或密碼似乎有誤。"
 
 #: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
 msgid "feedback.chat-start"
 msgstr "加入聊天"
 
@@ -1083,3 +1078,54 @@ msgstr "文字"
 
 msgid "workspace.undo.entry.multiple.typography"
 msgstr "字元樣式資產"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "title.settings.feedback"
+msgstr "提供回饋 - Penpot"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "title.settings.options"
+msgstr "設定 - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "字型 - %s - Penpot"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "title.dashboard.projects"
+msgstr "專案 - %s - Penpot"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "title.dashboard.search"
+msgstr "搜尋 - %s - Penpot"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
+msgid "title.default"
+msgstr "Penpot - 給團隊設計的自由"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "title.settings.password"
+msgstr "密碼 - Penpot"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "title.settings.profile"
+msgstr "個人資料 - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-members"
+msgstr "成員 - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-settings"
+msgstr "設定 - %s - Penpot"
+
+#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+msgid "title.viewer"
+msgstr "%s - 檢視模式 - Penpot"
+
+#: src/app/main/ui/workspace.cljs
+msgid "title.workspace"
+msgstr "%s - Penpot"
+
+msgid "viewer.breaking-change.description"
+msgstr "這個共用連結已失效，建立一個新連結，或向擁有者要求一個。"
