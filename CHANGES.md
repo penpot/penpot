@@ -19,6 +19,7 @@
 
 - Spelling fixes (by @jsoref) [#1340](https://github.com/penpot/penpot/pull/1340).
 - Explain folders in components (by @candideu) [Penpot-docs #42](https://github.com/penpot/penpot-docs/pull/42).
+- Readability improvements of user guide (by @PaulSchulz) [Penpot-docs #50](https://github.com/penpot/penpot-docs/pull/50).
 
 
 # 1.10.1-beta
