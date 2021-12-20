@@ -8,6 +8,7 @@
   (:require
    [app.main.data.modal :as modal]
    [app.main.data.viewer :as dv]
+   [app.main.data.viewer.shortcuts :as sc]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.fullscreen :as fs]
@@ -151,14 +152,14 @@
       [:button.mode-zone-button.tooltip.tooltip-bottom
        {:on-click #(navigate :interactions)
         :class (dom/classnames :active (= section :interactions))
-        :alt (tr "viewer.header.interactions-section")}
+        :alt (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))}
        i/play]
 
       (when (:can-edit permissions)
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :comments)
           :class (dom/classnames :active (= section :comments))
-          :alt (tr "viewer.header.comments-section")}
+          :alt (tr "viewer.header.comments-section" (sc/get-tooltip :open-comments))}
          i/chat])
 
       (when (or (= (:type permissions) :membership)
@@ -167,7 +168,7 @@
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :handoff)
           :class (dom/classnames :active (= section :handoff))
-          :alt (tr "viewer.header.handsoff-section")}
+          :alt (tr "viewer.header.handsoff-section" (sc/get-tooltip :open-handoff))}
          i/code])]
 
      [:& header-options {:section section

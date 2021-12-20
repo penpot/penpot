@@ -1756,7 +1756,7 @@ msgid "viewer.frame-not-found"
 msgstr "No se encuentra el tablero."
 
 msgid "viewer.header.comments-section"
-msgstr "Comentarios"
+msgstr "Comentarios (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
@@ -1767,14 +1767,14 @@ msgid "viewer.header.fullscreen"
 msgstr "Pantalla completa"
 
 msgid "viewer.header.handsoff-section"
-msgstr "Handoff"
+msgstr "Handoff (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
 msgstr "Interacciones"
 
 msgid "viewer.header.interactions-section"
-msgstr "Interacciones"
+msgstr "Interacciones (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"

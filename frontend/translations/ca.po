@@ -1708,7 +1708,7 @@ msgid "viewer.frame-not-found"
 msgstr "No s'ha trobat la taula de treball."
 
 msgid "viewer.header.comments-section"
-msgstr "Comentaris"
+msgstr "Comentaris (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
@@ -1723,14 +1723,14 @@ msgid "viewer.header.fullscreen"
 msgstr "Pantalla completa"
 
 msgid "viewer.header.handsoff-section"
-msgstr "Lliurament"
+msgstr "Lliurament (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
 msgstr "Interaccions"
 
 msgid "viewer.header.interactions-section"
-msgstr "Interaccions"
+msgstr "Interaccions (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
