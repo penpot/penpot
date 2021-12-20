@@ -2,7 +2,13 @@
 
 export PENPOT_FLAGS="enable-asserts enable-audit-log $PENPOT_FLAGS"
 
-export OPTIONS="-A:jmx-remote:dev -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -J-Dlog4j2.configurationFile=log4j2-devenv.xml -J-Dclojure.tools.logging.factory=clojure.tools.logging.impl/log4j2-factory -J-XX:+UseZGC -J-XX:ConcGCThreads=1 -J-XX:-OmitStackTraceInFastThrow -J-Xms50m -J-Xmx512m";
+export OPTIONS="-A:jmx-remote:dev \
+                -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
+                -J-Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector \
+                -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
+                -J-Dclojure.tools.logging.factory=clojure.tools.logging.impl/log4j2-factory \
+                -J-XX:+UseShenandoahGC -J-XX:-OmitStackTraceInFastThrow -J-Xms50m -J-Xmx512m";
+
 # export OPTIONS="$OPTIONS -J-XX:+UnlockDiagnosticVMOptions";
 # export OPTIONS="$OPTIONS -J-XX:-TieredCompilation -J-XX:CompileThreshold=10000";
 

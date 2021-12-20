@@ -8,12 +8,17 @@
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "1.1.0"}
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.14.1"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.14.1"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.14.1"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.14.1"}
-  org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.14.1"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.16.0"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.16.0"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.16.0"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.16.0"}
+  org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.16.0"}
   org.slf4j/slf4j-api {:mvn/version "2.0.0-alpha1"}
+  org.slf4j/jcl-over-slf4j {:mvn/version "2.0.0-alpha1"}
+  org.slf4j/log4j-over-slf4j {:mvn/version "2.0.0-alpha1"}
+  org.slf4j/osgi-over-slf4j {:mvn/version "2.0.0-alpha1"}
+  org.slf4j/jul-to-slf4j {:mvn/version "2.0.0-alpha1"}
+  com.lmax/disruptor {:mvn/version "3.4.4"}
 
   selmer/selmer {:mvn/version "1.12.45"}
   expound/expound {:mvn/version "0.8.10"}
