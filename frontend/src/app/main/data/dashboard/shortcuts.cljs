@@ -8,8 +8,7 @@
   (:require
    [app.main.data.dashboard :as dd]
    [app.main.data.shortcuts :as ds]
-   [app.main.store :as st]
-   ))
+   [app.main.store :as st]))
 
 (def shortcuts
   {:go-to-search       {:tooltip (ds/meta "F")

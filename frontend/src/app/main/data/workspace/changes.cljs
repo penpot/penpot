@@ -20,7 +20,7 @@
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
-(log/set-level! :debug)
+(log/set-level! :warn)
 
 (s/def ::coll-of-uuid
   (s/every ::us/uuid))

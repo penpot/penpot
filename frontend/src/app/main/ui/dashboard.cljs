@@ -90,7 +90,7 @@
         projects     (mf/deref refs/dashboard-projects)
         project      (get projects project-id)]
 
-    (hooks/use-shortcuts ::viewer sc/shortcuts)
+    (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
     (mf/use-effect
      (mf/deps team-id)
