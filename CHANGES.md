@@ -8,6 +8,18 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+# 1.10.2-beta
+
+### :bug: Bugs fixed
+
+- Fix corner case issues with media file uploads.
+- Fix issue with default page grids validation.
+- Fix issue related to some raceconditions on workspace navigation events.
+
+### :arrow_up: Deps updates
+
+- Update log4j2 dependency.
+
 
 # 1.10.1-beta
 
