@@ -1757,7 +1757,7 @@ msgid "viewer.frame-not-found"
 msgstr "Artboard not found."
 
 msgid "viewer.header.comments-section"
-msgstr "Comments"
+msgstr "Comments (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
@@ -1768,14 +1768,14 @@ msgid "viewer.header.fullscreen"
 msgstr "Full Screen"
 
 msgid "viewer.header.handsoff-section"
-msgstr "Handsoff"
+msgstr "Handsoff (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
 msgstr "Interactions"
 
 msgid "viewer.header.interactions-section"
-msgstr "Interactions"
+msgstr "Interactions (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"

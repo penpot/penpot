@@ -549,10 +549,12 @@
    (ptk/reify ::go-to-workspace
      ptk/WatchEvent
      (watch [_ state _]
-       (let [project-id (get-in state [:viewer :project :id])
+       (let [route   (:route state)
+             project-id (get-in state [:viewer :project :id])
              file-id    (get-in state [:viewer :file :id])
+             saved-page-id   (get-in route [:query-params :page-id])
              pparams    {:project-id project-id :file-id file-id}
-             qparams    {:page-id (or page-id (:current-page-id state))}]
+             qparams    {:page-id (or page-id saved-page-id)}]
          (rx/of (rt/nav-new-window*
                  {:rname :workspace
                   :path-params pparams

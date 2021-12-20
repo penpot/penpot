@@ -1753,7 +1753,7 @@ msgid "viewer.frame-not-found"
 msgstr "Keine Zeichenfläche gefunden."
 
 msgid "viewer.header.comments-section"
-msgstr "Kommentare"
+msgstr "Kommentare (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
@@ -1768,14 +1768,14 @@ msgid "viewer.header.fullscreen"
 msgstr "Vollbildmodus"
 
 msgid "viewer.header.handsoff-section"
-msgstr "Übergabe"
+msgstr "Übergabe (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
 msgstr "Interaktionen"
 
 msgid "viewer.header.interactions-section"
-msgstr "Interaktionen"
+msgstr "Interaktionen (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"

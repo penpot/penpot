@@ -1732,7 +1732,7 @@ msgid "viewer.frame-not-found"
 msgstr "Çalışma yüzeyi bulunamadı."
 
 msgid "viewer.header.comments-section"
-msgstr "Yorumlar"
+msgstr "Yorumlar (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
@@ -1755,7 +1755,7 @@ msgid "viewer.header.interactions"
 msgstr "Etkileşimler"
 
 msgid "viewer.header.interactions-section"
-msgstr "Etkileşimler"
+msgstr "Etkileşimler (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
