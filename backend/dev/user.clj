@@ -6,15 +6,18 @@
 
 (ns user
   (:require
+   [datoteka.core]
    [app.common.exceptions :as ex]
    [app.config :as cfg]
    [app.main :as main]
    [app.util.blob :as blob]
    [app.util.json :as json]
+   [app.util.fressian :as fres]
    [app.util.time :as dt]
-   [app.util.transit :as t]
+   [app.common.transit :as t]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint print-table]]
+   [clojure.contrib.humanize :as hum]
    [clojure.repl :refer :all]
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as sgen]
@@ -22,10 +25,12 @@
    [clojure.test :as test]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
+   [clj-async-profiler.core :as prof]
    [criterium.core :refer [quick-bench bench with-progress-reporting]]
    [integrant.core :as ig]))
 
 (repl/disable-reload! (find-ns 'integrant.core))
+(set! *warn-on-reflection* true)
 
 (defonce system nil)
 
@@ -91,7 +96,15 @@
 
 (defn compression-bench
   [data]
-  (print-table
-   [{:v1 (alength (blob/encode data {:version 1}))
-     :v2 (alength (blob/encode data {:version 2}))
-     :v3 (alength (blob/encode data {:version 3}))}]))
+  (let [humanize (fn [v] (hum/filesize v :binary true :format " %.4f "))]
+    (print-table
+     [{:v1 (humanize (alength (blob/encode data {:version 1})))
+       :v2 (humanize (alength (blob/encode data {:version 2})))
+       :v3 (humanize (alength (blob/encode data {:version 3})))
+       :v4 (humanize (alength (blob/encode data {:version 4})))
+       }])))
+
+
+;; ;; (def contents (read-string (slurp (io/resource "bool-contents-1.edn"))))
+;; (def pre-data (datoteka.core/slurp-bytes (io/resource "file-data-sample")))
+;; (def data (blob/decode pre-data))
