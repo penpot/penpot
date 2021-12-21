@@ -43,7 +43,6 @@
         ;; that the new parameter is sent
         {:keys [edit-path
                 edition
-                modifiers
                 options-mode
                 panning
                 picking-color?
@@ -62,10 +61,10 @@
         drawing           (mf/deref refs/workspace-drawing)
         options           (mf/deref refs/workspace-page-options)
         base-objects      (mf/deref refs/workspace-page-objects)
-        object-modifiers  (mf/deref refs/workspace-modifiers)
-        objects           (mf/use-memo
-                           (mf/deps base-objects object-modifiers)
-                           #(gsh/merge-modifiers base-objects object-modifiers))
+        modifiers         (mf/deref refs/workspace-modifiers)
+        objects-modified  (mf/use-memo
+                           (mf/deps base-objects modifiers)
+                           #(gsh/merge-modifiers base-objects modifiers))
         background        (get options :background clr/canvas)
 
         ;; STATE
@@ -81,7 +80,6 @@
 
         ;; REFS
         viewport-ref      (mf/use-ref nil)
-        render-ref        (mf/use-ref nil)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -94,25 +92,22 @@
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
-        selected-shapes   (into []
-                                (comp (map #(get objects %))
-                                      (filter some?))
-                                selected)
+        xf-select-shape   (comp (map (d/getf objects-modified)) (filter some?))
+        selected-shapes   (into [] xf-select-shape selected)
         selected-frames   (into #{} (map :frame-id) selected-shapes)
 
         ;; Only when we have all the selected shapes in one frame
-        selected-frame    (when (= (count selected-frames) 1) (get objects (first selected-frames)))
-
+        selected-frame    (when (= (count selected-frames) 1) (get base-objects (first selected-frames)))
 
         create-comment?   (= :comments drawing-tool)
         drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
-        node-editing?     (and edition (not= :text (get-in objects [edition :type])))
-        text-editing?     (and edition (= :text (get-in objects [edition :type])))
+        node-editing?     (and edition (not= :text (get-in base-objects [edition :type])))
+        text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool)
         on-context-menu   (actions/on-context-menu hover)
-        on-double-click   (actions/on-double-click hover hover-ids drawing-path? objects edition)
+        on-double-click   (actions/on-double-click hover hover-ids drawing-path? base-objects edition)
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file viewport-ref zoom)
@@ -155,10 +150,10 @@
     (hooks/setup-cursor cursor alt? panning drawing-tool drawing-path? node-editing?)
     (hooks/setup-resize layout viewport-ref)
     (hooks/setup-keyboard alt? ctrl? space?)
-    (hooks/setup-hover-shapes page-id move-stream objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
-    (hooks/setup-viewport-modifiers modifiers selected objects render-ref)
+    (hooks/setup-hover-shapes page-id move-stream base-objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
+    (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path?)
-    (hooks/setup-active-frames objects vbox hover active-frames)
+    (hooks/setup-active-frames base-objects vbox hover active-frames)
 
     [:div.viewport
      [:div.viewport-overlays
@@ -184,7 +179,6 @@
       [:& widgets/viewport-actions]]
      [:svg.render-shapes
       {:id "render"
-       :ref render-ref
        :xmlns "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :xmlns:penpot "https://penpot.app/xmlns"
@@ -202,7 +196,7 @@
        [:& (mf/provider embed/context) {:value true}
         ;; Render root shape
         [:& shapes/root-shape {:key page-id
-                               :objects objects
+                               :objects base-objects
                                :active-frames @active-frames}]]]]
 
      [:svg.viewport-controls
@@ -234,7 +228,7 @@
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-outlines?
          [:& outline/shape-outlines
-          {:objects objects
+          {:objects base-objects
            :selected selected
            :hover (when (not= :frame (:type @hover))
                     #{(or @frame-hover (:id @hover))})
@@ -259,10 +253,10 @@
            :zoom zoom}])
 
        (when text-editing?
-         [:& editor/text-shape-edit {:shape (get objects edition)}])
+         [:& editor/text-shape-edit {:shape (get base-objects edition)}])
 
        [:& widgets/frame-titles
-        {:objects objects
+        {:objects objects-modified
          :selected selected
          :zoom zoom
          :modifiers modifiers
@@ -273,7 +267,7 @@
        (when show-prototypes?
          [:& widgets/frame-flows
           {:flows (:flows options)
-           :objects objects
+           :objects base-objects
            :selected selected
            :zoom zoom
            :modifiers modifiers
@@ -310,7 +304,7 @@
            :zoom zoom
            :page-id page-id
            :selected selected
-           :objects objects
+           :objects base-objects
            :modifiers modifiers}])
 
        (when show-snap-distance?

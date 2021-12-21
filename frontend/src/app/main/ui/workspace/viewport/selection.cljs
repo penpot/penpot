@@ -320,7 +320,9 @@
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape {:round-coords? false})
 
-        shape' (if (debug? :simple-selection) (geom/setup {:type :rect} (geom/selection-rect [shape])) shape)
+        shape' (if (debug? :simple-selection)
+                 (geom/setup {:type :rect} (geom/selection-rect [shape]))
+                 shape)
 
         on-resize
         (fn [current-position _initial-position event]

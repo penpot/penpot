@@ -8,7 +8,6 @@
   "A collection of derived refs."
   (:require
    [app.common.data :as d]
-   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.path.commands :as upc]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -232,23 +231,13 @@
   (l/derived #(get % id) workspace-page-objects))
 
 (defn objects-by-id
-  ([ids]
-   (objects-by-id ids nil))
-
-  ([ids {:keys [with-modifiers?]
-         :or { with-modifiers? false }}]
-   (let [selector
-         (fn [state]
-           (let [objects (wsh/lookup-page-objects state)
-                 modifiers (:workspace-modifiers state)
-                 ;; FIXME: Improve performance
-                 objects (cond-> objects
-                           with-modifiers?
-                           (gsh/merge-modifiers modifiers))
-                 xform (comp (map (d/getf objects))
-                             (remove nil?))]
-             (into [] xform ids)))]
-     (l/derived selector st/state =))))
+  [ids]
+  (let [selector
+        (fn [state]
+          (let [objects (wsh/lookup-page-objects state)
+                xform (comp (map (d/getf objects)) (remove nil?))]
+            (into [] xform ids)))]
+    (l/derived selector st/state =)))
 
 (defn- set-content-modifiers [state]
   (fn [id shape]
@@ -260,20 +249,8 @@
 (defn select-children [id]
   (let [selector
         (fn [state]
-          (let [objects (wsh/lookup-page-objects state)
-
-                modifiers (-> (:workspace-modifiers state))
-                {selected :selected disp-modifiers :modifiers}
-                (-> (:workspace-local state)
-                    (select-keys [:modifiers :selected]))
-
-                modifiers
-                (d/deep-merge
-                 modifiers
-                 (into {} (map #(vector % {:modifiers disp-modifiers})) selected))]
-
+          (let [objects (wsh/lookup-page-objects state)]
             (as-> (cp/select-children id objects) $
-              (gsh/merge-modifiers $ modifiers)
               (d/mapm (set-content-modifiers state) $))))]
     (l/derived selector st/state =)))
 

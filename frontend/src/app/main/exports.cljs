@@ -31,6 +31,7 @@
    [app.util.object :as obj]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
 (def ^:private default-color clr/canvas)
@@ -76,10 +77,9 @@
   (let [shape-wrapper (shape-wrapper-factory objects)
         group-shape   (group/group-shape shape-wrapper)]
     (mf/fnc group-wrapper
-      [{:keys [shape frame] :as props}]
+      [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
-        [:& group-shape {:frame frame
-                         :shape shape
+        [:& group-shape {:shape shape
                          :is-child-selected? true
                          :childs childs}]))))
 
@@ -88,11 +88,10 @@
   (let [shape-wrapper (shape-wrapper-factory objects)
         bool-shape   (bool/bool-shape shape-wrapper)]
     (mf/fnc bool-wrapper
-      [{:keys [shape frame] :as props}]
+      [{:keys [shape] :as props}]
       (let [childs (->> (cp/get-children (:id shape) objects)
                         (select-keys objects))]
-        [:& bool-shape {:frame frame
-                        :shape shape
+        [:& bool-shape {:shape shape
                         :childs childs}]))))
 
 (defn svg-raw-wrapper-factory
@@ -100,18 +99,16 @@
   (let [shape-wrapper (shape-wrapper-factory objects)
         svg-raw-shape   (svg-raw/svg-raw-shape shape-wrapper)]
     (mf/fnc svg-raw-wrapper
-      [{:keys [shape frame] :as props}]
+      [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
         (if (and (map? (:content shape))
                  (or (= :svg (get-in shape [:content :tag]))
                      (contains? shape :svg-attrs)))
           [:> shape-container {:shape shape}
-           [:& svg-raw-shape {:frame frame
-                              :shape shape
+           [:& svg-raw-shape {:shape shape
                               :childs childs}]]
 
-          [:& svg-raw-shape {:frame frame
-                             :shape shape
+          [:& svg-raw-shape {:shape shape
                              :childs childs}])))))
 
 (defn shape-wrapper-factory
@@ -123,8 +120,7 @@
           bool-wrapper    (mf/use-memo (mf/deps objects) #(bool-wrapper-factory objects))
           frame-wrapper   (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
-        (let [shape (-> (gsh/transform-shape shape)
-                        (gsh/translate-to-frame frame))
+        (let [shape (gsh/transform-shape shape)
               opts #js {:shape shape}
               svg-raw? (= :svg-raw (:type shape))]
           (if-not svg-raw?
@@ -198,7 +194,7 @@
                        :width (:width item)
                        :height (:height item)
                        ;; DEBUG
-                       ;; :style {:filter "sepia(1)"}
+                       :style {:filter (when (debug? :thumbnails) "sepia(1)")}
                        }]
               frame?
               [:& frame-wrapper {:shape item

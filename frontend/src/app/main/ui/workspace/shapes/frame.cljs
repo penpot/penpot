@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.shapes.frame
   (:require
    [app.common.data :as d]
-   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.frame :as frame]

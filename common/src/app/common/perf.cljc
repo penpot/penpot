@@ -21,14 +21,15 @@
   [key]
   (- (timestamp) (get @measures key)))
 
-#?(:cljs
-   (defn benchmark
-     "A helper function for perform a unitari benchmark on JS/CLJS. It
+(defn benchmark
+  "A helper function for perform a unitari benchmark on JS/CLJS. It
      uses browser native api so it only suitable to be executed in
      browser."
-     [& {:keys [f iterations name]
-         :or {iterations 10000}}]
-     (let [end-mark (str name ":end")]
+  [& _options]
+  #?(:cljs
+     (let [{:keys [f iterations name]
+            :or {iterations 10000}} _options
+           end-mark (str name ":end")]
        (println "=> benchmarking:" name)
        (println "--> warming up:" iterations)
        (loop [i iterations]
@@ -50,4 +51,5 @@
          (js/performance.clearMeasures end-mark)
          #js {:duration duration
               :avg avg}))))
+
 

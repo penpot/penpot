@@ -27,12 +27,10 @@
   [shape-wrapper]
   (let [shape-component (bool/bool-shape shape-wrapper)]
     (mf/fnc bool-wrapper
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
+      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
        ::mf/wrap-props false}
       [props]
       (let [shape      (unchecked-get props "shape")
-            frame      (unchecked-get props "frame")
-
             childs-ref (mf/use-memo
                         (mf/deps (:id shape))
                         #(refs/select-children (:id shape)))
@@ -41,7 +39,6 @@
 
         [:> shape-container {:shape shape}
          [:& shape-component
-          {:frame frame
-           :shape shape
+          {:shape shape
            :childs childs}]]))))
 

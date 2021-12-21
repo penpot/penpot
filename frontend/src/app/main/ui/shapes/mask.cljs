@@ -34,13 +34,9 @@
   (mf/fnc mask-shape
     {::mf/wrap-props false}
     [props]
-    (let [frame     (unchecked-get props "frame")
-          mask      (unchecked-get props "mask")
+    (let [mask      (unchecked-get props "mask")
           render-id (mf/use-ctx muc/render-ctx)
-
-          mask' (-> mask
-                    (gsh/transform-shape)
-                    (gsh/translate-to-frame frame))]
+          mask'     (gsh/transform-shape mask)]
       [:defs
        [:filter {:id (filter-id render-id mask)}
         [:feFlood {:flood-color "white"
@@ -52,13 +48,13 @@
        ;; Clip path is necessary so the elements inside the mask won't affect
        ;; the events outside. Clip hides the elements but mask doesn't (like display vs visibility)
        ;; we cannot use clips instead of mask because clips can only be simple shapes
-       [:clipPath {:id (clip-id render-id mask)}
+       [:clipPath {:class "mask-clip-path"
+                   :id (clip-id render-id mask)}
         [:polyline {:points (->> (:points mask')
                                  (map #(str (:x %) "," (:y %)))
                                  (str/join " "))}]]
-       [:mask {:id (mask-id render-id mask)}
+       [:mask {:class "mask-shape"
+               :id (mask-id render-id mask)}
         [:g {:filter (filter-url render-id mask)}
-         [:& shape-wrapper {:frame frame
-                            :shape (-> mask
-                                       (dissoc :shadow :blur))}]]]])))
+         [:& shape-wrapper {:shape (dissoc mask :shadow :blur)}]]]])))
 

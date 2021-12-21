@@ -27,18 +27,15 @@
   [shape-wrapper]
   (let [group-shape (group/group-shape shape-wrapper)]
     (mf/fnc group-wrapper
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
+      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
        ::mf/wrap-props false}
       [props]
       (let [shape      (unchecked-get props "shape")
-            frame      (unchecked-get props "frame")
-
-            childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape) {:with-modifiers? true}))
+            childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
             childs     (mf/deref childs-ref)]
 
         [:> shape-container {:shape shape}
          [:& group-shape
-          {:frame frame
-           :shape shape
+          {:shape shape
            :childs childs}]]))))
 

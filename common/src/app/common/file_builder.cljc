@@ -51,7 +51,7 @@
      (get-in file [:data :components  (:current-component-id file) :objects])
      (get-in file [:data :pages-index (:current-page-id file) :objects]))))
 
-(defn- lookup-shape [file shape-id]
+(defn lookup-shape [file shape-id]
   (-> (lookup-objects file)
       (get shape-id)))
 
@@ -321,16 +321,11 @@
         (update :parent-stack pop))))
 
 (defn create-shape [file type data]
-  (let [frame-id (:current-frame-id file)
-        frame (when-not (= frame-id root-frame)
-                (lookup-shape file frame-id))
-        obj (-> (init/make-minimal-shape type)
+  (let [obj (-> (init/make-minimal-shape type)
                 (merge data)
                 (check-name file :type)
                 (setup-selrect)
-                (d/without-nils))
-        obj (cond-> obj
-              frame (gsh/translate-from-frame frame))]
+                (d/without-nils))]
     (-> file
         (commit-shape obj)
         (assoc :last-id (:id obj))

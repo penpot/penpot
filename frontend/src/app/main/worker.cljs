@@ -13,18 +13,22 @@
   [error]
   (js/console.error "Error on worker" error))
 
-(defonce instance
-  (when (not= *target* "nodejs")
-    (uw/init cfg/worker-uri on-error)))
+(defonce instance (atom nil))
+
+(defn init!
+  []
+  (reset!
+   instance
+   (uw/init cfg/worker-uri on-error)))
 
 (defn ask!
   [message]
-  (uw/ask! instance message))
+  (when @instance (uw/ask! @instance message)))
 
 (defn ask-buffered!
   [message]
-  (uw/ask-buffered! instance message))
+  (when @instance (uw/ask-buffered! @instance message)))
 
 (defn ask-many!
   [message]
-  (uw/ask-many! instance message))
+  (when @instance (uw/ask-many! @instance message)))

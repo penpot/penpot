@@ -14,6 +14,7 @@
    [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.fill-image :as fim]
    [app.main.ui.shapes.filters :as filters]
+   [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.gradients :as grad]
    [app.main.ui.shapes.svg-defs :as defs]
    [app.util.object :as obj]
@@ -26,6 +27,8 @@
   (let [shape          (obj/get props "shape")
         children       (obj/get props "children")
         pointer-events (obj/get props "pointer-events")
+
+        type           (:type shape)
         render-id      (mf/use-memo #(str (uuid/next)))
         filter-id      (str "filter_" render-id)
         styles         (-> (obj/new)
@@ -33,10 +36,6 @@
 
                            (cond-> (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
                              (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
-
-        {:keys [x y width height type]} shape
-        frame? (= :frame type)
-        group? (= :group type)
 
         include-metadata? (mf/use-ctx ed/include-metadata-ctx)
 
@@ -50,26 +49,14 @@
 
         wrapper-props
         (cond-> wrapper-props
-          frame?
-          (-> (obj/set! "x" x)
-              (obj/set! "y" y)
-              (obj/set! "width" width)
-              (obj/set! "height" height)
-              (obj/set! "xmlns" "http://www.w3.org/2000/svg")
-              (obj/set! "xmlnsXlink" "http://www.w3.org/1999/xlink")
-              (cond->
-                include-metadata?
-                (obj/set! "xmlns:penpot" "https://penpot.app/xmlns"))))
+          (= :frame type)
+          (obj/set! "clipPath" (frame/frame-clip-url shape render-id))
 
-        wrapper-props
-        (cond-> wrapper-props
-          group?
-          (attrs/add-style-attrs shape))
-
-        wrapper-tag (if frame? "svg" "g")]
+          (= :group type)
+          (attrs/add-style-attrs shape))]
 
     [:& (mf/provider muc/render-ctx) {:value render-id}
-     [:> wrapper-tag wrapper-props
+     [:> :g wrapper-props
       (when include-metadata?
         [:& ed/export-data {:shape shape}])
 
@@ -79,5 +66,6 @@
        [:& grad/gradient          {:shape shape :attr :fill-color-gradient}]
        [:& grad/gradient          {:shape shape :attr :stroke-color-gradient}]
        [:& fim/fill-image-pattern {:shape shape :render-id render-id}]
-       [:& cs/stroke-defs         {:shape shape :render-id render-id}]]
+       [:& cs/stroke-defs         {:shape shape :render-id render-id}]
+       [:& frame/frame-clip-def   {:shape shape :render-id render-id}]]
       children]]))

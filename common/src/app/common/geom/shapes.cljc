@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bool :as gsb]
    [app.common.geom.shapes.common :as gco]
+   [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.intersect :as gin]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
@@ -163,8 +164,12 @@
 (d/export gtr/rotation-modifiers)
 (d/export gtr/merge-modifiers)
 (d/export gtr/transform-shape)
-(d/export gtr/calc-transformed-parent-rect)
-(d/export gtr/calc-child-modifiers)
+(d/export gtr/transform-selrect)
+(d/export gtr/modifiers->transform)
+(d/export gtr/empty-modifiers?)
+
+;; Constratins
+(d/export gct/calc-child-modifiers)
 
 ;; PATHS
 (d/export gsp/content->selrect)

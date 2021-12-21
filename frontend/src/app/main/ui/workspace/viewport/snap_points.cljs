@@ -58,7 +58,7 @@
                 (->> shapes (first)))
 
         shape (if modifiers
-                (-> shape (assoc :modifiers modifiers) gsh/transform-shape)
+                (-> shape (merge (get modifiers (:id shape))) gsh/transform-shape)
                 shape)
 
         frame-id (snap/snap-frame-id shapes)]

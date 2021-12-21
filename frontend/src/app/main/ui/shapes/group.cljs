@@ -17,8 +17,7 @@
     (mf/fnc group-shape
       {::mf/wrap-props false}
       [props]
-      (let [frame          (unchecked-get props "frame")
-            shape          (unchecked-get props "shape")
+      (let [shape          (unchecked-get props "shape")
             childs         (unchecked-get props "childs")
             render-id      (mf/use-ctx muc/render-ctx)
             masked-group?  (:masked-group? shape)
@@ -46,11 +45,10 @@
         [:> clip-wrapper clip-props
          [:> mask-wrapper mask-props
           (when masked-group?
-            [:> render-mask #js {:frame frame :mask mask}])
+            [:> render-mask #js {:mask mask}])
 
           (for [item childs]
-            [:& shape-wrapper {:frame frame
-                               :shape item
+            [:& shape-wrapper {:shape item
                                :key (:id item)}])]]))))
 
 

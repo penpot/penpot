@@ -18,7 +18,7 @@
    [app.main.ui.confirm]
    [app.main.ui.modal :refer [modal]]
    [app.main.ui.routes :as rt]
-   [app.main.worker]
+   [app.main.worker :as worker]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
    [app.util.theme :as theme]
@@ -60,6 +60,7 @@
 
 (defn ^:export init
   []
+  (worker/init!)
   (sentry/init!)
   (i18n/init! cf/translations)
   (theme/init! cf/themes)
