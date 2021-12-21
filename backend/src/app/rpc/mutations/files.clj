@@ -409,7 +409,6 @@
   [conn project-id]
   (:team-id (db/get-by-id conn :project project-id {:columns [:team-id]})))
 
-
 ;; TEMPORARY FILE CREATION
 
 (s/def ::create-temp-file ::create-file)

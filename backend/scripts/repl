@@ -9,7 +9,6 @@ export OPTIONS="-A:jmx-remote:dev \
                 -J-Dclojure.tools.logging.factory=clojure.tools.logging.impl/log4j2-factory \
                 -J-XX:+UseShenandoahGC -J-XX:-OmitStackTraceInFastThrow -J-Xms50m -J-Xmx512m";
 
-# export OPTIONS="$OPTIONS -J-XX:+UnlockDiagnosticVMOptions";
 # export OPTIONS="$OPTIONS -J-XX:-TieredCompilation -J-XX:CompileThreshold=10000";
 
 export OPTIONS_EVAL="nil"

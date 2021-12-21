@@ -145,18 +145,27 @@
 ;; --- Low-Level Api
 
 #?(:clj
+   (def read-handlers
+     (t/read-handler-map +read-handlers+)))
+
+#?(:clj
+   (def write-handlers
+     (t/write-handler-map +write-handlers+)))
+
+#?(:clj
    (defn reader
      ([istream]
       (reader istream nil))
      ([istream {:keys [type] :or {type :json}}]
-      (t/reader istream type {:handlers +read-handlers+}))))
+      (t/reader istream type {:handlers read-handlers}))))
 
 #?(:clj
    (defn writer
      ([ostream]
       (writer ostream nil))
      ([ostream {:keys [type] :or {type :json}}]
-      (t/writer ostream type {:handlers +write-handlers+}))))
+      (t/writer ostream type {:handlers write-handlers}))))
+
 #?(:clj
    (defn read!
      [reader]
