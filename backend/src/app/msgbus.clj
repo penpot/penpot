@@ -179,18 +179,18 @@
     ;; Add a unique listener to connection
     (.addListener sub-conn
                   (reify RedisPubSubListener
-                    (message [_it _pattern _topic _message])
-                    (message [_it topic message]
-                      ;; There are no back pressure, so we use a sliding
+                    (message [_ _pattern _topic _message])
+                    (message [_ topic message]
+                      ;; There are no back pressure, so we use a slidding
                       ;; buffer for cases when the pubsub broker sends
                       ;; more messages that we can process.
                       (let [val {:topic topic :message (blob/decode message)}]
                         (when-not (a/offer! rcv-ch val)
                           (l/warn :msg "dropping message on subscription loop"))))
-                    (psubscribed [_it _pattern _count])
-                    (punsubscribed [_it _pattern _count])
-                    (subscribed [_it _topic _count])
-                    (unsubscribed [_it _topic _count])))
+                    (psubscribed [_ _pattern _count])
+                    (punsubscribed [_ _pattern _count])
+                    (subscribed [_ _topic _count])
+                    (unsubscribed [_ _topic _count])))
 
     (letfn [(subscribe-to-single-topic [nsubs topic chan]
               (let [nsubs (if (nil? nsubs) #{chan} (conj nsubs chan))]

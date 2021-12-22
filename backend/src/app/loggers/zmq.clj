@@ -15,8 +15,7 @@
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [integrant.core :as ig]
-   [jsonista.core :as j])
+   [integrant.core :as ig])
   (:import
    org.zeromq.SocketType
    org.zeromq.ZMQ$Socket
@@ -54,10 +53,10 @@
   [_ f]
   (a/close! (::buffer (meta f))))
 
-(def json-mapper
-  (j/object-mapper
-    {:encode-key-fn str/camel
-     :decode-key-fn (comp keyword str/kebab)}))
+(def ^:private json-mapper
+  (json/mapper
+   {:encode-key-fn str/camel
+    :decode-key-fn (comp keyword str/kebab)}))
 
 (defn- start-rcv-loop
   ([] (start-rcv-loop nil))
@@ -70,14 +69,13 @@
      (.. socket (setReceiveTimeOut 5000))
      (loop []
        (let [msg (.recv ^ZMQ$Socket socket)
-             msg (ex/ignoring (j/read-value msg json-mapper))
+             msg (ex/ignoring (json/read msg json-mapper))
              msg (if (nil? msg) :empty msg)]
          (if (a/>!! out msg)
            (recur)
            (do
              (.close ^java.lang.AutoCloseable socket)
              (.close ^java.lang.AutoCloseable zctx))))))))
-
 
 (s/def ::logger-name string?)
 (s/def ::level string?)

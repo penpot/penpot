@@ -13,7 +13,6 @@
    [app.util.json :as json]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
-   [clojure.java.io :as io]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
@@ -36,8 +35,7 @@
               (t/read! reader)))
 
           (parse-json [body]
-            (let [reader (io/reader body)]
-              (json/read reader)))
+            (json/read body))
 
           (parse [type body]
             (try

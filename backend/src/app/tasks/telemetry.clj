@@ -59,7 +59,7 @@
         response    (http/send! {:method :post
                                  :uri (:uri cfg)
                                  :headers {"content-type" "application/json"}
-                                 :body (json/encode-str data)})]
+                                 :body (json/write-str data)})]
     (when (> (:status response) 206)
       (ex/raise :type :internal
                 :code :invalid-response

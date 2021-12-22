@@ -68,7 +68,7 @@
                                 :timeout 6000
                                 :method :post
                                 :headers {"content-type" "application/json"}
-                                :body (json/encode payload)})]
+                                :body (json/write payload)})]
       (cond
         (= (:status response) 204)
         true
