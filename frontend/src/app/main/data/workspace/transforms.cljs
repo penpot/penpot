@@ -502,7 +502,6 @@
             stopper  (rx/filter ms/mouse-up? stream)]
         (when-not (empty? selected)
           (->> ms/mouse-position
-               (rx/take-until stopper)
                (rx/map #(gpt/to-vec initial %))
                (rx/map #(gpt/length %))
                (rx/filter #(> % 1))
@@ -515,7 +514,9 @@
                     (rx/of (start-move-duplicate initial)
                            (dws/duplicate-selected false))
                     ;; Otherwise just plain old move
-                    (rx/of (start-move initial selected)))))))))))
+                    (rx/of (start-move initial selected)))))
+               (rx/take-until stopper)))))))
+
 
 (defn- start-move-duplicate
   [from-position]
@@ -556,7 +557,6 @@
                             delta)))
 
              position (->> ms/mouse-position
-                           (rx/take-until stopper)
                            (rx/with-latest-from ms/mouse-position-shift)
                            (rx/map #(fix-axis %)))
 
@@ -575,7 +575,8 @@
             (->> position
                  (rx/with-latest vector snap-delta)
                  (rx/map snap/correct-snap-point)
-                 (rx/map set-local-displacement))
+                 (rx/map set-local-displacement)
+                 (rx/take-until stopper))
 
             (rx/of (set-modifiers ids)
                    (apply-modifiers ids)
