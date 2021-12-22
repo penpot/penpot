@@ -522,7 +522,7 @@
          [:li.feedback {:on-click (partial on-click :settings-feedback)}
           [:span.icon i/msg-info]
           [:span.text (tr "labels.give-feedback")]
-          [:span.primary-badge "ALPHA"]])]]]
+          [:span.primary-badge "BETA"]])]]]
 
      (when (and team profile)
        [:& comments-section {:profile profile
