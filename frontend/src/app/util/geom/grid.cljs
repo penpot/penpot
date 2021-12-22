@@ -23,61 +23,65 @@
         frame-length-no-margins (- frame-length (+ margin (- margin gutter)))]
     (mth/floor (/ frame-length-no-margins (+ item-length gutter)))))
 
+(defn- calculate-generic-grid
+  [v width {:keys [size gutter margin item-length type]}]
+  (let [size   (if (number? size)
+                 size
+                 (calculate-size width item-length margin gutter))
+        parts  (/ width size)
+
+        width' (min (or item-length ##Inf) (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
+
+        offset (case type
+                 :right (- width (* width' size) (* gutter (dec size)) margin)
+                 :center (/ (- width (* width' size) (* gutter (dec size))) 2)
+                 margin)
+
+        gutter (if (= :stretch type)
+                 (let [gutter (/ (- width (* width' size) (* margin 2)) (dec size))]
+                   (if (mth/finite? gutter) gutter 0))
+                 gutter)
+
+        next-v (fn [cur-val]
+                 (+ offset v (* (+ width' gutter) cur-val)))]
+
+    [size width' next-v]))
+
 (defn- calculate-column-grid
-  [{:keys [width height x y] :as frame} {:keys [size gutter margin item-length type] :as params}]
-  (let [size (if (number? size) size (calculate-size width item-length margin gutter))
-        parts (/ width size)
-        item-width (min (or item-length ##Inf) (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
-        item-height height
-        initial-offset (case type
-                         :right (- width (* item-width size) (* gutter (dec size)) margin)
-                         :center (/ (- width (* item-width size) (* gutter (dec size))) 2)
-                         margin)
-        gutter (if (= :stretch type) (/ (- width (* item-width size) (* margin 2)) (dec size)) gutter)
-        next-x (fn [cur-val] (+ initial-offset x (* (+ item-width gutter) cur-val)))
-        next-y (fn [_] y)]
-    [size item-width item-height next-x next-y]))
+  [{:keys [width height x y] :as frame} params]
+  (let [[size width next-x] (calculate-generic-grid x width params)]
+    [size width height next-x (constantly y)]))
 
 (defn- calculate-row-grid
-  [{:keys [width height x y] :as frame} {:keys [size gutter margin item-length type] :as params}]
-  (let [size (if (number? size) size (calculate-size height item-length margin gutter))
-        parts (/ height size)
-        item-width width
-        item-height (min (or item-length ##Inf) (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
-        initial-offset (case type
-                         :right (- height (* item-height size) (* gutter (dec size)) margin)
-                         :center (/ (- height (* item-height size) (* gutter (dec size))) 2)
-                         margin)
-        gutter (if (= :stretch type) (/ (- height (* item-height size) (* margin 2)) (dec size)) gutter)
-        next-x (fn [_] x)
-        next-y (fn [cur-val] (+ initial-offset y (* (+ item-height gutter) cur-val)))]
-    [size item-width item-height next-x next-y]))
+  [{:keys [width height x y] :as frame} params]
+  (let [[size height next-y] (calculate-generic-grid y height params)]
+    [size width height (constantly x) next-y]))
 
 (defn- calculate-square-grid
   [{:keys [width height x y] :as frame} {:keys [size] :as params}]
-  (let [col-size (quot width size)
-        row-size (quot height size)
+  (let [col-size   (quot width size)
+        row-size   (quot height size)
         as-row-col (fn [value] [(quot value col-size) (rem value col-size)])
-        next-x (fn [cur-val]
-                 (let [[_ col] (as-row-col cur-val)] (+ x (* col size))))
-        next-y (fn [cur-val]
-                 (let [[row _] (as-row-col cur-val)] (+ y (* row size))))]
+        next-x     (fn [cur-val]
+                     (let [[_ col] (as-row-col cur-val)] (+ x (* col size))))
+        next-y     (fn [cur-val]
+                     (let [[row _] (as-row-col cur-val)] (+ y (* row size))))]
+
     [(* col-size row-size) size size next-x next-y]))
 
 (defn grid-areas
   "Given a frame and the grid parameters returns the areas defined on the grid"
   [frame grid]
   (let [grid-fn (case (-> grid :type)
-                    :column calculate-column-grid
-                    :row calculate-row-grid
-                    :square calculate-square-grid)
+                  :column calculate-column-grid
+                  :row    calculate-row-grid
+                  :square calculate-square-grid)
         [num-items item-width item-height next-x next-y] (grid-fn frame (-> grid :params))]
-    (->>
-     (range 0 num-items)
-     (map #(hash-map :x (next-x %)
-                     :y (next-y %)
-                     :width item-width
-                     :height item-height)))))
+    (->> (range 0 num-items)
+         (map #(hash-map :x (next-x %)
+                         :y (next-y %)
+                         :width item-width
+                         :height item-height)))))
 
 (defn grid-area-points
   [{:keys [x y width height]}]
