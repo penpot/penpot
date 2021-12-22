@@ -31,7 +31,7 @@
           rsp  (http/send! {:uri uri
                             :method :post
                             :headers {"content-type" "application/json"}
-                            :body (json/encode-str {:text text})})]
+                            :body (json/write-str {:text text})})]
       (when (not= (:status rsp) 200)
         (l/error :hint "error on sending data to mattermost"
                  :response (pr-str rsp))))

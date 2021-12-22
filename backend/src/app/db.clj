@@ -27,14 +27,16 @@
    com.zaxxer.hikari.HikariConfig
    com.zaxxer.hikari.HikariDataSource
    com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
+   java.io.InputStream
+   java.io.OutputStream
    java.lang.AutoCloseable
    java.sql.Connection
    java.sql.Savepoint
    org.postgresql.PGConnection
    org.postgresql.geometric.PGpoint
+   org.postgresql.jdbc.PgArray
    org.postgresql.largeobject.LargeObject
    org.postgresql.largeobject.LargeObjectManager
-   org.postgresql.jdbc.PgArray
    org.postgresql.util.PGInterval
    org.postgresql.util.PGobject))
 
@@ -356,7 +358,7 @@
         val (.getValue o)]
     (if (or (= typ "json")
             (= typ "jsonb"))
-      (json/decode-str val)
+      (json/read val)
       val)))
 
 (defn decode-transit-pgobject
@@ -392,7 +394,7 @@
   [data]
   (doto (org.postgresql.util.PGobject.)
     (.setType "jsonb")
-    (.setValue (json/encode-str data))))
+    (.setValue (json/write-str data))))
 
 ;; --- Locks
 

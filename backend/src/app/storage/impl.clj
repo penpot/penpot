@@ -117,11 +117,11 @@
       io/IOFactory
       (make-reader [_ opts]
 	    (io/make-reader path opts))
-      (make-writer [_ opts]
+      (make-writer [_ _]
         (throw (UnsupportedOperationException. "not implemented")))
       (make-input-stream [_ opts]
         (io/make-input-stream path opts))
-      (make-output-stream [_ opts]
+      (make-output-stream [_ _]
         (throw (UnsupportedOperationException. "not implemented")))
       clojure.lang.Counted
       (count [_] size)
@@ -138,11 +138,11 @@
       io/IOFactory
       (make-reader [_ opts]
 	    (io/make-reader bais opts))
-      (make-writer [_ opts]
+      (make-writer [_ _]
         (throw (UnsupportedOperationException. "not implemented")))
       (make-input-stream [_ opts]
         (io/make-input-stream bais opts))
-      (make-output-stream [_ opts]
+      (make-output-stream [_ _]
         (throw (UnsupportedOperationException. "not implemented")))
 
       clojure.lang.Counted
@@ -159,11 +159,11 @@
     io/IOFactory
     (make-reader [_ opts]
       (io/make-reader is opts))
-    (make-writer [_ opts]
+    (make-writer [_ _]
       (throw (UnsupportedOperationException. "not implemented")))
     (make-input-stream [_ opts]
       (io/make-input-stream is opts))
-    (make-output-stream [_ opts]
+    (make-output-stream [_ _]
       (throw (UnsupportedOperationException. "not implemented")))
 
     clojure.lang.Counted
