@@ -20,13 +20,14 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
-(def measure-attrs [:proportion-lock
-                    :width :height
-                    :x :y
-                    :rotation
-                    :rx :ry
-                    :r1 :r2 :r3 :r4
-                    :selrect])
+(def measure-attrs
+  [:proportion-lock
+   :width :height
+   :x :y
+   :rotation
+   :rx :ry
+   :r1 :r2 :r3 :r4
+   :selrect])
 
 (defn- attr->string [attr values]
   (let [value (attr values)]
