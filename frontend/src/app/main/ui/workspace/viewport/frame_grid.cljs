@@ -11,7 +11,6 @@
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
    [app.util.geom.grid :as gg]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (mf/defc square-grid [{:keys [frame zoom grid] :as props}]
@@ -67,14 +66,14 @@
 
 (mf/defc grid-display-frame
   [{:keys [frame zoom]}]
-  (for [[index {:keys [type display] :as grid}] (->> (:grids frame)
+  (for [[index grid] (->> (:grids frame)
                                                      (filter :display)
                                                      (map-indexed vector))]
     (let [props #js {:key (str (:id frame) "-grid-" index)
                      :frame frame
                      :zoom zoom
                      :grid grid}]
-      (case type
+      (case (:type grid)
         :square [:> square-grid props]
         :column [:> layout-grid props]
         :row    [:> layout-grid props]))))
