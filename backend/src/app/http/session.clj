@@ -183,7 +183,7 @@
 
 (defmethod ig/prep-key ::gc-task
   [_ cfg]
-  (merge {:max-age (dt/duration {:days 2})}
+  (merge {:max-age (dt/duration {:days 15})}
          (d/without-nils cfg)))
 
 (defmethod ig/init-key ::gc-task

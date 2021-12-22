@@ -64,7 +64,6 @@
           (fn [value]
             (on-change (assoc-in grid keys-path value))))
 
-        ;; TODO: remove references to :auto
         handle-change-size
         (mf/use-fn
          (mf/deps grid)
@@ -75,7 +74,6 @@
                                 (-> (gg/calculate-default-item-length frame-length margin gutter)
                                     (mth/precision 2))
                                 item-length)]
-
              (-> grid
                  (update :params assoc :size size :item-length item-length)
                  (on-change)))))

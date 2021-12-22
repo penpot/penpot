@@ -289,8 +289,8 @@
 
        (when (contains? @cf/flags :user-feedback)
          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
-          [:span (tr "labels.give-feedback")]
-          [:span.primary-badge "ALPHA"]])
+          [:span (tr "labels.give-feedback")]])
+
        ]]]))
 
 ;; --- Header Component
