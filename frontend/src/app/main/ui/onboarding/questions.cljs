@@ -19,10 +19,12 @@
   (letfn [(on-init []
             (when-let [container (mf/ref-val container-ref)]
               (-> (.embed js/ArenguForms form-id container)
-                  (p/then (fn [form] (.setHiddenField ^js form "email" email))))))
+                  (p/then (fn [form]
+                            (.setHiddenField ^js form "email" email))))))
 
-          (on-submit-success [_]
-            (st/emit! (du/mark-questions-as-answered)))]
+          (on-submit-success [_event]
+            (st/emit! (du/mark-questions-as-answered)))
+          ]
 
     (let [script (dom/create-element "script")
           head   (unchecked-get js/document "head")

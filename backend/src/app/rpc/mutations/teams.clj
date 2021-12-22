@@ -158,7 +158,6 @@
 
       nil)))
 
-
 ;; --- Mutation: Delete Team
 
 (s/def ::delete-team

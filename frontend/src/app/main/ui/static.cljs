@@ -19,7 +19,6 @@
   [props]
   (let [children (obj/get props "children")
         on-click (mf/use-callback #(set! (.-href globals/location) ""))]
-
     [:section.exception-layout
      [:div.exception-header
       {:on-click on-click}

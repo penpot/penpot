@@ -61,6 +61,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare fetch-projects)
+(declare fetch-team-members)
 
 (defn initialize
   [{:keys [id] :as params}]
@@ -85,6 +86,7 @@
       (rx/merge
        (ptk/watch (df/load-team-fonts id) state stream)
        (ptk/watch (fetch-projects) state stream)
+       (ptk/watch (fetch-team-members) state stream)
        (ptk/watch (du/fetch-teams) state stream)
        (ptk/watch (du/fetch-users {:team-id id}) state stream)))))
 

@@ -50,7 +50,7 @@
 (defmethod ptk/handle-error :authentication
   [_]
   (let [msg (tr "errors.auth.unable-to-login")]
-    (st/emit! (du/logout {:capture-redirect? true}))
+    (st/emit! (du/logout {:capture-redirect true}))
     (ts/schedule 500 (st/emitf (dm/warn msg)))))
 
 

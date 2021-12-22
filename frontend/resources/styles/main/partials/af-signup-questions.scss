@@ -65,8 +65,7 @@
   }
 
   .af-divider-block {
-    margin-bottom: 2rem;
-
+    /* margin-bottom: 2rem; */
     p {
       &::after,
       &::before {
@@ -101,7 +100,7 @@
   }
 
   .af-field-input {
-    margin: 2rem 0;
+    margin: 0.5rem 0;
   }
 
   .af-choice-option input:checked+label:before,

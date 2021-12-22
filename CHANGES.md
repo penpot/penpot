@@ -23,6 +23,19 @@
 - Readability improvements of user guide (by @PaulSchulz) [Penpot-docs #50](https://github.com/penpot/penpot-docs/pull/50).
 
 
+# 1.10.2-beta
+
+### :bug: Bugs fixed
+
+- Fix corner case issues with media file uploads.
+- Fix issue with default page grids validation.
+- Fix issue related to some raceconditions on workspace navigation events.
+
+### :arrow_up: Deps updates
+
+- Update log4j2 dependency.
+
+
 # 1.10.1-beta
 
 ### :bug: Bugs fixed
