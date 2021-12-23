@@ -6,8 +6,7 @@
 
 (ns app.main.ui.shapes.bool
   (:require
-   [app.common.path.bool :as pb]
-   [app.common.path.shapes-to-path :as stp]
+   [app.common.geom.shapes :as gsh]
    [app.main.ui.hooks :refer [use-equal-memo]]
    [app.main.ui.shapes.export :as use]
    [app.main.ui.shapes.path :refer [path-shape]]
@@ -27,13 +26,8 @@
                 bool-content
                 (mf/use-memo
                  (mf/deps shape childs)
-                 (fn []
-                   (->> (:shapes shape)
-                        (map #(get childs %))
-                        (filter #(not (:hidden %)))
-                        (map #(stp/convert-to-path % childs))
-                        (mapv :content)
-                        (pb/content-bool (:bool-type shape)))))]
+                 #(or (:bool-content shape)
+                      (gsh/calc-bool-content shape childs)))]
 
             [:*
              [:& path-shape {:shape (assoc shape :content bool-content)}]

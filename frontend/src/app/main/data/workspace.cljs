@@ -28,6 +28,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
@@ -213,8 +214,11 @@
                                       (or (not ignore-until)
                                           (> (:modified-at %) ignore-until)))
                                 libraries)]
-        (when needs-update?
-          (rx/of (dwl/notify-sync-file file-id)))))))
+        (rx/merge
+         (rx/of (fbc/fix-bool-contents))
+         (if needs-update?
+           (rx/of (dwl/notify-sync-file file-id))
+           (rx/empty)))))))
 
 (defn finalize-file
   [_project-id file-id]
@@ -307,7 +311,7 @@
   [page-id]
   (ptk/reify ::duplicate-page
     ptk/WatchEvent
-    (watch [this state _]
+    (watch [it state _]
       (let [id      (uuid/next)
             pages   (get-in state [:workspace-data :pages-index])
             unames  (dwc/retrieve-used-names pages)
@@ -322,7 +326,7 @@
                      :id id}]
         (rx/of (dch/commit-changes {:redo-changes [rchange]
                                     :undo-changes [uchange]
-                                    :origin this}))))))
+                                    :origin it}))))))
 
 (s/def ::rename-page
   (s/keys :req-un [::id ::name]))

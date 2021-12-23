@@ -184,3 +184,4 @@
 
 ;; Bool
 (d/export gsb/update-bool-selrect)
+(d/export gsb/calc-bool-content)
