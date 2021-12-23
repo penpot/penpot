@@ -17,8 +17,11 @@
       org.apache.logging.log4j.LogManager
       org.apache.logging.log4j.Logger
       org.apache.logging.log4j.ThreadContext
+      org.apache.logging.log4j.CloseableThreadContext
       org.apache.logging.log4j.message.MapMessage
       org.apache.logging.log4j.spi.LoggerContext)))
+
+#?(:clj (set! *warn-on-reflection* true))
 
 #?(:clj
    (defn build-map-message
@@ -37,14 +40,13 @@
 (defn get-logger
   [lname]
   #?(:clj  (.getLogger ^LoggerContext logger-context ^String lname)
-     :cljs
-      (glog/getLogger
-       (cond
-         (string? lname) lname
-         (= lname :root) ""
-         (simple-ident? lname) (name lname)
-         (qualified-ident? lname) (str (namespace lname) "." (name lname))
-         :else (str lname)))))
+     :cljs (glog/getLogger
+            (cond
+              (string? lname) lname
+              (= lname :root) ""
+              (simple-ident? lname) (name lname)
+              (qualified-ident? lname) (str (namespace lname) "." (name lname))
+              :else (str lname)))))
 
 (defn get-level
   [level]
@@ -151,19 +153,47 @@
 ;; CLJ Specific
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- simple-prune
+  ([s] (simple-prune s (* 1024 1024)))
+  ([s max-length]
+   (if (> (count s) max-length)
+     (str (subs s 0 max-length) " [...]")
+     s)))
+
 #?(:clj
-   (defn update-thread-context!
+   (defn stringify-data
+     [val]
+     (cond
+       (instance? clojure.lang.Named val)
+       (name val)
+
+       (string? val)
+       val
+
+       (coll? val)
+       (binding [clojure.pprint/*print-right-margin* 120]
+         (-> (with-out-str (pprint val))
+             (simple-prune (* 1024 1024 3))))
+
+       :else
+       (str val))))
+
+#?(:clj
+   (defn data->context-map
+     ^java.util.Map
      [data]
-     (run! (fn [[key val]]
-             (ThreadContext/put
-              (name key)
-              (cond
-                (coll? val)
-                (binding [clojure.pprint/*print-right-margin* 120]
-                  (with-out-str (pprint val)))
-                (instance? clojure.lang.Named val) (name val)
-                :else (str val))))
+     (into {}
+           (comp (filter second)
+                 (map (fn [[key val]]
+                        [(stringify-data key)
+                         (stringify-data val)])))
            data)))
+
+#?(:clj
+   (defmacro with-context
+     [data & body]
+     `(with-open [instance# (CloseableThreadContext/putAll (data->context-map ~data))]
+        ~@body)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CLJS Specific

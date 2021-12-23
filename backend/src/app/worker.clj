@@ -266,13 +266,8 @@
 
         (= ::noop (:strategy edata))
         (assoc :inc-by 0))
-
-      (let [cdata (get-error-context error item)]
-        (l/update-thread-context! cdata)
-        (l/error :cause error
-                 :hint "unhandled exception on task"
-                 :id (:id cdata))
-
+      (l/with-context (get-error-context error item)
+        (l/error :cause error :hint "unhandled exception on task")
         (if (>= (:retry-num item) (:max-retries item))
           {:status :failed :task item :error error}
           {:status :retry :task item :error error})))))

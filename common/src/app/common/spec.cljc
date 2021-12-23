@@ -211,13 +211,11 @@
   [spec x message context]
   (if (s/valid? spec x)
     x
-    (let [data    (s/explain-data spec x)
-          explain (with-out-str (s/explain-out data))]
+    (let [data (s/explain-data spec x)]
       (ex/raise :type :assertion
                 :code :spec-validation
                 :hint message
                 :data data
-                :explain explain
                 :context context
                 #?@(:cljs [:stack (.-stack (ex-info message {}))])))))
 
@@ -253,12 +251,9 @@
   [spec data]
   (let [result (s/conform spec data)]
     (when (= result ::s/invalid)
-      (let [data    (s/explain-data spec data)
-            explain (with-out-str
-                      (s/explain-out data))]
+      (let [data (s/explain-data spec data)]
         (throw (ex/error :type :validation
                          :code :spec-validation
-                         :explain explain
                          :data data))))
     result))
 
