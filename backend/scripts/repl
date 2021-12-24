@@ -2,7 +2,6 @@
 
 export PENPOT_FLAGS="enable-asserts enable-audit-log $PENPOT_FLAGS"
 
-#-J-Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
 
 export OPTIONS="
        -A:jmx-remote:dev \

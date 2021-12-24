@@ -33,6 +33,7 @@
   com.sun.mail/jakarta.mail {:mvn/version "2.0.1"}
 
   ;; exception printing
+  fipp/fipp {:mvn/version "0.6.24"}
   io.aviso/pretty {:mvn/version "0.1.37"}
   environ/environ {:mvn/version "1.2.0"}}
  :paths ["src"]

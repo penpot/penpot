@@ -36,7 +36,7 @@
     (db/insert! conn :server-error-report
                 {:id id :content (db/tjson event)})))
 
-(defn- parse-context
+(defn- parse-event-data
   [event]
   (reduce-kv
    (fn [acc k v]
@@ -46,12 +46,11 @@
        (str/blank? v)    acc
        :else             (assoc acc k v)))
    {}
-   (:context event)))
+   event))
 
 (defn parse-event
   [event]
-  (-> (parse-context event)
-      (merge (dissoc event :context))
+  (-> (parse-event-data event)
       (assoc :tenant (cf/get :tenant))
       (assoc :host (cf/get :host))
       (assoc :public-uri (cf/get :public-uri))
@@ -62,6 +61,7 @@
   (aa/with-thread executor
     (try
       (let [event (parse-event event)]
+        (l/debug :hint "registering error on database" :id (:id event))
         (persist-on-database! cfg event))
       (catch Exception e
         (l/warn :hint "unexpected exception on database error logger"
@@ -74,7 +74,8 @@
   [_ {:keys [receiver] :as cfg}]
   (l/info :msg "initializing database error persistence")
   (let [output (a/chan (a/sliding-buffer 128)
-                       (filter #(= (:level %) "error")))]
+                       (filter (fn [event]
+                                 (= (:logger/level event) "error"))))]
     (receiver :sub output)
     (a/go-loop []
       (let [msg (a/<! output)]

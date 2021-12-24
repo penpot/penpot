@@ -95,3 +95,10 @@
    [{:v1 (alength (blob/encode data {:version 1}))
      :v2 (alength (blob/encode data {:version 2}))
      :v3 (alength (blob/encode data {:version 3}))}]))
+
+
+(defonce debug-tap
+  (do
+    (add-tap #(locking debug-tap
+                (prn "tap debug:" %)))
+    1))

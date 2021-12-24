@@ -9,6 +9,7 @@
    [app.common.exceptions :as ex]
    [clojure.pprint :refer [pprint]]
    [cuerdas.core :as str]
+   #?(:clj [io.aviso.exception :as ie])
    #?(:cljs [goog.log :as glog]))
   #?(:cljs (:require-macros [app.common.logging]))
   #?(:clj
@@ -20,6 +21,10 @@
       org.apache.logging.log4j.CloseableThreadContext
       org.apache.logging.log4j.message.MapMessage
       org.apache.logging.log4j.spi.LoggerContext)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CLJ Specific
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -36,6 +41,59 @@
 #?(:clj
   (def logging-agent
     (agent nil :error-mode :continue)))
+
+(defn- simple-prune
+  ([s] (simple-prune s (* 1024 1024)))
+  ([s max-length]
+   (if (> (count s) max-length)
+     (str (subs s 0 max-length) " [...]")
+     s)))
+
+#?(:clj
+   (defn stringify-data
+     [val]
+     (cond
+       (instance? clojure.lang.Named val)
+       (name val)
+
+       (instance? Throwable val)
+       (binding [ie/*app-frame-names* [#"app.*"]
+                 ie/*fonts* nil
+                 ie/*traditional* true]
+         (ie/format-exception val nil))
+
+       (string? val)
+       val
+
+       (coll? val)
+       (binding [clojure.pprint/*print-right-margin* 120]
+         (-> (with-out-str (pprint val))
+             (simple-prune (* 1024 1024 3))))
+
+       :else
+       (str val))))
+
+#?(:clj
+   (defn data->context-map
+     ^java.util.Map
+     [data]
+     (into {}
+           (comp (filter second)
+                 (map (fn [[key val]]
+                        [(stringify-data key)
+                         (stringify-data val)])))
+           data)))
+
+#?(:clj
+   (defmacro with-context
+     [data & body]
+     `(let [data# (data->context-map ~data)]
+        (with-open [closeable# (CloseableThreadContext/putAll data#)]
+          ~@body))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Common
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-logger
   [lname]
@@ -89,7 +147,7 @@
      :cljs
      (when glog/ENABLED
        (when-let [l (get-logger logger)]
-         (let [level  (get-level level)
+         (let [level (get-level level)
                record (glog/LogRecord. level message (.getName ^js l))]
            (when exception (.setException record exception))
            (glog/publishLogRecord l record))))))
@@ -100,7 +158,7 @@
      (.isEnabled ^Logger logger ^Level level)))
 
 (defmacro log
-  [& {:keys [level cause ::logger ::async ::raw] :as props}]
+  [& {:keys [level cause ::logger ::async ::raw] :or {async true} :as props}]
   (if (:ns &env) ; CLJS
     `(write-log! ~(or logger (str *ns*))
                  ~level
@@ -114,10 +172,12 @@
              ~level-sym  (get-level ~level)]
          (if (enabled? ~logger-sym ~level-sym)
            ~(if async
-              `(send-off logging-agent
-                         (fn [_#]
-                           (let [message# (or ~raw (build-map-message ~props))]
-                             (write-log! ~logger-sym ~level-sym ~cause message#))))
+              `(let [cdata# (ThreadContext/getImmutableContext)]
+                 (send-off logging-agent
+                           (fn [_#]
+                             (with-context (into {:cause ~cause} cdata#)
+                               (->> (or ~raw (build-map-message ~props))
+                                    (write-log! ~logger-sym ~level-sym ~cause))))))
               `(let [message# (or ~raw (build-map-message ~props))]
                  (write-log! ~logger-sym ~level-sym ~cause message#))))))))
 
@@ -148,52 +208,6 @@
   ([n level]
    (when (:ns &env)
      `(set-level* ~n ~level))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; CLJ Specific
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- simple-prune
-  ([s] (simple-prune s (* 1024 1024)))
-  ([s max-length]
-   (if (> (count s) max-length)
-     (str (subs s 0 max-length) " [...]")
-     s)))
-
-#?(:clj
-   (defn stringify-data
-     [val]
-     (cond
-       (instance? clojure.lang.Named val)
-       (name val)
-
-       (string? val)
-       val
-
-       (coll? val)
-       (binding [clojure.pprint/*print-right-margin* 120]
-         (-> (with-out-str (pprint val))
-             (simple-prune (* 1024 1024 3))))
-
-       :else
-       (str val))))
-
-#?(:clj
-   (defn data->context-map
-     ^java.util.Map
-     [data]
-     (into {}
-           (comp (filter second)
-                 (map (fn [[key val]]
-                        [(stringify-data key)
-                         (stringify-data val)])))
-           data)))
-
-#?(:clj
-   (defmacro with-context
-     [data & body]
-     `(with-open [instance# (CloseableThreadContext/putAll (data->context-map ~data))]
-        ~@body)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CLJS Specific
@@ -242,7 +256,6 @@
      [name lvl]
      (some-> (get-logger name)
              (glog/setLevel (get-level lvl)))))
-
 
 #?(:cljs
    (defn set-levels!

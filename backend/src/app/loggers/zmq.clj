@@ -92,19 +92,15 @@
 (defn- prepare
   [event]
   (if (s/valid? ::log4j-event event)
-    (merge
-     {:logger     (:logger-name event)
-      :level      (str/lower (:level event))
-      :thread     (:thread event)
-      :created-at (dt/instant (:time-millis event))
-      :message    (:message event)}
-     (when-let [ctx (:context-map event)]
-       {:context ctx})
-     (when-let [thrown (:thrown event)]
-       {:error
-        {:class (:name thrown)
-         :message (:message thrown)
-         :trace (:extended-stack-trace thrown)}}))
+    (merge {:message      (:message event)
+            :created-at   (dt/instant (:time-millis event))
+            :logger/name  (:logger-name event)
+            :logger/level (str/lower (:level event))}
+
+           (when-let [thrown (:thrown event)]
+             {:trace (:extended-stack-trace thrown)})
+
+           (:context-map event))
     (do
       (l/warn :hint "invalid event" :event event)
       nil)))

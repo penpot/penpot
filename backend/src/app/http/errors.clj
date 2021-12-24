@@ -11,6 +11,7 @@
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [clojure.pprint]
+   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
 (defn- parse-client-ip
@@ -23,22 +24,20 @@
   [request error]
   (let [data (ex-data error)]
     (merge
-     {:id         (uuid/next)
-      :path       (:uri request)
-      :method     (:request-method request)
-      :hint       (or (:hint data) (ex-message error))
-      :params     (l/stringify-data (:params request))
-      :data       (l/stringify-data (dissoc data :explain))
-      :ip-addr    (parse-client-ip request)
-      :profile-id (:profile-id request)}
+     {:id            (uuid/next)
+      :path          (:uri request)
+      :method        (:request-method request)
+      :hint          (or (:hint data) (ex-message error))
+      :params        (l/stringify-data (:params request))
+      :spec-problems (some-> data ::s/problems)
+      :ip-addr       (parse-client-ip request)
+      :profile-id    (:profile-id request)}
 
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
         :frontend-version (get headers "x-frontend-version" "unknown")})
 
-     (when (map? data)
-       {:error-type (:type data)
-        :error-code (:code data)}))))
+     (dissoc data ::s/problems))))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -66,17 +65,17 @@
                   (:explain edata)
                   "</pre>\n")}
       {:status 400
-       :body   (dissoc edata :data)})))
+       :body   (dissoc edata ::s/problems)})))
 
 (defmethod handle-exception :assertion
   [error request]
   (let [edata (ex-data error)]
     (l/with-context (get-error-context request error)
-      (l/error :hint "internal error: assertion" :cause error))
+      (l/error :hint (ex-message error) :cause error))
     {:status 500
      :body {:type :server-error
             :code :assertion
-            :data (dissoc edata :data)}}))
+            :data (dissoc edata ::s/problems)}}))
 
 (defmethod handle-exception :not-found
   [err _]
