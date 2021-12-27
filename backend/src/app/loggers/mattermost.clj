@@ -62,7 +62,8 @@
   (when uri
     (l/info :msg "initializing mattermost error reporter" :uri uri)
     (let [output (a/chan (a/sliding-buffer 128)
-                         (filter #(= (:level %) "error")))]
+                         (filter (fn [event]
+                                   (= (:logger/level event) "error"))))]
       (receiver :sub output)
       (a/go-loop []
         (let [msg (a/<! output)]
