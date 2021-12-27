@@ -284,13 +284,14 @@
 
   ([command coord]
    (let [params (:params command)
-         xkey (cond (= :c1 coord) :c1x
-                    (= :c2 coord) :c2x
-                    :else         :x)
-         ykey (cond (= :c1 coord) :c1y
-                    (= :c2 coord) :c2y
-                    :else         :y)
-
+         xkey (case coord
+                :c1 :c1x
+                :c2 :c2x
+                :x)
+         ykey (case coord
+                :c1 :c1y
+                :c2 :c2y
+                :y)
          x (get params xkey)
          y (get params ykey)]
      (when (and (some? x) (some? y))

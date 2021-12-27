@@ -22,15 +22,18 @@
 ;; --- Relative Movement
 
 (defn- move-selrect [selrect pt]
-  (let [dx (.-x pt)
-        dy (.-y pt)]
-    (-> selrect
-        (update :x + dx)
-        (update :y + dy)
-        (update :x1 + dx)
-        (update :y1 + dy)
-        (update :x2 + dx)
-        (update :y2 + dy))))
+  (when (and (some? selrect) (some? pt))
+    (let [dx (.-x pt)
+          dy (.-y pt)
+          {:keys [x y x1 y1 x2 y2 width height]} selrect]
+      {:x     (if (some? x) (+ dx x) x)
+       :y     (if (some? y) (+ dy y) y)
+       :x1    (if (some? x1) (+ dx x1) x1)
+       :y1    (if (some? y1) (+ dy y1) y1)
+       :x2    (if (some? x2) (+ dx x2) x2)
+       :y2    (if (some? y2) (+ dy y2) y2)
+       :width width
+       :height height})))
 
 (defn- move-points [points move-vec]
   (->> points
