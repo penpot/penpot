@@ -1,7 +1,6 @@
 {:deps
  {org.clojure/clojure {:mvn/version "1.10.3"}
   org.clojure/data.json {:mvn/version "2.4.0"}
-  org.clojure/core.async {:mvn/version "1.4.627"}
   org.clojure/tools.cli {:mvn/version "1.0.206"}
   metosin/jsonista {:mvn/version "0.3.4"}
   org.clojure/clojurescript {:mvn/version "1.10.891"}
@@ -34,7 +33,7 @@
 
   ;; exception printing
   fipp/fipp {:mvn/version "0.6.24"}
-  io.aviso/pretty {:mvn/version "0.1.37"}
+  io.aviso/pretty {:mvn/version "1.1.1"}
   environ/environ {:mvn/version "1.2.0"}}
  :paths ["src"]
  :aliases
