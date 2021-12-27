@@ -1,12 +1,6 @@
-{
- ;; :mvn/repos
- ;; {"central" {:url "https://repo1.maven.org/maven2/"}
- ;;  "clojars" {:url "https://clojars.org/repo"}
- ;;  "jcenter" {:url "https://jcenter.bintray.com/"}
- ;;  }
- :deps
- {penpot/common
-  {:local/root "../common"}
+{:deps
+ {penpot/common {:local/root "../common"}
+  org.clojure/core.async {:mvn/version "1.5.648"}
 
   ;; Logging
   org.zeromq/jeromq {:mvn/version "0.5.2"}
