@@ -74,5 +74,3 @@
     ;; (prn "==============" rtype (into {} ?meta))
     ;; (prn (api/sexpr result))
     {:node result}))
-
-

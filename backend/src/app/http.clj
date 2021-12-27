@@ -90,20 +90,9 @@
       (try
         (handler request)
         (catch Throwable e
-          (try
-            (let [cdata (errors/get-error-context request e)]
-              (l/update-thread-context! cdata)
-              (l/error :hint "unhandled exception"
-                       :message (ex-message e)
-                       :error-id (str (:id cdata))
-                       :cause e))
-            {:status 500 :body "internal server error"}
-            (catch Throwable e
-              (l/error :hint "unhandled exception"
-                       :message (ex-message e)
-                       :cause e)
-              {:status 500 :body "internal server error"})))))))
-
+          (l/with-context (errors/get-error-context request e)
+            (l/error :hint (ex-message e) :cause e)
+            {:status 500 :body "internal server error"}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Http Main Handler (Router)

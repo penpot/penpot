@@ -33,7 +33,6 @@
   metosin/reitit-ring {:mvn/version "0.5.15"}
   org.postgresql/postgresql {:mvn/version "42.2.23"}
   com.zaxxer/HikariCP {:mvn/version "5.0.0"}
-
   funcool/datoteka {:mvn/version "2.0.0"}
 
   buddy/buddy-core {:mvn/version "1.10.1"}
@@ -50,9 +49,7 @@
   io.sentry/sentry {:mvn/version "5.1.2"}
 
   ;; Pretty Print specs
-  fipp/fipp {:mvn/version "0.6.24"}
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-
   software.amazon.awssdk/s3 {:mvn/version "2.17.40"}}
 
  :paths ["src" "resources"]

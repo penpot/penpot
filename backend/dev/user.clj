@@ -104,7 +104,8 @@
        :v4 (humanize (alength (blob/encode data {:version 4})))
        }])))
 
-
-;; ;; (def contents (read-string (slurp (io/resource "bool-contents-1.edn"))))
-;; (def pre-data (datoteka.core/slurp-bytes (io/resource "file-data-sample")))
-;; (def data (blob/decode pre-data))
+(defonce debug-tap
+  (do
+    (add-tap #(locking debug-tap
+                (prn "tap debug:" %)))
+    1))

@@ -73,11 +73,7 @@
     (if-let [{:keys [id profile-id] :as session} (retrieve-from-request cfg request)]
       (do
         (a/>!! (::events-ch cfg) id)
-        (l/update-thread-context! {:profile-id profile-id})
-        (-> request
-            (assoc :profile-id profile-id)
-            (assoc :session-id id)
-            (handler)))
+        (handler (assoc request :profile-id profile-id)))
       (handler request))))
 
 ;; --- STATE INIT: SESSION

@@ -81,10 +81,7 @@
   (js/console.group "Validation Error:")
   (ex/ignoring
    (js/console.info
-    (with-out-str
-      (pprint (dissoc error :explain))))
-   (when-let [explain (:explain error)]
-     (js/console.error explain)))
+    (with-out-str (pprint error))))
   (js/console.groupEnd "Validation Error:"))
 
 
@@ -138,8 +135,7 @@
 (defmethod ptk/handle-error :server-error
   [{:keys [data hint] :as error}]
   (let [hint (or hint (:hint data) (:message data))
-        info (with-out-str (pprint (dissoc data :explain)))
-        expl (:explain data)
+        info (with-out-str (pprint data))
         msg  (str "Internal Server Error: " hint)]
 
     (ts/schedule
@@ -150,7 +146,6 @@
 
     (js/console.group msg)
     (js/console.info info)
-    (when expl (js/console.error expl))
     (js/console.groupEnd msg)))
 
 (defn on-unhandled-error
