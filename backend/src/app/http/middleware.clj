@@ -9,7 +9,6 @@
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.config :as cf]
-   [app.metrics :as mtx]
    [app.util.json :as json]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
@@ -78,6 +77,9 @@
         params (:query-params request)
         opts   {:type (if (contains? params "transit_verbose") :json-verbose :json)}]
     (cond
+      (:ws response)
+      response
+
       (coll? body)
       (-> response
           (update :headers assoc "content-type" "application/transit+json")
@@ -112,11 +114,6 @@
   {:name ::errors
    :compile (constantly wrap-errors)})
 
-(def metrics
-  {:name ::metrics
-   :wrap (fn [handler]
-           (mtx/wrap-counter handler {:id "http__requests_counter"
-                                      :help "Absolute http requests counter."}))})
 (def cookies
   {:name ::cookies
    :compile (constantly wrap-cookies)})

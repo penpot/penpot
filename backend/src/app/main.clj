@@ -22,33 +22,15 @@
     :min-pool-size 0
     :max-pool-size 30}
 
+   :app.migrations/migrations
+   {}
+
    :app.metrics/metrics
-   {:definitions
-    {:profile-register
-     {:name "actions_profile_register_count"
-      :help "A global counter of user registrations."
-      :type :counter}
-
-     :profile-activation
-     {:name "actions_profile_activation_count"
-      :help "A global counter of profile activations"
-      :type :counter}
-
-     :update-file-changes
-     {:name "rpc_update_file_changes_total"
-      :help "A total number of changes submitted to update-file."
-      :type :counter}
-
-     :update-file-bytes-processed
-     {:name "rpc_update_file_bytes_processed_total"
-      :help "A total number of bytes processed by update-file."
-      :type :counter}}}
+   {}
 
    :app.migrations/all
    {:main (ig/ref :app.migrations/migrations)}
 
-   :app.migrations/migrations
-   {}
 
    :app.msgbus/msgbus
    {:backend   (cf/get :msgbus-backend :redis)
@@ -91,23 +73,30 @@
 
    :app.http/server
    {:port    (cf/get :http-server-port)
+    :host    (cf/get :http-server-host)
     :router  (ig/ref :app.http/router)
-    :metrics (ig/ref :app.metrics/metrics)
-    :ws      {"/ws/notifications" (ig/ref :app.notifications/handler)}}
+    :metrics (ig/ref :app.metrics/metrics)}
 
    :app.http/router
-   {:rpc         (ig/ref :app.rpc/rpc)
-    :session     (ig/ref :app.http.session/session)
-    :tokens      (ig/ref :app.tokens/tokens)
-    :public-uri  (cf/get :public-uri)
-    :metrics     (ig/ref :app.metrics/metrics)
-    :oauth       (ig/ref :app.http.oauth/handler)
-    :assets      (ig/ref :app.http.assets/handlers)
-    :storage     (ig/ref :app.storage/storage)
-    :sns-webhook (ig/ref :app.http.awsns/handler)
-    :feedback    (ig/ref :app.http.feedback/handler)
+   {:assets               (ig/ref :app.http.assets/handlers)
+    :feedback             (ig/ref :app.http.feedback/handler)
+    :session              (ig/ref :app.http.session/session)
+    :sns-webhook          (ig/ref :app.http.awsns/handler)
+    :oauth                (ig/ref :app.http.oauth/handler)
+    :ws                   (ig/ref :app.http.websocket/handler)
+    :metrics              (ig/ref :app.metrics/metrics)
+    :public-uri           (cf/get :public-uri)
+    :storage              (ig/ref :app.storage/storage)
+    :tokens               (ig/ref :app.tokens/tokens)
     :audit-http-handler   (ig/ref :app.loggers.audit/http-handler)
-    :error-report-handler (ig/ref :app.loggers.database/handler)}
+    :error-report-handler (ig/ref :app.loggers.database/handler)
+    :rpc                  (ig/ref :app.rpc/rpc)}
+
+   :app.http.websocket/handler
+   {:pool     (ig/ref :app.db/pool)
+    :executor (ig/ref :app.worker/executor)
+    :metrics  (ig/ref :app.metrics/metrics)
+    :msgbus   (ig/ref :app.msgbus/msgbus)}
 
    :app.http.assets/handlers
    {:metrics           (ig/ref :app.metrics/metrics)
@@ -120,12 +109,12 @@
    {:pool (ig/ref :app.db/pool)}
 
    :app.http.oauth/handler
-   {:rpc           (ig/ref :app.rpc/rpc)
-    :session       (ig/ref :app.http.session/session)
-    :pool          (ig/ref :app.db/pool)
-    :tokens        (ig/ref :app.tokens/tokens)
-    :audit         (ig/ref :app.loggers.audit/collector)
-    :public-uri    (cf/get :public-uri)}
+   {:rpc        (ig/ref :app.rpc/rpc)
+    :session    (ig/ref :app.http.session/session)
+    :pool       (ig/ref :app.db/pool)
+    :tokens     (ig/ref :app.tokens/tokens)
+    :audit      (ig/ref :app.loggers.audit/collector)
+    :public-uri (cf/get :public-uri)}
 
    :app.rpc/rpc
    {:pool       (ig/ref :app.db/pool)
@@ -136,13 +125,6 @@
     :msgbus     (ig/ref :app.msgbus/msgbus)
     :public-uri (cf/get :public-uri)
     :audit      (ig/ref :app.loggers.audit/collector)}
-
-   :app.notifications/handler
-   {:msgbus   (ig/ref :app.msgbus/msgbus)
-    :pool     (ig/ref :app.db/pool)
-    :session  (ig/ref :app.http.session/session)
-    :metrics  (ig/ref :app.metrics/metrics)
-    :executor (ig/ref :app.worker/executor)}
 
    :app.worker/executor
    {:min-threads 0

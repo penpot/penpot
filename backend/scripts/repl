@@ -6,7 +6,7 @@ export OPTIONS="
        -A:jmx-remote:dev \
        -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
        -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
-       -J-XX:+UseShenandoahGC \
+       -J-XX:+UseZGC \
        -J-XX:-OmitStackTraceInFastThrow \
        -J-Xms50m -J-Xmx512m";
 
