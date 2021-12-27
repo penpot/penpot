@@ -24,7 +24,7 @@
    [app.config :as cfg]
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
-   [app.main.data.workspace.booleans :as dwb]
+   [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]

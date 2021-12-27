@@ -269,19 +269,19 @@
                         :type "keyup"
                         :fn #(st/emit! (dw/toggle-distances-display false))}
 
-   :boolean-union      {:tooltip (ds/meta (ds/alt "U"))
+   :bool-union         {:tooltip (ds/meta (ds/alt "U"))
                         :command (ds/c-mod "alt+u")
                         :fn #(st/emit! (dw/create-bool :union))}
 
-   :boolean-difference {:tooltip (ds/meta (ds/alt "D"))
+   :bool-difference    {:tooltip (ds/meta (ds/alt "D"))
                         :command (ds/c-mod "alt+d")
                         :fn #(st/emit! (dw/create-bool :difference))}
 
-   :boolean-intersection {:tooltip (ds/meta (ds/alt "I"))
+   :bool-intersection    {:tooltip (ds/meta (ds/alt "I"))
                           :command (ds/c-mod "alt+i")
                           :fn #(st/emit! (dw/create-bool :intersection))}
 
-   :boolean-exclude      {:tooltip (ds/meta (ds/alt "E"))
+   :bool-exclude         {:tooltip (ds/meta (ds/alt "E"))
                           :command (ds/c-mod "alt+e")
                           :fn #(st/emit! (dw/create-bool :exclude))}
 

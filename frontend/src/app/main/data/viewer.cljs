@@ -252,7 +252,6 @@
   (ptk/reify ::select-next-frame
     ptk/WatchEvent
     (watch [_ state _]
-      (prn "select-next-frame")
       (let [route   (:route state)
             pparams (:path-params route)
             qparams (:query-params route)

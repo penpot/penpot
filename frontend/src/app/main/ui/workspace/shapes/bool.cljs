@@ -30,15 +30,23 @@
       {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
        ::mf/wrap-props false}
       [props]
-      (let [shape      (unchecked-get props "shape")
-            childs-ref (mf/use-memo
-                        (mf/deps (:id shape))
-                        #(refs/select-children (:id shape)))
+      (let [shape         (unchecked-get props "shape")
+            child-sel-ref (mf/use-memo
+                           (mf/deps (:id shape))
+                           #(refs/is-child-selected? (:id shape)))
 
-            childs (mf/deref childs-ref)]
+            childs-ref    (mf/use-memo
+                           (mf/deps (:id shape))
+                           #(refs/select-bool-children (:id shape)))
+
+            child-sel?    (mf/deref child-sel-ref)
+            childs        (mf/deref childs-ref)
+
+            shape         (cond-> shape
+                            child-sel?
+                            (dissoc :bool-content))]
 
         [:> shape-container {:shape shape}
-         [:& shape-component
-          {:shape shape
-           :childs childs}]]))))
+         [:& shape-component {:shape shape
+                              :childs childs}]]))))
 

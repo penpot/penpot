@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.bool
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.hooks :refer [use-equal-memo]]
    [app.main.ui.shapes.export :as use]
@@ -26,11 +27,19 @@
                 bool-content
                 (mf/use-memo
                  (mf/deps shape childs)
-                 #(or (:bool-content shape)
-                      (gsh/calc-bool-content shape childs)))]
+                 (fn []
+                   (cond
+                     (some? (:bool-content shape))
+                     (:bool-content shape)
+
+                     (some? childs)
+                     (->> childs
+                          (d/mapm #(gsh/transform-shape %2))
+                          (gsh/calc-bool-content shape)))))]
 
             [:*
-             [:& path-shape {:shape (assoc shape :content bool-content)}]
+             (when (some? bool-content)
+               [:& path-shape {:shape (assoc shape :content bool-content)}])
 
              (when include-metadata?
                [:> "penpot:bool" {}

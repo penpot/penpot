@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.menus.booleans
+(ns app.main.ui.workspace.sidebar.options.menus.bool
   (:require
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
@@ -15,7 +15,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
-(mf/defc booleans-options
+(mf/defc bool-options
   []
   (let [selected (mf/deref refs/selected-objects)
         selected-with-children (mf/deref refs/selected-shapes-with-children)
@@ -52,37 +52,37 @@
     [:div.align-options
      [:div.align-group
       [:div.align-button.tooltip.tooltip-bottom
-       {:alt (str (tr "workspace.shape.menu.union") " (" (sc/get-tooltip :boolean-union) ")")
+       {:alt (str (tr "workspace.shape.menu.union") " (" (sc/get-tooltip :bool-union) ")")
         :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :union))
         :on-click (set-bool :union)}
-       i/boolean-union]
+       i/bool-union]
 
       [:div.align-button.tooltip.tooltip-bottom
-       {:alt (str (tr "workspace.shape.menu.difference") " (" (sc/get-tooltip :boolean-difference) ")")
+       {:alt (str (tr "workspace.shape.menu.difference") " (" (sc/get-tooltip :bool-difference) ")")
         :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :difference))
         :on-click (set-bool :difference)}
-       i/boolean-difference]
+       i/bool-difference]
 
       [:div.align-button.tooltip.tooltip-bottom
-       {:alt (str (tr "workspace.shape.menu.intersection") " (" (sc/get-tooltip :boolean-intersection) ")")
+       {:alt (str (tr "workspace.shape.menu.intersection") " (" (sc/get-tooltip :bool-intersection) ")")
         :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :intersection))
         :on-click (set-bool :intersection)}
-       i/boolean-intersection]
+       i/bool-intersection]
 
       [:div.align-button.tooltip.tooltip-bottom
-       {:alt (str (tr "workspace.shape.menu.exclude") " (" (sc/get-tooltip :boolean-exclude) ")")
+       {:alt (str (tr "workspace.shape.menu.exclude") " (" (sc/get-tooltip :bool-exclude) ")")
         :class (dom/classnames :disabled disabled-bool-btns
                                :selected (= head-bool-type :exclude))
         :on-click (set-bool :exclude)}
-       i/boolean-exclude]]
+       i/bool-exclude]]
 
      [:div.align-group
       [:div.align-button.tooltip.tooltip-bottom
        {:alt (tr "workspace.shape.menu.flatten")
         :class (dom/classnames :disabled disabled-flatten)
         :on-click (st/emitf (dw/convert-selected-to-path))}
-       i/boolean-flatten]]]))
+       i/bool-flatten]]]))
 

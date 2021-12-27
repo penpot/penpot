@@ -42,10 +42,10 @@
                i/mask
                i/folder))
     :bool (case (:bool-type shape)
-            :difference   i/boolean-difference
-            :exclude      i/boolean-exclude
-            :intersection i/boolean-intersection
-            #_:default    i/boolean-union)
+            :difference   i/bool-difference
+            :exclude      i/bool-exclude
+            :intersection i/bool-intersection
+            #_:default    i/bool-union)
     :svg-raw i/file-svg
     nil))
 

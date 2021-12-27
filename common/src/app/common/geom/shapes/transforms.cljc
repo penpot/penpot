@@ -49,6 +49,8 @@
         (update :points move-points move-vec)
         (d/update-when :x + dx)
         (d/update-when :y + dy)
+        (cond-> (= :bool (:type shape))
+          (update :bool-content gpa/move-content move-vec))
         (cond-> (= :path (:type shape))
           (update :content gpa/move-content move-vec)))))
 
@@ -256,6 +258,7 @@
 
   (let [points'  (:points shape)
         points   (gco/transform-points points' transform-mtx)
+        bool?    (= (:type shape) :bool)
         path?    (= (:type shape) :path)
         rotated? (is-rotated? points)
 
@@ -273,6 +276,8 @@
         rotation       (mod (+ base-rotation modif-rotation) 360)]
 
     (-> shape
+        (cond-> bool?
+          (update :bool-content gpa/transform-content transform-mtx))
         (cond-> path?
           (update :content gpa/transform-content transform-mtx))
         (cond-> (not path?)

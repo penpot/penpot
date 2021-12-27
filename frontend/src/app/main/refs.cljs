@@ -8,6 +8,7 @@
   "A collection of derived refs."
   (:require
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.path.commands :as upc]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -246,11 +247,13 @@
         (update shape :content upc/apply-content-modifiers content-modifiers)
         shape))))
 
-(defn select-children [id]
+(defn select-bool-children [id]
   (let [selector
         (fn [state]
-          (let [objects (wsh/lookup-page-objects state)]
+          (let [objects (wsh/lookup-page-objects state)
+                modifiers (:workspace-modifiers state)]
             (as-> (cp/select-children id objects) $
+              (gsh/merge-modifiers $ modifiers)
               (d/mapm (set-content-modifiers state) $))))]
     (l/derived selector st/state =)))
 
