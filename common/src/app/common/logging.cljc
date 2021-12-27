@@ -11,16 +11,15 @@
    [cuerdas.core :as str]
    #?(:clj [io.aviso.exception :as ie])
    #?(:cljs [goog.log :as glog]))
-  #?(:cljs (:require-macros [app.common.logging]))
-  #?(:clj
-     (:import
-      org.apache.logging.log4j.Level
-      org.apache.logging.log4j.LogManager
-      org.apache.logging.log4j.Logger
-      org.apache.logging.log4j.ThreadContext
-      org.apache.logging.log4j.CloseableThreadContext
-      org.apache.logging.log4j.message.MapMessage
-      org.apache.logging.log4j.spi.LoggerContext)))
+  #?(:cljs (:require-macros [app.common.logging])
+     :clj  (:import
+            org.apache.logging.log4j.Level
+            org.apache.logging.log4j.LogManager
+            org.apache.logging.log4j.Logger
+            org.apache.logging.log4j.ThreadContext
+            org.apache.logging.log4j.CloseableThreadContext
+            org.apache.logging.log4j.message.MapMessage
+            org.apache.logging.log4j.spi.LoggerContext)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CLJ Specific

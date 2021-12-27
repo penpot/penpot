@@ -4,7 +4,6 @@
  :jvm-opts ["-Xmx700m" "-Xms100m" "-XX:+UseSerialGC" "-XX:-OmitStackTraceInFastThrow"]
  :dev-http {8888 "classpath:public"}
 
-
  :builds
  {:main
   {:target :browser
