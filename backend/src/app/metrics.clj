@@ -26,27 +26,57 @@
 (declare instrument)
 (declare create-registry)
 (declare create)
+(declare handler)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Defaults
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(def default-metrics
+  {:profile-register
+   {:name "actions_profile_register_count"
+    :help "A global counter of user registrations."
+    :type :counter}
+
+   :profile-activation
+   {:name "actions_profile_activation_count"
+    :help "A global counter of profile activations"
+    :type :counter}
+
+   :update-file-changes
+   {:name "rpc_update_file_changes_total"
+    :help "A total number of changes submitted to update-file."
+    :type :counter}
+
+   :update-file-bytes-processed
+   {:name "rpc_update_file_bytes_processed_total"
+    :help "A total number of bytes processed by update-file."
+    :type :counter}
+
+   :websocket-active-connections
+   {:name "websocket_active_connections"
+    :help "Active websocket connections gauge"
+    :type :gauge}
+
+   :websocket-messages-total
+   {:name "websocket_message_total"
+    :help "Counter of processed messages."
+    :labels ["op"]
+    :type :counter}
+
+   :websocket-session-timing
+   {:name "websocket_session_timing"
+    :help "Websocket session timing (seconds)."
+    :quantiles []
+    :type :summary}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry Point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- handler
-  [registry _request]
-  (let [samples  (.metricFamilySamples ^CollectorRegistry registry)
-        writer   (StringWriter.)]
-    (TextFormat/write004 writer samples)
-    {:headers {"content-type" TextFormat/CONTENT_TYPE_004}
-     :body (.toString writer)}))
-
-(s/def ::definitions
-  (s/map-of keyword? map?))
-
-(defmethod ig/pre-init-spec ::metrics [_]
-  (s/keys :opt-un [::definitions]))
-
 (defmethod ig/init-key ::metrics
-  [_ {:keys [definitions] :as cfg}]
+  [_ _]
   (l/info :action "initialize metrics")
   (let [registry    (create-registry)
         definitions (reduce-kv (fn [res k v]
@@ -54,7 +84,7 @@
                                       (create)
                                       (assoc res k)))
                                {}
-                               definitions)]
+                               default-metrics)]
     {:handler (partial handler registry)
      :definitions definitions
      :registry registry}))
@@ -63,6 +93,14 @@
 (s/def ::registry #(instance? CollectorRegistry %))
 (s/def ::metrics
   (s/keys :req-un [::registry ::handler]))
+
+(defn- handler
+  [registry _request]
+  (let [samples  (.metricFamilySamples ^CollectorRegistry registry)
+        writer   (StringWriter.)]
+    (TextFormat/write004 writer samples)
+    {:headers {"content-type" TextFormat/CONTENT_TYPE_004}
+     :body (.toString writer)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation

@@ -17,75 +17,61 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [reitit.ring :as rr]
-   [ring.adapter.jetty9 :as jetty])
+   [yetti.adapter :as yt])
   (:import
    org.eclipse.jetty.server.Server
-   org.eclipse.jetty.server.handler.ErrorHandler
    org.eclipse.jetty.server.handler.StatisticsHandler))
 
-(declare router-handler)
+(declare wrap-router)
 
 (s/def ::handler fn?)
 (s/def ::router some?)
-(s/def ::ws (s/map-of ::us/string fn?))
 (s/def ::port ::us/integer)
+(s/def ::host ::us/string)
 (s/def ::name ::us/string)
 
 (defmethod ig/pre-init-spec ::server [_]
   (s/keys :req-un [::port]
-          :opt-un [::ws ::name ::mtx/metrics ::router ::handler]))
+          :opt-un [::name ::mtx/metrics ::router ::handler ::host]))
 
 (defmethod ig/prep-key ::server
   [_ cfg]
   (merge {:name "http"} (d/without-nils cfg)))
 
+(defn- instrument-metrics
+  [^Server server metrics]
+  (let [stats (doto (StatisticsHandler.)
+                (.setHandler (.getHandler server)))]
+    (.setHandler server stats)
+    (mtx/instrument-jetty! (:registry metrics) stats)
+    server))
+
 (defmethod ig/init-key ::server
-  [_ {:keys [handler router ws port name metrics] :as opts}]
+  [_ {:keys [handler router port name metrics] :as opts}]
   (l/info :msg "starting http server" :port port :name name)
-  (let [pre-start (fn [^Server server]
-                    (let [handler (doto (ErrorHandler.)
-                                    (.setShowStacks true)
-                                    (.setServer server))]
-                      (.setErrorHandler server ^ErrorHandler handler)
-                      (when metrics
-                        (let [stats (StatisticsHandler.)]
-                          (.setHandler ^StatisticsHandler stats (.getHandler server))
-                          (.setHandler server stats)
-                          (mtx/instrument-jetty! (:registry metrics) stats)))))
-
-        options   (merge
-                   {:port port
-                    :h2c? true
-                    :join? false
-                    :allow-null-path-info true
-                    :configurator pre-start}
-                   (when (seq ws)
-                     {:websockets ws}))
-
-        handler   (cond
-                    (fn? handler)  handler
-                    (some? router) (router-handler router)
-                    :else (ex/raise :type :internal
-                                    :code :invalid-argument
-                                    :hint "Missing `handler` or `router` option."))
-
-        server    (jetty/run-jetty handler options)]
-    (assoc opts :server server)))
+  (let [options {:http/port port}
+        handler (cond
+                  (fn? handler)  handler
+                  (some? router) (wrap-router router)
+                  :else (ex/raise :type :internal
+                                  :code :invalid-argument
+                                  :hint "Missing `handler` or `router` option."))
+        server  (-> (yt/server handler options)
+                    (cond-> metrics (instrument-metrics metrics)))]
+    (assoc opts :server (yt/start! server))))
 
 (defmethod ig/halt-key! ::server
   [_ {:keys [server name port] :as opts}]
-  (l/info :msg "stoping http server"
-          :name name
-          :port port)
-  (jetty/stop-server server))
+  (l/info :msg "stoping http server" :name name :port port)
+  (yt/stop! server))
 
-(defn- router-handler
+(defn- wrap-router
   [router]
-  (let [handler (rr/ring-handler router
-                                 (rr/routes
-                                  (rr/create-resource-handler {:path "/"})
-                                  (rr/create-default-handler))
-                                 {:middleware [middleware/server-timing]})]
+  (let [default (rr/routes
+                 (rr/create-resource-handler {:path "/"})
+                 (rr/create-default-handler))
+        options {:middleware [middleware/server-timing]}
+        handler (rr/ring-handler router default options)]
     (fn [request]
       (try
         (handler request)
@@ -95,7 +81,7 @@
             {:status 500 :body "internal server error"}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Http Main Handler (Router)
+;; Http Router
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::rpc map?)
@@ -104,17 +90,18 @@
 (s/def ::storage map?)
 (s/def ::assets map?)
 (s/def ::feedback fn?)
+(s/def ::ws fn?)
 (s/def ::error-report-handler fn?)
 (s/def ::audit-http-handler fn?)
 
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::rpc ::session ::mtx/metrics
+  (s/keys :req-un [::rpc ::session ::mtx/metrics ::ws
                    ::oauth ::storage ::assets ::feedback
                    ::error-report-handler
                    ::audit-http-handler]))
 
 (defmethod ig/init-key ::router
-  [_ {:keys [session rpc oauth metrics assets feedback] :as cfg}]
+  [_ {:keys [ws session rpc oauth metrics assets feedback] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
     ["/assets" {:middleware [[middleware/format-response-body]
@@ -130,6 +117,15 @@
 
     ["/webhooks"
      ["/sns" {:post (:sns-webhook cfg)}]]
+
+    ["/ws/notifications"
+     {:middleware [[middleware/params]
+                   [middleware/keyword-params]
+                   [middleware/format-response-body]
+                   [middleware/errors errors/handle]
+                   [middleware/cookies]
+                   [(:middleware session)]]
+      :get ws}]
 
     ["/api" {:middleware [[middleware/cors]
                           [middleware/etag]

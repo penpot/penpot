@@ -22,8 +22,10 @@
   io.lettuce/lettuce-core {:mvn/version "6.1.5.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
-  info.sunng/ring-jetty9-adapter {:mvn/version "0.15.2"
-                                  :exclusions [org.slf4j/slf4j-api]}
+  funcool/yetti {:git/tag "v4.0" :git/sha "59ed2a7"
+                 :git/url "https://github.com/funcool/yetti.git"
+                 :exclusions [org.slf4j/slf4j-api]}
+
   com.github.seancorfield/next.jdbc {:mvn/version "1.2.761"}
   metosin/reitit-ring {:mvn/version "0.5.15"}
   org.postgresql/postgresql {:mvn/version "42.3.1"}
