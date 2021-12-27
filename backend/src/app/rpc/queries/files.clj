@@ -260,6 +260,7 @@
 
 (def ^:private sql:team-shared-files
   "select f.id,
+          f.revn,
           f.project_id,
           f.created_at,
           f.modified_at,
@@ -330,6 +331,7 @@
 (def sql:team-recent-files
   "with recent_files as (
      select f.id,
+            f.revn,
             f.project_id,
             f.created_at,
             f.modified_at,
