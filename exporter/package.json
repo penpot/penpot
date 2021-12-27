@@ -9,20 +9,20 @@
   "author": "UXBOX LABS SL",
   "license": "SEE LICENSE IN <LICENSE>",
   "dependencies": {
-    "@sentry/node": "^6.15.0",
-    "@sentry/tracing": "^6.15.0",
+    "@sentry/node": "^6.16.1",
+    "@sentry/tracing": "^6.16.1",
     "cookies": "^0.8.0",
     "generic-pool": "^3.8.2",
     "inflation": "^2.0.0",
     "jszip": "^3.7.0",
-    "luxon": "^2.1.1",
-    "puppeteer-core": "^12.0.0",
+    "luxon": "^2.2.0",
+    "puppeteer-core": "^13.0.1",
     "raw-body": "^2.4.2",
     "xml-js": "^1.6.11",
     "xregexp": "^5.0.2"
   },
   "devDependencies": {
-    "shadow-cljs": "^2.16.6",
+    "shadow-cljs": "^2.16.9",
     "source-map-support": "^0.5.21"
   }
 }

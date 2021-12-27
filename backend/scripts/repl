@@ -2,11 +2,9 @@
 
 export PENPOT_FLAGS="enable-asserts enable-audit-log $PENPOT_FLAGS"
 
-
 export OPTIONS="
        -A:jmx-remote:dev \
        -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
-       -J-Dclojure.tools.logging.factory=clojure.tools.logging.impl/log4j2-factory \
        -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
        -J-XX:+UseShenandoahGC \
        -J-XX:-OmitStackTraceInFastThrow \

@@ -2,8 +2,8 @@
  {org.clojure/clojure {:mvn/version "1.10.3"}
   org.clojure/data.json {:mvn/version "2.4.0"}
   org.clojure/tools.cli {:mvn/version "1.0.206"}
-  metosin/jsonista {:mvn/version "0.3.4"}
-  org.clojure/clojurescript {:mvn/version "1.10.891"}
+  metosin/jsonista {:mvn/version "0.3.5"}
+  org.clojure/clojurescript {:mvn/version "1.10.914"}
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "1.2.3"}
@@ -23,7 +23,7 @@
   funcool/promesa {:mvn/version "6.0.2"}
   funcool/cuerdas {:mvn/version "2021.05.29-0"}
 
-  lambdaisland/uri {:mvn/version "1.11.86"
+  lambdaisland/uri {:mvn/version "1.12.89"
                     :exclusions [org.clojure/data.json]}
 
   frankiesardo/linked {:mvn/version "1.3.0"}
@@ -32,7 +32,7 @@
   com.sun.mail/jakarta.mail {:mvn/version "2.0.1"}
 
   ;; exception printing
-  fipp/fipp {:mvn/version "0.6.24"}
+  fipp/fipp {:mvn/version "0.6.25"}
   io.aviso/pretty {:mvn/version "1.1.1"}
   environ/environ {:mvn/version "1.2.0"}}
  :paths ["src"]
@@ -43,7 +43,7 @@
     org.clojure/test.check {:mvn/version "RELEASE"}
     org.clojure/tools.deps.alpha {:mvn/version "RELEASE"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.16.6"}
+    thheller/shadow-cljs {:mvn/version "2.16.9"}
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}
    :extra-paths ["test" "dev"]}
