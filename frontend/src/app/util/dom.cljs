@@ -354,6 +354,12 @@
   ([element scroll-top]
    (.scrollIntoView ^js element scroll-top)))
 
+(defn scroll-into-view-if-needed!
+  ([element]
+   (.scrollIntoViewIfNeeded ^js element false))
+  ([element scroll-top]
+   (.scrollIntoViewIfNeeded ^js element scroll-top)))
+
 (defn is-in-viewport?
   [element]
   (let [rect   (.getBoundingClientRect element)

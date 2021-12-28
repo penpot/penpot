@@ -168,7 +168,7 @@
                                                  :accept-label (tr "modals.update-remote-component.accept")
                                                  :accept-style :primary
                                                  :on-accept confirm-update-remote-component}))
-        do-show-component (st/emitf (dw/go-to-layout :assets))
+        do-show-component (st/emitf (dw/go-to-component selected-objects))
         do-navigate-component-file (st/emitf (dwl/nav-to-component-file
                                               (:component-file shape)))
 
