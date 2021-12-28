@@ -155,6 +155,9 @@
 (def editors
   (l/derived :editors workspace-local))
 
+(def selected-assets
+  (l/derived :selected-assets workspace-local))
+
 (def workspace-layout
   (l/derived :workspace-layout st/state))
 

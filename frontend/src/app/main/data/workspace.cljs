@@ -44,10 +44,12 @@
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
+   [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
+   [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -111,6 +113,10 @@
   {:zoom 1
    :flags #{}
    :selected (d/ordered-set)
+   :selected-assets {:components #{}
+                     :graphics #{}
+                     :colors #{}
+                     :typographies #{}}
    :expanded {}
    :tooltip nil
    :options-mode :design
@@ -1304,6 +1310,66 @@
             pparams    {:file-id file-id :project-id project-id}
             qparams    {:page-id page-id :layout (name layout)}]
         (rx/of (rt/nav :workspace pparams qparams))))))
+
+(defn check-in-asset
+  [set element]
+  (if (contains? set element)
+    (disj set element)
+    (conj set element)))
+
+(defn toggle-selected-assets
+  [asset type]
+  (ptk/reify ::toggle-selected-assets
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :selected-assets type] #(check-in-asset % asset)))))
+
+(defn select-single-asset
+  [asset type]
+  (ptk/reify ::select-single-asset
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selected-assets type] #{asset}))))
+
+(defn select-assets
+  [assets type]
+  (ptk/reify ::select-assets
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selected-assets type] (into #{} assets)))))
+
+(defn unselect-all-assets
+  []
+  (ptk/reify ::unselect-all-assets
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selected-assets] {:components #{}
+                                                           :graphics #{}
+                                                           :colors #{}
+                                                           :typographies #{}}))))
+
+(defn go-to-component
+  [objs]
+  (ptk/reify ::set-workspace-layout-component
+    IDeref
+    (-deref [_] {:layout :assets})
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [project-id    (get-in state [:workspace-project :id])
+            file-id       (get-in state [:workspace-file :id])
+            page-id       (get state :current-page-id)
+            component-id  (get (first objs) :component-id)
+            pparams       {:file-id file-id :project-id project-id}
+            qparams       {:page-id page-id :layout :assets}]
+        (rx/of (rt/nav :workspace pparams qparams)
+               (dwl/set-assets-box-open file-id :library true)
+               (dwl/set-assets-box-open file-id :components true)
+               (select-single-asset component-id :components))))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (let [component-id  (get (first objs) :component-id)
+            wrapper-id    (str "component-shape-id-" component-id)]
+        (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id)))))))
 
 (def go-to-file
   (ptk/reify ::go-to-file
