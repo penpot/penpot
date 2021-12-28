@@ -72,7 +72,15 @@
    (fn [v] (into {} v))))
 
 (def matrix-read-handler
-  (t/read-handler gmt/map->Matrix))
+  (t/read-handler (fn [data]
+                    #?(:cljs (gmt/map->Matrix data)
+                       :clj  (let [{:keys [a b c d e f]} data]
+                               (gmt/matrix (double a)
+                                           (double b)
+                                           (double c)
+                                           (double d)
+                                           (double e)
+                                           (double f)))))))
 
 ;; --- ORDERED SET
 

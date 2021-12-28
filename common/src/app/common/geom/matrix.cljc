@@ -14,7 +14,12 @@
 
 ;; --- Matrix Impl
 
-(defrecord Matrix [a b c d e f]
+(defrecord Matrix [^double a
+                   ^double b
+                   ^double c
+                   ^double d
+                   ^double e
+                   ^double f]
   Object
   (toString [_]
     (str "matrix(" a "," b "," c "," d "," e "," f ")")))
