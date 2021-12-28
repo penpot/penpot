@@ -105,3 +105,29 @@
                               :onRender on-render}
        children]
       children)))
+
+(defn benchmark
+  [& {:keys [f warmup iterations name]
+      :or {iterations 10000}}]
+  (let [end-mark (str name ":end")]
+    (println "=> benchmarking:" name)
+    (println "--> warming up:" iterations)
+    (loop [i iterations]
+      (when (pos? i)
+        (f)
+        (recur (dec i))))
+    (println "--> benchmarking:" iterations)
+    (js/performance.mark name)
+    (loop [i iterations]
+      (when (pos? i)
+        (f)
+        (recur (dec i))))
+    (js/performance.measure end-mark name)
+    (let [[result] (js/performance.getEntriesByName end-mark)
+          duration (mth/precision (.-duration ^js result) 4)
+          avg      (mth/precision (/ duration iterations) 4)]
+      (println "--> TOTAL:" (str duration "ms") "AVG:" (str avg "ms"))
+      (js/performance.clearMarks name)
+      (js/performance.clearMeasures end-mark)
+      #js {:duration duration
+           :avg avg})))

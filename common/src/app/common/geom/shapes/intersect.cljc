@@ -196,8 +196,8 @@
   [point {:keys [cx cy rx ry transform]}]
 
   (let [center (gpt/point cx cy)
-        transform (gmt/transform-in center transform)
-        {px :x py :y} (gpt/transform point transform)
+        transform (when (some? transform) (gmt/transform-in center transform))
+        {px :x py :y} (if (some? transform) (gpt/transform point transform) point)
         ;; Ellipse inequality formula
         ;; https://en.wikipedia.org/wiki/Ellipse#Shifted_ellipse
         v (+ (/ (mth/sq (- px cx))
@@ -256,10 +256,10 @@
   "Checks if a set of lines intersect with an ellipse in any point"
   [rect-lines {:keys [cx cy transform] :as ellipse-data}]
   (let [center (gpt/point cx cy)
-        transform (gmt/transform-in center transform)]
+        transform (when (some? transform) (gmt/transform-in center transform))]
     (some (fn [[p1 p2]]
-            (let [p1 (gpt/transform p1 transform)
-                  p2 (gpt/transform p2 transform)]
+            (let [p1 (if (some? transform) (gpt/transform p1 transform) p1)
+                  p2 (if (some? transform) (gpt/transform p2 transform) p2)]
               (intersects-line-ellipse? [p1 p2] ellipse-data))) rect-lines)))
 
 (defn overlaps-ellipse?

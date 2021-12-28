@@ -9,6 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.file-builder :as fb]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.path :as gpa]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.text :as ct]
@@ -229,6 +231,21 @@
         (cond-> (= type :text)
           (d/update-when :content resolve-text-content context)))))
 
+(defn- translate-frame
+  [data type file]
+  (let [frame-id (:current-frame-id file)
+        frame (when (and (some? frame-id) (not= frame-id uuid/zero))
+                (fb/lookup-shape file frame-id))]
+
+    (if (some? frame)
+      (-> data
+          (d/update-when :x + (:x frame))
+          (d/update-when :y + (:y frame))
+          (cond-> (= :path type)
+            (update :content gpa/move-content (gpt/point (:x frame) (:y frame)))))
+
+      data)))
+
 (defn process-import-node
   [context file node]
 
@@ -250,7 +267,9 @@
             data         (-> (cip/parse-data type node)
                              (resolve-data-ids type context)
                              (cond-> (some? old-id)
-                               (assoc :id (resolve old-id))))
+                               (assoc :id (resolve old-id)))
+                             (cond-> (< (:version context 1) 2)
+                               (translate-frame type file)))
 
             file (case type
                    :frame    (fb/add-artboard   file data)
@@ -463,6 +482,7 @@
           (rx/flat-map
            (fn [context]
              (->> (create-file context)
+                  (rx/tap #(.log js/console "create-file" (clj->js %)))
                   (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)

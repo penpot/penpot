@@ -57,8 +57,7 @@
   (let [{:keys [hover selected zoom]} local
         hover-shape     (-> (or (first (resolve-shapes objects [hover])) frame)
                             (gsh/translate-to-frame frame))
-        selected-shapes (->> (resolve-shapes objects selected)
-                             (map #(gsh/translate-to-frame % frame)))
+        selected-shapes (->> (resolve-shapes objects selected))
 
         selrect         (gsh/selection-rect selected-shapes)
         bounds          (frame->bounds frame)]

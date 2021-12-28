@@ -91,55 +91,55 @@
     :else
     [[] []]))
 
-(defn split
-  [seg-1 seg-2]
-  (let [r1 (gsp/command->selrect seg-1)
-        r2 (gsp/command->selrect seg-2)]
-    (if (not (gpr/overlaps-rects? r1 r2))
-      [[seg-1] [seg-2]]
-      (let [[ts-seg-1 ts-seg-2] (split-ts seg-1 seg-2)]
-        [(-> (split-command seg-1 ts-seg-1) (add-previous (:prev seg-1)))
-         (-> (split-command seg-2 ts-seg-2) (add-previous (:prev seg-2)))]))))
-
 (defn content-intersect-split
-  [content-a content-b]
+  [content-a content-b sr-a sr-b]
 
-  (let [cache (atom {})]
-    (letfn [(split-cache [seg-1 seg-2]
-              (cond
-                (contains? @cache [seg-1 seg-2])
-                (first (get @cache [seg-1 seg-2]))
+  (let [command->selrect (memoize gsp/command->selrect)]
 
-                (contains? @cache [seg-2 seg-1])
-                (second (get @cache [seg-2 seg-1]))
+    (letfn [(overlap-segment-selrect?
+              [segment selrect]
+              (if (= :move-to (:command segment))
+                false
+                (let [r1 (command->selrect segment)]
+                  (gpr/overlaps-rects? r1 selrect))))
 
-                :else
-                (let [value (split seg-1 seg-2)]
-                  (swap! cache assoc [seg-1 seg-2] value)
-                  (first value))))
+            (overlap-segments?
+              [seg-1 seg-2]
+              (if (or (= :move-to (:command seg-1))
+                      (= :move-to (:command seg-2)))
+                false
+                (let [r1 (command->selrect seg-1)
+                      r2 (command->selrect seg-2)]
+                  (gpr/overlaps-rects? r1 r2))))
+
+            (split
+              [seg-1 seg-2]
+              (if (not (overlap-segments? seg-1 seg-2))
+                [seg-1]
+                (let [[ts-seg-1 _] (split-ts seg-1 seg-2)]
+                  (-> (split-command seg-1 ts-seg-1)
+                      (add-previous (:prev seg-1))))))
 
             (split-segment-on-content
-              [segment content]
+              [segment content content-sr]
 
-              (loop [current (first content)
-                     content (rest content)
-                     result [segment]]
-
-                (if (nil? current)
-                  result
-                  (let [result (->> result (into [] (mapcat #(split-cache % current))))]
-                    (recur (first content)
-                           (rest content)
-                           result)))))
+              (if (overlap-segment-selrect? segment content-sr)
+                (->> content
+                     (filter #(overlap-segments? segment %))
+                     (reduce
+                      (fn [result current]
+                        (into [] (mapcat #(split % current)) result))
+                      [segment]))
+                [segment]))
 
             (split-content
-              [content-a content-b]
+              [content-a content-b sr-b]
               (into []
-                    (mapcat #(split-segment-on-content % content-b))
+                    (mapcat #(split-segment-on-content % content-b sr-b))
                     content-a))]
 
-      [(split-content content-a content-b)
-       (split-content content-b content-a)])))
+      [(split-content content-a content-b sr-b)
+       (split-content content-b content-a sr-a)])))
 
 (defn is-segment?
   [cmd]
@@ -147,7 +147,7 @@
        (contains? #{:line-to :curve-to} (:command cmd))))
 
 (defn contains-segment?
-  [segment content]
+  [segment content content-sr content-geom]
 
   (let [point (case (:command segment)
                 :line-to  (-> (gsp/command->line segment)
@@ -156,11 +156,13 @@
                 :curve-to (-> (gsp/command->bezier segment)
                               (gsp/curve-values 0.5)))]
 
-    (or (gsp/is-point-in-content? point content)
-        (gsp/is-point-in-border? point content))))
+    (and (gpr/contains-point? content-sr point)
+         (or
+          (gsp/is-point-in-geom-data? point content-geom)
+          (gsp/is-point-in-border? point content)))))
 
 (defn inside-segment?
-  [segment content]
+  [segment content-sr content-geom]
   (let [point (case (:command segment)
                 :line-to  (-> (gsp/command->line segment)
                               (gsp/line-values 0.5))
@@ -168,7 +170,8 @@
                 :curve-to (-> (gsp/command->bezier segment)
                               (gsp/curve-values 0.5)))]
 
-    (gsp/is-point-in-content? point content)))
+    (and (gpr/contains-point? content-sr point)
+         (gsp/is-point-in-geom-data? point content-geom))))
 
 (defn overlap-segment?
   "Finds if the current segment is overlapping against other
@@ -209,48 +212,58 @@
          (d/seek overlap-single?)
          (some?))))
 
-(defn create-union [content-a content-a-split content-b content-b-split]
+(defn create-union [content-a content-a-split content-b content-b-split sr-a sr-b]
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content-b that are not inside content-a
-  (let [content
+  (let [content-a-geom (gsp/content->geom-data content-a)
+        content-b-geom (gsp/content->geom-data content-b)
+
+        content
         (concat
-         (->> content-a-split (filter #(not (contains-segment? % content-b))))
-         (->> content-b-split (filter #(not (contains-segment? % content-a)))))
+         (->> content-a-split (filter #(not (contains-segment? % content-b sr-b content-b-geom))))
+         (->> content-b-split (filter #(not (contains-segment? % content-a sr-a content-a-geom)))))
+
+        content-geom (gsp/content->geom-data content)
+
+        content-sr (gsp/content->selrect content)
 
         ;; Overlapping segments should be added when they are part of the border
         border-content
         (->> content-b-split
-             (filter #(and (contains-segment? % content-a)
+             (filter #(and (contains-segment? % content-a sr-a content-a-geom)
                            (overlap-segment? % content-a-split)
-                           (not (inside-segment? % content)))))]
+                           (not (inside-segment? % content-sr content-geom)))))]
 
     ;; Ensure that the output is always a vector
     (d/concat-vec content border-content)))
 
-(defn create-difference [content-a content-a-split content-b content-b-split]
+(defn create-difference [content-a content-a-split content-b content-b-split sr-a sr-b]
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content b that are inside content-a
   ;;  removing overlapping
-  (d/concat-vec
-   (->> content-a-split (filter #(not (contains-segment? % content-b))))
+  (let [content-a-geom (gsp/content->geom-data content-a)
+        content-b-geom (gsp/content->geom-data content-b)]
+    (d/concat-vec
+     (->> content-a-split (filter #(not (contains-segment? % content-b sr-b content-b-geom))))
 
-   ;; Reverse second content so we can have holes inside other shapes
-   (->> content-b-split
-        (filter #(and (contains-segment? % content-a)
-                      (not (overlap-segment? % content-a-split)))))))
+     ;; Reverse second content so we can have holes inside other shapes
+     (->> content-b-split
+          (filter #(and (contains-segment? % content-a sr-a content-a-geom)
+                        (not (overlap-segment? % content-a-split))))))))
 
-(defn create-intersection [content-a content-a-split content-b content-b-split]
+(defn create-intersection [content-a content-a-split content-b content-b-split sr-a sr-b]
   ;; Pick all segments in content-a that are inside content-b
   ;; Pick all segments in content-b that are inside content-a
-  (d/concat-vec
-   (->> content-a-split (filter #(contains-segment? % content-b)))
-   (->> content-b-split (filter #(contains-segment? % content-a)))))
+  (let [content-a-geom (gsp/content->geom-data content-a)
+        content-b-geom (gsp/content->geom-data content-b)]
+    (d/concat-vec
+     (->> content-a-split (filter #(contains-segment? % content-b sr-b content-b-geom)))
+     (->> content-b-split (filter #(contains-segment? % content-a sr-a content-a-geom))))))
 
 
 (defn create-exclusion [content-a content-b]
   ;; Pick all segments
   (d/concat-vec content-a content-b))
-
 
 (defn fix-move-to
   [content]
@@ -284,16 +297,19 @@
                         (ups/reverse-content))
                       (add-previous))
 
+        sr-a (gsp/content->selrect content-a)
+        sr-b (gsp/content->selrect content-b)
+
         ;; Split content in new segments in the intersection with the other path
-        [content-a-split content-b-split] (content-intersect-split content-a content-b)
+        [content-a-split content-b-split] (content-intersect-split content-a content-b sr-a sr-b)
         content-a-split (->> content-a-split add-previous (filter is-segment?))
         content-b-split (->> content-b-split add-previous (filter is-segment?))
 
         bool-content
         (case bool-type
-          :union        (create-union        content-a content-a-split content-b content-b-split)
-          :difference   (create-difference   content-a content-a-split content-b content-b-split)
-          :intersection (create-intersection content-a content-a-split content-b content-b-split)
+          :union        (create-union        content-a content-a-split content-b content-b-split sr-a sr-b)
+          :difference   (create-difference   content-a content-a-split content-b content-b-split sr-a sr-b)
+          :intersection (create-intersection content-a content-a-split content-b content-b-split sr-a sr-b)
           :exclude      (create-exclusion    content-a-split content-b-split))]
 
     (->> (fix-move-to bool-content)

@@ -22,6 +22,7 @@
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.storage :as stg]
    [app.util.time :as dt]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
@@ -30,22 +31,55 @@
 
 ;; --- Grid Item Thumbnail
 
+(defn use-thumbnail-cache
+  "Creates some hooks to handle the files thumbnails cache"
+  [file]
+
+  (let [get-thumbnail
+        (mf/use-callback
+         (mf/deps file)
+         (fn []
+           (let [[revn thumb-data] (get-in @stg/storage [:thumbnails (:id file)])]
+             (when (= revn (:revn file))
+               thumb-data))))
+
+        cache-thumbnail
+        (mf/use-callback
+         (mf/deps file)
+         (fn [thumb-data]
+           (swap! stg/storage #(assoc-in % [:thumbnails (:id file)] [(:revn file) thumb-data]))))
+
+        generate-thumbnail
+        (mf/use-callback
+         (mf/deps file)
+         (fn []
+           (let [thumb-data (get-thumbnail)]
+             (if (some? thumb-data)
+               (rx/of thumb-data)
+               (->> (wrk/ask! {:cmd :thumbnails/generate
+                               :file-id (:id file)
+                               :page-id (get-in file [:data :pages 0])})
+                    (rx/tap cache-thumbnail))))))]
+
+    generate-thumbnail))
+
 (mf/defc grid-item-thumbnail
   {::mf/wrap [mf/memo]}
   [{:keys [file] :as props}]
-  (let [container (mf/use-ref)]
+  (let [container (mf/use-ref)
+        generate-thumbnail (use-thumbnail-cache file)]
+
     (mf/use-effect
-     (mf/deps (:id file))
+     (mf/deps file)
      (fn []
-       (->> (wrk/ask! {:cmd :thumbnails/generate
-                       :file-id (:id file)
-                       :page-id (get-in file [:data :pages 0])})
+       (->> (generate-thumbnail)
             (rx/subs (fn [{:keys [svg fonts]}]
                        (run! fonts/ensure-loaded! fonts)
                        (when-let [node (mf/ref-val container)]
                          (set! (.-innerHTML ^js node) svg)))))))
     [:div.grid-item-th {:style {:background-color (get-in file [:data :options :background])}
-                        :ref container}]))
+                        :ref container}
+     i/loader-pencil]))
 
 ;; --- Grid Item
 

@@ -113,7 +113,7 @@
         filter-x (min x (+ x offset-x (- spread) (- blur) -5))
         filter-y (min y (+ y offset-y (- spread) (- blur) -5))
         filter-width (+ width (mth/abs offset-x) (* spread 2) (* blur 2) 10)
-        filter-height (+ height (mth/abs offset-x) (* spread 2) (* blur 2) 10)]
+        filter-height (+ height (mth/abs offset-y) (* spread 2) (* blur 2) 10)]
     {:x1 filter-x
      :y1 filter-y
      :x2 (+ filter-x filter-width)
@@ -208,26 +208,31 @@
         margin (gsh/shape-stroke-margin shape stroke-width)]
     (+ stroke-width margin)))
 
+(defn change-filter-in
+  "Adds the previous filter as `filter-in` parameter"
+  [filters]
+  (map #(assoc %1 :filter-in %2) filters (cons nil (map :id filters))))
+
 (mf/defc filters
   [{:keys [filter-id shape]}]
 
-  (let [filters (shape->filters shape)
-
-        ;; Adds the previous filter as `filter-in` parameter
-        filters (map #(assoc %1 :filter-in %2) filters (cons nil (map :id filters)))
-        bounds (get-filters-bounds shape filters (or (-> shape :blur :value) 0))
-        padding (calculate-padding shape)]
-
+  (let [filters       (-> shape shape->filters change-filter-in)
+        bounds        (get-filters-bounds shape filters (or (-> shape :blur :value) 0))
+        padding       (calculate-padding shape)
+        selrect       (:selrect shape)
+        filter-x      (/ (- (:x bounds) (:x selrect) padding) (:width selrect))
+        filter-y      (/ (- (:y bounds) (:y selrect) padding) (:height selrect))
+        filter-width  (/ (+ (:width bounds) (* 2 padding)) (:width selrect))
+        filter-height (/ (+ (:height bounds) (* 2 padding)) (:height selrect))]
     [:*
      (when (> (count filters) 2)
-       [:filter {:id filter-id
-                 :x (- (:x bounds) padding)
-                 :y (- (:y bounds) padding)
-                 :width (+ (:width bounds) (* 2 padding))
-                 :height (+ (:height bounds) (* 2 padding))
-                 :filterUnits "userSpaceOnUse"
+       [:filter {:id          filter-id
+                 :x           filter-x
+                 :y           filter-y
+                 :width       filter-width
+                 :height      filter-height
+                 :filterUnits "objectBoundingBox"
                  :color-interpolation-filters "sRGB"}
-
         (for [entry filters]
           [:& filter-entry {:entry entry}])])]))
 

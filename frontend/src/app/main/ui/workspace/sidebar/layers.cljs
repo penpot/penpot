@@ -42,10 +42,10 @@
                i/mask
                i/folder))
     :bool (case (:bool-type shape)
-            :difference   i/boolean-difference
-            :exclude      i/boolean-exclude
-            :intersection i/boolean-intersection
-            #_:default    i/boolean-union)
+            :difference   i/bool-difference
+            :exclude      i/bool-exclude
+            :intersection i/bool-intersection
+            #_:default    i/bool-union)
     :svg-raw i/file-svg
     nil))
 
@@ -308,6 +308,7 @@
                     :bool-type]))
 
 (defn- strip-objects
+  "Remove unnecesary data from objects map"
   [objects]
   (persistent!
    (->> objects
@@ -320,8 +321,11 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo #(mf/throttle % 200)]}
   [props]
-  (let [objects (obj/get props "objects")
-        objects (strip-objects objects)]
+  (let [objects (-> (obj/get props "objects")
+                    (hooks/use-equal-memo))
+        objects (mf/use-memo
+                 (mf/deps objects)
+                 #(strip-objects objects))]
     [:& layers-tree {:objects objects}]))
 
 ;; --- Layers Toolbox

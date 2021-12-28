@@ -311,6 +311,9 @@
     width: 100%;
 
     background-color: $color-canvas;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
 
     .img-th {
       height: auto;
@@ -320,6 +323,10 @@
     svg {
       height: 100%;
       width: 100%;
+    }
+
+    svg#loader-pencil {
+      fill: $color-gray-20;
     }
   }
 }

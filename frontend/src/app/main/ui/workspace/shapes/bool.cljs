@@ -27,21 +27,26 @@
   [shape-wrapper]
   (let [shape-component (bool/bool-shape shape-wrapper)]
     (mf/fnc bool-wrapper
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
+      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
        ::mf/wrap-props false}
       [props]
-      (let [shape      (unchecked-get props "shape")
-            frame      (unchecked-get props "frame")
+      (let [shape         (unchecked-get props "shape")
+            child-sel-ref (mf/use-memo
+                           (mf/deps (:id shape))
+                           #(refs/is-child-selected? (:id shape)))
 
-            childs-ref (mf/use-memo
-                        (mf/deps (:id shape))
-                        #(refs/select-children (:id shape)))
+            childs-ref    (mf/use-memo
+                           (mf/deps (:id shape))
+                           #(refs/select-bool-children (:id shape)))
 
-            childs (mf/deref childs-ref)]
+            child-sel?    (mf/deref child-sel-ref)
+            childs        (mf/deref childs-ref)
+
+            shape         (cond-> shape
+                            child-sel?
+                            (dissoc :bool-content))]
 
         [:> shape-container {:shape shape}
-         [:& shape-component
-          {:frame frame
-           :shape shape
-           :childs childs}]]))))
+         [:& shape-component {:shape shape
+                              :childs childs}]]))))
 

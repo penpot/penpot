@@ -12,7 +12,6 @@
   others are defined using a generic wrapper implemented in
   common."
   (:require
-   [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
@@ -77,20 +76,16 @@
                             :key (:id item)}]))]))
 
 (mf/defc shape-wrapper
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
    ::mf/wrap-props false}
   [props]
   (let [shape  (obj/get props "shape")
-        frame  (obj/get props "frame")
-        shape  (-> (geom/transform-shape shape {:round-coords? false})
-                   (geom/translate-to-frame frame))
-        opts  #js {:shape shape
-                   :frame frame}
+        opts  #js {:shape shape}
 
         svg-element? (and (= (:type shape) :svg-raw)
                           (not= :svg (get-in shape [:content :tag])))]
 
-    (when (and shape (not (:hidden shape)))
+    (when (and (some? shape) (not (:hidden shape)))
       [:*
        (if-not svg-element?
          (case (:type shape)
@@ -104,7 +99,7 @@
            :bool    [:> bool-wrapper opts]
 
            ;; Only used when drawing a new frame.
-           :frame [:> frame-wrapper {:shape shape}]
+           :frame [:> frame-wrapper opts]
 
            nil)
 
@@ -112,7 +107,7 @@
          [:> svg-raw-wrapper opts])
 
        (when (debug? :bounding-boxes)
-         [:& bounding-box {:shape shape :frame frame}])])))
+         [:> bounding-box opts])])))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))

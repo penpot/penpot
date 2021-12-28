@@ -7,35 +7,89 @@
 (ns app.main.ui.workspace.viewport.utils
   (:require
    [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.main.ui.cursors :as cur]
    [app.util.dom :as dom]
    [cuerdas.core :as str]))
 
-;; TODO: looks like first argument is not necessary.
-(defn update-transform [_node shapes modifiers]
-  (doseq [{:keys [id type]} shapes]
-    (let [shape-node (dom/get-element (str "shape-" id))
+(defn- text-corrected-transform
+  "If we apply a scale directly to the texts it will show deformed so we need to create this
+  correction matrix to \"undo\" the resize but keep the other transformations."
+  [{:keys [points transform transform-inverse]} current-transform modifiers]
 
-          ;; When the shape is a frame we maybe need to move its thumbnail
-          thumb-node (dom/get-element (str "thumbnail-" id))]
-      (when-let [node (cond
-                        (and (some? shape-node) (= :frame type))
-                        (.-parentNode shape-node)
+  (let [corner-pt (first points)
+        transform (or transform (gmt/matrix))
+        transform-inverse (or transform-inverse (gmt/matrix))
 
-                        (and (some? thumb-node) (= :frame type))
-                        (.-parentNode thumb-node)
+        current-transform
+        (if (some? (:resize-vector modifiers))
+          (gmt/multiply
+           current-transform
+           transform
+           (gmt/scale-matrix (gpt/inverse (:resize-vector modifiers)) (gpt/transform corner-pt transform-inverse))
+           transform-inverse)
+          current-transform)
 
-                        :else
-                        shape-node)]
-        (dom/set-attribute node "transform" (str (:displacement modifiers)))))))
+        current-transform
+        (if (some? (:resize-vector-2 modifiers))
+          (gmt/multiply
+           current-transform
+           transform
+           (gmt/scale-matrix (gpt/inverse (:resize-vector-2 modifiers)) (gpt/transform corner-pt transform-inverse))
+           transform-inverse)
+          current-transform)]
+    current-transform))
 
-;; TODO: looks like first argument is not necessary.
-(defn remove-transform [_node shapes]
-  (doseq [{:keys [id type]} shapes]
-    (when-let [node (dom/get-element (str "shape-" id))]
-      (let [node (if (= :frame type) (.-parentNode node) node)]
-        (dom/remove-attribute node "transform")))))
+(defn get-nodes
+  "Retrieve the DOM nodes to apply the matrix transformation"
+  [{:keys [id type masked-group?]}]
+  (let [shape-node (dom/get-element (str "shape-" id))
+
+        frame? (= :frame type)
+        group? (= :group type)
+        mask?  (and group? masked-group?)
+
+        ;; When the shape is a frame we maybe need to move its thumbnail
+        thumb-node (when frame? (dom/get-element (str "thumbnail-" id)))]
+    (cond
+      (some? thumb-node)
+      [(.-parentNode thumb-node)]
+
+      (and (some? shape-node) frame?)
+      [(dom/query shape-node ".frame-background")
+       (dom/query shape-node ".frame-clip")]
+
+      ;; For groups we don't want to transform the whole group but only
+      ;; its filters/masks
+      (and (some? shape-node) mask?)
+      [(dom/query shape-node ".mask-clip-path")
+       (dom/query shape-node ".mask-shape")]
+
+      group?
+      []
+
+      :else
+      [shape-node])))
+
+(defn update-transform [shapes transforms modifiers]
+  (doseq [{id :id :as shape} shapes]
+    (when-let [nodes (get-nodes shape)]
+      (let [transform (get transforms id)
+            modifiers (get-in modifiers [id :modifiers])
+            transform (case type
+                        :text (text-corrected-transform shape transform modifiers)
+                        transform)]
+        (doseq [node nodes]
+          (when (and (some? transform) (some? node))
+            (dom/set-attribute node "transform" (str transform))))))))
+
+(defn remove-transform [shapes]
+  (doseq [shape shapes]
+    (when-let [nodes (get-nodes shape)]
+      (doseq [node nodes]
+        (when (some? node)
+          (dom/remove-attribute node "transform"))))))
 
 (defn format-viewbox [vbox]
   (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))

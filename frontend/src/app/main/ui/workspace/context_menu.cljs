@@ -250,16 +250,16 @@
                 (or multiple? (and single? (or is-group? is-bool?))))
        [:& menu-entry {:title (tr "workspace.shape.menu.path")}
         [:& menu-entry {:title (tr "workspace.shape.menu.union")
-                        :shortcut (sc/get-tooltip :boolean-union)
+                        :shortcut (sc/get-tooltip :bool-union)
                         :on-click (set-bool :union)}]
         [:& menu-entry {:title (tr "workspace.shape.menu.difference")
-                        :shortcut (sc/get-tooltip :boolean-difference)
+                        :shortcut (sc/get-tooltip :bool-difference)
                         :on-click (set-bool :difference)}]
         [:& menu-entry {:title (tr "workspace.shape.menu.intersection")
-                        :shortcut (sc/get-tooltip :boolean-intersection)
+                        :shortcut (sc/get-tooltip :bool-intersection)
                         :on-click (set-bool :intersection)}]
         [:& menu-entry {:title (tr "workspace.shape.menu.exclude")
-                        :shortcut (sc/get-tooltip :boolean-exclude)
+                        :shortcut (sc/get-tooltip :bool-exclude)
                         :on-click (set-bool :exclude)}]
 
         (when (and single? is-bool? (not disable-flatten?))

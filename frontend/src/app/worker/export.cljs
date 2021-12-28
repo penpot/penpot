@@ -19,6 +19,8 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]))
 
+(def ^:const current-version 2)
+
 (defn create-manifest
   "Creates a manifest entry for the given files"
   [team-id file-id export-type files]
@@ -41,6 +43,7 @@
                           :shared          is-shared
                           :pages           pages
                           :pagesIndex      index
+                          :version         current-version
                           :libraries       (->> (:libraries file) (into #{}) (mapv str))
                           :exportType      (d/name export-type)
                           :hasComponents   (d/not-empty? (get-in file [:data :components]))

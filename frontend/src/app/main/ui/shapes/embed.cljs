@@ -25,7 +25,12 @@
        (let [;; When not active the embedding we return the URI
              url-mapping (fn [obs]
                            (if embed?
-                             (rx/merge-map http/fetch-data-uri obs)
+                             (->> obs
+                                  (rx/merge-map
+                                   (fn [uri]
+                                     (->> (http/fetch-data-uri uri true)
+                                          ;; If fetching give an error we store the URI as its `data-uri`
+                                          (rx/catch #(rx/of (hash-map uri uri)))))))
                              (rx/map identity obs)))
 
              sub (->> (rx/from urls)

@@ -25,6 +25,10 @@
   ([state component-id]
    (get-in state [:workspace-data :components component-id :objects])))
 
+(defn lookup-local-components
+  ([state]
+   (get-in state [:workspace-data :components])))
+
 (defn lookup-selected
   ([state]
    (lookup-selected state nil))
