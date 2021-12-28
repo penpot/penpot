@@ -34,38 +34,32 @@
               (t/read! reader)))
 
           (parse-json [body]
-            (json/read body))
-
-          (parse [type body]
-            (try
-              (case type
-                :json (parse-json body)
-                :transit (parse-transit body))
-              (catch Exception e
-                (let [data {:type :parse
-                            :hint "unable to parse request body"
-                            :message (ex-message e)}]
-                  {:status 400
-                   :headers {"content-type" "application/transit+json"}
-                   :body (t/encode-str data {:type :json-verbose})}))))]
-
+            (json/read body))]
     (fn [{:keys [headers body] :as request}]
-      (let [ctype (get headers "content-type")]
-        (handler
-         (case ctype
-           "application/transit+json"
-           (let [params (parse :transit body)]
-             (-> request
-                 (assoc :body-params params)
-                 (update :params merge params)))
+      (try
+        (let [ctype (get headers "content-type")]
+          (handler (case ctype
+                     "application/transit+json"
+                     (let [params (parse-transit body)]
+                       (-> request
+                           (assoc :body-params params)
+                           (update :params merge params)))
 
-           "application/json"
-           (let [params (parse :json body)]
-             (-> request
-                 (assoc :body-params params)
-                 (update :params merge params)))
+                     "application/json"
+                     (let [params (parse-json body)]
+                       (-> request
+                           (assoc :body-params params)
+                           (update :params merge params)))
 
-           request))))))
+                     request)))
+        (catch Exception e
+          (let [data {:type :validation
+                      :code :unable-to-parse-request-body
+                      :hint "malformed params"}]
+            (l/error :hint (ex-message e) :cause e)
+            {:status 400
+             :headers {"content-type" "application/transit+json"}
+             :body (t/encode-str data {:type :json-verbose})}))))))
 
 (def parse-request-body
   {:name ::parse-request-body
