@@ -9,15 +9,12 @@
   com.github.luben/zstd-jni {:mvn/version "1.5.1-1"}
   org.clojure/data.fressian {:mvn/version "1.0.0"}
 
-  ;; NOTE: don't upgrade to latest version, breaking change is
-  ;; introduced on 0.10.0 that suffixes counters with _total if they
-  ;; are not already has this suffix.
-  io.prometheus/simpleclient {:mvn/version "0.9.0"}
-  io.prometheus/simpleclient_hotspot {:mvn/version "0.9.0"}
-  io.prometheus/simpleclient_jetty {:mvn/version "0.9.0"
+  io.prometheus/simpleclient {:mvn/version "0.14.1"}
+  io.prometheus/simpleclient_hotspot {:mvn/version "0.14.1"}
+  io.prometheus/simpleclient_jetty {:mvn/version "0.14.1"
                                     :exclusions [org.eclipse.jetty/jetty-server
                                                  org.eclipse.jetty/jetty-servlet]}
-  io.prometheus/simpleclient_httpserver {:mvn/version "0.9.0"}
+  io.prometheus/simpleclient_httpserver {:mvn/version "0.14.1"}
 
   io.lettuce/lettuce-core {:mvn/version "6.1.5.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
