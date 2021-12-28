@@ -186,7 +186,8 @@
 
 (defn query
   [el query]
-  (.querySelector el query))
+  (when (some? el)
+    (.querySelector el query)))
 
 (defn get-client-position
   [event]

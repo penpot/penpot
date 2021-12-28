@@ -81,32 +81,32 @@
               (obj/set! js/window "onbeforeunload" nil)
               (st/emit! (update-persistence-status {:status :saved})))]
         (->> (rx/merge
-               (->> stream
-                    (rx/filter dch/commit-changes?)
-                    (rx/map deref)
-                    (rx/filter local-file?)
-                    (rx/tap on-dirty)
-                    (rx/buffer-until notifier)
-                    (rx/filter (complement empty?))
-                    (rx/map (fn [buf]
-                              (->> (into [] (comp (map #(assoc % :id (uuid/next)))
-                                                  (map #(assoc % :file-id file-id)))
-                                         buf)
-                                   (persist-changes file-id))))
-                    (rx/tap on-saving)
-                    (rx/take-until (rx/delay 100 stoper)))
-               (->> stream
-                    (rx/filter dch/commit-changes?)
-                    (rx/map deref)
-                    (rx/filter library-file?)
-                    (rx/filter (complement #(empty? (:changes %))))
-                    (rx/map persist-synchronous-changes)
-                    (rx/take-until (rx/delay 100 stoper)))
-               (->> stream
-                    (rx/filter (ptk/type? ::changes-persisted))
-                    (rx/tap on-saved)
-                    (rx/ignore)
-                    (rx/take-until stoper)))
+              (->> stream
+                   (rx/filter dch/commit-changes?)
+                   (rx/map deref)
+                   (rx/filter local-file?)
+                   (rx/tap on-dirty)
+                   (rx/buffer-until notifier)
+                   (rx/filter (complement empty?))
+                   (rx/map (fn [buf]
+                             (->> (into [] (comp (map #(assoc % :id (uuid/next)))
+                                                 (map #(assoc % :file-id file-id)))
+                                        buf)
+                                  (persist-changes file-id))))
+                   (rx/tap on-saving)
+                   (rx/take-until (rx/delay 100 stoper)))
+              (->> stream
+                   (rx/filter dch/commit-changes?)
+                   (rx/map deref)
+                   (rx/filter library-file?)
+                   (rx/filter (complement #(empty? (:changes %))))
+                   (rx/map persist-synchronous-changes)
+                   (rx/take-until (rx/delay 100 stoper)))
+              (->> stream
+                   (rx/filter (ptk/type? ::changes-persisted))
+                   (rx/tap on-saved)
+                   (rx/ignore)
+                   (rx/take-until stoper)))
              (rx/subs #(st/emit! %)
                       (constantly nil)
                       (fn []
@@ -520,25 +520,25 @@
 (defn clone-media-object
   [{:keys [file-id object-id] :as params}]
   (us/assert ::clone-media-objects-params params)
-   (ptk/reify ::clone-media-objects
-     ptk/WatchEvent
-     (watch [_ _ _]
-       (let [{:keys [on-success on-error]
-              :or {on-success identity
-                   on-error identity}} (meta params)
-             params {:is-local true
-                     :file-id file-id
-                     :id object-id}]
+  (ptk/reify ::clone-media-objects
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error identity}} (meta params)
+            params {:is-local true
+                    :file-id file-id
+                    :id object-id}]
 
-         (rx/concat
-          (rx/of (dm/show {:content (tr "media.loading")
-                           :type :info
-                           :timeout nil
-                           :tag :media-loading}))
-          (->> (rp/mutation! :clone-file-media-object params)
-               (rx/do on-success)
-               (rx/catch on-error)
-               (rx/finalize #(st/emit! (dm/hide-tag :media-loading)))))))))
+        (rx/concat
+         (rx/of (dm/show {:content (tr "media.loading")
+                          :type :info
+                          :timeout nil
+                          :tag :media-loading}))
+         (->> (rp/mutation! :clone-file-media-object params)
+              (rx/do on-success)
+              (rx/catch on-error)
+              (rx/finalize #(st/emit! (dm/hide-tag :media-loading)))))))))
 
 ;; --- Helpers
 
@@ -555,12 +555,17 @@
   [ids]
   (ptk/reify ::remove-thumbnails
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       ;; Removes the thumbnail while it's regenerated
-      (rx/of (dch/update-shapes
-              ids
-              #(dissoc % :thumbnail)
-              {:save-undo? false})))))
+      (let [moving? (= :move (get-in state [:workspace-local :transform]))
+            selected? (wsh/lookup-selected state)
+            ;; When we're moving the current frame it's safe to keep the thumbnail
+            ;; if it's resize we need to remove it immeditely
+            ids (cond->> ids moving? (remove selected?))]
+
+        (if (empty? ids)
+          (rx/empty)
+          (rx/of (dch/update-shapes ids #(dissoc % :thumbnail) {:save-undo? false})))))))
 
 (defn update-frame-thumbnail
   [frame-id]
@@ -607,7 +612,8 @@
         xform (comp (mapcat extract-ids)
                     (map get-frame-id)
                     (remove nil?)
-                    (filter #(not= uuid/zero %)))]
+                    (filter #(not= uuid/zero %))
+                    (filter #(contains? new-objects %)))]
 
     (into #{} xform changes)))
 
@@ -647,7 +653,8 @@
                                (rx/filter dch/commit-changes?)
                                (rx/filter (comp not thumbnail-change?))
                                (rx/with-latest-from objects-stream)
-                               (rx/map extract-frame-changes))
+                               (rx/map extract-frame-changes)
+                               (rx/share))
 
             frames (-> state wsh/lookup-page-objects cp/select-frames)
             no-thumb-frames (->> frames

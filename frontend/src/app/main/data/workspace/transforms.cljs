@@ -510,6 +510,11 @@
 (defn- start-move-duplicate
   [from-position]
   (ptk/reify ::start-move-duplicate
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :transform] :move)))
+
     ptk/WatchEvent
     (watch [_ _ stream]
       (->> stream
