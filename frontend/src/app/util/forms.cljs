@@ -85,31 +85,30 @@
       (mf/ref-val state-ref))
 
     IReset
-    (-reset! [it new-value]
+    (-reset! [_ new-value]
       (if (nil? new-value)
         (mf/set-ref-val! state-ref (get-state))
         (mf/set-ref-val! state-ref new-value))
       (render inc))
 
     ISwap
-    (-swap! [self f]
+    (-swap! [_ f]
       (let [f (wrap-update-fn f opts)]
         (mf/set-ref-val! state-ref (f (mf/ref-val state-ref)))
         (render inc)))
 
 
-    (-swap! [self f x]
+    (-swap! [_ f x]
       (let [f (wrap-update-fn f opts)]
         (mf/set-ref-val! state-ref (f (mf/ref-val state-ref) x))
         (render inc)))
 
-
-    (-swap! [self f x y]
+    (-swap! [_ f x y]
       (let [f (wrap-update-fn f opts)]
         (mf/set-ref-val! state-ref (f (mf/ref-val state-ref) x y))
         (render inc)))
 
-    (-swap! [self f x y more]
+    (-swap! [_ f x y more]
       (let [f (wrap-update-fn f opts)]
         (mf/set-ref-val! state-ref (apply f (mf/ref-val state-ref) x y more))
         (render inc)))))
