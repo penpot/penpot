@@ -54,7 +54,7 @@
   {:status 400 :body (ex-data err)})
 
 (defmethod handle-exception :validation
-  [err req]
+  [err _]
   (let [edata (ex-data err)]
     {:status 400
      :body   (dissoc edata ::s/problems)}))
