@@ -62,19 +62,6 @@
   ([m1 m2 & others]
    (reduce multiply (multiply m1 m2) others)))
 
-(defn -old-multiply
-  ([{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
-    {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f}]
-   (Matrix.
-    (+ (* m1a m2a) (* m1c m2b))
-    (+ (* m1b m2a) (* m1d m2b))
-    (+ (* m1a m2c) (* m1c m2d))
-    (+ (* m1b m2c) (* m1d m2d))
-    (+ (* m1a m2e) (* m1c m2f) m1e)
-    (+ (* m1b m2e) (* m1d m2f) m1f)))
-  ([m1 m2 & others]
-   (reduce multiply (-old-multiply m1 m2) others)))
-
 (defn add-translate
   "Given two TRANSLATE matrixes (only e and f have significative
   values), combine them. Quicker than multiplying them, for this
