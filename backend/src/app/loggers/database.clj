@@ -54,14 +54,17 @@
       (assoc :tenant (cf/get :tenant))
       (assoc :host (cf/get :host))
       (assoc :public-uri (cf/get :public-uri))
-      (assoc :version (:full cf/version))))
+      (assoc :version (:full cf/version))
+      (update :id (fn [id] (or id (uuid/next))))))
 
 (defn handle-event
   [{:keys [executor] :as cfg} event]
   (aa/with-thread executor
     (try
-      (let [event (parse-event event)]
-        (l/debug :hint "registering error on database" :id (:id event))
+      (let [event (parse-event event)
+            uri   (cf/get :public-uri)]
+        (l/debug :hint "registering error on database" :id (:id event)
+                 :uri (str uri "/dbg/error-by-id/" (:id event)))
         (persist-on-database! cfg event))
       (catch Exception e
         (l/warn :hint "unexpected exception on database error logger"
