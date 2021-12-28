@@ -368,7 +368,7 @@
             (assoc-in [:workspace-local :transform] :resize)))
 
       ptk/WatchEvent
-      (watch [it state stream]
+      (watch [_ state stream]
         (let [initial-position @ms/mouse-position
               stoper  (rx/filter ms/mouse-up? stream)
               layout  (:workspace-layout state)

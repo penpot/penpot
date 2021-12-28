@@ -27,12 +27,12 @@
 (extend-protocol IBodyData
   globals/FormData
   (-get-body-data [it] it)
-  (-update-headers [it headers]
+  (-update-headers [_ headers]
     (dissoc headers "content-type" "Content-Type"))
 
   default
   (-get-body-data [it] it)
-  (-update-headers [it headers] headers))
+  (-update-headers [_ headers] headers))
 
 (defn translate-method
   [method]

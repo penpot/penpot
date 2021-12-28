@@ -31,7 +31,7 @@
            (specify! state
              cljs.core/IFn
              (-invoke
-               ([it val]
+               ([_ val]
                 (if val
                   (wapi/request-fullscreen (mf/ref-val container))
                   (wapi/exit-fullscreen)))))))]

@@ -10,7 +10,6 @@
  {:analyze-call
   {app.common.data/export hooks.export/export
    potok.core/reify hooks.export/potok-reify
-   cljs.core/specify! hooks.export/clojure-specify
    app.util.services/defmethod hooks.export/service-defmethod
    }}
 
