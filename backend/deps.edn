@@ -22,7 +22,7 @@
   io.lettuce/lettuce-core {:mvn/version "6.1.5.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
-  info.sunng/ring-jetty9-adapter {:mvn/version "0.17.0"
+  info.sunng/ring-jetty9-adapter {:mvn/version "0.15.2"
                                   :exclusions [org.slf4j/slf4j-api]}
   com.github.seancorfield/next.jdbc {:mvn/version "1.2.761"}
   metosin/reitit-ring {:mvn/version "0.5.15"}
