@@ -55,17 +55,9 @@
 
 (defmethod handle-exception :validation
   [err req]
-  (let [header (get-in req [:headers "accept"])
-        edata  (ex-data err)]
-    (if (and (= :spec-validation (:code edata))
-             (str/starts-with? header "text/html"))
-      {:status 400
-       :headers {"content-type" "text/html"}
-       :body (str "<pre style='font-size:16px'>"
-                  (:explain edata)
-                  "</pre>\n")}
-      {:status 400
-       :body   (dissoc edata ::s/problems)})))
+  (let [edata (ex-data err)]
+    {:status 400
+     :body   (dissoc edata ::s/problems)}))
 
 (defmethod handle-exception :assertion
   [error request]
