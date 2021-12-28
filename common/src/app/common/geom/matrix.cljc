@@ -36,7 +36,7 @@
     (apply matrix params)))
 
 (defn multiply
-  ([m1 m2]
+  ([^Matrix m1 ^Matrix m2]
    (let [m1a (.-a m1)
          m1b (.-b m1)
          m1c (.-c m1)
