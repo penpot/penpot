@@ -46,10 +46,17 @@
          (rx/subs #(reset! buffer (vec %))))
     buffer))
 
-(def emit! (partial ptk/emit! state))
+(defn emit!
+  ([] nil)
+  ([event]
+   (ptk/emit! state event)
+   nil)
+  ([event & events]
+   (apply ptk/emit! state (cons event events))
+   nil))
 
 (defn emitf
   [& events]
-  #(ptk/emit! state events))
+  #(apply ptk/emit! state events))
 
 

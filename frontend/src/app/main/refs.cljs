@@ -116,6 +116,14 @@
                               :show-distances?])
              workspace-local =))
 
+(def interactions-data
+  (l/derived #(select-keys % [:editing-interaction-index
+                              :draw-interaction-to
+                              :draw-interaction-to-frame
+                              :move-overlay-to
+                              :move-overlay-index])
+             workspace-local =))
+
 (def local-displacement
   (l/derived #(select-keys % [:modifiers :selected])
              workspace-local =))
@@ -235,9 +243,8 @@
   [ids]
   (let [selector
         (fn [state]
-          (let [objects (wsh/lookup-page-objects state)
-                xform (comp (map (d/getf objects)) (remove nil?))]
-            (into [] xform ids)))]
+          (let [objects (wsh/lookup-page-objects state)]
+            (into [] (keep (d/getf objects)) ids)))]
     (l/derived selector st/state =)))
 
 (defn- set-content-modifiers [state]

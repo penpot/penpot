@@ -92,8 +92,7 @@
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
-        xf-select-shape   (comp (map (d/getf objects-modified)) (filter some?))
-        selected-shapes   (into [] xf-select-shape selected)
+        selected-shapes   (into [] (keep (d/getf objects-modified)) selected)
         selected-frames   (into #{} (map :frame-id) selected-shapes)
 
         ;; Only when we have all the selected shapes in one frame
@@ -329,6 +328,9 @@
        (when show-prototypes?
          [:& interactions/interactions
           {:selected selected
+           :zoom zoom
+           :objects objects-modified
+           :current-transform transform
            :hover-disabled? hover-disabled?}])
 
        (when show-selrect?

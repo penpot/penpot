@@ -15,12 +15,16 @@
 
 (defn calc-bool-content
   [shape objects]
-  (->> (:shapes shape)
-       (map (d/getf objects))
-       (filter (comp not :hidden))
-       (map #(stp/convert-to-path % objects))
-       (mapv :content)
-       (pb/content-bool (:bool-type shape))))
+
+  (let [extract-content-xf
+        (comp (map (d/getf objects))
+              (filter (comp not :hidden))
+              (map #(stp/convert-to-path % objects))
+              (map :content))
+
+        shapes-content
+        (into [] extract-content-xf (:shapes shape))]
+    (pb/content-bool (:bool-type shape) shapes-content)))
 
 (defn update-bool-selrect
   "Calculates the selrect+points for the boolean shape"
