@@ -59,7 +59,7 @@
                (->> (wrk/ask! {:cmd :thumbnails/generate
                                :file-id (:id file)
                                :page-id (get-in file [:data :pages 0])})
-                    (rx/tap cache-thumbnail))))))]
+                    #_(rx/tap cache-thumbnail))))))]
 
     generate-thumbnail))
 
