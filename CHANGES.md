@@ -16,6 +16,7 @@
 - Fix problems with team management [#1353](https://github.com/penpot/penpot/issues/1353)
 - Fix problem when importing in shared libraries [#1362](https://github.com/penpot/penpot/issues/1362)
 - Fix problem with join nodes [#1422](https://github.com/penpot/penpot/issues/1422)
+- After team onboarding importing a file will import into the team drafts [Taiga #2408](https://tree.taiga.io/project/penpot/issue/2408)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
