@@ -28,10 +28,14 @@
            (when node
              (let [img-node (mf/ref-val thumbnail-img)]
                (timers/schedule-on-idle
-                #(let [frame-node (dom/get-element (str "shape-" (:id shape)))
-                       loading-node (when frame-node
-                                      (dom/query frame-node "[data-loading=\"true\"]"))]
-                   (if (and (some? frame-node) (not (some? loading-node)))
+                #(let [frame-node   (dom/get-element (str "shape-" (:id shape)))
+                       thumb-node   (dom/query frame-node ".frame-thumbnail")
+                       loading-node (dom/query frame-node "[data-loading=\"true\"]")]
+                   (if (and (some? frame-node)
+                            ;; Not render if the thumbnail is in display
+                            (nil? thumb-node)
+                            ;; Not render if some image is still loading
+                            (nil? loading-node))
                      (let [frame-html (->  (js/XMLSerializer.)
                                            (.serializeToString frame-node))
 
@@ -125,7 +129,9 @@
            ;; after a time
            (reset! shape-id nil)
            (rx/push! next :next)
-           (timers/schedule-on-idle (st/emitf (dwp/update-frame-thumbnail frame-id)))))]
+           (timers/schedule-on-idle
+            100
+            (st/emitf (dwp/update-frame-thumbnail frame-id)))))]
 
     (mf/use-effect
      (mf/deps render-frame)

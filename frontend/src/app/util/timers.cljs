@@ -44,11 +44,15 @@
     (def ^:private cancel-idle-callback #(js/clearTimeout %))))
 
 (defn schedule-on-idle
-  [func]
-  (let [sem (request-idle-callback #(func))]
-    (reify rx/IDisposable
-      (-dispose [_]
-        (cancel-idle-callback sem)))))
+  ([ms func]
+   ;; Schedule on idle after `ms` time
+   (schedule ms #(schedule-on-idle func)))
+
+  ([func]
+   (let [sem (request-idle-callback #(func))]
+     (reify rx/IDisposable
+       (-dispose [_]
+         (cancel-idle-callback sem))))))
 
 (def ^:private request-animation-frame
   (or (and (exists? js/window) (.-requestAnimationFrame js/window))
