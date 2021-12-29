@@ -22,44 +22,69 @@
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.storage :as stg]
    [app.util.time :as dt]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [promesa.core :as p]
    [rumext.alpha :as mf]))
 
 ;; --- Grid Item Thumbnail
+
+(def ^:const CACHE-NAME "penpot")
+(def ^:const CACHE-URL "https://penpot.app/cache/")
 
 (defn use-thumbnail-cache
   "Creates some hooks to handle the files thumbnails cache"
   [file]
 
-  (let [get-thumbnail
+  (let [cache-url (str CACHE-URL (:id file) "/" (:revn file) ".svg")
+        get-thumbnail
         (mf/use-callback
          (mf/deps file)
          (fn []
-           (let [[revn thumb-data] (get-in @stg/storage [:thumbnails (:id file)])]
-             (when (= revn (:revn file))
-               thumb-data))))
+           (p/let [response (.match js/caches cache-url)]
+             (when (some? response)
+               (p/let [blob         (.blob response)
+                       svg-content  (.text blob)
+                       headers      (.-headers response)
+                       fonts-header (or (.get headers "X-PENPOT-FONTS") "")
+                       fonts        (into #{}
+                                          (remove #(= "" %))
+                                          (str/split fonts-header ","))]
+                 {:svg   svg-content
+                  :fonts fonts})))))
 
         cache-thumbnail
         (mf/use-callback
          (mf/deps file)
-         (fn [thumb-data]
-           (swap! stg/storage #(assoc-in % [:thumbnails (:id file)] [(:revn file) thumb-data]))))
+         (fn [{:keys [svg fonts]}]
+           (p/let [cache    (.open js/caches CACHE-NAME)
+                   blob     (js/Blob. #js [svg] #js {:type "image/svg"})
+                   fonts    (str/join "," fonts)
+                   headers  (js/Headers. #js {"X-PENPOT-FONTS" fonts})
+                   response (js/Response. blob #js {:headers headers})]
+             (.put cache cache-url response))))
 
         generate-thumbnail
         (mf/use-callback
          (mf/deps file)
          (fn []
-           (let [thumb-data (get-thumbnail)]
-             (if (some? thumb-data)
-               (rx/of thumb-data)
-               (->> (wrk/ask! {:cmd :thumbnails/generate
-                               :file-id (:id file)
-                               :page-id (get-in file [:data :pages 0])})
-                    #_(rx/tap cache-thumbnail))))))]
+           (->> (rx/from (get-thumbnail))
+                (rx/merge-map
+                 (fn [thumb-data]
+                   (if (some? thumb-data)
+                     (rx/of thumb-data)
+                     (->> (wrk/ask! {:cmd :thumbnails/generate
+                                     :file-id (:id file)
+                                     :page-id (get-in file [:data :pages 0])})
+                          (rx/tap cache-thumbnail)))))
+
+                ;; If we have a problem we delegate to the thumbnail generation
+                (rx/catch #(wrk/ask! {:cmd :thumbnails/generate
+                                      :file-id (:id file)
+                                      :page-id (get-in file [:data :pages 0])})))))]
 
     generate-thumbnail))
 
