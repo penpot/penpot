@@ -96,7 +96,7 @@
                ;; connection
                (a/go-loop []
                  (when-let [val (a/<! output-ch)]
-                   (call-mtx metrics :messages ["send"])
+                   (call-mtx metrics :messages {:labels ["send"]})
                    (a/<! (ws-send! conn (t/encode-str val)))
                    (recur)))
 
