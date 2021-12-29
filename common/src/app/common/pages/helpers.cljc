@@ -256,20 +256,12 @@
 
 (defn select-frames
   [objects]
-  (let [root   (get objects uuid/zero)
-        loopfn (fn loopfn [ids]
-                 (let [id (first ids)
-                       obj (get objects id)]
-                   (cond
-                     (or (nil? id) (nil? obj))
-                     nil
-
-                     (= :frame (:type obj))
-                     (lazy-seq (cons obj (loopfn (rest ids))))
-
-                     :else
-                     (lazy-seq (loopfn (rest ids))))))]
-    (loopfn (:shapes root))))
+  (let [lookup #(get objects %)
+        frame? #(= :frame (:type %))
+        xform  (comp (map lookup)
+                     (filter frame?))]
+    (->> (:shapes (lookup uuid/zero))
+         (into [] xform))))
 
 (defn clone-object
   "Gets a copy of the object and all its children, with new ids
@@ -436,7 +428,7 @@
   [path-name]
   (let [path-name-split (split-path path-name)
         path (str/join " / " (butlast path-name-split))
-        name (last path-name-split)]
+        name (or (last path-name-split) "")]
     [path name]))
 
 (defn merge-path-item

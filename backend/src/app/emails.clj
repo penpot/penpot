@@ -66,8 +66,8 @@
                               (:id profile)
                               (db/interval bounce-max-age)])]
 
-      (and (< complaints complaint-threshold)
-           (< bounces bounce-threshold)))))
+      (and (< (or complaints 0) complaint-threshold)
+           (< (or bounces 0) bounce-threshold)))))
 
 (defn has-complaint-reports?
   ([conn email] (has-complaint-reports? conn email nil))

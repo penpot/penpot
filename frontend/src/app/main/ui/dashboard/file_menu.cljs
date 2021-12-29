@@ -115,7 +115,7 @@
             (st/emit! (dm/success (tr "dashboard.success-move-file"))))
           (if (or navigate? (not= team-id current-team-id))
             (st/emit! (dd/go-to-files team-id project-id))
-            (st/emit! (dd/fetch-recent-files)
+            (st/emit! (dd/fetch-recent-files team-id)
                       (dd/clear-selected-files))))
 
         on-move

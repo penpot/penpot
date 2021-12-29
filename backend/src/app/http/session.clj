@@ -58,7 +58,9 @@
     (assoc response :cookies {cookie-name {:path "/"
                                            :http-only true
                                            :value id
-                                           :same-site (if cors? :none :strict)
+                                           :same-site (cond (not secure?) :lax
+                                                            cors?         :none
+                                                            :else         :strict)
                                            :secure secure?}})))
 
 (defn- clear-cookies
@@ -71,7 +73,6 @@
     (if-let [{:keys [id profile-id] :as session} (retrieve-from-request cfg request)]
       (do
         (a/>!! (::events-ch cfg) id)
-        (l/update-thread-context! {:profile-id profile-id})
         (handler (assoc request :profile-id profile-id)))
       (handler request))))
 
@@ -178,7 +179,7 @@
 
 (defmethod ig/prep-key ::gc-task
   [_ cfg]
-  (merge {:max-age (dt/duration {:days 2})}
+  (merge {:max-age (dt/duration {:days 15})}
          (d/without-nils cfg)))
 
 (defmethod ig/init-key ::gc-task

@@ -8,6 +8,30 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+
+# 1.10.3-beta
+
+### :sparkles: Enhacements
+
+- Make all logging asynchronous, this avoid some overhead on jetty threads at cost of logging latency.
+- Increase default session time to 15 days.
+
+### :bug: Bugs fixed
+
+- Fix unexpected exception on saving pages with default grids [#2409](https://tree.taiga.io/project/penpot/issue/2409)
+- Fix react warnings on setting size 1 on row and column grids.
+- Fix minor issues on ZMQ logging listener (used in error reporting service).
+- Remove "ALPHA" from the code.
+- Fix value and nil handling on numeric-input component. This fixes many issues related to typography, components, etc. renaming.
+- Fix NPE on email complains processing.
+- Fix white page after leaving a team.
+- Fix missing leave team button outside members page.
+
+### :arrow_up: Deps updates
+
+- Update log4j2 dependency.
+
+
 # 1.10.2-beta
 
 ### :bug: Bugs fixed

@@ -3,7 +3,8 @@
   rumext.alpha/defc clojure.core/defn
   rumext.alpha/fnc clojure.core/fn
   app.common.data/export clojure.core/def
-  app.db/with-atomic clojure.core/with-open}
+  app.db/with-atomic clojure.core/with-open
+  app.common.logging/with-context clojure.core/do}
 
  :hooks
  {:analyze-call

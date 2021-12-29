@@ -294,7 +294,7 @@
 
        (when show-grids?
          [:& frame-grid/frame-grid
-          {:zoom zoom}])
+          {:zoom zoom :selected selected :transform transform}])
 
        (when show-pixel-grid?
          [:& widgets/pixel-grid

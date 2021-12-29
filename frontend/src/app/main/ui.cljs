@@ -6,6 +6,7 @@
 
 (ns app.main.ui
   (:require
+   [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.auth :refer [auth]]
@@ -17,6 +18,8 @@
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.main.ui.onboarding]
+   [app.main.ui.onboarding.questions]
+   [app.main.ui.releases]
    [app.main.ui.render :as render]
    [app.main.ui.settings :as settings]
    [app.main.ui.static :as static]
@@ -32,7 +35,7 @@
 
 (mf/defc main-page
   {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}
-  [{:keys [route] :as props}]
+  [{:keys [route profile]}]
   (let [{:keys [data params]} route]
     [:& (mf/provider ctx/current-route) {:value route}
      (case (:name data)
@@ -70,13 +73,32 @@
         :dashboard-font-providers
         :dashboard-team-members
         :dashboard-team-settings)
+
        [:*
         #_[:div.modal-wrapper
            #_[:& app.main.ui.onboarding/onboarding-templates-modal]
-           [:& app.main.ui.onboarding/onboarding-modal]
+           #_[:& app.main.ui.onboarding/onboarding-modal]
            #_[:& app.main.ui.onboarding/onboarding-team-modal]
            ]
-        [:& dashboard {:route route}]]
+        (when-let [props (some-> profile (get :props {}))]
+          (cond
+            (and cf/onboarding-form-id
+                 (not (:onboarding-questions-answered props false))
+                 (not (:onboarding-viewed props false)))
+
+            [:& app.main.ui.onboarding.questions/questions
+             {:profile profile
+              :form-id cf/onboarding-form-id}]
+
+            (not (:onboarding-viewed props))
+            [:& app.main.ui.onboarding/onboarding-modal {}]
+
+            (and (:onboarding-viewed props)
+                 (not= (:release-notes-viewed props) (:main @cf/version))
+                 (not= "0.0" (:main @cf/version)))
+            [:& app.main.ui.releases/release-notes-modal {}]))
+
+        [:& dashboard {:route route :profile profile}]]
 
        :viewer
        (let [{:keys [query-params path-params]} route
@@ -124,12 +146,14 @@
 
 (mf/defc app
   []
-  (let [route (mf/deref refs/route)
-        edata (mf/deref refs/exception)]
+  (let [route   (mf/deref refs/route)
+        edata   (mf/deref refs/exception)
+        profile (mf/deref refs/profile)]
     [:& (mf/provider ctx/current-route) {:value route}
-     (if edata
-       [:& static/exception-page {:data edata}]
-       [:*
-        [:& msgs/notifications]
-        (when route
-          [:& main-page {:route route}])])]))
+     [:& (mf/provider ctx/current-profile) {:value profile}
+      (if edata
+        [:& static/exception-page {:data edata}]
+        [:*
+         [:& msgs/notifications]
+         (when route
+           [:& main-page {:route route :profile profile}])])]]))

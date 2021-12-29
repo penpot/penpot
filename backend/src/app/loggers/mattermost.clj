@@ -31,7 +31,7 @@
           rsp  (http/send! {:uri uri
                             :method :post
                             :headers {"content-type" "application/json"}
-                            :body (json/encode-str {:text text})})]
+                            :body (json/write-str {:text text})})]
       (when (not= (:status rsp) 200)
         (l/error :hint "error on sending data to mattermost"
                  :response (pr-str rsp))))
@@ -62,7 +62,8 @@
   (when uri
     (l/info :msg "initializing mattermost error reporter" :uri uri)
     (let [output (a/chan (a/sliding-buffer 128)
-                         (filter #(= (:level %) "error")))]
+                         (filter (fn [event]
+                                   (= (:logger/level event) "error"))))]
       (receiver :sub output)
       (a/go-loop []
         (let [msg (a/<! output)]

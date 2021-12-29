@@ -28,6 +28,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.router :as rt]
+   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [goog.functions :as f]
    [rumext.alpha :as mf]))
@@ -287,27 +288,39 @@
         members-map (mf/deref refs/dashboard-team-members)
         members     (vals members-map)
 
-        on-rename-clicked
-        (st/emitf (modal/show :team-form {:team team}))
-
-        on-leaved-success
-        (fn []
-          (st/emit! (modal/hide)
-                    (du/fetch-teams)))
-
-        leave-fn
-        (st/emitf (dd/leave-team (with-meta {} {:on-success on-leaved-success})))
-
-        leave-and-reassign-fn
-        (fn [member-id]
-          (let [params {:reassign-to member-id}]
-            (st/emit! (dd/go-to-projects (:default-team-id profile))
-                      (dd/leave-team (with-meta params {:on-success on-leaved-success})))))
-
-        delete-fn
+        on-success
         (fn []
           (st/emit! (dd/go-to-projects (:default-team-id profile))
-                    (dd/delete-team (with-meta team {:on-success on-leaved-success}))))
+                    (modal/hide)
+                    (du/fetch-teams)))
+
+        on-error
+        (fn [{:keys [code] :as error}]
+          (condp = code
+            :no-enough-members-for-leave
+            (rx/of (dm/error (tr "errors.team-leave.insufficient-members")))
+
+            :member-does-not-exist
+            (rx/of (dm/error (tr "errors.team-leave.member-does-not-exists")))
+
+            :owner-cant-leave-team
+            (rx/of (dm/error (tr "errors.team-leave.owner-cant-leave")))
+
+            (rx/throw error)))
+
+        leave-fn
+        (fn [member-id]
+          (let [params (cond-> {} (uuid? member-id) (assoc :reassign-to member-id))]
+            (st/emit! (dd/leave-team (with-meta params
+                                       {:on-success on-success
+                                        :on-error on-error})))))
+        delete-fn
+        (fn []
+          (st/emit! (dd/delete-team (with-meta team {:on-success on-success
+                                                     :on-error on-error}))))
+        on-rename-clicked
+        (fn []
+          (st/emit! (modal/show :team-form {:team team})))
 
         on-leave-clicked
         (st/emitf (modal/show
@@ -324,7 +337,7 @@
                      {:type ::leave-and-reassign
                       :profile profile
                       :team team
-                      :accept leave-and-reassign-fn})))
+                      :accept leave-fn})))
 
         on-delete-clicked
         (st/emitf
@@ -501,7 +514,7 @@
        [:li {:on-click (partial on-click :settings-password)}
         [:span.icon i/lock]
         [:span.text (tr "labels.password")]]
-       [:li {:on-click (partial on-click (du/logout))}
+       [:li {:on-click #(on-click (du/logout) %)}
         [:span.icon i/exit]
         [:span.text (tr "labels.logout")]]
 
@@ -509,7 +522,7 @@
          [:li.feedback {:on-click (partial on-click :settings-feedback)}
           [:span.icon i/msg-info]
           [:span.text (tr "labels.give-feedback")]
-          [:span.primary-badge "ALPHA"]])]]]
+          ])]]]
 
      (when (and team profile)
        [:& comments-section {:profile profile

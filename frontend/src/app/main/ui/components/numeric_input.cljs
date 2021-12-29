@@ -162,5 +162,12 @@
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur))]
 
+    (mf/use-effect
+     (mf/deps value-str)
+     (fn []
+       (when-let [input-node (mf/ref-val ref)]
+         (when-not (dom/active? input-node)
+           (dom/set-value! input-node value-str)))))
+
     [:> :input props]))
 

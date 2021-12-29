@@ -130,10 +130,10 @@
       </div>
       {% endif %}
 
-      {% if error %}
+      {% if hint %}
       <div class="table-row">
         <div class="table-key">HINT: </div>
-        <div class="table-val">{{error.message}}</div>
+        <div class="table-val">{{hint}}</div>
       </div>
       {% endif %}
 
@@ -144,15 +144,9 @@
       </div>
       {% endif %}
 
-      {% if explain %}
-        <div>(<a href="#explain">go to explain</a>)</div>
-      {% endif %}
-      {% if data %}
-        <div>(<a href="#edata">go to edata</a>)</div>
-      {% endif %}
-      {% if error %}
-        <div>(<a href="#trace">go to trace</a>)</div>
-      {% endif %}
+      <div>(<a href="#explain">go to explain</a>)</div>
+      <div>(<a href="#edata">go to edata</a>)</div>
+      <div>(<a href="#trace">go to trace</a>)</div>
 
       {% if params %}
       <div id="params" class="table-row multiline">
@@ -163,25 +157,39 @@
       </div>
       {% endif %}
 
-      {% if explain %}
-      <div id="explain" class="table-row multiline">
-        <div class="table-key">EXPLAIN: </div>
-        <div class="table-val">
-          <pre>{{explain}}</pre>
-        </div>
-      </div>
-      {% endif %}
-
       {% if data %}
       <div id="edata" class="table-row multiline">
-        <div class="table-key">EDATA: </div>
+        <div class="table-key">ERROR DATA: </div>
         <div class="table-val">
           <pre>{{data}}</pre>
         </div>
       </div>
       {% endif %}
 
-      {% if error %}
+      {% if spec-problems %}
+      <div id="edata" class="table-row multiline">
+        <div class="table-key">SPEC PROBLEMS: </div>
+        <div class="table-val">
+          <pre>{{spec-problems}}</pre>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if cause %}
+      <div id="trace" class="table-row multiline">
+        <div class="table-key">TRACE:</div>
+        <div class="table-val">
+          <pre>{{cause}}</pre>
+        </div>
+      </div>
+      {% elif trace %}
+      <div id="trace" class="table-row multiline">
+        <div class="table-key">TRACE:</div>
+        <div class="table-val">
+          <pre>{{trace}}</pre>
+        </div>
+      </div>
+      {% elif error %}
       <div id="trace" class="table-row multiline">
         <div class="table-key">TRACE:</div>
         <div class="table-val">

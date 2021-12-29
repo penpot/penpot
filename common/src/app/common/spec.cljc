@@ -208,30 +208,30 @@
 ;; --- Macros
 
 (defn spec-assert*
-  [spec x message context]
-  (if (s/valid? spec x)
-    x
-    (let [data    (s/explain-data spec x)
-          explain (with-out-str (s/explain-out data))]
+  [spec val hint ctx]
+  (if (s/valid? spec val)
+    val
+    (let [data (s/explain-data spec val)]
       (ex/raise :type :assertion
                 :code :spec-validation
-                :hint message
-                :data data
-                :explain explain
-                :context context
-                #?@(:cljs [:stack (.-stack (ex-info message {}))])))))
-
+                :hint hint
+                :ctx  ctx
+                ::s/problems (::s/problems data)))))
 
 (defmacro assert
   "Development only assertion macro."
   [spec x]
   (when *assert*
     (let [nsdata  (:ns &env)
-          context (when nsdata
+          context (if nsdata
                     {:ns (str (:name nsdata))
                      :name (pr-str spec)
                      :line (:line &env)
-                     :file (:file (:meta nsdata))})
+                     :file (:file (:meta nsdata))}
+                    (let [mdata (meta &form)]
+                      {:ns   (str (ns-name *ns*))
+                       :name (pr-str spec)
+                       :line (:line mdata)}))
           message (str "spec assert: '" (pr-str spec) "'")]
       `(spec-assert* ~spec ~x ~message ~context))))
 
@@ -253,12 +253,9 @@
   [spec data]
   (let [result (s/conform spec data)]
     (when (= result ::s/invalid)
-      (let [data    (s/explain-data spec data)
-            explain (with-out-str
-                      (s/explain-out data))]
+      (let [data (s/explain-data spec data)]
         (throw (ex/error :type :validation
                          :code :spec-validation
-                         :explain explain
                          :data data))))
     result))
 

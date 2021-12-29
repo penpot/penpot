@@ -9,22 +9,27 @@
   (:require
    [jsonista.core :as j]))
 
-(defn encode-str
-  [v]
-  (j/write-value-as-string v j/keyword-keys-object-mapper))
+(defn mapper
+  [params]
+  (j/object-mapper params))
+
+(defn write
+  ([v] (j/write-value-as-bytes v j/keyword-keys-object-mapper))
+  ([v mapper] (j/write-value-as-bytes v mapper)))
+
+(defn write-str
+  ([v] (j/write-value-as-string v j/keyword-keys-object-mapper))
+  ([v mapper] (j/write-value-as-string v mapper)))
+
+(defn read
+  ([v] (j/read-value v j/keyword-keys-object-mapper))
+  ([v mapper] (j/read-value v mapper)))
 
 (defn encode
   [v]
   (j/write-value-as-bytes v j/keyword-keys-object-mapper))
 
-(defn decode-str
-  [v]
-  (j/read-value v j/keyword-keys-object-mapper))
-
 (defn decode
   [v]
   (j/read-value v j/keyword-keys-object-mapper))
 
-(defn read
-  [v]
-  (j/read-value v j/keyword-keys-object-mapper))

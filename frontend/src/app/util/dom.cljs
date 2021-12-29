@@ -166,7 +166,7 @@
 
 (defn append-child!
   [el child]
-  (.appendChild el child))
+  (.appendChild ^js el child))
 
 (defn get-first-child
   [el]

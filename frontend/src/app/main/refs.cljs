@@ -219,7 +219,7 @@
   (l/derived :options workspace-page))
 
 (def workspace-frames
-  (l/derived cp/select-frames workspace-page-objects))
+  (l/derived cp/select-frames workspace-page-objects =))
 
 (def workspace-editor
   (l/derived :workspace-editor st/state))

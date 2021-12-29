@@ -327,8 +327,9 @@
 
         on-finish-import
         (mf/use-callback
+         (mf/deps (:id team))
          (fn []
-           (st/emit! (dd/fetch-recent-files)
+           (st/emit! (dd/fetch-recent-files (:id team))
                      (dd/clear-selected-files))))
 
         import-files (use-import-file project-id on-finish-import)
@@ -366,7 +367,7 @@
         on-drop-success
         (fn []
           (st/emit! (dm/success (tr "dashboard.success-move-file"))
-                    (dd/fetch-recent-files)
+                    (dd/fetch-recent-files (:id team))
                     (dd/clear-selected-files)))
 
         on-drop
