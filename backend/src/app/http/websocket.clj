@@ -30,7 +30,7 @@
 
 (defmethod handle-message :connect
   [wsp _]
-  (let [{:keys [msgbus file-id team-id session-id ::output-ch]} @wsp
+  (let [{:keys [msgbus file-id team-id session-id ::ws/output-ch]} @wsp
         sub-ch (a/chan (a/dropping-buffer 32))]
 
     (swap! wsp assoc :sub-ch sub-ch)
