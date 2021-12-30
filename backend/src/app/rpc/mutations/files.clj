@@ -312,6 +312,8 @@
                   (mapcat :changes changes-with-metadata)
                   changes)
 
+        changes (vec changes)
+
         ;; Trace the number of changes processed
         _       ((::mtx/fn mtx1) {:by (count changes)})
 
