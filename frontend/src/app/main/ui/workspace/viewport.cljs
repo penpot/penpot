@@ -119,6 +119,7 @@
         on-pointer-move   (actions/on-pointer-move viewport-ref zoom move-stream)
         on-pointer-up     (actions/on-pointer-up)
         on-move-selected  (actions/on-move-selected hover hover-ids selected)
+        on-menu-selected  (actions/on-menu-selected hover hover-ids selected)
 
         on-frame-enter    (actions/on-frame-enter frame-hover)
         on-frame-leave    (actions/on-frame-leave frame-hover)
@@ -241,7 +242,8 @@
            :zoom zoom
            :edition edition
            :disable-handlers (or drawing-tool edition)
-           :on-move-selected on-move-selected}])
+           :on-move-selected on-move-selected
+           :on-context-menu on-menu-selected}])
 
        (when show-measures?
          [:& msr/measurement
