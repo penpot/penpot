@@ -65,7 +65,7 @@
        val
 
        (coll? val)
-       (binding [clojure.pprint/*print-right-margin* 120]
+       (binding [clojure.pprint/*print-right-margin* 200]
          (-> (with-out-str (pprint val))
              (simple-prune (* 1024 1024 3))))
 
@@ -82,6 +82,12 @@
                         [(stringify-data key)
                          (stringify-data val)])))
            data)))
+
+#?(:clj
+   (defn set-context!
+     [data]
+     (ThreadContext/putAll (data->context-map data))
+     nil))
 
 #?(:clj
    (defmacro with-context

@@ -252,6 +252,11 @@
   #?(:clj (Object.)
      :cljs (js/Object.)))
 
+(defn getf
+  "Returns a function to access a map"
+  [coll]
+  (partial get coll))
+
 (defn update-in-when
   [m key-seq f & args]
   (let [found (get-in m key-seq sentinel)]

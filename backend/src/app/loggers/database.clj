@@ -14,10 +14,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.util.async :as aa]
-   [app.util.template :as tmpl]
    [app.worker :as wrk]
    [clojure.core.async :as a]
-   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
@@ -60,8 +58,10 @@
   [{:keys [executor] :as cfg} event]
   (aa/with-thread executor
     (try
-      (let [event (parse-event event)]
-        (l/debug :hint "registering error on database" :id (:id event))
+      (let [event (parse-event event)
+            uri   (cf/get :public-uri)]
+        (l/debug :hint "registering error on database" :id (:id event)
+                 :uri (str uri "/dbg/error/" (:id event)))
         (persist-on-database! cfg event))
       (catch Exception e
         (l/warn :hint "unexpected exception on database error logger"
@@ -89,39 +89,3 @@
 (defmethod ig/halt-key! ::reporter
   [_ output]
   (a/close! output))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Http Handler
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool]))
-
-(defmethod ig/init-key ::handler
-  [_ {:keys [pool] :as cfg}]
-  (letfn [(parse-id [request]
-            (let [id (get-in request [:path-params :id])
-                  id (us/uuid-conformer id)]
-              (when (uuid? id)
-                id)))
-          (retrieve-report [id]
-            (ex/ignoring
-             (when-let [{:keys [content] :as row} (db/get-by-id pool :server-error-report id)]
-               (assoc row :content (db/decode-transit-pgobject content)))))
-
-          (render-template [{:keys [content] :as report}]
-            (some-> (io/resource "error-report.tmpl")
-                    (tmpl/render content)))]
-
-
-    (fn [request]
-      (let [result (some-> (parse-id request)
-                           (retrieve-report)
-                           (render-template))]
-        (if result
-          {:status 200
-           :headers {"content-type" "text/html; charset=utf-8"
-                     "x-robots-tag" "noindex"}
-           :body result}
-          {:status 404
-           :body "not found"})))))

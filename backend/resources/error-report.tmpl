@@ -13,15 +13,40 @@
       }
       pre {
         margin: 0px;
+        line-height: 17px;
       }
+
+      main {
+        margin: 20px;
+      }
+
+      nav {
+        position: fixed;
+        width: 100vw;
+        top: 0;
+        left: 0;
+        padding: 5px 20px;
+        display: flex;
+        background: #e3e3e3;
+      }
+
+      nav > div {
+        text-transform: uppercase;
+        font-weight: bold;
+      }
+
+      nav > div:not(:last-child) {
+        margin-right: 10px;
+      }
+
       * {
         font-family: "JetBrains Mono", monospace; 
         font-size: 12px;
       }
       .table {
+        margin-top: 25px;
         display: flex;
         flex-direction: column;
-        margin: 10px;
       }
 
       .table-row {
@@ -34,6 +59,9 @@
         font-weight: 600;
         width: 60px;
         padding: 4px;
+
+        padding-top: 40px;
+        margin-top: -40px;
       }
 
       .table-val {
@@ -57,147 +85,70 @@
     </style>
   </head>
   <body>
-    <div class="table">
-      <div class="table-row">
-        <div class="table-key" title="Error ID">ERID: </div>
-        <div class="table-val">{{id}}</div>
-      </div>
-      {% if profile-id %}
-      <div class="table-row">
-        <div class="table-key" title="Profile ID">PFID: </div>
-        <div class="table-val">{{profile-id}}</div>
-      </div>
-      {% endif %}
 
-      {% if user-agent %}
-      <div class="table-row">
-        <div class="table-key">UAGT: </div>
-        <div class="table-val">{{user-agent}}</div>
-      </div>
-      {% endif %}
-
-      {% if frontend-version %}
-      <div class="table-row">
-        <div class="table-key">FVER: </div>
-        <div class="table-val">{{frontend-version}}</div>
-      </div>
-      {% endif %}
-
-      <div class="table-row">
-        <div class="table-key">BVER: </div>
-        <div class="table-val">{{version}}</div>
-      </div>
-
-      {% if host %}
-      <div class="table-row">
-        <div class="table-key">HOST: </div>
-        <div class="table-val">{{host}}</div>
-      </div>
-      {% endif %}
-
-      {% if tenant %}
-      <div class="table-row">
-        <div class="table-key">ENV: </div>
-        <div class="table-val">{{tenant}}</div>
-      </div>
-      {% endif %}
-
-      {% if public-uri %}
-      <div class="table-row">
-        <div class="table-key">PURI: </div>
-        <div class="table-val">{{public-uri}}</div>
-      </div>
-      {% endif %}
-
-      {% if type %}
-      <div class="table-row">
-        <div class="table-key">TYPE: </div>
-        <div class="table-val">{{type}}</div>
-      </div>
-      {% endif %}
-
-      {% if code %}
-      <div class="table-row">
-        <div class="table-key">CODE: </div>
-        <div class="table-val">{{code}}</div>
-      </div>
-      {% endif %}
-
-      {% if error %}
-      <div class="table-row">
-        <div class="table-key">CLSS: </div>
-        <div class="table-val">{{error.class}}</div>
-      </div>
-      {% endif %}
-
-      {% if hint %}
-      <div class="table-row">
-        <div class="table-key">HINT: </div>
-        <div class="table-val">{{hint}}</div>
-      </div>
-      {% endif %}
-
-      {% if method %}
-      <div class="table-row">
-        <div class="table-key">PATH: </div>
-        <div class="table-val">{{method|upper}} {{path}}</div>
-      </div>
-      {% endif %}
-
-      <div>(<a href="#explain">go to explain</a>)</div>
-      <div>(<a href="#edata">go to edata</a>)</div>
-      <div>(<a href="#trace">go to trace</a>)</div>
-
-      {% if params %}
-      <div id="params" class="table-row multiline">
-        <div class="table-key">PARAMS: </div>
-        <div class="table-val">
-          <pre>{{params}}</pre>
-        </div>
-      </div>
+    <nav>
+      
+      <div>[<a href="/dbg/error"><<</a>]</div>
+      <div>[<a href="#context">context</a>]</div>
+      <div>[<a href="#params">params</a>]</div>
+      {% if spec-problems %}
+      <div>[<a href="#edata">spec</a>]</div>
       {% endif %}
 
       {% if data %}
-      <div id="edata" class="table-row multiline">
-        <div class="table-key">ERROR DATA: </div>
-        <div class="table-val">
-          <pre>{{data}}</pre>
-        </div>
-      </div>
+      <div>[<a href="#edata">data</a>]</div>
       {% endif %}
+      {% if trace %}
+      <div>[<a href="#trace">trace</a>]</div>
+      {% endif %}
+    </nav>
+    <main>
+      <div class="table">
+        <div class="table-row multiline">
+          <div id="context" class="table-key">CONTEXT: </div>
+          <div class="table-val">
+            <pre>{{context}}</pre>
+          </div>
+        </div>
 
-      {% if spec-problems %}
-      <div id="edata" class="table-row multiline">
-        <div class="table-key">SPEC PROBLEMS: </div>
-        <div class="table-val">
-          <pre>{{spec-problems}}</pre>
+        {% if params %}
+        <div class="table-row multiline">
+          <div id="params" class="table-key">PARAMS: </div>
+          <div class="table-val">
+            <pre>{{params}}</pre>
+          </div>
         </div>
-      </div>
-      {% endif %}
+        {% endif %}
 
-      {% if cause %}
-      <div id="trace" class="table-row multiline">
-        <div class="table-key">TRACE:</div>
-        <div class="table-val">
-          <pre>{{cause}}</pre>
+        <!-- NOTE: this is legacy, for old error data saved on the database -->
+        {% if data %}
+        <div class="table-row multiline">
+          <div id="edata" class="table-key">ERROR DATA: </div>
+          <div class="table-val">
+            <pre>{{data}}</pre>
+          </div>
         </div>
-      </div>
-      {% elif trace %}
-      <div id="trace" class="table-row multiline">
-        <div class="table-key">TRACE:</div>
-        <div class="table-val">
-          <pre>{{trace}}</pre>
+        {% endif %}
+
+        {% if spec-problems %}
+        <div class="table-row multiline">
+          <div id="spec-problems" class="table-key">SPEC PROBLEMS: </div>
+          <div class="table-val">
+            <pre>{{spec-problems}}</pre>
+          </div>
         </div>
-      </div>
-      {% elif error %}
-      <div id="trace" class="table-row multiline">
-        <div class="table-key">TRACE:</div>
-        <div class="table-val">
-          <pre>{{error.trace}}</pre>
+        {% endif %}
+
+        {% if trace %}
+        <div class="table-row multiline">
+          <div id="trace" class="table-key">TRACE:</div>
+          <div class="table-val">
+            <pre>{{trace}}</pre>
+          </div>
         </div>
+        {% endif %}
       </div>
-      {% endif %}
-    </div>
+    </main>
   </body>
 </html>
 

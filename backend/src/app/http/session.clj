@@ -73,6 +73,7 @@
     (if-let [{:keys [id profile-id] :as session} (retrieve-from-request cfg request)]
       (do
         (a/>!! (::events-ch cfg) id)
+        (l/set-context! {:profile-id profile-id})
         (handler (assoc request :profile-id profile-id)))
       (handler request))))
 

@@ -9,6 +9,19 @@
 ### :heart: Community contributions by (Thank you!)
 
 
+# 1.10.4-beta
+
+### :sparkles: Enhacements
+
+- Allow parametrice file snapshoting interval.
+
+### :bug: Bugs fixed
+
+- Fix issue on :mov-object change impl.
+- Minor fix on how file changes log is persisted.
+- Fix many issues on error reporting.
+
+
 # 1.10.3-beta
 
 ### :sparkles: Enhacements

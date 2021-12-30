@@ -106,8 +106,11 @@
     :storage     (ig/ref :app.storage/storage)
     :sns-webhook (ig/ref :app.http.awsns/handler)
     :feedback    (ig/ref :app.http.feedback/handler)
-    :audit-http-handler   (ig/ref :app.loggers.audit/http-handler)
-    :error-report-handler (ig/ref :app.loggers.database/handler)}
+    :debug                (ig/ref :app.http.debug/handlers)
+    :audit-http-handler   (ig/ref :app.loggers.audit/http-handler)}
+
+   :app.http.debug/handlers
+   {:pool (ig/ref :app.db/pool)}
 
    :app.http.assets/handlers
    {:metrics           (ig/ref :app.metrics/metrics)
@@ -305,9 +308,6 @@
    {:receiver (ig/ref :app.loggers.zmq/receiver)
     :pool     (ig/ref :app.db/pool)
     :executor (ig/ref :app.worker/executor)}
-
-   :app.loggers.database/handler
-   {:pool (ig/ref :app.db/pool)}
 
    :app.loggers.sentry/reporter
    {:dsn                (cf/get :sentry-dsn)

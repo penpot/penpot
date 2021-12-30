@@ -25,7 +25,7 @@
   [cfg {:keys [host id public-uri] :as event}]
   (try
     (let [uri  (:uri cfg)
-          text (str "Exception on (host: " host ", url: " public-uri "/dbg/error-by-id/" id ")\n"
+          text (str "Exception on (host: " host ", url: " public-uri "/dbg/error/" id ")\n"
                     (when-let [pid (:profile-id event)]
                       (str "- profile-id: #uuid-" pid "\n")))
           rsp  (http/send! {:uri uri

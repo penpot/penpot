@@ -12,6 +12,7 @@
    [app.common.spec :as us]
    [app.http.doc :as doc]
    [app.http.errors :as errors]
+   [app.http.debug :as debug]
    [app.http.middleware :as middleware]
    [app.metrics :as mtx]
    [clojure.spec.alpha :as s]
@@ -104,17 +105,16 @@
 (s/def ::storage map?)
 (s/def ::assets map?)
 (s/def ::feedback fn?)
-(s/def ::error-report-handler fn?)
 (s/def ::audit-http-handler fn?)
+(s/def ::debug map?)
 
 (defmethod ig/pre-init-spec ::router [_]
   (s/keys :req-un [::rpc ::session ::mtx/metrics
                    ::oauth ::storage ::assets ::feedback
-                   ::error-report-handler
-                   ::audit-http-handler]))
+                   ::debug ::audit-http-handler]))
 
 (defmethod ig/init-key ::router
-  [_ {:keys [session rpc oauth metrics assets feedback] :as cfg}]
+  [_ {:keys [session rpc oauth metrics assets feedback debug] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
     ["/assets" {:middleware [[middleware/format-response-body]
@@ -125,8 +125,17 @@
      ["/by-file-media-id/:id" {:get (:file-objects-handler assets)}]
      ["/by-file-media-id/:id/thumbnail" {:get (:file-thumbnails-handler assets)}]]
 
-    ["/dbg"
-     ["/error-by-id/:id" {:get (:error-report-handler cfg)}]]
+    ["/dbg" {:middleware [[middleware/params]
+                          [middleware/keyword-params]
+                          [middleware/format-response-body]
+                          [middleware/errors errors/handle]
+                          [middleware/cookies]
+                          [(:middleware session)]]}
+     ["/error-by-id/:id" {:get (:retrieve-error debug)}]
+     ["/error/:id" {:get (:retrieve-error debug)}]
+     ["/error" {:get (:retrieve-error-list debug)}]
+     ["/file/data/:id" {:get (:retrieve-file-data debug)}]
+     ["/file/changes/:id" {:get (:retrieve-file-changes debug)}]]
 
     ["/webhooks"
      ["/sns" {:post (:sns-webhook cfg)}]]

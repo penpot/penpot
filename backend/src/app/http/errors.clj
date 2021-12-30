@@ -30,14 +30,13 @@
       :hint          (or (:hint data) (ex-message error))
       :params        (l/stringify-data (:params request))
       :spec-problems (some-> data ::s/problems)
+      :data          (some-> data (dissoc ::s/problems))
       :ip-addr       (parse-client-ip request)
       :profile-id    (:profile-id request)}
 
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
-        :frontend-version (get headers "x-frontend-version" "unknown")})
-
-     (dissoc data ::s/problems))))
+        :frontend-version (get headers "x-frontend-version" "unknown")}))))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -54,18 +53,9 @@
   {:status 400 :body (ex-data err)})
 
 (defmethod handle-exception :validation
-  [err req]
-  (let [header (get-in req [:headers "accept"])
-        edata  (ex-data err)]
-    (if (and (= :spec-validation (:code edata))
-             (str/starts-with? header "text/html"))
-      {:status 400
-       :headers {"content-type" "text/html"}
-       :body (str "<pre style='font-size:16px'>"
-                  (:explain edata)
-                  "</pre>\n")}
-      {:status 400
-       :body   (dissoc edata ::s/problems)})))
+  [err _]
+  (let [edata (ex-data err)]
+    {:status 400 :body (dissoc edata ::s/problems)}))
 
 (defmethod handle-exception :assertion
   [error request]
