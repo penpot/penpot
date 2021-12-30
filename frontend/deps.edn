@@ -17,14 +17,13 @@
 
  :aliases
  {:outdated
-  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}
-                org.slf4j/slf4j-nop {:mvn/version "RELEASE"}}
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
    :main-opts ["-m" "antq.core"]}
 
   :dev
   {:extra-paths ["dev"]
    :extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.16.9"}
+   {thheller/shadow-cljs {:mvn/version "2.16.10"}
     cider/cider-nrepl {:mvn/version "0.27.4"}}}
 
   :shadow-cljs

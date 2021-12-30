@@ -23,7 +23,7 @@
     "test-e2e-gui": "cypress open"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.0",
+    "autoprefixer": "^10.4.1",
     "cypress": "^9.2.0",
     "gettext-parser": "^4.2.0",
     "gulp": "4.0.2",
@@ -44,12 +44,12 @@
     "postcss-clean": "^1.2.2",
     "rimraf": "^3.0.0",
     "sass": "^1.45.1",
-    "shadow-cljs": "2.16.9"
+    "shadow-cljs": "2.16.10"
   },
   "dependencies": {
     "@sentry/browser": "^6.16.1",
     "@sentry/tracing": "^6.16.1",
-    "date-fns": "^2.27.0",
+    "date-fns": "^2.28.0",
     "draft-js": "^0.11.7",
     "highlight.js": "^11.3.1",
     "js-beautify": "^1.14.0",

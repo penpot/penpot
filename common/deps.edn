@@ -6,15 +6,14 @@
   org.clojure/clojurescript {:mvn/version "1.10.914"}
 
   ;; Logging
-  org.clojure/tools.logging {:mvn/version "1.2.3"}
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.17.0"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.17.0"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.17.0"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.17.0"}
-  org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.17.0"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.17.1"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.17.1"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.17.1"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.17.1"}
+  org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.17.1"}
   org.slf4j/slf4j-api {:mvn/version "2.0.0-alpha1"}
 
-  selmer/selmer {:mvn/version "1.12.45"}
+  selmer/selmer {:mvn/version "1.12.48"}
   expound/expound {:mvn/version "0.8.10"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
   com.cognitect/transit-cljs {:mvn/version "0.8.269"}
@@ -43,7 +42,7 @@
     org.clojure/test.check {:mvn/version "RELEASE"}
     org.clojure/tools.deps.alpha {:mvn/version "RELEASE"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.16.9"}
+    thheller/shadow-cljs {:mvn/version "2.16.10"}
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}
    :extra-paths ["test" "dev"]}
