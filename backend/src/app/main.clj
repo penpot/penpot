@@ -83,6 +83,7 @@
     :session              (ig/ref :app.http.session/session)
     :sns-webhook          (ig/ref :app.http.awsns/handler)
     :oauth                (ig/ref :app.http.oauth/handler)
+    :debug                (ig/ref :app.http.debug/handlers)
     :ws                   (ig/ref :app.http.websocket/handler)
     :metrics              (ig/ref :app.metrics/metrics)
     :public-uri           (cf/get :public-uri)
@@ -91,6 +92,9 @@
     :audit-http-handler   (ig/ref :app.loggers.audit/http-handler)
     :error-report-handler (ig/ref :app.loggers.database/handler)
     :rpc                  (ig/ref :app.rpc/rpc)}
+
+   :app.http.debug/handlers
+   {:pool (ig/ref :app.db/pool)}
 
    :app.http.websocket/handler
    {:pool     (ig/ref :app.db/pool)
