@@ -14,6 +14,7 @@
    [app.db :as db]
    [app.rpc.queries.profile :as profile]
    [app.util.blob :as blob]
+   [app.util.time :as dt]
    [app.util.template :as tmpl]
    [clojure.java.io :as io]
    [clojure.pprint :as ppr]
@@ -137,10 +138,26 @@
         {:status 404
          :body "not found"}))))
 
-;; TODO: error list table
+(def sql:error-reports
+  "select id, created_at from server_error_report order by created_at desc limit 100")
+
+(defn retrieve-error-list
+  [{:keys [pool]} request]
+  (when-not (authorized? pool request)
+    (ex/raise :type :authentication
+              :code :only-admins-allowed))
+  (let [items (db/exec! pool [sql:error-reports])
+        items (map #(update % :created-at dt/format-instant :rfc1123) items)]
+    (prn (first items))
+    {:status 200
+     :headers {"content-type" "text/html; charset=utf-8"
+               "x-robots-tag" "noindex"}
+     :body (-> (io/resource "error-list.tmpl")
+               (tmpl/render {:items items}))}))
 
 (defmethod ig/init-key ::handlers
   [_ cfg]
   {:retrieve-file-data (partial retrieve-file-data cfg)
    :retrieve-file-changes (partial retrieve-file-changes cfg)
-   :retrieve-error (partial retrieve-error cfg)})
+   :retrieve-error (partial retrieve-error cfg)
+   :retrieve-error-list (partial retrieve-error-list cfg)})

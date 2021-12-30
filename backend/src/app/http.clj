@@ -119,6 +119,7 @@
                           [(:middleware session)]]}
      ["/error-by-id/:id" {:get (:retrieve-error debug)}]
      ["/error/:id" {:get (:retrieve-error debug)}]
+     ["/error" {:get (:retrieve-error-list debug)}]
      ["/file/data/:id" {:get (:retrieve-file-data debug)}]
      ["/file/changes/:id" {:get (:retrieve-file-changes debug)}]]
 
