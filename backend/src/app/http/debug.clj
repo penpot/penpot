@@ -6,75 +6,97 @@
 
 (ns app.http.debug
   (:require
-   [app.common.transit :as t]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
+   [app.common.spec :as us]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.util.template :as tmpl]
+   [clojure.java.io :as io]
+   [app.rpc.queries.profile :as profile]
    [app.util.blob :as blob]
    [app.util.json :as json]
+   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
 
-(defn retrieve-file-data
-  [{:keys [pool]} {:keys [params path-params] :as request}]
-  (let [id    (uuid/uuid (get path-params :id))
-        file  (db/get-by-id pool :file id)
-        wrap? (contains? params :wrap)]
-    {:status 200
-     :headers {"content-type" "application/transit+json"}
-     :body (-> (:data file)
-               (blob/decode)
-               (t/encode-str {:type :json-verbose})
-               (cond-> wrap? (json/write)))}))
-
 (def sql:retrieve-range-of-changes
-  "select revn, changes from file_change where file_id=? and revn >= ? and revn < ? order by revn")
+  "select revn, changes from file_change where file_id=? and revn >= ? and revn <= ? order by revn")
 
 (def sql:retrieve-single-change
-  "select revn, changes from file_change where file_id=? and revn = ?")
+  "select revn, changes, data from file_change where file_id=? and revn = ?")
+
+(defn authorized?
+  [pool {:keys [profile-id]}]
+  (or (= "devenv" (cf/get :host))
+      (let [profile (ex/ignoring (profile/retrieve-profile-data pool profile-id))
+            admins  (or (cf/get :admins) #{})]
+        (contains? admins (:email profile)))))
+
+(defn prepare-response
+  [body]
+  (when-not body
+    (ex/raise :type :not-found
+              :code :enpty-data
+              :hint "empty response"))
+
+  {:status 200
+   :headers {"content-type" "application/transit+json"}
+   :body body})
+
+(defn retrieve-file-data
+  [{:keys [pool]} request]
+  (when-not (authorized? pool request)
+    (ex/raise :type :authentication
+              :code :only-admins-allowed))
+
+  (let [id    (some-> (get-in request [:path-params :id]) uuid/uuid)
+        revn  (some-> (get-in request [:params :revn]) d/parse-integer)]
+    (when-not id
+      (ex/raise :type :validation
+                :code :missing-arguments))
+
+    (if (integer? revn)
+      (let [fchange (db/exec-one! pool [sql:retrieve-single-change id revn])]
+        (prepare-response (some-> fchange :data blob/decode)))
+
+      (let [file (db/get-by-id pool :file id)]
+        (prepare-response (some-> file :data blob/decode))))))
 
 (defn retrieve-file-changes
-  [{:keys [pool]} {:keys [params path-params] :as request}]
-  (let [id    (uuid/uuid (get path-params :id))
-        revn  (:rev params "latest")
-        file  (db/get-by-id pool :file id)
-        wrap? (contains? params :wrap)]
+  [{:keys [pool]} {:keys [params path-params profile-id] :as request}]
+  (when-not (authorized? pool request)
+    (ex/raise :type :authentication
+              :code :only-admins-allowed))
+
+  (let [id    (some-> (get-in request [:path-params :id]) uuid/uuid)
+        revn  (get-in request [:params :revn] "latest")]
+
+    (when (or (not id) (not revn))
+      (ex/raise :type :validation
+                :code :invalid-arguments
+                :hint "missing arguments"))
 
     (cond
-      (or (not file)
-          (not revn))
-      {:status 404 :body "not found"}
+      (d/num-string? revn)
+      (let [item (db/exec-one! pool [sql:retrieve-single-change id (d/parse-integer revn)])]
+        (prepare-response (some-> item :changes blob/decode vec)))
 
       (str/includes? revn ":")
       (let [[start end] (->> (str/split revn #":")
-                             (map d/read-string))
-            items (db/exec! pool [sql:retrieve-range-of-changes
-                                    id start end])
-            items (->> items
-                       (map :changes)
-                       (map blob/decode)
-                       (mapcat identity)
-                       (vec))]
-        {:status 200
-         :headers {"content-type" "application/transit+json"}
-         :body (-> items
-                   (t/encode-str {:type :json-verbose})
-                   (cond-> wrap? (json/write)))})
-
-      (d/num-string? revn)
-      (let [item (db/exec-one! pool [sql:retrieve-single-change id (d/read-string revn)])
-            item (-> item
-                     :changes
-                     blob/decode)]
-        {:status 200
-         :headers {"content-type" "application/transit+json"}
-         :body (-> (into [] item)
-                   (t/encode-str {:type :json-verbose})
-                   (cond-> wrap? (json/write)))})
+                             (map str/trim)
+                             (map d/parse-integer))
+            items       (db/exec! pool [sql:retrieve-range-of-changes id start end])]
+        (prepare-response  (some->> items
+                                    (map :changes)
+                                    (map blob/decode)
+                                    (mapcat identity)
+                                    (vec))))
 
       :else
-      {:status 400
-       :body "bad arguments"})))
+      (ex/raise :type :validation :code :invalid-arguments))))
 
 
 

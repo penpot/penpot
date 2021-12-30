@@ -102,6 +102,7 @@
 (s/def ::audit-log-archive-uri ::us/string)
 (s/def ::audit-log-gc-max-age ::dt/duration)
 
+(s/def ::admins ::us/set-of-str)
 (s/def ::file-change-snapshot-every ::us/integer)
 (s/def ::file-change-snapshot-timeout ::dt/duration)
 
@@ -193,6 +194,7 @@
 (s/def ::config
   (s/keys :opt-un [::secret-key
                    ::flags
+                   ::admins
                    ::allow-demo-users
                    ::audit-log-archive-uri
                    ::audit-log-gc-max-age
