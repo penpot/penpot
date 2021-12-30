@@ -148,7 +148,6 @@
               :code :only-admins-allowed))
   (let [items (db/exec! pool [sql:error-reports])
         items (map #(update % :created-at dt/format-instant :rfc1123) items)]
-    (prn (first items))
     {:status 200
      :headers {"content-type" "text/html; charset=utf-8"
                "x-robots-tag" "noindex"}
