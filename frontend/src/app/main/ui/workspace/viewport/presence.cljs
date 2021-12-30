@@ -14,45 +14,34 @@
    [rumext.alpha :as mf]))
 
 (def pointer-icon-path
-  (str "M5.292 4.027L1.524.26l-.05-.01L0 0l.258 1.524 3.769 3.768zm-.45 "
-       "0l-.313.314L1.139.95l.314-.314zm-.5.5l-.315.316-3.39-3.39.315-.315 "
-       "3.39 3.39zM1.192.526l-.668.667L.431.646.64.43l.552.094z"))
+  (str "M11.58,-0.47L11.47,-0.35L0.34,10.77L0.30,10.96L-0.46,"
+       "15.52L4.29,14.72L15.53,3.47L11.58,-0.47ZL11.58,"
+       "-0.47ZL11.58,-0.47ZM11.58,1.3C12.31,2.05,13.02,"
+       "2.742,13.76,3.47L4.0053,13.23C3.27,12.50,2.55,"
+       "11.78,1.82,11.05L11.58,1.30ZL11.58,1.30ZM1.37,12.15L2.90,"
+       "13.68L1.67,13.89L1.165,13.39L1.37,12.15ZL1.37,12.15Z"))
 
 (mf/defc session-cursor
   [{:keys [session profile] :as props}]
-  (let [zoom      (mf/deref refs/selected-zoom)
-        point     (:point session)
-        color     (:color session "var(--color-black)")
-        transform (str/fmt "translate(%s, %s) scale(%s)" (:x point) (:y point) (/ 4 zoom))]
+  (let [zoom             (mf/deref refs/selected-zoom)
+        point            (:point session)
+        background-color (:color session "var(--color-black)")
+        text-color       (:text-color session "var(--color-white)")
+        transform        (str/fmt "translate(%s, %s) scale(%s)" (:x point) (:y point) (/ 1 zoom))
+        shown-name       (if (> (count (:fullname profile)) 16)
+                           (str (str/slice (:fullname profile) 0 12) "...")
+                           (:fullname profile))]
     [:g.multiuser-cursor {:transform transform}
-     [:path {:fill color
-             :d pointer-icon-path
-             }]
-     [:g {:transform "translate(0 -291.708)"}
-      [:rect {:width 25
-              :height 5
-              :x 7
-              :y 291.5
-              :fill color
-              :fill-opacity 0.8
-              :paint-order "stroke fill markers"
-              :rx 1
-              :ry 1}]
-      [:text {:x 8
-              :y 295
-              :width 25
-              :height 5
-              :overflow "hidden"
-              :fill "var(--color-white)"
-              :stroke-width 1
-              :font-family "Works Sans"
-              :font-size 3
-              :font-weight 400
-              :letter-spacing 0
-              :style { :line-height 1.25 }
-              :word-spacing 0}
-       (str (str/slice (:fullname profile) 0 14)
-            (when (> (count (:fullname profile)) 14) "..."))]]]))
+     [:path {:fill background-color
+             :d pointer-icon-path}]
+     [:g {:transform "translate(17 -10)"}
+      [:foreignObject {:x -0.3
+                       :y -12.5
+                       :width 300
+                       :height 120}
+       [:div.profile-name {:style {:background-color background-color
+                                   :color text-color}}
+        shown-name]]]]))
 
 (mf/defc active-cursors
   {::mf/wrap [mf/memo]}
