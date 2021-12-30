@@ -5,21 +5,21 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns debug
-  #_(:import [goog.math AffineTransform])
   (:require
    [app.common.data :as d]
-   #_[app.common.geom.matrix :as gmt]
    [app.common.math :as mth]
    [app.common.pages :as cp]
-   #_[app.common.perf :as perf]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.changes :as dwc]
    [app.main.store :as st]
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [beicon.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.core :as ptk]
+   [promesa.core :as p]))
 
 (def debug-options
   #{;; Displays the bounding box for the shapes
@@ -251,3 +251,19 @@
                                  (not (debug-exclude-events (ptk/type s))))))
          (rx/subs #(println "[stream]: " (ptk/repr-event %))))))
 
+(defn ^:export apply-changes
+  "Takes a Transit JSON changes"
+  [^string changes*]
+
+  (let [file-id (:current-file-id @st/state)
+        changes (t/decode-str changes*)]
+    (st/emit! (dwc/commit-changes {:redo-changes changes
+                                   :undo-changes []
+                                   :save-undo? true
+                                   :file-id file-id}))))
+
+(defn ^:export fetch-apply
+  [^string url]
+  (-> (p/let [response (js/fetch url)]
+        (.text response))
+      (p/then apply-changes)))
