@@ -67,7 +67,7 @@
            created-at (dt/now)
 
            on-terminate
-           (fn [& args]
+           (fn [& _args]
              (when (compare-and-set! terminated false true)
                (call-mtx metrics :connections {:cmd :dec :by 1})
                (call-mtx metrics :sessions {:val (/ (inst-ms (dt/diff created-at (dt/now))) 1000.0)})

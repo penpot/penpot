@@ -9,17 +9,14 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.transit :as t]
    [app.common.uuid :as uuid]
-   [clojure.pprint :as ppr]
    [app.config :as cf]
    [app.db :as db]
-   [app.util.template :as tmpl]
-   [clojure.java.io :as io]
    [app.rpc.queries.profile :as profile]
    [app.util.blob :as blob]
-   [app.util.json :as json]
-   [clojure.spec.alpha :as s]
+   [app.util.template :as tmpl]
+   [clojure.java.io :as io]
+   [clojure.pprint :as ppr]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
 
@@ -67,7 +64,7 @@
         (prepare-response (some-> file :data blob/decode))))))
 
 (defn retrieve-file-changes
-  [{:keys [pool]} {:keys [params path-params profile-id] :as request}]
+  [{:keys [pool]} request]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
@@ -143,7 +140,7 @@
 ;; TODO: error list table
 
 (defmethod ig/init-key ::handlers
-  [_ {:keys [pool] :as cfg}]
+  [_ cfg]
   {:retrieve-file-data (partial retrieve-file-data cfg)
    :retrieve-file-changes (partial retrieve-file-changes cfg)
    :retrieve-error (partial retrieve-error cfg)})

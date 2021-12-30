@@ -7,9 +7,7 @@
 (ns app.loggers.database
   "A specific logger impl that persists errors on the database."
   (:require
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
