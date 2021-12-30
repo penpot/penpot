@@ -115,7 +115,8 @@
                  (a/offer! input-ch message))
                (catch Throwable e
                  (l/warn :hint "error on decoding incoming message from websocket"
-                         :cause e))))
+                         :cause e)
+                 (on-terminate))))
 
            on-pong
            (fn [_ buffer]
