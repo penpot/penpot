@@ -92,15 +92,13 @@
 (s/def ::assets map?)
 (s/def ::feedback fn?)
 (s/def ::ws fn?)
-(s/def ::error-report-handler fn?)
 (s/def ::audit-http-handler fn?)
 (s/def ::debug map?)
 
 (defmethod ig/pre-init-spec ::router [_]
   (s/keys :req-un [::rpc ::session ::mtx/metrics ::ws
                    ::oauth ::storage ::assets ::feedback
-                   ::error-report-handler ::debug
-                   ::audit-http-handler]))
+                   ::debug ::audit-http-handler]))
 
 (defmethod ig/init-key ::router
   [_ {:keys [ws session rpc oauth metrics assets feedback debug] :as cfg}]
@@ -120,7 +118,8 @@
                           [middleware/errors errors/handle]
                           [middleware/cookies]
                           [(:middleware session)]]}
-     ["/error-by-id/:id" {:get (:error-report-handler cfg)}]
+     ["/error-by-id/:id" {:get (:retrieve-error debug)}]
+     ["/error/:id" {:get (:retrieve-error debug)}]
      ["/file/data/:id" {:get (:retrieve-file-data debug)}]
      ["/file/changes/:id" {:get (:retrieve-file-changes debug)}]]
 

@@ -90,7 +90,6 @@
     :storage              (ig/ref :app.storage/storage)
     :tokens               (ig/ref :app.tokens/tokens)
     :audit-http-handler   (ig/ref :app.loggers.audit/http-handler)
-    :error-report-handler (ig/ref :app.loggers.database/handler)
     :rpc                  (ig/ref :app.rpc/rpc)}
 
    :app.http.debug/handlers
@@ -291,9 +290,6 @@
    {:receiver (ig/ref :app.loggers.zmq/receiver)
     :pool     (ig/ref :app.db/pool)
     :executor (ig/ref :app.worker/executor)}
-
-   :app.loggers.database/handler
-   {:pool (ig/ref :app.db/pool)}
 
    :app.loggers.sentry/reporter
    {:dsn                (cf/get :sentry-dsn)

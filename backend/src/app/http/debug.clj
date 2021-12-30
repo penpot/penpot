@@ -100,7 +100,41 @@
 
 
 
+(defn retrieve-error
+  [{:keys [pool]} request]
+  (letfn [(parse-id [request]
+            (let [id (get-in request [:path-params :id])
+                  id (us/uuid-conformer id)]
+              (when (uuid? id)
+                id)))
+          (retrieve-report [id]
+            (ex/ignoring
+             (when-let [{:keys [content] :as row} (db/get-by-id pool :server-error-report id)]
+               (assoc row :content (db/decode-transit-pgobject content)))))
+
+          (render-template [{:keys [content] :as report}]
+            (some-> (io/resource "error-report.tmpl")
+                    (tmpl/render content)))]
+
+    (when-not (authorized? pool request)
+      (ex/raise :type :authentication
+                :code :only-admins-allowed))
+
+    (let [result (some-> (parse-id request)
+                         (retrieve-report)
+                         (render-template))]
+      (if result
+        {:status 200
+         :headers {"content-type" "text/html; charset=utf-8"
+                   "x-robots-tag" "noindex"}
+         :body result}
+        {:status 404
+         :body "not found"}))))
+
+;; TODO: error list table
+
 (defmethod ig/init-key ::handlers
   [_ {:keys [pool] :as cfg}]
   {:retrieve-file-data (partial retrieve-file-data cfg)
-   :retrieve-file-changes (partial retrieve-file-changes cfg)})
+   :retrieve-file-changes (partial retrieve-file-changes cfg)
+   :retrieve-error (partial retrieve-error cfg)})

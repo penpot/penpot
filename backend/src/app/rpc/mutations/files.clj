@@ -281,8 +281,6 @@
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
   [{:keys [revn modified-at] :as file}]
-  ;; The snapshot will be saved every 20 changes or if the last
-  ;; modification is older than 3 hour.
   (let [freq    (or (cf/get :file-change-snapshot-every) 20)
         timeout (or (cf/get :file-change-snapshot-timeout)
                     (dt/duration {:hours 1}))]
