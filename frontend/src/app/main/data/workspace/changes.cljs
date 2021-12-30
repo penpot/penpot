@@ -120,16 +120,13 @@
   (log/debug :msg "commit-changes"
              :js/redo-changes redo-changes
              :js/undo-changes undo-changes)
-  (let [error  (volatile! nil)
-        strace (.-stack (ex-info "" {}))]
-
+  (let [error  (volatile! nil)]
     (ptk/reify ::commit-changes
       cljs.core/IDeref
       (-deref [_]
         {:file-id file-id
          :hint-events @st/last-events
          :hint-origin (ptk/type origin)
-         :hint-strace strace
          :changes redo-changes})
 
       ptk/UpdateEvent
