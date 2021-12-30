@@ -48,13 +48,13 @@
       (str/includes? revn ":")
       (let [[start end] (->> (str/split revn #":")
                              (map d/read-string))
-            _ (prn "fofof" start end)
             items (db/exec! pool [sql:retrieve-range-of-changes
                                     id start end])
             items (->> items
                        (map :changes)
                        (map blob/decode)
-                       (mapcat identity))]
+                       (mapcat identity)
+                       (vec))]
         {:status 200
          :headers {"content-type" "application/transit+json"}
          :body (-> items
@@ -63,15 +63,12 @@
 
       (d/num-string? revn)
       (let [item (db/exec-one! pool [sql:retrieve-single-change id (d/read-string revn)])
-            _     (prn "KAKAKAKA")
-            _    (clojure.pprint/pprint item)
-
             item (-> item
                      :changes
                      blob/decode)]
         {:status 200
          :headers {"content-type" "application/transit+json"}
-         :body (-> item
+         :body (-> (into [] item)
                    (t/encode-str {:type :json-verbose})
                    (cond-> wrap? (json/write)))})
 
