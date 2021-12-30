@@ -198,7 +198,8 @@
   [data {:keys [parent-id shapes index page-id component-id ignore-touched]}]
   (letfn [(is-valid-move? [objects shape-id]
             (let [invalid-targets (cph/calculate-invalid-targets shape-id objects)]
-              (and (not (invalid-targets parent-id))
+              (and (contains? objects shape-id)
+                   (not (invalid-targets parent-id))
                    (cph/valid-frame-target shape-id parent-id objects))))
 
           (insert-items [prev-shapes index shapes]
