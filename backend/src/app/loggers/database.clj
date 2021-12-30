@@ -62,7 +62,7 @@
       (let [event (parse-event event)
             uri   (cf/get :public-uri)]
         (l/debug :hint "registering error on database" :id (:id event)
-                 :uri (str uri "/dbg/error-by-id/" (:id event)))
+                 :uri (str uri "/dbg/error/" (:id event)))
         (persist-on-database! cfg event))
       (catch Exception e
         (l/warn :hint "unexpected exception on database error logger"

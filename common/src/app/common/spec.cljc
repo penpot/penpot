@@ -256,7 +256,7 @@
       (let [data (s/explain-data spec data)]
         (throw (ex/error :type :validation
                          :code :spec-validation
-                         :data data))))
+                         ::s/problems (::s/problems data)))))
     result))
 
 (defmacro instrument!

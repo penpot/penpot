@@ -30,14 +30,13 @@
       :hint          (or (:hint data) (ex-message error))
       :params        (l/stringify-data (:params request))
       :spec-problems (some-> data ::s/problems)
+      :data          (some-> data (dissoc ::s/problems))
       :ip-addr       (parse-client-ip request)
       :profile-id    (:profile-id request)}
 
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
-        :frontend-version (get headers "x-frontend-version" "unknown")})
-
-     (dissoc data ::s/problems))))
+        :frontend-version (get headers "x-frontend-version" "unknown")}))))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -56,8 +55,7 @@
 (defmethod handle-exception :validation
   [err _]
   (let [edata (ex-data err)]
-    {:status 400
-     :body   (dissoc edata ::s/problems)}))
+    {:status 400 :body edata}))
 
 (defmethod handle-exception :assertion
   [error request]

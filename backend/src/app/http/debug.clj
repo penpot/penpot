@@ -11,6 +11,7 @@
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
+   [clojure.pprint :as ppr]
    [app.config :as cf]
    [app.db :as db]
    [app.util.template :as tmpl]
@@ -99,7 +100,6 @@
       (ex/raise :type :validation :code :invalid-arguments))))
 
 
-
 (defn retrieve-error
   [{:keys [pool]} request]
   (letfn [(parse-id [request]
@@ -107,14 +107,23 @@
                   id (us/uuid-conformer id)]
               (when (uuid? id)
                 id)))
+
           (retrieve-report [id]
             (ex/ignoring
-             (when-let [{:keys [content] :as row} (db/get-by-id pool :server-error-report id)]
-               (assoc row :content (db/decode-transit-pgobject content)))))
+             (some-> (db/get-by-id pool :server-error-report id) :content db/decode-transit-pgobject)))
 
-          (render-template [{:keys [content] :as report}]
-            (some-> (io/resource "error-report.tmpl")
-                    (tmpl/render content)))]
+          (render-template [report]
+            (binding [ppr/*print-right-margin* 300]
+              (let [context (dissoc report :trace :cause :params :data :spec-prob :spec-problems)
+                    params  {:context (with-out-str (ppr/pprint context))
+                             :data    (:data report)
+                             :trace   (or (:cause report)
+                                          (:trace report)
+                                          (some-> report :error :trace))
+                             :params  (:params report)}]
+                (-> (io/resource "error-report.tmpl")
+                    (tmpl/render params)))))
+          ]
 
     (when-not (authorized? pool request)
       (ex/raise :type :authentication
