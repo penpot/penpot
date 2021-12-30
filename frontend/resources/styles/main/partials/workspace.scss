@@ -234,27 +234,20 @@
 }
 
 .multiuser-cursor {
-  align-items: center;
-  display: flex;
-  left: 0;
-  position: absolute;
-  top: 0;
   z-index: 10000;
+  pointer-events: none;
+}
 
-  svg {
-    height: 15px;
-    fill: #f3dd14;
-    width: 15px;
-  }
-
-  span {
-    background-color: #f3dd14;
-    border-radius: $br-small;
-    color: $color-black;
-    font-size: $fs12;
-    margin-left: $size-2;
-    padding: $size-1;
-  }
+.profile-name {
+  width: fit-content;
+  font-family: worksans;
+  padding: 2px 12px;
+  border-radius: 4px;
+  display:flex;
+  align-items: center;
+  height: 20px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .viewport-actions {
