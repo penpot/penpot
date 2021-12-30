@@ -52,6 +52,9 @@
    :default-blob-version 3
    :loggers-zmq-uri "tcp://localhost:45556"
 
+   :file-change-snapshot-every 1
+   :file-change-snapshot-timeout "3h"
+
    :public-uri "http://localhost:3449"
    :redis-uri "redis://redis/0"
 
@@ -98,6 +101,9 @@
 
 (s/def ::audit-log-archive-uri ::us/string)
 (s/def ::audit-log-gc-max-age ::dt/duration)
+
+(s/def ::file-change-snapshot-every ::us/integer)
+(s/def ::file-change-snapshot-timeout ::dt/duration)
 
 (s/def ::secret-key ::us/string)
 (s/def ::allow-demo-users ::us/boolean)
@@ -195,6 +201,8 @@
                    ::database-username
                    ::default-blob-version
                    ::error-report-webhook
+                   ::file-change-snapshot-every
+                   ::file-change-snapshot-timeout
                    ::user-feedback-destination
                    ::github-client-id
                    ::github-client-secret

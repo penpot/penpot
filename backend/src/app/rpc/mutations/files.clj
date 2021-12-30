@@ -11,6 +11,7 @@
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.rpc.permissions :as perms]
@@ -282,9 +283,13 @@
   [{:keys [revn modified-at] :as file}]
   ;; The snapshot will be saved every 20 changes or if the last
   ;; modification is older than 3 hour.
-  (or (zero? (mod revn 20))
-      (> (inst-ms (dt/diff modified-at (dt/now)))
-         (inst-ms (dt/duration {:hours 3})))))
+  (let [freq    (or (cf/get :file-change-snapshot-every) 20)
+        timeout (or (cf/get :file-change-snapshot-timeout)
+                    (dt/duration {:hours 1}))]
+    (or (= 1 freq)
+        (zero? (mod revn freq))
+        (> (inst-ms (dt/diff modified-at (dt/now)))
+           (inst-ms timeout)))))
 
 (defn- delete-from-storage
   [{:keys [storage] :as cfg} file]
