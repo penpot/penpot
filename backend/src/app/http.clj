@@ -12,7 +12,6 @@
    [app.common.spec :as us]
    [app.http.doc :as doc]
    [app.http.errors :as errors]
-   [app.http.debug :as debug]
    [app.http.middleware :as middleware]
    [app.metrics :as mtx]
    [clojure.spec.alpha :as s]
