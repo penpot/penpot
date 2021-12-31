@@ -52,7 +52,7 @@
    :default-blob-version 3
    :loggers-zmq-uri "tcp://localhost:45556"
 
-   :file-change-snapshot-every 1
+   :file-change-snapshot-every 5
    :file-change-snapshot-timeout "3h"
 
    :public-uri "http://localhost:3449"
