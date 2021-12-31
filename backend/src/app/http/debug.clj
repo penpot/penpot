@@ -115,7 +115,7 @@
 
           (render-template [report]
             (binding [ppr/*print-right-margin* 300]
-              (let [context (dissoc report :trace :cause :params :data :spec-prob :spec-problems)
+              (let [context (dissoc report :trace :cause :params :data :spec-prob :spec-problems :error :explain)
                     params  {:context (with-out-str (ppr/pprint context))
                              :data    (:data report)
                              :trace   (or (:cause report)
