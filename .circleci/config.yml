@@ -76,13 +76,21 @@ jobs:
           environment:
             PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
 
+      # - run:
+      #     working_directory: "./common"
+      #     name: common tests (cljs)
+      #     command: |
+      #       yarn install
+      #       yarn run compile-test
+      #       node target/test.js
+      # 
+      #     environment:
+      #       PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
+
       - run:
           working_directory: "./common"
-          name: common tests
+          name: common tests (clj)
           command: |
-            yarn install
-            yarn run compile-test
-            node target/test.js
             clojure -X:dev:test
 
           environment:
