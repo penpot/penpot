@@ -292,6 +292,7 @@
   (let [single?   (= (count shapes) 1)
 
         has-frame? (->> shapes (d/seek #(= :frame (:type %))))
+        has-component? (some true? (map #(contains? % :component-id) shapes))
         is-component? (and single? (-> shapes first :component-id some?))
 
         shape-id (->> shapes first :id)
@@ -303,6 +304,7 @@
 
         do-add-component (st/emitf (dwl/add-component))
         do-detach-component (st/emitf (dwl/detach-component shape-id))
+        do-detach-component-in-bulk (st/emitf dwl/detach-selected-components)
         do-reset-component (st/emitf (dwl/reset-component shape-id))
         do-show-component (st/emitf (dw/go-to-component component-id))
         do-navigate-component-file (st/emitf (dwl/nav-to-component-file component-file))
@@ -324,7 +326,11 @@
         [:& menu-separator]
         [:& menu-entry {:title (tr "workspace.shape.menu.create-component")
                         :shortcut (sc/get-tooltip :create-component)
-                        :on-click do-add-component}]])
+                        :on-click do-add-component}]
+        (when has-component?
+          [:& menu-entry {:title (tr "workspace.shape.menu.detach-instances-in-bulk")
+                          :shortcut (sc/get-tooltip :detach-component)
+                          :on-click do-detach-component-in-bulk}])])
 
      (when is-component?
        ;; WARNING: this menu is the same as the context menu at the sidebar.
@@ -352,7 +358,6 @@
                            :on-click do-navigate-component-file}]
            [:& menu-entry {:title (tr "workspace.shape.menu.update-main")
                            :on-click do-update-remote-component}]])])
-
      [:& menu-separator]]))
 
 (mf/defc context-menu-delete
