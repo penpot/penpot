@@ -5,7 +5,7 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 
-- Add shortcut to move action [Taiga #2411](https://tree.taiga.io/project/penpot/us/2411).
+- Add shortcut to move action [Github #1213](https://github.com/penpot/penpot/issues/1213).
 - Add alt as mod key to add stroke color from library menu [Taiga #2207](https://tree.taiga.io/project/penpot/us/2207).
 - Add detach in bulk option to context menu [Taiga #2210](https://tree.taiga.io/project/penpot/us/2210).
 - Add penpot look and feel to multiuser cursors [Taiga #1387](https://tree.taiga.io/project/penpot/us/1387).
