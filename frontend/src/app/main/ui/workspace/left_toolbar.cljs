@@ -67,7 +67,7 @@
      [:div.left-toolbar-inside
       [:ul.left-toolbar-options
        [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.move")
+        {:alt (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
          :class (when (and (nil? selected-drawtool)
                            (not edition)) "selected")
          :on-click (st/emitf :interrupt)}

@@ -137,6 +137,10 @@
                         :command "a"
                         :fn #(st/emit! (dwd/select-for-drawing :frame))}
 
+   :move               {:tooltip "V"
+                        :command "v"
+                        :fn #(st/emit! :interrupt)}
+
    :draw-rect          {:tooltip "R"
                         :command "r"
                         :fn #(st/emit! (dwd/select-for-drawing :rect))}

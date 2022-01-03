@@ -2579,7 +2579,7 @@ msgstr "Image (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.move"
-msgstr "Déplacer"
+msgstr "Déplacer (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.path"

@@ -1149,7 +1149,7 @@ msgstr "Изображение (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.move"
-msgstr "Вытеснить"
+msgstr "Вытеснить (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.path"

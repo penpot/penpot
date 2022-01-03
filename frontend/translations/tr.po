@@ -3062,7 +3062,7 @@ msgstr "Görsel (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.move"
-msgstr "Taşı"
+msgstr "Taşı (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.path"
