@@ -635,6 +635,20 @@
                                       :origin it
                                       :file-id file-id})))))))
 
+(defn update-component-sync
+  [shape-id file-id]
+  (ptk/reify ::update-component-sync
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [current-file-id (:current-file-id state)]
+        (rx/of
+         (dwu/start-undo-transaction)
+         (update-component shape-id)
+         (sync-file current-file-id file-id)
+         (when (not= current-file-id file-id)
+           (sync-file file-id file-id))
+         (dwu/commit-undo-transaction))))))
+
 (declare sync-file-2nd-stage)
 
 (defn sync-file

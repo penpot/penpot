@@ -184,11 +184,13 @@
             is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
                                                               :pages-index page-id
                                                               :objects shape-id
-                                                              :blocked] false)))]
-        (rx/of (->> new-selected
-                    (filter is-not-blocked)
-                    (into lks/empty-linked-set)
-                    (select-shapes)))))))
+                                                              :blocked] false)))
+
+            selected-ids (into lks/empty-linked-set
+                               (comp (filter some?)
+                                     (filter is-not-blocked))
+                               new-selected)]
+        (rx/of (select-shapes selected-ids))))))
 
 (defn deselect-all
   "Clear all possible state of drawing, edition

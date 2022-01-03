@@ -10,7 +10,6 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
@@ -33,10 +32,9 @@
         show?         (some? (:component-id values))
         local-library (mf/deref refs/workspace-local-library)
         libraries     (mf/deref refs/workspace-libraries)
-        component     (cp/get-component (:component-id values)
-                                        (:component-file values)
-                                        local-library
-                                        libraries)
+        {:keys [component-id component-file]} values
+
+        component     (cp/get-component component-id component-file local-library libraries)
 
         on-menu-click (mf/use-callback
                         (fn [event]
@@ -49,29 +47,21 @@
 
         do-detach-component (st/emitf (dwl/detach-component id))
         do-reset-component (st/emitf (dwl/reset-component id))
-        do-update-component (st/emitf
-                               (dwu/start-undo-transaction)
-                               (dwl/update-component id)
-                               (dwl/sync-file current-file-id current-file-id)
-                               (dwu/commit-undo-transaction))
-        confirm-update-remote-component (st/emitf
-                                          (dwl/update-component id)
-                                          (dwl/sync-file current-file-id
-                                                         (:component-file values))
-                                          (dwl/sync-file (:component-file values)
-                                                         (:component-file values)))
-        do-update-remote-component (st/emitf (modal/show
-                                                {:type :confirm
-                                                 :message ""
-                                                 :title (t locale "modals.update-remote-component.message")
-                                                 :hint (t locale "modals.update-remote-component.hint")
-                                                 :cancel-label (t locale "modals.update-remote-component.cancel")
-                                                 :accept-label (t locale "modals.update-remote-component.accept")
-                                                 :accept-style :primary
-                                                 :on-accept confirm-update-remote-component}))
-        do-show-component (st/emitf (dw/go-to-layout :assets))
-        do-navigate-component-file (st/emitf (dwl/nav-to-component-file
-                                                (:component-file values)))]
+        do-update-component (st/emitf (dwl/update-component-sync id component-file))
+
+        do-update-remote-component
+        (st/emitf (modal/show
+                   {:type :confirm
+                    :message ""
+                    :title (t locale "modals.update-remote-component.message")
+                    :hint (t locale "modals.update-remote-component.hint")
+                    :cancel-label (t locale "modals.update-remote-component.cancel")
+                    :accept-label (t locale "modals.update-remote-component.accept")
+                    :accept-style :primary
+                    :on-accept do-update-component}))
+
+        do-show-component (st/emitf (dw/go-to-component component-id))
+        do-navigate-component-file (st/emitf (dwl/nav-to-component-file component-file))]
     (when show?
       [:div.element-set
        [:div.element-set-title

@@ -1227,8 +1227,8 @@
 ;; --- Update Shape Flags
 
 (defn update-shape-flags
-  [id {:keys [blocked hidden] :as flags}]
-  (s/assert ::us/uuid id)
+  [ids {:keys [blocked hidden] :as flags}]
+  (us/verify (s/coll-of ::us/uuid) ids)
   (s/assert ::shape-attrs flags)
   (ptk/reify ::update-shape-flags
     ptk/WatchEvent
@@ -1238,9 +1238,8 @@
               (cond-> obj
                 (boolean? blocked) (assoc :blocked blocked)
                 (boolean? hidden) (assoc :hidden hidden)))
-
             objects (wsh/lookup-page-objects state)
-            ids     (into [id] (cp/get-children id objects))]
+            ids     (into ids (->> ids (mapcat #(cp/get-children % objects))))]
         (rx/of (dch/update-shapes ids update-fn))))))
 
 (defn toggle-visibility-selected
@@ -1349,16 +1348,16 @@
                                                            :typographies #{}}))))
 
 (defn go-to-component
-  [objs]
+  [component-id]
   (ptk/reify ::set-workspace-layout-component
     IDeref
     (-deref [_] {:layout :assets})
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [project-id    (get-in state [:workspace-project :id])
             file-id       (get-in state [:workspace-file :id])
             page-id       (get state :current-page-id)
-            component-id  (get (first objs) :component-id)
             pparams       {:file-id file-id :project-id project-id}
             qparams       {:page-id page-id :layout :assets}]
         (rx/of (rt/nav :workspace pparams qparams)
@@ -1367,8 +1366,7 @@
                (select-single-asset component-id :components))))
     ptk/EffectEvent
     (effect [_ _ _]
-      (let [component-id  (get (first objs) :component-id)
-            wrapper-id    (str "component-shape-id-" component-id)]
+      (let [wrapper-id    (str "component-shape-id-" component-id)]
         (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id)))))))
 
 (def go-to-file
@@ -1422,53 +1420,37 @@
 (s/def ::point gpt/point?)
 
 (defn show-context-menu
-  [{:keys [position shape] :as params}]
+  [{:keys [position] :as params}]
   (us/verify ::point position)
-  (us/verify (s/nilable ::cp/minimal-shape) shape)
   (ptk/reify ::show-context-menu
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (wsh/lookup-selected state)
-            objects (wsh/lookup-page-objects state)
-
-            selected-with-children
-            (into []
-                  (mapcat #(cp/get-object-with-children % objects))
-                  selected)
-
-            head (get objects (first selected))
-
-            first-not-group-like?
-            (and (= (count selected) 1)
-                 (not (contains? #{:group :bool} (:type head))))
-
-            has-invalid-shapes? (->> selected-with-children
-                                     (some (comp #{:frame :text} :type)))
-
-            disable-booleans? (or (empty? selected) has-invalid-shapes? first-not-group-like?)
-            disable-flatten? (or (empty? selected) has-invalid-shapes?)
-
-            mdata
-            (-> params
-                (assoc :disable-booleans? disable-booleans?)
-                (assoc :disable-flatten? disable-flatten?)
-                (cond-> (some? shape)
-                  (assoc :selected selected)))]
-
-        (assoc-in state [:workspace-local :context-menu] mdata)))))
+      (assoc-in state [:workspace-local :context-menu] params))))
 
 (defn show-shape-context-menu
-  [{:keys [position shape] :as params}]
-  (us/verify ::point position)
-  (us/verify ::cp/minimal-shape shape)
+  [{:keys [shape] :as params}]
+  (us/verify (s/nilable ::cp/minimal-shape) shape)
   (ptk/reify ::show-shape-context-menu
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
+      (let [selected        (wsh/lookup-selected state)
+            objects         (wsh/lookup-page-objects state)
+            all-selected    (into [] (mapcat #(cp/get-object-with-children % objects)) selected)
+            head            (get objects (first selected))
+
+            not-group-like? (and (= (count selected) 1)
+                                 (not (contains? #{:group :bool} (:type head))))
+            no-bool-shapes? (->> all-selected (some (comp #{:frame :text} :type)))]
+
         (rx/concat
-          (when-not (selected (:id shape))
-            (rx/of (dws/select-shape (:id shape))))
-          (rx/of (show-context-menu params)))))))
+         (when (and (some? shape) (not (contains? selected (:id shape))))
+           (rx/of (dws/select-shape (:id shape))))
+         (rx/of (show-context-menu
+                 (-> params
+                     (assoc
+                      :disable-booleans? (or no-bool-shapes? not-group-like?)
+                      :disable-flatten? no-bool-shapes?
+                      :selected (conj selected (:id shape)))))))))))
 
 (def hide-context-menu
   (ptk/reify ::hide-context-menu

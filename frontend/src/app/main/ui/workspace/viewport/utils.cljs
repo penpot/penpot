@@ -72,7 +72,7 @@
       [shape-node])))
 
 (defn update-transform [shapes transforms modifiers]
-  (doseq [{id :id :as shape} shapes]
+  (doseq [{:keys [id type] :as shape} shapes]
     (when-let [nodes (get-nodes shape)]
       (let [transform (get transforms id)
             modifiers (get-in modifiers [id :modifiers])

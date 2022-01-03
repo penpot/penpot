@@ -304,7 +304,7 @@
   [content points]
 
   (let [segments-set (into #{}
-                           (juxt :start :end)
+                           (map (juxt :start :end))
                            (get-segments content points))
 
         create-line-command (fn [point other]

@@ -203,6 +203,16 @@
                                            :shape @hover})
               (dw/show-context-menu {:position position})))))))))
 
+(defn on-menu-selected
+  [hover hover-ids selected]
+  (mf/use-callback
+   (mf/deps @hover hover-ids selected)
+   (fn [event]
+     (dom/prevent-default event)
+     (dom/stop-propagation event)
+     (let [position (dom/get-client-position event)]
+       (st/emit! (dw/show-shape-context-menu {:position position}))))))
+
 (defn on-mouse-up
   [disable-paste]
   (mf/use-callback

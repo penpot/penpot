@@ -1,6 +1,7 @@
 $width-settings-bar: 16rem;
 
 .handoff-layout {
+  height: 100vh;
   display: grid;
   grid-template-rows: 40px auto;
   grid-template-columns: 1fr;

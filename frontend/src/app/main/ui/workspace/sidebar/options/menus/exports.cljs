@@ -30,24 +30,18 @@
     :name (:name shape)
     :exports exports}))
 
-(mf/defc exports-menu
-  [{:keys [shape page-id file-id] :as props}]
-  (let [exports  (:exports shape [])
-        loading? (mf/use-state false)
+(defn use-download-export
+  [shape page-id file-id exports]
+  (let [loading? (mf/use-state false)
 
         filename (cond-> (:name shape)
                    (and (= (count exports) 1)
                         (not (empty (:suffix (first exports)))))
                    (str (:suffix (first exports))))
 
-        scale-enabled?
+        on-download-callback
         (mf/use-callback
-          (fn [export]
-            (#{:png :jpeg} (:type export))))
-
-        on-download
-        (mf/use-callback
-         (mf/deps shape)
+         (mf/deps filename shape exports)
          (fn [event]
            (dom/prevent-default event)
            (swap! loading? not)
@@ -59,7 +53,19 @@
                    (swap! loading? not)
                    (st/emit! (dm/error (tr "errors.unexpected-error"))))
                  (fn []
-                   (swap! loading? not))))))
+                   (swap! loading? not))))))]
+    [on-download-callback @loading?]))
+
+(mf/defc exports-menu
+  [{:keys [shape page-id file-id] :as props}]
+  (let [exports  (:exports shape [])
+
+        scale-enabled?
+        (mf/use-callback
+          (fn [export]
+            (#{:png :jpeg} (:type export))))
+
+        [on-download loading?] (use-download-export shape page-id file-id exports)
 
         add-export
         (mf/use-callback
@@ -143,11 +149,11 @@
             i/minus]])
 
         [:div.btn-icon-dark.download-button
-         {:on-click (when-not @loading? on-download)
+         {:on-click (when-not loading? on-download)
           :class (dom/classnames
-                  :btn-disabled @loading?)
-          :disabled @loading?}
-         (if @loading?
+                  :btn-disabled loading?)
+          :disabled loading?}
+         (if loading?
            (tr "workspace.options.exporting-object")
            (tr "workspace.options.export-object"))]])]))
 

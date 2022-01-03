@@ -139,16 +139,16 @@
         (fn [event]
           (dom/stop-propagation event)
           (if (:blocked item)
-            (st/emit! (dw/update-shape-flags id {:blocked false}))
-            (st/emit! (dw/update-shape-flags id {:blocked true})
+            (st/emit! (dw/update-shape-flags [id] {:blocked false}))
+            (st/emit! (dw/update-shape-flags [id] {:blocked true})
                       (dw/deselect-shape id))))
 
         toggle-visibility
         (fn [event]
           (dom/stop-propagation event)
           (if (:hidden item)
-            (st/emit! (dw/update-shape-flags id {:hidden false}))
-            (st/emit! (dw/update-shape-flags id {:hidden true}))))
+            (st/emit! (dw/update-shape-flags [id] {:hidden false}))
+            (st/emit! (dw/update-shape-flags [id] {:hidden true}))))
 
         select-shape
         (fn [event]
@@ -275,7 +275,7 @@
     [:ul.element-list
      [:& hooks/sortable-container {}
        (for [[index id] (reverse (d/enumerate (:shapes root)))]
-         (let [obj (get objects id)]
+         (when-let [obj (get objects id)]
            (if (= (:type obj) :frame)
              [:& frame-wrapper
               {:item obj
