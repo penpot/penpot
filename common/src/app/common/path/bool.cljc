@@ -284,8 +284,7 @@
 
 (defn create-exclusion [content-a content-b]
   ;; Pick all segments
-  (let []
-    (d/concat-vec content-a content-b)))
+  (d/concat-vec content-a content-b))
 
 (defn content-bool-pair
   [bool-type content-a content-b]

@@ -15,6 +15,7 @@
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.main.ui.components.editable-select :refer [editable-select]]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.util.dom :as dom]
@@ -350,20 +351,19 @@
         letter-spacing (or letter-spacing "0")
 
         handle-change
-        (fn [event attr]
-          (let [new-spacing (dom/get-target-val event)]
-            (on-change {attr new-spacing})))]
+        (fn [value attr]
+          (on-change {attr (str value)}))]
 
     [:div.spacing-options
      [:div.input-icon
       [:span.icon-before.tooltip.tooltip-bottom
        {:alt (tr "workspace.options.text-options.line-height")}
        i/line-height]
-      [:input.input-text
-       {:type "number"
-        :step "0.1"
-        :min "-200"
-        :max "200"
+      [:> numeric-input
+       {:min -200
+        :max 200
+        :step 0.1
+        :precision 2
         :value (attr->string line-height)
         :placeholder (tr "settings.multiple")
         :on-change #(handle-change % :line-height)
@@ -373,11 +373,11 @@
       [:span.icon-before.tooltip.tooltip-bottom
        {:alt (tr "workspace.options.text-options.letter-spacing")}
        i/letter-spacing]
-      [:input.input-text
-       {:type "number"
-        :step "0.1"
-        :min "-200"
-        :max "200"
+      [:> numeric-input
+       {:min -200
+        :max 200
+        :step 0.1
+        :precision 2
         :value (attr->string letter-spacing)
         :placeholder (tr "settings.multiple")
         :on-change #(handle-change % :letter-spacing)
