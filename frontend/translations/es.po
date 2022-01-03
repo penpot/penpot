@@ -3011,6 +3011,10 @@ msgstr "Eliminar inicio de flujo"
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Desacoplar instancia"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Desacoplar instancias"
+
 msgid "workspace.shape.menu.difference"
 msgstr "Diferencia"
 
