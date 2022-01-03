@@ -43,7 +43,7 @@
   (let [select-color
         (fn [event]
           (let [ids (wsh/lookup-selected @st/state)]
-            (if (kbd/shift? event)
+            (if (kbd/alt? event)
               (st/emit! (mdc/change-stroke ids (merge uc/empty-color color)))
               (st/emit! (mdc/change-fill ids (merge uc/empty-color color))))))]
 

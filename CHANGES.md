@@ -5,6 +5,7 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 
+- Add alt as mod key to add stroke color from library menu [Taiga #2207](https://tree.taiga.io/project/penpot/us/2207).
 - Add detach in bulk option to context menu [Taiga #2210](https://tree.taiga.io/project/penpot/us/2210).
 - Add penpot look and feel to multiuser cursors [Taiga #1387](https://tree.taiga.io/project/penpot/us/1387).
 - Add actions to go to main component context menu option [Taiga #2053](https://tree.taiga.io/project/penpot/us/2053).
