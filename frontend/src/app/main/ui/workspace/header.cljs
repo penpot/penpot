@@ -299,7 +299,7 @@
   [{:keys [file layout project page-id] :as props}]
   (let [team-id  (:team-id project)
         zoom     (mf/deref refs/selected-zoom)
-        params   {:page-id page-id :file-id (:id file)}
+        params   {:page-id page-id :file-id (:id file) :section "interactions"}
 
         go-back
         (mf/use-callback
