@@ -24,7 +24,7 @@
 
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values"]))]}
-  [{:keys [ids type values] :as props}]
+  [{:keys [ids type values disable-remove?] :as props}]
   (let [show? (or (not (nil? (:fill-color values)))
                   (not (nil? (:fill-color-gradient values))))
 
@@ -75,7 +75,8 @@
       [:div.element-set
        [:div.element-set-title
         [:span label]
-        [:div.add-page {:on-click on-delete} i/minus]]
+        (when (not disable-remove?)
+         [:div.add-page {:on-click on-delete} i/minus])]
 
        [:div.element-set-content
         [:& color-row {:color color
@@ -87,5 +88,3 @@
        [:div.element-set-title
         [:span label]
         [:div.add-page {:on-click on-add} i/close]]])))
-
-
