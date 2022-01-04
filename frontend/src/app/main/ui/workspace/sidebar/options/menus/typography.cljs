@@ -362,7 +362,7 @@
       [:input.input-text
        {:type "number"
         :step "0.1"
-        :min "0"
+        :min "-200"
         :max "200"
         :value (attr->string line-height)
         :placeholder (tr "settings.multiple")
@@ -376,7 +376,7 @@
       [:input.input-text
        {:type "number"
         :step "0.1"
-        :min "0"
+        :min "-200"
         :max "200"
         :value (attr->string letter-spacing)
         :placeholder (tr "settings.multiple")
