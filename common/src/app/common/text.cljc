@@ -6,6 +6,7 @@
 
 (ns app.common.text
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.transit :as t]
    [clojure.walk :as walk]
@@ -25,7 +26,7 @@
    :text-transform "none"
    :text-align "left"
    :text-decoration "none"
-   :fill-color nil
+   :fill-color clr/black
    :fill-opacity 1})
 
 (def typography-fields
@@ -247,6 +248,3 @@
 
     {:blocks (reduce #(conj %1 (build-block %2)) [] (node-seq #(= (:type %) "paragraph") root))
      :entityMap {}}))
-
-
-

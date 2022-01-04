@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
@@ -36,6 +37,8 @@
         fill-values (d/update-in-when fill-values [:fill-color-gradient :type] keyword)
 
         fill-values (cond-> fill-values
+                      (not (contains? fill-values :fill-color)) (assoc :fill-color clr/black)
+                      (not (contains? fill-values :fill-opacity)) (assoc :fill-opacity 1)
                       ;; Keep for backwards compatibility
                       (:fill fill-values) (assoc :fill-color (:fill fill-values))
                       (:opacity fill-values) (assoc :fill-opacity (:fill fill-values)))
@@ -73,7 +76,8 @@
      [:& fill-menu
       {:ids ids
        :type type
-       :values fill-values}]
+       :values fill-values
+       :disable-remove? true}]
 
      [:& shadow-menu
       {:ids ids
