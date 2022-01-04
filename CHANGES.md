@@ -139,6 +139,7 @@
 - Add placeholder to create shareable link
 - Fix project files count not refreshing correctly after import [Taiga #2216](https://tree.taiga.io/project/penpot/issue/2216)
 - Remove button after import process finish [Taiga #2215](https://tree.taiga.io/project/penpot/issue/2215)
+- Fix problem with styles in the viewer [Taiga #2467](https://tree.taiga.io/project/penpot/issue/2467)
 
 ### :heart: Community contributions by (Thank you!)
 
