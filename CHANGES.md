@@ -17,8 +17,9 @@
 
 ### :bug: Bugs fixed
 
-- Fix default project name in all languages [Taiga #2280](https://tree.taiga.io/project/penpot/issue/2280)
-- Fix line-height and letter-spacing inputs to allow negative values [Taiga #2381](https://tree.taiga.io/project/penpot/issue/2381)
+- Fix add fill color from palette to groups and components [Taiga #2313](https://tree.taiga.io/project/penpot/issue/2313).
+- Fix default project name in all languages [Taiga #2280](https://tree.taiga.io/project/penpot/issue/2280).
+- Fix line-height and letter-spacing inputs to allow negative values [Taiga #2381](https://tree.taiga.io/project/penpot/issue/2381).
 - Fix typo in Handoff tooltip [Taiga #2428](https://tree.taiga.io/project/penpot/issue/2428).
 - Fix crash when pressing Shift+1 on empty file [#1435](https://github.com/penpot/penpot/issues/1435).
 - Fix masked group resize strange behavior [Taiga #2317](https://tree.taiga.io/project/penpot/issue/2317).
