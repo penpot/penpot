@@ -8,7 +8,6 @@
   (:require
    [app.common.math :as mth]
    [app.main.data.workspace.colors :as mdc]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
@@ -40,12 +39,12 @@
 ;; --- Components
 (mf/defc palette-item
   [{:keys [color size]}]
-  (let [select-color
+  (let [ids-with-children (map :id (mf/deref refs/selected-shapes-with-children))
+        select-color
         (fn [event]
-          (let [ids (wsh/lookup-selected @st/state)]
-            (if (kbd/alt? event)
-              (st/emit! (mdc/change-stroke ids (merge uc/empty-color color)))
-              (st/emit! (mdc/change-fill ids (merge uc/empty-color color))))))]
+          (if (kbd/alt? event)
+              (st/emit! (mdc/change-stroke ids-with-children (merge uc/empty-color color)))
+              (st/emit! (mdc/change-fill ids-with-children (merge uc/empty-color color)))))]
 
     [:div.color-cell {:class (str "cell-"(name size))
                       :on-click select-color}
