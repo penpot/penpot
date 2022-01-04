@@ -35,6 +35,7 @@
 - Fix problem with booleans [Taiga #2356](https://tree.taiga.io/project/penpot/issue/2356)
 - Fix line-height/letter-spacing inputs behaviour [Taiga #2331](https://tree.taiga.io/project/penpot/issue/2331)
 - Fix dotted style in strokes [Taiga #2312](https://tree.taiga.io/project/penpot/issue/2312)
+- Fix problem when resizing texts inside groups [Taiga #2310](https://tree.taiga.io/project/penpot/issue/2310)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
