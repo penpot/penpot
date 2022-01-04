@@ -1767,7 +1767,7 @@ msgstr "Seite bearbeiten"
 msgid "viewer.header.fullscreen"
 msgstr "Vollbildmodus"
 
-msgid "viewer.header.handsoff-section"
+msgid "viewer.header.handoff-section"
 msgstr "Übergabe (%s)"
 
 #: src/app/main/ui/viewer/header.cljs

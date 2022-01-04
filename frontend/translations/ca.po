@@ -1722,7 +1722,7 @@ msgstr "Edita el fitxer"
 msgid "viewer.header.fullscreen"
 msgstr "Pantalla completa"
 
-msgid "viewer.header.handsoff-section"
+msgid "viewer.header.handoff-section"
 msgstr "Lliurament (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
