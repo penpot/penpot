@@ -1715,7 +1715,7 @@ msgstr "לא להציג אינטראקציות"
 msgid "viewer.header.fullscreen"
 msgstr "מסך מלא"
 
-msgid "viewer.header.handsoff-section"
+msgid "viewer.header.handoff-section"
 msgstr "מסירות"
 
 #: src/app/main/ui/viewer/header.cljs

@@ -168,7 +168,7 @@
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :handoff)
           :class (dom/classnames :active (= section :handoff))
-          :alt (tr "viewer.header.handsoff-section" (sc/get-tooltip :open-handoff))}
+          :alt (tr "viewer.header.handoff-section" (sc/get-tooltip :open-handoff))}
          i/code])]
 
      [:& header-options {:section section

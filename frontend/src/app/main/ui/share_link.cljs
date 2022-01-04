@@ -155,7 +155,7 @@
 
            ;; [:div.input-checkbox.check-primary
            ;;  [:input.check-primary.input-checkbox {:type "checkbox"}]
-           ;;  [:label "Handsoff" ]]
+           ;;  [:label "Handoff" ]]
            ]])
 
        (let [mode (:pages-mode @opts)]

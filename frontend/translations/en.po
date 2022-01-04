@@ -1767,8 +1767,8 @@ msgstr "Don't show interactions"
 msgid "viewer.header.fullscreen"
 msgstr "Full Screen"
 
-msgid "viewer.header.handsoff-section"
-msgstr "Handsoff (%s)"
+msgid "viewer.header.handoff-section"
+msgstr "Handoff (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
