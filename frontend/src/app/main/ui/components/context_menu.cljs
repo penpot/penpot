@@ -6,9 +6,11 @@
 
 (ns app.main.ui.components.context-menu
   (:require
+   [app.main.refs :as refs]
    [app.main.ui.components.dropdown :refer [dropdown']]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [goog.object :as gobj]
    [rumext.alpha :as mf]))
@@ -29,6 +31,8 @@
         left          (gobj/get props "left" 0)
         fixed?        (gobj/get props "fixed?" false)
         min-width?    (gobj/get props "min-width?" false)
+        route         (mf/deref refs/route)
+        in-dashboard? (= :dashboard-projects (:name (:data route)))
 
         local         (mf/use-state {:offset 0
                                      :levels nil})
@@ -107,7 +111,9 @@
                     [:a.context-menu-action {:on-click #(do (dom/stop-propagation %)
                                                             (on-close)
                                                             (option-handler %))}
-                     option-name]
+                     (if (and in-dashboard? (= option-name "Default"))
+                       (tr "dashboard.default-team-name")
+                       option-name)]
                     [:a.context-menu-action.submenu
                      {:data-no-close true
                       :on-click (enter-submenu option-name sub-options)}
