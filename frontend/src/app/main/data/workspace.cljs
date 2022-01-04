@@ -635,9 +635,7 @@
             objects (wsh/lookup-page-objects state page-id)
             shapes  (cp/select-toplevel-shapes objects {:include-frames? true})
             srect   (gsh/selection-rect shapes)]
-
-        (if (or (mth/nan? (:width srect))
-                (mth/nan? (:height srect)))
+        (if (= 0 (count shapes))
           state
           (update state :workspace-local
                   (fn [{:keys [vport] :as local}]
