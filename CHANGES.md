@@ -37,6 +37,7 @@
 - Fix dotted style in strokes [Taiga #2312](https://tree.taiga.io/project/penpot/issue/2312)
 - Fix problem when resizing texts inside groups [Taiga #2310](https://tree.taiga.io/project/penpot/issue/2310)
 - Fix problem with multiple exports [Taiga #2468](https://tree.taiga.io/project/penpot/issue/2468)
+- Allow import to continue from recoverable failures [#1412](https://github.com/penpot/penpot/issues/1412)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

@@ -98,7 +98,7 @@
        (filter #(= :ready (:status %)))
        (mapv #(assoc % :status :importing))))
 
-(defn update-status [files file-id status progress]
+(defn update-status [files file-id status progress errors]
   (->> files
        (mapv (fn [file]
                (cond-> file
@@ -106,7 +106,10 @@
                  (assoc :status status)
 
                  (and (= file-id (:file-id file)) (= status :import-progress))
-                 (assoc :progress progress))))))
+                 (assoc :progress progress)
+
+                 (= file-id (:file-id file))
+                 (assoc :errors errors))))))
 
 (defn parse-progress-message
   [message]
@@ -139,9 +142,10 @@
 
   (let [loading?       (or (= :analyzing (:status file))
                            (= :importing (:status file)))
-        load-success?  (= :import-success (:status file))
         analyze-error? (= :analyze-error (:status file))
+        import-finish? (= :import-finish (:status file))
         import-error?  (= :import-error (:status file))
+        import-warn?   (d/not-empty? (:errors file))
         ready?         (= :ready (:status file))
         is-shared?     (:shared file)
         progress       (:progress file)
@@ -177,7 +181,8 @@
     [:div.file-entry
      {:class (dom/classnames
               :loading  loading?
-              :success  load-success?
+              :success  (and import-finish? (not import-warn?) (not import-error?))
+              :warning  (and import-finish? import-warn? (not import-error?))
               :error    (or import-error? analyze-error?)
               :editable (and ready? (not editing?)))}
 
@@ -185,8 +190,9 @@
       [:div.file-icon
        (cond loading?       i/loader-pencil
              ready?         i/logo-icon
-             load-success?  i/tick
+             import-warn?   i/msg-warning
              import-error?  i/close
+             import-finish? i/tick
              analyze-error? i/close)]
 
       (if editing?
@@ -212,7 +218,7 @@
        [:div.error-message
         (tr "dashboard.import.import-error")]
 
-       (and (not load-success?) (some? progress))
+       (and (not import-finish?) (some? progress))
        [:div.progress-message (parse-progress-message progress)])
 
      [:div.linked-libraries
@@ -258,9 +264,8 @@
                   :project-id project-id
                   :files files})
                 (rx/subs
-                 (fn [{:keys [file-id status message] :as msg}]
-                   (log/debug :msg msg)
-                   (swap! state update :files update-status file-id status message))))))
+                 (fn [{:keys [file-id status message errors] :as msg}]
+                   (swap! state update :files update-status file-id status message errors))))))
 
         handle-cancel
         (mf/use-callback
@@ -291,7 +296,8 @@
            (st/emit! (modal/hide))
            (when on-finish-import (on-finish-import))))
 
-        success-files (->> @state :files (filter #(= (:status %) :import-success)) count)
+        warning-files (->> @state :files (filter #(and (= (:status %) :import-finish) (d/not-empty? (:errors %)))) count)
+        success-files (->> @state :files (filter #(and (= (:status %) :import-finish) (empty? (:errors %)))) count)
         pending-analysis? (> (->> @state :files (filter #(= (:status %) :analyzing)) count) 0)
         pending-import? (> (->> @state :files (filter #(= (:status %) :importing)) count) 0)]
 
@@ -316,11 +322,15 @@
         {:on-click handle-cancel} i/close]]
 
       [:div.modal-content
-       (when (and (= :importing (:status @state))
-                  (not pending-import?))
-         [:div.feedback-banner
-          [:div.icon i/checkbox-checked]
-          [:div.message (tr "dashboard.import.import-message" success-files)]])
+       (when (and (= :importing (:status @state)) (not pending-import?))
+         (if (> warning-files 0)
+           [:div.feedback-banner.warning
+            [:div.icon i/msg-warning]
+            [:div.message (tr "dashboard.import.import-warning" warning-files success-files)]]
+
+           [:div.feedback-banner
+            [:div.icon i/checkbox-checked]
+            [:div.message (tr "dashboard.import.import-message" success-files)]]))
 
        (for [file (->> (:files @state) (filterv (comp not :deleted?)))]
          (let [editing?      (and (some? (:file-id file))

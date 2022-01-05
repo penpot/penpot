@@ -3322,3 +3322,6 @@ msgstr "Insufficient members to leave team, you probably want to delete it."
 
 msgid "errors.auth.unable-to-login"
 msgstr "Looks like you are not authenticated or session expired."
+
+msgid "dashboard.import.import-warning"
+msgstr "Some files containted invalid objects that have been removed."
