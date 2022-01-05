@@ -735,7 +735,3 @@
                                :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))}
                               true)
                (apply-modifiers selected))))))
-
-
-;; -- Transform to path ---------------------------------------------
-
