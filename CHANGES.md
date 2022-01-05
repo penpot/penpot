@@ -5,6 +5,7 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 
+- Add shortcut for opacity [Taiga #2442](https://tree.taiga.io/project/penpot/us/2442).
 - Setting fill automatically for new texts [Taiga #2441](https://tree.taiga.io/project/penpot/us/2441).
 - Add shortcut to move action [Github #1213](https://github.com/penpot/penpot/issues/1213).
 - Add alt as mod key to add stroke color from library menu [Taiga #2207](https://tree.taiga.io/project/penpot/us/2207).

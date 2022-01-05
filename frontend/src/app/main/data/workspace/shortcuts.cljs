@@ -11,6 +11,7 @@
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
@@ -24,7 +25,7 @@
 
 ;; Shortcuts format https://github.com/ccampbell/mousetrap
 
-(def shortcuts
+(def base-shortcuts
   {:toggle-layers     {:tooltip (ds/alt "L")
                        :command (ds/a-mod "l")
                        :fn #(st/emit! (dw/go-to-layout :layers))}
@@ -332,6 +333,17 @@
    :toggle-lock-size     {:tooltip (ds/meta (ds/alt "L"))
                           :command (ds/c-mod "alt+l")
                           :fn #(st/emit! (dw/toggle-proportion-lock))}})
+
+(def opacity-shortcuts
+  (into {} (->>
+            (range 10)
+            (map (fn [n] [(keyword (str "opacity-" n))
+                          {:tooltip (str n)
+                           :command (str n)
+                           :fn #(st/emit! (dwly/pressed-opacity n))}])))))
+
+(def shortcuts
+  (merge base-shortcuts opacity-shortcuts))
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

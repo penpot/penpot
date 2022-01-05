@@ -31,6 +31,7 @@
    [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.interactions :as dwi]
+   [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.path :as dwdp]
@@ -1914,6 +1915,7 @@
 (d/export dwt/update-position)
 (d/export dwt/flip-horizontal-selected)
 (d/export dwt/flip-vertical-selected)
+(d/export dwly/set-opacity)
 
 ;; Persistence
 
