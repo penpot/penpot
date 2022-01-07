@@ -38,6 +38,7 @@
 - Fix problem when resizing texts inside groups [Taiga #2310](https://tree.taiga.io/project/penpot/issue/2310)
 - Fix problem with multiple exports [Taiga #2468](https://tree.taiga.io/project/penpot/issue/2468)
 - Allow import to continue from recoverable failures [#1412](https://github.com/penpot/penpot/issues/1412)
+- Improved behaviour on text options when not text is selected [Taiga #2390](https://tree.taiga.io/project/penpot/issue/2390)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
@@ -81,8 +82,6 @@
 ### :arrow_up: Deps updates
 
 - Update log4j2 dependency.
->>>>>>> main
-
 
 # 1.10.2-beta
 

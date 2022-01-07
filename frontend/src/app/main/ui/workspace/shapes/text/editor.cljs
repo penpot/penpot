@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.shapes.text.editor
   (:require
    ["draft-js" :as draft]
-   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.text :as txt]
    [app.main.data.workspace :as dw]
@@ -72,20 +71,18 @@
 (def empty-editor-state
   (ted/create-editor-state nil default-decorator))
 
-(defn get-content-changes
-  [old-state state]
-  (let [old-blocks (js->clj (.toJS (.getBlockMap (.getCurrentContent ^js old-state)))
-                            :keywordize-keys false)
-        new-blocks (js->clj (.toJS (.getBlockMap (.getCurrentContent ^js state)))
+(defn get-blocks-to-setup [block-changes]
+  (->> block-changes
+       (filter (fn [[_ v]]
+                 (nil? (:old v))))
+       (mapv first)))
 
-                            :keywordize-keys false)]
-    (->> old-blocks
-         (d/mapm
-          (fn [bkey bstate]
-            {:old (get bstate "text")
-             :new (get-in new-blocks [bkey "text"])}))
-         (filter #(contains? new-blocks (first %)))
-         (into {}))))
+(defn get-blocks-to-add-styles
+  [block-changes]
+  (->> block-changes
+       (filter (fn [[_ v]]
+                 (and (not= (:old v) (:new v)) (= (:old v) ""))))
+       (mapv first)))
 
 (mf/defc text-shape-edit-html
   {::mf/wrap [mf/memo]
@@ -143,25 +140,35 @@
          (fn [state]
            (let [old-state (mf/ref-val prev-value)]
              (if (and (some? state) (some? old-state))
-               (let [block-states (get-content-changes old-state state)
-
-                     block-to-add-styles
-                     (->> block-states
-                          (filter
-                           (fn [[_ v]]
-                             (and (not= (:old v) (:new v))
-                                  (= (:old v) ""))))
-                          (mapv first))]
-                 (ted/apply-block-styles-to-content state block-to-add-styles))
+               (let [block-changes (ted/get-content-changes old-state state)
+                     prev-data (ted/get-editor-current-inline-styles old-state)
+                     block-to-setup (get-blocks-to-setup block-changes)
+                     block-to-add-styles (get-blocks-to-add-styles block-changes)]
+                 (-> state
+                     (ted/setup-block-styles block-to-setup prev-data)
+                     (ted/apply-block-styles-to-content block-to-add-styles)))
                state))))
 
         on-change
         (mf/use-callback
          (fn [val]
-           (let [val (handle-change val)
-                 val (if (true? @blurred)
-                       (ted/add-editor-blur-selection val)
-                       (ted/remove-editor-blur-selection val))]
+           (let [prev-val (mf/ref-val prev-value)
+                 styleOverride (ted/get-style-override prev-val)
+
+                 ;; If the content and the selection are the same we keep the style override
+                 keep-style? (and (some? styleOverride)
+                                  (ted/content-equals prev-val val)
+                                  (ted/selection-equals prev-val val))
+
+                 val (cond-> (handle-change val)
+                       @blurred
+                       (ted/add-editor-blur-selection)
+
+                       (not @blurred)
+                       (ted/remove-editor-blur-selection)
+
+                       keep-style?
+                       (ted/set-style-override styleOverride))]
              (st/emit! (dwt/update-editor-state shape val)))))
 
         on-editor
