@@ -148,6 +148,7 @@
 
   (let [multiple? (> (count shapes) 1)
         single?   (= (count shapes) 1)
+        do-create-artboard-from-selection (st/emitf (dw/create-artboard-from-selection))
 
         has-group? (->> shapes (d/seek #(= :group (:type %))))
         has-bool? (->> shapes (d/seek #(= :bool (:type %))))
@@ -184,7 +185,11 @@
                        :on-click do-unmask-group}])
 
      (when (not has-frame?)
-       [:& menu-separator])]))
+       [:*
+         [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
+                         :shortcut (sc/get-tooltip :create-artboard-from-selection)
+                         :on-click do-create-artboard-from-selection}]
+         [:& menu-separator]])]))
 
 (mf/defc context-menu-path
   [{:keys [shapes disable-flatten? disable-booleans?]}]

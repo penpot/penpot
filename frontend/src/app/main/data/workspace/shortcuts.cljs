@@ -332,7 +332,11 @@
 
    :toggle-lock-size     {:tooltip (ds/meta (ds/alt "L"))
                           :command (ds/c-mod "alt+l")
-                          :fn #(st/emit! (dw/toggle-proportion-lock))}})
+                          :fn #(st/emit! (dw/toggle-proportion-lock))}
+
+   :create-artboard-from-selection   {:tooltip (ds/meta (ds/alt "G"))
+                          :command (ds/c-mod "alt+g")
+                          :fn #(st/emit! (dw/create-artboard-from-selection))}})
 
 (def opacity-shortcuts
   (into {} (->>

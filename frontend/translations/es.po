@@ -3041,6 +3041,10 @@ msgid "workspace.shape.menu.flip-vertical"
 msgstr "Voltear vertical"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Tablero de selección"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flow-start"
 msgstr "Inicio de flujo"
 
