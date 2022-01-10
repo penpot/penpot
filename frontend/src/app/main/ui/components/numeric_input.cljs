@@ -13,18 +13,13 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.simple-math :as sm]
+   [app.util.strings :as ust]
    [rumext.alpha :as mf]))
 
 (defn num? [val]
   (and (number? val)
        (not (math/nan? val))
        (math/finite? val)))
-
-(defn fixed [value precision]
-  (try
-    (.toFixed value precision)
-    (catch :default _
-      (str value))))
 
 (mf/defc numeric-input
   {::mf/wrap-props false
@@ -102,7 +97,7 @@
           (fn [new-value]
             (let [input-node (mf/ref-val ref)]
               (dom/set-value! input-node (if (some? precision)
-                                           (fixed new-value precision)
+                                           (ust/format-precision new-value precision)
                                            (str new-value))))))
 
         apply-value

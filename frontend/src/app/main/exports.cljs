@@ -29,11 +29,13 @@
    [app.main.ui.shapes.text :as text]
    [app.main.ui.shapes.text.fontfaces :as ff]
    [app.util.object :as obj]
+   [app.util.strings :as ust]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
+(def ^:const viewbox-decimal-precision 3)
 (def ^:private default-color clr/canvas)
 
 (mf/defc background
@@ -139,8 +141,13 @@
             ;; Don't wrap svg elements inside a <g> otherwise some can break
             [:> svg-raw-wrapper {:shape shape :frame frame}]))))))
 
-(defn get-viewbox [{:keys [x y width height] :or {x 0 y 0 width 100 height 100}}]
-  (str/fmt "%s %s %s %s" x y width height))
+(defn format-viewbox
+  "Format a viewbox given a rectangle"
+  [{:keys [x y width height] :or {x 0 y 0 width 100 height 100}}]
+  (str/join
+   " "
+   (->> [x y width height]
+        (map #(ust/format-precision % viewbox-decimal-precision)))))
 
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
@@ -160,7 +167,7 @@
         vport   (when (and (some? width) (some? height))
                   {:width width :height height})
         dim     (calculate-dimensions data vport)
-        vbox    (get-viewbox dim)
+        vbox    (format-viewbox dim)
         background-color (get-in data [:options :background] default-color)
         frame-wrapper
         (mf/use-memo
@@ -221,15 +228,15 @@
 
         width  (* (:width frame) zoom)
         height (* (:height frame) zoom)
-        vbox   (str "0 0 " (:width frame 0)
-                    " "    (:height frame 0))
+        vbox   (format-viewbox {:width (:width frame 0) :height (:height frame 0)})
+
         wrapper (mf/use-memo
                  (mf/deps objects)
                  #(frame-wrapper-factory objects))]
 
     [:svg {:view-box vbox
-           :width width
-           :height height
+           :width (ust/format-precision width viewbox-decimal-precision)
+           :height (ust/format-precision height viewbox-decimal-precision)
            :version "1.1"
            :xmlns "http://www.w3.org/2000/svg"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
@@ -255,18 +262,20 @@
 
         group   (get objects group-id)
 
+
         width  (* (:width group) zoom)
         height (* (:height group) zoom)
-        vbox   (str "0 0 " (:width group 0)
-                    " "    (:height group 0))
+        vbox   (format-viewbox {:width (:width group 0)
+                                :height (:height group 0)})
+
         group-wrapper
         (mf/use-memo
          (mf/deps objects)
          #(group-wrapper-factory objects))]
 
     [:svg {:view-box vbox
-           :width width
-           :height height
+           :width (ust/format-precision width viewbox-decimal-precision)
+           :height (ust/format-precision height viewbox-decimal-precision)
            :version "1.1"
            :xmlns "http://www.w3.org/2000/svg"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
@@ -281,7 +290,7 @@
         root (get objects id)
 
         {:keys [width height]} (:selrect root)
-        vbox   (str "0 0 " width " " height)
+        vbox   (format-viewbox {:width width :height height})
 
         modifier (-> (gpt/point (:x root) (:y root))
                      (gpt/negate)

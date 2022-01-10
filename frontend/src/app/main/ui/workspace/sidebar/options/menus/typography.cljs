@@ -23,6 +23,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.router :as rt]
+   [app.util.strings :as ust]
    [app.util.timers :as tm]
    [cuerdas.core :as str]
    [goog.events :as events]
@@ -31,7 +32,7 @@
 (defn- attr->string [value]
   (if (= value :multiple)
     ""
-    (str value)))
+    (ust/format-precision value 2)))
 
 (defn- get-next-font
   [{:keys [id] :as current} fonts]
