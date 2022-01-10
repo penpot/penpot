@@ -12,7 +12,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes :as ch]
    [app.common.pages.init :as init]
-   [app.common.pages.spec :as spec]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -21,15 +20,14 @@
 (def conjv (fnil conj []))
 (def conjs (fnil conj #{}))
 
-;; This flag controls if we should execute spec validation after every commit
-(def verify-on-commit? true)
-
 (defn- commit-change
   ([file change]
    (commit-change file change nil))
 
-  ([file change {:keys [add-container?]
-                 :or   {add-container? false}}]
+  ([file change {:keys [add-container?
+                        fail-on-spec?]
+                 :or   {add-container? false
+                        fail-on-spec? false}}]
    (let [component-id (:current-component-id file)
          change (cond-> change
                   (and add-container? (some? component-id))
@@ -39,11 +37,20 @@
                   (assoc :page-id  (:current-page-id file)
                          :frame-id (:current-frame-id file)))]
 
-     (when verify-on-commit?
-       (us/assert ::spec/change change))
-     (-> file
-         (update :changes conjv change)
-         (update :data ch/process-changes [change] verify-on-commit?)))))
+     (when fail-on-spec?
+       (us/verify :app.common.pages.spec/change change))
+
+     (let [valid? (us/valid? :app.common.pages.spec/change change)]
+       #?(:cljs
+          (when-not valid? (.warn js/console "Invalid shape" (clj->js change))))
+
+       (cond-> file
+         valid?
+         (-> (update :changes conjv change)
+             (update :data ch/process-changes [change] false))
+
+         (not valid?)
+         (update :errors conjv change))))))
 
 (defn- lookup-objects
   ([file]
@@ -56,15 +63,16 @@
       (get shape-id)))
 
 (defn- commit-shape [file obj]
-  (let [parent-id (-> file :parent-stack peek)]
-    (-> file
-        (commit-change
-         {:type :add-obj
-          :id (:id obj)
-          :obj obj
-          :parent-id parent-id}
+  (let [parent-id (-> file :parent-stack peek)
+        change {:type :add-obj
+                :id (:id obj)
+                :obj obj
+                :parent-id parent-id}
 
-         {:add-container? true}))))
+        fail-on-spec? (or (= :group (:type obj))
+                          (= :frame (:type obj)))]
+
+    (commit-change file change {:add-container? true :fail-on-spec? fail-on-spec?})))
 
 (defn setup-rect-selrect [obj]
   (let [rect      (select-keys obj [:x :y :width :height])
@@ -421,35 +429,36 @@
 (defn add-interaction
   [file from-id interaction-src]
 
-  (assert (some? (lookup-shape file from-id)) (str "Cannot locate shape with id " from-id))
+  (let [shape (lookup-shape file from-id)]
+    (if (nil? shape)
+      file
+      (let [{:keys [event-type action-type]} (read-classifier interaction-src)
+            {:keys [delay]} (read-event-opts interaction-src)
+            {:keys [destination overlay-pos-type overlay-position url
+                    close-click-outside background-overlay preserve-scroll]}
+            (read-action-opts interaction-src)
 
-  (let [{:keys [event-type action-type]} (read-classifier interaction-src)
-        {:keys [delay]} (read-event-opts interaction-src)
-        {:keys [destination overlay-pos-type overlay-position url
-                close-click-outside background-overlay preserve-scroll]}
-        (read-action-opts interaction-src)
+            interactions (-> shape
+                             :interactions
+                             (conjv
+                              (d/without-nils {:event-type event-type
+                                               :action-type action-type
+                                               :delay delay
+                                               :destination destination
+                                               :overlay-pos-type overlay-pos-type
+                                               :overlay-position overlay-position
+                                               :url url
+                                               :close-click-outside close-click-outside
+                                               :background-overlay background-overlay
+                                               :preserve-scroll preserve-scroll})))]
+        (commit-change
+         file
+         {:type :mod-obj
+          :page-id (:current-page-id file)
+          :id from-id
 
-        interactions (-> (lookup-shape file from-id)
-                         :interactions
-                         (conjv
-                          (d/without-nils {:event-type event-type
-                                           :action-type action-type
-                                           :delay delay
-                                           :destination destination
-                                           :overlay-pos-type overlay-pos-type
-                                           :overlay-position overlay-position
-                                           :url url
-                                           :close-click-outside close-click-outside
-                                           :background-overlay background-overlay
-                                           :preserve-scroll preserve-scroll})))]
-    (commit-change
-     file
-     {:type :mod-obj
-      :page-id (:current-page-id file)
-      :id from-id
-
-      :operations
-      [{:type :set :attr :interactions :val interactions}]})))
+          :operations
+          [{:type :set :attr :interactions :val interactions}]})))))
 
 (defn generate-changes
   [file]

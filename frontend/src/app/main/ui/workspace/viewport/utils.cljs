@@ -16,30 +16,54 @@
 (defn- text-corrected-transform
   "If we apply a scale directly to the texts it will show deformed so we need to create this
   correction matrix to \"undo\" the resize but keep the other transformations."
-  [{:keys [points transform transform-inverse]} current-transform modifiers]
+  [{:keys [x y width height points transform transform-inverse] :as shape} current-transform modifiers]
 
   (let [corner-pt (first points)
-        transform (or transform (gmt/matrix))
-        transform-inverse (or transform-inverse (gmt/matrix))
+        corner-pt (cond-> corner-pt (some? transform-inverse) (gpt/transform transform-inverse))
 
-        current-transform
-        (if (some? (:resize-vector modifiers))
-          (gmt/multiply
-           current-transform
-           transform
-           (gmt/scale-matrix (gpt/inverse (:resize-vector modifiers)) (gpt/transform corner-pt transform-inverse))
-           transform-inverse)
-          current-transform)
+        resize-x? (some? (:resize-vector modifiers))
+        resize-y? (some? (:resize-vector-2 modifiers))
 
-        current-transform
-        (if (some? (:resize-vector-2 modifiers))
-          (gmt/multiply
-           current-transform
-           transform
-           (gmt/scale-matrix (gpt/inverse (:resize-vector-2 modifiers)) (gpt/transform corner-pt transform-inverse))
-           transform-inverse)
-          current-transform)]
-    current-transform))
+        flip-x? (neg? (get-in modifiers [:resize-vector :x]))
+        flip-y? (or (neg? (get-in modifiers [:resize-vector :y]))
+                    (neg? (get-in modifiers [:resize-vector-2 :y])))
+
+        result (cond-> (gmt/matrix)
+                 (and (some? transform) (or resize-x? resize-y?))
+                 (gmt/multiply transform)
+
+                 resize-x?
+                 (gmt/scale (gpt/inverse (:resize-vector modifiers)) corner-pt)
+
+                 resize-y?
+                 (gmt/scale (gpt/inverse (:resize-vector-2 modifiers)) corner-pt)
+
+                 flip-x?
+                 (gmt/scale (gpt/point -1 1) corner-pt)
+
+                 flip-y?
+                 (gmt/scale (gpt/point 1 -1) corner-pt)
+
+                 (and (some? transform) (or resize-x? resize-y?))
+                 (gmt/multiply transform-inverse))
+
+        [width height]
+        (if (or resize-x? resize-y?)
+          (let [pc (-> (gpt/point x y)
+                       (gpt/transform transform)
+                       (gpt/transform current-transform))
+
+                pw (-> (gpt/point (+ x width) y)
+                       (gpt/transform transform)
+                       (gpt/transform current-transform))
+
+                ph (-> (gpt/point x (+ y height))
+                       (gpt/transform transform)
+                       (gpt/transform current-transform))]
+            [(gpt/distance pc pw) (gpt/distance pc ph)])
+          [width height])]
+
+    [result width height]))
 
 (defn get-nodes
   "Retrieve the DOM nodes to apply the matrix transformation"
@@ -48,6 +72,7 @@
 
         frame? (= :frame type)
         group? (= :group type)
+        text?  (= :text type)
         mask?  (and group? masked-group?)
 
         ;; When the shape is a frame we maybe need to move its thumbnail
@@ -68,6 +93,11 @@
       group?
       []
 
+      text?
+      [shape-node
+       (dom/query shape-node "foreignObject")
+       (dom/query shape-node ".text-shape")]
+
       :else
       [shape-node])))
 
@@ -76,11 +106,23 @@
     (when-let [nodes (get-nodes shape)]
       (let [transform (get transforms id)
             modifiers (get-in modifiers [id :modifiers])
-            transform (case type
-                        :text (text-corrected-transform shape transform modifiers)
-                        transform)]
+
+            [text-transform text-width text-height]
+            (when (= :text type)
+              (text-corrected-transform shape transform modifiers))]
+
         (doseq [node nodes]
-          (when (and (some? transform) (some? node))
+          (cond
+            (dom/class? node "text-shape")
+            (when (some? text-transform)
+              (dom/set-attribute node "transform" (str text-transform)))
+
+            (= (dom/get-tag-name node) "foreignObject")
+            (when (and (some? text-width) (some? text-height))
+              (dom/set-attribute node "width" text-width)
+              (dom/set-attribute node "height" text-height))
+
+            (and (some? transform) (some? node))
             (dom/set-attribute node "transform" (str transform))))))))
 
 (defn remove-transform [shapes]
@@ -88,7 +130,13 @@
     (when-let [nodes (get-nodes shape)]
       (doseq [node nodes]
         (when (some? node)
-          (dom/remove-attribute node "transform"))))))
+          (cond
+            (= (dom/get-tag-name node) "foreignObject")
+            ;; The shape width/height will be automaticaly setup when the modifiers are applied
+            nil
+
+            :else
+            (dom/remove-attribute node "transform")))))))
 
 (defn format-viewbox [vbox]
   (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))

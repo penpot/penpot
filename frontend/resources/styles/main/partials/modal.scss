@@ -322,6 +322,10 @@
       fill: $color-success;
     }
 
+    .icon-msg-warning {
+      fill: $color-warning;
+    }
+
     .icon-close {
       transform: rotate(45deg);
       fill: $color-danger;
@@ -390,6 +394,13 @@
         width: 20px;
         height: 20px;
         fill: $color-white;
+      }
+    }
+
+    &.warning {
+      background: $color-warning-lighter;
+      .icon {
+        background: $color-warning;
       }
     }
   }

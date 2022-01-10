@@ -18,7 +18,8 @@
   [width style]
   (let [values (case style
                  :mixed [5 5 1 5]
-                 :dotted [5 5]
+                 ;; We want 0 so they are circles
+                 :dotted [(- width) 5]
                  :dashed [10 10]
                  nil)]
 
@@ -132,8 +133,12 @@
               ;; for inner or outer strokes.
               (and (spec/stroke-caps-line (:stroke-cap-start shape))
                    (= (:stroke-cap-start shape) (:stroke-cap-end shape))
-                   (not (#{:inner :outer} (:stroke-alignment shape))))
+                   (not (#{:inner :outer} (:stroke-alignment shape)))
+                   (not= :dotted stroke-style))
               (assoc :strokeLinecap (:stroke-cap-start shape))
+
+              (= :dotted stroke-style)
+              (assoc :strokeLinecap "round")
 
               ;; For other cap types we use markers.
               (and (or (spec/stroke-caps-marker (:stroke-cap-start shape))

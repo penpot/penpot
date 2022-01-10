@@ -111,6 +111,16 @@
   [state]
   (impl/cursorToEnd state))
 
+(defn setup-block-styles
+  [state blocks attrs]
+  (if (empty? blocks)
+    state
+    (->> blocks
+         (reduce
+          (fn [state block-key]
+            (impl/updateBlockData state block-key (clj->js attrs)))
+          state))))
+
 (defn apply-block-styles-to-content
   [state blocks]
   (if (empty? blocks)
@@ -130,3 +140,37 @@
 (defn insert-text [state text attrs]
   (let [style (txt/attrs-to-styles attrs)]
     (impl/insertText state text (clj->js attrs) (clj->js style))))
+
+(defn get-style-override [state]
+  (.getInlineStyleOverride state))
+
+(defn set-style-override [state inline-style]
+  (impl/setInlineStyleOverride state inline-style))
+
+(defn content-equals [state other]
+  (.equals (.getCurrentContent state) (.getCurrentContent other)))
+
+(defn selection-equals [state other]
+  (impl/selectionEquals (.getSelection state) (.getSelection other)))
+
+(defn get-content-changes
+  [old-state state]
+  (let [old-blocks (js->clj (.toJS (.getBlockMap (.getCurrentContent ^js old-state)))
+                            :keywordize-keys false)
+        new-blocks (js->clj (.toJS (.getBlockMap (.getCurrentContent ^js state)))
+                            :keywordize-keys false)]
+    (merge
+     (into {}
+           (comp (filter #(contains? new-blocks (first %)))
+                 (map (fn [[bkey bstate]]
+                        [bkey
+                         {:old (get bstate "text")
+                          :new (get-in new-blocks [bkey "text"])}])))
+           old-blocks)
+     (into {}
+           (comp (filter #(not (contains? old-blocks (first %))))
+                 (map (fn [[bkey bstate]]
+                        [bkey
+                         {:old nil
+                          :new (get bstate "text")}])))
+           new-blocks))))

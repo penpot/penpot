@@ -451,9 +451,6 @@
          rt-modif (:rotation modifiers)]
 
      (cond-> (gmt/matrix)
-       (some? displacement)
-       (gmt/multiply displacement)
-
        (some? resize-1)
        (-> (gmt/translate origin-1)
            (gmt/multiply resize-transform)
@@ -467,6 +464,9 @@
            (gmt/scale resize-2)
            (gmt/multiply resize-transform-inverse)
            (gmt/translate (gpt/negate origin-2)))
+
+       (some? displacement)
+       (gmt/multiply displacement)
 
        (some? rt-modif)
        (-> (gmt/translate center)

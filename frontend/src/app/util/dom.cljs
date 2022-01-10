@@ -17,21 +17,24 @@
 ;; --- Deprecated methods
 
 (defn event->inner-text
-  [e]
-  (.-innerText (.-target e)))
+  [^js e]
+  (when (some? e)
+    (.-innerText (.-target e))))
 
 (defn event->value
-  [e]
-  (.-value (.-target e)))
+  [^js e]
+  (when (some? e)
+    (.-value (.-target e))))
 
 (defn event->target
-  [e]
-  (.-target e))
+  [^js e]
+  (when (some? e)
+    (.-target e)))
 
 ;; --- New methods
 
 (defn set-html-title
-  [title]
+  [^string title]
   (set! (.-title globals/document) title))
 
 (defn set-page-style
@@ -61,98 +64,117 @@
   (dom/getElement id))
 
 (defn get-elements-by-tag
-  [node tag]
-  (.getElementsByTagName node tag))
+  [^js node tag]
+  (when (some? node)
+    (.getElementsByTagName node tag)))
 
 (defn stop-propagation
-  [e]
-  (when e
-    (.stopPropagation e)))
+  [^js event]
+  (when event
+    (.stopPropagation event)))
 
 (defn prevent-default
-  [e]
-  (when e
-    (.preventDefault e)))
+  [^js event]
+  (when event
+    (.preventDefault event)))
 
 (defn get-target
   "Extract the target from event instance."
-  [event]
-  (.-target event))
+  [^js event]
+  (when (some? event)
+    (.-target event)))
 
 (defn get-current-target
   "Extract the current target from event instance (different from target
    when event triggered in a child of the subscribing element)."
-  [event]
-  (.-currentTarget event))
+  [^js event]
+  (when (some? event)
+    (.-currentTarget event)))
 
 (defn get-parent
-  [dom]
-  (.-parentElement ^js dom))
+  [^js node]
+  (when (some? node)
+    (.-parentElement ^js node)))
 
 (defn get-value
   "Extract the value from dom node."
-  [node]
-  (.-value node))
+  [^js node]
+  (when (some? node)
+    (.-value node)))
 
 (defn get-attribute
   "Extract the value of one attribute of a dom node."
-  [node attr-name]
-  (.getAttribute ^js node attr-name))
+  [^js node ^string attr-name]
+  (when (some? node)
+    (.getAttribute ^js node attr-name)))
 
 (def get-target-val (comp get-value get-target))
 
 (defn click
   "Click a node"
-  [node]
-  (.click node))
+  [^js node]
+  (when (some? node)
+    (.click node)))
 
 (defn get-files
   "Extract the files from dom node."
-  [node]
-  (array-seq (.-files node)))
+  [^js node]
+  (when (some? node)
+    (array-seq (.-files node))))
 
 (defn checked?
   "Check if the node that represents a radio
   or checkbox is checked or not."
-  [node]
-  (.-checked node))
+  [^js node]
+  (when (some? node)
+    (.-checked node)))
 
 (defn valid?
   "Check if the node that is a form input
   has a valid value, against html5 form validation
   properties (required, min/max, pattern...)."
-  [node]
-  (.-valid (.-validity node)))
+  [^js node]
+  (when (some? node)
+    (when-let [validity (.-validity node)]
+      (.-valid validity))))
 
 (defn set-validity!
   "Manually set the validity status of a node that
   is a form input. If the state is an empty string,
   the input will be valid. If not, the string will
   be set as the error message."
-  [node status]
-  (.setCustomValidity node status)
-  (.reportValidity node))
+  [^js node status]
+  (when (some? node)
+    (.setCustomValidity node status)
+    (.reportValidity node)))
 
 (defn clean-value!
-  [node]
-  (set! (.-value node) ""))
+  [^js node]
+  (when (some? node)
+    (set! (.-value node) "")))
 
 (defn set-value!
-  [node value]
-  (set! (.-value ^js node) value))
+  [^js node value]
+  (when (some? node)
+    (set! (.-value ^js node) value)))
 
 (defn select-text!
-  [node]
-  (.select ^js node))
+  [^js node]
+  (when (some? node)
+    (.select ^js node)))
 
 (defn ^boolean equals?
-  [node-a node-b]
-  (.isEqualNode ^js node-a node-b))
+  [^js node-a ^js node-b]
+
+  (or (and (nil? node-a) (nil? node-b))
+      (and (some? node-a)
+           (.isEqualNode ^js node-a node-b))))
 
 (defn get-event-files
   "Extract the files from event instance."
-  [event]
-  (get-files (get-target event)))
+  [^js event]
+  (when (some? event)
+    (get-files (get-target event))))
 
 (defn create-element
   ([tag]
@@ -161,50 +183,58 @@
    (.createElementNS globals/document ns tag)))
 
 (defn set-html!
-  [el html]
-  (set! (.-innerHTML el) html))
+  [^js el html]
+  (when (some? el)
+    (set! (.-innerHTML el) html)))
 
 (defn append-child!
-  [el child]
-  (.appendChild ^js el child))
+  [^js el child]
+  (when (some? el)
+    (.appendChild ^js el child)))
 
 (defn get-first-child
-  [el]
-  (.-firstChild el))
+  [^js el]
+  (when (some? el)
+    (.-firstChild el)))
 
 (defn get-tag-name
-  [el]
-  (.-tagName el))
+  [^js el]
+  (when (some? el)
+    (.-tagName el)))
 
 (defn get-outer-html
-  [el]
-  (.-outerHTML el))
+  [^js el]
+  (when (some? el)
+    (.-outerHTML el)))
 
 (defn get-inner-text
-  [el]
-  (.-innerText el))
+  [^js el]
+  (when (some? el)
+    (.-innerText el)))
 
 (defn query
-  [el query]
+  [^js el ^string query]
   (when (some? el)
     (.querySelector el query)))
 
 (defn get-client-position
-  [event]
+  [^js event]
   (let [x (.-clientX event)
         y (.-clientY event)]
     (gpt/point x y)))
 
 (defn get-offset-position
-  [event]
-  (let [x (.-offsetX event)
-        y (.-offsetY event)]
-    (gpt/point x y)))
+  [^js event]
+  (when (some? event)
+    (let [x (.-offsetX event)
+          y (.-offsetY event)]
+      (gpt/point x y))))
 
 (defn get-client-size
-  [node]
-  {:width (.-clientWidth ^js node)
-   :height (.-clientHeight ^js node)})
+  [^js node]
+  (when (some? node)
+    {:width (.-clientWidth ^js node)
+     :height (.-clientHeight ^js node)}))
 
 (defn get-bounding-rect
   [node]
@@ -222,12 +252,12 @@
    :height (.-innerHeight ^js js/window)})
 
 (defn focus!
-  [node]
+  [^js node]
   (when (some? node)
     (.focus node)))
 
 (defn blur!
-  [node]
+  [^js node]
   (when (some? node)
     (.blur node)))
 
@@ -245,8 +275,9 @@
               :hint "seems like the current browser does not support fullscreen api.")))
 
 (defn ^boolean blob?
-  [v]
-  (instance? js/Blob v))
+  [^js v]
+  (when (some? v)
+    (instance? js/Blob v)))
 
 (defn create-blob
   "Create a blob from content."
@@ -265,20 +296,24 @@
   {:pre [(blob? b)]}
   (js/URL.createObjectURL b))
 
-(defn set-property! [node property value]
-  (.setAttribute node property value))
+(defn set-property! [^js node property value]
+  (when (some? node)
+    (.setAttribute node property value)))
 
-(defn set-text! [node text]
-  (set! (.-textContent node) text))
+(defn set-text! [^js node text]
+  (when (some? node)
+    (set! (.-textContent node) text)))
 
-(defn set-css-property! [node property value]
-  (.setProperty (.-style ^js node) property value))
+(defn set-css-property! [^js node property value]
+  (when (some? node)
+    (.setProperty (.-style ^js node) property value)))
 
-(defn capture-pointer [event]
-  (-> event get-target (.setPointerCapture (.-pointerId event))))
+(defn capture-pointer [^js event]
+  (when (some? event)
+    (-> event get-target (.setPointerCapture (.-pointerId event)))))
 
-(defn release-pointer [event]
-  (when (.-pointerId event)
+(defn release-pointer [^js event]
+  (when (and (some? event) (.-pointerId event))
     (-> event get-target (.releasePointerCapture (.-pointerId event)))))
 
 (defn get-root []
@@ -295,19 +330,23 @@
                         (partition 2 params))))
 
 (defn ^boolean class? [node class-name]
-  (let [class-list (.-classList ^js node)]
-    (.contains ^js class-list class-name)))
+  (when (some? node)
+    (let [class-list (.-classList ^js node)]
+      (.contains ^js class-list class-name))))
 
-(defn add-class! [node class-name]
-  (let [class-list (.-classList ^js node)]
-    (.add ^js class-list class-name)))
+(defn add-class! [^js node class-name]
+  (when (some? node)
+    (let [class-list (.-classList ^js node)]
+      (.add ^js class-list class-name))))
 
-(defn remove-class! [node class-name]
-  (let [class-list (.-classList ^js node)]
-    (.remove ^js class-list class-name)))
+(defn remove-class! [^js node class-name]
+  (when (some? node)
+    (let [class-list (.-classList ^js node)]
+      (.remove ^js class-list class-name))))
 
-(defn child? [node1 node2]
-  (.contains ^js node2 ^js node1))
+(defn child? [^js node1 ^js node2]
+  (when (some? node1)
+    (.contains ^js node2 ^js node1)))
 
 (defn get-user-agent []
   (.-userAgent globals/navigator))
@@ -315,11 +354,13 @@
 (defn get-active []
   (.-activeElement globals/document))
 
-(defn active? [node]
-  (= (get-active) node))
+(defn active? [^js node]
+  (when (some? node)
+    (= (get-active) node)))
 
 (defn get-data [^js node ^string attr]
-  (.getAttribute node (str "data-" attr)))
+  (when (some? node)
+    (.getAttribute node (str "data-" attr))))
 
 (defn mtype->extension [mtype]
   ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
@@ -336,42 +377,53 @@
     nil))
 
 (defn set-attribute [^js node ^string attr value]
-  (.setAttribute node attr value))
+  (when (some? node)
+    (.setAttribute node attr value)))
 
 (defn remove-attribute [^js node ^string attr]
-  (.removeAttribute node attr))
+  (when (some? node)
+    (.removeAttribute node attr)))
 
 (defn get-scroll-pos
-  [element]
-  (.-scrollTop ^js element))
+  [^js element]
+  (when (some? element)
+    (.-scrollTop element)))
 
 (defn set-scroll-pos!
-  [element scroll]
-  (obj/set! ^js element "scrollTop" scroll))
+  [^js element scroll]
+  (when (some? element)
+    (obj/set! element "scrollTop" scroll)))
 
 (defn scroll-into-view!
-  ([element]
-   (.scrollIntoView ^js element false))
-  ([element scroll-top]
-   (.scrollIntoView ^js element scroll-top)))
+  ([^js element]
+   (when (some? element)
+     (.scrollIntoView element false)))
+
+  ([^js element scroll-top]
+   (when (some? element)
+     (.scrollIntoView element scroll-top))))
 
 (defn scroll-into-view-if-needed!
-  ([element]
-   (.scrollIntoViewIfNeeded ^js element false))
-  ([element scroll-top]
-   (.scrollIntoViewIfNeeded ^js element scroll-top)))
+  ([^js element]
+   (when (some? element)
+     (.scrollIntoViewIfNeeded ^js element false)))
+
+  ([^js element scroll-top]
+   (when (some? element)
+     (.scrollIntoViewIfNeeded ^js element scroll-top))))
 
 (defn is-in-viewport?
-  [element]
-  (let [rect   (.getBoundingClientRect element)
-        height (or (.-innerHeight js/window)
-                   (.. js/document -documentElement -clientHeight))
-        width  (or (.-innerWidth js/window)
-                   (.. js/document -documentElement -clientWidth))]
-    (and (>= (.-top rect) 0)
-         (>= (.-left rect) 0)
-         (<= (.-bottom rect) height)
-         (<= (.-right rect) width))))
+  [^js element]
+  (when (some? element)
+    (let [rect   (.getBoundingClientRect element)
+          height (or (.-innerHeight js/window)
+                     (.. js/document -documentElement -clientHeight))
+          width  (or (.-innerWidth js/window)
+                     (.. js/document -documentElement -clientWidth))]
+      (and (>= (.-top rect) 0)
+           (>= (.-left rect) 0)
+           (<= (.-bottom rect) height)
+           (<= (.-right rect) width)))))
 
 (defn trigger-download-uri
   [filename mtype uri]

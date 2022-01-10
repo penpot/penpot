@@ -31,6 +31,8 @@
 (def max-safe-int (int 1e6))
 (def min-safe-int (int -1e6))
 
+(def valid? s/valid?)
+
 ;; --- Conformers
 
 (defn uuid-conformer
@@ -216,7 +218,10 @@
                 :code :spec-validation
                 :hint hint
                 :ctx  ctx
+                :value val
                 ::s/problems (::s/problems data)))))
+
+
 
 (defmacro assert
   "Development only assertion macro."

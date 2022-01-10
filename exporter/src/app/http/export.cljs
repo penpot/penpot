@@ -80,9 +80,11 @@
         (p/then (fn [results]
                   (reduce #(zip/add! %1 (:filename %2) (:content %2)) (zip/create) results)))
         (p/then (fn [fzip]
+                  (.generateAsync ^js fzip #js {:type "uint8array"})))
+        (p/then (fn [data]
                   {:status 200
                    :headers {"content-type" "application/zip"}
-                   :body (.generateNodeStream ^js fzip)})))))
+                   :body data})))))
 
 (defn- perform-export
   [params]

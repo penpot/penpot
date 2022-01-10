@@ -176,7 +176,9 @@
           (rx/tap #(reset! revn (:revn %)))
           (rx/ignore))
 
-     (rp/mutation :persist-temp-file {:id file-id}))))
+     (->> (rp/mutation :persist-temp-file {:id file-id})
+          ;; We use merge to keep some information not stored in back-end
+          (rx/map #(merge file %))))))
 
 (defn upload-media-files
   "Upload a image to the backend and returns its id"
@@ -457,8 +459,7 @@
 
   (let [progress-str (rx/subject)
         context (assoc context :progress progress-str)]
-    (rx/merge
-     progress-str
+    [progress-str
      (->> (rx/of file)
           (rx/flat-map (partial process-pages context))
           (rx/tap #(progress! context :process-colors))
@@ -470,7 +471,7 @@
           (rx/tap #(progress! context :process-components))
           (rx/flat-map (partial process-library-components context))
           (rx/flat-map (partial send-changes context))
-          (rx/tap #(rx/end! progress-str))))))
+          (rx/tap #(rx/end! progress-str)))]))
 
 (defn create-files
   [context files]
@@ -482,7 +483,6 @@
           (rx/flat-map
            (fn [context]
              (->> (create-file context)
-                  (rx/tap #(.log js/console "create-file" (clj->js %)))
                   (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)
@@ -509,20 +509,29 @@
   (let [context {:project-id project-id
                  :resolve    (resolve-factory)}]
     (->> (create-files context files)
-         (rx/catch #(.error js/console "IMPORT ERROR" %))
+         (rx/catch #(.error js/console "IMPORT ERROR" (clj->js %)))
          (rx/flat-map
           (fn [[file data]]
             (->> (rx/concat
                   (->> (uz/load-from-url (:uri data))
                        (rx/map #(-> context (assoc :zip %) (merge data)))
-                       (rx/flat-map #(process-file % file)))
-                  (rx/of
-                   {:status :import-success
-                    :file-id (:file-id data)}))
+                       (rx/flat-map
+                        (fn [context]
+                          ;; process file retrieves a stream that will emit progress notifications
+                          ;; and other that will emit the files once imported
+                          (let [[progress-stream file-stream] (process-file context file)]
+                            (rx/merge
+                             progress-stream
+                             (->> file-stream
+                                  (rx/map
+                                   (fn [file]
+                                     {:status :import-finish
+                                      :errors (:errors file)
+                                      :file-id (:file-id data)})))))))))
 
                  (rx/catch
                      (fn [err]
-                       (.error js/console "ERROR" (:file-id data) err)
+                       (.error js/console "ERROR" (str (:file-id data)) (clj->js err) (clj->js (.-data err)))
                        (rx/of {:status :import-error
                                :file-id (:file-id data)
                                :error (.-message err)

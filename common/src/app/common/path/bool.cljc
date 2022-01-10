@@ -212,6 +212,27 @@
          (d/seek overlap-single?)
          (some?))))
 
+(defn fix-move-to
+  [content]
+  ;; Remove the field `:prev` and makes the necessaries `move-to`
+  ;; then clean the subpaths
+
+  (loop [current (first content)
+         content (rest content)
+         prev nil
+         result []]
+
+    (if (nil? current)
+      result
+
+      (let [result (if (not= (:prev current) prev)
+                     (conj result (upc/make-move-to (:prev current)))
+                     result)]
+        (recur (first content)
+               (rest content)
+               (gsp/command->point current)
+               (conj result (dissoc current :prev)))))))
+
 (defn create-union [content-a content-a-split content-b content-b-split sr-a sr-b]
   ;; Pick all segments in content-a that are not inside content-b
   ;; Pick all segments in content-b that are not inside content-a
@@ -225,7 +246,7 @@
 
         content-geom (gsp/content->geom-data content)
 
-        content-sr (gsp/content->selrect content)
+        content-sr (gsp/content->selrect (fix-move-to content))
 
         ;; Overlapping segments should be added when they are part of the border
         border-content
@@ -265,36 +286,22 @@
   ;; Pick all segments
   (d/concat-vec content-a content-b))
 
-(defn fix-move-to
-  [content]
-  ;; Remove the field `:prev` and makes the necessaries `move-to`
-  ;; then clean the subpaths
-
-  (loop [current (first content)
-         content (rest content)
-         prev nil
-         result []]
-
-    (if (nil? current)
-      result
-
-      (let [result (if (not= (:prev current) prev)
-                     (conj result (upc/make-move-to (:prev current)))
-                     result)]
-        (recur (first content)
-               (rest content)
-               (gsp/command->point current)
-               (conj result (dissoc current :prev)))))))
-
 (defn content-bool-pair
   [bool-type content-a content-b]
 
-  (let [content-a (-> content-a (close-paths) (add-previous))
+  (let [;; We need to reverse the second path when making a difference/intersection/exclude
+        ;; and both shapes are in the same direction
+        should-reverse? (and (not= :union bool-type)
+                            (= (ups/clockwise? content-b)
+                               (ups/clockwise? content-a)))
+
+        content-a (-> content-a
+                      (close-paths)
+                      (add-previous))
 
         content-b (-> content-b
                       (close-paths)
-                      (cond-> (ups/clockwise? content-b)
-                        (ups/reverse-content))
+                      (cond-> should-reverse? (ups/reverse-content))
                       (add-previous))
 
         sr-a (gsp/content->selrect content-a)

@@ -32,6 +32,14 @@
 - After team onboarding importing a file will import into the team drafts [Taiga #2408](https://tree.taiga.io/project/penpot/issue/2408)
 - Fix problem exporting shapes from handoff mode [Taiga #2386](https://tree.taiga.io/project/penpot/issue/2386)
 - Fix lock/hide elements in context menu when multiples shapes selected [Taiga #2340](https://tree.taiga.io/project/penpot/issue/2340)
+- Fix problem with booleans [Taiga #2356](https://tree.taiga.io/project/penpot/issue/2356)
+- Fix line-height/letter-spacing inputs behaviour [Taiga #2331](https://tree.taiga.io/project/penpot/issue/2331)
+- Fix dotted style in strokes [Taiga #2312](https://tree.taiga.io/project/penpot/issue/2312)
+- Fix problem when resizing texts inside groups [Taiga #2310](https://tree.taiga.io/project/penpot/issue/2310)
+- Fix problem with multiple exports [Taiga #2468](https://tree.taiga.io/project/penpot/issue/2468)
+- Allow import to continue from recoverable failures [#1412](https://github.com/penpot/penpot/issues/1412)
+- Improved behaviour on text options when not text is selected [Taiga #2390](https://tree.taiga.io/project/penpot/issue/2390)
+- Fix decimal numbers in export viewbox [Taiga #2290](https://tree.taiga.io/project/penpot/issue/2290)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
@@ -75,8 +83,6 @@
 ### :arrow_up: Deps updates
 
 - Update log4j2 dependency.
->>>>>>> main
-
 
 # 1.10.2-beta
 
@@ -134,6 +140,8 @@
 - Add placeholder to create shareable link
 - Fix project files count not refreshing correctly after import [Taiga #2216](https://tree.taiga.io/project/penpot/issue/2216)
 - Remove button after import process finish [Taiga #2215](https://tree.taiga.io/project/penpot/issue/2215)
+- Fix problem with styles in the viewer [Taiga #2467](https://tree.taiga.io/project/penpot/issue/2467)
+- Fix default state in viewer [Taiga #2465](https://tree.taiga.io/project/penpot/issue/2465)
 
 ### :heart: Community contributions by (Thank you!)
 
