@@ -123,7 +123,11 @@
             text-ids  (filter is-text? ids)
             shape-ids (filter (comp not is-text?) ids)
 
-            attrs (cond-> {}
+            attrs (cond-> {:fill-color nil
+                           :fill-color-gradient nil
+                           ::fill-color-ref-file nil
+                           :fill-color-ref-id nil
+                           :fill-opacity nil}
                     (contains? color :color)
                     (assoc :fill-color (:color color))
 
@@ -138,7 +142,7 @@
 
                     (contains? color :opacity)
                     (assoc :fill-opacity (:opacity color)))]
-
+        
         (rx/concat
          (rx/from (map #(dwt/update-text-attrs {:id % :attrs attrs}) text-ids))
          (rx/of (dch/update-shapes shape-ids (fn [shape] (d/merge shape attrs)))))))))
@@ -148,7 +152,11 @@
   (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [attrs (cond-> {}
+      (let [attrs (cond-> {:stroke-color nil
+                           :stroke-color-ref-id nil
+                           :stroke-color-ref-file nil
+                           :stroke-color-gradient nil
+                           :stroke-opacity nil}
                     (contains? color :color)
                     (assoc :stroke-color (:color color))
 

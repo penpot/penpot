@@ -17,6 +17,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix remove gradient if any when applying color from library [Taiga #2299](https://tree.taiga.io/project/penpot/issue/2299).
 - Fix Enter as key action to exit edit path [Taiga #2444](https://tree.taiga.io/project/penpot/issue/2444).
 - Fix add fill color from palette to groups and components [Taiga #2313](https://tree.taiga.io/project/penpot/issue/2313).
 - Fix default project name in all languages [Taiga #2280](https://tree.taiga.io/project/penpot/issue/2280).
