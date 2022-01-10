@@ -797,7 +797,7 @@
         apply-color
         (fn [_ event]
           (let [ids (wsh/lookup-selected @st/state)]
-            (if (kbd/shift? event)
+            (if (kbd/alt? event)
               (st/emit! (dc/change-stroke ids color))
               (st/emit! (dc/change-fill ids color)))))
 
