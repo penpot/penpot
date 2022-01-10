@@ -42,6 +42,7 @@
 - Fix decimal numbers in export viewbox [Taiga #2290](https://tree.taiga.io/project/penpot/issue/2290)
 
 ### :arrow_up: Deps updates
+
 ### :heart: Community contributions by (Thank you!)
 
 - Spelling fixes (by @jsoref) [#1340](https://github.com/penpot/penpot/pull/1340).
