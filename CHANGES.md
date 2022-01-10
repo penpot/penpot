@@ -150,6 +150,7 @@
 - Remove button after import process finish [Taiga #2215](https://tree.taiga.io/project/penpot/issue/2215)
 - Fix problem with styles in the viewer [Taiga #2467](https://tree.taiga.io/project/penpot/issue/2467)
 - Fix default state in viewer [Taiga #2465](https://tree.taiga.io/project/penpot/issue/2465)
+- Fix division by zero in bool operation [Taiga #2349](https://tree.taiga.io/project/penpot/issue/2349)
 
 ### :heart: Community contributions by (Thank you!)
 

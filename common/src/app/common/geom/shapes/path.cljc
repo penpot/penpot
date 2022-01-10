@@ -119,7 +119,9 @@
         ;; normalize value
         d (mth/sqrt (+ (* x x) (* y y)))]
 
-    (gpt/point (/ x d) (/ y d))))
+    (if (mth/almost-zero? d)
+      (gpt/point 0 0)
+      (gpt/point (/ x d) (/ y d)))))
 
 (defn curve-windup
   [curve t]
