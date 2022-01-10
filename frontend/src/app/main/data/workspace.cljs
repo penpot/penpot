@@ -1386,7 +1386,9 @@
      (watch [_ state _]
        (let [{:keys [current-file-id current-page-id]} state
              pparams {:file-id (or file-id current-file-id)}
-             qparams {:page-id (or page-id current-page-id) :section section}]
+             qparams (cond-> {:page-id (or page-id current-page-id)}
+                       (some? section)
+                       (assoc :section section))]
          (rx/of ::dwp/force-persist
                 (rt/nav-new-window* {:rname :viewer
                                      :path-params pparams
