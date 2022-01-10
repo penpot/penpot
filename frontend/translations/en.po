@@ -55,7 +55,7 @@ msgstr "Login here"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
-msgstr "Sign in"
+msgstr "Login"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-subtitle"
@@ -79,7 +79,7 @@ msgstr "Login with Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "Sign in with LDAP"
+msgstr "Login with LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
