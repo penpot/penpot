@@ -17,4 +17,4 @@ if [ -f ./environ ]; then
 fi
 
 set -x
-exec $JAVA_CMD $JVM_OPTS -classpath "$(cat classpath)" -Dlog4j2.configurationFile=./log4j2.xml "$@" clojure.main -m app.main
+exec $JAVA_CMD $JVM_OPTS "$@" -jar penpot.jar -m app.main

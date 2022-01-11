@@ -9,7 +9,8 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.util.time :as dt]
-   [integrant.core :as ig]))
+   [integrant.core :as ig])
+  (:gen-class))
 
 (def system-config
   {:app.db/pool
