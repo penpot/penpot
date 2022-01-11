@@ -215,7 +215,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect 1"})
+                                     {:name "Rect-1"})
                    (thp/make-component :instance1
                                        [(thp/id :shape1)]))
 
@@ -247,8 +247,7 @@
                      new-state
                      new-component-id)]
 
-                (t/is (= (:name component2)
-                         "Component-2")))))
+                (t/is (= (:name component2) "Rect-2")))))
 
           (rx/subs done #(throw %))))))
 
@@ -292,7 +291,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect 1"})
+                                     {:name "Rect-1"})
                    (thp/make-component :instance1
                                        [(thp/id :shape1)]))
 
@@ -320,10 +319,10 @@
 
                 (t/is (not= (:id instance1) (:id instance2)))
                 (t/is (= (:id component) component-id))
-                (t/is (= (:name instance2) "Component-2"))
-                (t/is (= (:name shape2) "Rect 1"))
-                (t/is (= (:name c-instance2) "Component-1"))
-                (t/is (= (:name c-shape2) "Rect 1")))))
+                (t/is (= (:name instance2) "Rect-3"))
+                (t/is (= (:name shape2) "Rect-1"))
+                (t/is (= (:name c-instance2) "Rect-2"))
+                (t/is (= (:name c-shape2) "Rect-1")))))
 
           (rx/subs done #(throw %))))))
 

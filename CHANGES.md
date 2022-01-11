@@ -46,6 +46,7 @@
 - Fix "open in new tab" on dashboard [Taiga #2235](https://tree.taiga.io/project/penpot/issue/2355)
 - Changing pages while comments activated will not close the panel [#1350](https://github.com/penpot/penpot/issues/1350)
 - Fix navigate comments in right sidebar [Taiga #2163](https://tree.taiga.io/project/penpot/issue/2163)
+- Fix keep name of component equal to the shape name [Taiga #2341](https://tree.taiga.io/project/penpot/issue/2341)
 
 ### :arrow_up: Deps updates
 
