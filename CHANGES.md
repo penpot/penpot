@@ -45,6 +45,8 @@
 
 ### :arrow_up: Deps updates
 
+- Update devenv docker image dependencies.
+
 ### :heart: Community contributions by (Thank you!)
 
 - Spelling fixes (by @jsoref) [#1340](https://github.com/penpot/penpot/pull/1340).
