@@ -445,7 +445,7 @@
                                           :y (+ (:y srect) (/ (- (:height srect) height) 2)))))))
 
           (setup [state local]
-            (if (:vbox local)
+            (if (and (:vbox local) (:vport local))
               (update* local)
               (initialize state local)))]
 

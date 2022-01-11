@@ -96,8 +96,7 @@
                      :file-id (:file-id thread)}
             qparams {:page-id (:page-id thread)}]
         (rx/merge
-         (rx/of (rt/nav :workspace pparams qparams)
-                (dw/select-for-drawing :comments))
+         (rx/of (rt/nav :workspace pparams qparams))
          (->> stream
               (rx/filter (ptk/type? ::dw/initialize-viewport))
               (rx/take 1)
