@@ -111,6 +111,16 @@
           (st/emitf (dw/go-to-layout :layers)
                     (dw/start-rename-shape (:id frame))))
 
+        on-context-menu
+        (mf/use-callback
+          (mf/deps frame)
+          (fn [bevent]
+            (let [event    (.-nativeEvent bevent)
+                  position (dom/get-client-position event)]
+              (dom/prevent-default event)
+              (dom/stop-propagation event)
+              (st/emit! (dw/show-shape-context-menu {:position position :shape frame})))))
+
         on-pointer-enter
         (mf/use-callback
          (mf/deps (:id frame) on-frame-enter)
@@ -134,6 +144,7 @@
             :style {:fill (when selected? "var(--color-primary-dark)")}
             :on-mouse-down on-mouse-down
             :on-double-click on-double-click
+            :on-context-menu on-context-menu
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
      (:name frame)]))

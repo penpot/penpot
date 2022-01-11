@@ -28,16 +28,6 @@
    (fn []
      (st/emit! (dws/change-hover-state id false)))))
 
-(defn use-context-menu
-  [shape]
-  (mf/use-callback
-   (mf/deps shape)
-   (fn [event]
-     (dom/prevent-default event)
-     (dom/stop-propagation event)
-     (let [position (dom/get-client-position event)]
-       (st/emit! (dw/show-shape-context-menu {:position position :shape shape}))))))
-
 (defn use-mouse-down
   [{:keys [id type blocked]}]
   (mf/use-callback

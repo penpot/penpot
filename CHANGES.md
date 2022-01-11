@@ -40,6 +40,7 @@
 - Allow import to continue from recoverable failures [#1412](https://github.com/penpot/penpot/issues/1412)
 - Improved behaviour on text options when not text is selected [Taiga #2390](https://tree.taiga.io/project/penpot/issue/2390)
 - Fix decimal numbers in export viewbox [Taiga #2290](https://tree.taiga.io/project/penpot/issue/2290)
+- Right click over artboard name to open its menu [Taiga #1679](https://tree.taiga.io/project/penpot/issue/1679)
 
 ### :arrow_up: Deps updates
 
