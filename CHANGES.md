@@ -44,6 +44,7 @@
 - Right click over artboard name to open its menu [Taiga #1679](https://tree.taiga.io/project/penpot/issue/1679)
 - Make the default session cookue use SameSite=Lax instead of Strict (causes some issues in latest versions of Chrome).
 - Fix "open in new tab" on dashboard [Taiga #2235](https://tree.taiga.io/project/penpot/issue/2355)
+- Fix navigate comments in right sidebar [Taiga #2163](https://tree.taiga.io/project/penpot/issue/2163)
 
 ### :arrow_up: Deps updates
 

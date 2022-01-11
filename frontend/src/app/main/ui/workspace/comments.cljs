@@ -79,7 +79,9 @@
              (st/emit! (dw/go-to-page (:page-id thread))))
            (tm/schedule
             (fn []
-              (st/emit! (dwcm/center-to-comment-thread thread)
+              (st/emit! (when (not= page-id (:page-id thread))
+                          (dw/select-for-drawing :comments))
+                        (dwcm/center-to-comment-thread thread)
                         (-> (dcm/open-thread thread)
                             (with-meta {::ev/origin "workspace"})))))))]
 
