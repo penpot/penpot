@@ -207,6 +207,10 @@ function usage {
 }
 
 case $1 in
+    version)
+        print-current-version
+        ;;
+
     ## devenv related commands
     pull-devenv)
         pull-devenv ${@:2};
