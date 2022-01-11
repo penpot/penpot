@@ -5,6 +5,7 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 
+- Show color hex or name on hover [Taiga #2413](https://tree.taiga.io/project/penpot/us/2413).
 - Add shortcut to create artboard from selected objects [Taiga #2412](https://tree.taiga.io/project/penpot/us/2412).
 - Add shortcut for opacity [Taiga #2442](https://tree.taiga.io/project/penpot/us/2442).
 - Setting fill automatically for new texts [Taiga #2441](https://tree.taiga.io/project/penpot/us/2441).

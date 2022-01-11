@@ -16,8 +16,9 @@
 
     ;; No multiple selection
     (let [color (if (string? color) {:color color :opacity 1} color)]
-      [:div.color-bullet {:class (when (:id color) "is-library-color")
-                          :on-click #(when on-click (on-click %))}
+      [:div.color-bullet.tooltip.tooltip-right {:class (when (:id color) "is-library-color")
+                          :on-click #(when on-click (on-click %))
+                          :alt (or (:name color) (:color color))}
        (when (not (:gradient color))
          [:div.color-bullet-left {:style {:background (uc/color->background (assoc color :opacity 1))}}])
 
@@ -36,4 +37,4 @@
     (when (or (not size) (= size :big))
       [:span.color-text {:on-click #(when on-click (on-click %))
                          :on-double-click #(when on-double-click (on-double-click %))
-                         :title name } color-str])))
+                         :title name} color-str])))
