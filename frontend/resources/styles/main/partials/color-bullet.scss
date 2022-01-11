@@ -92,8 +92,6 @@ ul.palette-menu .color-bullet {
 .color-bullet {
   display: flex;
   flex-direction: row;
-  overflow: hidden;
-
   background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
     left center;
   background-color: $color-white;
@@ -102,6 +100,14 @@ ul.palette-menu .color-bullet {
     width: 100%;
     height: 100%;
   }
+}
+
+.color-bullet-left {
+  border-radius: 10px 0 0 10px;
+}
+
+.color-bullet-right {
+  border-radius: 0 10px 10px 0;
 }
 
 .color-data .color-bullet.multiple {
@@ -155,6 +161,11 @@ ul.palette-menu .color-bullet {
   }
 }
 
+.color-data .color-bullet .color-bullet-left,
+.color-data .color-bullet .color-bullet-right {
+  border-radius: unset;
+}
+
 .colorpicker-content .libraries .selected-colors .color-bullet {
   grid-area: auto;
   margin-bottom: 0.25rem;
@@ -162,6 +173,7 @@ ul.palette-menu .color-bullet {
 
   &:hover {
     border-color: $color-primary;
+    z-index: 10;
   }
 
   &.button {
