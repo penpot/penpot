@@ -97,7 +97,7 @@
 
 (def layout-presets
   {:assets
-   {:del #{:sitemap :layers :document-history }
+   {:del #{:sitemap :layers :document-history}
     :add #{:assets}}
 
    :document-history
@@ -1899,6 +1899,35 @@
                                  :option :background
                                  :value previous-color}]
                  :origin it}))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Artboard
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn create-artboard-from-selection
+  []
+  (ptk/reify ::create-artboard-from-selection
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page-id       (:current-page-id state)
+            objects       (wsh/lookup-page-objects state page-id)
+            shapes        (cp/select-toplevel-shapes objects {:include-frames? true})
+            selected      (wsh/lookup-selected state)
+            selected-objs (map #(get objects %) selected)
+            has-frame?    (some #(= (:type %) :frame) selected-objs)]
+        (when (not (or (empty? selected) has-frame?))
+          (let [srect    (gsh/selection-rect selected-objs)
+                frame-id (:frame-id (first shapes))
+                shape    (-> (cp/make-minimal-shape :frame)
+                             (merge {:x (:x srect) :y (:y srect) :width (:width srect) :height (:height srect)})
+                             (assoc :frame-id frame-id)
+                             (gsh/setup-selrect))]
+            (rx/of
+              (dwu/start-undo-transaction)
+              (dwc/add-shape shape) 
+              (dwc/move-shapes-into-frame (:id shape) selected)
+              (dwu/commit-undo-transaction))))))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
