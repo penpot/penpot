@@ -4,9 +4,9 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v16.13.1 \
-    CLOJURE_VERSION=1.10.3.967 \
+    CLOJURE_VERSION=1.10.3.1058 \
     CLJKONDO_VERSION=2021.12.19 \
-    BABASHKA_VERSION=0.7.0 \
+    BABASHKA_VERSION=0.7.3 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -27,6 +27,7 @@ RUN set -ex; \
         git \
         rlwrap \
         unzip \
+        rsync \
         fakeroot \
         netcat \
     ; \
