@@ -58,9 +58,7 @@
     (assoc response :cookies {cookie-name {:path "/"
                                            :http-only true
                                            :value id
-                                           :same-site (cond (not secure?) :lax
-                                                            cors?         :none
-                                                            :else         :strict)
+                                           :same-site (if cors? :none :lax)
                                            :secure secure?}})))
 
 (defn- clear-cookies
