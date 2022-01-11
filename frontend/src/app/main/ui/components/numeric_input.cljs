@@ -42,6 +42,10 @@
         local-ref  (mf/use-ref)
         ref        (or external-ref local-ref)
 
+        ;; We need to store the handle-blur ref so we can call it on unmount
+        handle-blur-ref (mf/use-ref nil)
+        dirty-ref (mf/use-ref false)
+
         ;; This `value` represents the previous value and is used as
         ;; initil value for the simple math expression evaluation.
         value      (d/parse-integer value-str default-val)
@@ -104,6 +108,7 @@
         (mf/use-callback
           (mf/deps on-change update-input value)
           (fn [new-value]
+            (mf/set-ref-val! dirty-ref false)
             (when (and (not= new-value value) (some? on-change))
               (on-change new-value))
             (update-input new-value)))
@@ -142,6 +147,7 @@
         (mf/use-callback
          (mf/deps set-delta apply-value update-input)
          (fn [event]
+           (mf/set-ref-val! dirty-ref true)
            (let [up?    (kbd/up-arrow? event)
                  down?  (kbd/down-arrow? event)
                  enter? (kbd/enter? event)
@@ -187,6 +193,17 @@
        (when-let [input-node (mf/ref-val ref)]
          (when-not (dom/active? input-node)
            (dom/set-value! input-node value-str)))))
+
+    (mf/use-effect
+     (mf/deps handle-blur)
+     (fn []
+       (mf/set-ref-val! handle-blur-ref {:fn handle-blur})))
+
+    (mf/use-layout-effect
+     (fn []
+       #(when (mf/ref-val dirty-ref)
+          (let [handle-blur (:fn (mf/ref-val handle-blur-ref))]
+            (handle-blur)))))
 
     [:> :input props]))
 

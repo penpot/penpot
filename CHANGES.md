@@ -47,6 +47,7 @@
 - Changing pages while comments activated will not close the panel [#1350](https://github.com/penpot/penpot/issues/1350)
 - Fix navigate comments in right sidebar [Taiga #2163](https://tree.taiga.io/project/penpot/issue/2163)
 - Fix keep name of component equal to the shape name [Taiga #2341](https://tree.taiga.io/project/penpot/issue/2341)
+- Fix lossing changes when changing selection and an input was already changed [Taiga #2329](https://tree.taiga.io/project/penpot/issue/2329), [Taiga #2330](https://tree.taiga.io/project/penpot/issue/2330)
 
 ### :arrow_up: Deps updates
 

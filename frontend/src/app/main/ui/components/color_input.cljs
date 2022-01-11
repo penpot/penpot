@@ -13,6 +13,13 @@
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
+(defn clean-color
+  [value]
+  (-> value
+      (uc/expand-hex)
+      (uc/parse-color)
+      (uc/prepend-hash)))
+
 (mf/defc color-input
   {::mf/wrap-props false
    ::mf/forward-ref true}
@@ -26,16 +33,17 @@
         local-ref (mf/use-ref)
         ref       (or external-ref local-ref)
 
+        ;; We need to store the handle-blur ref so we can call it on unmount
+        handle-blur-ref (mf/use-ref nil)
+        dirty-ref (mf/use-ref false)
+
         parse-value
         (mf/use-callback
          (mf/deps ref)
          (fn []
            (let [input-node (mf/ref-val ref)]
              (try
-               (let [new-value (-> (dom/get-value input-node)
-                                   (uc/expand-hex)
-                                   (uc/parse-color)
-                                   (uc/prepend-hash))]
+               (let [new-value (clean-color (dom/get-value input-node))]
                  (dom/set-validity! input-node "")
                  new-value)
                (catch :default _e
@@ -53,7 +61,8 @@
         (mf/use-callback
          (mf/deps on-change update-input)
          (fn [new-value]
-           (when new-value
+           (mf/set-ref-val! dirty-ref false)
+           (when (and new-value (not= (uc/remove-hash new-value) value))
              (when on-change
                (on-change new-value))
              (update-input new-value))))
@@ -62,6 +71,7 @@
         (mf/use-callback
          (mf/deps apply-value update-input)
          (fn [event]
+           (mf/set-ref-val! dirty-ref true)
            (let [enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)]
              (when enter?
@@ -97,6 +107,17 @@
      (fn []
        (when-let [node (mf/ref-val ref)]
          (dom/set-value! node value))))
+
+    (mf/use-effect
+     (mf/deps handle-blur)
+     (fn []
+       (mf/set-ref-val! handle-blur-ref {:fn handle-blur})))
+
+    (mf/use-layout-effect
+     (fn []
+       #(when (mf/ref-val dirty-ref)
+          (let [handle-blur (:fn (mf/ref-val handle-blur-ref))]
+            (handle-blur)))))
 
     [:*
      [:> :input props]

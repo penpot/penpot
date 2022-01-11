@@ -14,6 +14,7 @@
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.util.dom :as dom]
@@ -208,11 +209,12 @@
          [:div.input-element
           {:class (dom/classnames :pixels (not= (:stroke-width values) :multiple))
            :title (tr "workspace.options.stroke-width")}
-          [:input.input-text {:type "number"
-                              :min "0"
-                              :value (-> (:stroke-width values) width->string)
-                              :placeholder (tr "settings.multiple")
-                              :on-change on-stroke-width-change}]]
+
+          [:> numeric-input
+           {:min 0
+            :value (-> (:stroke-width values) width->string)
+            :placeholder (tr "settings.multiple")
+            :on-change on-stroke-width-change}]]
 
          [:select#style.input-select {:value (enum->string (:stroke-alignment values))
                                       :on-change on-stroke-alignment-change}
