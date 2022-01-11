@@ -42,6 +42,7 @@
 - Improved behaviour on text options when not text is selected [Taiga #2390](https://tree.taiga.io/project/penpot/issue/2390)
 - Fix decimal numbers in export viewbox [Taiga #2290](https://tree.taiga.io/project/penpot/issue/2290)
 - Right click over artboard name to open its menu [Taiga #1679](https://tree.taiga.io/project/penpot/issue/1679)
+- Make the default session cookue use SameSite=Lax instead of Strict (causes some issues in latest versions of Chrome).
 
 ### :arrow_up: Deps updates
 
