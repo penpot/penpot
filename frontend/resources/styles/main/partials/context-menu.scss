@@ -5,99 +5,98 @@
 // Copyright (c) UXBOX Labs SL
 
 .context-menu {
-    position: relative;
-    visibility: hidden;
-    opacity: 0;
-    z-index: 100;
+  position: relative;
+  visibility: hidden;
+  opacity: 0;
+  z-index: 100;
 }
 
 .context-menu.is-open {
-    position: relative;
-    display: block;
-    opacity: 1;
-    visibility: visible;
+  position: relative;
+  display: block;
+  opacity: 1;
+  visibility: visible;
 }
 
 .context-menu.fixed {
-    position: fixed;
+  position: fixed;
 }
 
 .context-menu-items {
-    background: $color-white;
-    border-radius: $br-small;
-    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
-    left: -$size-4;
-    max-height: 30rem;
-    min-width: 7rem;
-    overflow: auto;
-    position: absolute;
-    top: $size-3;
+  background: $color-white;
+  border-radius: $br-small;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+  left: -$size-4;
+  max-height: 30rem;
+  min-width: 7rem;
+  overflow: auto;
+  position: absolute;
+  top: $size-3;
 
-    & .separator {
-      border-top: 1px solid $color-gray-10;
-      padding: 0px;
-      margin: 2px;
-    }
+  & .separator {
+    border-top: 1px solid $color-gray-10;
+    padding: 0px;
+    margin: 2px;
+  }
 
-    &.min-width {
-      min-width: 13rem;
-    }
+  &.min-width {
+    min-width: 13rem;
+  }
 }
 
 .context-menu-action {
+  color: $color-black;
+  display: block;
+  font-size: $fs14;
+  padding: $size-2 $size-4;
+  text-align: left;
+  white-space: nowrap;
+
+  &:hover {
     color: $color-black;
-    display: block;
-    font-size: $fs14;
-    padding: $size-2 $size-4;
-    text-align: left;
-    white-space: nowrap;
+    background-color: $color-primary-lighter;
+  }
 
-    &:hover {
-        color: $color-black;
-        background-color: $color-primary-lighter;
+  &.submenu {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    & span {
+      margin-left: 0.5rem;
     }
 
-    &.submenu {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      & span {
-        margin-left: 0.5rem;
-      }
-
-      & svg {
-        height: 10px;
-        width: 10px;
-      }
+    & svg {
+      height: 10px;
+      width: 10px;
     }
+  }
 
-    &.submenu-back {
-      color: $color-black;
-      display: flex;
-      font-weight: bold;
-      align-items: center;
+  &.submenu-back {
+    color: $color-black;
+    display: flex;
+    font-weight: bold;
+    align-items: center;
 
-      & svg {
-        height: 10px;
-        width: 10px;
-        transform: rotate(180deg);
-        margin-right: $size-2;
-      }
+    & svg {
+      height: 10px;
+      width: 10px;
+      transform: rotate(180deg);
+      margin-right: $size-2;
     }
+  }
 }
 
 .context-menu.is-selectable {
-    & .context-menu-action {
-        padding-left: 1.5rem;
-    }
+  & .context-menu-action {
+    padding-left: 1.5rem;
+  }
 
-    & .context-menu-item.is-selected .context-menu-action {
-        background-image: url(/images/icons/tick.svg);
-        background-repeat: no-repeat;
-        background-position: 5% 48%;
-        background-size: 10px;
-        font-weight: bold;
-    }
+  & .context-menu-item.is-selected .context-menu-action {
+    background-image: url(/images/icons/tick.svg);
+    background-repeat: no-repeat;
+    background-position: 5% 48%;
+    background-size: 10px;
+    font-weight: bold;
+  }
 }
-

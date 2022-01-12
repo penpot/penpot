@@ -5,7 +5,6 @@
 //
 // Copyright (c) UXBOX Labs SL
 
-
 .dashboard-sidebar {
   &.settings {
     .back-to-dashboard {
@@ -33,7 +32,6 @@
     }
   }
 }
-
 
 .dashboard-settings {
   display: flex;
@@ -88,7 +86,7 @@
         z-index: 14;
       }
 
-      input[type=file] {
+      input[type="file"] {
         width: 120px;
         height: 120px;
         position: absolute;
@@ -99,7 +97,9 @@
       }
 
       &:hover {
-        .update-overlay {opacity: 0.8};
+        .update-overlay {
+          opacity: 0.8;
+        }
       }
     }
   }
@@ -118,5 +118,4 @@
       margin-bottom: 20px;
     }
   }
-
 }

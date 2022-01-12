@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "compile-test": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
+    "lint-scss": "yarn run prettier -c resources/styles",
     "run-test": "node target/test.js",
     "test": "yarn run compile-test && yarn run run-test",
     "watch-gulp": "gulp watch",
@@ -42,6 +43,7 @@
     "npm-run-all": "^4.1.5",
     "postcss": "^8.4.5",
     "postcss-clean": "^1.2.2",
+    "prettier": "^2.5.1",
     "rimraf": "^3.0.0",
     "sass": "^1.45.1",
     "shadow-cljs": "2.16.10"

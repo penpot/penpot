@@ -1,13 +1,14 @@
 .debug-preview {
-    display: flex;
-    flex-direction: column;
-    overflow: scroll;
+  display: flex;
+  flex-direction: column;
+  overflow: scroll;
 }
 .debug-icons-preview {
   display: flex;
   flex-wrap: wrap;
 
-  .icon-item, .cursor-item {
+  .icon-item,
+  .cursor-item {
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -22,6 +23,6 @@
     }
   }
   .cursor-item {
-      height: auto;
+    height: auto;
   }
 }

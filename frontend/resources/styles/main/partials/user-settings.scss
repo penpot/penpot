@@ -93,7 +93,6 @@
     }
   }
 
-
   .settings-profile {
     .forms-container {
       margin-top: 80px;
@@ -126,7 +125,7 @@
         z-index: 14;
       }
 
-      input[type=file] {
+      input[type="file"] {
         width: 120px;
         height: 120px;
         position: absolute;
@@ -137,8 +136,12 @@
       }
 
       &:hover {
-        img {display: none;}
-        .update-overlay {opacity: 1};
+        img {
+          display: none;
+        }
+        .update-overlay {
+          opacity: 1;
+        }
       }
     }
   }

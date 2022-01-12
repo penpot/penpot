@@ -56,7 +56,6 @@
         height: 10px;
       }
     }
-
   }
 }
 
@@ -181,10 +180,10 @@
     .viewport-controls {
       position: absolute;
     }
-
   }
 
-  .page-canvas, .page-layout {
+  .page-canvas,
+  .page-layout {
     overflow: visible;
   }
 
@@ -224,7 +223,6 @@
       stroke: $color-gray-20;
     }
   }
-
 }
 
 .workspace-frame-label {
@@ -242,7 +240,7 @@
   font-family: worksans;
   padding: 2px 12px;
   border-radius: 4px;
-  display:flex;
+  display: flex;
   align-items: center;
   height: 20px;
   font-size: 12px;
@@ -335,4 +333,3 @@
     margin-right: 0;
   }
 }
-

@@ -1,7 +1,7 @@
 .viewer-header {
   align-items: center;
   background-color: $color-gray-50;
-  border-bottom: 1px solid  $color-gray-60;
+  border-bottom: 1px solid $color-gray-60;
   display: flex;
   height: 48px;
   padding: 0 $size-4 0 55px;
@@ -115,7 +115,8 @@
       }
     }
 
-    .breadcrumb, .current-frame {
+    .breadcrumb,
+    .current-frame {
       display: flex;
       position: relative;
 

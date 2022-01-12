@@ -33,25 +33,17 @@
         }
 
         &:hover {
-
           svg {
             fill: $color-white;
           }
-
         }
 
         &.current {
-
           svg {
             fill: $color-primary;
           }
-
         }
-
       }
-
     }
-
   }
-
 }

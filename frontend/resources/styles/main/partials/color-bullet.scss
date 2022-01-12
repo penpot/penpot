@@ -31,7 +31,6 @@
     width: 50px;
     height: 50px;
   }
-
 }
 
 .color-cell.current {
@@ -56,7 +55,7 @@ ul.palette-menu .color-bullet {
   display: flex;
   justify-content: center;
   margin-bottom: 1rem;
-  padding: .6rem;
+  padding: 0.6rem;
 
   svg {
     fill: $color-gray-10;
@@ -95,7 +94,8 @@ ul.palette-menu .color-bullet {
   flex-direction: row;
   overflow: hidden;
 
-  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=") left center;
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+    left center;
   background-color: $color-white;
 
   & > * {
@@ -108,7 +108,7 @@ ul.palette-menu .color-bullet {
   background: transparent;
 
   &::before {
-    content: "?"
+    content: "?";
   }
 }
 
@@ -151,7 +151,6 @@ ul.palette-menu .color-bullet {
       svg {
         fill: $color-primary;
       }
-
     }
   }
 }

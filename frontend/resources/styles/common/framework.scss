@@ -19,7 +19,7 @@
   justify-content: center;
   min-width: 25px;
   padding: 0 1rem;
-  transition: all .4s;
+  transition: all 0.4s;
   text-decoration: none !important;
   svg {
     height: 16px;
@@ -76,7 +76,7 @@
   color: $color-primary-dark;
   flex-shrink: 0;
   &:hover {
-    background: rgba(49,239,184,.12);
+    background: rgba(49, 239, 184, 0.12);
   }
 }
 
@@ -148,7 +148,6 @@
   }
 }
 
-
 .btn-gray {
   @extend %btn;
   background: $color-gray-30;
@@ -171,7 +170,7 @@
 .btn-option {
   display: flex;
   a {
-    margin-right: .5rem;
+    margin-right: 0.5rem;
     &:last-child {
       margin-right: 0;
     }
@@ -179,7 +178,7 @@
   &.column {
     flex-direction: column;
     a {
-      margin-bottom: .5rem;
+      margin-bottom: 0.5rem;
       &:last-child {
         margin-bottom: 0;
       }
@@ -193,11 +192,11 @@
     max-width: 400px;
   }
   &.mb {
-    margin-bottom: .5rem;
+    margin-bottom: 0.5rem;
   }
 }
 
-input[type=button][disabled],
+input[type="button"][disabled],
 .btn-disabled {
   background-color: $color-gray-10;
   color: $color-gray-40;
@@ -254,11 +253,9 @@ ul.slider-dots {
     &:hover {
       background-color: $color-gray-10;
     }
-
   }
 
   &.dots-purple {
-
     li {
       border-color: $color-complete;
 
@@ -266,17 +263,13 @@ ul.slider-dots {
       &:hover {
         background-color: $color-complete;
       }
-
     }
-
   }
-
 }
 
 // Doted list
 
 .doted-list {
-
   li {
     align-items: center;
     display: flex;
@@ -295,9 +288,7 @@ ul.slider-dots {
     &.not-included {
       text-decoration: line-through;
     }
-
   }
-
 }
 
 // Tags
@@ -310,7 +301,7 @@ ul.slider-dots {
     margin-right: 0;
   }
 
-  .tag  {
+  .tag {
     background-color: $color-gray-20;
     border-radius: 3px;
     color: $color-white;
@@ -332,7 +323,6 @@ ul.slider-dots {
       &:hover {
         background-color: $color-primary-dark;
       }
-
     }
 
     &.tag-green {
@@ -342,7 +332,6 @@ ul.slider-dots {
       &:hover {
         background-color: $color-success-dark;
       }
-
     }
 
     &.tag-purple {
@@ -352,7 +341,6 @@ ul.slider-dots {
       &:hover {
         background-color: $color-complete-dark;
       }
-
     }
 
     &.tag-orange {
@@ -362,7 +350,6 @@ ul.slider-dots {
       &:hover {
         background-color: $color-warning-dark;
       }
-
     }
 
     &.tag-red {
@@ -372,11 +359,8 @@ ul.slider-dots {
       &:hover {
         background-color: $color-danger-dark;
       }
-
     }
-
   }
-
 }
 
 // Input elements
@@ -404,8 +388,8 @@ ul.slider-dots {
   }
 
   .after {
-      width: auto;
-      right: 6px;
+    width: auto;
+    right: 6px;
   }
 
   &.mini {
@@ -425,49 +409,42 @@ ul.slider-dots {
   }
 
   &.percentail {
-
     &::after {
       content: "%";
     }
   }
 
   &.milliseconds {
-
     &::after {
       content: "ms";
     }
   }
 
   &.degrees {
-
     &::after {
       content: "dg";
     }
   }
 
   &.height {
-
     &::after {
       content: "H";
     }
   }
 
   &.width {
-
     &::after {
       content: "W";
     }
   }
 
   &.Xaxis {
-
     &::after {
       content: "X";
     }
   }
 
   &.Yaxis {
-
     &::after {
       content: "Y";
     }
@@ -524,7 +501,7 @@ input[type="checkbox"]:focus {
   position: relative;
 
   @include placeholder {
-    transition: all .3s ease;
+    transition: all 0.3s ease;
   }
 
   &:focus {
@@ -534,9 +511,8 @@ input[type="checkbox"]:focus {
     @include placeholder {
       opacity: 0;
       transform: translateY(-20px);
-      transition: all .3s ease;
+      transition: all 0.3s ease;
     }
-
   }
 
   &.success {
@@ -550,7 +526,6 @@ input[type="checkbox"]:focus {
     border-color: $color-danger;
     color: $color-danger-dark;
   }
-
 }
 
 // Element-name
@@ -579,9 +554,7 @@ input.element-name {
   &.small {
     padding: $size-1 $size-5 $size-1 $size-1;
   }
-
 }
-
 
 // Input radio
 
@@ -594,15 +567,15 @@ input.element-name {
   margin-top: 10px;
   padding-left: 0px;
 
-  label{
+  label {
     cursor: pointer;
     display: flex;
     align-items: center;
     margin-right: 15px;
     font-size: $fs12;
 
-    &:before{
-      content:"";
+    &:before {
+      content: "";
       width: 20px;
       height: 20px;
       margin-right: 10px;
@@ -618,11 +591,9 @@ input.element-name {
     align-items: flex-start;
     flex-direction: column;
   }
-
 }
 
 .input-radio {
-
   label {
     margin-bottom: 6px;
 
@@ -630,76 +601,61 @@ input.element-name {
       border-radius: 99px;
       transition: box-shadow 0.2s linear 0s, color 0.2s linear 0s;
     }
-
   }
 
-  input[type=radio]:checked {
-
+  input[type="radio"]:checked {
     & + label {
-
       &:before {
-        box-shadow: inset 0 0 0 5px $color-gray-20 ;
+        box-shadow: inset 0 0 0 5px $color-gray-20;
       }
-
     }
-
   }
 
-  input[type=radio] {
+  input[type="radio"] {
     display: none;
   }
 
-  input[type=radio][disabled] {
-
+  input[type="radio"][disabled] {
     & + label {
       opacity: 0.65;
     }
-
   }
-
 }
-input[type=radio]:checked + label:before{
-
-  .input-radio.radio-success &{
+input[type="radio"]:checked + label:before {
+  .input-radio.radio-success & {
     box-shadow: inset 0 0 0 5px $color-success;
   }
 
-  .input-radio.radio-primary &{
+  .input-radio.radio-primary & {
     box-shadow: inset 0 0 0 5px $color-primary;
   }
 
-  .input-radio.radio-info &{
+  .input-radio.radio-info & {
     box-shadow: inset 0 0 0 5px $color-info;
   }
 
-  .input-radio.radio-warning &{
+  .input-radio.radio-warning & {
     box-shadow: inset 0 0 0 5px $color-warning;
   }
 
-  .input-radio.radio-danger &{
+  .input-radio.radio-danger & {
     box-shadow: inset 0 0 0 5px $color-danger;
   }
 
-  .input-radio.radio-complete &{
+  .input-radio.radio-complete & {
     box-shadow: inset 0 0 0 5px $color-complete;
   }
-
 }
 
 // Input checkbox
 
 .input-checkbox {
-
-  input[type=radio][disabled] {
-
+  input[type="radio"][disabled] {
     & + label {
-
       &:after {
         background-color: $color-gray-10;
       }
-
     }
-
   }
 
   label {
@@ -726,17 +682,14 @@ input[type=radio]:checked + label:before{
     &:after {
       border-radius: 3px;
     }
-
   }
 
-  input[type=checkbox] {
+  input[type="checkbox"] {
     display: none;
   }
 
   &.checkbox-circle {
-
     label {
-
       &:after {
         border-radius: 99px;
       }
@@ -744,98 +697,81 @@ input[type=radio]:checked + label:before{
       &:before {
         border-radius: 99px;
       }
-
     }
-
   }
 
-  input[type=checkbox]:checked {
-
+  input[type="checkbox"]:checked {
     & + label {
-
       &:before {
         border-width: 10px;
       }
 
       &::after {
-        content:"✓";
+        content: "✓";
         color: #ffffff;
         font-size: $fs16;
       }
-
     }
-
   }
 
-  input[type=checkbox][disabled] {
-
+  input[type="checkbox"][disabled] {
     & + label {
       opacity: 0.65;
 
       &:before {
         background-color: #eceff3;
       }
-
     }
-
   }
 
   &.right {
-
     label {
       margin-right: 35px;
-      padding-left:0 !important;
+      padding-left: 0 !important;
 
       &:before {
-        right:-35px;
-        left:auto;
+        right: -35px;
+        left: auto;
       }
-
     }
 
-    input[type=checkbox]:checked {
-
+    input[type="checkbox"]:checked {
       & + label {
         position: relative;
 
         &::after {
-          content:"✓";
+          content: "✓";
           position: absolute;
           right: -27px;
           left: auto;
         }
-
       }
-
     }
-
   }
-
 }
 
-input[type=checkbox]:checked + label{
-
-  .input-checkbox.check-success &:before{
+input[type="checkbox"]:checked + label {
+  .input-checkbox.check-success &:before {
     border-color: $color-success;
   }
 
-  .input-checkbox.check-primary &:before{
+  .input-checkbox.check-primary &:before {
     border-color: $color-primary;
   }
 
-  .input-checkbox.check-complete &:before{
+  .input-checkbox.check-complete &:before {
     border-color: $color-complete;
   }
 
-  .input-checkbox.check-warning &:before{
+  .input-checkbox.check-warning &:before {
     border-color: $color-warning;
   }
 
-  .input-checkbox.check-danger &:before{
+  .input-checkbox.check-danger &:before {
     border-color: $color-danger;
   }
 
-  .input-checkbox.check-info &:before{
+  .input-checkbox.check-info &:before {
     border-color: $color-info;
   }
 
@@ -847,22 +783,21 @@ input[type=checkbox]:checked + label{
   .input-checkbox.check-info &::after {
     color: $color-white;
   }
-
 }
 
 // Input slidebar
 
-input[type=range] {
+input[type="range"] {
   background-color: transparent;
   -webkit-appearance: none;
   margin: 10px 0 10px 3px;
   max-width: 70px;
   width: 100%;
 }
-input[type=range]:focus {
+input[type="range"]:focus {
   outline: none;
 }
-input[type=range]::-webkit-slider-runnable-track {
+input[type="range"]::-webkit-slider-runnable-track {
   width: 100%;
   height: 6px;
   cursor: pointer;
@@ -872,7 +807,7 @@ input[type=range]::-webkit-slider-runnable-track {
   border-radius: 25px;
   border: 0px solid #000101;
 }
-input[type=range]::-webkit-slider-thumb {
+input[type="range"]::-webkit-slider-thumb {
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
   border: 0px solid #000000;
   height: 18px;
@@ -883,10 +818,10 @@ input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   margin-top: -6px;
 }
-input[type=range]:focus::-webkit-slider-runnable-track {
+input[type="range"]:focus::-webkit-slider-runnable-track {
   background: $color-gray-60;
 }
-input[type=range]::-moz-range-track {
+input[type="range"]::-moz-range-track {
   width: 100%;
   height: 8px;
   cursor: pointer;
@@ -896,7 +831,7 @@ input[type=range]::-moz-range-track {
   border-radius: 25px;
   border: 0px solid #000101;
 }
-input[type=range]::-moz-range-thumb {
+input[type="range"]::-moz-range-thumb {
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
   border: 0px solid #000000;
   height: 24px;
@@ -905,7 +840,7 @@ input[type=range]::-moz-range-thumb {
   background: $color-gray-20;
   cursor: pointer;
 }
-input[type=range]::-ms-track {
+input[type="range"]::-ms-track {
   width: 100%;
   height: 8px;
   cursor: pointer;
@@ -915,19 +850,19 @@ input[type=range]::-ms-track {
   border-width: 39px 0;
   color: transparent;
 }
-input[type=range]::-ms-fill-lower {
+input[type="range"]::-ms-fill-lower {
   background: $color-gray-60;
   border: 0px solid #000101;
   border-radius: 50px;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
 }
-input[type=range]::-ms-fill-upper {
+input[type="range"]::-ms-fill-upper {
   background: $color-gray-60;
   border: 0px solid #000101;
   border-radius: 50px;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
 }
-input[type=range]::-ms-thumb {
+input[type="range"]::-ms-thumb {
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
   border: 0px solid #000000;
   height: 24px;
@@ -936,32 +871,31 @@ input[type=range]::-ms-thumb {
   background: $color-gray-20;
   cursor: pointer;
 }
-input[type=range]:focus::-ms-fill-lower {
+input[type="range"]:focus::-ms-fill-lower {
   background: $color-gray-60;
 }
-input[type=range]:focus::-ms-fill-upper {
+input[type="range"]:focus::-ms-fill-upper {
   background: $color-gray-60;
 }
 
 // Scroll bar (chrome)
 
 ::-webkit-scrollbar {
-    background-color: transparent;
-    cursor: pointer;
-    height: 8px;
-    width: 8px;
+  background-color: transparent;
+  cursor: pointer;
+  height: 8px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
-    background-color: transparent;
+  background-color: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background-color: $color-gray-20;
+  background-color: $color-gray-20;
 
-    &:hover {
-      background-color: darken($color-gray-20, 14%);
-      outline: 2px solid $color-primary;
-    }
-
+  &:hover {
+    background-color: darken($color-gray-20, 14%);
+    outline: 2px solid $color-primary;
+  }
 }
 
 // Tooltip
@@ -984,7 +918,7 @@ input[type=range]:focus::-ms-fill-upper {
       top: 0;
       white-space: nowrap;
       z-index: 20;
-      @include animation(.3s,.6s,fadeIn);
+      @include animation(0.3s, 0.6s, fadeIn);
     }
   }
 
@@ -1025,7 +959,7 @@ input[type=range]:focus::-ms-fill-upper {
     }
   }
 
- &.tooltip-right {
+  &.tooltip-right {
     &:hover {
       &::after {
         top: 15%;
@@ -1034,7 +968,7 @@ input[type=range]:focus::-ms-fill-upper {
     }
   }
 
- &.tooltip-left {
+  &.tooltip-left {
     &:hover {
       &::after {
         left: unset;
@@ -1086,7 +1020,7 @@ input[type=range]:focus::-ms-fill-upper {
   }
 
   &.hide {
-    @include animation(0, .6s, fadeOutUp);
+    @include animation(0, 0.6s, fadeOutUp);
   }
 
   .icon {
@@ -1137,7 +1071,7 @@ input[type=range]:focus::-ms-fill-upper {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    opacity: .35;
+    opacity: 0.35;
 
     svg {
       fill: $color-black;
@@ -1147,13 +1081,13 @@ input[type=range]:focus::-ms-fill-upper {
     }
 
     &:hover {
-      opacity: .8;
+      opacity: 0.8;
     }
   }
 
   &.fixed {
     border-radius: $br-small;
-    box-shadow: 0px 4px 4px rgba(0,0,0,0.2);
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.2);
     height: 48px;
     max-width: 1000px;
     min-width: 500px;
@@ -1186,7 +1120,8 @@ input[type=range]:focus::-ms-fill-upper {
     }
   }
 
-  &.floating, &.inline {
+  &.floating,
+  &.inline {
     min-height: 40px;
 
     .wrapper {
@@ -1212,25 +1147,25 @@ input[type=range]:focus::-ms-fill-upper {
 
     &.error {
       .content {
-        background-color: lighten($color-danger,30%);
+        background-color: lighten($color-danger, 30%);
       }
     }
 
     &.success {
       .content {
-        background-color: lighten($color-success,30%);
+        background-color: lighten($color-success, 30%);
       }
     }
 
     &.warning {
       .content {
-        background-color: lighten($color-warning,30%);
+        background-color: lighten($color-warning, 30%);
       }
     }
 
     &.info {
       .content {
-        background-color: lighten($color-info,30%);
+        background-color: lighten($color-info, 30%);
       }
     }
   }
@@ -1282,7 +1217,7 @@ input[type=range]:focus::-ms-fill-upper {
   background-color: $color-info;
   color: $color-info-darker;
   margin-bottom: 1.2rem;
-  padding: .8rem;
+  padding: 0.8rem;
   text-align: center;
   p {
     margin: 0;

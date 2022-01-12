@@ -16,7 +16,7 @@
   z-index: 9;
 
   &.toggle {
-    left:-201px;
+    left: -201px;
   }
 
   .project-bar-inside {
@@ -37,13 +37,11 @@
     .btn-primary,
     .btn-warning {
       font-size: $fs12;
-      margin-bottom: .5rem;
+      margin-bottom: 0.5rem;
       padding: 8px $size-2;
       width: 90%;
     }
-
   }
-
 }
 
 .tree-view {
@@ -69,11 +67,9 @@
 
     &:hover,
     &.current {
-
       span {
         color: $color-primary;
       }
-
     }
 
     .options {
@@ -92,11 +88,7 @@
         &:hover {
           fill: $color-gray-40;
         }
-
       }
-
     }
-
   }
-
 }

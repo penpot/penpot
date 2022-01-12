@@ -48,6 +48,13 @@ jobs:
             clj-kondo --parallel --lint src/
 
       - run:
+          name: frontend styles prettier
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn run lint-scss
+
+      - run:
           name: backend lint
           working_directory: "./backend"
           command: |
