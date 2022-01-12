@@ -14,6 +14,8 @@
   org.slf4j/slf4j-api {:mvn/version "2.0.0-alpha1"}
 
   selmer/selmer {:mvn/version "1.12.48"}
+  criterium/criterium {:mvn/version "0.4.6"}
+
   expound/expound {:mvn/version "0.8.10"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
   com.cognitect/transit-cljs {:mvn/version "0.8.269"}

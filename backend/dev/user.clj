@@ -6,18 +6,20 @@
 
 (ns user
   (:require
-   [datoteka.core]
    [app.common.exceptions :as ex]
+   [app.common.geom.matrix :as gmt]
+   [app.common.perf :as perf]
+   [app.common.transit :as t]
    [app.config :as cfg]
    [app.main :as main]
    [app.util.blob :as blob]
-   [app.util.json :as json]
    [app.util.fressian :as fres]
+   [app.util.json :as json]
    [app.util.time :as dt]
-   [app.common.transit :as t]
+   [clj-async-profiler.core :as prof]
+   [clojure.contrib.humanize :as hum]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint print-table]]
-   [clojure.contrib.humanize :as hum]
    [clojure.repl :refer :all]
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as sgen]
@@ -25,32 +27,13 @@
    [clojure.test :as test]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
-   [clj-async-profiler.core :as prof]
-   [criterium.core :refer [quick-bench bench with-progress-reporting]]
+   [datoteka.core]
    [integrant.core :as ig]))
 
 (repl/disable-reload! (find-ns 'integrant.core))
 (set! *warn-on-reflection* true)
 
 (defonce system nil)
-
-;; --- Benchmarking Tools
-
-(defmacro run-quick-bench
-  [& exprs]
-  `(with-progress-reporting (quick-bench (do ~@exprs) :verbose)))
-
-(defmacro run-quick-bench'
-  [& exprs]
-  `(quick-bench (do ~@exprs)))
-
-(defmacro run-bench
-  [& exprs]
-  `(with-progress-reporting (bench (do ~@exprs) :verbose)))
-
-(defmacro run-bench'
-  [& exprs]
-  `(bench (do ~@exprs)))
 
 ;; --- Development Stuff
 

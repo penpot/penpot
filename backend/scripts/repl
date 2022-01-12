@@ -8,7 +8,11 @@ export OPTIONS="
        -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
        -J-XX:+UseZGC \
        -J-XX:-OmitStackTraceInFastThrow \
-       -J-Xms50m -J-Xmx512m";
+       -J-Xms50m -J-Xmx512m \
+       -J-Djdk.attach.allowAttachSelf \
+       -J-XX:+UnlockDiagnosticVMOptions \
+       -J-XX:+DebugNonSafepoints";
+
 
 # export OPTIONS="$OPTIONS -J-XX:+UnlockDiagnosticVMOptions";
 # export OPTIONS="$OPTIONS -J-XX:-TieredCompilation -J-XX:CompileThreshold=10000";
