@@ -217,8 +217,8 @@
       (ex/raise :type :assertion
                 :code :spec-validation
                 :hint hint
-                :ctx  ctx
-                :value val
+                ::ex/data ctx
+                ::s/value val
                 ::s/problems (::s/problems data)))))
 
 

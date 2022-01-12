@@ -27,10 +27,11 @@
      {:id            (uuid/next)
       :path          (:uri request)
       :method        (:request-method request)
-      :hint          (or (:hint data) (ex-message error))
-      :params        (l/stringify-data (:params request))
+      :hint          (ex-message error)
+      :params        (:params request)
       :spec-problems (some-> data ::s/problems)
-      :data          (some-> data (dissoc ::s/problems))
+      :spec-value    (some-> data ::s/value)
+      :data          (some-> data (dissoc ::s/problems ::s/value :hint))
       :ip-addr       (parse-client-ip request)
       :profile-id    (:profile-id request)}
 
@@ -55,17 +56,17 @@
 (defmethod handle-exception :validation
   [err _]
   (let [edata (ex-data err)]
-    {:status 400 :body (dissoc edata ::s/problems)}))
+    {:status 400 :body (dissoc edata ::s/problems ::s/value)}))
 
 (defmethod handle-exception :assertion
   [error request]
   (let [edata (ex-data error)]
     (l/with-context (get-error-context request error)
-      (l/error :hint (ex-message error) :cause error))
+      (l/error ::l/raw (ex-message error) :cause error))
     {:status 500
      :body {:type :server-error
             :code :assertion
-            :data (dissoc edata ::s/problems)}}))
+            :data (dissoc edata ::s/problems ::s/value)}}))
 
 (defmethod handle-exception :not-found
   [err _]
@@ -84,7 +85,7 @@
       (handle-exception (:handling edata) request)
       (do
         (l/with-context (get-error-context request error)
-          (l/error :hint (ex-message error) :cause error))
+          (l/error ::l/raw (ex-message error) :cause error))
 
         {:status 500
          :body {:type :server-error
@@ -97,10 +98,7 @@
   (let [state (.getSQLState ^java.sql.SQLException error)]
 
     (l/with-context (get-error-context request error)
-      (l/error :hint "psql exception"
-               :error-message (ex-message error)
-               :state state
-               :cause error))
+      (l/error ::l/raw (ex-message error) :cause error))
 
     (cond
       (= state "57014")

@@ -12,26 +12,23 @@
 
 (s/def ::type keyword?)
 (s/def ::code keyword?)
-(s/def ::message string?)
 (s/def ::hint string?)
 (s/def ::cause #?(:clj #(instance? Throwable %)
                   :cljs #(instance? js/Error %)))
+
 (s/def ::error-params
   (s/keys :req-un [::type]
           :opt-un [::code
                    ::hint
-                   ::message
                    ::cause]))
 
 (defn error
-  [& {:keys [message hint cause] :as params}]
+  [& {:keys [hint cause ::data] :as params}]
   (s/assert ::error-params params)
-  (let [message (or message hint "")
-        payload (-> params
-                    (dissoc :cause)
-                    (dissoc :message)
-                    (assoc :hint message))]
-    (ex-info message payload cause)))
+  (let [payload (-> params
+                    (dissoc :cause ::data)
+                    (merge data))]
+    (ex-info hint payload cause)))
 
 (defmacro raise
   [& args]
