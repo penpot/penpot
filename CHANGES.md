@@ -53,6 +53,7 @@
 - Fix default page id in workspace [Taiga #2205](https://tree.taiga.io/project/penpot/issue/2205)
 - Fix problem when importing a file with grids [Taiga #2314](https://tree.taiga.io/project/penpot/issue/2314)
 - Fix issues when updating selrect in paths [Taiga #2366](https://tree.taiga.io/project/penpot/issue/2366)
+- Fix scroll jumps in handoff mode [Taiga #2383](https://tree.taiga.io/project/penpot/issue/2383)
 
 ### :arrow_up: Deps updates
 

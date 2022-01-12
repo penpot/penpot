@@ -59,7 +59,7 @@
      (mf/deps selected)
      (fn []
        (when (and (= (count selected) 1) selected?)
-         (.scrollIntoView (mf/ref-val item-ref) false))))
+         (dom/scroll-into-view-if-needed! (mf/ref-val item-ref) true))))
 
     [:li {:ref item-ref
           :class (dom/classnames
