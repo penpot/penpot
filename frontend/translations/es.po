@@ -269,10 +269,10 @@ msgid "dashboard.export-frames"
 msgstr "Exportar tableros a PDF..."
 
 msgid "dashboard.export-multi"
-msgstr "Exportar %s archivos"
+msgstr "Exportar %s archivos Penpot"
 
 msgid "dashboard.export-single"
-msgstr "Exportar archivo"
+msgstr "Exportar archivo Penpot"
 
 msgid "dashboard.export.detail"
 msgstr "* Pueden incluir components, gráficos, colores y/o tipografias."
@@ -349,7 +349,7 @@ msgstr ""
 "licensing](https://www.typography.com/faq)."
 
 msgid "dashboard.import"
-msgstr "Importar archivos"
+msgstr "Importar archivos Penpot"
 
 msgid "dashboard.import.analyze-error"
 msgstr "¡Vaya! No hemos podido importar el fichero"
