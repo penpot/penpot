@@ -25,6 +25,7 @@
    {:class-dir class-dir
     :uber-file jar-file
     :main 'clojure.main
+    :exclude [#"goog.*" #"^javasist.*"]
     :basis basis}))
 
 (defn compile [_]
@@ -32,6 +33,5 @@
    {:src-dirs ["dev/java"]
     :class-dir class-dir
     :basis basis
-    :exclude [#"com.google.*" #"goog.*"]
     :javac-opts ["-source" "11" "-target" "11"]}))
 
