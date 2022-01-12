@@ -3,8 +3,10 @@
 ## :rocket: Next
 
 ### :boom: Breaking changes
+
 ### :sparkles: New features
 
+- Add new options for zoom widget in workspace and viewer mode [Taiga #896](https://tree.taiga.io/project/penpot/us/896).
 - Allow decimals on stroke width and positions [Taiga #2035](https://tree.taiga.io/project/penpot/issue/2035).
 - Ability to ignore background when exporting an artboard [Taiga #1395](https://tree.taiga.io/project/penpot/us/1395).
 - Show color hex or name on hover [Taiga #2413](https://tree.taiga.io/project/penpot/us/2413).
@@ -72,7 +74,6 @@
 - Explain folders in components (by @candideu) [Penpot-docs #42](https://github.com/penpot/penpot-docs/pull/42).
 - Readability improvements of user guide (by @PaulSchulz) [Penpot-docs #50](https://github.com/penpot/penpot-docs/pull/50).
 
-
 # 1.10.4-beta
 
 ### :sparkles: Enhacements
@@ -84,7 +85,6 @@
 - Fix issue on :mov-object change impl.
 - Minor fix on how file changes log is persisted.
 - Fix many issues on error reporting.
-
 
 # 1.10.3-beta
 
@@ -120,13 +120,11 @@
 
 - Update log4j2 dependency.
 
-
 # 1.10.1-beta
 
 ### :bug: Bugs fixed
 
 - Fix problems with team management [#1353](https://github.com/penpot/penpot/issues/1353)
-
 
 ## 1.10.0-beta
 
@@ -232,8 +230,6 @@
 - To the translation community for the hard work on making penpot
   available on so many languages.
 
-
-
 ## 1.8.4-alpha
 
 ### :bug: Bugs fixed
@@ -260,7 +256,6 @@
 - Fix internal exception on audit log persistence layer.
 - Set proper environment variable on docker images for chrome executable.
 - Fix internal metrics on websocket connections.
-
 
 ## 1.8.0-alpha
 
@@ -303,11 +298,12 @@
 - Fix problem while moving imported SVG's [#1199](https://github.com/penpot/penpot/issues/1199)
 
 ### :arrow_up: Deps updates
+
 ### :boom: Breaking changes
+
 ### :heart: Community contributions by (Thank you!)
 
 - eduayme [#1129](https://github.com/penpot/penpot/pull/1129).
-
 
 ## 1.7.4-alpha
 
@@ -316,13 +312,11 @@
 - Fix demo user creation (self-hosted only)
 - Add better ldap response validation and reporting (self-hosted only)
 
-
 ## 1.7.3-alpha
 
 ### :bug: Bugs fixed
 
 - Fix font uploading issue on Windows.
-
 
 ## 1.7.2-alpha
 
@@ -347,7 +341,6 @@
 
 - soultipsy [#1100](https://github.com/penpot/penpot/pull/1100)
 
-
 ## 1.7.1-alpha
 
 ### :bug: Bugs fixed
@@ -356,7 +349,6 @@
 - Fix issue on the shape order on some undo operations.
 - Fix issue on undo page deletion.
 - Fix some issues related to constraints.
-
 
 ## 1.7.0-alpha
 
@@ -392,7 +384,6 @@
 - Fix header partially visible on fullscreen viewer mode [Taiga #1875](https://tree.taiga.io/project/penpot/issue/1875)
 - Fix dynamic alignment enabled with hidden objects [#1063](https://github.com/penpot/penpot/issues/1063)
 
-
 ## 1.6.5-alpha
 
 ### :bug: Bugs fixed
@@ -403,8 +394,8 @@
 
 ### :sparkles: Minor improvements
 
--  Decrease default bulk buffers on storage tasks.
--  Reduce file_change preserve interval to 24h.
+- Decrease default bulk buffers on storage tasks.
+- Reduce file_change preserve interval to 24h.
 
 ### :bug: Bugs fixed
 
@@ -416,7 +407,6 @@
 - Fix unexpected exception on searching without term.
 - Properly handle nil values on `update-shapes` function.
 - Replace frame term usage by artboard on viewer app.
-
 
 ## 1.6.3-alpha
 
@@ -444,7 +434,6 @@
 - Minor fix on previous commit.
 - Minor improvements on svg uploading on libraries.
 
-
 ## 1.6.1-alpha
 
 ### :bug: Bugs fixed
@@ -460,7 +449,6 @@
 - Improve editor lifecycle management.
 - Make the navigation async by default.
 
-
 ## 1.6.0-alpha
 
 ### :sparkles: New features
@@ -474,7 +462,6 @@
 - Translate automatic names of new files and projects.
 - Use shift instead of ctrl/cmd to keep aspect ratio [Taiga 1697](https://tree.taiga.io/project/penpot/issue/1697).
 - New translations: Portuguese (Brazil) and Romanias.
-
 
 ### :bug: Bugs fixed
 
@@ -493,7 +480,6 @@
 - Update exporter dependencies (puppeteer), that fixes some unexpected exceptions.
 - Update string manipulation library.
 
-
 ### :boom: Breaking changes
 
 - The OIDC setting `PENPOT_OIDC_SCOPES` has changed the default semantics. Before this
@@ -504,14 +490,12 @@
 
 - Translations: Portuguese (Brazil) and Romanias.
 
-
 ## 1.5.4-alpha
 
 ### :bug: Bugs fixed
 
 - Fix issues on group rendering.
 - Fix problem with text editing auto-height [Taiga #1683](https://tree.taiga.io/project/penpot/issue/1683)
-
 
 ## 1.5.3-alpha
 
@@ -535,7 +519,6 @@
 - Fix issue when removing all path points.
 - Increase default team invitation token expiration to 48h.
 - Fix wrong error message when an expired token is used.
-
 
 ## 1.5.0-alpha
 
@@ -582,7 +565,6 @@
 - madmath03 (by [Monogramm](https://github.com/Monogramm)) [#807](https://github.com/penpot/penpot/pull/807)
 - zzkt [#814](https://github.com/penpot/penpot/pull/814)
 
-
 ## 1.4.1-alpha
 
 ### :bug: Bugs fixed
@@ -593,7 +575,6 @@
 - Fix some race conditions on removing shape from workspace.
 - Fix incorrect state management of user lang selection.
 - Fix email validation usability issue on team invitation lightbox.
-
 
 ## 1.4.0-alpha
 
@@ -616,7 +597,6 @@
 - Rename artboard with double click on the title [Taiga #1392](https://tree.taiga.io/project/penpot/us/1392)
 - Replace Slate-Editor with DraftJS [Taiga #1346](https://tree.taiga.io/project/penpot/us/1346)
 - Set proper page title [Taiga #1377](https://tree.taiga.io/project/penpot/us/1377)
-
 
 ### :bug: Bugs fixed
 
@@ -660,12 +640,10 @@
   (example `:username`) instead of `$`. The main reason is avoid
   unnecessary conflict with bash interpolation.
 
-
 ### :arrow_up: Deps updates
 
 - Update backend to JDK16.
 - Update exporter nodejs to v14.16.0
-
 
 ### :heart: Community contributions by (Thank you!)
 
@@ -673,7 +651,6 @@
 - gizembln [#759](https://github.com/penpot/penpot/pull/759)
 - girafic [#748](https://github.com/penpot/penpot/pull/748)
 - mbrksntrk [#794](https://github.com/penpot/penpot/pull/794)
-
 
 ## 1.3.0-alpha
 
@@ -689,7 +666,6 @@
 - Bounce & Complaint handling [#635](https://github.com/penpot/penpot/pull/635)
 - Disable groups interactions when holding "Ctrl" key (deep selection)
 - New action in context menu to "edit" some shapes (bound to key "Enter")
-
 
 ### :bug: Bugs fixed
 
@@ -711,12 +687,10 @@
 - Properly mark profile auth backend (on first register/ auth with 3rd party auth provider).
 - Refactor LDAP auth backend.
 
-
 ### :heart: Community contributions by (Thank you!)
 
 - girafic [#538](https://github.com/penpot/penpot/pull/654)
 - arkhi [#591](https://github.com/penpot/penpot/pull/591)
-
 
 ## 1.2.0-alpha
 
@@ -731,7 +705,6 @@
 - Increase default deletion delay to 7 days
 - Show a pixel grid when zoom greater than 800% [#519](https://github.com/penpot/penpot/discussions/519)
 - Fix behavior of select all command when there are objects outside frames [Taiga #1209](https://tree.taiga.io/project/penpot/issue/1209)
-
 
 ### :bug: Bugs fixed
 
@@ -767,7 +740,6 @@
 - Some changes to the register flow
 - Improved MacOS shortcuts and helpers
 - Small changes to shape creation
-
 
 ## 1.0.0-alpha
 

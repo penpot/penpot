@@ -23,17 +23,17 @@
                         :command (ds/c-mod "a")
                         :fn (st/emitf (dv/select-all))}
 
-   :zoom-50            {:tooltip (ds/shift "0")
+   :reset-zoom         {:tooltip (ds/shift "0")
                         :command "shift+0"
-                        :fn (st/emitf dv/zoom-to-50)}
-
-   :reset-zoom         {:tooltip (ds/shift "1")
-                        :command "shift+1"
                         :fn (st/emitf dv/reset-zoom)}
 
-   :zoom-200           {:tooltip (ds/shift "2")
-                        :command "shift+2"
-                        :fn (st/emitf dv/zoom-to-200)}
+   :toggle-zoom-style  {:tooltip "F"
+                        :command "f"
+                        :fn (st/emitf dv/toggle-zoom-style)}
+
+   :toogle-fullscreen  {:tooltip (ds/shift "F")
+                        :command "shift+f"
+                        :fn (st/emitf dv/toggle-fullscreen)}
 
    :next-frame         {:tooltip ds/left-arrow
                         :command "left"

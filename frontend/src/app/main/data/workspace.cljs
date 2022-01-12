@@ -263,7 +263,7 @@
       (when-not (contains? (get-in state [:workspace-data :pages-index]) page-id)
         (let [default-page-id (get-in state [:workspace-data :pages 0])]
           (rx/of (go-to-page default-page-id)))))
-    
+
     ptk/UpdateEvent
     (update [_ state]
       (let [;; we maintain a cache of page state for user convenience
@@ -455,7 +455,7 @@
                                           :y (+ (:y srect) (/ (- (:height srect) height) 2)))))))
 
           (setup [state local]
-            (if (and (:vport local) (:vbox local))
+            (if (and (:vbox local) (:vport local))
               (update* local)
               (initialize state local)))]
 
@@ -755,7 +755,7 @@
                                 :shapes [id]}))
                            selected)
 
-             uchanges (mapv (fn [id]
+            uchanges (mapv (fn [id]
                              (let [obj (get objects id)]
                                {:type :mov-objects
                                 :parent-id (:parent-id obj)
@@ -763,7 +763,7 @@
                                 :page-id page-id
                                 :shapes [id]
                                 :index (cp/position-on-parent id objects)}))
-                            selected)]
+                           selected)]
         ;; TODO: maybe missing the :reg-objects event?
         (rx/of (dch/commit-changes {:redo-changes rchanges
                                     :undo-changes uchanges
@@ -1223,15 +1223,15 @@
   (ptk/reify ::toggle-propotion-lock
     ptk/WatchEvent
     (watch [_ state _]
-           (let [page-id       (:current-page-id state)
-                 objects       (wsh/lookup-page-objects state page-id)
-                 selected      (wsh/lookup-selected state)
-                 selected-obj  (-> (map #(get objects %) selected))
-                 multi         (attrs/get-attrs-multi selected-obj [:proportion-lock])
-                 multi?        (= :multiple (:proportion-lock multi))]
-             (if multi?
-               (rx/of (dch/update-shapes selected #(assoc % :proportion-lock true)))
-               (rx/of (dch/update-shapes selected #(update % :proportion-lock not))))))))
+      (let [page-id       (:current-page-id state)
+            objects       (wsh/lookup-page-objects state page-id)
+            selected      (wsh/lookup-selected state)
+            selected-obj  (-> (map #(get objects %) selected))
+            multi         (attrs/get-attrs-multi selected-obj [:proportion-lock])
+            multi?        (= :multiple (:proportion-lock multi))]
+        (if multi?
+          (rx/of (dch/update-shapes selected #(assoc % :proportion-lock true)))
+          (rx/of (dch/update-shapes selected #(update % :proportion-lock not))))))))
 
 ;; --- Update Shape Flags
 
@@ -1256,8 +1256,8 @@
   (ptk/reify ::toggle-visibility-selected
     ptk/WatchEvent
     (watch [_ state _]
-           (let [selected (wsh/lookup-selected state)]
-             (rx/of (dch/update-shapes selected #(update % :hidden not)))))))
+      (let [selected (wsh/lookup-selected state)]
+        (rx/of (dch/update-shapes selected #(update % :hidden not)))))))
 
 (defn toggle-lock-selected
   []
@@ -1417,12 +1417,12 @@
 
 (defn go-to-dashboard-fonts
   []
-   (ptk/reify ::go-to-dashboard-fonts
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [team-id (:current-team-id state)]
-         (rx/of ::dwp/force-persist
-                (rt/nav :dashboard-fonts {:team-id team-id}))))))
+  (ptk/reify ::go-to-dashboard-fonts
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (rx/of ::dwp/force-persist
+               (rt/nav :dashboard-fonts {:team-id team-id}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Menu
@@ -1601,9 +1601,9 @@
                           paste-image-str)
                (rx/first)
                (rx/catch
-                   (fn [err]
-                     (js/console.error "Clipboard error:" err)
-                     (rx/empty)))))
+                (fn [err]
+                  (js/console.error "Clipboard error:" err)
+                  (rx/empty)))))
         (catch :default e
           (let [data (ex-data e)]
             (if (:not-implemented data)
@@ -1760,7 +1760,7 @@
 
                                                      (cond->
                                                        ;; if foreign instance, detach the shape
-                                                       (foreign-instance? shape paste-objects state)
+                                                      (foreign-instance? shape paste-objects state)
                                                        (dissoc :component-id
                                                                :component-file
                                                                :component-root?
@@ -1933,10 +1933,10 @@
                              (assoc :frame-id frame-id)
                              (gsh/setup-selrect))]
             (rx/of
-              (dwu/start-undo-transaction)
-              (dwc/add-shape shape) 
-              (dwc/move-shapes-into-frame (:id shape) selected)
-              (dwu/commit-undo-transaction))))))))
+             (dwu/start-undo-transaction)
+             (dwc/add-shape shape)
+             (dwc/move-shapes-into-frame (:id shape) selected)
+             (dwu/commit-undo-transaction))))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
