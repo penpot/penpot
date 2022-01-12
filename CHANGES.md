@@ -50,6 +50,7 @@
 - Fix lossing changes when changing selection and an input was already changed [Taiga #2329](https://tree.taiga.io/project/penpot/issue/2329), [Taiga #2330](https://tree.taiga.io/project/penpot/issue/2330)
 - Fix blur input field when click on viewport [Taiga #2164](https://tree.taiga.io/project/penpot/issue/2164)
 - Fix default page id in workspace [Taiga #2205](https://tree.taiga.io/project/penpot/issue/2205)
+- Fix problem when importing a file with grids [Taiga #2314](https://tree.taiga.io/project/penpot/issue/2314)
 
 ### :arrow_up: Deps updates
 
