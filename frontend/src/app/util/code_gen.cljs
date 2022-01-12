@@ -180,8 +180,9 @@
         shape-to-prop    (->> text-shape-style vals (map :to-prop) (reduce merge))
         shape-format     (->> text-shape-style vals (map :format) (reduce merge))
 
-
-        text-values      (->> (search-text-attrs (:content shape) (conj (:props style-text) :fill-color-gradient))
+        text-values      (->> (search-text-attrs
+                               (:content shape)
+                               (conj (:props style-text) :fill-color-gradient :fill-opacity))
                               (d/merge txt/default-text-attrs))]
     (str/join
      "\n"
