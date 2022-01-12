@@ -2088,6 +2088,30 @@ msgid "workspace.header.unsaved"
 msgstr "Unsaved changes"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Reset"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "Zoom to fil all"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "Zoom to selected"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "Fit - Scale down to fit"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "Fill -Scale to fill"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-full-screen"
+msgstr "Full screen"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.viewer"
 msgstr "View mode (%s)"
 

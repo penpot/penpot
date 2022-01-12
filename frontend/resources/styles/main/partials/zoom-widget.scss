@@ -33,14 +33,61 @@
       display: flex;
       padding: $size-2;
 
+      &.separator {
+        border-top: 1px solid $color-gray-10;
+        padding: 0px;
+        margin: 2px;
+        height: 0;
+      }
+
+      &.basic-zoom-bar {
+        cursor: auto;
+        display: flex;
+        justify-content: space-between;
+
+        &:hover {
+          background-color: $color-white;
+        }
+      }
+
       span {
         color: $color-gray-20;
         font-size: $fs14;
         margin-left: auto;
+
+        &.zoom-btns {
+          display: flex;
+          margin-left: 2px;
+          color: $color-gray-60;
+
+          p {
+            margin-bottom: 0;
+            font-size: $fs14;
+            padding: 0 3px;
+          }
+        }
       }
 
       &:hover {
         background-color: $color-primary-lighter;
+      }
+
+      button {
+        cursor: pointer;
+        background-color: $color-white;
+        border: none;
+        &:hover {
+          color: $color-primary;
+        }
+      }
+      .reset-btn {
+        color: $color-primary-dark;
+      }
+      .zoom-size {
+        min-width: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
       }
     }
   }

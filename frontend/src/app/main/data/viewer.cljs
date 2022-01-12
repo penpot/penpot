@@ -26,6 +26,7 @@
 (def ^:private
   default-local-state
   {:zoom 1
+   :fullscreen? false
    :interactions-mode :hide
    :interactions-show? false
    :comments-mode :all
@@ -209,17 +210,57 @@
     (update [_ state]
       (assoc-in state [:viewer-local :zoom] 1))))
 
-(def zoom-to-50
-  (ptk/reify ::zoom-to-50
+(def zoom-to-fit
+  (ptk/reify ::zoom-to-fit
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:viewer-local :zoom] 0.5))))
+      (let [page-id (get-in state [:route :query-params :page-id])
+            frame-idx (get-in state [:route :query-params :index])
+            srect   (get (nth (get-in state [:viewer :pages page-id :frames]) frame-idx) :selrect)
+            original-size (get-in state [:viewer-local :viewport-size])
+            wdiff (/ (:width original-size) (:width srect))
+            hdiff (/ (:height original-size) (:height srect))
+            minzoom (min wdiff hdiff)]
+        (-> state
+            (assoc-in  [:viewer-local :zoom] minzoom)
+            (assoc-in  [:viewer-local :zoom-type] :fit))))))
 
-(def zoom-to-200
-  (ptk/reify ::zoom-to-200
+(def zoom-to-fill
+  (ptk/reify ::zoom-to-fill
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:viewer-local :zoom] 2))))
+      (let [page-id (get-in state [:route :query-params :page-id])
+            frame-idx (get-in state [:route :query-params :index])
+            srect   (get (nth (get-in state [:viewer :pages page-id :frames]) frame-idx) :selrect)
+            original-size (get-in state [:viewer-local :viewport-size])
+            wdiff (/ (:width original-size) (:width srect))
+            hdiff (/ (:height original-size) (:height srect))
+            maxzoom (max wdiff hdiff)]
+        (-> state
+            (assoc-in  [:viewer-local :zoom] maxzoom)
+            (assoc-in  [:viewer-local :zoom-type] :fill))))))
+
+(def toggle-zoom-style
+  (ptk/reify ::toggle-zoom-style
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [zoom-type (get-in state [:viewer-local :zoom-type])]
+        (if (= zoom-type :fit)
+          (rx/of zoom-to-fill)
+          (rx/of zoom-to-fit))))))
+
+(def toggle-fullscreen
+  (ptk/reify ::toggle-fullscreen
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:viewer-local :fullscreen?] not))))
+
+(defn set-viewport-size
+  [{:keys [size]}]
+  (ptk/reify ::set-viewport-size
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :viewport-size] size))))
 
 ;; --- Local State Management
 
@@ -408,7 +449,7 @@
   [state frame position close-click-outside background-overlay animation]
   (cond-> state
     :always
-    (update-in [:viewer-local :overlays] conj 
+    (update-in [:viewer-local :overlays] conj
                {:frame frame
                 :position position
                 :close-click-outside close-click-outside
@@ -588,14 +629,14 @@
       (assoc-in state [:viewer-local :overlays] []))
 
     ptk/WatchEvent
-     (watch [_ state _]
-       (let [route   (:route state)
-             pparams (:path-params route)
-             qparams (-> (:query-params route)
-                         (assoc :index 0)
-                         (assoc :page-id page-id))
-             rname   (get-in route [:data :name])]
-         (rx/of (rt/nav rname pparams qparams))))))
+    (watch [_ state _]
+      (let [route   (:route state)
+            pparams (:path-params route)
+            qparams (-> (:query-params route)
+                        (assoc :index 0)
+                        (assoc :page-id page-id))
+            rname   (get-in route [:data :name])]
+        (rx/of (rt/nav rname pparams qparams))))))
 
 (defn go-to-workspace
   ([] (go-to-workspace nil))

@@ -26,6 +26,7 @@
    [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.webapi :as wapi]
    [goog.events :as events]
    [rumext.alpha :as mf]))
 
@@ -72,7 +73,7 @@
         zoom   (:zoom local)
         frames (:frames page)
         frame  (get frames index)
-
+        fullscreen? (mf/deref refs/fullscreen?)
         overlays (:overlays local)
 
         orig-frame
@@ -84,12 +85,12 @@
               (fn [] (calculate-size frame zoom)))
 
         orig-size (mf/use-memo
-                    (mf/deps orig-frame zoom)
-                    (fn [] (when orig-frame (calculate-size orig-frame zoom))))
+                   (mf/deps orig-frame zoom)
+                   (fn [] (when orig-frame (calculate-size orig-frame zoom))))
 
         wrapper-size (mf/use-memo
-                       (mf/deps size orig-size zoom)
-                       (fn [] (calculate-wrapper size orig-size zoom)))
+                      (mf/deps size orig-size zoom)
+                      (fn [] (calculate-wrapper size orig-size zoom)))
 
         interactions-mode
         (:interactions-mode local)
@@ -103,8 +104,15 @@
 
         close-overlay
         (mf/use-callback
-          (fn [frame]
-            (st/emit! (dv/close-overlay (:id frame)))))]
+         (fn [frame]
+           (st/emit! (dv/close-overlay (:id frame)))))
+
+        set-up-new-size
+        (mf/use-callback
+         (fn [_]
+           (let [viewer-section (dom/get-element "viewer-section")
+                 size (dom/get-client-size viewer-section)]
+             (st/emit! (dv/set-viewport-size {:size size})))))]
 
     (hooks/use-shortcuts ::viewer sc/shortcuts)
 
@@ -125,73 +133,92 @@
            (events/unlistenByKey key1)))))
 
     (mf/use-layout-effect
-      (mf/deps nav-scroll)
-      (fn []
-        ;; Set scroll position after navigate
-        (when (number? nav-scroll)
-          (let [viewer-section (dom/get-element "viewer-section")]
-            (st/emit! (dv/reset-nav-scroll))
-            (dom/set-scroll-pos! viewer-section nav-scroll)))))
+     (fn []
+       (set-up-new-size)
+       (.addEventListener js/window "resize" set-up-new-size)
+       (fn []
+         (.removeEventListener js/window "resize" set-up-new-size))))
 
     (mf/use-layout-effect
-      (mf/deps index)
-      (fn []
+     (mf/deps nav-scroll)
+     (fn []
+        ;; Set scroll position after navigate
+       (when (number? nav-scroll)
+         (let [viewer-section (dom/get-element "viewer-section")]
+           (st/emit! (dv/reset-nav-scroll))
+           (dom/set-scroll-pos! viewer-section nav-scroll)))))
+
+    (mf/use-layout-effect
+     (mf/deps fullscreen?)
+     (fn []
+       ;; Trigger dom fullscreen depending on our state
+       (let [wrapper     (dom/get-element "viewer-layout")
+             fullscreen-dom? (dom/fullscreen?)]
+         (when (not= fullscreen? fullscreen-dom?)
+           (if fullscreen?
+             (wapi/request-fullscreen wrapper)
+             (wapi/exit-fullscreen))))))
+
+    (mf/use-layout-effect
+     (mf/deps index)
+     (fn []
         ;; Navigate animation needs to be started after navigation
         ;; is complete, and we have the next page index.
-        (when (and current-animation
-                   (= (:kind current-animation) :go-to-frame))
-          (let [orig-viewport    (mf/ref-val orig-viewport-ref)
-                current-viewport (mf/ref-val current-viewport-ref)]
-            (interactions/animate-go-to-frame
-              (:animation current-animation)
-              current-viewport
-              orig-viewport
-              size
-              orig-size
-              wrapper-size)))))
+       (when (and current-animation
+                  (= (:kind current-animation) :go-to-frame))
+         (let [orig-viewport    (mf/ref-val orig-viewport-ref)
+               current-viewport (mf/ref-val current-viewport-ref)]
+           (interactions/animate-go-to-frame
+            (:animation current-animation)
+            current-viewport
+            orig-viewport
+            size
+            orig-size
+            wrapper-size)))))
 
     (mf/use-layout-effect
-      (mf/deps current-animation)
-      (fn []
+     (mf/deps current-animation)
+     (fn []
         ;; Overlay animations may be started when needed.
-        (when current-animation
-          (case (:kind current-animation)
+       (when current-animation
+         (case (:kind current-animation)
 
-            :open-overlay
-            (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id current-animation))))
-                  overlay (d/seek #(= (:id (:frame %)) (:overlay-id current-animation))
-                                  overlays)
-                  overlay-size (calculate-size (:frame overlay) zoom)
-                  overlay-position {:x (* (:x (:position overlay)) zoom)
-                                    :y (* (:y (:position overlay)) zoom)}]
-              (interactions/animate-open-overlay
-                (:animation current-animation)
-                overlay-viewport
-                wrapper-size
-                overlay-size
-                overlay-position))
+           :open-overlay
+           (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id current-animation))))
+                 overlay (d/seek #(= (:id (:frame %)) (:overlay-id current-animation))
+                                 overlays)
+                 overlay-size (calculate-size (:frame overlay) zoom)
+                 overlay-position {:x (* (:x (:position overlay)) zoom)
+                                   :y (* (:y (:position overlay)) zoom)}]
+             (interactions/animate-open-overlay
+              (:animation current-animation)
+              overlay-viewport
+              wrapper-size
+              overlay-size
+              overlay-position))
 
-            :close-overlay
-            (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id current-animation))))
-                  overlay (d/seek #(= (:id (:frame %)) (:overlay-id current-animation))
-                                  overlays)
-                  overlay-size (calculate-size (:frame overlay) zoom)
-                  overlay-position {:x (* (:x (:position overlay)) zoom)
-                                    :y (* (:y (:position overlay)) zoom)}]
-              (interactions/animate-close-overlay
-                (:animation current-animation)
-                overlay-viewport
-                wrapper-size
-                overlay-size
-                overlay-position
-                (:id (:frame overlay))))
+           :close-overlay
+           (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id current-animation))))
+                 overlay (d/seek #(= (:id (:frame %)) (:overlay-id current-animation))
+                                 overlays)
+                 overlay-size (calculate-size (:frame overlay) zoom)
+                 overlay-position {:x (* (:x (:position overlay)) zoom)
+                                   :y (* (:y (:position overlay)) zoom)}]
+             (interactions/animate-close-overlay
+              (:animation current-animation)
+              overlay-viewport
+              wrapper-size
+              overlay-size
+              overlay-position
+              (:id (:frame overlay))))
 
-            nil))))
+           nil))))
 
-    [:div {:class (dom/classnames
-                   :force-visible (:show-thumbnails local)
-                   :viewer-layout (not= section :handoff)
-                   :handoff-layout (= section :handoff))}
+    [:div#viewer-layout {:class (dom/classnames
+                                 :force-visible (:show-thumbnails local)
+                                 :viewer-layout (not= section :handoff)
+                                 :handoff-layout (= section :handoff)
+                                 :fullscreen fullscreen?)}
 
      [:& header {:project project
                  :index index
@@ -273,7 +300,7 @@
                                (:background-overlay  overlay))
                        [:div.viewer-overlay-background
                         {:class (dom/classnames
-                                  :visible (:background-overlay overlay))
+                                 :visible (:background-overlay overlay))
                          :style {:width (:width wrapper-size)
                                  :height (:height wrapper-size)
                                  :position "absolute"

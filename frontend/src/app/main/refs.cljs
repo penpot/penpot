@@ -322,3 +322,7 @@
 (def users
   (l/derived :users st/state))
 
+(def fullscreen?
+  (l/derived  (fn [state]
+                (get-in state [:viewer-local :fullscreen?] []))
+              st/state))

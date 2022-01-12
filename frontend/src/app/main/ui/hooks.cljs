@@ -91,9 +91,9 @@
         (fn []
           (some-> (:subscr @state) rx/unsub!)
           (swap! state (fn [state]
-                              (-> state
-                                  (cancel-timer)
-                                  (dissoc :over :subscr)))))
+                         (-> state
+                             (cancel-timer)
+                             (dissoc :over :subscr)))))
 
         subscribe-to-drag-end
         (fn []
