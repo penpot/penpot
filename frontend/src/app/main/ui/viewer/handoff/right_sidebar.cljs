@@ -22,7 +22,16 @@
         section       (mf/use-state :info #_:code)
 
         shapes        (resolve-shapes (:objects page) selected)
-        selected-type (or (-> shapes first :type) :not-found)]
+        first-shape   (first shapes)
+
+        selected-type (or (:type first-shape) :not-found)
+        selected-type (if (= selected-type :group)
+                        (if (some? (:component-id first-shape))
+                          :component
+                          (if (:masked-group? first-shape)
+                            :mask
+                            :group))
+                        selected-type)]
 
     [:aside.settings-bar.settings-bar-right {:class (when @expanded "expanded")}
      [:div.settings-bar-inside
@@ -35,7 +44,7 @@
              [:span.tool-window-bar-title (tr "handoff.tabs.code.selected.multiple" (count shapes))]]
             [:*
              [:span.tool-window-bar-icon
-              [:& element-icon {:shape (-> shapes first)}]]
+              [:& element-icon {:shape first-shape}]]
              [:span.tool-window-bar-title (->> selected-type d/name (str "handoff.tabs.code.selected.") (tr))]])
           ]
          [:div.tool-window-content

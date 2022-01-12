@@ -65,6 +65,7 @@
 - Fix thumbnail not taking frame blending mode [Taiga #2301](https://tree.taiga.io/project/penpot/issue/2301)
 - Fix import/export with SVG edge cases [Taiga #2389](https://tree.taiga.io/project/penpot/issue/2389)
 - Avoid modifying component when moving into a group [Taiga #2534](https://tree.taiga.io/project/penpot/issue/2534)
+- Show correctly group types label in handoff [Taiga #2482](https://tree.taiga.io/project/penpot/issue/2482)
 
 ### :arrow_up: Deps updates
 
