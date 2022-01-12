@@ -115,6 +115,7 @@
                  (a/offer! input-ch message))
                (catch Throwable e
                  (l/warn :hint "error on decoding incoming message from websocket"
+                         :wsmsg (pr-str message)
                          :cause e)
                  (on-terminate))))
 
