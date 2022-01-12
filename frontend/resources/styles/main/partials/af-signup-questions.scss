@@ -12,9 +12,10 @@
   padding: 3rem;
   width: 100% !important;
 
-  h1, h3 {
-    font-family: 'worksans', sans-serif !important;
-    margin-bottom: .8rem;
+  h1,
+  h3 {
+    font-family: "worksans", sans-serif !important;
+    margin-bottom: 0.8rem;
     font-weight: 500 !important;
   }
 
@@ -26,8 +27,9 @@
     font-weight: 500;
   }
 
-  p, label {
-    font-family: 'worksans', sans-serif !important;
+  p,
+  label {
+    font-family: "worksans", sans-serif !important;
     font-size: $fs14;
   }
 
@@ -37,7 +39,7 @@
   }
 
   button {
-    font-family: 'worksans', sans-serif !important;
+    font-family: "worksans", sans-serif !important;
   }
 
   .af-choice,
@@ -51,7 +53,7 @@
     width: 100%;
 
     label {
-      font-family: 'worksans', sans-serif !important;
+      font-family: "worksans", sans-serif !important;
       font-size: $fs14;
       padding-left: 0;
     }
@@ -76,7 +78,7 @@
 
   .af-dropdown-text,
   .text {
-    font-family: 'worksans', sans-serif !important;
+    font-family: "worksans", sans-serif !important;
   }
 
   .af-step-next {
@@ -109,13 +111,13 @@
     border-color: #c5c6c9 !important;
   }
 
-  .af-choice-option input:checked+label:before,
-  .af-legal input:checked+label:before {
+  .af-choice-option input:checked + label:before,
+  .af-legal input:checked + label:before {
     background-color: $color-primary;
   }
 
-  .af-field-use_of_penpot .af-choice-option input:checked+label,
-  .af-field-previous_design_tool .af-choice-option input:checked+label {
+  .af-field-use_of_penpot .af-choice-option input:checked + label,
+  .af-field-previous_design_tool .af-choice-option input:checked + label {
     &::before {
       background-color: transparent;
       border: 2px solid $color-primary !important;
@@ -156,7 +158,7 @@
 
     &:hover {
       background-color: transparent;
-      box-shadow: 0px 10px 20px rgba(0,0,0,.2);
+      box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
     }
 
     &::before {
@@ -177,7 +179,6 @@
 
   .af-field-previous_design_tool .af-choice-option:nth-child(1) label {
     background-image: url("../images/form/figma.png");
-
   }
 
   .af-field-previous_design_tool .af-choice-option:nth-child(2) label {
@@ -242,9 +243,11 @@
     }
   }
 
-  .af-field-previous_design_tool .af-choice-option:nth-child(7) input:checked+label,
-  .af-field-use_of_penpot .af-choice-option:nth-child(5) input:checked+label {
-
+  .af-field-previous_design_tool
+    .af-choice-option:nth-child(7)
+    input:checked
+    + label,
+  .af-field-use_of_penpot .af-choice-option:nth-child(5) input:checked + label {
     &::before {
       background-color: $color-primary;
     }

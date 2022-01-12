@@ -95,7 +95,7 @@
       }
     }
 
-    & input[type=radio]:checked {
+    & input[type="radio"]:checked {
       & + label {
         &:before {
           background-color: $color-primary;
@@ -212,4 +212,3 @@
     }
   }
 }
-

@@ -1,4 +1,3 @@
-
 .dashboard-invite-modal {
   top: 65px;
   right: 13px;
@@ -31,7 +30,7 @@
   .action-buttons {
     display: flex;
     justify-content: center;
-    input[type=submit] {
+    input[type="submit"] {
       margin-bottom: 0px;
     }
   }
@@ -98,11 +97,9 @@
       }
     }
   }
-
 }
 
 .dashboard-team-settings {
-
   .team-settings {
     display: flex;
     justify-content: center;
@@ -173,7 +170,9 @@
           background: $color-primary-dark;
           z-index: 14;
 
-          svg { fill: $color-white; }
+          svg {
+            fill: $color-white;
+          }
         }
 
         &:hover {

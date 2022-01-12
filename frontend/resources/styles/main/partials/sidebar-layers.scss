@@ -42,7 +42,6 @@
 
     .element-icon,
     .element-actions {
-
       svg {
         fill: $color-gray-60;
       }
@@ -110,7 +109,6 @@
 }
 
 .element-list li.component {
-
   .element-list-body {
     span.element-name {
       color: $color-component;
@@ -228,9 +226,9 @@ span.element-name {
     &.selected {
       display: flex;
 
-        svg {
-          fill: $color-gray-20;
-        }
+      svg {
+        fill: $color-gray-20;
+      }
     }
   }
 }
@@ -254,7 +252,9 @@ span.element-name {
   }
 
   &.inverse {
-    svg { transform: rotate(270deg); }
+    svg {
+      transform: rotate(270deg);
+    }
   }
 
   &:hover {
@@ -265,8 +265,8 @@ span.element-name {
 }
 
 .icon-layer {
-    > svg {
-    background-color: rgba(255,255,255,.6);
+  > svg {
+    background-color: rgba(255, 255, 255, 0.6);
     border-radius: $br-small;
     flex-shrink: 0;
     fill: $color-black !important;
