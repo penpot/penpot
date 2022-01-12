@@ -175,14 +175,15 @@
           level-sym  (gensym "log")]
       `(let [~logger-sym (get-logger ~logger)
              ~level-sym  (get-level ~level)]
-         (if (enabled? ~logger-sym ~level-sym)
+         (when (enabled? ~logger-sym ~level-sym)
            ~(if async
-              `(let [cdata# (ThreadContext/getImmutableContext)]
-                 (send-off logging-agent
-                           (fn [_#]
-                             (with-context (into {:cause ~cause} cdata#)
-                               (->> (or ~raw (build-map-message ~props))
-                                    (write-log! ~logger-sym ~level-sym ~cause))))))
+              `(->> (ThreadContext/getImmutableContext)
+                    (send-off logging-agent
+                              (fn [_# cdata#]
+                                (with-context (into {:cause ~cause} cdata#)
+                                  (->> (or ~raw (build-map-message ~props))
+                                       (write-log! ~logger-sym ~level-sym ~cause))))))
+
               `(let [message# (or ~raw (build-map-message ~props))]
                  (write-log! ~logger-sym ~level-sym ~cause message#))))))))
 
