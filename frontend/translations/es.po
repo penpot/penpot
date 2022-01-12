@@ -315,6 +315,20 @@ msgstr "Fuente eliminada."
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "Aun no tienes fuentes personalizadas."
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 fuente añadida"
+msgstr[1] "%s fuentes añadidas"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Cargar todas"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Ignorar todas"
+
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""

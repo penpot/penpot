@@ -103,6 +103,10 @@
                          (fn [error]
                            (js/console.log "error" error))))))
 
+        on-upload-all
+        (fn [items]
+          (run! on-upload items))
+
         on-blur-name
         (fn [id event]
           (let [name (dom/get-target-val event)]
@@ -112,7 +116,11 @@
         (mf/use-callback
          (mf/deps team)
          (fn [{:keys [id] :as item}]
-           (swap! fonts dissoc id)))]
+           (swap! fonts dissoc id)))
+
+        on-dismiss-all
+        (fn [items]
+          (run! on-delete items))]
 
     [:div.dashboard-fonts-upload
      [:div.dashboard-fonts-hero
@@ -136,6 +144,17 @@
                           :on-selected on-selected}]]]
 
      [:*
+      (when (some? (vals @fonts))
+        [:div.font-item.table-row
+         [:span (tr "dashboard.fonts.fonts-added" (i18n/c (count (vals @fonts))))]
+         [:div.table-field.options
+          [:div.btn-primary
+           {:on-click #(on-upload-all (vals @fonts))}
+           [:span (tr "dashboard.fonts.upload-all")]]
+          [:div.btn-secondary
+           {:on-click #(on-dismiss-all (vals @fonts))}
+           [:span (tr "dashboard.fonts.dismiss-all")]]]])
+
       (for [item (sort-by :font-family (vals @fonts))]
         (let [uploading? (contains? @uploading (:id item))]
           [:div.font-item.table-row {:key (:id item)}
