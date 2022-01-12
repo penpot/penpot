@@ -938,6 +938,12 @@ msgstr "Grupo"
 msgid "handoff.tabs.code.selected.image"
 msgstr "Imagen"
 
+msgid "handoff.tabs.code.selected.component"
+msgstr "Componente"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Máscara"
+
 #: src/app/main/ui/handoff/right_sidebar.cljs
 msgid "handoff.tabs.code.selected.multiple"
 msgstr "%s Seleccionado"
