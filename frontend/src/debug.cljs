@@ -5,9 +5,13 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns debug
+  (:require-macros
+   [app.common.namedtuple :as nt])
   (:require
    [app.common.data :as d]
+   [app.common.perf :as perf]
    [app.common.math :as mth]
+   [app.common.geom.matrix :as gmt]
    [app.common.pages :as cp]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
@@ -267,3 +271,137 @@
   (-> (p/let [response (js/fetch url)]
         (.text response))
       (p/then apply-changes)))
+
+(nt/deftuple Matrix [:a :b :c :d :e :f])
+
+
+;; (defn multiply!
+;;   [^Matrix m1 ^Matrix m2]
+;;   (let [bf1 (.-buff ^js m1)
+;;         bf2 (.-buff ^js m2)
+;;         m1a (aget bf1 0)
+;;         m1b (aget bf1 1)
+;;         m1c (aget bf1 2)
+;;         m1d (aget bf1 3)
+;;         m1e (aget bf1 4)
+;;         m1f (aget bf1 5)
+
+;;         m2a (aget bf2 0)
+;;         m2b (aget bf2 1)
+;;         m2c (aget bf2 2)
+;;         m2d (aget bf2 3)
+;;         m2e (aget bf2 4)
+;;         m2f (aget bf2 5)]
+
+;;     (aset bf1 0 (+ (* m1a m2a) (* m1c m2b)))
+;;     (aset bf1 1 (+ (* m1b m2a) (* m1d m2b)))
+;;     (aset bf1 2 (+ (* m1a m2c) (* m1c m2d)))
+;;     (aset bf1 3 (+ (* m1b m2c) (* m1d m2d)))
+;;     (aset bf1 4 (+ (* m1a m2e) (* m1c m2f) m1e))
+;;     (aset bf1 5 (+ (* m1b m2e) (* m1d m2f) m1f))
+;;     m1))
+
+(defn multiply!
+  [bf1 bf2]
+  (let [m1a (aget bf1 0)
+        m1b (aget bf1 1)
+        m1c (aget bf1 2)
+        m1d (aget bf1 3)
+        m1e (aget bf1 4)
+        m1f (aget bf1 5)
+
+        m2a (aget bf2 0)
+        m2b (aget bf2 1)
+        m2c (aget bf2 2)
+        m2d (aget bf2 3)
+        m2e (aget bf2 4)
+        m2f (aget bf2 5)]
+
+    (aset bf1 0 (+ (* m1a m2a) (* m1c m2b)))
+    (aset bf1 1 (+ (* m1b m2a) (* m1d m2b)))
+    (aset bf1 2 (+ (* m1a m2c) (* m1c m2d)))
+    (aset bf1 3 (+ (* m1b m2c) (* m1d m2d)))
+    (aset bf1 4 (+ (* m1a m2e) (* m1c m2f) m1e))
+    (aset bf1 5 (+ (* m1b m2e) (* m1d m2f) m1f))))
+
+(defn multiply
+  ([m1 m2]
+   (let [buff1 (.slice (.-buff ^js m1) 0)]
+     (multiply! buff1 (.-buff ^js m2))
+     (Matrix. buff1 nil)))
+
+  ([m1 m2 m3]
+   (let [buff1 (.slice (.-buff ^js m1) 0)]
+     (multiply! buff1 (.-buff ^js m2))
+     (multiply! buff1 (.-buff ^js m3))
+     (Matrix. buff1 nil)))
+
+  ([m1 m2 m3 m4]
+   (let [buff1 (.slice (.-buff ^js m1) 0)]
+     (multiply! buff1 (.-buff ^js m2))
+     (multiply! buff1 (.-buff ^js m3))
+     (multiply! buff1 (.-buff ^js m4))
+     (Matrix. buff1 nil)))
+
+  ([m1 m2 m3 m4 m5]
+   (let [buff1 (.slice (.-buff ^js m1) 0)]
+     (multiply! buff1 (.-buff ^js m2))
+     (multiply! buff1 (.-buff ^js m3))
+     (multiply! buff1 (.-buff ^js m4))
+     (multiply! buff1 (.-buff ^js m5))
+     (Matrix. buff1 nil))))
+
+(defn ^:export bench-matrix-multiply
+  []
+  (let [ma1 (make-matrix 1 2 3 4 5 6)
+        ma2 (make-matrix 6 5 4 3 2 1)]
+
+    (perf/benchmark
+     :f (fn []
+          (dotimes [i 100]
+            (when-not (multiply ma1 ma2)
+              (throw (ex-info "foobar" {}))))
+          :result)
+     :name "tuple matrix"))
+
+  (let [ma1 (gmt/matrix 1 2 3 4 5 6)
+        ma2 (gmt/matrix 6 5 4 3 2 1)]
+    (perf/benchmark
+     :f (fn []
+          (dotimes [i 100]
+            (when-not (gmt/multiply ma1 ma2)
+              (throw (ex-info "foobar" {}))))
+          :result)
+     :name "orig matrix")))
+
+(defn ^:export bench-matrix-multiply-bulk-5
+  []
+  (let [ma1 (make-matrix 1 2 3 4 5 6)
+        ma2 (make-matrix 6 5 4 3 2 1)
+        ma3 (make-matrix 9 8 7 6 5 4)
+        ma4 (make-matrix 7 6 5 4 3 2)
+        ma5 (make-matrix 1 9 2 8 4 7)]
+
+    (prn "result1" (multiply ma1 ma2 ma3 ma4 ma5))
+    (perf/benchmark
+     :f (fn []
+          (dotimes [i 100]
+            (when-not (multiply ma1 ma2 ma3 ma4 ma5)
+              (throw (ex-info "foobar" {}))))
+          :result)
+     :name "tuple matrix"))
+
+  (let [ma1 (gmt/matrix 1 2 3 4 5 6)
+        ma2 (gmt/matrix 6 5 4 3 2 1)
+        ma3 (gmt/matrix 9 8 7 6 5 4)
+        ma4 (gmt/matrix 7 6 5 4 3 2)
+        ma5 (gmt/matrix 1 9 2 8 4 7)]
+
+    (prn "result2" (gmt/multiply ma1 ma2 ma3 ma4 ma5))
+    (perf/benchmark
+     :f (fn []
+          (dotimes [i 100]
+            (when-not (gmt/multiply ma1 ma2 ma3 ma4 ma5)
+              (throw (ex-info "foobar" {}))))
+          :result)
+     :name "orig matrix")))

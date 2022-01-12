@@ -92,3 +92,64 @@
     (add-tap #(locking debug-tap
                 (prn "tap debug:" %)))
     1))
+
+
+;; (import
+;;  'app.Experiments
+;;  'app.Experiments$Matrix)
+
+;; (defn bench-matrix-multiply
+;;   []
+;;   (let [ma1 (Experiments/create 1 2 3 4 5 6)
+;;         ma2 (Experiments/create 6 5 4 3 2 1)]
+;;     (perf/benchmark
+;;      :f (fn []
+;;           (dotimes [i 100]
+;;             (when-not (Experiments/multiply ma1 ma2)
+;;               (throw (ex-info "foobar" {}))))
+;;           :result)
+;;      :name "java matrix"))
+
+;;   (let [ma1 (gmt/matrix 1 2 3 4 5 6)
+;;         ma2 (gmt/matrix 6 5 4 3 2 1)]
+;;     (perf/benchmark
+;;      :f (fn []
+;;           (dotimes [i 100]
+;;             (when-not (gmt/multiply ma1 ma2)
+;;               (throw (ex-info "foobar" {}))))
+;;           :result)
+;;      :name "orig matrix")))
+
+
+;; (defn bench-matrix-multiply-bulk-5
+;;   []
+;;   (let [ma1 (Experiments/create 1 2 3 4 5 6)
+;;         ma2 (Experiments/create 6 5 4 3 2 1)
+;;         ma3 (Experiments/create 9 8 7 6 5 4)
+;;         ma4 (Experiments/create 7 6 5 4 3 2)
+;;         ma5 (Experiments/create 1 9 2 8 4 7)]
+
+;;     (prn "result1" (seq (Experiments/multiplyBulk ma1 ma2 ma3 ma4 ma5)))
+;;     (perf/benchmark
+;;      :f (fn []
+;;           (dotimes [i 100]
+;;             (when-not (Experiments/multiplyBulk ma1 ma2 ma3 ma4 ma5)
+;;               (throw (ex-info "foobar" {}))))
+;;           :result)
+;;      :name "java matrix"))
+
+;;   (let [ma1 (gmt/matrix 1 2 3 4 5 6)
+;;         ma2 (gmt/matrix 6 5 4 3 2 1)
+;;         ma3 (gmt/matrix 9 8 7 6 5 4)
+;;         ma4 (gmt/matrix 7 6 5 4 3 2)
+;;         ma5 (gmt/matrix 1 9 2 8 4 7)]
+
+;;     (prn "result2" (map second (gmt/multiply ma1 ma2 ma3 ma4 ma5)))
+;;     (perf/benchmark
+;;      :f (fn []
+;;           (dotimes [i 100]
+;;             (when-not (gmt/multiply ma1 ma2 ma3 ma4 ma5)
+;;               (throw (ex-info "foobar" {}))))
+;;           :result)
+;;      :name "orig matrix")))
+
