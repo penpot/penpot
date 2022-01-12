@@ -8,10 +8,13 @@
   (:require
    [app.util.color :as uc]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [goog.events :as events]
+   [rumext.alpha :as mf])
+  (:import goog.events.EventType))
 
 (defn clean-color
   [value]
@@ -91,7 +94,14 @@
                (apply-value new-value)
                (update-input value)))))
 
-        ;; list-id (str "colors-" (uuid/next))
+        on-click
+        (mf/use-callback
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (when (some? ref)
+               (let [current (mf/ref-val ref)]
+                 (when (and (some? current) (not (.contains current target)))
+                   (dom/blur! current)))))))
 
         props (-> props
                   (obj/without ["value" "onChange"])
@@ -118,6 +128,14 @@
        #(when (mf/ref-val dirty-ref)
           (let [handle-blur (:fn (mf/ref-val handle-blur-ref))]
             (handle-blur)))))
+
+    (mf/use-layout-effect
+     (fn []
+       (let [keys [(events/listen globals/window EventType.POINTERDOWN on-click)
+                   (events/listen globals/window EventType.MOUSEDOWN on-click)
+                   (events/listen globals/window EventType.CLICK on-click)]]
+         #(doseq [key keys]
+            (events/unlistenByKey key)))))
 
     [:*
      [:> :input props]

@@ -10,11 +10,14 @@
    [app.common.math :as math]
    [app.common.spec :as us]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.simple-math :as sm]
    [app.util.strings :as ust]
-   [rumext.alpha :as mf]))
+   [goog.events :as events]
+   [rumext.alpha :as mf])
+  (:import goog.events.EventType))
 
 (defn num? [val]
   (and (number? val)
@@ -176,6 +179,15 @@
                 (update-input new-value)))
             (when on-blur (on-blur))))
 
+        on-click
+        (mf/use-callback
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (when (some? ref)
+               (let [current (mf/ref-val ref)]
+                 (when (and (some? current) (not (.contains current target)))
+                   (dom/blur! current)))))))
+
         props (-> props
                   (obj/without ["value" "onChange"])
                   (obj/set! "className" "input-text")
@@ -204,6 +216,14 @@
        #(when (mf/ref-val dirty-ref)
           (let [handle-blur (:fn (mf/ref-val handle-blur-ref))]
             (handle-blur)))))
+
+    (mf/use-layout-effect
+     (fn []
+       (let [keys [(events/listen globals/window EventType.POINTERDOWN on-click)
+                   (events/listen globals/window EventType.MOUSEDOWN on-click)
+                   (events/listen globals/window EventType.CLICK on-click)]]
+         #(doseq [key keys]
+            (events/unlistenByKey key)))))
 
     [:> :input props]))
 
