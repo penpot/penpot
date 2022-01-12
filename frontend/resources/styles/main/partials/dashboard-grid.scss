@@ -63,7 +63,6 @@
       .placeholder-label {
         font-size: $fs14;
       }
-
     }
 
     &.overlay {
@@ -90,8 +89,8 @@
     }
 
     .grid-item-icon {
-      width:90px;
-      height:90px;
+      width: 90px;
+      height: 90px;
     }
 
     .item-info {
@@ -133,7 +132,6 @@
           font-weight: 400;
         }
       }
-
     }
 
     .item-badge {
@@ -170,7 +168,6 @@
         background-color: $color-white;
         border: 2px solid $color-primary;
       }
-
     }
 
     // PROJECTS, ELEMENTS & ICONS GRID
@@ -225,13 +222,9 @@
               > svg {
                 fill: $color-primary-dark;
               }
-
             }
-
           }
-
         }
-
       }
 
       .project-th-actions.force-display {
@@ -247,11 +240,9 @@
       &:hover {
         border-color: $color-primary;
       }
-
     }
 
     .grid-item-image {
-
       svg {
         max-height: 100px;
         max-width: 100px;
@@ -259,7 +250,6 @@
         min-width: 40px;
         width: 8vw;
       }
-
     }
 
     .color-swatch {
@@ -291,7 +281,6 @@
       justify-content: center;
       align-items: center;
     }
-
   }
 
   // STYLES FOR LIBRARIES
@@ -355,7 +344,6 @@
     }
   }
 
-
   svg {
     width: 36px;
     height: 36px;
@@ -373,4 +361,3 @@
     margin-right: calc(100% - 148px);
   }
 }
-

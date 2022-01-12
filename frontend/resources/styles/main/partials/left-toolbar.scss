@@ -57,7 +57,6 @@ $width-left-toolbar: 48px;
       svg {
         fill: $color-gray-50;
       }
-
     }
 
     &.selected {
@@ -66,15 +65,10 @@ $width-left-toolbar: 48px;
       svg {
         fill: $color-primary;
       }
-
     }
-
   }
 
   &.panels {
     margin-top: auto;
   }
-
 }
-
-    

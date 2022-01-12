@@ -5,7 +5,7 @@
 // Copyright (c) UXBOX Labs SL
 
 .color-palette {
-  @include animation(0,.5s,fadeInUp);
+  @include animation(0, 0.5s, fadeInUp);
   align-items: center;
   background-color: $color-gray-50;
   border-top: 1px solid $color-gray-60;
@@ -18,12 +18,12 @@
 
   & .right-arrow,
   & .left-arrow {
-      cursor: pointer;
+    cursor: pointer;
 
     svg {
       fill: $color-gray-20;
       height: 1rem;
-      margin: 0 .5rem;
+      margin: 0 0.5rem;
       width: 1rem;
     }
 
@@ -37,53 +37,52 @@
     }
   }
 
-
   .left-arrow {
-      transform: rotate(180deg);
-      padding-top: 10px;
+    transform: rotate(180deg);
+    padding-top: 10px;
   }
 
   &.fade-out-down {
-    @include animation(0,.5s,fadeOutDown);
+    @include animation(0, 0.5s, fadeOutDown);
   }
 
   &.left-sidebar-open {
-      left: 303px;
-      width: calc(100% - 303px);
+    left: 303px;
+    width: calc(100% - 303px);
   }
 
   & .context-menu-items {
-      bottom: 1.5rem;
-      top: initial;
-      min-width: 10rem;
+    bottom: 1.5rem;
+    top: initial;
+    min-width: 10rem;
   }
 }
 
 .color-palette-actions {
-    align-self: stretch;
-    border: 1px solid #1F1F1F;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    justify-content: center;
-    margin-right: .5rem;
-    padding: 0.5rem;
+  align-self: stretch;
+  border: 1px solid #1f1f1f;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  justify-content: center;
+  margin-right: 0.5rem;
+  padding: 0.5rem;
 
-    .color-palette-buttons {
-        align-items: center;
-        display: flex;
-        justify-content: space-around;
-    }
+  .color-palette-buttons {
+    align-items: center;
+    display: flex;
+    justify-content: space-around;
+  }
 }
 
 .color-palette-actions-button {
-    cursor: pointer;
-    & svg {
-        width: 1rem;
-        height: 1rem;
-        fill: #AFB2BF;
-    }
+  cursor: pointer;
+  & svg {
+    width: 1rem;
+    height: 1rem;
+    fill: #afb2bf;
+  }
 }
 
 .btn-palette {
@@ -94,7 +93,7 @@
   display: flex;
   flex-shrink: 0;
   justify-content: center;
-  padding: .6rem;
+  padding: 0.6rem;
   svg {
     fill: $color-gray-10;
     height: 20px;
@@ -124,7 +123,7 @@
   padding: 0.25rem;
 
   &.size-small {
-      height: 3.5rem;
+    height: 3.5rem;
   }
 }
 
@@ -132,7 +131,7 @@
   position: relative;
   align-items: center;
   display: flex;
-  transition: all .6s ease;
+  transition: all 0.6s ease;
   width: 100%;
   scroll-behavior: smooth;
 }
@@ -146,11 +145,11 @@
   position: relative;
 
   &.cell-big {
-      flex-basis: 66px;
+    flex-basis: 66px;
   }
 
   &.cell-small {
-      flex-basis: 52px;
+    flex-basis: 52px;
   }
 
   .color-text {
@@ -232,7 +231,7 @@
     position: relative;
     .input-text {
       font-size: $fs12;
-      margin: 0 .5rem;
+      margin: 0 0.5rem;
       max-width: 100px;
     }
     &::after {
@@ -251,43 +250,41 @@
 }
 
 ul.palette-menu {
-    left: 8px;
-    top: auto;
-    bottom: 4.5rem;
-    color: $color-black;
+  left: 8px;
+  top: auto;
+  bottom: 4.5rem;
+  color: $color-black;
 
-    li {
-        position: relative;
-        padding: 5px 1.5rem;
-    }
+  li {
+    position: relative;
+    padding: 5px 1.5rem;
+  }
 
-    hr {
-        margin: 0.5rem 0;
-    }
+  hr {
+    margin: 0.5rem 0;
+  }
 
-    svg {
-        width: 9px;
-        height: 9px;
-        position: absolute;
-        left: 0.5rem;
-        top: 10px;
-    }
+  svg {
+    width: 9px;
+    height: 9px;
+    position: absolute;
+    left: 0.5rem;
+    top: 10px;
+  }
 
-    hr {
-        border-color: $color-gray-20;
-    }
+  hr {
+    border-color: $color-gray-20;
+  }
 
-    .palette-library {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-    }
+  .palette-library {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-    .color-sample {
-        display: flex;
-        flex-direction: row;
-        margin-top: 0.5rem;
-    }
-
+  .color-sample {
+    display: flex;
+    flex-direction: row;
+    margin-top: 0.5rem;
+  }
 }
-

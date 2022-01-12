@@ -1,5 +1,6 @@
 foreignObject {
-  .text-editor, .rich-text {
+  .text-editor,
+  .rich-text {
     color: $color-black;
     height: 100%;
     white-space: pre-wrap;
@@ -59,4 +60,3 @@ foreignObject {
     }
   }
 }
-

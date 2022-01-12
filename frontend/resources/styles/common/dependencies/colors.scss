@@ -8,35 +8,35 @@
 // Colors
 $color-white: #ffffff;
 $color-black: #000000;
-$color-canvas: #E8E9EA;
-$color-dashboard: #F6F6F6;
+$color-canvas: #e8e9ea;
+$color-dashboard: #f6f6f6;
 
 // Main color
-$color-primary: #31EFB8;
+$color-primary: #31efb8;
 
 // Secondary colors
-$color-success: #58C35C;
-$color-complete : #a599c6;
-$color-warning: #FC8802;
-$color-danger: #E65244;
+$color-success: #58c35c;
+$color-complete: #a599c6;
+$color-warning: #fc8802;
+$color-danger: #e65244;
 $color-info: #59b9e2;
 $color-ocean: #4285f4;
-$color-component: #76B0B8;
+$color-component: #76b0b8;
 $color-component-highlight: #1890ff;
 $color-pink: #feecfc;
 
 // Gray scale
-$color-gray-10: #E3E3E3;
+$color-gray-10: #e3e3e3;
 $color-gray-20: #b1b2b5;
-$color-gray-30: #7B7D85;
-$color-gray-40: #64666A;
+$color-gray-30: #7b7d85;
+$color-gray-40: #64666a;
 $color-gray-50: #303236;
-$color-gray-60: #1F1F1F;
+$color-gray-60: #1f1f1f;
 
 // UI colors
-$color-select: #1FDEA7;
-$color-distance: #DB00FF;
-$color-snap: #D383DA;
+$color-select: #1fdea7;
+$color-distance: #db00ff;
+$color-snap: #d383da;
 
 // Mixing Color variable for creating both light and dark colors
 $mix-percentage-dark: 81%;
@@ -46,121 +46,217 @@ $mix-percentage-lighter: 20%;
 $mix-percentage-lightest: 10%;
 
 // Lighter colors
-$color-success-light: mix($color-success, $color-white, $mix-percentage-light); //#79cf7d
-$color-success-lighter: mix($color-success, $color-white, $mix-percentage-lighter); //#def3de
+$color-success-light: mix(
+  $color-success,
+  $color-white,
+  $mix-percentage-light
+); //#79cf7d
+$color-success-lighter: mix(
+  $color-success,
+  $color-white,
+  $mix-percentage-lighter
+); //#def3de
 
-$color-complete-light: mix($color-complete, $color-white, $mix-percentage-light); //#b7add1
-$color-complete-lighter: mix($color-complete, $color-white, $mix-percentage-lighter); //#edebf4
+$color-complete-light: mix(
+  $color-complete,
+  $color-white,
+  $mix-percentage-light
+); //#b7add1
+$color-complete-lighter: mix(
+  $color-complete,
+  $color-white,
+  $mix-percentage-lighter
+); //#edebf4
 
-$color-primary-light: mix($color-primary, $color-white, $mix-percentage-light); //#5af2c6
-$color-primary-lighter: mix($color-primary, $color-white, $mix-percentage-lighter); //#d6fcf1
+$color-primary-light: mix(
+  $color-primary,
+  $color-white,
+  $mix-percentage-light
+); //#5af2c6
+$color-primary-lighter: mix(
+  $color-primary,
+  $color-white,
+  $mix-percentage-lighter
+); //#d6fcf1
 
-$color-warning-light: mix($color-warning, $color-white, $mix-percentage-light); //#fda035
-$color-warning-lighter: mix($color-warning, $color-white, $mix-percentage-lighter); //#fee7cc;
+$color-warning-light: mix(
+  $color-warning,
+  $color-white,
+  $mix-percentage-light
+); //#fda035
+$color-warning-lighter: mix(
+  $color-warning,
+  $color-white,
+  $mix-percentage-lighter
+); //#fee7cc;
 
-$color-danger-light: mix($color-danger, $color-white, $mix-percentage-light); //#eb7569
-$color-danger-lighter: mix($color-danger, $color-white, $mix-percentage-lighter); //#fadcda
+$color-danger-light: mix(
+  $color-danger,
+  $color-white,
+  $mix-percentage-light
+); //#eb7569
+$color-danger-lighter: mix(
+  $color-danger,
+  $color-white,
+  $mix-percentage-lighter
+); //#fadcda
 
-$color-info-light: mix($color-info, $color-white, $mix-percentage-light); //#7ac7e8
-$color-info-lighter: mix($color-info, $color-white, $mix-percentage-lighter); //#def1f9;
+$color-info-light: mix(
+  $color-info,
+  $color-white,
+  $mix-percentage-light
+); //#7ac7e8
+$color-info-lighter: mix(
+  $color-info,
+  $color-white,
+  $mix-percentage-lighter
+); //#def1f9;
 
 // Darker colors
-$color-success-dark: mix($color-success, $color-black, $mix-percentage-dark); //#479e4b;
-$color-success-darker: mix($color-success, $color-black, $mix-percentage-darker); // #357537;
+$color-success-dark: mix(
+  $color-success,
+  $color-black,
+  $mix-percentage-dark
+); //#479e4b;
+$color-success-darker: mix(
+  $color-success,
+  $color-black,
+  $mix-percentage-darker
+); // #357537;
 
-$color-complete-dark: mix($color-complete, $color-black, $mix-percentage-dark); //#867ca0
-$color-complete-darker: mix($color-complete, $color-black, $mix-percentage-darker); //#635c77
+$color-complete-dark: mix(
+  $color-complete,
+  $color-black,
+  $mix-percentage-dark
+); //#867ca0
+$color-complete-darker: mix(
+  $color-complete,
+  $color-black,
+  $mix-percentage-darker
+); //#635c77
 
-$color-primary-dark: mix($color-primary, $color-black, $mix-percentage-dark); //#28c295;
-$color-primary-darker: mix($color-primary, $color-black, $mix-percentage-darker); // #1d8f6e
+$color-primary-dark: mix(
+  $color-primary,
+  $color-black,
+  $mix-percentage-dark
+); //#28c295;
+$color-primary-darker: mix(
+  $color-primary,
+  $color-black,
+  $mix-percentage-darker
+); // #1d8f6e
 
-$color-warning-dark: mix($color-warning, $color-black, $mix-percentage-dark); // #cc6e02;
-$color-warning-darker: mix($color-warning, $color-black, $mix-percentage-darker); //#975201
+$color-warning-dark: mix(
+  $color-warning,
+  $color-black,
+  $mix-percentage-dark
+); // #cc6e02;
+$color-warning-darker: mix(
+  $color-warning,
+  $color-black,
+  $mix-percentage-darker
+); //#975201
 
-$color-danger-dark: mix($color-danger, $color-black, $mix-percentage-dark); //#ba4237
-$color-danger-darker: mix($color-danger, $color-black, $mix-percentage-darker);// #8a3129;
+$color-danger-dark: mix(
+  $color-danger,
+  $color-black,
+  $mix-percentage-dark
+); //#ba4237
+$color-danger-darker: mix(
+  $color-danger,
+  $color-black,
+  $mix-percentage-darker
+); // #8a3129;
 
-$color-info-dark: mix($color-info, $color-black, $mix-percentage-dark);// #4896b7
-$color-info-darker: mix($color-info, $color-black, $mix-percentage-darker); // #356f88;
+$color-info-dark: mix(
+  $color-info,
+  $color-black,
+  $mix-percentage-dark
+); // #4896b7
+$color-info-darker: mix(
+  $color-info,
+  $color-black,
+  $mix-percentage-darker
+); // #356f88;
 
 // bg transparent
-$color-dark-bg: rgba(0,0,0,.4);
-$color-light-bg: rgba(255,255,255,.6);
+$color-dark-bg: rgba(0, 0, 0, 0.4);
+$color-light-bg: rgba(255, 255, 255, 0.6);
 
 // Transform scss variables into css variables to use them onto cljs files
 :root {
-    // Colors
-    --color-white: #{$color-white};
-    --color-black: #{$color-black};
-    --color-canvas: #{$color-canvas};
-    --color-dashboard: #{$color-dashboard};
+  // Colors
+  --color-white: #{$color-white};
+  --color-black: #{$color-black};
+  --color-canvas: #{$color-canvas};
+  --color-dashboard: #{$color-dashboard};
 
-    // Main color;
-    --color-primary: #{$color-primary};
+  // Main color;
+  --color-primary: #{$color-primary};
 
-    // Secondary colors;
-    --color-success: #{$color-success};
-    --color-complete: #{$color-complete};
-    --color-warning: #{$color-warning};
-    --color-danger: #{$color-danger};
-    --color-info: #{$color-info};
-    --color-ocean: #{$color-ocean};
-    --color-component: #{$color-component};
-    --color-component-highlight: #{$color-component-highlight};
-    --color-pink: #{$color-pink};
+  // Secondary colors;
+  --color-success: #{$color-success};
+  --color-complete: #{$color-complete};
+  --color-warning: #{$color-warning};
+  --color-danger: #{$color-danger};
+  --color-info: #{$color-info};
+  --color-ocean: #{$color-ocean};
+  --color-component: #{$color-component};
+  --color-component-highlight: #{$color-component-highlight};
+  --color-pink: #{$color-pink};
 
-    // Gray scale;
-    --color-gray-10: #{$color-gray-10};
-    --color-gray-20: #{$color-gray-20};
-    --color-gray-30: #{$color-gray-30};
-    --color-gray-40: #{$color-gray-40};
-    --color-gray-50: #{$color-gray-50};
-    --color-gray-60: #{$color-gray-60};
+  // Gray scale;
+  --color-gray-10: #{$color-gray-10};
+  --color-gray-20: #{$color-gray-20};
+  --color-gray-30: #{$color-gray-30};
+  --color-gray-40: #{$color-gray-40};
+  --color-gray-50: #{$color-gray-50};
+  --color-gray-60: #{$color-gray-60};
 
-    // UI colors
-    --color-distance: #{$color-distance};
-    --color-select: #{$color-select};
-    --color-snap: #{$color-snap};
+  // UI colors
+  --color-distance: #{$color-distance};
+  --color-select: #{$color-select};
+  --color-snap: #{$color-snap};
 
-    // Lighter colors
-    --color-success-light : #{$color-success-light};
-    --color-success-lighter : #{$color-success-lighter};
+  // Lighter colors
+  --color-success-light: #{$color-success-light};
+  --color-success-lighter: #{$color-success-lighter};
 
-    --color-complete-light : #{$color-complete-light};
-    --color-complete-lighter : #{$color-complete-lighter};
+  --color-complete-light: #{$color-complete-light};
+  --color-complete-lighter: #{$color-complete-lighter};
 
-    --color-primary-light: #{$color-primary-light};
-    --color-primary-lighter : #{$color-primary-lighter};
+  --color-primary-light: #{$color-primary-light};
+  --color-primary-lighter: #{$color-primary-lighter};
 
-    --color-warning-light : #{$color-warning-light};
-    --color-warning-lighter : #{$color-warning-lighter};
+  --color-warning-light: #{$color-warning-light};
+  --color-warning-lighter: #{$color-warning-lighter};
 
-    --color-danger-light : #{$color-danger-light};
-    --color-danger-lighter : #{$color-danger-lighter};
+  --color-danger-light: #{$color-danger-light};
+  --color-danger-lighter: #{$color-danger-lighter};
 
-    --color-info-light : #{$color-info-light};
-    --color-info-lighter : #{$color-info-lighter};
+  --color-info-light: #{$color-info-light};
+  --color-info-lighter: #{$color-info-lighter};
 
-    // Darker colors
-    --color-success-dark : #{$color-success-dark};
-    --color-success-darker : #{$color-success-darker};
+  // Darker colors
+  --color-success-dark: #{$color-success-dark};
+  --color-success-darker: #{$color-success-darker};
 
-    --color-complete-dark : #{$color-complete-dark};
-    --color-complete-darker : #{$color-complete-darker};
+  --color-complete-dark: #{$color-complete-dark};
+  --color-complete-darker: #{$color-complete-darker};
 
-    --color-primary-dark : #{$color-primary-dark};
-    --color-primary-darker : #{$color-primary-darker};
+  --color-primary-dark: #{$color-primary-dark};
+  --color-primary-darker: #{$color-primary-darker};
 
-    --color-warning-dark : #{$color-warning-dark};
-    --color-warning-darker : #{$color-warning-darker};
+  --color-warning-dark: #{$color-warning-dark};
+  --color-warning-darker: #{$color-warning-darker};
 
-    --color-danger-dark : #{$color-danger-dark};
-    --color-danger-darker : #{$color-danger-darker};
+  --color-danger-dark: #{$color-danger-dark};
+  --color-danger-darker: #{$color-danger-darker};
 
-    --color-info-dark : #{$color-info-dark};
-    --color-info-darker : #{$color-info-darker};
+  --color-info-dark: #{$color-info-dark};
+  --color-info-darker: #{$color-info-darker};
 
-    // bg transparent
-    --color-dark-bg : #{$color-dark-bg};
-    --color-light-bg : #{$color-light-bg};
-  }
+  // bg transparent
+  --color-dark-bg: #{$color-dark-bg};
+  --color-light-bg: #{$color-light-bg};
+}

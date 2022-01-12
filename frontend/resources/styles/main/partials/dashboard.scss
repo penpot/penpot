@@ -71,7 +71,9 @@
       }
 
       &.active {
-        svg { fill: $color-gray-50; }
+        svg {
+          fill: $color-gray-50;
+        }
       }
     }
   }
@@ -132,7 +134,6 @@
     fill: $color-black;
   }
 }
-
 
 .edit-wrapper {
   border: 1px solid $color-gray-10;

@@ -6,7 +6,7 @@
 // Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 $width-settings-bar: 16rem;
-  // This width is also used in update-viewport-size at frontend/src/app/main/data/workspace.cljs
+// This width is also used in update-viewport-size at frontend/src/app/main/data/workspace.cljs
 
 .settings-bar {
   background-color: $color-gray-50;
@@ -35,34 +35,33 @@ $width-settings-bar: 16rem;
     display: grid;
     grid-template-columns: 100%;
 
-    &[data-layout*='sitemap-pages'] {
-        grid-template-rows: auto;
+    &[data-layout*="sitemap-pages"] {
+      grid-template-rows: auto;
     }
 
-    &[data-layout*='layers'] {
-        grid-template-rows: auto 1fr;
+    &[data-layout*="layers"] {
+      grid-template-rows: auto 1fr;
     }
 
-    &[data-layout*='libraries'] {
-        grid-template-rows: auto 1fr;
+    &[data-layout*="libraries"] {
+      grid-template-rows: auto 1fr;
     }
 
-    &[data-layout*='layers'][data-layout*='sitemap-pages'] {
-        grid-template-rows: 11.5rem 1fr;
+    &[data-layout*="layers"][data-layout*="sitemap-pages"] {
+      grid-template-rows: 11.5rem 1fr;
     }
 
-    &[data-layout*='libraries'][data-layout*='sitemap-pages'] {
-        grid-template-rows: 11.5rem 1fr;
+    &[data-layout*="libraries"][data-layout*="sitemap-pages"] {
+      grid-template-rows: 11.5rem 1fr;
     }
 
-    &[data-layout*='layers'][data-layout*='libraries'] {
-        grid-template-rows: auto 30% 1fr;
+    &[data-layout*="layers"][data-layout*="libraries"] {
+      grid-template-rows: auto 30% 1fr;
     }
 
-    &[data-layout*='layers'][data-layout*='libraries'][data-layout*='sitemap-pages'] {
-        grid-template-rows: 11.5rem 25% 1fr;
+    &[data-layout*="layers"][data-layout*="libraries"][data-layout*="sitemap-pages"] {
+      grid-template-rows: 11.5rem 25% 1fr;
     }
-
 
     flex-direction: column;
     padding-top: 48px;
@@ -151,20 +150,17 @@ $width-settings-bar: 16rem;
           transform: rotate(45deg);
 
           &:hover {
-
             svg {
               fill: $color-danger;
             }
-
           }
-
         }
       }
     }
 
     .assets-bar .tool-window {
-        flex: none;
-        height: auto;
+      flex: none;
+      height: auto;
     }
   }
 }
@@ -199,11 +195,8 @@ $width-settings-bar: 16rem;
     padding-bottom: 1px;
 
     &.open {
-
       ul {
-
         li {
-
           .element-list-body {
             border-style: dashed;
           }

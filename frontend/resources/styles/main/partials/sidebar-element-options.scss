@@ -34,11 +34,9 @@
       }
 
       &:hover {
-
         svg {
           fill: $color-primary;
         }
-
       }
 
       &.selected {
@@ -47,15 +45,12 @@
         svg {
           fill: $color-white;
         }
-
       }
 
       &:last-child {
         border: none;
       }
-
     }
-
   }
 
   .element-set {
@@ -85,14 +80,12 @@
       width: 100%;
 
       .list-icon {
-
         svg {
           fill: $color-gray-30;
           height: 15px;
           margin-right: $size-1;
           width: 15px;
         }
-
       }
 
       span {
@@ -111,7 +104,6 @@
         margin-left: auto;
 
         a {
-
           svg {
             fill: $color-gray-60;
             height: 15px;
@@ -121,59 +113,43 @@
             &:hover {
               fill: $color-gray-20;
             }
-
           }
-
         }
-
       }
 
       &:hover {
-
         .list-icon {
-
           svg {
             fill: $color-primary;
           }
-
         }
 
         span {
           color: $color-primary;
         }
-
       }
 
       &.selected {
-
         .list-icon {
-
           svg {
             fill: $color-primary;
           }
-
         }
 
         span {
           color: $color-primary;
           font-weight: bold;
         }
-
       }
-
     }
 
     &:hover {
-
       .list-actions {
         display: flex;
-        @include animation(0s,.3s,fadeIn);
+        @include animation(0s, 0.3s, fadeIn);
       }
-
     }
-
   }
-
 }
 
 .element-set-content {
@@ -272,7 +248,6 @@
       &:hover {
         fill: $color-primary;
       }
-
     }
 
     &.selected {
@@ -325,7 +300,6 @@
     &:hover {
       border: 1px solid $color-gray-20;
     }
-
   }
 
   .custom-select-dropdown {
@@ -426,8 +400,8 @@
     }
 
     input.input-text {
-        border: none;
-        background: none;
+      border: none;
+      background: none;
     }
 
     .input-select {
@@ -458,12 +432,11 @@
       height: 100%;
       display: flex;
       align-items: center;
-
     }
 
     &.input-option {
       height: 26px;
-      border-bottom: 1px solid #64666A;
+      border-bottom: 1px solid #64666a;
       width: 100%;
       margin-left: 0.25rem;
 
@@ -488,7 +461,7 @@
   }
 }
 
-.element-set-content .grid-option-main  {
+.element-set-content .grid-option-main {
   .editable-select {
     height: 2rem;
   }
@@ -598,20 +571,15 @@
 
     &:hover,
     &.current {
-
       svg {
         fill: $color-primary;
       }
-
     }
 
     &:last-child {
       margin-right: 0;
     }
-
   }
-
-
 }
 
 .element-color-picker {
@@ -640,9 +608,7 @@
       transition: none;
       top: 30%;
     }
-
   }
-
 }
 
 .radius-options {
@@ -751,7 +717,8 @@
     fill: $color-gray-20;
   }
 
-  &:hover svg, &.is-active svg {
+  &:hover svg,
+  &.is-active svg {
     fill: $color-primary;
   }
 }
@@ -797,7 +764,6 @@
   &:hover {
     background: $color-gray-60;
 
-
     .custom-select,
     .editable-select,
     input {
@@ -809,7 +775,7 @@
     min-width: 4.75rem;
     height: 2rem;
     border-color: transparent;
-    border-bottom: 1px solid #65666A;
+    border-bottom: 1px solid #65666a;
     max-height: 30px;
 
     &:hover {
@@ -898,7 +864,6 @@
   }
 }
 
-
 .element-set-options-group {
   display: flex;
   padding: 3px;
@@ -906,7 +871,7 @@
   border-radius: 4px;
 
   &:hover {
-    background: #1F1F1F;
+    background: #1f1f1f;
   }
 
   &.selected {
@@ -978,34 +943,34 @@
 }
 
 .shadow-options .color-row-wrap {
-    margin-left: 6px;
-    margin-top: 0.5rem;
+  margin-left: 6px;
+  margin-top: 0.5rem;
 }
 
 .element-set-actions-button {
-    display: flex;
-    min-width: 30px;
-    min-height: 30px;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    svg {
-        width: 12px;
-        height: 12px;
-        fill: $color-gray-20;
-        stroke: $color-gray-20;
-    }
+  display: flex;
+  min-width: 30px;
+  min-height: 30px;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  svg {
+    width: 12px;
+    height: 12px;
+    fill: $color-gray-20;
+    stroke: $color-gray-20;
+  }
 
-    &:hover svg,
-    &.active svg {
-        fill: $color-primary;
-        stroke: $color-primary;
-    }
+  &:hover svg,
+  &.active svg {
+    fill: $color-primary;
+    stroke: $color-primary;
+  }
 
-    &.actions-inside {
-      position: absolute;
-      right: 0;
-    }
+  &.actions-inside {
+    position: absolute;
+    right: 0;
+  }
 }
 
 .element-set-label {
@@ -1015,8 +980,8 @@
 }
 
 .element-set-actions {
-    display: flex;
-    visibility: hidden;
+  display: flex;
+  visibility: hidden;
 }
 
 .row-flex-removable:hover .element-set-actions,
@@ -1029,44 +994,44 @@
 }
 
 .typography-entry {
-    margin: 0.5rem 0.3rem;
+  margin: 0.5rem 0.3rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  .typography-selection-wrapper {
     display: flex;
     flex-direction: row;
     align-items: center;
+    flex: 1;
+    height: 100%;
 
-    .typography-selection-wrapper {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        flex: 1;
-        height: 100%;
-
-        &.is-selectable {
-            cursor: pointer;
-        }
+    &.is-selectable {
+      cursor: pointer;
     }
+  }
 
-    .typography-sample {
-        font-size: 17px;
-        color: $color-white;
-        margin: 0 0.5rem;
+  .typography-sample {
+    font-size: 17px;
+    color: $color-white;
+    margin: 0 0.5rem;
 
-        font-family: sourcesanspro;
-        font-style: normal;
-        font-weight: normal;
-    }
+    font-family: sourcesanspro;
+    font-style: normal;
+    font-weight: normal;
+  }
 
-    .typography-name {
-        flex-grow: 1;
-        font-size: 11px;
-        margin-top: 4px;
-        white-space: nowrap;
-    }
+  .typography-name {
+    flex-grow: 1;
+    font-size: 11px;
+    margin-top: 4px;
+    white-space: nowrap;
+  }
 
-    .element-set-actions-button svg {
-        width: 10px;
-        height: 10px;
-    }
+  .element-set-actions-button svg {
+    width: 10px;
+    height: 10px;
+  }
 }
 
 .spacing-options {
@@ -1075,75 +1040,75 @@
 }
 
 .asset-section {
-    .typography-entry {
-        margin: 0.25rem 0;
-    }
+  .typography-entry {
+    margin: 0.25rem 0;
+  }
 
-    .element-set-content .font-option,
-    .element-set-content .size-option {
-        margin: 0.5rem 0;
-    }
-    .element-set-content .variant-option {
-        margin-left: 0.5rem;
-    }
+  .element-set-content .font-option,
+  .element-set-content .size-option {
+    margin: 0.5rem 0;
+  }
+  .element-set-content .variant-option {
+    margin-left: 0.5rem;
+  }
 }
 
 .row-flex input.adv-typography-name {
-    font-size: 14px;
-    color: $color-gray-10;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    background-color: #303236;
-    border-top: none;
-    border-left: none;
-    border-right: none;
+  font-size: 14px;
+  color: $color-gray-10;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  background-color: #303236;
+  border-top: none;
+  border-left: none;
+  border-right: none;
 }
 
 .size-option .custom-select-dropdown {
-    cursor: pointer;
-    max-height: 16rem;
-    min-width: 6rem;
-    left: initial;
-    top: 0;
+  cursor: pointer;
+  max-height: 16rem;
+  min-width: 6rem;
+  left: initial;
+  top: 0;
 }
 
 .typography-read-only-data {
-    font-size: 12px;
-    color: $color-white;
+  font-size: 12px;
+  color: $color-white;
 
-    .typography-name {
-        font-size: 14px;
+  .typography-name {
+    font-size: 14px;
+  }
+
+  .row-flex {
+    padding: 0.5rem 0;
+  }
+
+  .label {
+    color: $color-gray-30;
+
+    &::after {
+      content: ":";
+      margin-right: 0.25rem;
     }
+  }
 
-    .row-flex {
-        padding: 0.5rem 0;
+  .go-to-lib-button {
+    transition: border 0.3s, color 0.3s;
+    text-align: center;
+    background: $color-gray-50;
+    padding: 0.5rem;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 1rem;
+
+    &:hover {
+      background: $color-primary;
+      color: $color-black;
     }
-
-    .label {
-        color: $color-gray-30;
-
-        &::after {
-            content: ':';
-            margin-right: 0.25rem;
-        }
-    }
-
-    .go-to-lib-button {
-        transition: border 0.3s, color 0.3s;
-        text-align: center;
-        background: $color-gray-50;
-        padding: 0.5rem;
-        border-radius: 2px;
-        cursor: pointer;
-        font-size: 14px;
-        margin-top: 1rem;
-
-        &:hover {
-            background: $color-primary;
-            color: $color-black;
-        }
-    }
+  }
 }
 
 .multiple-typography {
@@ -1249,7 +1214,6 @@
           }
         }
       }
-
     }
 
     input {
@@ -1275,7 +1239,7 @@
       svg {
         width: 16px;
         height: 16px;
-        fill: $color-gray-20
+        fill: $color-gray-20;
       }
 
       &.active {
@@ -1315,7 +1279,9 @@
       background-color: $color-black;
       color: $color-primary;
 
-      .icon svg {fill: $color-primary;}
+      .icon svg {
+        fill: $color-primary;
+      }
     }
 
     &:hover {
@@ -1328,7 +1294,7 @@
       // justify-content: center;
       align-items: center;
       // border: 1px solid red;
-      width: $size-5
+      width: $size-5;
     }
 
     .label {
@@ -1371,7 +1337,7 @@
     align-items: center;
 
     &::after {
-      content: ' ';
+      content: " ";
       background-color: $color-gray-30;
     }
 

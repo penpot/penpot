@@ -8,7 +8,7 @@
     pointer-events: auto;
     background-color: $color-gray-10;
     color: $color-gray-60;
-    border: 1px solid #B1B2B5;
+    border: 1px solid #b1b2b5;
     box-sizing: border-box;
     box-shadow: 0px 4px 4px rgba($color-black, 0.25);
 
@@ -124,7 +124,6 @@
 
           @include text-ellipsis;
           width: 174px;
-
         }
         .timeago {
           margin-top: -2px;
@@ -178,7 +177,6 @@
             fill: $color-black;
           }
         }
-
       }
     }
 
@@ -194,13 +192,12 @@
     }
   }
 
-
   .comment-options-dropdown {
     top: 7px;
     right: 7px;
     width: 150px;
 
-    border: 1px solid #B1B2B5;
+    border: 1px solid #b1b2b5;
   }
 }
 
@@ -241,13 +238,10 @@
   }
 }
 
-
-
 .comment-threads-section {
   pointer-events: auto;
 
   .thread-groups {
-
     hr {
       border: 0;
       height: 1px;
@@ -332,7 +326,6 @@
   }
 }
 
-
 .viewer-comments-container {
   width: 100%;
   height: 100%;
@@ -345,8 +338,8 @@
 .workspace-comments-container {
   width: 100%;
   height: 100%;
-  grid-column: 1/span 2;
-  grid-row: 1/span 2;
+  grid-column: 1 / span 2;
+  grid-row: 1 / span 2;
   z-index: 1000;
   pointer-events: none;
   overflow: hidden;
@@ -389,7 +382,9 @@
 
     &.open {
       background-color: $color-black;
-      svg { fill: $color-primary; }
+      svg {
+        fill: $color-primary;
+      }
     }
   }
 
@@ -419,7 +414,6 @@
       align-items: center;
     }
 
-
     svg {
       width: 15px;
       height: 15px;
@@ -439,7 +433,7 @@
   .thread-group .section-title {
     color: $color-black;
   }
-  
+
   .comment {
     .author .name .fullname {
       color: $color-gray-40;
@@ -465,4 +459,3 @@
     width: 24px;
   }
 }
-

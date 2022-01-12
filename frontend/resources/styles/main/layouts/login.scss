@@ -22,7 +22,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  background-color:#FEECFD;
+  background-color: #feecfd;
   background-image: url("/images/login-pink.svg");
   background-position: center;
   background-size: 96%;
@@ -33,12 +33,12 @@
     width: 280px;
     font-size: $fs18;
     margin-top: 2vh;
-    color: #2C233E;
+    color: #2c233e;
   }
 
   .logo {
     svg {
-      fill: #2C233E;
+      fill: #2c233e;
       max-width: 11vw;
       height: 80px;
     }
@@ -121,7 +121,6 @@
     justify-content: space-between;
     margin-top: $size-4;
     margin-bottom: $size-4;
-
 
     &.demo {
       justify-content: center;
