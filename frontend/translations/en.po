@@ -311,6 +311,20 @@ msgstr "Font deleted"
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "You still have no custom fonts installed."
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 font added"
+msgstr[1] "%s fonts added"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Upload all"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Dismiss all"
+
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
