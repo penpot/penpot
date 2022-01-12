@@ -47,9 +47,9 @@
     server))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [handler router port name metrics] :as opts}]
-  (l/info :msg "starting http server" :port port :name name)
-  (let [options {:http/port port}
+  [_ {:keys [handler router port name metrics host] :as opts}]
+  (l/info :msg "starting http server" :port port :host host :name name)
+  (let [options {:http/port port :http/host host}
         handler (cond
                   (fn? handler)  handler
                   (some? router) (wrap-router router)
