@@ -130,11 +130,12 @@
   (if (and (= (count shapes) 1)
            (:component-id (first shapes)))
     empty-changes
-    (let [[group rchanges uchanges]
+    (let [name (if (= 1 (count shapes)) (:name (first shapes)) "Component-1")
+          [group rchanges uchanges]
           (if (and (= (count shapes) 1)
                    (= (:type (first shapes)) :group))
             [(first shapes) [] []]
-            (dwg/prepare-create-group objects page-id shapes "Component-1" true))
+            (dwg/prepare-create-group objects page-id shapes name true))
 
           ;; Asserts for documentation purposes
           _ (us/assert vector? rchanges)
@@ -146,7 +147,7 @@
           rchanges (conj rchanges
                          {:type :add-component
                           :id (:id new-shape)
-                          :name (:name new-shape)
+                          :name name
                           :shapes new-shapes})
 
           rchanges (into rchanges

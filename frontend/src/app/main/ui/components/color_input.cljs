@@ -8,10 +8,20 @@
   (:require
    [app.util.color :as uc]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [goog.events :as events]
+   [rumext.alpha :as mf])
+  (:import goog.events.EventType))
+
+(defn clean-color
+  [value]
+  (-> value
+      (uc/expand-hex)
+      (uc/parse-color)
+      (uc/prepend-hash)))
 
 (mf/defc color-input
   {::mf/wrap-props false
@@ -26,16 +36,17 @@
         local-ref (mf/use-ref)
         ref       (or external-ref local-ref)
 
+        ;; We need to store the handle-blur ref so we can call it on unmount
+        handle-blur-ref (mf/use-ref nil)
+        dirty-ref (mf/use-ref false)
+
         parse-value
         (mf/use-callback
          (mf/deps ref)
          (fn []
            (let [input-node (mf/ref-val ref)]
              (try
-               (let [new-value (-> (dom/get-value input-node)
-                                   (uc/expand-hex)
-                                   (uc/parse-color)
-                                   (uc/prepend-hash))]
+               (let [new-value (clean-color (dom/get-value input-node))]
                  (dom/set-validity! input-node "")
                  new-value)
                (catch :default _e
@@ -53,7 +64,8 @@
         (mf/use-callback
          (mf/deps on-change update-input)
          (fn [new-value]
-           (when new-value
+           (mf/set-ref-val! dirty-ref false)
+           (when (and new-value (not= (uc/remove-hash new-value) value))
              (when on-change
                (on-change new-value))
              (update-input new-value))))
@@ -62,6 +74,7 @@
         (mf/use-callback
          (mf/deps apply-value update-input)
          (fn [event]
+           (mf/set-ref-val! dirty-ref true)
            (let [enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)]
              (when enter?
@@ -81,7 +94,14 @@
                (apply-value new-value)
                (update-input value)))))
 
-        ;; list-id (str "colors-" (uuid/next))
+        on-click
+        (mf/use-callback
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (when (some? ref)
+               (let [current (mf/ref-val ref)]
+                 (when (and (some? current) (not (.contains current target)))
+                   (dom/blur! current)))))))
 
         props (-> props
                   (obj/without ["value" "onChange"])
@@ -97,6 +117,25 @@
      (fn []
        (when-let [node (mf/ref-val ref)]
          (dom/set-value! node value))))
+
+    (mf/use-effect
+     (mf/deps handle-blur)
+     (fn []
+       (mf/set-ref-val! handle-blur-ref {:fn handle-blur})))
+
+    (mf/use-layout-effect
+     (fn []
+       #(when (mf/ref-val dirty-ref)
+          (let [handle-blur (:fn (mf/ref-val handle-blur-ref))]
+            (handle-blur)))))
+
+    (mf/use-layout-effect
+     (fn []
+       (let [keys [(events/listen globals/window EventType.POINTERDOWN on-click)
+                   (events/listen globals/window EventType.MOUSEDOWN on-click)
+                   (events/listen globals/window EventType.CLICK on-click)]]
+         #(doseq [key keys]
+            (events/unlistenByKey key)))))
 
     [:*
      [:> :input props]

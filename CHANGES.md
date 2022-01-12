@@ -44,7 +44,13 @@
 - Right click over artboard name to open its menu [Taiga #1679](https://tree.taiga.io/project/penpot/issue/1679)
 - Make the default session cookue use SameSite=Lax instead of Strict (causes some issues in latest versions of Chrome).
 - Fix "open in new tab" on dashboard [Taiga #2235](https://tree.taiga.io/project/penpot/issue/2355)
+- Changing pages while comments activated will not close the panel [#1350](https://github.com/penpot/penpot/issues/1350)
 - Fix navigate comments in right sidebar [Taiga #2163](https://tree.taiga.io/project/penpot/issue/2163)
+- Fix keep name of component equal to the shape name [Taiga #2341](https://tree.taiga.io/project/penpot/issue/2341)
+- Fix lossing changes when changing selection and an input was already changed [Taiga #2329](https://tree.taiga.io/project/penpot/issue/2329), [Taiga #2330](https://tree.taiga.io/project/penpot/issue/2330)
+- Fix blur input field when click on viewport [Taiga #2164](https://tree.taiga.io/project/penpot/issue/2164)
+- Fix default page id in workspace [Taiga #2205](https://tree.taiga.io/project/penpot/issue/2205)
+- Fix problem when importing a file with grids [Taiga #2314](https://tree.taiga.io/project/penpot/issue/2314)
 
 ### :arrow_up: Deps updates
 
@@ -150,6 +156,7 @@
 - Remove button after import process finish [Taiga #2215](https://tree.taiga.io/project/penpot/issue/2215)
 - Fix problem with styles in the viewer [Taiga #2467](https://tree.taiga.io/project/penpot/issue/2467)
 - Fix default state in viewer [Taiga #2465](https://tree.taiga.io/project/penpot/issue/2465)
+- Fix division by zero in bool operation [Taiga #2349](https://tree.taiga.io/project/penpot/issue/2349)
 
 ### :heart: Community contributions by (Thank you!)
 

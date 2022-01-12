@@ -87,7 +87,8 @@
 
 (mf/defc workspace-page
   [{:keys [file layout page-id] :as props}]
-  (mf/use-layout-effect
+
+ (mf/use-layout-effect
    (mf/deps page-id)
    (fn []
      (if (nil? page-id)

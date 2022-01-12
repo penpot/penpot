@@ -10,11 +10,14 @@
    [app.common.math :as math]
    [app.common.spec :as us]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.simple-math :as sm]
    [app.util.strings :as ust]
-   [rumext.alpha :as mf]))
+   [goog.events :as events]
+   [rumext.alpha :as mf])
+  (:import goog.events.EventType))
 
 (defn num? [val]
   (and (number? val)
@@ -41,6 +44,10 @@
         ;; So we use the external ref if provided, and the local one if not.
         local-ref  (mf/use-ref)
         ref        (or external-ref local-ref)
+
+        ;; We need to store the handle-blur ref so we can call it on unmount
+        handle-blur-ref (mf/use-ref nil)
+        dirty-ref (mf/use-ref false)
 
         ;; This `value` represents the previous value and is used as
         ;; initil value for the simple math expression evaluation.
@@ -104,6 +111,7 @@
         (mf/use-callback
           (mf/deps on-change update-input value)
           (fn [new-value]
+            (mf/set-ref-val! dirty-ref false)
             (when (and (not= new-value value) (some? on-change))
               (on-change new-value))
             (update-input new-value)))
@@ -142,6 +150,7 @@
         (mf/use-callback
          (mf/deps set-delta apply-value update-input)
          (fn [event]
+           (mf/set-ref-val! dirty-ref true)
            (let [up?    (kbd/up-arrow? event)
                  down?  (kbd/down-arrow? event)
                  enter? (kbd/enter? event)
@@ -170,6 +179,15 @@
                 (update-input new-value)))
             (when on-blur (on-blur))))
 
+        on-click
+        (mf/use-callback
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (when (some? ref)
+               (let [current (mf/ref-val ref)]
+                 (when (and (some? current) (not (.contains current target)))
+                   (dom/blur! current)))))))
+
         props (-> props
                   (obj/without ["value" "onChange"])
                   (obj/set! "className" "input-text")
@@ -187,6 +205,25 @@
        (when-let [input-node (mf/ref-val ref)]
          (when-not (dom/active? input-node)
            (dom/set-value! input-node value-str)))))
+
+    (mf/use-effect
+     (mf/deps handle-blur)
+     (fn []
+       (mf/set-ref-val! handle-blur-ref {:fn handle-blur})))
+
+    (mf/use-layout-effect
+     (fn []
+       #(when (mf/ref-val dirty-ref)
+          (let [handle-blur (:fn (mf/ref-val handle-blur-ref))]
+            (handle-blur)))))
+
+    (mf/use-layout-effect
+     (fn []
+       (let [keys [(events/listen globals/window EventType.POINTERDOWN on-click)
+                   (events/listen globals/window EventType.MOUSEDOWN on-click)
+                   (events/listen globals/window EventType.CLICK on-click)]]
+         #(doseq [key keys]
+            (events/unlistenByKey key)))))
 
     [:> :input props]))
 

@@ -253,17 +253,24 @@
        (->> (rx/of ::dwp/finalize)
             (rx/observe-on :async))))))
 
+(declare go-to-page)
 (defn initialize-page
   [page-id]
   (us/assert ::us/uuid page-id)
   (ptk/reify ::initialize-page
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-not (contains? (get-in state [:workspace-data :pages-index]) page-id)
+        (let [default-page-id (get-in state [:workspace-data :pages 0])]
+          (rx/of (go-to-page default-page-id)))))
+    
     ptk/UpdateEvent
     (update [_ state]
       (let [;; we maintain a cache of page state for user convenience
             ;; with the exception of the selection; when user abandon
             ;; the current page, the selection is lost
-
             page    (get-in state [:workspace-data :pages-index page-id])
+            page-id (:id page)
             local   (-> state
                         (get-in [:workspace-cache page-id] workspace-local-default)
                         (assoc :selected (d/ordered-set)))]
@@ -282,10 +289,13 @@
       (let [local (-> (:workspace-local state)
                       (dissoc :edition
                               :edit-path
-                              :selected))]
-        (-> state
-            (assoc-in [:workspace-cache page-id] local)
-            (dissoc :current-page-id :workspace-local :trimmed-page :workspace-drawing))))))
+                              :selected))
+            exit-workspace? (not= :workspace (get-in state [:route :data :name]))]
+        (cond-> (assoc-in state [:workspace-cache page-id] local)
+          :always
+          (dissoc :current-page-id :workspace-local :trimmed-page)
+          exit-workspace?
+          (dissoc :workspace-drawing))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Page CRUD
@@ -416,9 +426,9 @@
               (-> local
                   (assoc :vport size)
                   (update :vbox (fn [vbox]
-                                    (-> vbox
-                                        (update :width #(/ % wprop))
-                                        (update :height #(/ % hprop))))))))
+                                  (-> vbox
+                                      (update :width #(/ % wprop))
+                                      (update :height #(/ % hprop))))))))
 
           (initialize [state local]
             (let [page-id (:current-page-id state)
@@ -445,7 +455,7 @@
                                           :y (+ (:y srect) (/ (- (:height srect) height) 2)))))))
 
           (setup [state local]
-            (if (and (:vbox local) (:vport local))
+            (if (and (:vport local) (:vbox local))
               (update* local)
               (initialize state local)))]
 
