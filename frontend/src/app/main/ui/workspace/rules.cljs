@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.rules
   (:require
+   [app.common.colors :as colors]
    [app.common.math :as mth]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
@@ -47,8 +48,8 @@
         (.translate dctx 0 txfm))
 
       (obj/set! dctx "font" "12px worksans")
-      (obj/set! dctx "fillStyle" "var(--color-gray-30)")
-      (obj/set! dctx "strokeStyle" "var(--color-gray-30)")
+      (obj/set! dctx "fillStyle" colors/gray-30)
+      (obj/set! dctx "strokeStyle" colors/gray-30)
       (obj/set! dctx "textAlign" "center")
 
       (loop [i minv]

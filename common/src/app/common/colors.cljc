@@ -11,6 +11,8 @@
 (def canvas "#E8E9EA")
 (def default-layout "#DE4762")
 (def gray-20 "#B1B2B5")
+(def gray-30 "#7B7D85")
 (def info "#59B9E2")
 (def test "#fabada")
 (def white "#FFFFFF")
+
