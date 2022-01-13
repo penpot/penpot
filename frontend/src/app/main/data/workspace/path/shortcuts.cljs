@@ -73,7 +73,7 @@
                      :fn #(st/emit! (drp/toggle-snap))}
 
    :escape          {:tooltip (ds/esc)
-                     :command ["escape" "enter"]
+                     :command ["escape" "enter" "v"]
                      :fn #(st/emit! (esc-pressed))}
 
    :undo            {:tooltip (ds/meta "Z")
@@ -138,9 +138,7 @@
 
    :move-unit-right {:tooltip ds/left-arrow
                      :command "left"
-                     :fn #(st/emit! (drp/move-selected :left false))}
-
-   })
+                     :fn #(st/emit! (drp/move-selected :left false))}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))
