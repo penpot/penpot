@@ -15,7 +15,6 @@
    [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.core :as rx]
-   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
 (defn check-frame-props
@@ -36,27 +35,12 @@
          (= new-thumbnail? old-thumbnail?)
          (= new-children old-children))))
 
-(mf/defc thumbnail
-  {::mf/wrap-props false}
-  [props]
-  (let [shape (obj/get props "shape")]
-    (when (:thumbnail shape)
-      [:image.frame-thumbnail
-       {:id (str "thumbnail-" (:id shape))
-        :xlinkHref (:thumbnail shape)
-        :x (:x shape)
-        :y (:y shape)
-        :width (:width shape)
-        :height (:height shape)
-        ;; DEBUG
-        :style {:filter (when (debug? :thumbnails) "sepia(1)")}}])))
-
 (mf/defc frame-placeholder
   {::mf/wrap-props false}
   [props]
   (let [{:keys [x y width height fill-color] :as shape} (obj/get props "shape")]
     (if (some? (:thumbnail shape))
-      [:& thumbnail {:shape shape}]
+      [:& frame/frame-thumbnail {:shape shape}]
       [:rect {:x x :y y :width width :height height :style {:fill (or fill-color "var(--color-white)")}}])))
 
 (defn custom-deferred
@@ -128,7 +112,7 @@
            [:> shape-container {:shape shape}
             [:& ff/fontfaces-style {:shapes all-children}]
             (if show-thumbnail?
-              [:& thumbnail {:shape shape}]
+              [:& frame/frame-thumbnail {:shape shape}]
               [:& deferred-frame-shape
                {:shape shape
                 :childs children}])]])))))

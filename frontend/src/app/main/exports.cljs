@@ -195,14 +195,9 @@
           (let [frame? (= (:type item) :frame)]
             (cond
               (and frame? thumbnails? (some? (:thumbnail item)))
-              [:image {:xlinkHref (:thumbnail item)
-                       :x (:x item)
-                       :y (:y item)
-                       :width (:width item)
-                       :height (:height item)
-                       ;; DEBUG
-                       :style {:filter (when (debug? :thumbnails) "sepia(1)")}
-                       }]
+              [:> shape-container {:shape item}
+               [:& frame/frame-thumbnail {:shape item}]]
+
               frame?
               [:& frame-wrapper {:shape item
                                  :key (:id item)}]

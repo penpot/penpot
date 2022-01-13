@@ -57,6 +57,7 @@
 - Fix scroll jumps in handoff mode [Taiga #2383](https://tree.taiga.io/project/penpot/issue/2383)
 - Fix handoff text with opacity [Taiga #2384](https://tree.taiga.io/project/penpot/issue/2384)
 - Restored rules color [Taiga #2460](https://tree.taiga.io/project/penpot/issue/2460)
+- Fix thumbnail not taking frame blending mode [Taiga #2301](https://tree.taiga.io/project/penpot/issue/2301)
 
 ### :arrow_up: Deps updates
 

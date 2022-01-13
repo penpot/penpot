@@ -8,6 +8,7 @@
   (:require
    [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
 (defn frame-clip-id
@@ -25,6 +26,21 @@
     (let [{:keys [x y width height]} shape]
       [:clipPath {:id (frame-clip-id shape render-id) :class "frame-clip"}
        [:rect {:x x :y y :width width :height height}]])))
+
+(mf/defc frame-thumbnail
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (obj/get props "shape")]
+    (when (:thumbnail shape)
+      [:image.frame-thumbnail
+       {:id (str "thumbnail-" (:id shape))
+        :xlinkHref (:thumbnail shape)
+        :x (:x shape)
+        :y (:y shape)
+        :width (:width shape)
+        :height (:height shape)
+        ;; DEBUG
+        :style {:filter (when (debug? :thumbnails) "sepia(1)")}}])))
 
 (defn frame-shape
   [shape-wrapper]
