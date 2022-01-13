@@ -12,6 +12,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.util.color :as uc]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
@@ -21,6 +22,9 @@
    :fill-color-ref-id
    :fill-color-ref-file
    :fill-color-gradient])
+
+(def fill-attrs-shape
+  (conj fill-attrs :show-fill-on-export?))
 
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values"]))]}
@@ -39,37 +43,44 @@
                :file-id (:fill-color-ref-file values)
                :gradient (:fill-color-gradient values)}
 
+        show-fill-on-export? (:show-fill-on-export? values true)
+
         on-add
         (mf/use-callback
-          (mf/deps ids)
-          (fn [_]
-            (st/emit! (dc/change-fill ids {:color cp/default-color
-                                           :opacity 1}))))
+         (mf/deps ids)
+         (fn [_]
+           (st/emit! (dc/change-fill ids {:color cp/default-color
+                                          :opacity 1}))))
 
         on-delete
         (mf/use-callback
-          (mf/deps ids)
-          (fn [_]
-            (st/emit! (dc/change-fill ids (into {} uc/empty-color)))))
+         (mf/deps ids)
+         (fn [_]
+           (st/emit! (dc/change-fill ids (into {} uc/empty-color)))))
 
         on-change
         (mf/use-callback
-          (mf/deps ids)
-          (fn [color]
-            (let [remove-multiple (fn [[_ value]] (not= value :multiple))
-                  color (into {} (filter remove-multiple) color)]
-              (st/emit! (dc/change-fill ids color)))))
+         (mf/deps ids)
+         (fn [color]
+           (let [remove-multiple (fn [[_ value]] (not= value :multiple))
+                 color (into {} (filter remove-multiple) color)]
+             (st/emit! (dc/change-fill ids color)))))
 
         on-detach
         (mf/use-callback
-          (mf/deps ids)
-          (fn []
-            (let [remove-multiple (fn [[_ value]] (not= value :multiple))
-                  color (-> (into {} (filter remove-multiple) color)
-                            (assoc :id nil :file-id nil))]
-              (st/emit! (dc/change-fill ids color)))))
+         (mf/deps ids)
+         (fn []
+           (let [remove-multiple (fn [[_ value]] (not= value :multiple))
+                 color (-> (into {} (filter remove-multiple) color)
+                           (assoc :id nil :file-id nil))]
+             (st/emit! (dc/change-fill ids color)))))
 
-        ]
+        on-change-show-fill-on-export
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [event]
+           (let [value (-> event dom/get-target dom/checked?)]
+             (st/emit! (dc/change-show-fill-on-export ids value)))))]
 
     (if show?
       [:div.element-set
@@ -82,7 +93,17 @@
         [:& color-row {:color color
                        :title (tr "workspace.options.fill")
                        :on-change on-change
-                       :on-detach on-detach}]]]
+                       :on-detach on-detach}]
+
+        (when (contains? values :show-fill-on-export?)
+          [:div.input-checkbox
+           [:input {:type "checkbox"
+                    :id "show-fill-on-export"
+                    :checked show-fill-on-export?
+                    :on-change on-change-show-fill-on-export}]
+
+           [:label {:for "show-fill-on-export"}
+            (tr "workspace.options.show-fill-on-export")]])]]
 
       [:div.element-set
        [:div.element-set-title
