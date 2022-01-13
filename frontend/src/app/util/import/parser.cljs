@@ -22,6 +22,9 @@
 (def uuid-regex
   #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}")
 
+(def uuid-regex-prefix
+  #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}-")
+
 (defn valid?
   [root]
   (contains? (:attrs root) :xmlns:penpot))
@@ -554,20 +557,31 @@
 (defn remove-prefix [s]
   (cond-> s
     (string? s)
-    (str/replace (re-pattern (str uuid-regex "-")) "")))
+    (str/replace uuid-regex-prefix "")))
 
 (defn get-svg-attrs
-  [svg-data svg-attrs]
-  (let [assoc-key
+  [svg-import svg-data svg-attrs]
+  (let [process-attr
         (fn [acc prop]
-          (let [key (keyword prop)]
-            (if-let [v (or (get svg-data key)
-                           (get-in svg-data [:attrs key]))]
-              (assoc acc key (remove-prefix v))
-              acc)))]
+          (cond
+            (and (= prop "style")
+                 (contains? (:attrs svg-import) :penpot:svg-style))
+            (let [style (get-in svg-import [:attrs :penpot:svg-style])]
+              (assoc acc :style (parse-style style)))
 
+            (and (= prop "filter")
+                 (contains? (:attrs svg-import) :penpot:svg-filter))
+            (let [style (get-in svg-import [:attrs :penpot:svg-filter])]
+              (assoc acc :filter (parse-style style)))
+
+            :else
+            (let [key (keyword prop)]
+              (if-let [v (or (get svg-data key)
+                             (get-in svg-data [:attrs key]))]
+                (assoc acc key (remove-prefix v))
+                acc))))]
     (->> (str/split svg-attrs ",")
-         (reduce assoc-key {}))))
+         (reduce process-attr {}))))
 
 (defn get-svg-defs
   [node]
@@ -595,7 +609,7 @@
 
         (cond-> props
           :true
-          (assoc :svg-attrs (get-svg-attrs svg-data svg-attrs))
+          (assoc :svg-attrs (get-svg-attrs svg-import svg-data svg-attrs))
 
           (some? viewbox-x)
           (assoc :svg-viewbox {:x      (d/parse-double viewbox-x)

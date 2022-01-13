@@ -265,10 +265,10 @@ msgid "dashboard.export-frames"
 msgstr "Export artboards to PDF..."
 
 msgid "dashboard.export-multi"
-msgstr "Export %s files"
+msgstr "Export Penpot %s files"
 
 msgid "dashboard.export-single"
-msgstr "Export file"
+msgstr "Export Penpot file"
 
 msgid "dashboard.export.detail"
 msgstr "* Might include components, graphics, colors and/or typographies."
@@ -343,7 +343,7 @@ msgstr ""
 "[font licensing](https://www.typography.com/faq)."
 
 msgid "dashboard.import"
-msgstr "Import files"
+msgstr "Import Penpot files"
 
 msgid "dashboard.import.analyze-error"
 msgstr "Oops! We couldn't import this file"

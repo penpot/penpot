@@ -29,7 +29,12 @@
         [old-points old-selrect] (helpers/content->points+selrect shape old-content)
         [new-points new-selrect] (helpers/content->points+selrect shape new-content)
 
-        rch (if (empty? new-content)
+        rch (cond
+              ;; https://tree.taiga.io/project/penpot/issue/2366
+              (nil? shape-id)
+              []
+
+              (empty? new-content)
               [{:type :del-obj
                 :id shape-id
                 :page-id page-id}
@@ -37,6 +42,7 @@
                 :page-id page-id
                 :shapes [shape-id]}]
 
+              :else
               [{:type :mod-obj
                 :id shape-id
                 :page-id page-id
@@ -47,7 +53,12 @@
                 :page-id page-id
                 :shapes [shape-id]}])
 
-        uch (if (empty? new-content)
+        uch (cond
+              ;; https://tree.taiga.io/project/penpot/issue/2366
+              (nil? shape-id)
+              []
+
+              (empty? new-content)
               [{:type :add-obj
                 :id shape-id
                 :obj shape
@@ -58,6 +69,8 @@
                {:type :reg-objects
                 :page-id page-id
                 :shapes [shape-id]}]
+
+              :else
               [{:type :mod-obj
                 :id shape-id
                 :page-id page-id

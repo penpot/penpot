@@ -179,25 +179,28 @@
     [attrs styles]))
 
 (defn add-style-attrs
-  [props shape]
-  (let [render-id (mf/use-ctx muc/render-ctx)
-        svg-defs  (:svg-defs shape {})
-        svg-attrs (:svg-attrs shape {})
+  ([props shape]
+   (let [render-id (mf/use-ctx muc/render-ctx)]
+     (add-style-attrs props shape render-id)))
 
-        [svg-attrs svg-styles] (mf/use-memo
-                                (mf/deps render-id svg-defs svg-attrs)
-                                #(extract-svg-attrs render-id svg-defs svg-attrs))
+  ([props shape render-id]
+   (let [svg-defs  (:svg-defs shape {})
+         svg-attrs (:svg-attrs shape {})
 
-        styles (-> (obj/get props "style" (obj/new))
-                   (obj/merge! svg-styles)
-                   (add-fill shape render-id)
-                   (add-stroke shape render-id)
-                   (add-layer-props shape))]
+         [svg-attrs svg-styles] (mf/use-memo
+                                 (mf/deps render-id svg-defs svg-attrs)
+                                 #(extract-svg-attrs render-id svg-defs svg-attrs))
 
-    (-> props
-        (obj/merge! svg-attrs)
-        (add-border-radius shape)
-        (obj/set! "style" styles))))
+         styles (-> (obj/get props "style" (obj/new))
+                    (obj/merge! svg-styles)
+                    (add-fill shape render-id)
+                    (add-stroke shape render-id)
+                    (add-layer-props shape))]
+
+     (-> props
+         (obj/merge! svg-attrs)
+         (add-border-radius shape)
+         (obj/set! "style" styles)))))
 
 (defn extract-style-attrs
   [shape]

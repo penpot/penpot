@@ -46,6 +46,9 @@
 
     ;; When active the thumbnails will be displayed with a sepia filter
     :thumbnails
+
+    ;; When active we can check in the browser the export values
+    :show-export-metadata
     })
 
 ;; These events are excluded when we activate the :events flag
