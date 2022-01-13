@@ -33,6 +33,7 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [beicon.core :as rx]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
 ;; --- Viewport
@@ -192,7 +193,7 @@
 
       [:& use/export-page {:options options}]
 
-      [:& (mf/provider use/include-metadata-ctx) {:value false}
+      [:& (mf/provider use/include-metadata-ctx) {:value (debug? :show-export-metadata)}
        [:& (mf/provider embed/context) {:value true}
         ;; Render root shape
         [:& shapes/root-shape {:key page-id

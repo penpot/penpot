@@ -195,6 +195,12 @@
           :penpot:suffix suffix
           :penpot:scale  (str scale)}]))
 
+(defn style->str
+  [style]
+  (->> style
+       (map (fn [[key val]] (str (d/name key) ":" val)))
+       (str/join "; ")))
+
 (mf/defc export-svg-data [shape]
   [:*
    (when (contains? shape :svg-attrs)
@@ -203,6 +209,10 @@
            svg-defs      (->> shape :svg-defs keys (mapv d/name) (str/join ","))]
        [:> "penpot:svg-import"
         #js {:penpot:svg-attrs          (when-not (empty? svg-attrs) svg-attrs)
+             ;; Style and filter are special properties so we need to save it otherwise will be indistingishible from
+             ;; standard properties
+             :penpot:svg-style          (when (contains? (:svg-attrs shape) :style) (style->str (get-in shape [:svg-attrs :style])))
+             :penpot:svg-filter         (when (contains? (:svg-attrs shape) :filter) (get-in shape [:svg-attrs :filter]))
              :penpot:svg-defs           (when-not (empty? svg-defs) svg-defs)
              :penpot:svg-transform      (when svg-transform (str svg-transform))
              :penpot:svg-viewbox-x      (get-in shape [:svg-viewbox :x])

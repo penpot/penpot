@@ -32,7 +32,6 @@
    [app.util.strings :as ust]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
-   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
 (def ^:const viewbox-decimal-precision 3)
