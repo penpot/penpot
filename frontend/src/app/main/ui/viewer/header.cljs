@@ -177,12 +177,13 @@
           (st/emit! (dv/go-to-section section)))]
 
     [:header.viewer-header
-     [:div.main-icon
-      [:a {:on-click go-to-dashboard
-           ;; If the user doesn't have permission we disable the link
-           :style {:pointer-events (when-not permissions "none")}} i/logo-icon]]
+     [:div.nav-zone
+      [:div.main-icon
+       [:a {:on-click go-to-dashboard
+            ;; If the user doesn't have permission we disable the link
+            :style {:pointer-events (when-not permissions "none")}} i/logo-icon]]
 
-     [:& header-sitemap {:project project :file file :page page :frame frame :index index}]
+      [:& header-sitemap {:project project :file file :page page :frame frame :index index}]]
 
      [:div.mode-zone
       [:button.mode-zone-button.tooltip.tooltip-bottom
@@ -213,4 +214,3 @@
                          :file file
                          :index index
                          :zoom zoom}]]))
-
