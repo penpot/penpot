@@ -2,7 +2,8 @@
   align-items: center;
   background-color: $color-gray-50;
   border-bottom: 1px solid $color-gray-60;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   height: 48px;
   padding: 0 $size-4 0 55px;
   position: relative;
@@ -12,6 +13,10 @@
     font-size: $fs12;
   }
 
+  .nav-zone {
+    justify-content: flex-start;
+  }
+
   .main-icon {
     align-items: center;
     background-color: $color-gray-60;
@@ -19,8 +24,8 @@
     display: flex;
     height: 100%;
     justify-content: center;
-    left: 0;
     position: absolute;
+    left: 0;
     top: 0;
     width: 48px;
 
@@ -44,7 +49,6 @@
   .options-zone {
     align-items: center;
     display: flex;
-    // width: 384px;
     justify-content: flex-end;
     position: relative;
 
