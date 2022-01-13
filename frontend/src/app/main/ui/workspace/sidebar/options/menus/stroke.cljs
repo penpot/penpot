@@ -124,12 +124,9 @@
               (st/emit! (dch/update-shapes ids #(assoc % :stroke-alignment value))))))
 
         on-stroke-width-change
-        (fn [event]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-integer 0))]
-            (when-not (str/empty? value)
-              (st/emit! (dch/update-shapes ids #(assoc % :stroke-width value))))))
+        (fn [value]
+          (when-not (str/empty? value)
+            (st/emit! (dch/update-shapes ids #(assoc % :stroke-width value)))))
 
         update-cap-attr
         (fn [& kvs]
