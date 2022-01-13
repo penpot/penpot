@@ -1,0 +1,32 @@
+{% extends "templates/base.tmpl" %}
+
+{% block title %}
+Debug Main Page
+{% endblock %}
+
+{% block content %}
+<nav>
+  <h1>Debug INDEX:</h1>
+  <div>[<a href="/dbg/error">ERRORS</a>]</div>
+</nav>
+<main class="index">
+  <section>
+    <h2>Download file data:</h2>
+    <desc>Given an FILE-ID, downloads the file data as file. The file data is encoded using transit.</desc>
+    <form method="get" action="/dbg/file/data">
+      <input type="text" style="width:300px" name="file-id" placeholder="file-id" />
+      <input type="hidden" name="download" value="1" />
+      <input type="submit" value="Download" />
+    </form>
+  </section>
+
+  <section>
+    <h2>Upload File Data:</h2>
+    <desc>Create a new file on your draft projects using the file downloaded from the previous section.</desc>
+    <form method="post" enctype="multipart/form-data" action="/dbg/file/data">
+      <input type="file" name="file" value="" />
+      <input type="submit" value="Upload" />
+    </form>
+  </section>
+</main>
+{% endblock %}

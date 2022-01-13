@@ -111,17 +111,20 @@
      ["/by-file-media-id/:id" {:get (:file-objects-handler assets)}]
      ["/by-file-media-id/:id/thumbnail" {:get (:file-thumbnails-handler assets)}]]
 
-    ["/dbg" {:middleware [[middleware/params]
+    ["/dbg" {:middleware [[middleware/multipart-params]
+                          [middleware/params]
                           [middleware/keyword-params]
                           [middleware/format-response-body]
                           [middleware/errors errors/handle]
                           [middleware/cookies]
                           [(:middleware session)]]}
+     ["" {:get (:index debug)}]
      ["/error-by-id/:id" {:get (:retrieve-error debug)}]
      ["/error/:id" {:get (:retrieve-error debug)}]
      ["/error" {:get (:retrieve-error-list debug)}]
-     ["/file/data/:id" {:get (:retrieve-file-data debug)}]
-     ["/file/changes/:id" {:get (:retrieve-file-changes debug)}]]
+     ["/file/data" {:get (:retrieve-file-data debug)
+                    :post (:upload-file-data debug)}]
+     ["/file/changes" {:get (:retrieve-file-changes debug)}]]
 
     ["/webhooks"
      ["/sns" {:post (:sns-webhook cfg)}]]

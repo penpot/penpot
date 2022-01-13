@@ -1,0 +1,18 @@
+{% extends "templates/base.tmpl" %}
+
+{% block title %}
+penpot - error list
+{% endblock %}
+
+{% block content %}
+<nav>
+  <h1>Latest error reports:</h1>
+</nav>
+<main class="horizontal-list">
+  <ul>
+    {% for item in items %}
+    <li><a href="/dbg/error/{{item.id}}">{{item.created-at}}</a></li>
+    {% endfor %}
+  </ul>
+</main>
+{% endblock %}
