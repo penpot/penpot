@@ -6,7 +6,6 @@
 
 .color-cell {
   .color-bullet {
-    background-color: transparent;
     // Creates strange artifacts
     border: 2px solid $color-gray-60;
     // box-shadow: 0 0 0 2px $color-gray-60;
@@ -102,12 +101,26 @@ ul.palette-menu .color-bullet {
   }
 }
 
-.color-bullet-left {
+.color-bullet.is-library-color .color-bullet-left,
+.selected-colors .color-bullet .color-bullet-left {
   border-radius: 10px 0 0 10px;
 }
 
-.color-bullet-right {
+.color-bullet.is-library-color .color-bullet-right,
+.selected-colors .color-bullet .color-bullet-right {
   border-radius: 0 10px 10px 0;
+}
+
+.color-palette .color-bullet .color-bullet-left {
+  border-radius: 25px 0 0 25px;
+}
+
+.color-palette .color-bullet .color-bullet-right {
+  border-radius: 0 25px 25px 0;
+}
+
+.color-data .color-bullet.is-library-color {
+  border-radius: 50%;
 }
 
 .color-data .color-bullet.multiple {
@@ -118,12 +131,7 @@ ul.palette-menu .color-bullet {
   }
 }
 
-.color-data .color-bullet.is-library-color {
-  border-radius: 50%;
-}
-
 .color-data .color-bullet {
-  background-color: $color-gray-30;
   border: 1px solid $color-gray-30;
   border-radius: $br-small;
   cursor: pointer;
@@ -159,11 +167,6 @@ ul.palette-menu .color-bullet {
       }
     }
   }
-}
-
-.color-data .color-bullet .color-bullet-left,
-.color-data .color-bullet .color-bullet-right {
-  border-radius: unset;
 }
 
 .colorpicker-content .libraries .selected-colors .color-bullet {
