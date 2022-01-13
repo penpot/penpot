@@ -20,6 +20,7 @@
    :fill-color-gradient   :fill-group
    :fill-color-ref-file   :fill-group
    :fill-color-ref-id     :fill-group
+   :show-fill-on-export?  :fill-group
    :content               :content-group
    :hidden                :visibility-group
    :blocked               :modifiable-group

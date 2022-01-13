@@ -35,7 +35,8 @@
   {:frame-id uuid/zero
    :fill-color clr/white
    :fill-opacity 1
-   :shapes []})
+   :shapes []
+   :show-fill-on-export? true})
 
 (def ^:private minimal-shapes
   [{:type :rect

@@ -14,7 +14,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
@@ -309,7 +309,7 @@
                      :values layer-values}]
      [:& fill-menu {:ids ids
                     :type type
-                    :values (select-keys shape fill-attrs)}]
+                    :values (select-keys shape fill-attrs-shape)}]
      [:& stroke-menu {:ids ids
                       :type type
                       :values stroke-values}]

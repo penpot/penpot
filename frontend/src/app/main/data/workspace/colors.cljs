@@ -128,6 +128,7 @@
                            ::fill-color-ref-file nil
                            :fill-color-ref-id nil
                            :fill-opacity nil}
+
                     (contains? color :color)
                     (assoc :fill-color (:color color))
 
@@ -142,10 +143,22 @@
 
                     (contains? color :opacity)
                     (assoc :fill-opacity (:opacity color)))]
-        
+
         (rx/concat
          (rx/from (map #(dwt/update-text-attrs {:id % :attrs attrs}) text-ids))
          (rx/of (dch/update-shapes shape-ids (fn [shape] (d/merge shape attrs)))))))))
+
+(defn change-show-fill-on-export
+  [ids show-fill-on-export?]
+  (ptk/reify ::change-show-fill-on-export
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page-id   (:current-page-id state)
+            objects   (wsh/lookup-page-objects state page-id)
+            is-text?  #(= :text (:type (get objects %)))
+            shape-ids (filter (complement is-text?) ids)
+            attrs {:show-fill-on-export? show-fill-on-export?}]
+        (rx/of (dch/update-shapes shape-ids (fn [shape] (d/merge shape attrs))))))))
 
 (defn change-stroke
   [ids color]
