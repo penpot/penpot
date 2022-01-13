@@ -133,7 +133,8 @@
 
         handle-change-color
         (fn [changes]
-          (let [editing-stop (:editing-stop @state)]
+          (let [editing-stop (:editing-stop @state)
+                _ (println "handle-change-color" changes)]
             (swap! state #(cond-> %
                             true (update :current-color merge changes)
                             editing-stop (update-in [:stops editing-stop] merge changes)))
@@ -158,12 +159,14 @@
 
         on-select-library-color
         (fn [color]
-          (let [editing-stop (:editing-stop @state)
-                is-gradient? (some? (:gradient color))]
-            (if (and (some? editing-stop) (not is-gradient?))
-              (handle-change-color (color->components (:color color) (:opacity color)))
-              (do (reset! state (data->state color))
-                  (on-change color)))))
+          ;; TODO: FIXME
+          (on-change color))
+          ;; (let [editing-stop (:editing-stop @state)
+          ;;       is-gradient? (some? (:gradient color))]
+          ;;   (if (and (some? editing-stop) (not is-gradient?))
+          ;;     (handle-change-color (color->components (:color color) (:opacity color)))
+          ;;     (do (reset! state (data->state color))
+          ;;         (on-change color)))))
 
         on-add-library-color
         (fn [_]
