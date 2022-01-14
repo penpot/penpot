@@ -154,12 +154,14 @@
            (let [up?    (kbd/up-arrow? event)
                  down?  (kbd/down-arrow? event)
                  enter? (kbd/enter? event)
-                 esc?   (kbd/esc? event)]
+                 esc?   (kbd/esc? event)
+                 input-node (mf/ref-val ref)]
              (when (or up? down?)
                (set-delta event up? down?))
              (when enter?
                (let [new-value (parse-value)]
-                 (apply-value new-value)))
+                 (apply-value new-value)
+                 (dom/blur! input-node)))
              (when esc?
                (update-input value-str)))))
 
