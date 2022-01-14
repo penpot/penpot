@@ -14,7 +14,7 @@
   (case type
     :linear (tr "workspace.gradients.linear")
     :radial (tr "workspace.gradients.radial")
-    (str "???" type)))
+    nil))
 
 (mf/defc color-bullet [{:keys [color on-click]}]
   (if (uc/multiple? color)
