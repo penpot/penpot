@@ -385,6 +385,12 @@
       (invalidate-profile-session! conn (:id profile) session-id)
       nil)))
 
+(defn- invalidate-profile-session!
+  "Removes all sessions except the current one."
+  [conn profile-id session-id]
+  (let [sql "delete from http_session where profile_id = ? and id != ?"]
+    (:next.jdbc/update-count (db/exec-one! conn [sql profile-id session-id]))))
+
 (defn- validate-password!
   [conn {:keys [profile-id old-password] :as params}]
   (let [profile (db/get-by-id conn :profile profile-id)]
@@ -398,12 +404,6 @@
   (db/update! conn :profile
               {:password (derive-password password)}
               {:id id}))
-
-(defn- invalidate-profile-session!
-  "Removes all sessions except the current one."
-  [conn profile-id session-id]
-  (let [sql "delete from http_session where profile_id = ? and id != ?"]
-    (:next.jdbc/update-count (db/exec-one! conn [sql profile-id session-id]))))
 
 ;; --- MUTATION: Update Photo
 

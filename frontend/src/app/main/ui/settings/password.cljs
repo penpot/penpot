@@ -27,7 +27,8 @@
       (st/emit! (dm/error msg)))))
 
 (defn- on-success
-  [_]
+  [form]
+  (reset! form nil)
   (let [msg (tr "dashboard.notifications.password-saved")]
     (st/emit! (dm/success msg))))
 
