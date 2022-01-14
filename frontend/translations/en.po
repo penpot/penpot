@@ -308,6 +308,10 @@ msgstr "Export files"
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Font deleted"
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Dismiss all"
+
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "You still have no custom fonts installed."
 
@@ -316,14 +320,6 @@ msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "1 font added"
 msgstr[1] "%s fonts added"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.upload-all"
-msgstr "Upload all"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.dismiss-all"
-msgstr "Dismiss all"
 
 #, markdown
 msgid "dashboard.fonts.hero-text1"
@@ -342,6 +338,10 @@ msgstr ""
 "Service](https://penpot.app/terms.html). You also might want to read about "
 "[font licensing](https://www.typography.com/faq)."
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Upload all"
+
 msgid "dashboard.import"
 msgstr "Import Penpot files"
 
@@ -353,6 +353,9 @@ msgstr "There was a problem importing the file. The file wasn't imported."
 
 msgid "dashboard.import.import-message"
 msgstr "%s files have been imported successfully."
+
+msgid "dashboard.import.import-warning"
+msgstr "Some files containted invalid objects that have been removed."
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "Processing colors"
@@ -589,6 +592,9 @@ msgstr "Are you sure?"
 msgid "ds.updated-at"
 msgstr "Updated: %s"
 
+msgid "errors.auth.unable-to-login"
+msgstr "Looks like you are not authenticated or session expired."
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Your browser cannot do this operation"
@@ -662,6 +668,15 @@ msgstr "Your profile has emails muted (spam reports or high bounces)."
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "The registration is currently disabled."
+
+msgid "errors.team-leave.insufficient-members"
+msgstr "Insufficient members to leave team, you probably want to delete it."
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "The member you try to assign does not exist."
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "Owner can't leave team, you must reassign the owner role."
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "You must accept our terms of service and privacy policy."
@@ -2409,20 +2424,20 @@ msgid "workspace.options.interaction-animation"
 msgstr "Animation"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation-none"
-msgstr "None"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Dissolve"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation-slide"
-msgstr "Slide"
+msgid "workspace.options.interaction-animation-none"
+msgstr "None"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-push"
 msgstr "Push"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "Slide"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
@@ -2457,10 +2472,6 @@ msgid "workspace.options.interaction-easing"
 msgstr "Easing"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-linear"
-msgstr "Linear"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease"
 msgstr "Ease"
 
@@ -2469,20 +2480,20 @@ msgid "workspace.options.interaction-easing-ease-in"
 msgstr "Ease in"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease-out"
-msgstr "Ease out"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease-in-out"
 msgstr "Ease in out"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-in"
-msgstr "In"
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "Ease out"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-offset-effect"
-msgstr "Offset effect"
+msgid "workspace.options.interaction-easing-linear"
+msgstr "Linear"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-in"
+msgstr "In"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-enter"
@@ -2507,6 +2518,10 @@ msgstr "Navigate to: %s"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-none"
 msgstr "(not set)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "Offset effect"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-on-click"
@@ -3007,6 +3022,10 @@ msgid "workspace.shape.menu.copy"
 msgstr "Copy"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Selection to artboard"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-component"
 msgstr "Create component"
 
@@ -3054,10 +3073,6 @@ msgstr "Flip horizontal"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Flip vertical"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.create-artboard-from-selection"
-msgstr "Selection to artboard"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flow-start"
@@ -3328,18 +3343,3 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
-
-msgid "errors.team-leave.member-does-not-exists"
-msgstr "The member you try to assign does not exist."
-
-msgid "errors.team-leave.owner-cant-leave"
-msgstr "Owner can't leave team, you must reassign the owner role."
-
-msgid "errors.team-leave.insufficient-members"
-msgstr "Insufficient members to leave team, you probably want to delete it."
-
-msgid "errors.auth.unable-to-login"
-msgstr "Looks like you are not authenticated or session expired."
-
-msgid "dashboard.import.import-warning"
-msgstr "Some files containted invalid objects that have been removed."

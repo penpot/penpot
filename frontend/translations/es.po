@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-12-09 04:50+0000\n"
 "Last-Translator: Rubén <rubenx@mail.com>\n"
-"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
-"es/>\n"
+"Language-Team: Spanish "
+"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -312,6 +312,10 @@ msgstr "Exportar ficheros"
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Fuente eliminada."
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Ignorar todas"
+
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "Aun no tienes fuentes personalizadas."
 
@@ -320,14 +324,6 @@ msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "1 fuente añadida"
 msgstr[1] "%s fuentes añadidas"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.upload-all"
-msgstr "Cargar todas"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.dismiss-all"
-msgstr "Ignorar todas"
 
 #, markdown
 msgid "dashboard.fonts.hero-text1"
@@ -348,6 +344,10 @@ msgstr ""
 "más sobre licencias tipográficas: [font "
 "licensing](https://www.typography.com/faq)."
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Cargar todas"
+
 msgid "dashboard.import"
 msgstr "Importar archivos Penpot"
 
@@ -359,6 +359,9 @@ msgstr "Hubo un problema importando el fichero. No ha podido ser importado."
 
 msgid "dashboard.import.import-message"
 msgstr "%s files have been imported succesfully."
+
+msgid "dashboard.import.import-warning"
+msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "Procesando colores"
@@ -1142,6 +1145,9 @@ msgstr "Nombre"
 msgid "labels.new-password"
 msgstr "Nueva contraseña"
 
+msgid "labels.next"
+msgstr "Siguiente"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
 msgstr "No tienes notificaciones de comentarios pendientes"
@@ -1572,6 +1578,20 @@ msgstr "Perfil guardado correctamente!"
 msgid "notifications.validation-email-sent"
 msgstr "Verificación de email enviada a %s. Comprueba tu correo."
 
+msgid "onboarding.choice.desc"
+msgstr "¿Cómo quieres empezar?"
+
+msgid "onboarding.choice.fly-solo-desc"
+msgstr "Entra en Penpot y empieza a diseñar por tu cuenta."
+
+msgid "onboarding.choice.team-up"
+msgstr "Forma equipo"
+
+msgid "onboarding.choice.team-up-desc"
+msgstr ""
+"¿Estás trabajando con alguien? Crea un equipo e invita a la gente a "
+"trabajar juntos en proyectos y a compartir recursos de diseño."
+
 msgid "onboarding.choice.title"
 msgstr "Te damos la bienvenida a Penpot"
 
@@ -1651,6 +1671,9 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Una \"fuente de la verdad\" compartida"
 
+msgid "onboarding.team-input-placeholder"
+msgstr "Introduce el nuevo nombre del equipo"
+
 msgid "onboarding.team.create.button"
 msgstr "Crea un equipo"
 
@@ -1665,6 +1688,9 @@ msgstr "Introduce el nombre del equipo"
 msgid "onboarding.team.create.title"
 msgstr "Crear equipo"
 
+msgid "onboarding.team.skip-and-invite-later"
+msgstr "Saltar e invitar más tarde"
+
 msgid "onboarding.team.start.button"
 msgstr "Comenzar directamente"
 
@@ -1675,6 +1701,9 @@ msgstr ""
 
 msgid "onboarding.team.start.title"
 msgstr "Comienza a diseñar"
+
+msgid "onboarding.templates.subtitle"
+msgstr "Aquí tienes algunas plantillas."
 
 msgid "onboarding.welcome.desc1"
 msgstr "¡Hurra! Ya tienes tu cuenta en Penpot :)"
@@ -2414,12 +2443,12 @@ msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Disolver"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation-slide"
-msgstr "Deslizar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-push"
 msgstr "Empujar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "Deslizar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
@@ -2454,10 +2483,6 @@ msgid "workspace.options.interaction-easing"
 msgstr "Easing"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-linear"
-msgstr "Linear"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease"
 msgstr "Ease"
 
@@ -2466,20 +2491,20 @@ msgid "workspace.options.interaction-easing-ease-in"
 msgstr "Ease in"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease-out"
-msgstr "Ease out"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease-in-out"
 msgstr "Ease in out"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-in"
-msgstr "Dentro"
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "Ease out"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-offset-effect"
-msgstr "Offset effect"
+msgid "workspace.options.interaction-easing-linear"
+msgstr "Linear"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-in"
+msgstr "Dentro"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-enter"
@@ -2504,6 +2529,10 @@ msgstr "Navegar a: %s"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-none"
 msgstr "(sin definir)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "Offset effect"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-on-click"
@@ -3006,6 +3035,10 @@ msgid "workspace.shape.menu.copy"
 msgstr "Copiar"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Tablero de selección"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-component"
 msgstr "Crear componente"
 
@@ -3053,10 +3086,6 @@ msgstr "Voltear horizontal"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Voltear vertical"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.create-artboard-from-selection"
-msgstr "Tablero de selección"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flow-start"
@@ -3327,32 +3356,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-msgid "dashboard.import.import-warning"
-msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
-
-msgid "onboarding.choice.team-up"
-msgstr "Forma equipo"
-
-msgid "onboarding.templates.subtitle"
-msgstr "Aquí tienes algunas plantillas."
-
-msgid "onboarding.choice.desc"
-msgstr "¿Cómo quieres empezar?"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "Entra en Penpot y empieza a diseñar por tu cuenta."
-
-msgid "labels.next"
-msgstr "Siguiente"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"¿Estás trabajando con alguien? Crea un equipo e invita a la gente a trabajar "
-"juntos en proyectos y a compartir recursos de diseño."
-
-msgid "onboarding.team-input-placeholder"
-msgstr "Introduce el nuevo nombre del equipo"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Saltar e invitar más tarde"
