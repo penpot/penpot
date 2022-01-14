@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-07-30 16:34+0000\n"
+"PO-Revision-Date: 2021-12-09 04:50+0000\n"
 "Last-Translator: Maemolee <maemolee@gmail.com>\n"
-"Language-Team: Chinese (Simplified) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.7.2-dev\n"
+"X-Generator: Weblate 4.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -65,7 +65,7 @@ msgstr "很高兴又见到你！"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "使用Github登录"
+msgstr "使用GitHub登录"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
@@ -2648,3 +2648,70 @@ msgstr "更新"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+msgid "common.share-link.placeholder"
+msgstr "可分享的链接会在此处显示"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"现在尚无文件。如果你想尝试一些模板，请点击[库和模板](https://penpot.app/libraries-templates.html)"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "我同意订阅Penpot电子邮报。"
+
+#, fuzzy
+msgid "common.share-link.permissions-can-access"
+msgstr "可访问"
+
+msgid "auth.privacy-policy"
+msgstr "隐私政策"
+
+msgid "auth.terms-of-service"
+msgstr "服务协议"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr "你确定要移除链接？那么任何人都无法再访问它"
+
+msgid "common.share-link.get-link"
+msgstr "获取链接"
+
+msgid "common.share-link.link-copied-success"
+msgstr "链接已复制"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "链接已移除"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "可浏览"
+
+#, fuzzy
+msgid "common.share-link.permissions-hint"
+msgstr "任何人通过此链接都可访问"
+
+msgid "common.share-link.remove-link"
+msgstr "移除链接"
+
+msgid "common.share-link.title"
+msgstr "分享原型"
+
+msgid "common.share-link.view-all-pages"
+msgstr "全部页面"
+
+msgid "common.share-link.view-current-page"
+msgstr "仅此页面"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "选中的页面"
+
+msgid "dashboard.export-frames"
+msgstr "导出画板到PDF..."
+
+msgid "dashboard.export.detail"
+msgstr "* 可能包含组件、图形、颜色和/或排版。"
+
+#, fuzzy
+msgid "dashboard.export.explain"
+msgstr "你想导出的一个或多个文件用到了共享库。你想怎么处理它们的涉及资产？"
