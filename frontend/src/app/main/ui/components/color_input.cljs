@@ -76,11 +76,13 @@
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
            (let [enter? (kbd/enter? event)
-                 esc?   (kbd/esc? event)]
+                 esc?   (kbd/esc? event)
+                 input-node (mf/ref-val ref)]
              (when enter?
                (dom/prevent-default event)
                (let [new-value (parse-value)]
-                 (apply-value new-value)))
+                 (apply-value new-value)
+                 (dom/blur! input-node)))
              (when esc?
                (dom/prevent-default event)
                (update-input value)))))
