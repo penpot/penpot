@@ -171,13 +171,13 @@
 
         handle-blur
         (mf/use-callback
-          (mf/deps parse-value apply-value update-input on-blur)
-          (fn [_]
-            (let [new-value (or (parse-value) default-val)]
-              (if new-value
-                (apply-value new-value)
-                (update-input new-value)))
-            (when on-blur (on-blur))))
+         (mf/deps parse-value apply-value update-input on-blur)
+         (fn [_]
+           (let [new-value (or (parse-value) default-val)]
+             (if new-value
+               (apply-value new-value)
+               (update-input new-value)))
+           (when on-blur (on-blur))))
 
         on-click
         (mf/use-callback
@@ -203,8 +203,7 @@
      (mf/deps value-str)
      (fn []
        (when-let [input-node (mf/ref-val ref)]
-         (when-not (dom/active? input-node)
-           (dom/set-value! input-node value-str)))))
+         (dom/set-value! input-node value-str))))
 
     (mf/use-effect
      (mf/deps handle-blur)

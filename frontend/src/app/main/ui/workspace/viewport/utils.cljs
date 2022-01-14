@@ -49,17 +49,26 @@
 
         [width height]
         (if (or resize-x? resize-y?)
-          (let [pc (-> (gpt/point x y)
-                       (gpt/transform transform)
-                       (gpt/transform current-transform))
+          (let [pc (cond-> (gpt/point x y)
+                     (some? transform)
+                     (gpt/transform transform)
 
-                pw (-> (gpt/point (+ x width) y)
-                       (gpt/transform transform)
-                       (gpt/transform current-transform))
+                     (some? current-transform)
+                     (gpt/transform current-transform))
 
-                ph (-> (gpt/point x (+ y height))
-                       (gpt/transform transform)
-                       (gpt/transform current-transform))]
+                pw (cond-> (gpt/point (+ x width) y)
+                     (some? transform)
+                     (gpt/transform transform)
+
+                     (some? current-transform)
+                     (gpt/transform current-transform))
+
+                ph (cond-> (gpt/point x (+ y height))
+                     (some? transform)
+                     (gpt/transform transform)
+
+                     (some? current-transform)
+                     (gpt/transform current-transform))]
             [(gpt/distance pc pw) (gpt/distance pc ph)])
           [width height])]
 
