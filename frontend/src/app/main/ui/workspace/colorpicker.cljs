@@ -133,11 +133,17 @@
 
         handle-change-color
         (fn [changes]
-          (let [editing-stop (:editing-stop @state)
-                _ (println "handle-change-color" changes)]
+          (let [editing-stop (:editing-stop @state)]
             (swap! state #(cond-> %
-                            true (update :current-color merge changes)
-                            editing-stop (update-in [:stops editing-stop] merge changes)))
+                            :always
+                            (update :current-color merge changes)
+
+                            (not editing-stop)
+                            (-> (assoc :type :color)
+                                (dissoc :gradient-data :stops :editing-stops))
+
+                            editing-stop
+                            (update-in [:stops editing-stop] merge changes)))
             (reset! dirty? true)))
 
         handle-click-picker
@@ -159,14 +165,15 @@
 
         on-select-library-color
         (fn [color]
-          ;; TODO: FIXME
-          (on-change color))
-          ;; (let [editing-stop (:editing-stop @state)
-          ;;       is-gradient? (some? (:gradient color))]
-          ;;   (if (and (some? editing-stop) (not is-gradient?))
-          ;;     (handle-change-color (color->components (:color color) (:opacity color)))
-          ;;     (do (reset! state (data->state color))
-          ;;         (on-change color)))))
+          (let [editing-stop (:editing-stop @state)
+                is-gradient? (some? (:gradient color))]
+            (if (and (some? editing-stop) (not is-gradient?))
+              (handle-change-color (color->components (:color color) (:opacity color)))
+              (do (reset! dirty? false)
+                  (reset! state (-> (data->state color)
+                                    (assoc :editing-stop nil)))
+                  (on-change color)))))
+
 
         on-add-library-color
         (fn [_]
