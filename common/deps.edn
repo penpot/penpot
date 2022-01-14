@@ -13,16 +13,16 @@
   org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.17.1"}
   org.slf4j/slf4j-api {:mvn/version "2.0.0-alpha1"}
 
-  selmer/selmer {:mvn/version "1.12.48"}
+  selmer/selmer {:mvn/version "1.12.49"}
   criterium/criterium {:mvn/version "0.4.6"}
 
-  expound/expound {:mvn/version "0.8.10"}
+  expound/expound {:mvn/version "0.9.0"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
   com.cognitect/transit-cljs {:mvn/version "0.8.269"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/promesa {:mvn/version "6.0.2"}
-  funcool/cuerdas {:mvn/version "2021.05.29-0"}
+  funcool/cuerdas {:mvn/version "2022.01.14-391"}
 
   lambdaisland/uri {:mvn/version "1.12.89"
                     :exclusions [org.clojure/data.json]}
@@ -44,20 +44,16 @@
     org.clojure/test.check {:mvn/version "RELEASE"}
     org.clojure/tools.deps.alpha {:mvn/version "RELEASE"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.16.10"}
+    thheller/shadow-cljs {:mvn/version "2.16.12"}
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}
    :extra-paths ["test" "dev"]}
 
-  :kaocha
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "RELEASE"}}
-   :main-opts ["-m" "kaocha.runner"]}
-
   :test
   {:extra-paths ["test"]
-   :extra-deps {io.github.cognitect-labs/test-runner
-                {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                 :sha "dd6da11611eeb87f08780a30ac8ea6012d4c05ce"}}
+   :extra-deps
+   {io.github.cognitect-labs/test-runner
+    {:git/tag "v0.5.0" :git/sha "b3fd0d2"}}
    :exec-fn cognitect.test-runner.api/test}
 
   :shadow-cljs
