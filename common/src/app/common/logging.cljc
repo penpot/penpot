@@ -298,7 +298,7 @@
 
 #?(:cljs
    (defn default-handler
-     [{:keys [message level logger-name]}]
+     [{:keys [message level logger-name exception] :as params}]
      (let [header-styles (str "font-weight: 600; color: " (level->color level))
            normal-styles (str "font-weight: 300; color: " (get colors :gray6))
            level-name    (level->short-name level)
@@ -319,7 +319,13 @@
                             (js/console.error v))))
                (js/console.groupEnd message))
              (let [message (str header "%c" (pr-str message))]
-               (js/console.log message header-styles normal-styles))))))))
+               (js/console.log message header-styles normal-styles)))))
+
+       (when exception
+         (when-let [data (ex-data exception)]
+           (js/console.error "cause data:" (pr-str data)))
+         (js/console.error (.-stack exception))))))
+
 
 #?(:cljs
    (defn record->map
