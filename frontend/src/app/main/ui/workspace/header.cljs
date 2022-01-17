@@ -251,6 +251,12 @@
            (tr "workspace.header.menu.hide-palette")
            (tr "workspace.header.menu.show-palette"))]
         [:span.shortcut (sc/get-tooltip :toggle-palette)]]
+       
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :display-artboard-names))}
+        [:span
+         (if (contains? layout :display-artboard-names)
+           (tr "workspace.header.menu.hide-artboard-names")
+           (tr "workspace.header.menu.show-artboard-names"))]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :assets))}
         [:span

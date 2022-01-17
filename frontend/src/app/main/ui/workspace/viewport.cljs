@@ -144,7 +144,8 @@
                                           (contains? layout :snap-grid))
                                       (or drawing-obj transform))
         show-selrect?            (and selrect (empty? drawing))
-        show-measures?           (and (not transform) (not node-editing?) show-distances?)]
+        show-measures?           (and (not transform) (not node-editing?) show-distances?)
+        show-artboard-names?              (contains? layout :display-artboard-names)]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
     (hooks/setup-viewport-size viewport-ref)
@@ -262,6 +263,7 @@
          :selected selected
          :zoom zoom
          :modifiers modifiers
+         :show-artboard-names? show-artboard-names?
          :on-frame-enter on-frame-enter
          :on-frame-leave on-frame-leave
          :on-frame-select on-frame-select}]

@@ -2028,6 +2028,10 @@ msgid "workspace.header.menu.enable-snap-grid"
 msgstr "Snap to grid"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Hide artboard names"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-assets"
 msgstr "Hide assets"
 
@@ -2050,6 +2054,10 @@ msgstr "Hide rules"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "Select all"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Show artboards names"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-assets"

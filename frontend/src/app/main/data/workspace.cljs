@@ -82,7 +82,8 @@
     :display-grid
     :snap-grid
     :scale-text
-    :dynamic-alignment})
+    :dynamic-alignment
+    :display-artboard-names})
 
 (s/def ::layout-flags (s/coll-of ::layout-flag))
 
@@ -93,7 +94,8 @@
     :rules
     :display-grid
     :snap-grid
-    :dynamic-alignment})
+    :dynamic-alignment
+    :display-artboard-names})
 
 (def layout-presets
   {:assets
