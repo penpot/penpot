@@ -70,6 +70,7 @@
   (let [body   (:body response)
         params (:query-params request)
         opts   {:type (if (contains? params "transit_verbose") :json-verbose :json)}]
+
     (cond
       (:ws response)
       response
