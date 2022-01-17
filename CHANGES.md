@@ -6,6 +6,7 @@
 
 ### :sparkles: New features
 
+- Add an option to hide artboards names on the viewport [Taiga #2034](https://tree.taiga.io/project/penpot/issue/2034).
 - Add new options for zoom widget in workspace and viewer mode [Taiga #896](https://tree.taiga.io/project/penpot/us/896).
 - Allow decimals on stroke width and positions [Taiga #2035](https://tree.taiga.io/project/penpot/issue/2035).
 - Ability to ignore background when exporting an artboard [Taiga #1395](https://tree.taiga.io/project/penpot/us/1395).
