@@ -922,11 +922,13 @@
                   :operations [{:type :set
                                 :attr :constraints-h
                                 :val (spec/default-constraints-h
-                                       (assoc obj :parent-id parent-id :frame-id frame-id))}
+                                       (assoc obj :parent-id parent-id :frame-id frame-id))
+                                :ignore-touched true}
                                {:type :set
                                 :attr :constraints-v
                                 :val (spec/default-constraints-v
-                                       (assoc obj :parent-id parent-id :frame-id frame-id))}]}))
+                                       (assoc obj :parent-id parent-id :frame-id frame-id))
+                                :ignore-touched true}]}))
              shapes-to-unconstraint)
 
         u-unconstraint-change
@@ -937,10 +939,12 @@
                   :id id
                   :operations [{:type :set
                                 :attr :constraints-h
-                                :val (:constraints-h obj)}
+                                :val (:constraints-h obj)
+                                :ignore-touched true}
                                {:type :set
                                 :attr :constraints-v
-                                :val (:constraints-v obj)}]}))
+                                :val (:constraints-v obj)
+                                :ignore-touched true}]}))
              shapes-to-unconstraint)
 
         r-reg-change
