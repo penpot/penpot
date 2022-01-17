@@ -248,7 +248,7 @@
                 (rx/delay-emit emit-delay)
                 (rx/subs
                  (fn [{:keys [uri data error] :as msg}]
-                   (log/debug :msg msg)
+                   (log/debug :uri uri :data data :error error)
                    (if (some? error)
                      (swap! state update :files set-analyze-error uri)
                      (swap! state update :files set-analyze-result uri data)))))))

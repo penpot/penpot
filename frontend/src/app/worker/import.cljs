@@ -124,13 +124,12 @@
   [context]
   (let [resolve (:resolve context)
         file-id (resolve (:file-id context))]
-    (rp/mutation
-     :create-temp-file
-     {:id file-id
-      :name (:name context)
-      :is-shared (:shared context)
-      :project-id (:project-id context)
-      :data (-> cp/empty-file-data (assoc :id file-id))})))
+    (rp/mutation :create-temp-file
+                 {:id file-id
+                  :name (:name context)
+                  :is-shared (:shared context)
+                  :project-id (:project-id context)
+                  :data (-> cp/empty-file-data (assoc :id file-id))})))
 
 (defn link-file-libraries
   "Create a new file on the back-end"
@@ -250,7 +249,6 @@
 
 (defn process-import-node
   [context file node]
-
   (let [type         (cip/get-type node)
         close?       (cip/close? node)]
     (if close?
@@ -480,10 +478,9 @@
     (rx/concat
      (->> (rx/from files)
           (rx/map #(merge context %))
-          (rx/flat-map
-           (fn [context]
-             (->> (create-file context)
-                  (rx/map #(vector % (first (get data (:file-id context)))))))))
+          (rx/flat-map (fn [context]
+                         (->> (create-file context)
+                              (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)
           (rx/map #(merge context %))
@@ -508,31 +505,33 @@
 
   (let [context {:project-id project-id
                  :resolve    (resolve-factory)}]
+
     (->> (create-files context files)
-         (rx/catch #(.error js/console "IMPORT ERROR" (clj->js %)))
          (rx/flat-map
           (fn [[file data]]
-            (->> (rx/concat
-                  (->> (uz/load-from-url (:uri data))
-                       (rx/map #(-> context (assoc :zip %) (merge data)))
-                       (rx/flat-map
-                        (fn [context]
-                          ;; process file retrieves a stream that will emit progress notifications
-                          ;; and other that will emit the files once imported
-                          (let [[progress-stream file-stream] (process-file context file)]
-                            (rx/merge
-                             progress-stream
-                             (->> file-stream
-                                  (rx/map
-                                   (fn [file]
-                                     {:status :import-finish
-                                      :errors (:errors file)
-                                      :file-id (:file-id data)})))))))))
+            (->> (uz/load-from-url (:uri data))
+                 (rx/map #(-> context (assoc :zip %) (merge data)))
+                 (rx/flat-map
+                  (fn [context]
+                    ;; process file retrieves a stream that will emit progress notifications
+                    ;; and other that will emit the files once imported
+                    (let [[progress-stream file-stream] (process-file context file)]
+                      (rx/merge progress-stream
+                                (->> file-stream
+                                     (rx/map
+                                      (fn [file]
+                                        {:status :import-finish
+                                         :errors (:errors file)
+                                         :file-id (:file-id data)})))))))
+                 (rx/catch (fn [cause]
+                             (log/error :hint (ex-message cause) :file-id (:file-id data) :cause cause)
+                             (rx/of {:status :import-error
+                                     :file-id (:file-id data)
+                                     :error (ex-message cause)
+                                     :error-data (ex-data cause)}))))))
 
-                 (rx/catch
-                     (fn [err]
-                       (.error js/console "ERROR" (str (:file-id data)) (clj->js err) (clj->js (.-data err)))
-                       (rx/of {:status :import-error
-                               :file-id (:file-id data)
-                               :error (.-message err)
-                               :error-data (clj->js (.-data err))})))))))))
+         (rx/catch (fn [cause]
+                     (log/error :hint "unexpected error on import process"
+                                :project-id project-id
+                                :cause cause))))))
+

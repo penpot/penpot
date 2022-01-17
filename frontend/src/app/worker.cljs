@@ -6,6 +6,7 @@
 
 (ns app.worker
   (:require
+   [app.common.logging :as log]
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.worker.export]
@@ -17,6 +18,10 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [promesa.core :as p]))
+
+(log/initialize!)
+(log/set-level! :root :warn)
+(log/set-level! :app :info)
 
 ;; --- Messages Handling
 
