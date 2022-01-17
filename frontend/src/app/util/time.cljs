@@ -106,11 +106,15 @@
 (extend-protocol IEquiv
   DateTime
   (-equiv [it other]
-    (.equals it other))
+    (if other
+      (.equals it other)
+      false))
 
   Duration
   (-equiv [it other]
-    (.equals it other)))
+    (if other
+      (.equals it other)
+      false)))
 
 (extend-protocol Inst
   DateTime
