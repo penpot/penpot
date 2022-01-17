@@ -107,7 +107,7 @@
      #(dom/set-page-style {:size (str (mth/ceil width) "px "
                                       (mth/ceil height) "px")}))
 
-    [:& (mf/provider embed/context) {:value true}
+    [:& (mf/provider embed/context) {:value false}
      [:svg {:id "screenshot"
             :view-box vbox
             :width width
