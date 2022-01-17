@@ -217,11 +217,7 @@
       (ex/raise :type :assertion
                 :code :spec-validation
                 :hint hint
-                ::ex/data ctx
-                ::s/value val
-                ::s/problems (::s/problems data)))))
-
-
+                ::ex/data (merge ctx data)))))
 
 (defmacro assert
   "Development only assertion macro."
