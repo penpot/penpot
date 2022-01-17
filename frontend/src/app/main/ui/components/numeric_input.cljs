@@ -51,28 +51,28 @@
 
         ;; This `value` represents the previous value and is used as
         ;; initil value for the simple math expression evaluation.
-        value      (d/parse-integer value-str default-val)
+        value      (d/parse-double value-str default-val)
 
         min-val    (cond
                      (number? min-val-str)
                      min-val-str
 
                      (string? min-val-str)
-                     (d/parse-integer min-val-str))
+                     (d/parse-double min-val-str))
 
         max-val    (cond
                      (number? max-val-str)
                      max-val-str
 
                      (string? max-val-str)
-                     (d/parse-integer max-val-str))
+                     (d/parse-double max-val-str))
 
         step-val   (cond
                      (number? step-val-str)
                      step-val-str
 
                      (string? step-val-str)
-                     (d/parse-integer step-val-str)
+                     (d/parse-double step-val-str)
 
                      :else 1)
 

@@ -5,6 +5,7 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 
+- Allow decimals on stroke width and positions [Taiga #2035](https://tree.taiga.io/project/penpot/issue/2035).
 - Ability to ignore background when exporting an artboard [Taiga #1395](https://tree.taiga.io/project/penpot/us/1395).
 - Show color hex or name on hover [Taiga #2413](https://tree.taiga.io/project/penpot/us/2413).
 - Add shortcut to create artboard from selected objects [Taiga #2412](https://tree.taiga.io/project/penpot/us/2412).

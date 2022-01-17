@@ -8,7 +8,6 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
-   [app.common.math :as math]
    [app.common.pages.spec :as spec]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.colors :as dc]
@@ -37,9 +36,7 @@
 (defn- width->string [width]
   (if (= width :multiple)
    ""
-   (str (-> width
-            (d/coalesce 1)
-            (math/round)))))
+   (str (or width 1))))
 
 (defn- enum->string [value]
   (if (= value :multiple)
@@ -210,6 +207,7 @@
           [:> numeric-input
            {:min 0
             :value (-> (:stroke-width values) width->string)
+            :precision 2
             :placeholder (tr "settings.multiple")
             :on-change on-stroke-width-change}]]
 
