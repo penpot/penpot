@@ -34,7 +34,6 @@
       :data          (some-> data (dissoc ::s/problems ::s/value :hint))
       :ip-addr       (parse-client-ip request)
       :profile-id    (:profile-id request)}
-
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
         :frontend-version (get headers "x-frontend-version" "unknown")}))))

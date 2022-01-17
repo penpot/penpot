@@ -150,7 +150,7 @@
             (binding [ppr/*print-right-margin* 300]
               (let [context (dissoc report
                                     :trace :cause :params :data :spec-problems
-                                    :spec-value :error :explain :hint :message)
+                                    :spec-value :error :explain :hint)
                     params  {:context (with-out-str (ppr/pprint context))
                              :hint    (:hint report)
                              :spec-problems (:spec-problems report)
