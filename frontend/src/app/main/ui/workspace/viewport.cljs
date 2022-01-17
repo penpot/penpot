@@ -179,6 +179,7 @@
                                          :viewport-ref viewport-ref}])
 
       [:& widgets/viewport-actions]]
+
      [:svg.render-shapes
       {:id "render"
        :xmlns "http://www.w3.org/2000/svg"
