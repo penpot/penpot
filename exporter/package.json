@@ -15,14 +15,14 @@
     "generic-pool": "^3.8.2",
     "inflation": "^2.0.0",
     "jszip": "^3.7.0",
-    "luxon": "^2.2.0",
-    "puppeteer-core": "^13.0.1",
+    "luxon": "^2.3.0",
+    "puppeteer-core": "^13.1.1",
     "raw-body": "^2.4.2",
     "xml-js": "^1.6.11",
     "xregexp": "^5.0.2"
   },
   "devDependencies": {
-    "shadow-cljs": "^2.16.9",
+    "shadow-cljs": "^2.16.12",
     "source-map-support": "^0.5.21"
   }
 }
