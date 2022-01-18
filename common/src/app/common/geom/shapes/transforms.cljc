@@ -412,7 +412,7 @@
     {:rotation angle
      :displacement displacement}))
 
-(defn merge-modifiers*
+(defn merge-modifiers
   [objects modifiers]
 
   (let [set-modifier
@@ -421,8 +421,6 @@
               (d/update-when id merge modifiers)))]
     (->> modifiers
          (reduce set-modifier objects))))
-
-(def merge-modifiers (memoize merge-modifiers*))
 
 (defn modifiers->transform
   ([modifiers]
