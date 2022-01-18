@@ -590,6 +590,10 @@ msgstr "Cancelar"
 msgid "ds.confirm-ok"
 msgstr "Ok"
 
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Componentes a actualizar:"
+
 #: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
 msgid "ds.confirm-title"
 msgstr "¿Seguro?"
@@ -1552,7 +1556,7 @@ msgstr "Añadir “%s” como Biblioteca Compartida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
-msgstr "Actualizar componente"
+msgstr "Actualizar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
@@ -1565,8 +1569,18 @@ msgstr ""
 "afectar a otros archivos que la usen."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"Vas a actualizar componentes en una librería compartida. Esto puede "
+"afectar a otros archivos que la usen."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Actualizar un componente en librería"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Actualizar componentes en librería"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
@@ -3127,6 +3141,10 @@ msgstr "Desacoplar instancia"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Desacoplar instancias"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Actualizar componentes"
 
 msgid "workspace.shape.menu.difference"
 msgstr "Diferencia"
