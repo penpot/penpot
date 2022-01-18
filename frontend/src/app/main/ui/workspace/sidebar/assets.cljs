@@ -20,8 +20,8 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.exports :as exports]
    [app.main.refs :as refs]
+   [app.main.render :refer [component-svg]]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.components.context-menu :refer [context-menu]]
@@ -278,8 +278,8 @@
             :on-click #(on-asset-click % (:id component) nil)
             :on-context-menu (on-context-menu (:id component))
             :on-drag-start (partial on-drag-start component)}
-      [:& exports/component-svg {:group (get-in component [:objects (:id component)])
-                                 :objects (:objects component)}]
+      [:& component-svg {:group (get-in component [:objects (:id component)])
+                         :objects (:objects component)}]
       (let [renaming? (= renaming (:id component))]
         [:& editable-label
          {:class-name (dom/classnames

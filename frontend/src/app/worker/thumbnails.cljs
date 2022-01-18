@@ -9,8 +9,8 @@
    ["react-dom/server" :as rds]
    [app.common.uri :as u]
    [app.config :as cfg]
-   [app.main.exports :as exports]
    [app.main.fonts :as fonts]
+   [app.main.render :as render]
    [app.util.http :as http]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
@@ -50,7 +50,7 @@
   (let [prev (get @cache ckey)]
     (if (= (:data prev) data)
       (:result prev)
-      (let [elem   (mf/element exports/page-svg #js {:data data :width "290" :height "150" :thumbnails? true})
+      (let [elem   (mf/element render/page-svg #js {:data data :width "290" :height "150" :thumbnails? true})
             result (rds/renderToStaticMarkup elem)]
         (swap! cache assoc ckey {:data data :result result})
         result))))
