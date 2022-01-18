@@ -69,8 +69,8 @@
         object   (get objects object-id)
 
         object (cond-> object
-                     (not (:show-fill-on-export? object))
-                     (assoc :fill-color nil :fill-opacity 0))
+                 (:hide-fill-on-export object)
+                 (assoc :fill-color nil :fill-opacity 0))
 
         {:keys [x y width height] :as bs} (calc-bounds object objects)
         [_ _ width height :as coords] (->> [x y width height] (map #(* % zoom)))

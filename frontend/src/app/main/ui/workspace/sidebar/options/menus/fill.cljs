@@ -21,10 +21,11 @@
    :fill-opacity
    :fill-color-ref-id
    :fill-color-ref-file
-   :fill-color-gradient])
+   :fill-color-gradient
+   :hide-fill-on-export])
 
 (def fill-attrs-shape
-  (conj fill-attrs :show-fill-on-export?))
+  (conj fill-attrs :hide-fill-on-export))
 
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values"]))]}
@@ -43,7 +44,9 @@
                :file-id (:fill-color-ref-file values)
                :gradient (:fill-color-gradient values)}
 
-        show-fill-on-export? (:show-fill-on-export? values true)
+        hide-fill-on-export? (:hide-fill-on-export values false)
+
+        checkbox-ref (mf/use-ref)
 
         on-add
         (mf/use-callback
@@ -80,7 +83,17 @@
          (mf/deps ids)
          (fn [event]
            (let [value (-> event dom/get-target dom/checked?)]
-             (st/emit! (dc/change-show-fill-on-export ids value)))))]
+             (st/emit! (dc/change-hide-fill-on-export ids (not value))))))]
+
+    (mf/use-layout-effect
+      (mf/deps hide-fill-on-export?)
+      #(let [checkbox (mf/ref-val checkbox-ref)]
+         (when checkbox
+           ;; Note that the "indeterminate" attribute only may be set by code, not as a static attribute.
+           ;; See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox#attr-indeterminate
+           (if (= hide-fill-on-export? :multiple)
+             (dom/set-attribute checkbox "indeterminate" true)
+             (dom/remove-attribute checkbox "indeterminate")))))
 
     (if show?
       [:div.element-set
@@ -95,11 +108,13 @@
                        :on-change on-change
                        :on-detach on-detach}]
 
-        (when (contains? values :show-fill-on-export?)
+        (when (or (= type :frame)
+                  (and (= type :multiple) (some? hide-fill-on-export?)))
           [:div.input-checkbox
            [:input {:type "checkbox"
                     :id "show-fill-on-export"
-                    :checked show-fill-on-export?
+                    :ref checkbox-ref
+                    :checked (not hide-fill-on-export?)
                     :on-change on-change-show-fill-on-export}]
 
            [:label {:for "show-fill-on-export"}

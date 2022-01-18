@@ -76,6 +76,7 @@
         (add! :type)
         (add! :stroke-style)
         (add! :stroke-alignment)
+        (add! :hide-fill-on-export)
         (add! :transform)
         (add! :transform-inverse)
         (add! :flip-x)

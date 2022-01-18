@@ -361,6 +361,7 @@
   [props node svg-data]
 
   (let [fill (:fill svg-data)
+        hide-fill-on-export (get-meta node :hide-fill-on-export str->bool)
         gradient (when (str/starts-with? fill "url")
                    (parse-gradient node fill))]
     (cond-> props
@@ -375,7 +376,10 @@
 
       (uc/hex? fill)
       (assoc :fill-color fill
-             :fill-opacity (-> svg-data (:fill-opacity "1") d/parse-double)))))
+             :fill-opacity (-> svg-data (:fill-opacity "1") d/parse-double))
+
+      (some? hide-fill-on-export)
+      (assoc :hide-fill-on-export hide-fill-on-export))))
 
 (defn add-stroke
   [props node svg-data]
