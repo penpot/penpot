@@ -36,7 +36,7 @@
    :fill-color clr/white
    :fill-opacity 1
    :shapes []
-   :show-fill-on-export? true})
+   :hide-fill-on-export false})
 
 (def ^:private minimal-shapes
   [{:type :rect

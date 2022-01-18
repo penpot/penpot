@@ -724,6 +724,15 @@ input[type="radio"]:checked + label:before {
     }
   }
 
+  input[type="checkbox"][indeterminate] {
+    & + label {
+      &::after {
+        content: "?";
+        left: 4px;
+      }
+    }
+  }
+
   &.right {
     label {
       margin-right: 35px;

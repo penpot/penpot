@@ -180,6 +180,7 @@
 (s/def :internal.shape/fill-color-gradient (s/nilable ::gradient))
 (s/def :internal.shape/fill-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/fill-color-ref-id (s/nilable uuid?))
+(s/def :internal.shape/hide-fill-on-export boolean?)
 
 (s/def :internal.shape/font-family string?)
 (s/def :internal.shape/font-size ::us/safe-integer)
@@ -286,6 +287,7 @@
                    :internal.shape/fill-color-gradient
                    :internal.shape/fill-color-ref-file
                    :internal.shape/fill-color-ref-id
+                   :internal.shape/hide-fill-on-export ;; only for frames
                    :internal.shape/font-family
                    :internal.shape/font-size
                    :internal.shape/font-style

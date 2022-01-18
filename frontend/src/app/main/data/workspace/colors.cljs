@@ -148,17 +148,20 @@
          (rx/from (map #(dwt/update-text-attrs {:id % :attrs attrs}) text-ids))
          (rx/of (dch/update-shapes shape-ids (fn [shape] (d/merge shape attrs)))))))))
 
-(defn change-show-fill-on-export
-  [ids show-fill-on-export?]
-  (ptk/reify ::change-show-fill-on-export
+(defn change-hide-fill-on-export
+  [ids hide-fill-on-export]
+  (ptk/reify ::change-hide-fill-on-export
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id   (:current-page-id state)
             objects   (wsh/lookup-page-objects state page-id)
             is-text?  #(= :text (:type (get objects %)))
             shape-ids (filter (complement is-text?) ids)
-            attrs {:show-fill-on-export? show-fill-on-export?}]
-        (rx/of (dch/update-shapes shape-ids (fn [shape] (d/merge shape attrs))))))))
+            attrs {:hide-fill-on-export hide-fill-on-export}]
+        (rx/of (dch/update-shapes shape-ids (fn [shape]
+                                              (if (= (:type shape) :frame)
+                                                (d/merge shape attrs)
+                                                shape))))))))
 
 (defn change-stroke
   [ids color]
