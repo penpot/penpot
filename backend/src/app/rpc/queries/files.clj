@@ -253,8 +253,30 @@
         (update :data assoc :pages-index {page-id page})
         (assoc :pages [page-id]))))
 
-(defn remove-thumbnails-frames
-  "Removes from data the children for frames that have a thumbnail set up"
+(declare strip-frames-with-thumbnails)
+
+(s/def ::strip-frames-with-thumbnails ::us/boolean)
+
+(s/def ::page
+  (s/keys :req-un [::profile-id ::file-id]
+          :opt-un [::strip-frames-with-thumbnails]))
+
+(sv/defmethod ::page
+  "Retrieves the first page of the file. Used mainly for render
+  thumbnails on dashboard."
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
+  (db/with-atomic [conn pool]
+    (check-read-permissions! conn profile-id file-id)
+
+    (let [cfg     (assoc cfg :conn conn)
+          file    (retrieve-file cfg file-id)
+          page-id (get-in file [:data :pages 0])]
+      (cond-> (get-in file [:data :pages-index page-id])
+        (true? (:strip-frames-with-thumbnails props))
+        (strip-frames-with-thumbnails)))))
+
+(defn strip-frames-with-thumbnails
+  "Remove unnecesary shapes from frames that have thumbnail."
   [data]
   (let [filter-shape?
         (fn [objects [id shape]]
@@ -280,22 +302,6 @@
 
     (update data :objects update-objects)))
 
-(s/def ::page
-  (s/keys :req-un [::profile-id ::file-id]))
-
-(sv/defmethod ::page
-  "Retrieves the first page of the file. Used mainly for render
-  thumbnails on dashboard."
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id strip-thumbnails]}]
-  (db/with-atomic [conn pool]
-    (check-read-permissions! conn profile-id file-id)
-
-    (let [cfg     (assoc cfg :conn conn)
-          file    (retrieve-file cfg file-id)
-          page-id (get-in file [:data :pages 0])]
-      (cond-> (get-in file [:data :pages-index page-id])
-        strip-thumbnails
-        (remove-thumbnails-frames)))))
 
 ;; --- Query: Shared Library Files
 
