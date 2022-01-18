@@ -588,6 +588,10 @@ msgstr "Ok"
 msgid "ds.confirm-title"
 msgstr "Are you sure?"
 
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Components to update:"
+
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "ds.updated-at"
 msgstr "Updated: %s"
@@ -1550,7 +1554,7 @@ msgstr "Remove “%s” as Shared Library"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
-msgstr "Update component"
+msgstr "Update"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
@@ -1563,8 +1567,18 @@ msgstr ""
 "other files that use it."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"You are about to update components in a shared library. This may affect "
+"other files that use it."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Update a component in a shared library"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Update components in a shared library"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
@@ -3114,6 +3128,10 @@ msgstr "Detach instance"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Detach instances"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Update main components"
 
 msgid "workspace.shape.menu.difference"
 msgstr "Difference"

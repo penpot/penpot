@@ -105,6 +105,26 @@
     }
   }
 
+  .modal-item-element {
+    display: flex;
+    padding-bottom: 3px;
+    margin-left: 10px;
+    font-size: $fs14;
+    color: $color-info;
+
+    .modal-component-icon {
+      margin-right: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      svg {
+        width: 16px;
+        height: 16px;
+        fill: $color-info;
+      }
+    }
+  }
+
   .modal-content {
     display: flex;
     flex-direction: column;

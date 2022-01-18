@@ -347,7 +347,7 @@
       (let [component      (cp/get-component id
                                              (:current-file-id state)
                                              (dwlh/get-local-file state)
-                                              nil)
+                                             nil)
             all-components (vals (get-in state [:workspace-data :components]))
             unames         (set (map :name all-components))
             new-name       (dwc/generate-unique-name unames (:name component))
@@ -424,7 +424,7 @@
                 (cond-> new-shape
                   true
                   (as-> $
-                    (geom/move $ delta)
+                        (geom/move $ delta)
                     (assoc $ :frame-id frame-id)
                     (assoc $ :parent-id
                            (or (:parent-id $) (:frame-id $)))
@@ -444,9 +444,9 @@
 
             [new-shape new-shapes _]
             (cp/clone-object component-shape
-                              nil
-                              (get component :objects)
-                              update-new-shape)
+                             nil
+                             (get component :objects)
+                             update-new-shape)
 
             rchanges (mapv (fn [obj]
                              {:type :add-obj
@@ -506,8 +506,8 @@
             [rchanges uchanges]
             (reduce (fn [changes id]
                       (dwlh/concat-changes
-                        changes
-                        (dwlh/generate-detach-instance id container)))
+                       changes
+                       (dwlh/generate-detach-instance id container)))
                     dwlh/empty-changes
                     selected)]
 
@@ -565,8 +565,8 @@
                                              libraries
                                              true)]
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
-                                                                  rchanges
-                                                                  local-library))
+                                                                 rchanges
+                                                                 local-library))
 
         (rx/of (dch/commit-changes {:redo-changes rchanges
                                     :undo-changes uchanges
@@ -603,26 +603,26 @@
             file      (dwlh/get-file state file-id)
 
             xf-filter (comp
-                        (filter :local-change?)
-                        (map #(dissoc % :local-change?)))
+                       (filter :local-change?)
+                       (map #(dissoc % :local-change?)))
 
             local-rchanges (into [] xf-filter rchanges)
             local-uchanges (into [] xf-filter uchanges)
 
             xf-remove (comp
-                        (remove :local-change?)
-                        (map #(dissoc % :local-change?)))
+                       (remove :local-change?)
+                       (map #(dissoc % :local-change?)))
 
             rchanges (into [] xf-remove rchanges)
             uchanges (into [] xf-remove uchanges)]
 
         (log/debug :msg "UPDATE-COMPONENT finished"
                    :js/local-rchanges (log-changes
-                                        local-rchanges
-                                        local-library)
+                                       local-rchanges
+                                       local-library)
                    :js/rchanges (log-changes
-                                  rchanges
-                                  file))
+                                 rchanges
+                                 file))
 
         (rx/of (when (seq local-rchanges)
                  (dch/commit-changes {:redo-changes local-rchanges
@@ -648,6 +648,16 @@
          (when (not= current-file-id file-id)
            (sync-file file-id file-id))
          (dwu/commit-undo-transaction))))))
+
+(defn update-component-in-bulk
+  [shapes file-id]
+  (ptk/reify ::update-component-in-bulk
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/concat
+       (rx/of (dwu/start-undo-transaction))
+       (rx/map #(update-component-sync (:id %) file-id) (rx/from shapes))
+       (rx/of (dwu/commit-undo-transaction))))))
 
 (declare sync-file-2nd-stage)
 
@@ -690,28 +700,28 @@
                       (sequence xf-scat file-changes))]
 
         (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
-                                                            rchanges
-                                                            file))
+                                                           rchanges
+                                                           file))
         (rx/concat
-          (rx/of (dm/hide-tag :sync-dialog))
-          (when rchanges
-            (rx/of (dch/commit-changes {:redo-changes rchanges
-                                        :undo-changes uchanges
-                                        :origin it
-                                        :file-id file-id})))
-          (when (not= file-id library-id)
+         (rx/of (dm/hide-tag :sync-dialog))
+         (when rchanges
+           (rx/of (dch/commit-changes {:redo-changes rchanges
+                                       :undo-changes uchanges
+                                       :origin it
+                                       :file-id file-id})))
+         (when (not= file-id library-id)
             ;; When we have just updated the library file, give some time for the
             ;; update to finish, before marking this file as synced.
             ;; TODO: look for a more precise way of syncing this.
             ;; Maybe by using the stream (second argument passed to watch)
             ;; to wait for the corresponding changes-committed and then proceed
             ;; with the :update-sync mutation.
-            (rx/concat (rx/timer 3000)
-                       (rp/mutation :update-sync
-                                    {:file-id file-id
-                                     :library-id library-id})))
-          (when (some? library-changes)
-            (rx/of (sync-file-2nd-stage file-id library-id))))))))
+           (rx/concat (rx/timer 3000)
+                      (rp/mutation :update-sync
+                                   {:file-id file-id
+                                    :library-id library-id})))
+         (when (some? library-changes)
+           (rx/of (sync-file-2nd-stage file-id library-id))))))))
 
 (defn sync-file-2nd-stage
   "If some components have been modified, we need to launch another synchronization
@@ -738,8 +748,8 @@
             uchanges              (d/concat-vec uchanges1 uchanges2)]
         (when rchanges
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
-                                                                          rchanges
-                                                                          file))
+                                                                         rchanges
+                                                                         file))
           (rx/of (dch/commit-changes {:redo-changes rchanges
                                       :undo-changes uchanges
                                       :origin it
@@ -774,11 +784,11 @@
                             (st/emit! dm/hide))]
 
         (rx/of (dm/info-dialog
-                 (tr "workspace.updates.there-are-updates")
-                 :inline-actions
-                 [{:label (tr "workspace.updates.update")
-                   :callback do-update}
-                  {:label (tr "workspace.updates.dismiss")
-                   :callback do-dismiss}]
-                 :sync-dialog))))))
+                (tr "workspace.updates.there-are-updates")
+                :inline-actions
+                [{:label (tr "workspace.updates.update")
+                  :callback do-update}
+                 {:label (tr "workspace.updates.dismiss")
+                  :callback do-dismiss}]
+                :sync-dialog))))))
 

@@ -186,10 +186,10 @@
 
      (when (not has-frame?)
        [:*
-         [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
-                         :shortcut (sc/get-tooltip :create-artboard-from-selection)
-                         :on-click do-create-artboard-from-selection}]
-         [:& menu-separator]])]))
+        [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
+                        :shortcut (sc/get-tooltip :create-artboard-from-selection)
+                        :on-click do-create-artboard-from-selection}]
+        [:& menu-separator]])]))
 
 (mf/defc context-menu-path
   [{:keys [shapes disable-flatten? disable-booleans?]}]
@@ -303,6 +303,7 @@
         shape-id (->> shapes first :id)
         component-id (->> shapes first :component-id)
         component-file (-> shapes first :component-file)
+        component-shapes (filter #(contains? % :component-id) shapes)
 
         current-file-id (mf/use-ctx ctx/current-file-id)
         local-component? (= component-file current-file-id)
@@ -314,6 +315,7 @@
         do-show-component (st/emitf (dw/go-to-component component-id))
         do-navigate-component-file (st/emitf (dwl/nav-to-component-file component-file))
         do-update-component (st/emitf (dwl/update-component-sync shape-id component-file))
+        do-update-component-in-bulk (st/emitf (dwl/update-component-in-bulk component-shapes component-file))
 
         do-update-remote-component
         (st/emitf (modal/show
@@ -324,7 +326,18 @@
                     :cancel-label (tr "modals.update-remote-component.cancel")
                     :accept-label (tr "modals.update-remote-component.accept")
                     :accept-style :primary
-                    :on-accept do-update-component}))]
+                    :on-accept do-update-component}))
+
+        do-update-in-bulk (st/emitf (modal/show
+                                     {:type :confirm
+                                      :message ""
+                                      :title (tr "modals.update-remote-component-in-bulk.message")
+                                      :hint (tr "modals.update-remote-component-in-bulk.hint")
+                                      :items component-shapes
+                                      :cancel-label (tr "modals.update-remote-component.cancel")
+                                      :accept-label (tr "modals.update-remote-component.accept")
+                                      :accept-style :primary
+                                      :on-accept do-update-component-in-bulk}))]
     [:*
      (when (and (not has-frame?) (not is-component?))
        [:*
@@ -335,7 +348,10 @@
         (when has-component?
           [:& menu-entry {:title (tr "workspace.shape.menu.detach-instances-in-bulk")
                           :shortcut (sc/get-tooltip :detach-component)
-                          :on-click do-detach-component-in-bulk}])])
+                          :on-click do-detach-component-in-bulk}]
+          (when (not single?)
+            [:& menu-entry {:title (tr "workspace.shape.menu.update-components-in-bulk")
+                            :on-click do-update-in-bulk}]))])
 
      (when is-component?
        ;; WARNING: this menu is the same as the context menu at the sidebar.
@@ -407,17 +423,17 @@
         dropdown-ref (mf/use-ref)]
 
     (mf/use-effect
-      (mf/deps mdata)
-      #(let [dropdown (mf/ref-val dropdown-ref)]
-         (when dropdown
-           (let [bounding-rect (dom/get-bounding-rect dropdown)
-                 window-size (dom/get-window-size)
-                 delta-x (max (- (+ (:right bounding-rect) 250) (:width window-size)) 0)
-                 delta-y (max (- (:bottom bounding-rect) (:height window-size)) 0)
-                 new-style (str "top: " (- top delta-y) "px; "
-                                "left: " (- left delta-x) "px;")]
-             (when (or (> delta-x 0) (> delta-y 0))
-               (.setAttribute ^js dropdown "style" new-style))))))
+     (mf/deps mdata)
+     #(let [dropdown (mf/ref-val dropdown-ref)]
+        (when dropdown
+          (let [bounding-rect (dom/get-bounding-rect dropdown)
+                window-size (dom/get-window-size)
+                delta-x (max (- (+ (:right bounding-rect) 250) (:width window-size)) 0)
+                delta-y (max (- (:bottom bounding-rect) (:height window-size)) 0)
+                new-style (str "top: " (- top delta-y) "px; "
+                               "left: " (- left delta-x) "px;")]
+            (when (or (> delta-x 0) (> delta-y 0))
+              (.setAttribute ^js dropdown "style" new-style))))))
 
     [:& dropdown {:show (boolean mdata)
                   :on-close (st/emitf dw/hide-context-menu)}
