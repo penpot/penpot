@@ -67,25 +67,21 @@
                 type "png"
                 omit-background? false}}]
    (.screenshot ^js frame #js {:fullPage full-page?
+                               :clip nil
                                :type (name type)
                                :omitBackground omit-background?})))
 
 (defn pdf
   ([page] (pdf page nil))
-  ([page {:keys [viewport omit-background? prefer-css-page-size? save-path]
-          :or {viewport {}
-               omit-background? true
-               prefer-css-page-size? true
-               save-path nil}}]
-   (let [viewport (d/merge default-viewport viewport)]
+  ([page {:keys [viewport save-path]}]
+   (p/let [viewport (d/merge default-viewport viewport)]
+     (.emulateMediaType ^js page "screen")
      (.pdf ^js page #js {:path save-path
                          :width (:width viewport)
                          :height (:height viewport)
                          :scale (:scale viewport)
-                         :omitBackground omit-background?
-                         :printBackground (not omit-background?)
-                         :preferCSSPageSize prefer-css-page-size?}))))
-
+                         :printBackground true
+                         :preferCSSPageSize false}))))
 (defn eval!
   [frame f]
   (.evaluate ^js frame f))
