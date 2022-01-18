@@ -165,6 +165,7 @@
           f.created_at,
           f.modified_at,
           f.name,
+          f.revn,
           f.is_shared
      from file as f
     where f.project_id = ?
@@ -214,9 +215,6 @@
       (some-> (retrieve-file cfg id)
               (assoc :permissions perms)))))
 
-(s/def ::page
-  (s/keys :req-un [::profile-id ::file-id]))
-
 (defn remove-thumbnails-frames
   "Removes from data the children for frames that have a thumbnail set up"
   [data]
@@ -244,7 +242,12 @@
 
     (update data :objects update-objects)))
 
+(s/def ::page
+  (s/keys :req-un [::profile-id ::file-id]))
+
 (sv/defmethod ::page
+  "Retrieves the first page of the file. Used mainly for render
+  thumbnails on dashboard."
   [{:keys [pool] :as cfg} {:keys [profile-id file-id strip-thumbnails]}]
   (db/with-atomic [conn pool]
     (check-read-permissions! conn profile-id file-id)
