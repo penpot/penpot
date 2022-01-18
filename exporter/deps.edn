@@ -3,7 +3,7 @@
  {penpot/common       {:local/root "../common"}
   binaryage/devtools  {:mvn/version "RELEASE"}
   metosin/reitit-core {:mvn/version "0.5.13"}
-  lambdaisland/glogi  {:mvn/version "1.0.106"}
+  com.lambdaisland/glogi {:mvn/version "1.1.144"}
   funcool/beicon      {:mvn/version "2021.07.05-1"}
   }
  :aliases
@@ -14,7 +14,7 @@
 
   :dev
   {:extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.15.10"}}}
+   {thheller/shadow-cljs {:mvn/version "2.16.12"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
