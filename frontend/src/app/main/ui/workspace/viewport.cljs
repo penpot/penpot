@@ -21,11 +21,13 @@
    [app.main.ui.workspace.viewport.drawarea :as drawarea]
    [app.main.ui.workspace.viewport.frame-grid :as frame-grid]
    [app.main.ui.workspace.viewport.gradients :as gradients]
+   [app.main.ui.workspace.viewport.guides :as guides]
    [app.main.ui.workspace.viewport.hooks :as hooks]
    [app.main.ui.workspace.viewport.interactions :as interactions]
    [app.main.ui.workspace.viewport.outline :as outline]
    [app.main.ui.workspace.viewport.pixel-overlay :as pixel-overlay]
    [app.main.ui.workspace.viewport.presence :as presence]
+   [app.main.ui.workspace.viewport.rules :as rules]
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
@@ -89,6 +91,13 @@
         ;; STREAMS
         move-stream       (mf/use-memo #(rx/subject))
 
+        frame-parent      (mf/use-memo
+                           (mf/deps @hover-ids base-objects)
+                           (fn []
+                             (let [parent (get base-objects (last @hover-ids))]
+                               (when (= :frame (:type parent))
+                                 parent))))
+
         zoom              (d/check-num zoom 1)
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
@@ -145,7 +154,11 @@
                                       (or drawing-obj transform))
         show-selrect?            (and selrect (empty? drawing))
         show-measures?           (and (not transform) (not node-editing?) show-distances?)
-        show-artboard-names?              (contains? layout :display-artboard-names)]
+        show-artboard-names?     (contains? layout :display-artboard-names)
+        show-rules?              (contains? layout :rules)
+
+        ;; TODO
+        show-guides? true]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
     (hooks/setup-viewport-size viewport-ref)
@@ -157,6 +170,8 @@
     (hooks/setup-shortcuts node-editing? drawing-path?)
     (hooks/setup-active-frames base-objects vbox hover active-frames)
 
+    
+    
     [:div.viewport
      [:div.viewport-overlays
 
@@ -294,7 +309,9 @@
 
        (when show-grids?
          [:& frame-grid/frame-grid
-          {:zoom zoom :selected selected :transform transform}])
+          {:zoom zoom
+           :selected selected
+           :transform transform}])
 
        (when show-pixel-grid?
          [:& widgets/pixel-grid
@@ -325,12 +342,6 @@
           {:zoom zoom
            :tooltip tooltip}])
 
-       (when show-presence?
-         [:& presence/active-cursors
-          {:page-id page-id}])
-
-       [:& widgets/viewport-actions]
-
        (when show-prototypes?
          [:& interactions/interactions
           {:selected selected
@@ -341,5 +352,22 @@
 
        (when show-selrect?
          [:& widgets/selection-rect {:data selrect
-                                     :zoom zoom}])]]]))
+                                     :zoom zoom}])
+
+       (when show-presence?
+         [:& presence/active-cursors
+          {:page-id page-id}])
+
+       [:& widgets/viewport-actions]
+
+       (when show-rules?
+         [:& rules/rules
+          {:zoom zoom
+           :vbox vbox}])
+
+       (when show-guides?
+         [:& guides/viewport-guides
+          {:zoom zoom
+           :vbox vbox
+           :hover-frame frame-parent}])]]]))
 

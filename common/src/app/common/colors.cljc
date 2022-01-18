@@ -15,4 +15,5 @@
 (def info "#59B9E2")
 (def test "#fabada")
 (def white "#FFFFFF")
+(def primary "#31EFB8")
 
