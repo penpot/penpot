@@ -53,7 +53,7 @@
             (post {:payload result}))
 
           (reply-error [err]
-            (.error js/console "error" err)
+            (.error js/console "error" (pr-str err))
             (post {:error {:data (ex-data err)
                            :message (ex-message err)}}))
 
