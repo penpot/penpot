@@ -162,6 +162,7 @@
          (mf/deps files current-team-id)
          (fn [_]
            (st/emit! (ptk/event ::ev/event {::ev/name "export-files"
+                                            ::ev/origin "dashboard"
                                             :num-files (count files)}))
            (->> (rx/from files)
                 (rx/flat-map
