@@ -199,6 +199,18 @@
            :penpot:suffix suffix
            :penpot:scale  (str scale)}])))
 
+(defn str->style
+  [style-str]
+  (if (string? style-str)
+    (->> (str/split style-str ";")
+         (map str/trim)
+         (map #(str/split % ":"))
+         (group-by first)
+         (map (fn [[key val]]
+                (vector (keyword key) (second (first val)))))
+         (into {}))
+    style-str))
+
 (defn style->str
   [style]
   (->> style
@@ -229,7 +241,8 @@
             [:& render-xml {:xml def-xml}]])]))
 
     (when (= (:type shape) :svg-raw)
-      (let [props
+      (let [shape (-> shape (d/update-in-when [:content :attrs :style] str->style))
+            props
             (-> (obj/new)
                 (obj/set! "penpot:x" (:x shape))
                 (obj/set! "penpot:y" (:y shape))
@@ -263,7 +276,6 @@
 (mf/defc export-data
   [{:keys [shape]}]
   (let [props (-> (obj/new) (add-data shape) (add-library-refs shape))]
-    (js/console.log props)
     [:> "penpot:shape" props
      (export-shadow-data       shape)
      (export-blur-data         shape)

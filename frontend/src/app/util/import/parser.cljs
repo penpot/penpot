@@ -210,7 +210,8 @@
 
             svg-node (if (= :svg tag)
                        (->> node :content last :content last)
-                       (->> node :content last))]
+                       (->> node :content last))
+            svg-node (d/update-in-when svg-node [:attrs :style] parse-style)]
         (merge (add-attrs {} (:attrs svg-node)) node-attrs))
 
       (= type :bool)
@@ -633,7 +634,8 @@
 (defn add-svg-content
   [props node]
   (let [svg-content (get-data node :penpot:svg-content)
-        attrs (-> (:attrs svg-content) (without-penpot-prefix))
+        attrs (-> (:attrs svg-content) (without-penpot-prefix)
+                  (d/update-when :style parse-style))
         tag (-> svg-content :attrs :penpot:tag keyword)
 
         node-content
@@ -641,13 +643,17 @@
           (= tag :svg)
           (->> node :content last :content last :content fix-style-attr)
 
-          (= tag :text)
-          (-> node :content last :content))]
-    (assoc
-     props :content
-     {:attrs   attrs
-      :tag     tag
-      :content node-content})))
+          (some? (:content svg-content))
+          (->> (:content svg-content)
+               (filter #(= :penpot:svg-child (:tag %)))
+               (mapv :content)
+               (first)))]
+    (-> props
+        (assoc
+         :content
+         {:attrs   attrs
+          :tag     tag
+          :content node-content}))))
 
 (defn add-frame-data [props node]
   (let [grids (parse-grids node)]
