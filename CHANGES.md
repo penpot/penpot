@@ -22,6 +22,7 @@
 - Add actions to go to main component context menu option [Taiga #2053](https://tree.taiga.io/project/penpot/us/2053).
 - Add contrast between component select color and shape select color [Taiga #2121](https://tree.taiga.io/project/penpot/issue/2121).
 - Add animations in interactions [Taiga #2244](https://tree.taiga.io/project/penpot/us/2244).
+- Add performance improvements on .penpot file import process [Taiga 2497](https://tree.taiga.io/project/penpot/us/2497).
 
 ### :bug: Bugs fixed
 

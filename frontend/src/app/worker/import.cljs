@@ -141,38 +141,30 @@
          (rx/map #(hash-map :file-id file-id :library-id %))
          (rx/flat-map (partial rp/mutation :link-file-to-library)))))
 
-(defn persist-file [file]
-  (rp/mutation :persist-temp-file {:id (:id file)}))
-
 (defn send-changes
   "Creates batches of changes to be sent to the backend"
   [context file]
-  (let [revn (atom (:revn file))
-        file-id (:id file)
+  (let [file-id    (:id file)
         session-id (uuid/next)
-        changes-batches
-        (->> (fb/generate-changes file)
-             (partition change-batch-size change-batch-size nil)
-             (mapv vec))
+        batches    (->> (fb/generate-changes file)
+                        (partition change-batch-size change-batch-size nil)
+                        (mapv vec))
 
-        current (atom 0)
-        total (count changes-batches)]
+        processed  (atom 0)
+        total      (count batches)]
 
     (rx/concat
-     (->> (rx/from changes-batches)
-          (rx/mapcat
-           (fn [change-batch]
-             (->> (rp/mutation :update-file
+     (->> (rx/from (d/enumerate batches))
+          (rx/merge-map
+           (fn [[i change-batch]]
+             (->> (rp/mutation :update-temp-file
                                {:id file-id
                                 :session-id session-id
-                                :revn @revn
+                                :revn i
                                 :changes change-batch})
-                  (rx/tap #(do (swap! current inc)
-                               (progress! context
-                                          :upload-data @current total))))))
-
+                  (rx/tap #(do (swap! processed inc)
+                               (progress! context :upload-data @processed total))))))
           (rx/map first)
-          (rx/tap #(reset! revn (:revn %)))
           (rx/ignore))
 
      (->> (rp/mutation :persist-temp-file {:id file-id})
@@ -340,7 +332,7 @@
         file      (-> file (fb/add-page page-data))]
     (->> (rx/from nodes)
          (rx/filter cip/shape?)
-         (rx/mapcat (partial resolve-media context file-id))
+         (rx/merge-map (partial resolve-media context file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map (comp fb/close-page setup-interactions)))))
 
@@ -362,7 +354,7 @@
          (rx/filter cip/shape?)
          (rx/skip 1)
          (rx/skip-last 1)
-         (rx/mapcat (partial resolve-media context file-id))
+         (rx/merge-map (partial resolve-media context file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map fb/finish-component))))
 
@@ -382,6 +374,7 @@
           (fn [[page-id page-name]]
             (->> (get-file context :page page-id)
                  (rx/map (fn [page-data] [page-id page-name page-data])))))
+
          (rx/concat-reduce (partial import-page context) file))))
 
 (defn process-library-colors
@@ -420,7 +413,7 @@
     (let [resolve (:resolve context)]
       (->> (get-file context :media-list)
            (rx/flat-map (comp d/kebab-keys cip/string->uuid))
-           (rx/mapcat
+           (rx/merge-map
             (fn [[id media]]
               (let [media (assoc media :id (resolve id))]
                 (->> (get-file context :media id media)
@@ -432,12 +425,11 @@
                                   :content content
                                   :is-local false})))
                      (rx/tap #(progress! context :upload-media (:name %)))
-                     (rx/flat-map #(rp/mutation! :upload-file-media-object %))
+                     (rx/merge-map #(rp/mutation! :upload-file-media-object %))
                      (rx/map (constantly media))
                      (rx/catch #(do (.error js/console (str "Error uploading media: " (:name media)) )
                                     (rx/empty)))))))
            (rx/reduce fb/add-library-media file)))
-
     (rx/of file)))
 
 (defn process-library-components
@@ -511,7 +503,7 @@
           (fn [[file data]]
             (->> (uz/load-from-url (:uri data))
                  (rx/map #(-> context (assoc :zip %) (merge data)))
-                 (rx/flat-map
+                 (rx/merge-map
                   (fn [context]
                     ;; process file retrieves a stream that will emit progress notifications
                     ;; and other that will emit the files once imported
