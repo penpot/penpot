@@ -100,6 +100,7 @@
 (mf/defc menu
   [{:keys [layout project file team-id page-id] :as props}]
   (let [show-menu? (mf/use-state false)
+        show-sub-menu? (mf/use-state false)
         editing?   (mf/use-state false)
 
         frames (mf/deref refs/workspace-frames)
@@ -192,7 +193,8 @@
                        (dom/trigger-download filename body))
                      (fn [_error]
                        (st/emit! (dm/error (tr "errors.unexpected-error"))))
-                     (st/emitf dm/hide)))))))]
+                     (st/emitf dm/hide)))))))
+        on-item-click (fn [item] (fn [event] (do (dom/stop-propagation event) (reset! show-sub-menu? item))))]
 
     (mf/use-effect
      (mf/deps @editing?)
@@ -223,6 +225,51 @@
      [:& dropdown {:show @show-menu?
                    :on-close #(reset! show-menu? false)}
       [:ul.menu
+       [:li {:on-click (on-item-click :file)}
+        [:span (tr "workspace.header.menu.option.file")]
+        [:span i/arrow-slide]]
+       [:li {:on-click (on-item-click :edit)}
+        [:span (tr "workspace.header.menu.option.edit")] [:span i/arrow-slide]]
+       [:li {:on-click (on-item-click :view)}
+        [:span (tr "workspace.header.menu.option.view")] [:span i/arrow-slide]]
+       [:li {:on-click (on-item-click :preferences)}
+        [:span (tr "workspace.header.menu.option.preferences")] [:span i/arrow-slide]]
+       (when (contains? @cf/flags :user-feedback)
+         [:*
+          [:li.separator]
+          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
+           [:span (tr "labels.give-feedback")]]])]]
+
+     [:& dropdown {:show (= @show-sub-menu? :file)
+                   :on-close #(reset! show-sub-menu? false)}
+      [:ul.sub-menu.file
+       (if (:is-shared file)
+         [:li {:on-click on-remove-shared}
+          [:span (tr "dashboard.remove-shared")]]
+         [:li {:on-click on-add-shared}
+          [:span (tr "dashboard.add-shared")]])
+       [:li.export-file {:on-click on-export-file}
+        [:span (tr "dashboard.export-single")]]
+       (when (seq frames)
+         [:li.export-file {:on-click on-export-frames}
+          [:span (tr "dashboard.export-frames")]])]]
+
+     [:& dropdown {:show (= @show-sub-menu? :edit)
+                   :on-close #(reset! show-sub-menu? false)}
+      [:ul.sub-menu.edit
+       [:li {:on-click #(st/emit! (dw/select-all))}
+        [:span (tr "workspace.header.menu.select-all")]
+        [:span.shortcut (sc/get-tooltip :select-all)]]
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :scale-text))}
+        [:span
+         (if (contains? layout :scale-text)
+           (tr "workspace.header.menu.disable-scale-text")
+           (tr "workspace.header.menu.enable-scale-text"))]
+        [:span.shortcut (sc/get-tooltip :toggle-scale-text)]]]]
+
+     [:& dropdown {:show (= @show-sub-menu? :view)
+                   :on-close #(reset! show-sub-menu? false)}
+      [:ul.sub-menu.view
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :rules))}
         [:span
          (if (contains? layout :rules)
@@ -236,13 +283,6 @@
            (tr "workspace.header.menu.hide-grid")
            (tr "workspace.header.menu.show-grid"))]
         [:span.shortcut (sc/get-tooltip :toggle-grid)]]
-
-       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :snap-grid))}
-        [:span
-         (if (contains? layout :snap-grid)
-           (tr "workspace.header.menu.disable-snap-grid")
-           (tr "workspace.header.menu.enable-snap-grid"))]
-        [:span.shortcut (sc/get-tooltip :toggle-snap-grid)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :sitemap :layers))}
         [:span
@@ -258,12 +298,6 @@
            (tr "workspace.header.menu.show-palette"))]
         [:span.shortcut (sc/get-tooltip :toggle-palette)]]
 
-       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :display-artboard-names))}
-        [:span
-         (if (contains? layout :display-artboard-names)
-           (tr "workspace.header.menu.hide-artboard-names")
-           (tr "workspace.header.menu.show-artboard-names"))]]
-
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :assets))}
         [:span
          (if (contains? layout :assets)
@@ -271,40 +305,35 @@
            (tr "workspace.header.menu.show-assets"))]
         [:span.shortcut (sc/get-tooltip :toggle-assets)]]
 
-       [:li {:on-click #(st/emit! (dw/select-all))}
-        [:span (tr "workspace.header.menu.select-all")]
-        [:span.shortcut (sc/get-tooltip :select-all)]]
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :display-artboard-names))}
+        [:span
+         (if (contains? layout :display-artboard-names)
+           (tr "workspace.header.menu.hide-artboard-names")
+           (tr "workspace.header.menu.show-artboard-names"))]]]]
+
+     [:& dropdown {:show (= @show-sub-menu? :preferences)
+                   :on-close #(reset! show-sub-menu? false)}
+      [:ul.sub-menu.preferences
+       #_[:li {:on-click #()}
+          [:span
+           (if (contains? layout :snap-guide)
+             (tr "workspace.header.menu.disable-snap-guides")
+             (tr "workspace.header.menu.enable-snap-guides"))]
+          [:span.shortcut (sc/get-tooltip :toggle-snap-grid)]]
+
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :snap-grid))}
+        [:span
+         (if (contains? layout :snap-grid)
+           (tr "workspace.header.menu.disable-snap-grid")
+           (tr "workspace.header.menu.enable-snap-grid"))]
+        [:span.shortcut (sc/get-tooltip :toggle-snap-grid)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}
         [:span
          (if (contains? layout :dynamic-alignment)
            (tr "workspace.header.menu.disable-dynamic-alignment")
            (tr "workspace.header.menu.enable-dynamic-alignment"))]
-        [:span.shortcut (sc/get-tooltip :toggle-alignment)]]
-
-       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :scale-text))}
-        [:span
-         (if (contains? layout :scale-text)
-           (tr "workspace.header.menu.disable-scale-text")
-           (tr "workspace.header.menu.enable-scale-text"))]
-        [:span.shortcut (sc/get-tooltip :toggle-scale-text)]]
-
-       (if (:is-shared file)
-         [:li {:on-click on-remove-shared}
-          [:span (tr "dashboard.remove-shared")]]
-         [:li {:on-click on-add-shared}
-          [:span (tr "dashboard.add-shared")]])
-
-       [:li.export-file {:on-click on-export-file}
-        [:span (tr "dashboard.export-single")]]
-
-       (when (seq frames)
-         [:li.export-file {:on-click on-export-frames}
-          [:span (tr "dashboard.export-frames")]])
-
-       (when (contains? @cf/flags :user-feedback)
-         [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
-          [:span (tr "labels.give-feedback")]])]]]))
+        [:span.shortcut (sc/get-tooltip :toggle-alignment)]]]]]))
 
 ;; --- Header Component
 
