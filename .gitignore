@@ -47,3 +47,5 @@ clj-profiler/
 .clj-kondo
 .lsp
 /frontend/cypress/videos/*/
+/frontend/cypress/fixtures/validuser.json
+
