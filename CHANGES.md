@@ -6,6 +6,7 @@
 
 ### :sparkles: New features
 
+- Create firsts e2e test [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608).
 - Add an option to hide artboards names on the viewport [Taiga #2034](https://tree.taiga.io/project/penpot/issue/2034).
 - Limit pasted object position to container boundaries [Taiga #2449](https://tree.taiga.io/project/penpot/us/2449).
 - Add new options for zoom widget in workspace and viewer mode [Taiga #896](https://tree.taiga.io/project/penpot/us/896).

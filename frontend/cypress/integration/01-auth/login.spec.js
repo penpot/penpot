@@ -14,8 +14,28 @@ describe("login", () => {
   });
 
   it("displays the login form", () => {
+    cy.contains("Great to see you again!").should("exist");
     cy.get("#email").should("exist");
     cy.get("#password").should("exist");
+  });
+
+  it("can't login with an invalid user", () => {
+    cy.get("#email").type("bad@mail.com");
+    cy.get("#password").type("badpassword");
+    cy.get("input[type=submit]").first().click();
+    cy.get(".warning")
+      .should("exist")
+      .should("contain", "Username or password seems to be wrong.");
+  });
+
+  it("can login with a valid user", () => {
+    cy.fixture('validuser.json').then((user) => {
+      cy.get("#email").type(user.email);
+      cy.get("#password").type(user.password);
+    });
+    
+    cy.get("input[type=submit]").first().click();
+    cy.get(".dashboard-layout").should("exist");
   });
 });
 
