@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-08-10 23:33+0000\n"
+"PO-Revision-Date: 2022-01-20 20:55+0000\n"
 "Last-Translator: Voxybuns <fossati.val@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.8-dev\n"
+"X-Generator: Weblate 4.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2722,3 +2722,61 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+msgid "common.share-link.placeholder"
+msgstr "Le lien à partager apparaîtra ici"
+
+msgid "common.share-link.title"
+msgstr "Partager les prototypes"
+
+msgid "common.share-link.view-all-pages"
+msgstr "Toutes les pages"
+
+msgid "common.share-link.view-current-page"
+msgstr "Seulement cette page"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Pages sélectionnées"
+
+msgid "dashboard.export-frames"
+msgstr "Exporter les plans de travail comme PDF..."
+
+msgid "dashboard.export.detail"
+msgstr ""
+"* Peut inclure les composants, éléments graphiques, couleurs et/ou polices "
+"de caractère."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Je souhaite m'abonner à la newsletter de Penpot."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Un ou plusieurs fichiers que vous souhaitez exporter utilisent des "
+"bibliothèques partagées. Que voulez-vous faire avec leurs ressources ?"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Êtes-vous certain de vouloir supprimer ce lien ? Si oui, plus personne ne "
+"pourra y accéder"
+
+msgid "common.share-link.get-link"
+msgstr "Obtenir le lien"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Lien copié avec succès"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Lien supprimé avec succès"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "Peut y accéder"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Peut le visionner"
+
+msgid "common.share-link.permissions-hint"
+msgstr "N'importe qui possédant ce lien peut y accéder"
+
+msgid "common.share-link.remove-link"
+msgstr "Supprimer le lien"
