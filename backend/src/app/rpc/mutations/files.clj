@@ -414,7 +414,9 @@
   [conn project-id]
   (:team-id (db/get-by-id conn :project project-id {:columns [:team-id]})))
 
-;; TEMPORARY FILE CREATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TEMPORARY FILES (behaves differently)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::create-temp-file ::create-file)
 
@@ -424,6 +426,23 @@
     (proj/check-edition-permissions! conn profile-id project-id)
     (create-file conn (assoc params :deleted-at (dt/in-future {:days 1})))))
 
+(s/def ::update-temp-file
+  (s/keys :req-un [::changes ::revn ::session-id ::id]))
+
+(sv/defmethod ::update-temp-file
+  [{:keys [pool] :as cfg} {:keys [profile-id session-id id revn changes] :as params}]
+  (db/with-atomic [conn pool]
+    (db/insert! conn :file-change
+                {:id (uuid/next)
+                 :session-id session-id
+                 :profile-id profile-id
+                 :created-at (dt/now)
+                 :file-id id
+                 :revn revn
+                 :data nil
+                 :changes (blob/encode changes)})
+    nil))
+
 (s/def ::persist-temp-file
   (s/keys :req-un [::id ::profile-id]))
 
@@ -431,6 +450,25 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
-    (db/update! conn :file
-                {:deleted-at nil}
-                {:id id})))
+    (let [file (db/get-by-id conn :file id)
+          revs (db/query conn :file-change
+                         {:file-id id}
+                         {:order-by [[:revn :asc]]})
+          revn (count revs)]
+
+      (when (nil? (:deleted-at file))
+        (ex/raise :type :validation
+                  :code :cant-persist-already-persisted-file))
+
+      (loop [revs (seq revs)
+             data (blob/decode (:data file))]
+        (if-let [rev (first revs)]
+          (recur (rest revs)
+                 (->> rev :changes blob/decode (cp/process-changes data)))
+          (db/update! conn :file
+                      {:deleted-at nil
+                       :revn revn
+                       :data (blob/encode data)}
+                      {:id id})))
+
+      nil)))
