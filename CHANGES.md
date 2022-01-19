@@ -68,6 +68,7 @@
 - Avoid modifying component when moving into a group [Taiga #2534](https://tree.taiga.io/project/penpot/issue/2534)
 - Show correctly group types label in handoff [Taiga #2482](https://tree.taiga.io/project/penpot/issue/2482)
 - Display view mode buttons always centered in viewer [#Taiga 2466](https://tree.taiga.io/project/penpot/issue/2466)
+- Fix default profile image generation issue [Taiga #2601](https://tree.taiga.io/project/penpot/issue/2601)
 
 ### :arrow_up: Deps updates
 
