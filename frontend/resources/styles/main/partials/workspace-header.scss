@@ -132,7 +132,7 @@
     position: absolute;
     top: 40px;
     left: 40px;
-    width: 270px;
+    width: 183px;
     z-index: 12;
     @include animation(0, 0.2s, fadeInDown);
 
@@ -158,6 +158,54 @@
         margin: 0 $size-1;
       }
 
+      &:hover {
+        background-color: $color-primary-lighter;
+      }
+
+      &.feedback {
+        border-top: 1px solid $color-gray-10;
+      }
+    }
+  }
+
+  .sub-menu {
+    position: absolute;
+    left: 230px;
+    width: 270px;
+    z-index: 12;
+    @include animation(0, 0.2s, fadeInDown);
+    background-color: $color-white;
+    border-radius: $br-small;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+    &.file {
+      top: 40px;
+    }
+
+    &.edit {
+      top: 77px;
+    }
+
+    &.view {
+      top: 114px;
+    }
+
+    &.preferences {
+      top: 150px;
+    }
+
+    li {
+      cursor: pointer;
+      font-size: $fs14;
+      padding: $size-2;
+      display: flex;
+      justify-content: space-between;
+
+      span {
+        color: $color-gray-60;
+        margin: 0 $size-1;
+      }
+
       .shortcut {
         color: $color-gray-20;
         font-size: $fs12;
@@ -165,10 +213,6 @@
 
       &:hover {
         background-color: $color-primary-lighter;
-      }
-
-      &.feedback {
-        border-top: 1px solid $color-gray-10;
       }
     }
   }
