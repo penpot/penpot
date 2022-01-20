@@ -11,7 +11,7 @@
 
 (defn on-error
   [error]
-  (js/console.error "Error on worker" error))
+  (js/console.error "Error on worker" (pr-str error)))
 
 (defonce instance (atom nil))
 

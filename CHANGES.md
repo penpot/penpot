@@ -23,6 +23,7 @@
 - Add actions to go to main component context menu option [Taiga #2053](https://tree.taiga.io/project/penpot/us/2053).
 - Add contrast between component select color and shape select color [Taiga #2121](https://tree.taiga.io/project/penpot/issue/2121).
 - Add animations in interactions [Taiga #2244](https://tree.taiga.io/project/penpot/us/2244).
+- Add performance improvements on .penpot file import process [Taiga 2497](https://tree.taiga.io/project/penpot/us/2497).
 
 ### :bug: Bugs fixed
 
@@ -69,6 +70,7 @@
 - Avoid modifying component when moving into a group [Taiga #2534](https://tree.taiga.io/project/penpot/issue/2534)
 - Show correctly group types label in handoff [Taiga #2482](https://tree.taiga.io/project/penpot/issue/2482)
 - Display view mode buttons always centered in viewer [#Taiga 2466](https://tree.taiga.io/project/penpot/issue/2466)
+- Fix default profile image generation issue [Taiga #2601](https://tree.taiga.io/project/penpot/issue/2601)
 
 ### :arrow_up: Deps updates
 

@@ -12,8 +12,8 @@
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.util.object :as obj]
    [promesa.core :as p]))
-
 
 (l/set-level! :trace)
 
@@ -35,7 +35,8 @@
   [page {:keys [timeout cookie user-agent viewport]}]
   (let [timeout    (or timeout default-timeout)
         user-agent (or user-agent default-user-agent)
-        viewport   (d/merge default-viewport viewport)]
+        viewport   (merge default-viewport viewport)]
+
     (p/do!
      (.setViewport ^js page #js {:width (:width viewport)
                                  :height (:height viewport)
@@ -63,29 +64,27 @@
 (defn screenshot
   ([frame] (screenshot frame nil))
   ([frame {:keys [full-page? omit-background? type]
-           :or {full-page? false
-                type "png"
+           :or {type "png"
+                full-page? false
                 omit-background? false}}]
-   (.screenshot ^js frame #js {:fullPage full-page?
-                               :type (name type)
-                               :omitBackground omit-background?})))
+   (let [options (-> (obj/new)
+                     (obj/set! "type" (name type))
+                     (obj/set! "omitBackground" omit-background?)
+                     (cond-> full-page? (-> (obj/set! "fullPage" true)
+                                            (obj/set! "clip" nil))))]
+     (.screenshot ^js frame options))))
 
 (defn pdf
   ([page] (pdf page nil))
-  ([page {:keys [viewport omit-background? prefer-css-page-size? save-path]
-          :or {viewport {}
-               omit-background? true
-               prefer-css-page-size? true
-               save-path nil}}]
-   (let [viewport (d/merge default-viewport viewport)]
+  ([page {:keys [viewport save-path]}]
+   (p/let [viewport (d/merge default-viewport viewport)]
+     (.emulateMediaType ^js page "screen")
      (.pdf ^js page #js {:path save-path
                          :width (:width viewport)
                          :height (:height viewport)
                          :scale (:scale viewport)
-                         :omitBackground omit-background?
-                         :printBackground (not omit-background?)
-                         :preferCSSPageSize prefer-css-page-size?}))))
-
+                         :printBackground true
+                         :preferCSSPageSize true}))))
 (defn eval!
   [frame f]
   (.evaluate ^js frame f))
@@ -104,10 +103,17 @@
 (defonce pool (atom nil))
 (defonce pool-browser-id (atom 1))
 
+(def default-chrome-args
+  #js ["--no-sandbox"
+       "--font-render-hinting=none"
+       "--disable-setuid-sandbox"
+       "--disable-accelerated-2d-canvas"
+       "--disable-gpu"])
+
 (def browser-pool-factory
   (letfn [(create []
             (let [path (cf/get :browser-executable-path "/usr/bin/google-chrome")]
-              (-> (pp/launch #js {:executablePath path :args #js ["--no-sandbox" "--font-render-hinting=none"]})
+              (-> (pp/launch #js {:executablePath path :args default-chrome-args})
                   (p/then (fn [browser]
                             (let [id (deref pool-browser-id)]
                               (l/info :origin "factory" :action "create" :browser-id id)

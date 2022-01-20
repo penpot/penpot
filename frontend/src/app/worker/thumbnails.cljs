@@ -34,7 +34,7 @@
   (let [uri (u/join (cfg/get-public-uri) "api/rpc/query/page")
         params {:file-id file-id
                 :id page-id
-                :strip-thumbnails true}]
+                :strip-frames-with-thumbnails true}]
     (->> (http/send!
           {:method :get
            :uri uri

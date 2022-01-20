@@ -101,10 +101,12 @@
         bool-shape   (bool/bool-shape shape-wrapper)]
     (mf/fnc bool-wrapper
       [{:keys [shape] :as props}]
-      (let [childs (->> (cp/get-children (:id shape) objects)
-                        (select-keys objects))]
-        [:& bool-shape {:shape shape
-                        :childs childs}]))))
+      (let [childs (mf/use-memo
+                    (mf/deps (:id shape) objects)
+                    (fn []
+                      (->> (cp/get-children (:id shape) objects)
+                           (select-keys objects))))]
+        [:& bool-shape {:shape shape :childs childs}]))))
 
 (defn svg-raw-wrapper-factory
   [objects]
@@ -221,26 +223,39 @@
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
   [{:keys [objects frame zoom] :or {zoom 1} :as props}]
-  (let [modifier (-> (gpt/point (:x frame) (:y frame))
-                     (gpt/negate)
-                     (gmt/translate-matrix))
-
-        frame-id (:id frame)
-
+  (let [frame-id          (:id frame)
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
-        modifier-ids (concat [frame-id] (cp/get-children frame-id objects))
-        update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
-        objects (reduce update-fn objects modifier-ids)
-        frame (assoc-in frame [:modifiers :displacement] modifier)
+        modifier
+        (mf/use-memo
+         (mf/deps (:x frame) (:y frame))
+         (fn []
+           (-> (gpt/point (:x frame) (:y frame))
+               (gpt/negate)
+               (gmt/translate-matrix))))
+
+        objects
+        (mf/use-memo
+         (mf/deps frame-id objects modifier)
+         (fn []
+           (let [update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)]
+             (->> (cp/get-children frame-id objects)
+                  (into [frame-id])
+                  (reduce update-fn objects)))))
+
+        frame
+        (mf/use-memo
+         (mf/deps modifier)
+         (fn [] (assoc-in frame [:modifiers :displacement] modifier)))
+
+        wrapper
+        (mf/use-memo
+         (mf/deps objects)
+         (fn [] (frame-wrapper-factory objects)))
 
         width  (* (:width frame) zoom)
         height (* (:height frame) zoom)
-        vbox   (format-viewbox {:width (:width frame 0) :height (:height frame 0)})
-
-        wrapper (mf/use-memo
-                 (mf/deps objects)
-                 #(frame-wrapper-factory objects))]
+        vbox   (format-viewbox {:width (:width frame 0) :height (:height frame 0)})]
 
     [:svg {:view-box vbox
            :width (ust/format-precision width viewbox-decimal-precision)
@@ -254,19 +269,25 @@
 (mf/defc component-svg
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [objects group zoom] :or {zoom 1} :as props}]
-  (let [modifier (-> (gpt/point (:x group) (:y group))
-                     (gpt/negate)
-                     (gmt/translate-matrix))
-
-        group-id (:id group)
-
+  (let [group-id (:id group)
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
-        modifier-ids (concat [group-id] (cp/get-children group-id objects))
+        modifier
+        (mf/use-memo
+         (mf/deps (:x group) (:y group))
+         (fn []
+           (-> (gpt/point (:x group) (:y group))
+               (gpt/negate)
+               (gmt/translate-matrix))))
 
-        update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
-        modifiers (reduce update-fn {} modifier-ids)
-        objects   (gsh/merge-modifiers objects modifiers)
+        objects
+        (mf/use-memo
+         (mf/deps modifier objects group-id)
+         (fn []
+           (let [modifier-ids (concat [group-id] (cp/get-children group-id objects))
+                 update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)
+                 modifiers    (reduce update-fn {} modifier-ids)]
+             (gsh/merge-modifiers objects modifiers))))
 
         group  (get objects group-id)
         width  (* (:width group) zoom)
@@ -276,7 +297,7 @@
         group-wrapper
         (mf/use-memo
          (mf/deps objects)
-         #(group-wrapper-factory objects))]
+         (fn [] (group-wrapper-factory objects)))]
 
     [:svg {:view-box vbox
            :width (ust/format-precision width viewbox-decimal-precision)
@@ -285,31 +306,51 @@
            :xmlns "http://www.w3.org/2000/svg"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")}
+
      [:> shape-container {:shape group}
       [:& group-wrapper {:shape group :view-box vbox}]]]))
 
 (mf/defc component-symbol
-  [{:keys [id data] :as props}]
+  {::mf/wrap-props false}
+  [props]
+  (let [id      (obj/get props "id")
+        data    (obj/get props "data")
+        name    (:name data)
+        path    (:path data)
+        objects (:objects data)
+        root    (get objects id)
+        selrect (:selrect root)
 
-  (let [{:keys [name path objects]} data
-        root (get objects id)
+        vbox
+        (format-viewbox
+         {:width (:width selrect)
+          :height (:height selrect)})
 
-        {:keys [width height]} (:selrect root)
-        vbox   (format-viewbox {:width width :height height})
+        modifier
+        (mf/use-memo
+         (mf/deps (:x root) (:y root))
+         (fn []
+           (-> (gpt/point (:x root) (:y root))
+               (gpt/negate)
+               (gmt/translate-matrix))))
 
-        modifier (-> (gpt/point (:x root) (:y root))
-                     (gpt/negate)
-                     (gmt/translate-matrix))
+        objects
+        (mf/use-memo
+         (mf/deps modifier id objects)
+         (fn []
+           (let [modifier-ids (concat [id] (cp/get-children id objects))
+                 update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)]
+             (reduce update-fn objects modifier-ids))))
 
-        modifier-ids (concat [id] (cp/get-children id objects))
-        update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
-        objects (reduce update-fn objects modifier-ids)
-        root (assoc-in root [:modifiers :displacement] modifier)
+        root
+        (mf/use-memo
+         (mf/deps modifier root)
+         (fn [] (assoc-in root [:modifiers :displacement] modifier)))
 
         group-wrapper
         (mf/use-memo
          (mf/deps objects)
-         #(group-wrapper-factory objects))]
+         (fn [] (group-wrapper-factory objects)))]
 
     [:> "symbol" #js {:id (str id)
                       :viewBox vbox
@@ -321,10 +362,9 @@
 (mf/defc components-sprite-svg
   {::mf/wrap-props false}
   [props]
-
-  (let [data (obj/get props "data")
-        children (obj/get props "children")
-        embed? (obj/get props "embed?")
+  (let [data              (obj/get props "data")
+        children          (obj/get props "children")
+        embed?            (obj/get props "embed?")
         include-metadata? (obj/get props "include-metadata?")]
     [:& (mf/provider embed/context) {:value embed?}
      [:& (mf/provider export/include-metadata-ctx) {:value include-metadata?}

@@ -153,7 +153,7 @@
      (fn []
        (->> (rx/zip
              (repo/query! :font-variants {:file-id file-id})
-             (repo/query! :file {:id file-id}))
+             (repo/query! :trimmed-file {:id file-id :page-id page-id :object-id object-id}))
             (rx/subs
              (fn [[fonts {:keys [data]}]]
                (when (seq fonts)

@@ -99,37 +99,10 @@
   [component]
   (get-in component [:objects (:id component)]))
 
-;; Implemented with transient for performance
-(defn get-children*
-  "Retrieve all children ids recursively for a given object. The
-  children's order will be breadth first."
-  [id objects]
-  (loop [result  (transient [])
-         pending (transient [])
-         next    id]
-    (let [children (get-in objects [next :shapes] [])
-          [result pending]
-          ;; Iterate through children and add them to the result
-          ;; also add them in pending to check for their children
-          (loop [result result
-                 pending pending
-                 current  (first children)
-                 children (rest children)]
-            (if current
-              (recur (conj! result current)
-                     (conj! pending current)
-                     (first children)
-                     (rest children))
-              [result pending]))
-
-          ;; If we have still pending, advance the iterator
-          length (count pending)]
-      (if (pos? length)
-        (let [next (get pending (dec length))]
-          (recur result (pop! pending) next))
-        (persistent! result)))))
-
-(def get-children (memoize get-children*))
+(defn get-children [id objects]
+  (if-let [shapes (-> (get objects id) :shapes (some-> vec))]
+    (into shapes (mapcat #(get-children % objects)) shapes)
+    []))
 
 (defn get-children-objects
   "Retrieve all children objects recursively for a given object"
@@ -175,7 +148,7 @@
     shape
     (get objects (:frame-id shape))))
 
-(defn clean-loops*
+(defn clean-loops
   "Clean a list of ids from circular references."
   [objects ids]
 
@@ -191,8 +164,6 @@
             (conj id)))]
 
     (reduce add-element (d/ordered-set) ids)))
-
-(def clean-loops (memoize clean-loops*))
 
 (defn calculate-invalid-targets
   [shape-id objects]

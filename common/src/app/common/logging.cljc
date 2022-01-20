@@ -168,7 +168,7 @@
     `(write-log! ~(or logger (str *ns*))
                  ~level
                  ~cause
-                 ~(dissoc props :level :cause ::logger ::raw))
+                 (or ~raw ~(dissoc props :level :cause ::logger ::raw)))
     (let [props      (dissoc props :level :cause ::logger ::async ::raw)
           logger     (or logger (str *ns*))
           logger-sym (gensym "log")

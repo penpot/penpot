@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.config :as cf]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -25,6 +26,7 @@
    [app.util.router :as rt]
    [beicon.core :as rx]
    [okulary.core :as l]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 ;; --- Zoom Widget
@@ -152,6 +154,10 @@
         (mf/use-callback
          (mf/deps file team-id)
          (fn [_]
+           (st/emit! (ptk/event ::ev/event {::ev/name "export-files"
+                                            ::ev/origin "workspace"
+                                            :num-files 1}))
+
            (->> (rx/of file)
                 (rx/flat-map
                  (fn [file]
@@ -251,7 +257,7 @@
            (tr "workspace.header.menu.hide-palette")
            (tr "workspace.header.menu.show-palette"))]
         [:span.shortcut (sc/get-tooltip :toggle-palette)]]
-       
+
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :display-artboard-names))}
         [:span
          (if (contains? layout :display-artboard-names)
