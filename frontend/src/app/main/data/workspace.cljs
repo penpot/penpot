@@ -1198,15 +1198,16 @@
   (ptk/reify ::distribute-objects
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            selected (wsh/lookup-selected state)
-            moved    (-> (map #(get objects %) selected)
-                         (gal/distribute-space axis objects))
+      (let [page-id   (:current-page-id state)
+            objects   (wsh/lookup-page-objects state page-id)
+            selected  (wsh/lookup-selected state)
+            moved     (-> (map #(get objects %) selected)
+                          (gal/distribute-space axis objects))
 
-            moved-objects (->> moved (group-by :id))
-            ids (keys moved-objects)
-            update-fn (fn [shape] (first (get moved-objects (:id shape))))]
+            moved     (d/index-by :id moved)
+            ids       (keys moved)
+
+            update-fn #(get moved (:id %))]
         (when (can-distribute? selected)
           (rx/of (dch/update-shapes ids update-fn {:reg-objects? true})))))))
 
