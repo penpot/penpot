@@ -61,12 +61,29 @@
 (s/def ::flows
   (s/coll-of ::flow :kind vector?))
 
+;; --- Guides
+
+(s/def :guides/id ::us/uuid)
+(s/def :guides/axis #{:x :y})
+(s/def :guides/position ::us/safe-number)
+(s/def :guides/frame-id (s/nilable ::us/uuid))
+
+(s/def ::guide
+  (s/keys :req-un [:guides/id
+                   :guides/axis
+                   :guides/position]
+          :opt-un [:guides/frame-id]))
+
+(s/def ::guides
+  (s/map-of uuid? ::shape))
+
 ;; --- Options
 
 (s/def ::options
   (s/keys :opt-un [::background
                    ::saved-grids
-                   ::flows]))
+                   ::flows
+                   ::guides]))
 
 ;; --- Helpers for flow
 
