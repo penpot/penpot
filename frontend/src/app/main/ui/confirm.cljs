@@ -51,17 +51,15 @@
            (st/emit! (modal/hide))
            (on-cancel props)))]
 
-    (mf/use-effect
-     (fn []
-       (let [on-keydown
-             (fn [event]
-               (when (k/enter? event)
-                 (dom/prevent-default event)
-                 (dom/stop-propagation event)
-                 (st/emit! (modal/hide))
-                 (on-accept props)))
-             key (events/listen js/document EventType.KEYDOWN on-keydown)]
-         #(events/unlistenByKey key))))
+    (mf/with-effect
+      (letfn [(on-keydown [event]
+                (when (k/enter? event)
+                  (dom/prevent-default event)
+                  (dom/stop-propagation event)
+                  (st/emit! (modal/hide))
+                  (on-accept props)))]
+        (->> (events/listen js/document EventType.KEYDOWN on-keydown)
+             (partial events/unlistenByKey))))
 
     [:div.modal-overlay
      [:div.modal-container.confirm-dialog

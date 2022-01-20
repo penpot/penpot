@@ -117,29 +117,23 @@
         layout  (mf/deref refs/workspace-layout)]
 
     ;; Setting the layout preset by its name
-    (mf/use-effect
-     (mf/deps layout-name)
-     (fn []
-       (st/emit! (dw/setup-layout layout-name))))
+    (mf/with-effect [layout-name]
+      (st/emit! (dw/setup-layout layout-name)))
 
-    (mf/use-effect
-     (mf/deps project-id file-id)
-     (fn []
-       (st/emit! (dw/initialize-file project-id file-id))
-       (fn []
-         (st/emit! ::dwp/force-persist
-                   (dw/finalize-file project-id file-id)))))
+    (mf/with-effect [project-id file-id]
+      (st/emit! (dw/initialize-file project-id file-id))
+      (fn []
+        (st/emit! ::dwp/force-persist
+                  (dw/finalize-file project-id file-id))))
 
     ;; Close any non-modal dialog that may be still open
-    (mf/use-effect
-     (fn [] (st/emit! dm/hide)))
+    (mf/with-effect
+      (st/emit! dm/hide))
 
     ;; Set properly the page title
-    (mf/use-effect
-     (mf/deps (:name file))
-     (fn []
-       (when (:name file)
-         (dom/set-html-title (tr "title.workspace" (:name file))))))
+    (mf/with-effect [(:name file)]
+      (when (:name file)
+        (dom/set-html-title (tr "title.workspace" (:name file)))))
 
     [:& (mf/provider ctx/current-file-id) {:value (:id file)}
      [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
