@@ -92,10 +92,8 @@
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
-    (mf/use-effect
-     (mf/deps team-id)
-     (fn []
-       (st/emit! (dd/initialize {:id team-id}))))
+    (mf/with-effect [team-id]
+      (st/emit! (dd/initialize {:id team-id})))
 
     [:& (mf/provider ctx/current-team-id) {:value team-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}

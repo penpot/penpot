@@ -227,31 +227,25 @@
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
         modifier
-        (mf/use-memo
-         (mf/deps (:x frame) (:y frame))
-         (fn []
-           (-> (gpt/point (:x frame) (:y frame))
-               (gpt/negate)
-               (gmt/translate-matrix))))
+        (mf/with-memo [(:x frame) (:y frame)]
+          (-> (gpt/point (:x frame) (:y frame))
+              (gpt/negate)
+              (gmt/translate-matrix)))
 
         objects
-        (mf/use-memo
-         (mf/deps frame-id objects modifier)
-         (fn []
-           (let [update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)]
-             (->> (cp/get-children frame-id objects)
-                  (into [frame-id])
-                  (reduce update-fn objects)))))
+        (mf/with-memo [frame-id objects modifier]
+          (let [update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)]
+            (->> (cp/get-children frame-id objects)
+                 (into [frame-id])
+                 (reduce update-fn objects))))
 
         frame
-        (mf/use-memo
-         (mf/deps modifier)
-         (fn [] (assoc-in frame [:modifiers :displacement] modifier)))
+        (mf/with-memo [modifier]
+          (assoc-in frame [:modifiers :displacement] modifier))
 
         wrapper
-        (mf/use-memo
-         (mf/deps objects)
-         (fn [] (frame-wrapper-factory objects)))
+        (mf/with-memo [objects]
+          (frame-wrapper-factory objects))
 
         width  (* (:width frame) zoom)
         height (* (:height frame) zoom)
