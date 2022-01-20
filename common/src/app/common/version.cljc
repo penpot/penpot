@@ -14,7 +14,7 @@
 (defn parse
   [data]
   (cond
-    (= data "%version%")
+    (str/starts-with? data "%")
     {:full "develop"
      :branch "develop"
      :base "0.0.0"
