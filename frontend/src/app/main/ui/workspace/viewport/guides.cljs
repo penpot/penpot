@@ -396,7 +396,8 @@
   [{:keys [zoom vbox hover-frame]}]
 
   (let [page (mf/deref refs/workspace-page)
-        guides (->> (get-in page [:options :guides] [])
+        guides (->> (get-in page [:options :guides] {})
+                    (vals)
                     (filter (guide-inside-vbox? vbox)))
 
         hover-frame-ref (mf/use-ref nil)

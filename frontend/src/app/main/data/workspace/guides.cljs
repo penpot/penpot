@@ -22,16 +22,9 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id (:current-page-id state)
-            guides (-> state wsh/lookup-page-options (:guides []))
-            guides-ids? (into #{} (map :id) guides)
+            guides (-> state wsh/lookup-page-options (:guides {}))
 
-            new-guides
-            (if (guides-ids? (:id guide))
-              ;; Update existing guide
-              (mapv (make-update-guide guide) guides)
-
-              ;; Add new guide
-              (conj guides guide))
+            new-guides (assoc guides (:id guide) guide)
             
             rch [{:type :set-option
                   :page-id page-id
@@ -52,8 +45,8 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id (:current-page-id state)
-            guides (-> state wsh/lookup-page-options (:guides []))
-            new-guides (filterv #(not= (:id %) (:id guide)) guides)
+            guides (-> state wsh/lookup-page-options (:guides {}))
+            new-guides (dissoc guides (:id guide))
             
             rch [{:type :set-option
                   :page-id page-id

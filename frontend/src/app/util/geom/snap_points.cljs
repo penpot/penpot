@@ -28,3 +28,12 @@
     (case (:type shape)
       :frame (-> shape :selrect frame-snap-points)
       (into #{(gsh/center-shape shape)} (:points shape)))))
+
+(defn guide-snap-points
+  [guide]
+
+  ;; TODO: The line will be displayed from the position to the axis. Maybe
+  ;; revisit this
+  (if (= :x (:axis guide))
+    #{(gpt/point (:position guide) 0)}
+    #{(gpt/point 0 (:position guide))}))

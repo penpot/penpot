@@ -568,4 +568,32 @@
         (dissoc :current-component-id)
         (update :parent-stack pop))))
 
+(defn add-guide
+  [file guide]
 
+  (let [guide (cond-> guide
+                (nil? (:id guide))
+                (assoc :id (uuid/next)))
+        page-id (:current-page-id file)
+        old-guides (or (get-in file [:data :pages-index page-id :options :guides]) {})
+        new-guides (assoc old-guides (:id guide) guide)]
+    (commit-change
+     file
+     {:type :set-option
+      :page-id page-id
+      :option :guides
+      :value new-guides})))
+
+(defn delete-object
+  [file id]
+  (let [page-id (:current-page-id file)]
+    (commit-change
+     file
+     {:type :del-obj
+      :page-id page-id
+      :id id})))
+
+(defn get-current-page
+  [file]
+  (let [page-id (:current-page-id file)]
+    (-> file (get-in [:data :pages-index page-id]))))

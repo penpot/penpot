@@ -19,7 +19,7 @@
    [beicon.core :as rx]
    [clojure.set :as set]))
 
-(def ^:const snap-accuracy 5)
+(def ^:const snap-accuracy 10)
 (def ^:const snap-path-accuracy 10)
 (def ^:const snap-distance-accuracy 10)
 
@@ -27,12 +27,12 @@
   [remove-id?]
   (fn [query-result]
     (->> query-result
-         (map (fn [[value data]] [value (remove (comp remove-id? second) data)]))
+         (map (fn [[value data]] [value (remove (comp remove-id? :id) data)]))
          (filter (fn [[_ data]] (seq data))))))
 
 (defn- flatten-to-points
   [query-result]
-  (mapcat (fn [[_ data]] (map (fn [[point _]] point) data)) query-result))
+  (mapcat (fn [[_ data]] (map :pt data)) query-result))
 
 (defn- calculate-distance [query-result point coord]
   (->> query-result
@@ -62,7 +62,7 @@
     (->> (uw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
-                   :coord coord
+                   :axis coord
                    :ranges [[(- value 0.5) (+ value 0.5)]]})
          (rx/first)
          (rx/map (remove-from-snap-points filter-shapes))
@@ -78,7 +78,7 @@
     (->> (uw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
-                   :coord coord
+                   :axis coord
                    :ranges ranges})
          (rx/first)
          (rx/map (remove-from-snap-points filter-shapes))

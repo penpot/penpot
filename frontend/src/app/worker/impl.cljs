@@ -40,14 +40,13 @@
 (defmethod handler :update-page-indices
   [{:keys [page-id changes] :as message}]
 
-  (let [old-objects (get-in @state [:pages-index page-id :objects])]
+  (let [old-page (get-in @state [:pages-index page-id])]
     (swap! state ch/process-changes changes false)
 
-    (let [new-objects (get-in @state [:pages-index page-id :objects])
+    (let [new-page (get-in @state [:pages-index page-id])
           message (assoc message
-                         :objects new-objects
-                         :new-objects new-objects
-                         :old-objects old-objects)]
+                         :old-page old-page
+                         :new-page new-page)]
       (handler (-> message
                    (assoc :cmd :selection/update-index)))
       (handler (-> message
