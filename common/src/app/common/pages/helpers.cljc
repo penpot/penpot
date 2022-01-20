@@ -137,9 +137,8 @@
 
 (defn get-parents
   [shape-id objects]
-  (let [{:keys [parent-id]} (get objects shape-id)]
-    (when parent-id
-      (lazy-seq (cons parent-id (get-parents parent-id objects))))))
+  (when-let [parent-id (->> shape-id (get objects) :parent-id)]
+    (lazy-seq (cons parent-id (get-parents parent-id objects)))))
 
 (defn get-frame
   "Get the frame that contains the shape. If the shape is already a frame, get itself."
