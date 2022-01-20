@@ -160,9 +160,7 @@
                   update-fn #(d/update-when %1 %2 update-group %1)
                   xform     (comp
                              (mapcat #(cons % (cph/get-parents % objects)))
-                             (map lookup)
-                             (filter #(contains? #{:group :bool} (:type %)))
-                             (map :id)
+                             (filter #(contains? #{:group :bool} (-> % lookup :type)))
                              (distinct))]
 
               (->> (sequence xform shapes)
