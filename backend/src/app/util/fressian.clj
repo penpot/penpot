@@ -10,16 +10,18 @@
    [app.common.geom.point :as gpt]
    [clojure.data.fressian :as fres])
   (:import
-   clojure.lang.Ratio
-   org.fressian.handlers.WriteHandler
-   org.fressian.handlers.ReadHandler
-   org.fressian.Writer
-   org.fressian.Reader
-   org.fressian.StreamingWriter
    app.common.geom.matrix.Matrix
    app.common.geom.point.Point
+   clojure.lang.Ratio
    java.io.ByteArrayInputStream
-   java.io.ByteArrayOutputStream))
+   java.io.ByteArrayOutputStream
+   java.time.Instant
+   java.time.OffsetDateTime
+   org.fressian.Reader
+   org.fressian.StreamingWriter
+   org.fressian.Writer
+   org.fressian.handlers.ReadHandler
+   org.fressian.handlers.WriteHandler))
 
 ;; --- MISC
 
@@ -91,6 +93,20 @@
                                                  (.-d ^Matrix o)
                                                  (.-e ^Matrix o)
                                                  (.-f ^Matrix o)))))}
+
+   Instant
+   {"java/instant"
+    (reify WriteHandler
+      (write [_ w ch]
+        (.writeTag w "java/instant" 1)
+        (.writeInt w (.toEpochMilli ^Instant ch))))}
+
+   OffsetDateTime
+   {"java/instant"
+    (reify WriteHandler
+      (write [_ w ch]
+        (.writeTag w "java/instant" 1)
+        (.writeInt w (.toEpochMilli ^Instant (.toInstant ^OffsetDateTime ch)))))}
 
    Ratio
    {"ratio"
@@ -180,6 +196,12 @@
    (reify ReadHandler
      (read [_ rdr _ _]
        (char (.readObject rdr))))
+
+   "java/instant"
+   (reify ReadHandler
+     (read [_ rdr _ _]
+       (Instant/ofEpochMilli (.readInt rdr))))
+
 
    "clj/ratio"
    (reify ReadHandler
