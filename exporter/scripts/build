@@ -2,17 +2,21 @@
 
 set -ex
 
+CURRENT_VERSION=$1;
+
 yarn install
 rm -rf target
 
 export NODE_ENV=production;
 
 # Build the application
-clojure -M:dev:shadow-cljs release main
+clojure -M:dev:shadow-cljs release main;
 
 # Remove source
-rm -rf target/app
+rm -rf target/app;
 
 # Copy package*.json files
-cp yarn.lock target/
-cp package.json target/
+cp yarn.lock target/;
+cp package.json target/;
+
+sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/app.js;
