@@ -433,95 +433,97 @@
               [:label {:for (str "background-" index)}
                (tr "workspace.options.interaction-background")]]]])
 
-         ; Animation select
-         [:div.interactions-element.separator
-          [:span.element-set-subtitle.wide (tr "workspace.options.interaction-animation")]
-          [:select.input-select
-           {:value (str (-> interaction :animation :animation-type))
-            :on-change change-animation-type}
-           [:option {:value ""} (tr "workspace.options.interaction-animation-none")]
-           (for [[value name] (animation-type-names interaction)]
-             [:option {:value (str value)} name])]]
+         (when (cti/has-animation? interaction)
+           [:*
+             ; Animation select
+             [:div.interactions-element.separator
+              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-animation")]
+              [:select.input-select
+               {:value (str (-> interaction :animation :animation-type))
+                :on-change change-animation-type}
+               [:option {:value ""} (tr "workspace.options.interaction-animation-none")]
+               (for [[value name] (animation-type-names interaction)]
+                 [:option {:value (str value)} name])]]
 
-         ; Direction
-         (when (cti/has-way? interaction)
-           [:div.interactions-element.interactions-way-buttons
-            [:div.input-radio
-             [:input {:type "radio"
-                      :id "way-in"
-                      :checked (= :in way)
-                      :name "animation-way"
-                      :value ":in"
-                      :on-change change-way}]
-             [:label {:for "way-in"} (tr "workspace.options.interaction-in")]]
-            [:div.input-radio
-             [:input {:type "radio"
-                      :id "way-out"
-                      :checked (= :out way)
-                      :name "animation-way"
-                      :value ":out"
-                      :on-change change-way}]
-             [:label {:for "way-out"} (tr "workspace.options.interaction-out")]]])
+             ; Direction
+             (when (cti/has-way? interaction)
+               [:div.interactions-element.interactions-way-buttons
+                [:div.input-radio
+                 [:input {:type "radio"
+                          :id "way-in"
+                          :checked (= :in way)
+                          :name "animation-way"
+                          :value ":in"
+                          :on-change change-way}]
+                 [:label {:for "way-in"} (tr "workspace.options.interaction-in")]]
+                [:div.input-radio
+                 [:input {:type "radio"
+                          :id "way-out"
+                          :checked (= :out way)
+                          :name "animation-way"
+                          :value ":out"
+                          :on-change change-way}]
+                 [:label {:for "way-out"} (tr "workspace.options.interaction-out")]]])
 
-         ; Direction
-         (when (cti/has-direction? interaction)
-           [:div.interactions-element.interactions-direction-buttons
-            [:div.element-set-actions-button
-             {:class (dom/classnames :active (= direction :right))
-               :on-click #(change-direction :right)}
-              i/animate-right]
-            [:div.element-set-actions-button
-             {:class (dom/classnames :active (= direction :down))
-               :on-click #(change-direction :down)}
-              i/animate-down]
-            [:div.element-set-actions-button
-             {:class (dom/classnames :active (= direction :left))
-               :on-click #(change-direction :left)}
-              i/animate-left]
-            [:div.element-set-actions-button
-             {:class (dom/classnames :active (= direction :up))
-               :on-click #(change-direction :up)}
-              i/animate-up]])
+             ; Direction
+             (when (cti/has-direction? interaction)
+               [:div.interactions-element.interactions-direction-buttons
+                [:div.element-set-actions-button
+                 {:class (dom/classnames :active (= direction :right))
+                   :on-click #(change-direction :right)}
+                  i/animate-right]
+                [:div.element-set-actions-button
+                 {:class (dom/classnames :active (= direction :down))
+                   :on-click #(change-direction :down)}
+                  i/animate-down]
+                [:div.element-set-actions-button
+                 {:class (dom/classnames :active (= direction :left))
+                   :on-click #(change-direction :left)}
+                  i/animate-left]
+                [:div.element-set-actions-button
+                 {:class (dom/classnames :active (= direction :up))
+                   :on-click #(change-direction :up)}
+                  i/animate-up]])
 
-         ; Duration
-         (when (cti/has-duration? interaction)
-           [:div.interactions-element
-            [:span.element-set-subtitle.wide (tr "workspace.options.interaction-duration")]
-            [:div.input-element {:title (tr "workspace.options.interaction-ms")}
-             [:> numeric-input {:ref ext-duration-ref
-                                :on-click (select-text ext-duration-ref)
-                                :on-change change-duration
-                                :value (-> interaction :animation :duration)
-                                :title (tr "workspace.options.interaction-ms")}]
-             [:span.after (tr "workspace.options.interaction-ms")]]])
+             ; Duration
+             (when (cti/has-duration? interaction)
+               [:div.interactions-element
+                [:span.element-set-subtitle.wide (tr "workspace.options.interaction-duration")]
+                [:div.input-element {:title (tr "workspace.options.interaction-ms")}
+                 [:> numeric-input {:ref ext-duration-ref
+                                    :on-click (select-text ext-duration-ref)
+                                    :on-change change-duration
+                                    :value (-> interaction :animation :duration)
+                                    :title (tr "workspace.options.interaction-ms")}]
+                 [:span.after (tr "workspace.options.interaction-ms")]]])
 
-         ; Easing
-         (when (cti/has-easing? interaction)
-           [:div.interactions-element
-            [:span.element-set-subtitle.wide (tr "workspace.options.interaction-easing")]
-            [:select.input-select
-             {:value (str (-> interaction :animation :easing))
-              :on-change change-easing}
-             (for [[value name] (easing-names)]
-               [:option {:value (str value)} name])]
-            [:div.interactions-easing-icon
-             (case (-> interaction :animation :easing)
-               :linear i/easing-linear
-               :ease i/easing-ease
-               :ease-in i/easing-ease-in
-               :ease-out i/easing-ease-out
-               :ease-in-out i/easing-ease-in-out)]])
+             ; Easing
+             (when (cti/has-easing? interaction)
+               [:div.interactions-element
+                [:span.element-set-subtitle.wide (tr "workspace.options.interaction-easing")]
+                [:select.input-select
+                 {:value (str (-> interaction :animation :easing))
+                  :on-change change-easing}
+                 (for [[value name] (easing-names)]
+                   [:option {:value (str value)} name])]
+                [:div.interactions-easing-icon
+                 (case (-> interaction :animation :easing)
+                   :linear i/easing-linear
+                   :ease i/easing-ease
+                   :ease-in i/easing-ease-in
+                   :ease-out i/easing-ease-out
+                   :ease-in-out i/easing-ease-in-out)]])
 
-         ; Offset effect
-         (when (cti/has-offset-effect? interaction)
-           [:div.interactions-element
-            [:div.input-checkbox
-             [:input {:type "checkbox"
-                      :id (str "offset-effect-" index)
-                      :checked (-> interaction :animation :offset-effect)
-                      :on-change change-offset-effect}]
-             [:label {:for (str "offset-effect-" index)}
-              (tr "workspace.options.interaction-offset-effect")]]])])]]))
+             ; Offset effect
+             (when (cti/has-offset-effect? interaction)
+               [:div.interactions-element
+                [:div.input-checkbox
+                 [:input {:type "checkbox"
+                          :id (str "offset-effect-" index)
+                          :checked (-> interaction :animation :offset-effect)
+                          :on-change change-offset-effect}]
+                 [:label {:for (str "offset-effect-" index)}
+                  (tr "workspace.options.interaction-offset-effect")]]])])])]]))
 
 (mf/defc interactions-menu
   [{:keys [shape] :as props}]

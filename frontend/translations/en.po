@@ -925,6 +925,9 @@ msgstr "Code"
 msgid "handoff.tabs.code.selected.circle"
 msgstr "Circle"
 
+msgid "handoff.tabs.code.selected.component"
+msgstr "Component"
+
 msgid "handoff.tabs.code.selected.curve"
 msgstr "Curve"
 
@@ -936,9 +939,6 @@ msgstr "Group"
 
 msgid "handoff.tabs.code.selected.image"
 msgstr "Image"
-
-msgid "handoff.tabs.code.selected.component"
-msgstr "Component"
 
 msgid "handoff.tabs.code.selected.mask"
 msgstr "Mask"
@@ -2110,6 +2110,10 @@ msgid "workspace.header.menu.show-rules"
 msgstr "Show rules"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Reset"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.save-error"
 msgstr "Error on saving"
 
@@ -2126,32 +2130,28 @@ msgid "workspace.header.unsaved"
 msgstr "Unsaved changes"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.reset-zoom"
-msgstr "Reset"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.zoom-fit-all"
-msgstr "Zoom to fil all"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.zoom-selected"
-msgstr "Zoom to selected"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.zoom-fit"
-msgstr "Fit - Scale down to fit"
+msgid "workspace.header.viewer"
+msgstr "View mode (%s)"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fill"
 msgstr "Fill -Scale to fill"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "Fit - Scale down to fit"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "Zoom to fil all"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-full-screen"
 msgstr "Full screen"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.viewer"
-msgstr "View mode (%s)"
+msgid "workspace.header.zoom-selected"
+msgstr "Zoom to selected"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -2362,10 +2362,6 @@ msgstr "Exporting…"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"
 msgstr "Fill"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
-msgid "workspace.options.show-fill-on-export"
-msgstr "Show in exports"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.add-flow-start"
@@ -2844,6 +2840,10 @@ msgstr "Group shadow"
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Selection shadows"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "Show in exports"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.size"

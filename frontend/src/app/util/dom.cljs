@@ -478,7 +478,9 @@
   ([uri name]
    (open-new-window uri name "noopener,noreferrer"))
   ([uri name features]
-   (.open js/window (str uri) name features)))
+   (let [new-window (.open js/window (str uri) name features)]
+     (when (not= name "_blank")
+       (.reload (.-location new-window))))))
 
 (defn browser-back
   []
