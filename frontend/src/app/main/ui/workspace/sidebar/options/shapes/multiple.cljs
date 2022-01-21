@@ -222,7 +222,6 @@
          blur-ids       blur-values
          stroke-ids     stroke-values
          text-ids       text-values]
-
         (mf/use-memo
          (mf/deps objects-no-measures)
          (fn []
@@ -233,7 +232,7 @@
              (get-attrs shapes objects-no-measures :constraint)
              (get-attrs shapes objects-no-measures :fill)
              (get-attrs shapes objects-no-measures :shadow)
-             (get-attrs shapes objects-no-measures :shadow)
+             (get-attrs shapes objects-no-measures :blur)
              (get-attrs shapes objects-no-measures :stroke)
              (get-attrs shapes objects-no-measures :text)])))]
 
