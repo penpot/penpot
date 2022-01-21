@@ -42,9 +42,9 @@
 (defn move
   "Move the shape relatively to its current
   position applying the provided delta."
-  [shape {dx :x dy :y}]
-  (let [dx (d/check-num dx)
-        dy (d/check-num dy)
+  [{:keys [type] :as shape} {dx :x dy :y}]
+  (let [dx       (d/check-num dx)
+        dy       (d/check-num dy)
         move-vec (gpt/point dx dy)]
 
     (-> shape
@@ -52,11 +52,8 @@
         (update :points move-points move-vec)
         (d/update-when :x + dx)
         (d/update-when :y + dy)
-        (cond-> (= :bool (:type shape))
-          (update :bool-content gpa/move-content move-vec))
-        (cond-> (= :path (:type shape))
-          (update :content gpa/move-content move-vec)))))
-
+        (cond-> (= :bool type) (update :bool-content gpa/move-content move-vec))
+        (cond-> (= :path type) (update :content gpa/move-content move-vec)))))
 
 ;; --- Absolute Movement
 
