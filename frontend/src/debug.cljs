@@ -11,7 +11,8 @@
    [app.common.pages :as cp]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.changes :as dwc]   
    [app.main.store :as st]
    [app.util.object :as obj]
    [app.util.timers :as timers]
@@ -270,3 +271,10 @@
   (-> (p/let [response (js/fetch url)]
         (.text response))
       (p/then apply-changes)))
+
+(defn ^:export reset-viewport
+  []
+  (st/emit!
+   dw/reset-zoom
+   (dw/update-viewport-position {:x (constantly 0) :y (constantly 0)})))
+
