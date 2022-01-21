@@ -251,7 +251,7 @@
 
     (-> file
         (update :data assoc :pages-index {page-id page})
-        (assoc :pages [page-id]))))
+        (update :data assoc :pages [page-id]))))
 
 (declare strip-frames-with-thumbnails)
 
