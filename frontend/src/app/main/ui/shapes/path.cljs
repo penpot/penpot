@@ -19,10 +19,11 @@
   [props]
   (let [shape   (unchecked-get props "shape")
         content (:content shape)
-        pdata   (mf/use-memo (mf/deps content) #(upf/format-path content))
+        pdata   (mf/with-memo [content]
+                  (upf/format-path content))
+
         props   (-> (attrs/extract-style-attrs shape)
-                    (obj/merge!
-                     #js {:d pdata}))]
+                    (obj/set! "d" pdata))]
     [:& shape-custom-stroke {:shape shape}
      [:> :path props]]))
 

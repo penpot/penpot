@@ -17,8 +17,8 @@
        (command->point command))))
 
   ([command]
-   (when-not (nil? command)
-     (let [{{:keys [x y]} :params} command]
+   (when command
+     (let [{:keys [x y]} (:params command)]
        (gpt/point x y)))))
 
 

@@ -376,19 +376,20 @@
 
         set-tr
         (fn [params px py]
-          (assoc params
-                 px (+ (get params px) dx)
-                 py (+ (get params py) dy)))
+          (-> params
+              (update px + dx)
+              (update py + dy)))
 
         transform-params
-        (fn [params]
+        (fn [{:keys [x c1x c2x] :as params}]
           (cond-> params
-            (contains? params :x)   (set-tr :x :y)
-            (contains? params :c1x) (set-tr :c1x :c1y)
-            (contains? params :c2x) (set-tr :c2x :c2y)))]
+            (some? x)   (set-tr :x :y)
+            (some? c1x) (set-tr :c1x :c1y)
+            (some? c2x) (set-tr :c2x :c2y)))]
 
-    (->> content
-         (mapv #(d/update-when % :params transform-params)))))
+    (into []
+          (map #(update % :params transform-params))
+          content)))
 
 (defn transform-content
   [content transform]
