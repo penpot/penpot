@@ -15,7 +15,7 @@
   }
 }
 
-.fullscreen .viewer-layout:not(.force-visible) {
+.fullscreen.viewer-layout:not(.force-visible) {
   & .viewer-header {
     width: 100%;
     position: fixed;
