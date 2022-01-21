@@ -6,6 +6,7 @@
 
 ### :sparkles: New features
 
+- Create e2e tests for drawing basic fors [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608).
 - Improve file menu by adding semantically groups [Github #1203](https://github.com/penpot/penpot/issues/1203).
 - Create firsts e2e test [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608).
 - Add an option to hide artboards names on the viewport [Taiga #2034](https://tree.taiga.io/project/penpot/issue/2034).
