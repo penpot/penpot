@@ -242,7 +242,8 @@
 
          (nil? frame)
          [:section.empty-state
-          [:span (tr "viewer.frame-not-found")]]
+          (when (some? index)
+            [:span (tr "viewer.frame-not-found")])]
 
          (some? frame)
          (if (= :handoff section)
