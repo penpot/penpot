@@ -85,13 +85,16 @@
         mask?  (and group? masked-group?)
 
         ;; When the shape is a frame we maybe need to move its thumbnail
-        thumb-node (when frame? (dom/get-element (str "thumbnail-" id)))]
+        thumb-node (when frame? (dom/get-element (str "thumbnail-" id)))
+
+        ]
 
     (cond
       frame?
-      [thumb-node
-       (dom/query shape-node ".frame-background")
-       (dom/query shape-node ".frame-clip")]
+      (into [thumb-node
+             (dom/query shape-node ".frame-background")
+             (dom/query shape-node ".frame-clip")]
+            (dom/query-all (str "[data-guide-frame-id='" id "']")))
 
       ;; For groups we don't want to transform the whole group but only
       ;; its filters/masks

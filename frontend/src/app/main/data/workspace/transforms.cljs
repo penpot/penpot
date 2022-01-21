@@ -16,6 +16,7 @@
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.guides :as dwg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -155,6 +156,8 @@
 
          (update state :workspace-modifiers #(reduce update-shape % shapes)))))))
 
+
+
 (defn- apply-modifiers
   [ids]
   (us/verify (s/coll-of uuid?) ids)
@@ -186,6 +189,7 @@
                           :rotation
                           :flip-x
                           :flip-y]})
+               (dwg/move-frame-guides ids-with-children)
                (clear-local-transform)
                (dwu/commit-undo-transaction))))))
 

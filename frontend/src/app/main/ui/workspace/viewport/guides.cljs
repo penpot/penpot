@@ -259,7 +259,7 @@
         guide-width (/ guide-width zoom)
         guide-pill-corner-radius (/ guide-pill-corner-radius zoom)]
 
-    [:g.guide-area
+    [:g.guide-area {:data-guide-frame-id (when (some? frame) (str (:id frame)))}
      (when-not disabled-guides?
        (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
          [:rect {:x x
