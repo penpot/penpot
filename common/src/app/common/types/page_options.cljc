@@ -75,7 +75,7 @@
           :opt-un [:guides/frame-id]))
 
 (s/def ::guides
-  (s/map-of uuid? ::shape))
+  (s/map-of uuid? ::guide))
 
 ;; --- Options
 

@@ -155,20 +155,30 @@
                              :name name
                              :starting-frame starting-frame}])])
 
+(mf/defc export-guides
+  [{:keys [guides]}]
+  [:> "penpot:guides" #js {}
+   (for [{:keys [id position frame-id axis]} (vals guides)]
+     [:> "penpot:guide" #js {:position position
+                             :frame-id frame-id
+                             :axis (d/name axis)}])])
+
 (mf/defc export-page
   [{:keys [options]}]
   (let [saved-grids (get options :saved-grids)
-        flows       (get options :flows)]
-    (when (or (seq saved-grids) (seq flows))
-       (let [parse-grid
-             (fn [[type params]]
-               {:type type :params params})
+        flows       (get options :flows)
+        guides      (get options :guides)]
+    [:> "penpot:page" #js {}
+     (when (d/not-empty? saved-grids)
+       (let [parse-grid (fn [[type params]] {:type type :params params})
              grids (->> saved-grids (mapv parse-grid))]
-         [:> "penpot:page" #js {}
-          (when (seq saved-grids)
-            [:& export-grid-data {:grids grids}])
-          (when (seq flows)
-            [:& export-flows {:flows flows}])]))))
+         [:& export-grid-data {:grids grids}]))
+
+     (when (d/not-empty? flows)
+       [:& export-flows {:flows flows}])
+
+     (when (d/not-empty? guides)
+       [:& export-guides {:guides guides}])]))
 
 (defn- export-shadow-data [{:keys [shadow]}]
   (mf/html

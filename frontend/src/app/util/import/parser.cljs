@@ -515,6 +515,20 @@
   (let [flows-node (get-data node :penpot:flows)]
     (->> flows-node :content (mapv parse-flow-node))))
 
+(defn parse-guide-node [node]
+  (let [attrs (-> node :attrs remove-penpot-prefix)]
+    (println attrs)
+    (let [id (uuid/next)]
+      [id
+       {:id       id
+        :frame-id (when (:frame-id attrs) (-> attrs :frame-id uuid))
+        :axis     (-> attrs :axis keyword)
+        :position (-> attrs :position d/parse-double)}])))
+
+(defn parse-guides [node]
+  (let [guides-node (get-data node :penpot:guides)]
+    (->> guides-node :content (map parse-guide-node) (into {}))))
+
 (defn extract-from-data
   ([node tag]
    (extract-from-data node tag identity))
@@ -764,7 +778,8 @@
         grids      (->> (parse-grids node)
                         (group-by :type)
                         (d/mapm (fn [_ v] (-> v first :params))))
-        flows      (parse-flows node)]
+        flows      (parse-flows node)
+        guides     (parse-guides node)]
     (cond-> {}
       (some? background)
       (assoc-in [:options :background] background)
@@ -773,7 +788,10 @@
       (assoc-in [:options :saved-grids] grids)
 
       (d/not-empty? flows)
-      (assoc-in [:options :flows] flows))))
+      (assoc-in [:options :flows] flows)
+
+      (d/not-empty? guides)
+      (assoc-in [:options :guides] guides))))
 
 (defn parse-interactions
   [node]

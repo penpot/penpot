@@ -158,7 +158,7 @@
         show-rules?              (contains? layout :rules)
 
         ;; TODO
-        show-guides? true]
+        disabled-guides?         (or drawing-tool transform)]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
     (hooks/setup-viewport-size viewport-ref)
@@ -361,13 +361,14 @@
        [:& widgets/viewport-actions]
 
        (when show-rules?
-         [:& rules/rules
-          {:zoom zoom
-           :vbox vbox}])
+         [:*
+          [:& rules/rules
+           {:zoom zoom
+            :vbox vbox}]
 
-       (when show-guides?
-         [:& guides/viewport-guides
-          {:zoom zoom
-           :vbox vbox
-           :hover-frame frame-parent}])]]]))
+          [:& guides/viewport-guides
+           {:zoom zoom
+            :vbox vbox
+            :hover-frame frame-parent
+            :disabled-guides? disabled-guides?}]])]]]))
 

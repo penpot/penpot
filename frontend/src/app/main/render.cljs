@@ -204,7 +204,9 @@
                      :height "100%"
                      :background background-color}}
 
-       [:& export/export-page {:options (:options data)}]
+       (when include-metadata?
+         [:& export/export-page {:options (:options data)}])
+
        [:& ff/fontfaces-style {:shapes root-children}]
        (for [item shapes]
          (let [frame? (= (:type item) :frame)]

@@ -234,7 +234,7 @@
 
 (mf/defc guide
   {::mf/wrap [mf/memo]}
-  [{:keys [guide hover? on-guide-change get-hover-frame vbox zoom hover-frame]}]
+  [{:keys [guide hover? on-guide-change get-hover-frame vbox zoom hover-frame disabled-guides?]}]
 
   (let [axis (:axis guide)
 
@@ -260,20 +260,21 @@
         guide-pill-corner-radius (/ guide-pill-corner-radius zoom)]
 
     [:g.guide-area
-     (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
-       [:rect {:x x
-               :y y
-               :width width
-               :height height
-               :style {:fill "none"
-                       :pointer-events "fill"
-                       :cursor (if (= axis :x) "ew-resize" "ns-resize")}
-               :on-pointer-enter on-pointer-enter
-               :on-pointer-leave on-pointer-leave
-               :on-pointer-down on-pointer-down
-               :on-pointer-up on-pointer-up
-               :on-lost-pointer-capture on-lost-pointer-capture
-               :on-mouse-move on-mouse-move}])
+     (when-not disabled-guides?
+       (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
+         [:rect {:x x
+                 :y y
+                 :width width
+                 :height height
+                 :style {:fill "none"
+                         :pointer-events "fill"
+                         :cursor (if (= axis :x) "ew-resize" "ns-resize")}
+                 :on-pointer-enter on-pointer-enter
+                 :on-pointer-leave on-pointer-leave
+                 :on-pointer-down on-pointer-down
+                 :on-pointer-up on-pointer-up
+                 :on-lost-pointer-capture on-lost-pointer-capture
+                 :on-mouse-move on-mouse-move}]))
 
      (if (some? frame)
        (let [{:keys [l1-x1 l1-y1 l1-x2 l1-y2
@@ -345,7 +346,7 @@
            (str (mth/round pos))]]))]))
 
 (mf/defc new-guide-area
-  [{:keys [vbox zoom axis get-hover-frame]}]
+  [{:keys [vbox zoom axis get-hover-frame disabled-guides?]}]
 
   (let [on-guide-change
         (mf/use-callback
@@ -367,20 +368,21 @@
                 frame]} (use-guide on-guide-change get-hover-frame zoom {:axis axis})]
 
     [:g.new-guides
-     (let [{:keys [x y width height]} (guide-creation-area vbox zoom axis)]
-       [:rect {:x x
-               :y y
-               :width width
-               :height height
-               :on-pointer-enter on-pointer-enter
-               :on-pointer-leave on-pointer-leave
-               :on-pointer-down on-pointer-down
-               :on-pointer-up on-pointer-up
-               :on-lost-pointer-capture on-lost-pointer-capture
-               :on-mouse-move on-mouse-move
-               :style {:fill "none"
-                       :pointer-events "fill"
-                       :cursor (if (= axis :x) "ew-resize" "ns-resize")}}])
+     (when-not disabled-guides?
+       (let [{:keys [x y width height]} (guide-creation-area vbox zoom axis)]
+         [:rect {:x x
+                 :y y
+                 :width width
+                 :height height
+                 :on-pointer-enter on-pointer-enter
+                 :on-pointer-leave on-pointer-leave
+                 :on-pointer-down on-pointer-down
+                 :on-pointer-up on-pointer-up
+                 :on-lost-pointer-capture on-lost-pointer-capture
+                 :on-mouse-move on-mouse-move
+                 :style {:fill "none"
+                         :pointer-events "fill"
+                         :cursor (if (= axis :x) "ew-resize" "ns-resize")}}]))
 
      (when (:new-position @state)
        [:& guide {:guide {:axis axis
@@ -393,12 +395,15 @@
 
 (mf/defc viewport-guides
   {::mf/wrap [mf/memo]}
-  [{:keys [zoom vbox hover-frame]}]
+  [{:keys [zoom vbox hover-frame disabled-guides?]}]
 
   (let [page (mf/deref refs/workspace-page)
-        guides (->> (get-in page [:options :guides] {})
-                    (vals)
-                    (filter (guide-inside-vbox? vbox)))
+
+        guides (mf/use-memo
+                (mf/deps page vbox)
+                #(->> (get-in page [:options :guides] {})
+                      (vals)
+                      (filter (guide-inside-vbox? vbox))))
 
         hover-frame-ref (mf/use-ref nil)
 
@@ -417,16 +422,23 @@
              (st/emit! (dw/update-guides guide))
              (st/emit! (dw/remove-guide guide)))))]
 
-    #_(mf/use-effect (mf/deps guides) #(.log js/console (clj->js guides)))
     (mf/use-effect
      (mf/deps hover-frame)
      (fn []
-       #_(.log js/console "set" (clj->js hover-frame))
        (mf/set-ref-val! hover-frame-ref hover-frame)))
 
     [:g.guides {:pointer-events "none"}
-     [:& new-guide-area {:vbox vbox :zoom zoom :axis :x :get-hover-frame get-hover-frame}]
-     [:& new-guide-area {:vbox vbox :zoom zoom :axis :y :get-hover-frame get-hover-frame}]
+     [:& new-guide-area {:vbox vbox
+                         :zoom zoom
+                         :axis :x
+                         :get-hover-frame get-hover-frame
+                         :disabled-guides? disabled-guides?}]
+
+     [:& new-guide-area {:vbox vbox
+                         :zoom zoom
+                         :axis :y
+                         :get-hover-frame get-hover-frame
+                         :disabled-guides? disabled-guides?}]
      
      (for [current guides]
        [:& guide  {:key (str "guide-" (:id current))
@@ -434,5 +446,6 @@
                    :vbox vbox
                    :zoom zoom
                    :get-hover-frame get-hover-frame
-                   :on-guide-change on-guide-change}])]))
+                   :on-guide-change on-guide-change
+                   :disabled-guides? disabled-guides?}])]))
 
