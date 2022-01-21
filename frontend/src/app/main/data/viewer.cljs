@@ -190,19 +190,21 @@
   (ptk/reify ::increase-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (let [increase #(nth c/zoom-levels
-                           (+ (d/index-of c/zoom-levels %) 1)
-                           (last c/zoom-levels))]
-        (update-in state [:viewer-local :zoom] (fnil increase 1))))))
+      (let [increase (fn [zoom]
+                       (d/seek #(> % zoom)
+                               c/zoom-levels
+                               zoom))]
+        (update-in state [:viewer-local :zoom] increase)))))
 
 (def decrease-zoom
   (ptk/reify ::decrease-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (let [decrease #(nth c/zoom-levels
-                           (- (d/index-of c/zoom-levels %) 1)
-                           (first c/zoom-levels))]
-        (update-in state [:viewer-local :zoom] (fnil decrease 1))))))
+      (let [decrease (fn [zoom]
+                       (d/seek #(< % zoom)
+                               (reverse c/zoom-levels)
+                               zoom))]
+        (update-in state [:viewer-local :zoom] decrease)))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom
