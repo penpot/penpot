@@ -72,6 +72,7 @@
 - Fix default profile image generation issue [Taiga #2601](https://tree.taiga.io/project/penpot/issue/2601)
 - Fix edit blur attributes for multiselection [Taiga #2625](https://tree.taiga.io/project/penpot/issue/2625)
 - Fix auto hide header in viewer full screen [Taiga #2632](https://tree.taiga.io/project/penpot/issue/2632)
+- Fix zoom in/out after fit or fill [Taiga #2630](https://tree.taiga.io/project/penpot/issue/2630)
 
 ### :arrow_up: Deps updates
 
