@@ -7,6 +7,7 @@
 (ns app.main.data.comments
   (:require
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.main.repo :as rp]
    [beicon.core :as rx]
@@ -24,7 +25,7 @@
 (s/def ::page-id ::us/uuid)
 (s/def ::page-name ::us/string)
 (s/def ::participants (s/every ::us/uuid :kind set?))
-(s/def ::position ::us/point)
+(s/def ::position ::gpt/point)
 (s/def ::project-id ::us/uuid)
 (s/def ::seqn ::us/integer)
 (s/def ::thread-id ::us/uuid)

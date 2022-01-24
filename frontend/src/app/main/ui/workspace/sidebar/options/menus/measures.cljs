@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as math]
-   [app.common.types.radius :as ctr]
+   [app.common.spec.radius :as ctr]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
    [app.main.refs :as refs]

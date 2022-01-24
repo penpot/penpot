@@ -10,8 +10,8 @@
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.types.interactions :as cti]
-   [app.common.types.page-options :as cto]
+   [app.common.spec.interactions :as csi]
+   [app.common.spec.page :as csp]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -45,7 +45,7 @@
                 {:redo-changes [{:type :set-option
                                  :page-id page-id
                                  :option :flows
-                                 :value (cto/add-flow flows new-flow)}]
+                                 :value (csp/add-flow flows new-flow)}]
                  :undo-changes [{:type :set-option
                                  :page-id page-id
                                  :option :flows
@@ -76,7 +76,7 @@
                 {:redo-changes [{:type :set-option
                                  :page-id page-id
                                  :option :flows
-                                 :value (cto/remove-flow flows flow-id)}]
+                                 :value (csp/remove-flow flows flow-id)}]
                  :undo-changes [{:type :set-option
                                  :page-id page-id
                                  :option :flows
@@ -100,8 +100,8 @@
                 {:redo-changes [{:type :set-option
                                  :page-id page-id
                                  :option :flows
-                                 :value (cto/update-flow flows flow-id
-                                                         #(cto/rename-flow % name))}]
+                                 :value (csp/update-flow flows flow-id
+                                                         #(csp/rename-flow % name))}]
                  :undo-changes [{:type :set-option
                                  :page-id page-id
                                  :option :flows
@@ -140,15 +140,15 @@
                                      page-id
                                      :options
                                      :flows] [])
-             flow     (cto/get-frame-flow flows (:id frame))]
+             flow     (csp/get-frame-flow flows (:id frame))]
          (rx/concat
            (rx/of (dch/update-shapes [(:id shape)]
                     (fn [shape]
-                      (let [new-interaction (cti/set-destination
-                                              cti/default-interaction
-                                              destination)]
+                      (let [new-interaction (csi/set-destination
+                                             csi/default-interaction
+                                             destination)]
                         (update shape :interactions
-                                cti/add-interaction new-interaction)))))
+                                csi/add-interaction new-interaction)))))
            (when (and (not (cph/connected-frame? (:id frame) objects))
                       (nil? flow))
              (rx/of (add-flow (:id frame))))))))))
@@ -161,7 +161,7 @@
       (rx/of (dch/update-shapes [(:id shape)]
                (fn [shape]
                  (update shape :interactions
-                         cti/remove-interaction index)))))))
+                         csi/remove-interaction index)))))))
 
 (defn update-interaction
   [shape index update-fn]
@@ -171,7 +171,7 @@
       (rx/of (dch/update-shapes [(:id shape)]
                (fn [shape]
                  (update shape :interactions
-                        cti/update-interaction index update-fn)))))))
+                        csi/update-interaction index update-fn)))))))
 
 (declare move-edit-interaction)
 (declare finish-edit-interaction)
@@ -244,11 +244,11 @@
                 (rx/of (update-interaction shape index
                                            (fn [interaction]
                                              (cond-> interaction
-                                               (not (cti/has-destination interaction))
-                                               (cti/set-action-type :navigate)
+                                               (not (csi/has-destination interaction))
+                                               (csi/set-action-type :navigate)
 
                                                :always
-                                               (cti/set-destination (:id frame))))))))))))))
+                                               (csi/set-destination (:id frame))))))))))))))
 ;; --- Overlays
 
 (declare move-overlay-pos)
@@ -326,7 +326,7 @@
 
            new-interactions
            (update interactions index
-                   #(cti/set-overlay-position % overlay-pos))]
+                   #(csi/set-overlay-position % overlay-pos))]
 
        (rx/of (dch/update-shapes [(:id shape)] #(merge % {:interactions new-interactions})))))))
 

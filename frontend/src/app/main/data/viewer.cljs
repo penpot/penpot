@@ -7,9 +7,10 @@
 (ns app.main.data.viewer
   (:require
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.common.types.interactions :as cti]
+   [app.common.spec.interactions :as cti]
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
@@ -469,7 +470,7 @@
 (defn open-overlay
   [frame-id position close-click-outside background-overlay animation]
   (us/verify ::us/uuid frame-id)
-  (us/verify ::us/point position)
+  (us/verify ::gpt/point position)
   (us/verify (s/nilable ::us/boolean) close-click-outside)
   (us/verify (s/nilable ::us/boolean) background-overlay)
   (us/verify (s/nilable ::cti/animation) animation)
@@ -494,7 +495,7 @@
 (defn toggle-overlay
   [frame-id position close-click-outside background-overlay animation]
   (us/verify ::us/uuid frame-id)
-  (us/verify ::us/point position)
+  (us/verify ::gpt/point position)
   (us/verify (s/nilable ::us/boolean) close-click-outside)
   (us/verify (s/nilable ::us/boolean) background-overlay)
   (us/verify (s/nilable ::cti/animation) animation)

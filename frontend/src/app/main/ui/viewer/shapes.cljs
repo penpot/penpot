@@ -11,7 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
-   [app.common.types.interactions :as cti]
+   [app.common.spec.interactions :as cti]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]

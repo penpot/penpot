@@ -7,6 +7,7 @@
 (ns app.rpc.mutations.comments
   (:require
    [app.common.exceptions :as ex]
+   [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.db :as db]
    [app.rpc.queries.comments :as comments]
@@ -26,7 +27,7 @@
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
-(s/def ::position ::us/point)
+(s/def ::position ::gpt/point)
 (s/def ::content ::us/string)
 
 (s/def ::create-comment-thread

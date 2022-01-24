@@ -11,7 +11,7 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
-   [app.common.pages.spec :as spec]))
+   [app.common.uuid :as uuid]))
 
 ;; Auxiliary methods to work in an specifica axis
 (defn get-delta-start [axis rect tr-rect]
@@ -117,7 +117,7 @@
              (not (mth/close? (:y resize-vector-2) 1)))
         (assoc :resize-origin (:resize-origin-2 modifiers)
                :resize-vector (gpt/point 1 (:y resize-vector-2)))
-        
+
         (some? displacement)
         (assoc :displacement
                (get-displacement axis (-> (gpt/point 0 0)
@@ -138,16 +138,32 @@
    :center :center
    :scale :scale})
 
+(defn default-constraints-h
+  [shape]
+  (if (= (:parent-id shape) uuid/zero)
+    nil
+    (if (= (:parent-id shape) (:frame-id shape))
+      :left
+      :scale)))
+
+(defn default-constraints-v
+  [shape]
+  (if (= (:parent-id shape) uuid/zero)
+    nil
+    (if (= (:parent-id shape) (:frame-id shape))
+      :top
+      :scale)))
+
 (defn calc-child-modifiers
   [parent child modifiers ignore-constraints transformed-parent-rect]
   (let [constraints-h
         (if-not ignore-constraints
-          (:constraints-h child (spec/default-constraints-h child))
+          (:constraints-h child (default-constraints-h child))
           :scale)
 
         constraints-v
         (if-not ignore-constraints
-          (:constraints-v child (spec/default-constraints-v child))
+          (:constraints-v child (default-constraints-v child))
           :scale)
 
         modifiers-h (constraint-modifier (constraints-h const->type+axis) :x parent child modifiers transformed-parent-rect)
