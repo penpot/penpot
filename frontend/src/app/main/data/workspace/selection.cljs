@@ -12,7 +12,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.common.types.interactions :as cti]
+   [app.common.spec.interactions :as cti]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]

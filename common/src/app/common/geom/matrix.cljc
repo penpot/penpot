@@ -10,7 +10,9 @@
       :clj  [clojure.pprint :as pp])
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.math :as mth]))
+   [app.common.math :as mth]
+   [app.common.spec :as us]
+   [clojure.spec.alpha :as s]))
 
 ;; --- Matrix Impl
 
@@ -23,6 +25,21 @@
   Object
   (toString [_]
     (str "matrix(" a "," b "," c "," d "," e "," f ")")))
+
+(defn ^boolean matrix?
+  "Return true if `v` is Matrix instance."
+  [v]
+  (instance? Matrix v))
+
+(s/def ::a ::us/safe-number)
+(s/def ::b ::us/safe-number)
+(s/def ::c ::us/safe-number)
+(s/def ::d ::us/safe-number)
+(s/def ::e ::us/safe-number)
+(s/def ::f ::us/safe-number)
+
+(s/def ::matrix
+  (s/and (s/keys :req-un [::a ::b ::c ::d ::e ::f]) matrix?))
 
 (defn matrix
   "Create a new matrix instance."
@@ -83,11 +100,6 @@
   (Matrix.
    (- m1a m2a) (- m1b m2b) (- m1c m2c)
    (- m1d m2d) (- m1e m2e) (- m1f m2f)))
-
-(defn ^boolean matrix?
-  "Return true if `v` is Matrix instance."
-  [v]
-  (instance? Matrix v))
 
 (def base (matrix))
 

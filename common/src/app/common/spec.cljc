@@ -16,7 +16,6 @@
    ;; because of some strange interaction with cljs.spec.alpha and
    ;; modules splitting.
    [app.common.exceptions :as ex]
-   [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]
    [expound.alpha]))
@@ -110,7 +109,6 @@
 (s/def ::not-empty-string (s/and string? #(not (str/empty? %))))
 (s/def ::url string?)
 (s/def ::fn fn?)
-(s/def ::point gpt/point?)
 (s/def ::id ::uuid)
 
 (defn bytes?

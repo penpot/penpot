@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.spec :as us]
-   [app.common.types.interactions :as cti]
+   [app.common.spec.interactions :as cti]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -464,3 +464,4 @@
     (tree-seq #(d/not-empty? (get shape :shapes))
               #(->> (get % :shapes) (map getter))
               shape)))
+

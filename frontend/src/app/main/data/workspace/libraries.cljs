@@ -12,6 +12,10 @@
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.common.spec.change :as spec.change]
+   [app.common.spec.color :as spec.color]
+   [app.common.spec.file :as spec.file]
+   [app.common.spec.typography :as spec.typography]
    [app.common.uuid :as uuid]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.changes :as dch]
@@ -88,7 +92,7 @@
         color (-> color
                   (assoc :id id)
                   (assoc :name (default-color-name color)))]
-    (us/assert ::cp/color color)
+    (us/assert ::spec.color/color color)
     (ptk/reify ::add-color
       IDeref
       (-deref [_] color)
@@ -105,7 +109,7 @@
                                       :origin it})))))))
 (defn add-recent-color
   [color]
-  (us/assert ::cp/recent-color color)
+  (us/assert ::spec.color/recent-color color)
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
     (watch [it _ _]
@@ -123,7 +127,7 @@
 
 (defn update-color
   [{:keys [id] :as color} file-id]
-  (us/assert ::cp/color color)
+  (us/assert ::spec.color/color color)
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-color
     ptk/WatchEvent
@@ -159,7 +163,7 @@
 
 (defn add-media
   [{:keys [id] :as media}]
-  (us/assert ::cp/media-object media)
+  (us/assert ::spec.file/media-object media)
   (ptk/reify ::add-media
     ptk/WatchEvent
     (watch [it _ _]
@@ -215,7 +219,7 @@
   ([typography] (add-typography typography true))
   ([typography edit?]
    (let [typography (update typography :id #(or % (uuid/next)))]
-     (us/assert ::cp/typography typography)
+     (us/assert ::spec.typography/typography typography)
      (ptk/reify ::add-typography
        IDeref
        (-deref [_] typography)
@@ -235,7 +239,7 @@
 
 (defn update-typography
   [typography file-id]
-  (us/assert ::cp/typography typography)
+  (us/assert ::spec.typography/typography typography)
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-typography
     ptk/WatchEvent
@@ -396,7 +400,7 @@
   [file-id component-id position]
   (us/assert ::us/uuid file-id)
   (us/assert ::us/uuid component-id)
-  (us/assert ::us/point position)
+  (us/assert ::gpt/point position)
   (ptk/reify ::instantiate-component
     ptk/WatchEvent
     (watch [it state _]
@@ -533,7 +537,7 @@
 (defn ext-library-changed
   [file-id modified-at revn changes]
   (us/assert ::us/uuid file-id)
-  (us/assert ::cp/changes changes)
+  (us/assert ::spec.change/changes changes)
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]

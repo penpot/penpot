@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
-   [app.common.types.interactions :as cti]
+   [app.common.spec.interactions :as cti]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]

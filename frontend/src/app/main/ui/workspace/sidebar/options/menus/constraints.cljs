@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.spec :as spec]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.refs :as refs]
@@ -50,8 +49,8 @@
         ;; first-level? (and in-frame?
         ;;                   (= (:parent-id values) (:frame-id values)))
 
-        constraints-h (get values :constraints-h (spec/default-constraints-h values))
-        constraints-v (get values :constraints-v (spec/default-constraints-v values))
+        constraints-h (get values :constraints-h (gsh/default-constraints-h values))
+        constraints-v (get values :constraints-v (gsh/default-constraints-v values))
 
         on-constraint-button-clicked
         (mf/use-callback

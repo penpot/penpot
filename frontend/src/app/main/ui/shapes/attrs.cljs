@@ -6,8 +6,8 @@
 
 (ns app.main.ui.shapes.attrs
   (:require
-   [app.common.pages.spec :as spec]
-   [app.common.types.radius :as ctr]
+   [app.common.spec.radius :as ctr]
+   [app.common.spec.shape :refer [stroke-caps-line stroke-caps-marker]]
    [app.main.ui.context :as muc]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
@@ -131,7 +131,7 @@
               ;; For simple line caps we use svg stroke-line-cap attribute. This
               ;; only works if all caps are the same and we are not using the tricks
               ;; for inner or outer strokes.
-              (and (spec/stroke-caps-line (:stroke-cap-start shape))
+              (and (stroke-caps-line (:stroke-cap-start shape))
                    (= (:stroke-cap-start shape) (:stroke-cap-end shape))
                    (not (#{:inner :outer} (:stroke-alignment shape)))
                    (not= :dotted stroke-style))
@@ -141,15 +141,15 @@
               (assoc :strokeLinecap "round")
 
               ;; For other cap types we use markers.
-              (and (or (spec/stroke-caps-marker (:stroke-cap-start shape))
-                       (and (spec/stroke-caps-line (:stroke-cap-start shape))
+              (and (or (stroke-caps-marker (:stroke-cap-start shape))
+                       (and (stroke-caps-line (:stroke-cap-start shape))
                             (not= (:stroke-cap-start shape) (:stroke-cap-end shape))))
                    (not (#{:inner :outer} (:stroke-alignment shape))))
               (assoc :markerStart
                      (str/format "url(#marker-%s-%s)" render-id (name (:stroke-cap-start shape))))
 
-              (and (or (spec/stroke-caps-marker (:stroke-cap-end shape))
-                       (and (spec/stroke-caps-line (:stroke-cap-end shape))
+              (and (or (stroke-caps-marker (:stroke-cap-end shape))
+                       (and (stroke-caps-line (:stroke-cap-end shape))
                             (not= (:stroke-cap-start shape) (:stroke-cap-end shape))))
                    (not (#{:inner :outer} (:stroke-alignment shape))))
               (assoc :markerEnd
