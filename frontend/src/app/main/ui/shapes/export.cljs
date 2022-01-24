@@ -158,7 +158,7 @@
 (mf/defc export-guides
   [{:keys [guides]}]
   [:> "penpot:guides" #js {}
-   (for [{:keys [id position frame-id axis]} (vals guides)]
+   (for [{:keys [position frame-id axis]} (vals guides)]
      [:> "penpot:guide" #js {:position position
                              :frame-id frame-id
                              :axis (d/name axis)}])])

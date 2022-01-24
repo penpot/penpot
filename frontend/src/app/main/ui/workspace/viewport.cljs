@@ -370,5 +370,6 @@
            {:zoom zoom
             :vbox vbox
             :hover-frame frame-parent
+            :modifiers modifiers
             :disabled-guides? disabled-guides?}]])]]]))
 

@@ -7,6 +7,8 @@
 (ns app.main.ui.workspace.viewport.guides
   (:require
    [app.common.colors :as colors]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -137,11 +139,7 @@
       {:x (+ (:x vbox) rules-pos)
        :y (- pos (/ guide-active-area 2))
        :width (:width vbox)
-       :height guide-active-area}
-
-
-
-      )))
+       :height guide-active-area})))
 
 (defn guide-line-axis
   ([pos vbox axis]
@@ -232,9 +230,19 @@
      :width (:width vbox)
      :height (/ 24 zoom)}))
 
+(defn is-guide-inside-frame?
+  [guide frame]
+
+  (if (= :x (:axis guide))
+    (and (>= (:position guide) (:x frame) )
+         (<= (:position guide) (+ (:x frame) (:width frame)) ))
+
+    (and (>= (:position guide) (:y frame) )
+         (<= (:position guide) (+ (:y frame) (:height frame)) ))))
+
 (mf/defc guide
   {::mf/wrap [mf/memo]}
-  [{:keys [guide hover? on-guide-change get-hover-frame vbox zoom hover-frame disabled-guides?]}]
+  [{:keys [guide hover? on-guide-change get-hover-frame vbox zoom hover-frame disabled-guides? frame-modifier]}]
 
   (let [axis (:axis guide)
 
@@ -254,96 +262,102 @@
                 state
                 frame]} (use-guide handle-change-position get-hover-frame zoom guide)
 
-        frame (or frame hover-frame)
-        pos (or (:new-position @state) (:position guide))
+        base-frame (or frame hover-frame)
+        frame (gsh/transform-shape (merge base-frame frame-modifier))
+
+        move-vec (gpt/to-vec (gpt/point (:x base-frame) (:y base-frame))
+                             (gpt/point (:x frame) (:y frame)))
+
+        pos (+ (or (:new-position @state) (:position guide)) (get move-vec axis))
         guide-width (/ guide-width zoom)
         guide-pill-corner-radius (/ guide-pill-corner-radius zoom)]
 
-    [:g.guide-area {:data-guide-frame-id (when (some? frame) (str (:id frame)))}
-     (when-not disabled-guides?
-       (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
-         [:rect {:x x
-                 :y y
-                 :width width
-                 :height height
-                 :style {:fill "none"
-                         :pointer-events "fill"
-                         :cursor (if (= axis :x) "ew-resize" "ns-resize")}
-                 :on-pointer-enter on-pointer-enter
-                 :on-pointer-leave on-pointer-leave
-                 :on-pointer-down on-pointer-down
-                 :on-pointer-up on-pointer-up
-                 :on-lost-pointer-capture on-lost-pointer-capture
-                 :on-mouse-move on-mouse-move}]))
+    (when (or (nil? frame) (is-guide-inside-frame? (assoc guide :position pos) frame))
+      [:g.guide-area {:data-guide-frame-id (when (some? frame) (str (:id frame)))}
+       (when-not disabled-guides?
+         (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
+           [:rect {:x x
+                   :y y
+                   :width width
+                   :height height
+                   :style {:fill "none"
+                           :pointer-events "fill"
+                           :cursor (if (= axis :x) "ew-resize" "ns-resize")}
+                   :on-pointer-enter on-pointer-enter
+                   :on-pointer-leave on-pointer-leave
+                   :on-pointer-down on-pointer-down
+                   :on-pointer-up on-pointer-up
+                   :on-lost-pointer-capture on-lost-pointer-capture
+                   :on-mouse-move on-mouse-move}]))
 
-     (if (some? frame)
-       (let [{:keys [l1-x1 l1-y1 l1-x2 l1-y2
-                     l2-x1 l2-y1 l2-x2 l2-y2
-                     l3-x1 l3-y1 l3-x2 l3-y2]}
-             (guide-line-axis pos vbox frame axis)]
-         [:g
-          (when (or hover? (:hover @state))
-            [:line {:x1 l1-x1
-                    :y1 l1-y1
-                    :x2 l1-x2
-                    :y2 l1-y2
+       (if (some? frame)
+         (let [{:keys [l1-x1 l1-y1 l1-x2 l1-y2
+                       l2-x1 l2-y1 l2-x2 l2-y2
+                       l3-x1 l3-y1 l3-x2 l3-y2]}
+               (guide-line-axis pos vbox frame axis)]
+           [:g
+            (when (or hover? (:hover @state))
+              [:line {:x1 l1-x1
+                      :y1 l1-y1
+                      :x2 l1-x2
+                      :y2 l1-y2
+                      :style {:stroke guide-color
+                              :stroke-opacity guide-opacity-hover
+                              :stroke-dasharray (str "0, " (/ 6 zoom))
+                              :stroke-linecap "round"
+                              :stroke-width guide-width}}])
+            [:line {:x1 l2-x1
+                    :y1 l2-y1
+                    :x2 l2-x2
+                    :y2 l2-y2
                     :style {:stroke guide-color
-                            :stroke-opacity guide-opacity-hover
-                            :stroke-dasharray (str "0, " (/ 6 zoom))
-                            :stroke-linecap "round"
-                            :stroke-width guide-width}}])
-          [:line {:x1 l2-x1
-                  :y1 l2-y1
-                  :x2 l2-x2
-                  :y2 l2-y2
-                  :style {:stroke guide-color
-                          :stroke-width guide-width
-                          :stroke-opacity (if (or hover? (:hover @state))
-                                            guide-opacity-hover
-                                            guide-opacity)}}]
-          (when (or hover? (:hover @state))
-            [:line {:x1 l3-x1
-                    :y1 l3-y1
-                    :x2 l3-x2
-                    :y2 l3-y2
-                    :style {:stroke guide-color
-                            :stroke-opacity guide-opacity-hover
                             :stroke-width guide-width
-                            :stroke-dasharray (str "0, " (/ 6 zoom))
-                            :stroke-linecap "round"}}])])
+                            :stroke-opacity (if (or hover? (:hover @state))
+                                              guide-opacity-hover
+                                              guide-opacity)}}]
+            (when (or hover? (:hover @state))
+              [:line {:x1 l3-x1
+                      :y1 l3-y1
+                      :x2 l3-x2
+                      :y2 l3-y2
+                      :style {:stroke guide-color
+                              :stroke-opacity guide-opacity-hover
+                              :stroke-width guide-width
+                              :stroke-dasharray (str "0, " (/ 6 zoom))
+                              :stroke-linecap "round"}}])])
 
-       (let [{:keys [x1 y1 x2 y2]} (guide-line-axis pos vbox axis)]
-         [:line {:x1 x1
-                 :y1 y1
-                 :x2 x2
-                 :y2 y2
-                 :style {:stroke guide-color
-                         :stroke-width guide-width
-                         :stroke-opacity (if (or hover? (:hover @state))
-                                           guide-opacity-hover
-                                           guide-opacity)}}]))
+         (let [{:keys [x1 y1 x2 y2]} (guide-line-axis pos vbox axis)]
+           [:line {:x1 x1
+                   :y1 y1
+                   :x2 x2
+                   :y2 y2
+                   :style {:stroke guide-color
+                           :stroke-width guide-width
+                           :stroke-opacity (if (or hover? (:hover @state))
+                                             guide-opacity-hover
+                                             guide-opacity)}}]))
 
-     (when (or hover? (:hover @state))
-       (let [{:keys [rect-x rect-y rect-width rect-height text-x text-y]}
-             (guide-pill-axis pos vbox zoom axis)]
-         [:g.guide-pill
-          [:rect {:x rect-x
-                  :y rect-y
-                  :width rect-width
-                  :height rect-height
-                  :rx guide-pill-corner-radius
-                  :ry guide-pill-corner-radius
-                  :style {:fill guide-color}}]
-          
-          [:text {:x text-x
-                  :y text-y
-                  :text-anchor "middle"
-                  :dominant-baseline "middle"
-                  :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
-                  :style {:font-size (/ 13 zoom)
-                          :font-family "sourcesanspro"
-                          :fill colors/black}}
-           (str (mth/round pos))]]))]))
+       (when (or hover? (:hover @state))
+         (let [{:keys [rect-x rect-y rect-width rect-height text-x text-y]}
+               (guide-pill-axis pos vbox zoom axis)]
+           [:g.guide-pill
+            [:rect {:x rect-x
+                    :y rect-y
+                    :width rect-width
+                    :height rect-height
+                    :rx guide-pill-corner-radius
+                    :ry guide-pill-corner-radius
+                    :style {:fill guide-color}}]
+
+            [:text {:x text-x
+                    :y text-y
+                    :text-anchor "middle"
+                    :dominant-baseline "middle"
+                    :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
+                    :style {:font-size (/ 13 zoom)
+                            :font-family "sourcesanspro"
+                            :fill colors/black}}
+             (str (mth/round pos))]]))])))
 
 (mf/defc new-guide-area
   [{:keys [vbox zoom axis get-hover-frame disabled-guides?]}]
@@ -395,7 +409,7 @@
 
 (mf/defc viewport-guides
   {::mf/wrap [mf/memo]}
-  [{:keys [zoom vbox hover-frame disabled-guides?]}]
+  [{:keys [zoom vbox hover-frame disabled-guides? modifiers]}]
 
   (let [page (mf/deref refs/workspace-page)
 
@@ -445,6 +459,7 @@
                    :guide current
                    :vbox vbox
                    :zoom zoom
+                   :frame-modifier (get modifiers (:frame-id current))
                    :get-hover-frame get-hover-frame
                    :on-guide-change on-guide-change
                    :disabled-guides? disabled-guides?}])]))

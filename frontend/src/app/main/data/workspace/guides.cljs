@@ -6,7 +6,10 @@
 
 (ns app.main.data.workspace.guides
   (:require
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.spec :as us]
+   [app.common.types.page-options :as tpo]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
@@ -20,7 +23,7 @@
       (merge guide))))
 
 (defn update-guides [guide]
-  ;; TODO CHECK SPEC
+  (us/verify ::tpo/guide guide)
   (ptk/reify ::update-guides
     ptk/WatchEvent
     (watch [it state _]
@@ -44,7 +47,7 @@
            :origin it}))))))
 
 (defn remove-guide [guide]
-  ;; TODO CHECK SPEC
+  (us/verify ::tpo/guide guide)
   (ptk/reify ::remove-guide
     ptk/WatchEvent
     (watch [it state _]
@@ -75,26 +78,24 @@
 
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
-            frame-ids (->> ids (filter #(= :frame (get-in objects [% :type]))) (into #{}))
+            frame-ids? (->> ids (filter #(= :frame (get-in objects [% :type]))) (into #{}))
             object-modifiers  (get state :workspace-modifiers)
-
-            moved-guide?
-            (fn [guide]
-              (let [frame-id (:frame-id guide)]
-                (and (contains? frame-ids frame-id)
-                     (some? (get-in object-modifiers [frame-id :modifiers :displacement])))))
 
             build-move-event
             (fn [guide]
-              (let [disp (get-in object-modifiers [(:frame-id guide) :modifiers :displacement])
-                    guide (if (= :x (:axis guide))
-                            (update guide :position + (:e disp))
-                            (update guide :position + (:f disp)))]
+              (let [frame (get objects (:frame-id guide))
+                    frame' (-> (merge frame (get object-modifiers (:frame-id guide)))
+                               (gsh/transform-shape))
+
+                    moved (gpt/to-vec (gpt/point (:x frame) (:y frame))
+                                      (gpt/point (:x frame') (:y frame')))
+
+                    guide (update guide :position + (get moved (:axis guide)))]
                 (update-guides guide)))]
 
         (->> (wsh/lookup-page-options state)
              :guides
              (vals)
-             (filter moved-guide?)
+             (filter (comp frame-ids? :frame-id))
              (map build-move-event)
              (rx/from))))))

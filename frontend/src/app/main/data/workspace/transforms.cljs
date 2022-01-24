@@ -171,6 +171,7 @@
             ignore-tree       (get-ignore-tree object-modifiers objects ids)]
 
         (rx/of (dwu/start-undo-transaction)
+               (dwg/move-frame-guides ids-with-children)
                (dch/update-shapes
                  ids-with-children
                  (fn [shape]
@@ -189,7 +190,6 @@
                           :rotation
                           :flip-x
                           :flip-y]})
-               (dwg/move-frame-guides ids-with-children)
                (clear-local-transform)
                (dwu/commit-undo-transaction))))))
 
