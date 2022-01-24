@@ -13,6 +13,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -33,8 +34,33 @@
   (dom/prevent-default event)
   (dom/stop-propagation event))
 
+
+(mf/defc element-icon
+  [{:keys [shape] :as props}]
+  (case (:type shape)
+    :frame i/artboard
+    :image i/image
+    :line i/line
+    :circle i/circle
+    :path i/curve
+    :rect i/box
+    :text i/text
+    :group (if (some? (:component-id shape))
+             i/component
+             (if (:masked-group? shape)
+               i/mask
+               i/folder))
+    :bool (case (:bool-type shape)
+            :difference   i/bool-difference
+            :exclude      i/bool-exclude
+            :intersection i/bool-intersection
+            #_:default    i/bool-union)
+    :svg-raw i/file-svg
+    nil))
+
+
 (mf/defc menu-entry
-  [{:keys [title shortcut on-click children] :as props}]
+  [{:keys [title shortcut on-click children selected has-icon? shape] :as props}]
   (let [submenu-ref (mf/use-ref nil)
         hovering? (mf/use-ref false)
 
@@ -64,22 +90,33 @@
              (when (and (some? dom) (some? submenu-node))
                (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
 
-    [:li {:ref set-dom-node
-          :on-click on-click
-          :on-pointer-enter on-pointer-enter
-          :on-pointer-leave on-pointer-leave}
-     [:span.title title]
-     [:span.shortcut (or shortcut "")]
+    (if has-icon?
+      [:li.sub-menu-item {:ref set-dom-node
+                          :on-click on-click
+                          :on-pointer-enter on-pointer-enter
+                          :on-pointer-leave on-pointer-leave}
+       (when has-icon?
+         [:span.icon-wrapper
+          (if selected [:span.selected-icon i/tick]
+              [:span.selected-icon])
+          [:span.shape-icon (element-icon {:shape shape})]])
+       [:span.title title]]
+      [:li {:ref set-dom-node
+            :on-click on-click
+            :on-pointer-enter on-pointer-enter
+            :on-pointer-leave on-pointer-leave}
+       [:span.title title]
+       [:span.shortcut (or shortcut "")]
 
-     (when (> (count children) 1)
-       [:span.submenu-icon i/arrow-slide])
+       (when (> (count children) 1)
+         [:span.submenu-icon i/arrow-slide])
 
-     (when (> (count children) 1)
-       [:ul.workspace-context-menu
-        {:ref submenu-ref
-         :style {:display "none" :left 250}
-         :on-context-menu prevent-default}
-        children])]))
+       (when (> (count children) 1)
+         [:ul.workspace-context-menu
+          {:ref submenu-ref
+           :style {:display "none" :left 250}
+           :on-context-menu prevent-default}
+          children])])))
 
 (mf/defc menu-separator
   []
@@ -108,12 +145,21 @@
      [:& menu-separator]]))
 
 (mf/defc context-menu-layer-position
-  []
+  [{:keys [hover-objs shapes]}]
   (let [do-bring-forward  (st/emitf (dw/vertical-order-selected :up))
         do-bring-to-front (st/emitf (dw/vertical-order-selected :top))
         do-send-backward  (st/emitf (dw/vertical-order-selected :down))
-        do-send-to-back   (st/emitf (dw/vertical-order-selected :bottom))]
+        do-send-to-back   (st/emitf (dw/vertical-order-selected :bottom))
+        select-shapes     (fn [id] (st/emitf (dws/select-shape id)))]
     [:*
+     (when (> (count hover-objs) 1)
+       [:& menu-entry {:title (tr "workspace.shape.menu.select-layer")}
+        (for [object hover-objs]
+          [:& menu-entry {:title (:name object)
+                          :selected (some #(= object %) shapes)
+                          :on-click (select-shapes (:id object))
+                          :has-icon? true
+                          :shape object}])])
      [:& menu-entry {:title (tr "workspace.shape.menu.forward")
                      :shortcut (sc/get-tooltip :bring-forward)
                      :on-click do-bring-forward}]
@@ -392,8 +438,11 @@
   [{:keys [mdata] :as props}]
   (let [{:keys [disable-booleans? disable-flatten?]} mdata
         shapes (mf/deref refs/selected-objects)
+        hover-ids (mf/deref refs/current-hover-ids)
+        hover-objs (mf/deref (refs/objects-by-id hover-ids))
 
         props #js {:shapes shapes
+                   :hover-objs hover-objs
                    :disable-booleans? disable-booleans?
                    :disable-flatten? disable-flatten?}]
     (when-not (empty? shapes)

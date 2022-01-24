@@ -34,11 +34,11 @@
       margin: 2px;
     }
 
-    span:first-child {
+    span {
       color: $color-gray-60;
     }
 
-    span:last-child {
+    span.shortcut {
       color: $color-gray-20;
       font-size: $fs12;
     }
@@ -55,6 +55,40 @@
         width: 10px;
         height: 10px;
       }
+    }
+  }
+
+  .sub-menu-item {
+    display: flex;
+    justify-content: flex-start;
+
+    &:hover {
+      background-color: $color-primary-lighter;
+    }
+
+    span.title {
+      margin-left: 5px;
+    }
+
+    .selected-icon {
+      svg {
+        width: 10px;
+        height: 10px;
+      }
+    }
+
+    .shape-icon {
+      margin-left: 3px;
+      svg {
+        width: 13px;
+        height: 13px;
+      }
+    }
+
+    .icon-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      margin: 0;
     }
   }
 }

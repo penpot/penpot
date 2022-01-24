@@ -186,9 +186,9 @@
                          (dw/start-editing-selected))))))))
 
 (defn on-context-menu
-  [hover]
+  [hover hover-ids]
   (mf/use-callback
-   (mf/deps @hover)
+   (mf/deps @hover @hover-ids)
    (fn [event]
      (when (or (dom/class? (dom/get-target event) "viewport-controls")
                (dom/class? (dom/get-target event) "viewport-selrect"))
@@ -200,18 +200,19 @@
           #(st/emit!
             (if (some? @hover)
               (dw/show-shape-context-menu {:position position
-                                           :shape @hover})
+                                           :shape @hover
+                                           :hover-ids @hover-ids})
               (dw/show-context-menu {:position position})))))))))
 
 (defn on-menu-selected
   [hover hover-ids selected]
   (mf/use-callback
-   (mf/deps @hover hover-ids selected)
+   (mf/deps @hover @hover-ids selected)
    (fn [event]
      (dom/prevent-default event)
      (dom/stop-propagation event)
      (let [position (dom/get-client-position event)]
-       (st/emit! (dw/show-shape-context-menu {:position position}))))))
+       (st/emit! (dw/show-shape-context-menu {:position position :hover-ids @hover-ids}))))))
 
 (defn on-mouse-up
   [disable-paste]
@@ -251,58 +252,58 @@
      (reset! in-viewport? false))))
 
 (defn on-pointer-down []
- (mf/use-callback
-  (fn [event]
+  (mf/use-callback
+   (fn [event]
     ;; We need to handle editor related stuff here because
     ;; handling on editor dom node does not works properly.
-    (let [target  (dom/get-target event)
-          editor (.closest ^js target ".public-DraftEditor-content")]
+     (let [target  (dom/get-target event)
+           editor (.closest ^js target ".public-DraftEditor-content")]
       ;; Capture mouse pointer to detect the movements even if cursor
       ;; leaves the viewport or the browser itself
       ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
-      (if editor
-        (.setPointerCapture editor (.-pointerId event))
-        (.setPointerCapture target (.-pointerId event)))))))
+       (if editor
+         (.setPointerCapture editor (.-pointerId event))
+         (.setPointerCapture target (.-pointerId event)))))))
 
 (defn on-pointer-up []
- (mf/use-callback
-  (fn [event]
-    (let [target (dom/get-target event)]
+  (mf/use-callback
+   (fn [event]
+     (let [target (dom/get-target event)]
       ; Release pointer on mouse up
-      (.releasePointerCapture target (.-pointerId event))))))
+       (.releasePointerCapture target (.-pointerId event))))))
 
 (defn on-key-down []
- (mf/use-callback
-  (fn [event]
-    (let [bevent   (.getBrowserEvent ^js event)
-          key      (.-key ^js event)
-          ctrl?    (kbd/ctrl? event)
-          shift?   (kbd/shift? event)
-          alt?     (kbd/alt? event)
-          meta?    (kbd/meta? event)
-          target   (dom/get-target event)
-          editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
-                       (= "rich-text" (obj/get target "className"))
-                       (= "INPUT" (obj/get target "tagName"))
-                       (= "TEXTAREA" (obj/get target "tagName")))]
+  (mf/use-callback
+   (fn [event]
+     (let [bevent   (.getBrowserEvent ^js event)
+           key      (.-key ^js event)
+           ctrl?    (kbd/ctrl? event)
+           shift?   (kbd/shift? event)
+           alt?     (kbd/alt? event)
+           meta?    (kbd/meta? event)
+           target   (dom/get-target event)
+           editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
+                        (= "rich-text" (obj/get target "className"))
+                        (= "INPUT" (obj/get target "tagName"))
+                        (= "TEXTAREA" (obj/get target "tagName")))]
 
-      (when-not (.-repeat bevent)
-        (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta? editing?)))))))
+       (when-not (.-repeat bevent)
+         (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta? editing?)))))))
 
 (defn on-key-up []
- (mf/use-callback
-  (fn [event]
-    (let [key    (.-key event)
-          ctrl?  (kbd/ctrl? event)
-          shift? (kbd/shift? event)
-          alt?   (kbd/alt? event)
-          meta?  (kbd/meta? event)
-          target   (dom/get-target event)
-          editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
-                       (= "rich-text" (obj/get target "className"))
-                       (= "INPUT" (obj/get target "tagName"))
-                       (= "TEXTAREA" (obj/get target "tagName")))]
-      (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta? editing?))))))
+  (mf/use-callback
+   (fn [event]
+     (let [key    (.-key event)
+           ctrl?  (kbd/ctrl? event)
+           shift? (kbd/shift? event)
+           alt?   (kbd/alt? event)
+           meta?  (kbd/meta? event)
+           target   (dom/get-target event)
+           editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
+                        (= "rich-text" (obj/get target "className"))
+                        (= "INPUT" (obj/get target "tagName"))
+                        (= "TEXTAREA" (obj/get target "tagName")))]
+       (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta? editing?))))))
 
 (defn on-mouse-move [viewport-ref zoom]
   (let [last-position (mf/use-var nil)]
@@ -386,29 +387,29 @@
                                                      :y #(+ % delta-y)})))))))))
 
 (defn on-drag-enter []
- (mf/use-callback
-  (fn [e]
-    (when (or (dnd/has-type? e "penpot/shape")
-              (dnd/has-type? e "penpot/component")
-              (dnd/has-type? e "Files")
-              (dnd/has-type? e "text/uri-list")
-              (dnd/has-type? e "text/asset-id"))
-      (dom/prevent-default e)))))
+  (mf/use-callback
+   (fn [e]
+     (when (or (dnd/has-type? e "penpot/shape")
+               (dnd/has-type? e "penpot/component")
+               (dnd/has-type? e "Files")
+               (dnd/has-type? e "text/uri-list")
+               (dnd/has-type? e "text/asset-id"))
+       (dom/prevent-default e)))))
 
 (defn on-drag-over []
- (mf/use-callback
-  (fn [e]
-    (when (or (dnd/has-type? e "penpot/shape")
-              (dnd/has-type? e "penpot/component")
-              (dnd/has-type? e "Files")
-              (dnd/has-type? e "text/uri-list")
-              (dnd/has-type? e "text/asset-id"))
-      (dom/prevent-default e)))))
+  (mf/use-callback
+   (fn [e]
+     (when (or (dnd/has-type? e "penpot/shape")
+               (dnd/has-type? e "penpot/component")
+               (dnd/has-type? e "Files")
+               (dnd/has-type? e "text/uri-list")
+               (dnd/has-type? e "text/asset-id"))
+       (dom/prevent-default e)))))
 
 (defn on-image-uploaded []
- (mf/use-callback
-  (fn [image position]
-    (st/emit! (dw/image-uploaded image position)))))
+  (mf/use-callback
+   (fn [image position]
+     (st/emit! (dw/image-uploaded image position)))))
 
 (defn on-drop [file viewport-ref zoom]
   (let [on-image-uploaded (on-image-uploaded)]
@@ -483,19 +484,19 @@
              (st/emit! (dw/upload-media-workspace params)))))))))
 
 (defn on-paste [disable-paste in-viewport?]
- (mf/use-callback
-  (fn [event]
+  (mf/use-callback
+   (fn [event]
     ;; We disable the paste just after mouse-up of a middle button so when panning won't
     ;; paste the content into the workspace
-    (let [tag-name (-> event dom/get-target dom/get-tag-name)]
-      (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste))
-        (st/emit! (dw/paste-from-event event @in-viewport?)))))))
+     (let [tag-name (-> event dom/get-target dom/get-tag-name)]
+       (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste))
+         (st/emit! (dw/paste-from-event event @in-viewport?)))))))
 
 (defn on-resize [viewport-ref]
- (mf/use-callback
-  (fn [_]
-    (let [node (mf/ref-val viewport-ref)
-          prnt (dom/get-parent node)
-          size (dom/get-client-size prnt)]
+  (mf/use-callback
+   (fn [_]
+     (let [node (mf/ref-val viewport-ref)
+           prnt (dom/get-parent node)
+           size (dom/get-client-size prnt)]
       ;; We schedule the event so it fires after `initialize-page` event
-      (timers/schedule #(st/emit! (dw/update-viewport-size size)))))))
+       (timers/schedule #(st/emit! (dw/update-viewport-size size)))))))

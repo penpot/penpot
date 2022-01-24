@@ -3163,6 +3163,10 @@ msgid "workspace.shape.menu.flow-start"
 msgstr "Flow start"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "Select layer"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.forward"
 msgstr "Bring forward"
 

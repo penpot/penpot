@@ -115,7 +115,7 @@
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool)
-        on-context-menu   (actions/on-context-menu hover)
+        on-context-menu   (actions/on-context-menu hover hover-ids)
         on-double-click   (actions/on-double-click hover hover-ids drawing-path? base-objects edition)
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
