@@ -18,6 +18,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.components.shape-icon :as si]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -35,32 +36,10 @@
   (dom/stop-propagation event))
 
 
-(mf/defc element-icon
-  [{:keys [shape] :as props}]
-  (case (:type shape)
-    :frame i/artboard
-    :image i/image
-    :line i/line
-    :circle i/circle
-    :path i/curve
-    :rect i/box
-    :text i/text
-    :group (if (some? (:component-id shape))
-             i/component
-             (if (:masked-group? shape)
-               i/mask
-               i/folder))
-    :bool (case (:bool-type shape)
-            :difference   i/bool-difference
-            :exclude      i/bool-exclude
-            :intersection i/bool-intersection
-            #_:default    i/bool-union)
-    :svg-raw i/file-svg
-    nil))
 
 
 (mf/defc menu-entry
-  [{:keys [title shortcut on-click children selected has-icon? shape] :as props}]
+  [{:keys [title shortcut on-click children selected? icon] :as props}]
   (let [submenu-ref (mf/use-ref nil)
         hovering? (mf/use-ref false)
 
@@ -90,16 +69,15 @@
              (when (and (some? dom) (some? submenu-node))
                (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
 
-    (if has-icon?
-      [:li.sub-menu-item {:ref set-dom-node
-                          :on-click on-click
-                          :on-pointer-enter on-pointer-enter
-                          :on-pointer-leave on-pointer-leave}
-       (when has-icon?
-         [:span.icon-wrapper
-          (if selected [:span.selected-icon i/tick]
-              [:span.selected-icon])
-          [:span.shape-icon (element-icon {:shape shape})]])
+    (if icon
+      [:li.icon-menu-item {:ref set-dom-node
+                           :on-click on-click
+                           :on-pointer-enter on-pointer-enter
+                           :on-pointer-leave on-pointer-leave}
+       [:span.icon-wrapper
+        (if selected? [:span.selected-icon i/tick]
+            [:span.selected-icon])
+        [:span.shape-icon icon]]
        [:span.title title]]
       [:li {:ref set-dom-node
             :on-click on-click
@@ -156,10 +134,9 @@
        [:& menu-entry {:title (tr "workspace.shape.menu.select-layer")}
         (for [object hover-objs]
           [:& menu-entry {:title (:name object)
-                          :selected (some #(= object %) shapes)
+                          :selected? (some #(= object %) shapes)
                           :on-click (select-shapes (:id object))
-                          :has-icon? true
-                          :shape object}])])
+                          :icon (si/element-icon {:shape object})}])])
      [:& menu-entry {:title (tr "workspace.shape.menu.forward")
                      :shortcut (sc/get-tooltip :bring-forward)
                      :on-click do-bring-forward}]
