@@ -95,7 +95,6 @@
 (s/def ::color ::spec/color)
 (s/def ::data ::spec/data)
 (s/def ::media-object ::spec/media-object)
-(s/def ::minimal-shape ::spec/minimal-shape)
 (s/def ::page ::spec/page)
 (s/def ::recent-color ::spec/recent-color)
 (s/def ::shape-attrs ::spec/shape-attrs)

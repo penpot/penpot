@@ -1243,7 +1243,7 @@
 (defn update-shape-flags
   [ids {:keys [blocked hidden] :as flags}]
   (us/verify (s/coll-of ::us/uuid) ids)
-  (s/assert ::shape-attrs flags)
+  (us/assert ::shape-attrs flags)
   (ptk/reify ::update-shape-flags
     ptk/WatchEvent
     (watch [_ state _]
@@ -1445,7 +1445,6 @@
 
 (defn show-shape-context-menu
   [{:keys [shape] :as params}]
-  (us/verify (s/nilable ::cp/minimal-shape) shape)
   (ptk/reify ::show-shape-context-menu
     ptk/WatchEvent
     (watch [_ state _]
@@ -1854,7 +1853,7 @@
 
 (defn paste-text
   [text]
-  (s/assert string? text)
+  (us/assert string? text)
   (ptk/reify ::paste-text
     ptk/WatchEvent
     (watch [_ state _]
@@ -1883,7 +1882,7 @@
 
 (defn- paste-svg
   [text]
-  (s/assert string? text)
+  (us/assert string? text)
   (ptk/reify ::paste-svg
     ptk/WatchEvent
     (watch [_ state _]
