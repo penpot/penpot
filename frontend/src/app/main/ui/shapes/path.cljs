@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.path
   (:require
+   [app.common.logging :as log]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
    [app.util.object :as obj]
@@ -19,10 +20,21 @@
   [props]
   (let [shape   (unchecked-get props "shape")
         content (:content shape)
-        pdata   (mf/use-memo (mf/deps content) #(upf/format-path content))
+        pdata   (mf/use-memo
+                 (mf/deps content)
+                 (fn []
+                   (try
+                     (upf/format-path content)
+                     (catch :default e
+                       (log/error :hint "unexpected error on formating path"
+                                  :shape-name (:name shape)
+                                  :shape-id (:id shape)
+                                  :cause e)
+                       ""))))
+
         props   (-> (attrs/extract-style-attrs shape)
                     (obj/merge!
                      #js {:d pdata}))]
+
     [:& shape-custom-stroke {:shape shape}
      [:> :path props]]))
-
