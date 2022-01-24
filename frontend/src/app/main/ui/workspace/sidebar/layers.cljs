@@ -13,6 +13,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.shape-icon :as si]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -23,31 +24,6 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
-
-;; --- Helpers
-
-(mf/defc element-icon
-  [{:keys [shape] :as props}]
-  (case (:type shape)
-    :frame i/artboard
-    :image i/image
-    :line i/line
-    :circle i/circle
-    :path i/curve
-    :rect i/box
-    :text i/text
-    :group (if (some? (:component-id shape))
-             i/component
-             (if (:masked-group? shape)
-               i/mask
-               i/folder))
-    :bool (case (:bool-type shape)
-            :difference   i/bool-difference
-            :exclude      i/bool-exclude
-            :intersection i/bool-intersection
-            #_:default    i/bool-union)
-    :svg-raw i/file-svg
-    nil))
 
 ;; --- Layer Name
 
@@ -227,7 +203,7 @@
                                                      :icon-layer (= (:type item) :icon))
                               :on-click select-shape
                               :on-double-click #(dom/stop-propagation %)}
-      [:& element-icon {:shape item}]
+      [:& si/element-icon {:shape item}]
       [:& layer-name {:shape item
                       :on-start-edit #(reset! disable-drag true)
                       :on-stop-edit #(reset! disable-drag false)}]

@@ -9,8 +9,9 @@
    [app.common.data :as d]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
+   [app.main.ui.components.shape-icon :as si]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.layers :refer [element-icon layer-name]]
+   [app.main.ui.workspace.sidebar.layers :refer [layer-name]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [okulary.core :as l]
@@ -70,7 +71,7 @@
      [:div.element-list-body {:class (dom/classnames :selected selected?
                                                      :icon-layer (= (:type item) :icon))
                               :on-click select-shape}
-      [:& element-icon {:shape item}]
+      [:& si/element-icon {:shape item}]
       [:& layer-name {:shape item}]
 
       (when (and (not disable-collapse?) (:shapes item))

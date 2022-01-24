@@ -164,9 +164,10 @@
                           @ctrl?
                           (into (filter is-group?) ids))
 
-             ids         (filterv (comp not remove-id?) ids)
-             hover-shape (get objects (first ids))]
-
+             hover-shape (->> ids
+                              (filterv (comp not remove-id?))
+                              (first)
+                              (get objects))]
          (reset! hover hover-shape)
          (reset! hover-ids ids))))))
 
