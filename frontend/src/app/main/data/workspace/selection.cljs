@@ -150,7 +150,7 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-       (let [objects (wsh/lookup-page-objects state)]
+      (let [objects (wsh/lookup-page-objects state)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
 (defn select-all
@@ -256,7 +256,7 @@
             ;; in the later vector position
             selected (->> children
                           reverse
-                           (d/seek #(geom/has-point? % position)))]
+                          (d/seek #(geom/has-point? % position)))]
         (when selected
           (rx/of (select-shape (:id selected))))))))
 
@@ -312,8 +312,8 @@
               result (prepare-duplicate-change objects page-id unames update-unames! ids-map id delta)
               result (if (vector? result) result [result])]
           (recur
-            (next ids)
-            (into chgs result)))
+           (next ids)
+           (into chgs result)))
         chgs))))
 
 (defn duplicate-changes-update-indices
@@ -384,12 +384,12 @@
                         (mapcat #(prepare-duplicate-shape-change objects page-id unames update-unames! ids-map % delta new-id new-id)))
 
         new-frame  (-> obj
-                      (assoc :id new-id
-                             :name frame-name
-                             :frame-id uuid/zero
-                             :shapes [])
-                      (geom/move delta)
-                      (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
+                       (assoc :id new-id
+                              :name frame-name
+                              :frame-id uuid/zero
+                              :shapes [])
+                       (geom/move delta)
+                       (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
         fch {:type :add-obj
              :old-id (:id obj)

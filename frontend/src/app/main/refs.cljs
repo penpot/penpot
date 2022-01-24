@@ -152,6 +152,12 @@
 (def current-hover
   (l/derived :hover workspace-local))
 
+(def context-menu
+  (l/derived :context-menu workspace-local))
+
+(def current-hover-ids
+  (l/derived :hover-ids context-menu))
+
 (def editors
   (l/derived :editors workspace-local))
 

@@ -3176,6 +3176,10 @@ msgid "workspace.shape.menu.flow-start"
 msgstr "Inicio de flujo"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "Seleccionar capa"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.forward"
 msgstr "Mover hacia delante"
 
