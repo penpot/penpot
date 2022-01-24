@@ -15,6 +15,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.main.ui.cursors :as cur]
    [app.main.ui.workspace.viewport.rules :as rules]
    [app.util.dom :as dom]
    [rumext.alpha :as mf]))
@@ -272,7 +273,9 @@
         guide-width (/ guide-width zoom)
         guide-pill-corner-radius (/ guide-pill-corner-radius zoom)]
 
-    (when (or (nil? frame) (is-guide-inside-frame? (assoc guide :position pos) frame))
+    (when (or (nil? frame)
+              (is-guide-inside-frame? (assoc guide :position pos) frame)
+              (:hover @state true))
       [:g.guide-area {:data-guide-frame-id (when (some? frame) (str (:id frame)))}
        (when-not disabled-guides?
          (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
@@ -282,7 +285,7 @@
                    :height height
                    :style {:fill "none"
                            :pointer-events "fill"
-                           :cursor (if (= axis :x) "ew-resize" "ns-resize")}
+                           :cursor (if (= axis :x) (cur/resize-ew 0) (cur/resize-ns 0))}
                    :on-pointer-enter on-pointer-enter
                    :on-pointer-leave on-pointer-leave
                    :on-pointer-down on-pointer-down
@@ -396,7 +399,7 @@
                  :on-mouse-move on-mouse-move
                  :style {:fill "none"
                          :pointer-events "fill"
-                         :cursor (if (= axis :x) "ew-resize" "ns-resize")}}]))
+                         :cursor (if (= axis :x) (cur/resize-ew 0) (cur/resize-ns 0))}}]))
 
      (when (:new-position @state)
        [:& guide {:guide {:axis axis
