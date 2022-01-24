@@ -89,9 +89,9 @@
         data       (some-> params :file :tempfile fs/slurp-bytes blob/decode)]
 
     (if (and data project-id)
-      (do
+      (let [fname (str "imported-file-" (dt/now))]
         (m.files/create-file pool {:id (uuid/next)
-                                   :name "imported-file"
+                                   :name fname
                                    :project-id project-id
                                    :profile-id profile-id
                                    :data data})
