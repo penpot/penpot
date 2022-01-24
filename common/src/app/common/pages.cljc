@@ -12,9 +12,7 @@
    [app.common.pages.common :as common]
    [app.common.pages.helpers :as helpers]
    [app.common.pages.indices :as indices]
-   [app.common.pages.init :as init]
-   [app.common.pages.spec :as spec]
-   [clojure.spec.alpha :as s]))
+   [app.common.pages.init :as init]))
 
 ;; Common
 (d/export common/root)
@@ -88,15 +86,3 @@
 (d/export init/make-minimal-shape)
 (d/export init/make-minimal-group)
 (d/export init/empty-file-data)
-
-;; Specs
-
-(s/def ::changes ::spec/changes)
-(s/def ::color ::spec/color)
-(s/def ::data ::spec/data)
-(s/def ::media-object ::spec/media-object)
-(s/def ::page ::spec/page)
-(s/def ::recent-color ::spec/recent-color)
-(s/def ::shape-attrs ::spec/shape-attrs)
-(s/def ::typography ::spec/typography)
-

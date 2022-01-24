@@ -17,8 +17,8 @@
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
-   [app.common.pages.spec :as spec]
    [app.common.spec :as us]
+   [app.common.spec.shape :as spec.shape]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
@@ -59,7 +59,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
-(s/def ::shape-attrs ::cp/shape-attrs)
+(s/def ::shape-attrs ::spec.shape/shape)
 (s/def ::set-of-string
   (s/every string? :kind set?))
 
@@ -925,13 +925,13 @@
                   :id id
                   :operations [{:type :set
                                 :attr :constraints-h
-                                :val (spec/default-constraints-h
-                                       (assoc obj :parent-id parent-id :frame-id frame-id))
+                                :val (gsh/default-constraints-h
+                                      (assoc obj :parent-id parent-id :frame-id frame-id))
                                 :ignore-touched true}
                                {:type :set
                                 :attr :constraints-v
-                                :val (spec/default-constraints-v
-                                       (assoc obj :parent-id parent-id :frame-id frame-id))
+                                :val (gsh/default-constraints-v
+                                      (assoc obj :parent-id parent-id :frame-id frame-id))
                                 :ignore-touched true}]}))
              shapes-to-unconstraint)
 

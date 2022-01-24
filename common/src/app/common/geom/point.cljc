@@ -11,7 +11,9 @@
       :clj  [clojure.pprint :as pp])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
-   [app.common.math :as mth]))
+   [app.common.math :as mth]
+   [app.common.spec :as us]
+   [clojure.spec.alpha :as s]))
 
 ;; --- Point Impl
 
@@ -24,6 +26,13 @@
   [v]
   (or (instance? Point v)
       (and (map? v) (contains? v :x) (contains? v :y))))
+
+(s/def ::x ::us/safe-number)
+(s/def ::y ::us/safe-number)
+
+(s/def ::point
+  (s/and (s/keys :req-un [::x ::y]) point?))
+
 
 (defn ^boolean point-like?
   [{:keys [x y] :as v}]

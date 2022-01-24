@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.types.interactions
+(ns app.common.spec.interactions
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
@@ -100,7 +100,7 @@
                             :bottom-left
                             :bottom-right
                             :bottom-center})
-(s/def ::overlay-position ::us/point)
+(s/def ::overlay-position ::gpt/point)
 (s/def ::url ::us/string)
 (s/def ::close-click-outside ::us/boolean)
 (s/def ::background-overlay ::us/boolean)

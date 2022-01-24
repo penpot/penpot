@@ -185,3 +185,7 @@
 ;; Bool
 (d/export gsb/update-bool-selrect)
 (d/export gsb/calc-bool-content)
+
+;; Constraints
+(d/export gct/default-constraints-h)
+(d/export gct/default-constraints-v)

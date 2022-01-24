@@ -8,7 +8,7 @@
   "A workspace specific context menu (mouse right click)."
   (:require
    [app.common.data :as d]
-   [app.common.types.page-options :as cto]
+   [app.common.spec.page :as csp]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
@@ -307,7 +307,7 @@
         is-frame?       (and single? has-frame?)]
 
     (when (and prototype? is-frame?)
-      (let [flow (cto/get-frame-flow flows (-> shapes first :id))]
+      (let [flow (csp/get-frame-flow flows (-> shapes first :id))]
         (if (some? flow)
           [:& menu-entry {:title (tr "workspace.shape.menu.delete-flow-start")
                           :on-click (do-remove-flow flow)}]

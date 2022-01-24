@@ -12,8 +12,9 @@
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.common.types.interactions :as cti]
-   [app.common.types.page-options :as cto]
+   [app.common.spec.interactions :as csi]
+   [app.common.spec.page :as csp]
+   [app.common.spec.shape :as spec.shape]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -27,7 +28,7 @@
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
 
-(s/def ::shape-attrs ::cp/shape-attrs)
+(s/def ::shape-attrs ::spec.shape/shape)
 (s/def ::set-of-string (s/every string? :kind set?))
 (s/def ::ordered-set-of-uuid (s/every uuid? :kind d/ordered-set?))
 
@@ -409,7 +410,7 @@
             interacting-shapes
             (filter (fn [shape]
                       (let [interactions (:interactions shape)]
-                        (some #(and (cti/has-destination %)
+                        (some #(and (csi/has-destination %)
                                     (contains? ids (:destination %)))
                               interactions)))
                     (vals objects))
@@ -482,7 +483,7 @@
                           :operations [{:type :set
                                         :attr :interactions
                                         :val (vec (remove (fn [interaction]
-                                                            (and (cti/has-destination interaction)
+                                                            (and (csi/has-destination interaction)
                                                                  (contains? ids (:destination interaction))))
                                                           (:interactions obj)))}]})))
             mk-mod-int-add-xf
@@ -501,7 +502,7 @@
                          {:type :set-option
                           :page-id page-id
                           :option :flows
-                          :value (cto/remove-flow flows (:id flow))})))
+                          :value (csp/remove-flow flows (:id flow))})))
 
             mk-mod-add-flow-xf
             (comp (filter some?)

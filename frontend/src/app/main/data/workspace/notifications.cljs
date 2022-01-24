@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.common.spec.change :as spec.change]
    [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -201,7 +201,7 @@
 (s/def ::file-id uuid?)
 (s/def ::session-id uuid?)
 (s/def ::revn integer?)
-(s/def ::changes ::cp/changes)
+(s/def ::changes ::spec.change/changes)
 
 (s/def ::file-change-event
   (s/keys :req-un [::type ::profile-id ::file-id ::session-id ::revn ::changes]))
