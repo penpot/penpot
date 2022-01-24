@@ -97,7 +97,6 @@
                    ;; TODO: Change when pixel-grid flag exists
                    new-position (mth/round new-position)
                    new-frame-id (:id (get-hover-frame))]
-               #_(prn ">>" new-position new-frame-id)
                (swap! state assoc
                       :new-position new-position
                       :new-frame-id new-frame-id)))))]
@@ -276,7 +275,7 @@
     (when (or (nil? frame)
               (is-guide-inside-frame? (assoc guide :position pos) frame)
               (:hover @state true))
-      [:g.guide-area {:data-guide-frame-id (when (some? frame) (str (:id frame)))}
+      [:g.guide-area
        (when-not disabled-guides?
          (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
            [:rect {:x x

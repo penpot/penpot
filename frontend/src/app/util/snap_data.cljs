@@ -21,7 +21,7 @@
 
 ;; PRIVATE FUNCTIONS
 
-(defn make-insert-tree-data
+(defn- make-insert-tree-data
   [shape-data axis]
   (fn [tree]
     (let [tree (or tree (rt/make-tree))]
@@ -30,7 +30,7 @@
                   (rt/insert tree (get-in data [:pt axis]) data))
                 $ shape-data)))))
 
-(defn make-delete-tree-data
+(defn- make-delete-tree-data
   [shape-data axis]
   (fn [tree]
     (let [tree (or tree (rt/make-tree))]
@@ -39,7 +39,7 @@
                   (rt/remove tree (get-in data [:pt axis]) data))
                 $ shape-data)))))
 
-(defn add-root-frame
+(defn- add-root-frame
   [page-data]
   (let [frame-id uuid/zero]
 
@@ -47,7 +47,7 @@
         (assoc-in [frame-id :x] (rt/make-tree))
         (assoc-in [frame-id :y] (rt/make-tree)))))
 
-(defn add-frame
+(defn- add-frame
   [page-data frame]
   (let [frame-id (:id frame)
         parent-id (:parent-id frame)
@@ -79,7 +79,7 @@
         (update-in [frame-id :x] (make-insert-tree-data (d/concat-vec frame-data grid-x-data) :x))
         (update-in [frame-id :y] (make-insert-tree-data (d/concat-vec frame-data grid-y-data) :y)))))
 
-(defn add-shape
+(defn- add-shape
   [page-data shape]
   (let [frame-id    (:frame-id shape)
         snap-points (snap/shape-snap-points shape)
@@ -94,7 +94,7 @@
         (update-in [frame-id :y] (make-insert-tree-data shape-data :y)))))
 
 
-(defn add-guide
+(defn- add-guide
   [page-data guide]
 
   (let [guide-data (->> (snap/guide-snap-points guide)
@@ -113,7 +113,7 @@
           (assoc-in [:guides :objects-data (:id guide)] guide-data)
           (update-in [:guides (:axis guide)] (make-insert-tree-data guide-data (:axis guide)))))))
 
-(defn remove-frame
+(defn- remove-frame
   [page-data frame]
   (let [frame-id (:id frame)
         root-data (get-in page-data [uuid/zero :objects-data frame-id])]
@@ -123,7 +123,7 @@
         (update-in [uuid/zero :y] (make-delete-tree-data root-data :y))
         (dissoc frame-id))))
 
-(defn remove-shape
+(defn- remove-shape
   [page-data shape]
 
   (let [frame-id (:frame-id shape)
@@ -133,7 +133,7 @@
         (update-in [frame-id :x] (make-delete-tree-data shape-data :x))
         (update-in [frame-id :y] (make-delete-tree-data shape-data :y)))))
 
-(defn remove-guide
+(defn- remove-guide
   [page-data guide]
   (if-let [frame-id (:frame-id guide)]
     (let [guide-data (get-in page-data [frame-id :objects-data (:id guide)])]
@@ -147,7 +147,7 @@
           (d/dissoc-in [:guides :objects-data (:id guide)])
           (update-in [:guides (:axis guide)] (make-delete-tree-data guide-data (:axis guide)))))))
 
-(defn update-frame
+(defn- update-frame
   [page-data [_ new-frame]]
   (let [frame-id (:id new-frame)
         root-data (get-in page-data [uuid/zero :objects-data frame-id])
@@ -159,19 +159,20 @@
         (update-in [frame-id :y]  (make-delete-tree-data frame-data :y))
         (add-frame new-frame))))
 
-(defn update-shape
+(defn- update-shape
   [page-data [old-shape new-shape]]
   (-> page-data
       (remove-shape old-shape)
       (add-shape new-shape)))
 
-(defn update-guide
+(defn- update-guide
   [page-data [old-guide new-guide]]
   (-> page-data
       (remove-guide old-guide)
       (add-guide new-guide)))
 
 ;; PUBLIC API
+
 (defn make-snap-data
   "Creates an empty snap index"
   []
@@ -231,6 +232,7 @@
     (add-page snap-data page)))
 
 (defn query
+  "Retrieve the shape data for the snaps in that range"
   [snap-data page-id frame-id axis [from to]]
 
   (d/concat-vec

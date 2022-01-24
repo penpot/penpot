@@ -157,7 +157,6 @@
         show-artboard-names?     (contains? layout :display-artboard-names)
         show-rules?              (contains? layout :rules)
 
-        ;; TODO
         disabled-guides?         (or drawing-tool transform)]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)

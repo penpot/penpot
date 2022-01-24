@@ -70,12 +70,12 @@
            :origin it}))))))
 
 (defn move-frame-guides
+  "Move guides that are inside a frame when that frame is moved"
   [ids]
   (us/verify (s/coll-of uuid?) ids)
 
   (ptk/reify ::move-frame-guides
     ptk/WatchEvent
-
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
             frame-ids? (->> ids (filter #(= :frame (get-in objects [% :type]))) (into #{}))
