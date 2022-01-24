@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.outline
   (:require
+   [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.main.refs :as refs]
@@ -27,7 +28,9 @@
         path-data
         (mf/use-memo
          (mf/deps shape)
-         #(when path? (upf/format-path (:content shape))))
+         #(when path?
+            (or (ex/ignoring (upf/format-path (:content shape)))
+                "")))
 
         {:keys [x y width height selrect]} shape
 

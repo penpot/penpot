@@ -413,6 +413,43 @@
 ;; Workspace State Manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; --- Toggle layout flag
+
+(defn toggle-layout-flags
+  [& flags]
+  (ptk/reify ::toggle-layout-flags
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-layout
+              (fn [stored]
+                (reduce (fn [flags flag]
+                          (if (contains? flags flag)
+                            (disj flags flag)
+                            (conj flags flag)))
+                        stored
+                        (d/concat-set flags)))))))
+
+;; --- Set element options mode
+
+(defn set-options-mode
+  [mode]
+  (us/assert ::options-mode mode)
+  (ptk/reify ::set-options-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :options-mode] mode))))
+
+;; --- Tooltip
+
+(defn assign-cursor-tooltip
+  [content]
+  (ptk/reify ::assign-cursor-tooltip
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (string? content)
+        (assoc-in state [:workspace-local :tooltip] content)
+        (assoc-in state [:workspace-local :tooltip] nil)))))
+
 ;; --- Viewport Sizing
 
 (declare increase-zoom)
@@ -551,44 +588,6 @@
     (update [_ state]
       (-> state
           (update :workspace-local dissoc :zooming)))))
-
-
-;; --- Toggle layout flag
-
-(defn toggle-layout-flags
-  [& flags]
-  (ptk/reify ::toggle-layout-flags
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-layout
-              (fn [stored]
-                (reduce (fn [flags flag]
-                          (if (contains? flags flag)
-                            (disj flags flag)
-                            (conj flags flag)))
-                        stored
-                        (d/concat-set flags)))))))
-
-;; --- Set element options mode
-
-(defn set-options-mode
-  [mode]
-  (us/assert ::options-mode mode)
-  (ptk/reify ::set-options-mode
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :options-mode] mode))))
-
-;; --- Tooltip
-
-(defn assign-cursor-tooltip
-  [content]
-  (ptk/reify ::assign-cursor-tooltip
-    ptk/UpdateEvent
-    (update [_ state]
-      (if (string? content)
-        (assoc-in state [:workspace-local :tooltip] content)
-        (assoc-in state [:workspace-local :tooltip] nil)))))
 
 ;; --- Zoom Management
 
