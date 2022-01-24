@@ -2,9 +2,10 @@
   "A  main namespace for server repl."
   #_:clj-kondo/ignore
   (:require
+   [app.common.data :as d]
    [app.common.pages :as cp]
-   [app.common.uuid :as uuid]
    [app.common.pages.migrations :as pmg]
+   [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
    [app.db.sql :as sql]
@@ -12,12 +13,12 @@
    [app.rpc.queries.profile :as prof]
    [app.srepl.dev :as dev]
    [app.util.blob :as blob]
-   [cuerdas.core :as str]
-   [clojure.pprint :refer [pprint]]))
+   [clojure.pprint :refer [pprint]]
+   [cuerdas.core :as str]))
 
 (defn update-file
-  ([id f] (update-file id f false))
-  ([id f save?]
+  ([system id f] (update-file system id f false))
+  ([system id f save?]
    (db/with-atomic [conn (:app.db/pool system)]
      (let [file (db/get-by-id conn :file id {:for-update true})
            file (-> file

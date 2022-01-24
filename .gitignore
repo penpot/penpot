@@ -1,5 +1,6 @@
 figwheel_server.log
-*jar
+*.penpot
+*.jar
 *-init.clj
 .lein-deps-sum
 .lein-failures
@@ -9,9 +10,10 @@ figwheel_server.log
 .nrepl-port
 .cpcache
 .rebel_readline_history
+node_modules
+/clj-profiler/
 /vendor/**/target
 /cd.md
-node_modules
 /backend/target/
 /backend/resources/public/media
 /backend/resources/public/assets
