@@ -11,7 +11,6 @@
    [app.common.spec :as us]
    [app.common.types.interactions :as cti]
    [app.common.uuid :as uuid]
-   [app.main.constants :as c]
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
    [app.main.repo :as rp]
@@ -190,21 +189,15 @@
   (ptk/reify ::increase-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (let [increase (fn [zoom]
-                       (d/seek #(> % zoom)
-                               c/zoom-levels
-                               zoom))]
-        (update-in state [:viewer-local :zoom] increase)))))
+      (let [increase #(min (* % 1.3) 200)]
+        (update-in state [:viewer-local :zoom] (fnil increase 1))))))
 
 (def decrease-zoom
   (ptk/reify ::decrease-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (let [decrease (fn [zoom]
-                       (d/seek #(< % zoom)
-                               (reverse c/zoom-levels)
-                               zoom))]
-        (update-in state [:viewer-local :zoom] decrease)))))
+      (let [decrease #(max (/ % 1.3) 0.01)]
+        (update-in state [:viewer-local :zoom] (fnil decrease 1))))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom
