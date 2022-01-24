@@ -102,7 +102,6 @@
                                 :type :guide
                                 :id (:id guide)
                                 :pt %)))]
-
     (if-let [frame-id (:frame-id guide)]
       ;; Guide inside frame, we add the information only on that frame
       (-> page-data
@@ -111,7 +110,7 @@
 
       ;; Guide outside the frame. We add the information in the global guides data
       (-> page-data
-          (assoc-in [:guides :objects-data (:id guide)] [guide-data])
+          (assoc-in [:guides :objects-data (:id guide)] guide-data)
           (update-in [:guides (:axis guide)] (make-insert-tree-data guide-data (:axis guide)))))))
 
 (defn remove-frame

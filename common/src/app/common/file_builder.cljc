@@ -568,22 +568,6 @@
         (dissoc :current-component-id)
         (update :parent-stack pop))))
 
-(defn add-guide
-  [file guide]
-
-  (let [guide (cond-> guide
-                (nil? (:id guide))
-                (assoc :id (uuid/next)))
-        page-id (:current-page-id file)
-        old-guides (or (get-in file [:data :pages-index page-id :options :guides]) {})
-        new-guides (assoc old-guides (:id guide) guide)]
-    (commit-change
-     file
-     {:type :set-option
-      :page-id page-id
-      :option :guides
-      :value new-guides})))
-
 (defn delete-object
   [file id]
   (let [page-id (:current-page-id file)]
@@ -593,7 +577,69 @@
       :page-id page-id
       :id id})))
 
+(defn update-object
+  [file old-obj new-obj]
+  (let [page-id (:current-page-id file)
+        new-obj (setup-selrect new-obj)
+        attrs (d/concat-set (keys old-obj) (keys new-obj))
+        generate-operation
+        (fn [changes attr]
+          (let [old-val (get old-obj attr)
+                new-val (get new-obj attr)]
+            (if (= old-val new-val)
+              changes
+              (conj changes {:type :set :attr attr :val new-val}))))]
+    (-> file
+        (commit-change
+         {:type :mod-obj
+          :operations (reduce generate-operation [] attrs)
+          :page-id page-id
+          :id (:id old-obj)}))))
+
 (defn get-current-page
   [file]
   (let [page-id (:current-page-id file)]
     (-> file (get-in [:data :pages-index page-id]))))
+
+(defn add-guide
+  [file guide]
+
+  (let [guide (cond-> guide
+                (nil? (:id guide))
+                (assoc :id (uuid/next)))
+        page-id (:current-page-id file)
+        old-guides (or (get-in file [:data :pages-index page-id :options :guides]) {})
+        new-guides (assoc old-guides (:id guide) guide)]
+    (-> file
+        (commit-change
+         {:type :set-option
+          :page-id page-id
+          :option :guides
+          :value new-guides})
+        (assoc :last-id (:id guide)))))
+
+(defn delete-guide
+  [file id]
+
+  (let [page-id (:current-page-id file)
+        old-guides (or (get-in file [:data :pages-index page-id :options :guides]) {})
+        new-guides (dissoc old-guides id)]
+    (-> file
+        (commit-change
+         {:type :set-option
+          :page-id page-id
+          :option :guides
+          :value new-guides}))))
+
+(defn update-guide
+  [file guide]
+
+  (let [page-id (:current-page-id file)
+        old-guides (or (get-in file [:data :pages-index page-id :options :guides]) {})
+        new-guides (assoc old-guides (:id guide) guide)]
+    (-> file
+        (commit-change
+         {:type :set-option
+          :page-id page-id
+          :option :guides
+          :value new-guides}))))
