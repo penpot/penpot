@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.spec :as us]
    [app.common.types.page-options :as tpo]
    [app.main.data.workspace.changes :as dwc]
@@ -27,47 +28,30 @@
   (ptk/reify ::update-guides
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id (:current-page-id state)
-            guides (-> state wsh/lookup-page-options (:guides {}))
-
+      (let [page       (wsh/lookup-page state)
+            guides     (get-in page [:options :guides] {})
             new-guides (assoc guides (:id guide) guide)
-            
-            rch [{:type :set-option
-                  :page-id page-id
-                  :option :guides
-                  :value new-guides}]
-            uch [{:type :set-option
-                  :page-id page-id
-                  :option :guides
-                  :value guides}]]
-        (rx/of
-         (dwc/commit-changes
-          {:redo-changes rch
-           :undo-changes uch
-           :origin it}))))))
+
+            changes
+            (-> (pcb/empty-changes it)
+                (pcb/with-page page)
+                (pcb/set-page-option :guides new-guides))]
+        (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guide [guide]
   (us/verify ::tpo/guide guide)
   (ptk/reify ::remove-guide
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id (:current-page-id state)
-            guides (-> state wsh/lookup-page-options (:guides {}))
+      (let [page       (wsh/lookup-page state)
+            guides     (get-in page [:options :guides] {})
             new-guides (dissoc guides (:id guide))
-            
-            rch [{:type :set-option
-                  :page-id page-id
-                  :option :guides
-                  :value new-guides}]
-            uch [{:type :set-option
-                  :page-id page-id
-                  :option :guides
-                  :value guides}]]
-        (rx/of
-         (dwc/commit-changes
-          {:redo-changes rch
-           :undo-changes uch
-           :origin it}))))))
+
+            changes
+            (-> (pcb/empty-changes it)
+                (pcb/with-page page)
+                (pcb/set-page-option :guides new-guides))]
+        (rx/of (dwc/commit-changes changes))))))
 
 (defn move-frame-guides
   "Move guides that are inside a frame when that frame is moved"
@@ -78,7 +62,10 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
-            frame-ids? (->> ids (filter #(= :frame (get-in objects [% :type]))) (into #{}))
+
+            is-frame? (fn [id] (= :frame (get-in objects [id :type])))
+            frame-ids? (into #{} (filter is-frame?) ids)
+
             object-modifiers  (get state :workspace-modifiers)
 
             build-move-event

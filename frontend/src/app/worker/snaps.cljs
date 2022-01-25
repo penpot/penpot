@@ -28,9 +28,10 @@
 
 (defmethod impl/handler :snaps/range-query
   [{:keys [page-id frame-id axis ranges] :as message}]
-  (->> ranges
-       (mapcat #(sd/query @state page-id frame-id axis %))
-       (set) ;; unique
-       (into [])))
+
+  (into []
+        (comp (mapcat #(sd/query @state page-id frame-id axis %))
+              (distinct))
+        ranges))
 
 

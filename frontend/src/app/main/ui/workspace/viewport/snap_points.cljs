@@ -152,10 +152,7 @@
   {::mf/wrap [mf/memo]}
   [{:keys [layout zoom objects selected page-id drawing transform modifiers] :as props}]
 
-  (let [shapes
-        (->> selected
-             (map #(get objects %))
-             (filterv (comp not nil?)))
+  (let [shapes (into [] (keep (d/getf objects)) selected)
 
         filter-shapes
         (into #{}

@@ -22,22 +22,28 @@
 ;; PRIVATE FUNCTIONS
 
 (defn- make-insert-tree-data
+  "Inserts all data in it's corresponding axis bucket"
   [shape-data axis]
   (fn [tree]
-    (let [tree (or tree (rt/make-tree))]
-      (as-> tree $
-        (reduce (fn [tree data]
-                  (rt/insert tree (get-in data [:pt axis]) data))
-                $ shape-data)))))
+    (let [tree (or tree (rt/make-tree))
+
+          insert-data
+          (fn [tree data]
+            (rt/insert tree (get-in data [:pt axis]) data))]
+
+      (reduce insert-data tree shape-data))))
 
 (defn- make-delete-tree-data
+  "Removes all data in it's corresponding axis bucket"
   [shape-data axis]
   (fn [tree]
-    (let [tree (or tree (rt/make-tree))]
-      (as-> tree $
-        (reduce (fn [tree data]
-                  (rt/remove tree (get-in data [:pt axis]) data))
-                $ shape-data)))))
+    (let [tree (or tree (rt/make-tree))
+
+          remove-data
+          (fn [tree data]
+            (rt/remove tree (get-in data [:pt axis]) data))]
+
+      (reduce remove-data tree shape-data))))
 
 (defn- add-root-frame
   [page-data]
@@ -52,19 +58,19 @@
   (let [frame-id (:id frame)
         parent-id (:parent-id frame)
         frame-data (->> (snap/shape-snap-points frame)
-                        (map #(hash-map :type :shape
-                                        :id frame-id
-                                        :pt %)))
+                        (mapv #(array-map :type :shape
+                                          :id frame-id
+                                          :pt %)))
 
         grid-x-data (->> (gg/grid-snap-points frame :x)
-                         (map #(hash-map :type :grid-x
-                                         :id frame-id
-                                         :pt %)))
+                         (mapv #(array-map :type :grid-x
+                                           :id frame-id
+                                           :pt %)))
 
         grid-y-data (->> (gg/grid-snap-points frame :y)
-                         (map #(hash-map :type :grid-y
-                                         :id frame-id
-                                         :pt %)))]
+                         (mapv #(array-map :type :grid-y
+                                          :id frame-id
+                                          :pt %)))]
 
     (-> page-data
         ;; Update root frame information
@@ -84,7 +90,7 @@
   (let [frame-id    (:frame-id shape)
         snap-points (snap/shape-snap-points shape)
         shape-data  (->> snap-points
-                         (mapv #(hash-map
+                         (mapv #(array-map
                                  :type :shape
                                  :id (:id shape)
                                  :pt %)))]
@@ -98,7 +104,7 @@
   [page-data guide]
 
   (let [guide-data (->> (snap/guide-snap-points guide)
-                        (mapv #(hash-map
+                        (mapv #(array-map
                                 :type :guide
                                 :id (:id guide)
                                 :pt %)))]
