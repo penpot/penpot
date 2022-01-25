@@ -71,7 +71,8 @@
 
      [:div.links
       [:div.link-item
-       [:a {:on-click #(modal/show! :delete-account {})}
+       [:a {:on-click #(modal/show! :delete-account {})
+            :data-test "remove-acount-btn"}
         (t locale "dashboard.remove-account")]]]]))
 
 ;; --- Profile Photo Form
@@ -94,7 +95,8 @@
       [:& file-uploader {:accept "image/jpeg,image/png"
                          :multi false
                          :ref file-input
-                         :on-selected on-file-selected}]]]))
+                         :on-selected on-file-selected
+                         :data-test "profile-image-input"}]]]))
 
 ;; --- Profile Page
 

@@ -10,13 +10,12 @@
 
 describe("demo account", () => {
   beforeEach(() => {
-    cy.visit("http://localhost:3449/#/auth/login");    
+    cy.visit("http://localhost:3449/#/auth/login");
   });
 
-  it.only("create demo account", () => {
-    cy.get("a").contains("Create demo account").click()    
-    cy.get(".profile").contains("Demo User")
+  it("create demo account", () => {
+    cy.getBySel("demo-account-link").should("exist");
+    cy.getBySel("demo-account-link").click();
+    cy.get(".profile").contains("Demo User");
   });
-
 });
-

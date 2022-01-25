@@ -98,7 +98,8 @@
                     :name :email
                     :tab-index "2"
                     :help-icon i/at
-                    :label (tr "auth.email")}]]
+                    :label (tr "auth.email")
+                    :data-test "email-input"}]]
      [:div.fields-row
       [:& fm/input {:name :password
                     :tab-index "3"
@@ -108,12 +109,13 @@
 
      [:& fm/submit-button
       {:label (tr "auth.register-submit")
-       :disabled @submitted?}]]))
+       :disabled @submitted?
+       :data-test "register-form-submit"}]]))
 
 (mf/defc register-page
   [{:keys [params] :as props}]
   [:div.form-container
-   [:h1 (tr "auth.register-title")]
+   [:h1 {:data-test "registration-title"} (tr "auth.register-title")]
    [:div.subtitle (tr "auth.register-subtitle")]
 
    (when (contains? @cf/flags :demo-warning)
@@ -132,7 +134,8 @@
     [:div.link-entry
      [:span (tr "auth.already-have-account") " "]
      [:a {:on-click #(st/emit! (rt/nav :auth-login {} params))
-          :tab-index "4"}
+          :tab-index "4"
+          :data-test "login-here-link"}
       (tr "auth.login-here")]]
 
     (when (contains? @cf/flags :demo-users)

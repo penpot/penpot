@@ -91,7 +91,8 @@
        [:& msgs/inline-banner
         {:type :warning
          :content message
-         :on-close #(reset! error nil)}])
+         :on-close #(reset! error nil)
+         :data-test "login-banner"}])
 
      [:& fm/form {:on-submit on-submit :form form}
       [:div.fields-row
@@ -111,7 +112,8 @@
 
       [:div.buttons-stack
        [:& fm/submit-button
-        {:label (tr "auth.login-submit")}]
+        {:label (tr "auth.login-submit")
+         :data-test "login-submit"}]
 
        (when (contains? @cf/flags :login-with-ldap)
          [:& fm/submit-button
@@ -149,7 +151,7 @@
   [{:keys [params] :as props}]
   [:div.generic-form.login-form
    [:div.form-container
-    [:h1 (tr "auth.login-title")]
+    [:h1 {:data-test "login-title"} (tr "auth.login-title")]
     [:div.subtitle (tr "auth.login-subtitle")]
 
     [:& login-form {:params params}]
@@ -163,18 +165,21 @@
 
     [:div.links
      [:div.link-entry
-      [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))}
+      [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))
+           :data-test "forgot-password"}
        (tr "auth.forgot-password")]]
 
      (when (contains? @cf/flags :registration)
        [:div.link-entry
         [:span (tr "auth.register") " "]
-        [:a {:on-click #(st/emit! (rt/nav :auth-register {} params))}
+        [:a {:on-click #(st/emit! (rt/nav :auth-register {} params))
+             :data-test "register-submit"}
          (tr "auth.register-submit")]])]
 
     (when (contains? @cf/flags :demo-users)
       [:div.links.demo
        [:div.link-entry
         [:span (tr "auth.create-demo-profile") " "]
-        [:a {:on-click (st/emitf (du/create-demo-profile))}
+        [:a {:on-click (st/emitf (du/create-demo-profile))
+             :data-test "demo-account-link"}
          (tr "auth.create-demo-account")]]])]])

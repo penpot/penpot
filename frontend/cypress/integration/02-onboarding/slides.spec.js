@@ -6,75 +6,50 @@
  * Copyright (c) UXBOX Labs SL
  */
 
- "use strict";
+"use strict";
+import {
+  checkOnboardingSlide,
+  goToSlideByNumber,
+} from "../../support/utils.js";
 
- describe("onboarding slides", () => {
-   beforeEach(() => {
+describe("onboarding slides", () => {
+  beforeEach(() => {
     cy.demoLogin();
-     
-   });
- 
-   it("go trough all the onboarding slides", () => {
-     cy.get(".modal-right").should("contain", "Welcome to Penpot");
-     cy.get(".modal-right button").should("contain", "Continue");
-     cy.get(".modal-right button").click();
-
-     cy.get(".onboarding").should("contain", "Open Source Contributor?")
-     cy.get(".onboarding .skip").should("not.exist");
-     cy.get(".onboarding button").should("contain", "Continue");
-     cy.get(".onboarding button").click();
-
-     cy.get(".onboarding").should("contain", "Design libraries, styles and components")
-     cy.get(".onboarding .skip").should("exist");
-     cy.get(".onboarding .step-dots").should("exist");
-     cy.get(".onboarding button").should("contain", "Continue");
-     cy.get(".onboarding button").click();
-
-     cy.get(".onboarding").should("contain", "Bring your designs to life with interactions")
-     cy.get(".onboarding .skip").should("exist");
-     cy.get(".onboarding .step-dots").should("exist");
-     cy.get(".onboarding button").should("contain", "Continue");
-     cy.get(".onboarding button").click();
-
-     
-     cy.get(".onboarding").should("contain", "Get feedback, present and share your work")
-     cy.get(".onboarding .skip").should("exist");
-     cy.get(".onboarding .step-dots").should("exist");
-     cy.get(".onboarding button").should("contain", "Continue");
-     cy.get(".onboarding button").click();
-     
-     cy.get(".onboarding").should("contain", "One shared source of truth")
-     cy.get(".onboarding .skip").should("not.exist");
-     cy.get(".onboarding .step-dots").should("exist");
-     cy.get(".onboarding button").should("contain", "Start");
-     cy.get(".onboarding button").click();
-
-     cy.get(".onboarding").should("contain", "Welcome to Penpot")
-   });
-
-   it("go to specific onboarding slides", () => {    
-    cy.get(".modal-right button").click();    
-    cy.get(".onboarding button").click();
-
-    cy.get(".step-dots li:nth-child(4)").click();
-    cy.get(".onboarding").should("contain", "One shared source of truth")
-    cy.get(".step-dots li:nth-child(3)").click();
-    cy.get(".onboarding").should("contain", "Get feedback, present and share your work")
-    cy.get(".step-dots li:nth-child(2)").click();
-    cy.get(".onboarding").should("contain", "Bring your designs to life with interactions")
-    cy.get(".step-dots li:nth-child(1)").click();
-    cy.get(".onboarding").should("contain", "Design libraries, styles and components")
-    
   });
 
-  it("skip onboarding slides", () => {    
-    cy.get(".modal-right button").click();    
-    cy.get(".onboarding button").click();
-    cy.get(".onboarding .skip").click();
+  it("go trough all the onboarding slides", () => {
+    cy.getBySel("onboarding-welcome").should("exist");
+    cy.getBySel("onboarding-next-btn").should("exist");
+    cy.getBySel("onboarding-next-btn").click();
 
-    cy.get(".onboarding").should("contain", "Welcome to Penpot")
+    cy.getBySel("opsource-next-btn").should("exist");
+    cy.getBySel("skip-btn").should("not.exist");
+    cy.getBySel("opsource-next-btn").click();
+
+    var genArr = Array.from(Array(3).keys());
+    cy.wrap(genArr).each((index) => {
+      checkOnboardingSlide(index, true);
+    });
+    checkOnboardingSlide("3", false);
+
+    cy.getBySel("onboarding-welcome-title").should("exist");
   });
 
- });
- 
- 
+  it("go to specific onboarding slides", () => {
+    cy.getBySel("onboarding-next-btn").click();
+    cy.getBySel(`opsource-next-btn`).click();
+
+    var genArr = Array.from(Array(4).keys());
+    cy.wrap(genArr).each((index) => {
+      goToSlideByNumber(4 - index);
+    });
+  });
+
+  it("skip onboarding slides", () => {
+    cy.getBySel("onboarding-next-btn").click();
+    cy.getBySel("opsource-next-btn").click();
+    cy.getBySel("skip-btn").click();
+    cy.getBySel("fly-solo-op").click();
+    cy.getBySel("onboarding-welcome-title").should("exist");
+  });
+});

@@ -89,7 +89,8 @@
         :label (t locale "labels.confirm-password")}]]
 
      [:& fm/submit-button
-      {:label (t locale "dashboard.update-settings")}]]))
+      {:label (t locale "dashboard.update-settings")
+       :data-test "submit-password"}]]))
 
 ;; --- Password Page
 
