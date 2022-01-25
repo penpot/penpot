@@ -332,7 +332,7 @@
         file      (-> file (fb/add-page page-data))]
     (->> (rx/from nodes)
          (rx/filter cip/shape?)
-         (rx/merge-map (partial resolve-media context file-id))
+         (rx/mapcat (partial resolve-media context file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map (comp fb/close-page setup-interactions)))))
 
@@ -354,7 +354,7 @@
          (rx/filter cip/shape?)
          (rx/skip 1)
          (rx/skip-last 1)
-         (rx/merge-map (partial resolve-media context file-id))
+         (rx/mapcat (partial resolve-media context file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map fb/finish-component))))
 
@@ -374,7 +374,6 @@
           (fn [[page-id page-name]]
             (->> (get-file context :page page-id)
                  (rx/map (fn [page-data] [page-id page-name page-data])))))
-
          (rx/concat-reduce (partial import-page context) file))))
 
 (defn process-library-colors
@@ -413,7 +412,7 @@
     (let [resolve (:resolve context)]
       (->> (get-file context :media-list)
            (rx/flat-map (comp d/kebab-keys cip/string->uuid))
-           (rx/merge-map
+           (rx/mapcat
             (fn [[id media]]
               (let [media (assoc media :id (resolve id))]
                 (->> (get-file context :media id media)
