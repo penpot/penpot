@@ -318,6 +318,11 @@
     (->> (rx/of node)
          (rx/observe-on :async))))
 
+(defn media-node? [node]
+  (and (cip/shape? node)
+       (cip/has-image? node)
+       (not (cip/close? node))))
+
 (defn import-page
   [context file [page-id page-name content]]
   (let [nodes (->> content cip/node-seq)
@@ -329,12 +334,28 @@
         flows     (->> (get-in page-data [:options :flows])
                        (mapv #(update % :starting-frame resolve)))
         page-data (d/assoc-in-when page-data [:options :flows] flows)
-        file      (-> file (fb/add-page page-data))]
-    (->> (rx/from nodes)
-         (rx/filter cip/shape?)
-         (rx/mapcat (partial resolve-media context file-id))
-         (rx/reduce (partial process-import-node context) file)
-         (rx/map (comp fb/close-page setup-interactions)))))
+        file      (-> file (fb/add-page page-data))
+
+        ;; Preprocess nodes to parallel upload the images. Store the result in a table
+        ;; old-node => node with image
+        ;; that will be used in the second pass immediately
+        pre-process-images
+        (->> (rx/from nodes)
+             (rx/filter media-node?)
+             (rx/merge-map
+              (fn [node]
+                (->> (resolve-media context file-id node)
+                     (rx/map (fn [result] [node result])))))
+             (rx/reduce conj {}))]
+
+    (->> pre-process-images
+         (rx/flat-map
+          (fn  [pre-proc]
+            (->> (rx/from nodes)
+                 (rx/filter cip/shape?)
+                 (rx/map (fn [node] (or (get pre-proc node) node)))
+                 (rx/reduce (partial process-import-node context) file)
+                 (rx/map (comp fb/close-page setup-interactions))))))))
 
 (defn import-component [context file node]
   (let [resolve      (:resolve context)
