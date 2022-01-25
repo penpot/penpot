@@ -58,6 +58,10 @@
                        :command (ds/c-mod "shift+'")
                        :fn #(st/emit! (dw/toggle-layout-flags :snap-grid))}
 
+   :toggle-snap-guide {:tooltip (ds/meta-shift "G")
+                       :command (ds/c-mod "shift+G")
+                       :fn #(st/emit! (dw/toggle-layout-flags :snap-guides))}
+
    :toggle-alignment  {:tooltip (ds/meta "\\")
                        :command (ds/c-mod "\\")
                        :fn #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}

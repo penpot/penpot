@@ -170,8 +170,10 @@
     nil))
 
 (defmethod impl/handler :selection/update-index
-  [{:keys [page-id old-objects new-objects] :as message}]
-  (let [update-page-index
+  [{:keys [page-id old-page new-page] :as message}]
+  (let [old-objects (:objects old-page)
+        new-objects (:objects new-page)
+        update-page-index
         (fn [index]
           (let [old-bounds (:bounds index)
                 new-bounds (objects-bounds new-objects)]

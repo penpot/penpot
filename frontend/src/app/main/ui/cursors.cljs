@@ -38,6 +38,9 @@
 (def resize-nwse (cursor-fn :resize-h 135))
 (def rotate (cursor-fn :rotate 90))
 
+;;
+(def resize-ew-2 (cursor-fn :resize-h-2 0))
+(def resize-ns-2 (cursor-fn :resize-h-2 90))
 
 (mf/defc debug-preview
   {::mf/wrap-props false}

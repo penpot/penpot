@@ -2,13 +2,19 @@
 
 ## :rocket: Next
 
+### :sparkles: New features
+
+- Guides [Taiga #290](https://tree.taiga.io/project/penpot/us/290?milestone=307334)
+- Improve file menu by adding semantically groups [Github #1203](https://github.com/penpot/penpot/issues/1203).
+- Create e2e tests for drawing basic fors [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608).
+- Create firsts e2e test [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608).
+
+## 1.11.0-beta
+
 ### :boom: Breaking changes
 
 ### :sparkles: New features
 
-- Create e2e tests for drawing basic fors [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608).
-- Improve file menu by adding semantically groups [Github #1203](https://github.com/penpot/penpot/issues/1203).
-- Create firsts e2e test [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608).
 - Add an option to hide artboards names on the viewport [Taiga #2034](https://tree.taiga.io/project/penpot/issue/2034).
 - Limit pasted object position to container boundaries [Taiga #2449](https://tree.taiga.io/project/penpot/us/2449).
 - Add new options for zoom widget in workspace and viewer mode [Taiga #896](https://tree.taiga.io/project/penpot/us/896).

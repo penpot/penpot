@@ -213,9 +213,20 @@
     (.-innerText el)))
 
 (defn query
-  [^js el ^string query]
-  (when (some? el)
-    (.querySelector el query)))
+  ([^string query]
+   (query globals/document query))
+
+  ([^js el ^string query]
+   (when (some? el)
+     (.querySelector el query))))
+
+(defn query-all
+  ([^string query]
+   (query-all globals/document query))
+
+  ([^js el ^string query]
+   (when (some? el)
+     (.querySelectorAll el query))))
 
 (defn get-client-position
   [^js event]

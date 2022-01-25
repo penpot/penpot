@@ -13,12 +13,21 @@
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
 (defn empty-changes
-  [origin page-id]
-  (let [changes {:redo-changes []
-                 :undo-changes []
-                 :origin origin}]
-    (with-meta changes
-      {::page-id page-id})))
+  ([origin page-id]
+   (let [changes (empty-changes origin)]
+     (with-meta changes
+       {::page-id page-id})))
+
+  ([origin]
+   {:redo-changes []
+    :undo-changes []
+    :origin origin}))
+
+(defn with-page [changes page]
+  (vary-meta changes assoc
+             ::page page
+             ::page-id (:id page)
+             ::objects (:objects page)))
 
 (defn with-objects [changes objects]
   (vary-meta changes assoc ::objects objects))
@@ -167,10 +176,25 @@
                                  (reduce add-undo-change-parent $ ids)
                                  (reduce add-undo-change-shape $ ids))))))
 
-
 (defn move-page
   [chdata index prev-index]
   (let [page-id (::page-id (meta chdata))]
     (-> chdata
         (update :redo-changes conj {:type :mov-page :id page-id :index index})
         (update :undo-changes conj {:type :mov-page :id page-id :index prev-index}))))
+
+(defn set-page-option
+  [chdata option-key option-val]
+  (let [page-id (::page-id (meta chdata))
+        page (::page (meta chdata))
+        old-val (get-in page [:options option-key])]
+
+    (-> chdata
+        (update :redo-changes conj {:type :set-option
+                                    :page-id page-id
+                                    :option option-key
+                                    :value option-val})
+        (update :undo-changes conj {:type :set-option
+                                    :page-id page-id
+                                    :option option-key
+                                    :value old-val}))))

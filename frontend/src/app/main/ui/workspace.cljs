@@ -20,7 +20,6 @@
    [app.main.ui.workspace.header :refer [header]]
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [app.main.ui.workspace.libraries]
-   [app.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.dom :as dom]
@@ -31,45 +30,22 @@
 
 ;; --- Workspace
 
-(mf/defc workspace-rules
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
-  [props]
-  (let [zoom  (or (obj/get props "zoom") 1)
-        vbox  (obj/get props "vbox")
-        vport (obj/get props "vport")
-        colorpalette? (obj/get props "colorpalette?")]
-
-    [:*
-     [:div.empty-rule-square]
-     [:& horizontal-rule {:zoom zoom
-                          :vbox vbox
-                          :vport vport}]
-     [:& vertical-rule {:zoom zoom
-                        :vbox vbox
-                        :vport vport}]
-     [:& coordinates/coordinates {:colorpalette? colorpalette?}]]))
-
 (mf/defc workspace-content
   {::mf/wrap-props false}
   [props]
   (let [selected (mf/deref refs/selected-shapes)
         local    (mf/deref refs/viewport-data)
 
-        {:keys [zoom vbox vport options-mode]} local
+        {:keys [options-mode]} local
         file   (obj/get props "file")
-        layout (obj/get props "layout")]
+        layout (obj/get props "layout")
+        colorpalette? (:colorpalette layout)]
     [:*
-     (when (:colorpalette layout)
-       [:& colorpalette])
+     (when colorpalette? [:& colorpalette])
 
      [:section.workspace-content
       [:section.workspace-viewport
-       (when (contains? layout :rules)
-         [:& workspace-rules {:zoom zoom
-                              :vbox vbox
-                              :vport vport
-                              :colorpalette? (contains? layout :colorpalette)}])
+       [:& coordinates/coordinates {:colorpalette? colorpalette?}]
 
        [:& viewport {:file file
                      :local local

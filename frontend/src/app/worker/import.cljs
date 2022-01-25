@@ -283,7 +283,6 @@
 
 (defn setup-interactions
   [file]
-
   (letfn [(add-interactions
             [file [id interactions]]
             (->> interactions
@@ -294,7 +293,6 @@
             (let [interactions (:interactions file)
                   file (dissoc file :interactions)]
               (->> interactions (reduce add-interactions file))))]
-
     (-> file process-interactions)))
 
 (defn resolve-media
@@ -328,7 +326,12 @@
                       (assoc :id (resolve page-id)))
         flows     (->> (get-in page-data [:options :flows])
                        (mapv #(update % :starting-frame resolve)))
-        page-data (d/assoc-in-when page-data [:options :flows] flows)
+        guides    (->> (get-in page-data [:options :guides])
+                       (d/mapm #(update %2 :frame-id resolve)))
+
+        page-data (-> page-data
+                      (d/assoc-in-when [:options :flows] flows)
+                      (d/assoc-in-when [:options :guides] guides))
         file      (-> file (fb/add-page page-data))]
     (->> (rx/from nodes)
          (rx/filter cip/shape?)

@@ -30,6 +30,7 @@
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
@@ -83,7 +84,8 @@
     :snap-grid
     :scale-text
     :dynamic-alignment
-    :display-artboard-names})
+    :display-artboard-names
+    :snap-guides})
 
 (s/def ::layout-flags (s/coll-of ::layout-flag))
 
@@ -95,7 +97,8 @@
     :display-grid
     :snap-grid
     :dynamic-alignment
-    :display-artboard-names})
+    :display-artboard-names
+    :snap-guides})
 
 (def layout-presets
   {:assets
@@ -2033,3 +2036,8 @@
 
 ;; Shapes to path
 (d/export dwps/convert-selected-to-path)
+
+;; Guides
+(d/export dwgu/update-guides)
+(d/export dwgu/remove-guide)
+

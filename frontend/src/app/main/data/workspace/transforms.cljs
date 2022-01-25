@@ -16,6 +16,7 @@
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.guides :as dwg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -155,6 +156,8 @@
 
          (update state :workspace-modifiers #(reduce update-shape % shapes)))))))
 
+
+
 (defn- apply-modifiers
   [ids]
   (us/verify (s/coll-of uuid?) ids)
@@ -168,6 +171,7 @@
             ignore-tree       (get-ignore-tree object-modifiers objects ids)]
 
         (rx/of (dwu/start-undo-transaction)
+               (dwg/move-frame-guides ids-with-children)
                (dch/update-shapes
                  ids-with-children
                  (fn [shape]

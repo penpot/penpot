@@ -9,6 +9,12 @@
    [app.common.data :as d]
    [app.common.pages :as cp]))
 
+(defn lookup-page
+  ([state]
+   (lookup-page state (:current-page-id state)))
+  ([state page-id]
+   (get-in state [:workspace-data :pages-index page-id])))
+
 (defn lookup-page-objects
   ([state]
    (lookup-page-objects state (:current-page-id state)))

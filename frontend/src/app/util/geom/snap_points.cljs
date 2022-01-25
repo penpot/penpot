@@ -28,3 +28,9 @@
     (case (:type shape)
       :frame (-> shape :selrect frame-snap-points)
       (into #{(gsh/center-shape shape)} (:points shape)))))
+
+(defn guide-snap-points
+  [guide]
+  (if (= :x (:axis guide))
+    #{(gpt/point (:position guide) 0)}
+    #{(gpt/point 0 (:position guide))}))

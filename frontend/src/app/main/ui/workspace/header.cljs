@@ -194,7 +194,13 @@
                      (fn [_error]
                        (st/emit! (dm/error (tr "errors.unexpected-error"))))
                      (st/emitf dm/hide)))))))
-        on-item-click (fn [item] (fn [event] (do (dom/stop-propagation event) (reset! show-sub-menu? item))))]
+
+        on-item-click
+        (mf/use-callback
+         (fn [item]
+           (fn [event]
+             (dom/stop-propagation event)
+             (reset! show-sub-menu? item))))]
 
     (mf/use-effect
      (mf/deps @editing?)
@@ -314,12 +320,12 @@
      [:& dropdown {:show (= @show-sub-menu? :preferences)
                    :on-close #(reset! show-sub-menu? false)}
       [:ul.sub-menu.preferences
-       #_[:li {:on-click #()}
-          [:span
-           (if (contains? layout :snap-guide)
-             (tr "workspace.header.menu.disable-snap-guides")
-             (tr "workspace.header.menu.enable-snap-guides"))]
-          [:span.shortcut (sc/get-tooltip :toggle-snap-grid)]]
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :snap-guides))}
+        [:span
+         (if (contains? layout :snap-guides)
+           (tr "workspace.header.menu.disable-snap-guides")
+           (tr "workspace.header.menu.enable-snap-guides"))]
+        [:span.shortcut (sc/get-tooltip :toggle-snap-guide)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :snap-grid))}
         [:span
