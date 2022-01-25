@@ -34,13 +34,14 @@
 /exporter/target
 /frontend/.shadow-cljs
 /frontend/cypress/videos/*/
-/frontend/cypress/videos/*/
+/frontend/cypress/fixtures/validuser.json
 /frontend/dist/
 /frontend/npm-debug.log
 /frontend/out/
 /frontend/resources/fonts/experiments
 /frontend/resources/public/*
 /frontend/target/
+/frontend/cypress/videos/*/
 /media
 /telemetry/
 /vendor/**/target
