@@ -87,7 +87,7 @@
 
        [:hr]
 
-       [:li {:on-click show-release-notes}
+       [:li {:on-click show-release-notes :data-test "release-notes"}
         i/pencil
         [:span.element-title (tr "labels.release-notes")]]
 

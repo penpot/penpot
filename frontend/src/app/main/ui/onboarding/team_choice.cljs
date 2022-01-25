@@ -51,7 +51,7 @@
          [:h2 (tr "onboarding.choice.fly-solo")]
          [:p (tr "onboarding.choice.fly-solo-desc")]]]
        [:div.modal-right
-        [:div.content-button {:on-click on-team-up}
+        [:div.content-button {:on-click on-team-up :data-test "team-up-button"}
          [:h2 (tr "onboarding.choice.team-up")]
          [:p (tr "onboarding.choice.team-up-desc")]]]]
       [:img.deco {:src "images/deco-left.png" :border "0"}]
@@ -72,7 +72,7 @@
     [:div.modal-overlay
      [:div.modal-container.onboarding-team
       [:div.title
-       [:h2 (tr "onboarding.choice.team-up")]
+       [:h2 {:data-test "onboarding-choice-team-up"} (tr "onboarding.choice.team-up")]
        [:p (tr "onboarding.choice.team-up-desc")]]
 
       [:& fm/form {:form form

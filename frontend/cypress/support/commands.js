@@ -88,7 +88,7 @@ Cypress.Commands.add('clickMultiInViewport', (coords) => {
 Cypress.Commands.add('clearViewport', () => {
    cy.get(".viewport-controls").type('{ctrl}a');
    cy.get(".viewport-controls").type('{del}');
-   cy.window().its("debug").invoke('reset_viewport')
+   cy.window().its("debug").invoke('reset_viewport');
 })
 
 Cypress.Commands.add('getBySel', (selector, ...args) => {
@@ -98,3 +98,17 @@ Cypress.Commands.add('getBySel', (selector, ...args) => {
 Cypress.Commands.add('getBySelLike', (selector, ...args) => {
    return cy.get(`[data-test*=${selector}]`, ...args)
 })
+
+Cypress.Commands.add('uploadBinaryFile', (fileInputSelector, fileName) => {
+   cy.fixture(fileName, "binary")
+   .then(Cypress.Blob.binaryStringToBlob)
+   .then(fileContent => {
+      cy.get(fileInputSelector).attachFile({
+         fileContent,
+         filePath: fileName,
+         encoding: 'utf-8',
+         lastModified: new Date().getTime()
+      });
+   });
+})
+

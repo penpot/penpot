@@ -1,4 +1,5 @@
 {
     "email": "validuser@penpot.app",
-    "password": "password"
+    "password": "password",
+    "team": "test team"
 }

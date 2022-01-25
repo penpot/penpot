@@ -75,17 +75,20 @@
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
          :class (when (= selected-drawtool :frame) "selected")
-         :on-click (partial select-drawtool :frame)}
+         :on-click (partial select-drawtool :frame)
+         :data-test "artboard-btn"}
         i/artboard]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
          :class (when (= selected-drawtool :rect) "selected")
-         :on-click (partial select-drawtool :rect)}
+         :on-click (partial select-drawtool :rect)
+         :data-test "rect-btn"}
         i/box]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
          :class (when (= selected-drawtool :circle) "selected")
-         :on-click (partial select-drawtool :circle)}
+         :on-click (partial select-drawtool :circle)
+         :data-test "ellipse-btn"}
         i/circle]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
@@ -98,12 +101,14 @@
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
          :class (when (= selected-drawtool :curve) "selected")
-         :on-click (partial select-drawtool :curve)}
+         :on-click (partial select-drawtool :curve)
+         :data-test "curve-btn"}
         i/pencil]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
          :class (when (= selected-drawtool :path) "selected")
-         :on-click (partial select-drawtool :path)}
+         :on-click (partial select-drawtool :path)
+         :data-test "path-btn"}
         i/pen]
 
        [:li.tooltip.tooltip-right

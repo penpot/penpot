@@ -18,48 +18,48 @@ describe("draw shapes", () => {
   });
 
   it("draw an artboard", () => {
-    cy.get(".viewport-controls rect").should("not.exist");
-    cy.get(".left-toolbar-options li[alt='Artboard (A)']").click();
+    cy.get(".render-shapes rect").should("not.exist");
+    cy.getBySel("artboard-btn").click();
     cy.drawInViewport(300, 300, 400, 450);
-    cy.get(".viewport-controls rect").first().as("artboard");
+    cy.get(".render-shapes rect").first().as("artboard");
     cy.get("@artboard").should("exist");
     cy.get("@artboard").invoke("attr", "width").should("eq", "100");
     cy.get("@artboard").invoke("attr", "height").should("eq", "150");
   });
 
   it("draw a square", () => {
-    cy.get(".viewport-controls rect").should("not.exist");
-    cy.get(".left-toolbar-options li[alt='Rectangle (R)']").click();
+    cy.get(".render-shapes rect").should("not.exist");
+    cy.getBySel("rect-btn").click();
     cy.drawInViewport(300, 300, 400, 450);
-    cy.get(".viewport-controls rect").should("exist");
-    cy.get(".viewport-controls rect")
+    cy.get(".render-shapes rect").should("exist");
+    cy.get(".render-shapes rect")
       .invoke("attr", "width")
       .should("eq", "100");
-    cy.get(".viewport-controls rect")
+    cy.get(".render-shapes rect")
       .invoke("attr", "height")
       .should("eq", "150");
   });
 
   it("draw an ellipse", () => {
-    cy.get(".viewport-controls ellipse").should("not.exist");
-    cy.get(".left-toolbar-options li[alt='Ellipse (E)']").click();
+    cy.get(".render-shapes ellipse").should("not.exist");
+    cy.getBySel("ellipse-btn").click();
     cy.drawInViewport(300, 300, 400, 450);
-    cy.get(".viewport-controls ellipse").as("ellipse");
+    cy.get(".render-shapes ellipse").as("ellipse");
     cy.get("@ellipse").should("exist");
     cy.get("@ellipse").invoke("attr", "rx").should("eq", "50");
     cy.get("@ellipse").invoke("attr", "ry").should("eq", "75");
   });
 
   it("draw a curve", () => {
-    cy.get(".viewport-controls path").should("not.exist");
-    cy.get(".left-toolbar-options li[alt='Curve (Shift+C)']").click();
+    cy.get(".render-shapes path").should("not.exist");
+    cy.getBySel("curve-btn").click();
     cy.drawMultiInViewport([
       { x: 300, y: 300 },
       { x: 350, y: 300 },
       { x: 300, y: 350 },
       { x: 400, y: 450 },
     ]);
-    cy.get(".viewport-controls path").as("curve");
+    cy.get(".render-shapes path").as("curve");
     cy.get("@curve").should("exist");
     cy.get("@curve")
       .invoke("attr", "d")
@@ -67,8 +67,8 @@ describe("draw shapes", () => {
   });
 
   it("draw a path", () => {
-    cy.get(".viewport-controls path").should("not.exist");
-    cy.get(".left-toolbar-options li[alt='Path (P)']").click();
+    cy.get(".render-shapes path").should("not.exist");
+    cy.getBySel("path-btn").click();
     cy.clickMultiInViewport([
       { x: 300, y: 300 },
       { x: 350, y: 300 },
@@ -81,7 +81,7 @@ describe("draw shapes", () => {
       true
     );
     cy.clickMultiInViewport([{ x: 300, y: 300 }]);
-    cy.get(".viewport-controls path").as("curve");
+    cy.get(".render-shapes path").as("curve");
     cy.get("@curve").should("exist");
     cy.get("@curve")
       .invoke("attr", "d")
