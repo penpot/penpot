@@ -18,6 +18,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -66,8 +67,9 @@
         (mf/use-callback
          (fn [event]
            (let [target (dom/event->target event)
-                 name   (dom/get-value target)]
-             (st/emit! (dw/rename-page id name))
+                 name   (str/trim (dom/get-value target))]
+             (when-not (str/empty? name)
+               (st/emit! (dw/rename-page id name)))
              (swap! local assoc :edition false))))
 
         on-key-down
