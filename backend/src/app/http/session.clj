@@ -21,9 +21,13 @@
    [integrant.core :as ig]
    [ring.middleware.session.store :as rss]))
 
-;; A default cookie name for storing the session. We don't allow
-;; configure it.
-(def cookie-name "auth-token")
+;; A default cookie name for storing the session. We don't allow to configure it.
+(def token-cookie-name "auth-token")
+
+;; A cookie that we can use to check from other sites of the same domain if a user
+;; is registered. Is not intended for on premise installations, although nothing
+;; prevents using it if some one wants to.
+(def authenticated-cookie-name "authenticated")
 
 (deftype DatabaseStore [pool tokens]
   rss/SessionStore
@@ -78,7 +82,7 @@
 
 (defn- delete-session
   [store {:keys [cookies] :as request}]
-  (when-let [token (get-in cookies [cookie-name :value])]
+  (when-let [token (get-in cookies [token-cookie-name :value])]
     (rss/delete-session store token)))
 
 (defn- retrieve-session
@@ -88,21 +92,35 @@
 
 (defn- retrieve-from-request
   [store {:keys [cookies] :as request}]
-  (->> (get-in cookies [cookie-name :value])
+  (->> (get-in cookies [token-cookie-name :value])
        (retrieve-session store)))
 
 (defn- add-cookies
   [response token]
   (let [cors?   (contains? cfg/flags :cors)
-        secure? (contains? cfg/flags :secure-session-cookies)]
-    (assoc response :cookies {cookie-name {:path "/"
-                                           :http-only true
-                                           :value token
-                                           :same-site (if cors? :none :lax)
-                                           :secure secure?}})))
+        secure? (contains? cfg/flags :secure-session-cookies)
+        authenticated-cookie-domain (cfg/get :authenticated-cookie-domain)]
+    (update response :cookies
+            (fn [cookies]
+              (cond-> cookies
+                :always
+                (assoc token-cookie-name {:path "/"
+                                          :http-only true
+                                          :value token
+                                          :same-site (if cors? :none :lax)
+                                          :secure secure?})
+
+                (some? authenticated-cookie-domain)
+                (assoc authenticated-cookie-name {:domain authenticated-cookie-domain
+                                                  :path "/"
+                                                  :value true
+                                                  :same-site :strict
+                                                  :secure secure?}))))))
+
 (defn- clear-cookies
   [response]
-  (assoc response :cookies {cookie-name {:value "" :max-age -1}}))
+  (assoc response :cookies {token-cookie-name {:value "" :max-age -1}
+                            authenticated-cookie-name {:value "" :max-age -1}}))
 
 (defn- middleware
   [events-ch store handler]
