@@ -3,8 +3,11 @@
   #_:clj-kondo/ignore
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.pages.migrations :as pmg]
+   [app.common.pages.spec :as spec]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
@@ -13,8 +16,11 @@
    [app.rpc.queries.profile :as prof]
    [app.srepl.dev :as dev]
    [app.util.blob :as blob]
+   [app.util.time :as dt]
    [clojure.pprint :refer [pprint]]
-   [cuerdas.core :as str]))
+   [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [expound.alpha :as expound]))
 
 (defn update-file
   ([system id f] (update-file system id f false))
@@ -33,8 +39,8 @@
                      {:id (:id file)}))
        (update file :data blob/decode)))))
 
-(defn update-file-raw
-  [id data]
+(defn reset-file-data
+  [system id data]
   (db/with-atomic [conn (:app.db/pool system)]
     (db/update! conn :file
                 {:data data}
@@ -42,33 +48,10 @@
 
 (defn get-file
   [system id]
-  (with-open [conn (db/open (:app.db/pool system))]
-    (let [file (db/get-by-id conn :file id)]
-      (-> file
-          (update :data app.util.blob/decode)
-          (update :data pmg/migrate-data)))))
-
-
-;; Examples:
-;; (def backup (update-file  #uuid "1586e1f0-3e02-11eb-b1d2-556a2f641513" identity))
-;; (def x (update-file
-;;         #uuid "1586e1f0-3e02-11eb-b1d2-556a2f641513"
-;;         (fn [{:keys [data] :as file}]
-;;           (update-in data [:pages-index #uuid "878278c0-3ef0-11eb-9d67-8551e7624f43" :objects] dissoc nil))))
-
-;; Migrate
-
-(defn update-file-data-blob-format
-  [system]
-  (db/with-atomic [conn (:app.db/pool system)]
-    (doseq [id (->> (db/exec! conn ["select id from file;"]) (map :id))]
-      (let [{:keys [data]} (db/get-by-id conn :file id {:columns [:id :data]})]
-        (prn "Updating file:" id)
-        (db/update! conn :file
-                    {:data (-> (blob/decode data)
-                               (blob/encode {:version 2}))}
-                    {:id id})))))
-
+  (-> (:app.db/pool system)
+      (db/get-by-id :file id)
+      (update :data app.util.blob/decode)
+      (update :data pmg/migrate-data)))
 
 (defn duplicate-file
   "This is a raw version of duplication of file just only for forensic analysis"
@@ -82,3 +65,87 @@
                             :project-id (:default-project-id profile))]
           (db/insert! conn :file params)
           (:id file))))))
+
+(defn verify-files
+  [system {:keys [age sleep chunk-size max-chunks stop-on-error? verbose?]
+           :or {sleep 1000
+                age "72h"
+                chunk-size 10
+                verbose? false
+                stop-on-error? true
+                max-chunks ##Inf}}]
+
+  (letfn [(retrieve-chunk [conn cursor]
+            (let [sql (str "select id, name, modified_at, data from file "
+                           " where modified_at > ? and deleted_at is null "
+                           " order by modified_at asc limit ?")
+                  age (if cursor
+                        cursor
+                        (-> (dt/now) (dt/minus age)))]
+              (seq (db/exec! conn [sql age chunk-size]))))
+
+          (validate-item [{:keys [id data modified-at] :as file}]
+            (let [data   (blob/decode data)
+                  valid? (s/valid? ::spec/data data)]
+
+              (l/debug :hint "validated file"
+                       :file-id id
+                       :age (-> (dt/diff modified-at (dt/now))
+                                (dt/truncate :minutes)
+                                (str)
+                                (subs 2)
+                                (str/lower))
+                       :valid valid?)
+
+              (when (and (not valid?) verbose?)
+                (let [edata (-> (s/explain-data ::spec/data data)
+                                (update ::s/problems #(take 5 %)))]
+                  (binding [s/*explain-out* expound/printer]
+                    (l/warn ::l/raw (with-out-str (s/explain-out edata))))))
+
+              (when (and (not valid?) stop-on-error?)
+                (throw (ex-info "penpot/abort" {})))
+
+              valid?))
+
+          (validate-chunk [chunk]
+            (loop [items   chunk
+                   success 0
+                   errored 0]
+
+              (if-let [item (first items)]
+                (if (validate-item item)
+                  (recur (rest items) (inc success) errored)
+                  (recur (rest items) success (inc errored)))
+                [(:modified-at (last chunk))
+                 success
+                 errored])))
+
+          (fmt-result [ns ne]
+            {:total (+ ns ne)
+             :errors ne
+             :success ns})
+
+          ]
+
+    (try
+      (db/with-atomic [conn (:app.db/pool system)]
+        (loop [cursor  nil
+               chunks  0
+               success 0
+               errors 0]
+          (if (< chunks max-chunks)
+            (if-let [chunk (retrieve-chunk conn cursor)]
+              (let [[cursor success' errors'] (validate-chunk chunk)]
+                (Thread/sleep (inst-ms (dt/duration sleep)))
+                (recur cursor
+                       (inc chunks)
+                       (+ success success')
+                       (+ errors errors')))
+              (fmt-result success errors))
+            (fmt-result success errors))))
+      (catch Throwable cause
+        (when (not= "penpot/abort" (ex-message cause))
+          (throw cause))
+        :error))))
+
