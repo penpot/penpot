@@ -12,6 +12,7 @@
    [app.common.uuid :as uuid]
    [clojure.pprint]
    [clojure.spec.alpha :as s]
+   [expound.alpha :as expound]
    [cuerdas.core :as str]))
 
 (defn- parse-client-ip
@@ -31,6 +32,8 @@
       :params        (:params request)
       :spec-problems (some-> data ::s/problems)
       :spec-value    (some-> data ::s/value)
+      :spec-explain  (with-out-str
+                       (expound/printer data))
       :data          (some-> data (dissoc ::s/problems ::s/value :hint))
       :ip-addr       (parse-client-ip request)
       :profile-id    (:profile-id request)}
