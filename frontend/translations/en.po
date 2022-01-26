@@ -2111,7 +2111,7 @@ msgstr "View mode (%s)"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fill"
-msgstr "Fill -Scale to fill"
+msgstr "Fill - Scale to fill"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fit"

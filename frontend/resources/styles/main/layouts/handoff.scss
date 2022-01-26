@@ -50,14 +50,14 @@ $width-settings-bar: 16rem;
 .handoff-layout {
   .viewer-section {
     flex-wrap: nowrap;
-    &.fullscreen{
+    &.fullscreen {
       .settings-bar,
       .settings-bar {
-        padding-top:48px;
+        padding-top: 48px;
       }
     }
   }
-  
+
   .settings-bar {
     transition: width 0.2s;
     &.expanded {
