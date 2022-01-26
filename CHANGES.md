@@ -75,6 +75,7 @@
 - Fix zoom in/out after fit or fill [Taiga #2630](https://tree.taiga.io/project/penpot/issue/2630)
 - Normalize zoom levels in workspace and viewer [Taiga #2631](https://tree.taiga.io/project/penpot/issue/2631)
 - Avoid empty names in projects, files and pages [Taiga #2594](https://tree.taiga.io/project/penpot/issue/2594)
+- Fix "move to" menu when duplicated team or project names [Taiga #2655](https://tree.taiga.io/project/penpot/issue/2655)
 
 ### :arrow_up: Deps updates
 
