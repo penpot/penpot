@@ -17,6 +17,8 @@
    java.time.ZonedDateTime
    java.time.format.DateTimeFormatter
    java.time.temporal.TemporalAmount
+   java.time.temporal.TemporalUnit
+   java.time.temporal.ChronoUnit
    java.util.Date
    org.apache.logging.log4j.core.util.CronExpression))
 
@@ -54,14 +56,29 @@
     :else
     (obj->duration ms-or-obj)))
 
-(defn duration-between
-  {:deprecated true}
-  [t1 t2]
-  (Duration/between t1 t2))
-
 (defn diff
   [t1 t2]
   (Duration/between t1 t2))
+
+(defn truncate
+  [o unit]
+  (let [unit (if (instance? TemporalUnit unit)
+               unit
+               (case unit
+                 :nanos ChronoUnit/NANOS
+                 :millis ChronoUnit/MILLIS
+                 :micros ChronoUnit/MICROS
+                 :seconds ChronoUnit/SECONDS
+                 :minutes ChronoUnit/MINUTES))]
+    (cond
+      (instance? Instant o)
+      (.truncatedTo ^Instant o ^TemporalUnit unit)
+
+      (instance? Duration o)
+      (.truncatedTo ^Duration o ^TemporalUnit unit)
+
+      :else
+      (throw (IllegalArgumentException. "only instant and duration allowed")))))
 
 (s/def ::duration
   (s/conformer
