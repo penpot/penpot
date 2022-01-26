@@ -9,6 +9,12 @@ penpot - error report {{id}}
   <div>[<a href="/dbg/error">⮜</a>]</div>
   <div>[<a href="#context">context</a>]</div>
   <div>[<a href="#params">request params</a>]</div>
+  {% if data %}
+  <div>[<a href="#edata">error data</a>]</div>
+  {% endif %}
+  {% if spec-explain %}
+  <div>[<a href="#spec-explain">spec explain</a>]</div>
+  {% endif %}
   {% if spec-problems %}
   <div>[<a href="#spec-problems">spec problems</a>]</div>
   {% endif %}
@@ -16,9 +22,6 @@ penpot - error report {{id}}
   <div>[<a href="#spec-value">spec value</a>]</div>
   {% endif %}
 
-  {% if data %}
-  <div>[<a href="#edata">error data</a>]</div>
-  {% endif %}
   {% if trace %}
   <div>[<a href="#trace">error trace</a>]</div>
   {% endif %}
@@ -51,6 +54,15 @@ penpot - error report {{id}}
       <div id="edata" class="table-key">ERROR DATA: </div>
       <div class="table-val">
         <pre>{{data}}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if spec-explain %}
+    <div class="table-row multiline">
+      <div id="spec-explain" class="table-key">SPEC EXPLAIN: </div>
+      <div class="table-val">
+        <pre>{{spec-explain}}</pre>
       </div>
     </div>
     {% endif %}

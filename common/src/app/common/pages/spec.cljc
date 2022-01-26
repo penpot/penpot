@@ -276,8 +276,9 @@
     :luminosity})
 
 (s/def ::shape-attrs
-  (s/keys :req-un [::type ::name]
-          :opt-un [::id
+  (s/keys :opt-un [::id
+                   ::type
+                   ::name
                    ::component-id
                    ::component-file
                    ::component-root?
@@ -345,15 +346,16 @@
 (s/def :internal.shape.text/key string?)
 
 (s/def :internal.shape.text/content
-  (s/or :container
-        (s/keys :req-un [:internal.shape.text/type
-                         :internal.shape.text/children]
-                :opt-un [:internal.shape.text/key])
-        :content
-        (s/keys :req-un [:internal.shape.text/text])))
+  (s/nilable
+   (s/or :text-container
+         (s/keys :req-un [:internal.shape.text/type
+                          :internal.shape.text/children]
+                 :opt-un [:internal.shape.text/key])
+         :text-content
+         (s/keys :req-un [:internal.shape.text/text]))))
 
 (s/def :internal.shape.path/command keyword?)
-(s/def :internal.shape.path/params (s/map-of keyword? any?))
+(s/def :internal.shape.path/params (s/nilable (s/map-of keyword? any?)))
 (s/def :internal.shape.path/command-item
   (s/keys :req-un [:internal.shape.path/command
                    :internal.shape.path/params]))
@@ -378,7 +380,11 @@
   (s/and ::shape-attrs
          (s/keys :opt-un [:internal.shape/hide-fill-on-export])))
 
-(s/def ::shape (s/multi-spec shape-spec :type))
+(s/def ::shape
+  (s/and (s/multi-spec shape-spec :type)
+         #(contains? % :name)
+         #(contains? % :type)))
+
 (s/def :internal.page/objects (s/map-of uuid? ::shape))
 
 (s/def ::page

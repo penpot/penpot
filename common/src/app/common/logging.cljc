@@ -180,7 +180,7 @@
               `(->> (ThreadContext/getImmutableContext)
                     (send-off logging-agent
                               (fn [_# cdata#]
-                                (with-context (into {:cause ~cause} cdata#)
+                                (with-context (into {} cdata#)
                                   (->> (or ~raw (build-map-message ~props))
                                        (write-log! ~logger-sym ~level-sym ~cause))))))
 

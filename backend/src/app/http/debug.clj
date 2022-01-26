@@ -150,14 +150,14 @@
             (binding [ppr/*print-right-margin* 300]
               (let [context (dissoc report
                                     :trace :cause :params :data :spec-problems
-                                    :spec-value :error :explain :hint)
+                                    :spec-explain :spec-value :error :explain :hint)
                     params  {:context (with-out-str (ppr/pprint context))
                              :hint    (:hint report)
+                             :spec-explain  (:spec-explain report)
                              :spec-problems (:spec-problems report)
                              :spec-value    (:spec-value report)
                              :data          (:data report)
-                             :trace         (or (:cause report)
-                                                (:trace report)
+                             :trace         (or (:trace report)
                                                 (some-> report :error :trace))
                              :params        (:params report)}]
                 (-> (io/resource "templates/error-report.tmpl")
