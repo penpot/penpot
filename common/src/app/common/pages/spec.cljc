@@ -276,8 +276,9 @@
     :luminosity})
 
 (s/def ::shape-attrs
-  (s/keys :req-un [::type ::name]
-          :opt-un [::id
+  (s/keys :opt-un [::id
+                   ::type
+                   ::name
                    ::component-id
                    ::component-file
                    ::component-root?
@@ -379,7 +380,11 @@
   (s/and ::shape-attrs
          (s/keys :opt-un [:internal.shape/hide-fill-on-export])))
 
-(s/def ::shape (s/multi-spec shape-spec :type))
+(s/def ::shape
+  (s/and (s/multi-spec shape-spec :type)
+         #(contains? % :name)
+         #(contains? % :type)))
+
 (s/def :internal.page/objects (s/map-of uuid? ::shape))
 
 (s/def ::page
