@@ -8,7 +8,7 @@
 
 .viewer-section {
   height: calc(100vh - 48px);
-  &.fullscreen{
+  &.fullscreen {
     height: 100vh;
   }
   grid-row: 1 / span 2;
