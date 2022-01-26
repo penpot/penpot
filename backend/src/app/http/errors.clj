@@ -12,8 +12,8 @@
    [app.common.uuid :as uuid]
    [clojure.pprint]
    [clojure.spec.alpha :as s]
-   [expound.alpha :as expound]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [expound.alpha :as expound]))
 
 (defn- parse-client-ip
   [{:keys [headers] :as request}]
