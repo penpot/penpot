@@ -22,7 +22,7 @@
     top: -48px;
     left: 0;
     transition: top 400ms ease 300ms;
-
+    z-index: 1;
     &::after {
       content: " ";
       position: absolute;
