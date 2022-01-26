@@ -30,10 +30,13 @@
       :method        (:request-method request)
       :hint          (ex-message error)
       :params        (:params request)
-      :spec-problems (some-> data ::s/problems)
-      :spec-value    (some-> data ::s/value)
-      :spec-explain  (with-out-str
-                       (expound/printer data))
+
+      :spec-problems (some->> data ::s/problems (take 10) seq vec)
+      :spec-value    (some->> data ::s/value)
+      :spec-explain  (binding [s/*explain-out* expound/printer]
+                       (with-out-str
+                         (s/explain-out (update data ::s/problems #(take 10 %)))))
+
       :data          (some-> data (dissoc ::s/problems ::s/value :hint))
       :ip-addr       (parse-client-ip request)
       :profile-id    (:profile-id request)}
