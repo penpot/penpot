@@ -278,3 +278,8 @@
    dw/reset-zoom
    (dw/update-viewport-position {:x (constantly 0) :y (constantly 0)})))
 
+
+(defn ^:export hide-ui
+  []
+  (st/emit!
+   (dw/toggle-layout-flags :hide-ui)))

@@ -6,6 +6,8 @@
 
 (ns app.main.ui.workspace.sidebar
   (:require
+   [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.comments :refer [comments-sidebar]]
@@ -15,14 +17,20 @@
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.alpha :as mf]
+   [app.main.store :as st]
+   [app.main.ui.icons :as i]
+   ))
 
 ;; --- Left Sidebar (Component)
 
 (mf/defc left-sidebar
   {:wrap [mf/memo]}
   [{:keys [layout ] :as props}]
-  (let [{:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+  (let [section (cond (contains? layout :layers) :layers
+                      (contains? layout :assets) :assets)
+
+        {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
         (use-resize-hook 255 255 500 :x false :left)]
 
     [:aside.settings-bar.settings-bar-left {:ref parent-ref
@@ -30,18 +38,21 @@
      [:div.resize-area {:on-pointer-down on-pointer-down
                         :on-lost-pointer-capture on-lost-pointer-capture
                         :on-mouse-move on-mouse-move}]
+
+
      [:div.settings-bar-inside
-      {:data-layout (str/join "," layout)}
-      (when (contains? layout :layers)
-        [:*
-         [:& sitemap {:layout layout}]
-         [:& layers-toolbox]])
+      [:button.collapse-sidebar i/arrow-slide]
+      [:& tab-container {:on-change-tab #(st/emit! (dw/go-to-layout %))
+                         :selected section}
 
-      (when (contains? layout :document-history)
-        [:& history-toolbox])
+       [:& tab-element {:id :layers :title "Layers"}
+        [:& sitemap {:layout layout}]
+        [:& layers-toolbox]]
 
-      (when (contains? layout :assets)
-        [:& assets-toolbox])]]))
+       [:& tab-element {:id :assets :title "Library"}
+        [:& assets-toolbox]]]]
+     
+     ]))
 
 ;; --- Right Sidebar (Component)
 

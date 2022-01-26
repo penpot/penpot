@@ -120,20 +120,13 @@
 
       [:ul.left-toolbar-options.panels
        [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.sidebar.layers" (sc/get-tooltip :toggle-layers))
-         :class (when (contains? layout :layers) "selected")
-         :on-click (st/emitf (dw/go-to-layout :layers))}
-        i/layers]
-       [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.assets" (sc/get-tooltip :toggle-assets))
-         :class (when (contains? layout :assets) "selected")
-         :on-click (st/emitf (dw/go-to-layout :assets))}
-        i/library]
-       [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
-         :class (when (contains? layout :document-history) "selected")
-         :on-click (st/emitf (dw/go-to-layout :document-history))}
-        i/recent]
+        {;;:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-textpalette))
+         :class (when (contains? layout :textpalette) "selected")
+         :on-click (do
+                     (r/set-resize-type! :bottom)
+                     (st/emitf (dw/toggle-layout-flags :textpalette)))}
+        i/palette]
+       
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-palette))
          :class (when (contains? layout :colorpalette) "selected")

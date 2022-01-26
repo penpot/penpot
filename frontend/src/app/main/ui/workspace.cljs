@@ -61,12 +61,12 @@
                      :selected selected
                      :layout layout}]]]
 
-     [:& left-toolbar {:layout layout}]
-
-     ;; Aside
-     [:& left-sidebar {:layout layout}]
-     [:& right-sidebar {:section options-mode
-                        :selected selected}]]))
+     (when-not (:hide-ui layout)
+       [:*
+        [:& left-toolbar {:layout layout}]
+        [:& left-sidebar {:layout layout}]
+        [:& right-sidebar {:section options-mode
+                           :selected selected}]])]))
 
 (def trimmed-page-ref (l/derived :trimmed-page st/state =))
 
@@ -125,10 +125,11 @@
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:section#workspace
-         [:& header {:file file
-                     :page-id page-id
-                     :project project
-                     :layout layout}]
+         (when (not (:hide-ui layout))
+           [:& header {:file file
+                       :page-id page-id
+                       :project project
+                       :layout layout}])
 
          [:& context-menu]
 

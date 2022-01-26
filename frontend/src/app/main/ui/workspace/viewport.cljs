@@ -156,7 +156,7 @@
         show-selrect?            (and selrect (empty? drawing))
         show-measures?           (and (not transform) (not node-editing?) show-distances?)
         show-artboard-names?     (contains? layout :display-artboard-names)
-        show-rules?              (contains? layout :rules)
+        show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
 
         disabled-guides?         (or drawing-tool transform)]
 

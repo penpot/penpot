@@ -20,7 +20,9 @@
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.alpha :as mf]
+   [app.main.ui.hooks.resize :refer [use-resize-hook]]
+   ))
 
 ;; --- Page Item
 
@@ -205,10 +207,14 @@
                                                   :project-id (:project-id file)}))))
         show-pages? (mf/use-state true)
 
+        {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+        (use-resize-hook 200 38 400 :y false nil)
+
         toggle-pages
         (mf/use-callback #(reset! show-pages? not))]
 
-    [:div.sitemap.tool-window
+    [:div#sitemap.tool-window {:ref parent-ref
+                               :style #js {"--height" (str size "px")}}
      [:div.tool-window-bar
       [:span (tr "workspace.sidebar.sitemap")]
       [:div.add-page {:on-click create} i/close]
@@ -216,4 +222,10 @@
 
      (when @show-pages?
        [:div.tool-window-content
-        [:& pages-list {:file file :key (:id file)}]])]))
+        [:& pages-list {:file file :key (:id file)}]])
+
+     [:div.resize-area {:on-pointer-down on-pointer-down
+                        :on-lost-pointer-capture on-lost-pointer-capture
+                        :on-mouse-move on-mouse-move}]
+
+     ]))

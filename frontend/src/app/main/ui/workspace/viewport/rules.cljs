@@ -53,6 +53,21 @@
           height (- (:height vbox) (/ 21 zoom))]
       {:x x :y y :width width :height height})))
 
+(defn get-background-area
+  [vbox zoom axis]
+  (if (= axis :x)
+    (let [x      (:x vbox)
+          y      (:y vbox)
+          width  (:width vbox)
+          height (/ 22 zoom)]
+      {:x x :y y :width width :height height})
+
+    (let [x      (:x vbox)
+          y      (+ (:y vbox) (/ 22 zoom))
+          width  (/ 22 zoom)
+          height (- (:height vbox) (/ 21 zoom))]
+      {:x x :y y :width width :height height})))
+
 (defn get-rule-params
   [vbox axis]
   (if (= axis :x)
@@ -89,41 +104,48 @@
         step (calculate-step-size zoom)
         clip-id (str "clip-rule-" (d/name axis))]
 
-    [:g.rules {:clipPath (str "url(#" clip-id ")")} 
+    
+    [:*
+     (let [{:keys [x y width height]} (get-background-area vbox zoom axis)]
+       [:rect {:x x :y y :width width :height height :style {:fill "#303236"}}])
 
-     [:defs
-      [:clipPath {:id clip-id}
-       (let [{:keys [x y width height]} (get-clip-area vbox zoom axis)]
-         [:rect {:x x :y y :width width :height height}])]]
+     [:g.rules {:clipPath (str "url(#" clip-id ")")} 
 
-     (let [{:keys [start end]} (get-rule-params vbox axis)
-           minv (max (mth/round start) -100000)
-           minv (* (mth/ceil (/ minv step)) step)
-           maxv (min (mth/round end) 100000)
-           maxv (* (mth/floor (/ maxv step)) step)]
+      [:defs
+       [:clipPath {:id clip-id}
+        (let [{:keys [x y width height]} (get-clip-area vbox zoom axis)]
+          [:rect {:x x :y y :width width :height height}])]]
 
-       (for [step-val (range minv (inc maxv) step)]
-         (let [{:keys [text-x text-y line-x1 line-y1 line-x2 line-y2]}
-               (get-rule-axis step-val vbox zoom axis)]
-           [:* 
-            [:text {:key (str "text-" (d/name axis) "-" step-val)
-                    :x text-x
-                    :y text-y
-                    :text-anchor "middle"
-                    :dominant-baseline "middle"
-                    :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
-                    :style {:font-size (/ 13 zoom)
-                            :font-family "sourcesanspro"
-                            :fill colors/gray-30}}
-             (str (mth/round step-val))]
+      
 
-            [:line {:key (str "line-" (d/name axis) "-"  step-val)
-                    :x1 line-x1
-                    :y1 line-y1
-                    :x2 line-x2
-                    :y2 line-y2
-                    :style {:stroke colors/gray-30
-                            :stroke-width rules-width}}]])))]))
+      (let [{:keys [start end]} (get-rule-params vbox axis)
+            minv (max (mth/round start) -100000)
+            minv (* (mth/ceil (/ minv step)) step)
+            maxv (min (mth/round end) 100000)
+            maxv (* (mth/floor (/ maxv step)) step)]
+
+        (for [step-val (range minv (inc maxv) step)]
+          (let [{:keys [text-x text-y line-x1 line-y1 line-x2 line-y2]}
+                (get-rule-axis step-val vbox zoom axis)]
+            [:* 
+             [:text {:key (str "text-" (d/name axis) "-" step-val)
+                     :x text-x
+                     :y text-y
+                     :text-anchor "middle"
+                     :dominant-baseline "middle"
+                     :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
+                     :style {:font-size (/ 13 zoom)
+                             :font-family "sourcesanspro"
+                             :fill colors/gray-30}}
+              (str (mth/round step-val))]
+
+             [:line {:key (str "line-" (d/name axis) "-"  step-val)
+                     :x1 line-x1
+                     :y1 line-y1
+                     :x2 line-x2
+                     :y2 line-y2
+                     :style {:stroke colors/gray-30
+                             :stroke-width rules-width}}]])))]]))
 
 (mf/defc rules
   {::mf/wrap-props false

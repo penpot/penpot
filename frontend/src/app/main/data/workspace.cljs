@@ -528,7 +528,9 @@
     (update [_ state]
       (update state :workspace-local
               (fn [{:keys [vport] :as local}]
-                (if (or (mth/almost-zero? width) (mth/almost-zero? height))
+                (if (or (nil? vport)
+                        (mth/almost-zero? width)
+                        (mth/almost-zero? height))
                   ;; If we have a resize to zero just keep the old value
                   local
                   (let [wprop (/ (:width vport) width)

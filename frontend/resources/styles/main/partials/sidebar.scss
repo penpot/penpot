@@ -13,6 +13,27 @@
   &.settings-bar-left {
     border-left: none;
     border-right: 1px solid $color-gray-60;
+
+    & .tab-container-tabs {
+      padding-left: 1.5rem;
+    }
+
+    & button.collapse-sidebar {
+      background: none;
+      border: none;
+      cursor: pointer;
+      height: 2.5rem;
+      padding-top: 0.75rem;
+      position: absolute;
+      width: 1rem;
+
+      & svg {
+        width: 12px;
+        height: 12px;
+        fill: $color-gray-20;
+        transform: rotate(180deg);
+      }
+    }
   }
 
   .settings-bar-inside {
@@ -59,7 +80,6 @@
       flex: 1;
       width: 100%;
       height: 100%;
-      overflow: hidden;
 
       .tool-window-bar {
         align-items: center;
@@ -148,7 +168,7 @@
     }
   }
 
-  & .resize-area {
+  & > .resize-area {
     position: absolute;
     width: 8px;
     height: 100%;
@@ -156,11 +176,11 @@
     cursor: ew-resize;
   }
 
-  &.settings-bar-left .resize-area {
+  &.settings-bar-left > .resize-area {
     right: -8px;
   }
 
-  &.settings-bar-right .resize-area {
+  &.settings-bar-right > .resize-area {
     left: -8px;
   }
 }

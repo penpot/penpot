@@ -45,8 +45,7 @@
             [:*
              [:span.tool-window-bar-icon
               [:& si/element-icon {:shape first-shape}]]
-             [:span.tool-window-bar-title (->> selected-type d/name (str "handoff.tabs.code.selected.") (tr))]])
-          ]
+             [:span.tool-window-bar-title (->> selected-type d/name (str "handoff.tabs.code.selected.") (tr))]])]
          [:div.tool-window-content
           [:& tab-container {:on-change-tab #(do
                                                (reset! expanded false)
