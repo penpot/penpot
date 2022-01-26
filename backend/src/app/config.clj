@@ -48,6 +48,7 @@
    :database-uri "postgresql://postgres/penpot"
    :database-username "penpot"
    :database-password "penpot"
+   :authenticated-cookie-domain "penpot.app"
 
    :default-blob-version 3
    :loggers-zmq-uri "tcp://localhost:45556"
