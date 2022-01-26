@@ -353,7 +353,7 @@
         (s/keys :req-un [:internal.shape.text/text])))
 
 (s/def :internal.shape.path/command keyword?)
-(s/def :internal.shape.path/params (s/map-of keyword? any?))
+(s/def :internal.shape.path/params (s/nilable (s/map-of keyword? any?)))
 (s/def :internal.shape.path/command-item
   (s/keys :req-un [:internal.shape.path/command
                    :internal.shape.path/params]))
