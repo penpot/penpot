@@ -138,10 +138,10 @@
   .coordinates {
     background-color: $color-dark-bg;
     border-radius: $br-small;
-    bottom: -10px;
+    bottom: 0px;
     padding-left: 5px;
     position: fixed;
-    right: calc(#{$width-settings-bar} + 10px);
+    right: calc(#{$width-settings-bar} + 14px);
     text-align: center;
     width: 125px;
     white-space: nowrap;

@@ -6,8 +6,9 @@
 
 ### :sparkles: New features
 
+- Scroll bars [Taiga #2550](https://tree.taiga.io/project/penpot/task/2550)
 - Add select layer option to context menu [Taiga #2474](https://tree.taiga.io/project/penpot/us/2474).
-- Guides [Taiga #290](https://tree.taiga.io/project/penpot/us/290?milestone=307334)
+- Guides [Taiga #290](https://tree.taiga.io/project/penpot/us/290)
 - Improve file menu by adding semantically groups [Github #1203](https://github.com/penpot/penpot/issues/1203).
 - Add update components in bulk option in context menu [Taiga #1975](https://tree.taiga.io/project/penpot/us/1975).
 - Create first E2E tests [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608), [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608)
