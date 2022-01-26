@@ -5,29 +5,14 @@
 // Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-$width-settings-bar: 16rem;
-// This width is also used in update-viewport-size at frontend/src/app/main/data/workspace.cljs
-
 .settings-bar {
   background-color: $color-gray-50;
   border-left: 1px solid $color-gray-60;
-  bottom: 0;
-  height: 100%;
-  position: fixed;
-  right: 0;
-  width: $width-settings-bar;
-
-  &.expanded {
-    width: $width-settings-bar * 3;
-  }
-
-  z-index: 10;
-  overflow-y: auto;
+  position: relative;
 
   &.settings-bar-left {
     border-left: none;
     border-right: 1px solid $color-gray-60;
-    left: 48px;
   }
 
   .settings-bar-inside {
@@ -64,7 +49,6 @@ $width-settings-bar: 16rem;
     }
 
     flex-direction: column;
-    padding-top: 48px;
     height: 100%;
 
     .tool-window {
@@ -163,6 +147,22 @@ $width-settings-bar: 16rem;
       height: auto;
     }
   }
+
+  & .resize-area {
+    position: absolute;
+    width: 8px;
+    height: 100%;
+    z-index: 10;
+    cursor: ew-resize;
+  }
+
+  &.settings-bar-left .resize-area {
+    right: -8px;
+  }
+
+  &.settings-bar-right .resize-area {
+    left: -8px;
+  }
 }
 
 .tool-window-content {
@@ -204,6 +204,7 @@ $width-settings-bar: 16rem;
       }
     }
   }
+
 }
 
 .element-list.pages-list {

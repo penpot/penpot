@@ -12,6 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
@@ -52,7 +53,7 @@
      [:& cb/color-name {:color color :size size}]]))
 
 (mf/defc palette
-  [{:keys [current-colors recent-colors file-colors shared-libs selected size]}]
+  [{:keys [current-colors recent-colors file-colors shared-libs selected]}]
   (let [state      (mf/use-state {:show-menu false })
 
         width      (:width @state 0)
@@ -63,6 +64,9 @@
                       visible)
 
         container  (mf/use-ref nil)
+
+        {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+        (use-resize-hook 72 54 80 :y true :bottom)
 
         on-left-arrow-click
         (mf/use-callback
@@ -111,7 +115,11 @@
         (fn []
           (events/unlistenByKey key1))))
 
-    [:div.color-palette.left-sidebar-open
+    [:div.color-palette {:ref parent-ref
+                         :style #js {"--height" (str size "px")}}
+     [:div.resize-area {:on-pointer-down on-pointer-down
+                        :on-lost-pointer-capture on-lost-pointer-capture
+                        :on-mouse-move on-mouse-move}]
      [:& dropdown {:show (:show-menu @state)
                    :on-close #(swap! state assoc :show-menu false)}
       [:ul.workspace-context-menu.palette-menu
@@ -170,8 +178,7 @@
       [:div.color-palette-inside {:style {:position "relative"
                                           :right (str (* 66 offset) "px")}}
        (for [[idx item] (map-indexed vector current-colors)]
-         [:& palette-item {:size size
-                           :color item
+         [:& palette-item {:color item
                            :key idx}])]]
 
      [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))
@@ -188,8 +195,6 @@
         file-colors   (mf/deref refs/workspace-file-colors)
         shared-libs   (mf/deref refs/workspace-libraries)
         selected      (or (mf/deref selected-palette-ref) :recent)
-        size      (or (mf/deref selected-palette-size-ref) :big)
-
         current-library-colors (mf/use-state [])]
 
     (mf/use-effect
@@ -219,5 +224,4 @@
                  :recent-colors recent-colors
                  :file-colors file-colors
                  :shared-libs shared-libs
-                 :selected selected
-                 :size size}]))
+                 :selected selected}]))

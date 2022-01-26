@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar
   (:require
    [app.main.refs :as refs]
+   [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.comments :refer [comments-sidebar]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
@@ -21,19 +22,26 @@
 (mf/defc left-sidebar
   {:wrap [mf/memo]}
   [{:keys [layout ] :as props}]
-  [:aside.settings-bar.settings-bar-left
-   [:div.settings-bar-inside
-    {:data-layout (str/join "," layout)}
-    (when (contains? layout :layers)
-      [:*
-       [:& sitemap {:layout layout}]
-       [:& layers-toolbox]])
+  (let [{:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+        (use-resize-hook 255 255 500 :x false :left)]
 
-    (when (contains? layout :document-history)
-      [:& history-toolbox])
+    [:aside.settings-bar.settings-bar-left {:ref parent-ref
+                                            :style #js {"--width" (str size "px")}}
+     [:div.resize-area {:on-pointer-down on-pointer-down
+                        :on-lost-pointer-capture on-lost-pointer-capture
+                        :on-mouse-move on-mouse-move}]
+     [:div.settings-bar-inside
+      {:data-layout (str/join "," layout)}
+      (when (contains? layout :layers)
+        [:*
+         [:& sitemap {:layout layout}]
+         [:& layers-toolbox]])
 
-    (when (contains? layout :assets)
-      [:& assets-toolbox])]])
+      (when (contains? layout :document-history)
+        [:& history-toolbox])
+
+      (when (contains? layout :assets)
+        [:& assets-toolbox])]]))
 
 ;; --- Right Sidebar (Component)
 
@@ -41,8 +49,15 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [drawing-tool (:tool (mf/deref refs/workspace-drawing))]
-    [:aside.settings-bar
+  (let [{:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+        (use-resize-hook 255 255 500 :x true :right)
+
+        drawing-tool (:tool (mf/deref refs/workspace-drawing))]
+    [:aside.settings-bar.settings-bar-right {:ref parent-ref
+                                             :style #js {"--width" (str size "px")}}
+     [:div.resize-area {:on-pointer-down on-pointer-down
+                        :on-lost-pointer-capture on-lost-pointer-capture
+                        :on-mouse-move on-mouse-move}]
      [:div.settings-bar-inside
       (if (= drawing-tool :comments)
         [:& comments-sidebar]

@@ -481,7 +481,7 @@
               (cond
                 (or (not (mth/finite? (:width srect)))
                     (not (mth/finite? (:height srect))))
-                (assoc local :vbox (assoc size :x 0 :y 0 :left-offset 0))
+                (assoc local :vbox (assoc size :x 0 :y 0))
 
                 (or (> (:width srect) width)
                     (> (:height srect) height))
@@ -522,25 +522,44 @@
                        (update :y y)))))))
 
 (defn update-viewport-size
-  [{:keys [width height] :as size}]
+  [resize-type {:keys [width height] :as size}]
   (ptk/reify ::update-viewport-size
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              (fn [{:keys [vport left-sidebar? zoom] :as local}]
+              (fn [{:keys [vport] :as local}]
                 (if (or (mth/almost-zero? width) (mth/almost-zero? height))
                   ;; If we have a resize to zero just keep the old value
                   local
                   (let [wprop (/ (:width vport) width)
                         hprop (/ (:height vport) height)
-                        left-offset (if left-sidebar? 0 (/ (* -1 15 16) zoom))]
-                    (-> local         ;; This matches $width-settings-bar
-                        (assoc :vport size) ;; in frontend/resources/styles/main/partials/sidebar.scss
-                        (update :vbox (fn [vbox]
-                                        (-> vbox
-                                            (update :width #(/ % wprop))
-                                            (update :height #(/ % hprop))
-                                            (assoc :left-offset left-offset))))))))))))
+
+                        vbox (:vbox local)
+                        vbox-x (:x vbox)
+                        vbox-y (:y vbox)
+                        vbox-width (:width vbox)
+                        vbox-height (:height vbox)
+
+                        vbox-width' (/ vbox-width wprop)
+                        vbox-height' (/ vbox-height hprop)
+
+                        vbox-x'
+                        (case resize-type
+                          :left  (+ vbox-x (- vbox-width vbox-width'))
+                          :right vbox-x
+                          (+ vbox-x (/ (- vbox-width vbox-width') 2)))
+
+                        vbox-y'
+                        (case resize-type
+                          :top  (+ vbox-y (- vbox-height vbox-height'))
+                          :bottom vbox-y
+                          (+ vbox-y (/ (- vbox-height vbox-height') 2)))]
+                    (-> local
+                        (assoc :vport size)
+                        (assoc-in [:vbox :x] vbox-x')
+                        (assoc-in [:vbox :y] vbox-y')
+                        (assoc-in [:vbox :width] vbox-width')
+                        (assoc-in [:vbox :height] vbox-height')))))))))
 
 (defn start-panning []
   (ptk/reify ::start-panning
@@ -596,14 +615,12 @@
 
 (defn- impl-update-zoom
   [{:keys [vbox] :as local} center zoom]
-  (let [vbox (update vbox :x + (:left-offset vbox))
-        new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
+  (let [new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
         old-zoom (:zoom local)
         center (if center center (gsh/center-rect vbox))
         scale (/ old-zoom new-zoom)
         mtx  (gmt/scale-matrix (gpt/point scale) center)
-        vbox' (gsh/transform-rect vbox mtx)
-        vbox' (update vbox' :x - (:left-offset vbox))]
+        vbox' (gsh/transform-rect vbox mtx)]
     (-> local
         (assoc :zoom new-zoom)
         (update :vbox merge (select-keys vbox' [:x :y :width :height])))))

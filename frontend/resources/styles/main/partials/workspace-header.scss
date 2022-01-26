@@ -5,14 +5,12 @@
 // Copyright (c) UXBOX Labs SL
 
 .workspace-header {
+  position: relative;
   align-items: center;
   background-color: $color-gray-50;
   border-bottom: 1px solid $color-gray-60;
   display: flex;
-  height: 48px;
   padding: $size-1 $size-4 $size-1 55px;
-  position: relative;
-  z-index: 12;
   justify-content: space-between;
 
   .main-icon {

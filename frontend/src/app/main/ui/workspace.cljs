@@ -12,6 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks.resize :refer [use-resize-observer]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
    [app.main.ui.workspace.colorpicker]
@@ -39,11 +40,19 @@
         {:keys [options-mode]} local
         file   (obj/get props "file")
         layout (obj/get props "layout")
-        colorpalette? (:colorpalette layout)]
+        colorpalette? (:colorpalette layout)
+
+        on-resize
+        (mf/use-callback
+         (fn [resize-type size]
+           (when (:vport local)
+             (st/emit! (dw/update-viewport-size resize-type size)))))
+
+        node-ref (use-resize-observer on-resize)]
     [:*
      (when colorpalette? [:& colorpalette])
 
-     [:section.workspace-content
+     [:section.workspace-content {:ref node-ref}
       [:section.workspace-viewport
        [:& coordinates/coordinates {:colorpalette? colorpalette?}]
 
@@ -130,4 +139,6 @@
                                :file file
                                :layout layout}]
            [:& workspace-loader])]]]]]))
+
+
 

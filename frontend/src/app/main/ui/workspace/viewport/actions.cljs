@@ -492,11 +492,3 @@
        (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste))
          (st/emit! (dw/paste-from-event event @in-viewport?)))))))
 
-(defn on-resize [viewport-ref]
-  (mf/use-callback
-   (fn [_]
-     (let [node (mf/ref-val viewport-ref)
-           prnt (dom/get-parent node)
-           size (dom/get-client-size prnt)]
-      ;; We schedule the event so it fires after `initialize-page` event
-       (timers/schedule #(st/emit! (dw/update-viewport-size size)))))))

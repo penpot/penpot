@@ -220,12 +220,12 @@
 (defn guide-creation-area
   [vbox zoom axis]
   (if (= axis :x)
-    {:x (:x vbox)
+    {:x (+ (:x vbox) (/ 8 zoom))
      :y (:y vbox)
-     :width (/ 24 zoom)
+     :width (/ 16 zoom)
      :height (:height vbox)}
 
-    {:x (:x vbox)
+    {:x (+ (:x vbox) (+ 28 zoom))
      :y (:y vbox)
      :width (:width vbox)
      :height (/ 24 zoom)}))

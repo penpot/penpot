@@ -14,6 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -136,5 +137,7 @@
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-palette))
          :class (when (contains? layout :colorpalette) "selected")
-         :on-click (st/emitf (dw/toggle-layout-flags :colorpalette))}
+         :on-click (do
+                     (r/set-resize-type! :bottom)
+                     (st/emitf (dw/toggle-layout-flags :colorpalette)))}
         i/palette]]]]))

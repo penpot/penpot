@@ -163,7 +163,6 @@
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
     (hooks/setup-viewport-size viewport-ref)
     (hooks/setup-cursor cursor alt? panning drawing-tool drawing-path? node-editing?)
-    (hooks/setup-resize layout viewport-ref)
     (hooks/setup-keyboard alt? ctrl? space?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)
@@ -222,8 +221,6 @@
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :preserveAspectRatio "xMidYMid meet"
        :key (str "viewport" page-id)
-       :width (:width vport 0)
-       :height (:height vport 0)
        :view-box (utils/format-viewbox vbox)
        :ref viewport-ref
        :class (when drawing-tool "drawing")

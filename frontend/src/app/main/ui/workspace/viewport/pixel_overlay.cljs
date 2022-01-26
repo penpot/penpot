@@ -25,7 +25,7 @@
   (:import goog.events.EventType))
 
 (defn format-viewbox [vbox]
-  (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
+  (str/join " " [(:x vbox 0)
                  (:y vbox 0)
                  (:width vbox 0)
                  (:height vbox 0)]))

@@ -10,10 +10,7 @@
   background-color: $color-gray-50;
   border-top: 1px solid $color-gray-60;
   display: flex;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
+  
   z-index: 11;
 
   & .right-arrow,
@@ -46,15 +43,20 @@
     @include animation(0, 0.5s, fadeOutDown);
   }
 
-  &.left-sidebar-open {
-    left: 303px;
-    width: calc(100% - 303px);
-  }
-
   & .context-menu-items {
     bottom: 1.5rem;
     top: initial;
     min-width: 10rem;
+  }
+
+  & .resize-area {
+    position: absolute;
+    height: 8px;
+    width: 100%;
+    z-index: 10;
+    cursor: ns-resize;
+    top: 0;
+    left: 0;
   }
 }
 
@@ -119,7 +121,6 @@
   display: flex;
   overflow: hidden;
   width: 100%;
-  height: 5rem;
   padding: 0.25rem;
 
   &.size-small {
