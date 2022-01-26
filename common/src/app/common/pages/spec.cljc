@@ -346,11 +346,11 @@
 
 (s/def :internal.shape.text/content
   (s/nilable
-   (s/or :container
+   (s/or :text-container
          (s/keys :req-un [:internal.shape.text/type
                           :internal.shape.text/children]
                  :opt-un [:internal.shape.text/key])
-         :content
+         :text-content
          (s/keys :req-un [:internal.shape.text/text]))))
 
 (s/def :internal.shape.path/command keyword?)
