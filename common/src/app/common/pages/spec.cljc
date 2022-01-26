@@ -345,12 +345,13 @@
 (s/def :internal.shape.text/key string?)
 
 (s/def :internal.shape.text/content
-  (s/or :container
-        (s/keys :req-un [:internal.shape.text/type
-                         :internal.shape.text/children]
-                :opt-un [:internal.shape.text/key])
-        :content
-        (s/keys :req-un [:internal.shape.text/text])))
+  (s/nilable
+   (s/or :container
+         (s/keys :req-un [:internal.shape.text/type
+                          :internal.shape.text/children]
+                 :opt-un [:internal.shape.text/key])
+         :content
+         (s/keys :req-un [:internal.shape.text/text]))))
 
 (s/def :internal.shape.path/command keyword?)
 (s/def :internal.shape.path/params (s/nilable (s/map-of keyword? any?)))
