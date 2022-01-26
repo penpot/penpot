@@ -18,6 +18,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -73,9 +74,11 @@
         (mf/use-callback
          (mf/deps project)
          (fn [name]
-           (st/emit! (-> (dd/rename-project (assoc project :name name))
-                         (with-meta {::ev/origin "dashboard"})))
-           (swap! local assoc :edition? false)))
+           (let [name (str/trim name)]
+             (when-not (str/empty? name)
+               (st/emit! (-> (dd/rename-project (assoc project :name name))
+                             (with-meta {::ev/origin "dashboard"}))))
+             (swap! local assoc :edition? false))))
 
         on-file-created
         (mf/use-callback

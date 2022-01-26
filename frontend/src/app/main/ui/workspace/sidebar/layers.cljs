@@ -46,8 +46,8 @@
                         (on-stop-edit)
                         (swap! local assoc :edition false)
                         (st/emit! (dw/end-rename-shape)
-                                  (when-not (str/empty? name)
-                                    (dw/update-shape (:id shape) {:name name})))))
+                                  (when-not (str/empty? (str/trim name))
+                                    (dw/update-shape (:id shape) {:name (str/trim name)})))))
 
         cancel-edit (fn []
                       (on-stop-edit)

@@ -2,6 +2,8 @@
 
 ## :rocket: Next
 
+### :boom: Breaking changes
+
 ### :sparkles: New features
 
 - Add select layer option to context menu [Taiga #2474](https://tree.taiga.io/project/penpot/us/2474).
@@ -10,6 +12,11 @@
 - Add update components in bulk option in context menu [Taiga #1975](https://tree.taiga.io/project/penpot/us/1975).
 - Create e2e tests for drawing basic shapes [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608).
 - Create firsts e2e test [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608).
+
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :heart: Community contributions by (Thank you!)
+
 
 ## 1.11.0-beta
 
@@ -85,6 +92,7 @@
 - Fix auto hide header in viewer full screen [Taiga #2632](https://tree.taiga.io/project/penpot/issue/2632)
 - Fix zoom in/out after fit or fill [Taiga #2630](https://tree.taiga.io/project/penpot/issue/2630)
 - Normalize zoom levels in workspace and viewer [Taiga #2631](https://tree.taiga.io/project/penpot/issue/2631)
+- Avoid empty names in projects, files and pages [Taiga #2594](https://tree.taiga.io/project/penpot/issue/2594)
 
 ### :arrow_up: Deps updates
 
@@ -95,8 +103,8 @@
 - Spelling fixes (by @jsoref) [#1340](https://github.com/penpot/penpot/pull/1340).
 - Explain folders in components (by @candideu) [Penpot-docs #42](https://github.com/penpot/penpot-docs/pull/42).
 - Readability improvements of user guide (by @PaulSchulz) [Penpot-docs #50](https://github.com/penpot/penpot-docs/pull/50).
-
-# 1.10.4-beta
+  
+## 1.10.4-beta
 
 ### :sparkles: Enhacements
 
@@ -108,7 +116,7 @@
 - Minor fix on how file changes log is persisted.
 - Fix many issues on error reporting.
 
-# 1.10.3-beta
+## 1.10.3-beta
 
 ### :sparkles: Enhacements
 
@@ -130,7 +138,7 @@
 
 - Update log4j2 dependency.
 
-# 1.10.2-beta
+## 1.10.2-beta
 
 ### :bug: Bugs fixed
 
@@ -142,7 +150,7 @@
 
 - Update log4j2 dependency.
 
-# 1.10.1-beta
+## 1.10.1-beta
 
 ### :bug: Bugs fixed
 
