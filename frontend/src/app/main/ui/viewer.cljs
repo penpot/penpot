@@ -234,7 +234,8 @@
                             :show? (:show-thumbnails local false)
                             :page page
                             :index index}]
-      [:section.viewer-section {:id "viewer-section"}
+      [:section.viewer-section {:id "viewer-section"
+                                :class (if fullscreen? "fullscreen" "")}
        (cond
          (empty? frames)
          [:section.empty-state
