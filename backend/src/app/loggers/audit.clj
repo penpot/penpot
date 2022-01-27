@@ -89,19 +89,24 @@
 (s/def ::events (s/every ::event))
 
 (defmethod ig/init-key ::http-handler
-  [_  {:keys [executor] :as cfg}]
-  (fn [{:keys [params profile-id] :as request}]
-    (when (contains? cf/flags :audit-log)
-      (let [events  (->> (:events params)
-                         (remove #(not= profile-id (:profile-id %)))
-                         (us/conform ::events))
-            ip-addr (parse-client-ip request)
-            cfg     (-> cfg
-                        (assoc :source "frontend")
-                        (assoc :events events)
-                        (assoc :ip-addr ip-addr))]
-        (px/run! executor #(persist-http-events cfg))))
-    {:status 204 :body ""}))
+  [_  {:keys [executor pool] :as cfg}]
+  (if (db/read-only? pool)
+    (do
+      (l/warn :hint "audit log http handler disabled, db is read-only")
+      (constantly {:status 204 :body ""}))
+    (fn [{:keys [params profile-id] :as request}]
+      (when (contains? cf/flags :audit-log)
+        (let [events  (->> (:events params)
+                           (remove #(not= profile-id (:profile-id %)))
+                           (us/conform ::events))
+              ip-addr (parse-client-ip request)
+              cfg     (-> cfg
+                          (assoc :source "frontend")
+                          (assoc :events events)
+                          (assoc :ip-addr ip-addr))]
+
+          (px/run! executor #(persist-http-events cfg))))
+      {:status 204 :body ""})))
 
 (defn- persist-http-events
   [{:keys [pool events ip-addr source] :as cfg}]
@@ -148,13 +153,25 @@
    (map clean-props)))
 
 (defmethod ig/init-key ::collector
-  [_ cfg]
-  (when (contains? cf/flags :audit-log)
-    (l/info :msg "initializing audit log collector")
+  [_ {:keys [pool] :as cfg}]
+  (cond
+    (not (contains? cf/flags :audit-log))
+    (do
+      (l/info :hint "audit log collection disabled")
+      (constantly nil))
+
+    (db/read-only? pool)
+    (do
+      (l/warn :hint "audit log collection disabled, db is read-only")
+      (constantly nil))
+
+    :else
     (let [input  (a/chan 512 event-xform)
           buffer (aa/batch input {:max-batch-size 100
                                   :max-batch-age (* 10 1000) ; 10s
                                   :init []})]
+
+      (l/info :hint "audit log collector initialized")
       (a/go-loop []
         (when-let [[_type events] (a/<! buffer)]
           (let [res (a/<! (persist-events cfg events))]
@@ -216,6 +233,7 @@
                       (:enabled props false))
           uri     (or uri (:uri props))
           cfg     (assoc cfg :uri uri)]
+
       (when (and enabled (not uri))
         (ex/raise :type :internal
                   :code :task-not-configured

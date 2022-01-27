@@ -59,6 +59,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare event-loop-fn)
+(declare event-loop)
 (declare instrument-tasks)
 
 (s/def ::queue keyword?)
@@ -85,13 +86,10 @@
             :queue :default}
            (d/without-nils cfg)))
 
-(defmethod ig/init-key ::worker
-  [_ {:keys [pool poll-interval name queue] :as cfg}]
-  (l/info :action "start worker"
-          :name (d/name name)
-          :queue (d/name queue))
-  (let [close-ch (a/chan 1)
-        poll-ms  (inst-ms poll-interval)]
+(defn- event-loop
+  "Main, worker eventloop"
+  [{:keys [pool poll-interval close-ch] :as cfg}]
+  (let [poll-ms (inst-ms poll-interval)]
     (a/go-loop []
       (let [[val port] (a/alts! [close-ch (event-loop-fn cfg)] :priority true)]
         (cond
@@ -100,7 +98,7 @@
           (or (= port close-ch) (nil? val))
           (l/debug :hint "stop condition found")
 
-          (db/pool-closed? pool)
+          (db/closed? pool)
           (do
             (l/debug :hint "eventloop aborted because pool is closed")
             (a/close! close-ch))
@@ -132,13 +130,26 @@
           (= ::empty val)
           (do
             (a/<! (a/timeout poll-ms))
-            (recur)))))
+            (recur)))))))
+
+(defmethod ig/init-key ::worker
+  [_ {:keys [pool name queue] :as cfg}]
+  (let [close-ch (a/chan 1)
+        cfg      (assoc cfg :close-ch close-ch)]
+    (if (db/read-only? pool)
+      (l/warn :hint "worker not started, db is read-only"
+              :name (d/name name)
+              :queue (d/name queue))
+      (do
+        (l/info :hint "worker started"
+                :name (d/name name)
+                :queue (d/name queue))
+        (event-loop cfg)))
 
     (reify
       java.lang.AutoCloseable
       (close [_]
         (a/close! close-ch)))))
-
 
 (defmethod ig/halt-key! ::worker
   [_ instance]
@@ -343,31 +354,35 @@
   (s/keys :req-un [::executor ::db/pool ::schedule ::tasks]))
 
 (defmethod ig/init-key ::scheduler
-  [_ {:keys [schedule tasks] :as cfg}]
-  (let [scheduler (Executors/newScheduledThreadPool (int 1))
-        schedule  (->> schedule
-                       (filter some?)
-                       ;; If id is not defined, use the task as id.
-                       (map (fn [{:keys [id task] :as item}]
-                              (if (some? id)
-                                (assoc item :id (d/name id))
-                                (assoc item :id (d/name task)))))
-                       (map (fn [{:keys [task] :as item}]
-                              (let [f (get tasks task)]
-                                (when-not f
-                                  (ex/raise :type :internal
-                                            :code :task-not-found
-                                            :hint (str/fmt "task %s not configured" task)))
-                                (-> item
-                                    (dissoc :task)
-                                    (assoc :fn f))))))
-        cfg       (assoc cfg
-                         :scheduler scheduler
-                         :schedule schedule)]
+  [_ {:keys [schedule tasks pool] :as cfg}]
+  (let [scheduler (Executors/newScheduledThreadPool (int 1))]
+    (if (db/read-only? pool)
+      (l/warn :hint "scheduler not started, db is read-only")
+      (let [schedule  (->> schedule
+                           (filter some?)
+                           ;; If id is not defined, use the task as id.
+                           (map (fn [{:keys [id task] :as item}]
+                                  (if (some? id)
+                                    (assoc item :id (d/name id))
+                                    (assoc item :id (d/name task)))))
+                           (map (fn [{:keys [task] :as item}]
+                                  (let [f (get tasks task)]
+                                    (when-not f
+                                      (ex/raise :type :internal
+                                                :code :task-not-found
+                                                :hint (str/fmt "task %s not configured" task)))
+                                    (-> item
+                                        (dissoc :task)
+                                        (assoc :fn f))))))
+            cfg       (assoc cfg
+                             :scheduler scheduler
+                             :schedule schedule)]
+        (l/info :hint "scheduler started"
+                :registred-tasks (count schedule))
 
-    (synchronize-schedule cfg)
-    (run! (partial schedule-task cfg)
-          (filter some? schedule))
+        (synchronize-schedule cfg)
+        (run! (partial schedule-task cfg)
+              (filter some? schedule))))
 
     (reify
       java.lang.AutoCloseable
