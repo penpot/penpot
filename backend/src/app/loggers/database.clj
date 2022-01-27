@@ -28,9 +28,10 @@
 
 (defn- persist-on-database!
   [{:keys [pool] :as cfg} {:keys [id] :as event}]
-  (db/with-atomic [conn pool]
-    (db/insert! conn :server-error-report
-                {:id id :content (db/tjson event)})))
+  (when-not (db/read-only? pool)
+    (db/with-atomic [conn pool]
+      (db/insert! conn :server-error-report
+                  {:id id :content (db/tjson event)}))))
 
 (defn- parse-event-data
   [event]

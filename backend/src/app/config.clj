@@ -112,6 +112,7 @@
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
 (s/def ::database-username (s/nilable ::us/string))
+(s/def ::database-readonly ::us/boolean)
 (s/def ::default-blob-version ::us/integer)
 (s/def ::error-report-webhook ::us/string)
 (s/def ::user-feedback-destination ::us/string)
@@ -201,6 +202,7 @@
                    ::database-password
                    ::database-uri
                    ::database-username
+                   ::database-readonly
                    ::default-blob-version
                    ::error-report-webhook
                    ::file-change-snapshot-every

@@ -17,6 +17,7 @@
    {:uri        (cf/get :database-uri)
     :username   (cf/get :database-username)
     :password   (cf/get :database-password)
+    :read-only  (cf/get :database-readonly false)
     :metrics    (ig/ref :app.metrics/metrics)
     :migrations (ig/ref :app.migrations/all)
     :name :main

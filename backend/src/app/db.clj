@@ -62,12 +62,13 @@
           :opt-un [::migrations ::mtx/metrics ::read-only]))
 
 (defmethod ig/init-key ::pool
-  [_ {:keys [migrations metrics name] :as cfg}]
+  [_ {:keys [migrations metrics name read-only] :as cfg}]
   (l/info :action "initialize connection pool" :name (d/name name) :uri (:uri cfg))
   (some-> metrics :registry instrument-jdbc!)
 
   (let [pool (create-pool cfg)]
-    (some->> (seq migrations) (apply-migrations! pool))
+    (when-not read-only
+      (some->> (seq migrations) (apply-migrations! pool)))
     pool))
 
 (defmethod ig/halt-key! ::pool
@@ -136,9 +137,13 @@
 
 (s/def ::pool pool?)
 
-(defn pool-closed?
+(defn closed?
   [pool]
   (.isClosed ^HikariDataSource pool))
+
+(defn read-only?
+  [pool]
+  (.isReadOnly ^HikariDataSource pool))
 
 (defn create-pool
   [cfg]
