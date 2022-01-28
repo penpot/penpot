@@ -159,9 +159,7 @@
              (when (or up? down?)
                (set-delta event up? down?))
              (when enter?
-               (let [new-value (parse-value)]
-                 (apply-value new-value)
-                 (dom/blur! input-node)))
+               (dom/blur! input-node))
              (when esc?
                (update-input value-str)))))
 

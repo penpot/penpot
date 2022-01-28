@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 
-export PENPOT_FLAGS="enable-asserts enable-audit-log $PENPOT_FLAGS"
+# export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot"
+# export PENPOT_DATABASE_USERNAME="penpot"
+# export PENPOT_DATABASE_PASSWORD="penpot"
+# export PENPOT_DATABASE_READONLY=true
+
+# export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot_pre"
+# export PENPOT_DATABASE_USERNAME="penpot_pre"
+# export PENPOT_DATABASE_PASSWORD="penpot_pre"
+# export PENPOT_FLAGS="enable-asserts enable-audit-log $PENPOT_FLAGS"
 
 export OPTIONS="
-       -A:jmx-remote:dev \
+       -A:dev \
        -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
        -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
        -J-XX:+UseZGC \
@@ -12,10 +20,6 @@ export OPTIONS="
        -J-Djdk.attach.allowAttachSelf \
        -J-XX:+UnlockDiagnosticVMOptions \
        -J-XX:+DebugNonSafepoints";
-
-
-# export OPTIONS="$OPTIONS -J-XX:+UnlockDiagnosticVMOptions";
-# export OPTIONS="$OPTIONS -J-XX:-TieredCompilation -J-XX:CompileThreshold=10000";
 
 export OPTIONS_EVAL="nil"
 # export OPTIONS_EVAL="(set! *warn-on-reflection* true)"

@@ -86,9 +86,13 @@
   (reify rp/StreamableResponseBody
     (write-body-to-stream [_ _ output-stream]
       ;; Use the same buffer as jetty output buffer size
-      (with-open [bos (buffered-output-stream output-stream buffer-size)]
-        (let [tw (t/writer bos opts)]
-          (t/write! tw data))))))
+      (try
+        (with-open [bos (buffered-output-stream output-stream buffer-size)]
+          (let [tw (t/writer bos opts)]
+            (t/write! tw data)))
+        (catch Throwable cause
+          (l/warn :hint "unexpected error on encoding response"
+                  :cause cause))))))
 
 (defn- impl-format-response-body
   [response {:keys [query-params] :as request}]

@@ -285,6 +285,8 @@
         (cond-> transform
           (-> (assoc :transform transform)
               (assoc :transform-inverse transform-inverse)))
+        (cond-> (not transform)
+          (dissoc :transform :transform-inverse))
         (assoc :selrect selrect)
         (assoc :points points)
         (assoc :rotation rotation))))

@@ -33,16 +33,17 @@
 
       :spec-problems (some->> data ::s/problems (take 10) seq vec)
       :spec-value    (some->> data ::s/value)
-      :spec-explain  (binding [s/*explain-out* expound/printer]
-                       (with-out-str
-                         (s/explain-out (update data ::s/problems #(take 10 %)))))
-
-      :data          (some-> data (dissoc ::s/problems ::s/value :hint))
+      :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))
       :ip-addr       (parse-client-ip request)
       :profile-id    (:profile-id request)}
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
-        :frontend-version (get headers "x-frontend-version" "unknown")}))))
+        :frontend-version (get headers "x-frontend-version" "unknown")})
+
+     (when (and data (::s/problems data))
+       {:spec-explain (binding [s/*explain-out* expound/printer]
+                        (with-out-str
+                          (s/explain-out (update data ::s/problems #(take 10 %)))))}))))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -71,7 +72,7 @@
     {:status 500
      :body {:type :server-error
             :code :assertion
-            :data (dissoc edata ::s/problems ::s/value)}}))
+            :data (dissoc edata ::s/problems ::s/value ::s/spec)}}))
 
 (defmethod handle-exception :not-found
   [err _]
