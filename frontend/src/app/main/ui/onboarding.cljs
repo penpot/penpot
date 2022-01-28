@@ -27,14 +27,14 @@
     [:img {:src "images/login-on.jpg" :border "0" :alt (tr "onboarding.welcome.alt")}]]
    [:div.modal-right
     [:div.modal-title
-     [:h2 (tr "onboarding.welcome.title")]]
+     [:h2 {:data-test "onboarding-welcome"} (tr "onboarding.welcome.title")]]
     [:span.release "Beta version " (:main @cf/version)]
     [:div.modal-content
      [:p (tr "onboarding.welcome.desc1")]
      [:p (tr "onboarding.welcome.desc2")]
      [:p (tr "onboarding.welcome.desc3")]]
     [:div.modal-navigation
-     [:button.btn-secondary {:on-click next} (tr "labels.continue")]]]
+     [:button.btn-secondary {:on-click next :data-test "onboarding-next-btn"} (tr "labels.continue")]]]
    [:img.deco {:src "images/deco-left.png" :border "0"}]
    [:img.deco.right {:src "images/deco-right.png" :border "0"}]])
 
@@ -55,7 +55,7 @@
       "\u00A0"
       (tr "onboarding.contrib.desc2.2")]]
     [:div.modal-navigation
-     [:button.btn-secondary {:on-click next} (tr "labels.continue")]]]])
+     [:button.btn-secondary {:on-click next  :data-test "opsource-next-btn"} (tr "labels.continue")]]]])
 
 (defmulti render-slide :slide)
 
@@ -67,13 +67,14 @@
      [:img {:src "images/on-design.gif" :border "0" :alt (tr "onboarding.slide.0.alt")}]]
     [:div.modal-right
      [:div.modal-title
-      [:h2 (tr "onboarding.slide.0.title")]]
+      [:h2 {:data-test "slide-0-title"} (tr "onboarding.slide.0.title")]]
      [:div.modal-content
       [:p (tr "onboarding.slide.0.desc1")]
       [:p (tr "onboarding.slide.0.desc2")]]
      [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate 1)} (tr "labels.continue")]
-      [:span.skip {:on-click skip} (tr "labels.skip")]
+      [:button.btn-secondary {:on-click #(navigate 1)
+                              :data-test "slide-0-btn"} (tr "labels.continue")]
+      [:span.skip {:on-click skip :data-test "skip-btn"} (tr "labels.skip")]
       [:& rc/navigation-bullets
        {:slide slide
         :navigate navigate
@@ -87,13 +88,14 @@
      [:img {:src "images/on-proto.gif" :border "0" :alt (tr "onboarding.slide.1.alt")}]]
     [:div.modal-right
      [:div.modal-title
-      [:h2 (tr "onboarding.slide.1.title")]]
+      [:h2 {:data-test "slide-1-title"} (tr "onboarding.slide.1.title")]]
      [:div.modal-content
       [:p (tr "onboarding.slide.1.desc1")]
       [:p (tr "onboarding.slide.1.desc2")]]
      [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate 2)} (tr "labels.continue")]
-      [:span.skip {:on-click skip} (tr "labels.skip")]
+      [:button.btn-secondary {:on-click #(navigate 2)
+                              :data-test "slide-1-btn"} (tr "labels.continue")]
+      [:span.skip {:on-click skip :data-test "skip-btn"} (tr "labels.skip")]
       [:& rc/navigation-bullets
        {:slide slide
         :navigate navigate
@@ -107,12 +109,13 @@
      [:img {:src "images/on-feed.gif" :border "0" :alt (tr "onboarding.slide.2.alt")}]]
     [:div.modal-right
      [:div.modal-title
-      [:h2 (tr "onboarding.slide.2.title")]]
+      [:h2 {:data-test "slide-2-title"} (tr "onboarding.slide.2.title")]]
      [:div.modal-content
       [:p (tr "onboarding.slide.2.desc1")]]
      [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate 3)} (tr "labels.continue")]
-      [:span.skip {:on-click skip} (tr "labels.skip")]
+      [:button.btn-secondary {:on-click #(navigate 3)
+                              :data-test "slide-2-btn"} (tr "labels.continue")]
+      [:span.skip {:on-click skip :data-test "skip-btn"} (tr "labels.skip")]
       [:& rc/navigation-bullets
        {:slide slide
         :navigate navigate
@@ -126,12 +129,13 @@
      [:img {:src "images/on-handoff.gif" :border "0" :alt (tr "onboarding.slide.3.alt")}]]
     [:div.modal-right
      [:div.modal-title
-      [:h2 (tr "onboarding.slide.3.title")]]
+      [:h2 {:data-test "slide-3-title"} (tr "onboarding.slide.3.title")]]
      [:div.modal-content
       [:p (tr "onboarding.slide.3.desc1")]
       [:p (tr "onboarding.slide.3.desc2")]]
      [:div.modal-navigation
-      [:button.btn-secondary {:on-click skip} (tr "labels.start")]
+      [:button.btn-secondary {:on-click skip
+                              :data-test "slide-3-btn"} (tr "labels.start")]
       [:& rc/navigation-bullets
        {:slide slide
         :navigate navigate

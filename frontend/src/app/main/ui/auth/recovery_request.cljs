@@ -67,7 +67,8 @@
                     :type "text"}]]
 
      [:& fm/submit-button
-      {:label (tr "auth.recovery-request-submit")}]]))
+      {:label (tr "auth.recovery-request-submit")
+       :data-test "recovery-resquest-submit"}]]))
 
 
 ;; --- Recovery Request Page
@@ -82,5 +83,6 @@
 
     [:div.links
      [:div.link-entry
-      [:a {:on-click #(st/emit! (rt/nav :auth-login))}
+      [:a {:on-click #(st/emit! (rt/nav :auth-login))
+           :data-test "go-back-link"}
        (tr "labels.go-back")]]]]])

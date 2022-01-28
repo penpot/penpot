@@ -70,7 +70,8 @@
      [:div.modal-container.onboarding-templates
       [:div.modal-header
        [:div.modal-close-button
-        {:on-click close-fn} i/close]]
+        {:on-click close-fn
+         :data-test "close-templates-btn"} i/close]]
 
       [:div.modal-content
        [:h3 (tr "onboarding.templates.title")]

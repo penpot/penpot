@@ -12,6 +12,7 @@
    [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
+   [clojure.string]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
@@ -19,7 +20,7 @@
 (def use-form fm/use-form)
 
 (mf/defc input
-  [{:keys [label help-icon disabled form hint trim children] :as props}]
+  [{:keys [label help-icon disabled form hint trim children data-test] :as props}]
   (let [input-type   (get props :type "text")
         input-name   (get props :name)
         more-classes (get props :class)
@@ -112,7 +113,7 @@
          help-icon'])
       (cond
         (and touched? (:message error))
-        [:span.error (tr (:message error))]
+        [:span.error {:data-test (clojure.string/join [data-test "-error"]) }(tr (:message error))]
 
         (string? hint)
         [:span.hint hint])]]))
@@ -170,7 +171,7 @@
         [:span.hint hint])]]))
 
 (mf/defc select
-  [{:keys [options label form default] :as props
+  [{:keys [options label form default data-test] :as props
     :or {default ""}}]
   (let [input-name (get props :name)
 
@@ -181,7 +182,8 @@
 
     [:div.custom-select
      [:select {:value value
-               :on-change on-change}
+               :on-change on-change
+               :data-test data-test}
       (for [item options]
         [:option {:key (:value item) :value (:value item)} (:label item)])]
 
@@ -194,7 +196,7 @@
        i/arrow-slide]]]))
 
 (mf/defc submit-button
-  [{:keys [label form on-click disabled] :as props}]
+  [{:keys [label form on-click disabled data-test] :as props}]
   (let [form (or form (mf/use-ctx form-ctx))]
     [:input.btn-primary.btn-large
      {:name "submit"
@@ -202,6 +204,7 @@
       :disabled (or (not (:valid @form)) (true? disabled))
       :on-click on-click
       :value label
+      :data-test data-test
       :type "submit"}]))
 
 (mf/defc form

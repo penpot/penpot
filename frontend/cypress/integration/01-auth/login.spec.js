@@ -14,7 +14,7 @@ describe("login", () => {
   });
 
   it("displays the login form", () => {
-    cy.contains("Great to see you again!").should("exist");
+    cy.getBySel("login-title").should("exist");
     cy.get("#email").should("exist");
     cy.get("#password").should("exist");
   });
@@ -22,20 +22,17 @@ describe("login", () => {
   it("can't login with an invalid user", () => {
     cy.get("#email").type("bad@mail.com");
     cy.get("#password").type("badpassword");
-    cy.get("input[type=submit]").first().click();
-    cy.get(".warning")
-      .should("exist")
-      .should("contain", "Username or password seems to be wrong.");
+    cy.getBySel("login-submit").click();
+    cy.getBySel("login-banner").should("exist");
   });
 
   it("can login with a valid user", () => {
-    cy.fixture('validuser.json').then((user) => {
+    cy.fixture("validuser.json").then((user) => {
       cy.get("#email").type(user.email);
       cy.get("#password").type(user.password);
     });
-    
-    cy.get("input[type=submit]").first().click();
+
+    cy.getBySel("login-submit").click();
     cy.get(".dashboard-layout").should("exist");
   });
 });
-

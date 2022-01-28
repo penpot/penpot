@@ -42,11 +42,12 @@
     [:div.modal-overlay
      [:div.modal-container.onboarding.final.animated.fadeInUp
       [:div.modal-top
-       [:h1 (tr "onboarding.welcome.title")]
+       [:h1 {:data-test "onboarding-welcome-title"} (tr "onboarding.welcome.title")]
        [:p (tr "onboarding.welcome.desc3")]]
       [:div.modal-columns
        [:div.modal-left
-        [:div.content-button {:on-click on-fly-solo}
+        [:div.content-button {:on-click on-fly-solo
+                              :data-test "fly-solo-op"}
          [:h2 (tr "onboarding.choice.fly-solo")]
          [:p (tr "onboarding.choice.fly-solo-desc")]]]
        [:div.modal-right

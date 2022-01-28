@@ -23,18 +23,18 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-
+import 'cypress-file-upload';
 
 Cypress.Commands.add('login', (email, password) => { 
     cy.visit("http://localhost:3449/#/auth/login");
     cy.get("#email").type(email);
     cy.get("#password").type(password);
-    cy.get("input[type=submit]").first().click();
+    cy.getBySel("login-submit").click();
  })
 
  Cypress.Commands.add('demoLogin', () => { 
     cy.visit("http://localhost:3449/#/auth/login");
-    cy.get("a").contains("Create demo account").click()
+    cy.getBySel("demo-account-link").click()
  })
 
  Cypress.Commands.add('drawInViewport', (x1, y1, x2, y2) => {
@@ -89,4 +89,12 @@ Cypress.Commands.add('clearViewport', () => {
    cy.get(".viewport-controls").type('{ctrl}a');
    cy.get(".viewport-controls").type('{del}');
    cy.window().its("debug").invoke('reset_viewport')
+})
+
+Cypress.Commands.add('getBySel', (selector, ...args) => {
+   return cy.get(`[data-test=${selector}]`, ...args)
+})
+
+Cypress.Commands.add('getBySelLike', (selector, ...args) => {
+   return cy.get(`[data-test*=${selector}]`, ...args)
 })

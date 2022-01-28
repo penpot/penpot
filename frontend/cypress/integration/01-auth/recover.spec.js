@@ -11,36 +11,31 @@
 describe("recover password", () => {
   beforeEach(() => {
     cy.visit("http://localhost:3449/#/auth/login");
-    cy.get("a").contains("Forgot password?").click()
+    cy.getBySel("forgot-password").click();
   });
 
   it("displays the recover form", () => {
-    cy.get("input[type=submit]").contains("Recover Password").should("exist");
+    cy.getBySel("recovery-resquest-submit").should("exist");
   });
 
   it("recover password with wrong mail works", () => {
     cy.get("#email").type("bad@mail.com");
-    cy.get("input[type=submit]").contains("Recover Password").click();
-    cy.get(".info")
-      .should("exist")
-      .should("contain", "Password recovery link sent to your inbox.");
+    cy.getBySel("recovery-resquest-submit").click();
+    cy.get(".info").should("exist");
   });
 
   it("recover password with good mail works", () => {
-    cy.fixture('validuser.json').then((user) => {
+    cy.fixture("validuser.json").then((user) => {
       cy.get("#email").type(user.email);
-    });    
-    cy.get("input[type=submit]").contains("Recover Password").click();
-    cy.get(".info")
-      .should("exist")
-      .should("contain", "Password recovery link sent to your inbox.");
+    });
+    cy.getBySel("recovery-resquest-submit").click();
+    cy.get(".info").should("exist");
   });
 
   it("can go back", () => {
-    cy.get("a").contains("Go back").click()
-    cy.contains("Great to see you again!").should("exist");
+    cy.getBySel("go-back-link").click();
+    cy.getBySel("login-title").should("exist");
     cy.get("#email").should("exist");
     cy.get("#password").should("exist");
   });
 });
-
