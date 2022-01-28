@@ -23,35 +23,35 @@
 
 ### :sparkles: New features
 
-- Add an option to hide artboards names on the viewport [Taiga #2034](https://tree.taiga.io/project/penpot/issue/2034).
-- Limit pasted object position to container boundaries [Taiga #2449](https://tree.taiga.io/project/penpot/us/2449).
-- Add new options for zoom widget in workspace and viewer mode [Taiga #896](https://tree.taiga.io/project/penpot/us/896).
-- Allow decimals on stroke width and positions [Taiga #2035](https://tree.taiga.io/project/penpot/issue/2035).
-- Ability to ignore background when exporting an artboard [Taiga #1395](https://tree.taiga.io/project/penpot/us/1395).
-- Show color hex or name on hover [Taiga #2413](https://tree.taiga.io/project/penpot/us/2413).
-- Add shortcut to create artboard from selected objects [Taiga #2412](https://tree.taiga.io/project/penpot/us/2412).
-- Add shortcut for opacity [Taiga #2442](https://tree.taiga.io/project/penpot/us/2442).
-- Setting fill automatically for new texts [Taiga #2441](https://tree.taiga.io/project/penpot/us/2441).
-- Add shortcut to move action [Github #1213](https://github.com/penpot/penpot/issues/1213).
-- Add alt as mod key to add stroke color from library menu [Taiga #2207](https://tree.taiga.io/project/penpot/us/2207).
-- Add detach in bulk option to context menu [Taiga #2210](https://tree.taiga.io/project/penpot/us/2210).
-- Add penpot look and feel to multiuser cursors [Taiga #1387](https://tree.taiga.io/project/penpot/us/1387).
-- Add actions to go to main component context menu option [Taiga #2053](https://tree.taiga.io/project/penpot/us/2053).
-- Add contrast between component select color and shape select color [Taiga #2121](https://tree.taiga.io/project/penpot/issue/2121).
-- Add animations in interactions [Taiga #2244](https://tree.taiga.io/project/penpot/us/2244).
-- Add performance improvements on .penpot file import process [Taiga 2497](https://tree.taiga.io/project/penpot/us/2497).
+- Add an option to hide artboards names on the viewport [Taiga #2034](https://tree.taiga.io/project/penpot/issue/2034)
+- Limit pasted object position to container boundaries [Taiga #2449](https://tree.taiga.io/project/penpot/us/2449)
+- Add new options for zoom widget in workspace and viewer mode [Taiga #896](https://tree.taiga.io/project/penpot/us/896)
+- Allow decimals on stroke width and positions [Taiga #2035](https://tree.taiga.io/project/penpot/issue/2035)
+- Ability to ignore background when exporting an artboard [Taiga #1395](https://tree.taiga.io/project/penpot/us/1395)
+- Show color hex or name on hover [Taiga #2413](https://tree.taiga.io/project/penpot/us/2413)
+- Add shortcut to create artboard from selected objects [Taiga #2412](https://tree.taiga.io/project/penpot/us/2412)
+- Add shortcut for opacity [Taiga #2442](https://tree.taiga.io/project/penpot/us/2442)
+- Setting fill automatically for new texts [Taiga #2441](https://tree.taiga.io/project/penpot/us/2441)
+- Add shortcut to move action [Github #1213](https://github.com/penpot/penpot/issues/1213)
+- Add alt as mod key to add stroke color from library menu [Taiga #2207](https://tree.taiga.io/project/penpot/us/2207)
+- Add detach in bulk option to context menu [Taiga #2210](https://tree.taiga.io/project/penpot/us/2210)
+- Add penpot look and feel to multiuser cursors [Taiga #1387](https://tree.taiga.io/project/penpot/us/1387)
+- Add actions to go to main component context menu option [Taiga #2053](https://tree.taiga.io/project/penpot/us/2053)
+- Add contrast between component select color and shape select color [Taiga #2121](https://tree.taiga.io/project/penpot/issue/2121)
+- Add animations in interactions [Taiga #2244](https://tree.taiga.io/project/penpot/us/2244)
+- Add performance improvements on .penpot file import process [Taiga 2497](https://tree.taiga.io/project/penpot/us/2497)
 
 ### :bug: Bugs fixed
 
-- Fix remove gradient if any when applying color from library [Taiga #2299](https://tree.taiga.io/project/penpot/issue/2299).
-- Fix Enter as key action to exit edit path [Taiga #2444](https://tree.taiga.io/project/penpot/issue/2444).
-- Fix add fill color from palette to groups and components [Taiga #2313](https://tree.taiga.io/project/penpot/issue/2313).
-- Fix default project name in all languages [Taiga #2280](https://tree.taiga.io/project/penpot/issue/2280).
-- Fix line-height and letter-spacing inputs to allow negative values [Taiga #2381](https://tree.taiga.io/project/penpot/issue/2381).
-- Fix typo in Handoff tooltip [Taiga #2428](https://tree.taiga.io/project/penpot/issue/2428).
-- Fix crash when pressing Shift+1 on empty file [#1435](https://github.com/penpot/penpot/issues/1435).
-- Fix masked group resize strange behavior [Taiga #2317](https://tree.taiga.io/project/penpot/issue/2317).
-- Fix problems when exporting all artboards [Taiga #2234](https://tree.taiga.io/project/penpot/issue/2234).
+- Fix remove gradient if any when applying color from library [Taiga #2299](https://tree.taiga.io/project/penpot/issue/2299)
+- Fix Enter as key action to exit edit path [Taiga #2444](https://tree.taiga.io/project/penpot/issue/2444)
+- Fix add fill color from palette to groups and components [Taiga #2313](https://tree.taiga.io/project/penpot/issue/2313)
+- Fix default project name in all languages [Taiga #2280](https://tree.taiga.io/project/penpot/issue/2280)
+- Fix line-height and letter-spacing inputs to allow negative values [Taiga #2381](https://tree.taiga.io/project/penpot/issue/2381)
+- Fix typo in Handoff tooltip [Taiga #2428](https://tree.taiga.io/project/penpot/issue/2428)
+- Fix crash when pressing Shift+1 on empty file [#1435](https://github.com/penpot/penpot/issues/1435)
+- Fix masked group resize strange behavior [Taiga #2317](https://tree.taiga.io/project/penpot/issue/2317)
+- Fix problems when exporting all artboards [Taiga #2234](https://tree.taiga.io/project/penpot/issue/2234)
 - Fix problems with team management [#1353](https://github.com/penpot/penpot/issues/1353)
 - Fix problem when importing in shared libraries [#1362](https://github.com/penpot/penpot/issues/1362)
 - Fix problem with join nodes [#1422](https://github.com/penpot/penpot/issues/1422)
@@ -67,7 +67,7 @@
 - Improved behaviour on text options when not text is selected [Taiga #2390](https://tree.taiga.io/project/penpot/issue/2390)
 - Fix decimal numbers in export viewbox [Taiga #2290](https://tree.taiga.io/project/penpot/issue/2290)
 - Right click over artboard name to open its menu [Taiga #1679](https://tree.taiga.io/project/penpot/issue/1679)
-- Make the default session cookue use SameSite=Lax instead of Strict (causes some issues in latest versions of Chrome).
+- Make the default session cookue use SameSite=Lax instead of Strict (causes some issues in latest versions of Chrome)
 - Fix "open in new tab" on dashboard [Taiga #2235](https://tree.taiga.io/project/penpot/issue/2355)
 - Changing pages while comments activated will not close the panel [#1350](https://github.com/penpot/penpot/issues/1350)
 - Fix navigate comments in right sidebar [Taiga #2163](https://tree.taiga.io/project/penpot/issue/2163)
@@ -95,25 +95,25 @@
 
 ### :arrow_up: Deps updates
 
-- Update devenv docker image dependencies.
+- Update devenv docker image dependencies
 
 ### :heart: Community contributions by (Thank you!)
 
-- Spelling fixes (by @jsoref) [#1340](https://github.com/penpot/penpot/pull/1340).
-- Explain folders in components (by @candideu) [Penpot-docs #42](https://github.com/penpot/penpot-docs/pull/42).
-- Readability improvements of user guide (by @PaulSchulz) [Penpot-docs #50](https://github.com/penpot/penpot-docs/pull/50).
+- Spelling fixes (by @jsoref) [#1340](https://github.com/penpot/penpot/pull/1340)
+- Explain folders in components (by @candideu) [Penpot-docs #42](https://github.com/penpot/penpot-docs/pull/42)
+- Readability improvements of user guide (by @PaulSchulz) [Penpot-docs #50](https://github.com/penpot/penpot-docs/pull/50)
   
 ## 1.10.4-beta
 
 ### :sparkles: Enhacements
 
-- Allow parametrice file snapshoting interval.
+- Allow parametrice file snapshoting interval
 
 ### :bug: Bugs fixed
 
-- Fix issue on :mov-object change impl.
-- Minor fix on how file changes log is persisted.
-- Fix many issues on error reporting.
+- Fix issue on :mov-object change impl
+- Minor fix on how file changes log is persisted
+- Fix many issues on error reporting
 
 ## 1.10.3-beta
 
