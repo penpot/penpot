@@ -81,6 +81,10 @@
 
 (defn add-fill [attrs shape render-id]
   (let [fill-attrs (cond
+                     (contains? shape :fill-image)
+                     (let [fill-image-id (str "fill-image-" render-id)]
+                       {:fill (str/format "url(#%s)" fill-image-id)})
+
                      (contains? shape :fill-color-gradient)
                      (let [fill-color-gradient-id (str "fill-color-gradient_" render-id)]
                        {:fill (str/format "url(#%s)" fill-color-gradient-id)})
@@ -88,14 +92,10 @@
                      (contains? shape :fill-color)
                      {:fill (:fill-color shape)}
 
-                     (contains? shape :fill-image)
-                     (let [fill-image-id (str "fill-image-" render-id)]
-                       {:fill (str/format "url(#%s)" fill-image-id) })
-
                      ;; If contains svg-attrs the origin is svg. If it's not svg origin
                      ;; we setup the default fill as transparent (instead of black)
                      (and (not (contains? shape :svg-attrs))
-                          (not (#{ :svg-raw :group } (:type shape))))
+                          (not (#{:svg-raw :group} (:type shape))))
                      {:fill "none"}
 
                      :else
@@ -206,3 +206,11 @@
   [shape]
   (-> (obj/new)
       (add-style-attrs shape)))
+
+(defn extract-fill-attrs
+  [shape]
+  (let [render-id (mf/use-ctx muc/render-ctx)
+        fill-styles (-> (obj/get shape "style" (obj/new))
+                        (add-fill shape render-id))]
+    (-> (obj/new)
+        (obj/set! "style" fill-styles))))

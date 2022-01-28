@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.shapes :as gsh]
    [app.config :as cfg]
+   [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.embed :as embed]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
@@ -23,7 +24,11 @@
             fill-image-id (str "fill-image-" render-id)
             uri (cfg/resolve-file-media (:fill-image shape))
             embed (embed/use-data-uris [uri])
-            transform (gsh/transform-matrix shape)]
+            transform (gsh/transform-matrix shape)
+            shape-without-image (dissoc shape :fill-image)
+            fill-attrs (-> (attrs/extract-fill-attrs shape-without-image)
+                           (obj/set! "width" width)
+                           (obj/set! "height" height))]
 
         [:pattern {:id fill-image-id
                    :patternUnits "userSpaceOnUse"
@@ -33,6 +38,9 @@
                    :width width
                    :patternTransform transform
                    :data-loading (str (not (contains? embed uri)))}
-         [:image {:xlinkHref (get embed uri uri)
-                  :width width
-                  :height height}]]))))
+         [:g
+          [:> :rect fill-attrs]
+          [:image {:xlinkHref (get embed uri uri)
+                   :width width
+                   :height height}]
+          ]]))))
