@@ -20,8 +20,6 @@
 
 ## 1.11.0-beta
 
-### :boom: Breaking changes
-
 ### :sparkles: New features
 
 - Add an option to hide artboards names on the viewport [Taiga #2034](https://tree.taiga.io/project/penpot/issue/2034).
