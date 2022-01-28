@@ -1148,7 +1148,7 @@
 
 ;; --- Shape / Selection Alignment and Distribution
 
-(declare align-object-to-frame)
+(declare align-object-to-parent)
 (declare align-objects-list)
 
 (defn can-align? [selected objects]
@@ -1168,7 +1168,7 @@
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
             moved    (if (= 1 (count selected))
-                       (align-object-to-frame objects (first selected) axis)
+                       (align-object-to-parent objects (first selected) axis)
                        (align-objects-list objects selected axis))
             moved-objects (->> moved (group-by :id))
             ids (keys moved-objects)
@@ -1176,11 +1176,12 @@
         (when (can-align? selected objects)
           (rx/of (dch/update-shapes ids update-fn {:reg-objects? true})))))))
 
-(defn align-object-to-frame
+(defn align-object-to-parent
   [objects object-id axis]
   (let [object (get objects object-id)
-        frame (get objects (:frame-id object))]
-    (gal/align-to-rect object frame axis objects)))
+        parent (:parent-id (get objects object-id))
+        parent-obj (get objects parent)]
+    (gal/align-to-rect object parent-obj axis objects)))
 
 (defn align-objects-list
   [objects selected axis]
