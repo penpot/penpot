@@ -26,7 +26,7 @@
    :rect     [:layout :fill :stroke :shadow :blur :svg]
    :circle   [:layout :fill :stroke :shadow :blur :svg]
    :path     [:layout :fill :stroke :shadow :blur :svg]
-   :image    [:image :layout :shadow :blur :svg]
+   :image    [:image :layout :fill :stroke :shadow :blur :svg]
    :text     [:layout :text :shadow :blur]})
 
 (mf/defc attributes

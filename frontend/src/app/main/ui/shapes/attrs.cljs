@@ -214,3 +214,8 @@
                         (add-fill shape render-id))]
     (-> (obj/new)
         (obj/set! "style" fill-styles))))
+
+(defn extract-border-radius-attrs
+  [shape]
+   (-> (obj/new)
+       (add-border-radius shape)))

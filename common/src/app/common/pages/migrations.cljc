@@ -281,3 +281,22 @@
             (d/update-in-when page [:options :saved-grids] #(d/mapm update-grid %)))]
 
     (update data :pages-index #(d/mapm update-page %))))
+
+;; Add rx and ry to images
+(defmethod migrate 13
+  [data]
+  (letfn [(fix-radius [shape]
+            (if-not (or (contains? shape :rx) (contains? shape :r1))
+              (-> shape
+                  (assoc :rx 0)
+                  (assoc :ry 0))
+              shape))
+          (update-object [_ object]
+            (cond-> object
+              (= :image (:type object))
+              (fix-radius)))
+
+          (update-page [_ page]
+            (update page :objects #(d/mapm update-object %)))]
+
+    (update data :pages-index #(d/mapm update-page %))))

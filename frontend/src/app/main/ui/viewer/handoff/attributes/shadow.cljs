@@ -60,7 +60,7 @@
 
 (mf/defc shadow-panel [{:keys [shapes]}]
   (let [shapes (->> shapes (filter has-shadow?))]
-    (when (seq shapes)
+    (when (and (seq shapes) (> (count shapes) 0))
       [:div.attributes-block
        [:div.attributes-block-title
         [:div.attributes-block-title-text (tr "handoff.attributes.shadow")]
