@@ -59,7 +59,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
-(s/def ::shape-attrs ::spec.shape/shape)
+(s/def ::shape-attrs ::spec.shape/shape-attrs)
 (s/def ::set-of-string
   (s/every string? :kind set?))
 

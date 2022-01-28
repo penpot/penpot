@@ -28,7 +28,7 @@
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
 
-(s/def ::shape-attrs ::spec.shape/shape)
+(s/def ::shape-attrs ::spec.shape/shape-attrs)
 (s/def ::set-of-string (s/every string? :kind set?))
 (s/def ::ordered-set-of-uuid (s/every uuid? :kind d/ordered-set?))
 

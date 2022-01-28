@@ -145,6 +145,7 @@
                    ::fill-color-gradient
                    ::fill-color-ref-file
                    ::fill-color-ref-id
+                   ::hide-fill-on-export
                    ::font-family
                    ::font-size
                    ::font-style
