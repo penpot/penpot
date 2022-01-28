@@ -64,6 +64,7 @@
   (let [add! (add-factory shape)
         group? (= :group (:type shape))
         rect?  (= :rect (:type shape))
+        image? (= :image (:type shape))
         text?  (= :text (:type shape))
         path?  (= :path (:type shape))
         mask?  (and group? (:masked-group? shape))
@@ -92,11 +93,20 @@
         (add! :constraints-v)
         (add! :fixed-scroll)
 
-        (cond-> (and rect? (some? (:r1 shape)))
+        (cond-> (and (or rect? image?) (some? (:r1 shape)))
           (-> (add! :r1)
               (add! :r2)
               (add! :r3)
               (add! :r4)))
+
+        (cond-> (and image? (some? (:rx shape)))
+          (-> (add! :rx)
+              (add! :ry)))
+
+        (cond-> image?
+          (-> (add! :fill-color)
+              (add! :fill-opacity)
+              (add! :fill-color-gradient)))
 
         (cond-> path?
           (-> (add! :stroke-cap-start)

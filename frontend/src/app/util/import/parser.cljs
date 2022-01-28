@@ -364,7 +364,11 @@
   (let [fill (:fill svg-data)
         hide-fill-on-export (get-meta node :hide-fill-on-export str->bool)
         gradient (when (str/starts-with? fill "url")
-                   (parse-gradient node fill))]
+                   (parse-gradient node fill))
+        meta-fill-color (get-meta node :fill-color)
+        meta-fill-opacity (get-meta node :fill-opacity)
+        meta-fill-color-gradient (get-meta node :fill-color-gradient)]
+
     (cond-> props
       :always
       (assoc :fill-color nil
@@ -380,7 +384,16 @@
              :fill-opacity (-> svg-data (:fill-opacity "1") d/parse-double))
 
       (some? hide-fill-on-export)
-      (assoc :hide-fill-on-export hide-fill-on-export))))
+      (assoc :hide-fill-on-export hide-fill-on-export)
+
+      (some? meta-fill-color)
+      (assoc :fill-color meta-fill-color
+             :fill-opacity (d/parse-double meta-fill-opacity))
+
+      (some? meta-fill-color-gradient)
+      (assoc :fill-color-gradient meta-fill-color-gradient
+             :fill-color nil
+             :fill-opacity nil))))
 
 (defn add-stroke
   [props node svg-data]
@@ -763,7 +776,9 @@
             (add-rect-data node svg-data))
 
           (cond-> (some? (get-in node [:attrs :penpot:media-id]))
-            (add-image-data type node))
+            (->
+             (add-rect-data node svg-data)
+             (add-image-data type node)))
 
           (cond-> (= :text type)
             (add-text-data node))

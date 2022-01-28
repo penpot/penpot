@@ -24,7 +24,7 @@
 
 (defn has-color? [shape]
   (and
-   (not (contains? #{:image :text :group} (:type shape)))
+   (not (contains? #{:text :group} (:type shape)))
    (or (:fill-color shape)
        (:fill-color-gradient shape))))
 

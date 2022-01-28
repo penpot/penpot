@@ -34,12 +34,14 @@
         fill-image-id (str "fill-image-" render-id)
         shape (assoc shape :fill-image fill-image-id)
         props (-> (attrs/extract-style-attrs shape)
+                  (obj/merge! (attrs/extract-border-radius-attrs shape))
                   (obj/merge!
                    #js {:x x
                         :y y
                         :transform transform
                         :width width
-                        :height height}))]
+                        :height height}))
+        path? (some? (.-d props))]
 
     [:g
       [:defs
@@ -56,4 +58,6 @@
                   :width width
                   :height height}]]]]
      [:& shape-custom-stroke {:shape shape}
-      [:> :rect props]]]))
+      (if path?
+        [:> :path props]
+        [:> :rect props])]]))
