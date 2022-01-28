@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.path
   (:require
    [app.common.logging :as log]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
    [app.util.object :as obj]
@@ -18,7 +19,10 @@
 (mf/defc path-shape
   {::mf/wrap-props false}
   [props]
-  (let [shape   (unchecked-get props "shape")
+  (let [shape   (-> (unchecked-get props "shape")
+                    (dissoc :fill-color)
+                    (dissoc :fill-opacity)
+                    (dissoc :fill-image))
         content (:content shape)
         pdata   (mf/with-memo [content]
                   (try
@@ -30,6 +34,8 @@
                                  :cause e)
                        "")))
 
+        render-id  (mf/use-ctx muc/render-ctx)
+        shape (assoc shape :fill-image (str "fill-image-" render-id))
         props   (-> (attrs/extract-style-attrs shape)
                     (obj/set! "d" pdata))]
 
