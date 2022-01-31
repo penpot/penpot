@@ -3431,3 +3431,6 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Show/Hide UI"

@@ -338,9 +338,15 @@
                           :command (ds/c-mod "alt+l")
                           :fn #(st/emit! (dw/toggle-proportion-lock))}
 
-   :create-artboard-from-selection   {:tooltip (ds/meta (ds/alt "G"))
-                          :command (ds/c-mod "alt+g")
-                          :fn #(st/emit! (dw/create-artboard-from-selection))}})
+   :create-artboard-from-selection {:tooltip (ds/meta (ds/alt "G"))
+                                    :command (ds/c-mod "alt+g")
+                                    :fn #(st/emit! (dw/create-artboard-from-selection))}
+
+   :hide-ui {:tooltip "\\"
+             :command "\\"
+             :fn #(st/emit! (dw/toggle-layout-flags :hide-ui))}
+
+   })
 
 (def opacity-shortcuts
   (into {} (->>

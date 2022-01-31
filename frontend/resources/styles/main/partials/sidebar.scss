@@ -17,23 +17,6 @@
     & .tab-container-tabs {
       padding-left: 1.5rem;
     }
-
-    & button.collapse-sidebar {
-      background: none;
-      border: none;
-      cursor: pointer;
-      height: 2.5rem;
-      padding-top: 0.75rem;
-      position: absolute;
-      width: 1rem;
-
-      & svg {
-        width: 12px;
-        height: 12px;
-        fill: $color-gray-20;
-        transform: rotate(180deg);
-      }
-    }
   }
 
   .settings-bar-inside {
@@ -181,7 +164,7 @@
   }
 
   &.settings-bar-right > .resize-area {
-    left: -8px;
+    left: -4px;
   }
 }
 
@@ -241,5 +224,38 @@
 
   .context-menu-action {
     width: 100%;
+  }
+}
+
+button.collapse-sidebar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  height: 2.5rem;
+  padding-top: 0.75rem;
+  position: absolute;
+  width: 1rem;
+
+  & svg {
+    width: 12px;
+    height: 12px;
+    fill: $color-gray-20;
+    transform: rotate(180deg);
+  }
+
+  &.collapsed {
+    background: $color-black;
+    left: 48px;
+    top: 48px;
+    width: 18px;
+    height: 24px;
+    padding: 0;
+    border-radius: 0px 4px 4px 0px;
+
+    & svg {
+      width: 8px;
+      height: 8px;
+      transform: rotate(0deg);
+    }
   }
 }

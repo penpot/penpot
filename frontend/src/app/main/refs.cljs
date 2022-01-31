@@ -167,6 +167,9 @@
 (def workspace-layout
   (l/derived :workspace-layout st/state))
 
+(def current-file-id
+  (l/derived :current-file-id st/state))
+
 (def workspace-file
   (l/derived (fn [state]
                (let [file (:workspace-file state)

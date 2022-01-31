@@ -8,7 +8,9 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
+   [app.main.refs :as refs]
    [app.util.dom :as dom]
+   [app.util.storage :refer [storage]]
    [rumext.alpha :as mf]))
 
 (log/set-level! :warn)
@@ -19,8 +21,10 @@
   (set! last-resize-type type))
 
 (defn use-resize-hook
-  [initial min-val max-val axis negate? resize-type]
-  (let [size-state (mf/use-state initial)
+  [key initial min-val max-val axis negate? resize-type]
+
+  (let [current-file-id (mf/deref refs/current-file-id)
+        size-state (mf/use-state (or (get-in @storage [::saved-resize current-file-id key]) initial))
         parent-ref (mf/use-ref nil)
 
         dragging-ref (mf/use-ref false)
@@ -54,7 +58,8 @@
                   start-size (mf/ref-val start-size-ref)
                   new-size (-> (+ start-size delta) (max min-val) (min max-val))]
               
-              (reset! size-state new-size))))]
+              (reset! size-state new-size)
+              (swap! storage assoc-in [::saved-resize current-file-id key] new-size))))]
     {:on-pointer-down on-pointer-down
      :on-lost-pointer-capture on-lost-pointer-capture
      :on-mouse-move on-mouse-move
@@ -86,7 +91,7 @@
                         (let [size (dom/get-client-size node)]
                           (when callback (callback last-resize-type size)))))]
                  (mf/set-ref-val! current-observer-ref observer)
-                 (log/debug :action "observe"  :js/node node)
+                 (log/debug :action "observe"  :js/node node :js/observer observer)
                  (.observe observer node))))
            (mf/set-ref-val! prev-val-ref node)))]
 

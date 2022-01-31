@@ -26,6 +26,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
+   [debug :refer [debug?]]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -44,6 +45,7 @@
 
         on-resize
         (mf/use-callback
+         (mf/deps (:vport local))
          (fn [resize-type size]
            (when (:vport local)
              (st/emit! (dw/update-viewport-size resize-type size)))))
@@ -54,7 +56,8 @@
 
      [:section.workspace-content {:ref node-ref}
       [:section.workspace-viewport
-       [:& coordinates/coordinates {:colorpalette? colorpalette?}]
+       (when (debug? :coordinates)
+         [:& coordinates/coordinates {:colorpalette? colorpalette?}])
 
        [:& viewport {:file file
                      :local local
@@ -64,9 +67,13 @@
      (when-not (:hide-ui layout)
        [:*
         [:& left-toolbar {:layout layout}]
-        [:& left-sidebar {:layout layout}]
+        (if (:collapse-left-sidebar layout)
+          [:button.collapse-sidebar.collapsed {:on-click #(st/emit! (dw/toggle-layout-flags :collapse-left-sidebar))}
+           i/arrow-slide]
+          [:& left-sidebar {:layout layout}])
         [:& right-sidebar {:section options-mode
-                           :selected selected}]])]))
+                           :selected selected
+                           :layout layout}]])]))
 
 (def trimmed-page-ref (l/derived :trimmed-page st/state =))
 

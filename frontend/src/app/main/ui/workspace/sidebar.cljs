@@ -6,21 +6,20 @@
 
 (ns app.main.ui.workspace.sidebar
   (:require
-   [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
+   [app.main.ui.icons :as i]
    [app.main.ui.workspace.comments :refer [comments-sidebar]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
-   [app.main.store :as st]
-   [app.main.ui.icons :as i]
-   ))
+   [app.util.object :as obj]
+   [rumext.alpha :as mf]))
 
 ;; --- Left Sidebar (Component)
 
@@ -31,7 +30,11 @@
                       (contains? layout :assets) :assets)
 
         {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
-        (use-resize-hook 255 255 500 :x false :left)]
+        (use-resize-hook :left-sidebar 255 255 500 :x false :left)
+
+        handle-collapse
+        (fn []
+          (st/emit! (dw/toggle-layout-flags :collapse-left-sidebar)))]
 
     [:aside.settings-bar.settings-bar-left {:ref parent-ref
                                             :style #js {"--width" (str size "px")}}
@@ -39,9 +42,10 @@
                         :on-lost-pointer-capture on-lost-pointer-capture
                         :on-mouse-move on-mouse-move}]
 
-
      [:div.settings-bar-inside
-      [:button.collapse-sidebar i/arrow-slide]
+      [:button.collapse-sidebar
+       {:on-click handle-collapse}
+       i/arrow-slide]
       [:& tab-container {:on-change-tab #(st/emit! (dw/go-to-layout %))
                          :selected section}
 
@@ -50,9 +54,7 @@
         [:& layers-toolbox]]
 
        [:& tab-element {:id :assets :title "Library"}
-        [:& assets-toolbox]]]]
-     
-     ]))
+        [:& assets-toolbox]]]]]))
 
 ;; --- Right Sidebar (Component)
 
@@ -60,8 +62,9 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [{:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
-        (use-resize-hook 255 255 500 :x true :right)
+  (let [layout (obj/get props "layout")
+        {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+        (use-resize-hook :right-sidebar 255 255 500 :x true :right)
 
         drawing-tool (:tool (mf/deref refs/workspace-drawing))]
     [:aside.settings-bar.settings-bar-right {:ref parent-ref
@@ -70,7 +73,13 @@
                         :on-lost-pointer-capture on-lost-pointer-capture
                         :on-mouse-move on-mouse-move}]
      [:div.settings-bar-inside
-      (if (= drawing-tool :comments)
+      (cond
+        (= drawing-tool :comments)
         [:& comments-sidebar]
+
+        (contains? layout :document-history)
+        [:& history-toolbox]
+
+        :else
         [:> options-toolbox props])]]))
 

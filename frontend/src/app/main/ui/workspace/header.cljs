@@ -360,31 +360,40 @@
          (st/emitf (dw/go-to-viewer params)))]
 
     [:header.workspace-header
-     [:div.main-icon
-      [:a {:on-click go-back} i/logo-icon]]
+     [:div.left-area
+      [:div.main-icon
+       [:a {:on-click go-back} i/logo-icon]]
 
-     [:& menu {:layout layout
-               :project project
-               :file file
-               :team-id team-id
-               :page-id page-id}]
+      [:& menu {:layout layout
+                :project project
+                :file file
+                :team-id team-id
+                :page-id page-id}]]
 
-     [:div.users-section
-      [:& active-sessions]]
+     [:div.center-area
+      [:div.users-section
+       [:& active-sessions]]]
 
-     [:div.options-section
-      [:& persistence-state-widget]
+     [:div.right-area
+      [:div.options-section
+       [:& persistence-state-widget]
+       [:button.document-history
+        {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
+         :class (when (contains? layout :document-history) "selected")
+         :on-click (st/emitf (dw/toggle-layout-flags :document-history))}
+        i/recent]]
 
-      [:& zoom-widget-workspace
-       {:zoom zoom
-        :on-increase #(st/emit! (dw/increase-zoom nil))
-        :on-decrease #(st/emit! (dw/decrease-zoom nil))
-        :on-zoom-reset #(st/emit! dw/reset-zoom)
-        :on-zoom-fit #(st/emit! dw/zoom-to-fit-all)
-        :on-zoom-selected #(st/emit! dw/zoom-to-selected-shape)}]
+      [:div.options-section
+       [:& zoom-widget-workspace
+        {:zoom zoom
+         :on-increase #(st/emit! (dw/increase-zoom nil))
+         :on-decrease #(st/emit! (dw/decrease-zoom nil))
+         :on-zoom-reset #(st/emit! dw/reset-zoom)
+         :on-zoom-fit #(st/emit! dw/zoom-to-fit-all)
+         :on-zoom-selected #(st/emit! dw/zoom-to-selected-shape)}]
 
-      [:a.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
-       {:alt (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
-        :on-click go-viewer}
-       i/play]]]))
+       [:a.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
+        {:alt (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
+         :on-click go-viewer}
+        i/play]]]]))
 

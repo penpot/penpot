@@ -66,7 +66,7 @@
         container  (mf/use-ref nil)
 
         {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
-        (use-resize-hook 72 54 80 :y true :bottom)
+        (use-resize-hook :palette 72 54 80 :y true :bottom)
 
         on-left-arrow-click
         (mf/use-callback
