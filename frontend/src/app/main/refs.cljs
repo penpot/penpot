@@ -188,6 +188,11 @@
                (get-in state [:workspace-data :recent-colors] []))
              st/state))
 
+(def workspace-recent-fonts
+  (l/derived (fn [state]
+               (get-in state [:workspace-data :recent-fonts] []))
+             st/state))
+
 (def workspace-file-typography
   (l/derived (fn [state]
                (when-let [file (:workspace-data state)]

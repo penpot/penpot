@@ -1168,9 +1168,9 @@
   }
 
   header {
-    padding: 15px 17px;
     display: flex;
     align-items: center;
+    flex-direction: column;
     position: relative;
 
     .backend-filters {
@@ -1225,7 +1225,7 @@
       border-radius: $br-small;
       color: $color-gray-20;
       border: 1px solid $color-gray-30;
-      margin: 0px;
+      margin: 15px 17px;
     }
 
     .options {

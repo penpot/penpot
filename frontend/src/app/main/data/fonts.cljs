@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
+   [app.util.storage :refer [storage]]
    [app.util.webapi :as wa]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -250,3 +251,28 @@
       (let [team-id (:current-team-id state)]
         (->> (rp/mutation! :delete-font-variant {:id id :team-id team-id})
              (rx/ignore))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Workspace related events
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn add-recent-font
+  [font]
+  (ptk/reify ::add-recent-font
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [recent-fonts      (get-in state [:workspace-data :recent-fonts])
+            most-recent-fonts (into [font] (comp (remove #(= font %)) (take 3)) recent-fonts)]
+        (assoc-in state [:workspace-data :recent-fonts] most-recent-fonts)))
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [most-recent-fonts      (get-in state [:workspace-data :recent-fonts])]
+        (swap! storage assoc ::recent-fonts most-recent-fonts)))))
+
+(defn load-recent-fonts
+  []
+  (ptk/reify ::load-recent-fonts
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [saved-recent-fonts (::recent-fonts @storage)]
+        (assoc-in state [:workspace-data :recent-fonts] saved-recent-fonts)))))
