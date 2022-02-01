@@ -20,4 +20,3 @@
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
 
   }}
-
