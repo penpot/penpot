@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.common.pages.changes-builder :as cb]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -136,8 +137,8 @@
     [group rchanges uchanges]))
 
 (defn prepare-remove-group
-  [page-id group objects]
-  (let [shapes    (into [] (:shapes group)) ; ensure we always have vector
+  [it page-id group objects]
+  (let [children  (mapv #(get objects %) (:shapes group))
         parent-id (cp/get-parent (:id group) objects)
         parent    (get objects parent-id)
 
@@ -147,29 +148,25 @@
              (filter #(#{(:id group)} (second %)))
              (ffirst))
 
-        rchanges [{:type :mov-objects
-                   :page-id page-id
-                   :parent-id parent-id
-                   :shapes shapes
-                   :index index-in-parent}
-                  {:type :del-obj
-                   :page-id page-id
-                   :id (:id group)}]
-        uchanges [{:type :add-obj
-                   :page-id page-id
-                   :id (:id group)
-                   :frame-id (:frame-id group)
-                   :obj (assoc group :shapes [])}
-                  {:type :mov-objects
-                   :page-id page-id
-                   :parent-id (:id group)
-                   :shapes shapes}
-                  {:type :mov-objects
-                   :page-id page-id
-                   :parent-id parent-id
-                   :shapes [(:id group)]
-                   :index index-in-parent}]]
-    [rchanges uchanges]))
+        ids-to-detach (when (:component-id group)
+                        (cp/get-children (:id group) objects))
+
+        detach-fn (fn [attrs]
+                    (dissoc attrs
+                            :component-id
+                            :component-file
+                            :component-root?
+                            :remote-synced?
+                            :shape-ref
+                            :touched))]
+
+    (cond-> (-> (cb/empty-changes it page-id)
+                (cb/with-objects objects)
+                (cb/change-parent parent-id children index-in-parent)
+                (cb/remove-objects [(:id group)]))
+
+      (some? ids-to-detach)
+      (cb/update-shapes ids-to-detach detach-fn))))
 
 (defn prepare-remove-mask
   [page-id mask]
@@ -223,20 +220,20 @@
             objects   (wsh/lookup-page-objects state page-id)
             is-group? #(or (= :bool (:type %)) (= :group (:type %)))
             lookup    #(get objects %)
-            prepare   #(prepare-remove-group page-id % objects)
+            prepare   #(prepare-remove-group it page-id % objects)
 
-            changes   (sequence
-                       (comp (map lookup)
-                             (filter is-group?)
-                             (map prepare))
-                       (wsh/lookup-selected state))
+            changes-list (sequence
+                           (comp (map lookup)
+                                 (filter is-group?)
+                                 (map prepare))
+                           (wsh/lookup-selected state))
 
-            rchanges (into [] (mapcat first) changes)
-            uchanges (into [] (mapcat second) changes)]
+            changes {:redo-changes (vec (mapcat :redo-changes changes-list))
+                     :undo-changes (vec (mapcat :undo-changes changes-list))
+                     :origin it}]
 
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+        (rx/of (dch/commit-changes changes))))))
+
 (def mask-group
   (ptk/reify ::mask-group
     ptk/WatchEvent
