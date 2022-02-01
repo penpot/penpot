@@ -20,40 +20,10 @@
   }
 
   .settings-bar-inside {
-    align-items: flex-start;
     display: grid;
     grid-template-columns: 100%;
-
-    &[data-layout*="sitemap-pages"] {
-      grid-template-rows: auto;
-    }
-
-    &[data-layout*="layers"] {
-      grid-template-rows: auto 1fr;
-    }
-
-    &[data-layout*="libraries"] {
-      grid-template-rows: auto 1fr;
-    }
-
-    &[data-layout*="layers"][data-layout*="sitemap-pages"] {
-      grid-template-rows: 11.5rem 1fr;
-    }
-
-    &[data-layout*="libraries"][data-layout*="sitemap-pages"] {
-      grid-template-rows: 11.5rem 1fr;
-    }
-
-    &[data-layout*="layers"][data-layout*="libraries"] {
-      grid-template-rows: auto 30% 1fr;
-    }
-
-    &[data-layout*="layers"][data-layout*="libraries"][data-layout*="sitemap-pages"] {
-      grid-template-rows: 11.5rem 25% 1fr;
-    }
-
-    flex-direction: column;
-    height: 100%;
+    grid-template-rows: 100%;
+    height: calc(100% - 2px);
 
     .tool-window {
       position: relative;
@@ -171,9 +141,9 @@
 .tool-window-content {
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   height: 100%;
   width: 100%;
+  overflow-y: auto;
 }
 
 .element-list {
@@ -258,4 +228,16 @@ button.collapse-sidebar {
       transform: rotate(0deg);
     }
   }
+}
+
+#layers.tool-window {
+  overflow: auto;  
+}
+
+.layers-tab {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 100%;
+  height: 100%;
+  overflow: hidden;
 }

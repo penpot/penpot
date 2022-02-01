@@ -50,8 +50,9 @@
                          :selected section}
 
        [:& tab-element {:id :layers :title "Layers"}
-        [:& sitemap {:layout layout}]
-        [:& layers-toolbox]]
+        [:div.layers-tab
+         [:& sitemap {:layout layout}]
+         [:& layers-toolbox]]]
 
        [:& tab-element {:id :assets :title "Library"}
         [:& assets-toolbox]]]]]))

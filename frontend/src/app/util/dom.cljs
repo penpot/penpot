@@ -416,6 +416,7 @@
 
 (defn scroll-into-view-if-needed!
   ([^js element]
+   (.log js/console "SCROLL INTO VIEW" element)
    (when (some? element)
      (.scrollIntoViewIfNeeded ^js element false)))
 
