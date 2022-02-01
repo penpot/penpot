@@ -54,7 +54,7 @@ We will use the `easy fix` mark for tag for indicate issues that are
 easy for beginners.
 
 
-## Commit Message Guidelines ##
+## Commit Guidelines ##
 
 We have very precise rules over how our git commit messages can be formatted.
 
@@ -78,7 +78,6 @@ Where type is:
 - :ambulance: `:ambulance:` a commit that fixes critical bug
 - :books: `:books:` a commit that improves or adds documentation
 - :construction: `:construction:`: a wip commit
-- :construction_worker: `:construction_worker:` a commit with CI related stuff
 - :boom: `:boom:` a commit with breaking changes
 - :wrench: `:wrench:` a commit for config updates
 - :zap: `:zap:` a commit with performance improvements
@@ -91,13 +90,14 @@ More info:
  - https://gist.github.com/parmentf/035de27d6ed1dce0b36a
  - https://gist.github.com/rxaviers/7360908
 
-The subject should be:
+Each commit should have:
 
-- Use the imperative mood.
-- Capitalize the first letter.
-- Don't put a period at the end of the subject line.
-- Put a blank line between the subject line and the body.
-
+- A concise subject using imperative mood.
+- The subject should have capitalized the first letter and without
+  period at the end.
+- A blank line between the subject line and the body.
+- An entry on the CHANGES.md file if applicable, referencing the
+  github or taiga issue/user-story using the these same rules.
 
 ## Code of conduct ##
 
