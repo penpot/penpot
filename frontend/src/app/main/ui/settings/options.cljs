@@ -54,9 +54,10 @@
                      :default ""
                      :name :lang
                      :data-test "setting-lang"}]]
-
-     [:h2 (t locale "dashboard.theme-change")]
-     [:div.fields-row
+     
+     ;; TODO: Do not show as long as we only have one theme
+     #_[:h2 (t locale "dashboard.theme-change")]
+     #_[:div.fields-row
       [:& fm/select {:label (t locale "dashboard.select-ui-theme")
                      :name :theme
                      :default "default"
