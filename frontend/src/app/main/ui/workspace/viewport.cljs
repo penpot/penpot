@@ -251,13 +251,13 @@
            :hover (when (not= :frame (:type @hover))
                     #{(or @frame-hover (:id @hover))})
            :edition edition
-           :zoom zoom}]
+           :zoom zoom}])
 
        [:& scroll-bars/viewport-scrollbars
         {:objects base-objects
          :zoom zoom
          :vbox vbox
-         :viewport-ref viewport-ref}])
+         :viewport-ref viewport-ref}]
 
        (when show-selection-handlers?
          [:& selection/selection-handlers
