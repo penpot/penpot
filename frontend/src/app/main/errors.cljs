@@ -81,7 +81,13 @@
   (js/console.group "Validation Error:")
   (ex/ignoring
    (js/console.info
-    (with-out-str (pprint error))))
+    (with-out-str (pprint (dissoc error :explain)))))
+
+  (when-let [explain (:explain error)]
+    (js/console.group "Spec explain:")
+    (js/console.log explain)
+    (js/console.groupEnd "Spec explain:"))
+
   (js/console.groupEnd "Validation Error:"))
 
 

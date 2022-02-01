@@ -61,8 +61,15 @@
 
 (defmethod handle-exception :validation
   [err _]
-  (let [edata (ex-data err)]
-    {:status 400 :body (dissoc edata ::s/problems ::s/value)}))
+  (let [data    (ex-data err)
+        explain (binding [s/*explain-out* expound/printer]
+                  (with-out-str
+                    (s/explain-out (update data ::s/problems #(take 10 %)))))]
+    {:status 400
+     :body (-> data
+               (dissoc ::s/problems)
+               (dissoc ::s/value)
+               (assoc :explain explain))}))
 
 (defmethod handle-exception :assertion
   [error request]

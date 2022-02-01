@@ -39,7 +39,8 @@
 - Add actions to go to main component context menu option [Taiga #2053](https://tree.taiga.io/project/penpot/us/2053)
 - Add contrast between component select color and shape select color [Taiga #2121](https://tree.taiga.io/project/penpot/issue/2121)
 - Add animations in interactions [Taiga #2244](https://tree.taiga.io/project/penpot/us/2244)
-- Add performance improvements on .penpot file import process [Taiga 2497](https://tree.taiga.io/project/penpot/us/2497)
+- Add performance improvements on .penpot file import process [Taiga #2497](https://tree.taiga.io/project/penpot/us/2497)
+- On team settings set color of members count to black [Taiga #2607](https://tree.taiga.io/project/penpot/us/2607)
 
 ### :bug: Bugs fixed
 
@@ -93,6 +94,7 @@
 - Normalize zoom levels in workspace and viewer [Taiga #2631](https://tree.taiga.io/project/penpot/issue/2631)
 - Avoid empty names in projects, files and pages [Taiga #2594](https://tree.taiga.io/project/penpot/issue/2594)
 - Fix "move to" menu when duplicated team or project names [Taiga #2655](https://tree.taiga.io/project/penpot/issue/2655)
+- Fix ungroup a component leaves an asterisk in layers [Taiga #2694](https://tree.taiga.io/project/penpot/issue/2694)
 
 ### :arrow_up: Deps updates
 
