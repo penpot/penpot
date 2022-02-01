@@ -122,6 +122,7 @@
   overflow: hidden;
   width: 100%;
   padding: 0.25rem;
+  height: 100%;
 
   &.size-small {
     height: 3.5rem;
@@ -135,6 +136,7 @@
   transition: all 0.6s ease;
   width: 100%;
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 .color-cell {
@@ -145,24 +147,21 @@
   flex-shrink: 0;
   position: relative;
 
-  &.cell-big {
-    flex-basis: 66px;
-  }
-
-  &.cell-small {
-    flex-basis: 52px;
-  }
-
   .color-text {
     color: $color-gray-20;
     font-size: $fs12;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 66px;
+    width: 65px;
     text-align: center;
     margin-top: 0.25rem;
+
+    .no-text & {
+      display: none;
+    }
   }
+
   &.current {
     .color-text {
       color: $color-gray-50;

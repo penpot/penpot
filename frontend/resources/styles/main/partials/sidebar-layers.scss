@@ -207,6 +207,11 @@ span.element-name {
   margin-left: auto;
   position: relative;
   width: 32px;
+  right: 20px;
+
+  &.is-parent {
+    right: 0;
+  }
 
   svg {
     height: 13px;
@@ -242,7 +247,7 @@ span.element-name {
 }
 
 .toggle-content {
-  margin-left: auto;
+  margin-left: 8px;
   width: 12px;
 
   svg {

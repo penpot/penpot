@@ -17,6 +17,7 @@
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
+   [app.main.ui.hooks.resize :as r]
    [app.util.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -38,9 +39,17 @@
                        :command (ds/a-mod "h")
                        :fn #(st/emit! (dw/go-to-layout :document-history))}
 
-   :toggle-palette    {:tooltip (ds/alt "P")
-                       :command (ds/a-mod "p")
-                       :fn #(st/emit! (dw/toggle-layout-flags :colorpalette))}
+   :toggle-colorpalette {:tooltip (ds/alt "P")
+                         :command (ds/a-mod "p")
+                         :fn #(do (r/set-resize-type! :bottom)
+                                  (st/emit! (dw/remove-layout-flags :textpalette)
+                                            (dw/toggle-layout-flags :colorpalette)))}
+
+   :toggle-textpalette  {:tooltip (ds/alt "T")
+                         :command (ds/a-mod "t")
+                         :fn #(do (r/set-resize-type! :bottom)
+                                  (st/emit! (dw/remove-layout-flags :colorpalette)
+                                            (dw/toggle-layout-flags :textpalette)))}
 
    :toggle-rules      {:tooltip (ds/meta-shift "R")
                        :command (ds/c-mod "shift+r")

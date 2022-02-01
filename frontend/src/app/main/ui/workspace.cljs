@@ -22,6 +22,7 @@
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
+   [app.main.ui.workspace.textpalette :refer [textpalette]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -41,7 +42,10 @@
         {:keys [options-mode]} local
         file   (obj/get props "file")
         layout (obj/get props "layout")
+
         colorpalette? (:colorpalette layout)
+        textpalette? (:textpalette layout)
+        hide-ui? (:hide-ui layout)
 
         on-resize
         (mf/use-callback
@@ -52,7 +56,11 @@
 
         node-ref (use-resize-observer on-resize)]
     [:*
-     (when colorpalette? [:& colorpalette])
+     (when (and colorpalette? (not hide-ui?))
+       [:& colorpalette])
+
+     (when (and textpalette? (not hide-ui?))
+       [:& textpalette])
 
      [:section.workspace-content {:ref node-ref}
       [:section.workspace-viewport
@@ -64,7 +72,7 @@
                      :selected selected
                      :layout layout}]]]
 
-     (when-not (:hide-ui layout)
+     (when-not hide-ui?
        [:*
         [:& left-toolbar {:layout layout}]
         (if (:collapse-left-sidebar layout)

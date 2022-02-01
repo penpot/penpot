@@ -120,17 +120,19 @@
 
       [:ul.left-toolbar-options.panels
        [:li.tooltip.tooltip-right
-        {;;:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-textpalette))
+        {:alt (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
          :class (when (contains? layout :textpalette) "selected")
-         :on-click (do
+         :on-click (fn []
                      (r/set-resize-type! :bottom)
-                     (st/emitf (dw/toggle-layout-flags :textpalette)))}
-        i/palette]
+                     (st/emit! (dw/remove-layout-flags :colorpalette)
+                               (dw/toggle-layout-flags :textpalette)))}
+        "Ag"]
        
        [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-palette))
+        {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
          :class (when (contains? layout :colorpalette) "selected")
-         :on-click (do
+         :on-click (fn []
                      (r/set-resize-type! :bottom)
-                     (st/emitf (dw/toggle-layout-flags :colorpalette)))}
+                     (st/emit! (dw/remove-layout-flags :textpalette)
+                               (dw/toggle-layout-flags :colorpalette)))}
         i/palette]]]]))

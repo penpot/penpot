@@ -18,6 +18,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.presence :refer [active-sessions]]
    [app.util.dom :as dom]
@@ -297,12 +298,25 @@
            (tr "workspace.header.menu.show-layers"))]
         [:span.shortcut (sc/get-tooltip :toggle-layers)]]
 
-       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :colorpalette))}
+       [:li {:on-click (fn []
+                         (r/set-resize-type! :bottom)
+                         (st/emit! (dw/remove-layout-flags :textpalette)
+                                   (dw/toggle-layout-flags :colorpalette)))}
         [:span
          (if (contains? layout :colorpalette)
-           (tr "workspace.header.menu.hide-palette")
-           (tr "workspace.header.menu.show-palette"))]
-        [:span.shortcut (sc/get-tooltip :toggle-palette)]]
+           (tr "workspace.header.menu.hide-colorpalette")
+           (tr "workspace.header.menu.show-colorpalette"))]
+        [:span.shortcut (sc/get-tooltip :toggle-colorpalette)]]
+
+       [:li {:on-click (fn []
+                         (r/set-resize-type! :bottom)
+                         (st/emit! (dw/remove-layout-flags :colorpalette)
+                                   (dw/toggle-layout-flags :textpalette)))}
+        [:span
+         (if (contains? layout :textpalette)
+           (tr "workspace.header.menu.hide-textpalette")
+           (tr "workspace.header.menu.show-textpalette"))]
+        [:span.shortcut (sc/get-tooltip :toggle-textpalette)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :assets))}
         [:span

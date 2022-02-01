@@ -18,6 +18,7 @@
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
+   [app.util.dom :as dom]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
@@ -37,6 +38,10 @@
           (st/emit! (dw/toggle-layout-flags :collapse-left-sidebar)))]
 
     [:aside.settings-bar.settings-bar-left {:ref parent-ref
+                                            :class (dom/classnames
+                                                    :two-row   (<= size 300)
+                                                    :three-row (and (> size 300) (<= size 400))
+                                                    :four-row  (> size 400))
                                             :style #js {"--width" (str size "px")}}
      [:div.resize-area {:on-pointer-down on-pointer-down
                         :on-lost-pointer-capture on-lost-pointer-capture

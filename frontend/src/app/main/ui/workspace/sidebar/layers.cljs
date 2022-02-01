@@ -213,7 +213,7 @@
                       :on-start-edit #(reset! disable-drag true)
                       :on-stop-edit #(reset! disable-drag false)}]
 
-      [:div.element-actions
+      [:div.element-actions {:class (when (:shapes item) "is-parent")}
        [:div.toggle-element {:class (when (:hidden item) "selected")
                              :on-click toggle-visibility}
         (if (:hidden item) i/eye-closed i/eye)]

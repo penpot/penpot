@@ -432,6 +432,15 @@
                         stored
                         (d/concat-set flags)))))))
 
+(defn remove-layout-flags
+  [& flags]
+  (ptk/reify ::remove-layout-flags
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-layout
+              (fn [stored]
+                (reduce disj stored (d/concat-set flags)))))))
+
 ;; --- Set element options mode
 
 (defn set-options-mode
