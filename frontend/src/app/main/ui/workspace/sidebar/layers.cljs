@@ -180,12 +180,17 @@
                               :name (:name item)})]
 
     (mf/use-effect
-     (mf/deps selected)
+     (mf/deps selected? selected)
      (fn []
-       (let [subid
-             (when (and (= (count selected) 1) selected?)
-               (ts/schedule-on-idle
-                #(.scrollIntoView (mf/ref-val dref) #js {:block "nearest", :behavior "smooth"})))]
+       (let [single? (= (count selected) 1)
+             node (mf/ref-val dref)
+
+             subid
+             (when (and single? selected?)
+               (ts/schedule
+                100
+                #(dom/scroll-into-view! node #js {:block "nearest", :behavior "smooth"})))]
+
          #(when (some? subid)
             (rx/dispose! subid)))))
 
@@ -247,6 +252,7 @@
   {::mf/wrap [#(mf/memo % =)]}
   [{:keys [objects] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
+        selected (hooks/use-equal-memo selected)
         root (get objects uuid/zero)]
     [:ul.element-list
      [:& hooks/sortable-container {}

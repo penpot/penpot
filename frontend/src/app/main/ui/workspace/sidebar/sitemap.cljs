@@ -107,7 +107,7 @@
       (fn []
         (when selected?
           (let [node (mf/ref-val dref)]
-            (.scrollIntoViewIfNeeded ^js node)))))
+            (dom/scroll-into-view-if-needed! node)))))
 
     (mf/use-layout-effect
      (mf/deps (:edition @local))

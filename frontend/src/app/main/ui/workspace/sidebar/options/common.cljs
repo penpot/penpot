@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.common
   (:require
+   [app.util.dom :as dom]
    [rumext.alpha :as mf]))
 
 (mf/defc advanced-options [{:keys [visible? children]}]
@@ -15,7 +16,7 @@
      (fn []
        (when-let [node (mf/ref-val ref)]
          (when visible?
-           (.scrollIntoViewIfNeeded ^js node)))))
+           (dom/scroll-into-view-if-needed! node)))))
 
     (when visible?
       [:div.advanced-options-wrapper {:ref ref}

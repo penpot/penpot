@@ -300,7 +300,7 @@
      (mf/deps thread comments-map)
      (fn []
        (when-let [node (mf/ref-val ref)]
-         (.scrollIntoViewIfNeeded ^js node))))
+         (dom/scroll-into-view-if-needed! node))))
 
     (when (some? comment)
       [:div.thread-content
