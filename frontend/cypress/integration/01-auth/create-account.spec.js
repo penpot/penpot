@@ -23,6 +23,17 @@ describe("account creation", () => {
     cy.getBySel("register-form-submit").should("exist");
   });
 
+  it("create an account", () => {
+    let email = "mail" +  Date.now() +"@mail.com";
+    cy.get("#email").type(email);
+    cy.get("#password").type("anewpassword");    
+    cy.get("input[type=submit]").click();
+    cy.getBySel("register-title").should("exist");
+    cy.get("#fullname").type("Test user")
+    cy.get("input[type=submit]").click();
+    cy.get(".dashboard-layout").should("exist");
+  });
+
   it("create an account of an existent email fails", () => {
     cy.get("#email").type(validUser.email);
     cy.get("#password").type("anewpassword");

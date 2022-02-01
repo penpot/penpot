@@ -55,6 +55,7 @@
     [:div.dashboard-comments-section
      [:div.button
       {:on-click show-dropdown
+       :data-test "open-comments"
        :class (dom/classnames :open @show-dropdown?
                               :unread (boolean (seq tgroups)))}
       i/chat]

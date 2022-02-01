@@ -221,7 +221,7 @@
          [:span.team-text {:title (:name team)} (:name team)]]])
 
      [:hr]
-     [:li.action {:on-click on-create-clicked}
+     [:li.action {:on-click on-create-clicked :data-test "create-new-team"}
       (tr "dashboard.create-new-team")]]))
 
 (s/def ::member-id ::us/uuid)
@@ -349,21 +349,21 @@
            :on-accept delete-fn}))]
 
     [:ul.dropdown.options-dropdown
-     [:li {:on-click go-members} (tr "labels.members")]
-     [:li {:on-click go-settings} (tr "labels.settings")]
+     [:li {:on-click go-members :data-test "team-members"} (tr "labels.members")]
+     [:li {:on-click go-settings :data-test "team-settings"} (tr "labels.settings")]
      [:hr]
-     [:li {:on-click on-rename-clicked} (tr "labels.rename")]
+     [:li {:on-click on-rename-clicked :data-test "rename-team"} (tr "labels.rename")]
 
      (cond
        (get-in team [:permissions :is-owner])
-       [:li {:on-click on-leave-as-owner-clicked} (tr "dashboard.leave-team")]
+       [:li {:on-click on-leave-as-owner-clicked :data-test "leave-team"} (tr "dashboard.leave-team")]
 
        (> (count members) 1)
        [:li {:on-click on-leave-clicked}  (tr "dashboard.leave-team")])
 
 
      (when (get-in team [:permissions :is-owner])
-       [:li {:on-click on-delete-clicked} (tr "dashboard.delete-team")])]))
+       [:li {:on-click on-delete-clicked :data-test "delete-team"} (tr "dashboard.delete-team")])]))
 
 
 (mf/defc sidebar-team-switch
@@ -466,13 +466,14 @@
 
      [:div.sidebar-content-section
       [:ul.sidebar-nav.no-overflow
-       [:li.recent-projects
+       [:li
         {:on-click go-fonts
+         :data-test "fonts"
          :class-name (when fonts? "current")}
         [:span.element-title (tr "labels.fonts")]]]]
 
      [:hr]
-     [:div.sidebar-content-section
+     [:div.sidebar-content-section {:data-test "pinned-projects"}
       (if (seq pinned-projects)
         [:ul.sidebar-nav
          (for [item pinned-projects]

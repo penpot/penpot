@@ -203,27 +203,28 @@
                                     (for [sub-project (:projects team)]
                                       [(get-project-name sub-project)
                                        (on-move (:id team)
-                                                (:id sub-project))])])]))
+                                                (:id sub-project))])])
+                                 "move-to-other-team"]))
 
             options (if multi?
-                      [[(tr "dashboard.duplicate-multi" file-count) on-duplicate]
+                      [[(tr "dashboard.duplicate-multi" file-count) on-duplicate nil "duplicate-multi"]
                        (when (or (seq current-projects) (seq other-teams))
-                         [(tr "dashboard.move-to-multi" file-count) nil sub-options])
+                         [(tr "dashboard.move-to-multi" file-count) nil sub-options "move-to-multi"])
                        [(tr "dashboard.export-multi" file-count) on-export-files]
                        [:separator]
-                       [(tr "labels.delete-multi-files" file-count) on-delete]]
+                       [(tr "labels.delete-multi-files" file-count) on-delete nil "delete-multi-files"]]
 
                       [[(tr "dashboard.open-in-new-tab") on-new-tab]
-                       [(tr "labels.rename") on-edit]
-                       [(tr "dashboard.duplicate") on-duplicate]
+                       [(tr "labels.rename") on-edit nil "file-rename"]
+                       [(tr "dashboard.duplicate") on-duplicate nil "file-duplicate"]
                        (when (or (seq current-projects) (seq other-teams))
-                           [(tr "dashboard.move-to") nil sub-options])
+                           [(tr "dashboard.move-to") nil sub-options "file-move-to"])
                        (if (:is-shared file)
-                         [(tr "dashboard.remove-shared") on-del-shared]
-                         [(tr "dashboard.add-shared") on-add-shared])
-                       [(tr "dashboard.export-single") on-export-files]
+                         [(tr "dashboard.remove-shared") on-del-shared nil "file-del-shared"]
+                         [(tr "dashboard.add-shared") on-add-shared nil "file-add-shared"])
+                       [(tr "dashboard.export-single") on-export-files nil "file-export"]
                        [:separator]
-                       [(tr "labels.delete") on-delete]])]
+                       [(tr "labels.delete") on-delete nil "file-delete"]])]
 
           [:& context-menu {:on-close on-menu-close
                             :show show?

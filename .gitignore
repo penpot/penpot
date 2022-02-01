@@ -1,6 +1,7 @@
 *-init.clj
 *.jar
 *.penpot
+*.orig
 .calva
 .clj-kondo
 .cpcache

@@ -237,7 +237,7 @@
 (mf/defc register-validate-page
   [{:keys [params] :as props}]
   [:div.form-container
-   [:h1 (tr "auth.register-title")]
+   [:h1 {:data-test "register-title"} (tr "auth.register-title")]
    [:div.subtitle (tr "auth.register-subtitle")]
 
    [:& register-validate-form {:params params}]

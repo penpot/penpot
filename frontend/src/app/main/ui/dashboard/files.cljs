@@ -70,7 +70,7 @@
                                                          (with-meta {::ev/origin "project"}))))
                                          (swap! local assoc :edition false)))}]
          [:div.dashboard-title
-          [:h1 {:on-double-click on-edit}
+          [:h1 {:on-double-click on-edit :data-test "project-title"}
            (:name project)]]))
 
      [:& project-menu {:project project
@@ -82,7 +82,7 @@
                        :on-import on-import}]
 
      [:div.dashboard-header-actions
-      [:a.btn-secondary.btn-small {:on-click on-create-clicked}
+      [:a.btn-secondary.btn-small {:on-click on-create-clicked :data-test "new-file"}
        (tr "dashboard.new-file")]
 
       (when-not (:is-default project)

@@ -149,10 +149,10 @@
          [:span (tr "dashboard.fonts.fonts-added" (i18n/c (count (vals @fonts))))]
          [:div.table-field.options
           [:div.btn-primary
-           {:on-click #(on-upload-all (vals @fonts))}
+           {:on-click #(on-upload-all (vals @fonts)) :data-test "upload-all"}
            [:span (tr "dashboard.fonts.upload-all")]]
           [:div.btn-secondary
-           {:on-click #(on-dismiss-all (vals @fonts))}
+           {:on-click #(on-dismiss-all (vals @fonts)) :data-test "dismiss-all"}
            [:span (tr "dashboard.fonts.dismiss-all")]]]])
 
       (for [item (sort-by :font-family (vals @fonts))]
@@ -277,8 +277,8 @@
           :fixed? false
           :top -15
           :left -115
-          :options [[(tr "labels.edit") #(reset! edit? true)]
-                    [(tr "labels.delete") on-delete]]}]])]))
+          :options [[(tr "labels.edit") #(reset! edit? true) nil "font-edit"]
+                    [(tr "labels.delete") on-delete nil "font-delete"]]}]])]))
 
 
 (mf/defc installed-fonts
