@@ -76,6 +76,7 @@
 - Normalize zoom levels in workspace and viewer [Taiga #2631](https://tree.taiga.io/project/penpot/issue/2631)
 - Avoid empty names in projects, files and pages [Taiga #2594](https://tree.taiga.io/project/penpot/issue/2594)
 - Fix "move to" menu when duplicated team or project names [Taiga #2655](https://tree.taiga.io/project/penpot/issue/2655)
+- Fix ungroup a component leaves an asterisk in layers [Taiga #2694](https://tree.taiga.io/project/penpot/issue/2694)
 
 ### :arrow_up: Deps updates
 
