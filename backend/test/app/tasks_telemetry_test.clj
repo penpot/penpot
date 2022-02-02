@@ -1,0 +1,46 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) UXBOX Labs SL
+
+(ns app.tasks-telemetry-test
+  (:require
+   [app.db :as db]
+   [app.emails :as emails]
+   [app.test-helpers :as th]
+   [app.util.time :as dt]
+   [clojure.pprint :refer [pprint]]
+   [clojure.test :as t]
+   [mockery.core :refer [with-mocks]]))
+
+(t/use-fixtures :once th/state-init)
+(t/use-fixtures :each th/database-reset)
+
+(t/deftest test-base-report-data-structure
+  (with-mocks [mock {:target 'app.tasks.telemetry/send!
+                     :return nil}]
+    (let [task-fn (-> th/*system* :app.worker/registry :telemetry)
+          prof    (th/create-profile* 1 {:is-active true})]
+
+      ;; run the task
+      (task-fn nil)
+
+      (t/is (:called? @mock))
+      (let [[data] (-> @mock :call-args)]
+        (t/is (contains? data :total-fonts))
+        (t/is (contains? data :total-users))
+        (t/is (contains? data :total-projects))
+        (t/is (contains? data :total-files))
+        (t/is (contains? data :total-teams))
+        (t/is (contains? data :total-comments))
+        (t/is (contains? data :instance-id))
+        (t/is (contains? data :jvm-cpus))
+        (t/is (contains? data :jvm-heap-max))
+        (t/is (contains? data :max-users-on-team))
+        (t/is (contains? data :avg-users-on-team))
+        (t/is (contains? data :max-files-on-project))
+        (t/is (contains? data :avg-files-on-project))
+        (t/is (contains? data :max-projects-on-team))
+        (t/is (contains? data :avg-files-on-project))
+        (t/is (contains? data :version))))))

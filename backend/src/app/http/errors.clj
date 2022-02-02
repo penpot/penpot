@@ -59,17 +59,25 @@
   [err _]
   {:status 400 :body (ex-data err)})
 
+(defn- explain-spec-error-data
+  [data]
+  (when (and (::s/problems data)
+             (::s/value data)
+             (::s/spec data))
+    (binding [s/*explain-out* expound/printer]
+      (with-out-str
+        (s/explain-out (update data ::s/problems #(take 10 %)))))))
+
+
 (defmethod handle-exception :validation
   [err _]
   (let [data    (ex-data err)
-        explain (binding [s/*explain-out* expound/printer]
-                  (with-out-str
-                    (s/explain-out (update data ::s/problems #(take 10 %)))))]
+        explain (explain-spec-error-data data)]
     {:status 400
      :body (-> data
                (dissoc ::s/problems)
                (dissoc ::s/value)
-               (assoc :explain explain))}))
+               (cond-> explain (assoc :explain explain)))}))
 
 (defmethod handle-exception :assertion
   [error request]

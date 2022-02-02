@@ -19,10 +19,8 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
-(declare handler)
-(declare acquire-lock)
-(declare release-all-locks)
 (declare retrieve-stats)
+(declare send!)
 
 (s/def ::version ::us/string)
 (s/def ::uri ::us/string)
@@ -34,49 +32,48 @@
   (s/keys :req-un [::db/pool ::version ::uri ::sprops]))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [pool] :as cfg}]
+  [_ {:keys [pool sprops version] :as cfg}]
   (fn [_]
-    (db/with-atomic [conn pool]
-      (try
-        (acquire-lock conn)
-        (handler (assoc cfg :conn conn))
-        (finally
-          (release-all-locks conn))))))
+    (let [instance-id (:instance-id sprops)]
+      (-> (retrieve-stats pool version)
+          (assoc :instance-id instance-id)
+          (send! cfg)))))
 
-(defn- acquire-lock
-  [conn]
-  (db/exec-one! conn ["select pg_advisory_lock(87562985867332);"]))
-
-(defn- release-all-locks
-  [conn]
-  (db/exec-one! conn ["select pg_advisory_unlock_all();"]))
-
-(defn- handler
-  [{:keys [sprops] :as cfg}]
-  (let [instance-id (:instance-id sprops)
-        data        (retrieve-stats cfg)
-        data        (assoc data :instance-id instance-id)
-        response    (http/send! {:method :post
-                                 :uri (:uri cfg)
-                                 :headers {"content-type" "application/json"}
-                                 :body (json/write-str data)})]
+(defn- send!
+  [data cfg]
+  (let [response (http/send! {:method :post
+                              :uri (:uri cfg)
+                              :headers {"content-type" "application/json"}
+                              :body (json/write-str data)})]
     (when (> (:status response) 206)
       (ex/raise :type :internal
                 :code :invalid-response
-                :context {:status (:status response)
-                          :body (:body response)}))))
+                :response-status (:status response)
+                :response-body (:body response)))))
 
-(defn retrieve-num-teams
+(defn- retrieve-num-teams
   [conn]
   (-> (db/exec-one! conn ["select count(*) as count from team;"]) :count))
 
-(defn retrieve-num-projects
+(defn- retrieve-num-projects
   [conn]
   (-> (db/exec-one! conn ["select count(*) as count from project;"]) :count))
 
-(defn retrieve-num-files
+(defn- retrieve-num-files
   [conn]
-  (-> (db/exec-one! conn ["select count(*) as count from project;"]) :count))
+  (-> (db/exec-one! conn ["select count(*) as count from file;"]) :count))
+
+(defn- retrieve-num-users
+  [conn]
+  (-> (db/exec-one! conn ["select count(*) as count from profile;"]) :count))
+
+(defn- retrieve-num-fonts
+  [conn]
+  (-> (db/exec-one! conn ["select count(*) as count from team_font_variant;"]) :count))
+
+(defn- retrieve-num-comments
+  [conn]
+  (-> (db/exec-one! conn ["select count(*) as count from comment;"]) :count))
 
 (def sql:team-averages
   "with projects_by_team as (
@@ -98,7 +95,6 @@
      select t.id, count(tp.profile_id) as num_users
        from team as t
        left join team_profile_rel as tp on(tp.team_id = t.id)
-      where t.is_default = false
       group by 1
    )
    select (select avg(num_projects)::integer from projects_by_team) as avg_projects_on_team,
@@ -110,20 +106,20 @@
           (select avg(num_users)::integer from users_by_team) as avg_users_on_team,
           (select max(num_users)::integer from users_by_team) as max_users_on_team;")
 
-(defn retrieve-team-averages
+(defn- retrieve-team-averages
   [conn]
   (->> [sql:team-averages]
        (db/exec-one! conn)))
 
-(defn retrieve-jvm-stats
+(defn- retrieve-jvm-stats
   []
   (let [^Runtime runtime (Runtime/getRuntime)]
     {:jvm-heap-current (.totalMemory runtime)
      :jvm-heap-max     (.maxMemory runtime)
      :jvm-cpus         (.availableProcessors runtime)}))
 
-(defn- retrieve-stats
-  [{:keys [conn version]}]
+(defn retrieve-stats
+  [conn version]
   (let [referer (if (cfg/get :telemetry-with-taiga)
                   "taiga"
                   (cfg/get :telemetry-referer))]
@@ -131,7 +127,10 @@
          :referer        referer
          :total-teams    (retrieve-num-teams conn)
          :total-projects (retrieve-num-projects conn)
-         :total-files    (retrieve-num-files conn)}
+         :total-files    (retrieve-num-files conn)
+         :total-users    (retrieve-num-users conn)
+         :total-fonts    (retrieve-num-fonts conn)
+         :total-comments (retrieve-num-comments conn)}
         (d/merge
          (retrieve-team-averages conn)
          (retrieve-jvm-stats))
