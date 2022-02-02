@@ -172,6 +172,10 @@
   (let [go-to-dashboard
         (st/emitf (dv/go-to-dashboard))
 
+        go-to-handoff
+        (fn []
+          (st/emit! dv/close-thumbnails-panel (dv/go-to-section :handoff)))
+
         navigate
         (fn [section]
           (st/emit! (dv/go-to-section section)))]
@@ -203,7 +207,7 @@
                 (and (= (:type permissions) :share-link)
                      (contains? (:flags permissions) :section-handoff)))
         [:button.mode-zone-button.tooltip.tooltip-bottom
-         {:on-click #(navigate :handoff)
+         {:on-click go-to-handoff
           :class (dom/classnames :active (= section :handoff))
           :alt (tr "viewer.header.handoff-section" (sc/get-tooltip :open-handoff))}
          i/code])]

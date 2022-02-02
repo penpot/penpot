@@ -104,14 +104,13 @@
      {:class (dom/classnames :expanded @expanded?
                              :invisible (not show?))
 
-      :ref container
-      }
+      :ref container}
 
      [:& thumbnails-summary {:on-toggle-expand #(swap! expanded? not)
                              :on-close on-close
                              :total (count frames)}]
      [:& thumbnails-content {:expanded? @expanded?
-                              :total (count frames)}
+                             :total (count frames)}
       (for [[i frame] (d/enumerate frames)]
         [:& thumbnail-item {:index i
                             :frame frame
