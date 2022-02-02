@@ -99,4 +99,5 @@
               (rx/filter (ptk/type? ::dw/initialize-viewport))
               (rx/take 1)
               (rx/mapcat #(rx/of (center-to-comment-thread thread)
+                                 (dw/select-for-drawing :comments)
                                  (dcm/open-thread thread)))))))))

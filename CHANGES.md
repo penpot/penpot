@@ -7,6 +7,7 @@
 ### :sparkles: New features
 
 - On user settings, hide the theme selector as long as we only have one theme [Taiga #2610](https://tree.taiga.io/project/penpot/us/2610)
+- Automatically open comments from dashboard notifications [Taiga #2605](https://tree.taiga.io/project/penpot/us/2605)
 - Add recent used fonts in font selection widget [Taiga #1381](https://tree.taiga.io/project/penpot/us/1381)
 - Allow to align items relative to groups [Taiga #2533](https://tree.taiga.io/project/penpot/us/2533)
 - Scroll bars [Taiga #2550](https://tree.taiga.io/project/penpot/task/2550)
