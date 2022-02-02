@@ -69,15 +69,9 @@
    ::mf/wrap [mf/memo]}
   [props]
   (let [layout (obj/get props "layout")
-        {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
-        (use-resize-hook :right-sidebar 255 255 500 :x true :right)
-
         drawing-tool (:tool (mf/deref refs/workspace-drawing))]
-    [:aside.settings-bar.settings-bar-right {:ref parent-ref
-                                             :style #js {"--width" (str size "px")}}
-     [:div.resize-area {:on-pointer-down on-pointer-down
-                        :on-lost-pointer-capture on-lost-pointer-capture
-                        :on-mouse-move on-mouse-move}]
+
+    [:aside.settings-bar.settings-bar-right
      [:div.settings-bar-inside
       (cond
         (= drawing-tool :comments)

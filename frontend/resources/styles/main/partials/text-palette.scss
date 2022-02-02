@@ -11,13 +11,15 @@
     color: $color-white;
   }
 
-  & .typography-font, & .typography-data {
+  & .typography-font,
+  & .typography-data {
     font-size: 16px;
-    color: #7B7D85;
+    color: $color-gray-30;
   }
 
   .no-text & {
-    & .typography-font, & .typography-data {
+    & .typography-font,
+    & .typography-data {
       display: none;
     }
   }

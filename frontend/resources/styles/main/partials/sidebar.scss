@@ -177,7 +177,6 @@
       }
     }
   }
-
 }
 
 .element-list.pages-list {
@@ -214,24 +213,23 @@ button.collapse-sidebar {
   }
 
   &.collapsed {
-    background: $color-black;
+    background: $color-gray-60;
     left: 48px;
     top: 48px;
-    width: 18px;
-    height: 24px;
+    width: 28px;
+    height: 48px;
     padding: 0;
     border-radius: 0px 4px 4px 0px;
+    border-left: 1px solid $color-gray-50;
 
     & svg {
-      width: 8px;
-      height: 8px;
       transform: rotate(0deg);
     }
   }
 }
 
 #layers.tool-window {
-  overflow: auto;  
+  overflow: auto;
 }
 
 .layers-tab {

@@ -367,7 +367,8 @@
          [:*
           [:& rules/rules
            {:zoom zoom
-            :vbox vbox}]
+            :vbox vbox
+            :selected-shapes selected-shapes}]
 
           [:& guides/viewport-guides
            {:zoom zoom

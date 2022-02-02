@@ -8,13 +8,20 @@
   (:require
    [app.common.colors :as colors]
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.main.ui.hooks :as hooks]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
 (def rules-pos 15)
 (def rules-size 4)
 (def rules-width 1)
+
+(def rule-area-size 22)
+(def rule-area-half-size (/ rule-area-size 2))
+
+(def rules-background "var(--color-gray-50)")
 
 ;; ----------------
 ;;   RULES
@@ -59,12 +66,12 @@
     (let [x      (:x vbox)
           y      (:y vbox)
           width  (:width vbox)
-          height (/ 22 zoom)]
+          height (/ rule-area-size zoom)]
       {:x x :y y :width width :height height})
 
     (let [x      (:x vbox)
-          y      (+ (:y vbox) (/ 22 zoom))
-          width  (/ 22 zoom)
+          y      (+ (:y vbox) (/ rule-area-size zoom))
+          width  (/ rule-area-size zoom)
           height (- (:height vbox) (/ 21 zoom))]
       {:x x :y y :width width :height height})))
 
@@ -107,7 +114,7 @@
     
     [:*
      (let [{:keys [x y width height]} (get-background-area vbox zoom axis)]
-       [:rect {:x x :y y :width width :height height :style {:fill "#303236"}}])
+       [:rect {:x x :y y :width width :height height :style {:fill rules-background}}])
 
      [:g.rules {:clipPath (str "url(#" clip-id ")")} 
 
@@ -147,13 +154,118 @@
                      :style {:stroke colors/gray-30
                              :stroke-width rules-width}}]])))]]))
 
+(def selection-area-color "var(--color-primary)")
+(def selection-area-opacity 0.3)
+(def over-number-size 50)
+(def over-number-opacity 0.7)
+
+(mf/defc selection-area
+  [{:keys [vbox zoom selection-rect]}]
+  [:g.selection-area
+   [:g
+    [:rect {:x (:x selection-rect)
+            :y (:y vbox)
+            :width (:width selection-rect)
+            :height (/ rule-area-size zoom)
+            :style {:fill selection-area-color
+                    :fill-opacity selection-area-opacity}}]
+
+    [:rect {:x (- (:x selection-rect) (/ over-number-size zoom))
+            :y (:y vbox)
+            :width (/ over-number-size zoom)
+            :height (/ rule-area-size zoom)
+            :style {:fill rules-background
+                    :fill-opacity over-number-opacity}}]
+    
+    [:text {:x (- (:x1 selection-rect) (/ 4 zoom))
+            :y (+ (:y vbox) (/ 12 zoom))
+            :text-anchor "end"
+            :dominant-baseline "middle"
+            :style {:font-size (/ 13 zoom)
+                    :font-family "sourcesanspro"
+                    :fill selection-area-color}}
+     (str (mth/round (:x1 selection-rect)))]
+
+    [:rect {:x (:x2 selection-rect)
+            :y (:y vbox)
+            :width (/ over-number-size zoom)
+            :height (/ rule-area-size zoom)
+            :style {:fill rules-background
+                    :fill-opacity over-number-opacity}}]
+
+    [:text {:x (+ (:x2 selection-rect) (/ 4 zoom))
+            :y (+ (:y vbox) (/ 12 zoom))
+            :text-anchor "start"
+            :dominant-baseline "middle"
+            :style {:font-size (/ 13 zoom)
+                    :font-family "sourcesanspro"
+                    :fill selection-area-color}}
+     (str (mth/round (:x2 selection-rect)))]]
+
+   (let [center-x (+ (:x vbox) (/ rule-area-half-size zoom))
+         center-y (- (+ (:y selection-rect) (/ (:height selection-rect) 2)) (/ rule-area-half-size zoom))]
+     
+     [:g {:transform (str "rotate(-90 " center-x "," center-y ")")}
+      [:rect {:x (- center-x (/ (:height selection-rect) 2) (/ rule-area-half-size zoom))
+              :y (- center-y (/ rule-area-half-size zoom))
+              :width (:height selection-rect)
+              :height (/ rule-area-size zoom)
+              :style {:fill selection-area-color
+                      :fill-opacity selection-area-opacity}}]
+
+      [:rect {:x (- center-x (/ (:height selection-rect) 2) (/ rule-area-half-size zoom) (/ over-number-size zoom))
+              :y (- center-y (/ rule-area-half-size zoom))
+              :width (/ over-number-size zoom)
+              :height (/ rule-area-size zoom)
+              :style {:fill rules-background
+                      :fill-opacity over-number-opacity}}]
+
+      [:rect {:x (+ (- center-x (/ (:height selection-rect) 2) (/ rule-area-half-size zoom) ) (:height selection-rect))
+              :y (- center-y (/ rule-area-half-size zoom))
+              :width (/ over-number-size zoom)
+              :height (/ rule-area-size zoom)
+              :style {:fill rules-background
+                      :fill-opacity over-number-opacity}}]
+      
+      [:text {:x (- center-x (/ (:height selection-rect) 2) (/ 15 zoom))
+              :y center-y
+              :text-anchor "end"
+              :dominant-baseline "middle"
+              :style {:font-size (/ 13 zoom)
+                      :font-family "sourcesanspro"
+                      :fill selection-area-color}}
+       (str (mth/round (:y2 selection-rect)))]
+
+      [:text {:x (+ center-x (/ (:height selection-rect) 2) )
+              :y center-y
+              :text-anchor "start"
+              :dominant-baseline "middle"
+              :style {:font-size (/ 13 zoom)
+                      :font-family "sourcesanspro"
+                      :fill selection-area-color}}
+       (str (mth/round (:y1 selection-rect)))]])])
+
 (mf/defc rules
   {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
+   ::mf/wrap [#(mf/memo' % (mf/check-props ["zoom" "vbox" "selected-shapes"]))]}
   [props]
-  (let [zoom        (obj/get props "zoom")
-        vbox        (obj/get props "vbox")]
+  (let [zoom            (obj/get props "zoom")
+        vbox            (obj/get props "vbox")
+        selected-shapes (-> (obj/get props "selected-shapes")
+                            (hooks/use-equal-memo))
+
+        selection-rect
+        (mf/use-memo
+         (mf/deps selected-shapes)
+         #(when (d/not-empty? selected-shapes)
+            (gsh/selection-rect selected-shapes)))]
+
     (when (some? vbox)
       [:g.rules {:pointer-events "none"}
        [:& rules-axis {:zoom zoom :vbox vbox :axis :x}]
-       [:& rules-axis {:zoom zoom :vbox vbox :axis :y}]])))
+       [:& rules-axis {:zoom zoom :vbox vbox :axis :y}]
+
+       (when (some? selection-rect)
+         [:& selection-area {:zoom zoom
+                             :vbox vbox
+                             :selection-rect selection-rect}])])))

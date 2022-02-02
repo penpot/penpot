@@ -52,7 +52,6 @@
   [{:keys [local selected-ids current-file-id file-typographies shared-libs]}]
 
   (let [state (mf/use-state {:show-menu false})
-
         selected (mf/use-state :file)
 
         file-id
@@ -116,18 +115,7 @@
         {:on-click #(reset! selected :file)}
         (when (= selected :file) i/tick)
         [:div.library-name (str (tr "workspace.libraries.colors.file-library")
-                                (str/format " (%s)" (count file-typographies)))]]
-
-       #_[:li.palette-library
-        {:on-click #(st/emit! (mdc/change-palette-selected :recent))}
-        (when (= selected :recent) i/tick)
-        [:div.library-name (str (tr "workspace.libraries.colors.recent-colors")
-                                (str/format " (%s)" (count recent-colors)))]
-        [:div.color-sample
-         (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors))) ]
-           [:& cb/color-bullet {:key (str "color-" idx)
-                                :color color}])]]
-       ]]
+                                (str/format " (%s)" (count file-typographies)))]]]]
 
      [:div.color-palette-actions
       {:on-click #(swap! state assoc :show-menu true)}
@@ -136,7 +124,7 @@
      [:span.left-arrow {:on-click on-left-arrow-click} i/arrow-slide]
 
      [:div.color-palette-content {:ref container :on-wheel on-wheel}
-      [:div.color-palette-inside {:style {:position "relative"}}
+      [:div.color-palette-inside
        (for [[idx item] (map-indexed vector current-typographies)]
          [:& typography-item
           {:key idx
@@ -145,9 +133,7 @@
            :selected-ids selected-ids
            :typography item}])]]
 
-     [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]])
-
-  )
+     [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))
 
 (def local-data
   (l/derived #(select-keys % [:editors]) refs/workspace-local =))
