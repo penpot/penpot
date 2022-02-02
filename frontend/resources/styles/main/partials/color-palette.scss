@@ -9,7 +9,9 @@
   align-items: center;
   background-color: $color-gray-50;
   border-top: 1px solid $color-gray-60;
-  display: flex;
+
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto;
   
   z-index: 11;
 
@@ -252,7 +254,7 @@
 ul.palette-menu {
   left: 8px;
   top: auto;
-  bottom: 4.5rem;
+  bottom: var(--height);
   color: $color-black;
 
   li {

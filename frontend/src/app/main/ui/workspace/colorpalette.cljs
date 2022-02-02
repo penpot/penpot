@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.colorpalette
   (:require
-   [app.common.data :as d]
    [app.common.math :as mth]
    [app.main.data.workspace.colors :as mdc]
    [app.main.refs :as refs]
@@ -55,7 +54,7 @@
 
 (mf/defc palette
   [{:keys [current-colors recent-colors file-colors shared-libs selected]}]
-  (let [state      (mf/use-state {:show-menu false })
+  (let [state      (mf/use-state {:show-menu false})
 
         width      (:width @state 0)
         visible    (mth/round (/ width 66))
@@ -180,6 +179,7 @@
            (vals))))
 
 (mf/defc colorpalette
+  {::mf/wrap [mf/memo]}
   []
   (let [recent-colors (mf/deref refs/workspace-recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)

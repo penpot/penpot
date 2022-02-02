@@ -92,7 +92,7 @@
   (l/derived :workspace-drawing st/state))
 
 (def selected-shapes
-  (l/derived wsh/lookup-selected st/state))
+  (l/derived wsh/lookup-selected st/state =))
 
 (defn make-selected-ref
   [id]
