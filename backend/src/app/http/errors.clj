@@ -9,11 +9,11 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [clojure.pprint]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [expound.alpha :as expound]))
+   [cuerdas.core :as str]))
 
 (defn- parse-client-ip
   [{:keys [headers] :as request}]
@@ -41,9 +41,7 @@
         :frontend-version (get headers "x-frontend-version" "unknown")})
 
      (when (and data (::s/problems data))
-       {:spec-explain (binding [s/*explain-out* expound/printer]
-                        (with-out-str
-                          (s/explain-out (update data ::s/problems #(take 10 %)))))}))))
+       {:spec-explain (us/pretty-explain data)}))))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -59,20 +57,10 @@
   [err _]
   {:status 400 :body (ex-data err)})
 
-(defn- explain-spec-error-data
-  [data]
-  (when (and (::s/problems data)
-             (::s/value data)
-             (::s/spec data))
-    (binding [s/*explain-out* expound/printer]
-      (with-out-str
-        (s/explain-out (update data ::s/problems #(take 10 %)))))))
-
-
 (defmethod handle-exception :validation
   [err _]
   (let [data    (ex-data err)
-        explain (explain-spec-error-data data)]
+        explain (us/pretty-explain data)]
     {:status 400
      :body (-> data
                (dissoc ::s/problems)
