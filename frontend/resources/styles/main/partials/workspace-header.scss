@@ -7,7 +7,7 @@
 .workspace-header {
   align-items: center;
   background-color: $color-gray-50;
-  border-bottom: 1px solid  $color-gray-60;
+  border-bottom: 1px solid $color-gray-60;
   display: flex;
   height: 48px;
   padding: $size-1 $size-4 $size-1 55px;
@@ -35,17 +35,13 @@
         fill: $color-gray-30;
         height: 30px;
         width: 28px;
-
       }
 
       &:hover {
-
         svg {
           fill: $color-primary;
         }
-
       }
-
     }
   }
 
@@ -116,19 +112,19 @@
         cursor: pointer;
 
         &:hover {
-            color: $color-primary;
+          color: $color-primary;
         }
       }
     }
 
     .file-name {
-        margin: 0;
-        padding: 0;
-        border: none;
-        border-bottom: 1px solid $color-gray-10;
-        background: $color-gray-50;
-        color: $color-gray-10;
-        margin-bottom: -1px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-bottom: 1px solid $color-gray-10;
+      background: $color-gray-50;
+      color: $color-gray-10;
+      margin-bottom: -1px;
     }
   }
 
@@ -138,7 +134,7 @@
     left: 40px;
     width: 270px;
     z-index: 12;
-    @include animation(0,.2s,fadeInDown);
+    @include animation(0, 0.2s, fadeInDown);
 
     background-color: $color-white;
     border-radius: $br-small;
@@ -208,13 +204,21 @@
     display: flex;
 
     &.error {
-      .label { color: $color-danger; }
-      .icon svg { fill: $color-danger; }
+      .label {
+        color: $color-danger;
+      }
+      .icon svg {
+        fill: $color-danger;
+      }
     }
 
     &.pending {
-      .label { color: $color-warning; }
-      .icon svg { fill: $color-warning; }
+      .label {
+        color: $color-warning;
+      }
+      .icon svg {
+        fill: $color-warning;
+      }
     }
   }
 

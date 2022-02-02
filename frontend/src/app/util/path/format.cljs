@@ -8,88 +8,92 @@
   (:require
    [app.common.path.commands :as upc]
    [app.common.path.subpaths :refer [pt=]]
-   [cuerdas.core :as str]))
+   [app.util.array :as arr]))
 
-(defn command->param-list [command]
-  (let [params (:params command)]
-    (case (:command command)
-      (:move-to :line-to :smooth-quadratic-bezier-curve-to)
-      (str (:x params) ","
-           (:y params))
+(defn- join-params
+  ([a]
+   (js* "\"\"+~{}" a))
+  ([a b]
+   (js* "\"\"+~{}+\",\"+~{}" a b))
+  ([a b c]
+   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}" a b c))
+  ([a b c d]
+   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}" a b c d))
+  ([a b c d e]
+   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}" a b c d e))
+  ([a b c d e f]
+   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}" a b c d e f))
+  ([a b c d e f g]
+   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}" a b c d e f g)))
 
-      :close-path
-      ""
+(defn- translate-params
+  [command {:keys [x y] :as params}]
+  (case command
+    (:move-to :line-to :smooth-quadratic-bezier-curve-to)
+    (join-params x y)
 
-      (:line-to-horizontal :line-to-vertical)
-      (str (:value params))
+    :close-path
+    ""
 
-      :curve-to
-      (str (:c1x params) ","
-           (:c1y params) ","
-           (:c2x params) ","
-           (:c2y params) ","
-           (:x params) ","
-           (:y params))
+    (:line-to-horizontal :line-to-vertical)
+    (:value params)
 
-      (:smooth-curve-to :quadratic-bezier-curve-to)
-      (str (:cx params) ","
-           (:cy params) ","
-           (:x params) ","
-           (:y params))
+    :curve-to
+    (let [{:keys [c1x c1y c2x c2y]} params]
+      (join-params c1x c1y c2x c2y x y))
 
-      :elliptical-arc
-      (str (:rx params) ","
-           (:ry params) ","
-           (:x-axis-rotation params) ","
-           (:large-arc-flag params) ","
-           (:sweep-flag params) ","
-           (:x params) ","
-           (:y params))
+    (:smooth-curve-to :quadratic-bezier-curve-to)
+    (let [{:keys [cx cy]} params]
+      (join-params cx cy x y))
 
-      "")))
+    :elliptical-arc
+    (let [{:keys [rx ry x-axis-rotation large-arc-flag sweep-flag]} params]
+      (join-params rx ry x-axis-rotation large-arc-flag sweep-flag x y))
 
-(defn command->string [{:keys [command relative] :as entry}]
-  (let [command-str (case command
-                      :move-to "M"
-                      :close-path "Z"
-                      :line-to "L"
-                      :line-to-horizontal "H"
-                      :line-to-vertical "V"
-                      :curve-to "C"
-                      :smooth-curve-to "S"
-                      :quadratic-bezier-curve-to "Q"
-                      :smooth-quadratic-bezier-curve-to "T"
-                      :elliptical-arc "A"
-                      "")
-        command-str (if relative (str/lower command-str) command-str)
-        param-list (command->param-list entry)]
-    (str command-str param-list)))
+    ""))
+
+(defn- translate-command
+  [cname]
+  (case cname
+    :move-to "M"
+    :close-path "Z"
+    :line-to "L"
+    :line-to-horizontal "H"
+    :line-to-vertical "V"
+    :curve-to "C"
+    :smooth-curve-to "S"
+    :quadratic-bezier-curve-to "Q"
+    :smooth-quadratic-bezier-curve-to "T"
+    :elliptical-arc "A"
+    ""))
 
 
-(defn set-point
-  [command point]
-  (-> command
-      (assoc-in [:params :x] (:x point))
-      (assoc-in [:params :y] (:y point))))
+(defn- command->string
+  [{:keys [command relative params]}]
+  (let [cmd (cond-> (translate-command command)
+              relative (.toLowerCase))
+        prm (translate-params command params)]
+    (js* "~{} + ~{}" cmd prm)))
+
+(defn- set-point
+  [command {:keys [x y]}]
+  (update command :params assoc :x x :y y))
 
 (defn format-path [content]
-  (with-out-str
-    (loop [last-move nil
-           current (first content)
-           content (rest content)]
+  (let [result (make-array (count content))]
+    (reduce (fn [last-move current]
+              (let [point         (upc/command->point current)
+                    current-move? (= :move-to (:command current))
+                    last-move     (if current-move? point last-move)]
 
-      (when (some? current)
-        (let [point (upc/command->point current)
-              current-move? (= :move-to (:command current))
-              last-move (if current-move? point last-move)]
+                (if (and (not current-move?) (pt= last-move point))
+                  (arr/conj! result (command->string (set-point current last-move)))
+                  (arr/conj! result (command->string current)))
 
-          (if (and (not current-move?) (pt= last-move point))
-            (print (command->string (set-point current last-move)))
-            (print (command->string current)))
+                (when (and (not current-move?) (pt= last-move point))
+                  (arr/conj! result "Z"))
 
-          (when (and (not current-move?) (pt= last-move point))
-            (print "Z"))
-
-          (recur last-move
-                 (first content)
-                 (rest content)))))))
+                last-move))
+            nil
+            content)
+    (.join ^js result "")))

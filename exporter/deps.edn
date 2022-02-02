@@ -2,14 +2,14 @@
  :deps
  {penpot/common       {:local/root "../common"}
   binaryage/devtools  {:mvn/version "RELEASE"}
-  metosin/reitit-core {:mvn/version "0.5.13"}
-  com.lambdaisland/glogi {:mvn/version "1.1.144"}
+  metosin/reitit-core {:mvn/version "0.5.15"}
   funcool/beicon      {:mvn/version "2021.07.05-1"}
   }
  :aliases
  {:outdated
   {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}
-                org.slf4j/slf4j-nop {:mvn/version "RELEASE"}}
+                ;; org.slf4j/slf4j-nop {:mvn/version "RELEASE"}
+                }
    :main-opts ["-m" "antq.core"]}
 
   :dev
@@ -20,4 +20,3 @@
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
 
   }}
-

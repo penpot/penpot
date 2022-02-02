@@ -157,7 +157,7 @@
   "Return a map without the keys provided
   in the `keys` parameter."
   [data keys]
-  (when data
+  (when (map? data)
     (persistent!
      (reduce #(dissoc! %1 %2) (transient data) keys))))
 
@@ -201,7 +201,7 @@
   "Maps a function to each pair of values that can be combined inside the
   function without repetition.
 
-  Optional parmeters:
+  Optional parameters:
   `pred?`   A predicate that if not satisfied won't process the pair
   `target?` A collection that will be used as seed to be stored
 
@@ -497,7 +497,7 @@
     (keyword (str prefix kw))))
 
 (defn tap
-  "Simpilar to the tap in rxjs but for plain collections"
+  "Similar to the tap in rxjs but for plain collections"
   [f coll]
   (f coll)
   coll)

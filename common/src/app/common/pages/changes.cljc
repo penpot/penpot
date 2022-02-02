@@ -40,7 +40,9 @@
 (defmulti process-operation (fn [_ op] (:type op)))
 
 (defn process-changes
-  ([data items] (process-changes data items true))
+  ([data items]
+   (process-changes data items true))
+
   ([data items verify?]
    ;; When verify? false we spec the schema validation. Currently used to make just
    ;; 1 validation even if the changes are applied twice
@@ -152,29 +154,37 @@
 ;; reg-objects operation "regenerates" the geometry and selrect of the parent groups
 (defmethod process-change :reg-objects
   [data {:keys [page-id component-id shapes]}]
+  ;; FIXME: Improve performance
   (letfn [(reg-objects [objects]
-            (reduce #(d/update-when %1 %2 update-group %1) objects
-                    (sequence (comp
-                               (mapcat #(cons % (cph/get-parents % objects)))
-                               (map #(get objects %))
-                               (filter #(contains? #{:group :bool} (:type %)))
-                               (map :id)
-                               (distinct))
-                              shapes)))
+            (let [lookup    (d/getf objects)
+                  update-fn #(d/update-when %1 %2 update-group %1)
+                  xform     (comp
+                             (mapcat #(cons % (cph/get-parents % objects)))
+                             (map lookup)
+                             (filter #(contains? #{:group :bool} (:type %)))
+                             (map :id)
+                             (distinct))]
+
+              (->> (sequence xform shapes)
+                   (reduce update-fn objects))))
+
           (set-mask-selrect [group children]
             (let [mask (first children)]
               (-> group
-                  (merge (select-keys mask [:selrect :points]))
-                  (assoc :x (-> mask :selrect :x)
-                         :y (-> mask :selrect :y)
-                         :width (-> mask :selrect :width)
-                         :height (-> mask :selrect :height)
-                         :flip-x (-> mask :flip-x)
-                         :flip-y (-> mask :flip-y)))))
+                  (assoc :selrect (-> mask :selrect))
+                  (assoc :points  (-> mask :points))
+                  (assoc :x       (-> mask :selrect :x))
+                  (assoc :y       (-> mask :selrect :y))
+                  (assoc :width   (-> mask :selrect :width))
+                  (assoc :height  (-> mask :selrect :height))
+                  (assoc :flip-x  (-> mask :flip-x))
+                  (assoc :flip-y  (-> mask :flip-y)))))
+
           (update-group [group objects]
-            (let [children (->> group :shapes (map #(get objects %)))]
+            (let [lookup   (d/getf objects)
+                  children (->> group :shapes (map lookup))]
               (cond
-                ;; If the group is empty we don't make any changes. Should be removed by a later process
+                ;; If the group is empty we don't make any changes. Will be removed by a later process
                 (empty? children)
                 group
 
@@ -292,7 +302,7 @@
                   (reduce update-parent-id $ shapes)
 
                   ;; Analyze the old parents and clear the old links
-                  ;; only if the new parrent is different form old
+                  ;; only if the new parent is different form old
                   ;; parent.
                   (reduce (partial remove-from-old-parent cpindex) $ shapes)
 
@@ -470,4 +480,3 @@
   (ex/raise :type :not-implemented
             :code :operation-not-implemented
             :context {:type (:type op)}))
-

@@ -29,12 +29,12 @@
                    :artboard-grid/color]))
 
 (s/def :artboard-grid/column
-  (s/keys :req-un [:artboard-grid/size
-                   :artboard-grid/color
+  (s/keys :req-un [:artboard-grid/color]
+          :opt-un [:artboard-grid/size
+                   :artboard-grid/type
+                   :artboard-grid/item-length
                    :artboard-grid/margin
-                   :artboard-grid/gutter]
-          :opt-un [:artboard-grid/type
-                   :artboard-grid/item-length]))
+                   :artboard-grid/gutter]))
 
 (s/def :artboard-grid/row :artboard-grid/column)
 

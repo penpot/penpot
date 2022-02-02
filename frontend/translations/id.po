@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-23 21:33+0000\n"
-"Last-Translator: luthfi azhari <fiazhari@gmail.com>\n"
+"PO-Revision-Date: 2021-12-18 01:51+0000\n"
+"Last-Translator: Muhammad Insan Al-Amin <insan@mecha.id>\n"
 "Language-Team: Indonesian "
 "<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
 "Language: id\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: Weblate 4.10\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -95,12 +95,16 @@ msgstr "Masuk dengan OpenID (SSO)"
 msgid "auth.new-password"
 msgstr "Ketikkan kata sandi baru"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Saya setuju untuk berlangganan milis Penpot."
+
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "Token pemulihan tidak valid."
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
+msgid "auth.notifications.password-changed-successfully"
 msgstr "Kata sandi berhasil diubah"
 
 #: src/app/main/ui/auth/recovery_request.cljs
@@ -123,9 +127,12 @@ msgstr "Kata sandi"
 msgid "auth.password-length-hint"
 msgstr "Paling tidak 8 karakter"
 
+msgid "auth.privacy-policy"
+msgstr "Kebijakan privasi"
+
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
-msgstr "Pemulihan Kata sandi"
+msgstr "Pemulihan kata sandi"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-subtitle"
@@ -159,6 +166,9 @@ msgstr "Buat akun baru"
 msgid "auth.sidebar-tagline"
 msgstr "Solusi open-source untuk desain dan pembuatan prototype."
 
+msgid "auth.terms-of-service"
+msgstr "Ketentuan layanan"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr ""
@@ -167,7 +177,36 @@ msgstr ""
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
-msgstr "Kami mengirim verifikasi ke surel anda"
+msgstr "Kami telah mengirim verifikasi ke surel anda"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Apakah anda yakin akan menghapus tautan ini? Jika ya, maka tautan tersebut "
+"tidak akan lagi tersedia untuk siapapun"
+
+msgid "common.share-link.get-link"
+msgstr "Dapatkan tautan"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Tautan berhasil disalin"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Tautan berhasil dihapus"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "Dapat mengakses"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Dapat melihat"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Siapapun yang memiliki tautan dapat mengakses"
+
+msgid "common.share-link.view-current-page"
+msgstr "Hanya halaman ini"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Halaman yang dipilih"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -194,7 +233,7 @@ msgid "dashboard.delete-team"
 msgstr "Hapus tim"
 
 msgid "dashboard.draft-title"
-msgstr "Konsep"
+msgstr "Draf"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
@@ -207,3 +246,28 @@ msgstr "Duplikasi % file"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
 msgstr "Anda belum memiliki file disini"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Belum ada file di sini. Jika anda mau mencoba menggunakan template, anda "
+"dapat membuka [Libraries & templates "
+"section](https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-frames"
+msgstr "Ekspor artboards ke PDF ..."
+
+msgid "dashboard.export-multi"
+msgstr "Ekspor % file"
+
+msgid "dashboard.export-single"
+msgstr "Ekspor file"
+
+msgid "dashboard.export.detail"
+msgstr "* Dapat mencakup komponen, grafik, warna dan/atau tipografi."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Satu atau lebih file yang ingin anda ekspor, menggunakan pustaka bersama. "
+"Apa yang akan anda lakukan dengan asetnya*?"

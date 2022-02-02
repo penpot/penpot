@@ -65,7 +65,7 @@
   (ts/schedule
    (st/emitf (rt/assign-exception error))))
 
-;; Error that happens on an active bussines model validation does not
+;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From
 ;; the user perspective a error flash message should be visualized but
 ;; user can continue operate on the application.
@@ -81,7 +81,13 @@
   (js/console.group "Validation Error:")
   (ex/ignoring
    (js/console.info
-    (with-out-str (pprint error))))
+    (with-out-str (pprint (dissoc error :explain)))))
+
+  (when-let [explain (:explain error)]
+    (js/console.group "Spec explain:")
+    (js/console.log explain)
+    (js/console.groupEnd "Spec explain:"))
+
   (js/console.groupEnd "Validation Error:"))
 
 
@@ -106,14 +112,14 @@
 ;; assertion (assertion that is preserved on production builds). From
 ;; the user perspective this should be treated as internal error.
 (defmethod ptk/handle-error :assertion
-  [{:keys [data stack message hint context] :as error}]
+  [{:keys [message hint] :as error}]
   (let [message (or message hint)
         message (str "Internal Assertion Error: " message)
         context (str/fmt "ns: '%s'\nname: '%s'\nfile: '%s:%s'"
-                              (:ns context)
-                              (:name context)
-                              (str cf/public-uri "js/cljs-runtime/" (:file context))
-                              (:line context))]
+                              (:ns error)
+                              (:name error)
+                              (str cf/public-uri "js/cljs-runtime/" (:file error))
+                              (:line error))]
     (ts/schedule
      (st/emitf
       (dm/show {:content "Internal error: assertion."
@@ -123,10 +129,7 @@
     ;; Print to the console some debugging info
     (js/console.group message)
     (js/console.info context)
-    (js/console.groupCollapsed "Stack Trace")
-    (js/console.info stack)
-    (js/console.groupEnd "Stack Trace")
-    (js/console.error (with-out-str (expound/printer data)))
+    (js/console.error (with-out-str (expound/printer error)))
     (js/console.groupEnd message)))
 
 ;; This happens when the backed server fails to process the

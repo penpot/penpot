@@ -71,9 +71,7 @@
   (atom (prepare-config)))
 
 (def version
-  (atom (v/parse (or (some-> (ex/ignoring (fs/readFileSync "version.txt"))
-                             (str/trim))
-                     "%version%"))))
+  (atom (v/parse "%version%")))
 
 (defn get
   "A configuration getter."

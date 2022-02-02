@@ -7,9 +7,7 @@
 (ns app.loggers.database
   "A specific logger impl that persists errors on the database."
   (:require
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -52,7 +50,8 @@
       (assoc :tenant (cf/get :tenant))
       (assoc :host (cf/get :host))
       (assoc :public-uri (cf/get :public-uri))
-      (assoc :version (:full cf/version))))
+      (assoc :version (:full cf/version))
+      (update :id (fn [id] (or id (uuid/next))))))
 
 (defn handle-event
   [{:keys [executor] :as cfg} event]

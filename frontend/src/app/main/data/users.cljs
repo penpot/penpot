@@ -81,8 +81,6 @@
           (when-not (contains? ids ctid)
             (swap! storage dissoc ::current-team-id)))))))
 
-
-
 (defn fetch-teams
   []
   (ptk/reify ::fetch-teams
@@ -160,7 +158,6 @@
   (letfn [(get-redirect-event []
             (let [team-id (:default-team-id profile)]
               (rt/nav' :dashboard-projects {:team-id team-id})))]
-
     (ptk/reify ::logged-in
       IDeref
       (-deref [_] profile)
@@ -237,7 +234,7 @@
 
 (defn login-from-register
   "Event used mainly for mark current session as logged-in in after the
-  user sucessfully registred using third party auth provider (in this
+  user successfully registered using third party auth provider (in this
   case we dont need to verify the email)."
   []
   (ptk/reify ::login-from-register
@@ -305,7 +302,11 @@
                   on-success identity}} (meta data)]
         (->> (rp/mutation :register-profile data)
              (rx/tap on-success)
-             (rx/catch on-error))))))
+             (rx/catch on-error))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (swap! storage dissoc ::redirect-to))))
 
 ;; --- Update Profile
 
@@ -383,7 +384,7 @@
 (defn mark-onboarding-as-viewed
   ([] (mark-onboarding-as-viewed nil))
   ([{:keys [version]}]
-   (ptk/reify ::mark-oboarding-as-viewed
+   (ptk/reify ::mark-onboarding-as-viewed
      ptk/WatchEvent
      (watch [_ _ _]
        (let [version (or version (:main @cf/version))

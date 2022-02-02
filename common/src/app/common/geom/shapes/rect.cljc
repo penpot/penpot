@@ -121,3 +121,19 @@
          (or (< px x2) (s= px x2))
          (or (> py y1) (s= py y1))
          (or (< py y2) (s= py y2)))))
+
+(defn contains-selrect?
+  "Check if a selrect sr2 is contained inside sr1"
+  [sr1 sr2]
+  (and (>= (:x1 sr2) (:x1 sr1))
+       (<= (:x2 sr2) (:x2 sr1))
+       (>= (:y1 sr2) (:y1 sr1))
+       (<= (:y2 sr2) (:y2 sr1))))
+
+(defn round-selrect
+  [selrect]
+  (-> selrect
+      (update :x mth/round)
+      (update :y mth/round)
+      (update :width mth/round)
+      (update :height mth/round)))

@@ -6,6 +6,7 @@
 
 (ns app.common.pages.init
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pages.common :refer [file-version default-color]]
@@ -32,9 +33,10 @@
 
 (def default-frame-attrs
   {:frame-id uuid/zero
-   :fill-color "#ffffff"
+   :fill-color clr/white
    :fill-opacity 1
-   :shapes []})
+   :shapes []
+   :hide-fill-on-export false})
 
 (def ^:private minimal-shapes
   [{:type :rect
@@ -44,7 +46,7 @@
     :stroke-style :none
     :stroke-alignment :center
     :stroke-width 0
-    :stroke-color "#000000"
+    :stroke-color clr/black
     :stroke-opacity 0
     :rx 0
     :ry 0}
@@ -58,7 +60,7 @@
     :stroke-style :none
     :stroke-alignment :center
     :stroke-width 0
-    :stroke-color "#000000"
+    :stroke-color clr/black
     :stroke-opacity 0}
 
    {:type :path
@@ -66,17 +68,17 @@
     :stroke-style :solid
     :stroke-alignment :center
     :stroke-width 2
-    :stroke-color "#000000"
+    :stroke-color clr/black
     :stroke-opacity 1}
 
    {:type :frame
     :name "Artboard-1"
-    :fill-color "#ffffff"
+    :fill-color clr/white
     :fill-opacity 1
     :stroke-style :none
     :stroke-alignment :center
     :stroke-width 0
-    :stroke-color "#000000"
+    :stroke-color clr/black
     :stroke-opacity 0}
 
    {:type :text

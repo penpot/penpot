@@ -12,6 +12,7 @@ RUN set -ex; \
     brew install ghostscript; \
     brew install mailhog; \
     brew install openldap; \
+    brew install poppler-utils; \
     sudo mkdir -p /var/log/nginx; \
     sudo chown gitpod:gitpod /var/log/nginx
 

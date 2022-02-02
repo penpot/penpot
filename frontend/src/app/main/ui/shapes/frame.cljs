@@ -8,7 +8,39 @@
   (:require
    [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
+
+(defn frame-clip-id
+  [shape render-id]
+  (str "frame-clip-" (:id shape) "-" render-id))
+
+(defn frame-clip-url
+  [shape render-id]
+  (when (= :frame (:type shape))
+    (str "url(#" (frame-clip-id shape render-id) ")")))
+
+(mf/defc frame-clip-def
+  [{:keys [shape render-id]}]
+  (when (= :frame (:type shape))
+    (let [{:keys [x y width height]} shape]
+      [:clipPath {:id (frame-clip-id shape render-id) :class "frame-clip"}
+       [:rect {:x x :y y :width width :height height}]])))
+
+(mf/defc frame-thumbnail
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (obj/get props "shape")]
+    (when (:thumbnail shape)
+      [:image.frame-thumbnail
+       {:id (str "thumbnail-" (:id shape))
+        :xlinkHref (:thumbnail shape)
+        :x (:x shape)
+        :y (:y shape)
+        :width (:width shape)
+        :height (:height shape)
+        ;; DEBUG
+        :style {:filter (when (debug? :thumbnails) "sepia(1)")}}])))
 
 (defn frame-shape
   [shape-wrapper]
@@ -17,7 +49,7 @@
     [props]
     (let [childs     (unchecked-get props "childs")
           shape      (unchecked-get props "shape")
-          {:keys [width height]} shape
+          {:keys [x y width height]} shape
 
           has-background? (or (some? (:fill-color shape))
                               (some? (:fill-color-gradient shape)))
@@ -25,8 +57,8 @@
 
           props (-> (attrs/extract-style-attrs shape)
                     (obj/merge!
-                     #js {:x 0
-                          :y 0
+                     #js {:x x
+                          :y y
                           :width width
                           :height height
                           :className "frame-background"}))]
@@ -34,7 +66,6 @@
        (when (or has-background? has-stroke?)
          [:> :rect props])
        (for [item childs]
-         [:& shape-wrapper {:frame shape
-                            :shape item
+         [:& shape-wrapper {:shape item
                             :key (:id item)}])])))
 

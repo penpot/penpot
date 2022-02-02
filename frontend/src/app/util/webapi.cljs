@@ -115,7 +115,7 @@
 
     :else
     (ex/raise :type :not-supported
-              :hint "seems like the current browset does not support fullscreen api.")))
+              :hint "seems like the current browser does not support fullscreen api.")))
 
 (defn exit-fullscreen
   []
@@ -128,7 +128,7 @@
 
     :else
     (ex/raise :type :not-supported
-              :hint "seems like the current browset does not support fullscreen api.")))
+              :hint "seems like the current browser does not support fullscreen api.")))
 
 (defn observe-resize
   [node]

@@ -22,7 +22,7 @@
   (mth/almost-zero? (- a b)))
 
 (defn calculate-opposite-handler
-  "Given a point and its handler, gives the symetric handler"
+  "Given a point and its handler, gives the symmetric handler"
   [point handler]
   (let [handler-vector (gpt/to-vec point handler)]
     (gpt/add point (gpt/negate handler-vector))))
@@ -119,7 +119,9 @@
         ;; normalize value
         d (mth/sqrt (+ (* x x) (* y y)))]
 
-    (gpt/point (/ x d) (/ y d))))
+    (if (mth/almost-zero? d)
+      (gpt/point 0 0)
+      (gpt/point (/ x d) (/ y d)))))
 
 (defn curve-windup
   [curve t]
@@ -179,7 +181,7 @@
        (and (mth/almost-zero? d) (mth/almost-zero? a))
        [(/ (- c) b)]
 
-       ;; Cuadratic
+       ;; Quadratic
        (mth/almost-zero? d)
        [(/ (+ (- b) sqrt-b2-4ac)
            (* 2 a))
@@ -279,11 +281,19 @@
           (filterv #(and (>= % 0) (<= % 1)))))))
 
 (defn command->point
-  ([command] (command->point command nil))
-  ([{params :params} coord]
-   (let [prefix (if coord (name coord) "")
-         xkey (keyword (str prefix "x"))
-         ykey (keyword (str prefix "y"))
+  ([command]
+   (command->point command nil))
+
+  ([command coord]
+   (let [params (:params command)
+         xkey (case coord
+                :c1 :c1x
+                :c2 :c2x
+                :x)
+         ykey (case coord
+                :c1 :c1y
+                :c2 :c2y
+                :y)
          x (get params xkey)
          y (get params ykey)]
      (when (and (some? x) (some? y))
@@ -322,7 +332,7 @@
                                                (command->point command :c1)
                                                (command->point command :c2)]]
                                     (->> (curve-extremities curve)
-                                         (map #(curve-values curve %)))))
+                                         (mapv #(curve-values curve %)))))
                   [])
          selrect (gpr/points->selrect points)]
      (-> selrect
@@ -361,25 +371,25 @@
         (update :height #(if (mth/almost-zero? %) 1 %)))))
 
 (defn move-content [content move-vec]
-  (let [set-tr (fn [params px py]
-                 (let [tr-point (-> (gpt/point (get params px) (get params py))
-                                    (gpt/add move-vec))]
-                   (assoc params
-                          px (:x tr-point)
-                          py (:y tr-point))))
+  (let [dx (:x move-vec)
+        dy (:y move-vec)
+
+        set-tr
+        (fn [params px py]
+          (-> params
+              (update px + dx)
+              (update py + dy)))
 
         transform-params
         (fn [{:keys [x c1x c2x] :as params}]
           (cond-> params
-            (not (nil? x))   (set-tr :x :y)
-            (not (nil? c1x)) (set-tr :c1x :c1y)
-            (not (nil? c2x)) (set-tr :c2x :c2y)))]
+            (some? x)   (set-tr :x :y)
+            (some? c1x) (set-tr :c1x :c1y)
+            (some? c2x) (set-tr :c2x :c2y)))]
 
-    (->> content
-         (mapv (fn [cmd]
-                 (cond-> cmd
-                   (map? cmd)
-                   (update :params transform-params)))))))
+    (into []
+          (map #(update % :params transform-params))
+          content)))
 
 (defn transform-content
   [content transform]
@@ -393,11 +403,13 @@
         transform-params
         (fn [{:keys [x c1x c2x] :as params}]
           (cond-> params
-            (not (nil? x))   (set-tr :x :y)
-            (not (nil? c1x)) (set-tr :c1x :c1y)
-            (not (nil? c2x)) (set-tr :c2x :c2y)))]
+            (some? x)   (set-tr :x :y)
+            (some? c1x) (set-tr :c1x :c1y)
+            (some? c2x) (set-tr :c2x :c2y)))]
 
-    (mapv #(update % :params transform-params) content)))
+    (into []
+          (map #(update % :params transform-params))
+          content)))
 
 (defn segments->content
   ([segments]
@@ -675,12 +687,10 @@
 
     (curve-roots c2' :y)))
 
-
-
 (defn ray-line-intersect
   [point [a b :as line]]
 
-  ;; If the ray is paralell to the line there will be no crossings
+  ;; If the ray is parallel to the line there will be no crossings
   (let [ray-line [point (gpt/point (inc (:x point)) (:y point))]
         ;; Rays fail when fall just in a vertex so we move a bit upward
         ;; because only want to use this for insideness
@@ -707,20 +717,19 @@
       [[l1-t] [l2-t]])))
 
 (defn ray-curve-intersect
-  [ray-line c2]
+  [ray-line curve]
 
-  (let [;; ray-line [point (gpt/point (inc (:x point)) (:y point))]
-        curve-ts (->> (line-curve-crossing ray-line c2)
-                      (filterv #(let [curve-v (curve-values c2 %)
-                                      curve-tg (curve-tangent c2 %)
+  (let [curve-ts (->> (line-curve-crossing ray-line curve)
+                      (filterv #(let [curve-v (curve-values curve %)
+                                      curve-tg (curve-tangent curve %)
                                       curve-tg-angle (gpt/angle curve-tg)
                                       ray-t (get-line-tval ray-line curve-v)]
                                   (and (> ray-t 0)
                                        (> (mth/abs (- curve-tg-angle 180)) 0.01)
                                        (> (mth/abs (- curve-tg-angle 0)) 0.01)) )))]
     (->> curve-ts
-         (mapv #(vector (curve-values c2 %)
-                        (curve-windup c2 %))))))
+         (mapv #(vector (curve-values curve %)
+                        (curve-windup curve %))))))
 
 (defn line-curve-intersect
   [l1 c2]
@@ -816,32 +825,58 @@
     (->> content
          (some inside-border?))))
 
-(defn is-point-in-content?
-  [point content]
-  (let [selrect (content->selrect content)
-        ray-line [point (gpt/point (inc (:x point)) (:y point))]
+(defn close-content
+  [content]
+  (into []
+        (comp  (filter sp/is-closed?)
+               (mapcat :data))
+        (->> content
+             (sp/close-subpaths)
+             (sp/get-subpaths))))
 
-        closed-content
-        (into []
-              (comp  (filter sp/is-closed?)
-                     (mapcat :data))
-              (->> content
-                   (sp/close-subpaths)
-                   (sp/get-subpaths)))
+
+(defn ray-overlaps?
+  [ray-point {selrect :selrect}]
+  (and (>= (:y ray-point) (:y1 selrect))
+       (<= (:y ray-point) (:y2 selrect))))
+
+(defn content->geom-data
+  [content]
+
+  (->> content
+       (close-content)
+       (filter #(not= (= :line-to (:command %))
+                      (= :curve-to (:command %))))
+       (mapv (fn [segment]
+               {:command (:command segment)
+                :segment segment
+                :geom (if (= :line-to (:command segment))
+                        (command->line segment)
+                        (command->bezier segment))
+                :selrect (command->selrect segment)}))))
+
+(defn is-point-in-geom-data?
+  [point content-geom]
+
+  (let [ray-line [point (gpt/point (inc (:x point)) (:y point))]
 
         cast-ray
-        (fn [cmd]
-          (case (:command cmd)
-            :line-to  (ray-line-intersect  point (command->line cmd))
-            :curve-to (ray-curve-intersect ray-line (command->bezier cmd))
-            #_:else   []))]
+        (fn [data]
+          (case (:command data)
+            :line-to
+            (ray-line-intersect point (:geom data))
 
-    (and (gpr/contains-point? selrect point)
-         (->> closed-content
-              (mapcat cast-ray)
-              (map second)
-              (reduce +)
-              (not= 0)))))
+            :curve-to
+            (ray-curve-intersect ray-line (:geom data))
+
+            #_:default []))]
+
+    (->> content-geom
+         (filter (partial ray-overlaps? point))
+         (mapcat cast-ray)
+         (map second)
+         (reduce +)
+         (not= 0))))
 
 (defn split-line-to
   "Given a point and a line-to command will create a two new line-to commands

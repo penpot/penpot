@@ -106,11 +106,15 @@
 (extend-protocol IEquiv
   DateTime
   (-equiv [it other]
-    (.equals it other))
+    (if other
+      (.equals it other)
+      false))
 
   Duration
   (-equiv [it other]
-    (.equals it other)))
+    (if other
+      (.equals it other)
+      false)))
 
 (extend-protocol Inst
   DateTime
@@ -157,11 +161,11 @@
 
 (extend-protocol IPrintWithWriter
   DateTime
-  (-pr-writer [p writer opts]
+  (-pr-writer [p writer _]
     (-write writer (str/fmt "#stks/datetime \"%s\"" (format p :iso))))
 
   Duration
-  (-pr-writer [p writer opts]
+  (-pr-writer [p writer _]
     (-write writer (str/fmt "#stks/duration \"%s\"" (format p :iso)))))
 
 (defn- resolve-format

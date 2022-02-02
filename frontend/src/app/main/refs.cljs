@@ -116,6 +116,14 @@
                               :show-distances?])
              workspace-local =))
 
+(def interactions-data
+  (l/derived #(select-keys % [:editing-interaction-index
+                              :draw-interaction-to
+                              :draw-interaction-to-frame
+                              :move-overlay-to
+                              :move-overlay-index])
+             workspace-local =))
+
 (def local-displacement
   (l/derived #(select-keys % [:modifiers :selected])
              workspace-local =))
@@ -146,6 +154,9 @@
 
 (def editors
   (l/derived :editors workspace-local))
+
+(def selected-assets
+  (l/derived :selected-assets workspace-local))
 
 (def workspace-layout
   (l/derived :workspace-layout st/state))
@@ -232,22 +243,12 @@
   (l/derived #(get % id) workspace-page-objects))
 
 (defn objects-by-id
-  ([ids]
-   (objects-by-id ids nil))
-
-  ([ids {:keys [with-modifiers?]
-         :or { with-modifiers? false }}]
-   (let [selector
-         (fn [state]
-           (let [objects (wsh/lookup-page-objects state)
-                 modifiers (:workspace-modifiers state)
-                 objects (cond-> objects
-                           with-modifiers?
-                           (gsh/merge-modifiers modifiers))
-                 xform (comp (map #(get objects %))
-                             (remove nil?))]
-             (into [] xform ids)))]
-     (l/derived selector st/state =))))
+  [ids]
+  (let [selector
+        (fn [state]
+          (let [objects (wsh/lookup-page-objects state)]
+            (into [] (keep (d/getf objects)) ids)))]
+    (l/derived selector st/state =)))
 
 (defn- set-content-modifiers [state]
   (fn [id shape]
@@ -256,21 +257,11 @@
         (update shape :content upc/apply-content-modifiers content-modifiers)
         shape))))
 
-(defn select-children [id]
+(defn select-bool-children [id]
   (let [selector
         (fn [state]
           (let [objects (wsh/lookup-page-objects state)
-
-                modifiers (-> (:workspace-modifiers state))
-                {selected :selected disp-modifiers :modifiers}
-                (-> (:workspace-local state)
-                    (select-keys [:modifiers :selected]))
-
-                modifiers
-                (d/deep-merge
-                 modifiers
-                 (into {} (map #(vector % {:modifiers disp-modifiers})) selected))]
-
+                modifiers (:workspace-modifiers state)]
             (as-> (cp/select-children id objects) $
               (gsh/merge-modifiers $ modifiers)
               (d/mapm (set-content-modifiers state) $))))]
@@ -299,19 +290,10 @@
 
 (def selected-shapes-with-children
   (letfn [(selector [{:keys [selected objects]}]
-            (let [children (->> selected
-                                (mapcat #(cp/get-children % objects))
-                                (filterv (comp not nil?)))]
-              (into selected children)))]
-    (l/derived selector selected-data =)))
-
-(def selected-objects-with-children
-  (letfn [(selector [{:keys [selected objects]}]
-            (let [children (->> selected
-                                (mapcat #(cp/get-children % objects))
-                                (filterv (comp not nil?)))
-                  shapes   (into selected children)]
-              (mapv #(get objects %) shapes)))]
+            (let [xform (comp (remove nil?)
+                              (mapcat #(cp/get-children % objects)))
+                  shapes (into selected xform selected)]
+              (mapv (d/getf objects) shapes)))]
     (l/derived selector selected-data =)))
 
 ;; ---- Viewer refs
@@ -340,3 +322,7 @@
 (def users
   (l/derived :users st/state))
 
+(def fullscreen?
+  (l/derived  (fn [state]
+                (get-in state [:viewer-local :fullscreen?] []))
+              st/state))

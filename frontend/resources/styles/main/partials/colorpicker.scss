@@ -76,7 +76,8 @@
       height: 100%;
       width: 100%;
       border: 1px solid $color-gray-10;
-      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=") left center;
+      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+        left center;
     }
 
     .gradient-background {
@@ -102,7 +103,8 @@
       margin-left: -7px;
       box-shadow: 0 2px 2px rgb(0 0 0 / 15%);
 
-      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=") left center;
+      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+        left center;
       background-color: $color-white;
 
       &.active {
@@ -142,7 +144,11 @@
 
     border: 1px solid $color-gray-10;
 
-    background: linear-gradient(var(--gradient-direction), rgba(var(--color), 0) 0%, rgba(var(--color), 1.0) 100%);
+    background: linear-gradient(
+      var(--gradient-direction),
+      rgba(var(--color), 0) 0%,
+      rgba(var(--color), 1) 100%
+    );
     align-self: center;
     position: relative;
     cursor: pointer;
@@ -157,9 +163,15 @@
 
     &.hue {
       background: linear-gradient(
-        var(--gradient-direction), 
-        #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, 
-        #00f 67%, #f0f 83%, #f00 100%);
+        var(--gradient-direction),
+        #f00 0%,
+        #ff0 17%,
+        #0f0 33%,
+        #0ff 50%,
+        #00f 67%,
+        #f0f 83%,
+        #f00 100%
+      );
     }
 
     &.saturation {
@@ -167,29 +179,36 @@
         var(--gradient-direction),
         var(--saturation-grad-from) 0%,
         var(--saturation-grad-to) 100%
-      )
+      );
     }
 
     &.opacity {
-      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=") var(--background-repeat) center;
+      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+        var(--background-repeat) center;
 
       &::after {
         content: "";
         position: absolute;
         width: 100%;
         height: 100%;
-        background: linear-gradient(var(--gradient-direction), rgba(var(--color), 0) 0%, rgba(var(--color), 1.0) 100%);
+        background: linear-gradient(
+          var(--gradient-direction),
+          rgba(var(--color), 0) 0%,
+          rgba(var(--color), 1) 100%
+        );
       }
-
     }
 
     &.value {
-      background: linear-gradient(var(--gradient-direction), #FFF 0%, #000 100%);
+      background: linear-gradient(
+        var(--gradient-direction),
+        #fff 0%,
+        #000 100%
+      );
     }
 
-
     .handler {
-      background-color: $color-white;;
+      background-color: $color-white;
       box-shadow: rgba(0, 0, 0, 0.37) 0px 1px 4px 0px;
       transform: translate(-6px, -2px);
       left: 50%;
@@ -218,7 +237,8 @@
       border-radius: 6px;
       z-index: 1;
       border: 1px solid $color-white;
-      box-shadow: rgb(255, 255, 255) 0px 0px 0px 1px inset, rgb(0 0 0 / 0.25) 0px 4px 4px inset, rgb(0 0 0 / 0.25) 0px 4px 4px;
+      box-shadow: rgb(255, 255, 255) 0px 0px 0px 1px inset,
+        rgb(0 0 0 / 0.25) 0px 4px 4px inset, rgb(0 0 0 / 0.25) 0px 4px 4px;
       transform: translate(-6px, -6px);
       left: 50%;
       top: 50%;
@@ -229,7 +249,7 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      background: linear-gradient(to right, #fff, rgba(255,255,255,0));
+      background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0));
     }
 
     &::after {
@@ -237,7 +257,7 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      background: linear-gradient(to top, #000, rgba(0,0,0,0));
+      background: linear-gradient(to top, #000, rgba(0, 0, 0, 0));
     }
   }
 
@@ -245,8 +265,9 @@
     display: grid;
     justify-items: center;
     align-items: center;
-    grid-template-areas: "color hue"
-                         "color opacity";
+    grid-template-areas:
+      "color hue"
+      "color opacity";
     grid-template-columns: 2.5rem 1fr;
     height: 3.5rem;
     grid-row-gap: 0.5rem;
@@ -296,7 +317,7 @@
     padding-top: 0.5rem;
     margin-top: 0.25rem;
     width: 200px;
-    
+
     select {
       background-image: url(/images/icons/arrow-down.svg);
       background-repeat: no-repeat;
@@ -322,12 +343,9 @@
       grid-template-columns: repeat(8, 1fr);
       justify-content: space-between;
       margin-right: -8px;
-      overflow-x: hidden;
-      overflow-y: auto;
       max-height: 5.5rem;
     }
 
-    
     .selected-colors::after {
       content: "";
       flex: auto;
@@ -367,7 +385,8 @@
         border-radius: 6px;
         z-index: 1;
         border: 1px solid $color-white;
-        box-shadow: rgb(255, 255, 255) 0px 0px 0px 1px inset, rgb(0 0 0 / 0.25) 0px 4px 4px inset, rgb(0 0 0 / 0.25) 0px 4px 4px;
+        box-shadow: rgb(255, 255, 255) 0px 0px 0px 1px inset,
+          rgb(0 0 0 / 0.25) 0px 4px 4px inset, rgb(0 0 0 / 0.25) 0px 4px 4px;
         transform: translate(-6px, -6px);
         left: 50%;
         top: 50%;
@@ -431,7 +450,6 @@
   }
 
   .inputs-area {
-
     .input-text {
       color: $color-gray-60;
       font-size: $fs12;
@@ -439,7 +457,6 @@
       padding: 5px;
       width: 100%;
     }
-
   }
 
   .colorpicker-tabs {
@@ -473,7 +490,6 @@
     :hover svg {
       fill: $color-primary;
     }
-
   }
 }
 
@@ -517,7 +533,7 @@
     }
   }
 
-  ::placeholder{
+  ::placeholder {
     color: $color-gray-10;
   }
 
@@ -535,4 +551,3 @@
     height: 10px;
   }
 }
-

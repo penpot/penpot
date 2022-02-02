@@ -11,37 +11,53 @@
    [app.main.store :as st]))
 
 (def shortcuts
-  {:increase-zoom {:tooltip "+"
-                   :command "+"
-                   :fn (st/emitf dv/increase-zoom)}
+  {:increase-zoom      {:tooltip "+"
+                        :command "+"
+                        :fn (st/emitf dv/increase-zoom)}
 
-   :decrease-zoom {:tooltip "-"
-                   :command "-"
-                   :fn (st/emitf dv/decrease-zoom)}
+   :decrease-zoom      {:tooltip "-"
+                        :command "-"
+                        :fn (st/emitf dv/decrease-zoom)}
 
-   :select-all    {:tooltip (ds/meta "A")
-                   :command (ds/c-mod "a")
-                   :fn (st/emitf (dv/select-all))}
+   :select-all         {:tooltip (ds/meta "A")
+                        :command (ds/c-mod "a")
+                        :fn (st/emitf (dv/select-all))}
 
-   :zoom-50       {:tooltip (ds/shift "0")
-                   :command "shift+0"
-                   :fn (st/emitf dv/zoom-to-50)}
+   :reset-zoom         {:tooltip (ds/shift "0")
+                        :command "shift+0"
+                        :fn (st/emitf dv/reset-zoom)}
 
-   :reset-zoom    {:tooltip (ds/shift "1")
-                   :command "shift+1"
-                   :fn (st/emitf dv/reset-zoom)}
+   :toggle-zoom-style  {:tooltip "F"
+                        :command "f"
+                        :fn (st/emitf dv/toggle-zoom-style)}
 
-   :zoom-200      {:tooltip (ds/shift "2")
-                   :command "shift+2"
-                   :fn (st/emitf dv/zoom-to-200)}
+   :toogle-fullscreen  {:tooltip (ds/shift "F")
+                        :command "shift+f"
+                        :fn (st/emitf dv/toggle-fullscreen)}
 
-   :next-frame    {:tooltip ds/left-arrow
-                   :command "left"
-                   :fn (st/emitf dv/select-prev-frame)}
+   :next-frame         {:tooltip ds/left-arrow
+                        :command "left"
+                        :fn (st/emitf dv/select-prev-frame)}
 
-   :prev-frame    {:tooltip ds/right-arrow
-                   :command "right"
-                   :fn (st/emitf dv/select-next-frame)}})
+   :prev-frame         {:tooltip ds/right-arrow
+                        :command "right"
+                        :fn (st/emitf dv/select-next-frame)}
+
+   :open-handoff       {:tooltip "G H"
+                        :command "g h"
+                        :fn #(st/emit! (dv/go-to-section :handoff))}
+
+   :open-comments      {:tooltip "G C"
+                        :command "g c"
+                        :fn #(st/emit! (dv/go-to-section :comments))}
+
+   :open-interactions  {:tooltip "G V"
+                        :command "g v"
+                        :fn #(st/emit! (dv/go-to-section :interactions))}
+
+   :open-workspace     {:tooltip "G W"
+                        :command "g w"
+                        :fn #(st/emit! (dv/go-to-workspace))}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# A repl usefull for debug macros.
+
+export OPTIONS="\
+       -J-XX:-OmitStackTraceInFastThrow \
+       -J-Xms50m -J-Xmx512m \
+       -M:dev:jvm-repl";
+
+set -ex;
+exec clojure $OPTIONS;

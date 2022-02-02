@@ -11,19 +11,19 @@
    [app.browser :as bw]
    [app.common.data :as d]
    [app.common.exceptions :as ex :include-macros true]
+   [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.config :as cf]
+   [app.renderer.bitmap :refer [create-cookie]]
    [app.util.shell :as sh]
    [cljs.spec.alpha :as s]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
-   [lambdaisland.glogi :as log]
    [lambdaisland.uri :as u]
-   [app.renderer.bitmap :refer [create-cookie]]
    [promesa.core :as p]))
 
-(log/set-level "app.renderer.svg" :trace)
+(l/set-level! :trace)
 
 (defn- xml->clj
   [data]
@@ -116,22 +116,22 @@
 (defn- render-object
   [{:keys [page-id file-id object-id token scale suffix type]}]
   (letfn [(convert-to-ppm [pngpath]
-            (log/trace :fn :convert-to-ppm)
+            (l/trace :fn :convert-to-ppm)
             (let [basepath (path/dirname pngpath)
                   ppmpath  (path/join basepath "origin.ppm")]
               (-> (sh/run-cmd! (str "convert " pngpath " " ppmpath))
                   (p/then (constantly ppmpath)))))
 
           (trace-color-mask [pbmpath]
-            (log/trace :fn :trace-color-mask :pbmpath pbmpath)
+            (l/trace :fn :trace-color-mask :pbmpath pbmpath)
             (let [basepath (path/dirname pbmpath)
                   basename (path/basename pbmpath ".pbm")
                   svgpath  (path/join basepath (str basename ".svg"))]
               (-> (sh/run-cmd! (str "potrace --flat -b svg " pbmpath " -o " svgpath))
                   (p/then (constantly svgpath)))))
-          
+
           (generate-color-layer [ppmpath color]
-            (log/trace :fn :generate-color-layer :ppmpath ppmpath :color color)
+            (l/trace :fn :generate-color-layer :ppmpath ppmpath :color color)
             (let [basepath (path/dirname ppmpath)
                   pbmpath  (path/join basepath (str "mask-" (subs color 1) ".pbm"))]
               (-> (sh/run-cmd! (str/format "ppmcolormask \"%s\" %s" color ppmpath))
@@ -193,7 +193,7 @@
                  (mapv (partial data->gradient-def id))))
 
           (join-color-layers [{:keys [id x y width height mapping] :as node} layers]
-            (log/trace :fn :join-color-layers :mapping mapping)
+            (l/trace :fn :join-color-layers :mapping mapping)
             (loop [result (-> (:svgdata (first layers))
                               (assoc "elements" []))
                    layers (seq layers)]
@@ -206,7 +206,7 @@
 
                 ;; Now we have the result containing the svgdata of a
                 ;; SVG with all text layers. Now we need to transform
-                ;; this SVG to G (Group) and remove unnecesary metada
+                ;; this SVG to G (Group) and remove unnecessary metadata
                 ;; objects.
                 (let [vbox      (-> (get-in result ["attributes" "viewBox"])
                                     (parse-viewbox))
@@ -241,12 +241,12 @@
                       (assoc "elements" elements))))))
 
           (convert-to-svg [ppmpath {:keys [colors] :as node}]
-            (log/trace :fn :convert-to-svg :ppmpath ppmpath :colors colors)
+            (l/trace :fn :convert-to-svg :ppmpath ppmpath :colors colors)
             (-> (p/all (map (partial generate-color-layer ppmpath) colors))
                 (p/then (partial join-color-layers node))))
 
           (trace-node [{:keys [data] :as node}]
-            (log/trace :fn :trace-node)
+            (l/trace :fn :trace-node)
             (p/let [tdpath  (sh/create-tmpdir! "svgexport-")
                     pngpath (path/join tdpath "origin.png")
                     _       (sh/write-file! pngpath data)
@@ -270,7 +270,7 @@
                    :mapping (js/JSON.parse mapping)}))
 
           (extract-single-node [[shot node]]
-            (log/trace :fn :extract-single-node)
+            (l/trace :fn :extract-single-node)
 
             (p/let [attrs (bw/eval! node extract-element-attrs)]
               {:id      (unchecked-get attrs "id")
@@ -302,7 +302,7 @@
                 (p/then clean-temp-data)))
 
           (process-text-nodes [page]
-            (log/trace :fn :process-text-nodes)
+            (l/trace :fn :process-text-nodes)
             (-> (bw/select-all page "#screenshot foreignObject")
                 (p/then (fn [nodes] (p/all (map (partial process-text-node page) nodes))))))
 
@@ -345,7 +345,7 @@
           cookie (create-cookie uri token)
           rctx   {:cookie cookie
                   :uri (str uri)}]
-      (log/info :uri (:uri rctx))
+      (l/info :uri (:uri rctx))
       (bw/exec! (partial handle rctx)))))
 
 (s/def ::name ::us/string)

@@ -1,8 +1,9 @@
 $width-settings-bar: 16rem;
 
 .handoff-layout {
+  height: 100vh;
   display: grid;
-  grid-template-rows: 40px auto;
+  grid-template-rows: 48px auto;
   grid-template-columns: 1fr;
   user-select: none;
 
@@ -17,13 +18,14 @@ $width-settings-bar: 16rem;
   }
 }
 
-.fullscreen .handoff-layout:not(.force-visible) {
+.fullscreen.handoff-layout:not(.force-visible) {
   .viewer-header {
     width: 100%;
     position: fixed;
     top: -48px;
     left: 0;
     transition: top 400ms ease 300ms;
+    z-index: 25;
 
     &::after {
       content: " ";
@@ -48,7 +50,14 @@ $width-settings-bar: 16rem;
 .handoff-layout {
   .viewer-section {
     flex-wrap: nowrap;
+    &.fullscreen {
+      .settings-bar,
+      .settings-bar {
+        padding-top: 48px;
+      }
+    }
   }
+
   .settings-bar {
     transition: width 0.2s;
     &.expanded {
@@ -77,7 +86,7 @@ $width-settings-bar: 16rem;
   .handoff-svg-container {
     display: grid;
     width: 100%;
-    height: calc(100% - 35px);
+    height: 100%;
     overflow: auto;
     align-items: center;
     justify-content: safe center;

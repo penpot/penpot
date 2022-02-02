@@ -129,7 +129,7 @@
     (doseq [{:keys [id] :as profile} profiles]
       (l/trace :action "delete object" :table table :id id)
 
-      ;; Mark the owned teams as deleted; this enables them to be procesed
+      ;; Mark the owned teams as deleted; this enables them to be processed
       ;; in the same transaction in the "team" table step.
       (db/exec-one! conn [sql:mark-owned-teams-deleted id max-age])
 

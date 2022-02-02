@@ -36,14 +36,15 @@
     }
   }
 
-
   &.with-check {
     > li {
       padding: 5px 10px;
     }
 
     > li:not(.selected) {
-      svg { display: none; }
+      svg {
+        display: none;
+      }
     }
 
     svg {

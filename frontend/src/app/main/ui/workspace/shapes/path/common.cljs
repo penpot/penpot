@@ -10,11 +10,11 @@
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
-(def primary-color "#1FDEA7")
-(def secondary-color "#DB00FF")
-(def black-color "#000000")
-(def white-color "#FFFFFF")
-(def gray-color "#B1B2B5")
+(def primary-color "var(--color-select)")
+(def secondary-color "var(--color-distance)")
+(def black-color "var(--color-black)")
+(def white-color "var(--color-white)")
+(def gray-color "var(--color-gray-20)")
 
 (def current-edit-path-ref
   (let [selfn (fn [local]

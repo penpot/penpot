@@ -21,11 +21,11 @@ $br-huge: 12px;
 
 // Alignments
 .text-left {
-    text-align: left;
+  text-align: left;
 }
 
 .text-right {
-    text-align: right;
+  text-align: right;
 }
 
 .row-flex {
@@ -43,12 +43,12 @@ $br-huge: 12px;
 }
 
 .row-grid-2 {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .flex-grow {
- flex-grow: 1;
+  flex-grow: 1;
 }
 
 .column-half {
@@ -57,13 +57,13 @@ $br-huge: 12px;
 
 // Display
 .hidden {
-    display: none;
+  display: none;
 }
 
 .hide {
-    opacity: 0;
+  opacity: 0;
 }
 
 .display {
-    opacity: 1 !important;
+  opacity: 1 !important;
 }

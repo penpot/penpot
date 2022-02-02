@@ -18,7 +18,8 @@
   [width style]
   (let [values (case style
                  :mixed [5 5 1 5]
-                 :dotted [5 5]
+                 ;; We want 0 so they are circles
+                 :dotted [(- width) 5]
                  :dashed [10 10]
                  nil)]
 
@@ -132,8 +133,12 @@
               ;; for inner or outer strokes.
               (and (spec/stroke-caps-line (:stroke-cap-start shape))
                    (= (:stroke-cap-start shape) (:stroke-cap-end shape))
-                   (not (#{:inner :outer} (:stroke-alignment shape))))
+                   (not (#{:inner :outer} (:stroke-alignment shape)))
+                   (not= :dotted stroke-style))
               (assoc :strokeLinecap (:stroke-cap-start shape))
+
+              (= :dotted stroke-style)
+              (assoc :strokeLinecap "round")
 
               ;; For other cap types we use markers.
               (and (or (spec/stroke-caps-marker (:stroke-cap-start shape))
@@ -174,25 +179,28 @@
     [attrs styles]))
 
 (defn add-style-attrs
-  [props shape]
-  (let [render-id (mf/use-ctx muc/render-ctx)
-        svg-defs  (:svg-defs shape {})
-        svg-attrs (:svg-attrs shape {})
+  ([props shape]
+   (let [render-id (mf/use-ctx muc/render-ctx)]
+     (add-style-attrs props shape render-id)))
 
-        [svg-attrs svg-styles] (mf/use-memo
-                                (mf/deps render-id svg-defs svg-attrs)
-                                #(extract-svg-attrs render-id svg-defs svg-attrs))
+  ([props shape render-id]
+   (let [svg-defs  (:svg-defs shape {})
+         svg-attrs (:svg-attrs shape {})
 
-        styles (-> (obj/get props "style" (obj/new))
-                   (obj/merge! svg-styles)
-                   (add-fill shape render-id)
-                   (add-stroke shape render-id)
-                   (add-layer-props shape))]
+         [svg-attrs svg-styles] (mf/use-memo
+                                 (mf/deps render-id svg-defs svg-attrs)
+                                 #(extract-svg-attrs render-id svg-defs svg-attrs))
 
-    (-> props
-        (obj/merge! svg-attrs)
-        (add-border-radius shape)
-        (obj/set! "style" styles))))
+         styles (-> (obj/get props "style" (obj/new))
+                    (obj/merge! svg-styles)
+                    (add-fill shape render-id)
+                    (add-stroke shape render-id)
+                    (add-layer-props shape))]
+
+     (-> props
+         (obj/merge! svg-attrs)
+         (add-border-radius shape)
+         (obj/set! "style" styles)))))
 
 (defn extract-style-attrs
   [shape]

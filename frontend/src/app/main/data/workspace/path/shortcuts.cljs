@@ -28,12 +28,12 @@
                            (get-in state [:workspace-local :edition]))
             path-edit-mode (get-in state [:workspace-local :edit-path edition-id :edit-mode])]
         (if-not (= :draw path-edit-mode)
-          (rx/of :interrupt (dw/deselect-all true))
+          (rx/of :interrupt)
           (rx/empty))))))
 
 (def shortcuts
-  {:move-nodes      {:tooltip "V"
-                     :command "v"
+  {:move-nodes      {:tooltip "M"
+                     :command "m"
                      :fn #(st/emit! (drp/change-edit-mode :move))}
 
    :draw-nodes      {:tooltip "P"
@@ -60,12 +60,12 @@
                      :command "k"
                      :fn #(st/emit! (drp/separate-nodes))}
 
-   :make-corner     {:tooltip "B"
-                     :command "b"
+   :make-corner     {:tooltip "X"
+                     :command "x"
                      :fn #(st/emit! (drp/make-corner))}
 
-   :make-curve      {:tooltip (ds/meta "B")
-                     :command (ds/c-mod "b")
+   :make-curve      {:tooltip "C"
+                     :command "c"
                      :fn #(st/emit! (drp/make-curve))}
 
    :snap-nodes      {:tooltip (ds/meta "'")
@@ -73,12 +73,8 @@
                      :fn #(st/emit! (drp/toggle-snap))}
 
    :escape          {:tooltip (ds/esc)
-                     :command "escape"
+                     :command ["escape" "enter" "v"]
                      :fn #(st/emit! (esc-pressed))}
-
-   :start-editing   {:tooltip (ds/enter)
-                     :command "enter"
-                     :fn #(st/emit! (dw/start-editing-selected))}
 
    :undo            {:tooltip (ds/meta "Z")
                      :command (ds/c-mod "z")
@@ -142,9 +138,7 @@
 
    :move-unit-right {:tooltip ds/left-arrow
                      :command "left"
-                     :fn #(st/emit! (drp/move-selected :left false))}
-
-   })
+                     :fn #(st/emit! (drp/move-selected :left false))}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

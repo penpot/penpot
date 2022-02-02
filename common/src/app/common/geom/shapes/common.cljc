@@ -50,6 +50,22 @@
    :width width
    :height height})
 
+(defn make-centered-selrect
+  "Creates a rect given a center and a width and height"
+  [center width height]
+  (let [x1 (- (:x center) (/ width 2.0))
+        y1 (- (:y center) (/ height 2.0))
+        x2 (+ x1 width)
+        y2 (+ y1 height)]
+    {:x x1
+     :y y1
+     :x1 x1
+     :x2 x2
+     :y1 y1
+     :y2 y2
+     :width width
+     :height height}))
+
 (defn transform-points
   ([points matrix]
    (transform-points points nil matrix))

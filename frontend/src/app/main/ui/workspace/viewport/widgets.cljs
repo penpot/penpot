@@ -31,7 +31,7 @@
                :pattern-units "userSpaceOnUse"}
      [:path {:d "M 1 0 L 0 0 0 1"
              :style {:fill "none"
-                     :stroke "#59B9E2"
+                     :stroke "var(--color-info)"
                      :stroke-opacity "0.2"
                      :stroke-width (str (/ 1 zoom))}}]]]
    [:rect {:x (:x vbox)
@@ -90,7 +90,8 @@
      "translate(" (* zoom x) ", " (* zoom y) ")")))
 
 (mf/defc frame-title
-  [{:keys [frame modifiers selected? zoom on-frame-enter on-frame-leave on-frame-select]}]
+  {::mf/wrap [mf/memo]}
+  [{:keys [frame modifiers selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
   (let [{:keys [width x y]} (gsh/transform-shape frame)
         label-pos (gpt/point x (- y (/ 10 zoom)))
 
@@ -109,6 +110,16 @@
           (mf/deps (:id frame))
           (st/emitf (dw/go-to-layout :layers)
                     (dw/start-rename-shape (:id frame))))
+
+        on-context-menu
+        (mf/use-callback
+          (mf/deps frame)
+          (fn [bevent]
+            (let [event    (.-nativeEvent bevent)
+                  position (dom/get-client-position event)]
+              (dom/prevent-default event)
+              (dom/stop-propagation event)
+              (st/emit! (dw/show-shape-context-menu {:position position :shape frame})))))
 
         on-pointer-enter
         (mf/use-callback
@@ -130,9 +141,11 @@
             :transform (str (when (and selected? modifiers)
                               (str (:displacement modifiers) " " ))
                             (text-transform label-pos zoom))
-            :style {:fill (when selected? "#28c295")}
+            :style {:fill (when selected? "var(--color-primary-dark)")}
+            :visibility (if show-artboard-names? "visible" "hidden")
             :on-mouse-down on-mouse-down
             :on-double-click on-double-click
+            :on-context-menu on-context-menu
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
      (:name frame)]))
@@ -144,6 +157,7 @@
         zoom            (unchecked-get props "zoom")
         modifiers       (unchecked-get props "modifiers")
         selected        (or (unchecked-get props "selected") #{})
+        show-artboard-names? (unchecked-get props "show-artboard-names?")
         on-frame-enter  (unchecked-get props "on-frame-enter")
         on-frame-leave  (unchecked-get props "on-frame-leave")
         on-frame-select (unchecked-get props "on-frame-select")
@@ -154,6 +168,7 @@
        [:& frame-title {:frame frame
                         :selected? (contains? selected (:id frame))
                         :zoom zoom
+                        :show-artboard-names? show-artboard-names?
                         :modifiers modifiers
                         :on-frame-enter on-frame-enter
                         :on-frame-leave on-frame-leave

@@ -15,14 +15,14 @@
   }
 }
 
-.fullscreen .viewer-layout:not(.force-visible) {
+.fullscreen.viewer-layout:not(.force-visible) {
   & .viewer-header {
     width: 100%;
     position: fixed;
     top: -48px;
     left: 0;
     transition: top 400ms ease 300ms;
-
+    z-index: 1;
     &::after {
       content: " ";
       position: absolute;
@@ -31,7 +31,6 @@
       left: 0;
       top: 48px;
     }
-
   }
 
   & .viewer-header:hover {
@@ -57,5 +56,3 @@
     background-color: rgb(0, 0, 0, 0.2);
   }
 }
-
-

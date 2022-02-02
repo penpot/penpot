@@ -48,6 +48,13 @@ jobs:
             clj-kondo --parallel --lint src/
 
       - run:
+          name: frontend styles prettier
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn run lint-scss
+
+      - run:
           name: backend lint
           working_directory: "./backend"
           command: |
@@ -74,21 +81,27 @@ jobs:
             node target/tests.js
 
           environment:
-            JAVA_HOME: /usr/lib/jvm/openjdk16
-            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin:/usr/lib/jvm/openjdk16/bin
+            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
+
+      # - run:
+      #     working_directory: "./common"
+      #     name: common tests (cljs)
+      #     command: |
+      #       yarn install
+      #       yarn run compile-test
+      #       node target/test.js
+      # 
+      #     environment:
+      #       PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
 
       - run:
           working_directory: "./common"
-          name: common tests
+          name: common tests (clj)
           command: |
-            yarn install
-            clojure -M:dev:shadow-cljs compile test
-            node target/tests.js
             clojure -X:dev:test
 
           environment:
-            JAVA_HOME: /usr/lib/jvm/openjdk16
-            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin:/usr/lib/jvm/openjdk16/bin
+            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
 
       - save_cache:
          paths:

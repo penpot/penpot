@@ -175,15 +175,16 @@
             :x :y :width :height :x1 :y1 :x2 :y2))
       :rect :path))
 
-  (t/testing "Transform shape with invalid selrect fails gracefuly"
+  (t/testing "Transform shape with invalid selrect fails gracefully"
     (t/are [type selrect]
         (let [modifiers {:displacement (gmt/matrix)}
               shape-before (-> (create-test-shape type {:modifiers modifiers})
                                (assoc :selrect selrect))
               shape-after  (gsh/transform-shape shape-before {:round-coords? false})]
-          (= (:selrect shape-before) (:selrect shape-after)))
+          (= (:selrect shape-before)
+             (:selrect shape-after)))
 
-      :rect {:x 0 :y 0 :width ##Inf :height ##Inf}
-      :path {:x 0 :y 0 :width ##Inf :height ##Inf}
+      :rect {:x 0.0 :y 0.0 :x1 0.0 :y1 0.0 :x2 ##Inf :y2 ##Inf :width ##Inf :height ##Inf}
+      :path {:x 0.0 :y 0.0 :x1 0.0 :y1 0.0 :x2 ##Inf :y2 ##Inf :width ##Inf :height ##Inf}
       :rect nil
       :path nil)))

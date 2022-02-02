@@ -9,8 +9,8 @@
    [app.common.data :as d]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.common.types.interactions :as cti]
    [app.common.uuid :as uuid]
-   [app.main.constants :as c]
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
    [app.main.repo :as rp]
@@ -25,6 +25,7 @@
 (def ^:private
   default-local-state
   {:zoom 1
+   :fullscreen? false
    :interactions-mode :hide
    :interactions-show? false
    :comments-mode :all
@@ -188,18 +189,14 @@
   (ptk/reify ::increase-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (let [increase #(nth c/zoom-levels
-                           (+ (d/index-of c/zoom-levels %) 1)
-                           (last c/zoom-levels))]
+      (let [increase #(min (* % 1.3) 200)]
         (update-in state [:viewer-local :zoom] (fnil increase 1))))))
 
 (def decrease-zoom
   (ptk/reify ::decrease-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (let [decrease #(nth c/zoom-levels
-                           (- (d/index-of c/zoom-levels %) 1)
-                           (first c/zoom-levels))]
+      (let [decrease #(max (/ % 1.3) 0.01)]
         (update-in state [:viewer-local :zoom] (fnil decrease 1))))))
 
 (def reset-zoom
@@ -208,17 +205,57 @@
     (update [_ state]
       (assoc-in state [:viewer-local :zoom] 1))))
 
-(def zoom-to-50
-  (ptk/reify ::zoom-to-50
+(def zoom-to-fit
+  (ptk/reify ::zoom-to-fit
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:viewer-local :zoom] 0.5))))
+      (let [page-id (get-in state [:route :query-params :page-id])
+            frame-idx (get-in state [:route :query-params :index])
+            srect   (get (nth (get-in state [:viewer :pages page-id :frames]) frame-idx) :selrect)
+            original-size (get-in state [:viewer-local :viewport-size])
+            wdiff (/ (:width original-size) (:width srect))
+            hdiff (/ (:height original-size) (:height srect))
+            minzoom (min wdiff hdiff)]
+        (-> state
+            (assoc-in  [:viewer-local :zoom] minzoom)
+            (assoc-in  [:viewer-local :zoom-type] :fit))))))
 
-(def zoom-to-200
-  (ptk/reify ::zoom-to-200
+(def zoom-to-fill
+  (ptk/reify ::zoom-to-fill
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:viewer-local :zoom] 2))))
+      (let [page-id (get-in state [:route :query-params :page-id])
+            frame-idx (get-in state [:route :query-params :index])
+            srect   (get (nth (get-in state [:viewer :pages page-id :frames]) frame-idx) :selrect)
+            original-size (get-in state [:viewer-local :viewport-size])
+            wdiff (/ (:width original-size) (:width srect))
+            hdiff (/ (:height original-size) (:height srect))
+            maxzoom (max wdiff hdiff)]
+        (-> state
+            (assoc-in  [:viewer-local :zoom] maxzoom)
+            (assoc-in  [:viewer-local :zoom-type] :fill))))))
+
+(def toggle-zoom-style
+  (ptk/reify ::toggle-zoom-style
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [zoom-type (get-in state [:viewer-local :zoom-type])]
+        (if (= zoom-type :fit)
+          (rx/of zoom-to-fill)
+          (rx/of zoom-to-fit))))))
+
+(def toggle-fullscreen
+  (ptk/reify ::toggle-fullscreen
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:viewer-local :fullscreen?] not))))
+
+(defn set-viewport-size
+  [{:keys [size]}]
+  (ptk/reify ::set-viewport-size
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :viewport-size] size))))
 
 ;; --- Local State Management
 
@@ -251,7 +288,6 @@
   (ptk/reify ::select-next-frame
     ptk/WatchEvent
     (watch [_ state _]
-      (prn "select-next-frame")
       (let [route   (:route state)
             pparams (:path-params route)
             qparams (:query-params route)
@@ -316,6 +352,12 @@
     (update [_ state]
       (d/dissoc-in state [:viewer-local :nav-scroll]))))
 
+(defn complete-animation
+  []
+  (ptk/reify ::complete-animation
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/dissoc-in state [:viewer-local :current-animation]))))
 
 ;; --- Navigation inside page
 
@@ -335,23 +377,38 @@
         (rx/of (rt/nav screen pparams (assoc qparams :index index)))))))
 
 (defn go-to-frame
-  [frame-id]
-  (us/verify ::us/uuid frame-id)
-  (ptk/reify ::go-to-frame
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:viewer-local :overlays] []))
+  ([frame-id] (go-to-frame frame-id nil))
+  ([frame-id animation]
+   (us/verify ::us/uuid frame-id)
+   (us/verify (s/nilable ::cti/animation) animation)
+   (ptk/reify ::go-to-frame
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [route   (:route state)
+             qparams (:query-params route)
+             page-id (:page-id qparams)
+             index   (:index qparams)
+             frames  (get-in state [:viewer :pages page-id :frames])
+             frame   (get frames index)]
+         (cond-> state
+           :always
+           (assoc-in [:viewer-local :overlays] [])
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [route   (:route state)
-            qparams (:query-params route)
-            page-id (:page-id qparams)
+           (some? animation)
+           (assoc-in [:viewer-local :current-animation]
+                     {:kind :go-to-frame
+                      :orig-frame-id (:id frame)
+                      :animation animation}))))
 
-            frames  (get-in state [:viewer :pages page-id :frames])
-            index   (d/index-of-pred frames #(= (:id %) frame-id))]
-        (when index
-          (rx/of (go-to-frame-by-index index)))))))
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [route   (:route state)
+             qparams (:query-params route)
+             page-id (:page-id qparams)
+             frames  (get-in state [:viewer :pages page-id :frames])
+             index   (d/index-of-pred frames #(= (:id %) frame-id))]
+         (when index
+           (rx/of (go-to-frame-by-index index))))))))
 
 (defn go-to-frame-auto
   []
@@ -383,12 +440,39 @@
 
 ;; --- Overlays
 
+(defn- do-open-overlay
+  [state frame position close-click-outside background-overlay animation]
+  (cond-> state
+    :always
+    (update-in [:viewer-local :overlays] conj
+               {:frame frame
+                :position position
+                :close-click-outside close-click-outside
+                :background-overlay background-overlay})
+    (some? animation)
+    (assoc-in [:viewer-local :current-animation]
+              {:kind :open-overlay
+               :overlay-id (:id frame)
+               :animation animation})))
+
+(defn- do-close-overlay
+  [state frame-id animation]
+  (if (nil? animation)
+    (update-in state [:viewer-local :overlays]
+               (fn [overlays]
+                 (d/removev #(= (:id (:frame %)) frame-id) overlays)))
+    (assoc-in state [:viewer-local :current-animation]
+              {:kind :close-overlay
+               :overlay-id frame-id
+               :animation animation})))
+
 (defn open-overlay
-  [frame-id position close-click-outside background-overlay]
+  [frame-id position close-click-outside background-overlay animation]
   (us/verify ::us/uuid frame-id)
   (us/verify ::us/point position)
   (us/verify (s/nilable ::us/boolean) close-click-outside)
   (us/verify (s/nilable ::us/boolean) background-overlay)
+  (us/verify (s/nilable ::cti/animation) animation)
   (ptk/reify ::open-overlay
     ptk/UpdateEvent
     (update [_ state]
@@ -399,19 +483,21 @@
             frame    (d/seek #(= (:id %) frame-id) frames)
             overlays (get-in state [:viewer-local :overlays])]
         (if-not (some #(= (:frame %) frame) overlays)
-          (update-in state [:viewer-local :overlays] conj 
-                     {:frame frame
-                      :position position
-                      :close-click-outside close-click-outside
-                      :background-overlay background-overlay})
+          (do-open-overlay state
+                           frame
+                           position
+                           close-click-outside
+                           background-overlay
+                           animation)
           state)))))
 
 (defn toggle-overlay
-  [frame-id position close-click-outside background-overlay]
+  [frame-id position close-click-outside background-overlay animation]
   (us/verify ::us/uuid frame-id)
   (us/verify ::us/point position)
   (us/verify (s/nilable ::us/boolean) close-click-outside)
   (us/verify (s/nilable ::us/boolean) background-overlay)
+  (us/verify (s/nilable ::cti/animation) animation)
   (ptk/reify ::toggle-overlay
     ptk/UpdateEvent
     (update [_ state]
@@ -422,23 +508,27 @@
             frame    (d/seek #(= (:id %) frame-id) frames)
             overlays (get-in state [:viewer-local :overlays])]
         (if-not (some #(= (:frame %) frame) overlays)
-          (update-in state [:viewer-local :overlays] conj 
-                     {:frame frame
-                      :position position
-                      :close-click-outside close-click-outside
-                      :background-overlay background-overlay})
-          (update-in state [:viewer-local :overlays]
-                     (fn [overlays]
-                       (d/removev #(= (:id (:frame %)) frame-id) overlays))))))))
+          (do-open-overlay state
+                           frame
+                           position
+                           close-click-outside
+                           background-overlay
+                           animation)
+          (do-close-overlay state
+                            (:id frame)
+                            (cti/invert-direction animation)))))))
 
 (defn close-overlay
-  [frame-id]
-  (ptk/reify ::close-overlay
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:viewer-local :overlays]
-                 (fn [overlays]
-                   (d/removev #(= (:id (:frame %)) frame-id) overlays))))))
+  ([frame-id] (close-overlay frame-id nil))
+  ([frame-id animation]
+   (us/verify ::us/uuid frame-id)
+   (us/verify (s/nilable ::cti/animation) animation)
+   (ptk/reify ::close-overlay
+     ptk/UpdateEvent
+     (update [_ state]
+       (do-close-overlay state
+                         frame-id
+                         animation)))))
 
 ;; --- Objects selection
 
@@ -534,28 +624,29 @@
       (assoc-in state [:viewer-local :overlays] []))
 
     ptk/WatchEvent
-     (watch [_ state _]
-       (let [route   (:route state)
-             pparams (:path-params route)
-             qparams (-> (:query-params route)
-                         (assoc :index 0)
-                         (assoc :page-id page-id))
-             rname   (get-in route [:data :name])]
-         (rx/of (rt/nav rname pparams qparams))))))
+    (watch [_ state _]
+      (let [route   (:route state)
+            pparams (:path-params route)
+            qparams (-> (:query-params route)
+                        (assoc :index 0)
+                        (assoc :page-id page-id))
+            rname   (get-in route [:data :name])]
+        (rx/of (rt/nav rname pparams qparams))))))
 
 (defn go-to-workspace
-  [page-id]
-  (ptk/reify ::go-to-workspace
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [project-id (get-in state [:viewer :project :id])
-            file-id    (get-in state [:viewer :file :id])
-            pparams    {:project-id project-id :file-id file-id}
-            qparams    {:page-id page-id}]
+  ([] (go-to-workspace nil))
+  ([page-id]
+   (ptk/reify ::go-to-workspace
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [route   (:route state)
+             project-id (get-in state [:viewer :project :id])
+             file-id    (get-in state [:viewer :file :id])
+             saved-page-id   (get-in route [:query-params :page-id])
+             pparams    {:project-id project-id :file-id file-id}
+             qparams    {:page-id (or page-id saved-page-id)}]
          (rx/of (rt/nav-new-window*
                  {:rname :workspace
                   :path-params pparams
                   :query-params qparams
-                  :name (str "workspace-" file-id)}))))))
-
-
+                  :name (str "workspace-" file-id)})))))))

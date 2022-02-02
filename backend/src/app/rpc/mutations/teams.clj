@@ -164,7 +164,7 @@
   (s/keys :req-un [::profile-id ::id]))
 
 ;; TODO: right now just don't allow delete default team, in future it
-;; should raise a speific exception for signal that this acction is
+;; should raise a specific exception for signal that this action is
 ;; not allowed.
 
 (sv/defmethod ::delete-team
@@ -201,8 +201,8 @@
     (let [perms (teams/get-permissions conn profile-id team-id)
           ;; We retrieve all team members instead of query the
           ;; database for a single member. This is just for
-          ;; convenience, if this bocomes a bottleneck or problematic,
-          ;; we will change it to more efficient fetch mechanims.
+          ;; convenience, if this becomes a bottleneck or problematic,
+          ;; we will change it to more efficient fetch mechanisms.
           members (teams/retrieve-team-members conn team-id)
           member  (d/seek #(= member-id (:id %)) members)
 

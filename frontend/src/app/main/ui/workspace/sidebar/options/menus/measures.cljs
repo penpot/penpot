@@ -199,13 +199,15 @@
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-pos-x-change
-                              :value (attr->string :x values)}]]
+                              :value (attr->string :x values)
+                              :precision 2}]]
           [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-pos-y-change
-                              :value (attr->string :y values)}]]])
+                              :value (attr->string :y values)
+                              :precision 2}]]])
 
        ;; ROTATION
        (when (options :rotation)

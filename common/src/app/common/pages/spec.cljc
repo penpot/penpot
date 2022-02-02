@@ -173,13 +173,13 @@
 ;; Page Data related
 (s/def :internal.shape/blocked boolean?)
 (s/def :internal.shape/collapsed boolean?)
-(s/def :internal.shape/content any?)
 
 (s/def :internal.shape/fill-color string?)
 (s/def :internal.shape/fill-opacity ::us/safe-number)
 (s/def :internal.shape/fill-color-gradient (s/nilable ::gradient))
 (s/def :internal.shape/fill-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/fill-color-ref-id (s/nilable uuid?))
+(s/def :internal.shape/hide-fill-on-export boolean?)
 
 (s/def :internal.shape/font-family string?)
 (s/def :internal.shape/font-size ::us/safe-integer)
@@ -256,12 +256,37 @@
 (s/def :internal.shape/transform ::matrix)
 (s/def :internal.shape/transform-inverse ::matrix)
 
+(s/def :internal.shape/opacity ::us/safe-number)
+(s/def :internal.shape/blend-mode
+  #{:normal
+    :darken
+    :multiply
+    :color-burn
+    :lighten
+    :screen
+    :color-dodge
+    :overlay
+    :soft-light
+    :hard-light
+    :difference
+    :exclusion
+    :hue
+    :saturation
+    :color
+    :luminosity})
+
 (s/def ::shape-attrs
-  (s/keys :opt-un [:internal.shape/selrect
+  (s/keys :opt-un [::id
+                   ::type
+                   ::name
+                   ::component-id
+                   ::component-file
+                   ::component-root?
+                   ::shape-ref
+                   :internal.shape/selrect
                    :internal.shape/points
                    :internal.shape/blocked
                    :internal.shape/collapsed
-                   :internal.shape/content
                    :internal.shape/fill-color
                    :internal.shape/fill-opacity
                    :internal.shape/fill-color-gradient
@@ -307,22 +332,60 @@
                    ::cti/interactions
                    :internal.shape/masked-group?
                    :internal.shape/shadow
-                   :internal.shape/blur]))
+                   :internal.shape/blur
+                   :internal.shape/opacity
+                   :internal.shape/blend-mode]))
 
+(s/def :internal.shape.text/type #{"root" "paragraph-set" "paragraph"})
+(s/def :internal.shape.text/children
+  (s/coll-of :internal.shape.text/content
+             :kind vector?
+             :min-count 1))
 
-;; shapes-group is handled differently
+(s/def :internal.shape.text/text string?)
+(s/def :internal.shape.text/key string?)
 
-(s/def ::minimal-shape
-  (s/keys :req-un [::type ::name]
-          :opt-un [::id]))
+(s/def :internal.shape.text/content
+  (s/nilable
+   (s/or :text-container
+         (s/keys :req-un [:internal.shape.text/type
+                          :internal.shape.text/children]
+                 :opt-un [:internal.shape.text/key])
+         :text-content
+         (s/keys :req-un [:internal.shape.text/text]))))
+
+(s/def :internal.shape.path/command keyword?)
+(s/def :internal.shape.path/params
+  (s/nilable (s/map-of keyword? any?)))
+
+(s/def :internal.shape.path/command-item
+  (s/keys :req-un [:internal.shape.path/command]
+          :opt-un [:internal.shape.path/params]))
+
+(s/def :internal.shape.path/content
+  (s/coll-of :internal.shape.path/command-item :kind vector?))
+
+(defmulti shape-spec :type)
+
+(defmethod shape-spec :default [_]
+  (s/spec ::shape-attrs))
+
+(defmethod shape-spec :text [_]
+  (s/and ::shape-attrs
+         (s/keys :opt-un [:internal.shape.text/content])))
+
+(defmethod shape-spec :path [_]
+  (s/and ::shape-attrs
+         (s/keys :opt-un [:internal.shape.path/content])))
+
+(defmethod shape-spec :frame [_]
+  (s/and ::shape-attrs
+         (s/keys :opt-un [:internal.shape/hide-fill-on-export])))
 
 (s/def ::shape
-  (s/and ::minimal-shape ::shape-attrs
-         (s/keys :opt-un [::id
-                          ::component-id
-                          ::component-file
-                          ::component-root?
-                          ::shape-ref])))
+  (s/and (s/multi-spec shape-spec :type)
+         #(contains? % :name)
+         #(contains? % :type)))
 
 (s/def :internal.page/objects (s/map-of uuid? ::shape))
 
@@ -331,7 +394,6 @@
                    ::name
                    ::cto/options
                    :internal.page/objects]))
-
 
 (s/def ::recent-color
   (s/keys :opt-un [:internal.color/value

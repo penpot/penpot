@@ -14,7 +14,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
@@ -200,6 +200,11 @@
     :width 1368
     :height 912}
 
+   {:name "ReMarkable"}
+   {:name "Remarkable 2"
+    :width 840
+    :height 1120}
+
    {:name "WEB"}
    {:name "Web 1280"
     :width 1280
@@ -280,13 +285,13 @@
    {:name "Twitter post"
     :width 1024
     :height 512}
-   {:name "Youtube profile"
+   {:name "YouTube profile"
     :width 800
     :height 800}
-   {:name "Youtube banner"
+   {:name "YouTube banner"
     :width 2560
     :height 1440}
-   {:name "Youtube thumb"
+   {:name "YouTube thumb"
     :width 1280
     :height 720}
    ])
@@ -304,7 +309,7 @@
                      :values layer-values}]
      [:& fill-menu {:ids ids
                     :type type
-                    :values (select-keys shape fill-attrs)}]
+                    :values (select-keys shape fill-attrs-shape)}]
      [:& stroke-menu {:ids ids
                       :type type
                       :values stroke-values}]
@@ -313,4 +318,3 @@
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
      [:& frame-grid {:shape shape}]]))
-

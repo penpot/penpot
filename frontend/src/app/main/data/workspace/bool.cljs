@@ -4,8 +4,9 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.data.workspace.booleans
+(ns app.main.data.workspace.bool
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
@@ -35,19 +36,22 @@
         head (if (= bool-type :difference) (first shapes) (last shapes))
         head (cond-> head
                (and (contains? head :svg-attrs) (nil? (:fill-color head)))
-               (assoc :fill-color "#000000"))
+               (assoc :fill-color clr/black))
 
-        head-data (select-keys head stp/style-properties)]
-    [(-> {:id (uuid/next)
-          :type :bool
-          :bool-type bool-type
-          :frame-id (:frame-id head)
-          :parent-id (:parent-id head)
-          :name name
-          :shapes []}
-         (merge head-data)
-         (gsh/update-bool-selrect shapes objects))
-     (cp/position-on-parent (:id head) objects)]))
+        head-data (select-keys head stp/style-properties)
+
+        bool-shape
+        (-> {:id (uuid/next)
+             :type :bool
+             :bool-type bool-type
+             :frame-id (:frame-id head)
+             :parent-id (:parent-id head)
+             :name name
+             :shapes (->> shapes (mapv :id))}
+            (merge head-data)
+            (gsh/update-bool-selrect shapes objects))]
+
+    [bool-shape (cp/position-on-parent (:id head) objects)]))
 
 (defn group->bool
   [group bool-type objects]
@@ -58,7 +62,7 @@
         head (if (= bool-type :difference) (first shapes) (last shapes))
         head (cond-> head
                (and (contains? head :svg-attrs) (nil? (:fill-color head)))
-               (assoc :fill-color "#000000"))
+               (assoc :fill-color clr/black))
         head-data (select-keys head stp/style-properties)]
 
     (-> group

@@ -35,13 +35,13 @@
                              :object-id frame-id
                              :scale 1
                              :save-path spath})]
-    (cons spath spaths)))
+    (conj spaths spath)))
 
 (defn- join-files
   [tdpath file-id paths]
   (let [output-path (path/join tdpath (str file-id ".pdf"))
         paths-str   (str/join " " paths)]
-    (-> (sh/run-cmd! (str "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile='" output-path "' " paths-str))
+    (-> (sh/run-cmd! (str "pdfunite " paths-str " " output-path))
         (p/then (constantly output-path)))))
 
 (defn- clean-tmp-data
@@ -54,16 +54,20 @@
   [{:keys [params cookies] :as request}]
   (let [{:keys [name file-id page-id frame-ids]} (us/conform ::handler-params params)
         token  (.get ^js cookies "auth-token")]
-    (p/let [tdpath (sh/create-tmpdir! "pdfexport-")
-            data (-> (reduce (fn [promis frame-id]
-                               (p/then promis (partial export-frame tdpath file-id page-id token frame-id)))
-                       (p/future [])
-                       frame-ids)
-                     (p/then  (partial join-files tdpath file-id))
-                     (p/then  sh/read-file)
-                     (p/then  (partial clean-tmp-data tdpath)))]
-      {:status 200
-       :body data
-       :headers {"content-type" "application/pdf"
-                 "content-length" (.-length data)}})))
+    (if (seq frame-ids)
+      (p/let [tdpath (sh/create-tmpdir! "pdfexport-")
+              data (-> (reduce (fn [promise frame-id]
+                                 (p/then promise (partial export-frame tdpath file-id page-id token frame-id)))
+                               (p/future [])
+                               (reverse frame-ids))
+                       (p/then  (partial join-files tdpath file-id))
+                       (p/then  sh/read-file)
+                       (p/then  (partial clean-tmp-data tdpath)))]
+        {:status 200
+         :body data
+         :headers {"content-type" "application/pdf"
+                   "content-length" (.-length data)}})
+      {:status 204
+       :body ""
+       :headers {"content-type" "text/plain"}})))
 

@@ -134,7 +134,6 @@
         (let [current-file-id (get state :current-file-id)
               file-id         (or file-id current-file-id)
               path            (if (= file-id current-file-id)
-
                                 [:workspace-data]
                                 [:workspace-libraries file-id :data])]
           (try

@@ -166,8 +166,8 @@
                                (mapv (fn [[style text]] (vector (merge txt/default-text-attrs style) text))))]
 
     (for [[idx [full-style text]] (map-indexed vector style-text-blocks)]
-      (let [previus-style (first (nth style-text-blocks (dec idx) nil))
-            style (remove-equal-values full-style previus-style)
+      (let [previous-style (first (nth style-text-blocks (dec idx) nil))
+            style (remove-equal-values full-style previous-style)
 
             ;; If the color is set we need to add opacity otherwise the display will not work
             style (cond-> style

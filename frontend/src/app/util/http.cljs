@@ -20,19 +20,19 @@
    [promesa.core :as p]))
 
 (defprotocol IBodyData
-  "A helper for define body data with the appropiate headers."
+  "A helper for define body data with the appropriate headers."
   (-update-headers [_ headers])
   (-get-body-data [_]))
 
 (extend-protocol IBodyData
   globals/FormData
   (-get-body-data [it] it)
-  (-update-headers [it headers]
+  (-update-headers [_ headers]
     (dissoc headers "content-type" "Content-Type"))
 
   default
   (-get-body-data [it] it)
-  (-update-headers [it headers] headers))
+  (-update-headers [_ headers] headers))
 
 (defn translate-method
   [method]
@@ -137,8 +137,8 @@
 
 (defn conditional-decode-transit
   [{:keys [body headers] :as response}]
-  (let [contentype (get headers "content-type")]
-    (if (and (str/starts-with? contentype "application/transit+json")
+  (let [contenttype (get headers "content-type")]
+    (if (and (str/starts-with? contenttype "application/transit+json")
              (pos? (count body)))
       (assoc response :body (t/decode-str body))
       response)))
@@ -162,16 +162,30 @@
      (->> (rx/take 1 observable)
           (rx/subs resolve reject)))))
 
-(defn fetch-data-uri [uri]
-  (c/with-cache {:key uri :max-age (dt/duration {:hours 4})}
-    (->> (send! {:method :get
-                 :uri uri
-                 :response-type :blob
-                 :omit-default-headers true})
-         (rx/filter #(= 200 (:status %)))
-         (rx/map :body)
-         (rx/mapcat wapi/read-file-as-data-url)
-         (rx/map #(hash-map uri %)))))
+(defn fetch-data-uri
+  ([uri]
+   (fetch-data-uri uri false))
+
+  ([uri throw-err?]
+   (c/with-cache {:key uri :max-age (dt/duration {:hours 4})}
+     (let [request-stream
+           (send! {:method :get
+                   :uri uri
+                   :response-type :blob
+                   :omit-default-headers true})
+
+           request-stream
+           (if throw-err?
+             (rx/tap #(when-not (and (>= (:status %) 200) (< (:status %) 300))
+                        ;; HTTP ERRROR
+                        (throw (js/Error. "Error fetching data uri" #js {:cause (clj->js %)})))
+                     request-stream)
+             (rx/filter #(= 200 (:status %))
+                        request-stream))]
+       (->> request-stream
+            (rx/map :body)
+            (rx/mapcat wapi/read-file-as-data-url)
+            (rx/map #(hash-map uri %)))))))
 
 (defn fetch-text [url]
   (c/with-cache {:key url :max-age (dt/duration {:hours 4})}

@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.config :as cf]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -25,6 +26,7 @@
    [app.util.router :as rt]
    [beicon.core :as rx]
    [okulary.core :as l]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 ;; --- Zoom Widget
@@ -57,16 +59,14 @@
         [:span.icon i/msg-warning]
         [:span.label (tr "workspace.header.save-error")]])]))
 
-
-(mf/defc zoom-widget
+(mf/defc zoom-widget-workspace
   {::mf/wrap [mf/memo]}
   [{:keys [zoom
            on-increase
            on-decrease
            on-zoom-reset
            on-zoom-fit
-           on-zoom-selected
-           on-fullscreen]
+           on-zoom-selected]
     :as props}]
   (let [show-dropdown? (mf/use-state false)]
     [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
@@ -75,19 +75,24 @@
      [:& dropdown {:show @show-dropdown?
                    :on-close #(reset! show-dropdown? false)}
       [:ul.dropdown
-       [:li {:on-click on-increase}
-        "Zoom in" [:span (sc/get-tooltip :increase-zoom)]]
-       [:li {:on-click on-decrease}
-        "Zoom out" [:span (sc/get-tooltip :decrease-zoom)]]
-       [:li {:on-click on-zoom-reset}
-        "Zoom to 100%" [:span (sc/get-tooltip :reset-zoom)]]
+       [:li.basic-zoom-bar
+        [:span.zoom-btns
+         [:button {:on-click (fn [event]
+                               (dom/stop-propagation event)
+                               (dom/prevent-default event)
+                               (on-decrease))} "-"]
+         [:p.zoom-size {} (str (mth/round (* 100 zoom)) "%")]
+         [:button {:on-click (fn [event]
+                               (dom/stop-propagation event)
+                               (dom/prevent-default event)
+                               (on-increase))} "+"]]
+        [:button.reset-btn {:on-click on-zoom-reset} (tr "workspace.header.reset-zoom")]]
+       [:li.separator]
        [:li {:on-click on-zoom-fit}
-        "Zoom to fit all" [:span (sc/get-tooltip :fit-all)]]
+        (tr "workspace.header.zoom-fit-all") [:span (sc/get-tooltip :fit-all)]]
        [:li {:on-click on-zoom-selected}
-        "Zoom to selected" [:span (sc/get-tooltip :zoom-selected)]]
-       (when on-fullscreen
-         [:li {:on-click on-fullscreen}
-          "Full screen"])]]]))
+        (tr "workspace.header.zoom-selected") [:span (sc/get-tooltip :zoom-selected)]]]]]))
+
 
 
 ;; --- Header Users
@@ -95,9 +100,9 @@
 (mf/defc menu
   [{:keys [layout project file team-id page-id] :as props}]
   (let [show-menu? (mf/use-state false)
-        editing? (mf/use-state false)
+        editing?   (mf/use-state false)
 
-        frames   (mf/deref refs/workspace-frames)
+        frames (mf/deref refs/workspace-frames)
 
         edit-input-ref (mf/use-ref nil)
 
@@ -149,6 +154,10 @@
         (mf/use-callback
          (mf/deps file team-id)
          (fn [_]
+           (st/emit! (ptk/event ::ev/event {::ev/name "export-files"
+                                            ::ev/origin "workspace"
+                                            :num-files 1}))
+
            (->> (rx/of file)
                 (rx/flat-map
                  (fn [file]
@@ -166,23 +175,24 @@
 
         on-export-frames
         (mf/use-callback
-          (mf/deps file)
-          (fn [_]
-            (let [filename  (str (:name file) ".pdf")
-                  frame-ids (mapv :id frames)]
-              (st/emit! (dm/info (tr "workspace.options.exporting-object")
-                                 {:timeout nil}))
-              (->> (rp/query! :export-frames
-                              {:name     (:name file)
-                               :file-id  (:id file)
-                               :page-id   page-id
-                               :frame-ids frame-ids})
-                   (rx/subs
+         (mf/deps file frames)
+         (fn [_]
+           (when (seq frames)
+             (let [filename  (str (:name file) ".pdf")
+                   frame-ids (mapv :id frames)]
+               (st/emit! (dm/info (tr "workspace.options.exporting-object")
+                                  {:timeout nil}))
+               (->> (rp/query! :export-frames
+                               {:name     (:name file)
+                                :file-id  (:id file)
+                                :page-id   page-id
+                                :frame-ids frame-ids})
+                    (rx/subs
                      (fn [body]
                        (dom/trigger-download filename body))
                      (fn [_error]
                        (st/emit! (dm/error (tr "errors.unexpected-error"))))
-                     (st/emitf dm/hide))))))]
+                     (st/emitf dm/hide)))))))]
 
     (mf/use-effect
      (mf/deps @editing?)
@@ -248,6 +258,12 @@
            (tr "workspace.header.menu.show-palette"))]
         [:span.shortcut (sc/get-tooltip :toggle-palette)]]
 
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :display-artboard-names))}
+        [:span
+         (if (contains? layout :display-artboard-names)
+           (tr "workspace.header.menu.hide-artboard-names")
+           (tr "workspace.header.menu.show-artboard-names"))]]
+
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :assets))}
         [:span
          (if (contains? layout :assets)
@@ -282,14 +298,13 @@
        [:li.export-file {:on-click on-export-file}
         [:span (tr "dashboard.export-single")]]
 
-       [:li.export-file {:on-click on-export-frames}
-        [:span (tr "dashboard.export-frames")]]
+       (when (seq frames)
+         [:li.export-file {:on-click on-export-frames}
+          [:span (tr "dashboard.export-frames")]])
 
        (when (contains? @cf/flags :user-feedback)
          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
-          [:span (tr "labels.give-feedback")]])
-
-       ]]]))
+          [:span (tr "labels.give-feedback")]])]]]))
 
 ;; --- Header Component
 
@@ -297,7 +312,7 @@
   [{:keys [file layout project page-id] :as props}]
   (let [team-id  (:team-id project)
         zoom     (mf/deref refs/selected-zoom)
-        params   {:page-id page-id :file-id (:id file)}
+        params   {:page-id page-id :file-id (:id file) :section "interactions"}
 
         go-back
         (mf/use-callback
@@ -325,7 +340,7 @@
      [:div.options-section
       [:& persistence-state-widget]
 
-      [:& zoom-widget
+      [:& zoom-widget-workspace
        {:zoom zoom
         :on-increase #(st/emit! (dw/increase-zoom nil))
         :on-decrease #(st/emit! (dw/decrease-zoom nil))

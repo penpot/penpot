@@ -6,13 +6,16 @@
 
 (ns app.browser
   (:require
-   ["puppeteer-core" :as pp]
    ["generic-pool" :as gp]
+   ["puppeteer-core" :as pp]
    [app.common.data :as d]
+   [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [lambdaisland.glogi :as log]
+   [app.util.object :as obj]
    [promesa.core :as p]))
+
+(l/set-level! :trace)
 
 ;; --- BROWSER API
 
@@ -32,7 +35,8 @@
   [page {:keys [timeout cookie user-agent viewport]}]
   (let [timeout    (or timeout default-timeout)
         user-agent (or user-agent default-user-agent)
-        viewport   (d/merge default-viewport viewport)]
+        viewport   (merge default-viewport viewport)]
+
     (p/do!
      (.setViewport ^js page #js {:width (:width viewport)
                                  :height (:height viewport)
@@ -60,29 +64,27 @@
 (defn screenshot
   ([frame] (screenshot frame nil))
   ([frame {:keys [full-page? omit-background? type]
-           :or {full-page? false
-                type "png"
+           :or {type "png"
+                full-page? false
                 omit-background? false}}]
-   (.screenshot ^js frame #js {:fullPage full-page?
-                               :type (name type)
-                               :omitBackground omit-background?})))
+   (let [options (-> (obj/new)
+                     (obj/set! "type" (name type))
+                     (obj/set! "omitBackground" omit-background?)
+                     (cond-> full-page? (-> (obj/set! "fullPage" true)
+                                            (obj/set! "clip" nil))))]
+     (.screenshot ^js frame options))))
 
 (defn pdf
   ([page] (pdf page nil))
-  ([page {:keys [viewport omit-background? prefer-css-page-size? save-path]
-          :or {viewport {}
-               omit-background? true
-               prefer-css-page-size? true
-               save-path nil}}]
-   (let [viewport (d/merge default-viewport viewport)]
+  ([page {:keys [viewport save-path]}]
+   (p/let [viewport (d/merge default-viewport viewport)]
+     (.emulateMediaType ^js page "screen")
      (.pdf ^js page #js {:path save-path
                          :width (:width viewport)
                          :height (:height viewport)
                          :scale (:scale viewport)
-                         :omitBackground omit-background?
-                         :printBackground (not omit-background?)
-                         :preferCSSPageSize prefer-css-page-size?}))))
-
+                         :printBackground true
+                         :preferCSSPageSize true}))))
 (defn eval!
   [frame f]
   (.evaluate ^js frame f))
@@ -101,24 +103,31 @@
 (defonce pool (atom nil))
 (defonce pool-browser-id (atom 1))
 
+(def default-chrome-args
+  #js ["--no-sandbox"
+       "--font-render-hinting=none"
+       "--disable-setuid-sandbox"
+       "--disable-accelerated-2d-canvas"
+       "--disable-gpu"])
+
 (def browser-pool-factory
   (letfn [(create []
             (let [path (cf/get :browser-executable-path "/usr/bin/google-chrome")]
-              (-> (pp/launch #js {:executablePath path :args #js ["--no-sandbox" "--font-render-hinting=none"]})
+              (-> (pp/launch #js {:executablePath path :args default-chrome-args})
                   (p/then (fn [browser]
                             (let [id (deref pool-browser-id)]
-                              (log/info :origin "factory" :action "create" :browser-id id)
+                              (l/info :origin "factory" :action "create" :browser-id id)
                               (unchecked-set browser "__id" id)
                               (swap! pool-browser-id inc)
                               browser))))))
           (destroy [obj]
             (let [id (unchecked-get obj "__id")]
-              (log/info :origin "factory" :action "destroy" :browser-id id)
+              (l/info :origin "factory" :action "destroy" :browser-id id)
               (.close ^js obj)))
 
           (validate [obj]
             (let [id (unchecked-get obj "__id")]
-              (log/info :origin "factory" :action "validate" :browser-id id :obj obj)
+              (l/info :origin "factory" :action "validate" :browser-id id :obj obj)
               (p/resolved (.isConnected ^js obj))))]
 
     #js {:create create
@@ -127,7 +136,7 @@
 
 (defn init
   []
-  (log/info :msg "initializing browser pool")
+  (l/info :msg "initializing browser pool")
   (let [opts #js {:max (cf/get :browser-pool-max 3)
                   :min (cf/get :browser-pool-min 0)
                   :testOnBorrow true
@@ -142,34 +151,74 @@
 (defn stop
   []
   (when-let [pool (deref pool)]
-    (log/info :msg "finalizing browser pool")
+    (l/info :msg "finalizing browser pool")
     (-> (.drain ^js pool)
         (p/then (fn [] (.clear ^js pool))))))
 
 (defn exec!
   [callback]
-  (letfn [(on-release [pool browser ctx result error]
-            (-> (p/do! (.close ^js ctx))
-                (p/handle
-                 (fn [_ _]
-                   (.release ^js pool browser)))
-                (p/handle
-                 (fn [_ _]
-                   (let [id (unchecked-get browser "__id")]
-                     (log/info :origin "exec" :action "release" :browser-id id))
-                   (if result
-                     (p/resolved result)
-                     (p/rejected error))))))
+  (letfn [(release-browser [pool browser]
+            (let [id (unchecked-get browser "__id")]
+              (-> (p/do! (.release ^js pool browser))
+                  (p/handle (fn [res err]
+                              (l/trace :action "exec:release-browser" :browser-id id)
+                              (when err (js/console.log err))
+                              (if err
+                                (p/rejected err)
+                                (p/resolved res)))))))
+
+          (destroy-browser [pool browser]
+            (let [id (unchecked-get browser "__id")]
+              (-> (p/do! (.destroy ^js pool browser))
+                  (p/handle (fn [res err]
+                              (l/trace :action "exec:destroy-browser" :browser-id id)
+                              (when err (js/console.log err))
+                              (if err
+                                (p/rejected err)
+                                (p/resolved res)))))))
+
+          (handle-error [pool browser obj err]
+            (let [id (unchecked-get browser "__id")]
+              (if err
+                (do
+                  (l/trace :action "exec:handle-error" :browser-id id)
+                  (-> (p/do! (destroy-browser pool browser))
+                      (p/handle #(p/rejected err))))
+                (p/resolved obj))))
+
+          (on-result [pool browser context result]
+            (let [id (unchecked-get browser "__id")]
+              (l/trace :action "exec:on-result" :browser-id id)
+              (-> (p/do! (.close ^js context))
+                  (p/handle (fn [_ err]
+                              (if err
+                                (destroy-browser pool browser)
+                                (release-browser pool browser))))
+                  (p/handle #(p/resolved result)))))
+
+          (on-page [pool browser context page]
+            (let [id (unchecked-get browser "__id")]
+              (l/trace :action "exec:on-page" :browser-id id)
+              (-> (p/do! (callback page))
+                  (p/handle (partial handle-error pool browser))
+                  (p/then (partial on-result pool browser context)))))
 
           (on-context [pool browser ctx]
-            (-> (p/do! (.newPage ^js ctx))
-                (p/then callback)
-                (p/handle #(on-release pool browser ctx %1 %2))))
+            (let [id (unchecked-get browser "__id")]
+              (l/trace :action "exec:on-context" :browser-id id)
+              (-> (p/do! (.newPage ^js ctx))
+                  (p/handle (partial handle-error pool browser))
+                  (p/then (partial on-page pool browser ctx)))))
 
-          (on-acquire [pool browser]
-            (-> (.createIncognitoBrowserContext ^js browser)
-                (p/then #(on-context pool browser %))))]
+          (on-acquire [pool browser err]
+            (let [id (unchecked-get browser "__id")]
+              (l/trace :action "exec:on-acquire" :browser-id id)
+              (if err
+                (js/console.log err)
+                (-> (p/do! (.createIncognitoBrowserContext ^js browser))
+                    (p/handle (partial handle-error pool browser))
+                    (p/then (partial on-context pool browser))))))]
 
     (when-let [pool (deref pool)]
       (-> (p/do! (.acquire ^js pool))
-          (p/then (partial on-acquire pool))))))
+          (p/handle (partial on-acquire pool))))))

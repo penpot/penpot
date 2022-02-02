@@ -9,12 +9,11 @@
    [app.common.exceptions :as exc :include-macros true]
    [app.common.spec :as us]
    [app.renderer.bitmap :as rb]
-   [app.renderer.svg :as rs]
    [app.renderer.pdf :as rp]
+   [app.renderer.svg :as rs]
    [app.zipfile :as zip]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [lambdaisland.glogi :as log]
    [promesa.core :as p]))
 
 (s/def ::name ::us/string)
@@ -81,9 +80,11 @@
         (p/then (fn [results]
                   (reduce #(zip/add! %1 (:filename %2) (:content %2)) (zip/create) results)))
         (p/then (fn [fzip]
+                  (.generateAsync ^js fzip #js {:type "uint8array"})))
+        (p/then (fn [data]
                   {:status 200
                    :headers {"content-type" "application/zip"}
-                   :body (.generateNodeStream ^js fzip)})))))
+                   :body data})))))
 
 (defn- perform-export
   [params]

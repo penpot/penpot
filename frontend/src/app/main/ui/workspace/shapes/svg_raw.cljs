@@ -15,12 +15,10 @@
   [shape-wrapper]
   (let [svg-raw-shape (svg-raw/svg-raw-shape shape-wrapper)]
     (mf/fnc svg-raw-wrapper
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
+      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
        ::mf/wrap-props false}
       [props]
       (let [shape      (unchecked-get props "shape")
-            frame      (unchecked-get props "frame")
-
             childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
             childs     (mf/deref childs-ref)]
 
@@ -28,11 +26,9 @@
         (if (or (= (get-in shape [:content :tag]) :svg)
                 (and (contains? shape :svg-attrs) (map? (:content shape))))
           [:> shape-container {:shape shape}
-           [:& svg-raw-shape {:frame frame
-                              :shape shape
+           [:& svg-raw-shape {:shape shape
                               :childs childs}]]
 
-          [:& svg-raw-shape {:frame frame
-                             :shape shape
+          [:& svg-raw-shape {:shape shape
                              :childs childs}])))))
 

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.dashboard.grid
   (:require
+   [app.common.logging :as log]
    [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
@@ -26,26 +27,89 @@
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [promesa.core :as p]
    [rumext.alpha :as mf]))
 
+(log/set-level! :warn)
+
 ;; --- Grid Item Thumbnail
+
+(def ^:const CACHE-NAME "penpot")
+(def ^:const CACHE-URL "https://penpot.app/cache/")
+
+(defn use-thumbnail-cache
+  "Creates some hooks to handle the files thumbnails cache"
+  [file]
+
+  (let [cache-url (str CACHE-URL (:id file) "/" (:revn file) ".svg")
+
+        get-thumbnail
+        (mf/use-callback
+         (mf/deps cache-url)
+         (fn []
+           (p/let [response (.match js/caches cache-url)]
+             (when (some? response)
+               (p/let [blob         (.blob response)
+                       svg-content  (.text blob)
+                       headers      (.-headers response)
+                       fonts-header (or (.get headers "X-PENPOT-FONTS") "")
+                       fonts        (into #{}
+                                          (remove #(= "" %))
+                                          (str/split fonts-header ","))]
+                 {:svg   svg-content
+                  :fonts fonts})))))
+
+        cache-thumbnail
+        (mf/use-callback
+         (mf/deps cache-url)
+         (fn [{:keys [svg fonts]}]
+           (p/let [cache    (.open js/caches CACHE-NAME)
+                   blob     (js/Blob. #js [svg] #js {:type "image/svg"})
+                   fonts    (str/join "," fonts)
+                   headers  (js/Headers. #js {"X-PENPOT-FONTS" fonts})
+                   response (js/Response. blob #js {:headers headers})]
+             (.put cache cache-url response))))]
+
+    (mf/use-callback
+     (mf/deps (:id file) (:revn file))
+     (fn []
+       (->> (rx/from (get-thumbnail))
+            (rx/merge-map
+             (fn [thumb-data]
+               (log/debug :msg "retrieve thumbnail" :file (:id file) :revn (:revn file)
+                          :cache (if (some? thumb-data) :hit :miss))
+
+               (if (some? thumb-data)
+                 (rx/of thumb-data)
+                 (->> (wrk/ask! {:cmd :thumbnails/generate
+                                 :file-id (:id file)
+                                 :page-id (get-in file [:data :pages 0])})
+                      (rx/tap cache-thumbnail)))))
+
+            ;; If we have a problem we delegate to the thumbnail generation
+            (rx/catch #(wrk/ask! {:cmd :thumbnails/generate
+                                  :file-id (:id file)
+                                  :page-id (get-in file [:data :pages 0])})))))))
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap [mf/memo]}
   [{:keys [file] :as props}]
-  (let [container (mf/use-ref)]
+  (let [container (mf/use-ref)
+        generate  (use-thumbnail-cache file)]
+
     (mf/use-effect
-     (mf/deps (:id file))
+     (mf/deps file)
      (fn []
-       (->> (wrk/ask! {:cmd :thumbnails/generate
-                       :file-id (:id file)
-                       :page-id (get-in file [:data :pages 0])})
+       (->> (generate)
             (rx/subs (fn [{:keys [svg fonts]}]
                        (run! fonts/ensure-loaded! fonts)
                        (when-let [node (mf/ref-val container)]
-                         (set! (.-innerHTML ^js node) svg)))))))
+                         (dom/set-html! node svg)))))))
+
     [:div.grid-item-th {:style {:background-color (get-in file [:data :options :background])}
-                        :ref container}]))
+                        :ref container}
+     i/loader-pencil]))
 
 ;; --- Grid Item
 
@@ -205,6 +269,7 @@
         (mf/use-callback
          (fn []
            (st/emit! (dd/fetch-files {:project-id project-id})
+                     (dd/fetch-shared-files)
                      (dd/clear-selected-files))))
 
         import-files (use-import-file project-id on-finish-import)

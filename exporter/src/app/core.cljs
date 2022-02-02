@@ -6,23 +6,22 @@
 
 (ns app.core
   (:require
-   [lambdaisland.glogi :as log]
-   [lambdaisland.glogi.console :as glogi-console]
-   [promesa.core :as p]
+   [app.browser :as bwr]
+   [app.common.logging :as l]
+   [app.config]
    [app.http :as http]
    [app.sentry :as sentry]
-   [app.config]
-   [app.browser :as bwr]))
+   [promesa.core :as p]))
 
-(glogi-console/install!)
 (enable-console-print!)
+(l/initialize!)
 (sentry/init!)
 
 (defonce state (atom nil))
 
 (defn start
   [& args]
-  (log/info :msg "initializing")
+  (l/info :msg "initializing")
   (p/do!
    (bwr/init)
    (http/init)))
@@ -34,7 +33,7 @@
   ;; an empty line for visual feedback of restart
   (js/console.log "")
 
-  (log/info :msg "stoping")
+  (l/info :msg "stoping")
   (p/do!
    (bwr/stop)
    (http/stop)

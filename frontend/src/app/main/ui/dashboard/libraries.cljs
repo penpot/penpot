@@ -6,6 +6,7 @@
 
 (ns app.main.ui.dashboard.libraries
   (:require
+   [app.common.data :as d]
    [app.main.data.dashboard :as dd]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -17,6 +18,8 @@
 (mf/defc libraries-page
   [{:keys [team] :as props}]
   (let [files-map (mf/deref refs/dashboard-shared-files)
+        projects (mf/deref refs/dashboard-projects)
+        default-project (->> projects vals (d/seek :is-default))
         files     (->> (vals files-map)
                        (sort-by :modified-at)
                        (reverse))]
@@ -38,5 +41,6 @@
       [:div.dashboard-title
        [:h1 (tr "dashboard.libraries-title")]]]
      [:section.dashboard-container
-      [:& grid {:files files}]]]))
+      [:& grid {:files files
+                :project default-project}]]]))
 

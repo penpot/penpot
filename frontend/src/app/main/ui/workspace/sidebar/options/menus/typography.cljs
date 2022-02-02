@@ -15,6 +15,7 @@
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.main.ui.components.editable-select :refer [editable-select]]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.util.dom :as dom]
@@ -22,6 +23,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.router :as rt]
+   [app.util.strings :as ust]
    [app.util.timers :as tm]
    [cuerdas.core :as str]
    [goog.events :as events]
@@ -30,7 +32,7 @@
 (defn- attr->string [value]
   (if (= value :multiple)
     ""
-    (str value)))
+    (ust/format-precision value 2)))
 
 (defn- get-next-font
   [{:keys [id] :as current} fonts]
@@ -350,20 +352,19 @@
         letter-spacing (or letter-spacing "0")
 
         handle-change
-        (fn [event attr]
-          (let [new-spacing (dom/get-target-val event)]
-            (on-change {attr new-spacing})))]
+        (fn [value attr]
+          (on-change {attr (str value)}))]
 
     [:div.spacing-options
      [:div.input-icon
       [:span.icon-before.tooltip.tooltip-bottom
        {:alt (tr "workspace.options.text-options.line-height")}
        i/line-height]
-      [:input.input-text
-       {:type "number"
-        :step "0.1"
-        :min "0"
-        :max "200"
+      [:> numeric-input
+       {:min -200
+        :max 200
+        :step 0.1
+        :precision 2
         :value (attr->string line-height)
         :placeholder (tr "settings.multiple")
         :on-change #(handle-change % :line-height)
@@ -373,11 +374,11 @@
       [:span.icon-before.tooltip.tooltip-bottom
        {:alt (tr "workspace.options.text-options.letter-spacing")}
        i/letter-spacing]
-      [:input.input-text
-       {:type "number"
-        :step "0.1"
-        :min "0"
-        :max "200"
+      [:> numeric-input
+       {:min -200
+        :max 200
+        :step 0.1
+        :precision 2
         :value (attr->string letter-spacing)
         :placeholder (tr "settings.multiple")
         :on-change #(handle-change % :letter-spacing)
@@ -433,8 +434,8 @@
 ;; In summary, this need to a good UX/UI/IMPL rework.
 
 (mf/defc typography-entry
-  [{:keys [typography read-only? selected? on-click on-change on-detach on-context-menu editting? focus-name? file]}]
-  (let [open?          (mf/use-state editting?)
+  [{:keys [typography read-only? selected? on-click on-change on-detach on-context-menu editing? focus-name? file]}]
+  (let [open?          (mf/use-state editing?)
         hover-detach   (mf/use-state false)
         name-input-ref (mf/use-ref)
 
@@ -458,10 +459,10 @@
            (mf/set-ref-val! name-ref (dom/get-target-val event))))]
 
     (mf/use-effect
-     (mf/deps editting?)
+     (mf/deps editing?)
      (fn []
-       (when editting?
-         (reset! open? editting?))))
+       (when editing?
+         (reset! open? editing?))))
 
     (mf/use-effect
      (mf/deps focus-name?)

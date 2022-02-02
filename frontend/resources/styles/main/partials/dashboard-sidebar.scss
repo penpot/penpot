@@ -278,7 +278,8 @@
       border-color: $color-black;
     }
 
-    .search, .clear-search {
+    .search,
+    .clear-search {
       align-items: center;
       cursor: pointer;
       display: flex;
@@ -354,11 +355,10 @@
     justify-content: center;
   }
 
-  input[type=submit] {
+  input[type="submit"] {
     margin-bottom: 0px;
   }
 }
-
 
 .profile-section {
   align-items: center;
@@ -400,7 +400,7 @@
     bottom: 45px;
     min-width: 189px;
 
-    @include animation(0,.2s,fadeInUp);
+    @include animation(0, 0.2s, fadeInUp);
 
     li {
       height: 40px;

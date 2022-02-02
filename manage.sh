@@ -169,7 +169,7 @@ function build-exporter-bundle {
     echo ">> bundle exporter end";
 }
 
-# DEPRECATED: temporary mantained for backward compatibilty.
+# DEPRECATED: temporary maintained for backward compatibility.
 
 function build-app-bundle {
     echo ">> bundle app start";
@@ -207,6 +207,10 @@ function usage {
 }
 
 case $1 in
+    version)
+        print-current-version
+        ;;
+
     ## devenv related commands
     pull-devenv)
         pull-devenv ${@:2};

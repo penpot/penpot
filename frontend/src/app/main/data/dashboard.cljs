@@ -792,3 +792,46 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (rx/of (rt/nav :dashboard-team-settings {:team-id team-id}))))))
+
+(defn go-to-drafts
+  []
+  (ptk/reify ::go-to-drafts
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)
+            projects (:dashboard-projects state)
+            default-project (d/seek :is-default (vals projects))]
+        (when default-project
+          (rx/of (rt/nav :dashboard-files {:team-id team-id
+                                           :project-id (:id default-project)})))))))
+
+(defn go-to-libs
+  []
+  (ptk/reify ::go-to-libs
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (rx/of (rt/nav :dashboard-libraries {:team-id team-id}))))))
+
+(defn create-element
+  []
+  (ptk/reify ::create-element
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id       (:current-team-id state)
+            route         (:route state)
+            pparams       (:path-params route)
+            in-project?   (contains? pparams :project-id)
+            name          (if in-project?
+                            (name (gensym (str (tr "dashboard.new-file-prefix") " ")))
+                            (name (gensym (str (tr "dashboard.new-project-prefix") " "))))
+            params        (if in-project?
+                            {:project-id (:project-id pparams)
+                             :name name}
+                            {:name name
+                             :team-id team-id})
+            action-name   (if in-project? :create-file :create-project)
+            action        (if in-project? file-created project-created)]
+        
+        (->> (rp/mutation! action-name params)
+             (rx/map action))))))

@@ -6,7 +6,6 @@
 
 .color-cell {
   .color-bullet {
-    background-color: transparent;
     // Creates strange artifacts
     border: 2px solid $color-gray-60;
     // box-shadow: 0 0 0 2px $color-gray-60;
@@ -31,7 +30,6 @@
     width: 50px;
     height: 50px;
   }
-
 }
 
 .color-cell.current {
@@ -56,7 +54,7 @@ ul.palette-menu .color-bullet {
   display: flex;
   justify-content: center;
   margin-bottom: 1rem;
-  padding: .6rem;
+  padding: 0.6rem;
 
   svg {
     fill: $color-gray-10;
@@ -93,9 +91,8 @@ ul.palette-menu .color-bullet {
 .color-bullet {
   display: flex;
   flex-direction: row;
-  overflow: hidden;
-
-  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=") left center;
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+    left center;
   background-color: $color-white;
 
   & > * {
@@ -104,20 +101,37 @@ ul.palette-menu .color-bullet {
   }
 }
 
-.color-data .color-bullet.multiple {
-  background: transparent;
+.color-bullet.is-library-color .color-bullet-left,
+.selected-colors .color-bullet .color-bullet-left {
+  border-radius: 10px 0 0 10px;
+}
 
-  &::before {
-    content: "?"
-  }
+.color-bullet.is-library-color .color-bullet-right,
+.selected-colors .color-bullet .color-bullet-right {
+  border-radius: 0 10px 10px 0;
+}
+
+.color-palette .color-bullet .color-bullet-left {
+  border-radius: 25px 0 0 25px;
+}
+
+.color-palette .color-bullet .color-bullet-right {
+  border-radius: 0 25px 25px 0;
 }
 
 .color-data .color-bullet.is-library-color {
   border-radius: 50%;
 }
 
+.color-data .color-bullet.multiple {
+  background: transparent;
+
+  &::before {
+    content: "?";
+  }
+}
+
 .color-data .color-bullet {
-  background-color: $color-gray-30;
   border: 1px solid $color-gray-30;
   border-radius: $br-small;
   cursor: pointer;
@@ -151,7 +165,6 @@ ul.palette-menu .color-bullet {
       svg {
         fill: $color-primary;
       }
-
     }
   }
 }
@@ -163,6 +176,7 @@ ul.palette-menu .color-bullet {
 
   &:hover {
     border-color: $color-primary;
+    z-index: 10;
   }
 
   &.button {

@@ -181,7 +181,7 @@
       [:& cap-markers {:shape shape
                        :render-id render-id}])))
 
-;; Outer alingmnent: display the shape in two layers. One
+;; Outer alignment: display the shape in two layers. One
 ;; without stroke (only fill), and another one only with stroke
 ;; at double width (transparent fill) and passed through a mask
 ;; that shows the whole shape, but hides the original shape

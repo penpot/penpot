@@ -1,7 +1,7 @@
 // full width BG
 .loader-content {
   align-items: center;
-  background-color: rgba(255,255,255, .85);
+  background-color: rgba(255, 255, 255, 0.85);
   display: flex;
   height: 100vh;
   justify-content: center;
@@ -31,12 +31,12 @@ svg#loader-icon {
   animation: pen3 2s infinite ease;
 }
 
-// btn prncil loader
+// btn pencil loader
 svg#loader-pencil {
   fill: $color-primary-darker;
   width: 60px;
 }
 
 #loader-line {
-  animation: linePencil .8s infinite linear;
+  animation: linePencil 0.8s infinite linear;
 }

@@ -6,6 +6,7 @@
 
 (ns app.worker
   (:require
+   [app.common.logging :as log]
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.worker.export]
@@ -17,6 +18,10 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [promesa.core :as p]))
+
+(log/initialize!)
+(log/set-level! :root :warn)
+(log/set-level! :app :info)
 
 ;; --- Messages Handling
 
@@ -48,7 +53,7 @@
             (post {:payload result}))
 
           (reply-error [err]
-            (.error js/console "error" err)
+            (.error js/console "error" (pr-str err))
             (post {:error {:data (ex-data err)
                            :message (ex-message err)}}))
 
@@ -78,7 +83,7 @@
         (reply-error err)))))
 
 (defn- drop-message
-  "Sends to the client a notifiction that its messages have been dropped"
+  "Sends to the client a notification that its messages have been dropped"
   [{:keys [sender-id] :as message}]
   (us/assert ::message message)
   (.postMessage js/self (t/encode-str {:reply-to sender-id
@@ -96,7 +101,7 @@
          ;; This scan will store the last message per type in `messages`
          ;; when a previous message is dropped is stored in `dropped`
          ;; we also store the last message processed in order to detect
-         ;; posible infinite loops
+         ;; possible infinite loops
          (rx/scan
           (fn [[messages dropped _last] message]
             (let [cmd (get-in message [:payload :cmd])

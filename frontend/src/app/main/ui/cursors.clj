@@ -25,7 +25,7 @@
       ;; Remove comments
       (str/replace #"<\!\-\-(.*?(?=\-\->))\-\->" "")
 
-      ;; Remofe end of line
+      ;; Remove end of line
       (str/replace #"\r?\n|\r" " ")
 
       ;; Replace double quotes for single

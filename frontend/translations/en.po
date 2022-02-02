@@ -35,7 +35,7 @@ msgstr "Just wanna try it?"
 msgid "auth.demo-warning"
 msgstr ""
 "This is a DEMO service, DO NOT USE for real work, the projects will be "
-"periodicaly wiped."
+"periodically wiped."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
@@ -55,7 +55,7 @@ msgstr "Login here"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
-msgstr "Sign in"
+msgstr "Login"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-subtitle"
@@ -67,7 +67,7 @@ msgstr "Great to see you again!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Login with Github"
+msgstr "Login with GitHub"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
@@ -79,7 +79,7 @@ msgstr "Login with Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "Sign in with LDAP"
+msgstr "Login with LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
@@ -98,7 +98,7 @@ msgid "auth.notifications.invalid-token-error"
 msgstr "The recovery token is invalid."
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
+msgid "auth.notifications.password-changed-successfully"
 msgstr "Password successfully changed"
 
 #: src/app/main/ui/auth/recovery_request.cljs
@@ -111,7 +111,7 @@ msgstr "Password recovery link sent to your inbox."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
-msgstr "Joined the team succesfully"
+msgstr "Joined the team successfully"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.password"
@@ -265,10 +265,10 @@ msgid "dashboard.export-frames"
 msgstr "Export artboards to PDF..."
 
 msgid "dashboard.export-multi"
-msgstr "Export %s files"
+msgstr "Export Penpot %s files"
 
 msgid "dashboard.export-single"
-msgstr "Export file"
+msgstr "Export Penpot file"
 
 msgid "dashboard.export.detail"
 msgstr "* Might include components, graphics, colors and/or typographies."
@@ -308,8 +308,18 @@ msgstr "Export files"
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Font deleted"
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Dismiss all"
+
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "You still have no custom fonts installed."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 font added"
+msgstr[1] "%s fonts added"
 
 #, markdown
 msgid "dashboard.fonts.hero-text1"
@@ -328,8 +338,12 @@ msgstr ""
 "Service](https://penpot.app/terms.html). You also might want to read about "
 "[font licensing](https://www.typography.com/faq)."
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Upload all"
+
 msgid "dashboard.import"
-msgstr "Import files"
+msgstr "Import Penpot files"
 
 msgid "dashboard.import.analyze-error"
 msgstr "Oops! We couldn't import this file"
@@ -338,7 +352,10 @@ msgid "dashboard.import.import-error"
 msgstr "There was a problem importing the file. The file wasn't imported."
 
 msgid "dashboard.import.import-message"
-msgstr "%s files have been imported succesfully."
+msgstr "%s files have been imported successfully."
+
+msgid "dashboard.import.import-warning"
+msgstr "Some files containted invalid objects that have been removed."
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "Processing colors"
@@ -575,6 +592,9 @@ msgstr "Are you sure?"
 msgid "ds.updated-at"
 msgstr "Updated: %s"
 
+msgid "errors.auth.unable-to-login"
+msgstr "Looks like you are not authenticated or session expired."
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Your browser cannot do this operation"
@@ -648,6 +668,15 @@ msgstr "Your profile has emails muted (spam reports or high bounces)."
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "The registration is currently disabled."
+
+msgid "errors.team-leave.insufficient-members"
+msgstr "Insufficient members to leave team, you probably want to delete it."
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "The member you try to assign does not exist."
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "Owner can't leave team, you must reassign the owner role."
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "You must accept our terms of service and privacy policy."
@@ -896,6 +925,9 @@ msgstr "Code"
 msgid "handoff.tabs.code.selected.circle"
 msgstr "Circle"
 
+msgid "handoff.tabs.code.selected.component"
+msgstr "Component"
+
 msgid "handoff.tabs.code.selected.curve"
 msgstr "Curve"
 
@@ -907,6 +939,9 @@ msgstr "Group"
 
 msgid "handoff.tabs.code.selected.image"
 msgstr "Image"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Mask"
 
 #: src/app/main/ui/handoff/right_sidebar.cljs
 msgid "handoff.tabs.code.selected.multiple"
@@ -1468,7 +1503,7 @@ msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Promote and leave"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.select-memeber-to-promote"
+msgid "modals.leave-and-reassign.select-member-to-promote"
 msgstr "Select a member to promote"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -1757,7 +1792,7 @@ msgid "viewer.frame-not-found"
 msgstr "Artboard not found."
 
 msgid "viewer.header.comments-section"
-msgstr "Comments"
+msgstr "Comments (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
@@ -1767,15 +1802,15 @@ msgstr "Don't show interactions"
 msgid "viewer.header.fullscreen"
 msgstr "Full Screen"
 
-msgid "viewer.header.handsoff-section"
-msgstr "Handsoff"
+msgid "viewer.header.handoff-section"
+msgstr "Handoff (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
 msgstr "Interactions"
 
 msgid "viewer.header.interactions-section"
-msgstr "Interactions"
+msgstr "Interactions (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
@@ -1811,35 +1846,35 @@ msgstr "Sitemap"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "Align horizontal center"
+msgstr "Align horizontal center (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "Distribute horizontal spacing"
+msgstr "Distribute horizontal spacing (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "Align left"
+msgstr "Align left (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "Align right"
+msgstr "Align right (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "Align bottom"
+msgstr "Align bottom (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "Align vertical center"
+msgstr "Align vertical center (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "Distribute vertical spacing"
+msgstr "Distribute vertical spacing (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "Align top"
+msgstr "Align top (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"
@@ -1988,7 +2023,7 @@ msgstr "Disable snap to grid"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
-msgstr "Enable dynamic aligment"
+msgstr "Enable dynamic alignment"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-scale-text"
@@ -1997,6 +2032,10 @@ msgstr "Enable scale text"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-grid"
 msgstr "Snap to grid"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Hide artboard names"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-assets"
@@ -2023,6 +2062,10 @@ msgid "workspace.header.menu.select-all"
 msgstr "Select all"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Show artboards names"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-assets"
 msgstr "Show assets"
 
@@ -2043,6 +2086,10 @@ msgid "workspace.header.menu.show-rules"
 msgstr "Show rules"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Reset"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.save-error"
 msgstr "Error on saving"
 
@@ -2061,6 +2108,26 @@ msgstr "Unsaved changes"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.viewer"
 msgstr "View mode (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "Fill - Scale to fill"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "Fit - Scale down to fit"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "Zoom to fil all"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-full-screen"
+msgstr "Full screen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "Zoom to selected"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -2258,7 +2325,7 @@ msgstr "Export"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "Export shape"
+msgstr "Export"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -2391,6 +2458,26 @@ msgid "workspace.options.interaction-after-delay"
 msgstr "After delay"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation"
+msgstr "Animation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "Dissolve"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "None"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "Push"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "Slide"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
 msgstr "Add background overlay"
 
@@ -2413,6 +2500,38 @@ msgstr "Delay"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-destination"
 msgstr "Destination"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-duration"
+msgstr "Duration"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing"
+msgstr "Easing"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease"
+msgstr "Ease"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "Ease in"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "Ease in out"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "Ease out"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-linear"
+msgstr "Linear"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-in"
+msgstr "In"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-enter"
@@ -2439,6 +2558,10 @@ msgid "workspace.options.interaction-none"
 msgstr "(not set)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "Offset effect"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-on-click"
 msgstr "On Click"
 
@@ -2453,6 +2576,10 @@ msgstr "Open overlay: %s"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
 msgstr "Open url"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-out"
+msgstr "Out"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-bottom-center"
@@ -2689,6 +2816,10 @@ msgstr "Group shadow"
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Selection shadows"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "Show in exports"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.size"
@@ -2933,6 +3064,10 @@ msgid "workspace.shape.menu.copy"
 msgstr "Copy"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Selection to artboard"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-component"
 msgstr "Create component"
 
@@ -2951,6 +3086,10 @@ msgstr "Delete flow start"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Detach instance"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Detach instances"
 
 msgid "workspace.shape.menu.difference"
 msgstr "Difference"
@@ -3103,7 +3242,7 @@ msgstr "Image (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.move"
-msgstr "Move"
+msgstr "Move (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.path"
@@ -3246,15 +3385,3 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
-
-msgid "errors.team-leave.member-does-not-exists"
-msgstr "The member you try to assign does not exist."
-
-msgid "errors.team-leave.owner-cant-leave"
-msgstr "Owner can't leave team, you must reassign the owner role."
-
-msgid "errors.team-leave.insufficient-members"
-msgstr "Insufficient members to leave team, you probably want to delete it."
-
-msgid "errors.auth.unable-to-login"
-msgstr "Looks like you are not authenticated or session expired."

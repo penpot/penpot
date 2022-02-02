@@ -1,5 +1,6 @@
 (ns app.shapes-test
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
@@ -45,7 +46,7 @@
   (t/testing "asynctest"
     (t/async done
       (let [state {}
-            color {:color "#ffffff"}]
+            color {:color clr/white}]
         (->> state
              (the/do-watch-update
                (dwl/add-recent-color color))

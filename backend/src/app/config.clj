@@ -42,6 +42,7 @@
 
 (def defaults
   {:http-server-port 6060
+   :http-server-host "localhost"
    :host "devenv"
    :tenant "dev"
    :database-uri "postgresql://postgres/penpot"
@@ -132,6 +133,7 @@
 (s/def ::oidc-roles-attr ::us/keyword)
 (s/def ::host ::us/string)
 (s/def ::http-server-port ::us/integer)
+(s/def ::http-server-host ::us/string)
 (s/def ::http-session-idle-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-size ::us/integer)
@@ -221,6 +223,7 @@
                    ::oidc-roles-attr
                    ::oidc-roles
                    ::host
+                   ::http-server-host
                    ::http-server-port
                    ::http-session-idle-max-age
                    ::http-session-updater-batch-max-age

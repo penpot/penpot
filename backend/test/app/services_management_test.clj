@@ -52,7 +52,7 @@
 
       ;; (th/print-result! out)
 
-      ;; Check tha tresult is correct
+      ;; Check that result is correct
       (t/is (nil? (:error out)))
       (let [result (:result out)]
 
@@ -127,7 +127,7 @@
 
       ;; (th/print-result! out)
 
-      ;; Check tha tresult is correct
+      ;; Check that result is correct
       (t/is (nil? (:error out)))
       (let [result (:result out)]
 
@@ -183,7 +183,7 @@
                 :name "project 1 (copy)"}
           out  (th/mutation! data)]
 
-      ;; Check tha tresult is correct
+      ;; Check that result is correct
       (t/is (nil? (:error out)))
 
       (let [result (:result out)]
@@ -254,7 +254,7 @@
                 :name "project 1 (copy)"}
           out  (th/mutation! data)]
 
-      ;; Check tha tresult is correct
+      ;; Check that result is correct
       (t/is (nil? (:error out)))
 
       (let [result (:result out)]

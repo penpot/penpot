@@ -14,7 +14,7 @@
 
    ;; NOTE: don't remove this, causes exception on advanced build
    ;; because of some strange interaction with cljs.spec.alpha and
-   ;; modules spliting.
+   ;; modules splitting.
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]
@@ -30,6 +30,8 @@
 
 (def max-safe-int (int 1e6))
 (def min-safe-int (int -1e6))
+
+(def valid? s/valid?)
 
 ;; --- Conformers
 
@@ -215,8 +217,7 @@
       (ex/raise :type :assertion
                 :code :spec-validation
                 :hint hint
-                :ctx  ctx
-                ::s/problems (::s/problems data)))))
+                ::ex/data (merge ctx data)))))
 
 (defmacro assert
   "Development only assertion macro."
@@ -256,7 +257,7 @@
       (let [data (s/explain-data spec data)]
         (throw (ex/error :type :validation
                          :code :spec-validation
-                         ::s/problems (::s/problems data)))))
+                         ::ex/data data))))
     result))
 
 (defmacro instrument!

@@ -38,8 +38,8 @@
         (.stroke ctx)))
 
     (let [grd (.createRadialGradient ctx cx cy 0 cx cx radius)]
-      (.addColorStop grd 0 "white")
-      (.addColorStop grd 1 "rgba(255, 255, 255, 0")
+      (.addColorStop grd 0 "rgba(255, 255, 255, 1)")
+      (.addColorStop grd 1 "rgba(255, 255, 255, 0)")
       (obj/set! ctx "fillStyle" grd)
 
       (.beginPath ctx)

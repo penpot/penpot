@@ -18,7 +18,6 @@
   top: 40px;
   width: 240px;
   z-index: 12;
-  padding: $size-1 0;
 
   li {
     align-items: center;
@@ -57,7 +56,6 @@
         height: 10px;
       }
     }
-
   }
 }
 
@@ -156,11 +154,6 @@
     overflow: hidden;
     position: relative;
 
-    svg {
-      widht: 100%;
-      height: 100%;
-    }
-
     .viewport-overlays {
       position: absolute;
       width: 100%;
@@ -187,10 +180,10 @@
     .viewport-controls {
       position: absolute;
     }
-
   }
 
-  .page-canvas, .page-layout {
+  .page-canvas,
+  .page-layout {
     overflow: visible;
   }
 
@@ -230,7 +223,6 @@
       stroke: $color-gray-20;
     }
   }
-
 }
 
 .workspace-frame-label {
@@ -239,27 +231,20 @@
 }
 
 .multiuser-cursor {
-  align-items: center;
-  display: flex;
-  left: 0;
-  position: absolute;
-  top: 0;
   z-index: 10000;
+  pointer-events: none;
+}
 
-  svg {
-    height: 15px;
-    fill: #f3dd14;
-    width: 15px;
-  }
-
-  span {
-    background-color: #f3dd14;
-    border-radius: $br-small;
-    color: $color-black;
-    font-size: $fs12;
-    margin-left: $size-2;
-    padding: $size-1;
-  }
+.profile-name {
+  width: fit-content;
+  font-family: worksans;
+  padding: 2px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  height: 20px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .viewport-actions {
@@ -348,4 +333,3 @@
     margin-right: 0;
   }
 }
-

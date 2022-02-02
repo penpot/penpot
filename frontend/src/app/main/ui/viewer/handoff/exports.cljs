@@ -7,36 +7,17 @@
 (ns app.main.ui.viewer.handoff.exports
   (:require
    [app.common.data :as d]
-   [app.main.data.messages :as dm]
-   [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.exports :as we]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 (mf/defc exports
   [{:keys [shape page-id file-id] :as props}]
   (let [exports  (mf/use-state (:exports shape []))
-        loading? (mf/use-state false)
 
-        on-download
-        (mf/use-callback
-         (mf/deps shape @exports)
-         (fn [event]
-           (dom/prevent-default event)
-           (swap! loading? not)
-           (->> (we/request-export (assoc shape :page-id page-id :file-id file-id) @exports)
-                (rx/subs
-                 (fn [{:keys [status body] :as response}]
-                   (js/console.log status body)
-                   (if (= status 200)
-                     (dom/trigger-download (:name shape) body)
-                     (st/emit! (dm/error (tr "errors.unexpected-error")))))
-                 (constantly nil)
-                 (fn []
-                   (swap! loading? not))))))
+        [on-download loading?] (we/use-download-export shape page-id file-id @exports)
 
         add-export
         (mf/use-callback
@@ -118,10 +99,10 @@
             i/minus]])
 
         [:div.btn-icon-dark.download-button
-         {:on-click (when-not @loading? on-download)
-          :class (dom/classnames :btn-disabled @loading?)
-          :disabled @loading?}
-         (if @loading?
+         {:on-click (when-not loading? on-download)
+          :class (dom/classnames :btn-disabled loading?)
+          :disabled loading?}
+         (if loading?
            (tr "workspace.options.exporting-object")
            (tr "workspace.options.export-object"))]])]))
 

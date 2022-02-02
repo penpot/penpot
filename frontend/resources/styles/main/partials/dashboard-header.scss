@@ -58,7 +58,6 @@
         &:hover {
           color: $color-black;
         }
-
       }
 
       &.active {
@@ -115,7 +114,9 @@
     }
 
     &.active {
-      svg { fill: $color-gray-50; }
+      svg {
+        fill: $color-gray-50;
+      }
     }
   }
 }

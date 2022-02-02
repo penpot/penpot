@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bool :as gsb]
    [app.common.geom.shapes.common :as gco]
+   [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.intersect :as gin]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
@@ -56,8 +57,7 @@
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
   (->> shapes
-       (gtr/transform-shape)
-       (map (comp gpr/points->selrect :points))
+       (map (comp gpr/points->selrect :points gtr/transform-shape))
        (gpr/join-selrects)))
 
 (defn translate-to-frame
@@ -150,6 +150,7 @@
 (d/export gpr/points->rect)
 (d/export gpr/center->rect)
 (d/export gpr/join-rects)
+(d/export gpr/contains-selrect?)
 
 (d/export gtr/move)
 (d/export gtr/absolute-move)
@@ -163,7 +164,12 @@
 (d/export gtr/rotation-modifiers)
 (d/export gtr/merge-modifiers)
 (d/export gtr/transform-shape)
-(d/export gtr/calc-child-modifiers)
+(d/export gtr/transform-selrect)
+(d/export gtr/modifiers->transform)
+(d/export gtr/empty-modifiers?)
+
+;; Constratins
+(d/export gct/calc-child-modifiers)
 
 ;; PATHS
 (d/export gsp/content->selrect)
@@ -178,3 +184,4 @@
 
 ;; Bool
 (d/export gsb/update-bool-selrect)
+(d/export gsb/calc-bool-content)

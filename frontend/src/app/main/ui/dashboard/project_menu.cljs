@@ -6,6 +6,7 @@
 
 (ns app.main.ui.dashboard.project-menu
   (:require
+   [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
@@ -17,14 +18,24 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
+   [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
+
+(s/def ::project some?)
+(s/def ::show? boolean?)
+(s/def ::on-edit fn?)
+(s/def ::on-menu-close fn?)
+(s/def ::top (s/nilable ::us/number))
+(s/def ::left (s/nilable ::us/number))
+(s/def ::on-import fn?)
+
+(s/def ::project-menu
+  (s/keys :req-un [::project ::show? ::on-edit ::on-menu-close]
+          :opt-un [::top ::left ::on-import]))
 
 (mf/defc project-menu
   [{:keys [project show? on-edit on-menu-close top left on-import] :as props}]
-  (assert (some? project) "missing `project` prop")
-  (assert (boolean? show?) "missing `show?` prop")
-  (assert (fn? on-edit) "missing `on-edit` prop")
-  (assert (fn? on-menu-close) "missing `on-menu-close` prop")
+  (us/verify ::project-menu props)
   (let [top  (or top 0)
         left (or left 0)
 
@@ -83,7 +94,7 @@
         on-finish-import
         (mf/use-callback
          (fn []
-           (when (some? on-import) (on-import))))]
+           (when (fn? on-import) (on-import))))]
 
     [:*
      [:& udi/import-form {:ref file-input

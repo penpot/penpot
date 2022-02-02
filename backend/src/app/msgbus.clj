@@ -243,7 +243,7 @@
             (recur))
           (a/close! rcv-ch)))
 
-      ;; Asyncrhonous message processing loop;x
+      ;; Asynchronous message processing loop;x
       (a/go-loop []
         (if-let [{:keys [topic message]} (a/<! rcv-ch)]
           ;; This means we receive data from redis and we need to

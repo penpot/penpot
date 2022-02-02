@@ -14,7 +14,7 @@
 ;; CONSTANTS
 ;; ------------------------------------------------
 
-(def select-color "#1FDEA7")
+(def select-color "var(--color-select)")
 (def selection-rect-width 1)
 (def select-guide-width 1)
 (def select-guide-dasharray 5)
@@ -57,8 +57,7 @@
   (let [{:keys [hover selected zoom]} local
         hover-shape     (-> (or (first (resolve-shapes objects [hover])) frame)
                             (gsh/translate-to-frame frame))
-        selected-shapes (->> (resolve-shapes objects selected)
-                             (map #(gsh/translate-to-frame % frame)))
+        selected-shapes (->> (resolve-shapes objects selected))
 
         selrect         (gsh/selection-rect selected-shapes)
         bounds          (frame->bounds frame)]

@@ -25,7 +25,12 @@
        (let [;; When not active the embedding we return the URI
              url-mapping (fn [obs]
                            (if embed?
-                             (rx/merge-map http/fetch-data-uri obs)
+                             (->> obs
+                                  (rx/merge-map
+                                   (fn [uri]
+                                     (->> (http/fetch-data-uri uri true)
+                                          ;; If fetching give an error we store the URI as its `data-uri`
+                                          (rx/catch #(rx/of (hash-map uri uri)))))))
                              (rx/map identity obs)))
 
              sub (->> (rx/from urls)
@@ -38,6 +43,6 @@
          #(when sub
             (rx/dispose! sub)))))
 
-    ;; Use ref so if the urls are cached will return inmediately instead of the
+    ;; Use ref so if the urls are cached will return immediately instead of the
     ;; next render
     (mf/ref-val uri-data)))

@@ -29,7 +29,6 @@
         font-size: $fs14;
 
         margin-bottom: 16px;
-
       }
       .actions {
         display: flex;
@@ -37,7 +36,6 @@
       }
     }
   }
-
 
   .modal-content {
     padding: 26px;
@@ -59,7 +57,6 @@
         margin-right: 0px;
       }
     }
-
 
     .share-link-section {
       margin-top: 12px;
@@ -93,7 +90,8 @@
         padding-left: 20px;
         display: flex;
 
-        > .input-checkbox, > .input-radio {
+        > .input-checkbox,
+        > .input-radio {
           display: flex;
           user-select: none;
 

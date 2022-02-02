@@ -6,6 +6,8 @@
 
 (ns app.rpc.queries.files
   (:require
+   [app.common.data :as d]
+   [app.common.pages :as cp]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -84,8 +86,8 @@
    (let [perms  (get-permissions conn profile-id file-id)
          ldata  (retrieve-share-link conn file-id share-id)]
 
-     ;; NOTE: in a future when share-link becomes more powerfull and
-     ;; will allow us specify which parts of the app is availabel, we
+     ;; NOTE: in a future when share-link becomes more powerful and
+     ;; will allow us specify which parts of the app is available, we
      ;; will probably need to tweak this function in order to expose
      ;; this flags to the frontend.
      (cond
@@ -165,6 +167,7 @@
           f.created_at,
           f.modified_at,
           f.name,
+          f.revn,
           f.is_shared
      from file as f
     where f.project_id = ?
@@ -214,11 +217,66 @@
       (some-> (retrieve-file cfg id)
               (assoc :permissions perms)))))
 
-(s/def ::page
-  (s/keys :req-un [::profile-id ::file-id]))
+(declare trim-file-data)
 
-(defn remove-thumbnails-frames
-  "Removes from data the children for frames that have a thumbnail set up"
+(s/def ::page-id ::us/uuid)
+(s/def ::object-id ::us/uuid)
+
+(s/def ::trimmed-file
+  (s/keys :req-un [::profile-id ::id ::object-id ::page-id]))
+
+(sv/defmethod ::trimmed-file
+  "Retrieve a file by its ID and trims all unnecesary content from
+  it. It is mainly used for rendering a concrete object, so we don't
+  need force download all shapes when only a small subset is
+  necesseary."
+  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  (db/with-atomic [conn pool]
+    (let [cfg   (assoc cfg :conn conn)
+          perms (get-permissions conn profile-id id)]
+      (check-read-permissions! perms)
+      (some-> (retrieve-file cfg id)
+              (trim-file-data params)
+              (assoc :permissions perms)))))
+
+(defn- trim-file-data
+  [file {:keys [page-id object-id]}]
+  (let [page    (get-in file [:data :pages-index page-id])
+        objects (->> (:objects page)
+                     (cp/get-object-with-children object-id)
+                     (map #(dissoc % :thumbnail)))
+
+        objects (d/index-by :id objects)
+        page    (assoc page :objects objects)]
+
+    (-> file
+        (update :data assoc :pages-index {page-id page})
+        (update :data assoc :pages [page-id]))))
+
+(declare strip-frames-with-thumbnails)
+
+(s/def ::strip-frames-with-thumbnails ::us/boolean)
+
+(s/def ::page
+  (s/keys :req-un [::profile-id ::file-id]
+          :opt-un [::strip-frames-with-thumbnails]))
+
+(sv/defmethod ::page
+  "Retrieves the first page of the file. Used mainly for render
+  thumbnails on dashboard."
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
+  (db/with-atomic [conn pool]
+    (check-read-permissions! conn profile-id file-id)
+
+    (let [cfg     (assoc cfg :conn conn)
+          file    (retrieve-file cfg file-id)
+          page-id (get-in file [:data :pages 0])]
+      (cond-> (get-in file [:data :pages-index page-id])
+        (true? (:strip-frames-with-thumbnails props))
+        (strip-frames-with-thumbnails)))))
+
+(defn strip-frames-with-thumbnails
+  "Remove unnecesary shapes from frames that have thumbnail."
   [data]
   (let [filter-shape?
         (fn [objects [id shape]]
@@ -227,7 +285,7 @@
                 (= frame-id uuid/zero)
                 (not (some? (get-in objects [frame-id :thumbnail]))))))
 
-        ;; We need to remove from the attribute :shapes its childrens because
+        ;; We need to remove from the attribute :shapes its children because
         ;; they will not be sent in the data
         remove-frame-children
         (fn [[id shape]]
@@ -244,22 +302,12 @@
 
     (update data :objects update-objects)))
 
-(sv/defmethod ::page
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id strip-thumbnails]}]
-  (db/with-atomic [conn pool]
-    (check-read-permissions! conn profile-id file-id)
-
-    (let [cfg     (assoc cfg :conn conn)
-          file    (retrieve-file cfg file-id)
-          page-id (get-in file [:data :pages 0])]
-      (cond-> (get-in file [:data :pages-index page-id])
-        strip-thumbnails
-        (remove-thumbnails-frames)))))
 
 ;; --- Query: Shared Library Files
 
 (def ^:private sql:team-shared-files
   "select f.id,
+          f.revn,
           f.project_id,
           f.created_at,
           f.modified_at,
@@ -330,6 +378,7 @@
 (def sql:team-recent-files
   "with recent_files as (
      select f.id,
+            f.revn,
             f.project_id,
             f.created_at,
             f.modified_at,

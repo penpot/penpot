@@ -8,6 +8,7 @@
   (:require
    [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
+   [app.main.data.dashboard.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -20,6 +21,7 @@
    [app.main.ui.dashboard.search :refer [search-page]]
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
    [app.main.ui.dashboard.team :refer [team-settings-page team-members-page]]
+   [app.main.ui.hooks :as hooks]
    [rumext.alpha :as mf]))
 
 (defn ^boolean uuid-str?
@@ -88,6 +90,8 @@
         projects     (mf/deref refs/dashboard-projects)
         project      (get projects project-id)]
 
+    (hooks/use-shortcuts ::dashboard sc/shortcuts)
+
     (mf/use-effect
      (mf/deps team-id)
      (fn []
@@ -99,8 +103,8 @@
       ;; that the team is a implicit context variable that is
       ;; available using react context or accessing
       ;; the :current-team-id on the state. We set the key to the
-      ;; team-id becase we want to completly refresh all the
-      ;; components on team change. Many components assumess that the
+      ;; team-id because we want to completely refresh all the
+      ;; components on team change. Many components assumes that the
       ;; team is already set so don't put the team into mf/deps.
       (when team
         [:section.dashboard-layout {:key (:id team)}

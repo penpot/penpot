@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.main.refs :as refs]
@@ -32,6 +33,7 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [beicon.core :as rx]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
 ;; --- Viewport
@@ -42,7 +44,6 @@
         ;; that the new parameter is sent
         {:keys [edit-path
                 edition
-                modifiers
                 options-mode
                 panning
                 picking-color?
@@ -60,12 +61,12 @@
         ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
         options           (mf/deref refs/workspace-page-options)
-        objects           (mf/deref refs/workspace-page-objects)
-        object-modifiers  (mf/deref refs/workspace-modifiers)
-        objects           (mf/use-memo
-                           (mf/deps objects object-modifiers)
-                           #(gsh/merge-modifiers objects object-modifiers))
-        background        (get options :background "#E8E9EA")
+        base-objects      (mf/deref refs/workspace-page-objects)
+        modifiers         (mf/deref refs/workspace-modifiers)
+        objects-modified  (mf/use-memo
+                           (mf/deps base-objects modifiers)
+                           #(gsh/merge-modifiers base-objects modifiers))
+        background        (get options :background clr/canvas)
 
         ;; STATE
         alt?              (mf/use-state false)
@@ -80,7 +81,6 @@
 
         ;; REFS
         viewport-ref      (mf/use-ref nil)
-        render-ref        (mf/use-ref nil)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -93,25 +93,21 @@
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
-        selected-shapes   (into []
-                                (comp (map #(get objects %))
-                                      (filter some?))
-                                selected)
+        selected-shapes   (into [] (keep (d/getf objects-modified)) selected)
         selected-frames   (into #{} (map :frame-id) selected-shapes)
 
         ;; Only when we have all the selected shapes in one frame
-        selected-frame    (when (= (count selected-frames) 1) (get objects (first selected-frames)))
-
+        selected-frame    (when (= (count selected-frames) 1) (get base-objects (first selected-frames)))
 
         create-comment?   (= :comments drawing-tool)
         drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
-        node-editing?     (and edition (not= :text (get-in objects [edition :type])))
-        text-editing?     (and edition (= :text (get-in objects [edition :type])))
+        node-editing?     (and edition (not= :text (get-in base-objects [edition :type])))
+        text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool)
         on-context-menu   (actions/on-context-menu hover)
-        on-double-click   (actions/on-double-click hover hover-ids drawing-path? objects edition)
+        on-double-click   (actions/on-double-click hover hover-ids drawing-path? base-objects edition)
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file viewport-ref zoom)
@@ -124,6 +120,7 @@
         on-pointer-move   (actions/on-pointer-move viewport-ref zoom move-stream)
         on-pointer-up     (actions/on-pointer-up)
         on-move-selected  (actions/on-move-selected hover hover-ids selected)
+        on-menu-selected  (actions/on-menu-selected hover hover-ids selected)
 
         on-frame-enter    (actions/on-frame-enter frame-hover)
         on-frame-leave    (actions/on-frame-leave frame-hover)
@@ -147,22 +144,23 @@
                                           (contains? layout :snap-grid))
                                       (or drawing-obj transform))
         show-selrect?            (and selrect (empty? drawing))
-        show-measures?           (and (not transform) (not node-editing?) show-distances?)]
+        show-measures?           (and (not transform) (not node-editing?) show-distances?)
+        show-artboard-names?              (contains? layout :display-artboard-names)]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
     (hooks/setup-viewport-size viewport-ref)
     (hooks/setup-cursor cursor alt? panning drawing-tool drawing-path? node-editing?)
     (hooks/setup-resize layout viewport-ref)
     (hooks/setup-keyboard alt? ctrl? space?)
-    (hooks/setup-hover-shapes page-id move-stream objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
-    (hooks/setup-viewport-modifiers modifiers selected objects render-ref)
+    (hooks/setup-hover-shapes page-id move-stream base-objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
+    (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path?)
-    (hooks/setup-active-frames objects vbox hover active-frames)
+    (hooks/setup-active-frames base-objects vbox hover active-frames)
 
     [:div.viewport
      [:div.viewport-overlays
 
-      [:& wtr/frame-renderer {:objects objects
+      [:& wtr/frame-renderer {:objects base-objects
                               :background background}]
 
       (when show-comments?
@@ -181,9 +179,9 @@
                                          :viewport-ref viewport-ref}])
 
       [:& widgets/viewport-actions]]
+
      [:svg.render-shapes
       {:id "render"
-       :ref render-ref
        :xmlns "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :xmlns:penpot "https://penpot.app/xmlns"
@@ -197,11 +195,11 @@
 
       [:& use/export-page {:options options}]
 
-      [:& (mf/provider use/include-metadata-ctx) {:value false}
+      [:& (mf/provider use/include-metadata-ctx) {:value (debug? :show-export-metadata)}
        [:& (mf/provider embed/context) {:value true}
         ;; Render root shape
         [:& shapes/root-shape {:key page-id
-                               :objects objects
+                               :objects base-objects
                                :active-frames @active-frames}]]]]
 
      [:svg.viewport-controls
@@ -233,7 +231,7 @@
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-outlines?
          [:& outline/shape-outlines
-          {:objects objects
+          {:objects base-objects
            :selected selected
            :hover (when (not= :frame (:type @hover))
                     #{(or @frame-hover (:id @hover))})
@@ -247,7 +245,8 @@
            :zoom zoom
            :edition edition
            :disable-handlers (or drawing-tool edition)
-           :on-move-selected on-move-selected}])
+           :on-move-selected on-move-selected
+           :on-context-menu on-menu-selected}])
 
        (when show-measures?
          [:& msr/measurement
@@ -258,13 +257,14 @@
            :zoom zoom}])
 
        (when text-editing?
-         [:& editor/text-shape-edit {:shape (get objects edition)}])
+         [:& editor/text-shape-edit {:shape (get base-objects edition)}])
 
        [:& widgets/frame-titles
-        {:objects objects
+        {:objects objects-modified
          :selected selected
          :zoom zoom
          :modifiers modifiers
+         :show-artboard-names? show-artboard-names?
          :on-frame-enter on-frame-enter
          :on-frame-leave on-frame-leave
          :on-frame-select on-frame-select}]
@@ -272,7 +272,7 @@
        (when show-prototypes?
          [:& widgets/frame-flows
           {:flows (:flows options)
-           :objects objects
+           :objects base-objects
            :selected selected
            :zoom zoom
            :modifiers modifiers
@@ -309,7 +309,7 @@
            :zoom zoom
            :page-id page-id
            :selected selected
-           :objects objects
+           :objects base-objects
            :modifiers modifiers}])
 
        (when show-snap-distance?
@@ -334,6 +334,9 @@
        (when show-prototypes?
          [:& interactions/interactions
           {:selected selected
+           :zoom zoom
+           :objects objects-modified
+           :current-transform transform
            :hover-disabled? hover-disabled?}])
 
        (when show-selrect?

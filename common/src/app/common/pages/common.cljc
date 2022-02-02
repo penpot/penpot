@@ -6,10 +6,11 @@
 
 (ns app.common.pages.common
   (:require
+   [app.common.colors :as clr]
    [app.common.uuid :as uuid]))
 
 (def file-version 12)
-(def default-color "#b1b2b5") ;; $color-gray-20
+(def default-color clr/gray-20)
 (def root uuid/zero)
 
 (def component-sync-attrs
@@ -19,6 +20,7 @@
    :fill-color-gradient   :fill-group
    :fill-color-ref-file   :fill-group
    :fill-color-ref-id     :fill-group
+   :hide-fill-on-export   :fill-group
    :content               :content-group
    :hidden                :visibility-group
    :blocked               :modifiable-group

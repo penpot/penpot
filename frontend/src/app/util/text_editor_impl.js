@@ -121,15 +121,33 @@ export function updateCurrentBlockData(state, attrs) {
   return EditorState.push(state, content, "change-block-data");
 }
 
+function addStylesToOverride(styles, other) {
+  let result = styles;
+
+  for (let style of other) {
+    const [p, k, v] = style.split("$$$");
+    const prefix = [p, k, ""].join("$$$");
+
+    const curValue = result.find((it) => it.startsWith(prefix))
+    if (curValue) {
+      result = result.remove(curValue);
+    }
+    result = result.add(style);
+  }
+  return result
+}
+
 export function applyInlineStyle(state, styles) {
   const userSelection = state.getSelection();
   let selection = userSelection;
+  let result = state;
 
   if (selection.isCollapsed()) {
-    selection = getSelectAllSelection(state);
+    const currentOverride = state.getCurrentInlineStyle() || new OrderedSet();
+    const styleOverride = addStylesToOverride(currentOverride, styles)
+    return EditorState.setInlineStyleOverride(state, styleOverride);
   }
 
-  let result = state;
   let content = null;
 
   for (let style of styles) {
@@ -300,6 +318,7 @@ export function getBlockData(state, blockKey) {
 
 export function updateBlockData(state, blockKey, data) {
   const userSelection = state.getSelection();
+  const inlineStyleOverride = state.getInlineStyleOverride();
   const content = state.getCurrentContent();
   const block = content.getBlockForKey(blockKey);
   const newBlock = mergeBlockData(block, data);
@@ -312,8 +331,10 @@ export function updateBlockData(state, blockKey, data) {
     blockData
   );
 
-  const result = EditorState.push(state, newContent, 'change-block-data');
-  return EditorState.acceptSelection(result, userSelection);
+  let result = EditorState.push(state, newContent, 'change-block-data');
+  result = EditorState.acceptSelection(result, userSelection);
+  result = EditorState.setInlineStyleOverride(result, inlineStyleOverride);
+  return result;
 }
 
 export function getSelection(state) {
@@ -375,4 +396,16 @@ export function insertText(state, text, attrs, inlineStyles) {
 
   const resultSelection = SelectionState.createEmpty(selection.getStartKey());
   return EditorState.push(state, newContent, 'insert-fragment');
+}
+
+export function setInlineStyleOverride(state, inlineStyles) {
+  return EditorState.setInlineStyleOverride(state, inlineStyles);
+}
+
+export function selectionEquals(selection, other) {
+  return selection.getAnchorKey() === other.getAnchorKey() &&
+    selection.getAnchorOffset() === other.getAnchorOffset() &&
+    selection.getFocusKey() === other.getFocusKey() &&
+    selection.getFocusOffset() === other.getFocusOffset() &&
+    selection.getIsBackward() === other.getIsBackward();
 }

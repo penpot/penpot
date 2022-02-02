@@ -8,7 +8,7 @@
 (t/deftest test-parser-inst
   (t/testing "Evaluate an empty string"
     (let [result (sm/expr-eval "" 999)]
-      (t/is (= result 0))))
+      (t/is (= result nil))))
 
   (t/testing "Evaluate a single number"
     (let [result (sm/expr-eval "10" 999)]

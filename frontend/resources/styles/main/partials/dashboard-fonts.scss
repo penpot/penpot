@@ -56,7 +56,6 @@
   }
 
   .font-item {
-    margin-top: $size-5;
     color: $color-gray-40;
     font-size: $fs14;
     background-color: $color-white;
@@ -163,6 +162,10 @@
 
     .upload-button {
       width: 100px;
+    }
+
+    .btn-secondary {
+      margin-left: 10px;
     }
   }
 

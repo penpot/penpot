@@ -168,21 +168,22 @@
     `(write-log! ~(or logger (str *ns*))
                  ~level
                  ~cause
-                 ~(dissoc props :level :cause ::logger ::raw))
+                 (or ~raw ~(dissoc props :level :cause ::logger ::raw)))
     (let [props      (dissoc props :level :cause ::logger ::async ::raw)
           logger     (or logger (str *ns*))
           logger-sym (gensym "log")
           level-sym  (gensym "log")]
       `(let [~logger-sym (get-logger ~logger)
              ~level-sym  (get-level ~level)]
-         (if (enabled? ~logger-sym ~level-sym)
+         (when (enabled? ~logger-sym ~level-sym)
            ~(if async
-              `(let [cdata# (ThreadContext/getImmutableContext)]
-                 (send-off logging-agent
-                           (fn [_#]
-                             (with-context (into {:cause ~cause} cdata#)
-                               (->> (or ~raw (build-map-message ~props))
-                                    (write-log! ~logger-sym ~level-sym ~cause))))))
+              `(->> (ThreadContext/getImmutableContext)
+                    (send-off logging-agent
+                              (fn [_# cdata#]
+                                (with-context (into {} cdata#)
+                                  (->> (or ~raw (build-map-message ~props))
+                                       (write-log! ~logger-sym ~level-sym ~cause))))))
+
               `(let [message# (or ~raw (build-map-message ~props))]
                  (write-log! ~logger-sym ~level-sym ~cause message#))))))))
 
@@ -297,7 +298,7 @@
 
 #?(:cljs
    (defn default-handler
-     [{:keys [message level logger-name]}]
+     [{:keys [message level logger-name exception] :as params}]
      (let [header-styles (str "font-weight: 600; color: " (level->color level))
            normal-styles (str "font-weight: 300; color: " (get colors :gray6))
            level-name    (level->short-name level)
@@ -318,7 +319,13 @@
                             (js/console.error v))))
                (js/console.groupEnd message))
              (let [message (str header "%c" (pr-str message))]
-               (js/console.log message header-styles normal-styles))))))))
+               (js/console.log message header-styles normal-styles)))))
+
+       (when exception
+         (when-let [data (ex-data exception)]
+           (js/console.error "cause data:" (pr-str data)))
+         (js/console.error (.-stack exception))))))
+
 
 #?(:cljs
    (defn record->map

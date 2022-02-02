@@ -15,10 +15,10 @@
    [app.main.store :as st]
    [app.main.ui.cursors :as cur]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
-   [app.util.debug :refer [debug?]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [cuerdas.core :as str]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]
    [rumext.util :refer [map->obj]]))
 
@@ -27,13 +27,13 @@
 (def resize-point-circle-radius 10)
 (def resize-point-rect-size 8)
 (def resize-side-height 8)
-(def selection-rect-color-normal "#1FDEA7")
-(def selection-rect-color-component "#00E0FF")
+(def selection-rect-color-normal "var(--color-select)")
+(def selection-rect-color-component "var(--color-component-highlight)")
 (def selection-rect-width 1)
 (def min-selrect-side 10)
 (def small-selrect-side 30)
 
-(mf/defc selection-rect [{:keys [transform rect zoom color on-move-selected]}]
+(mf/defc selection-rect [{:keys [transform rect zoom color on-move-selected on-context-menu]}]
   (when rect
     (let [{:keys [x y width height]} rect]
       [:rect.main.viewport-selrect
@@ -43,6 +43,7 @@
         :height height
         :transform transform
         :on-mouse-down on-move-selected
+        :on-context-menu on-context-menu
         :style {:stroke color
                 :stroke-width (/ selection-rect-width zoom)
                 :fill "none"}}])))
@@ -149,7 +150,7 @@
                :style {:fillOpacity "1"
                        :strokeWidth "1px"
                        :vectorEffect "non-scaling-stroke"}
-               :fill "#FFFFFF"
+               :fill "var(--color-white)"
                :stroke (if (and (= position :bottom-right) overflow-text) "red" color)
                :cx cx'
                :cy cy'}]
@@ -179,7 +180,7 @@
        )]))
 
 (mf/defc resize-side-handler
-  "The side handler is always rendered horizontaly and then rotated"
+  "The side handler is always rendered horizontally and then rotated"
   [{:keys [x y length align angle zoom position rotation transform on-resize]}]
   (let [res-point (if (#{:top :bottom} position)
                     {:y y}
@@ -223,6 +224,7 @@
         zoom              (obj/get props "zoom")
         color             (obj/get props "color")
         on-move-selected  (obj/get props "on-move-selected")
+        on-context-menu   (obj/get props "on-context-menu")
         on-resize         (obj/get props "on-resize")
         on-rotate         (obj/get props "on-rotate")
         disable-handlers  (obj/get props "disable-handlers")
@@ -244,7 +246,8 @@
                            :transform transform
                            :zoom zoom
                            :color color
-                           :on-move-selected on-move-selected}]
+                           :on-move-selected on-move-selected
+                           :on-context-menu on-context-menu}]
 
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect shape zoom)]
@@ -281,7 +284,7 @@
                           :fill "none"}}]]))
 
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes selected zoom color disable-handlers on-move-selected] :as props}]
+  [{:keys [shapes selected zoom color disable-handlers on-move-selected on-context-menu] :as props}]
   (let [shape (mf/use-memo
                (mf/deps shapes)
                #(->> shapes
@@ -310,17 +313,20 @@
                    :disable-handlers disable-handlers
                    :on-move-selected on-move-selected
                    :on-resize on-resize
-                   :on-rotate on-rotate}]
+                   :on-rotate on-rotate
+                   :on-context-menu on-context-menu}]
 
      (when (debug? :selection-center)
        [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}])]))
 
 (mf/defc single-selection-handlers
-  [{:keys [shape zoom color disable-handlers on-move-selected] :as props}]
+  [{:keys [shape zoom color disable-handlers on-move-selected on-context-menu] :as props}]
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape {:round-coords? false})
 
-        shape' (if (debug? :simple-selection) (geom/setup {:type :rect} (geom/selection-rect [shape])) shape)
+        shape' (if (debug? :simple-selection)
+                 (geom/setup {:type :rect} (geom/selection-rect [shape]))
+                 shape)
 
         on-resize
         (fn [current-position _initial-position event]
@@ -340,11 +346,12 @@
                   :on-rotate on-rotate
                   :on-resize on-resize
                   :disable-handlers disable-handlers
-                  :on-move-selected on-move-selected}]))
+                  :on-move-selected on-move-selected
+                  :on-context-menu on-context-menu}]))
 
 (mf/defc selection-handlers
   {::mf/wrap [mf/memo]}
-  [{:keys [shapes selected edition zoom disable-handlers on-move-selected] :as props}]
+  [{:keys [shapes selected edition zoom disable-handlers on-move-selected on-context-menu] :as props}]
   (let [num (count shapes)
         {:keys [type] :as shape} (first shapes)
 
@@ -361,7 +368,8 @@
                                        :zoom zoom
                                        :color color
                                        :disable-handlers disable-handlers
-                                       :on-move-selected on-move-selected}]
+                                       :on-move-selected on-move-selected
+                                       :on-context-menu on-context-menu}]
 
       (and (= type :text)
            (= edition (:id shape)))
@@ -378,4 +386,5 @@
                                      :zoom zoom
                                      :color color
                                      :disable-handlers disable-handlers
-                                     :on-move-selected on-move-selected}])))
+                                     :on-move-selected on-move-selected
+                                     :on-context-menu on-context-menu}])))

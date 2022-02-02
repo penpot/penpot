@@ -6,12 +6,29 @@
  :builds
  {:test
   {:target :node-test
-   :output-to "target/tests.js"
+   :output-to "target/test.js"
+   :output-dir "target/test/"
    :ns-regexp "^app.common.*-test$"
-   ;; :autorun true
+   :autorun true
 
    :compiler-options
    {:output-feature-set :es-next
     :output-wrapper false
-    :warnings {:fn-deprecated false}}}}}
+    :source-map true
+    :source-map-include-sources-content true
+    :source-map-detail-level :all
+    :warnings {:fn-deprecated false}}}
+
+  :bench
+  {:target :node-script
+   :output-to "target/bench.js"
+   :output-dir "target/bench/"
+   :main bench/main
+   :devtools {:autoload false}
+
+   :compiler-options
+   {:output-feature-set :es-next
+    :output-wrapper false}}}
+ }
+
 

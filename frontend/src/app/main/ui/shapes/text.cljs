@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.text
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
    [app.main.ui.context :as muc]
@@ -135,7 +136,7 @@
              (filter some?))
 
         colors (->> color-data
-                    (into #{"#000000"}
+                    (into #{clr/black}
                           (comp (filter #(= :solid (:type %)))
                                 (map :hex))))
 
@@ -208,7 +209,7 @@
                      :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
                      :style (-> (obj/new) (attrs/add-layer-props shape))
                      :ref ref}
-     ;; We use a class here because react has a bug that won't use the appropiate selector for
+     ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`
      [:style ".text-node { background-clip: text;
                            -webkit-background-clip: text;" ]

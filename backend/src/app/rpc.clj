@@ -29,7 +29,7 @@
   response)
 
 (defn- rpc-query-handler
-  [methods {:keys [profile-id] :as request}]
+  [methods {:keys [profile-id session-id] :as request}]
   (let [type   (keyword (get-in request [:path-params :type]))
 
         data   (merge (:params request)
@@ -38,7 +38,7 @@
                       {::request request})
 
         data   (if profile-id
-                 (assoc data :profile-id profile-id)
+                 (assoc data :profile-id profile-id ::session-id session-id)
                  (dissoc data :profile-id))
 
         result ((get methods type default-handler) data)
@@ -49,7 +49,7 @@
       ((:transform-response mdata) request))))
 
 (defn- rpc-mutation-handler
-  [methods {:keys [profile-id] :as request}]
+  [methods {:keys [profile-id session-id] :as request}]
   (let [type   (keyword (get-in request [:path-params :type]))
         data   (merge (:params request)
                       (:body-params request)
@@ -57,7 +57,7 @@
                       {::request request})
 
         data   (if profile-id
-                 (assoc data :profile-id profile-id)
+                 (assoc data :profile-id profile-id ::session-id session-id)
                  (dissoc data :profile-id))
 
         result ((get methods type default-handler) data)

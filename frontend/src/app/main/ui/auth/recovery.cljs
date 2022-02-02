@@ -42,7 +42,7 @@
 
 (defn- on-success
   [_]
-  (st/emit! (dm/info (tr "auth.notifications.password-changed-succesfully"))
+  (st/emit! (dm/info (tr "auth.notifications.password-changed-successfully"))
             (rt/nav :auth-login)))
 
 (defn- on-submit

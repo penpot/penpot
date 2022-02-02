@@ -6,28 +6,65 @@
 
 (ns app.main.ui.viewer.header
   (:require
+   [app.common.math :as mth]
    [app.main.data.modal :as modal]
    [app.main.data.viewer :as dv]
+   [app.main.data.viewer.shortcuts :as sc]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.fullscreen :as fs]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.comments :refer [comments-menu]]
    [app.main.ui.viewer.interactions :refer [flows-menu interactions-menu]]
-   [app.main.ui.workspace.header :refer [zoom-widget]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
+(mf/defc zoom-widget
+  {::mf/wrap [mf/memo]}
+  [{:keys [zoom
+           on-increase
+           on-decrease
+           on-zoom-reset
+           on-fullscreen
+           on-zoom-fit
+           on-zoom-fill]
+    :as props}]
+  (let [show-dropdown? (mf/use-state false)]
+    [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
+     [:span.label {} (str (mth/round (* 100 zoom)) "%")]
+     [:span.icon i/arrow-down]
+     [:& dropdown {:show @show-dropdown?
+                   :on-close #(reset! show-dropdown? false)}
+      [:ul.dropdown
+       [:li.basic-zoom-bar
+        [:span.zoom-btns
+         [:button {:on-click (fn [event]
+                               (dom/stop-propagation event)
+                               (dom/prevent-default event)
+                               (on-decrease))} "-"]
+         [:p.zoom-size {} (str (mth/round (* 100 zoom)) "%")]
+         [:button {:on-click (fn [event]
+                               (dom/stop-propagation event)
+                               (dom/prevent-default event)
+                               (on-increase))} "+"]]
+        [:button.reset-btn {:on-click on-zoom-reset} (tr "workspace.header.reset-zoom")]]
+       [:li.separator]
+       [:li {:on-click on-zoom-fit}
+        (tr "workspace.header.zoom-fit") [:span (sc/get-tooltip :toggle-zoom-style)]]
+       [:li {:on-click on-zoom-fill}
+        (tr "workspace.header.zoom-fill") [:span (sc/get-tooltip :toggle-zoom-style)]]
+       [:li {:on-click on-fullscreen}
+        (tr "workspace.header.zoom-full-screen") [:span (sc/get-tooltip :toogle-fullscreen)]]]]]))
+
+
 (mf/defc header-options
   [{:keys [section zoom page file index permissions]}]
-  (let [fullscreen (mf/use-ctx fs/fullscreen-context)
+  (let [fullscreen? (mf/deref refs/fullscreen?)
 
         toggle-fullscreen
         (mf/use-callback
-         (mf/deps fullscreen)
-         (fn []
-           (if @fullscreen (fullscreen false) (fullscreen true))))
+         (fn [] (st/emit! dv/toggle-fullscreen)))
 
         go-to-workspace
         (mf/use-callback
@@ -55,15 +92,15 @@
       {:zoom zoom
        :on-increase (st/emitf dv/increase-zoom)
        :on-decrease (st/emitf dv/decrease-zoom)
-       :on-zoom-to-50 (st/emitf dv/zoom-to-50)
-       :on-zoom-to-100 (st/emitf dv/reset-zoom)
-       :on-zoom-to-200 (st/emitf dv/zoom-to-200)
+       :on-zoom-reset (st/emitf dv/reset-zoom)
+       :on-zoom-fill (st/emitf dv/zoom-to-fill)
+       :on-zoom-fit (st/emitf dv/zoom-to-fit)
        :on-fullscreen toggle-fullscreen}]
 
      [:span.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
       {:alt (tr "viewer.header.fullscreen")
        :on-click toggle-fullscreen}
-      (if @fullscreen
+      (if fullscreen?
         i/full-screen-off
         i/full-screen)]
 
@@ -103,31 +140,31 @@
            (st/emit! (dv/go-to-page page-id))
            (reset! show-dropdown? false)))]
 
-     [:div.sitemap-zone {:alt (tr "viewer.header.sitemap")}
-      [:div.breadcrumb
-       {:on-click open-dropdown}
-       [:span.project-name project-name]
-       [:span "/"]
-       [:span.file-name file-name]
-       [:span "/"]
+    [:div.sitemap-zone {:alt (tr "viewer.header.sitemap")}
+     [:div.breadcrumb
+      {:on-click open-dropdown}
+      [:span.project-name project-name]
+      [:span "/"]
+      [:span.file-name file-name]
+      [:span "/"]
 
-       [:span.page-name page-name]
-       [:span.icon i/arrow-down]
+      [:span.page-name page-name]
+      [:span.icon i/arrow-down]
 
-       [:& dropdown {:show @show-dropdown?
-                     :on-close close-dropdown}
-        [:ul.dropdown
-         (for [id (get-in file [:data :pages])]
-           [:li {:id (str id)
-                 :on-click (partial navigate-to id)}
-            (get-in file [:data :pages-index id :name])])]]]
+      [:& dropdown {:show @show-dropdown?
+                    :on-close close-dropdown}
+       [:ul.dropdown
+        (for [id (get-in file [:data :pages])]
+          [:li {:id (str id)
+                :on-click (partial navigate-to id)}
+           (get-in file [:data :pages-index id :name])])]]]
 
-      [:div.current-frame
-       {:on-click toggle-thumbnails}
-       [:span.label "/"]
-       [:span.label frame-name]
-       [:span.icon i/arrow-down]
-       [:span.counters (str (inc index) " / " total)]]]))
+     [:div.current-frame
+      {:on-click toggle-thumbnails}
+      [:span.label "/"]
+      [:span.label frame-name]
+      [:span.icon i/arrow-down]
+      [:span.counters (str (inc index) " / " total)]]]))
 
 
 (mf/defc header
@@ -140,25 +177,26 @@
           (st/emit! (dv/go-to-section section)))]
 
     [:header.viewer-header
-     [:div.main-icon
-      [:a {:on-click go-to-dashboard
-           ;; If the user doesn't have permission we disable the link
-           :style {:pointer-events (when-not permissions "none")}} i/logo-icon]]
+     [:div.nav-zone
+      [:div.main-icon
+       [:a {:on-click go-to-dashboard
+            ;; If the user doesn't have permission we disable the link
+            :style {:pointer-events (when-not permissions "none")}} i/logo-icon]]
 
-     [:& header-sitemap {:project project :file file :page page :frame frame :index index}]
+      [:& header-sitemap {:project project :file file :page page :frame frame :index index}]]
 
      [:div.mode-zone
       [:button.mode-zone-button.tooltip.tooltip-bottom
        {:on-click #(navigate :interactions)
         :class (dom/classnames :active (= section :interactions))
-        :alt (tr "viewer.header.interactions-section")}
+        :alt (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))}
        i/play]
 
       (when (:can-edit permissions)
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :comments)
           :class (dom/classnames :active (= section :comments))
-          :alt (tr "viewer.header.comments-section")}
+          :alt (tr "viewer.header.comments-section" (sc/get-tooltip :open-comments))}
          i/chat])
 
       (when (or (= (:type permissions) :membership)
@@ -167,7 +205,7 @@
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :handoff)
           :class (dom/classnames :active (= section :handoff))
-          :alt (tr "viewer.header.handsoff-section")}
+          :alt (tr "viewer.header.handoff-section" (sc/get-tooltip :open-handoff))}
          i/code])]
 
      [:& header-options {:section section
@@ -176,4 +214,3 @@
                          :file file
                          :index index
                          :zoom zoom}]]))
-

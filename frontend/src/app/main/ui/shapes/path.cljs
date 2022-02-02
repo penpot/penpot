@@ -20,21 +20,18 @@
   [props]
   (let [shape   (unchecked-get props "shape")
         content (:content shape)
-        pdata   (mf/use-memo
-                 (mf/deps content)
-                 (fn []
-                   (try
-                     (upf/format-path content)
-                     (catch :default e
-                       (log/error :hint "unexpected error on formating path"
-                                  :shape-name (:name shape)
-                                  :shape-id (:id shape)
-                                  :cause e)
-                       ""))))
+        pdata   (mf/with-memo [content]
+                  (try
+                    (upf/format-path content)
+                    (catch :default e
+                      (log/error :hint "unexpected error on formating path"
+                                 :shape-name (:name shape)
+                                 :shape-id (:id shape)
+                                 :cause e)
+                       "")))
 
         props   (-> (attrs/extract-style-attrs shape)
-                    (obj/merge!
-                     #js {:d pdata}))]
+                    (obj/set! "d" pdata))]
 
     [:& shape-custom-stroke {:shape shape}
      [:> :path props]]))

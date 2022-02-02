@@ -1,0 +1,2 @@
+ALTER INDEX file__modified_at__has_media_trimed__idx RENAME TO file__modified_at__has_media_trimmed__idx;
+ALTER INDEX media_bject__file_id__idx RENAME TO media_object__file_id__idx;

@@ -88,8 +88,7 @@
     {::mf/wrap-props false}
     [props]
 
-    (let [frame  (unchecked-get props "frame")
-          shape  (unchecked-get props "shape")
+    (let [shape  (unchecked-get props "shape")
           childs (unchecked-get props "childs")
 
           {:keys [content]} shape
@@ -103,12 +102,12 @@
         svg-root?
         [:& svg-root {:shape shape}
          (for [item childs]
-           [:& shape-wrapper {:frame frame :shape item :key (:id item)}])]
+           [:& shape-wrapper {:shape item :key (:id item)}])]
 
         svg-tag?
         [:& svg-element {:shape shape}
          (for [item childs]
-           [:& shape-wrapper {:frame frame :shape item :key (:id item)}])]
+           [:& shape-wrapper {:shape item :key (:id item)}])]
 
         svg-leaf?
         content

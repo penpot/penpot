@@ -9,7 +9,7 @@
 
 ;; Extract some attributes of a list of shapes.
 ;; For each attribute, if the value is the same in all shapes,
-;; wll take this value. If there is any shape that is different,
+;; will take this value. If there is any shape that is different,
 ;; the value of the attribute will be the keyword :multiple.
 ;;
 ;; If some shape has the value nil in any attribute, it's

@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-07-30 16:34+0000\n"
+"PO-Revision-Date: 2021-12-09 04:50+0000\n"
 "Last-Translator: Maemolee <maemolee@gmail.com>\n"
 "Language-Team: Chinese (Simplified) "
 "<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.7.2-dev\n"
+"X-Generator: Weblate 4.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -65,7 +65,7 @@ msgstr "很高兴又见到你！"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "使用Github登录"
+msgstr "使用GitHub登录"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
@@ -87,12 +87,16 @@ msgstr "使用OpenID (SSO)登录"
 msgid "auth.new-password"
 msgstr "输入新的密码"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "我同意订阅Penpot电子邮报。"
+
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "恢复令牌无效。"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
+msgid "auth.notifications.password-changed-successfully"
 msgstr "密码修改成功"
 
 #: src/app/main/ui/auth/recovery_request.cljs
@@ -114,6 +118,9 @@ msgstr "密码"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "至少8位字符"
+
+msgid "auth.privacy-policy"
+msgstr "隐私政策"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
@@ -151,6 +158,9 @@ msgstr "创建账号"
 msgid "auth.sidebar-tagline"
 msgstr "设计与原型的开源解决方案。"
 
+msgid "auth.terms-of-service"
+msgstr "服务协议"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr "创建账号意味着您认可我们的服务条例和隐私政策。"
@@ -158,6 +168,47 @@ msgstr "创建账号意味着您认可我们的服务条例和隐私政策。"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "我们已经发送了一封验证邮件到"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr "你确定要移除链接？那么任何人都无法再访问它"
+
+msgid "common.share-link.get-link"
+msgstr "获取链接"
+
+msgid "common.share-link.link-copied-success"
+msgstr "链接已复制"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "链接已移除"
+
+#, fuzzy
+msgid "common.share-link.permissions-can-access"
+msgstr "可访问"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "可浏览"
+
+#, fuzzy
+msgid "common.share-link.permissions-hint"
+msgstr "任何人通过此链接都可访问"
+
+msgid "common.share-link.placeholder"
+msgstr "可分享的链接会在此处显示"
+
+msgid "common.share-link.remove-link"
+msgstr "移除链接"
+
+msgid "common.share-link.title"
+msgstr "分享原型"
+
+msgid "common.share-link.view-all-pages"
+msgstr "全部页面"
+
+msgid "common.share-link.view-current-page"
+msgstr "仅此页面"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "选中的页面"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -198,11 +249,26 @@ msgstr "复制 %s 个文件"
 msgid "dashboard.empty-files"
 msgstr "暂无文档"
 
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr "现在尚无文件。如果你想尝试一些模板，请点击[库和模板](https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-frames"
+msgstr "导出画板到PDF..."
+
 msgid "dashboard.export-multi"
 msgstr "导出 %s 个文件"
 
 msgid "dashboard.export-single"
 msgstr "导出文件"
+
+msgid "dashboard.export.detail"
+msgstr "* 可能包含组件、图形、颜色和/或排版。"
+
+#, fuzzy
+msgid "dashboard.export.explain"
+msgstr "你想导出的一个或多个文件用到了共享库。你想怎么处理它们的涉及资产？"
 
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "字体已删除"
@@ -1283,7 +1349,7 @@ msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "晋升并退出"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.select-memeber-to-promote"
+msgid "modals.leave-and-reassign.select-member-to-promote"
 msgstr "选择一位成员晋升"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -1488,35 +1554,35 @@ msgstr "站点地图"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
-msgstr "水平居中对齐"
+msgstr "水平居中对齐 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "水平均匀分布"
+msgstr "水平均匀分布 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
-msgstr "靠左对齐"
+msgstr "靠左对齐 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
-msgstr "靠右对齐"
+msgstr "靠右对齐 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vbottom"
-msgstr "底部对齐"
+msgstr "底部对齐 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
-msgstr "垂直居中对齐"
+msgstr "垂直居中对齐 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "垂直均匀分布"
+msgstr "垂直均匀分布 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
-msgstr "顶部对齐"
+msgstr "顶部对齐 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"
@@ -2505,7 +2571,7 @@ msgstr "图片（%s）"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.move"
-msgstr "移动"
+msgstr "移动 (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.path"

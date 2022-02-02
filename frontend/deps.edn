@@ -9,7 +9,7 @@
   funcool/beicon {:mvn/version "2021.07.05-1"}
   funcool/okulary {:mvn/version "2020.04.14-0"}
   funcool/potok {:mvn/version "2021.09.20-0"}
-  funcool/rumext {:mvn/version "2021.05.12-1"}
+  funcool/rumext {:mvn/version "2022.01.20.128"}
   funcool/tubax {:mvn/version "2021.05.20-0"}
 
   instaparse/instaparse {:mvn/version "1.4.10"}
@@ -17,15 +17,21 @@
 
  :aliases
  {:outdated
-  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}
-                org.slf4j/slf4j-nop {:mvn/version "RELEASE"}}
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
    :main-opts ["-m" "antq.core"]}
+
+  :jvm-repl
+  {:extra-deps
+   {com.bhauman/rebel-readline {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "rebel-readline.main"]}
+
 
   :dev
   {:extra-paths ["dev"]
    :extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.15.12"}
-    cider/cider-nrepl {:mvn/version "0.26.0"}}}
+   {thheller/shadow-cljs {:mvn/version "2.16.12"}
+    org.clojure/tools.namespace {:mvn/version "RELEASE"}
+    cider/cider-nrepl {:mvn/version "0.28.0"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}

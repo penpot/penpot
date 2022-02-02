@@ -11,7 +11,6 @@ img {
   display: block;
 }
 
-
 // #Reset & Basics (Inspired by E. Meyers)
 //==================================================
 a,
@@ -95,14 +94,14 @@ u,
 ul,
 var,
 video {
-    border: 0;
-    font: inherit;
-    font-size: 100%;
-    line-height: $base-lh;
-    margin: 0;
-    padding: 0;
-    text-decoration: none;
-    vertical-align: baseline;
+  border: 0;
+  font: inherit;
+  font-size: 100%;
+  line-height: $base-lh;
+  margin: 0;
+  padding: 0;
+  text-decoration: none;
+  vertical-align: baseline;
 }
 
 article,
@@ -116,34 +115,34 @@ hgroup,
 menu,
 nav,
 section {
-    display: block;
+  display: block;
 }
 body {
-    line-height: 1;
+  line-height: 1;
 }
 
 ol,
 ul {
-    list-style: none;
+  list-style: none;
 }
 
 blockquote,
 q {
-    quotes: none;
+  quotes: none;
 }
 
 blockquote:before,
 blockquote:after,
 q:before,
 q:after {
-    content: '';
+  content: "";
 }
 
 table {
-    border-collapse: collapse;
-    border-spacing: 0;
+  border-collapse: collapse;
+  border-spacing: 0;
 }
 
 select {
-  -webkit-appearance:none
+  -webkit-appearance: none;
 }

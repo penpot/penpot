@@ -12,6 +12,7 @@
 (defn generate*
   [{:keys [name color size]
     :or {color "#000000" size 128}}]
+
   (let [parts   (str/words (str/upper name))
         letters (if (= 1 (count parts))
                   (ffirst parts)
@@ -27,7 +28,7 @@
 
     (obj/set! context "font" (str (/ size 2) "px Arial"))
     (obj/set! context "textAlign" "center")
-    (obj/set! context "fillStyle" "#FFFFFF")
+    (obj/set! context "fillStyle" "#ffffff")
     (.fillText context letters (/ size 2) (/ size 1.5))
 
     (.toDataURL canvas)))

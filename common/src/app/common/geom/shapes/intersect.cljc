@@ -147,7 +147,7 @@
       (not= wn 0))))
 
 ;; A intersects with B
-;; Three posible cases:
+;; Three possible cases:
 ;;   1) A is inside of B
 ;;   2) B is inside of A
 ;;   3) A intersects B
@@ -196,8 +196,8 @@
   [point {:keys [cx cy rx ry transform]}]
 
   (let [center (gpt/point cx cy)
-        transform (gmt/transform-in center transform)
-        {px :x py :y} (gpt/transform point transform)
+        transform (when (some? transform) (gmt/transform-in center transform))
+        {px :x py :y} (if (some? transform) (gpt/transform point transform) point)
         ;; Ellipse inequality formula
         ;; https://en.wikipedia.org/wiki/Ellipse#Shifted_ellipse
         v (+ (/ (mth/sq (- px cx))
@@ -207,11 +207,11 @@
     (<= v 1)))
 
 (defn intersects-line-ellipse?
-  "Checks wether a single line intersects with the given ellipse"
+  "Checks whether a single line intersects with the given ellipse"
   [[{x1 :x y1 :y} {x2 :x y2 :y}] {:keys [cx cy rx ry]}]
 
   ;; Given the ellipse inequality after inserting the line parametric equations
-  ;; we resolve t and gives us a cuadratic formula
+  ;; we resolve t and gives us a quadratic formula
   ;; The result of this quadratic will give us a value of T that needs to be
   ;; between 0-1 to be in the segment
 
@@ -256,10 +256,10 @@
   "Checks if a set of lines intersect with an ellipse in any point"
   [rect-lines {:keys [cx cy transform] :as ellipse-data}]
   (let [center (gpt/point cx cy)
-        transform (gmt/transform-in center transform)]
+        transform (when (some? transform) (gmt/transform-in center transform))]
     (some (fn [[p1 p2]]
-            (let [p1 (gpt/transform p1 transform)
-                  p2 (gpt/transform p2 transform)]
+            (let [p1 (if (some? transform) (gpt/transform p1 transform) p1)
+                  p2 (if (some? transform) (gpt/transform p2 transform) p2)]
               (intersects-line-ellipse? [p1 p2] ellipse-data))) rect-lines)))
 
 (defn overlaps-ellipse?
@@ -284,7 +284,7 @@
         (intersects-lines-ellipse? rect-lines ellipse-data))))
 
 (defn overlaps?
-  "General case to check for overlaping between shapes and a rectangle"
+  "General case to check for overlapping between shapes and a rectangle"
   [shape rect]
   (let [stroke-width (/ (or (:stroke-width shape) 0) 2)
         rect (-> rect

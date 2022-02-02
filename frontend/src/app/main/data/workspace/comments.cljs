@@ -76,15 +76,13 @@
     (update [_ state]
       (update state :workspace-local
               (fn [{:keys [vbox zoom] :as local}]
-                (let [pw (/ 50 zoom)
-                      ph (/ 200 zoom)
+                (let [pw (/ 160 zoom)
+                      ph (/ 160 zoom)
                       nw (mth/round (- (/ (:width vbox) 2) pw))
                       nh (mth/round (- (/ (:height vbox) 2) ph))
                       nx (- (:x position) nw)
                       ny (- (:y position) nh)]
-
-
-                   (update local :vbox assoc :x nx :y ny)))))))
+                  (update local :vbox assoc :x nx :y ny)))))))
 
 (defn navigate
   [thread]
@@ -96,8 +94,7 @@
                      :file-id (:file-id thread)}
             qparams {:page-id (:page-id thread)}]
         (rx/merge
-         (rx/of (rt/nav :workspace pparams qparams)
-                (dw/select-for-drawing :comments))
+         (rx/of (rt/nav :workspace pparams qparams))
          (->> stream
               (rx/filter (ptk/type? ::dw/initialize-viewport))
               (rx/take 1)

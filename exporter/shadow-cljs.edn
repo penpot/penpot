@@ -20,7 +20,7 @@
     :compiler-options
     {:fn-invoke-direct true
      :source-map true
-     :optimizations :simple
+     :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :simple]
      :pseudo-names true
      :pretty-print true
      :anon-fn-naming-policy :off

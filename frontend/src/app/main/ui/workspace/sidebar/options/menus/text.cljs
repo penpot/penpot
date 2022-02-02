@@ -271,14 +271,14 @@
 
         on-convert-to-typography
         (fn [_]
-          (let [setted-values (-> (d/without-nils values)
-                                  (select-keys
-                                   (d/concat-vec text-font-attrs
-                                                 text-spacing-attrs
-                                                 text-transform-attrs)))
-                typography    (merge txt/default-typography setted-values)
-                typography    (generate-typography-name typography)
-                id            (uuid/next)]
+          (let [set-values (-> (d/without-nils values)
+                               (select-keys
+                                (d/concat-vec text-font-attrs
+                                              text-spacing-attrs
+                                              text-transform-attrs)))
+                typography (merge txt/default-typography set-values)
+                typography (generate-typography-name typography)
+                id         (uuid/next)]
             (st/emit! (dwl/add-typography (assoc typography :id id) false))
             (run! #(emit-update! % {:typography-ref-id id
                                     :typography-ref-file file-id}) ids)))

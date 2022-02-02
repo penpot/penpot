@@ -169,3 +169,338 @@
         [:span.icon i/tick]
         [:span.label (tr "viewer.header.show-interactions-on-click")]]]]]))
 
+
+(defn animate-go-to-frame
+  [animation current-viewport orig-viewport current-size orig-size wrapper-size]
+  (case (:animation-type animation)
+
+    :dissolve
+    (do (dom/animate! orig-viewport
+                      [#js {:opacity "100"}
+                       #js {:opacity "0"}]
+                      #js {:duration (:duration animation)
+                           :easing (name (:easing animation))}
+                      #(st/emit! (dv/complete-animation)))
+        (dom/animate! current-viewport
+                      [#js {:opacity "0"}
+                       #js {:opacity "100"}]
+                      #js {:duration (:duration animation)
+                           :easing (name (:easing animation))}))
+
+    :slide
+    (case (:way animation)
+
+      :in
+      (case (:direction animation)
+
+        :right
+        (let [offset (+ (:width current-size)
+                        (/ (- (:width wrapper-size) (:width current-size)) 2))]
+          (dom/animate! current-viewport
+                        [#js {:left (str "-" offset "px")}
+                         #js {:left "0"}]
+                        #js {:duration (:duration animation)
+                             :easing (name (:easing animation))}
+                        #(st/emit! (dv/complete-animation)))
+          (when (:offset-effect animation)
+            (dom/animate! orig-viewport
+                          [#js {:left "0"
+                                :opacity "100%"}
+                           #js {:left (str (* offset 0.2) "px")
+                                :opacity "0"}]
+                          #js {:duration (:duration animation)
+                               :easing (name (:easing animation))})))
+
+        :left
+        (let [offset (+ (:width current-size)
+                        (/ (- (:width wrapper-size) (:width current-size)) 2))]
+          (dom/animate! current-viewport
+                        [#js {:right (str "-" offset "px")}
+                         #js {:right "0"}]
+                        #js {:duration (:duration animation)
+                             :easing (name (:easing animation))}
+                        #(st/emit! (dv/complete-animation)))
+          (when (:offset-effect animation)
+            (dom/animate! orig-viewport
+                          [#js {:right "0"
+                                :opacity "100%"}
+                           #js {:right (str (* offset 0.2) "px")
+                                :opacity "0"}]
+                          #js {:duration (:duration animation)
+                               :easing (name (:easing animation))})))
+
+        :up
+        (let [offset (+ (:height current-size)
+                        (/ (- (:height wrapper-size) (:height current-size)) 2))]
+          (dom/animate! current-viewport
+                        [#js {:bottom (str "-" offset "px")}
+                         #js {:bottom "0"}]
+                        #js {:duration (:duration animation)
+                             :easing (name (:easing animation))}
+                        #(st/emit! (dv/complete-animation)))
+          (when (:offset-effect animation)
+            (dom/animate! orig-viewport
+                          [#js {:bottom "0"
+                                :opacity "100%"}
+                           #js {:bottom (str (* offset 0.2) "px")
+                                :opacity "0"}]
+                          #js {:duration (:duration animation)
+                               :easing (name (:easing animation))})))
+
+        :down
+        (let [offset (+ (:height current-size)
+                        (/ (- (:height wrapper-size) (:height current-size)) 2))]
+          (dom/animate! current-viewport
+                        [#js {:top (str "-" offset "px")}
+                         #js {:top "0"}]
+                        #js {:duration (:duration animation)
+                             :easing (name (:easing animation))}
+                        #(st/emit! (dv/complete-animation)))
+          (when (:offset-effect animation)
+            (dom/animate! orig-viewport
+                          [#js {:top "0"
+                                :opacity "100%"}
+                           #js {:top (str (* offset 0.2) "px")
+                                :opacity "0"}]
+                          #js {:duration (:duration animation)
+                               :easing (name (:easing animation))}))))
+
+      :out
+      (case (:direction animation)
+
+        :right
+        (let [offset (+ (:width orig-size)
+                        (/ (- (:width wrapper-size) (:width orig-size)) 2))]
+          (dom/set-css-property! orig-viewport "z-index" 10000)
+          (dom/animate! orig-viewport
+                        [#js {:right "0"}
+                         #js {:right (str "-" offset "px")}]
+                        #js {:duration (:duration animation)
+                             :easing (name (:easing animation))}
+                        #(st/emit! (dv/complete-animation)))
+          (when (:offset-effect animation)
+            (dom/animate! current-viewport
+                          [#js {:right (str (* offset 0.2) "px")
+                                :opacity "0"}
+                           #js {:right "0"
+                                :opacity "100%"}]
+                          #js {:duration (:duration animation)
+                               :easing (name (:easing animation))})))
+
+        :left
+        (let [offset (+ (:width orig-size)
+                        (/ (- (:width wrapper-size) (:width orig-size)) 2))]
+          (dom/set-css-property! orig-viewport "z-index" 10000)
+          (dom/animate! orig-viewport
+                        [#js {:left "0"}
+                         #js {:left (str "-" offset "px")}]
+                        #js {:duration (:duration animation)
+                             :easing (name (:easing animation))}
+                        #(st/emit! (dv/complete-animation)))
+          (when (:offset-effect animation)
+            (dom/animate! current-viewport
+                          [#js {:left (str (* offset 0.2) "px")
+                                :opacity "0"}
+                           #js {:left "0"
+                                :opacity "100%"}]
+                          #js {:duration (:duration animation)
+                               :easing (name (:easing animation))})))
+
+        :up
+        (let [offset (+ (:height orig-size)
+                        (/ (- (:height wrapper-size) (:height orig-size)) 2))]
+          (dom/set-css-property! orig-viewport "z-index" 10000)
+          (dom/animate! orig-viewport
+                        [#js {:top "0"}
+                         #js {:top (str "-" offset "px")}]
+                        #js {:duration (:duration animation)
+                             :easing (name (:easing animation))}
+                        #(st/emit! (dv/complete-animation)))
+          (when (:offset-effect animation)
+            (dom/animate! current-viewport
+                          [#js {:top (str (* offset 0.2) "px")
+                                :opacity "0"}
+                           #js {:top "0"
+                                :opacity "100%"}]
+                          #js {:duration (:duration animation)
+                               :easing (name (:easing animation))})))
+
+        :down
+        (let [offset (+ (:height orig-size)
+                        (/ (- (:height wrapper-size) (:height orig-size)) 2))]
+          (dom/set-css-property! orig-viewport "z-index" 10000)
+          (dom/animate! orig-viewport
+                        [#js {:bottom "0"}
+                         #js {:bottom (str "-" offset "px")}]
+                        #js {:duration (:duration animation)
+                             :easing (name (:easing animation))}
+                        #(st/emit! (dv/complete-animation)))
+          (when (:offset-effect animation)
+            (dom/animate! current-viewport
+                          [#js {:bottom (str (* offset 0.2) "px")
+                                :opacity "0"}
+                           #js {:bottom "0"
+                                :opacity "100%"}]
+                          #js {:duration (:duration animation)
+                               :easing (name (:easing animation))})))))
+
+    :push
+    (case (:direction animation)
+
+      :right
+      (let [offset (:width wrapper-size)]
+        (dom/animate! current-viewport
+                      [#js {:left (str "-" offset "px")}
+                       #js {:left "0"}]
+                      #js {:duration (:duration animation)
+                           :easing (name (:easing animation))}
+                      #(st/emit! (dv/complete-animation)))
+        (dom/animate! orig-viewport
+                      [#js {:left "0"}
+                       #js {:left (str offset "px")}]
+                      #js {:duration (:duration animation)
+                           :easing (name (:easing animation))}))
+
+      :left
+      (let [offset (:width wrapper-size)]
+        (dom/animate! current-viewport
+                      [#js {:right (str "-" offset "px")}
+                       #js {:right "0"}]
+                      #js {:duration (:duration animation)
+                           :easing (name (:easing animation))}
+                      #(st/emit! (dv/complete-animation)))
+        (dom/animate! orig-viewport
+                      [#js {:right "0"}
+                       #js {:right (str offset "px")}]
+                      #js {:duration (:duration animation)
+                           :easing (name (:easing animation))}))
+
+      :up
+      (let [offset (:height wrapper-size)]
+        (dom/animate! current-viewport
+                      [#js {:bottom (str "-" offset "px")}
+                       #js {:bottom "0"}]
+                      #js {:duration (:duration animation)
+                           :easing (name (:easing animation))}
+                      #(st/emit! (dv/complete-animation)))
+        (dom/animate! orig-viewport
+                      [#js {:bottom "0"}
+                       #js {:bottom (str offset "px")}]
+                      #js {:duration (:duration animation)
+                           :easing (name (:easing animation))}))
+
+      :down
+      (let [offset (:height wrapper-size)]
+        (dom/animate! current-viewport
+                      [#js {:top (str "-" offset "px")}
+                       #js {:top "0"}]
+                      #js {:duration (:duration animation)
+                           :easing (name (:easing animation))}
+                      #(st/emit! (dv/complete-animation)))
+        (dom/animate! orig-viewport
+                      [#js {:top "0"}
+                       #js {:top (str offset "px")}]
+                      #js {:duration (:duration animation)
+                           :easing (name (:easing animation))})))))
+
+(defn animate-open-overlay
+  [animation overlay-viewport
+   wrapper-size overlay-size overlay-position]
+  (case (:animation-type animation)
+
+    :dissolve
+    (dom/animate! overlay-viewport
+                  [#js {:opacity "0"}
+                   #js {:opacity "100"}]
+                  #js {:duration (:duration animation)
+                       :easing (name (:easing animation))}
+                  #(st/emit! (dv/complete-animation)))
+
+    :slide
+    (case (:direction animation) ;; way and offset-effect are ignored
+
+      :right
+      (dom/animate! overlay-viewport
+                    [#js {:left (str "-" (:width overlay-size) "px")}
+                     #js {:left (str (:x overlay-position) "px")}]
+                    #js {:duration (:duration animation)
+                         :easing (name (:easing animation))}
+                    #(st/emit! (dv/complete-animation)))
+
+      :left
+      (dom/animate! overlay-viewport
+                    [#js {:left (str (:width wrapper-size) "px")}
+                     #js {:left (str (:x overlay-position) "px")}]
+                    #js {:duration (:duration animation)
+                         :easing (name (:easing animation))}
+                    #(st/emit! (dv/complete-animation)))
+
+      :up
+      (dom/animate! overlay-viewport
+                    [#js {:top (str (:height wrapper-size) "px")}
+                     #js {:top (str (:y overlay-position) "px")}]
+                    #js {:duration (:duration animation)
+                         :easing (name (:easing animation))}
+                    #(st/emit! (dv/complete-animation)))
+
+      :down
+      (dom/animate! overlay-viewport
+                    [#js {:top (str "-" (:height overlay-size) "px")}
+                     #js {:top (str (:y overlay-position) "px")}]
+                    #js {:duration (:duration animation)
+                         :easing (name (:easing animation))}
+                    #(st/emit! (dv/complete-animation))))))
+
+(defn animate-close-overlay
+  [animation overlay-viewport
+   wrapper-size overlay-size overlay-position overlay-id]
+  (case (:animation-type animation)
+
+    :dissolve
+    (dom/animate! overlay-viewport
+                  [#js {:opacity "100"}
+                   #js {:opacity "0"}]
+                  #js {:duration (:duration animation)
+                       :easing (name (:easing animation))}
+                  #(st/emit! (dv/complete-animation)
+                             (dv/close-overlay overlay-id)))
+
+    :slide
+    (case (:direction animation) ;; way and offset-effect are ignored
+
+      :right
+      (dom/animate! overlay-viewport
+                    [#js {:left (str (:x overlay-position) "px")}
+                     #js {:left (str (:width wrapper-size) "px")}]
+                    #js {:duration (:duration animation)
+                         :easing (name (:easing animation))}
+                    #(st/emit! (dv/complete-animation)
+                               (dv/close-overlay overlay-id)))
+
+      :left
+      (dom/animate! overlay-viewport
+                    [#js {:left (str (:x overlay-position) "px")}
+                     #js {:left (str "-" (:width overlay-size) "px")}]
+                    #js {:duration (:duration animation)
+                         :easing (name (:easing animation))}
+                    #(st/emit! (dv/complete-animation)
+                               (dv/close-overlay overlay-id)))
+
+      :up
+      (dom/animate! overlay-viewport
+                    [#js {:top (str (:y overlay-position) "px")}
+                     #js {:top (str "-" (:height overlay-size) "px")}]
+                    #js {:duration (:duration animation)
+                         :easing (name (:easing animation))}
+                    #(st/emit! (dv/complete-animation)
+                               (dv/close-overlay overlay-id)))
+
+      :down
+      (dom/animate! overlay-viewport
+                    [#js {:top (str (:y overlay-position) "px")}
+                     #js {:top (str (:height wrapper-size) "px")}]
+                    #js {:duration (:duration animation)
+                         :easing (name (:easing animation))}
+                    #(st/emit! (dv/complete-animation)
+                               (dv/close-overlay overlay-id))))))
+

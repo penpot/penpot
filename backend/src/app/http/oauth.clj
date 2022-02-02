@@ -130,7 +130,7 @@
         (when-not (set/subset? provider-roles profile-roles)
           (ex/raise :type :internal
                     :code :unable-to-auth
-                    :hint "not enought permissions"))))
+                    :hint "not enough permissions"))))
 
     (cond-> info
       (some? (:invitation-token state))
@@ -268,14 +268,29 @@
 
 (defn- discover-oidc-config
   [{:keys [base-uri] :as opts}]
+
   (let [discovery-uri (u/join base-uri ".well-known/openid-configuration")
-        response      (http/send! {:method :get :uri (str discovery-uri)})]
-    (when (= 200 (:status response))
+        response      (ex/try (http/send! {:method :get :uri (str discovery-uri)}))]
+    (cond
+      (ex/exception? response)
+      (do
+        (l/warn :hint "unable to discover oidc configuration"
+                :discover-uri (str discovery-uri)
+                :cause response)
+        nil)
+
+      (= 200 (:status response))
       (let [data (json/read-str (:body response))]
-        (assoc opts
-               :token-uri (get data "token_endpoint")
-               :auth-uri (get data "authorization_endpoint")
-               :user-uri (get data "userinfo_endpoint"))))))
+        {:token-uri (get data "token_endpoint")
+         :auth-uri  (get data "authorization_endpoint")
+         :user-uri  (get data "userinfo_endpoint")})
+
+      :else
+      (do
+        (l/warn :hint "unable to discover OIDC configuration"
+                :uri (str discovery-uri)
+                :response-status-code (:status response))
+        nil))))
 
 (defn- obfuscate-string
   [s]
@@ -299,17 +314,23 @@
     (if (and (string? (:base-uri opts))
              (string? (:client-id opts))
              (string? (:client-secret opts)))
-      (if (and (string? (:token-uri opts))
-               (string? (:user-uri opts))
-               (string? (:auth-uri opts)))
-        (do
-          (l/info :action "initialize" :provider "oidc" :method "static"
-                  :opts (pr-str (update opts :client-secret obfuscate-string)))
-          (assoc-in cfg [:providers "oidc"] opts))
-        (let [opts (discover-oidc-config opts)]
-          (l/info :action "initialize" :provider "oidc" :method "discover"
-                  :opts (pr-str (update opts :client-secret obfuscate-string)))
-          (assoc-in cfg [:providers "oidc"] opts)))
+      (do
+        (l/debug :hint "initialize oidc provider" :name "generic-oidc"
+                 :opts (update opts :client-secret obfuscate-string))
+        (if (and (string? (:token-uri opts))
+                 (string? (:user-uri opts))
+                 (string? (:auth-uri opts)))
+          (do
+            (l/debug :hint "initialized with user provided configuration")
+            (assoc-in cfg [:providers "oidc"] opts))
+          (do
+            (l/debug :hint "trying to discover oidc provider configuration using BASE_URI")
+            (if-let [opts' (discover-oidc-config opts)]
+              (do
+                (l/debug :hint "discovered opts" :additional-opts opts')
+                (assoc-in cfg [:providers "oidc"] (merge opts opts')))
+
+              cfg))))
       cfg)))
 
 (defn- initialize-google-provider

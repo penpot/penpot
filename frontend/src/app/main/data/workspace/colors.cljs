@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.colors
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
@@ -122,7 +123,12 @@
             text-ids  (filter is-text? ids)
             shape-ids (filter (comp not is-text?) ids)
 
-            attrs (cond-> {}
+            attrs (cond-> {:fill-color nil
+                           :fill-color-gradient nil
+                           ::fill-color-ref-file nil
+                           :fill-color-ref-id nil
+                           :fill-opacity nil}
+
                     (contains? color :color)
                     (assoc :fill-color (:color color))
 
@@ -142,12 +148,31 @@
          (rx/from (map #(dwt/update-text-attrs {:id % :attrs attrs}) text-ids))
          (rx/of (dch/update-shapes shape-ids (fn [shape] (d/merge shape attrs)))))))))
 
+(defn change-hide-fill-on-export
+  [ids hide-fill-on-export]
+  (ptk/reify ::change-hide-fill-on-export
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page-id   (:current-page-id state)
+            objects   (wsh/lookup-page-objects state page-id)
+            is-text?  #(= :text (:type (get objects %)))
+            shape-ids (filter (complement is-text?) ids)
+            attrs {:hide-fill-on-export hide-fill-on-export}]
+        (rx/of (dch/update-shapes shape-ids (fn [shape]
+                                              (if (= (:type shape) :frame)
+                                                (d/merge shape attrs)
+                                                shape))))))))
+
 (defn change-stroke
   [ids color]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [attrs (cond-> {}
+      (let [attrs (cond-> {:stroke-color nil
+                           :stroke-color-ref-id nil
+                           :stroke-color-ref-file nil
+                           :stroke-color-gradient nil
+                           :stroke-opacity nil}
                     (contains? color :color)
                     (assoc :stroke-color (:color color))
 
@@ -203,7 +228,7 @@
           (-> state
               (assoc-in [:workspace-local :picking-color?] true)
               (assoc ::md/modal {:id (random-uuid)
-                                 :data {:color "#000000" :opacity 1}
+                                 :data {:color clr/black :opacity 1}
                                  :type :colorpicker
                                  :props {:on-change handle-change-color}
                                  :allow-click-outside true})))))))

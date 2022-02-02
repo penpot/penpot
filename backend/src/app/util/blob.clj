@@ -10,6 +10,7 @@
   (:require
    [app.common.transit :as t]
    [app.config :as cf]
+   [app.util.fressian :as fres]
    [taoensso.nippy :as n])
   (:import
    java.io.ByteArrayInputStream
@@ -21,23 +22,28 @@
    net.jpountz.lz4.LZ4FastDecompressor
    net.jpountz.lz4.LZ4Compressor))
 
+(set! *warn-on-reflection* true)
+
 (def lz4-factory (LZ4Factory/fastestInstance))
 
 (declare decode-v1)
 (declare decode-v2)
 (declare decode-v3)
+(declare decode-v4)
 (declare encode-v1)
 (declare encode-v2)
 (declare encode-v3)
+(declare encode-v4)
 
 (defn encode
   ([data] (encode data nil))
   ([data {:keys [version]}]
-   (let [version (or version (cf/get :default-blob-version 1))]
+   (let [version (or version (cf/get :default-blob-version 3))]
      (case (long version)
        1 (encode-v1 data)
        2 (encode-v2 data)
        3 (encode-v3 data)
+       4 (encode-v4 data)
        (throw (ex-info "unsupported version" {:version version}))))))
 
 (defn decode
@@ -51,6 +57,7 @@
         1 (decode-v1 data ulen)
         2 (decode-v2 data ulen)
         3 (decode-v3 data ulen)
+        4 (decode-v4 data ulen)
         (throw (ex-info "unsupported version" {:version version}))))))
 
 ;; --- IMPL
@@ -122,3 +129,26 @@
     (Zstd/decompressByteArray ^bytes udata 0 ulen
                               ^bytes cdata 6 (- (alength cdata) 6))
     (t/decode udata {:type :json})))
+
+(defn- encode-v4
+  [data]
+  (let [data  (fres/encode data)
+        dlen  (alength ^bytes data)
+        mlen  (Zstd/compressBound dlen)
+        cdata (byte-array mlen)
+        clen  (Zstd/compressByteArray ^bytes cdata 0 mlen
+                                      ^bytes data 0 dlen
+                                      0)]
+    (with-open [^ByteArrayOutputStream baos (ByteArrayOutputStream. (+ (alength cdata) 2 4))
+                ^DataOutputStream dos (DataOutputStream. baos)]
+      (.writeShort dos (short 4)) ;; version number
+      (.writeInt dos (int dlen))
+      (.write dos ^bytes cdata (int 0) clen)
+      (.toByteArray baos))))
+
+(defn- decode-v4
+  [^bytes cdata ^long ulen]
+  (let [udata (byte-array ulen)]
+    (Zstd/decompressByteArray ^bytes udata 0 ulen
+                              ^bytes cdata 6 (- (alength cdata) 6))
+    (fres/decode udata)))

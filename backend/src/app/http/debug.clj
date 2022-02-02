@@ -9,26 +9,21 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.rpc.mutations.files :as m.files]
    [app.rpc.queries.profile :as profile]
    [app.util.blob :as blob]
-   [app.util.json :as json]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.pprint :as ppr]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
+   [datoteka.core :as fs]
    [integrant.core :as ig]))
 
-(def sql:retrieve-range-of-changes
-  "select revn, changes from file_change where file_id=? and revn >= ? and revn <= ? order by revn")
-
-(def sql:retrieve-single-change
-  "select revn, changes, data from file_change where file_id=? and revn = ?")
+;; (selmer.parser/cache-off!)
 
 (defn authorized?
   [pool {:keys [profile-id]}]
@@ -37,66 +32,104 @@
             admins  (or (cf/get :admins) #{})]
         (contains? admins (:email profile)))))
 
-(defn prepare-response
-  [body]
-  (when-not body
-    (ex/raise :type :not-found
-              :code :enpty-data
-              :hint "empty response"))
-
-  {:status 200
-   :headers {"content-type" "application/transit+json"}
-   :body body})
-
-(defn retrieve-file-data
+(defn index
   [{:keys [pool]} request]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
 
-  (let [id    (some-> (get-in request [:path-params :id]) uuid/uuid)
-        revn  (some-> (get-in request [:params :revn]) d/parse-integer)]
-    (when-not id
-      (ex/raise :type :validation
-                :code :missing-arguments))
+  {:status 200
+   :headers {"content-type" "text/html"}
+   :body (-> (io/resource "templates/debug.tmpl")
+             (tmpl/render {}))})
 
-    (if (integer? revn)
-      (let [fchange (db/exec-one! pool [sql:retrieve-single-change id revn])]
-        (prepare-response (some-> fchange :data blob/decode)))
 
-      (let [file (db/get-by-id pool :file id)]
-        (prepare-response (some-> file :data blob/decode))))))
+(def sql:retrieve-range-of-changes
+  "select revn, changes from file_change where file_id=? and revn >= ? and revn <= ? order by revn")
 
-(defn retrieve-file-changes
-  [{:keys [pool]} {:keys [params path-params profile-id] :as request}]
+(def sql:retrieve-single-change
+  "select revn, changes, data from file_change where file_id=? and revn = ?")
+
+(defn prepare-response
+  [{:keys [params] :as request} body]
+  (when-not body
+    (ex/raise :type :not-found
+              :code :enpty-data
+              :hint "empty response"))
+
+  (cond-> {:status 200
+           :headers {"content-type" "application/transit+json"}
+           :body body}
+    (contains? params :download)
+    (update :headers assoc "content-disposition" "attachment")))
+
+(defn retrieve-file-data
+  [{:keys [pool]} {:keys [params] :as request}]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
 
-  (let [id    (some-> (get-in request [:path-params :id]) uuid/uuid)
-        revn  (get-in request [:params :revn] "latest")]
+  (let [file-id (some-> (get-in request [:params :file-id]) uuid/uuid)
+        revn    (some-> (get-in request [:params :revn]) d/parse-integer)]
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :missing-arguments))
 
-    (when (or (not id) (not revn))
+    (let [data (if (integer? revn)
+                 (some-> (db/exec-one! pool [sql:retrieve-single-change file-id revn]) :data)
+                 (some-> (db/get-by-id pool :file file-id) :data))]
+      (if (contains? params :download)
+        (-> (prepare-response request data)
+            (update :headers assoc "content-type" "application/octet-stream"))
+        (prepare-response request (some-> data blob/decode))))))
+
+(defn upload-file-data
+  [{:keys [pool]} {:keys [profile-id params] :as request}]
+  (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
+        data       (some-> params :file :tempfile fs/slurp-bytes blob/decode)]
+
+    (if (and data project-id)
+      (let [fname (str "imported-file-" (dt/now))]
+        (m.files/create-file pool {:id (uuid/next)
+                                   :name fname
+                                   :project-id project-id
+                                   :profile-id profile-id
+                                   :data data})
+        {:status 200
+         :body "OK"})
+      {:status 500
+       :body "error"})))
+
+(defn retrieve-file-changes
+  [{:keys [pool]} request]
+  (when-not (authorized? pool request)
+    (ex/raise :type :authentication
+              :code :only-admins-allowed))
+
+  (let [file-id (some-> (get-in request [:params :id]) uuid/uuid)
+        revn    (or (get-in request [:params :revn]) "latest")]
+
+    (when (or (not file-id) (not revn))
       (ex/raise :type :validation
                 :code :invalid-arguments
                 :hint "missing arguments"))
 
     (cond
       (d/num-string? revn)
-      (let [item (db/exec-one! pool [sql:retrieve-single-change id (d/parse-integer revn)])]
-        (prepare-response (some-> item :changes blob/decode vec)))
+      (let [item (db/exec-one! pool [sql:retrieve-single-change file-id (d/parse-integer revn)])]
+        (prepare-response request (some-> item :changes blob/decode vec)))
 
       (str/includes? revn ":")
       (let [[start end] (->> (str/split revn #":")
                              (map str/trim)
                              (map d/parse-integer))
-            items       (db/exec! pool [sql:retrieve-range-of-changes id start end])]
-        (prepare-response  (some->> items
-                                    (map :changes)
-                                    (map blob/decode)
-                                    (mapcat identity)
-                                    (vec))))
-
+            items       (db/exec! pool [sql:retrieve-range-of-changes file-id start end])]
+        (prepare-response request
+                          (some->> items
+                                   (map :changes)
+                                   (map blob/decode)
+                                   (mapcat identity)
+                                   (vec))))
       :else
       (ex/raise :type :validation :code :invalid-arguments))))
 
@@ -115,14 +148,19 @@
 
           (render-template [report]
             (binding [ppr/*print-right-margin* 300]
-              (let [context (dissoc report :trace :cause :params :data :spec-prob :spec-problems :error :explain)
+              (let [context (dissoc report
+                                    :trace :cause :params :data :spec-problems
+                                    :spec-explain :spec-value :error :explain :hint)
                     params  {:context (with-out-str (ppr/pprint context))
-                             :data    (:data report)
-                             :trace   (or (:cause report)
-                                          (:trace report)
-                                          (some-> report :error :trace))
-                             :params  (:params report)}]
-                (-> (io/resource "error-report.tmpl")
+                             :hint    (:hint report)
+                             :spec-explain  (:spec-explain report)
+                             :spec-problems (:spec-problems report)
+                             :spec-value    (:spec-value report)
+                             :data          (:data report)
+                             :trace         (or (:trace report)
+                                                (some-> report :error :trace))
+                             :params        (:params report)}]
+                (-> (io/resource "templates/error-report.tmpl")
                     (tmpl/render params)))))
           ]
 
@@ -154,12 +192,14 @@
     {:status 200
      :headers {"content-type" "text/html; charset=utf-8"
                "x-robots-tag" "noindex"}
-     :body (-> (io/resource "error-list.tmpl")
+     :body (-> (io/resource "templates/error-list.tmpl")
                (tmpl/render {:items items}))}))
 
 (defmethod ig/init-key ::handlers
-  [_ {:keys [pool] :as cfg}]
-  {:retrieve-file-data (partial retrieve-file-data cfg)
+  [_ cfg]
+  {:index (partial index cfg)
+   :retrieve-file-data (partial retrieve-file-data cfg)
    :retrieve-file-changes (partial retrieve-file-changes cfg)
    :retrieve-error (partial retrieve-error cfg)
-   :retrieve-error-list (partial retrieve-error-list cfg)})
+   :retrieve-error-list (partial retrieve-error-list cfg)
+   :upload-file-data (partial upload-file-data cfg)})

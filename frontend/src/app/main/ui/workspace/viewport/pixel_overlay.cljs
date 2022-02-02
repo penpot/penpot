@@ -6,13 +6,14 @@
 
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
+   [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.cursors :as cur]
-   [app.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
+   [app.main.ui.workspace.shapes :as shapes]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
@@ -36,16 +37,16 @@
   (let [data     (mf/deref refs/workspace-page)
         objects  (:objects data)
         root     (get objects uuid/zero)
-        shapes   (->> (:shapes root) (map #(get objects %)))]
-    [:*
-     [:g.shapes
-      (for [item shapes]
-        (if (= (:type item) :frame)
-          [:& frame-wrapper {:shape item
-                             :key (:id item)
-                             :objects objects}]
-          [:& shape-wrapper {:shape item
-                             :key (:id item)}]))]]))
+        shapes   (->> (:shapes root)
+                      (map (d/getf objects)))]
+    [:g.shapes
+     (for [item shapes]
+       (if (= (:type item) :frame)
+         [:& shapes/frame-wrapper {:shape item
+                                   :key (:id item)
+                                   :objects objects}]
+         [:& shapes/shape-wrapper {:shape item
+                                   :key (:id item)}]))]))
 
 (mf/defc pixel-overlay
   {::mf/wrap-props false}

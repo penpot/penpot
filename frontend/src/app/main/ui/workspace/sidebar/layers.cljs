@@ -19,6 +19,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.timers :as ts]
+   [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -41,10 +42,10 @@
                i/mask
                i/folder))
     :bool (case (:bool-type shape)
-            :difference   i/boolean-difference
-            :exclude      i/boolean-exclude
-            :intersection i/boolean-intersection
-            #_:default    i/boolean-union)
+            :difference   i/bool-difference
+            :exclude      i/bool-exclude
+            :intersection i/bool-intersection
+            #_:default    i/bool-union)
     :svg-raw i/file-svg
     nil))
 
@@ -69,8 +70,8 @@
                         (on-stop-edit)
                         (swap! local assoc :edition false)
                         (st/emit! (dw/end-rename-shape)
-                                  (when-not (str/empty? name)
-                                    (dw/update-shape (:id shape) {:name name})))))
+                                  (when-not (str/empty? (str/trim name))
+                                    (dw/update-shape (:id shape) {:name (str/trim name)})))))
 
         cancel-edit (fn []
                       (on-stop-edit)
@@ -138,16 +139,16 @@
         (fn [event]
           (dom/stop-propagation event)
           (if (:blocked item)
-            (st/emit! (dw/update-shape-flags id {:blocked false}))
-            (st/emit! (dw/update-shape-flags id {:blocked true})
+            (st/emit! (dw/update-shape-flags [id] {:blocked false}))
+            (st/emit! (dw/update-shape-flags [id] {:blocked true})
                       (dw/deselect-shape id))))
 
         toggle-visibility
         (fn [event]
           (dom/stop-propagation event)
           (if (:hidden item)
-            (st/emit! (dw/update-shape-flags id {:hidden false}))
-            (st/emit! (dw/update-shape-flags id {:hidden true}))))
+            (st/emit! (dw/update-shape-flags [id] {:hidden false}))
+            (st/emit! (dw/update-shape-flags [id] {:hidden true}))))
 
         select-shape
         (fn [event]
@@ -205,8 +206,12 @@
     (mf/use-effect
      (mf/deps selected)
      (fn []
-       (when (and (= (count selected) 1) selected?)
-         (.scrollIntoView (mf/ref-val dref) #js {:block "nearest", :behavior "smooth"}))))
+       (let [subid
+             (when (and (= (count selected) 1) selected?)
+               (ts/schedule-on-idle
+                #(.scrollIntoView (mf/ref-val dref) #js {:block "nearest", :behavior "smooth"})))]
+         #(when (some? subid)
+            (rx/dispose! subid)))))
 
     [:li {:on-context-menu on-context-menu
           :ref dref
@@ -270,7 +275,7 @@
     [:ul.element-list
      [:& hooks/sortable-container {}
        (for [[index id] (reverse (d/enumerate (:shapes root)))]
-         (let [obj (get objects id)]
+         (when-let [obj (get objects id)]
            (if (= (:type obj) :frame)
              [:& frame-wrapper
               {:item obj
@@ -303,6 +308,7 @@
                     :bool-type]))
 
 (defn- strip-objects
+  "Remove unnecesary data from objects map"
   [objects]
   (persistent!
    (->> objects
@@ -315,8 +321,11 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo #(mf/throttle % 200)]}
   [props]
-  (let [objects (obj/get props "objects")
-        objects (strip-objects objects)]
+  (let [objects (-> (obj/get props "objects")
+                    (hooks/use-equal-memo))
+        objects (mf/use-memo
+                 (mf/deps objects)
+                 #(strip-objects objects))]
     [:& layers-tree {:objects objects}]))
 
 ;; --- Layers Toolbox

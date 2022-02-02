@@ -10,7 +10,7 @@ body {
   color: $color-gray-20;
   display: flex;
   flex-direction: column;
-  font-family: 'worksans', sans-serif;
+  font-family: "worksans", sans-serif;
   height: 100vh;
   overflow: hidden;
 }
@@ -30,7 +30,6 @@ body {
   object {
     transition: none;
   }
-
 }
 
 img {
@@ -39,18 +38,15 @@ img {
 }
 
 svg {
-
   * {
     transition: none;
   }
-
 }
 
 *:focus {
   outline: none;
   box-shadow: 0;
 }
-
 
 a {
   cursor: pointer;
@@ -59,7 +55,6 @@ a {
   &:hover {
     color: $color-primary;
   }
-
 }
 
 p {
@@ -71,16 +66,14 @@ p {
     font-size: $fs16;
     line-height: $base-lh;
   }
-
 }
 
 li {
   line-height: $base-lh-sm;
 
   @include bp(baby-bear) {
-    line-height: $base-lh
+    line-height: $base-lh;
   }
-
 }
 
 ul {
@@ -114,9 +107,7 @@ h1 {
       font-size: $fs44;
       line-height: $title-lh;
     }
-
   }
-
 }
 h2 {
   font-size: $fs24;
@@ -127,13 +118,12 @@ h2 {
     font-size: $fs32;
     line-height: $title-lh;
   }
-
 }
 
 h3 {
   font-size: $fs24;
   font-weight: 300;
-  padding: .5rem 0;
+  padding: 0.5rem 0;
 }
 
 h4 {
@@ -142,33 +132,65 @@ h4 {
 }
 
 @-webkit-keyframes rotation {
-    from {-webkit-transform: rotate(0deg);}
-    to   {-webkit-transform: rotate(359deg);}
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(359deg);
+  }
 }
 
 @-webkit-keyframes rotation-negative {
-    from {-webkit-transform: rotate(0deg);}
-    to   {-webkit-transform: rotate(-359deg);}
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(-359deg);
+  }
 }
-
 
 @keyframes tooltipAppear {
-  0%   {opacity: 0; display: none;}
-  1% {display: block; opacity: 0; left: 3rem}
-  100% {opacity: 1; left: 2rem}
+  0% {
+    opacity: 0;
+    display: none;
+  }
+  1% {
+    display: block;
+    opacity: 0;
+    left: 3rem;
+  }
+  100% {
+    opacity: 1;
+    left: 2rem;
+  }
 }
 
-
 @keyframes show {
-  0%   {opacity: 0; display: none;}
-  1% {display: block; opacity: 0;}
-  100% {opacity: 1;}
+  0% {
+    opacity: 0;
+    display: none;
+  }
+  1% {
+    display: block;
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes hide {
-  0%   {opacity: 1; display: block;}
-  99% {opacity: 0; display: block}
-  100% {display: none;}
+  0% {
+    opacity: 1;
+    display: block;
+  }
+  99% {
+    opacity: 0;
+    display: block;
+  }
+  100% {
+    display: none;
+  }
 }
 
 .hide {
@@ -182,7 +204,7 @@ h4 {
 }
 
 .show {
-  animation: show .4s linear ;
+  animation: show 0.4s linear;
   display: block !important;
 }
 
@@ -191,7 +213,7 @@ h4 {
   text-align: center;
 }
 
-.hidden-input  {
+.hidden-input {
   display: none;
 }
 
@@ -215,17 +237,17 @@ hr {
   margin: 1rem 0;
 }
 
-input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-     margin: 0;
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-input[type=number] {
+input[type="number"] {
   -moz-appearance: textfield;
 }
 
 [contenteditable] {
-    -webkit-user-select: text;
-    user-select: text;
+  -webkit-user-select: text;
+  user-select: text;
 }

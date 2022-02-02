@@ -6,8 +6,9 @@
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
-   [app.common.geom.shapes :as gsh]
+   [app.common.data :as d]
    [app.common.pages :as cp]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text.fontfaces :as ff]
@@ -34,72 +35,88 @@
          (= new-thumbnail? old-thumbnail?)
          (= new-children old-children))))
 
-(mf/defc thumbnail
+(mf/defc frame-placeholder
   {::mf/wrap-props false}
   [props]
-  (let [shape (obj/get props "shape")]
-    (when (:thumbnail shape)
-      [:image.frame-thumbnail
-       {:id (str "thumbnail-" (:id shape))
-        :xlinkHref (:thumbnail shape)
-        :x (:x shape)
-        :y (:y shape)
-        :width (:width shape)
-        :height (:height shape)
-        ;; DEBUG
-        ;; :style {:filter "sepia(1)"}
-        }])))
+  (let [{:keys [x y width height fill-color] :as shape} (obj/get props "shape")]
+    (if (some? (:thumbnail shape))
+      [:& frame/frame-thumbnail {:shape shape}]
+      [:rect {:x x :y y :width width :height height :style {:fill (or fill-color "var(--color-white)")}}])))
 
-;; This custom deffered don't deffer rendering when ghost rendering is
-;; used.
 (defn custom-deferred
   [component]
   (mf/fnc deferred
     {::mf/wrap-props false}
     [props]
-    (let [tmp (mf/useState false)
+    (let [shape (-> (obj/get props "shape")
+                    (select-keys [:x :y :width :height])
+                    (hooks/use-equal-memo))
+
+          tmp (mf/useState false)
           ^boolean render? (aget tmp 0)
-          ^js set-render (aget tmp 1)]
-      (mf/use-layout-effect
+          ^js set-render (aget tmp 1)
+          prev-shape-ref (mf/use-ref shape)]
+
+      (mf/use-effect
+       (mf/deps shape)
        (fn []
-         (let [sem (ts/schedule-on-idle #(set-render true))]
-           #(rx/dispose! sem))))
-      (when render? (mf/create-element component props)))))
+         (mf/set-ref-val! prev-shape-ref shape)
+         (set-render false)))
+
+      (mf/use-effect
+       (mf/deps render? shape)
+       (fn []
+         (when-not render?
+           (let [sem (ts/schedule-on-idle #(set-render true))]
+             #(rx/dispose! sem)))))
+
+      (if (and render? (= shape (mf/ref-val prev-shape-ref)))
+        (mf/create-element component props)
+        (mf/create-element frame-placeholder props)))))
+
+;; Draw the frame proper as a deferred component
+(defn deferred-frame-shape-factory
+  [shape-wrapper]
+  (let [frame-shape (frame/frame-shape shape-wrapper)]
+    (mf/fnc defered-frame-wrapper
+      {::mf/wrap-props false
+       ::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "childs"]))
+                  custom-deferred]}
+      [props]
+      (let [shape  (unchecked-get props "shape")
+            childs (unchecked-get props "childs")]
+        [:& frame-shape {:shape shape
+                         :childs childs}]))))
 
 (defn frame-wrapper-factory
   [shape-wrapper]
-  (let [frame-shape (frame/frame-shape shape-wrapper)]
+  (let [deferred-frame-shape (deferred-frame-shape-factory shape-wrapper)]
     (mf/fnc frame-wrapper
-      {::mf/wrap [#(mf/memo' % check-frame-props) custom-deferred]
+      {::mf/wrap [#(mf/memo' % check-frame-props)]
        ::mf/wrap-props false}
       [props]
-      (let [shape       (unchecked-get props "shape")
-            objects     (unchecked-get props "objects")
-            thumbnail?  (unchecked-get props "thumbnail?")
 
-            shape        (gsh/transform-shape shape)
-            children     (mapv #(get objects %) (:shapes shape))
+      (when-let [shape (unchecked-get props "shape")]
+        (let [objects    (unchecked-get props "objects")
+              thumbnail? (unchecked-get props "thumbnail?")
 
-            all-children (cp/get-children-objects (:id shape) objects)
+              children
+              (-> (mapv (d/getf objects) (:shapes shape))
+                  (hooks/use-equal-memo))
 
-            rendered?   (mf/use-state false)
+              all-children
+              (-> (cp/get-children-objects (:id shape) objects)
+                  (hooks/use-equal-memo))
 
-            show-thumbnail? (and thumbnail? (some? (:thumbnail shape)))
+              show-thumbnail?
+              (and thumbnail? (some? (:thumbnail shape)))]
 
-            on-dom
-            (mf/use-callback
-             (fn [node]
-               (ts/schedule-on-idle #(reset! rendered? (some? node)))))]
-
-        (when (some? shape)
           [:g.frame-wrapper {:display (when (:hidden shape) "none")}
-
-           (when-not show-thumbnail?
-             [:> shape-container {:shape shape :ref on-dom}
-              [:& ff/fontfaces-style {:shapes all-children}]
-              [:& frame-shape {:shape shape
-                               :childs children}]])
-
-           (when (or (not @rendered?) show-thumbnail?)
-             [:& thumbnail {:shape shape}])])))))
+           [:> shape-container {:shape shape}
+            [:& ff/fontfaces-style {:shapes all-children}]
+            (if show-thumbnail?
+              [:& frame/frame-thumbnail {:shape shape}]
+              [:& deferred-frame-shape
+               {:shape shape
+                :childs children}])]])))))
 

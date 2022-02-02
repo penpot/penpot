@@ -9,11 +9,11 @@
   (:require
    [app.browser :as bw]
    [app.common.exceptions :as ex :include-macros true]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cf]
    [cljs.spec.alpha :as s]
    [lambdaisland.uri :as u]
-   [lambdaisland.glogi :as log]
    [promesa.core :as p]))
 
 (defn create-cookie
@@ -31,20 +31,26 @@
             (let [path   (str "/render-object/" file-id "/" page-id "/" object-id)
                   uri    (-> (u/uri (cf/get :public-uri))
                              (assoc :path "/")
+                             (assoc :query "essential=t")
                              (assoc :fragment path))
+
                   cookie (create-cookie uri token)]
               (pdf-from page (str uri) cookie)))
 
           (pdf-from [page uri cookie]
-            (log/info :uri uri)
-            (let [options {:cookie cookie}]
-              (p/do!
-                (bw/configure-page! page options)
-                (bw/navigate! page uri)
-                (bw/wait-for page "#screenshot")
-                (if save-path
-                  (bw/pdf page {:save-path save-path})
-                  (bw/pdf page)))))]
+            (l/info :uri uri)
+            (p/let [options {:cookie cookie}]
+              (bw/configure-page! page options)
+              (bw/navigate! page uri)
+              (bw/wait-for page "#screenshot")
+              ;; taking png screenshot before pdf, helps to make the
+              ;; pdf rendering works as expected.
+              (p/let [dom (bw/select page "#screenshot")]
+                (bw/screenshot dom {:full-page? true}))
+
+              (if save-path
+                (bw/pdf page {:save-path save-path})
+                (bw/pdf page))))]
 
     (bw/exec! handle)))
 

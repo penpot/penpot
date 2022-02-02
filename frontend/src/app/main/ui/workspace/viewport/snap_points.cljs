@@ -15,7 +15,7 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
-(def ^:private line-color "#D383DA")
+(def ^:private line-color "var(--color-snap)")
 (def ^:private line-opacity 0.6)
 (def ^:private line-width 1)
 
@@ -58,7 +58,7 @@
                 (->> shapes (first)))
 
         shape (if modifiers
-                (-> shape (assoc :modifiers modifiers) gsh/transform-shape)
+                (-> shape (merge (get modifiers (:id shape))) gsh/transform-shape)
                 shape)
 
         frame-id (snap/snap-frame-id shapes)]

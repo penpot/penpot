@@ -197,8 +197,8 @@
   "Removes some commands and convert relative to absolute coordinates"
   [commands]
   (let [simplify-command
-        ;; prev-pos   : previous position for the current path. Necesary for relative commands
-        ;; prev-start : previous move-to necesary for Z commands
+        ;; prev-pos   : previous position for the current path. Necessary for relative commands
+        ;; prev-start : previous move-to necessary for Z commands
         ;; prev-cc    : previous command control point for cubic beziers
         ;; prev-qc    : previous command control point for quadratic curves
         (fn [[result prev-pos prev-start prev-cc prev-qc] [command _prev]]

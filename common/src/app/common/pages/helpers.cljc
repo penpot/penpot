@@ -46,13 +46,14 @@
 (defn get-root-shape
   "Get the root shape linked to a component for this shape, if any"
   [shape objects]
-  (if-not (:shape-ref shape)
-    nil
-    (if (:component-root? shape)
-      shape
-      (if-let [parent-id (:parent-id shape)]
-        (get-root-shape (get objects parent-id) objects)
-        nil))))
+
+  (cond
+    (some? (:component-root? shape))
+    shape
+
+    (some? (:shape-ref shape))
+    (recur (get objects (:parent-id shape))
+           objects)))
 
 (defn make-container
   [page-or-component type]
@@ -98,35 +99,10 @@
   [component]
   (get-in component [:objects (:id component)]))
 
-;; Implemented with transient for performance
-(defn get-children
-  "Retrieve all children ids recursively for a given object. The
-  children's order will be breadth first."
-  [id objects]
-  (loop [result  (transient [])
-         pending (transient [])
-         next    id]
-    (let [children (get-in objects [next :shapes] [])
-          [result pending]
-          ;; Iterate through children and add them to the result
-          ;; also add them in pending to check for their children
-          (loop [result result
-                 pending pending
-                 current  (first children)
-                 children (rest children)]
-            (if current
-              (recur (conj! result current)
-                     (conj! pending current)
-                     (first children)
-                     (rest children))
-              [result pending]))
-
-          ;; If we have still pending, advance the iterator
-          length (count pending)]
-      (if (pos? length)
-        (let [next (get pending (dec length))]
-          (recur result (pop! pending) next))
-        (persistent! result)))))
+(defn get-children [id objects]
+  (if-let [shapes (-> (get objects id) :shapes (some-> vec))]
+    (into shapes (mapcat #(get-children % objects)) shapes)
+    []))
 
 (defn get-children-objects
   "Retrieve all children objects recursively for a given object"
@@ -175,6 +151,7 @@
 (defn clean-loops
   "Clean a list of ids from circular references."
   [objects ids]
+
   (let [parent-selected?
         (fn [id]
           (let [parents (get-parents id objects)]
@@ -481,3 +458,10 @@
   (and (not= (:type shape) :frame)
        (= (:frame-id shape) uuid/zero)))
 
+(defn children-seq
+  "Creates a sequence of shapes through the objects tree"
+  [shape objects]
+  (let [getter (partial get objects)]
+    (tree-seq #(d/not-empty? (get shape :shapes))
+              #(->> (get % :shapes) (map getter))
+              shape)))

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.colorpicker
   (:require
+   [app.common.colors :as clr]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
@@ -49,7 +50,7 @@
 ;; --- Color Picker Modal
 
 (defn color->components [value opacity]
-  (let [value (if (uc/hex? value) value "#000000")
+  (let [value (if (uc/hex? value) value clr/black)
         [r g b] (uc/hex->rgb value)
         [h s v] (uc/hex->hsv value)]
 
@@ -134,8 +135,15 @@
         (fn [changes]
           (let [editing-stop (:editing-stop @state)]
             (swap! state #(cond-> %
-                            true (update :current-color merge changes)
-                            editing-stop (update-in [:stops editing-stop] merge changes)))
+                            :always
+                            (update :current-color merge changes)
+
+                            (not editing-stop)
+                            (-> (assoc :type :color)
+                                (dissoc :gradient-data :stops :editing-stops))
+
+                            editing-stop
+                            (update-in [:stops editing-stop] merge changes)))
             (reset! dirty? true)))
 
         handle-click-picker
@@ -161,8 +169,11 @@
                 is-gradient? (some? (:gradient color))]
             (if (and (some? editing-stop) (not is-gradient?))
               (handle-change-color (color->components (:color color) (:opacity color)))
-              (do (reset! state (data->state color))
+              (do (reset! dirty? false)
+                  (reset! state (-> (data->state color)
+                                    (assoc :editing-stop nil)))
                   (on-change color)))))
+
 
         on-add-library-color
         (fn [_]

@@ -173,14 +173,14 @@
 
 (defn- process-report
   [cfg {:keys [type profile-id] :as report}]
-  (l/trace :action "procesing report" :report (pr-str report))
+  (l/trace :action "processing report" :report (pr-str report))
   (cond
     ;; In this case we receive a bounce/complaint notification without
     ;; confirmed identity, we just emit a warning but do nothing about
     ;; it because this is not a normal case. All notifications should
     ;; come with profile identity.
     (nil? profile-id)
-    (l/warn :msg "a notification without identity recevied from AWS"
+    (l/warn :msg "a notification without identity received from AWS"
             :report (pr-str report))
 
     (= "bounce" type)

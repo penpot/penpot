@@ -17,8 +17,8 @@
        (command->point command))))
 
   ([command]
-   (when-not (nil? command)
-     (let [{{:keys [x y]} :params} command]
+   (when command
+     (let [{:keys [x y]} (:params command)]
        (gpt/point x y)))))
 
 
@@ -147,7 +147,7 @@
                    [])))))
 
 (defn opposite-index
-  "Calculate sthe opposite index given a prefix and an index"
+  "Calculates the opposite index given a prefix and an index"
   [content index prefix]
 
   (let [point (if (= prefix :c2)

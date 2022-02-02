@@ -11,6 +11,7 @@
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
@@ -24,7 +25,7 @@
 
 ;; Shortcuts format https://github.com/ccampbell/mousetrap
 
-(def shortcuts
+(def base-shortcuts
   {:toggle-layers     {:tooltip (ds/alt "L")
                        :command (ds/a-mod "l")
                        :fn #(st/emit! (dw/go-to-layout :layers))}
@@ -137,6 +138,10 @@
                         :command "a"
                         :fn #(st/emit! (dwd/select-for-drawing :frame))}
 
+   :move               {:tooltip "V"
+                        :command "v"
+                        :fn #(st/emit! :interrupt)}
+
    :draw-rect          {:tooltip "R"
                         :command "r"
                         :fn #(st/emit! (dwd/select-for-drawing :rect))}
@@ -233,11 +238,19 @@
 
    :open-color-picker  {:tooltip "I"
                         :command "i"
-                        :fn #(st/emit! (mdc/picker-for-selected-shape ))}
+                        :fn #(st/emit! (mdc/picker-for-selected-shape))}
 
    :open-viewer        {:tooltip "G V"
                         :command "g v"
                         :fn #(st/emit! (dw/go-to-viewer))}
+
+   :open-handoff       {:tooltip "G H"
+                        :command "g h"
+                        :fn #(st/emit! (dw/go-to-viewer {:section :handoff}))}
+
+   :open-comments      {:tooltip "G C"
+                        :command "g c"
+                        :fn #(st/emit! (dw/go-to-viewer {:section :comments}))}
 
    :open-dashboard     {:tooltip "G D"
                         :command "g d"
@@ -261,23 +274,80 @@
                         :type "keyup"
                         :fn #(st/emit! (dw/toggle-distances-display false))}
 
-   :boolean-union        {:tooltip (ds/alt "U")
-                          :command "alt+u"
-                          :fn #(st/emit! (dw/create-bool :union))}
+   :bool-union         {:tooltip (ds/meta (ds/alt "U"))
+                        :command (ds/c-mod "alt+u")
+                        :fn #(st/emit! (dw/create-bool :union))}
 
-   :boolean-difference   {:tooltip (ds/alt "D")
-                          :command "alt+d"
-                          :fn #(st/emit! (dw/create-bool :difference))}
+   :bool-difference    {:tooltip (ds/meta (ds/alt "D"))
+                        :command (ds/c-mod "alt+d")
+                        :fn #(st/emit! (dw/create-bool :difference))}
 
-   :boolean-intersection {:tooltip (ds/alt "I")
-                          :command "alt+i"
+   :bool-intersection    {:tooltip (ds/meta (ds/alt "I"))
+                          :command (ds/c-mod "alt+i")
                           :fn #(st/emit! (dw/create-bool :intersection))}
 
-   :boolean-exclude      {:tooltip (ds/alt "E")
-                          :command "alt+e"
+   :bool-exclude         {:tooltip (ds/meta (ds/alt "E"))
+                          :command (ds/c-mod "alt+e")
                           :fn #(st/emit! (dw/create-bool :exclude))}
 
-   })
+   :align-left           {:tooltip (ds/alt "A")
+                          :command "alt+a"
+                          :fn #(st/emit! (dw/align-objects :hleft))}
+
+   :align-right          {:tooltip (ds/alt "D")
+                          :command "alt+d"
+                          :fn #(st/emit! (dw/align-objects :hright))}
+
+   :align-top            {:tooltip (ds/alt "W")
+                          :command "alt+w"
+                          :fn #(st/emit! (dw/align-objects :vtop))}
+
+   :align-hcenter        {:tooltip (ds/alt "H")
+                          :command "alt+h"
+                          :fn #(st/emit! (dw/align-objects :hcenter))}
+
+   :align-vcenter        {:tooltip (ds/alt "V")
+                          :command "alt+v"
+                          :fn #(st/emit! (dw/align-objects :vcenter))}
+
+   :align-bottom         {:tooltip (ds/alt "S")
+                          :command "alt+s"
+                          :fn #(st/emit! (dw/align-objects :vbottom))}
+
+   :h-distribute         {:tooltip (ds/meta-shift (ds/alt "H"))
+                          :command (ds/c-mod "shift+alt+h")
+                          :fn #(st/emit! (dw/distribute-objects :horizontal))}
+
+   :v-distribute         {:tooltip (ds/meta-shift (ds/alt "V"))
+                          :command (ds/c-mod "shift+alt+v")
+                          :fn #(st/emit! (dw/distribute-objects :vertical))}
+
+   :toggle-visibility    {:tooltip (ds/meta-shift "H")
+                          :command (ds/c-mod "shift+h")
+                          :fn #(st/emit! (dw/toggle-visibility-selected))}
+
+   :toggle-lock          {:tooltip (ds/meta-shift "L")
+                          :command (ds/c-mod "shift+l")
+                          :fn #(st/emit! (dw/toggle-lock-selected))}
+
+   :toggle-lock-size     {:tooltip (ds/meta (ds/alt "L"))
+                          :command (ds/c-mod "alt+l")
+                          :fn #(st/emit! (dw/toggle-proportion-lock))}
+
+   :create-artboard-from-selection   {:tooltip (ds/meta (ds/alt "G"))
+                          :command (ds/c-mod "alt+g")
+                          :fn #(st/emit! (dw/create-artboard-from-selection))}})
+
+(def opacity-shortcuts
+  (into {} (->>
+            (range 10)
+            (map (fn [n] [(keyword (str "opacity-" n))
+                          {:tooltip (str n)
+                           :command (str n)
+                           :fn #(st/emit! (dwly/pressed-opacity n))}])))))
+
+(def shortcuts
+  (merge base-shortcuts opacity-shortcuts))
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

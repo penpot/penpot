@@ -1,4 +1,4 @@
--- Fix problem with content-type inconherence
+-- Fix problem with content-type incoherence
 
 UPDATE storage_object so
 SET metadata = jsonb_set(metadata, '{~:content-type}', to_jsonb(fmo.mtype))
