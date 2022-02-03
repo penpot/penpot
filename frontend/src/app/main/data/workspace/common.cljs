@@ -314,37 +314,41 @@
      [redo-changes undo-changes])))
 
 (defn add-shape
-  [attrs]
-  (us/verify ::shape-attrs attrs)
-  (ptk/reify ::add-shape
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
+  ([attrs]
+   (add-shape attrs {}))
 
-            id (or (:id attrs) (uuid/next))
-            name (-> objects
-                     (retrieve-used-names)
-                     (generate-unique-name (:name attrs)))
+  ([attrs {:keys [no-select?]}]
+   (us/verify ::shape-attrs attrs)
+   (ptk/reify ::add-shape
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id  (:current-page-id state)
+             objects  (wsh/lookup-page-objects state page-id)
 
-            selected (wsh/lookup-selected state)
+             id (or (:id attrs) (uuid/next))
+             name (-> objects
+                      (retrieve-used-names)
+                      (generate-unique-name (:name attrs)))
 
-            [rchanges uchanges] (add-shape-changes
-                                 page-id
-                                 objects
-                                 selected
-                                 (-> attrs
-                                     (assoc :id id )
-                                     (assoc :name name)))]
+             selected (wsh/lookup-selected state)
 
-        (rx/concat
-         (rx/of (dch/commit-changes {:redo-changes rchanges
-                                     :undo-changes uchanges
-                                     :origin it})
-                (select-shapes (d/ordered-set id)))
-         (when (= :text (:type attrs))
-           (->> (rx/of (start-edition-mode id))
-                (rx/observe-on :async))))))))
+             [rchanges uchanges] (add-shape-changes
+                                  page-id
+                                  objects
+                                  selected
+                                  (-> attrs
+                                      (assoc :id id )
+                                      (assoc :name name)))]
+
+         (rx/concat
+          (rx/of (dch/commit-changes {:redo-changes rchanges
+                                      :undo-changes uchanges
+                                      :origin it})
+                 (when-not no-select?
+                   (select-shapes (d/ordered-set id))))
+          (when (= :text (:type attrs))
+            (->> (rx/of (start-edition-mode id))
+                 (rx/observe-on :async)))))))))
 
 (defn move-shapes-into-frame [frame-id shapes]
   (ptk/reify ::move-shapes-into-frame

@@ -142,7 +142,7 @@
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
         show-grids?              (contains? layout :display-grid)
-        show-outlines?           (and (nil? transform) (not edition) (not drawing-obj) (not (#{:comments :path} drawing-tool)))
+        show-outlines?           (and (nil? transform) (not edition) (not drawing-obj) (not (#{:comments :path :curve} drawing-tool)))
         show-pixel-grid?         (>= zoom 8)
         show-presence?           page-id
         show-prototypes?         (= options-mode :prototype)
