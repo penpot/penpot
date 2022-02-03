@@ -3032,7 +3032,7 @@ msgstr "Verlauf (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.layers"
-msgstr "Ebenen (%s)"
+msgstr "Ebenen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
@@ -3048,7 +3048,7 @@ msgstr "Sitemap"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.assets"
-msgstr "Assets (%s)"
+msgstr "Assets"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"

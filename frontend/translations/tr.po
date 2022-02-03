@@ -3112,7 +3112,7 @@ msgstr "Geçmiş (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.layers"
-msgstr "Katmanlar (%s)"
+msgstr "Katmanlar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
@@ -3128,7 +3128,7 @@ msgstr "Site haritası"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.assets"
-msgstr "Varlıklar(%s)"
+msgstr "Varlıklar"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"

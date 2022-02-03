@@ -19,6 +19,7 @@
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
@@ -54,12 +55,12 @@
       [:& tab-container {:on-change-tab #(st/emit! (dw/go-to-layout %))
                          :selected section}
 
-       [:& tab-element {:id :layers :title "Layers"}
+       [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
         [:div.layers-tab
          [:& sitemap {:layout layout}]
          [:& layers-toolbox]]]
 
-       [:& tab-element {:id :assets :title "Library"}
+       [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
         [:& assets-toolbox]]]]]))
 
 ;; --- Right Sidebar (Component)

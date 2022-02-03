@@ -225,6 +225,4 @@
 
      [:div.resize-area {:on-pointer-down on-pointer-down
                         :on-lost-pointer-capture on-lost-pointer-capture
-                        :on-mouse-move on-mouse-move}]
-
-     ]))
+                        :on-mouse-move on-mouse-move}]]))

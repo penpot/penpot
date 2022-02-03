@@ -156,8 +156,7 @@
         [:div.color-sample
          (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors))) ]
            [:& cb/color-bullet {:key (str "color-" idx)
-                                :color color}])]]
-       ]]
+                                :color color}])]]]]
 
      [:div.color-palette-actions
       {:on-click #(swap! state assoc :show-menu true)}

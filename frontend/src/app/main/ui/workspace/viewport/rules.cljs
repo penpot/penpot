@@ -17,11 +17,16 @@
 (def rules-pos 15)
 (def rules-size 4)
 (def rules-width 1)
-
 (def rule-area-size 22)
 (def rule-area-half-size (/ rule-area-size 2))
-
 (def rules-background "var(--color-gray-50)")
+(def selection-area-color "var(--color-primary)")
+(def selection-area-opacity 0.3)
+(def over-number-size 50)
+(def over-number-opacity 0.7)
+
+(def font-size 13)
+(def font-family "sourcesanspro")
 
 ;; ----------------
 ;;   RULES
@@ -141,8 +146,8 @@
                      :text-anchor "middle"
                      :dominant-baseline "middle"
                      :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
-                     :style {:font-size (/ 13 zoom)
-                             :font-family "sourcesanspro"
+                     :style {:font-size (/ font-size zoom)
+                             :font-family font-family
                              :fill colors/gray-30}}
               (str (mth/round step-val))]
 
@@ -153,11 +158,6 @@
                      :y2 line-y2
                      :style {:stroke colors/gray-30
                              :stroke-width rules-width}}]])))]]))
-
-(def selection-area-color "var(--color-primary)")
-(def selection-area-opacity 0.3)
-(def over-number-size 50)
-(def over-number-opacity 0.7)
 
 (mf/defc selection-area
   [{:keys [vbox zoom selection-rect]}]
@@ -181,8 +181,8 @@
             :y (+ (:y vbox) (/ 12 zoom))
             :text-anchor "end"
             :dominant-baseline "middle"
-            :style {:font-size (/ 13 zoom)
-                    :font-family "sourcesanspro"
+            :style {:font-size (/ font-size zoom)
+                    :font-family font-family
                     :fill selection-area-color}}
      (str (mth/round (:x1 selection-rect)))]
 
@@ -197,8 +197,8 @@
             :y (+ (:y vbox) (/ 12 zoom))
             :text-anchor "start"
             :dominant-baseline "middle"
-            :style {:font-size (/ 13 zoom)
-                    :font-family "sourcesanspro"
+            :style {:font-size (/ font-size zoom)
+                    :font-family font-family
                     :fill selection-area-color}}
      (str (mth/round (:x2 selection-rect)))]]
 
@@ -231,8 +231,8 @@
               :y center-y
               :text-anchor "end"
               :dominant-baseline "middle"
-              :style {:font-size (/ 13 zoom)
-                      :font-family "sourcesanspro"
+              :style {:font-size (/ font-size zoom)
+                      :font-family font-family
                       :fill selection-area-color}}
        (str (mth/round (:y2 selection-rect)))]
 
@@ -240,8 +240,8 @@
               :y center-y
               :text-anchor "start"
               :dominant-baseline "middle"
-              :style {:font-size (/ 13 zoom)
-                      :font-family "sourcesanspro"
+              :style {:font-size (/ font-size zoom)
+                      :font-family font-family
                       :fill selection-area-color}}
        (str (mth/round (:y1 selection-rect)))]])])
 
