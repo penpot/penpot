@@ -12,30 +12,35 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (mf/defc typography-item
-  [{:keys [local file-id selected-ids typography name-only?]}]
+  [{:keys [file-id selected-ids typography name-only?]}]
   (let [font-data (f/get-font-data (:font-id typography))
         font-variant-id (:font-variant-id typography)
         variant-data (->> font-data :variants (d/seek #(= (:id %) font-variant-id)))
 
         handle-click
         (mf/use-callback
-         (mf/deps local typography selected-ids)
+         (mf/deps typography selected-ids)
          (fn []
            (let [attrs (merge
                         {:typography-ref-file file-id
                          :typography-ref-id (:id typography)}
                         (dissoc typography :id :name))]
-             (->> selected-ids
-                  (run! #(st/emit! (dwt/update-text-attrs {:id % :editor (get-in local [:editors %]) :attrs attrs})))))))]
+
+             (run! #(st/emit!
+                     (dwt/update-text-attrs
+                      {:id %
+                       :editor (get @refs/workspace-editor-state %)
+                       :attrs attrs}))
+                   selected-ids))))]
 
     [:div.typography-item {:on-click handle-click}
      [:div.typography-name
@@ -49,7 +54,7 @@
         [:div.typography-data (str (:font-size typography) "pt | " (:name variant-data))]])]))
 
 (mf/defc palette
-  [{:keys [local selected-ids current-file-id file-typographies shared-libs]}]
+  [{:keys [selected-ids current-file-id file-typographies shared-libs]}]
 
   (let [state (mf/use-state {:show-menu false})
         selected (mf/use-state :file)
@@ -129,25 +134,19 @@
          [:& typography-item
           {:key idx
            :file-id file-id
-           :local local
            :selected-ids selected-ids
            :typography item}])]]
 
      [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))
 
-(def local-data
-  (l/derived #(select-keys % [:editors]) refs/workspace-local =))
-
 (mf/defc textpalette
   {::mf/wrap [mf/memo]}
   []
-  (let [local             (mf/deref local-data)
-        selected-ids      (mf/deref refs/selected-shapes)
+  (let [selected-ids      (mf/deref refs/selected-shapes)
         file-typographies (mf/deref refs/workspace-file-typography)
         shared-libs       (mf/deref refs/workspace-libraries)
-        current-file-id   (mf/deref refs/current-file-id)]
-    [:& palette {:local local
-                 :current-file-id current-file-id
+        current-file-id   (mf/use-ctx ctx/current-file-id)]
+    [:& palette {:current-file-id current-file-id
                  :selected-ids selected-ids
                  :file-typographies file-typographies
                  :shared-libs shared-libs}]))

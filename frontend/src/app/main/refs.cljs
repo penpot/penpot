@@ -124,6 +124,11 @@
                               :move-overlay-index])
              workspace-local =))
 
+(def typography-data
+  (l/derived #(select-keys % [:rename-typography
+                              :edit-typography])
+             workspace-local =))
+
 (def local-displacement
   (l/derived #(select-keys % [:modifiers :selected])
              workspace-local =))
@@ -157,9 +162,6 @@
 
 (def current-hover-ids
   (l/derived :hover-ids context-menu))
-
-(def editors
-  (l/derived :editors workspace-local))
 
 (def selected-assets
   (l/derived :selected-assets workspace-local))
