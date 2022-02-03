@@ -523,7 +523,7 @@
     (watch [_ _ stream]
       (->> stream
            (rx/filter (ptk/type? ::dws/duplicate-selected))
-           (rx/first)
+           (rx/take 1)
            (rx/map #(start-move from-position))))))
 
 (defn- start-move
@@ -612,7 +612,7 @@
                                  (rx/filter #(= direction (deref %))))
                 stopper (->> move-events
                              (rx/debounce 100)
-                             (rx/first))
+                             (rx/take 1))
                 scale (if shift? (gpt/point (:big nudge)) (gpt/point (:small nudge)))
                 mov-vec (gpt/multiply (get-displacement direction) scale)]
 

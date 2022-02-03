@@ -219,7 +219,7 @@
 
            ;; Hide the modal if the stop event is emitted
            (->> stop?
-                (rx/first)
+                (rx/take 1)
                 (rx/map #(md/hide))))))
 
       ptk/UpdateEvent
