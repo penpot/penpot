@@ -40,6 +40,9 @@
   font-size: $fs12;
   color: $color-gray-20;
   fill: $color-gray-20;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .history-entry {
