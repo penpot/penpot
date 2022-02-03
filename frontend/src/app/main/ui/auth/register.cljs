@@ -32,14 +32,10 @@
 
 (defn- validate
   [data]
-  (let [password (:password data)
-        terms-privacy (:terms-privacy data)]
+  (let [password (:password data)]
     (cond-> {}
       (> 8 (count password))
-      (assoc :password {:message "errors.password-too-short"})
-
-      (and (not terms-privacy) false)
-      (assoc :terms-privacy {:message "errors.terms-privacy-agreement-invalid"}))))
+      (assoc :password {:message "errors.password-too-short"}))))
 
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::password ::us/not-empty-string)
