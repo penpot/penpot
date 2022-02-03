@@ -185,7 +185,7 @@
            (reset! v-scrolling? false)
            (reset! h-scrolling? false)))]
 
-    [*
+    [:*
      (when show-v-scroll?
        [:g.v-scroll
         [:rect {:on-mouse-move #(on-mouse-move % :y)
