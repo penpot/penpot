@@ -2815,6 +2815,9 @@ msgstr "Rotation"
 msgid "workspace.options.search-font"
 msgstr "Search font"
 
+msgid "workspace.options.recent-fonts"
+msgstr "Recent"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
 msgstr "Select a shape, artboard or group to drag a connection to other artboard."

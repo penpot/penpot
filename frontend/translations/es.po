@@ -2826,6 +2826,9 @@ msgstr "Rotación"
 msgid "workspace.options.search-font"
 msgstr "Buscar fuente"
 
+msgid "workspace.options.recent-fonts"
+msgstr "Recientes"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
 msgstr ""
