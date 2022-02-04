@@ -6,6 +6,7 @@
 
 ### :sparkles: New features
 
+- Add configurable nudge amount [Taiga #910](https://tree.taiga.io/project/penpot/us/910)
 - Add stroke properties for image shapes [Taiga #497](https://tree.taiga.io/project/penpot/us/497)
 - On user settings, hide the theme selector as long as we only have one theme [Taiga #2610](https://tree.taiga.io/project/penpot/us/2610)
 - Automatically open comments from dashboard notifications [Taiga #2605](https://tree.taiga.io/project/penpot/us/2605)

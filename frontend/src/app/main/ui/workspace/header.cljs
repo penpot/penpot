@@ -353,7 +353,10 @@
          (if (contains? layout :dynamic-alignment)
            (tr "workspace.header.menu.disable-dynamic-alignment")
            (tr "workspace.header.menu.enable-dynamic-alignment"))]
-        [:span.shortcut (sc/get-tooltip :toggle-alignment)]]]]]))
+        [:span.shortcut (sc/get-tooltip :toggle-alignment)]]
+
+       [:li {:on-click #(st/emit! (modal/show {:type :nudge-option}))}
+        [:span (tr "modals.nudge-title")]]]]]))
 
 ;; --- Header Component
 
