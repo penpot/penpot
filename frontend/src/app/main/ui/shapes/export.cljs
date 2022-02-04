@@ -103,11 +103,6 @@
           (-> (add! :rx)
               (add! :ry)))
 
-        (cond-> image?
-          (-> (add! :fill-color)
-              (add! :fill-opacity)
-              (add! :fill-color-gradient)))
-
         (cond-> path?
           (-> (add! :stroke-cap-start)
               (add! :stroke-cap-end)))
@@ -292,6 +287,7 @@
               :penpot:close-click-outside ((d/nilf str) (:close-click-outside interaction))
               :penpot:background-overlay ((d/nilf str) (:background-overlay interaction))
               :penpot:preserve-scroll ((d/nilf str) (:preserve-scroll interaction))}])])))
+
 
 (mf/defc export-data
   [{:keys [shape]}]

@@ -73,26 +73,28 @@
 (defn setup-fill [shape]
   (cond-> shape
     ;; Color present as attribute
-    (uc/color? (get-in shape [:svg-attrs :fill]))
+    (uc/color? (str/trim (get-in shape [:svg-attrs :fill])))
     (-> (update :svg-attrs dissoc :fill)
-        (assoc :fill-color (-> (get-in shape [:svg-attrs :fill])
-                               (uc/parse-color))))
+        (assoc-in [:fills 0 :fill-color] (-> (get-in shape [:svg-attrs :fill])
+                                             (str/trim)
+                                             (uc/parse-color))))
 
     ;; Color present as style
-    (uc/color? (get-in shape [:svg-attrs :style :fill]))
+    (uc/color? (str/trim (get-in shape [:svg-attrs :style :fill])))
     (-> (update-in [:svg-attrs :style] dissoc :fill)
-        (assoc :fill-color (-> (get-in shape [:svg-attrs :style :fill])
-                               (uc/parse-color))))
+        (assoc-in [:fills 0 :fill-color] (-> (get-in shape [:svg-attrs :style :fill])
+                                             (str/trim)
+                                             (uc/parse-color))))
 
     (get-in shape [:svg-attrs :fill-opacity])
     (-> (update :svg-attrs dissoc :fill-opacity)
-        (assoc :fill-opacity (-> (get-in shape [:svg-attrs :fill-opacity])
-                                 (d/parse-double))))
+        (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :fill-opacity])
+                                                (d/parse-double))))
 
     (get-in shape [:svg-attrs :style :fill-opacity])
     (-> (update-in [:svg-attrs :style] dissoc :fill-opacity)
-        (assoc :fill-opacity (-> (get-in shape [:svg-attrs :style :fill-opacity])
-                                 (d/parse-double))))))
+        (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :style :fill-opacity])
+                                                (d/parse-double))))))
 
 (defn setup-stroke [shape]
   (let [stroke-linecap (-> (or (get-in shape [:svg-attrs :stroke-linecap])
@@ -378,9 +380,10 @@
                         :polygon     (create-path-shape name frame-id svg-data (-> element-data usvg/polygon->path))
                         :line        (create-path-shape name frame-id svg-data (-> element-data usvg/line->path))
                         :image       (create-image-shape name frame-id svg-data element-data)
-                        #_other      (create-raw-svg name frame-id svg-data element-data))
+                        #_other      (create-raw-svg name frame-id svg-data element-data)))
 
-                      )
+            shape (assoc shape :fills [])
+
             shape (when (some? shape)
                     (-> shape
                         (assoc :svg-defs (select-keys (:defs svg-data) references))

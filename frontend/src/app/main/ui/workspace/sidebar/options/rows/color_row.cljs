@@ -61,11 +61,12 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [color disable-gradient disable-opacity on-change on-detach on-open on-close title]}]
+  [{:keys [index color disable-gradient disable-opacity on-change on-reorder on-detach on-open on-close title on-remove]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         file-colors     (mf/deref refs/workspace-file-colors)
         shared-libs     (mf/deref refs/workspace-libraries)
         hover-detach    (mf/use-state false)
+        disable-drag    (mf/use-state false)
 
         get-color-name (fn [{:keys [id file-id]}]
                          (let [src-colors (if (= file-id current-file-id)
@@ -76,6 +77,9 @@
         parse-color (fn [color]
                       (-> color
                           (update :color #(or % (:value color)))))
+
+        detach-value (fn []
+                       (when on-detach (on-detach color)))
 
         change-value (fn [new-value]
                        (when on-change (on-change (-> color
@@ -104,7 +108,12 @@
                                 (change-opacity (/ value 100)))
 
         select-all (fn [event]
-                     (dom/select-text! (dom/get-target event)))
+                     (when (not @disable-drag)
+                       (dom/select-text! (dom/get-target event)))
+                     (reset! disable-drag true))
+
+        on-blur (fn [_]
+                  (reset! disable-drag false))
 
         handle-click-color (mf/use-callback
                             (mf/deps color)
@@ -115,7 +124,22 @@
                                                    handle-open
                                                    handle-close))
 
-        prev-color (h/use-previous color)]
+        prev-color (h/use-previous color)
+
+        on-drop
+        (fn [_ data]
+          (on-reorder (:index data)))
+
+        [dprops dref] (if (some? on-reorder)
+                        (h/use-sortable
+                         :data-type "penpot/color-row"
+                         :on-drop on-drop
+                         :disabled @disable-drag
+                         :detect-center? false
+                         :data {:id (str "color-row-" index)
+                                :index index
+                                :name (str "Color row" index)})
+                        [nil nil])]
 
     (mf/use-effect
      (mf/deps color prev-color)
@@ -123,7 +147,11 @@
        (when (not= prev-color color)
          (modal/update-props! :colorpicker {:data (parse-color color)}))))
 
-    [:div.row-flex.color-data {:title title}
+    [:div.row-flex.color-data {:title title
+                               :class (dom/classnames
+                                       :dnd-over-top (= (:over dprops) :top)
+                                       :dnd-over-bot (= (:over dprops) :bot))
+                               :ref dref}
      [:& cb/color-bullet {:color color
                           :on-click handle-click-color}]
 
@@ -137,7 +165,7 @@
           [:div.element-set-actions-button
            {:on-mouse-enter #(reset! hover-detach true)
             :on-mouse-leave #(reset! hover-detach false)
-            :on-click on-detach}
+            :on-click detach-value}
            (if @hover-detach i/unchain i/chain)])]
 
        ;; Rendering a gradient
@@ -156,6 +184,7 @@
                                    (-> color :color uc/remove-hash))
                           :placeholder (tr "settings.multiple")
                           :on-click select-all
+                          :on-blur on-blur
                           :on-change handle-value-change}]]
 
         (when (and (not disable-opacity)
@@ -167,5 +196,7 @@
                               :on-click select-all
                               :on-change handle-opacity-change
                               :min 0
-                              :max 100}]])])]))
+                              :max 100}]])])
+     (when (some? on-remove)
+       [:div.element-set-actions-button.remove {:on-click on-remove} i/minus])]))
 

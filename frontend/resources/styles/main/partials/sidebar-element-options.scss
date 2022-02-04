@@ -954,11 +954,17 @@
   justify-content: center;
   align-items: center;
   cursor: pointer;
+
   svg {
     width: 12px;
     height: 12px;
     fill: $color-gray-20;
     stroke: $color-gray-20;
+  }
+
+  &.remove {
+    min-width: 20px;
+    min-height: 20px;
   }
 
   &:hover svg,

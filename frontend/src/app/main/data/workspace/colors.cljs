@@ -111,42 +111,105 @@
           (assoc-in [:workspace-local :picked-color-select] value)
           (assoc-in [:workspace-local :picked-shift?] shift?)))))
 
+(defn transform-fill
+  [state ids color transform]
+  (let [page-id   (:current-page-id state)
+        objects   (wsh/lookup-page-objects state page-id)
+
+        is-text?  #(= :text (:type (get objects %)))
+        text-ids  (filter is-text? ids)
+        shape-ids (filter (comp not is-text?) ids)
+
+        attrs (cond-> {:fill-color nil
+                       :fill-color-gradient nil
+                       :fill-color-ref-file nil
+                       :fill-color-ref-id nil
+                       :fill-opacity nil}
+
+                (contains? color :color)
+                (assoc :fill-color (:color color))
+
+                (contains? color :id)
+                (assoc :fill-color-ref-id (:id color))
+
+                (contains? color :file-id)
+                (assoc :fill-color-ref-file (:file-id color))
+
+                (contains? color :gradient)
+                (assoc :fill-color-gradient (:gradient color))
+
+                (contains? color :opacity)
+                (assoc :fill-opacity (:opacity color)))
+        ;; Not nil attrs
+        clean-attrs (d/without-nils attrs)]
+
+    (rx/concat
+     (rx/from (map #(dwt/update-text-attrs {:id % :attrs attrs}) text-ids))
+     (rx/of (dch/update-shapes
+             shape-ids
+             #(transform % clean-attrs))))))
+
+(defn swap-fills [shape index new-index]
+  (let [first (get-in shape [:fills index])
+        second (get-in shape [:fills new-index])]
+    (-> shape
+        (assoc-in [:fills index] second)
+        (assoc-in [:fills new-index] first))
+    ))
+
+(defn reorder-fills
+  [ids index new-index]
+  (ptk/reify ::reorder-fills
+    ptk/WatchEvent
+    (watch [_ _ _]
+           (rx/of (dch/update-shapes
+                   ids
+                   #(swap-fills % index new-index))))))
+
 (defn change-fill
-  [ids color]
+  [ids color position]
   (ptk/reify ::change-fill
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page-id   (:current-page-id state)
-            objects   (wsh/lookup-page-objects state page-id)
+           (let [change (fn [shape attrs] (assoc-in shape [:fills position] (into {} attrs)))]
+             (transform-fill state ids color change)))))
 
-            is-text?  #(= :text (:type (get objects %)))
-            text-ids  (filter is-text? ids)
-            shape-ids (filter (comp not is-text?) ids)
+(defn change-fill-and-clear
+  [ids color]
+  (ptk/reify ::change-fill-and-clear
+    ptk/WatchEvent
+    (watch [_ state _]
+           (let [set (fn [shape attrs] (assoc shape :fills [attrs]))]
+             (transform-fill state ids color set)))))
 
-            attrs (cond-> {:fill-color nil
-                           :fill-color-gradient nil
-                           ::fill-color-ref-file nil
-                           :fill-color-ref-id nil
-                           :fill-opacity nil}
+(defn add-fill
+  [ids color]
+  (ptk/reify ::add-fill
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [add (fn [shape attrs] (assoc shape :fills (into [attrs] (:fills shape))))]
+        (transform-fill state ids color add)))))
 
-                    (contains? color :color)
-                    (assoc :fill-color (:color color))
+(defn remove-fill
+  [ids color position]
+  (ptk/reify ::remove-fill
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [remove-fill-by-index (fn [values index] (->> (d/enumerate values)
+                                                         (filterv (fn [[idx _]] (not= idx index)))
+                                                         (mapv second)))
 
-                    (contains? color :id)
-                    (assoc :fill-color-ref-id (:id color))
+            remove (fn [shape _] (update shape :fills remove-fill-by-index position))]
+        (transform-fill state ids color remove)))))
 
-                    (contains? color :file-id)
-                    (assoc :fill-color-ref-file (:file-id color))
+(defn remove-all-fills
+  [ids color]
+  (ptk/reify ::remove-all-fills
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [remove-all (fn [shape _] (assoc shape :fills []))]
+        (transform-fill state ids color remove-all)))))
 
-                    (contains? color :gradient)
-                    (assoc :fill-color-gradient (:gradient color))
-
-                    (contains? color :opacity)
-                    (assoc :fill-opacity (:opacity color)))]
-
-        (rx/concat
-         (rx/from (map #(dwt/update-text-attrs {:id % :attrs attrs}) text-ids))
-         (rx/of (dch/update-shapes shape-ids (fn [shape] (d/merge shape attrs)))))))))
 
 (defn change-hide-fill-on-export
   [ids hide-fill-on-export]
@@ -207,7 +270,7 @@
 
               update-events
               (fn [color]
-                (rx/of (change-fill ids color)))]
+                (rx/of (change-fill ids color 0)))]
 
           (rx/merge
            ;; Stream that updates the stroke/width and stops if `esc` pressed

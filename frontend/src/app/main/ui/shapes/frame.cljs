@@ -51,10 +51,6 @@
           shape      (unchecked-get props "shape")
           {:keys [x y width height]} shape
 
-          has-background? (or (some? (:fill-color shape))
-                              (some? (:fill-color-gradient shape)))
-          has-stroke? (not= :none (:stroke-style shape))
-
           props (-> (attrs/extract-style-attrs shape)
                     (obj/merge!
                      #js {:x x
@@ -63,8 +59,8 @@
                           :height height
                           :className "frame-background"}))]
       [:*
-       (when (or has-background? has-stroke?)
-         [:> :rect props])
+       [:> :rect props]
+
        (for [item childs]
          [:& shape-wrapper {:shape item
                             :key (:id item)}])])))

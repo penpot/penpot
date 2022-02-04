@@ -15,6 +15,7 @@
 
 ### :sparkles: New features
 
+- Ability to add multiple fills to a shape [Taiga #1394](https://tree.taiga.io/project/penpot/us/1394)
 - Team members redesign [Taiga #2283](https://tree.taiga.io/project/penpot/us/2283)
 - Rotation to snap to 15º intervals with shift [Taiga #2437](https://tree.taiga.io/project/penpot/issue/2437)
 - Support border radius and stroke properties for images [Taiga #497](https://tree.taiga.io/project/penpot/us/497)
