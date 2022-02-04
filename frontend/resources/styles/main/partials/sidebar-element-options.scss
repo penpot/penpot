@@ -1169,7 +1169,6 @@
 
   header {
     display: flex;
-    align-items: center;
     flex-direction: column;
     position: relative;
 
@@ -1225,7 +1224,13 @@
       border-radius: $br-small;
       color: $color-gray-20;
       border: 1px solid $color-gray-30;
+      width: 88%;
       margin: 15px 17px;
+    }
+
+    .title {
+      font-size: $fs14;
+      margin: 9px 17px;
     }
 
     .options {

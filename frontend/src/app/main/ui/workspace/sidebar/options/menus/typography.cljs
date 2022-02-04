@@ -143,9 +143,8 @@
          (mf/deps on-select on-close)
          (fn [font]
            (on-select font)
-           (on-close)))
-        ]
-    
+           (on-close)))]
+
     (mf/use-effect
      (fn []
        (st/emit! (fts/load-recent-fonts))))
@@ -190,13 +189,16 @@
                 :ref input
                 :spell-check false
                 :on-change on-filter-change}]
+       [:hr]
        (when recent-fonts
-         (for [font recent-fonts]
-           [:& font-item {:key (:id font)
-                          :font font
-                          :style {}
-                          :on-click on-select-and-close
-                          :current? (= (:id font) (:id @selected))}]))
+         [*
+          [:p.title (tr "workspace.options.recent-fonts")]
+          (for [font recent-fonts]
+            [:& font-item {:key (:id font)
+                           :font font
+                           :style {}
+                           :on-click on-select-and-close
+                           :current? (= (:id font) (:id @selected))}])])
 
        #_[:div.options
           {:on-click #(swap! state assoc :show-options true)
@@ -257,6 +259,7 @@
         fonts           (mf/deref fonts/fontsdb)
         font            (get fonts font-id)
         recent-fonts    (mf/deref refs/workspace-recent-fonts)
+        last-font       (mf/use-ref nil)
 
         open-selector?  (mf/use-state false)
 
@@ -271,7 +274,7 @@
                          :font-variant-id (or id name)
                          :font-weight weight
                          :font-style style})
-             (st/emit! (fts/add-recent-font font)))))
+             (mf/set-ref-val! last-font font))))
 
         on-font-size-change
         (mf/use-callback
@@ -309,7 +312,7 @@
            (reset! open-selector? false)
            (when (some? on-blur)
              (on-blur))
-           ))]
+           (st/emit! (fts/add-recent-font (mf/ref-val last-font)))))]
 
     [:*
      (when @open-selector?
