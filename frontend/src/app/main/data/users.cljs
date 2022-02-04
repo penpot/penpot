@@ -447,6 +447,20 @@
         (->> (rp/query :team-users {:team-id team-id})
              (rx/map #(partial fetched %)))))))
 
+;; --- Update Nudge
+
+(defn update-nudge
+  [value]
+  (ptk/reify ::update-nudge
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:profile :props] assoc :nudge value))
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [props {:nudge value}]
+        (->> (rp/mutation :update-profile-props {:props props})
+             (rx/map (constantly (fetch-profile))))))))
+
 ;; --- EVENT: request-account-deletion
 
 (defn request-account-deletion

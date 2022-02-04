@@ -1582,6 +1582,18 @@ msgstr "Actualizar un componente en librería"
 msgid "modals.update-remote-component-in-bulk.message"
 msgstr "Actualizar componentes en librería"
 
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "Desplazamiento"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Mínimo"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "Máximo"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
 msgstr "Invitación enviada con éxito"

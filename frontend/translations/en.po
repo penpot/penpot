@@ -1580,6 +1580,18 @@ msgstr "Update a component in a shared library"
 msgid "modals.update-remote-component-in-bulk.message"
 msgstr "Update components in a shared library"
 
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "Nudge amount"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Small nudge"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "Big nudge"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
 msgstr "Invitation sent successfully"

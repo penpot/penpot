@@ -606,13 +606,14 @@
       (watch [_ state stream]
         (if (= same-event (get-in state [:workspace-local :current-move-selected]))
           (let [selected (wsh/lookup-selected state {:omit-blocked? true})
+                nudge (get-in state [:profile :props :nudge] {:big 10 :small 1})
                 move-events (->> stream
                                  (rx/filter (ptk/type? ::move-selected))
                                  (rx/filter #(= direction (deref %))))
                 stopper (->> move-events
                              (rx/debounce 100)
                              (rx/first))
-                scale (if shift? (gpt/point 10) (gpt/point 1))
+                scale (if shift? (gpt/point (:big nudge)) (gpt/point (:small nudge)))
                 mov-vec (gpt/multiply (get-displacement direction) scale)]
 
             (rx/concat
