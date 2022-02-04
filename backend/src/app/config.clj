@@ -42,7 +42,7 @@
 
 (def defaults
   {:http-server-port 6060
-   :http-server-host "localhost"
+   :http-server-host "0.0.0.0"
    :host "devenv"
    :tenant "dev"
    :database-uri "postgresql://postgres/penpot"
