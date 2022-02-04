@@ -30,6 +30,9 @@
 (def pointer-node (cursor-ref :pointer-node 0 0 10 32))
 (def resize-alt (cursor-ref :resize-alt))
 (def text (cursor-ref :text))
+(def zoom (cursor-ref :zoom))
+(def zoom-in (cursor-ref :zoom-in))
+(def zoom-out (cursor-ref :zoom-out))
 
 ;; Dynamic cursors
 (def resize-ew (cursor-fn :resize-h 0))

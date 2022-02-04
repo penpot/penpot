@@ -179,4 +179,7 @@
     :pencil cur/pencil
     :create-shape cur/create-shape
     :duplicate cur/duplicate
+    :zoom cur/zoom
+    :zoom-in cur/zoom-in
+    :zooom-out cur/zoom-out
     cur/pointer-inner))

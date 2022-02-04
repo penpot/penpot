@@ -47,7 +47,7 @@
       (assoc-in state [:workspace-local :selrect] selrect))))
 
 (defn handle-area-selection
-  [preserve?]
+  [preserve? ignore-groups?]
   (letfn [(data->selrect [data]
             (let [start (:start data)
                   stop (:stop data)
@@ -91,7 +91,7 @@
                  (rx/buffer-time 100)
                  (rx/map #(last %))
                  (rx/dedupe)
-                 (rx/map #(select-shapes-by-current-selrect preserve?))))
+                 (rx/map #(select-shapes-by-current-selrect preserve? ignore-groups?))))
 
            (rx/of (update-selrect nil))))))))
 
@@ -218,7 +218,7 @@
 ;; --- Select Shapes (By selrect)
 
 (defn select-shapes-by-current-selrect
-  [preserve?]
+  [preserve? ignore-groups?]
   (ptk/reify ::select-shapes-by-current-selrect
     ptk/WatchEvent
     (watch [_ state _]
@@ -237,6 +237,7 @@
                  :page-id page-id
                  :rect selrect
                  :include-frames? true
+                 :ignore-groups? ignore-groups?
                  :full-frame? true})
                (rx/map #(cp/clean-loops objects %))
                (rx/map #(into initial-set (filter (comp not blocked?)) %))
