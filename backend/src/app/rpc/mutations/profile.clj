@@ -116,6 +116,12 @@
 
   (check-profile-existence! pool params)
 
+  (when (= (str/lower (:email params))
+           (str/lower (:password params)))
+    (ex/raise :type :validation
+              :code :email-as-password
+              :hint "you can't use your email as password"))
+
   (let [params (assoc params
                       :backend "penpot"
                       :iss :prepared-register
@@ -381,6 +387,11 @@
   (db/with-atomic [conn pool]
     (let [profile    (validate-password! conn params)
           session-id (:app.rpc/session-id params)]
+      (when (= (str/lower (:email profile))
+               (str/lower (:password params)))
+        (ex/raise :type :validation
+                  :code :email-as-password
+                  :hint "you can't use your email as password"))
       (update-profile-password! conn (assoc profile :password password))
       (invalidate-profile-session! conn (:id profile) session-id)
       nil)))

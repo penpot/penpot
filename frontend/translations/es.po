@@ -610,6 +610,9 @@ msgstr "Tu navegador no puede realizar esta operación"
 msgid "errors.email-already-exists"
 msgstr "Este correo ya está en uso"
 
+msgid "errors.email-as-password"
+msgstr "No puedes usar tu email como password"
+
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.email-already-validated"
 msgstr "Este correo ya está validado."

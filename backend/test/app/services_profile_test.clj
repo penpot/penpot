@@ -240,6 +240,16 @@
       (t/is (nil? error))
       (t/is (string? (:token result))))))
 
+(t/deftest test-register-profile-with-email-as-password
+  (let [data  {::th/type :prepare-register-profile
+               :email "user@example.com"
+               :password "USER@example.com"}]
+
+    (let [{:keys [result error] :as out} (th/mutation! data)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :email-as-password)))))
+
 (t/deftest test-email-change-request
   (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}
                cfg-get-mock    {:target 'app.config/get
@@ -345,3 +355,39 @@
         (t/is (th/ex-of-code? error :email-has-permanent-bounces)))
 
       )))
+
+
+(t/deftest update-profile-password
+  (let [profile (th/create-profile* 1)
+        data  {::th/type :update-profile-password
+               :profile-id (:id profile)
+               :old-password "123123"
+               :password "foobarfoobar"}
+        out   (th/mutation! data)]
+    (t/is (nil? (:error out)))
+    (t/is (nil? (:result out)))
+  ))
+
+
+(t/deftest update-profile-password-bad-old-password
+  (let [profile (th/create-profile* 1)
+        data  {::th/type :update-profile-password
+               :profile-id (:id profile)
+               :old-password "badpassword"
+               :password "foobarfoobar"}
+        {:keys [result error] :as out} (th/mutation! data)]
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :validation))
+    (t/is (th/ex-of-code? error :old-password-not-match))))
+
+
+(t/deftest update-profile-password-email-as-password
+  (let [profile (th/create-profile* 1)
+        data  {::th/type :update-profile-password
+               :profile-id (:id profile)
+               :old-password "123123"
+               :password "profile1.test@nodomain.com"}
+        {:keys [result error] :as out} (th/mutation! data)]
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :validation))
+    (t/is (th/ex-of-code? error :email-as-password))))
