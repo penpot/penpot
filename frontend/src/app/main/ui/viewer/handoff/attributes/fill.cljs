@@ -26,7 +26,8 @@
   (and
    (not (contains? #{:text :group} (:type shape)))
    (or (:fill-color shape)
-       (:fill-color-gradient shape))))
+       (:fill-color-gradient shape)
+       (seq (:fills shape)))))
 
 (defn copy-data [shape]
   (cg/generate-css-props
@@ -55,5 +56,9 @@
           [:& copy-button {:data (copy-data (first shapes))}])]
 
        (for [shape shapes]
-         [:& fill-block {:key (str "fill-block-" (:id shape))
-                         :shape shape}])])))
+         (if (seq (:fills shape))
+           (for [value (:fills shape [])]
+             [:& fill-block {:key (str "fill-block-" (:id shape))
+                             :shape value}])
+           [:& fill-block {:key (str "fill-block-" (:id shape))
+                           :shape shape}]))])))

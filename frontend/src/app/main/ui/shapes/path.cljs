@@ -13,8 +13,6 @@
    [app.util.path.format :as upf]
    [rumext.alpha :as mf]))
 
-;; --- Path Shape
-
 (mf/defc path-shape
   {::mf/wrap-props false}
   [props]

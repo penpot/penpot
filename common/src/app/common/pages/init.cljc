@@ -33,16 +33,16 @@
 
 (def default-frame-attrs
   {:frame-id uuid/zero
-   :fill-color clr/white
-   :fill-opacity 1
+   :fills [{:fill-color clr/white
+            :fill-opacity 1}]
    :shapes []
    :hide-fill-on-export false})
 
 (def ^:private minimal-shapes
   [{:type :rect
     :name "Rect-1"
-    :fill-color default-color
-    :fill-opacity 1
+    :fills [{:fill-color default-color
+             :fill-opacity 1}]
     :stroke-style :none
     :stroke-alignment :center
     :stroke-width 0
@@ -53,12 +53,13 @@
 
    {:type :image
     :rx 0
-    :ry 0}
+    :ry 0
+    :fills []}
 
    {:type :circle
     :name "Circle-1"
-    :fill-color default-color
-    :fill-opacity 1
+    :fills [{:fill-color default-color
+             :fill-opacity 1}]
     :stroke-style :none
     :stroke-alignment :center
     :stroke-width 0
@@ -67,6 +68,7 @@
 
    {:type :path
     :name "Path-1"
+    :fills []
     :stroke-style :solid
     :stroke-alignment :center
     :stroke-width 2
@@ -75,8 +77,8 @@
 
    {:type :frame
     :name "Artboard-1"
-    :fill-color clr/white
-    :fill-opacity 1
+    :fills [{:fill-color clr/white
+             :fill-opacity 1}]
     :stroke-style :none
     :stroke-alignment :center
     :stroke-width 0

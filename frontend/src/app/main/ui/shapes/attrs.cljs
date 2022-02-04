@@ -79,14 +79,15 @@
                                      "z")}))
     attrs))
 
-(defn add-fill [attrs shape render-id]
-  (let [fill-attrs (cond
+(defn add-fill [attrs shape render-id index]
+  (let [
+        fill-attrs (cond
                      (contains? shape :fill-image)
                      (let [fill-image-id (str "fill-image-" render-id)]
                        {:fill (str/format "url(#%s)" fill-image-id)})
 
                      (contains? shape :fill-color-gradient)
-                     (let [fill-color-gradient-id (str "fill-color-gradient_" render-id)]
+                     (let [fill-color-gradient-id (str "fill-color-gradient_" render-id "_" index)]
                        {:fill (str/format "url(#%s)" fill-color-gradient-id)})
 
                      (contains? shape :fill-color)
@@ -193,9 +194,23 @@
 
          styles (-> (obj/get props "style" (obj/new))
                     (obj/merge! svg-styles)
-                    (add-fill shape render-id)
                     (add-stroke shape render-id)
-                    (add-layer-props shape))]
+                    (add-layer-props shape))
+
+         styles (cond (or (some? (:fill-image shape))
+                          (= :image (:type shape))
+                          (> (count (:fills shape)) 1)
+                          (some #(some? (:fill-color-gradient %)) (:fills shape)))
+                  (obj/set! styles "fill" (str "url(#fill-" render-id ")"))
+
+                  ;; imported svgs can have fill and fill-opacity attributes
+                  (obj/contains? svg-styles "fill")
+                  (-> styles
+                      (obj/set! "fill" (obj/get svg-styles "fill"))
+                      (obj/set! "fillOpacity" (obj/get svg-styles "fillOpacity")))
+
+                  :else
+                  (add-fill styles (get-in shape [:fills 0]) render-id 0))]
 
      (-> props
          (obj/merge! svg-attrs)
@@ -208,10 +223,10 @@
       (add-style-attrs shape)))
 
 (defn extract-fill-attrs
-  [shape]
+  [shape index]
   (let [render-id (mf/use-ctx muc/render-ctx)
         fill-styles (-> (obj/get shape "style" (obj/new))
-                        (add-fill shape render-id))]
+                        (add-fill shape render-id index))]
     (-> (obj/new)
         (obj/set! "style" fill-styles))))
 

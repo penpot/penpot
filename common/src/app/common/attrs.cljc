@@ -36,6 +36,7 @@
 ;;        :rx nil
 ;;        :ry nil}
 ;;
+
 (defn get-attrs-multi
   ([objs attrs]
    (get-attrs-multi objs attrs = identity))
