@@ -88,7 +88,9 @@
            (rx/merge
             (->> selrect-stream (rx/map update-selrect))
             (->> selrect-stream
-                 (rx/debounce 50)
+                 (rx/buffer-time 100)
+                 (rx/map #(last %))
+                 (rx/dedupe)
                  (rx/map #(select-shapes-by-current-selrect preserve?))))
 
            (rx/of (update-selrect nil))))))))
