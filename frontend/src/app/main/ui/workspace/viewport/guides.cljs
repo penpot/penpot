@@ -29,6 +29,11 @@
 (def guide-pill-corner-radius 4)
 (def guide-active-area 16)
 
+(def guide-creation-margin-left 8)
+(def guide-creation-margin-top 28)
+(def guide-creation-width 16)
+(def guide-creation-height 24)
+
 (defn use-guide
   "Hooks to support drag/drop for existing guides and new guides"
   [on-guide-change get-hover-frame zoom {:keys [position axis frame-id]}]
@@ -220,15 +225,15 @@
 (defn guide-creation-area
   [vbox zoom axis]
   (if (= axis :x)
-    {:x (:x vbox)
+    {:x (+ (:x vbox) (/ guide-creation-margin-left zoom))
      :y (:y vbox)
-     :width (/ 24 zoom)
+     :width (/ guide-creation-width zoom)
      :height (:height vbox)}
 
-    {:x (:x vbox)
+    {:x (+ (:x vbox) (+ guide-creation-margin-top zoom))
      :y (:y vbox)
      :width (:width vbox)
-     :height (/ 24 zoom)}))
+     :height (/ guide-creation-height zoom)}))
 
 (defn is-guide-inside-frame?
   [guide frame]

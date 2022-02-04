@@ -1,0 +1,26 @@
+.typography-item {
+  padding: 0 1rem;
+  margin-right: 1rem;
+  cursor: pointer;
+
+  & > * {
+    white-space: nowrap;
+  }
+
+  & .typography-name {
+    color: $color-white;
+  }
+
+  & .typography-font,
+  & .typography-data {
+    font-size: 16px;
+    color: $color-gray-30;
+  }
+
+  .no-text & {
+    & .typography-font,
+    & .typography-data {
+      display: none;
+    }
+  }
+}

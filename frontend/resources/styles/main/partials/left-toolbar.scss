@@ -5,16 +5,8 @@
 // Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-$width-left-toolbar: 48px;
-
 .left-toolbar {
   background-color: $color-gray-50;
-  bottom: 0;
-  height: 100%;
-  position: fixed;
-  left: 0;
-  width: $width-left-toolbar;
-  z-index: 11;
 }
 
 .left-toolbar-inside {
@@ -23,7 +15,6 @@ $width-left-toolbar: 48px;
   display: flex;
   flex-direction: column;
   overflow: visible;
-  padding-top: 48px;
   height: 100%;
 }
 
@@ -44,6 +35,7 @@ $width-left-toolbar: 48px;
     justify-content: center;
     position: relative;
     width: 48px;
+    color: $color-gray-20;
 
     svg {
       fill: $color-gray-20;
@@ -53,6 +45,7 @@ $width-left-toolbar: 48px;
 
     &:hover {
       background-color: $color-primary;
+      color: $color-gray-50;
 
       svg {
         fill: $color-gray-50;
@@ -61,6 +54,7 @@ $width-left-toolbar: 48px;
 
     &.selected {
       background-color: $color-gray-60;
+      color: $color-primary;
 
       svg {
         fill: $color-primary;

@@ -14,6 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -119,22 +120,19 @@
 
       [:ul.left-toolbar-options.panels
        [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.sidebar.layers" (sc/get-tooltip :toggle-layers))
-         :class (when (contains? layout :layers) "selected")
-         :on-click (st/emitf (dw/go-to-layout :layers))}
-        i/layers]
+        {:alt (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+         :class (when (contains? layout :textpalette) "selected")
+         :on-click (fn []
+                     (r/set-resize-type! :bottom)
+                     (st/emit! (dw/remove-layout-flags :colorpalette)
+                               (dw/toggle-layout-flags :textpalette)))}
+        "Ag"]
+       
        [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.assets" (sc/get-tooltip :toggle-assets))
-         :class (when (contains? layout :assets) "selected")
-         :on-click (st/emitf (dw/go-to-layout :assets))}
-        i/library]
-       [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
-         :class (when (contains? layout :document-history) "selected")
-         :on-click (st/emitf (dw/go-to-layout :document-history))}
-        i/recent]
-       [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-palette))
+        {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
          :class (when (contains? layout :colorpalette) "selected")
-         :on-click (st/emitf (dw/toggle-layout-flags :colorpalette))}
+         :on-click (fn []
+                     (r/set-resize-type! :bottom)
+                     (st/emit! (dw/remove-layout-flags :textpalette)
+                               (dw/toggle-layout-flags :colorpalette)))}
         i/palette]]]]))

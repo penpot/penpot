@@ -31,10 +31,9 @@
         on-key-up         (actions/on-key-up)
         on-mouse-move     (actions/on-mouse-move viewport-ref zoom)
         on-mouse-wheel    (actions/on-mouse-wheel viewport-ref zoom)
-        on-resize         (actions/on-resize viewport-ref)
         on-paste          (actions/on-paste disable-paste in-viewport?)]
     (mf/use-layout-effect
-     (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-resize on-paste)
+     (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-paste)
      (fn []
        (let [node (mf/ref-val viewport-ref)
              keys [(events/listen js/document EventType.KEYDOWN on-key-down)
@@ -43,7 +42,6 @@
                    ;; bind with passive=false to allow the event to be cancelled
                    ;; https://stackoverflow.com/a/57582286/3219895
                    (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
-                   (events/listen js/window EventType.RESIZE on-resize)
                    (events/listen js/window EventType.PASTE on-paste)]]
 
          (fn []
@@ -52,12 +50,12 @@
 
 (defn setup-viewport-size [viewport-ref]
   (mf/use-layout-effect
-  (fn []
-    (let [node (mf/ref-val viewport-ref)
-          prnt (dom/get-parent node)
-          size (dom/get-client-size prnt)]
-      ;; We schedule the event so it fires after `initialize-page` event
-      (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
+   (fn []
+     (let [node (mf/ref-val viewport-ref)
+           prnt (dom/get-parent node)
+           size (dom/get-client-size prnt)]
+       ;; We schedule the event so it fires after `initialize-page` event
+       (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
 
 (defn setup-cursor [cursor alt? panning drawing-tool drawing-path? path-editing?]
   (mf/use-effect
@@ -79,10 +77,6 @@
 
        (when (not= @cursor new-cursor)
          (reset! cursor new-cursor))))))
-
-(defn setup-resize [layout viewport-ref]
-  (let [on-resize (actions/on-resize viewport-ref)]
-    (mf/use-layout-effect (mf/deps layout) on-resize)))
 
 (defn setup-keyboard [alt? ctrl? space?]
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))

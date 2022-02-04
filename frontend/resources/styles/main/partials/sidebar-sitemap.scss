@@ -5,8 +5,8 @@
 // Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-.sitemap {
-  flex: none !important;
+#sitemap {
+  height: var(--height, 200px);
 
   .element-list {
     li {
@@ -117,6 +117,15 @@
         background-color: $color-gray-10;
       }
     }
+  }
+
+  & .resize-area {
+    position: absolute;
+    width: 100%;
+    height: 16px;
+    bottom: -8px;
+    left: 0;
+    cursor: ns-resize;
   }
 }
 

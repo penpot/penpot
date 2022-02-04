@@ -18,6 +18,7 @@
 - Improve file menu by adding semantically groups [Github #1203](https://github.com/penpot/penpot/issues/1203)
 - Add update components in bulk option in context menu [Taiga #1975](https://tree.taiga.io/project/penpot/us/1975)
 - Create first E2E tests [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608), [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608)
+- Redesign of workspace toolbars [Taiga #2319](https://tree.taiga.io/project/penpot/us/2319)
 
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates

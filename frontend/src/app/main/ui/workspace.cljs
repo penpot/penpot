@@ -12,6 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks.resize :refer [use-resize-observer]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
    [app.main.ui.workspace.colorpicker]
@@ -21,10 +22,12 @@
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
+   [app.main.ui.workspace.textpalette :refer [textpalette]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
+   [debug :refer [debug?]]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -39,25 +42,46 @@
         {:keys [options-mode]} local
         file   (obj/get props "file")
         layout (obj/get props "layout")
-        colorpalette? (:colorpalette layout)]
-    [:*
-     (when colorpalette? [:& colorpalette])
 
-     [:section.workspace-content
+        colorpalette? (:colorpalette layout)
+        textpalette? (:textpalette layout)
+        hide-ui? (:hide-ui layout)
+
+        on-resize
+        (mf/use-callback
+         (mf/deps (:vport local))
+         (fn [resize-type size]
+           (when (:vport local)
+             (st/emit! (dw/update-viewport-size resize-type size)))))
+
+        node-ref (use-resize-observer on-resize)]
+    [:*
+     (when (and colorpalette? (not hide-ui?))
+       [:& colorpalette])
+
+     (when (and textpalette? (not hide-ui?))
+       [:& textpalette])
+
+     [:section.workspace-content {:ref node-ref}
       [:section.workspace-viewport
-       [:& coordinates/coordinates {:colorpalette? colorpalette?}]
+       (when (debug? :coordinates)
+         [:& coordinates/coordinates {:colorpalette? colorpalette?}])
 
        [:& viewport {:file file
                      :local local
                      :selected selected
                      :layout layout}]]]
 
-     [:& left-toolbar {:layout layout}]
-
-     ;; Aside
-     [:& left-sidebar {:layout layout}]
-     [:& right-sidebar {:section options-mode
-                        :selected selected}]]))
+     (when-not hide-ui?
+       [:*
+        [:& left-toolbar {:layout layout}]
+        (if (:collapse-left-sidebar layout)
+          [:button.collapse-sidebar.collapsed {:on-click #(st/emit! (dw/toggle-layout-flags :collapse-left-sidebar))}
+           i/arrow-slide]
+          [:& left-sidebar {:layout layout}])
+        [:& right-sidebar {:section options-mode
+                           :selected selected
+                           :layout layout}]])]))
 
 (def trimmed-page-ref (l/derived :trimmed-page st/state =))
 
@@ -116,10 +140,11 @@
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:section#workspace
-         [:& header {:file file
-                     :page-id page-id
-                     :project project
-                     :layout layout}]
+         (when (not (:hide-ui layout))
+           [:& header {:file file
+                       :page-id page-id
+                       :project project
+                       :layout layout}])
 
          [:& context-menu]
 
@@ -130,4 +155,6 @@
                                :file file
                                :layout layout}]
            [:& workspace-loader])]]]]]))
+
+
 

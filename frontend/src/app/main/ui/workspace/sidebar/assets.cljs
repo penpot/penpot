@@ -1087,7 +1087,7 @@
 ;; ---- Typography box ----
 
 (mf/defc typographies-group
-  [{:keys [file-id prefix groups open-groups file local? selected-typographies local
+  [{:keys [file-id prefix groups open-groups file local? selected-typographies local-data
            editing-id on-asset-click handle-change apply-typography
            on-rename-group on-ungroup on-context-menu]}]
   (let [group-open? (get open-groups prefix true)]
@@ -1115,7 +1115,7 @@
                :on-click  #(on-asset-click % (:id typography)
                                            (partial apply-typography typography))
                :editing? (= editing-id (:id typography))
-               :focus-name? (= (:rename-typography local) (:id typography))}])])
+               :focus-name? (= (:rename-typography local-data) (:id typography))}])])
 
         (for [[path-item content] groups]
           (when-not (empty? path-item)
@@ -1127,7 +1127,7 @@
                                     :local? local?
                                     :selected-typographies selected-typographies
                                     :editing-id editing-id
-                                    :local local
+                                    :local-data local-data
                                     :on-asset-click on-asset-click
                                     :handle-change handle-change
                                     :apply-typography apply-typography
@@ -1141,11 +1141,9 @@
   (let [state (mf/use-state {:detail-open? false
                              :id nil})
 
+        local-data (mf/deref refs/typography-data)
         menu-state (mf/use-state auto-pos-menu-state)
-
-        local    (deref refs/workspace-local)
-
-        groups        (group-assets typographies reverse-sort?)
+        groups     (group-assets typographies reverse-sort?)
 
         selected-typographies (:typographies selected-assets)
         multi-typographies?   (> (count selected-typographies) 1)
@@ -1174,7 +1172,11 @@
                         {:typography-ref-file file-id
                          :typography-ref-id (:id typography)}
                         (dissoc typography :id :name))]
-            (run! #(st/emit! (dwt/update-text-attrs {:id % :editor (get-in local [:editors %]) :attrs attrs}))
+            (run! #(st/emit!
+                    (dwt/update-text-attrs
+                     {:id %
+                      :editor (get @refs/workspace-editor-state %)
+                      :attrs attrs}))
                   ids)))
 
         create-group
@@ -1273,14 +1275,15 @@
                        (dwl/sync-file file-id file-id)
                        (dwu/commit-undo-transaction)))))
 
-        editing-id (or (:rename-typography local) (:edit-typography local))]
+        editing-id (or (:rename-typography local-data)
+                       (:edit-typography local-data))]
 
     (mf/use-effect
-     (mf/deps local)
+     (mf/deps local-data)
      (fn []
-       (when (:rename-typography local)
+       (when (:rename-typography local-data)
          (st/emit! #(update % :workspace-local dissoc :rename-typography)))
-       (when (:edit-typography local)
+       (when (:edit-typography local-data)
          (st/emit! #(update % :workspace-local dissoc :edit-typography)))))
 
     [:& asset-section {:file-id file-id
@@ -1303,7 +1306,7 @@
                                 :local? local?
                                 :selected-typographies selected-typographies
                                 :editing-id editing-id
-                                :local local
+                                :local-data local-data
                                 :on-asset-click (partial on-asset-click groups)
                                 :handle-change handle-change
                                 :apply-typography apply-typography

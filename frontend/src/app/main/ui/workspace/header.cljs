@@ -18,6 +18,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.presence :refer [active-sessions]]
    [app.util.dom :as dom]
@@ -297,12 +298,25 @@
            (tr "workspace.header.menu.show-layers"))]
         [:span.shortcut (sc/get-tooltip :toggle-layers)]]
 
-       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :colorpalette))}
+       [:li {:on-click (fn []
+                         (r/set-resize-type! :bottom)
+                         (st/emit! (dw/remove-layout-flags :textpalette)
+                                   (dw/toggle-layout-flags :colorpalette)))}
         [:span
          (if (contains? layout :colorpalette)
-           (tr "workspace.header.menu.hide-palette")
-           (tr "workspace.header.menu.show-palette"))]
-        [:span.shortcut (sc/get-tooltip :toggle-palette)]]
+           (tr "workspace.header.menu.hide-colorpalette")
+           (tr "workspace.header.menu.show-colorpalette"))]
+        [:span.shortcut (sc/get-tooltip :toggle-colorpalette)]]
+
+       [:li {:on-click (fn []
+                         (r/set-resize-type! :bottom)
+                         (st/emit! (dw/remove-layout-flags :colorpalette)
+                                   (dw/toggle-layout-flags :textpalette)))}
+        [:span
+         (if (contains? layout :textpalette)
+           (tr "workspace.header.menu.hide-textpalette")
+           (tr "workspace.header.menu.show-textpalette"))]
+        [:span.shortcut (sc/get-tooltip :toggle-textpalette)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :assets))}
         [:span
@@ -360,31 +374,40 @@
          (st/emitf (dw/go-to-viewer params)))]
 
     [:header.workspace-header
-     [:div.main-icon
-      [:a {:on-click go-back} i/logo-icon]]
+     [:div.left-area
+      [:div.main-icon
+       [:a {:on-click go-back} i/logo-icon]]
 
-     [:& menu {:layout layout
-               :project project
-               :file file
-               :team-id team-id
-               :page-id page-id}]
+      [:& menu {:layout layout
+                :project project
+                :file file
+                :team-id team-id
+                :page-id page-id}]]
 
-     [:div.users-section
-      [:& active-sessions]]
+     [:div.center-area
+      [:div.users-section
+       [:& active-sessions]]]
 
-     [:div.options-section
-      [:& persistence-state-widget]
+     [:div.right-area
+      [:div.options-section
+       [:& persistence-state-widget]
+       [:button.document-history
+        {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
+         :class (when (contains? layout :document-history) "selected")
+         :on-click (st/emitf (dw/toggle-layout-flags :document-history))}
+        i/recent]]
 
-      [:& zoom-widget-workspace
-       {:zoom zoom
-        :on-increase #(st/emit! (dw/increase-zoom nil))
-        :on-decrease #(st/emit! (dw/decrease-zoom nil))
-        :on-zoom-reset #(st/emit! dw/reset-zoom)
-        :on-zoom-fit #(st/emit! dw/zoom-to-fit-all)
-        :on-zoom-selected #(st/emit! dw/zoom-to-selected-shape)}]
+      [:div.options-section
+       [:& zoom-widget-workspace
+        {:zoom zoom
+         :on-increase #(st/emit! (dw/increase-zoom nil))
+         :on-decrease #(st/emit! (dw/decrease-zoom nil))
+         :on-zoom-reset #(st/emit! dw/reset-zoom)
+         :on-zoom-fit #(st/emit! dw/zoom-to-fit-all)
+         :on-zoom-selected #(st/emit! dw/zoom-to-selected-shape)}]
 
-      [:a.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
-       {:alt (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
-        :on-click go-viewer}
-       i/play]]]))
+       [:a.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
+        {:alt (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
+         :on-click go-viewer}
+        i/play]]]]))
 

@@ -14,6 +14,7 @@
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -106,7 +107,7 @@
       (fn []
         (when selected?
           (let [node (mf/ref-val dref)]
-            (.scrollIntoViewIfNeeded ^js node)))))
+            (dom/scroll-into-view-if-needed! node)))))
 
     (mf/use-layout-effect
      (mf/deps (:edition @local))
@@ -205,10 +206,14 @@
                                                   :project-id (:project-id file)}))))
         show-pages? (mf/use-state true)
 
+        {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+        (use-resize-hook :sitemap 200 38 400 :y false nil)
+
         toggle-pages
         (mf/use-callback #(reset! show-pages? not))]
 
-    [:div.sitemap.tool-window
+    [:div#sitemap.tool-window {:ref parent-ref
+                               :style #js {"--height" (str size "px")}}
      [:div.tool-window-bar
       [:span (tr "workspace.sidebar.sitemap")]
       [:div.add-page {:on-click create} i/close]
@@ -216,4 +221,8 @@
 
      (when @show-pages?
        [:div.tool-window-content
-        [:& pages-list {:file file :key (:id file)}]])]))
+        [:& pages-list {:file file :key (:id file)}]])
+
+     [:div.resize-area {:on-pointer-down on-pointer-down
+                        :on-lost-pointer-capture on-lost-pointer-capture
+                        :on-mouse-move on-mouse-move}]]))

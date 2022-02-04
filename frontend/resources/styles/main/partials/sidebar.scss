@@ -5,67 +5,25 @@
 // Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-$width-settings-bar: 16rem;
-// This width is also used in update-viewport-size at frontend/src/app/main/data/workspace.cljs
-
 .settings-bar {
   background-color: $color-gray-50;
   border-left: 1px solid $color-gray-60;
-  bottom: 0;
-  height: 100%;
-  position: fixed;
-  right: 0;
-  width: $width-settings-bar;
-
-  &.expanded {
-    width: $width-settings-bar * 3;
-  }
-
-  z-index: 10;
-  overflow-y: auto;
+  position: relative;
 
   &.settings-bar-left {
     border-left: none;
     border-right: 1px solid $color-gray-60;
-    left: 48px;
+
+    & .tab-container-tabs {
+      padding-left: 1.5rem;
+    }
   }
 
   .settings-bar-inside {
-    align-items: flex-start;
     display: grid;
     grid-template-columns: 100%;
-
-    &[data-layout*="sitemap-pages"] {
-      grid-template-rows: auto;
-    }
-
-    &[data-layout*="layers"] {
-      grid-template-rows: auto 1fr;
-    }
-
-    &[data-layout*="libraries"] {
-      grid-template-rows: auto 1fr;
-    }
-
-    &[data-layout*="layers"][data-layout*="sitemap-pages"] {
-      grid-template-rows: 11.5rem 1fr;
-    }
-
-    &[data-layout*="libraries"][data-layout*="sitemap-pages"] {
-      grid-template-rows: 11.5rem 1fr;
-    }
-
-    &[data-layout*="layers"][data-layout*="libraries"] {
-      grid-template-rows: auto 30% 1fr;
-    }
-
-    &[data-layout*="layers"][data-layout*="libraries"][data-layout*="sitemap-pages"] {
-      grid-template-rows: 11.5rem 25% 1fr;
-    }
-
-    flex-direction: column;
-    padding-top: 48px;
-    height: 100%;
+    grid-template-rows: 100%;
+    height: calc(100% - 2px);
 
     .tool-window {
       position: relative;
@@ -75,7 +33,6 @@ $width-settings-bar: 16rem;
       flex: 1;
       width: 100%;
       height: 100%;
-      overflow: hidden;
 
       .tool-window-bar {
         align-items: center;
@@ -163,14 +120,30 @@ $width-settings-bar: 16rem;
       height: auto;
     }
   }
+
+  & > .resize-area {
+    position: absolute;
+    width: 8px;
+    height: 100%;
+    z-index: 10;
+    cursor: ew-resize;
+  }
+
+  &.settings-bar-left > .resize-area {
+    right: -8px;
+  }
+
+  &.settings-bar-right > .resize-area {
+    left: -4px;
+  }
 }
 
 .tool-window-content {
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   height: 100%;
   width: 100%;
+  overflow-y: auto;
 }
 
 .element-list {
@@ -221,4 +194,48 @@ $width-settings-bar: 16rem;
   .context-menu-action {
     width: 100%;
   }
+}
+
+button.collapse-sidebar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  height: 2.5rem;
+  padding-top: 0.75rem;
+  position: absolute;
+  width: 1rem;
+
+  & svg {
+    width: 12px;
+    height: 12px;
+    fill: $color-gray-20;
+    transform: rotate(180deg);
+  }
+
+  &.collapsed {
+    background: $color-gray-60;
+    left: 48px;
+    top: 48px;
+    width: 28px;
+    height: 48px;
+    padding: 0;
+    border-radius: 0px 4px 4px 0px;
+    border-left: 1px solid $color-gray-50;
+
+    & svg {
+      transform: rotate(0deg);
+    }
+  }
+}
+
+#layers.tool-window {
+  overflow: auto;
+}
+
+.layers-tab {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 100%;
+  height: 100%;
+  overflow: hidden;
 }

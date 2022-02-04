@@ -92,7 +92,7 @@
   (l/derived :workspace-drawing st/state))
 
 (def selected-shapes
-  (l/derived wsh/lookup-selected st/state))
+  (l/derived wsh/lookup-selected st/state =))
 
 (defn make-selected-ref
   [id]
@@ -122,6 +122,11 @@
                               :draw-interaction-to-frame
                               :move-overlay-to
                               :move-overlay-index])
+             workspace-local =))
+
+(def typography-data
+  (l/derived #(select-keys % [:rename-typography
+                              :edit-typography])
              workspace-local =))
 
 (def local-displacement
@@ -158,14 +163,14 @@
 (def current-hover-ids
   (l/derived :hover-ids context-menu))
 
-(def editors
-  (l/derived :editors workspace-local))
-
 (def selected-assets
   (l/derived :selected-assets workspace-local))
 
 (def workspace-layout
   (l/derived :workspace-layout st/state))
+
+(def current-file-id
+  (l/derived :current-file-id st/state))
 
 (def workspace-file
   (l/derived (fn [state]

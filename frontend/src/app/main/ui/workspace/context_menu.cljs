@@ -436,10 +436,15 @@
 
 (mf/defc viewport-context-menu
   []
-  (let [do-paste (st/emitf dw/paste)]
-    [:& menu-entry {:title (tr "workspace.shape.menu.paste")
-                    :shortcut (sc/get-tooltip :paste)
-                    :on-click do-paste}]))
+  (let [do-paste (st/emitf dw/paste)
+        do-hide-ui (st/emitf (dw/toggle-layout-flags :hide-ui))]
+    [:*
+     [:& menu-entry {:title (tr "workspace.shape.menu.paste")
+                     :shortcut (sc/get-tooltip :paste)
+                     :on-click do-paste}]
+     [:& menu-entry {:title (tr "workspace.shape.menu.hide-ui")
+                     :shortcut (sc/get-tooltip :hide-ui)
+                     :on-click do-hide-ui}]]))
 
 (mf/defc context-menu
   []
