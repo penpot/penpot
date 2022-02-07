@@ -463,7 +463,7 @@
               (l/info :task "recheck"
                       :action "recheck items"
                       :processed n
-                      :deleted n)
+                      :deleted d)
               {:processed n :deleted d})))))))
 
 (def sql:retrieve-pending-to-recheck
