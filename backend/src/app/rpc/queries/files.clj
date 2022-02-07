@@ -7,7 +7,7 @@
 (ns app.rpc.queries.files
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -242,13 +242,10 @@
 (defn- trim-file-data
   [file {:keys [page-id object-id]}]
   (let [page    (get-in file [:data :pages-index page-id])
-        objects (->> (:objects page)
-                     (cp/get-object-with-children object-id)
-                     (map #(dissoc % :thumbnail)))
-
-        objects (d/index-by :id objects)
+        objects (->> (cph/get-children-with-self (:objects page) object-id)
+                     (map #(dissoc % :thumbnail))
+                     (d/index-by :id))
         page    (assoc page :objects objects)]
-
     (-> file
         (update :data assoc :pages-index {page-id page})
         (update :data assoc :pages [page-id]))))

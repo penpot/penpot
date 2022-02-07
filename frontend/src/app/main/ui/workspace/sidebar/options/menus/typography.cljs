@@ -9,7 +9,7 @@
    ["react-virtualized" :as rvt]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.main.data.fonts :as fts]
    [app.main.data.shortcuts :as dsc]
@@ -575,7 +575,7 @@
            [:input.element-name.adv-typography-name
             {:type "text"
              :ref name-input-ref
-             :default-value (cp/merge-path-item (:path typography) (:name typography))
+             :default-value (cph/merge-path-item (:path typography) (:name typography))
              :on-blur on-name-blur
              :on-change on-name-change}]
 

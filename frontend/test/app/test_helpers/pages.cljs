@@ -66,7 +66,7 @@
   ([state label type] (sample-shape state type {}))
   ([state label type props]
    (let [page  (current-page state)
-         frame (cph/get-top-frame (:objects page))
+         frame (cph/get-frame (:objects page))
          shape (-> (cp/make-minimal-shape type)
                    (gsh/setup {:x 0 :y 0 :width 1 :height 1})
                    (merge props))]

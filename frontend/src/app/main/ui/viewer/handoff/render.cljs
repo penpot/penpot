@@ -8,7 +8,7 @@
   "The main container for a frame in handoff mode"
   (:require
    [app.common.geom.shapes :as geom]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
    [app.main.ui.shapes.bool :as bool]
@@ -116,12 +116,12 @@
     (mf/fnc bool-container
       {::mf/wrap-props false}
       [props]
-      (let [shape  (unchecked-get props "shape")
-            children-ids (cp/get-children (:id shape) objects)
-            childs (select-keys objects children-ids)
-            props (-> (obj/new)
-                      (obj/merge! props)
-                      (obj/merge! #js {:childs childs}))]
+      (let [shape    (unchecked-get props "shape")
+            children (->> (cph/get-children-ids objects (:id shape))
+                          (select-keys objects))
+            props    (-> (obj/new)
+                         (obj/merge! props)
+                         (obj/merge! #js {:childs children}))]
         [:> bool-wrapper props]))))
 
 (defn svg-raw-container-factory

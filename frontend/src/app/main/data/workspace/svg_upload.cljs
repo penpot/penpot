@@ -12,7 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :refer [max-safe-int min-safe-int]]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -454,9 +454,9 @@
     ptk/WatchEvent
     (watch [it state _]
       (try
-        (let [page-id (:current-page-id state)
-              objects (wsh/lookup-page-objects state page-id)
-              frame-id (cp/frame-id-by-position objects position)
+        (let [page-id  (:current-page-id state)
+              objects  (wsh/lookup-page-objects state page-id)
+              frame-id (cph/frame-id-by-position objects position)
               selected (wsh/lookup-selected state)
 
               [vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)

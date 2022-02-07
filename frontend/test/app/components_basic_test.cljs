@@ -197,13 +197,10 @@
                                 "Renamed component"))
           (rx/do
             (fn [new-state]
-              (let [file      (dwlh/get-local-file new-state)
-                    component (cph/get-component
-                               (:component-id instance1)
-                               (:component-file instance1)
-                               file
-                               {})]
-
+              (let [libs      (dwlh/get-libraries new-state)
+                    component (cph/get-component libs
+                                                 (:component-file instance1)
+                                                 (:component-id instance1))]
                 (t/is (= (:name component)
                          "Renamed component")))))
 
@@ -274,13 +271,10 @@
                      new-state
                      (:id instance1))
 
-                    file      (dwlh/get-local-file new-state)
-                    component (cph/get-component
-                               (:component-id instance1)
-                               (:component-file instance1)
-                               file
-                               {})]
-
+                    libs      (dwlh/get-libraries new-state)
+                    component (cph/get-component libs
+                                                 (:component-file instance1)
+                                                 (:component-id instance1))]
                 (t/is (nil? component)))))
 
           (rx/subs done #(throw %))))))

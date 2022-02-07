@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.main.refs :as refs]
    [app.main.worker :as uw]
    [beicon.core :as rx]
@@ -225,7 +225,7 @@
                                                 :frame-id (:id frame)
                                                 :include-frames? true
                                                 :rect rect})
-                                      (rx/map #(cp/clean-loops @refs/workspace-page-objects %))
+                                      (rx/map #(cph/clean-loops @refs/workspace-page-objects %))
                                       (rx/map #(set/difference % selected))
                                       (rx/map #(->> % (map (partial get @refs/workspace-page-objects)))))
                                  (rx/of nil))))]

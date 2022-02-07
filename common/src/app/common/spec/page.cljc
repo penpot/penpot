@@ -11,7 +11,6 @@
    [app.common.spec.shape :as shape]
    [clojure.spec.alpha :as s]))
 
-
 ;; --- Grid options
 
 (s/def :internal.grid.color/color string?)

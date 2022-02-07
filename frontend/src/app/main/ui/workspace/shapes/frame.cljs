@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.shapes.frame
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
@@ -105,7 +105,7 @@
                   (hooks/use-equal-memo))
 
               all-children
-              (-> (cp/get-children-objects (:id shape) objects)
+              (-> (cph/get-children objects (:id shape))
                   (hooks/use-equal-memo))
 
               show-thumbnail?

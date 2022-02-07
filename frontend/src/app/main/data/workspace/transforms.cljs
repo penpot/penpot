@@ -12,7 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -144,9 +144,7 @@
        (let [objects (wsh/lookup-page-objects state)
              shapes  (->> shapes
                           (remove #(get % :blocked false))
-                          (mapcat (fn [shape]
-                                    (->> (cp/get-children (:id shape) objects)
-                                         (map #(get objects %)))))
+                          (mapcat #(cph/get-children objects (:id %)))
                           (concat shapes))
 
              update-shape
@@ -156,8 +154,6 @@
 
          (update state :workspace-modifiers #(reduce update-shape % shapes)))))))
 
-
-
 (defn- apply-modifiers
   [ids]
   (us/verify (s/coll-of uuid?) ids)
@@ -165,8 +161,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects           (wsh/lookup-page-objects state)
-            children-ids      (->> ids (mapcat #(cp/get-children % objects)))
-            ids-with-children (d/concat-vec children-ids ids)
+            ids-with-children (into (vec ids) (mapcat #(cph/get-children-ids objects %)) ids)
             object-modifiers  (get state :workspace-modifiers)
             ignore-tree       (get-ignore-tree object-modifiers objects ids)]
 
@@ -203,7 +198,7 @@
           shape
 
           (nil? root)
-          (cp/get-root-shape shape objects)
+          (cph/get-root-shape objects shape)
 
           :else root)
 
@@ -213,7 +208,7 @@
           transformed-shape
 
           (nil? transformed-root)
-          (cp/get-root-shape transformed-shape objects)
+          (cph/get-root-shape objects transformed-shape)
 
           :else transformed-root)
 
@@ -663,10 +658,10 @@
       (let [position @ms/mouse-position
             page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            frame-id (cp/frame-id-by-position objects position)
+            frame-id (cph/frame-id-by-position objects position)
 
             moving-shapes (->> ids
-                               (cp/clean-loops objects)
+                               (cph/clean-loops objects)
                                (map #(get objects %))
                                (remove #(or (nil? %)
                                             (= (:frame-id %) frame-id))))
@@ -683,7 +678,7 @@
                              {:type :mov-objects
                               :page-id page-id
                               :parent-id (:parent-id shape)
-                              :index (cp/get-index-in-parent objects (:id shape))
+                              :index (cph/get-index-in-parent objects (:id shape))
                               :shapes [(:id shape)]})))]
 
         (when-not (empty? uch)

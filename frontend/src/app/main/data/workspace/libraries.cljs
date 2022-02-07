@@ -11,6 +11,7 @@
    [app.common.geom.shapes :as geom]
    [app.common.logging :as log]
    [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.change :as spec.change]
    [app.common.spec.color :as spec.color]
@@ -132,7 +133,7 @@
   (ptk/reify ::update-color
     ptk/WatchEvent
     (watch [it state _]
-      (let [[path name] (cp/parse-path-name (:name color))
+      (let [[path name] (cph/parse-path-name (:name color))
             color (assoc color :path path :name name)
             prev (get-in state [:workspace-data :colors id])
             rchg {:type :mod-color
@@ -184,7 +185,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [object (get-in state [:workspace-data :media id])
-            [path name] (cp/parse-path-name new-name)
+            [path name] (cph/parse-path-name new-name)
 
             rchanges [{:type :mod-media
                        :object {:id id
@@ -244,7 +245,7 @@
   (ptk/reify ::update-typography
     ptk/WatchEvent
     (watch [it state _]
-      (let [[path name] (cp/parse-path-name (:name typography))
+      (let [[path name] (cph/parse-path-name (:name typography))
             typography  (assoc typography :path path :name name)
             prev        (get-in state [:workspace-data :typographies (:id typography)])
             rchg        {:type :mod-typography
@@ -307,7 +308,7 @@
     (watch [_ state _]
       (let [objects  (wsh/lookup-page-objects state)
             selected (->> (wsh/lookup-selected state)
-                          (cp/clean-loops objects))]
+                          (cph/clean-loops objects))]
         (rx/of (add-component2 selected))))))
 
 (defn rename-component
@@ -318,7 +319,7 @@
   (ptk/reify ::rename-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [[path name] (cp/parse-path-name new-name)
+      (let [[path name] (cph/parse-path-name new-name)
             component (get-in state [:workspace-data :components id])
             objects (get component :objects)
             ; Give the same name to the root shape
@@ -348,12 +349,10 @@
   (ptk/reify ::duplicate-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [component      (cp/get-component id
-                                             (:current-file-id state)
-                                             (dwlh/get-local-file state)
-                                             nil)
-            all-components (vals (get-in state [:workspace-data :components]))
-            unames         (set (map :name all-components))
+      (let [libraries      (dwlh/get-libraries state)
+            component      (cph/get-component libraries id)
+            all-components (-> state :workspace-data :components vals)
+            unames         (into #{} (map :name) all-components)
             new-name       (dwc/generate-unique-name unames (:name component))
 
             [new-shape new-shapes _updated-shapes]
@@ -404,10 +403,9 @@
   (ptk/reify ::instantiate-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [local-library   (dwlh/get-local-file state)
-            libraries       (get state :workspace-libraries)
-            component       (cp/get-component component-id file-id local-library libraries)
-            component-shape (cp/get-shape component component-id)
+      (let [libraries       (dwlh/get-libraries state)
+            component       (cph/get-component libraries file-id component-id)
+            component-shape (cph/get-shape component component-id)
 
             orig-pos  (gpt/point (:x component-shape) (:y component-shape))
             delta     (gpt/subtract position orig-pos)
@@ -416,7 +414,7 @@
             objects   (wsh/lookup-page-objects state page-id)
             unames    (volatile! (dwc/retrieve-used-names objects))
 
-            frame-id (cp/frame-id-by-position objects (gpt/add orig-pos delta))
+            frame-id (cph/frame-id-by-position objects (gpt/add orig-pos delta))
 
             update-new-shape
             (fn [new-shape original-shape]
@@ -447,10 +445,10 @@
                   (dissoc :component-root?))))
 
             [new-shape new-shapes _]
-            (cp/clone-object component-shape
-                             nil
-                             (get component :objects)
-                             update-new-shape)
+            (cph/clone-object component-shape
+                              nil
+                              (get component :objects)
+                              update-new-shape)
 
             rchanges (mapv (fn [obj]
                              {:type :add-obj
@@ -482,13 +480,12 @@
   (ptk/reify ::detach-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [local-library (dwlh/get-local-file state)
-            container (cp/get-container (get state :current-page-id)
-                                        :page
-                                        local-library)
+      (let [file      (dwlh/get-local-file state)
+            page-id   (get state :current-page-id)
+            container (cph/get-container file :page page-id)
 
             [rchanges uchanges]
-            (dwlh/generate-detach-instance id container)]
+            (dwlh/generate-detach-instance container id)]
 
         (rx/of (dch/commit-changes {:redo-changes rchanges
                                     :undo-changes uchanges
@@ -498,20 +495,19 @@
   (ptk/reify ::detach-selected-components
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            local-library (dwlh/get-local-file state)
-            container (cp/get-container page-id :page local-library)
-
-            selected (->> state
-                          (wsh/lookup-selected)
-                          (cp/clean-loops objects))
+      (let [page-id   (:current-page-id state)
+            objects   (wsh/lookup-page-objects state page-id)
+            file      (dwlh/get-local-file state)
+            container (cph/get-container file :page page-id)
+            selected  (->> state
+                           (wsh/lookup-selected)
+                           (cph/clean-loops objects))
 
             [rchanges uchanges]
             (reduce (fn [changes id]
                       (dwlh/concat-changes
                        changes
-                       (dwlh/generate-detach-instance id container)))
+                       (dwlh/generate-detach-instance container id)))
                     dwlh/empty-changes
                     selected)]
 
@@ -557,21 +553,18 @@
     ptk/WatchEvent
     (watch [it state _]
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
-      (let [local-library (dwlh/get-local-file state)
-            libraries     (dwlh/get-libraries state)
-            container     (cp/get-container (get state :current-page-id)
-                                            :page
-                                            local-library)
+      (let [file      (dwlh/get-local-file state)
+            libraries (dwlh/get-libraries state)
+
+            page-id   (:current-page-id state)
+            container (cph/get-container file :page page-id)
+
             [rchanges uchanges]
-            (dwlh/generate-sync-shape-direct container
-                                             id
-                                             local-library
-                                             libraries
-                                             true)]
+            (dwlh/generate-sync-shape-direct libraries container id true)]
+
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
                                                                  rchanges
-                                                                 local-library))
-
+                                                                 file))
         (rx/of (dch/commit-changes {:redo-changes rchanges
                                     :undo-changes uchanges
                                     :origin it}))))))
@@ -592,17 +585,16 @@
     (watch [it state _]
       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
       (let [page-id       (get state :current-page-id)
-            local-library (dwlh/get-local-file state)
+
+            local-file    (dwlh/get-local-file state)
             libraries     (dwlh/get-libraries state)
 
-            [rchanges uchanges]
-            (dwlh/generate-sync-shape-inverse page-id
-                                              id
-                                              local-library
-                                              libraries)
+            container     (cph/get-container local-file :page page-id)
+            shape         (cph/get-shape container id)
 
-            container (cp/get-container page-id :page local-library)
-            shape     (cp/get-shape container id)
+            [rchanges uchanges]
+            (dwlh/generate-sync-shape-inverse libraries container id)
+
             file-id   (:component-file shape)
             file      (dwlh/get-file state file-id)
 
@@ -623,21 +615,22 @@
         (log/debug :msg "UPDATE-COMPONENT finished"
                    :js/local-rchanges (log-changes
                                        local-rchanges
-                                       local-library)
+                                       file)
                    :js/rchanges (log-changes
                                  rchanges
                                  file))
 
-        (rx/of (when (seq local-rchanges)
-                 (dch/commit-changes {:redo-changes local-rchanges
-                                      :undo-changes local-uchanges
-                                      :origin it
-                                      :file-id (:id local-library)}))
-               (when (seq rchanges)
-                 (dch/commit-changes {:redo-changes rchanges
-                                      :undo-changes uchanges
-                                      :origin it
-                                      :file-id file-id})))))))
+        (rx/of
+         (when (seq local-rchanges)
+           (dch/commit-changes {:redo-changes local-rchanges
+                                :undo-changes local-uchanges
+                                :origin it
+                                :file-id (:id local-file)}))
+         (when (seq rchanges)
+           (dch/commit-changes {:redo-changes rchanges
+                                :undo-changes uchanges
+                                :origin it
+                                :file-id file-id})))))))
 
 (defn update-component-sync
   [shape-id file-id]

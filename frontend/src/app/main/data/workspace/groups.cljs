@@ -10,6 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as cb]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -22,7 +23,7 @@
   (->> selected
        (map #(get objects %))
        (filter #(not= :frame (:type %)))
-       (map #(assoc % ::index (cp/position-on-parent (:id %) objects)))
+       (map #(assoc % ::index (cph/get-position-on-parent objects (:id %))))
        (sort-by ::index)))
 
 (defn- get-empty-groups-after-group-creation
@@ -34,10 +35,8 @@
   group, one (or many) groups can become empty because they have had a
   single shape which is moved to the created group."
   [objects parent-id shapes]
-  (let [ids (cp/clean-loops objects (into #{} (map :id) shapes))
-        parents (->> ids
-                     (reduce #(conj %1 (cp/get-parent %2 objects))
-                             #{}))]
+  (let [ids     (cph/clean-loops objects (into #{} (map :id) shapes))
+        parents (into #{} (map #(cph/get-parent-id objects %)) ids)]
     (loop [current-id (first parents)
            to-check (rest parents)
            removed-id? ids
@@ -53,7 +52,7 @@
                    (empty? (remove removed-id? (:shapes group))))
 
             ;; Adds group to the remove and check its parent
-            (let [to-check (concat to-check [(cp/get-parent current-id objects)]) ]
+            (let [to-check (concat to-check [(cph/get-parent-id objects current-id)]) ]
               (recur (first to-check)
                      (rest to-check)
                      (conj removed-id? current-id)
@@ -139,7 +138,7 @@
 (defn prepare-remove-group
   [it page-id group objects]
   (let [children  (mapv #(get objects %) (:shapes group))
-        parent-id (cp/get-parent (:id group) objects)
+        parent-id (cph/get-parent-id objects (:id group))
         parent    (get objects parent-id)
 
         index-in-parent
@@ -149,7 +148,7 @@
              (ffirst))
 
         ids-to-detach (when (:component-id group)
-                        (cp/get-children (:id group) objects))
+                        (cph/get-children-ids objects (:id group)))
 
         detach-fn (fn [attrs]
                     (dissoc attrs
@@ -202,7 +201,7 @@
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
-            selected (cp/clean-loops objects selected)
+            selected (cph/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group rchanges uchanges]
@@ -241,7 +240,7 @@
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             selected (wsh/lookup-selected state)
-            selected (cp/clean-loops objects selected)
+            selected (cph/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [;; If the selected shape is a group, we can use it. If not,

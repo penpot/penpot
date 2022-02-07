@@ -10,7 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :refer [zero]]
    [app.main.refs :as refs]
    [app.main.worker :as uw]
@@ -202,9 +202,9 @@
                  :frame-id (->> shapes first :frame-id)
                  :include-frames? true
                  :rect area-selrect})
-       (rx/map #(cp/clean-loops objects %))
+       (rx/map #(cph/clean-loops objects %))
        (rx/map #(set/difference % (into #{} (map :id shapes))))
-       (rx/map (fn [ids] (map #(get objects %) ids)))))
+       (rx/map #(map (d/getf objects) %))))
 
 (defn closest-distance-snap
   [page-id shapes objects zoom movev]

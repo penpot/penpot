@@ -126,6 +126,14 @@
 
 ;; --- Interactions
 
+(defn- connected-frame?
+  "Check if some frame is origin or destination of any navigate interaction
+  in the page"
+  [objects frame-id]
+  (let [children (cph/get-children-with-self objects frame-id)]
+    (or (some csi/flow-origin? (map :interactions children))
+        (some #(csi/flow-to? % frame-id) (map :interactions (vals objects))))))
+
 (defn add-new-interaction
   ([shape] (add-new-interaction shape nil))
   ([shape destination]
@@ -134,7 +142,7 @@
      (watch [_ state _]
        (let [page-id  (:current-page-id state)
              objects  (wsh/lookup-page-objects state page-id)
-             frame    (cph/get-frame shape objects)
+             frame    (cph/get-frame objects shape)
              flows    (get-in state [:workspace-data
                                      :pages-index
                                      page-id
@@ -149,7 +157,7 @@
                                              destination)]
                         (update shape :interactions
                                 csi/add-interaction new-interaction)))))
-           (when (and (not (cph/connected-frame? (:id frame) objects))
+           (when (and (not (connected-frame? objects (:id frame)))
                       (nil? flow))
              (rx/of (add-flow (:id frame))))))))))
 
@@ -278,7 +286,7 @@
                 overlay-pos (-> shape
                                 (get-in [:interactions index])
                                 :overlay-position)
-                orig-frame  (cph/get-frame shape objects)
+                orig-frame  (cph/get-frame objects shape)
                 frame-pos   (gpt/point (:x orig-frame) (:y orig-frame))
                 offset      (-> initial-pos
                                 (gpt/subtract overlay-pos)

@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.path.shortcuts :as psc]
@@ -154,13 +154,13 @@
 
              selected (mf/ref-val selected-ref)
 
-             remove-xfm (mapcat #(cp/get-parents % objects))
+             remove-xfm (mapcat #(cph/get-parent-ids objects %))
              remove-id? (cond-> (into #{} remove-xfm selected)
                           @ctrl?
                           (into (filter is-group?) ids))
 
              hover-shape (->> ids
-                              (filterv (comp not remove-id?))
+                              (filter (comp not remove-id?))
                               (first)
                               (get objects))]
          (reset! hover hover-shape)

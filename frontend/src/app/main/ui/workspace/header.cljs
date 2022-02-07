@@ -100,13 +100,11 @@
 
 (mf/defc menu
   [{:keys [layout project file team-id page-id] :as props}]
-  (let [show-menu? (mf/use-state false)
+  (let [show-menu?     (mf/use-state false)
         show-sub-menu? (mf/use-state false)
-        editing?   (mf/use-state false)
-
-        frames (mf/deref refs/workspace-frames)
-
+        editing?       (mf/use-state false)
         edit-input-ref (mf/use-ref nil)
+        frames         (mf/deref refs/workspace-frames)
 
         add-shared-fn
         (st/emitf (dw/set-file-shared (:id file) true))

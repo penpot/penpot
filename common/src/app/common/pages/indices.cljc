@@ -7,7 +7,7 @@
 (ns app.common.pages.indices
   (:require
    [app.common.data :as d]
-   [app.common.pages.helpers :as helpers]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
@@ -45,7 +45,7 @@
   means is displayed over other shapes with less index."
   [objects]
 
-  (let [frames (helpers/select-frames objects)
+  (let [frames  (cph/get-frames objects)
         z-index (calculate-frame-z-index {} uuid/zero objects)]
     (->> frames
          (map :id)
@@ -61,7 +61,7 @@
 
         changed-frames (set/union old-frames new-frames)
 
-        frames (->> (helpers/select-frames new-objects)
+        frames (->> (cph/get-frames new-objects)
                     (map :id)
                     (filter #(contains? changed-frames %)))
 
@@ -84,13 +84,10 @@
    (generate-child-all-parents-index objects (vals objects)))
 
   ([objects shapes]
-   (let [shape->parents
-         (fn [shape]
-           (->> (helpers/get-parents (:id shape) objects)
-                (into [])))]
-     (->> shapes
-          (map #(vector (:id %) (shape->parents %)))
-          (into {})))))
+   (let [xf-parents (comp
+                     (map :id)
+                     (map #(vector % (cph/get-parent-ids objects %))))]
+     (into {} xf-parents shapes))))
 
 (defn create-clip-index
   "Retrieves the mask information for an object"
