@@ -484,7 +484,7 @@
           (initialize [state local]
             (let [page-id (:current-page-id state)
                   objects (wsh/lookup-page-objects state page-id)
-                  shapes  (cp/select-toplevel-shapes objects {:include-frames? true})
+                  shapes  (cph/get-immediate-children objects)
                   srect   (gsh/selection-rect shapes)
                   local   (assoc local :vport size :zoom 1)]
               (cond
@@ -675,7 +675,7 @@
     (update [_ state]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            shapes  (cp/select-toplevel-shapes objects {:include-frames? true})
+            shapes  (cph/get-immediate-children objects)
             srect   (gsh/selection-rect shapes)]
         (if (empty? shapes)
           state
@@ -794,7 +794,7 @@
                                 :frame-id (:frame-id obj)
                                 :page-id page-id
                                 :shapes [id]
-                                :index (cp/position-on-parent id objects)}))
+                                :index (cph/get-position-on-parent objects id)}))
                            selected)]
         ;; TODO: maybe missing the :reg-objects event?
         (rx/of (dch/commit-changes {:redo-changes rchanges
@@ -821,7 +821,7 @@
                  {:type :mov-objects
                   :parent-id (:parent-id obj)
                   :page-id page-id
-                  :index (cp/position-on-parent id objects)
+                  :index (cph/get-position-on-parent objects id)
                   :shapes [id]}))
              (reverse ids))
 
@@ -1023,11 +1023,11 @@
             objects  (wsh/lookup-page-objects state page-id)
 
             ;; Ignore any shape whose parent is also intented to be moved
-            ids      (cp/clean-loops objects ids)
+            ids      (cph/clean-loops objects ids)
 
             ;; If we try to move a parent into a child we remove it
-            ids      (filter #(not (cp/is-parent? objects parent-id %)) ids)
-            parents  (into #{parent-id} (map #(cp/get-parent % objects)) ids)
+            ids      (filter #(not (cph/is-parent? objects parent-id %)) ids)
+            parents  (into #{parent-id} (map #(cph/get-parent-id objects %)) ids)
 
             groups-to-delete
             (loop [current-id  (first parents)
@@ -1045,7 +1045,7 @@
                            (empty? (remove removed-id? (:shapes group))))
 
                     ;; Adds group to the remove and check its parent
-                    (let [to-check (concat to-check [(cp/get-parent current-id objects)])]
+                    (let [to-check (concat to-check [(cph/get-parent-id objects current-id)])]
                       (recur (first to-check)
                              (rest to-check)
                              (conj removed-id? current-id)
@@ -1090,8 +1090,8 @@
                                                 (not (:component-root? shape)))
 
                             parent                 (get objects parent-id)
-                            component-shape        (cph/get-component-shape shape objects)
-                            component-shape-parent (cph/get-component-shape parent objects)
+                            component-shape        (cph/get-component-shape objects shape)
+                            component-shape-parent (cph/get-component-shape objects parent)
 
                             detach? (and instance-part? (not= (:id component-shape)
                                                               (:id component-shape-parent)))
@@ -1099,7 +1099,7 @@
                             reroot? (and sub-instance? (not component-shape-parent))
 
                             ids-to-detach (when detach?
-                                            (cons id (cph/get-children id objects)))]
+                                            (cons id (cph/get-children-ids objects id)))]
 
                         [(cond-> shapes-to-detach detach? (into ids-to-detach))
                          (cond-> shapes-to-deroot deroot? (conj id))
@@ -1286,7 +1286,7 @@
                 (boolean? blocked) (assoc :blocked blocked)
                 (boolean? hidden) (assoc :hidden hidden)))
             objects (wsh/lookup-page-objects state)
-            ids     (into ids (->> ids (mapcat #(cp/get-children % objects))))]
+            ids     (into ids (->> ids (mapcat #(cph/get-children-ids objects %))))]
         (rx/of (dch/update-shapes ids update-fn))))))
 
 (defn toggle-visibility-selected
@@ -1483,7 +1483,7 @@
     (watch [_ state _]
       (let [selected        (wsh/lookup-selected state)
             objects         (wsh/lookup-page-objects state)
-            all-selected    (into [] (mapcat #(cp/get-object-with-children % objects)) selected)
+            all-selected    (into [] (mapcat #(cph/get-children-with-self objects %)) selected)
             head            (get objects (first selected))
 
             not-group-like? (and (= (count selected) 1)
@@ -1588,7 +1588,7 @@
       (watch [_ state _]
         (let [objects  (wsh/lookup-page-objects state)
               selected (->> (wsh/lookup-selected state)
-                            (cp/clean-loops objects))
+                            (cph/clean-loops objects))
               pdata    (reduce (partial collect-object-ids objects) {} selected)
               initial  {:type :copied-shapes
                         :file-id (:current-file-id state)
@@ -1771,18 +1771,18 @@
                   [frame-id frame-id delta])
 
                 (empty? page-selected)
-                (let [frame-id (cp/frame-id-by-position page-objects mouse-pos)
+                (let [frame-id (cph/frame-id-by-position page-objects mouse-pos)
                       delta    (gpt/subtract mouse-pos orig-pos)]
                   [frame-id frame-id delta])
 
                 :else
-                (let [base (cp/get-base-shape page-objects page-selected)
-                      index (cp/position-on-parent (:id base) page-objects)
-                      frame-id (:frame-id base)
+                (let [base      (cph/get-base-shape page-objects page-selected)
+                      index     (cph/get-position-on-parent page-objects (:id base))
+                      frame-id  (:frame-id base)
                       parent-id (:parent-id base)
-                      delta (if in-viewport?
-                              (gpt/subtract mouse-pos orig-pos)
-                              (gpt/subtract (gpt/point (:selrect base)) orig-pos))]
+                      delta     (if in-viewport?
+                                  (gpt/subtract mouse-pos orig-pos)
+                                  (gpt/subtract (gpt/point (:selrect base)) orig-pos))]
                   [frame-id parent-id delta index]))))
 
           ;; Change the indexes if the paste is done with an element selected
@@ -1804,7 +1804,7 @@
           ;; Check if the shape is an instance whose master is defined in a
           ;; library that is not linked to the current file
           (foreign-instance? [shape paste-objects state]
-            (let [root         (cph/get-root-shape shape paste-objects)
+            (let [root         (cph/get-root-shape paste-objects shape)
                   root-file-id (:component-file root)]
               (and (some? root)
                    (not= root-file-id (:current-file-id state))
@@ -1896,7 +1896,7 @@
             height 16
             page-id (:current-page-id state)
             frame-id (-> (wsh/lookup-page-objects state page-id)
-                         (cp/frame-id-by-position @ms/mouse-position))
+                         (cph/frame-id-by-position @ms/mouse-position))
             shape (gsh/setup-selrect
                    {:id id
                     :type :text
@@ -1987,7 +1987,7 @@
     (watch [_ state _]
       (let [page-id       (:current-page-id state)
             objects       (wsh/lookup-page-objects state page-id)
-            shapes        (cp/select-toplevel-shapes objects {:include-frames? true})
+            shapes        (cph/get-immediate-children objects)
             selected      (wsh/lookup-selected state)
             selected-objs (map #(get objects %) selected)
             has-frame?    (some #(= (:type %) :frame) selected-objs)]

@@ -9,7 +9,8 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
+   [app.common.spec :as us]
    [app.main.snap :as snap]
    [app.util.geom.snap-points :as sp]
    [beicon.core :as rx]
@@ -151,18 +152,14 @@
 (mf/defc snap-points
   {::mf/wrap [mf/memo]}
   [{:keys [layout zoom objects selected page-id drawing transform modifiers] :as props}]
-
-  (let [shapes (into [] (keep (d/getf objects)) selected)
+  (us/assert set? selected)
+  (let [shapes  (into [] (keep (d/getf objects)) selected)
 
         filter-shapes
-        (into #{}
-              (comp (mapcat #(cp/get-object-with-children % objects))
-                    (map :id))
-              selected)
+        (into selected (mapcat #(cph/get-children-ids objects %)) selected)
 
-        remove-snap? (mf/use-memo
-                      (mf/deps layout filter-shapes)
-                      #(snap/make-remove-snap layout filter-shapes))
+        remove-snap? (mf/with-memo [layout filter-shapes]
+                       (snap/make-remove-snap layout filter-shapes))
 
         shapes    (if drawing [drawing] shapes)]
     (when (or drawing transform)

@@ -8,11 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.changes :as dwc]   
+   [app.main.data.workspace.changes :as dwc]
    [app.main.store :as st]
    [app.util.object :as obj]
    [app.util.timers :as timers]
@@ -208,7 +208,7 @@
              (show-component [shape objects]
                (if (nil? (:shape-ref shape))
                  ""
-                 (let [root-shape        (cp/get-component-shape shape objects)
+                 (let [root-shape        (cph/get-component-shape objects shape)
                        component-id      (when root-shape (:component-id root-shape))
                        component-file-id (when root-shape (:component-file root-shape))
                        component-file    (when component-file-id (get libraries component-file-id nil))

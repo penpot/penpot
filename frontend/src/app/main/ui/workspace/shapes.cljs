@@ -12,9 +12,7 @@
   others are defined using a generic wrapper implemented in
   common."
   (:require
-   [app.common.pages :as cp]
-   [app.common.uuid :as uuid]
-   [app.main.refs :as refs]
+   [app.common.pages.helpers :as cph]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.rect :as rect]
@@ -29,7 +27,6 @@
    [app.main.ui.workspace.shapes.text :as text]
    [app.util.object :as obj]
    [debug :refer [debug?]]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (declare shape-wrapper)
@@ -42,31 +39,23 @@
 (def image-wrapper (common/generic-wrapper-factory image/image-shape))
 (def rect-wrapper (common/generic-wrapper-factory rect/rect-shape))
 
-(defn make-is-moving-ref
-  [id]
-  (fn []
-    (let [check-moving (fn [local]
-                         (and (= :move (:transform local))
-                              (contains? (:selected local) id)))]
-      (l/derived check-moving refs/workspace-local))))
-
 (mf/defc root-shape
   "Draws the root shape of the viewport and recursively all the shapes"
   {::mf/wrap-props false}
   [props]
   (let [objects       (obj/get props "objects")
         active-frames (obj/get props "active-frames")
-        root-shapes   (get-in objects [uuid/zero :shapes])
-        shapes        (->> root-shapes (mapv #(get objects %)))
-
-        root-children (->> shapes
-                           (filter #(not= :frame (:type %)))
-                           (mapcat #(cp/get-object-with-children (:id %) objects)))]
-
+        shapes        (cph/get-immediate-children objects)]
     [:*
-     [:& ff/fontfaces-style {:shapes root-children}]
+     ;; Render font faces only for shapes that are part of the root
+     ;; frame but don't belongs to any other frame.
+     (let [xform (comp
+                  (remove cph/frame-shape?)
+                  (mapcat #(cph/get-children-with-self objects (:id %))))]
+       [:& ff/fontfaces-style {:shapes (into [] xform shapes)}])
+
      (for [item shapes]
-       (if (= (:type item) :frame)
+       (if (cph/frame-shape? item)
          [:& frame-wrapper {:shape item
                             :key (:id item)
                             :objects objects

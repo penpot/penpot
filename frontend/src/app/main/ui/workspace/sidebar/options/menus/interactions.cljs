@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.interactions
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec.interactions :as csi]
    [app.common.spec.page :as csp]
    [app.common.uuid :as uuid]
@@ -178,10 +178,10 @@
 
 (mf/defc interaction-entry
   [{:keys [index shape interaction update-interaction remove-interaction]}]
-  (let [objects     (deref refs/workspace-page-objects)
-        destination (get objects (:destination interaction))
-        frames      (mf/use-memo (mf/deps objects)
-                                 #(cp/select-frames objects))
+  (let [objects             (deref refs/workspace-page-objects)
+        destination         (get objects (:destination interaction))
+        frames              (mf/with-memo [objects]
+                              (cph/get-frames objects))
 
         overlay-pos-type     (:overlay-pos-type interaction)
         close-click-outside? (:close-click-outside interaction false)
@@ -190,10 +190,10 @@
         way                  (-> interaction :animation :way)
         direction            (-> interaction :animation :direction)
 
-        extended-open? (mf/use-state false)
+        extended-open?       (mf/use-state false)
 
-        ext-delay-ref (mf/use-ref nil)
-        ext-duration-ref (mf/use-ref nil)
+        ext-delay-ref        (mf/use-ref nil)
+        ext-duration-ref     (mf/use-ref nil)
 
         select-text
         (fn [ref] (fn [_] (dom/select-text! (mf/ref-val ref))))
@@ -550,7 +550,7 @@
        [:& page-flows {:flows flows}])
 
      [:div.element-set.interactions-options
-      (when (and shape (not (cp/unframed-shape? shape)))
+      (when (and shape (not (cph/unframed-shape? shape)))
         [:div.element-set-title
          [:span (tr "workspace.options.interactions")]
          [:div.add-page {:on-click add-interaction}
@@ -558,7 +558,7 @@
       [:div.element-set-content
        (when (= (count interactions) 0)
          [:*
-          (when (and shape (not (cp/unframed-shape? shape)))
+          (when (and shape (not (cph/unframed-shape? shape)))
             [:*
              [:div.interactions-help-icon i/plus]
              [:div.interactions-help.separator (tr "workspace.options.add-interaction")]])

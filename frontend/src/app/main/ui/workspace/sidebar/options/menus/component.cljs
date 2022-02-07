@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -16,7 +16,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
 (def component-attrs [:component-id :component-file :shape-ref])
@@ -25,47 +25,59 @@
   [{:keys [ids values] :as props}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
 
-        id     (first ids)
-        locale (mf/deref i18n/locale)
-        local  (mf/use-state {:menu-open false})
+        id              (first ids)
+        local           (mf/use-state {:menu-open false})
 
-        show?         (some? (:component-id values))
-        local-library (mf/deref refs/workspace-local-library)
-        libraries     (mf/deref refs/workspace-libraries)
-        {:keys [component-id component-file]} values
+        component-id    (:component-id values)
+        library-id      (:component-file values)
 
-        component     (cp/get-component component-id component-file local-library libraries)
+        local-file      (deref refs/workspace-local-library)
+        libraries       (deref refs/workspace-libraries)
 
-        on-menu-click (mf/use-callback
-                        (fn [event]
-                          (dom/prevent-default event)
-                          (dom/stop-propagation event)
-                          (swap! local assoc :menu-open true)))
+        ;; NOTE: this is necessary because the `cph/get-component`
+        ;; expects a map of all libraries, including the local one.
+        libraries       (assoc libraries (:id local-file) local-file)
 
-        on-menu-close (mf/use-callback
-                        #(swap! local assoc :menu-open false))
+        component       (cph/get-component libraries library-id component-id)
+        show?           (some? component-id)
 
-        do-detach-component (st/emitf (dwl/detach-component id))
-        do-reset-component (st/emitf (dwl/reset-component id))
-        do-update-component (st/emitf (dwl/update-component-sync id component-file))
+        on-menu-click
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (swap! local assoc :menu-open true)))
+
+        on-menu-close
+        (mf/use-callback
+         #(swap! local assoc :menu-open false))
+
+        do-detach-component
+        (st/emitf (dwl/detach-component id))
+
+        do-reset-component
+        (st/emitf (dwl/reset-component id))
+
+        do-update-component
+        (st/emitf (dwl/update-component-sync id library-id))
 
         do-update-remote-component
         (st/emitf (modal/show
                    {:type :confirm
                     :message ""
-                    :title (t locale "modals.update-remote-component.message")
-                    :hint (t locale "modals.update-remote-component.hint")
-                    :cancel-label (t locale "modals.update-remote-component.cancel")
-                    :accept-label (t locale "modals.update-remote-component.accept")
+                    :title (tr "modals.update-remote-component.message")
+                    :hint (tr "modals.update-remote-component.hint")
+                    :cancel-label (tr "modals.update-remote-component.cancel")
+                    :accept-label (tr "modals.update-remote-component.accept")
                     :accept-style :primary
                     :on-accept do-update-component}))
 
         do-show-component (st/emitf (dw/go-to-component component-id))
-        do-navigate-component-file (st/emitf (dwl/nav-to-component-file component-file))]
+        do-navigate-component-file (st/emitf (dwl/nav-to-component-file library-id))]
     (when show?
       [:div.element-set
        [:div.element-set-title
-        [:span (t locale "workspace.options.component")]]
+        [:span (tr "workspace.options.component")]]
        [:div.element-set-content
         [:div.row-flex.component-row
          i/component
@@ -78,14 +90,14 @@
           ;;          app/main/ui/workspace/context_menu.cljs
           [:& context-menu {:on-close on-menu-close
                             :show (:menu-open @local)
-                            :options (if (= (:component-file values) current-file-id)
-                                       [[(t locale "workspace.shape.menu.detach-instance") do-detach-component]
-                                        [(t locale "workspace.shape.menu.reset-overrides") do-reset-component]
-                                        [(t locale "workspace.shape.menu.update-main") do-update-component]
-                                        [(t locale "workspace.shape.menu.show-main") do-show-component]]
+                            :options (if (= library-id current-file-id)
+                                       [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                        [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
+                                        [(tr "workspace.shape.menu.update-main") do-update-component]
+                                        [(tr "workspace.shape.menu.show-main") do-show-component]]
 
-                                       [[(t locale "workspace.shape.menu.detach-instance") do-detach-component]
-                                        [(t locale "workspace.shape.menu.reset-overrides") do-reset-component]
-                                        [(t locale "workspace.shape.menu.go-main") do-navigate-component-file]
-                                        [(t locale "workspace.shape.menu.update-main") do-update-remote-component]])}]]]]])))
+                                       [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                        [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
+                                        [(tr "workspace.shape.menu.go-main") do-navigate-component-file]
+                                        [(tr "workspace.shape.menu.update-main") do-update-remote-component]])}]]]]])))
 

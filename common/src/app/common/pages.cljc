@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.pages.changes :as changes]
    [app.common.pages.common :as common]
-   [app.common.pages.helpers :as helpers]
    [app.common.pages.indices :as indices]
    [app.common.pages.init :as init]))
 
@@ -19,55 +18,6 @@
 (d/export common/file-version)
 (d/export common/default-color)
 (d/export common/component-sync-attrs)
-
-;; Helpers
-
-(d/export helpers/walk-pages)
-(d/export helpers/select-objects)
-(d/export helpers/update-object-list)
-(d/export helpers/get-component-shape)
-(d/export helpers/get-root-shape)
-(d/export helpers/make-container)
-(d/export helpers/page?)
-(d/export helpers/component?)
-(d/export helpers/get-container)
-(d/export helpers/get-shape)
-(d/export helpers/get-component)
-(d/export helpers/is-main-of)
-(d/export helpers/get-component-root)
-(d/export helpers/get-children)
-(d/export helpers/get-children-objects)
-(d/export helpers/get-object-with-children)
-(d/export helpers/select-children)
-(d/export helpers/is-shape-grouped)
-(d/export helpers/get-parent)
-(d/export helpers/get-parents)
-(d/export helpers/get-frame)
-(d/export helpers/clean-loops)
-(d/export helpers/calculate-invalid-targets)
-(d/export helpers/valid-frame-target)
-(d/export helpers/position-on-parent)
-(d/export helpers/insert-at-index)
-(d/export helpers/append-at-the-end)
-(d/export helpers/select-toplevel-shapes)
-(d/export helpers/select-frames)
-(d/export helpers/clone-object)
-(d/export helpers/indexed-shapes)
-(d/export helpers/expand-region-selection)
-(d/export helpers/frame-id-by-position)
-(d/export helpers/set-touched-group)
-(d/export helpers/touched-group?)
-(d/export helpers/get-base-shape)
-(d/export helpers/is-parent?)
-(d/export helpers/get-index-in-parent)
-(d/export helpers/split-path)
-(d/export helpers/join-path)
-(d/export helpers/parse-path-name)
-(d/export helpers/merge-path-item)
-(d/export helpers/compact-path)
-(d/export helpers/compact-name)
-(d/export helpers/unframed-shape?)
-(d/export helpers/children-seq)
 
 ;; Indices
 (d/export indices/calculate-z-index)

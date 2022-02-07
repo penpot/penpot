@@ -50,13 +50,10 @@
         vbox-x                    (:x vbox)
         vbox-y                    (:y vbox)
 
-        base-objects-rect
-        (mf/use-memo
-         (mf/deps objects)
-         (fn []
-           (let [root-shapes (-> objects cph/get-top-frame :shapes)
-                 shapes      (->> root-shapes (mapv #(get objects %)))]
-             (gsh/selection-rect shapes))))
+        base-objects-rect         (mf/with-memo [objects]
+                                    (-> objects
+                                        (cph/get-immediate-children)
+                                        (gsh/selection-rect)))
 
         inv-zoom                 (/ 1 zoom)
         vbox-height              (- (:height vbox) (* inv-zoom scroll-height))

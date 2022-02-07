@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.interactions :as cti]
    [app.common.uuid :as uuid]
@@ -571,7 +571,7 @@
                           (conj id))]
         (-> state
             (assoc-in [:viewer-local :selected]
-                      (cp/expand-region-selection objects selection)))))))
+                      (cph/expand-region-selection objects selection)))))))
 
 (defn select-all
   []

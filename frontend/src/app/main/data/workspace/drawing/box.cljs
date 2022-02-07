@@ -9,7 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -62,7 +62,7 @@
             layout  (get state :workspace-layout)
             zoom    (get-in state [:workspace-local :zoom] 1)
 
-            frames  (cp/select-frames objects)
+            frames  (cph/get-frames objects)
             fid     (or (->> frames
                              (filter #(gsh/has-point? % initial))
                              first

@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.util.quadtree :as qdt]
    [app.worker.impl :as impl]
@@ -86,7 +87,7 @@
         changed-ids (into #{}
                           (comp (filter #(not= % uuid/zero))
                                 (filter changes?)
-                                (mapcat #(into [%] (cp/get-children % new-objects))))
+                                (mapcat #(into [%] (cph/get-children-ids new-objects %))))
                           (set/union (set (keys old-objects))
                                      (set (keys new-objects))))
 

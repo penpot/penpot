@@ -10,8 +10,8 @@
    https://en.wikipedia.org/wiki/Range_tree"
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
    [app.common.pages.diff :as diff]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.util.geom.grid :as gg]
    [app.util.geom.snap-points :as snap]
@@ -187,9 +187,9 @@
 (defn add-page
   "Adds page information"
   [snap-data {:keys [objects options] :as page}]
-
-  (let [frames     (cp/select-frames objects)
-        shapes     (cp/select-objects #(not= :frame (:type %)) page)
+  (let [frames     (cph/get-frames objects)
+        shapes     (->> (vals (:objects page))
+                        (remove cph/frame-shape?))
         guides     (vals (:guides options))
 
         page-data
@@ -233,7 +233,7 @@
                   (reduce remove-guide   $ removed-guides)
                   (reduce update-guide   $ updated-guides)
                   (reduce add-guide      $ new-guides)))))
-    
+
     ;; Page doesn't exist, we create a new entry
     (add-page snap-data page)))
 

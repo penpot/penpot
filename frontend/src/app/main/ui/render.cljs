@@ -10,7 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.fonts :as df]
    [app.main.render :as render]
@@ -60,7 +60,7 @@
                      (gpt/negate)
                      (gmt/translate-matrix))
 
-        mod-ids  (cons frame-id (cp/get-children frame-id objects))
+        mod-ids  (cons frame-id (cph/get-children-ids objects frame-id))
         updt-fn  #(-> %1
                       (assoc-in [%2 :modifiers :displacement] modifier)
                       (update %2 gsh/transform-shape))
@@ -133,7 +133,7 @@
   [objects object-id]
   (if (uuid/zero? object-id)
     (let [object   (get objects object-id)
-          shapes   (cp/select-toplevel-shapes objects {:include-frames? true})
+          shapes   (cph/get-immediate-children objects)
           srect    (gsh/selection-rect shapes)
           object   (merge object (select-keys srect [:x :y :width :height]))
           object   (gsh/transform-shape object)

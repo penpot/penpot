@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.change :as spec.change]
    [app.common.spec.file :as spec.file]
@@ -658,7 +659,7 @@
                                (rx/map extract-frame-changes)
                                (rx/share))
 
-            frames (-> state wsh/lookup-page-objects cp/select-frames)
+            frames (-> state wsh/lookup-page-objects cph/get-frames)
             no-thumb-frames (->> frames
                                  (filter (comp nil? :thumbnail))
                                  (mapv :id))]

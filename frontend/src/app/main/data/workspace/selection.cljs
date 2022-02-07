@@ -10,7 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.interactions :as cti]
    [app.common.uuid :as uuid]
@@ -151,7 +151,7 @@
                            (conj id))]
          (-> state
              (assoc-in [:workspace-local :selected]
-                       (cp/expand-region-selection objects selection))))))))
+                       (cph/expand-region-selection objects selection))))))))
 
 (defn select-shapes
   [ids]
@@ -171,39 +171,23 @@
   (ptk/reify ::select-all
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page-id      (:current-page-id state)
-            objects      (wsh/lookup-page-objects state page-id)
-            new-selected (let [selected-objs
-                               (->> (wsh/lookup-selected state)
-                                    (map #(get objects %)))
+      (let [page-id  (:current-page-id state)
+            objects  (wsh/lookup-page-objects state page-id)
 
-                               frame-ids
-                               (reduce #(conj %1 (:frame-id %2))
-                                       #{}
-                                       selected-objs)
+            selected (let [frame-ids (into #{} (comp
+                                                (map (d/getf objects))
+                                                (map :frame-id))
+                                           (wsh/lookup-selected state))
+                           frame-id  (if (= 1 (count frame-ids))
+                                       (first frame-ids)
+                                       uuid/zero)]
+                       (cph/get-immediate-children objects frame-id))
 
-                               common-frame-id
-                               (when (= (count frame-ids) 1) (first frame-ids))]
+            selected (into (d/ordered-set)
+                           (remove :blocked)
+                           selected)]
 
-                           (if (and common-frame-id
-                                    (not= (:id common-frame-id) uuid/zero))
-                             (-> (get objects common-frame-id)
-                                 :shapes)
-                             (->> (cp/select-toplevel-shapes objects
-                                                             {:include-frames? true
-                                                              :include-frame-children? false})
-                                  (map :id))))
-
-            is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
-                                                              :pages-index page-id
-                                                              :objects shape-id
-                                                              :blocked] false)))
-
-            selected-ids (into lks/empty-linked-set
-                               (comp (filter some?)
-                                     (filter is-not-blocked))
-                               new-selected)]
-        (rx/of (select-shapes selected-ids))))))
+        (rx/of (select-shapes selected))))))
 
 (defn deselect-all
   "Clear all possible state of drawing, edition
@@ -250,7 +234,7 @@
                  :include-frames? true
                  :ignore-groups? ignore-groups?
                  :full-frame? true})
-               (rx/map #(cp/clean-loops objects %))
+               (rx/map #(cph/clean-loops objects %))
                (rx/map #(into initial-set (filter (comp not blocked?)) %))
                (rx/map select-shapes)))))))
 
@@ -314,11 +298,8 @@
   [objects page-id unames ids delta]
   (let [unames         (volatile! unames)
         update-unames! (fn [new-name] (vswap! unames conj new-name))
-        all-ids        (reduce (fn [ids-set id]
-                                 (into ids-set (cons id (cp/get-children id objects))))
-                               #{}
-                               ids)
-        ids-map        (into {} (map #(vector % (uuid/next)) all-ids))]
+        all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids objects %2))) #{} ids)
+        ids-map        (into {} (map #(vector % (uuid/next))) all-ids)]
     (loop [ids   (seq ids)
            chgs  []]
       (if ids
@@ -337,7 +318,7 @@
   (let [process-id
         (fn [index-map id]
           (let [parent-id    (get-in objects [id :parent-id])
-                parent-index (cp/position-on-parent id objects)]
+                parent-index (cph/get-position-on-parent objects id)]
             (update index-map parent-id (fnil conj []) [id parent-index])))
         index-map (reduce process-id {} ids)]
     (-> changes (update-indices index-map))))
@@ -345,7 +326,7 @@
 (defn- prepare-duplicate-change
   [objects page-id unames update-unames! ids-map id delta]
   (let [obj (get objects id)]
-    (if (= :frame (:type obj))
+    (if (cph/frame-shape? obj)
       (prepare-duplicate-frame-change objects page-id unames update-unames! ids-map obj delta)
       (prepare-duplicate-shape-change objects page-id unames update-unames! ids-map obj delta (:frame-id obj) (:parent-id obj)))))
 
@@ -449,7 +430,7 @@
 
       ;; The default is leave normal shapes in place, but put
       ;; new frames to the right of the original.
-      (if (= (:type obj) :frame)
+      (if (cph/frame-shape? obj)
         (gpt/point (+ (:width obj) 50) 0)
         (gpt/point 0 0))
 
