@@ -45,11 +45,11 @@
           (when (= tool :curve)
             (let [stopper (->> stream (rx/filter dwc/interrupt?))]
               (->> stream
-                   (rx/take-until stopper)
                    (rx/filter (ptk/type? ::common/handle-finish-drawing))
                    (rx/take 1)
                    (rx/observe-on :async)
-                   (rx/map #(select-for-drawing tool data)))))
+                   (rx/map #(select-for-drawing tool data))
+                   (rx/take-until stopper))))
 
           ;; NOTE: comments are a special case and they manage they
           ;; own interrupt cycle.q
