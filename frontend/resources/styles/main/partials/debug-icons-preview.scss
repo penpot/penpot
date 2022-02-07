@@ -2,7 +2,9 @@
   display: flex;
   flex-direction: column;
   overflow: scroll;
+  height: 100%;
 }
+
 .debug-icons-preview {
   display: flex;
   flex-wrap: wrap;

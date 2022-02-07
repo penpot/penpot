@@ -22,7 +22,10 @@
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
    [app.main.ui.dashboard.team :refer [team-settings-page team-members-page]]
    [app.main.ui.hooks :as hooks]
-   [rumext.alpha :as mf]))
+   [app.util.keyboard :as kbd]
+   [goog.events :as events]
+   [rumext.alpha :as mf])
+  (:import goog.events.EventType))
 
 (defn ^boolean uuid-str?
   [s]
@@ -94,6 +97,16 @@
 
     (mf/with-effect [team-id]
       (st/emit! (dd/initialize {:id team-id})))
+
+    (mf/use-effect
+     (fn []
+       (let [events [(events/listen goog/global EventType.KEYDOWN
+                                    (fn [event]
+                                      (when (kbd/enter? event)
+                                        (st/emit! (dd/open-selected-file)))))]]
+         (fn []
+           (doseq [key events]
+             (events/unlistenByKey key))))))
 
     [:& (mf/provider ctx/current-team-id) {:value team-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}

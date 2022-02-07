@@ -42,6 +42,15 @@
           (when (= tool :path)
             (rx/of (start-drawing :path)))
 
+          (when (= tool :curve)
+            (let [stopper (->> stream (rx/filter dwc/interrupt?))]
+              (->> stream
+                   (rx/filter (ptk/type? ::common/handle-finish-drawing))
+                   (rx/take 1)
+                   (rx/observe-on :async)
+                   (rx/map #(select-for-drawing tool data))
+                   (rx/take-until stopper))))
+
           ;; NOTE: comments are a special case and they manage they
           ;; own interrupt cycle.q
           (when (and (not= tool :comments)
@@ -74,7 +83,7 @@
              (rx/of (handle-drawing type))
              (->> stream
                   (rx/filter (ptk/type? ::common/handle-finish-drawing) )
-                  (rx/first)
+                  (rx/take 1)
                   (rx/map #(fn [state] (update state :workspace-drawing dissoc :lock)))))))))))
 
 (defn handle-drawing

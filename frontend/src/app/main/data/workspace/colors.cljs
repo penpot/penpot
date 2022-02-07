@@ -206,11 +206,9 @@
               stop? (rx/filter (ptk/type? ::stop-picker) stream)
 
               update-events
-              (fn [[color shift?]]
-                (rx/of (if shift?
-                         (change-stroke ids color)
-                         (change-fill ids color))
-                       (stop-picker)))]
+              (fn [color]
+                (rx/of (change-fill ids color)))]
+
           (rx/merge
            ;; Stream that updates the stroke/width and stops if `esc` pressed
            (->> sub
@@ -219,12 +217,12 @@
 
            ;; Hide the modal if the stop event is emitted
            (->> stop?
-                (rx/first)
+                (rx/take 1)
                 (rx/map #(md/hide))))))
 
       ptk/UpdateEvent
       (update [_ state]
-        (let [handle-change-color (fn [color shift?] (rx/push! sub [color shift?]))]
+        (let [handle-change-color (fn [color] (rx/push! sub color))]
           (-> state
               (assoc-in [:workspace-local :picking-color?] true)
               (assoc ::md/modal {:id (random-uuid)

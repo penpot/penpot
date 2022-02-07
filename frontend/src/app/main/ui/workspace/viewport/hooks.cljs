@@ -57,13 +57,14 @@
        ;; We schedule the event so it fires after `initialize-page` event
        (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
 
-(defn setup-cursor [cursor alt? panning drawing-tool drawing-path? path-editing?]
+(defn setup-cursor [cursor alt? ctrl? space? panning drawing-tool drawing-path? path-editing?]
   (mf/use-effect
-   (mf/deps @cursor @alt? panning drawing-tool drawing-path? path-editing?)
+   (mf/deps @cursor @alt? @ctrl? @space? panning drawing-tool drawing-path? path-editing?)
    (fn []
      (let [new-cursor
            (cond
-             panning                         (utils/get-cursor :hand)
+             (and @ctrl? @space?)            (utils/get-cursor :zoom)
+             (or panning @space?)            (utils/get-cursor :hand)
              (= drawing-tool :comments)      (utils/get-cursor :comments)
              (= drawing-tool :frame)         (utils/get-cursor :create-artboard)
              (= drawing-tool :rect)          (utils/get-cursor :create-rectangle)

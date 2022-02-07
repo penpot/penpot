@@ -80,7 +80,7 @@
                        :fn #(st/emit! (dw/toggle-layout-flags :scale-text))}
 
    :increase-zoom      {:tooltip "+"
-                        :command "+"
+                        :command ["+" "="]
                         :fn #(st/emit! (dw/increase-zoom nil))}
 
    :decrease-zoom      {:tooltip "-"

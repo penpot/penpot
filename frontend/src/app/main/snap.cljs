@@ -82,7 +82,7 @@
                    :frame-id frame-id
                    :axis coord
                    :ranges [[(- value 0.5) (+ value 0.5)]]})
-         (rx/first)
+         (rx/take 1)
          (rx/map (remove-from-snap-points remove-snap?))
          (rx/map flatten-to-points))))
 
@@ -98,7 +98,7 @@
                    :frame-id frame-id
                    :axis coord
                    :ranges ranges})
-         (rx/first)
+         (rx/take 1)
          (rx/map (remove-from-snap-points remove-snap?))
          (rx/map (get-min-distance-snap points coord)))))
 

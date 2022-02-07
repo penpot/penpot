@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
-   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.spec.interactions :as cti]
@@ -47,51 +46,58 @@
       (assoc-in state [:workspace-local :selrect] selrect))))
 
 (defn handle-area-selection
-  [preserve?]
-  (letfn [(data->selrect [data]
-            (let [start (:start data)
-                  stop (:stop data)
-                  start-x (min (:x start) (:x stop))
-                  start-y (min (:y start) (:y stop))
-                  end-x (max (:x start) (:x stop))
-                  end-y (max (:y start) (:y stop))]
-              {:type :rect
-               :x start-x
-               :y start-y
-               :width (mth/abs (- end-x start-x))
-               :height (mth/abs (- end-y start-y))}))]
-    (ptk/reify ::handle-area-selection
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [zoom (get-in state [:workspace-local :zoom] 1)
-              stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
-              stoper (->> stream (rx/filter stop?))
+  [preserve? ignore-groups?]
+  (ptk/reify ::handle-area-selection
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [zoom (get-in state [:workspace-local :zoom] 1)
+            stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
+            stoper (->> stream (rx/filter stop?))
 
-              calculate-selrect
-              (fn [data pos]
-                (if data
-                  (assoc data :stop pos)
-                  {:start pos :stop pos}))
+            init-selrect
+            {:type :rect
+             :x (:x @ms/mouse-position)
+             :y (:y @ms/mouse-position)
+             :width 0
+             :height 0}
 
-              selrect-stream
-              (->> ms/mouse-position
-                   (rx/scan calculate-selrect nil)
-                   (rx/map data->selrect)
-                   (rx/filter #(or (> (:width %) (/ 10 zoom))
-                                   (> (:height %) (/ 10 zoom))))
-                   (rx/take-until stoper))]
-          (rx/concat
-           (if preserve?
-             (rx/empty)
-             (rx/of (deselect-all)))
+            calculate-selrect
+            (fn [selrect [delta space?]]
+              (if space?
+                (-> selrect
+                    (update :x + (:x delta))
+                    (update :y + (:y delta)))
 
-           (rx/merge
-            (->> selrect-stream (rx/map update-selrect))
-            (->> selrect-stream
-                 (rx/debounce 50)
-                 (rx/map #(select-shapes-by-current-selrect preserve?))))
+                (-> selrect
+                    (update :width + (:x delta))
+                    (update :height + (:y delta)))))
 
-           (rx/of (update-selrect nil))))))))
+            selrect-stream
+            (->> ms/mouse-position
+                 (rx/buffer 2 1)
+                 (rx/map (fn [[from to]] (when (and from to) (gpt/to-vec from to))))
+                 (rx/filter some?)
+                 (rx/with-latest-from ms/keyboard-space)
+                 (rx/scan calculate-selrect init-selrect)
+                 (rx/filter #(or (> (:width %) (/ 10 zoom))
+                                 (> (:height %) (/ 10 zoom))))
+                 (rx/take-until stoper))]
+        (rx/concat
+         (if preserve?
+           (rx/empty)
+           (rx/of (deselect-all)))
+
+         (rx/merge
+          (->> selrect-stream
+               (rx/map update-selrect))
+
+          (->> selrect-stream
+               (rx/buffer-time 100)
+               (rx/map #(last %))
+               (rx/dedupe)
+               (rx/map #(select-shapes-by-current-selrect preserve? ignore-groups?))))
+
+         (rx/of (update-selrect nil)))))))
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
@@ -216,7 +222,7 @@
 ;; --- Select Shapes (By selrect)
 
 (defn select-shapes-by-current-selrect
-  [preserve?]
+  [preserve? ignore-groups?]
   (ptk/reify ::select-shapes-by-current-selrect
     ptk/WatchEvent
     (watch [_ state _]
@@ -235,6 +241,7 @@
                  :page-id page-id
                  :rect selrect
                  :include-frames? true
+                 :ignore-groups? ignore-groups?
                  :full-frame? true})
                (rx/map #(cp/clean-loops objects %))
                (rx/map #(into initial-set (filter (comp not blocked?)) %))

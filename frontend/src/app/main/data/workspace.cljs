@@ -196,7 +196,7 @@
 
                           (->> stream
                                (rx/filter #(= ::dwc/index-initialized %))
-                               (rx/first)
+                               (rx/take 1)
                                (rx/map #(file-initialized bundle)))))))))
 
     ptk/EffectEvent
@@ -1636,7 +1636,7 @@
           (->> (rx/concat paste-transit-str
                           paste-plain-text-str
                           paste-image-str)
-               (rx/first)
+               (rx/take 1)
                (rx/catch
                 (fn [err]
                   (js/console.error "Clipboard error:" err)

@@ -70,7 +70,7 @@
           (let [opacity-events (->> stream ;; Stop buffering after time without opacities
                                     (rx/filter (ptk/type? ::pressed-opacity))
                                     (rx/buffer-time 600)
-                                    (rx/first)
+                                    (rx/take 1)
                                     (rx/map #(set-opacity (calculate-opacity (map deref %)))))]
             (rx/concat
              (rx/of (set-opacity (calculate-opacity [opacity]))) ;; First opacity is always fired

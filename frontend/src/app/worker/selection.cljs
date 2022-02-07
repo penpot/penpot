@@ -105,7 +105,7 @@
     (assoc data :index index :z-index z-index)))
 
 (defn- query-index
-  [{index :index z-index :z-index} rect frame-id full-frame? include-frames? clip-children? reverse?]
+  [{index :index z-index :z-index} rect frame-id full-frame? include-frames? ignore-groups? clip-children? reverse?]
   (let [result (-> (qdt/search index (clj->js rect))
                    (es6-iterator-seq))
 
@@ -117,6 +117,7 @@
                (or (not frame-id) (= frame-id (:frame-id shape)))
                (case (:type shape)
                  :frame   include-frames?
+                 (:bool :group) (not ignore-groups?)
                  true)
 
                (or (not full-frame?)
@@ -189,10 +190,10 @@
   nil)
 
 (defmethod impl/handler :selection/query
-  [{:keys [page-id rect frame-id reverse? full-frame? include-frames? clip-children?]
+  [{:keys [page-id rect frame-id reverse? full-frame? include-frames? ignore-groups? clip-children?]
     :or {reverse? false full-frame? false include-frames? false clip-children? true} :as message}]
   (when-let [index (get @state page-id)]
-    (query-index index rect frame-id full-frame? include-frames? clip-children? reverse?)))
+    (query-index index rect frame-id full-frame? include-frames? ignore-groups? clip-children? reverse?)))
 
 (defmethod impl/handler :selection/query-z-index
   [{:keys [page-id objects ids]}]
