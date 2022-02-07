@@ -94,7 +94,7 @@
 ;;     (conj backends id)))
 
 (mf/defc font-selector
-  [{:keys [on-select on-close current-font] :as props}]
+  [{:keys [on-select on-close current-font show-recent] :as props}]
   (let [selected     (mf/use-state current-font)
         state        (mf/use-state {:term "" :backends #{}})
 
@@ -189,8 +189,8 @@
                 :ref input
                 :spell-check false
                 :on-change on-filter-change}]
-       [:hr]
-       (when recent-fonts
+       (when (and recent-fonts show-recent)
+         [:hr]
          [*
           [:p.title (tr "workspace.options.recent-fonts")]
           (for [font recent-fonts]
@@ -249,7 +249,7 @@
                     :current? (= (:id font) (:id selected))}])))
 
 (mf/defc font-options
-  [{:keys [values on-change on-blur] :as props}]
+  [{:keys [values on-change on-blur show-recent] :as props}]
   (let [{:keys [font-id font-size font-variant-id]} values
 
         font-id         (or font-id (:font-id txt/default-text-attrs))
@@ -312,14 +312,17 @@
            (reset! open-selector? false)
            (when (some? on-blur)
              (on-blur))
-           (st/emit! (fts/add-recent-font (mf/ref-val last-font)))))]
+           (when (mf/ref-val last-font)
+             (st/emit! (fts/add-recent-font (mf/ref-val last-font))))
+           ))]
 
     [:*
      (when @open-selector?
        [:& font-selector
         {:current-font font
          :on-close on-font-selector-close
-         :on-select on-font-select}])
+         :on-select on-font-select
+         :show-recent show-recent}])
 
      [:div.row-flex
       [:div.input-select.font-option
@@ -434,12 +437,13 @@
       i/titlecase]]))
 
 (mf/defc typography-options
-  [{:keys [ids editor values on-change on-blur]}]
+  [{:keys [ids editor values on-change on-blur show-recent]}]
   (let [opts #js {:editor editor
                   :ids ids
                   :values values
                   :on-change on-change
-                  :on-blur on-blur}]
+                  :on-blur on-blur
+                  :show-recent show-recent}]
     [:div.element-set-content
      [:> font-options opts]
      [:div.row-flex
@@ -580,4 +584,5 @@
              i/actions]]]
 
          [:& typography-options {:values typography
-                                 :on-change on-change}]])]]))
+                                 :on-change on-change
+                                 :show-recent false}]])]]))

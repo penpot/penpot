@@ -301,6 +301,7 @@
         opts #js {:ids ids
                   :values values
                   :on-change on-change
+                  :show-recent true
                   :on-blur
                   (fn []
                     (tm/schedule
