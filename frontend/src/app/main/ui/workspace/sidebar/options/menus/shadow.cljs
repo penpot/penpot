@@ -77,13 +77,11 @@
 
         update-color
         (fn [index]
-          (fn [color opacity]
+          (fn [color]
             (let [color (dissoc color :id :file-id :gradient)]
               (st/emit! (dch/update-shapes
                          ids
-                         #(-> %
-                              (assoc-in [:shadow index :color] color)
-                              (assoc-in [:shadow index :opacity] opacity)))))))
+                         #(assoc-in % [:shadow index :color] color))))))
 
         detach-color
         (fn [index]

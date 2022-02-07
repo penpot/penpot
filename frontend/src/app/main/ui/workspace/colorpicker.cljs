@@ -226,9 +226,9 @@
 
     ;; Updates color when used el pixel picker
     (mf/use-effect
-     (mf/deps picking-color? picked-color-select)
+     (mf/deps picking-color? picked-color picked-color-select)
      (fn []
-       (when (and picking-color? picked-color-select)
+       (when (and picking-color? picked-color picked-color-select)
          (let [[r g b alpha] picked-color
                hex (uc/rgb->hex [r g b])
                [h s v] (uc/hex->hsv hex)]

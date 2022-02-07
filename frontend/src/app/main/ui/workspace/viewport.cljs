@@ -248,12 +248,6 @@
            :edition edition
            :zoom zoom}])
 
-       [:& scroll-bars/viewport-scrollbars
-        {:objects base-objects
-         :zoom zoom
-         :vbox vbox
-         :viewport-ref viewport-ref}]
-
        (when show-selection-handlers?
          [:& selection/selection-handlers
           {:selected selected
@@ -360,6 +354,12 @@
           {:page-id page-id}])
 
        [:& widgets/viewport-actions]
+
+       [:& scroll-bars/viewport-scrollbars
+        {:objects base-objects
+         :zoom zoom
+         :vbox vbox
+         :viewport-ref viewport-ref}]
 
        (when show-rules?
          [:*
