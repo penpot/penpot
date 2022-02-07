@@ -24,6 +24,9 @@
 - Redesign of workspace toolbars [Taiga #2319](https://tree.taiga.io/project/penpot/us/2319)
 
 ### :bug: Bugs fixed
+
+- Fixed handoff shadow type text [Taiga #2717](https://tree.taiga.io/project/penpot/issue/2717)
+
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
