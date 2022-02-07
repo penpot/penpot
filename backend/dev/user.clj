@@ -6,6 +6,7 @@
 
 (ns user
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
    [app.common.perf :as perf]
