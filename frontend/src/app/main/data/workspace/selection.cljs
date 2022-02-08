@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
+   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.spec.interactions :as cti]
@@ -56,21 +57,27 @@
 
             init-selrect
             {:type :rect
-             :x (:x @ms/mouse-position)
-             :y (:y @ms/mouse-position)
-             :width 0
-             :height 0}
+             :x1 (:x @ms/mouse-position)
+             :y1 (:y @ms/mouse-position)
+             :x2 (:x @ms/mouse-position)
+             :y2 (:y @ms/mouse-position)}
 
             calculate-selrect
             (fn [selrect [delta space?]]
-              (if space?
-                (-> selrect
-                    (update :x + (:x delta))
-                    (update :y + (:y delta)))
+              (let [result
+                    (cond-> selrect
+                      :always
+                      (-> (update :x2 + (:x delta))
+                          (update :y2 + (:y delta)))
 
-                (-> selrect
-                    (update :width + (:x delta))
-                    (update :height + (:y delta)))))
+                      space?
+                      (-> (update :x1 + (:x delta))
+                          (update :y1 + (:y delta))))]
+                (assoc result
+                       :x (min (:x1 result) (:x2 result))
+                       :y (min (:y1 result) (:y2 result))
+                       :width (mth/abs (- (:x2 result) (:x1 result)))
+                       :height (mth/abs (- (:y2 result) (:y1 result))))))
 
             selrect-stream
             (->> ms/mouse-position
