@@ -358,7 +358,7 @@
   "Calculates the style properties for the given coordinates and position"
   [{vh :height} position x y]
   (let [;; picker height in pixels
-        h 360
+        h 430
         ;; Checks for overflow outside the viewport height
         overflow-fix (max 0 (+ y (- 50) h (- vh)))]
     (cond
