@@ -27,6 +27,7 @@
 ### :bug: Bugs fixed
 
 - Fixed color palette outside viewport [Taiga #2715](https://tree.taiga.io/project/penpot/issue/2715)
+- Fixed missing translate string [Taiga #2780](https://tree.taiga.io/project/penpot/issue/2780)
 - Fixed handoff shadow type text [Taiga #2717](https://tree.taiga.io/project/penpot/issue/2717)
 
 ### :arrow_up: Deps updates

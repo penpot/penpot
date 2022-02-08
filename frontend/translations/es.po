@@ -3298,6 +3298,10 @@ msgid "workspace.toolbar.color-palette"
 msgstr "Paleta de colores (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "Tipografías (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.comments"
 msgstr "Comentarios (%s)"
 
