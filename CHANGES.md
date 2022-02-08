@@ -31,6 +31,17 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+## 1.11.1-beta
+
+### :bug: Bugs fixed
+
+- Fix issue related to default http host config value.
+- Fix issue on rendering frames on firefox.
+
+### :arrow_up: Deps updates
+
+- Update nodejs version to 16.13.1 on docker images.
+
 ## 1.11.0-beta
 
 ### :sparkles: New features

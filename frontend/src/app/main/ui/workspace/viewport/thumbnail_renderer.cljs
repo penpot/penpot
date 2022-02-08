@@ -43,6 +43,8 @@
                            svg-node (.createElementNS js/document "http://www.w3.org/2000/svg" "svg")
                            _ (.setAttribute svg-node "version" "1.1")
                            _ (.setAttribute svg-node "viewBox" (str (:x shape) " " (:y shape) " " (:width shape) " " (:height shape)))
+                           _ (.setAttribute svg-node "width" (:width shape))
+                           _ (.setAttribute svg-node "height" (:height shape))
                            _ (unchecked-set svg-node "innerHTML" frame-html)
                            xml  (-> (js/XMLSerializer.)
                                     (.serializeToString svg-node)

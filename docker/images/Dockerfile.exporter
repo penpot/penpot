@@ -5,7 +5,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v14.17.5 \
+    NODE_VERSION=v16.13.1 \
     PENPOT_BROWSER_EXECUTABLE_PATH=/usr/bin/chromium
 
 RUN set -ex; \
