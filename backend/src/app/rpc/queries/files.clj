@@ -26,6 +26,7 @@
 
 ;; --- Helpers & Specs
 
+(s/def ::frame-id ::us/uuid)
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::project-id ::us/uuid)
@@ -392,6 +393,7 @@
    )
    select * from recent_files where row_num <= 10;")
 
+
 (s/def ::team-recent-files
   (s/keys :req-un [::profile-id ::team-id]))
 
@@ -400,6 +402,25 @@
   (with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (db/exec! conn [sql:team-recent-files team-id])))
+
+
+;; --- QUERY: get the thumbnail for an frame
+
+(def ^:private sql:file-frame-thumbnail
+  "select data
+     from file_frame_thumbnail
+    where file_id = ?
+      and frame_id = ?")
+
+(s/def ::file-frame-thumbnail
+  (s/keys :req-un [::profile-id ::file-id ::frame-id]))
+
+(sv/defmethod ::file-frame-thumbnail
+  [{:keys [pool]} {:keys [profile-id file-id frame-id]}]
+  (with-open [conn (db/open pool)]
+    (check-read-permissions! conn profile-id file-id)
+    (db/exec-one! conn [sql:file-frame-thumbnail file-id frame-id])))
+
 
 ;; --- Helpers
 

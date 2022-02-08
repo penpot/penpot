@@ -27,6 +27,8 @@
 
 ;; --- Helpers & Specs
 
+(s/def ::frame-id ::us/uuid)
+(s/def ::file-id ::us/uuid)
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
@@ -472,3 +474,25 @@
                       {:id id})))
 
       nil)))
+
+
+;; --- Mutation: Upsert frame thumbnail
+
+(def sql:upsert-frame-thumbnail
+  "insert into file_frame_thumbnail(file_id, frame_id, data)
+   values (?, ?, ?)
+       on conflict(file_id, frame_id) do
+          update set data = ?;")
+
+(s/def ::data ::us/string)
+(s/def ::upsert-frame-thumbnail
+  (s/keys :req-un [::profile-id ::file-id ::frame-id ::data]))
+
+(sv/defmethod ::upsert-frame-thumbnail
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id frame-id data]}]
+  (db/with-atomic [conn pool]
+    (files/check-edition-permissions! conn profile-id file-id)
+    (db/exec-one! conn [sql:upsert-frame-thumbnail file-id frame-id data data])
+    nil))
+
+
