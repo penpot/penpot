@@ -302,8 +302,8 @@
                                    (dw/toggle-layout-flags :colorpalette)))}
         [:span
          (if (contains? layout :colorpalette)
-           (tr "workspace.header.menu.hide-colorpalette")
-           (tr "workspace.header.menu.show-colorpalette"))]
+           (tr "workspace.header.menu.hide-palette")
+           (tr "workspace.header.menu.show-palette"))]
         [:span.shortcut (sc/get-tooltip :toggle-colorpalette)]]
 
        [:li {:on-click (fn []
