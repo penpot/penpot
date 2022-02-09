@@ -8,7 +8,8 @@
   (:require
    [app.common.exceptions :as ex]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str])
+   [cuerdas.core :as str]
+   [fipp.ednize :as fez])
   (:import
    java.time.Duration
    java.time.Instant
@@ -111,6 +112,11 @@
 (defmethod print-dup Duration [o w]
   (print-method o w))
 
+(extend-protocol fez/IEdn
+  Duration
+  (-edn [o] (pr-str o)))
+
+
 ;; --- INSTANT
 
 (defn instant
@@ -174,6 +180,10 @@
 
 (defmethod print-dup Instant [o w]
   (print-method o w))
+
+(extend-protocol fez/IEdn
+  Instant
+  (-edn [o] (pr-str o)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Cron Expression

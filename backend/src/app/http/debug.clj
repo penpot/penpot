@@ -18,7 +18,7 @@
    [app.util.template :as tmpl]
    [app.util.time :as dt]
    [clojure.java.io :as io]
-   [clojure.pprint :as ppr]
+   [fipp.edn :as fpp]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [integrant.core :as ig]))
@@ -147,21 +147,20 @@
              (some-> (db/get-by-id pool :server-error-report id) :content db/decode-transit-pgobject)))
 
           (render-template [report]
-            (binding [ppr/*print-right-margin* 300]
-              (let [context (dissoc report
-                                    :trace :cause :params :data :spec-problems
-                                    :spec-explain :spec-value :error :explain :hint)
-                    params  {:context (with-out-str (ppr/pprint context))
-                             :hint    (:hint report)
-                             :spec-explain  (:spec-explain report)
-                             :spec-problems (:spec-problems report)
-                             :spec-value    (:spec-value report)
-                             :data          (:data report)
-                             :trace         (or (:trace report)
-                                                (some-> report :error :trace))
-                             :params        (:params report)}]
-                (-> (io/resource "templates/error-report.tmpl")
-                    (tmpl/render params)))))
+            (let [context (dissoc report
+                                  :trace :cause :params :data :spec-problems
+                                  :spec-explain :spec-value :error :explain :hint)
+                  params  {:context (with-out-str (fpp/pprint context {:width 300}))
+                           :hint    (:hint report)
+                           :spec-explain  (:spec-explain report)
+                           :spec-problems (:spec-problems report)
+                           :spec-value    (:spec-value report)
+                           :data          (:data report)
+                           :trace         (or (:trace report)
+                                              (some-> report :error :trace))
+                           :params        (:params report)}]
+              (-> (io/resource "templates/error-report.tmpl")
+                  (tmpl/render params))))
           ]
 
     (when-not (authorized? pool request)

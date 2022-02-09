@@ -17,7 +17,7 @@
    [app.srepl.dev :as dev]
    [app.util.blob :as blob]
    [app.util.time :as dt]
-   [clojure.pprint :refer [pprint]]
+   [fipp.edn :refer [pprint]]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [expound.alpha :as expound]))

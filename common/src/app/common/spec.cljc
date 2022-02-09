@@ -19,7 +19,7 @@
    [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]
-   [expound.alpha]))
+   [expound.alpha :as expound]))
 
 (s/check-asserts true)
 
@@ -269,4 +269,15 @@
          (set! ~sym (fn [& params#]
                       (spec-assert* ~spec params# ~message mdata#)
                       (apply origf# params#)))))))
+
+(defn pretty-explain
+  ([data] (pretty-explain data nil))
+  ([data {:keys [max-problems] :or {max-problems 10}}]
+   (when (and (::s/problems data)
+              (::s/value data)
+              (::s/spec data))
+     (binding [s/*explain-out* expound/printer]
+       (with-out-str
+         (s/explain-out (update data ::s/problems #(take max-problems %))))))))
+
 

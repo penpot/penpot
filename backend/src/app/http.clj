@@ -76,11 +76,11 @@
       (try
         (handler request)
         (catch Throwable e
-          (l/with-context (errors/get-error-context request e)
-            (l/error :hint "unexpected error processing request"
-                     :query-string (:query-string request)
-                     :cause e)
-            {:status 500 :body "internal server error"}))))))
+          (l/error :hint "unexpected error processing request"
+                   ::l/context (errors/get-error-context request e)
+                   :query-string (:query-string request)
+                   :cause e)
+          {:status 500 :body "internal server error"})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Http Router
