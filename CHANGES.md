@@ -27,6 +27,7 @@
 
 ### :bug: Bugs fixed
 
+- Fixed error when trying to post an empty comment [Taiga #2603](https://tree.taiga.io/project/penpot/issue/2603)
 - Fixed missing translation strings [Taiga #2786](https://tree.taiga.io/project/penpot/issue/2786)
 - Fixed color palette outside viewport [Taiga #2715](https://tree.taiga.io/project/penpot/issue/2715)
 - Fixed missing translate string [Taiga #2780](https://tree.taiga.io/project/penpot/issue/2780)
