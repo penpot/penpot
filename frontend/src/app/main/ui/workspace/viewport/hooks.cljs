@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.rect :as gshr]
    [app.common.pages.helpers :as cph]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
@@ -84,7 +85,30 @@
   (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %))
   (hooks/use-stream ms/keyboard-space #(reset! space? %)))
 
-(defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids hover-disabled? zoom]
+(defn group-empty-space?
+  "Given a group `group-id` check if `hover-ids` contains any of its children. If it doesn't means
+  we're hovering over empty space for the group "
+  [group-id objects hover-ids]
+
+  (and (contains? #{:group :bool} (get-in objects [group-id :type]))
+
+       ;; If there are no children in the hover-ids we're in the empty side
+       (->> hover-ids
+            (remove #(contains? #{:group :bool} (get-in objects [% :type])))
+            (some #(cph/is-parent? objects % group-id))
+            (not))))
+
+(defn check-text-collision?
+  "Checks if he current position `pos` overlaps any of the text-nodes for the given `text-id`"
+  [objects pos text-id]
+  (and (= :text (get-in objects [text-id :type]))
+       (let [collisions
+             (->> (dom/query-all (str "#shape-" text-id " .text-node"))
+                  (map dom/get-bounding-rect)
+                  (map dom/bounding-rect->rect))]
+         (not (some #(gshr/contains-point? % pos) collisions)))))
+
+(defn setup-hover-shapes [page-id move-stream raw-position-ref objects transform selected ctrl? hover hover-ids hover-disabled? zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         ctrl-ref (mf/use-ref @ctrl?)
@@ -156,6 +180,12 @@
 
              remove-xfm (mapcat #(cph/get-parent-ids objects %))
              remove-id? (cond-> (into #{} remove-xfm selected)
+                          :always
+                          (into (filter #(check-text-collision? objects (mf/ref-val raw-position-ref) %)) ids)
+
+                          (not @ctrl?)
+                          (into (filter #(group-empty-space? % objects ids)) ids)
+
                           @ctrl?
                           (into (filter is-group?) ids))
 

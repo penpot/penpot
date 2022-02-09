@@ -257,6 +257,13 @@
      :width (.-width ^js rect)
      :height (.-height ^js rect)}))
 
+(defn bounding-rect->rect
+  [{:keys [left top width height]}]
+  {:x left
+   :y top
+   :width width
+   :height height})
+
 (defn get-window-size
   []
   {:width (.-innerWidth ^js js/window)
