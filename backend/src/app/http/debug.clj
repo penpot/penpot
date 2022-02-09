@@ -18,9 +18,9 @@
    [app.util.template :as tmpl]
    [app.util.time :as dt]
    [clojure.java.io :as io]
-   [fipp.edn :as fpp]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
+   [fipp.edn :as fpp]
    [integrant.core :as ig]))
 
 ;; (selmer.parser/cache-off!)
@@ -194,9 +194,17 @@
      :body (-> (io/resource "templates/error-list.tmpl")
                (tmpl/render {:items items}))}))
 
+(defn health-check
+  "Mainly a task that performs a health check."
+  [{:keys [pool]} _]
+  (db/with-atomic [conn pool]
+    (db/exec-one! conn ["select count(*) as count from server_prop;"])
+    {:status 200 :body "Ok"}))
+
 (defmethod ig/init-key ::handlers
   [_ cfg]
   {:index (partial index cfg)
+   :health-check (partial health-check cfg)
    :retrieve-file-data (partial retrieve-file-data cfg)
    :retrieve-file-changes (partial retrieve-file-changes cfg)
    :retrieve-error (partial retrieve-error cfg)
