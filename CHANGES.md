@@ -36,6 +36,7 @@
 ### :heart: Community contributions by (Thank you!)
 
 - Cleanup unused static images (by @rhcarvalho) [#1561](https://github.com/penpot/penpot/pull/1561)
+- Compress static images to save space (by @rhcarvalho) [#1562](https://github.com/penpot/penpot/pull/1562)
 
 ## 1.11.1-beta
 
