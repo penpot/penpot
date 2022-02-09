@@ -64,6 +64,7 @@
 (def full-screen-off (icon-xref :full-screen-off))
 (def grid (icon-xref :grid))
 (def grid-snap (icon-xref :grid-snap))
+(def help (icon-xref :help))
 (def icon-empty (icon-xref :icon-empty))
 (def icon-list (icon-xref :icon-list))
 (def icon-lock (icon-xref :icon-lock))

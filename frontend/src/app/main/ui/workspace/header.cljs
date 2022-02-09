@@ -241,7 +241,6 @@
         [:span (tr "workspace.header.menu.option.preferences")] [:span i/arrow-slide]]
        (when (contains? @cf/flags :user-feedback)
          [:*
-          [:li.separator]
           [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
            [:span (tr "labels.give-feedback")]]])]]
 

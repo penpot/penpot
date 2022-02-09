@@ -109,6 +109,7 @@
 (s/def ::secret-key ::us/string)
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::assets-path ::us/string)
+(s/def ::authenticated-cookie-domain ::us/string)
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
 (s/def ::database-username (s/nilable ::us/string))
@@ -199,6 +200,7 @@
                    ::allow-demo-users
                    ::audit-log-archive-uri
                    ::audit-log-gc-max-age
+                   ::authenticated-cookie-domain
                    ::database-password
                    ::database-uri
                    ::database-username

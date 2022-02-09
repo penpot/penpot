@@ -973,6 +973,10 @@ msgstr "Info"
 msgid "history.alert-message"
 msgstr "You are seeing version %s"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "About Penpot"
+
 msgid "labels.accept"
 msgstr "Accept"
 
@@ -1108,6 +1112,10 @@ msgstr "Give feedback"
 msgid "labels.go-back"
 msgstr "Go back"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Help Center"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Hide resolved comments"
@@ -1134,6 +1142,10 @@ msgstr "Internal Error"
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
 msgstr "Language"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "Libraries & Templates"
 
 msgid "labels.link"
 msgstr "Link"
@@ -1216,7 +1228,7 @@ msgstr "Password"
 msgid "labels.permissions"
 msgstr "Permissions"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.profile"
 msgstr "Profile"
 
@@ -1329,6 +1341,10 @@ msgstr "Workspace"
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
 msgstr "Write new comment"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Your account"
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
