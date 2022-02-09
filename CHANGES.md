@@ -23,6 +23,7 @@
 - Create first E2E tests [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608), [Taiga #2608](https://tree.taiga.io/project/penpot/task/2608)
 - Redesign of workspace toolbars [Taiga #2319](https://tree.taiga.io/project/penpot/us/2319)
 - Graphic Tablet usability improvements [Taiga #1913](https://tree.taiga.io/project/penpot/us/1913)
+- Improved mouse collision detection for groups and text shapes [Taiga #2452](https://tree.taiga.io/project/penpot/us/2452), [Taiga #2453](https://tree.taiga.io/project/penpot/us/2453)
 
 ### :bug: Bugs fixed
 
