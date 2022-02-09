@@ -32,7 +32,10 @@
 - Fixed handoff shadow type text [Taiga #2717](https://tree.taiga.io/project/penpot/issue/2717)
 
 ### :arrow_up: Deps updates
+
 ### :heart: Community contributions by (Thank you!)
+
+- Cleanup unused static images (by @rhcarvalho) [#1561](https://github.com/penpot/penpot/pull/1561)
 
 ## 1.11.1-beta
 
