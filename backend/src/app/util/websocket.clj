@@ -15,7 +15,9 @@
    [clojure.core.async :as a]
    [yetti.websocket :as yws])
   (:import
-   java.nio.ByteBuffer))
+   java.nio.ByteBuffer
+   org.eclipse.jetty.io.EofException))
+
 
 (declare decode-beat)
 (declare encode-beat)
@@ -132,17 +134,25 @@
 (defn- ws-send!
   [conn s]
   (let [ch (a/chan 1)]
-    (yws/send! conn s (fn [e]
-                        (when e (a/offer! ch e))
-                        (a/close! ch)))
+    (try
+      (yws/send! conn s (fn [e]
+                          (when e (a/offer! ch e))
+                          (a/close! ch)))
+      (catch EofException cause
+        (a/offer! ch cause)
+        (a/close! ch)))
     ch))
 
 (defn- ws-ping!
   [conn s]
   (let [ch (a/chan 1)]
-    (yws/ping! conn s (fn [e]
-                        (when e (a/offer! ch e))
-                        (a/close! ch)))
+    (try
+      (yws/ping! conn s (fn [e]
+                          (when e (a/offer! ch e))
+                          (a/close! ch)))
+      (catch EofException cause
+        (a/offer! ch cause)
+        (a/close! ch)))
     ch))
 
 (defn- encode-beat
