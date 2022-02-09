@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+# This script automates compressing PNG images using the lossless Zopfli
+# Compression Algorithm. The process is slow but can produce significantly
+# better compression and, thus, smaller file sizes.
+#
+# This script is meant to be run manually, for example, before making a new
+# release.
+#
+# Requirements
+#
+# zopflipng - https://github.com/google/zopfli
+#             Debian/Ubuntu: sudo apt install zopfli
+#             Fedora:        sudo dnf install zopfli
+#             macOS:         brew install zopfli
+#
+# Usage
+#
+# This script takes a single positional argument which is the path where to
+# search for PNG files. By default, the target path is the current working
+# directory. Run from the root of the repository to compress all PNG images. Run
+# from the `frontend` subdirectory to compress all PNG images within that
+# directory. Alternatively, run from any directory and pass an explicit path to
+# `compress-png` to limit the script to that path/directory.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+readonly TARGET="${1:-.}"
+readonly ABS_TARGET="$(command -v realpath &>/dev/null && realpath "$TARGET")"
+
+function png_total_size() {
+    find "$TARGET" -type f -iname '*.png' -exec du -ch {} + | tail -1
+}
+
+echo "Compressing PNGs in ${ABS_TARGET:-$TARGET}"
+
+echo "Before"
+png_total_size
+
+readonly opts=(
+    # More iterations means slower, potentially better compression.
+    #--iterations=500
+    -m
+    # Try all filter strategies (slow).
+    #--filters=01234mepb
+    # According to docs, remove colors behind alpha channel 0. No visual
+    # difference, removes hidden information.
+    --lossy_transparent
+    # Avoid information loss that could affect how images are rendered, see
+    # https://github.com/penpot/penpot/issues/1533#issuecomment-1030005203
+    # https://github.com/google/zopfli/issues/113
+    --keepchunks=cHRM,gAMA,pHYs,iCCP,sRGB,oFFs,sTER
+    # Since we have git behind our back, overwrite PNG files in-place (only
+    # when result is smaller).
+    -y
+)
+time find "$TARGET" -type f -iname '*.png' -exec zopflipng "${opts[@]}" {} {} \;
+
+echo "After"
+png_total_size
