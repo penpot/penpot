@@ -974,6 +974,10 @@ msgstr "Información"
 msgid "history.alert-message"
 msgstr "Estás viendo la versión %s"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "Acerca de Penpot"
+
 msgid "labels.accept"
 msgstr "Aceptar"
 
@@ -1109,6 +1113,10 @@ msgstr "Danos tu opinión"
 msgid "labels.go-back"
 msgstr "Volver"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Centro de ayuda"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Ocultar comentarios resueltos"
@@ -1135,6 +1143,10 @@ msgstr "Error interno"
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
 msgstr "Idioma"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "Bibliotecas y Plantillas"
 
 msgid "labels.link"
 msgstr "Enlace"
@@ -1217,7 +1229,7 @@ msgstr "Contraseña"
 msgid "labels.permissions"
 msgstr "Permisos"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.profile"
 msgstr "Perfil"
 
@@ -1331,6 +1343,10 @@ msgstr "Espacio de trabajo"
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
 msgstr "Escribir un nuevo comentario"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Tu cuenta"
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
