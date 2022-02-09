@@ -2111,6 +2111,10 @@ msgid "workspace.header.menu.hide-rules"
 msgstr "Hide rules"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "Hide fonts palette"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "Select all"
 
@@ -2137,6 +2141,11 @@ msgstr "Show color palette"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"
 msgstr "Show rules"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Show fonts palette"
+
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
