@@ -150,8 +150,8 @@
                           [middleware/errors errors/handle]
                           [middleware/cookies]]}
 
+     ["/health" {:get (:health-check debug)}]
      ["/_doc" {:get (doc/handler rpc)}]
-
      ["/feedback" {:middleware [(:middleware session)]
                    :post feedback}]
      ["/auth/oauth/:provider" {:post (:handler oauth)}]
