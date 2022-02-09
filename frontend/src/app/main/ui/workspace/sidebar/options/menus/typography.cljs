@@ -461,14 +461,17 @@
   (let [open?          (mf/use-state editing?)
         hover-detach   (mf/use-state false)
         name-input-ref (mf/use-ref)
+        on-change-ref  (mf/use-ref nil)
 
         name-ref (mf/use-ref (:name typography))
 
         on-name-blur
-        (fn [event]
-          (let [content (dom/get-target-val event)]
-            (when-not (str/blank? content)
-              (on-change {:name content}))))
+        (mf/use-callback
+         (mf/deps on-change)
+         (fn [event]
+           (let [content (dom/get-target-val event)]
+             (when-not (str/blank? content)
+               (on-change {:name content})))))
 
         handle-go-to-edit
         (fn []
@@ -497,12 +500,18 @@
              (dom/select-text! node))))))
 
     (mf/use-effect
+     (mf/deps on-change)
+     (fn []
+       (mf/set-ref-val! on-change-ref {:on-change on-change})))
+
+    (mf/use-effect
      (fn []
        (fn []
          (let [content (mf/ref-val name-ref)]
            ;; On destroy we check if it changed
            (when (and (some? content) (not= content (:name typography)))
-             (on-change {:name content}))))))
+             (let [{:keys [on-change]} (mf/ref-val on-change-ref)]
+               (on-change {:name content})))))))
 
     [:*
      [:div.element-set-options-group.typography-entry
