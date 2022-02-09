@@ -249,10 +249,16 @@
 
 (defn get-error-context
   [error item]
-  (let [edata (ex-data error)]
-    {:id      (uuid/next)
-     :data    edata
-     :params  item}))
+  (let [data (ex-data error)]
+    (merge
+     {:id            (uuid/next)
+      :hint          (ex-message error)
+      :spec-problems (some->> data ::s/problems (take 10) seq vec)
+      :spec-value    (some->> data ::s/value)
+      :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))
+      :params        item}
+     (when (and data (::s/problems data))
+       {:spec-explain (us/pretty-explain data)}))))
 
 (defn- handle-exception
   [error item]
@@ -266,8 +272,10 @@
 
         (= ::noop (:strategy edata))
         (assoc :inc-by 0))
-      (l/with-context (get-error-context error item)
-        (l/error :cause error :hint "unhandled exception on task")
+      (do
+        (l/error :hint "unhandled exception on task"
+                 ::l/context (get-error-context error item)
+                 :cause error)
         (if (>= (:retry-num item) (:max-retries item))
           {:status :failed :task item :error error}
           {:status :retry :task item :error error})))))
