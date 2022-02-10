@@ -11,6 +11,7 @@
    [app.http :as http]
    [app.storage :as sto]
    [app.test-helpers :as th]
+   [app.storage-test :refer [configure-storage-backend]]
    [clojure.test :as t]
    [buddy.core.bytes :as b]
    [datoteka.core :as fs]))
@@ -19,7 +20,9 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest duplicate-file
-  (let [storage (:app.storage/storage th/*system*)
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+
         sobject (sto/put-object storage {:content (sto/content "content")
                                          :content-type "text/plain"
                                          :other "data"})
@@ -90,7 +93,8 @@
         ))))
 
 (t/deftest duplicate-file-with-deleted-rels
-  (let [storage (:app.storage/storage th/*system*)
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
         sobject (sto/put-object storage {:content (sto/content "content")
                                          :content-type "text/plain"
                                          :other "data"})
@@ -151,7 +155,9 @@
         ))))
 
 (t/deftest duplicate-project
-  (let [storage (:app.storage/storage th/*system*)
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+
         sobject (sto/put-object storage {:content (sto/content "content")
                                          :content-type "text/plain"
                                          :other "data"})
@@ -221,7 +227,8 @@
           )))))
 
 (t/deftest duplicate-project-with-deleted-files
-  (let [storage (:app.storage/storage th/*system*)
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
         sobject (sto/put-object storage {:content (sto/content "content")
                                          :content-type "text/plain"
                                          :other "data"})

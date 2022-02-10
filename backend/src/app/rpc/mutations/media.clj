@@ -10,13 +10,11 @@
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
    [app.util.http :as http]
-   [app.util.rlimit :as rlimit]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -49,13 +47,10 @@
           :opt-un [::id]))
 
 (sv/defmethod ::upload-file-media-object
-  {::rlimit/permits (cf/get :rlimit-image)}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [file (select-file conn file-id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id file))
-      (-> (assoc cfg :conn conn)
-          (create-file-media-object params)))))
+  (let [file (select-file pool file-id)]
+    (teams/check-edition-permissions! pool profile-id (:team-id file))
+    (create-file-media-object cfg params)))
 
 (defn- big-enough-for-thumbnail?
   "Checks if the provided image info is big enough for
@@ -77,6 +72,9 @@
                 :code :unable-to-access-to-url
                 :cause e))))
 
+;; TODO: we need to check the size before fetch resource, if not we
+;; can start downloading very big object and cause OOM errors.
+
 (defn- download-media
   [{:keys [storage] :as cfg} url]
   (let [result (fetch-url url)
@@ -90,6 +88,8 @@
     (-> (assoc storage :backend :tmp)
         (sto/put-object {:content (sto/content data)
                          :content-type mtype
+                         :reference :file-media-object
+                         :touched-at (dt/now)
                          :expired-at (dt/in-future {:minutes 30})}))))
 
 ;; NOTE: we use the `on conflict do update` instead of `do nothing`
@@ -102,13 +102,27 @@
        on conflict (id) do update set created_at=file_media_object.created_at
        returning *")
 
+;; NOTE: the following function executes without a transaction, this
+;; means that if something fails in the middle of this function, it
+;; will probably leave leaked/unreferenced objects in the database and
+;; probably in the storage layer. For handle possible object leakage,
+;; we create all media objects marked as touched, this ensures that if
+;; something fails, all leaked (already created storage objects) will
+;; be eventually marked as deleted by the touched-gc task.
+;;
+;; The touched-gc task, performs periodic analisis of all touched
+;; storage objects and check references of it. This is the reason why
+;; `reference` metadata exists: it indicates the name of the table
+;; witch holds the reference to storage object (it some kind of
+;; inverse, soft referential integrity).
+
 (defn create-file-media-object
-  [{:keys [conn storage] :as cfg} {:keys [id file-id is-local name content] :as params}]
+  [{:keys [storage pool] :as cfg} {:keys [id file-id is-local name content] :as params}]
   (media/validate-media-type (:content-type content))
-  (let [storage      (media/configure-assets-storage storage conn)
-        source-path  (fs/path (:tempfile content))
+  (let [source-path  (fs/path (:tempfile content))
         source-mtype (:content-type content)
         source-info  (media/run {:cmd :info :input {:path source-path :mtype source-mtype}})
+        storage      (media/configure-assets-storage storage)
 
         thumb        (when (and (not (svg-image? source-info))
                                 (big-enough-for-thumbnail? source-info))
@@ -119,16 +133,25 @@
 
         image        (if (= (:mtype source-info) "image/svg+xml")
                        (let [data (slurp source-path)]
-                         (sto/put-object storage {:content (sto/content data)
-                                                  :content-type (:mtype source-info)}))
-                       (sto/put-object storage {:content (sto/content source-path)
-                                                :content-type (:mtype source-info)}))
+                         (sto/put-object storage
+                                         {:content (sto/content data)
+                                          :content-type (:mtype source-info)
+                                          :reference :file-media-object
+                                          :touched-at (dt/now)}))
+                       (sto/put-object storage
+                                       {:content (sto/content source-path)
+                                        :content-type (:mtype source-info)
+                                        :reference :file-media-object
+                                        :touched-at (dt/now)}))
 
         thumb        (when thumb
-                       (sto/put-object storage {:content (sto/content (:data thumb) (:size thumb))
-                                                :content-type (:mtype thumb)}))]
+                       (sto/put-object storage
+                                       {:content (sto/content (:data thumb) (:size thumb))
+                                        :content-type (:mtype thumb)
+                                        :reference :file-media-object
+                                        :touched-at (dt/now)}))]
 
-    (db/exec-one! conn [sql:create-file-media-object
+    (db/exec-one! pool [sql:create-file-media-object
                         (or id (uuid/next))
                         file-id is-local name
                         (:id image)
@@ -145,19 +168,16 @@
 
 (sv/defmethod ::create-file-media-object-from-url
   [{:keys [pool storage] :as cfg} {:keys [profile-id file-id url name] :as params}]
-  (db/with-atomic [conn pool]
-    (let [file (select-file conn file-id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id file))
-      (let [mobj    (download-media cfg url)
-            content {:filename "tempfile"
-                     :size (:size mobj)
-                     :tempfile (sto/get-object-path storage mobj)
-                     :content-type (:content-type (meta mobj))}
-            params' (merge params {:content content
-                                   :name (or name (:filename content))})]
-        (-> (assoc cfg :conn conn)
-            (create-file-media-object params'))))))
+  (let [file (select-file pool file-id)]
+    (teams/check-edition-permissions! pool profile-id (:team-id file))
+    (let [mobj    (download-media cfg url)
+          content {:filename "tempfile"
+                   :size (:size mobj)
+                   :tempfile (sto/get-object-path storage mobj)
+                   :content-type (:content-type (meta mobj))}]
 
+      (->> (merge params {:content content :name (or name (:filename content))})
+           (create-file-media-object cfg)))))
 
 ;; --- Clone File Media object (Upload and create from url)
 
@@ -188,7 +208,6 @@
                  :width  (:width mobj)
                  :height (:height mobj)
                  :mtype  (:mtype mobj)})))
-
 
 ;; --- HELPERS
 

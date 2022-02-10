@@ -174,6 +174,14 @@
                             :type :image
                             :metadata {:id (:id fmo1)}}}]})]
 
+
+
+      ;; If we launch gc-touched-task, we should have 4 items to freeze.
+      (let [task (:app.storage/gc-touched-task th/*system*)
+            res  (task {})]
+        (t/is (= 4 (:freeze res)))
+        (t/is (= 0 (:delete res))))
+
       ;; run the task immediately
       (let [task  (:app.tasks.file-media-gc/handler th/*system*)
             res   (task {})]
@@ -202,16 +210,22 @@
       (t/is (some? (sto/get-object storage (:media-id fmo1))))
       (t/is (some? (sto/get-object storage (:thumbnail-id fmo1))))
 
-      ;; but if we pass the touched gc task two of them should disappear
+      ;; now, we have deleted the unused file-media-object, if we
+      ;; execute the touched-gc task, we should see that two of them
+      ;; are marked to be deleted.
       (let [task (:app.storage/gc-touched-task th/*system*)
             res  (task {})]
         (t/is (= 0 (:freeze res)))
-        (t/is (= 2 (:delete res)))
+        (t/is (= 2 (:delete res))))
 
-        (t/is (nil? (sto/get-object storage (:media-id fmo2))))
-        (t/is (nil? (sto/get-object storage (:thumbnail-id fmo2))))
-        (t/is (some? (sto/get-object storage (:media-id fmo1))))
-        (t/is (some? (sto/get-object storage (:thumbnail-id fmo1)))))
+
+      ;; Finally, check that some of the objects that are marked as
+      ;; deleted we are unable to retrieve them using standard storage
+      ;; public api.
+      (t/is (nil? (sto/get-object storage (:media-id fmo2))))
+      (t/is (nil? (sto/get-object storage (:thumbnail-id fmo2))))
+      (t/is (some? (sto/get-object storage (:media-id fmo1))))
+      (t/is (some? (sto/get-object storage (:thumbnail-id fmo1))))
 
       )))
 

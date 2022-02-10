@@ -52,7 +52,6 @@
                    (assoc-in [:app.db/pool :uri] (:database-uri config))
                    (assoc-in [:app.db/pool :username] (:database-username config))
                    (assoc-in [:app.db/pool :password] (:database-password config))
-                   (assoc-in [[:app.main/main :app.storage.fs/backend] :directory] "/tmp/app/storage")
                    (dissoc :app.srepl/server
                            :app.http/server
                            :app.http/router
@@ -65,8 +64,7 @@
                            :app.worker/scheduler
                            :app.worker/worker)
                    (d/deep-merge
-                    {:app.storage/storage {:backend :tmp}
-                     :app.tasks.file-media-gc/handler {:max-age (dt/duration 300)}}))
+                    {:app.tasks.file-media-gc/handler {:max-age (dt/duration 300)}}))
         _      (ig/load-namespaces config)
         system (-> (ig/prep config)
                    (ig/init))]
