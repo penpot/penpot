@@ -75,7 +75,8 @@
   [state]
   (let [{:keys [id] :as local} (:workspace-data state)]
     (-> (:workspace-libraries state)
-        (assoc id local))))
+        (assoc id {:id id
+                   :data local}))))
 
 (defn pretty-file
   [file-id state]
