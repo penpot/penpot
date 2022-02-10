@@ -27,6 +27,7 @@
 
 ### :bug: Bugs fixed
 
+- Fixed ungroup typography when editing it [Taiga #2391](https://tree.taiga.io/project/penpot/issue/2391) 
 - Fixed error when trying to post an empty comment [Taiga #2603](https://tree.taiga.io/project/penpot/issue/2603)
 - Fixed missing translation strings [Taiga #2786](https://tree.taiga.io/project/penpot/issue/2786)
 - Fixed color palette outside viewport [Taiga #2715](https://tree.taiga.io/project/penpot/issue/2715)
