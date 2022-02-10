@@ -209,9 +209,9 @@
   "Retrieve a component from libraries, if no library-id is provided, we
   iterate over all libraries and find the component on it."
   ([libraries component-id]
-   (some #(-> % :components (get component-id)) (vals libraries)))
+   (some #(-> % :data :components (get component-id)) (vals libraries)))
   ([libraries library-id component-id]
-   (get-in libraries [library-id :components component-id])))
+   (get-in libraries [library-id :data :components component-id])))
 
 (defn ^boolean is-main-of?
   [shape-main shape-inst]
