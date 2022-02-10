@@ -21,7 +21,7 @@
     :migrations (ig/ref :app.migrations/all)
     :name :main
     :min-pool-size 0
-    :max-pool-size 30}
+    :max-pool-size 60}
 
    :app.migrations/migrations
    {}
