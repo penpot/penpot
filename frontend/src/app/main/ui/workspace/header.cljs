@@ -326,7 +326,12 @@
         [:span
          (if (contains? layout :display-artboard-names)
            (tr "workspace.header.menu.hide-artboard-names")
-           (tr "workspace.header.menu.show-artboard-names"))]]]]
+           (tr "workspace.header.menu.show-artboard-names"))]]
+
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :hide-ui))}
+        [:span
+         (tr "workspace.shape.menu.hide-ui")]
+        [:span.shortcut (sc/get-tooltip :hide-ui)]]]]
 
      [:& dropdown {:show (= @show-sub-menu? :preferences)
                    :on-close #(reset! show-sub-menu? false)}
