@@ -5,7 +5,7 @@
 ### :boom: Breaking changes
 
 ### :sparkles: New features
-
+- Rotation to snap to 15º intervals with shift [Taiga #2437](https://tree.taiga.io/project/penpot/issue/2437)
 - Support border radius and stroke properties for images [Taiga #497](https://tree.taiga.io/project/penpot/us/497)
 - Disallow using same password as user email [Taiga #2454](https://tree.taiga.io/project/penpot/us/2454)
 - Add configurable nudge amount [Taiga #910](https://tree.taiga.io/project/penpot/us/910)
