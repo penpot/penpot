@@ -471,7 +471,8 @@
          (fn [event]
            (let [content (dom/get-target-val event)]
              (when-not (str/blank? content)
-               (on-change {:name content})))))
+               (let [[path name] (cph/parse-path-name content)]
+                 (on-change {:name name :path path}))))))
 
         handle-go-to-edit
         (fn []
@@ -510,8 +511,9 @@
          (let [content (mf/ref-val name-ref)]
            ;; On destroy we check if it changed
            (when (and (some? content) (not= content (:name typography)))
-             (let [{:keys [on-change]} (mf/ref-val on-change-ref)]
-               (on-change {:name content})))))))
+             (let [{:keys [on-change]} (mf/ref-val on-change-ref)
+                 [path name] (cph/parse-path-name content)]
+             (on-change {:name name :path path})))))))
 
     [:*
      [:div.element-set-options-group.typography-entry
