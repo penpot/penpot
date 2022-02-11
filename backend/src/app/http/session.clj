@@ -119,8 +119,14 @@
 
 (defn- clear-cookies
   [response]
-  (assoc response :cookies {token-cookie-name {:value "" :max-age -1}
-                            authenticated-cookie-name {:value "" :max-age -1}}))
+  (let [authenticated-cookie-domain (cfg/get :authenticated-cookie-domain)]
+    (assoc response :cookies {token-cookie-name {:path "/"
+                                                 :value ""
+                                                 :max-age -1}
+                              authenticated-cookie-name {:domain authenticated-cookie-domain
+                                                         :path "/"
+                                                         :value ""
+                                                         :max-age -1}})))
 
 (defn- middleware
   [events-ch store handler]
