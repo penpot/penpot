@@ -522,7 +522,8 @@
              :data-test "libraries-templates-profile-opt"}
         [:span.icon i/download]
         [:span.text (tr "labels.libraries-and-templates")]]
-       [:li {:on-click #(dom/open-new-window "https://penpot.app?no-redirect=1")
+       ;;[:li {:on-click #(dom/open-new-window "https://penpot.app?no-redirect=1")
+       [:li {:on-click #(dom/open-new-window "https://landing-next.penpot.app?no-redirect=1")
              :data-test "about-penpot-profile-opt"} ;; Parameter ?no-redirect is to force stay in landing page
         [:span.icon i/logo-icon]                    ;; instead of redirecting to app
         [:span.text (tr "labels.about-penpot")]]
