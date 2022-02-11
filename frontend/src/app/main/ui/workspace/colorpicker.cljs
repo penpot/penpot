@@ -167,6 +167,11 @@
         (fn [color]
           (let [editing-stop (:editing-stop @state)
                 is-gradient? (some? (:gradient color))]
+
+            (if is-gradient?
+              (st/emit! (dc/start-gradient (:gradient color)))
+              (st/emit! (dc/stop-gradient)))
+
             (if (and (some? editing-stop) (not is-gradient?))
               (handle-change-color (color->components (:color color) (:opacity color)))
               (do (reset! dirty? false)

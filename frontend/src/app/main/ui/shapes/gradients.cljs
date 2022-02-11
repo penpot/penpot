@@ -46,41 +46,40 @@
                :stop-color color
                :stop-opacity opacity}])]))
 
-
-
 (mf/defc radial-gradient [{:keys [id gradient shape]}]
-  (let [{:keys [x y width height]} (:selrect shape)
-        transform (if (= :path (:type shape))
-                    (gsh/transform-matrix shape)
-                    (gmt/matrix))
-        [x y] (if (= (:type shape) :frame) [0 0] [x y])
-        translate-vec (gpt/point (+ x (* width (:start-x gradient)))
-                                 (+ y (* height (:start-y gradient))))
+  (let [path? (= :path (:type shape))
+        shape-transform (or (when path? (:transform shape)) (gmt/matrix))
+        shape-transform-inv (or (when path? (:transform-inverse shape)) (gmt/matrix))
 
-        gradient-vec (gpt/to-vec (gpt/point (* width (:start-x gradient))
-                                            (* height (:start-y gradient)))
-                                 (gpt/point (* width (:end-x gradient))
-                                            (* height (:end-y gradient))))
+        {:keys [start-x start-y end-x end-y] gwidth :width} gradient
 
-        angle (gpt/angle gradient-vec
-                         (gpt/point 1 0))
+        gradient-vec (gpt/to-vec (gpt/point start-x start-y)
+                                 (gpt/point end-x end-y))
 
-        scale-factor-y (/ (gpt/length gradient-vec) (/ height 2))
-        scale-factor-x (* scale-factor-y (:width gradient))
+        angle (+ (gpt/angle gradient-vec) 90)
 
-        scale-vec (gpt/point (* scale-factor-y (/ height 2))
-                             (* scale-factor-x (/ width 2)))
+        bb-shape (gsh/selection-rect [shape])
 
-        transform (gmt/multiply transform
-                                (gmt/translate-matrix translate-vec)
-                                (gmt/rotate-matrix angle)
-                                (gmt/scale-matrix scale-vec))
+        ;; Paths don't have a transform in SVG because we transform the points
+        ;; we need to compensate the difference between the original rectangle
+        ;; and the transformed one. This factor is that calculation.
+        factor (if path?
+                 (/ (:height (:selrect shape)) (:height bb-shape))
+                 1.0)
 
+        transform (-> (gmt/matrix)
+                      (gmt/translate (gpt/point start-x start-y))
+                      (gmt/multiply shape-transform)
+                      (gmt/rotate angle)
+                      (gmt/scale (gpt/point gwidth factor))
+                      (gmt/multiply shape-transform-inv)
+                      (gmt/translate (gpt/negate (gpt/point start-x start-y))))
+
+        gradient-radius (gpt/length gradient-vec)
         base-props #js {:id id
-                        :cx 0
-                        :cy 0
-                        :r 1
-                        :gradientUnits "userSpaceOnUse"
+                        :cx start-x
+                        :cy start-y
+                        :r gradient-radius
                         :gradientTransform transform}
 
         include-metadata? (mf/use-ctx ed/include-metadata-ctx)
