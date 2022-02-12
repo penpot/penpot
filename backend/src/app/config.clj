@@ -181,9 +181,11 @@
 (s/def ::storage-assets-fs-directory ::us/string)
 (s/def ::storage-assets-s3-bucket ::us/string)
 (s/def ::storage-assets-s3-region ::us/keyword)
+(s/def ::storage-assets-s3-endpoint ::us/string)
 (s/def ::storage-fdata-s3-bucket ::us/string)
 (s/def ::storage-fdata-s3-region ::us/keyword)
 (s/def ::storage-fdata-s3-prefix ::us/string)
+(s/def ::storage-fdata-s3-endpoint ::us/string)
 (s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-with-taiga ::us/boolean)
 (s/def ::tenant ::us/string)
@@ -278,10 +280,12 @@
                    ::storage-assets-fs-directory
                    ::storage-assets-s3-bucket
                    ::storage-assets-s3-region
+                   ::storage-assets-s3-endpoint
                    ::fdata-storage-backend
                    ::storage-fdata-s3-bucket
                    ::storage-fdata-s3-region
                    ::storage-fdata-s3-prefix
+                   ::storage-fdata-s3-endpoint
                    ::telemetry-enabled
                    ::telemetry-uri
                    ::telemetry-referer

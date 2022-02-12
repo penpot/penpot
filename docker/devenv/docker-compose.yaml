@@ -10,6 +10,7 @@ networks:
 volumes:
   postgres_data:
   user_data:
+  minio_data:
 
 services:
   main:
@@ -66,6 +67,22 @@ services:
       - PENPOT_LDAP_ATTRS_FULLNAME=cn
       - PENPOT_LDAP_ATTRS_PHOTO=jpegPhoto
 
+  minio:
+    profiles: ["full"]
+    image: "minio/minio:latest"
+    command: minio server /mnt/data --console-address ":9001"
+
+    volumes:
+      - "minio_data:/mnt/data"
+
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+
+    ports:
+      - 9000:9000
+      - 9001:9001
+
   backend:
     profiles: ["backend"]
     privileged: true
@@ -91,6 +108,7 @@ services:
     environment:
       - EXTERNAL_UID=${CURRENT_USER_ID}
       - PENPOT_SECRET_KEY=super-secret-devenv-key
+
       # SMTP setup
       - PENPOT_SMTP_ENABLED=true
       - PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com

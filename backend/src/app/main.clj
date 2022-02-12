@@ -309,13 +309,15 @@
      :fs        (ig/ref [::assets :app.storage.fs/backend])}}
 
    [::fdata :app.storage.s3/backend]
-   {:region (cf/get :storage-fdata-s3-region)
-    :bucket (cf/get :storage-fdata-s3-bucket)
-    :prefix (cf/get :storage-fdata-s3-prefix)}
+   {:region   (cf/get :storage-fdata-s3-region)
+    :bucket   (cf/get :storage-fdata-s3-bucket)
+    :endpoint (cf/get :storage-fdata-s3-endpoint)
+    :prefix   (cf/get :storage-fdata-s3-prefix)}
 
    [::assets :app.storage.s3/backend]
-   {:region (cf/get :storage-assets-s3-region)
-    :bucket (cf/get :storage-assets-s3-bucket)}
+   {:region   (cf/get :storage-assets-s3-region)
+    :endpoint (cf/get :storage-assets-s3-endpoint)
+    :bucket   (cf/get :storage-assets-s3-bucket)}
 
    [::assets :app.storage.fs/backend]
    {:directory (cf/get :storage-assets-fs-directory)}

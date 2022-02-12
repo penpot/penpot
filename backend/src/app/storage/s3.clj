@@ -56,9 +56,10 @@
 (s/def ::region #{:eu-central-1})
 (s/def ::bucket ::us/string)
 (s/def ::prefix ::us/string)
+(s/def ::endpoint ::us/string)
 
 (defmethod ig/pre-init-spec ::backend [_]
-  (s/keys :opt-un [::region ::bucket ::prefix]))
+  (s/keys :opt-un [::region ::bucket ::prefix ::endpoint]))
 
 (defmethod ig/prep-key ::backend
   [_ {:keys [prefix] :as cfg}]
@@ -119,20 +120,31 @@
 
 (defn- ^Region lookup-region
   [region]
-  (case region
-    :eu-central-1 Region/EU_CENTRAL_1))
+  (Region/of (name region)))
 
 (defn build-s3-client
-  [{:keys [region]}]
-  (.. (S3Client/builder)
-      (region (lookup-region region))
-      (build)))
+  [{:keys [region endpoint]}]
+  (if (string? endpoint)
+    (let [uri (java.net.URI. endpoint)]
+      (.. (S3Client/builder)
+          (endpointOverride uri)
+          (region (lookup-region region))
+          (build)))
+    (.. (S3Client/builder)
+        (region (lookup-region region))
+        (build))))
 
 (defn build-s3-presigner
-  [{:keys [region]}]
-  (.. (S3Presigner/builder)
-      (region (lookup-region region))
-      (build)))
+  [{:keys [region endpoint]}]
+  (if (string? endpoint)
+    (let [uri (java.net.URI. endpoint)]
+      (.. (S3Presigner/builder)
+          (endpointOverride uri)
+          (region (lookup-region region))
+          (build)))
+    (.. (S3Presigner/builder)
+        (region (lookup-region region))
+        (build))))
 
 (defn put-object
   [{:keys [client bucket prefix]} {:keys [id] :as object} content]
