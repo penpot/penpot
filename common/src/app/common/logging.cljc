@@ -60,8 +60,8 @@
        (name val)
 
        (coll? val)
-       (binding [*print-level* 5
-                 *print-length* 20]
+       (binding [*print-level* 8
+                 *print-length* 25]
          (with-out-str (fpp/pprint val {:width 200})))
 
        :else
