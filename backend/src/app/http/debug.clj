@@ -18,9 +18,9 @@
    [app.util.template :as tmpl]
    [app.util.time :as dt]
    [clojure.java.io :as io]
-   [clojure.pprint :as ppr]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
+   [fipp.edn :as fpp]
    [integrant.core :as ig]))
 
 ;; (selmer.parser/cache-off!)
@@ -147,21 +147,20 @@
              (some-> (db/get-by-id pool :server-error-report id) :content db/decode-transit-pgobject)))
 
           (render-template [report]
-            (binding [ppr/*print-right-margin* 300]
-              (let [context (dissoc report
-                                    :trace :cause :params :data :spec-problems
-                                    :spec-explain :spec-value :error :explain :hint)
-                    params  {:context (with-out-str (ppr/pprint context))
-                             :hint    (:hint report)
-                             :spec-explain  (:spec-explain report)
-                             :spec-problems (:spec-problems report)
-                             :spec-value    (:spec-value report)
-                             :data          (:data report)
-                             :trace         (or (:trace report)
-                                                (some-> report :error :trace))
-                             :params        (:params report)}]
-                (-> (io/resource "templates/error-report.tmpl")
-                    (tmpl/render params)))))
+            (let [context (dissoc report
+                                  :trace :cause :params :data :spec-problems
+                                  :spec-explain :spec-value :error :explain :hint)
+                  params  {:context (with-out-str (fpp/pprint context {:width 300}))
+                           :hint    (:hint report)
+                           :spec-explain  (:spec-explain report)
+                           :spec-problems (:spec-problems report)
+                           :spec-value    (:spec-value report)
+                           :data          (:data report)
+                           :trace         (or (:trace report)
+                                              (some-> report :error :trace))
+                           :params        (:params report)}]
+              (-> (io/resource "templates/error-report.tmpl")
+                  (tmpl/render params))))
           ]
 
     (when-not (authorized? pool request)
@@ -195,9 +194,17 @@
      :body (-> (io/resource "templates/error-list.tmpl")
                (tmpl/render {:items items}))}))
 
+(defn health-check
+  "Mainly a task that performs a health check."
+  [{:keys [pool]} _]
+  (db/with-atomic [conn pool]
+    (db/exec-one! conn ["select count(*) as count from server_prop;"])
+    {:status 200 :body "Ok"}))
+
 (defmethod ig/init-key ::handlers
   [_ cfg]
   {:index (partial index cfg)
+   :health-check (partial health-check cfg)
    :retrieve-file-data (partial retrieve-file-data cfg)
    :retrieve-file-changes (partial retrieve-file-changes cfg)
    :retrieve-error (partial retrieve-error cfg)

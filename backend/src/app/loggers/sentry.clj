@@ -120,8 +120,6 @@
               (.captureMessage ^IHub shub msg)
               ))
           ]
-    ;; (clojure.pprint/pprint event)
-
     (when @enabled
       (.withScope ^IHub shub (reify ScopeCallback
                                (run [_ scope]

@@ -70,12 +70,15 @@
 (defmethod ig/pre-init-spec ::reporter [_]
   (s/keys :req-un [::wrk/executor ::db/pool ::receiver]))
 
+(defn error-event?
+  [event]
+  (= "error" (:logger/level event)))
+
 (defmethod ig/init-key ::reporter
   [_ {:keys [receiver] :as cfg}]
   (l/info :msg "initializing database error persistence")
-  (let [output (a/chan (a/sliding-buffer 128)
-                       (filter (fn [event]
-                                 (= (:logger/level event) "error"))))]
+  (let [output (a/chan (a/sliding-buffer 5)
+                       (filter error-event?))]
     (receiver :sub output)
     (a/go-loop []
       (let [msg (a/<! output)]

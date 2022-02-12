@@ -340,7 +340,10 @@
         pre-process-images
         (->> (rx/from nodes)
              (rx/filter media-node?)
-             (rx/merge-map
+             ;; TODO: this should be merge-map, but we disable the
+             ;; parallel upload until we resolve resource usage issues
+             ;; on backend.
+             (rx/mapcat
               (fn [node]
                 (->> (resolve-media context file-id node)
                      (rx/map (fn [result] [node result])))))

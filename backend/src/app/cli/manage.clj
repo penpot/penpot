@@ -140,7 +140,6 @@
   indicating the action the program should take and the options provided."
   [args]
   (let [{:keys [options arguments errors summary] :as opts} (parse-opts args cli-options)]
-    ;; (pp/pprint opts)
     (cond
       (:help options) ; help => exit OK with usage summary
       {:exit-message (usage summary) :ok? true}

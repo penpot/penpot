@@ -11,7 +11,6 @@
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [clojure.pprint]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
@@ -36,6 +35,7 @@
       :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))
       :ip-addr       (parse-client-ip request)
       :profile-id    (:profile-id request)}
+
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
         :frontend-version (get headers "x-frontend-version" "unknown")})
@@ -70,8 +70,10 @@
 (defmethod handle-exception :assertion
   [error request]
   (let [edata (ex-data error)]
-    (l/with-context (get-error-context request error)
-      (l/error ::l/raw (ex-message error) :cause error))
+    (l/error ::l/raw (ex-message error)
+             ::l/context (get-error-context request error)
+             :cause error)
+
     {:status 500
      :body {:type :server-error
             :code :assertion
@@ -93,9 +95,9 @@
              (ex/exception? (:handling edata)))
       (handle-exception (:handling edata) request)
       (do
-        (l/with-context (get-error-context request error)
-          (l/error ::l/raw (ex-message error) :cause error))
-
+        (l/error ::l/raw (ex-message error)
+                 ::l/context (get-error-context request error)
+                 :cause error)
         {:status 500
          :body {:type :server-error
                 :code :unexpected
@@ -105,10 +107,9 @@
 (defmethod handle-exception org.postgresql.util.PSQLException
   [error request]
   (let [state (.getSQLState ^java.sql.SQLException error)]
-
-    (l/with-context (get-error-context request error)
-      (l/error ::l/raw (ex-message error) :cause error))
-
+    (l/error ::l/raw (ex-message error)
+             ::l/context (get-error-context request error)
+             :cause error)
     (cond
       (= state "57014")
       {:status 504

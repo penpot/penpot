@@ -193,20 +193,21 @@
 (defn- persist-events
   [{:keys [pool executor] :as cfg} events]
   (letfn [(event->row [event]
-            [(uuid/next)
-             (:name event)
-             (:type event)
-             (:profile-id event)
-             (:tracked-at event)
-             (some-> (:ip-addr event) db/inet)
-             (db/tjson (:props event))
-             "backend"])]
+            (when (:profile-id event)
+              [(uuid/next)
+               (:name event)
+               (:type event)
+               (:profile-id event)
+               (:tracked-at event)
+               (some-> (:ip-addr event) db/inet)
+               (db/tjson (:props event))
+               "backend"]))]
     (aa/with-thread executor
       (when (seq events)
         (db/with-atomic [conn pool]
           (db/insert-multi! conn :audit-log
                             [:id :name :type :profile-id :tracked-at :ip-addr :props :source]
-                            (sequence (map event->row) events)))))))
+                            (sequence (keep event->row) events)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Archive Task
