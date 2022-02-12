@@ -389,3 +389,73 @@
         (t/is (th/ex-info? error))
         (t/is (= (:type error-data) :not-found))))
     ))
+
+(t/deftest query-frame-thumbnails
+  (let [prof  (th/create-profile* 1 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id prof)
+                                  :project-id (:default-project-id prof)
+                                  :is-shared false})
+        data {::th/type :file-frame-thumbnail
+              :profile-id (:id prof)
+              :file-id (:id file)
+              :frame-id (uuid/next)}]
+
+    ;;insert an entry on the database with a test value for the thumbnail of this frame
+    (db/exec-one! th/*pool*
+                  ["insert into file_frame_thumbnail(file_id, frame_id, data) values (?, ?, ?)"
+                   (:file-id data) (:frame-id data) "testvalue"])
+
+    (let [out (th/query! data)]
+      (t/is (nil? (:error out)))
+      (let [result (:result out)]
+        (t/is (= 1 (count result)))
+        (t/is (= "testvalue" (:data result)))))))
+
+(t/deftest insert-frame-thumbnails
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id prof)
+                                    :project-id (:default-project-id prof)
+                                    :is-shared false})
+        data {::th/type :upsert-frame-thumbnail
+              :profile-id (:id prof)
+              :file-id (:id file)
+              :frame-id (uuid/next)
+              :data "test insert new value"}
+        out  (th/mutation! data)]
+
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out)))
+
+        ;;retrieve the value from the database and check its content
+        (let [result (db/exec-one!
+                      th/*pool*
+                      ["select data from file_frame_thumbnail where file_id = ? and frame_id = ?"
+                       (:file-id data) (:frame-id data)])]
+          (t/is (= "test insert new value" (:data result))))))
+
+(t/deftest frame-thumbnails
+  (let [prof (th/create-profile* 1 {:is-active true})
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})
+        data {::th/type :upsert-frame-thumbnail
+              :profile-id (:id prof)
+              :file-id (:id file)
+              :frame-id (uuid/next)
+              :data "updated value"}]
+
+    ;;insert an entry on the database with and old value for the thumbnail of this frame
+    (db/exec-one! th/*pool*
+                  ["insert into file_frame_thumbnail(file_id, frame_id, data) values (?, ?, ?)"
+                   (:file-id data) (:frame-id data) "old value"])
+
+    (let [out (th/mutation! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out)))
+
+      ;;retrieve the value from the database and check its content
+      (let [result (db/exec-one!
+                    th/*pool*
+                    ["select data from file_frame_thumbnail where file_id = ? and frame_id = ?"
+                     (:file-id data) (:frame-id data)])]
+        (t/is (= "updated value" (:data result)))))))

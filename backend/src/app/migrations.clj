@@ -205,6 +205,9 @@
 
    {:name "0065-add-trivial-spelling-fixes"
     :fn (mg/resource "app/migrations/sql/0065-add-trivial-spelling-fixes.sql")}
+   
+   {:name "0066-add-frame-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0066-add-frame-thumbnail-table.sql")}
    ])
 
 

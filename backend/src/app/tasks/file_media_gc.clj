@@ -10,6 +10,7 @@
   after some period of inactivity (the default threshold is 72h)."
   (:require
    [app.common.logging :as l]
+   [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.db :as db]
    [app.util.blob :as blob]
@@ -52,6 +53,7 @@
     limit 10
     for update skip locked")
 
+
 (defn- retrieve-candidates
   [{:keys [conn max-age] :as cfg}]
   (let [interval (db/interval max-age)]
@@ -64,12 +66,11 @@
   (comp
    (map :objects)
    (mapcat vals)
-   (map (fn [{:keys [type] :as obj}]
-          (case type
-            :path (get-in obj [:fill-image :id])
-            :image (get-in obj [:metadata :id])
-            nil)))
-   (filter uuid?)))
+   (keep (fn [{:keys [type] :as obj}]
+           (case type
+             :path (get-in obj [:fill-image :id])
+             :image (get-in obj [:metadata :id])
+             nil)))))
 
 (defn- collect-used-media
   [data]
@@ -80,37 +81,59 @@
       (into collect-media-xf pages)
       (into (keys (:media data))))))
 
+(def ^:private
+  collect-frames-xf
+  (comp
+   (map :objects)
+   (mapcat vals)
+   (filter cph/frame-shape?)
+   (keep :id)))
+
+(defn- collect-frames
+  [data]
+  (let [pages (concat
+               (vals (:pages-index data))
+               (vals (:components data)))]
+    (into #{} collect-frames-xf pages)))
+
 (defn- process-file
   [{:keys [conn] :as cfg} {:keys [id data age] :as file}]
-  (let [data   (-> (blob/decode data)
-                   (assoc :id id)
-                   (pmg/migrate-data))
+  (let [data (-> (blob/decode data)
+                 (assoc :id id)
+                 (pmg/migrate-data))]
 
-        used   (collect-used-media data)
-        unused (->> (db/query conn :file-media-object {:file-id id})
-                    (remove #(contains? used (:id %))))]
+    (let [used   (collect-used-media data)
+          unused (->> (db/query conn :file-media-object {:file-id id})
+                      (remove #(contains? used (:id %))))]
 
-    (l/debug :action "processing file"
-             :id id
-             :age age
-             :to-delete (count unused))
+      (l/debug :action "processing file"
+               :id id
+               :age age
+               :to-delete (count unused))
 
-    ;; Mark file as trimmed
-    (db/update! conn :file
-                {:has-media-trimmed true}
-                {:id id})
+      ;; Mark file as trimmed
+      (db/update! conn :file
+                  {:has-media-trimmed true}
+                  {:id id})
 
-    (doseq [mobj unused]
-      (l/debug :action "deleting media object"
-               :id (:id mobj)
-               :media-id (:media-id mobj)
-               :thumbnail-id (:thumbnail-id mobj))
+      (doseq [mobj unused]
+        (l/debug :action "deleting media object"
+                 :id (:id mobj)
+                 :media-id (:media-id mobj)
+                 :thumbnail-id (:thumbnail-id mobj))
 
-      ;; NOTE: deleting the file-media-object in the database
-      ;; automatically marks as touched the referenced storage
-      ;; objects. The touch mechanism is needed because many files can
-      ;; point to the same storage objects and we can't just delete
-      ;; them.
-      (db/delete! conn :file-media-object {:id (:id mobj)}))
+        ;; NOTE: deleting the file-media-object in the database
+        ;; automatically marks as touched the referenced storage
+        ;; objects. The touch mechanism is needed because many files can
+        ;; point to the same storage objects and we can't just delete
+        ;; them.
+        (db/delete! conn :file-media-object {:id (:id mobj)})))
+
+    (let [sql (str "delete from file_frame_thumbnail "
+                   " where file_id = ? and not (frame_id = ANY(?))")
+          ids (->> (collect-frames data)
+                   (db/create-array conn "uuid"))]
+      ;; delete the unused frame thumbnails
+      (db/exec! conn [sql (:id file) ids]))
 
     nil))
