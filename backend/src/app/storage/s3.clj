@@ -33,6 +33,7 @@
    software.amazon.awssdk.services.s3.model.GetObjectRequest
    software.amazon.awssdk.services.s3.model.ObjectIdentifier
    software.amazon.awssdk.services.s3.model.PutObjectRequest
+   software.amazon.awssdk.services.s3.model.S3Error
    ;; software.amazon.awssdk.services.s3.model.GetObjectResponse
    software.amazon.awssdk.services.s3.presigner.S3Presigner
    software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
@@ -231,6 +232,9 @@
                              ^DeleteObjectsRequest dor)]
     (when (.hasErrors ^DeleteObjectsResponse dres)
       (let [errors (seq (.errors ^DeleteObjectsResponse dres))]
-        (ex/raise :type :s3-error
-                  :code :error-on-bulk-delete
-                  :context errors)))))
+        (ex/raise :type :internal
+                  :code :error-on-s3-bulk-delete
+                  :s3-errors (mapv (fn [^S3Error error]
+                                     {:key (.key error)
+                                      :msg (.message error)})
+                                   errors))))))

@@ -414,21 +414,18 @@
 (defn- execute-scheduled-task
   [{:keys [executor pool] :as cfg} {:keys [id] :as task}]
   (letfn [(run-task [conn]
-            (try
-              (when (db/exec-one! conn [sql:lock-scheduled-task (d/name id)])
-                (l/debug :action "execute scheduled task" :id id)
-                ((:fn task) task))
-              (catch Throwable e
-                e)))
+            (when (db/exec-one! conn [sql:lock-scheduled-task (d/name id)])
+              (l/debug :action "execute scheduled task" :id id)
+              ((:fn task) task)))
 
           (handle-task []
-            (db/with-atomic [conn pool]
-              (let [result (run-task conn)]
-                (when (ex/exception? result)
-                  (l/error :cause result
-                           :hint "unhandled exception on scheduled task"
-                           :id id)))))]
-
+            (try
+              (db/with-atomic [conn pool]
+                (run-task conn))
+              (catch Throwable cause
+                (l/error :hint "unhandled exception on scheduled task"
+                         :task-id id
+                         :cause cause))))]
     (try
       (px/run! executor handle-task)
       (finally
