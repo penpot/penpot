@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.11.2-beta
+
+### :bug: Bugs fixed
+
+- Fix issue on handling empty content on boolean shapes.
+
+
 ## 1.11.1-beta
 
 ### :bug: Bugs fixed
