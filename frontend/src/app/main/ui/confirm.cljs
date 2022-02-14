@@ -20,6 +20,7 @@
   {::mf/register modal/components
    ::mf/register-as :confirm}
   [{:keys [message
+           scd-message
            title
            on-accept
            on-cancel
@@ -73,6 +74,8 @@
       [:div.modal-content
        (when (and (string? message) (not= message ""))
          [:h3 message])
+       (when (and (string? scd-message) (not= scd-message ""))
+         [:h3 scd-message])
        (when (string? hint)
          [:p hint])
        (when (> (count items) 0)

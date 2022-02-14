@@ -1161,6 +1161,14 @@ msgstr "Manage fonts"
 msgid "labels.members"
 msgstr "Members"
 
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Member"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(you)"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.name"
 msgstr "Name"
@@ -1246,6 +1254,10 @@ msgstr "Release notes"
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
 msgstr "Remove"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "Remove member"
 
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
@@ -1515,11 +1527,7 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
-msgstr "You are %s owner."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "Select other member to promote before leave"
+msgstr "You are the owner of this team. Please select another member to promote to owner before you leave."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
@@ -1531,7 +1539,7 @@ msgstr "Select a member to promote"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.title"
-msgstr "Select a member to promote"
+msgstr "Before you leave"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.accept"
@@ -1542,20 +1550,36 @@ msgid "modals.leave-confirm.message"
 msgstr "Are you sure you want to leave this team?"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "Are you sure you want to leave the %s team?"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr "As you're the only member of this team, the team will be deleted along with its projects and files."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr "You are the owner of this team. Please select another member to promote to owner before you leave."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.title"
 msgstr "Leaving team"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
-msgstr "Promote"
+msgstr "Transfer ownership"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
-msgstr "Are you sure you want to promote this user to owner?"
+msgstr "You are the current owner of this team. Are you sure you want to make %s the new owner of the team?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr "If you transfer the ownership, you will change your role to Admin, losing some permissions over this team. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
-msgstr "Promote to owner"
+msgstr "New team owner"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"

@@ -1077,7 +1077,7 @@ msgstr "Editar archivo"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
-msgstr "Editor"
+msgstr "Edición"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.email"
@@ -1162,6 +1162,14 @@ msgstr "Administrar fuentes"
 msgid "labels.members"
 msgstr "Integrantes"
 
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Integrante"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(tú)"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.name"
 msgstr "Nombre"
@@ -1219,7 +1227,7 @@ msgstr "o"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.owner"
-msgstr "Dueño"
+msgstr "Propiedad"
 
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.password"
@@ -1248,6 +1256,10 @@ msgstr "Notas de versión"
 msgid "labels.remove"
 msgstr "Quitar"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "Eliminar integrante"
+
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
 msgstr "Renombrar"
@@ -1262,7 +1274,7 @@ msgstr "Reintentar"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.role"
-msgstr "Cargo"
+msgstr "Rol"
 
 msgid "labels.save"
 msgstr "Guardar"
@@ -1517,11 +1529,8 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
-msgstr "Eres %s dueño."
+msgstr "Tienes la propiedad de este equipo. Por favor selecciona otra persona integrante para promover al rol Propiedad."
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "Promociona otro miembro a dueño antes de abandonar el equipo"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
@@ -1533,7 +1542,7 @@ msgstr "Selecciona un miembro a promocionar"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.title"
-msgstr "Selecciona un miembro a promocionar"
+msgstr "Antes de que abandones"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.accept"
@@ -1544,20 +1553,36 @@ msgid "modals.leave-confirm.message"
 msgstr "¿Seguro que quieres abandonar este equipo?"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr " ¿Seguro que quieres abandonar el equipo %s?"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr "Al ser la única persona integrante de este equipo, el equipo será eliminado junto con sus proyectos y archivos."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr "Tienes la propiedad de este equipo. Por favor selecciona otra persona integrante para promover al rol Propiedad."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.title"
 msgstr "Abandonando el equipo"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
-msgstr "Promocionar"
+msgstr "Transferir propiedad"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
-msgstr "¿Seguro que quieres promocionar este usuario a dueño?"
+msgstr "Tienes la propiedad de este equipo. ¿Seguro que quieres transferir la propiedad del equipo a %s?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr "Si transfieres la propiedad, tu rol cambiará a Administración, perdiendo algunos permisos sobre este equipo."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
-msgstr "Promocionar a dueño"
+msgstr "Nueva propiedad del equipo"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"

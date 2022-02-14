@@ -5,6 +5,8 @@
 ### :boom: Breaking changes
 
 ### :sparkles: New features
+
+- Team members redesign [Taiga #2283](https://tree.taiga.io/project/penpot/us/2283)
 - Rotation to snap to 15º intervals with shift [Taiga #2437](https://tree.taiga.io/project/penpot/issue/2437)
 - Support border radius and stroke properties for images [Taiga #497](https://tree.taiga.io/project/penpot/us/497)
 - Disallow using same password as user email [Taiga #2454](https://tree.taiga.io/project/penpot/us/2454)
@@ -27,7 +29,7 @@
 
 ### :bug: Bugs fixed
 
-- Fixed ungroup typography when editing it [Taiga #2391](https://tree.taiga.io/project/penpot/issue/2391) 
+- Fixed ungroup typography when editing it [Taiga #2391](https://tree.taiga.io/project/penpot/issue/2391)
 - Fixed error when trying to post an empty comment [Taiga #2603](https://tree.taiga.io/project/penpot/issue/2603)
 - Fixed missing translation strings [Taiga #2786](https://tree.taiga.io/project/penpot/issue/2786)
 - Fixed color palette outside viewport [Taiga #2715](https://tree.taiga.io/project/penpot/issue/2715)
