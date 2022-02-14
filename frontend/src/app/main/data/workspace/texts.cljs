@@ -65,7 +65,7 @@
                (when (and (not= content (:content shape))
                           (some? (:current-page-id state)))
                  (rx/of
-                  (dch/update-shapes [id] #(assoc % :content content))
+                  (dch/update-shapes [id] #(assoc % :content content :dirty? true))
                   (dwu/commit-undo-transaction)))))
 
             (when (some? id)
@@ -149,7 +149,9 @@
   [shape pred-fn merge-fn attrs]
   (let [merge-attrs #(merge-fn % attrs)
         transform   #(txt/transform-nodes pred-fn merge-attrs %)]
-    (update shape :content transform)))
+    (-> shape
+        (update :content transform)
+        (assoc :dirty? true))))
 
 (defn update-root-attrs
   [{:keys [id attrs]}]

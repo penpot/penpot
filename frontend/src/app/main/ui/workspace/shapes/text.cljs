@@ -8,14 +8,17 @@
   (:require
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.main.ui.shapes.text :as text]
+   [app.main.ui.shapes.text.fo-text :as fo]
+   [app.main.ui.shapes.text.svg-text :as svg]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
+   [app.util.text-svg-position :as utp]
    [app.util.timers :as timers]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
@@ -29,7 +32,7 @@
 
 (mf/defc text-static-content
   [{:keys [shape]}]
-  [:& text/text-shape {:shape shape
+  [:& fo/text-shape {:shape shape
                        :grow-type (:grow-type shape)}])
 
 (defn- update-with-current-editor-state
@@ -99,24 +102,67 @@
     (mf/use-effect
      (fn [] #(mf/set-ref-val! mnt false)))
 
-    [:& text/text-shape {:ref text-ref-cb :shape shape :grow-type (:grow-type shape)}]))
+    [:& fo/text-shape {:ref text-ref-cb :shape shape :grow-type (:grow-type shape)}]))
 
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id] :as shape} (unchecked-get props "shape")
+  (let [{:keys [id dirty?] :as shape} (unchecked-get props "shape")
         edition-ref (mf/use-memo (mf/deps id) #(l/derived (fn [o] (= id (:edition o))) refs/workspace-local))
-        edition?    (mf/deref edition-ref)]
+        edition?    (mf/deref edition-ref)
+        shape-ref (mf/use-ref nil)]
+
+    (mf/use-layout-effect
+     (mf/deps dirty?)
+     (fn []
+       (when (and (or dirty? (not (:position-data shape))) (some? id))
+         (let [base-node (mf/ref-val shape-ref)
+               viewport (dom/get-element "render")
+               zoom (get-in @st/state [:workspace-local :zoom])
+               text-data (utp/calc-text-node-positions base-node viewport zoom)
+               position-data
+               (->> text-data
+                    (map (fn [{:keys [node position text]}]
+                           (let [{:keys [x y width height]} position
+                                 rtl? (= "rtl" (.-dir (.-parentElement ^js node)))
+                                 styles (.computedStyleMap ^js node)]
+                             {:rtl? rtl?
+                              :x    (if rtl? (+ x width) x)
+                              :y    (+ y height)
+                              :width width
+                              :height height
+                              :font-family (str (.get styles "font-family"))
+                              :font-size (str (.get styles "font-size"))
+                              :font-weight (str (.get styles "font-weight"))
+                              :text-transform (str (.get styles "text-transform"))
+                              :text-decoration (str (.get styles "text-decoration"))
+                              :font-style (str (.get styles "font-style"))
+                              :text text}))))]
+           (st/emit! (dch/update-shapes
+                      [id]
+                      (fn [shape]
+                        (-> shape
+                            (dissoc :dirty?)
+                            (assoc :position-data position-data)))))))))
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
      ;; and updates the selrect accordingly
-     [:g.text-shape {:opacity (when edition? 0)
-                     :pointer-events "none"}
+     [:*
+      [:g.text-shape {:ref shape-ref
+                      :opacity (when (or edition? (some? (:position-data shape))) 0)
+                      :pointer-events "none"}
 
-      ;; The `:key` prop here is mandatory because the
-      ;; text-resize-content breaks a hooks rule and we can't reuse
-      ;; the component if the edition flag changes.
-      [:& text-resize-content {:shape shape
-                               :edition? edition?
-                               :key (str id edition?)}]]]))
+       ;; The `:key` prop here is mandatory because the
+       ;; text-resize-content breaks a hooks rule and we can't reuse
+       ;; the component if the edition flag changes.
+       [:& text-resize-content {:shape (cond-> shape
+                                         (:position-data shape)
+                                         (dissoc :transform :transform-inverse))
+                                :edition? edition?
+                                :key (str id edition?)}]]
+
+      [:g {:opacity (when edition? 0)
+           :pointer-events "none"}
+       (when (some? (:position-data shape))
+         [:& svg/text-shape {:shape shape}])]]]))

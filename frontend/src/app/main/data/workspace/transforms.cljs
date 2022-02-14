@@ -185,6 +185,7 @@
                           :transform
                           :transform-inverse
                           :rotation
+                          :dirty?
                           :flip-x
                           :flip-y]})
                (clear-local-transform)

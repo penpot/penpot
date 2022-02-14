@@ -264,11 +264,11 @@
      :height (.-height ^js rect)}))
 
 (defn bounding-rect->rect
-  [{:keys [left top width height]}]
-  {:x left
-   :y top
-   :width width
-   :height height})
+  [rect]
+  {:x      (or (.-left rect)   (:left rect))
+   :y      (or (.-top rect)    (:top rect))
+   :width  (or (.-width rect)  (:width rect))
+   :height (or (.-height rect) (:height rect))})
 
 (defn get-window-size
   []

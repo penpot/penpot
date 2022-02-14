@@ -108,8 +108,16 @@
               (-> (cph/get-children objects (:id shape))
                   (hooks/use-equal-memo))
 
+              all-svg-text?
+              (mf/use-memo
+               (mf/deps all-children)
+               (fn []
+                 (->> all-children
+                      (filter #(= :text (:type %)))
+                      (every? #(some? (:position-data %))))))
+
               show-thumbnail?
-              (and thumbnail? (some? (:thumbnail shape)))]
+              (and thumbnail? (some? (:thumbnail shape)) all-svg-text?)]
 
           [:g.frame-wrapper {:display (when (:hidden shape) "none")}
            [:> shape-container {:shape shape}

@@ -39,6 +39,14 @@
   (->> points
        (mapv #(gpt/add % move-vec))))
 
+(defn move-position-data
+  [position-data dx dy]
+
+  (->> position-data
+       (map #(-> %
+                 (update :x + dx)
+                 (update :y + dy)))))
+
 (defn move
   "Move the shape relatively to its current
   position applying the provided delta."
@@ -52,6 +60,7 @@
         (update :points move-points move-vec)
         (d/update-when :x + dx)
         (d/update-when :y + dy)
+        (d/update-when :position-data move-position-data dx dy)
         (cond-> (= :bool type) (update :bool-content gpa/move-content move-vec))
         (cond-> (= :path type) (update :content gpa/move-content move-vec)))))
 
@@ -533,7 +542,8 @@
 
        :else
        (let [shape     (apply-displacement shape)
-             modifiers (:modifiers shape)]
+             modifiers (:modifiers shape)
+             shape (cond-> shape (= :text (:type shape)) (assoc :dirty? true))]
          (cond-> shape
            (not (empty-modifiers? modifiers))
            (-> (set-flip modifiers)
