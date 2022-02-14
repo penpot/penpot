@@ -4,7 +4,18 @@
 
 ### :bug: Bugs fixed
 
-- Fix issue on handling empty content on boolean shapes.
+- Fix issue on handling empty content on boolean shapes
+- Handle EOF errors on writting streamed response
+- Handle EOF errors on websocket send/ping methods
+- Disable parallel upload of file media on import (causes too much
+  contention on the rlimit subsistem that does not works as expected
+  on high load).
+
+### :sparkles: New features
+
+- Add health check endpoint on API
+- Increase default max connection pool size to 60
+- Reduce resource usage of the error reporter.
 
 
 ## 1.11.1-beta
