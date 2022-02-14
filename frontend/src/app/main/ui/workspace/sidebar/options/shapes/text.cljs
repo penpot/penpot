@@ -16,6 +16,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu text-fill-attrs root-attrs paragraph-attrs text-attrs]]
    [rumext.alpha :as mf]))
 
@@ -42,6 +43,8 @@
                       ;; Keep for backwards compatibility
                       (:fill fill-values) (assoc :fill-color (:fill fill-values))
                       (:opacity fill-values) (assoc :fill-opacity (:fill fill-values)))
+
+        stroke-values (select-keys shape stroke-attrs)
 
         text-values (d/merge
                      (select-keys shape [:grow-type])
@@ -78,6 +81,10 @@
        :type type
        :values fill-values
        :disable-remove? true}]
+
+     [:& stroke-menu {:ids ids
+                      :type type
+                      :values stroke-values}]
 
      [:& shadow-menu
       {:ids ids

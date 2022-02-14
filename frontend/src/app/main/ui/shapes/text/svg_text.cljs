@@ -6,40 +6,52 @@
 
 (ns app.main.ui.shapes.text.svg-text
   (:require
-   [app.common.geom.matrix :as gmt]
+   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.main.store :as st]
+   [app.main.ui.context :as muc]
+   [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
+   [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
+
+(def fill-attrs [:fill-color :fill-color-gradient :fill-opacity])
 
 (mf/defc text-shape
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
   
-  (let [{:keys [x y width height position-data] :as shape} (obj/get props "shape")
-        zoom (or (get-in @st/state [:workspace-local :zoom]) 1)]
-    [:text {:x x
-            :y y
-            :width width
-            :height height
-            :dominant-baseline "ideographic"
-            :transform (gsh/transform-matrix shape)
-            }
-     (for [data position-data]
-       [:tspan {:x (:x data)
-                :y (:y data)
-                :transform (:transform-inverse shape (gmt/matrix))
-                :style {:fill "black"
-                        :fill-opacity 1
-                        :stroke "red"
-                        :stroke-width (/ 0.5 zoom)
-                        :font-family (:font-family data)
-                        :font-size (:font-size data)
-                        :font-weight (:font-weight data)
-                        :text-transform (:text-transform data)
-                        :text-decoration (:text-decoration data)
-                        :font-style (:font-style data)
-                        :direction (if (:rtl? data) "rtl" "ltr")
-                        :white-space "pre"}}
-        (:text data)])]))
+  (let [render-id (mf/use-ctx muc/render-ctx)
+        {:keys [position-data] :as shape} (obj/get props "shape")
+        group-props (-> #js {:transform (gsh/transform-matrix shape)}
+                       (attrs/add-style-attrs shape render-id))
+        get-gradient-id
+        (fn [index]
+          (str render-id "_" (:id shape) "_" index))]
+    [:*
+     ;; Definition of gradients for partial elements
+     (when (d/seek :fill-color-gradient position-data)
+       [:defs
+        (for [[index data] (d/enumerate position-data)]
+          (when (some? (:fill-color-gradient data))
+            [:& grad/gradient {:id (str "fill-color-gradient_" (get-gradient-id index))
+                               :attr :fill-color-gradient
+                               :shape data}]))])
+
+     [:& shape-custom-stroke {:shape shape}
+      [:> :g group-props
+       (for [[index data] (d/enumerate position-data)]
+         (let [props (-> #js {:x (:x data)
+                              :y (:y data)
+                              :dominant-baseline "ideographic"
+                              :style (-> #js {:fontFamily (:font-family data)
+                                              :fontSize (:font-size data)
+                                              :fontWeight (:font-weight data)
+                                              :textTransform (:text-transform data)
+                                              :textDecoration (:text-decoration data)
+                                              :fontStyle (:font-style data)
+                                              :direction (if (:rtl? data) "rtl" "ltr")
+                                              :whiteSpace "pre"}
+                                         (attrs/add-fill data (get-gradient-id index)))})]
+           [:> :text props (:text data)]))]]]))

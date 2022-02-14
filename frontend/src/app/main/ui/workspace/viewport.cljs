@@ -206,7 +206,8 @@
        :style {:background-color background
                :pointer-events "none"}}
 
-      [:& use/export-page {:options options}]
+      (when (debug? :show-export-metadata)
+        [:& use/export-page {:options options}])
 
       [:& (mf/provider use/include-metadata-ctx) {:value (debug? :show-export-metadata)}
        [:& (mf/provider embed/context) {:value true}

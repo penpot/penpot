@@ -9,6 +9,7 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
+   [app.common.transit :as transit]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
@@ -23,7 +24,12 @@
   (let [node  (obj/get props "node")
         text  (:text node)
         style (sts/generate-text-styles node)]
-    [:span.text-node {:style style}
+    [:span.text-node {:style style
+                      :data-fill-color (:fill-color node)
+                      :data-fill-color-gradient (transit/encode-str (:fill-color-gradient node))
+                      :data-fill-color-ref-file (transit/encode-str (:fill-color-ref-file node))
+                      :data-fill-color-ref-id (transit/encode-str (:fill-color-ref-id node))
+                      :data-fill-opacity (:fill-opacity node)}
      (if (= text "") "\u00A0" text)]))
 
 (mf/defc render-root

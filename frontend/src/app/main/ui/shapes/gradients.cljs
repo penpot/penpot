@@ -97,10 +97,10 @@
 (mf/defc gradient
   {::mf/wrap-props false}
   [props]
-  (let [attr (obj/get props "attr")
-        shape (obj/get props "shape")
-        render-id (mf/use-ctx muc/render-ctx)
-        id (str (name attr) "_" render-id)
+  (let [attr   (obj/get props "attr")
+        shape  (obj/get props "shape")
+        id     (obj/get props "id")
+        id     (or id (str (name attr) "_" (mf/use-ctx muc/render-ctx)))
         gradient (get shape attr)
         gradient-props #js {:id id
                             :gradient gradient

@@ -189,9 +189,8 @@
    (let [svg-defs  (:svg-defs shape {})
          svg-attrs (:svg-attrs shape {})
 
-         [svg-attrs svg-styles] (mf/use-memo
-                                 (mf/deps render-id svg-defs svg-attrs)
-                                 #(extract-svg-attrs render-id svg-defs svg-attrs))
+         [svg-attrs svg-styles]
+         (extract-svg-attrs render-id svg-defs svg-attrs)
 
          styles (-> (obj/get props "style" (obj/new))
                     (obj/merge! svg-styles)

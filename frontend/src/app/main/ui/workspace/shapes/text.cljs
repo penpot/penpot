@@ -6,8 +6,10 @@
 
 (ns app.main.ui.workspace.shapes.text
   (:require
+   [app.common.data :as d]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.common.transit :as transit]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
@@ -126,18 +128,22 @@
                            (let [{:keys [x y width height]} position
                                  rtl? (= "rtl" (.-dir (.-parentElement ^js node)))
                                  styles (.computedStyleMap ^js node)]
-                             {:rtl? rtl?
-                              :x    (if rtl? (+ x width) x)
-                              :y    (+ y height)
-                              :width width
-                              :height height
-                              :font-family (str (.get styles "font-family"))
-                              :font-size (str (.get styles "font-size"))
-                              :font-weight (str (.get styles "font-weight"))
-                              :text-transform (str (.get styles "text-transform"))
-                              :text-decoration (str (.get styles "text-decoration"))
-                              :font-style (str (.get styles "font-style"))
-                              :text text}))))]
+                             (d/without-nils
+                              {:rtl? rtl?
+                               :x    (if rtl? (+ x width) x)
+                               :y    (+ y height)
+                               :width width
+                               :height height
+                               :font-family (str (.get styles "font-family"))
+                               :font-size (str (.get styles "font-size"))
+                               :font-weight (str (.get styles "font-weight"))
+                               :text-transform (str (.get styles "text-transform"))
+                               :text-decoration (str (.get styles "text-decoration"))
+                               :font-style (str (.get styles "font-style"))
+                               :fill-color (or (dom/get-attribute node "data-fill-color") "#000000")
+                               :fill-color-gradient (transit/decode-str (dom/get-attribute node "data-fill-color-gradient"))
+                               :fill-opacity (d/parse-double (or (:fill-opacity node) "1"))
+                               :text text})))))]
            (st/emit! (dch/update-shapes
                       [id]
                       (fn [shape]
@@ -162,7 +168,7 @@
                                 :edition? edition?
                                 :key (str id edition?)}]]
 
-      [:g {:opacity (when edition? 0)
-           :pointer-events "none"}
+      [:g.text-svg {:opacity (when edition? 0)
+                    :pointer-events "none"}
        (when (some? (:position-data shape))
          [:& svg/text-shape {:shape shape}])]]]))
