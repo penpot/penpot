@@ -41,33 +41,26 @@
 
 (defn clean-props
   [{:keys [profile-id] :as event}]
-  (letfn [(clean-common [props]
-            (-> props
-                (dissoc :session-id)
-                (dissoc :password)
-                (dissoc :old-password)
-                (dissoc :token)))
+  (let [invalid-keys #{:session-id
+                       :password
+                       :old-password
+                       :token}
+        xform (comp
+               (remove (fn [kv]
+                         (qualified-keyword? (first kv))))
+               (remove (fn [kv]
+                         (contains? invalid-keys (first kv))))
+               (remove (fn [[k v]]
+                         (and (= k :profile-id)
+                              (= v profile-id))))
+               (filter (fn [[_ v]]
+                         (or (string? v)
+                             (keyword? v)
+                             (uuid? v)
+                             (boolean? v)
+                             (number? v)))))]
 
-          (clean-profile-id [props]
-            (cond-> props
-              (= profile-id (:profile-id props))
-              (dissoc :profile-id)))
-
-          (clean-complex-data [props]
-            (reduce-kv (fn [props k v]
-                         (cond-> props
-                           (or (string? v)
-                               (uuid? v)
-                               (boolean? v)
-                               (number? v))
-                           (assoc k v)
-
-                           (keyword? v)
-                           (assoc k (name v))))
-                       {}
-                       props))]
-
-    (update event :props #(-> % clean-common clean-profile-id clean-complex-data))))
+    (update event :props #(into {} xform %))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HTTP Handler
@@ -82,11 +75,11 @@
 (s/def ::timestamp dt/instant?)
 (s/def ::context (s/map-of ::us/keyword any?))
 
-(s/def ::event
+(s/def ::frontend-event
   (s/keys :req-un [::type ::name ::props ::timestamp ::profile-id]
           :opt-un [::context]))
 
-(s/def ::events (s/every ::event))
+(s/def ::frontend-events (s/every ::event))
 
 (defmethod ig/init-key ::http-handler
   [_  {:keys [executor pool] :as cfg}]
@@ -98,7 +91,7 @@
       (when (contains? cf/flags :audit-log)
         (let [events  (->> (:events params)
                            (remove #(not= profile-id (:profile-id %)))
-                           (us/conform ::events))
+                           (us/conform ::frontend-events))
               ip-addr (parse-client-ip request)
               cfg     (-> cfg
                           (assoc :source "frontend")
@@ -147,9 +140,14 @@
 (defmethod ig/pre-init-spec ::collector [_]
   (s/keys :req-un [::db/pool ::wrk/executor]))
 
-(def event-xform
+(s/def ::ip-addr string?)
+(s/def ::backend-event
+  (s/keys :req-un [::type ::name ::profile-id]
+          :opt-un [::ip-addr ::props]))
+
+(def ^:private backend-event-xform
   (comp
-   (filter :profile-id)
+   (filter #(us/valid? ::backend-event %))
    (map clean-props)))
 
 (defmethod ig/init-key ::collector
@@ -166,42 +164,41 @@
       (constantly nil))
 
     :else
-    (let [input  (a/chan 512 event-xform)
+    (let [input  (a/chan 512 backend-event-xform)
           buffer (aa/batch input {:max-batch-size 100
                                   :max-batch-age (* 10 1000) ; 10s
                                   :init []})]
-
       (l/info :hint "audit log collector initialized")
       (a/go-loop []
         (when-let [[_type events] (a/<! buffer)]
           (let [res (a/<! (persist-events cfg events))]
             (when (ex/exception? res)
-              (l/error :hint "error on persisting events"
-                       :cause res)))
-          (recur)))
+              (l/error :hint "error on persisting events" :cause res))
+            (recur))))
 
       (fn [& {:keys [cmd] :as params}]
-        (let [params (-> params
-                         (dissoc :cmd)
-                         (assoc :tracked-at (dt/now)))]
-          (case cmd
-            :stop   (a/close! input)
-            :submit (when-not (a/offer! input params)
-                      (l/warn :msg "activity channel is full"))))))))
+        (case cmd
+          :stop
+          (a/close! input)
 
+          :submit
+          (let [params (-> params
+                           (dissoc :cmd)
+                           (assoc :tracked-at (dt/now)))]
+            (when-not (a/offer! input params)
+              (l/warn :hint "activity channel is full"))))))))
 
 (defn- persist-events
   [{:keys [pool executor] :as cfg} events]
   (letfn [(event->row [event]
-            (when (:profile-id event)
-              [(uuid/next)
-               (:name event)
-               (:type event)
-               (:profile-id event)
-               (:tracked-at event)
-               (some-> (:ip-addr event) db/inet)
-               (db/tjson (:props event))
-               "backend"]))]
+            [(uuid/next)
+             (:name event)
+             (:type event)
+             (:profile-id event)
+             (:tracked-at event)
+             (some-> (:ip-addr event) db/inet)
+             (db/tjson (:props event))
+             "backend"])]
     (aa/with-thread executor
       (when (seq events)
         (db/with-atomic [conn pool]

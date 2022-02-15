@@ -113,7 +113,6 @@
                      :profile-id profile-id
                      :ip-addr (audit/parse-client-ip request)
                      :props props)))
-
           result))
       mdata)))
 

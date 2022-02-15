@@ -41,13 +41,15 @@
   [tdata]
   (case (:state tdata)
     :created
-    (st/emit! (dm/success (tr "auth.notifications.team-invitation-accepted"))
-              (du/fetch-profile)
-              (rt/nav :dashboard-projects {:team-id (:team-id tdata)}))
+    (st/emit!
+     (dm/success (tr "auth.notifications.team-invitation-accepted"))
+     (du/fetch-profile)
+     (rt/nav :dashboard-projects {:team-id (:team-id tdata)}))
 
     :pending
-    (let [token (:invitation-token tdata)]
-      (st/emit! (rt/nav :auth-register {} {:invitation-token token})))))
+    (let [token    (:invitation-token tdata)
+          route-id (:redirect-to tdata :auth-register)]
+      (st/emit! (rt/nav route-id {} {:invitation-token token})))))
 
 (defmethod handle-token :default
   [_tdata]
