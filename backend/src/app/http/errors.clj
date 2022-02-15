@@ -10,7 +10,6 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
@@ -24,8 +23,7 @@
   [request error]
   (let [data (ex-data error)]
     (merge
-     {:id            (uuid/next)
-      :path          (:uri request)
+     {:path          (:uri request)
       :method        (:request-method request)
       :hint          (ex-message error)
       :params        (:params request)
