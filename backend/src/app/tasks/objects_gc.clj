@@ -48,7 +48,7 @@
         result  (db/exec! conn [sql max-age])]
 
     (doseq [{:keys [id] :as item} result]
-      (l/trace :action "delete object" :table table :id id))
+      (l/trace :hint "delete object" :table table :id id))
 
     (count result)))
 
@@ -63,7 +63,7 @@
         backend (simpl/resolve-backend storage (cf/get :fdata-storage-backend))]
 
     (doseq [{:keys [id] :as item} result]
-      (l/trace :action "delete object" :table table :id id)
+      (l/trace :hint "delete object" :table table :id id)
       (when backend
         (simpl/del-object backend item)))
 
@@ -78,7 +78,7 @@
         fonts   (db/exec! conn [sql max-age])
         storage (assoc storage :conn conn)]
     (doseq [{:keys [id] :as font} fonts]
-      (l/trace :action "delete object" :table table :id id)
+      (l/trace :hint "delete object" :table table :id id)
       (some->> (:woff1-file-id font) (sto/del-object storage))
       (some->> (:woff2-file-id font) (sto/del-object storage))
       (some->> (:otf-file-id font)   (sto/del-object storage))
@@ -95,7 +95,7 @@
         storage (assoc storage :conn conn)]
 
     (doseq [{:keys [id] :as team} teams]
-      (l/trace :action "delete object" :table table :id id)
+      (l/trace :hint "delete object" :table table :id id)
       (some->> (:photo-id team) (sto/del-object storage)))
 
     (count teams)))
@@ -127,7 +127,7 @@
         storage  (assoc storage :conn conn)]
 
     (doseq [{:keys [id] :as profile} profiles]
-      (l/trace :action "delete object" :table table :id id)
+      (l/trace :hint "delete object" :table table :id id)
 
       ;; Mark the owned teams as deleted; this enables them to be processed
       ;; in the same transaction in the "team" table step.

@@ -90,7 +90,7 @@
         unused (->> (db/query conn :file-media-object {:file-id id})
                     (remove #(contains? used (:id %))))]
 
-    (l/debug :action "processing file"
+    (l/debug :hint "processing file"
              :id id
              :age age
              :to-delete (count unused))
@@ -101,7 +101,7 @@
                 {:id id})
 
     (doseq [mobj unused]
-      (l/debug :action "deleting media object"
+      (l/debug :hint "deleting media object"
                :id (:id mobj)
                :media-id (:media-id mobj)
                :thumbnail-id (:thumbnail-id mobj))

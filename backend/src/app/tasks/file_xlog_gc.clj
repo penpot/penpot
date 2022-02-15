@@ -28,7 +28,8 @@
       (let [interval (db/interval max-age)
             result   (db/exec-one! conn [sql:delete-files-xlog interval])
             result   (:next.jdbc/update-count result)]
-        (l/debug :removed result :hint "remove old file changes")
+        (l/info :hint "remove old file changes"
+                :removed result)
         result))))
 
 (def ^:private
