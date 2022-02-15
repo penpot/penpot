@@ -14,12 +14,17 @@
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.db :as db]
+   [app.util.async :refer [thread-sleep]]
    [app.util.http :as http]
    [app.util.json :as json]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
-(declare retrieve-stats)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TASK ENTRY POINT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare get-stats)
 (declare send!)
 
 (s/def ::version ::us/string)
@@ -34,10 +39,17 @@
 (defmethod ig/init-key ::handler
   [_ {:keys [pool sprops version] :as cfg}]
   (fn [_]
+    ;; Sleep randomly between 0 to 10s
+    (thread-sleep (rand-int 10000))
+
     (let [instance-id (:instance-id sprops)]
-      (-> (retrieve-stats pool version)
+      (-> (get-stats pool version)
           (assoc :instance-id instance-id)
           (send! cfg)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; IMPL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- send!
   [data cfg]
@@ -62,6 +74,20 @@
 (defn- retrieve-num-files
   [conn]
   (-> (db/exec-one! conn ["select count(*) as count from file;"]) :count))
+
+(defn- retrieve-num-file-changes
+  [conn]
+  (let [sql (str "select count(*) as count "
+                 "  from file_change "
+                 " where date_trunc('day', created_at) = date_trunc('day', now())")]
+    (-> (db/exec-one! conn [sql]) :count)))
+
+(defn- retrieve-num-touched-files
+  [conn]
+  (let [sql (str "select count(distinct file_id) as count "
+                 "  from file_change "
+                 " where date_trunc('day', created_at) = date_trunc('day', now())")]
+    (-> (db/exec-one! conn [sql]) :count)))
 
 (defn- retrieve-num-users
   [conn]
@@ -118,7 +144,7 @@
      :jvm-heap-max     (.maxMemory runtime)
      :jvm-cpus         (.availableProcessors runtime)}))
 
-(defn retrieve-stats
+(defn get-stats
   [conn version]
   (let [referer (if (cfg/get :telemetry-with-taiga)
                   "taiga"
@@ -130,7 +156,9 @@
          :total-files    (retrieve-num-files conn)
          :total-users    (retrieve-num-users conn)
          :total-fonts    (retrieve-num-fonts conn)
-         :total-comments (retrieve-num-comments conn)}
+         :total-comments (retrieve-num-comments conn)
+         :total-file-changes  (retrieve-num-file-changes conn)
+         :total-touched-files (retrieve-num-touched-files conn)}
         (d/merge
          (retrieve-team-averages conn)
          (retrieve-jvm-stats))

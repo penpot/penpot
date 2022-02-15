@@ -295,6 +295,11 @@
   (s/assert cron? cron)
   (.toInstant (.getNextValidTimeAfter cron (Date/from now))))
 
+(defn get-next
+  [cron tnow]
+  (let [nt (next-valid-instant-from cron tnow)]
+    (cons nt (lazy-seq (get-next cron nt)))))
+
 (defmethod print-method CronExpression
   [mv ^java.io.Writer writer]
   (.write writer (str "#app/cron \"" (.toString ^CronExpression mv) "\"")))
