@@ -5,6 +5,7 @@
 ### :bug: Bugs fixed
 
 - Fix issue on handling empty content on boolean shapes
+- Fix race condition issue on component renaming
 - Handle EOF errors on writting streamed response
 - Handle EOF errors on websocket send/ping methods
 - Disable parallel upload of file media on import (causes too much
