@@ -23,6 +23,7 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [datoteka.core :as fs]))
 
 ;; --- Helpers & Specs
@@ -359,12 +360,19 @@
               :role role))
       nil)))
 
+(def sql:upsert-team-invitation
+  "insert into team_invitation(team_id, email_to, role, valid_until)
+   values (?, ?, ?, ?)
+       on conflict(team_id, email_to) do
+          update set role = ?, valid_until = ?, updated_at = now();")
+
 (defn- create-team-invitation
   [{:keys [conn tokens team profile role email] :as cfg}]
   (let [member   (profile/retrieve-profile-data-by-email conn email)
+        token-exp (dt/in-future "48h")
         itoken   (tokens :generate
                          {:iss :team-invitation
-                          :exp (dt/in-future "48h")
+                          :exp token-exp
                           :profile-id (:id profile)
                           :role role
                           :team-id (:id team)
@@ -385,6 +393,10 @@
       (ex/raise :type :validation
                 :code :email-has-permanent-bounces
                 :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
+
+
+    (db/exec-one! conn [sql:upsert-team-invitation
+                        (:id team) (str/lower email) (name role) token-exp (name role) token-exp])
 
     (eml/send! {::eml/conn conn
                 ::eml/factory eml/invite-to-team
@@ -418,3 +430,24 @@
                 :email email
                 :role role)))
       team)))
+
+
+;; --- Mutation: Update invitation role
+
+(s/def ::update-team-invitation-role
+  (s/keys :req-un [::profile-id ::team-id ::email ::role]))
+
+(sv/defmethod ::update-team-invitation-role
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id email role] :as params}]
+  (db/with-atomic [conn pool]
+    (let [perms    (teams/get-permissions conn profile-id team-id)
+          team     (db/get-by-id conn :team team-id)]
+
+      (when-not (:is-admin perms)
+        (ex/raise :type :validation
+                  :code :insufficient-permissions))
+
+      (db/update! conn :team-invitation
+                  {:role (name role) :updated-at (dt/now)}
+                  {:team-id (:id team) :email-to (str/lower email)})
+      nil)))
