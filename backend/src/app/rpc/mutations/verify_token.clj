@@ -118,41 +118,13 @@
     (assoc member :is-active true)))
 
 (defmethod process-token :team-invitation
-  [{:keys [session] :as cfg} {:keys [profile-id token]} {:keys [member-id] :as claims}]
+  [cfg {:keys [profile-id token]} {:keys [member-id] :as claims}]
   (us/assert ::team-invitation-claims claims)
   (cond
     ;; This happens when token is filled with member-id and current
-    ;; user is already logged in with some account.
-    (and (uuid? profile-id)
-         (uuid? member-id))
+    ;; user is already logged in with exactly invited account.
+    (and (uuid? profile-id) (uuid? member-id) (= member-id profile-id))
     (let [profile (accept-invitation cfg claims)]
-      (if (= member-id profile-id)
-        ;; If the current session is already matches the invited
-        ;; member, then just return the token and leave the frontend
-        ;; app redirect to correct team.
-        (assoc claims :state :created)
-
-        ;; If the session does not matches the invited member, replace
-        ;; the session with a new one matching the invited member.
-        ;; This technique should be considered secure because the
-        ;; user clicking the link he already has access to the email
-        ;; account.
-        (with-meta
-          (assoc claims :state :created)
-          {:transform-response ((:create session) member-id)
-           ::audit/name "accept-team-invitation"
-           ::audit/props (merge
-                          (audit/profile->props profile)
-                          {:team-id (:team-id claims)
-                           :role (:role claims)})
-           ::audit/profile-id profile-id})))
-
-    ;; This happens when member-id is not filled in the invitation but
-    ;; the user already has an account (probably with other mail) and
-    ;; is already logged-in.
-    (and (uuid? profile-id)
-         (nil? member-id))
-    (let [profile (accept-invitation cfg (assoc claims :member-id profile-id))]
       (with-meta
         (assoc claims :state :created)
         {::audit/name "accept-team-invitation"
@@ -160,34 +132,24 @@
                         (audit/profile->props profile)
                         {:team-id (:team-id claims)
                          :role (:role claims)})
-         ::audit/profile-id profile-id}))
-
-    ;; This happens when member-id is filled but the accessing user is
-    ;; not logged-in. In this case we proceed to accept invitation and
-    ;; leave the user logged-in.
-    (and (nil? profile-id)
-         (uuid? member-id))
-    (let [profile (accept-invitation cfg claims)]
-      (with-meta
-        (assoc claims :state :created)
-        {:transform-response ((:create session) member-id)
-         ::audit/name "accept-team-invitation"
-         ::audit/props (merge
-                        (audit/profile->props profile)
-                        {:team-id (:team-id claims)
-                         :role (:role claims)})
          ::audit/profile-id member-id}))
 
-    ;; In this case, we wait until frontend app redirect user to
-    ;; registration page, the user is correctly registered and the
-    ;; register mutation call us again with the same token to finally
-    ;; create the corresponding team-profile relation from the first
-    ;; condition of this if.
+    ;; This case means that invitation token does not match with
+    ;; registred user, so we need to indicate to frontend to redirect
+    ;; it to register page.
+    (nil? member-id)
+    {:invitation-token token
+     :iss :team-invitation
+     :redirect-to :auth-register
+     :state :pending}
+
+    ;; In all other cases, just tell to fontend to redirect the user
+    ;; to the login page.
     :else
     {:invitation-token token
      :iss :team-invitation
+     :redirect-to :auth-login
      :state :pending}))
-
 
 ;; --- Default
 

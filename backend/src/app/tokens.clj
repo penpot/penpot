@@ -7,6 +7,7 @@
 (ns app.tokens
   "Tokens generation service."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.transit :as t]
@@ -17,7 +18,7 @@
 
 (defn- generate
   [cfg claims]
-  (let [payload (t/encode claims)]
+  (let [payload (-> claims d/without-nils t/encode)]
     (jwe/encrypt payload (::secret cfg) {:alg :a256kw :enc :a256gcm})))
 
 (defn- verify
