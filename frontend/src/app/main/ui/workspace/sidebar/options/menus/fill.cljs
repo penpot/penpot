@@ -44,7 +44,7 @@
                :file-id (:fill-color-ref-file values)
                :gradient (:fill-color-gradient values)}
 
-        hide-fill-on-export? (:hide-fill-on-export values false)
+        hide-fill-on-export? (:hide-fill-on-export values)
 
         checkbox-ref (mf/use-ref)
 
