@@ -190,3 +190,20 @@
         (multiply mtx)
         (translate (gpt/negate pt)))
     mtx))
+
+(defn determinant
+  "Determinant for the affinity transform"
+  [{:keys [a b c d _ _]}]
+  (- (* a d) (* c b)))
+
+(defn inverse
+  "Gets the inverse of the affinity transform `mtx`"
+  [{:keys [a b c d e f] :as mtx}]
+  (let [det (determinant mtx)
+        a' (/  d det)
+        b' (/ (- b) det)
+        c' (/ (- c) det)
+        d' (/  a det)
+        e' (/ (- (* c f) (* d e)) det)
+        f' (/ (- (* b e) (* a f)) det)]
+    (Matrix. a' b' c' d' e' f')))

@@ -84,16 +84,18 @@
         base            #js {:textDecoration text-decoration
                              :textTransform text-transform
                              :lineHeight (or line-height "inherit")
-                             :color text-color}]
+                             :color text-color
+                             :caretColor "black"}]
 
     (when-let [gradient (:fill-color-gradient data)]
       (let [text-color (-> (update gradient :type keyword)
                            (uc/gradient->css))]
         (-> base
-            (obj/set! "--text-color" text-color)
-            (obj/set! "backgroundImage" "var(--text-color)")
-            (obj/set! "WebkitTextFillColor" "transparent")
-            (obj/set! "WebkitBackgroundClip" "text"))))
+            (obj/set! "color" text-color)
+            #_(obj/set! "--text-color" text-color)
+            #_(obj/set! "backgroundImage" "var(--text-color)")
+            #_(obj/set! "WebkitTextFillColor" "transparent")
+            #_(obj/set! "WebkitBackgroundClip" "text"))))
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
