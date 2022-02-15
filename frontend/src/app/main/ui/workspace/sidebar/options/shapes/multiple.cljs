@@ -8,6 +8,7 @@
   (:require
    [app.common.attrs :as attrs]
    [app.common.data :as d]
+   [app.common.pages.common :as cpc]
    [app.common.text :as txt]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
@@ -20,8 +21,11 @@
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
    [rumext.alpha :as mf]))
 
-;; We define a map that goes from type to
-;; attribute and how to handle them
+;; Define how to read each kind of attribute depending on the shape type:
+;;   - shape: read the attribute directly from the shape.
+;;   - children: read it from all the children, and then merging it.
+;;   - ignore: do not read this attribute from this shape.
+;;   - text: read it from all the content nodes, and then merging it.
 (def type->props
   {:frame
    {:measure    :shape
@@ -151,9 +155,6 @@
   [v]
   (when v (select-keys v blur-keys)))
 
-(defn empty-map [keys]
-  (into {} (map #(hash-map % nil)) keys))
-
 (defn get-attrs*
   "Given a `type` of options that we want to extract and the shapes to extract them from
   returns a list of tuples [id, values] with the extracted properties for the shapes that
@@ -172,10 +173,9 @@
           (let [props (get-in type->props [type attr-type])]
             (case props
               :ignore   [ids values]
-              :shape    [(conj ids id)
-                         (merge-attrs values (merge
-                                              (empty-map attrs)
-                                              (select-keys shape attrs)))]
+              :shape    (let [editable-attrs (filter (get cpc/editable-attrs (:type shape)) attrs)]
+                          [(conj ids id)
+                           (merge-attrs values (select-keys shape editable-attrs))])
               :text     [(conj ids id)
                          (-> values
                              (merge-attrs (select-keys shape attrs))

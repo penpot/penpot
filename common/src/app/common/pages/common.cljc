@@ -65,3 +65,320 @@
    :constraints-v         :constraints-group
    :fixed-scroll          :constraints-group})
 
+;; Attributes that may directly be edited by the user with forms
+(def editable-attrs
+  {:frame #{:proportion-lock
+            :width :height
+            :x :y
+            :selrect
+
+            :opacity
+            :blend-mode
+            :blocked
+            :hidden
+
+            :fills
+            :fill-color
+            :fill-opacity
+            :fill-color-ref-id
+            :fill-color-ref-file
+            :fill-color-gradient
+            :hide-fill-on-export}
+
+  :group #{:proportion-lock
+           :width :height
+           :x :y
+           :selrect
+
+           :constraints-h
+           :constraints-v
+           :fixed-scroll
+           :parent-id
+           :frame-id
+
+           :opacity
+           :blend-mode
+           :blocked
+           :hidden
+
+           :shadow
+
+           :blur}
+
+   :rect #{:proportion-lock
+           :width :height
+           :x :y
+           :rotation
+           :rx :ry
+           :r1 :r2 :r3 :r4
+           :selrect
+
+           :constraints-h
+           :constraints-v
+           :fixed-scroll
+           :parent-id
+           :frame-id
+
+           :opacity
+           :blend-mode
+           :blocked
+           :hidden
+
+           :fills
+           :fill-color
+           :fill-opacity
+           :fill-color-ref-id
+           :fill-color-ref-file
+           :fill-color-gradient
+
+           :stroke-style
+           :stroke-alignment
+           :stroke-width
+           :stroke-color
+           :stroke-color-ref-id
+           :stroke-color-ref-file
+           :stroke-opacity
+           :stroke-color-gradient
+           :stroke-cap-start
+           :stroke-cap-end
+
+           :shadow
+
+           :blur}
+
+   :circle #{:proportion-lock
+             :width :height
+             :x :y
+             :rotation
+             :selrect
+
+             :constraints-h
+             :constraints-v
+             :fixed-scroll
+             :parent-id
+             :frame-id
+
+             :opacity
+             :blend-mode
+             :blocked
+             :hidden
+
+             :fills
+             :fill-color
+             :fill-opacity
+             :fill-color-ref-id
+             :fill-color-ref-file
+             :fill-color-gradient
+
+             :stroke-style
+             :stroke-alignment
+             :stroke-width
+             :stroke-color
+             :stroke-color-ref-id
+             :stroke-color-ref-file
+             :stroke-opacity
+             :stroke-color-gradient
+             :stroke-cap-start
+             :stroke-cap-end
+
+             :shadow
+
+             :blur}
+
+  :path #{:proportion-lock
+          :width :height
+          :x :y
+          :rotation
+          :selrect
+
+          :constraints-h
+          :constraints-v
+          :fixed-scroll
+          :parent-id
+          :frame-id
+
+          :opacity
+          :blend-mode
+          :blocked
+          :hidden
+
+          :fills
+          :fill-color
+          :fill-opacity
+          :fill-color-ref-id
+          :fill-color-ref-file
+          :fill-color-gradient
+
+          :stroke-style
+          :stroke-alignment
+          :stroke-width
+          :stroke-color
+          :stroke-color-ref-id
+          :stroke-color-ref-file
+          :stroke-opacity
+          :stroke-color-gradient
+          :stroke-cap-start
+          :stroke-cap-end
+
+          :shadow
+
+          :blur}
+
+  :text #{:proportion-lock
+          :width :height
+          :x :y
+          :rotation
+          :rx :ry
+          :r1 :r2 :r3 :r4
+          :selrect
+
+          :constraints-h
+          :constraints-v
+          :fixed-scroll
+          :parent-id
+          :frame-id
+
+          :opacity
+          :blend-mode
+          :blocked
+          :hidden
+
+          :fill-color
+          :fill-opacity
+          :fill-color-ref-id
+          :fill-color-ref-file
+          :fill-color-gradient
+
+          :shadow
+
+          :blur
+
+          :typography-ref-id
+          :typography-ref-file
+
+          :font-id
+          :font-family
+          :font-variant-id
+          :font-size
+          :font-weight
+          :font-style
+
+          :text-align
+
+          :text-direction
+
+          :line-height
+          :letter-spacing
+
+          :vertical-align
+
+          :text-decoration
+
+          :text-transform
+
+          :grow-type}
+
+  :image #{:proportion-lock
+           :width :height
+           :x :y
+           :rotation
+           :rx :ry
+           :r1 :r2 :r3 :r4
+           :selrect
+
+           :constraints-h
+           :constraints-v
+           :fixed-scroll
+           :parent-id
+           :frame-id
+
+           :opacity
+           :blend-mode
+           :blocked
+           :hidden
+
+           :shadow
+
+           :blur}
+
+  :svg-raw #{:proportion-lock
+             :width :height
+             :x :y
+             :rotation
+             :rx :ry
+             :r1 :r2 :r3 :r4
+             :selrect
+
+             :constraints-h
+             :constraints-v
+             :fixed-scroll
+             :parent-id
+             :frame-id
+
+             :opacity
+             :blend-mode
+             :blocked
+             :hidden
+
+             :fills
+             :fill-color
+             :fill-opacity
+             :fill-color-ref-id
+             :fill-color-ref-file
+             :fill-color-gradient
+
+             :stroke-style
+             :stroke-alignment
+             :stroke-width
+             :stroke-color
+             :stroke-color-ref-id
+             :stroke-color-ref-file
+             :stroke-opacity
+             :stroke-color-gradient
+             :stroke-cap-start
+             :stroke-cap-end
+
+             :shadow
+
+             :blur}
+
+  :bool #{:proportion-lock
+          :width :height
+          :x :y
+          :rotation
+          :rx :ry
+          :r1 :r2 :r3 :r4
+          :selrect
+
+          :constraints-h
+          :constraints-v
+          :fixed-scroll
+          :parent-id
+          :frame-id
+
+          :opacity
+          :blend-mode
+          :blocked
+          :hidden
+
+          :fill-color
+          :fill-opacity
+          :fill-color-ref-id
+          :fill-color-ref-file
+          :fill-color-gradient
+
+          :stroke-style
+          :stroke-alignment
+          :stroke-width
+          :stroke-color
+          :stroke-color-ref-id
+          :stroke-color-ref-file
+          :stroke-opacity
+          :stroke-color-gradient
+          :stroke-cap-start
+          :stroke-cap-end
+
+          :shadow
+
+          :blur}})
+
