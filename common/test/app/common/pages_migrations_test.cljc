@@ -38,7 +38,7 @@
                  :components {}
                  :version 7}
 
-        res     (cpm/migrate-data data)]
+        res     (cpm/migrate-data data nil 8)]
 
     ;; (pprint data)
     ;; (pprint res)
@@ -81,7 +81,7 @@
                                  (let [id (uuid/custom 1 2)]
                                    (into [] (remove #(= id %)) shapes)))))
 
-        res     (cpm/migrate-data data)]
+        res     (cpm/migrate-data data nil 8)]
 
     ;; (pprint res)
     ;; (pprint expect)
