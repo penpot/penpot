@@ -13,8 +13,9 @@
    [app.metrics :as mtx]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
-   [app.util.services :as sv]
-   [clojure.spec.alpha :as s]))
+   [app.util.services :as sv]   
+   [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]))
 
 (defmulti process-token (fn [_ _ claims] (:iss claims)))
 
@@ -100,11 +101,18 @@
           :opt-un [:internal.tokens.team-invitation/member-id]))
 
 (defn- accept-invitation
-  [{:keys [conn] :as cfg} {:keys [member-id team-id role] :as claims}]
-  (let [params (merge {:team-id team-id
+  [{:keys [conn] :as cfg} {:keys [member-id team-id role member-email] :as claims}]
+  (let [
+        member (profile/retrieve-profile conn member-id)
+        invitation (db/get-by-params conn :team-invitation
+                                    {:team-id team-id :email-to (str/lower member-email)}
+                                    {:check-not-found false})
+        ;; Update the role if there is an invitation
+        role (or (some-> invitation :role keyword) role)
+        params (merge {:team-id team-id
                        :profile-id member-id}
                       (teams/role->params role))
-        member (profile/retrieve-profile conn member-id)]
+        ]
 
     ;; Insert the invited member to the team
     (db/insert! conn :team-profile-rel params {:on-conflict-do-nothing true})
@@ -115,7 +123,12 @@
       (db/update! conn :profile
                   {:is-active true}
                   {:id member-id}))
-    (assoc member :is-active true)))
+    (assoc member :is-active true)
+    
+    ;; Delete the invitation
+    (db/delete! conn :team-invitation
+                {:team-id team-id :email-to (str/lower member-email)})))
+    
 
 (defmethod process-token :team-invitation
   [{:keys [session] :as cfg} {:keys [profile-id token]} {:keys [member-id] :as claims}]

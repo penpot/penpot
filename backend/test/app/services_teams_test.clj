@@ -35,12 +35,19 @@
 
       ;; invite external user without complaints
       (let [data (assoc data :email "foo@bar.com")
-            out  (th/mutation! data)]
+            out  (th/mutation! data)
+            ;;retrieve the value from the database and check its content
+            invitation (db/exec-one!
+                  th/*pool*
+                  ["select count(*) as num from team_invitation where team_id = ? and email_to = ?"
+                   (:team-id data) "foo@bar.com"])]
 
         ;; (th/print-result! out)
 
         (t/is (nil? (:result out)))
-        (t/is (= 1 (:call-count (deref mock)))))
+        (t/is (= 1 (:call-count (deref mock))))
+        (t/is (= 1 (:num invitation))))
+
 
       ;; invite internal user without complaints
       (th/reset-mock! mock)
@@ -159,4 +166,61 @@
 
 
 
+(t/deftest query-team-invitations
+  (let [prof  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id prof)})
+        data {::th/type :team-invitations
+              :profile-id (:id prof)
+              :team-id (:id team)}]
 
+    ;;insert an entry on the database with an enabled invitation
+    (db/insert! th/*pool* :team-invitation
+               {:team-id (:team-id data)
+                :email-to "test1@mail.com"
+                :role "editor"
+                :valid-until (dt/in-future "48h")})
+
+
+    ;;insert an entry on the database with an expired invitation
+    (db/insert! th/*pool* :team-invitation
+                {:team-id (:team-id data)
+                 :email-to "test2@mail.com"
+                 :role "editor"
+                 :valid-until (dt/in-past "48h")})
+
+    (let [out (th/query! data)]
+      (t/is (nil? (:error out)))
+      (let [result (:result out)
+            one (first result)
+            two (second result)]
+        (t/is (= 2 (count result)))
+        (t/is (= "test1@mail.com" (:email one)))
+        (t/is (= "test2@mail.com" (:email two)))
+        (t/is (false? (:expired one)))
+        (t/is (true? (:expired two)))))))
+
+
+(t/deftest update-team-invitation-role
+  (let [prof  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id prof)})
+        data {::th/type :update-team-invitation-role
+              :profile-id (:id prof)
+              :team-id (:id team)
+              :email "TEST1@mail.com"
+              :role :admin}]
+
+    ;;insert an entry on the database with an invitation
+    (db/insert! th/*pool* :team-invitation
+                {:team-id (:team-id data)
+                 :email-to "test1@mail.com"
+                 :role "editor"
+                 :valid-until (dt/in-future "48h")})
+
+    (let [out (th/mutation! data)
+          ;;retrieve the value from the database and check its content
+          result (db/get-by-params th/*pool* :team-invitation
+                                       {:team-id (:team-id data) :email-to "test1@mail.com"}
+                                       {:check-not-found false})]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out)))
+      (t/is (= "admin" (:role result))))))
