@@ -302,3 +302,8 @@
 (defmethod print-dup CronExpression
   [o w]
   (print-ctor o (fn [o w] (print-dup (.toString ^CronExpression o) w)) w))
+
+(extend-protocol fez/IEdn
+  CronExpression
+  (-edn [o] (pr-str o)))
+

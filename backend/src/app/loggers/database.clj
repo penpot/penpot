@@ -27,10 +27,8 @@
 (defonce enabled (atom true))
 
 (defn- persist-on-database!
-  [{:keys [pool] :as cfg} {:keys [id] :as event}]
-  (db/with-atomic [conn pool]
-    (db/insert! conn :server-error-report
-                {:id id :content (db/tjson event)})))
+  [{:keys [pool]} {:keys [id] :as event}]
+  (db/insert! pool :server-error-report {:id id :content (db/tjson event)}))
 
 (defn- parse-event-data
   [event]
@@ -51,7 +49,7 @@
       (assoc :host (cf/get :host))
       (assoc :public-uri (cf/get :public-uri))
       (assoc :version (:full cf/version))
-      (update :id (fn [id] (or id (uuid/next))))))
+      (assoc :id (uuid/next))))
 
 (defn handle-event
   [{:keys [executor] :as cfg} event]
@@ -59,12 +57,13 @@
     (try
       (let [event (parse-event event)
             uri   (cf/get :public-uri)]
+
         (l/debug :hint "registering error on database" :id (:id event)
                  :uri (str uri "/dbg/error/" (:id event)))
+
         (persist-on-database! cfg event))
-      (catch Exception e
-        (l/warn :hint "unexpected exception on database error logger"
-                :cause e)))))
+      (catch Exception cause
+        (l/warn :hint "unexpected exception on database error logger" :cause cause)))))
 
 (defmethod ig/pre-init-spec ::reporter [_]
   (s/keys :req-un [::wrk/executor ::db/pool ::receiver]))
@@ -76,8 +75,7 @@
 (defmethod ig/init-key ::reporter
   [_ {:keys [receiver] :as cfg}]
   (l/info :msg "initializing database error persistence")
-  (let [output (a/chan (a/sliding-buffer 5)
-                       (filter error-event?))]
+  (let [output (a/chan (a/sliding-buffer 5) (filter error-event?))]
     (receiver :sub output)
     (a/go-loop []
       (let [msg (a/<! output)]
