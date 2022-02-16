@@ -261,9 +261,8 @@ msgstr "Todavía no hay ningún archivo aquí"
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"Aún no tienes archivos. Si quieres probar alguna plantilla visita nuestra "
-"seccion de [Bibliotecas y "
-"plantillas](https://penpot.app/libraries-templates.html)"
+"¡Oh, no! ¡Aún no tienes archivos! Si quieres probar con alguna plantilla ve a "
+"[Bibliotecas y plantillas](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
 msgstr "Exportar tableros a PDF..."

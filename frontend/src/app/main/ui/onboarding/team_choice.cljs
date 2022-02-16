@@ -30,7 +30,7 @@
         ;; the onboarding templates modal.
         on-fly-solo
         (fn []
-          (tm/schedule 400  #(st/emit! (modal/show {:type :onboarding-templates}))))
+          (tm/schedule 400  #(st/emit! (modal/hide))))
 
         ;; When user choices the option of `team up`, we proceed to show
         ;; the team creation modal.
@@ -121,14 +121,12 @@
         on-success
         (mf/use-callback
          (fn [_form response]
-           (let [project-id (:default-project-id response)
-                 team-id    (:id response)]
+           (let [team-id    (:id response)]
              (st/emit!
               (modal/hide)
               (rt/nav :dashboard-projects {:team-id team-id}))
              (tm/schedule 400 #(st/emit!
-                                (modal/show {:type :onboarding-templates
-                                             :project-id project-id}))))))
+                                (modal/hide))))))
 
         on-error
         (mf/use-callback
