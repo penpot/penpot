@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## :rocket: Next
+
+### :boom: Breaking changes
+### :sparkles: New features
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :heart: Community contributions by (Thank you!)
+
+
 ## 1.12.0-beta
 
 ### :boom: Breaking changes
