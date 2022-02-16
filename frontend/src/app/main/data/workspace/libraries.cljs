@@ -321,7 +321,7 @@
       ;; are small posibilities of race conditions with component
       ;; deletion.
       (when-let [component (get-in state [:workspace-data :components id])]
-        (let [[path name] (cp/parse-path-name new-name)
+        (let [[path name] (cph/parse-path-name new-name)
               objects     (get component :objects)
               ;; Give the same name to the root shape
               new-objects (assoc-in objects
