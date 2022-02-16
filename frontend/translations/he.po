@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-11-25 13:50+0000\n"
+"PO-Revision-Date: 2022-01-15 16:53+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 4.10-dev\n"
+"X-Generator: Weblate 4.10.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -259,10 +259,10 @@ msgid "dashboard.export-frames"
 msgstr "ייצוא לוחות אומנות ל־PDF…"
 
 msgid "dashboard.export-multi"
-msgstr "ייצוא קובצי %s"
+msgstr "ייצוא קובצי %s של Penpot"
 
 msgid "dashboard.export-single"
-msgstr "ייצוא קובץ"
+msgstr "ייצוא קובץ Penpot"
 
 msgid "dashboard.export.detail"
 msgstr "* עשוי לכלול רכיבים, גרפיקה, צבעים ו/או טיפוגרפיות."
@@ -316,7 +316,7 @@ msgstr ""
 "גופנים](https://www.typography.com/faq)."
 
 msgid "dashboard.import"
-msgstr "ייבוא קבצים"
+msgstr "ייבוא קובצי Penpot"
 
 msgid "dashboard.import.analyze-error"
 msgstr "אופס! לא הצלחנו לייבא את הקובץ הזה"
@@ -1766,7 +1766,7 @@ msgid "viewer.frame-not-found"
 msgstr "לוח האומנות לא נמצא."
 
 msgid "viewer.header.comments-section"
-msgstr "הערות"
+msgstr "הערות (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
@@ -1784,7 +1784,7 @@ msgid "viewer.header.interactions"
 msgstr "אינטראקציות"
 
 msgid "viewer.header.interactions-section"
-msgstr "אינטראקציות"
+msgstr "אינטראקציות (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
@@ -3265,3 +3265,102 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "להעלות הכול"
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "החבר שניסית להקצות לא קיים."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "גלישה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-duration"
+msgstr "משך"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "התמוססות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing"
+msgstr "החלקה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-linear"
+msgstr "קווי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "אפקט הזחה"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "להתעלם מהכול"
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "הבעלים לא יכולים לעזוב את הקבוצה, עליך להעביר את תפקיד הבעלות."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "דחיפה"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "נוסף גופן"
+msgstr[1] "נוספו 2 גופנים"
+msgstr[2] "נוספו %s גופנים"
+msgstr[3] "נוספו %s גופנים"
+
+msgid "errors.auth.unable-to-login"
+msgstr "נראה שלא עברת אימות או שתוקף ההפעלה פג."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation"
+msgstr "הנפשה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "ללא"
+
+msgid "dashboard.import.import-warning"
+msgstr "חלק מהקבצים הכילו פריטים שגויים שהוסרו."
+
+msgid "errors.team-leave.insufficient-members"
+msgstr "אין מספיק חברים כדי לעזוב את הצוות, כנראה יהיה עליך למחוק אותו."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-in"
+msgstr "פנימה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-out"
+msgstr "החוצה"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "בחירה ללוח אומנות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "הפרדת מופעים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "החלקה החוצה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "החלקה פנימה החוצה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease"
+msgstr "קלה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "החלקה פנימה"
