@@ -74,7 +74,7 @@
          :data-test "close-templates-btn"} i/close]]
 
       [:div.modal-content
-       [:h3 {:data-test "onboarding-templates-title"} (tr "onboarding.templates.title")]
+       [:h3 (tr "onboarding.templates.title")]
        [:p (tr "onboarding.templates.subtitle")]
 
        [:div.templates

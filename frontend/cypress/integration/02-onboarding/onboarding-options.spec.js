@@ -19,7 +19,7 @@
    it("choose solo option", () => {
     cy.getBySel("onboarding-welcome-title").should("exist");
     cy.getBySel("fly-solo-op").click();
-    cy.getBySel("onboarding-templates-title").should("exist");
+    cy.getBySel("empty-placeholder").should("exist");
    });
 
    it("choose team option and cancel", () => {
@@ -49,7 +49,7 @@
     cy.get("input[type=submit]").first().click();
     cy.get("#email").should("exist");
     cy.get(".skip-action").click();
-    cy.getBySel("onboarding-templates-title").should("exist");
+    cy.getBySel("empty-placeholder").should("exist");
    });
 
    it("choose team option, set team name and invite", () => {
@@ -61,7 +61,7 @@
     cy.get("#email").should("exist");
     cy.get("#email").type("test@test.com");
     cy.get("input[type=submit]").first().click();
-    cy.getBySel("onboarding-templates-title").should("exist");
+    cy.getBySel("empty-placeholder").should("exist");
    });
 
 
