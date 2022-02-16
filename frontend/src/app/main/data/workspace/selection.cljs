@@ -184,7 +184,7 @@
                        (cph/get-immediate-children objects frame-id))
 
             selected (into (d/ordered-set)
-                           (remove :blocked)
+                           (comp (remove :blocked) (map :id))
                            selected)]
 
         (rx/of (select-shapes selected))))))
