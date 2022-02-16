@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.gradients
   (:require
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -106,6 +107,7 @@
                             :gradient gradient
                             :shape shape}]
     (when gradient
-      (case (:type gradient)
-        :linear [:> linear-gradient gradient-props]
-        :radial [:> radial-gradient gradient-props]))))
+      (case (d/name (:type gradient))
+        "linear" [:> linear-gradient gradient-props]
+        "radial" [:> radial-gradient gradient-props]
+        nil))))

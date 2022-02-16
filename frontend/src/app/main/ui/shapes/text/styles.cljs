@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.text :as txt]
+   [app.common.transit :as transit]
    [app.main.fonts :as fonts]
    [app.util.color :as uc]
    [app.util.object :as obj]
@@ -71,31 +72,22 @@
         fill-color      (:fill-color data)
         fill-opacity    (:fill-opacity data)
 
-        ;; Uncomment this to allow to remove text colors. This could break the texts that already exist
-        ;;[r g b a] (if (nil? fill-color)
-        ;;            [0 0 0 0] ;; Transparent color
-        ;;            (uc/hex->rgba fill-color fill-opacity))
-
         [r g b a]       (uc/hex->rgba fill-color fill-opacity)
         text-color      (when (and (some? fill-color) (some? fill-opacity))
                           (str/format "rgba(%s, %s, %s, %s)" r g b a))
+
         fontsdb         (deref fonts/fontsdb)
 
         base            #js {:textDecoration text-decoration
                              :textTransform text-transform
                              :lineHeight (or line-height "inherit")
-                             :color text-color
-                             :caretColor "black"}]
+                             :color "transparent"
+                             :caretColor (or text-color "black")}
 
-    (when-let [gradient (:fill-color-gradient data)]
-      (let [text-color (-> (update gradient :type keyword)
-                           (uc/gradient->css))]
-        (-> base
-            (obj/set! "color" text-color)
-            #_(obj/set! "--text-color" text-color)
-            #_(obj/set! "backgroundImage" "var(--text-color)")
-            #_(obj/set! "WebkitTextFillColor" "transparent")
-            #_(obj/set! "WebkitBackgroundClip" "text"))))
+        base (-> base
+                 (obj/set! "--fill-color" fill-color)
+                 (obj/set! "--fill-color-gradient" (transit/encode-str (:fill-color-gradient data)))
+                 (obj/set! "--fill-opacity" fill-opacity))]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))

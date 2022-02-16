@@ -9,7 +9,6 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
-   [app.common.transit :as transit]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
@@ -24,12 +23,7 @@
   (let [node  (obj/get props "node")
         text  (:text node)
         style (sts/generate-text-styles node)]
-    [:span.text-node {:style style
-                      :data-fill-color (:fill-color node)
-                      :data-fill-color-gradient (transit/encode-str (:fill-color-gradient node))
-                      :data-fill-color-ref-file (transit/encode-str (:fill-color-ref-file node))
-                      :data-fill-color-ref-id (transit/encode-str (:fill-color-ref-id node))
-                      :data-fill-opacity (:fill-opacity node)}
+    [:span.text-node {:style style}
      (if (= text "") "\u00A0" text)]))
 
 (mf/defc render-root
@@ -193,7 +187,10 @@
   {::mf/wrap-props false
    ::mf/forward-ref true}
   [props ref]
-  (let [{:keys [id x y width height content] :as shape} (obj/get props "shape")
+  (let [shape (obj/get props "shape")
+        transform (str (geom/transform-matrix shape))
+
+        {:keys [id x y width height content]} shape
         grow-type (obj/get props "grow-type") ;; This is only needed in workspace
         ;; We add 8px to add a padding for the exporter
         ;; width (+ width 8)
@@ -205,16 +202,17 @@
                   plain-colors?
                   (remap-colors color-mapping))]
 
-    [:foreignObject {:x x
-                     :y y
-                     :id id
-                     :data-colors (->> colors (str/join ","))
-                     :data-mapping (-> color-mapping-inverse (clj->js) (js/JSON.stringify))
-                     :transform (geom/transform-matrix shape)
-                     :width  (if (#{:auto-width} grow-type) 100000 width)
-                     :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
-                     :style (-> (obj/new) (attrs/add-layer-props shape))
-                     :ref ref}
+    [:foreignObject
+     {:x x
+      :y y
+      :id id
+      :data-colors (->> colors (str/join ","))
+      :data-mapping (-> color-mapping-inverse (clj->js) (js/JSON.stringify))
+      :transform transform
+      :width  (if (#{:auto-width} grow-type) 100000 width)
+      :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
+      :style (-> (obj/new) (attrs/add-layer-props shape))
+      :ref ref}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`
      [:style ".text-node { background-clip: text;

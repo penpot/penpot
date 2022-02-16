@@ -7,16 +7,15 @@
 (ns app.main.ui.workspace.shapes.text
   (:require
    [app.common.attrs :as attrs]
-   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.math :as mth]
-   [app.common.transit :as transit]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.hooks.mutable-observer :refer [use-mutable-observer]]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text.fo-text :as fo]
    [app.main.ui.shapes.text.svg-text :as svg]
@@ -39,7 +38,7 @@
 (mf/defc text-static-content
   [{:keys [shape]}]
   [:& fo/text-shape {:shape shape
-                       :grow-type (:grow-type shape)}])
+                     :grow-type (:grow-type shape)}])
 
 (defn- update-with-current-editor-state
   [{:keys [id] :as shape}]
@@ -114,36 +113,10 @@
     (mf/use-effect
      (fn [] #(mf/set-ref-val! mnt false)))
 
-    [:& fo/text-shape {:ref text-ref-cb :shape shape :grow-type (:grow-type shape)}]))
-
-
-(defn calc-position-data
-  [base-node]
-  (let [viewport      (dom/get-element "render")
-        zoom          (get-in @st/state [:workspace-local :zoom])
-        text-data     (utp/calc-text-node-positions base-node viewport zoom)]
-    (->> text-data
-         (map (fn [{:keys [node position text]}]
-                (let [{:keys [x y width height]} position
-                      rtl? (= "rtl" (.-dir (.-parentElement ^js node)))
-                      styles (.computedStyleMap ^js node)]
-                  (d/without-nils
-                   {:rtl? rtl?
-                    :x    (if rtl? (+ x width) x)
-                    :y    (+ y height)
-                    :width width
-                    :height height
-                    :font-family (str (.get styles "font-family"))
-                    :font-size (str (.get styles "font-size"))
-                    :font-weight (str (.get styles "font-weight"))
-                    :text-transform (str (.get styles "text-transform"))
-                    :text-decoration (str (.get styles "text-decoration"))
-                    :font-style (str (.get styles "font-style"))
-                    :fill-color (or (dom/get-attribute node "data-fill-color") "#000000")
-                    :fill-color-gradient (transit/decode-str (dom/get-attribute node "data-fill-color-gradient"))
-                    :fill-opacity (d/parse-double (or (:fill-opacity node) "1"))
-                    :text text})))))))
-
+    [:& fo/text-shape {:ref text-ref-cb
+                       :shape shape
+                       :grow-type (:grow-type shape)
+                       :key (str "shape-" (:id shape))}]))
 
 
 (mf/defc text-wrapper
@@ -154,13 +127,13 @@
         edition?    (mf/deref edition-ref)
         shape-ref (mf/use-ref nil)
 
-        prev-obs-ref (mf/use-ref nil)
         local-position-data (mf/use-state nil)
 
         handle-change-foreign-object
-        (fn []
-          (when-let [node (mf/ref-val shape-ref)]
-            (let [position-data (calc-position-data node)
+        (fn [node]
+          (when (some? node)
+            (mf/set-ref-val! shape-ref node)
+            (let [position-data (utp/calc-position-data node)
                   parent (dom/get-parent node)
                   parent-transform (dom/get-attribute parent "transform")
                   node-transform (dom/get-attribute node "transform")
@@ -173,40 +146,20 @@
                   mtx (-> (gmt/multiply parent-mtx node-mtx)
                           (gmt/inverse))
 
-                  position-data'
+                  position-data
                   (->> position-data
                        (mapv #(merge % (-> (select-keys % [:x :y :width :height])
                                            (gsh/transform-rect mtx)))))]
-              (reset! local-position-data position-data'))))
+              (reset! local-position-data position-data))))
 
-        on-change-node
-        (fn [^js node]
-          (mf/set-ref-val! shape-ref node)
+        on-change-node (use-mutable-observer handle-change-foreign-object)]
 
-          (when-let [^js prev-obs (mf/ref-val prev-obs-ref)]
-            (.disconnect prev-obs)
-            (mf/set-ref-val! prev-obs-ref nil))
-
-          (when (some? node)
-            (let [fo-node (dom/query node "foreignObject")
-                  options #js {:attributes true
-                               :childList true
-                               :subtree true}
-                  mutation-obs (js/MutationObserver. handle-change-foreign-object)]
-              (mf/set-ref-val! prev-obs-ref mutation-obs)
-              (.observe mutation-obs fo-node options))))]
-    (mf/use-effect
-     (fn []
-       (fn []
-         (when-let [^js prev-obs (mf/ref-val prev-obs-ref)]
-           (.disconnect prev-obs)
-           (mf/set-ref-val! prev-obs-ref nil)))))
-
+    ;; When the text is "dirty?" we get recalculate the positions
     (mf/use-layout-effect
      (mf/deps id dirty?)
      (fn []
        (let [node (mf/ref-val shape-ref)
-             position-data (calc-position-data node)]
+             position-data (utp/calc-position-data node)]
          (reset! local-position-data nil)
          (st/emit! (dch/update-shapes
                     [id]
@@ -233,9 +186,10 @@
                                 :edition? edition?
                                 :key (str id edition?)}]]
 
-      [:g.text-svg {:opacity (when edition? 0)
-                    :pointer-events "none"}
-       (when (some? (:position-data shape))
-         [:& svg/text-shape {:shape (cond-> shape
-                                      (some? @local-position-data)
-                                      (assoc :position-data @local-position-data))}])]]]))
+      (when (and (not edition?) (or (some? (:position-data shape)) (some? local-position-data)))
+        (let [shape
+              (cond-> shape
+                (some? @local-position-data)
+                (assoc :position-data @local-position-data))]
+          [:g.text-svg {:pointer-events "none"}
+           [:& svg/text-shape {:shape shape}]]))]]))

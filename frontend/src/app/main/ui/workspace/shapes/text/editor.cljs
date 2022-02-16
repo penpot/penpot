@@ -14,11 +14,15 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.cursors :as cur]
+   [app.main.ui.hooks.mutable-observer :refer [use-mutable-observer]]
+   [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text.styles :as sts]
+   [app.main.ui.shapes.text.svg-text :as svg]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
+   [app.util.text-svg-position :as utp]
    [goog.events :as events]
    [rumext.alpha :as mf])
   (:import
@@ -233,17 +237,56 @@
    ::mf/forward-ref true}
   [props _]
   (let [{:keys [id x y width height grow-type] :as shape} (obj/get props "shape")
-        clip-id (str "clip-" id)]
-    [:g.text-editor {:clip-path (str "url(#" clip-id ")")}
-     [:defs
-      ;; This clippath will cut the huge foreign object we use to calculate the automatic resize
-      [:clipPath {:id clip-id}
-       [:rect {:x x :y y
-               :width (+ width 8) :height (+ height 8)
-               :transform (gsh/transform-matrix shape)}]]]
-     [:foreignObject {:transform (gsh/transform-matrix shape)
-                      :x x :y y
-                      :width  (if (#{:auto-width} grow-type) 100000 width)
-                      :height (if (#{:auto-height :auto-width} grow-type) 100000 height)}
+        transform (str (gsh/transform-matrix shape))
 
-      [:& text-shape-edit-html {:shape shape :key (str id)}]]]))
+        clip-id (str "clip-" id)
+
+        shape-ref (mf/use-ref nil)
+        local-position-data (mf/use-state nil)
+
+        handle-change-foreign-object
+        (mf/use-callback
+         (fn [node]
+           (when node
+             (mf/set-ref-val! shape-ref node)
+             (let [position-data (utp/calc-position-data node)]
+               (reset! local-position-data position-data)))))
+
+        handle-interaction
+        (mf/use-callback
+         (fn []
+           (handle-change-foreign-object (mf/ref-val shape-ref))))
+
+        on-change-node (use-mutable-observer handle-change-foreign-object)]
+
+    (mf/use-effect
+     (mf/use-callback handle-interaction)
+     (fn []
+       (let [keys [(events/listen js/document EventType.KEYUP handle-interaction)
+                   (events/listen js/document EventType.KEYDOWN handle-interaction)
+                   (events/listen js/document EventType.MOUSEDOWN handle-interaction)]]
+         #(doseq [key keys]
+            (events/unlistenByKey key)))))
+    [:*
+     [:> shape-container {:shape shape
+                          :pointer-events "none"}
+      [:& svg/text-shape {:shape (cond-> shape
+                                   (some? @local-position-data)
+                                   (assoc :position-data @local-position-data))}]]
+
+     [:g.text-editor {:clip-path (str "url(#" clip-id ")")
+                      :ref on-change-node
+                      :key (str "editor-" id)}
+      [:defs
+       ;; This clippath will cut the huge foreign object we use to calculate the automatic resize
+       [:clipPath {:id clip-id}
+        [:rect {:x x :y y
+                :width (+ width 8) :height (+ height 8)
+                :transform transform}]]]
+
+      [:foreignObject {:transform transform
+                       :x x :y y
+                       :width  (if (#{:auto-width} grow-type) 100000 width)
+                       :height (if (#{:auto-height :auto-width} grow-type) 100000 height)}
+
+       [:& text-shape-edit-html {:shape shape :key (str id)}]]]]))

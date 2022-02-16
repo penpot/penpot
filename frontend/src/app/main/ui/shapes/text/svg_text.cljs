@@ -45,10 +45,7 @@
       [:> :g group-props
        [:defs
         [:clipPath {:id clip-id}
-         [:rect.text-clip
-          {:x x :y y
-           :width width :height height
-           :transform (gsh/transform-matrix shape)}]]]
+         [:rect.text-clip {:x x :y y :width width :height height}]]]
        (for [[index data] (d/enumerate position-data)]
          (let [props (-> #js {:x (:x data)
                               :y (:y data)
@@ -63,3 +60,5 @@
                                               :whiteSpace "pre"}
                                          (attrs/add-fill data (get-gradient-id index)))})]
            [:> :text props (:text data)]))]]]))
+
+
