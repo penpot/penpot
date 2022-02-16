@@ -326,8 +326,10 @@
 (defn configure-assets-storage
   "Given storage map, returns a storage configured with the appropriate
   backend for assets."
-  [storage conn]
-  (-> storage
-      (assoc :conn conn)
-      (assoc :backend (cf/get :assets-storage-backend :assets-fs))))
+  ([storage]
+   (assoc storage :backend (cf/get :assets-storage-backend :assets-fs)))
+  ([storage conn]
+   (-> storage
+       (assoc :conn conn)
+       (assoc :backend (cf/get :assets-storage-backend :assets-fs)))))
 

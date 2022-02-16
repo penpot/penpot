@@ -52,10 +52,10 @@
        :body (sto/get-object-bytes storage obj)}
 
       :s3
-      (let [url (sto/get-object-url storage obj {:max-age signature-max-age})]
+      (let [{:keys [host port] :as url} (sto/get-object-url storage obj {:max-age signature-max-age})]
         {:status 307
          :headers {"location" (str url)
-                   "x-host"   (:host url)
+                   "x-host"   (cond-> host port (str ":" port))
                    "cache-control" (str "max-age=" (inst-ms cache-max-age))}
          :body ""})
 

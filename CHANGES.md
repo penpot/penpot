@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## :rocket: Next
+## 1.12.0-beta
 
 ### :boom: Breaking changes
 
@@ -24,6 +24,7 @@
 - Redesign of workspace toolbars [Taiga #2319](https://tree.taiga.io/project/penpot/us/2319)
 - Graphic Tablet usability improvements [Taiga #1913](https://tree.taiga.io/project/penpot/us/1913)
 - Improved mouse collision detection for groups and text shapes [Taiga #2452](https://tree.taiga.io/project/penpot/us/2452), [Taiga #2453](https://tree.taiga.io/project/penpot/us/2453)
+- Add support for alternative S3 storage providers and all aws regions [#1267](https://github.com/penpot/penpot/issues/1267)
 
 ### :bug: Bugs fixed
 
