@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-01-20 20:55+0000\n"
 "Last-Translator: Rubén <rubenx@mail.com>\n"
-"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
-"ca/>\n"
+"Language-Team: Catalan "
+"<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -312,8 +312,18 @@ msgstr "Exporta els fitxers"
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "S'ha eliminat el tipus de lletra"
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Descarta-ho tot"
+
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "Encara no teniu cap tipus de lletra personalitzat instal·lat."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "S'ha afegit 1 tipografia"
+msgstr[1] "S'han afegit %s tipografies"
 
 #, markdown
 msgid "dashboard.fonts.hero-text1"
@@ -333,6 +343,10 @@ msgstr ""
 "Penpot](https://penpot.app/terms.html). També podeu llegir sobre les "
 "[llicències dels tipus de lletra](https://www.typography.com/faq)."
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Puja-ho tot"
+
 msgid "dashboard.import"
 msgstr "Importa fitxers de Penpot"
 
@@ -344,6 +358,9 @@ msgstr "S'ha produït un problema en importar el fitxer i no s'ha importat."
 
 msgid "dashboard.import.import-message"
 msgstr "S'han importat %s fitxers correctament."
+
+msgid "dashboard.import.import-warning"
+msgstr "Alguns fitxers contenen objectes no vàlids que s'han eliminat."
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "S'estan carregant els colors"
@@ -580,6 +597,9 @@ msgstr "N'esteu segur?"
 msgid "ds.updated-at"
 msgstr "Actualitzat: %s"
 
+msgid "errors.auth.unable-to-login"
+msgstr "Sembla que no esteu autenticat o que la sessió ha caducat."
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "El vostre navegador no pot fer aquesta operació"
@@ -659,6 +679,19 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "El registre està desactivat."
+
+msgid "errors.team-leave.insufficient-members"
+msgstr ""
+"No hi ha suficients membres com per a abandonar l'equip, potser voleu "
+"eliminar-lo."
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "El membre que intenteu assignar no existeix."
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr ""
+"El propietari no pot abandonar l'equip, heu de reassignar el rol de "
+"propietat."
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr ""
@@ -2452,6 +2485,26 @@ msgid "workspace.options.interaction-after-delay"
 msgstr "Després de"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation"
+msgstr "Animació"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "Dissol"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "Cap"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "Empenta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "Lliscament"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
 msgstr "Afegeix una superposició de fons"
 
@@ -2476,6 +2529,14 @@ msgid "workspace.options.interaction-destination"
 msgstr "Destinació"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-duration"
+msgstr "Durada"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-linear"
+msgstr "Lineal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-enter"
 msgstr "El ratolí entra"
 
@@ -2498,6 +2559,10 @@ msgstr "Navega a: %s"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-none"
 msgstr "(sense definir)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "Efecte de desplaçament"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-on-click"
@@ -3001,6 +3066,10 @@ msgid "workspace.shape.menu.copy"
 msgstr "Copia"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Selecciona a la taula de treball"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-component"
 msgstr "Crea un component"
 
@@ -3019,6 +3088,10 @@ msgstr "Elimina l'inici del flux"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Desconnecta la instància"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Desenganxa les instàncies"
 
 msgid "workspace.shape.menu.difference"
 msgstr "Diferència"
@@ -3314,76 +3387,3 @@ msgstr "Actualitza"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Feu clic per a tancar el camí"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.dismiss-all"
-msgstr "Descarta-ho tot"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.fonts-added"
-msgid_plural "dashboard.fonts.fonts-added"
-msgstr[0] "S'ha afegit 1 tipografia"
-msgstr[1] "S'han afegit %s tipografies"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.upload-all"
-msgstr "Puja-ho tot"
-
-msgid "errors.team-leave.insufficient-members"
-msgstr ""
-"No hi ha suficients membres com per a abandonar l'equip, potser voleu "
-"eliminar-lo."
-
-msgid "errors.team-leave.member-does-not-exists"
-msgstr "El membre que intenteu assignar no existeix."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation-dissolve"
-msgstr "Dissol"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation-none"
-msgstr "Cap"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation-push"
-msgstr "Empenta"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation-slide"
-msgstr "Lliscament"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-duration"
-msgstr "Durada"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-linear"
-msgstr "Lineal"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.detach-instances-in-bulk"
-msgstr "Desenganxa les instàncies"
-
-msgid "errors.team-leave.owner-cant-leave"
-msgstr ""
-"El propietari no pot abandonar l'equip, heu de reassignar el rol de "
-"propietat."
-
-msgid "dashboard.import.import-warning"
-msgstr "Alguns fitxers contenen objectes no vàlids que s'han eliminat."
-
-msgid "errors.auth.unable-to-login"
-msgstr "Sembla que no esteu autenticat o que la sessió ha caducat."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-offset-effect"
-msgstr "Efecte de desplaçament"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation"
-msgstr "Animació"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.create-artboard-from-selection"
-msgstr "Selecciona a la taula de treball"

@@ -577,6 +577,10 @@ msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
 
 #: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Components to update:"
+
+#: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-cancel"
 msgstr "Cancel"
 
@@ -587,10 +591,6 @@ msgstr "Ok"
 #: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
 msgid "ds.confirm-title"
 msgstr "Are you sure?"
-
-#: src/app/main/ui/confirm.cljs
-msgid "ds.component-subtitle"
-msgstr "Components to update:"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "ds.updated-at"
@@ -607,12 +607,12 @@ msgstr "Your browser cannot do this operation"
 msgid "errors.email-already-exists"
 msgstr "Email already used"
 
-msgid "errors.email-as-password"
-msgstr "You can't use your email as password"
-
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.email-already-validated"
 msgstr "Email already validated."
+
+msgid "errors.email-as-password"
+msgstr "You can't use your email as password"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
@@ -1364,6 +1364,10 @@ msgstr ""
 msgid "modals.add-shared-confirm.message"
 msgstr "Add “%s” as Shared Library"
 
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "Big nudge"
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.confirm-email"
 msgstr "Verify new email"
@@ -1545,6 +1549,10 @@ msgstr "Are you sure you want to leave this team?"
 msgid "modals.leave-confirm.title"
 msgstr "Leaving team"
 
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "Nudge amount"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
 msgstr "Promote"
@@ -1571,6 +1579,20 @@ msgstr ""
 msgid "modals.remove-shared-confirm.message"
 msgstr "Remove “%s” as Shared Library"
 
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Small nudge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"You are about to update components in a shared library. This may affect "
+"other files that use it."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Update components in a shared library"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
 msgstr "Update"
@@ -1586,30 +1608,8 @@ msgstr ""
 "other files that use it."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "modals.update-remote-component-in-bulk.hint"
-msgstr ""
-"You are about to update components in a shared library. This may affect "
-"other files that use it."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Update a component in a shared library"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "modals.update-remote-component-in-bulk.message"
-msgstr "Update components in a shared library"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.nudge-title"
-msgstr "Nudge amount"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.small-nudge"
-msgstr "Small nudge"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.big-nudge"
-msgstr "Big nudge"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
@@ -2055,22 +2055,6 @@ msgid "workspace.gradients.radial"
 msgstr "Radial gradient"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.file"
-msgstr "File"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.edit"
-msgstr "Edit"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.view"
-msgstr "View"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.preferences"
-msgstr "Preferences"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Disable dynamic alignment"
 
@@ -2131,6 +2115,22 @@ msgid "workspace.header.menu.hide-textpalette"
 msgstr "Hide fonts palette"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "Edit"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "File"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Preferences"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "View"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "Select all"
 
@@ -2161,7 +2161,6 @@ msgstr "Show rules"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Show fonts palette"
-
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
@@ -2833,15 +2832,15 @@ msgstr "All corners"
 msgid "workspace.options.radius.single-corners"
 msgstr "Single corners"
 
+msgid "workspace.options.recent-fonts"
+msgstr "Recent"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.rotation"
 msgstr "Rotation"
 
 msgid "workspace.options.search-font"
 msgstr "Search font"
-
-msgid "workspace.options.recent-fonts"
-msgstr "Recent"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
@@ -3172,10 +3171,6 @@ msgstr "Detach instance"
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Detach instances"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.update-components-in-bulk"
-msgstr "Update main components"
-
 msgid "workspace.shape.menu.difference"
 msgstr "Difference"
 
@@ -3206,10 +3201,6 @@ msgid "workspace.shape.menu.flow-start"
 msgstr "Flow start"
 
 #: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.select-layer"
-msgstr "Select layer"
-
-#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.forward"
 msgstr "Bring forward"
 
@@ -3228,6 +3219,9 @@ msgstr "Group"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.hide"
 msgstr "Hide"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Show/Hide UI"
 
 msgid "workspace.shape.menu.intersection"
 msgstr "Intersection"
@@ -3250,6 +3244,10 @@ msgstr "Path"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Reset overrides"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "Select layer"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show"
@@ -3276,6 +3274,10 @@ msgstr "Unlock"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.unmask"
 msgstr "Unmask"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Update main components"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
@@ -3308,10 +3310,6 @@ msgstr "Assets"
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"
 msgstr "Color Palette (%s)"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.text-palette"
-msgstr "Typographies (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.comments"
@@ -3348,6 +3346,10 @@ msgstr "Rectangle (%s)"
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
 msgstr "Text (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "Typographies (%s)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
@@ -3478,6 +3480,3 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
-
-msgid "workspace.shape.menu.hide-ui"
-msgstr "Show/Hide UI"
