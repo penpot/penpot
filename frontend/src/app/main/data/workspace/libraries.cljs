@@ -317,29 +317,31 @@
   (ptk/reify ::rename-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [[path name] (cph/parse-path-name new-name)
-            component (get-in state [:workspace-data :components id])
-            objects (get component :objects)
-            ; Give the same name to the root shape
-            new-objects (assoc-in objects
-                                  [(:id component) :name]
-                                  name)
+      ;; NOTE: we need to ensure the component exists, because there
+      ;; are small posibilities of race conditions with component
+      ;; deletion.
+      (when-let [component (get-in state [:workspace-data :components id])]
+        (let [[path name] (cp/parse-path-name new-name)
+              objects     (get component :objects)
+              ;; Give the same name to the root shape
+              new-objects (assoc-in objects
+                                    [(:id component) :name]
+                                    name)
 
-            rchanges [{:type :mod-component
-                       :id id
-                       :name name
-                       :path path
-                       :objects new-objects}]
+              rchanges [{:type :mod-component
+                         :id id
+                         :name name
+                         :path path
+                         :objects new-objects}]
 
-            uchanges [{:type :mod-component
-                       :id id
-                       :name (:name component)
-                       :path (:path component)
-                       :objects objects}]]
-
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+              uchanges [{:type :mod-component
+                         :id id
+                         :name (:name component)
+                         :path (:path component)
+                         :objects objects}]]
+          (rx/of (dch/commit-changes {:redo-changes rchanges
+                                      :undo-changes uchanges
+                                      :origin it})))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."

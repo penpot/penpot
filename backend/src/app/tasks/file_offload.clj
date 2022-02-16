@@ -29,7 +29,7 @@
 
 (defn- offload-candidate
   [{:keys [storage conn backend] :as cfg} {:keys [id data] :as file}]
-  (l/debug :action "offload file data" :id id)
+  (l/debug :hint "offload file data" :id id)
   (let [backend (simpl/resolve-backend storage backend)]
     (->> (simpl/content data)
          (simpl/put-object backend file))

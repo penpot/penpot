@@ -41,6 +41,24 @@
 - Cleanup unused static images (by @rhcarvalho) [#1561](https://github.com/penpot/penpot/pull/1561)
 - Compress static images to save space (by @rhcarvalho) [#1562](https://github.com/penpot/penpot/pull/1562)
 
+## 1.11.2-beta
+
+### :bug: Bugs fixed
+
+- Fix issue on handling empty content on boolean shapes
+- Fix race condition issue on component renaming
+- Handle EOF errors on writting streamed response
+- Handle EOF errors on websocket send/ping methods
+- Disable parallel upload of file media on import (causes too much
+  contention on the rlimit subsistem that does not works as expected
+  on high load).
+
+### :sparkles: New features
+
+- Add health check endpoint on API
+- Increase default max connection pool size to 60
+- Reduce resource usage of the error reporter.
+
 ## 1.11.1-beta
 
 ### :bug: Bugs fixed

@@ -326,6 +326,9 @@
   [bool-type contents]
   ;; We apply the boolean operation in to each pair and the result to the next
   ;; element
-  (->> contents
-       (reduce (partial content-bool-pair bool-type))
-       (into [])))
+  (if (seq contents)
+    (->> contents
+         (reduce (partial content-bool-pair bool-type))
+         (into []))
+    []))
+

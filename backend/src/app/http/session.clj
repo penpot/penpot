@@ -40,8 +40,12 @@
           token      (tokens :generate {:iss "authentication"
                                         :iat (dt/now)
                                         :uid profile-id})
+
+          now        (dt/now)
           params     {:user-agent user-agent
                       :profile-id profile-id
+                      :created-at now
+                      :updated-at now
                       :id token}]
       (db/insert! pool :http-session params)
       token))
@@ -146,8 +150,7 @@
 
 (defmethod ig/prep-key ::session
   [_ cfg]
-  (d/merge {:buffer-size 64}
-           (d/without-nils cfg)))
+  (d/merge {:buffer-size 128} (d/without-nils cfg)))
 
 (defmethod ig/init-key ::session
   [_ {:keys [pool tokens] :as cfg}]
@@ -222,7 +225,7 @@
 
             (= :size reason)
             (l/debug :task "updater"
-                     :action "update sessions"
+                     :hint "update sessions"
                      :reason (name reason)
                      :count result))
           (recur))))))
@@ -251,17 +254,20 @@
 
 (defmethod ig/init-key ::gc-task
   [_ {:keys [pool max-age] :as cfg}]
+  (l/debug :hint "initializing session gc task" :max-age max-age)
   (fn [_]
     (db/with-atomic [conn pool]
       (let [interval (db/interval max-age)
-            result   (db/exec-one! conn [sql:delete-expired interval])
+            result   (db/exec-one! conn [sql:delete-expired interval interval])
             result   (:next.jdbc/update-count result)]
         (l/debug :task "gc"
-                 :action "clean http sessions"
-                 :count result)
+                 :hint "clean http sessions"
+                 :deleted result)
         result))))
 
 (def ^:private
   sql:delete-expired
   "delete from http_session
-    where updated_at < now() - ?::interval")
+    where updated_at < now() - ?::interval
+       or (updated_at is null and
+           created_at < now() - ?::interval)")

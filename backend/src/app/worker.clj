@@ -106,7 +106,7 @@
           (and (instance? java.sql.SQLException val)
                (contains? #{"08003" "08006" "08001" "08004"} (.getSQLState ^java.sql.SQLException val)))
           (do
-            (l/error :hint "connection error, trying resume in some instants")
+            (l/warn :hint "connection error, trying resume in some instants")
             (a/<! (a/timeout poll-interval))
             (recur))
 
@@ -119,8 +119,8 @@
 
           (instance? Exception val)
           (do
-            (l/error :cause val
-                     :hint "unexpected error ocurried on polling the database (will resume in some instants)")
+            (l/warn :cause val
+                    :hint "unexpected error ocurried on polling the database (will resume in some instants)")
             (a/<! (a/timeout poll-ms))
             (recur))
 
@@ -262,8 +262,7 @@
   [error item]
   (let [data (ex-data error)]
     (merge
-     {:id            (uuid/next)
-      :hint          (ex-message error)
+     {:hint          (ex-message error)
       :spec-problems (some->> data ::s/problems (take 10) seq vec)
       :spec-value    (some->> data ::s/value)
       :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))
@@ -429,21 +428,19 @@
 (defn- execute-scheduled-task
   [{:keys [executor pool] :as cfg} {:keys [id] :as task}]
   (letfn [(run-task [conn]
-            (try
-              (when (db/exec-one! conn [sql:lock-scheduled-task (d/name id)])
-                (l/debug :action "execute scheduled task" :id id)
-                ((:fn task) task))
-              (catch Throwable e
-                e)))
+            (when (db/exec-one! conn [sql:lock-scheduled-task (d/name id)])
+              (l/debug :action "execute scheduled task" :id id)
+              ((:fn task) task)))
 
           (handle-task []
-            (db/with-atomic [conn pool]
-              (let [result (run-task conn)]
-                (when (ex/exception? result)
-                  (l/error :cause result
-                           :hint "unhandled exception on scheduled task"
-                           :id id)))))]
-
+            (try
+              (db/with-atomic [conn pool]
+                (run-task conn))
+              (catch Throwable cause
+                (l/error :hint "unhandled exception on scheduled task"
+                         ::l/context (get-error-context cause task)
+                         :task-id id
+                         :cause cause))))]
     (try
       (px/run! executor handle-task)
       (finally

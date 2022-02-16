@@ -177,7 +177,7 @@
         :task :file-offload})
 
      (when (contains? cf/flags :audit-log-archive)
-       {:cron #app/cron "0 */3 * * * ?" ;; every 3m
+       {:cron #app/cron "0 */5 * * * ?" ;; every 5m
         :task :audit-log-archive})
 
      (when (contains? cf/flags :audit-log-gc)
@@ -186,7 +186,7 @@
 
      (when (or (contains? cf/flags :telemetry)
                (cf/get :telemetry-enabled))
-       {:cron #app/cron "0 0 */6 * * ?" ;; every 6h
+       {:cron #app/cron "0 30 */3,23 * * ?"
         :task :telemetry})]}
 
    :app.worker/registry

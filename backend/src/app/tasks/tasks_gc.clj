@@ -28,7 +28,7 @@
       (let [interval (db/interval max-age)
             result   (db/exec-one! conn [sql:delete-completed-tasks interval])
             result   (:next.jdbc/update-count result)]
-        (l/debug :action "trim completed tasks table" :removed result)
+        (l/debug :hint "trim completed tasks table" :removed result)
         result))))
 
 (def ^:private

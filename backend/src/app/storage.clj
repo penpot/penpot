@@ -305,7 +305,7 @@
               (recur (+ n ^long total)))
             (do
               (l/info :task "gc-deleted"
-                      :action "permanently delete items"
+                      :hint "permanently delete items"
                       :count n)
               {:deleted n})))))))
 
@@ -379,10 +379,10 @@
                      (+ cntd (count to-delete))))
             (do
               (l/info :task "gc-touched"
-                      :action "mark freeze"
+                      :hint "mark freeze"
                       :count cntf)
               (l/info :task "gc-touched"
-                      :action "mark for deletion"
+                      :hint "mark for deletion"
                       :count cntd)
               {:freeze cntf :delete cntd})))))))
 
@@ -461,7 +461,7 @@
                      (+ d (count to-delete))))
             (do
               (l/info :task "recheck"
-                      :action "recheck items"
+                      :hint "recheck items"
                       :processed n
                       :deleted d)
               {:processed n :deleted d})))))))
