@@ -163,7 +163,9 @@
       (let [objects           (wsh/lookup-page-objects state)
             ids-with-children (into (vec ids) (mapcat #(cph/get-children-ids objects %)) ids)
             object-modifiers  (get state :workspace-modifiers)
-            ignore-tree       (get-ignore-tree object-modifiers objects ids)]
+            shapes            (map (d/getf objects) ids)
+            ignore-tree       (->> (map #(get-ignore-tree object-modifiers objects %) shapes)
+                                   (reduce merge {}))]
 
         (rx/of (dwu/start-undo-transaction)
                (dwg/move-frame-guides ids-with-children)
@@ -245,7 +247,7 @@
     (reduce set-child modif-tree children)))
 
 (defn- get-ignore-tree
-  "Retrieves a map with the flag `ignore-tree` given a tree of modifiers"
+  "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
   ([modif-tree objects shape]
    (get-ignore-tree modif-tree objects shape nil nil {}))
 
@@ -261,7 +263,7 @@
          ignore-tree (assoc ignore-tree shape-id ignore-geometry?)
 
          set-child
-         (fn [modif-tree child]
+         (fn [ignore-tree child]
            (get-ignore-tree modif-tree objects child root transformed-root ignore-tree))]
 
      (reduce set-child ignore-tree children))))

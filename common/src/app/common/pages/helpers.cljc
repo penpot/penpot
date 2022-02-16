@@ -243,8 +243,7 @@
     shape
 
     (some? (:shape-ref shape))
-    (recur (get objects (:parent-id shape))
-           objects)))
+    (recur objects (get objects (:parent-id shape)))))
 
 (defn make-container
   [page-or-component type]

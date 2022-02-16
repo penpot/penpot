@@ -34,6 +34,7 @@
 - Fixed color palette outside viewport [Taiga #2715](https://tree.taiga.io/project/penpot/issue/2715)
 - Fixed missing translate string [Taiga #2780](https://tree.taiga.io/project/penpot/issue/2780)
 - Fixed handoff shadow type text [Taiga #2717](https://tree.taiga.io/project/penpot/issue/2717)
+- Fixed components get "dirty" marker when moved [Taiga #2764](https://tree.taiga.io/project/penpot/issue/2764)
 
 ### :arrow_up: Deps updates
 
