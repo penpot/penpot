@@ -6,7 +6,7 @@
 
 (ns app.common.data
   "Data manipulation and query helper functions."
-  (:refer-clojure :exclude [read-string hash-map merge name parse-double])
+  (:refer-clojure :exclude [read-string hash-map merge name parse-double group-by])
   #?(:cljs
      (:require-macros [app.common.data]))
   (:require
@@ -609,3 +609,70 @@
           (if (or (keyword? k) (string? k))
             [(keyword (str/kebab (name k))) v]
             [k v])))))
+
+
+(defn group-by
+  ([kf coll] (group-by kf identity coll))
+  ([kf vf coll]
+   (let [conj (fnil conj [])]
+     (reduce (fn [result item]
+               (update result (kf item) conj (vf item)))
+             {}
+             coll))))
+
+(defn group-by'
+  "A variant of group-by that uses a set for collecting results."
+  ([kf coll] (group-by kf identity coll))
+  ([kf vf coll]
+   (let [conj (fnil conj #{})]
+     (reduce (fn [result item]
+               (update result (kf item) conj (vf item)))
+             {}
+             coll))))
+
+;; TEMPORAL COPY of clojure-1.11 iteration function, should be
+;; replaced with the builtin on when stable version is released.
+
+#?(:clj
+   (defn iteration
+     "Creates a seqable/reducible via repeated calls to step,
+     a function of some (continuation token) 'k'. The first call to step
+     will be passed initk, returning 'ret'. Iff (somef ret) is true,
+     (vf ret) will be included in the iteration, else iteration will
+     terminate and vf/kf will not be called. If (kf ret) is non-nil it
+     will be passed to the next step call, else iteration will terminate.
+     This can be used e.g. to consume APIs that return paginated or batched data.
+      step - (possibly impure) fn of 'k' -> 'ret'
+      :somef - fn of 'ret' -> logical true/false, default 'some?'
+      :vf - fn of 'ret' -> 'v', a value produced by the iteration, default 'identity'
+      :kf - fn of 'ret' -> 'next-k' or nil (signaling 'do not continue'), default 'identity'
+      :initk - the first value passed to step, default 'nil'
+     It is presumed that step with non-initk is unreproducible/non-idempotent.
+     If step with initk is unreproducible it is on the consumer to not consume twice."
+     {:added "1.11"}
+     [step & {:keys [somef vf kf initk]
+              :or {vf identity
+                   kf identity
+                   somef some?
+                   initk nil}}]
+     (reify
+       clojure.lang.Seqable
+       (seq [_]
+         ((fn next [ret]
+            (when (somef ret)
+              (cons (vf ret)
+                    (when-some [k (kf ret)]
+                      (lazy-seq (next (step k)))))))
+          (step initk)))
+       clojure.lang.IReduceInit
+       (reduce [_ rf init]
+         (loop [acc init
+                ret (step initk)]
+           (if (somef ret)
+             (let [acc (rf acc (vf ret))]
+               (if (reduced? acc)
+                 @acc
+                 (if-some [k (kf ret)]
+                   (recur acc (step k))
+                   acc)))
+             acc))))))
