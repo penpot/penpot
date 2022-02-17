@@ -61,13 +61,13 @@
         explain (us/pretty-explain data)]
     {:status 400
      :body (-> data
-               (dissoc ::s/problems)
-               (dissoc ::s/value)
+               (dissoc ::s/problems ::s/value)
                (cond-> explain (assoc :explain explain)))}))
 
 (defmethod handle-exception :assertion
   [error request]
-  (let [edata (ex-data error)]
+  (let [edata (ex-data error)
+        explain (us/pretty-explain edata)]
     (l/error ::l/raw (ex-message error)
              ::l/context (get-error-context request error)
              :cause error)
@@ -75,7 +75,9 @@
     {:status 500
      :body {:type :server-error
             :code :assertion
-            :data (dissoc edata ::s/problems ::s/value ::s/spec)}}))
+            :data (-> edata
+                      (dissoc ::s/problems ::s/value ::s/spec)
+                      (cond-> explain (assoc :explain explain)))}}))
 
 (defmethod handle-exception :not-found
   [err _]

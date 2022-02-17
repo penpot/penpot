@@ -84,7 +84,6 @@
 
         ;; REFS
         viewport-ref      (mf/use-ref nil)
-        raw-position-ref  (mf/use-ref nil) ;; Stores the raw position of the cursor
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -130,7 +129,7 @@
         on-pointer-down   (actions/on-pointer-down)
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
         on-pointer-leave  (actions/on-pointer-leave in-viewport?)
-        on-pointer-move   (actions/on-pointer-move viewport-ref raw-position-ref zoom move-stream)
+        on-pointer-move   (actions/on-pointer-move viewport-ref zoom move-stream)
         on-pointer-up     (actions/on-pointer-up)
         on-move-selected  (actions/on-move-selected hover hover-ids selected space?)
         on-menu-selected  (actions/on-menu-selected hover hover-ids selected)
@@ -169,7 +168,7 @@
     (hooks/setup-viewport-size viewport-ref)
     (hooks/setup-cursor cursor alt? ctrl? space? panning drawing-tool drawing-path? node-editing?)
     (hooks/setup-keyboard alt? ctrl? space?)
-    (hooks/setup-hover-shapes page-id move-stream raw-position-ref base-objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
+    (hooks/setup-hover-shapes page-id move-stream base-objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path?)
     (hooks/setup-active-frames base-objects vbox hover active-frames)

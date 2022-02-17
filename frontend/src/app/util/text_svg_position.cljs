@@ -99,27 +99,27 @@
         zoom          (get-in @st/state [:workspace-local :zoom])
         text-data     (calc-text-node-positions base-node viewport zoom)]
     (->> text-data
-         (map (fn [{:keys [node position text]}]
-                (let [{:keys [x y width height]} position
-                      rtl?   (= "rtl" (.-dir (.-parentElement ^js node)))
-                      styles (js/getComputedStyle ^js node)
-                      get    (fn [prop]
-                               (let [value (.getPropertyValue styles prop)]
-                                 (when (and value (not= value ""))
-                                   value)))]
-                  (d/without-nils
-                   {:rtl?                rtl?
-                    :x                   (if rtl? (+ x width) x)
-                    :y                   (+ y height)
-                    :width               width
-                    :height              height
-                    :font-family         (str (get "font-family"))
-                    :font-size           (str (get "font-size"))
-                    :font-weight         (str (get "font-weight"))
-                    :text-transform      (str (get "text-transform"))
-                    :text-decoration     (str (get "text-decoration"))
-                    :font-style          (str (get "font-style"))
-                    :fill-color          (or (get "--fill-color") "#000000")
-                    :fill-color-gradient (transit/decode-str (get "--fill-color-gradient"))
-                    :fill-opacity        (d/parse-double (or (get "--fill-opacity") "1"))
-                    :text                text})))))))
+         (mapv (fn [{:keys [node position text]}]
+                 (let [{:keys [x y width height]} position
+                       rtl?   (= "rtl" (.-dir (.-parentElement ^js node)))
+                       styles (js/getComputedStyle ^js node)
+                       get    (fn [prop]
+                                (let [value (.getPropertyValue styles prop)]
+                                  (when (and value (not= value ""))
+                                    value)))]
+                   (d/without-nils
+                    {:rtl?                rtl?
+                     :x                   (if rtl? (+ x width) x)
+                     :y                   (+ y height)
+                     :width               width
+                     :height              height
+                     :font-family         (str (get "font-family"))
+                     :font-size           (str (get "font-size"))
+                     :font-weight         (str (get "font-weight"))
+                     :text-transform      (str (get "text-transform"))
+                     :text-decoration     (str (get "text-decoration"))
+                     :font-style          (str (get "font-style"))
+                     :fill-color          (or (get "--fill-color") "#000000")
+                     :fill-color-gradient (transit/decode-str (get "--fill-color-gradient"))
+                     :fill-opacity        (d/parse-double (or (get "--fill-opacity") "1"))
+                     :text                text})))))))

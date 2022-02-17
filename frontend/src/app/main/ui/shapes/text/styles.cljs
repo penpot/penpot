@@ -35,8 +35,7 @@
   ;; the property it's known.
   ;; `inline-flex` is similar to flex but `overflows` outside the bounds of the
   ;; parent
-  (let [auto-width?  (= grow-type :auto-width)
-        auto-height? (= grow-type :auto-height)]
+  (let [auto-width?  (= grow-type :auto-width)]
     #js {:display "inline-flex"
          :flexDirection "column"
          :justifyContent "inherit"

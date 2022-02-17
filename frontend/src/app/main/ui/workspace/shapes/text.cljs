@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.shapes.text
   (:require
    [app.common.attrs :as attrs]
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
@@ -150,7 +151,9 @@
                                            (gsh/transform-rect mtx)))))]
               (reset! local-position-data position-data))))
 
-        [shape-ref on-change-node] (use-mutable-observer handle-change-foreign-object)]
+        [shape-ref on-change-node] (use-mutable-observer handle-change-foreign-object)
+
+        show-svg-text? (or (some? (:position-data shape)) (some? @local-position-data))]
 
     ;; When the text is "dirty?" we get recalculate the positions
     (mf/use-layout-effect
@@ -159,21 +162,22 @@
        (let [node (mf/ref-val shape-ref)]
          (when (and dirty? (some? node))
            (let [position-data (utp/calc-position-data node)]
-             (reset! local-position-data nil)
-             (st/emit! (dch/update-shapes
-                        [id]
-                        (fn [shape]
-                          (-> shape
-                              (dissoc :dirty?)
-                              (assoc :position-data position-data)))
-                        {:save-undo? false})))))))
+             (when (d/not-empty? position-data)
+               (reset! local-position-data nil)
+               (st/emit! (dch/update-shapes
+                          [id]
+                          (fn [shape]
+                            (-> shape
+                                (dissoc :dirty?)
+                                (assoc :position-data position-data)))
+                          {:save-undo? false}))))))))
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
      ;; and updates the selrect accordingly
      [:*
       [:g.text-shape {:ref on-change-node
-                      :opacity (when (or edition? (some? (:position-data shape))) 0)
+                      :opacity (when (or edition? show-svg-text?) 0)
                       :pointer-events "none"}
 
        ;; The `:key` prop here is mandatory because the
@@ -186,7 +190,7 @@
                                 :edition? edition?
                                 :key (str id edition?)}]]
 
-      (when (and (or (some? (:position-data shape)) (some? local-position-data)))
+      (when show-svg-text?
         (let [shape
               (cond-> shape
                 (some? @local-position-data)

@@ -23,7 +23,7 @@
   [props]
   
   (let [render-id (mf/use-ctx muc/render-ctx)
-        {:keys [id x y width height position-data] :as shape} (obj/get props "shape")
+        {:keys [position-data] :as shape} (obj/get props "shape")
         transform (str (gsh/transform-matrix shape))
         group-props (-> #js {:transform transform}
                         (attrs/add-style-attrs shape render-id))

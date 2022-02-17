@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.rect :as gshr]
    [app.common.pages.helpers :as cph]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
@@ -98,7 +97,7 @@
             (some #(cph/is-parent? objects % group-id))
             (not))))
 
-(defn setup-hover-shapes [page-id move-stream raw-position-ref objects transform selected ctrl? hover hover-ids hover-disabled? zoom]
+(defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids hover-disabled? zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         ctrl-ref (mf/use-ref @ctrl?)

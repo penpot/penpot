@@ -15,15 +15,11 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.cursors :as cur]
-   [app.main.ui.hooks.mutable-observer :refer [use-mutable-observer]]
-   [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text.styles :as sts]
-   [app.main.ui.shapes.text.svg-text :as svg]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
-   [app.util.text-svg-position :as utp]
    [goog.events :as events]
    [rumext.alpha :as mf])
   (:import
