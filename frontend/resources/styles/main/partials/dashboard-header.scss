@@ -5,14 +5,18 @@
 // Copyright (c) UXBOX Labs SL
 
 .dashboard-header {
-  align-items: center;
-  background-color: $color-white;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: $color-white;
   height: 63px;
   padding: $size-1 $size-4 $size-1 $size-2;
   position: relative;
   z-index: 10;
-  justify-content: space-between;
+  &.team {
+    display: grid;
+    grid-template-columns: 20% 1fr 20%;
+  }
 
   .element-name {
     margin-right: $size-2;
@@ -33,27 +37,26 @@
 
   nav {
     display: flex;
-    width: 300px;
+    align-items: flex-end;
     justify-content: center;
     z-index: 1;
-    margin-top: 39px;
 
     ul {
       display: flex;
-      align-items: center;
       font-size: $fs14;
       justify-content: center;
+      margin: 0;
     }
 
     li {
       a {
+        display: flex;
         align-items: center;
+        flex-basis: 140px;
         border-bottom: 3px solid transparent;
         color: $color-gray-30;
-        display: flex;
         height: 40px;
         padding: $size-1 $size-5;
-        flex-basis: 140px;
 
         &:hover {
           color: $color-black;
@@ -71,6 +74,8 @@
 
   .dashboard-title {
     display: flex;
+    align-items: center;
+
     h1 {
       color: $color-black;
       display: flex;
@@ -101,6 +106,12 @@
         fill: $color-primary-dark;
       }
     }
+  }
+
+  .dashboard-buttons {
+    display: flex;
+    justify-content: end;
+    align-items: center;
   }
 
   .dashboard-header-actions {

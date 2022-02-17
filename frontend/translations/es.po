@@ -1165,6 +1165,14 @@ msgstr "Integrantes"
 msgid "labels.member"
 msgstr "Integrante"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.invitations"
+msgstr "Invitaciones"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Status"
+
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
 msgstr "(tú)"
@@ -1300,6 +1308,34 @@ msgstr "El servicio no está disponible"
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Configuración"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Invitaciones"
+
+#:src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "Pendiente"
+
+#:src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Expirada"
+
+#:src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "Reenviar invitacion"
+
+#:src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Eliminar invitation"
+
+#:src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "No hay invitaciones"
+
+#:src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr "Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
 
 #: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.share-prototype"
@@ -1848,6 +1884,10 @@ msgstr "Perfil - Penpot"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-members"
 msgstr "Integrantes - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "Invitaciones - %s - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-settings"

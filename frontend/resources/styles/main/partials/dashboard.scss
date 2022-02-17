@@ -90,14 +90,25 @@
   margin-top: 20px;
   font-size: $fs16;
 
+  &.team-members {
+    margin-bottom: 52px;
+  }
+
+  &.invitations {
+    .table-row {
+      display: grid;
+      grid-template-columns: 43% 1fr 109px 12px;
+    }
+  }
+
   .table-header {
+    display: grid;
+    grid-template-columns: 43% 1fr 109px 12px;
     max-width: 1040px;
-    display: flex;
     background-color: $color-white;
     color: $color-gray-30;
     width: 100%;
     height: 40px;
-    align-items: center;
     padding: 0px 16px;
   }
 

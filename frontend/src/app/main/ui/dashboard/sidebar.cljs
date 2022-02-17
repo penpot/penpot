@@ -229,12 +229,13 @@
 
 (mf/defc team-options-dropdown
   [{:keys [team profile] :as props}]
-  (let [go-members  (st/emitf (dd/go-to-team-members))
-        go-settings (st/emitf (dd/go-to-team-settings))
+  (let [go-members     (st/emitf (dd/go-to-team-members))
+        go-invitations (st/emitf (dd/go-to-team-invitations))
+        go-settings    (st/emitf (dd/go-to-team-settings))
 
-        members-map (mf/deref refs/dashboard-team-members)
-        members     (vals members-map)
-        can-rename? (or (get-in team [:permissions :is-owner]) (get-in team [:permissions :is-admin]))
+        members-map    (mf/deref refs/dashboard-team-members)
+        members        (vals members-map)
+        can-rename?    (or (get-in team [:permissions :is-owner]) (get-in team [:permissions :is-admin]))
 
         on-success
         (fn []
@@ -307,6 +308,7 @@
 
     [:ul.dropdown.options-dropdown
      [:li {:on-click go-members :data-test "team-members"} (tr "labels.members")]
+     [:li {:on-click go-invitations :data-test "team-invitations"} (tr "labels.invitations")]
      [:li {:on-click go-settings :data-test "team-settings"} (tr "labels.settings")]
      [:hr]
      (when can-rename?
@@ -466,7 +468,7 @@
      [:div.profile {:on-click #(reset! show true)
                     :data-test "profile-btn"}
       [:img {:src photo}]
-      [:span (:fullname profile)]
+      [:span (:fullname profile)]]
 
      [:& dropdown {:on-close #(reset! show false)
                    :show @show}
@@ -498,7 +500,7 @@
        [:li.separator {:on-click #(on-click (du/logout) %)
                        :data-test "logout-profile-opt"}
         [:span.icon i/exit]
-        [:span.text (tr "labels.logout")]]]]]
+        [:span.text (tr "labels.logout")]]]]
 
      (when (and team profile)
        [:& comments-section {:profile profile

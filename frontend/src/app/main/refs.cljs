@@ -67,6 +67,9 @@
 (def dashboard-team-members
   (l/derived :dashboard-team-members st/state))
 
+(def dashboard-team-invitations
+  (l/derived :dashboard-team-invitations st/state))
+
 (def dashboard-selected-project
   (l/derived (fn [state]
                (get-in state [:dashboard-local :selected-project]))

@@ -224,3 +224,28 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= "admin" (:role result))))))
+
+
+(t/deftest delete-team-invitation
+  (let [prof  (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id prof)})
+        data {::th/type :delete-team-invitation
+              :profile-id (:id prof)
+              :team-id (:id team)
+              :email "TEST1@mail.com"}]
+
+    ;;insert an entry on the database with an invitation
+    (db/insert! th/*pool* :team-invitation
+                {:team-id (:team-id data)
+                 :email-to "test1@mail.com"
+                 :role "editor"
+                 :valid-until (dt/in-future "48h")})
+
+    (let [out (th/mutation! data)
+          ;;retrieve the value from the database and check its content
+          result (db/get-by-params th/*pool* :team-invitation
+                                   {:team-id (:team-id data) :email-to "test1@mail.com"}
+                                   {:check-not-found false})]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out)))
+      (t/is (nil? result)))))

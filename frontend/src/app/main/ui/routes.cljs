@@ -66,6 +66,7 @@
 
    ["/dashboard/team/:team-id"
     ["/members"              :dashboard-team-members]
+    ["/invitations"          :dashboard-team-invitations]
     ["/settings"             :dashboard-team-settings]
     ["/projects"             :dashboard-projects]
     ["/search"               :dashboard-search]

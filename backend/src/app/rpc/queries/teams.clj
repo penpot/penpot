@@ -238,11 +238,12 @@
   (s/keys :req-un [::profile-id ::team-id]))
 
 (def sql:team-invitations
-  "select email_to as email, role, (valid_until < now()) as expired from team_invitation where team_id = ?")
-
+  "select email_to as email, role, (valid_until < now()) as expired 
+   from team_invitation where team_id = ? order by valid_until desc")
 
 (sv/defmethod ::team-invitations
   [{:keys [pool] :as cfg} {:keys [profile-id team-id]}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
-    (db/exec! conn [sql:team-invitations team-id])))
+    (->> (db/exec! conn [sql:team-invitations team-id])
+         (mapv #(update % :role keyword)))))
