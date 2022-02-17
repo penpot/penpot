@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.math :as mth]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.interactions :as cti]
@@ -265,40 +266,31 @@
 (declare prepare-duplicate-shape-change)
 
 (defn prepare-duplicate-changes
-  "Prepare objects to paste: generate new id, give them unique names,
-  move to the position of mouse pointer, and find in what frame they
-  fit."
-  [objects page-id unames ids delta]
-  (let [unames         (volatile! unames)
+  "Prepare objects to duplicate: generate new id, give them unique names,
+  move to the desired position, and recalculate parents and frames as needed."
+  [page-objects all-objects page-id ids delta it]
+  (let [unames         (volatile! (dwc/retrieve-used-names page-objects))
         update-unames! (fn [new-name] (vswap! unames conj new-name))
-        all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids objects %2))) #{} ids)
+        all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids all-objects %2))) #{} ids)
         ids-map        (into {} (map #(vector % (uuid/next))) all-ids)]
-    (loop [ids   (seq ids)
-           chgs  []]
-      (if ids
-        (let [id     (first ids)
-              result (prepare-duplicate-change objects page-id unames update-unames! ids-map id delta)
-              result (if (vector? result) result [result])]
-          (recur
-           (next ids)
-           (into chgs result)))
-        chgs))))
+    (reduce (fn [changes id]
+              (prepare-duplicate-change changes all-objects page-id unames update-unames! ids-map id delta))
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects all-objects))
+            ids)))
 
 (defn- prepare-duplicate-change
-  [objects page-id unames update-unames! ids-map id delta]
+  [changes objects page-id unames update-unames! ids-map id delta]
   (let [obj (get objects id)]
     (if (cph/frame-shape? obj)
-      (prepare-duplicate-frame-change objects page-id unames update-unames! ids-map obj delta)
-      (prepare-duplicate-shape-change objects page-id unames update-unames! ids-map obj delta (:frame-id obj) (:parent-id obj)))))
+      (prepare-duplicate-frame-change changes objects page-id unames update-unames! ids-map obj delta)
+      (prepare-duplicate-shape-change changes objects page-id unames update-unames! ids-map obj delta (:frame-id obj) (:parent-id obj)))))
 
 (defn- prepare-duplicate-frame-change
-  [objects page-id unames update-unames! ids-map obj delta]
+  [changes objects page-id unames update-unames! ids-map obj delta]
   (let [new-id   (ids-map (:id obj))
         frame-name (dwc/generate-unique-name @unames (:name obj))
         _          (update-unames! frame-name)
-
-        sch        (->> (map #(get objects %) (:shapes obj))
-                        (mapcat #(prepare-duplicate-shape-change objects page-id unames update-unames! ids-map % delta new-id new-id)))
 
         new-frame  (-> obj
                        (assoc :id new-id
@@ -308,18 +300,27 @@
                        (geom/move delta)
                        (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
-        fch {:type :add-obj
-             :old-id (:id obj)
-             :page-id page-id
-             :id new-id
-             :frame-id uuid/zero
-             :obj new-frame}]
+        changes (-> (pcb/add-obj changes new-frame)
+                    (pcb/amend-last-change #(assoc % :old-id (:id obj))))
 
-    (into [fch] sch)))
+        changes (reduce (fn [changes child]
+                          (prepare-duplicate-shape-change changes
+                                                          objects
+                                                          page-id
+                                                          unames
+                                                          update-unames!
+                                                          ids-map
+                                                          child
+                                                          delta
+                                                          new-id
+                                                          new-id))
+                        changes
+                        (map (d/getf objects) (:shapes obj)))]
+    changes))
 
 (defn- prepare-duplicate-shape-change
-  [objects page-id unames update-unames! ids-map obj delta frame-id parent-id]
-  (when (some? obj)
+  [changes objects page-id unames update-unames! ids-map obj delta frame-id parent-id]
+  (if (some? obj)
     (let [new-id      (ids-map (:id obj))
           parent-id   (or parent-id frame-id)
           name        (dwc/generate-unique-name @unames (:name obj))
@@ -328,55 +329,44 @@
           new-obj     (-> obj
                           (assoc :id new-id
                                  :name name
+                                 :parent-id parent-id
                                  :frame-id frame-id)
                           (dissoc :shapes)
                           (geom/move delta)
                           (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
-          children-changes
-          (loop [result []
-                 cid  (first (:shapes obj))
-                 cids (rest (:shapes obj))]
-            (if (nil? cid)
-              result
-              (let [obj (get objects cid)
-                    changes (prepare-duplicate-shape-change objects page-id unames update-unames! ids-map obj delta frame-id new-id)]
-                (recur
-                 (into result changes)
-                 (first cids)
-                 (rest cids)))))]
+          changes (pcb/add-obj changes new-obj {:ignore-touched true})
+          changes (-> (pcb/add-obj changes new-obj {:ignore-touched true})
+                      (pcb/amend-last-change #(assoc % :old-id (:id obj))))
 
-      (into [{:type :add-obj
-              :id new-id
-              :page-id page-id
-              :old-id (:id obj)
-              :frame-id frame-id
-              :parent-id parent-id
-              :ignore-touched true
-              :obj new-obj}]
-            children-changes))))
-
-(declare update-indices)
+          changes (reduce (fn [changes child]
+                            (prepare-duplicate-shape-change changes
+                                                            objects
+                                                            page-id
+                                                            unames
+                                                            update-unames!
+                                                            ids-map
+                                                            child
+                                                            delta
+                                                            frame-id
+                                                            new-id))
+                          changes
+                          (map (d/getf objects) (:shapes obj)))]
+      changes)))
 
 (defn duplicate-changes-update-indices
-  "Parses the change set when duplicating to set-up the appropriate indices"
+  "Updates the changes to correctly set the indexes of the duplicated objects,
+  depending on the index of the original object respect their parent."
   [objects ids changes]
+  (let [;; index-map is a map that goes from parent-id => vector([id index-in-parent])
+        index-map (reduce (fn [index-map id]
+                            (let [parent-id    (get-in objects [id :parent-id])
+                                  parent-index (cph/get-position-on-parent objects id)]
+                              (update index-map parent-id (fnil conj []) [id parent-index])))
+                          {}
+                          ids)
 
-  (let [process-id
-        (fn [index-map id]
-          (let [parent-id    (get-in objects [id :parent-id])
-                parent-index (cph/get-position-on-parent objects id)]
-            (update index-map parent-id (fnil conj []) [id parent-index])))
-        index-map (reduce process-id {} ids)]
-    (-> changes (update-indices index-map))))
-
-(defn update-indices
-  "Fixes the indices for a set of changes after a duplication. We need to
-  fix the indices to take into the account the movement of indices.
-
-  index-map is a map that goes from parent-id => vector([id index-in-parent])"
-  [changes index-map]
-  (let [inc-indices
+        inc-indices
         (fn [[offset result] [id index]]
           [(inc offset) (conj result [id (+ index offset)])])
 
@@ -388,14 +378,12 @@
                (second)
                (into {})))
 
-        objects-indices (->> index-map (d/mapm fix-indices) (vals) (reduce merge))
+        objects-indices (->> index-map (d/mapm fix-indices) (vals) (reduce merge))]
 
-        update-change
-        (fn [change]
-          (let [index (get objects-indices (:old-id change))]
-            (-> change
-                (assoc :index index))))]
-    (mapv update-change changes)))
+    (pcb/amend-changes
+      changes
+      (fn [change]
+        (assoc change :index (get objects-indices (:old-id change)))))))
 
 (defn clear-memorize-duplicated
   []
@@ -457,17 +445,14 @@
                            (calc-duplicate-delta obj state objects))
                          (gpt/point 0 0))
 
-              unames   (dwc/retrieve-used-names objects)
-
-              rchanges (->> (prepare-duplicate-changes objects page-id unames selected delta)
-                            (duplicate-changes-update-indices objects selected))
-
-              uchanges (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))
-                             (reverse rchanges))
+              changes (->> (prepare-duplicate-changes objects objects page-id selected delta it)
+                           (duplicate-changes-update-indices objects selected))
 
               id-original (when (= (count selected) 1) (first selected))
 
-              selected (->> rchanges
+              selected (->> changes
+                            :redo-changes
+                            (filter #(= (:type %) :add-obj))
                             (filter #(selected (:old-id %)))
                             (map #(get-in % [:obj :id]))
                             (into (d/ordered-set)))
@@ -475,9 +460,7 @@
               id-duplicated (when (= (count selected) 1) (first selected))]
 
           (rx/of (select-shapes selected)
-                 (dch/commit-changes {:redo-changes rchanges
-                                      :undo-changes uchanges
-                                      :origin it})
+                 (dch/commit-changes changes)
                  (memorize-duplicated id-original id-duplicated)))))))
 
 (defn change-hover-state

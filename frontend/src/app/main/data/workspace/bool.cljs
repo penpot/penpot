@@ -99,7 +99,7 @@
                 shape-id (:id boolean-data)
                 changes (-> (cb/empty-changes it page-id)
                             (cb/with-objects objects)
-                            (cb/add-obj boolean-data index)
+                            (cb/add-obj boolean-data {:index index})
                             (cb/change-parent shape-id shapes))]
             (rx/of (dch/commit-changes changes)
                    (dwc/select-shapes (d/ordered-set shape-id)))))))))

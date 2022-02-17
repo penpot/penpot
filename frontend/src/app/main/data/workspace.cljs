@@ -1718,7 +1718,8 @@
           ;; Analyze the rchange and replace staled media and
           ;; references to the new uploaded media-objects.
           (process-rchange [media-idx item]
-            (if (= :image (get-in item [:obj :type]))
+            (if (and (= (:type item) :add-obj)
+                     (= :image (get-in item [:obj :type])))
               (update-in item [:obj :metadata]
                          (fn [{:keys [id] :as mdata}]
                            (if-let [mobj (get media-idx id)]
@@ -1818,51 +1819,44 @@
                   ;; Calculate position for the pasted elements
                   [frame-id parent-id delta index] (calculate-paste-position state mouse-pos in-viewport?)
 
-                  paste-objects   (->> paste-objects
-                                       (d/mapm (fn [_ shape]
-                                                 (-> shape
-                                                     (assoc :frame-id frame-id)
-                                                     (assoc :parent-id parent-id)
+                  paste-objects (->> paste-objects
+                                     (d/mapm (fn [_ shape]
+                                               (-> shape
+                                                   (assoc :frame-id frame-id)
+                                                   (assoc :parent-id parent-id)
 
-                                                     (cond->
-                                                       ;; if foreign instance, detach the shape
-                                                      (foreign-instance? shape paste-objects state)
-                                                       (dissoc :component-id
-                                                               :component-file
-                                                               :component-root?
-                                                               :remote-synced?
-                                                               :shape-ref
-                                                               :touched))))))
+                                                   (cond->
+                                                     ;; if foreign instance, detach the shape
+                                                     (foreign-instance? shape paste-objects state)
+                                                     (dissoc :component-id
+                                                             :component-file
+                                                             :component-root?
+                                                             :remote-synced?
+                                                             :shape-ref
+                                                             :touched))))))
 
-                  all-objects   (merge page-objects paste-objects)
+                  all-objects (merge page-objects paste-objects)
 
-                  page-id   (:current-page-id state)
-                  unames    (-> (wsh/lookup-page-objects state page-id)
-                                (dwc/retrieve-used-names)) ;; TODO: move this calculation inside prepare-duplicate-changes?
-
-                  rchanges  (->> (dws/prepare-duplicate-changes all-objects page-id unames selected delta)
-                                 (mapv (partial process-rchange media-idx))
-                                 (mapv (partial change-add-obj-index paste-objects selected index)))
-
-                  uchanges  (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))
-                                  (reverse rchanges))
+                  page-id  (:current-page-id state)
+                  changes  (-> (dws/prepare-duplicate-changes page-objects all-objects page-id selected delta it)
+                               (pcb/amend-changes (partial process-rchange media-idx))
+                               (pcb/amend-changes (partial change-add-obj-index paste-objects selected index)))
 
                   ;; Adds a reg-objects operation so the groups are updated. We add all the new objects
-                  new-objects-ids (->> rchanges (filter #(= (:type %) :add-obj)) (mapv :id))
+                  new-objects-ids (->> changes :redo-changes (filter #(= (:type %) :add-obj)) (mapv :id))
 
-                  rchanges (conj rchanges {:type :reg-objects
-                                           :page-id page-id
-                                           :shapes new-objects-ids})
+                  changes (pcb/reg-objects changes new-objects-ids)
 
-                  selected  (->> rchanges
+                  selected  (->> changes
+                                 :redo-changes
+                                 (filter #(= (:type %) :add-obj))
                                  (filter #(selected (:old-id %)))
                                  (map #(get-in % [:obj :id]))
                                  (into (d/ordered-set)))]
 
-              (rx/of (dch/commit-changes {:redo-changes rchanges
-                                          :undo-changes uchanges
-                                          :origin it})
+              (rx/of (dch/commit-changes changes)
                      (dwc/select-shapes selected))))]
+
     (ptk/reify ::paste-shape
       ptk/WatchEvent
       (watch [it state _]

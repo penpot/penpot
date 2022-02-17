@@ -32,18 +32,23 @@
   (vary-meta changes assoc ::objects objects))
 
 (defn add-obj
-  ([changes obj index]
-   (add-obj changes (assoc obj ::index index)))
-
   ([changes obj]
-   (let [add-change
-         {:type      :add-obj
-          :id        (:id obj)
-          :page-id   (::page-id (meta changes))
-          :parent-id (:parent-id obj)
-          :frame-id  (:frame-id obj)
-          :index     (::index obj)
-          :obj       (dissoc obj ::index :parent-id)}
+   (add-obj changes obj nil))
+
+  ([changes obj {:keys [index ignore-touched] :or {index ::undefined ignore-touched false}}]
+   (let [obj (cond-> obj
+               (not= index ::undefined)
+               (assoc :index index))
+
+         add-change
+         {:type           :add-obj
+          :id             (:id obj)
+          :page-id        (::page-id (meta changes))
+          :parent-id      (:parent-id obj)
+          :frame-id       (:frame-id obj)
+          :index          (::index obj)
+          :ignore-touched ignore-touched
+          :obj            (dissoc obj ::index :parent-id)}
 
          del-change
          {:type :del-obj
@@ -201,3 +206,22 @@
                                     :page-id page-id
                                     :option option-key
                                     :value old-val}))))
+
+(defn reg-objects
+  [chdata shape-ids]
+  (let [page-id (::page-id (meta chdata))]
+    (-> chdata
+        (update :redo-changes conj {:type :reg-objects :page-id page-id :shapes shape-ids}))))
+        ;; No need to do anything to undo
+
+(defn amend-last-change
+  "Modify the last redo-changes added with an update function."
+  [chdata f]
+  (update chdata :redo-changes
+          #(conj (pop %) (f (peek %)))))
+
+(defn amend-changes
+  "Modify all redo-changes with an update function."
+  [chdata f]
+  (update chdata :redo-changes #(mapv f %)))
+
