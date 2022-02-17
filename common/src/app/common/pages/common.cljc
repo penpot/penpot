@@ -9,7 +9,7 @@
    [app.common.colors :as clr]
    [app.common.uuid :as uuid]))
 
-(def file-version 14)
+(def file-version 15)
 (def default-color clr/gray-20)
 (def root uuid/zero)
 
@@ -32,6 +32,7 @@
    :letter-spacing        :text-display-group
    :line-height           :text-display-group
    :text-align            :text-display-group
+   :strokes               :stroke-group
    :stroke-color          :stroke-group
    :stroke-color-gradient :stroke-group
    :stroke-color-ref-file :stroke-group
@@ -84,7 +85,19 @@
             :fill-color-ref-id
             :fill-color-ref-file
             :fill-color-gradient
-            :hide-fill-on-export}
+            :hide-fill-on-export
+
+            :strokes
+            :stroke-style
+            :stroke-alignment
+            :stroke-width
+            :stroke-color
+            :stroke-color-ref-id
+            :stroke-color-ref-file
+            :stroke-opacity
+            :stroke-color-gradient
+            :stroke-cap-start
+            :stroke-cap-end}
 
   :group #{:proportion-lock
            :width :height
@@ -131,7 +144,8 @@
            :fill-color-ref-id
            :fill-color-ref-file
            :fill-color-gradient
-
+           
+           :strokes
            :stroke-style
            :stroke-alignment
            :stroke-width
@@ -171,6 +185,7 @@
              :fill-color-ref-file
              :fill-color-gradient
 
+             :strokes
              :stroke-style
              :stroke-alignment
              :stroke-width
@@ -210,6 +225,7 @@
           :fill-color-ref-file
           :fill-color-gradient
 
+          :strokes
           :stroke-style
           :stroke-alignment
           :stroke-width
@@ -339,6 +355,7 @@
              :fill-color-ref-file
              :fill-color-gradient
 
+             :strokes
              :stroke-style
              :stroke-alignment
              :stroke-width

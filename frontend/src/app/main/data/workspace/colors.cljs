@@ -135,12 +135,12 @@
      (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
      (rx/of (dch/update-shapes shape-ids transform-attrs)))))
 
-(defn swap-fills [shape index new-index]
-  (let [first (get-in shape [:fills index])
-        second (get-in shape [:fills new-index])]
+(defn swap-attrs [shape attr index new-index]
+  (let [first (get-in shape [attr index])
+        second (get-in shape [attr new-index])]
     (-> shape
-        (assoc-in [:fills index] second)
-        (assoc-in [:fills new-index] first))))
+        (assoc-in [attr index] second)
+        (assoc-in [attr new-index] first))))
 
 (defn reorder-fills
   [ids index new-index]
@@ -152,7 +152,7 @@
             is-text?  #(= :text (:type (get objects %)))
             text-ids  (filter is-text? ids)
             shape-ids (remove is-text? ids)
-            transform-attrs #(swap-fills % index new-index)]
+            transform-attrs #(swap-attrs % :fills index new-index)]
 
         (rx/concat
          (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
@@ -225,37 +225,72 @@
                                                 shape))))))))
 
 (defn change-stroke
-  [ids color]
+  [ids attrs index]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [attrs (cond-> {:stroke-color nil
-                           :stroke-color-ref-id nil
-                           :stroke-color-ref-file nil
-                           :stroke-color-gradient nil
-                           :stroke-opacity nil}
-                    (contains? color :color)
-                    (assoc :stroke-color (:color color))
+      (let [color-attrs (cond-> {}
+                          (contains? attrs :color)
+                          (assoc :stroke-color (:color attrs))
 
-                    (contains? color :id)
-                    (assoc :stroke-color-ref-id (:id color))
+                          (contains? attrs :id)
+                          (assoc :stroke-color-ref-id (:id attrs))
 
-                    (contains? color :file-id)
-                    (assoc :stroke-color-ref-file (:file-id color))
+                          (contains? attrs :file-id)
+                          (assoc :stroke-color-ref-file (:file-id attrs))
 
-                    (contains? color :gradient)
-                    (assoc :stroke-color-gradient (:gradient color))
+                          (contains? attrs :gradient)
+                          (assoc :stroke-color-gradient (:gradient attrs))
 
-                    (contains? color :opacity)
-                    (assoc :stroke-opacity (:opacity color)))]
+                          (contains? attrs :opacity)
+                          (assoc :stroke-opacity (:opacity attrs)))
+            attrs (merge attrs color-attrs)]
 
         (rx/of (dch/update-shapes ids (fn [shape]
-                                        (cond-> (d/merge shape attrs)
-                                          (= (:stroke-style shape) :none)
-                                          (assoc :stroke-style :solid
-                                                 :stroke-width 1
-                                                 :stroke-opacity 1)))))))))
+                                        (assoc-in shape [:strokes index] (merge (get-in shape [:strokes index]) attrs)))))))))
 
+(defn add-stroke
+  [ids stroke]
+  (ptk/reify ::add-stroke
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [add (fn [shape attrs] (assoc shape :strokes (into [attrs] (:strokes shape))))]
+        (rx/of (dch/update-shapes
+                ids
+                #(add % stroke)))))))
+
+(defn remove-stroke
+  [ids position]
+  (ptk/reify ::remove-stroke
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [remove-fill-by-index (fn [values index] (->> (d/enumerate values)
+                                                         (filterv (fn [[idx _]] (not= idx index)))
+                                                         (mapv second)))
+
+            remove (fn [shape] (update shape :strokes remove-fill-by-index position))]
+        (rx/of (dch/update-shapes
+                ids
+                #(remove %)))))))
+
+(defn remove-all-strokes
+  [ids]
+  (ptk/reify ::remove-all-strokes
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [remove-all (fn [shape] (assoc shape :strokes []))]
+        (rx/of (dch/update-shapes
+                ids
+                #(remove-all %)))))))
+
+(defn reorder-strokes
+  [ids index new-index]
+  (ptk/reify ::reorder-strokes
+    ptk/WatchEvent
+    (watch [_ _ _]
+           (rx/of (dch/update-shapes
+                   ids
+                   #(swap-attrs % :strokes index new-index))))))
 
 (defn picker-for-selected-shape
   []

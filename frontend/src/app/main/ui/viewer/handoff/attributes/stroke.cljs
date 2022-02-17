@@ -30,10 +30,13 @@
         color (-> shape shape->color uc/color->background)]
     (str/format "%spx %s %s" width style color)))
 
-(defn has-stroke? [{:keys [stroke-style]}]
-  (and stroke-style
-       (and (not= stroke-style :none)
-            (not= stroke-style :svg))))
+(defn has-stroke? [shape]
+  (let [stroke-style (:stroke-style shape)]
+    (or
+     (and stroke-style
+          (and (not= stroke-style :none)
+               (not= stroke-style :svg)))
+     (seq (:strokes shape)))))
 
 (defn copy-stroke-data [shape]
   (cg/generate-css-props
@@ -80,6 +83,11 @@
           [:& copy-button {:data (copy-stroke-data (first shapes))}])]
 
        (for [shape shapes]
-         [:& stroke-block {:key (str "stroke-color-" (:id shape))
-                           :shape shape
-                           :locale locale}])])))
+         (if (seq (:strokes shape))
+           (for [value (:strokes shape [])]
+             [:& stroke-block {:key (str "stroke-color-" (:id shape))
+                               :shape value
+                               :locale locale}])
+           [:& stroke-block {:key (str "stroke-color-" (:id shape))
+                             :shape shape
+                             :locale locale}]))])))

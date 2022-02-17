@@ -98,7 +98,17 @@
          (mf/deps ids)
          (fn [event]
            (let [value (-> event dom/get-target dom/checked?)]
-             (st/emit! (dc/change-hide-fill-on-export ids (not value))))))]
+             (st/emit! (dc/change-hide-fill-on-export ids (not value))))))
+
+        disable-drag    (mf/use-state false)
+
+        select-all (fn [event]
+                     (when (not @disable-drag)
+                       (dom/select-text! (dom/get-target event)))
+                     (reset! disable-drag true))
+
+        on-blur (fn [_]
+                  (reset! disable-drag false))]
 
     (mf/use-layout-effect
       (mf/deps hide-fill-on-export?)
@@ -139,7 +149,10 @@
                             :on-change (on-change index)
                             :on-reorder (on-reorder index)
                             :on-detach (on-detach index)
-                            :on-remove (on-remove index)}])])
+                            :on-remove (on-remove index)
+                            :disable-drag disable-drag
+                            :select-all select-all
+                            :on-blur on-blur}])])
 
         (when (or (= type :frame)
                   (and (= type :multiple) (some? hide-fill-on-export?)))

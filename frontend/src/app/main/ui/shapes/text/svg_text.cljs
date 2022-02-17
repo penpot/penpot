@@ -10,7 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
+   [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
@@ -21,7 +21,7 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  
+
   (let [render-id (mf/use-ctx muc/render-ctx)
         {:keys [x y width height position-data] :as shape} (obj/get props "shape")
         transform (str (gsh/transform-matrix shape))
@@ -60,7 +60,7 @@
                                              :direction (if (:rtl data) "rtl" "ltr")
                                              :whiteSpace "pre"}
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})]
-          [:& shape-custom-stroke {:shape shape :index index}
+          [:& shape-custom-strokes {:shape shape}
            [:> :text props (:text data)]]))]]))
 
 

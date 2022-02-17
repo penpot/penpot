@@ -208,7 +208,11 @@
            (reduce add-attrs node-attrs))
 
       (= type :frame)
-      (let [svg-node (->> node :content (d/seek #(= "frame-background" (get-in % [:attrs :class]))))]
+      (let [;; The nodes with the "frame-background" class can have some anidation depending on the strokes they have
+            g-nodes (find-all-nodes node :g)
+            defs-nodes (flatten (map #(find-all-nodes % :defs) g-nodes))
+            rect-nodes (flatten [(map #(find-all-nodes % :rect) defs-nodes) (map #(find-all-nodes % :rect) g-nodes)])
+            svg-node (d/seek #(= "frame-background" (get-in % [:attrs :class])) rect-nodes)]
         (merge (add-attrs {} (:attrs svg-node)) node-attrs))
 
       (= type :svg-raw)
@@ -685,20 +689,48 @@
 
       props)))
 
-(defn add-fills
-  [props node svg-data]
-  (let [fills (-> node
-                  (find-node :defs)
-                  (find-node :pattern)
-                  (find-node :g)
-                  (find-all-nodes :rect)
-                  (reverse))
-        fills (if (= 0 (count fills))
-                [(add-fill {} node svg-data)]
-                (map #(add-fill {} node (get-svg-data :rect %)) fills))]
-      (-> props
-          (assoc :fills fills))))
+(defn parse-fills
+  [node svg-data]
+  (let [fills-node (get-data node :penpot:fills)
+        fills (->> (find-all-nodes fills-node :penpot:fill)
+                   (mapv (fn [fill-node]
+                           {:fill-color  (when (not (str/starts-with? (get-meta fill-node :fill-color) "url"))
+                                           (get-meta fill-node :fill-color))
+                            :fill-color-gradient (when (str/starts-with? (get-meta fill-node :fill-color) "url")
+                                                   (parse-gradient node (get-meta fill-node :fill-color)))
+                            :fill-color-ref-file (get-meta fill-node :fill-color-ref-file uuid/uuid)
+                            :fill-color-ref-id (get-meta fill-node :fill-color-ref-id uuid/uuid)
+                            :fill-opacity (get-meta fill-node :fill-opacity d/parse-double)}))
+                   (mapv d/without-nils))]
+    (if (seq fills)
+      fills
+      (->> [(-> (add-fill {} node svg-data)
+                (d/without-nils))]
+           (filterv not-empty)))))
 
+(defn parse-strokes
+  [node svg-data]
+  (let [strokes-node (get-data node :penpot:strokes)
+        strokes (->> (find-all-nodes strokes-node :penpot:stroke)
+                     (mapv (fn [stroke-node]
+                             {:stroke-color  (when (not (str/starts-with? (get-meta stroke-node :stroke-color) "url"))
+                                               (get-meta stroke-node :stroke-color))
+                              :stroke-color-gradient (when (str/starts-with? (get-meta stroke-node :stroke-color) "url")
+                                                       (parse-gradient node (get-meta stroke-node :stroke-color)))
+                              :stroke-color-ref-file (get-meta stroke-node :stroke-color-ref-file uuid/uuid)
+                              :stroke-color-ref-id (get-meta stroke-node :stroke-color-ref-id uuid/uuid)
+                              :stroke-opacity (get-meta stroke-node :stroke-opacity d/parse-double)
+                              :stroke-style (get-meta stroke-node :stroke-style keyword)
+                              :stroke-width (get-meta stroke-node :stroke-width d/parse-double)
+                              :stroke-alignment (get-meta stroke-node :stroke-alignment keyword)
+                              :stroke-cap-start (get-meta stroke-node :stroke-cap-start keyword)
+                              :stroke-cap-end (get-meta stroke-node :stroke-cap-end keyword)}))
+                     (mapv d/without-nils))]
+    (if (seq strokes)
+      strokes
+      (->> [(-> (add-stroke {} node svg-data)
+                (d/without-nils))]
+           (filterv #(and (not-empty %) (not= (:stroke-style %) :none)))))))
 
 (defn add-svg-content
   [props node]
@@ -765,14 +797,16 @@
       (-> {}
           (add-common-data node)
           (add-position type node svg-data)
-          (add-stroke node svg-data)
+
           (add-layer-options svg-data)
           (add-shadows node)
           (add-blur node)
           (add-exports node)
           (add-svg-attrs node svg-data)
           (add-library-refs node)
-          (add-fills node svg-data)
+
+          (assoc :fills (parse-fills node svg-data))
+          (assoc :strokes (parse-strokes node svg-data))
 
           (cond-> (= :svg-raw type)
             (add-svg-content node))
