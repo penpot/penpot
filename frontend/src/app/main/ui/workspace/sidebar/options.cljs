@@ -78,7 +78,6 @@
       [:div.element-options
        [:& interactions-menu {:shape (first shapes)}]]]]]])
 
-
 ;; TODO: this need optimizations, selected-objects and
 ;; selected-objects-with-children are derefed always but they only
 ;; need on multiple selection in majority of cases
@@ -93,6 +92,8 @@
         file-id              (mf/use-ctx ctx/current-file-id)
         shapes               (mf/deref refs/selected-objects)
         shapes-with-children (mf/deref refs/selected-shapes-with-children)]
+        ;; TODO: review performance]
+
     [:& options-content {:shapes shapes
                          :selected selected
                          :shapes-with-children shapes-with-children

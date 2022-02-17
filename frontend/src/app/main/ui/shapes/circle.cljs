@@ -8,7 +8,7 @@
   (:require
    [app.common.geom.shapes :as geom]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
+   [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
@@ -32,5 +32,5 @@
                         :ry ry
                         :transform transform}))]
 
-    [:& shape-custom-stroke {:shape shape}
+    [:& shape-custom-strokes {:shape shape}
      [:> :ellipse props]]))

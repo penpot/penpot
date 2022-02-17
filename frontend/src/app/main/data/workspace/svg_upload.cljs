@@ -101,25 +101,26 @@
                                (get-in shape [:svg-attrs :style :stroke-linecap]))
                            ((d/nilf str/trim))
                            ((d/nilf keyword)))
+
         shape
         (cond-> shape
-          (uc/color? (get-in shape [:svg-attrs :stroke]))
+          (uc/color? (str/trim (get-in shape [:svg-attrs :stroke])))
           (-> (update :svg-attrs dissoc :stroke)
-              (assoc :stroke-color (get-in shape [:svg-attrs :stroke])))
+              (assoc-in [:strokes 0 :stroke-color] (get-in shape [:svg-attrs :stroke])))
 
-          (uc/color? (get-in shape [:svg-attrs :style :stroke]))
+          (uc/color? (str/trim (get-in shape [:svg-attrs :style :stroke])))
           (-> (update-in [:svg-attrs :style] dissoc :stroke)
-              (assoc :stroke-color (get-in shape [:svg-attrs :style :stroke])))
+              (assoc-in [:strokes 0 :stroke-color] (get-in shape [:svg-attrs :style :stroke])))
 
           (get-in shape [:svg-attrs :stroke-width])
           (-> (update :svg-attrs dissoc :stroke-width)
-              (assoc :stroke-width (-> (get-in shape [:svg-attrs :stroke-width])
-                                       (d/parse-double))))
+              (assoc-in [:strokes 0 :stroke-width] (-> (get-in shape [:svg-attrs :stroke-width])
+                                                       (d/parse-double))))
 
           (get-in shape [:svg-attrs :style :stroke-width])
           (-> (update-in [:svg-attrs :style] dissoc :stroke-width)
-              (assoc :stroke-width (-> (get-in shape [:svg-attrs :style :stroke-width])
-                                       (d/parse-double))))
+              (assoc-in [:strokes 0 :stroke-width] (-> (get-in shape [:svg-attrs :style :stroke-width])
+                                                       (d/parse-double))))
 
           (and stroke-linecap (= (:type shape) :path))
           (-> (update-in [:svg-attrs :style] dissoc :stroke-linecap)
@@ -128,8 +129,8 @@
                 (assoc :stroke-cap-start stroke-linecap
                        :stroke-cap-end   stroke-linecap))))]
 
-    (if (d/any-key? shape :stroke-color :stroke-opacity :stroke-width :stroke-cap-start :stroke-cap-end)
-      (merge {:stroke-style :svg} shape)
+    (if (d/any-key? (get-in [:strokes 0] shape) :stroke-color :stroke-opacity :stroke-width :stroke-cap-start :stroke-cap-end)
+      (assoc-in shape [:strokes 0 :stroke-style] :svg)
       shape)))
 
 (defn setup-opacity [shape]
@@ -383,6 +384,7 @@
                         #_other      (create-raw-svg name frame-id svg-data element-data)))
 
             shape (assoc shape :fills [])
+            shape (assoc shape :strokes [])
 
             shape (when (some? shape)
                     (-> shape

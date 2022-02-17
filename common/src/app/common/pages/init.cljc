@@ -35,6 +35,7 @@
   {:frame-id uuid/zero
    :fills [{:fill-color clr/white
             :fill-opacity 1}]
+   :strokes []
    :shapes []
    :hide-fill-on-export false})
 
@@ -43,47 +44,32 @@
     :name "Rect-1"
     :fills [{:fill-color default-color
              :fill-opacity 1}]
-    :stroke-style :none
-    :stroke-alignment :center
-    :stroke-width 0
-    :stroke-color clr/black
-    :stroke-opacity 0
+    :strokes []
     :rx 0
     :ry 0}
 
    {:type :image
     :rx 0
     :ry 0
-    :fills []}
+    :fills []
+    :strokes []}
 
    {:type :circle
     :name "Circle-1"
     :fills [{:fill-color default-color
              :fill-opacity 1}]
-    :stroke-style :none
-    :stroke-alignment :center
-    :stroke-width 0
-    :stroke-color clr/black
-    :stroke-opacity 0}
+    :strokes []}
 
    {:type :path
     :name "Path-1"
     :fills []
-    :stroke-style :solid
-    :stroke-alignment :center
-    :stroke-width 2
-    :stroke-color clr/black
-    :stroke-opacity 1}
+    :strokes []}
 
    {:type :frame
     :name "Artboard-1"
     :fills [{:fill-color clr/white
              :fill-opacity 1}]
-    :stroke-style :none
-    :stroke-alignment :center
-    :stroke-width 0
-    :stroke-color clr/black
-    :stroke-opacity 0}
+    :strokes []}
 
    {:type :text
     :name "Text-1"

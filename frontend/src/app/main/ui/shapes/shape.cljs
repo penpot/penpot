@@ -14,7 +14,6 @@
    [app.main.ui.shapes.fills :as fills]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
-   [app.main.ui.shapes.gradients :as grad]
    [app.main.ui.shapes.svg-defs :as defs]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
@@ -62,7 +61,6 @@
       [:defs
        [:& defs/svg-defs          {:shape shape :render-id render-id}]
        [:& filters/filters        {:shape shape :filter-id filter-id}]
-       [:& grad/gradient          {:shape shape :attr :stroke-color-gradient}]
        [:& fills/fills            {:shape shape :render-id render-id}]
        [:& frame/frame-clip-def   {:shape shape :render-id render-id}]]
       children]]))

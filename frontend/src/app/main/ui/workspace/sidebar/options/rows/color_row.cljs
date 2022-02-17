@@ -61,12 +61,11 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [index color disable-gradient disable-opacity on-change on-reorder on-detach on-open on-close title on-remove]}]
+  [{:keys [index color disable-gradient disable-opacity on-change on-reorder on-detach on-open on-close title on-remove disable-drag select-all on-blur]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         file-colors     (mf/deref refs/workspace-file-colors)
         shared-libs     (mf/deref refs/workspace-libraries)
         hover-detach    (mf/use-state false)
-        disable-drag    (mf/use-state false)
 
         get-color-name (fn [{:keys [id file-id]}]
                          (let [src-colors (if (= file-id current-file-id)
@@ -106,14 +105,6 @@
 
         handle-opacity-change (fn [value]
                                 (change-opacity (/ value 100)))
-
-        select-all (fn [event]
-                     (when (not @disable-drag)
-                       (dom/select-text! (dom/get-target event)))
-                     (reset! disable-drag true))
-
-        on-blur (fn [_]
-                  (reset! disable-drag false))
 
         handle-click-color (mf/use-callback
                             (mf/deps color)
@@ -194,6 +185,7 @@
            [:> numeric-input {:value (-> color :opacity opacity->string)
                               :placeholder (tr "settings.multiple")
                               :on-click select-all
+                              :on-blur on-blur
                               :on-change handle-opacity-change
                               :min 0
                               :max 100}]])])

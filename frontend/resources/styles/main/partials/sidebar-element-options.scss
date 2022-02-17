@@ -463,6 +463,12 @@
   }
 }
 
+.element-set-content .border-data {
+  &[draggable="true"] {
+    cursor: pointer;
+  }
+}
+
 .element-set-content .grid-option-main {
   .editable-select {
     height: 2rem;

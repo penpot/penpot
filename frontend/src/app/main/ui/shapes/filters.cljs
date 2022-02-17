@@ -201,11 +201,11 @@
           :height (- y2 y1)})))))
 
 (defn calculate-padding [shape]
-  (let [stroke-width (case (:stroke-alignment shape :center)
-                       :center (/ (:stroke-width shape 0) 2)
-                       :outer (:stroke-width shape 0)
-                       0)
-        margin (gsh/shape-stroke-margin shape stroke-width)]
+  (let [stroke-width (apply max 0 (map #(case (:stroke-alignment % :center)
+                                        :center (/ (:stroke-width % 0) 2)
+                                        :outer (:stroke-width % 0)
+                                        0) (:strokes shape)))
+        margin (apply max 0 (map #(gsh/shape-stroke-margin % stroke-width) (:strokes shape)))]
     (+ stroke-width margin)))
 
 (defn change-filter-in

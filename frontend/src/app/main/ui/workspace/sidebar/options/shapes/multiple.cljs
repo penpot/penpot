@@ -8,6 +8,7 @@
   (:require
    [app.common.attrs :as attrs]
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.common :as cpc]
    [app.common.text :as txt]
    [app.main.ui.hooks :as hooks]
@@ -34,7 +35,7 @@
     :fill       :shape
     :shadow     :children
     :blur       :children
-    :stroke     :children
+    :stroke     :shape
     :text       :children}
 
    :group
@@ -205,6 +206,7 @@
   (let [shapes (unchecked-get props "shapes")
         shapes-with-children (unchecked-get props "shapes-with-children")
         objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
+        show-caps (some #(and (= :path (:type %)) (gsh/open-path? %)) shapes)
 
         ;; Selrect/points only used for measures and it's the one that changes the most. We separate it
         ;; so we can memoize it
@@ -249,14 +251,14 @@
      (when-not (empty? fill-ids)
        [:& fill-menu {:type type :ids fill-ids :values fill-values}])
 
+     (when-not (empty? stroke-ids)
+       [:& stroke-menu {:type type :ids stroke-ids :show-caps show-caps :values stroke-values}])
+
      (when-not (empty? shadow-ids)
        [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])
 
      (when-not (empty? blur-ids)
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
-
-     (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type :ids stroke-ids :show-caps true :values stroke-values}])
 
      (when-not (empty? text-ids)
        [:& ot/text-menu {:type type :ids text-ids :values text-values}])]))

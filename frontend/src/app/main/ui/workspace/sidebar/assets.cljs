@@ -803,7 +803,7 @@
         (fn [_ event]
           (let [ids (wsh/lookup-selected @st/state)]
             (if (kbd/alt? event)
-              (st/emit! (dc/change-stroke ids color))
+              (st/emit! (dc/change-stroke ids color 0))
               (st/emit! (dc/change-fill ids color 0)))))
 
         rename-color

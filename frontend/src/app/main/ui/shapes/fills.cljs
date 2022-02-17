@@ -29,7 +29,7 @@
 
       (let [{:keys [x y width height]} (:selrect shape)
             {:keys [metadata]} shape
-            
+
             has-image (or metadata (:fill-image shape))
             uri (if metadata
                   (cfg/resolve-file-media metadata)
