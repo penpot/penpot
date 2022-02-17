@@ -20,6 +20,10 @@
     height: 40px;
     padding: 5px 16px;
 
+    &.warning {
+      color: $color-danger;
+    }
+
     svg {
       fill: $color-gray-20;
       height: 12px;

@@ -17,7 +17,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.comments :refer [comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
@@ -228,58 +227,6 @@
 (s/def ::leave-modal-form
   (s/keys :req-un [::member-id]))
 
-(mf/defc leave-and-reassign-modal
-  {::mf/register modal/components
-   ::mf/register-as ::leave-and-reassign}
-  [{:keys [team accept]}]
-  (let [form        (fm/use-form :spec ::leave-modal-form :initial {})
-
-        members-map (mf/deref refs/dashboard-team-members)
-        members     (vals members-map)
-
-        options     (into [{:value ""
-                            :label (tr "modals.leave-and-reassign.select-member-to-promote")}]
-                          (map #(hash-map :label (:name %) :value (str (:id %))) members))
-
-        on-cancel   (st/emitf (modal/hide))
-        on-accept
-        (fn [_]
-          (let [member-id (get-in @form [:clean-data :member-id])]
-            (accept member-id)))]
-
-    [:div.modal-overlay
-     [:div.modal-container.confirm-dialog
-      [:div.modal-header
-       [:div.modal-header-title
-        [:h2 (tr "modals.leave-and-reassign.title")]]
-       [:div.modal-close-button
-        {:on-click on-cancel} i/close]]
-
-      [:div.modal-content.generic-form
-       [:p (tr "modals.leave-and-reassign.hint1" (:name team))]
-
-       (if (empty? members)
-         [:p (tr "modals.leave-and-reassign.forbiden")]
-         [:*
-          [:p (tr "modals.leave-and-reassign.hint2")]
-          [:& fm/form {:form form}
-           [:& fm/select {:name :member-id
-                          :options options}]]])]
-
-      [:div.modal-footer
-       [:div.action-buttons
-        [:input.cancel-button
-         {:type "button"
-          :value (tr "labels.cancel")
-          :on-click on-cancel}]
-
-        [:input.accept-button
-         {:type "button"
-          :class (if (:valid @form) "primary" "btn-disabled")
-          :disabled (not (:valid @form))
-          :value (tr "modals.leave-and-reassign.promote-and-leave")
-          :on-click on-accept}]]]]]))
-
 (mf/defc team-options-dropdown
   [{:keys [team profile] :as props}]
   (let [go-members  (st/emitf (dd/go-to-team-members))
@@ -287,6 +234,7 @@
 
         members-map (mf/deref refs/dashboard-team-members)
         members     (vals members-map)
+        can-rename? (or (get-in team [:permissions :is-owner]) (get-in team [:permissions :is-admin]))
 
         on-success
         (fn []
@@ -334,10 +282,19 @@
         (fn []
           (st/emit! (dd/fetch-team-members)
                     (modal/show
-                     {:type ::leave-and-reassign
+                     {:type :leave-and-reassign
                       :profile profile
                       :team team
                       :accept leave-fn})))
+
+        leave-and-close
+        (st/emitf (modal/show
+                   {:type :confirm
+                    :title (tr "modals.leave-confirm.title")
+                    :message  (tr "modals.leave-and-close-confirm.message" (:name team))
+                    :scd-message (tr "modals.leave-and-close-confirm.hint")
+                    :accept-label (tr "modals.leave-confirm.accept")
+                    :on-accept delete-fn}))
 
         on-delete-clicked
         (st/emitf
@@ -352,9 +309,13 @@
      [:li {:on-click go-members :data-test "team-members"} (tr "labels.members")]
      [:li {:on-click go-settings :data-test "team-settings"} (tr "labels.settings")]
      [:hr]
-     [:li {:on-click on-rename-clicked :data-test "rename-team"} (tr "labels.rename")]
+     (when can-rename?
+       [:li {:on-click on-rename-clicked :data-test "rename-team"} (tr "labels.rename")])
 
      (cond
+       (= (count members) 1)
+       [:li {:on-click leave-and-close}  (tr "dashboard.leave-team")]
+
        (get-in team [:permissions :is-owner])
        [:li {:on-click on-leave-as-owner-clicked :data-test "leave-team"} (tr "dashboard.leave-team")]
 
@@ -363,7 +324,7 @@
 
 
      (when (get-in team [:permissions :is-owner])
-       [:li {:on-click on-delete-clicked :data-test "delete-team"} (tr "dashboard.delete-team")])]))
+       [:li.warning {:on-click on-delete-clicked :data-test "delete-team"} (tr "dashboard.delete-team")])]))
 
 
 (mf/defc sidebar-team-switch

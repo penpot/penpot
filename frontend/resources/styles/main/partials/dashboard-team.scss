@@ -41,23 +41,69 @@
 }
 
 .dashboard-team-members {
+  .table-row {
+    background-color: $color-white;
+    height: 63px;
+    &:not(:first-child) {
+      margin-top: 16px;
+    }
+  }
+
   .table-field {
-    // border: 1px solid red;
     &.name {
       width: 43%;
       min-width: 300px;
+      display: flex;
+      .member-info {
+        display: flex;
+        flex-direction: column;
+        margin-left: 16px;
+        .member-name {
+          font-size: $fs16;
+          .you {
+            color: $color-gray-30;
+            margin-left: 5px;
+          }
+        }
+        .member-email {
+          color: $color-gray-30;
+          font-size: $fs12;
+        }
+      }
+
+      .member-image {
+        height: 32px;
+        width: 32px;
+        img {
+          border-radius: 50%;
+        }
+      }
     }
 
-    &.email {
-      width: 43%;
-      min-width: 300px;
-    }
-
-    &.permissions {
-      min-width: 120px;
+    &.roles {
+      flex-grow: 1;
       user-select: none;
       cursor: default;
       position: relative;
+      .rol-selector {
+        &.has-priv {
+          border: 1px solid $color-gray-20;
+        }
+        min-width: 160px;
+        height: 32px;
+        display: flex;
+        justify-content: space-between;
+        border-radius: 2px;
+        padding: 3px 8px;
+      }
+    }
+
+    &.actions {
+      position: relative;
+      .actions-dropdown {
+        max-height: 30rem;
+        min-width: 180px;
+      }
     }
   }
 
@@ -69,9 +115,9 @@
     border-radius: 4px;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
     z-index: 12;
-    top: 30px;
-    left: 0px;
-    width: 168px;
+    top: 40px;
+    left: 6px;
+    width: 155px;
 
     hr {
       margin: 0;

@@ -42,11 +42,11 @@
     }
 
     .options-dropdown {
-      left: 117px;
+      right: 2px;
       top: 50px;
       z-index: 12;
       max-height: 30rem;
-      min-width: 116px;
+      min-width: 162px;
     }
 
     .switch-content {
@@ -403,7 +403,7 @@
     @include animation(0, 0.2s, fadeInUp);
 
     li {
-      height: 40px;
+      height: 32px;
       font-size: $fs14;
       padding: 5px 10px;
 

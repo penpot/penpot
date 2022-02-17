@@ -12,15 +12,18 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
+   [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.dashboard.change-owner]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
@@ -121,16 +124,79 @@
       [:div.action-buttons
        [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))
 
+(mf/defc member-info [{:keys [member profile] :as props}]
+  (let [is-you? (= (:id profile) (:id member))]
+    [:*
+     [:div.member-image
+      [:img {:src (cfg/resolve-profile-photo-url member)}]]
+     [:div.member-info
+      [:div.member-name (:name member)
+       (when is-you?
+         [:span.you (tr "labels.you")])]
+      [:div.member-email (:email member)]]]))
+
+(mf/defc rol-info [{:keys [member team set-admin set-editor set-owner profile] :as props}]
+  (let [member-is-owner?  (:is-owner member)
+        member-is-admin?  (and (:is-admin member) (not member-is-owner?))
+        member-is-editor? (and (:can-edit member) (and (not member-is-admin?) (not member-is-owner?)))
+        show?             (mf/use-state false)
+        you-owner?        (get-in team [:permissions :is-owner])
+        you-admin?        (get-in team [:permissions :is-admin])
+        can-change-rol?   (or you-owner? you-admin?)
+        not-superior?     (or you-owner? (and can-change-rol? (or member-is-admin? member-is-editor?)))
+        role              (cond
+                            member-is-owner? "labels.owner"
+                            member-is-admin? "labels.admin"
+                            member-is-editor? "labels.editor"
+                            :else "labels.viewer")
+        is-you?             (= (:id profile) (:id member))
+        ]
+    [:*
+     (if (and can-change-rol? not-superior? (not (and is-you? you-owner?)))
+       [:div.rol-selector.has-priv
+        [:span.rol-label (tr role)]
+        [:span.icon {:on-click #(reset! show? true)} i/arrow-down]]
+       [::div.rol-selector
+        [:span.rol-label (tr role)]])
+
+     [:& dropdown {:show @show?
+                   :on-close #(reset! show? false)}
+      [:ul.dropdown.options-dropdown
+       [:li {:on-click set-admin} (tr "labels.admin")]
+       [:li {:on-click set-editor} (tr "labels.editor")]
+        ;; Temporarily disabled viewer role
+        ;; https://tree.taiga.io/project/uxboxproject/issue/1083
+        ;;  [:li {:on-click set-viewer} (tr "labels.viewer")]
+       (when you-owner?
+         [:li {:on-click (partial set-owner member)} (tr "labels.owner")])]]]))
+
+(mf/defc member-actions [{:keys [member team delete leave profile] :as props}]
+  (let [is-owner? (:is-owner member)
+        owner? (get-in team [:permissions :is-owner])
+        admin? (get-in team [:permissions :is-admin])
+        show?     (mf/use-state false)
+        is-you? (= (:id profile) (:id member))
+        can-delete? (or owner? admin?)]
+    [:*
+     (when (or is-you? (and can-delete? (not (and is-owner? (not owner?)))))
+       [:span.icon {:on-click #(reset! show? true)} [i/actions]])
+     [:& dropdown {:show @show?
+                   :on-close #(reset! show? false)}
+      [:ul.dropdown.actions-dropdown
+       (when is-you?
+         [:li {:on-click leave} (tr "dashboard.leave-team")])
+       (when (and can-delete? (not is-you?) (not (and is-owner? (not owner?))))
+         [:li {:on-click delete} (tr "labels.remove-member")])]]]))
+
 (mf/defc team-member
   {::mf/wrap [mf/memo]}
-  [{:keys [team member profile] :as props}]
+  [{:keys [team member members profile] :as props}]
 
-  (let [show? (mf/use-state false)
-
-        set-role
+  (let [set-role
         (fn [role]
           (let [params {:member-id (:id member) :role role}]
             (st/emit! (dd/update-team-member-role params))))
+        owner? (get-in team [:permissions :is-owner])
 
         set-owner-fn (partial set-role :owner)
         set-admin    (partial set-role :admin)
@@ -138,15 +204,81 @@
         ;; set-viewer   (partial set-role :viewer)
 
         set-owner
-        (st/emitf (modal/show
-                   {:type :confirm
-                    :title (tr "modals.promote-owner-confirm.title")
-                    :message (tr "modals.promote-owner-confirm.message")
-                    :accept-label (tr "modals.promote-owner-confirm.accept")
-                    :on-accept set-owner-fn}))
+        (fn [member]
+          (st/emit! (modal/show
+                     {:type :confirm
+                      :title (tr "modals.promote-owner-confirm.title")
+                      :message (tr "modals.promote-owner-confirm.message" (:name member))
+                      :scd-message (tr "modals.promote-owner-confirm.hint")
+                      :accept-label (tr "modals.promote-owner-confirm.accept")
+                      :on-accept set-owner-fn
+                      :accept-style :primary})))
+
+        delete-member-fn
+        (st/emitf (dd/delete-team-member {:member-id (:id member)}))
+
+        on-success
+        (fn []
+          (st/emit! (dd/go-to-projects (:default-team-id profile))
+                    (modal/hide)
+                    (du/fetch-teams)))
+
+        on-error
+        (fn [{:keys [code] :as error}]
+          (condp = code
+
+            :no-enough-members-for-leave
+            (rx/of (dm/error (tr "errors.team-leave.insufficient-members")))
+
+            :member-does-not-exist
+            (rx/of (dm/error (tr "errors.team-leave.member-does-not-exists")))
+
+            :owner-cant-leave-team
+            (rx/of (dm/error (tr "errors.team-leave.owner-cant-leave")))
+
+            (rx/throw error)))
 
         delete-fn
-        (st/emitf (dd/delete-team-member {:member-id (:id member)}))
+        (fn []
+          (st/emit! (dd/delete-team (with-meta team {:on-success on-success
+                                                     :on-error on-error}))))
+
+        leave-fn
+        (fn [member-id]
+          (let [params (cond-> {} (uuid? member-id) (assoc :reassign-to member-id))]
+            (st/emit! (dd/leave-team (with-meta params
+                                       {:on-success on-success
+                                        :on-error on-error})))))
+
+        leave-and-close
+        (st/emitf (modal/show
+                   {:type :confirm
+                    :title (tr "modals.leave-confirm.title")
+                    :message  (tr "modals.leave-and-close-confirm.message" (:name team))
+                    :scd-message (tr "modals.leave-and-close-confirm.hint")
+                    :accept-label (tr "modals.leave-confirm.accept")
+                    :on-accept delete-fn}))
+
+        change-owner-and-leave
+        (fn []
+          (st/emit! (dd/fetch-team-members)
+                    (modal/show
+                     {:type :leave-and-reassign
+                      :profile profile
+                      :team team
+                      :accept leave-fn})))
+
+        leave
+        (st/emitf (modal/show
+                   {:type :confirm
+                    :title (tr "modals.leave-confirm.title")
+                    :message  (tr "modals.leave-confirm.message")
+                    :accept-label (tr "modals.leave-confirm.accept")
+                    :on-accept leave-fn}))
+
+        preset-leave (cond (= 1 (count members)) leave-and-close
+                           (= true owner?) change-owner-and-leave
+                           :else leave)
 
         delete
         (st/emitf (modal/show
@@ -154,50 +286,24 @@
                     :title (tr "modals.delete-team-member-confirm.title")
                     :message  (tr "modals.delete-team-member-confirm.message")
                     :accept-label (tr "modals.delete-team-member-confirm.accept")
-                    :on-accept delete-fn}))]
+                    :on-accept delete-member-fn}))]
 
     [:div.table-row
-     [:div.table-field.name (:name member)]
-     [:div.table-field.email (:email member)]
-     [:div.table-field.permissions
-      [:*
-       (cond
-         (:is-owner member)
-         [:span.label (tr "labels.owner")]
-
-         (:is-admin member)
-         [:span.label (tr "labels.admin")]
-
-         (:can-edit member)
-         [:span.label (tr "labels.editor")]
-
-         :else
-         [:span.label (tr "labels.viewer")])
-
-       (when (and (not (:is-owner member))
-                  (or (get-in team [:permissions :is-admin])
-                      (get-in team [:permissions :is-owner])))
-         [:span.icon {:on-click #(reset! show? true)} i/arrow-down])]
-
-      [:& dropdown {:show @show?
-                    :on-close #(reset! show? false)}
-       [:ul.dropdown.options-dropdown
-        [:li {:on-click set-admin} (tr "labels.admin")]
-        [:li {:on-click set-editor} (tr "labels.editor")]
-        ;; Temporarily disabled viewer role
-        ;; https://tree.taiga.io/project/uxboxproject/issue/1083
-        ;; [:li {:on-click set-viewer} (tr "labels.viewer")]
-        (when (:is-owner team)
-          [:*
-           [:hr]
-           [:li {:on-click set-owner} (tr "dashboard.promote-to-owner")]])
-        [:hr]
-        (when (and (or (get-in team [:permissions :is-owner])
-                       (get-in team [:permissions :is-admin]))
-                   (not= (:id profile)
-                         (:id member)))
-          [:li {:on-click delete} (tr "labels.remove")])]]]]))
-
+     [:div.table-field.name
+      [:& member-info {:member member :profile profile}]]
+     [:div.table-field.roles
+      [:& rol-info  {:member member
+                     :team team
+                     :set-admin set-admin
+                     :set-editor set-editor
+                     :set-owner set-owner
+                     :profile profile}]]
+     [:div.table-field.actions
+      [:& member-actions {:member member
+                          :profile profile
+                          :team team
+                          :delete delete
+                          :leave preset-leave}]]]))
 
 (mf/defc team-members
   [{:keys [members-map team profile] :as props}]
@@ -208,13 +314,12 @@
                      (d/seek :is-owner))]
     [:div.dashboard-table
      [:div.table-header
-      [:div.table-field.name (tr "labels.name")]
-      [:div.table-field.email (tr "labels.email")]
-      [:div.table-field.permissions (tr "labels.permissions")]]
+      [:div.table-field.name (tr "labels.member")]
+      [:div.table-field.permissions (tr "labels.role")]]
      [:div.table-rows
-      [:& team-member {:member owner :team team :profile profile}]
+      [:& team-member {:member owner :team team :profile profile :members members-map}]
       (for [item members]
-        [:& team-member {:member item :team team :profile profile :key (:id item)}])]]))
+        [:& team-member {:member item :team team :profile profile :key (:id item) :members members-map}])]]))
 
 (mf/defc team-members-page
   [{:keys [team profile] :as props}]
