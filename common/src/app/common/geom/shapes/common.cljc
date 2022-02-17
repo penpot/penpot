@@ -70,9 +70,11 @@
   ([points matrix]
    (transform-points points nil matrix))
   ([points center matrix]
-   (let [prev (if center (gmt/translate-matrix center) (gmt/matrix))
-         post (if center (gmt/translate-matrix (gpt/negate center)) (gmt/matrix))
+   (if (some? matrix)
+     (let [prev (if center (gmt/translate-matrix center) (gmt/matrix))
+           post (if center (gmt/translate-matrix (gpt/negate center)) (gmt/matrix))
 
-         tr-point (fn [point]
-                    (gpt/transform point (gmt/multiply prev matrix post)))]
-     (mapv tr-point points))))
+           tr-point (fn [point]
+                      (gpt/transform point (gmt/multiply prev matrix post)))]
+       (mapv tr-point points))
+     points)))

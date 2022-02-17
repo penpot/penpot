@@ -82,7 +82,7 @@
 
 (defn add-fill
   ([attrs shape render-id]
-   (add-fill attrs shape render-id 0))
+   (add-fill attrs shape render-id nil))
 
   ([attrs shape render-id index]
    (let [fill-attrs
@@ -92,7 +92,7 @@
              {:fill (str/format "url(#%s)" fill-image-id)})
 
            (contains? shape :fill-color-gradient)
-           (let [fill-color-gradient-id (str "fill-color-gradient_" render-id "_" index)]
+           (let [fill-color-gradient-id (str "fill-color-gradient_" render-id (if index (str "_" index) ""))]
              {:fill (str/format "url(#%s)" fill-color-gradient-id)})
 
            (contains? shape :fill-color)

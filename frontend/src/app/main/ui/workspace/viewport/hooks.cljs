@@ -98,16 +98,6 @@
             (some #(cph/is-parent? objects % group-id))
             (not))))
 
-(defn check-text-collision?
-  "Checks if he current position `pos` overlaps any of the text-nodes for the given `text-id`"
-  [objects pos text-id]
-  (and (= :text (get-in objects [text-id :type]))
-       (let [collisions
-             (->> (dom/query-all (str "#shape-" text-id " .text-node"))
-                  (map dom/get-bounding-rect)
-                  (map dom/bounding-rect->rect))]
-         (not (some #(gshr/contains-point? % pos) collisions)))))
-
 (defn setup-hover-shapes [page-id move-stream raw-position-ref objects transform selected ctrl? hover hover-ids hover-disabled? zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
@@ -180,9 +170,6 @@
 
              remove-xfm (mapcat #(cph/get-parent-ids objects %))
              remove-id? (cond-> (into #{} remove-xfm selected)
-                          :always
-                          (into (filter #(check-text-collision? objects (mf/ref-val raw-position-ref) %)) ids)
-
                           (not @ctrl?)
                           (into (filter #(group-empty-space? % objects ids)) ids)
 

@@ -9,8 +9,10 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpp]
    [app.common.geom.shapes.rect :as gpr]
+   [app.common.geom.shapes.text :as gte]
    [app.common.math :as mth]))
 
 (defn orientation
@@ -283,6 +285,23 @@
         (is-point-inside-ellipse? (first rect-points) ellipse-data)
         (intersects-lines-ellipse? rect-lines ellipse-data))))
 
+(defn overlaps-text?
+  [{:keys [position-data] :as shape} rect]
+
+  (if (and (some? position-data) (d/not-empty? position-data))
+    (let [center    (gco/center-shape shape)
+
+          transform-rect
+          (fn [rect-points]
+            (gco/transform-points rect-points center (:transform shape)))]
+
+      (->> position-data
+           (map (comp transform-rect
+                      gpr/rect->points
+                      gte/position-data->rect))
+           (some #(overlaps-rect-points? rect %))))
+    (overlaps-rect-points? rect (:points shape))))
+
 (defn overlaps?
   "General case to check for overlapping between shapes and a rectangle"
   [shape rect]
@@ -291,14 +310,25 @@
                  (update :x - stroke-width)
                  (update :y - stroke-width)
                  (update :width + (* 2 stroke-width))
-                 (update :height + (* 2 stroke-width))
-                 )]
+                 (update :height + (* 2 stroke-width)))]
     (or (not shape)
         (let [path? (= :path (:type shape))
-              circle? (= :circle (:type shape))]
-          (and (overlaps-rect-points? rect (:points shape))
-               (or (not path?)   (overlaps-path? shape rect))
-               (or (not circle?) (overlaps-ellipse? shape rect)))))))
+              circle? (= :circle (:type shape))
+              text? (= :text (:type shape))]
+          (cond
+            path?
+            (and (overlaps-rect-points? rect (:points shape))
+                 (overlaps-path? shape rect))
+
+            circle?
+            (and (overlaps-rect-points? rect (:points shape))
+                 (overlaps-ellipse? shape rect))
+
+            text?
+            (overlaps-text? shape rect)
+
+            :else
+            (overlaps-rect-points? rect (:points shape)))))))
 
 (defn has-point-rect?
   [rect point]
