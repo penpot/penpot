@@ -18,7 +18,7 @@
      [:div.grid-item]]
 
     (true? default?)
-    [:div.grid-empty-placeholder.drafts
+    [:div.grid-empty-placeholder.drafts {:data-test "empty-placeholder"}
      [:div.text
       [:& i18n/tr-html {:label "dashboard.empty-placeholder-drafts"}]]]
 
