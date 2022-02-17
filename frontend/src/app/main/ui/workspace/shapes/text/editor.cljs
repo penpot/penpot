@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.shapes.text.editor
   (:require
    ["draft-js" :as draft]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.text :as txt]
    [app.main.data.workspace :as dw]
@@ -211,7 +212,7 @@
 
     [:div.text-editor
      {:ref self-ref
-      :style {:cursor cur/text
+      :style {:cursor (cur/text (:rotation shape))
               :width (:width shape)
               :height (:height shape)}
       :on-click on-click
@@ -231,61 +232,34 @@
        :ref on-editor
        :editor-state state}]]))
 
-(mf/defc text-shape-edit
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false
-   ::mf/forward-ref true}
-  [props _]
-  (let [{:keys [id x y width height grow-type] :as shape} (obj/get props "shape")
-        transform (str (gsh/transform-matrix shape))
+(defn translate-point-from-viewport
+  "Translate a point in the viewport into client coordinates"
+  [pt viewport zoom]
+  (let [vbox     (.. ^js viewport -viewBox -baseVal)
+        box      (gpt/point (.-x vbox) (.-y vbox))
+        zoom     (gpt/point zoom)]
+    (-> (gpt/subtract pt box)
+        (gpt/multiply zoom))))
 
-        clip-id (str "clip-" id)
+(mf/defc text-editor-viewport
+  {::mf/wrap-props false}
+  [props]
+  (let [shape        (obj/get props "shape")
+        viewport-ref (obj/get props "viewport-ref")
+        zoom         (obj/get props "zoom")
 
-        ;; local-position-data (mf/use-state nil)
+        position
+        (-> (gpt/point (-> shape :selrect :x)
+                       (-> shape :selrect :y))
+            (translate-point-from-viewport (mf/ref-val viewport-ref) zoom))]
 
-        ;;handle-change-foreign-object
-        ;;(mf/use-callback
-        ;; (fn [node]
-        ;;   (when node
-        ;;     (let [position-data (utp/calc-position-data node)]
-        ;;       (reset! local-position-data position-data)))))
-        ;;
-        ;;[shape-ref on-change-node] (use-mutable-observer handle-change-foreign-object)
+    [:div {:style {:position "absolute"
+                   :left (str (:x position) "px")
+                   :top  (str (:y position) "px")
+                   :pointer-events "all"
+                   :transform (str (gsh/transform-matrix shape nil (gpt/point 0 0)))
+                   :transform-origin "center center"}}
 
-        ;;handle-interaction
-        ;;(mf/use-callback
-        ;; (fn []
-        ;;   (handle-change-foreign-object (mf/ref-val shape-ref))))
-        ]
-
-    #_(mf/use-effect
-     (mf/use-callback handle-interaction)
-     (fn []
-       (let [keys [(events/listen js/document EventType.KEYUP handle-interaction)
-                   (events/listen js/document EventType.KEYDOWN handle-interaction)
-                   (events/listen js/document EventType.MOUSEDOWN handle-interaction)]]
-         #(doseq [key keys]
-            (events/unlistenByKey key)))))
-    [:*
-     #_[:> shape-container {:shape shape
-                          :pointer-events "none"}
-      [:& svg/text-shape {:shape (cond-> shape
-                                   (some? @local-position-data)
-                                   (assoc :position-data @local-position-data))}]]
-
-     [:g.text-editor {:clip-path (str "url(#" clip-id ")")
-                      ;; :ref on-change-node
-                      :key (str "editor-" id)}
-      [:defs
-       ;; This clippath will cut the huge foreign object we use to calculate the automatic resize
-       [:clipPath {:id clip-id}
-        [:rect {:x x :y y
-                :width (+ width 8) :height (+ height 8)
-                :transform transform}]]]
-
-      [:foreignObject {:transform transform
-                       :x x :y y
-                       :width  (if (#{:auto-width} grow-type) 100000 width)
-                       :height (if (#{:auto-height :auto-width} grow-type) 100000 height)}
-
-       [:& text-shape-edit-html {:shape shape :key (str id)}]]]]))
+     [:div  {:style {:transform (str "scale(" zoom ")")
+                     :transform-origin "top left"}}
+      [:& text-shape-edit-html {:shape shape :key (str (:id shape))}]]]))

@@ -38,19 +38,8 @@
         stroke-width (case (:stroke-alignment shape :center)
                        :center (/ (:stroke-width shape 0) 2)
                        :outer (:stroke-width shape 0)
-                       0)
-        margin (gsh/shape-stroke-margin shape stroke-width)
-        bounding-box (-> (gsh/points->selrect (:points shape))
-                         (update :x - (+ stroke-width margin))
-                         (update :y - (+ stroke-width margin))
-                         (update :width + (* 2 (+ stroke-width margin)))
-                         (update :height + (* 2 (+ stroke-width margin))))]
-    [:mask {:id stroke-mask-id
-            :x (:x bounding-box)
-            :y (:y bounding-box)
-            :width (:width bounding-box)
-            :height (:height bounding-box)
-            :maskUnits "userSpaceOnUse"}
+                       0)]
+    [:mask {:id stroke-mask-id}
      [:use {:xlinkHref (str "#" shape-id)
             :style #js {:fill "none" :stroke "white" :strokeWidth (* stroke-width 2)}}]
 

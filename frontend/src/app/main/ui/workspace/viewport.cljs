@@ -110,6 +110,8 @@
         ;; Only when we have all the selected shapes in one frame
         selected-frame    (when (= (count selected-frames) 1) (get base-objects (first selected-frames)))
 
+        editing-shape     (when edition (get base-objects edition))
+
         create-comment?   (= :comments drawing-tool)
         drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
@@ -159,6 +161,8 @@
         show-artboard-names?     (contains? layout :display-artboard-names)
         show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
 
+        show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
+
         disabled-guides?         (or drawing-tool transform)]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
@@ -176,6 +180,10 @@
       [:& wtr/frame-renderer {:objects base-objects
                               :background background}]
 
+      (when show-text-editor?
+        [:& editor/text-editor-viewport {:shape editing-shape
+                                         :viewport-ref viewport-ref
+                                         :zoom zoom}])
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox
                                      :vport vport
@@ -267,9 +275,6 @@
            :frame selected-frame
            :hover-shape @hover
            :zoom zoom}])
-
-       (when text-editing?
-         [:& editor/text-shape-edit {:shape (get base-objects edition)}])
 
        [:& widgets/frame-titles
         {:objects objects-modified

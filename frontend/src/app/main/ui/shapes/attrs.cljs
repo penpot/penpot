@@ -80,34 +80,38 @@
                                      "z")}))
     attrs))
 
-(defn add-fill [attrs shape render-id index]
-  (let [
-        fill-attrs (cond
-                     (contains? shape :fill-image)
-                     (let [fill-image-id (str "fill-image-" render-id)]
-                       {:fill (str/format "url(#%s)" fill-image-id)})
+(defn add-fill
+  ([attrs shape render-id]
+   (add-fill attrs shape render-id 0))
 
-                     (contains? shape :fill-color-gradient)
-                     (let [fill-color-gradient-id (str "fill-color-gradient_" render-id "_" index)]
-                       {:fill (str/format "url(#%s)" fill-color-gradient-id)})
+  ([attrs shape render-id index]
+   (let [fill-attrs
+         (cond
+           (contains? shape :fill-image)
+           (let [fill-image-id (str "fill-image-" render-id)]
+             {:fill (str/format "url(#%s)" fill-image-id)})
 
-                     (contains? shape :fill-color)
-                     {:fill (:fill-color shape)}
+           (contains? shape :fill-color-gradient)
+           (let [fill-color-gradient-id (str "fill-color-gradient_" render-id "_" index)]
+             {:fill (str/format "url(#%s)" fill-color-gradient-id)})
 
-                     ;; If contains svg-attrs the origin is svg. If it's not svg origin
-                     ;; we setup the default fill as transparent (instead of black)
-                     (and (not (contains? shape :svg-attrs))
-                          (not (#{:svg-raw :group} (:type shape))))
-                     {:fill "none"}
+           (contains? shape :fill-color)
+           {:fill (:fill-color shape)}
 
-                     :else
-                     {})
+           ;; If contains svg-attrs the origin is svg. If it's not svg origin
+           ;; we setup the default fill as transparent (instead of black)
+           (and (not (contains? shape :svg-attrs))
+                (not (#{:svg-raw :group} (:type shape))))
+           {:fill "none"}
 
-        fill-attrs (cond-> fill-attrs
-                     (contains? shape :fill-opacity)
-                     (assoc :fillOpacity (:fill-opacity shape)))]
+           :else
+           {})
 
-    (obj/merge! attrs (clj->js fill-attrs))))
+         fill-attrs (cond-> fill-attrs
+                      (contains? shape :fill-opacity)
+                      (assoc :fillOpacity (:fill-opacity shape)))]
+
+     (obj/merge! attrs (clj->js fill-attrs)))))
 
 (defn add-stroke [attrs shape render-id]
   (let [stroke-style (:stroke-style shape :none)

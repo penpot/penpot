@@ -29,7 +29,6 @@
 (def pointer-move (cursor-ref :pointer-move 0 0 10 42))
 (def pointer-node (cursor-ref :pointer-node 0 0 10 32))
 (def resize-alt (cursor-ref :resize-alt))
-(def text (cursor-ref :text))
 (def zoom (cursor-ref :zoom))
 (def zoom-in (cursor-ref :zoom-in))
 (def zoom-out (cursor-ref :zoom-out))
@@ -40,6 +39,7 @@
 (def resize-ns (cursor-fn :resize-h 90))
 (def resize-nwse (cursor-fn :resize-h 135))
 (def rotate (cursor-fn :rotate 90))
+(def text (cursor-fn :text 0))
 
 ;;
 (def resize-ew-2 (cursor-fn :resize-h-2 0))

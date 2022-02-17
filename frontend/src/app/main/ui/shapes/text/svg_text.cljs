@@ -24,9 +24,8 @@
   
   (let [render-id (mf/use-ctx muc/render-ctx)
         {:keys [id x y width height position-data] :as shape} (obj/get props "shape")
-        clip-id (str "clip-text" id "_" render-id)
-        group-props (-> #js {:transform (gsh/transform-matrix shape)
-                             :clipPath (str "url(#" clip-id ")")}
+        transform (str (gsh/transform-matrix shape))
+        group-props (-> #js {:transform transform}
                         (attrs/add-style-attrs shape render-id))
         get-gradient-id
         (fn [index]
@@ -43,9 +42,6 @@
 
      [:& shape-custom-stroke {:shape shape}
       [:> :g group-props
-       [:defs
-        [:clipPath {:id clip-id}
-         [:rect.text-clip {:x x :y y :width width :height height}]]]
        (for [[index data] (d/enumerate position-data)]
          (let [props (-> #js {:x (:x data)
                               :y (:y data)

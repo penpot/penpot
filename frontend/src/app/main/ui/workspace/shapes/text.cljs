@@ -131,7 +131,6 @@
         handle-change-foreign-object
         (fn [node]
           (when (some? node)
-            (prn "change!")
             (let [position-data (utp/calc-position-data node)
                   parent (dom/get-parent node)
                   parent-transform (dom/get-attribute parent "transform")
@@ -174,7 +173,7 @@
      ;; and updates the selrect accordingly
      [:*
       [:g.text-shape {:ref on-change-node
-                      :opacity (when (or edition? (some? (:position-data shape))) 0.2)
+                      :opacity (when (or edition? (some? (:position-data shape))) 0)
                       :pointer-events "none"}
 
        ;; The `:key` prop here is mandatory because the

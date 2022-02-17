@@ -19,11 +19,12 @@
   (let [valign (:vertical-align node "top")
         base   #js {:height "100%"
                     :width  "100%"
-                    :fontFamily "sourcesanspro"}]
+                    :fontFamily "sourcesanspro"
+                    :display "flex"}]
     (cond-> base
-      (= valign "top")     (obj/set! "justifyContent" "flex-start")
-      (= valign "center")  (obj/set! "justifyContent" "center")
-      (= valign "bottom")  (obj/set! "justifyContent" "flex-end"))))
+      (= valign "top")     (obj/set! "alignItems" "flex-start")
+      (= valign "center")  (obj/set! "alignItems" "center")
+      (= valign "bottom")  (obj/set! "alignItems" "flex-end"))))
 
 (defn generate-paragraph-set-styles
   [{:keys [grow-type] :as shape}]
@@ -39,7 +40,6 @@
     #js {:display "inline-flex"
          :flexDirection "column"
          :justifyContent "inherit"
-         :minHeight (when-not (or auto-width? auto-height?) "100%")
          :minWidth (when-not auto-width? "100%")
          :marginRight "1px"
          :verticalAlign "top"}))
