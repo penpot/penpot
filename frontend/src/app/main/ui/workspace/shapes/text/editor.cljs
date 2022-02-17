@@ -241,25 +241,24 @@
 
         clip-id (str "clip-" id)
 
-        shape-ref (mf/use-ref nil)
-        local-position-data (mf/use-state nil)
+        ;; local-position-data (mf/use-state nil)
 
-        handle-change-foreign-object
-        (mf/use-callback
-         (fn [node]
-           (when node
-             (mf/set-ref-val! shape-ref node)
-             (let [position-data (utp/calc-position-data node)]
-               (reset! local-position-data position-data)))))
+        ;;handle-change-foreign-object
+        ;;(mf/use-callback
+        ;; (fn [node]
+        ;;   (when node
+        ;;     (let [position-data (utp/calc-position-data node)]
+        ;;       (reset! local-position-data position-data)))))
+        ;;
+        ;;[shape-ref on-change-node] (use-mutable-observer handle-change-foreign-object)
 
-        handle-interaction
-        (mf/use-callback
-         (fn []
-           (handle-change-foreign-object (mf/ref-val shape-ref))))
+        ;;handle-interaction
+        ;;(mf/use-callback
+        ;; (fn []
+        ;;   (handle-change-foreign-object (mf/ref-val shape-ref))))
+        ]
 
-        on-change-node (use-mutable-observer handle-change-foreign-object)]
-
-    (mf/use-effect
+    #_(mf/use-effect
      (mf/use-callback handle-interaction)
      (fn []
        (let [keys [(events/listen js/document EventType.KEYUP handle-interaction)
@@ -268,14 +267,14 @@
          #(doseq [key keys]
             (events/unlistenByKey key)))))
     [:*
-     [:> shape-container {:shape shape
+     #_[:> shape-container {:shape shape
                           :pointer-events "none"}
       [:& svg/text-shape {:shape (cond-> shape
                                    (some? @local-position-data)
                                    (assoc :position-data @local-position-data))}]]
 
      [:g.text-editor {:clip-path (str "url(#" clip-id ")")
-                      :ref on-change-node
+                      ;; :ref on-change-node
                       :key (str "editor-" id)}
       [:defs
        ;; This clippath will cut the huge foreign object we use to calculate the automatic resize

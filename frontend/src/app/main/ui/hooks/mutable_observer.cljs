@@ -6,6 +6,7 @@
 
 (ns app.main.ui.hooks.mutable-observer
   (:require
+   [app.common.data :as d]
    [app.common.logging :as log]
    [rumext.alpha :as mf]))
 
@@ -20,9 +21,12 @@
         on-mutation
         (mf/use-callback
          (mf/deps on-change)
-         (fn [mutation]
-           (log/debug :action "mutation" :js/mutation mutation)
-           (on-change (mf/ref-val node-ref))))
+         (fn [mutations]
+           (let [mutations
+                 (->> mutations
+                      (remove #(= "transform" (.-attributeName ^js %))))]
+             (when (d/not-empty? mutations)
+               (on-change (mf/ref-val node-ref))))))
         
         set-node
         (mf/use-callback
@@ -51,4 +55,4 @@
            (.disconnect prev-obs)
            (mf/set-ref-val! prev-obs-ref nil)))))
 
-    set-node))
+    [node-ref set-node]))

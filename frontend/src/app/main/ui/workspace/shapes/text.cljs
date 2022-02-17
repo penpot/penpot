@@ -125,14 +125,13 @@
   (let [{:keys [id dirty?] :as shape} (unchecked-get props "shape")
         edition-ref (mf/use-memo (mf/deps id) #(l/derived (fn [o] (= id (:edition o))) refs/workspace-local))
         edition?    (mf/deref edition-ref)
-        shape-ref (mf/use-ref nil)
 
         local-position-data (mf/use-state nil)
 
         handle-change-foreign-object
         (fn [node]
           (when (some? node)
-            (mf/set-ref-val! shape-ref node)
+            (prn "change!")
             (let [position-data (utp/calc-position-data node)
                   parent (dom/get-parent node)
                   parent-transform (dom/get-attribute parent "transform")
@@ -152,28 +151,30 @@
                                            (gsh/transform-rect mtx)))))]
               (reset! local-position-data position-data))))
 
-        on-change-node (use-mutable-observer handle-change-foreign-object)]
+        [shape-ref on-change-node] (use-mutable-observer handle-change-foreign-object)]
 
     ;; When the text is "dirty?" we get recalculate the positions
     (mf/use-layout-effect
      (mf/deps id dirty?)
      (fn []
-       (let [node (mf/ref-val shape-ref)
-             position-data (utp/calc-position-data node)]
-         (reset! local-position-data nil)
-         (st/emit! (dch/update-shapes
-                    [id]
-                    (fn [shape]
-                      (-> shape
-                          (dissoc :dirty?)
-                          (assoc :position-data position-data))))))))
+       (let [node (mf/ref-val shape-ref)]
+         (when (and dirty? (some? node))
+           (let [position-data (utp/calc-position-data node)]
+             (reset! local-position-data nil)
+             (st/emit! (dch/update-shapes
+                        [id]
+                        (fn [shape]
+                          (-> shape
+                              (dissoc :dirty?)
+                              (assoc :position-data position-data)))
+                        {:save-undo? false})))))))
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
      ;; and updates the selrect accordingly
      [:*
       [:g.text-shape {:ref on-change-node
-                      :opacity (when (or edition? (some? (:position-data shape))) 0)
+                      :opacity (when (or edition? (some? (:position-data shape))) 0.2)
                       :pointer-events "none"}
 
        ;; The `:key` prop here is mandatory because the
@@ -186,7 +187,7 @@
                                 :edition? edition?
                                 :key (str id edition?)}]]
 
-      (when (and (not edition?) (or (some? (:position-data shape)) (some? local-position-data)))
+      (when (and (or (some? (:position-data shape)) (some? local-position-data)))
         (let [shape
               (cond-> shape
                 (some? @local-position-data)
