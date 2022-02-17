@@ -130,6 +130,24 @@
         (->> (rp/query :team-stats {:team-id team-id})
              (rx/map team-stats-fetched))))))
 
+;; --- EVENT: fetch-team-invitations
+
+(defn team-invitations-fetched
+  [invitations]
+  (ptk/reify ::team-invitations-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :dashboard-team-invitations invitations))))
+
+(defn fetch-team-invitations
+  []
+  (ptk/reify ::fetch-team-invitations
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (->> (rp/query :team-invitations {:team-id team-id})
+             (rx/map team-invitations-fetched))))))
+
 ;; --- EVENT: fetch-projects
 
 (defn projects-fetched
@@ -424,6 +442,38 @@
             team-id (:current-team-id state)
             params  (assoc params :team-id team-id)]
         (->> (rp/mutation! :invite-team-member params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+(defn update-team-invitation-role
+  [{:keys [email team-id role] :as params}]
+  (us/assert ::us/email email)
+  (us/assert ::us/uuid team-id)
+  (us/assert ::us/keyword role)
+  (ptk/reify ::update-team-invitation-role
+    IDeref
+    (-deref [_] {:role role})
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/mutation! :update-team-invitation-role params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+(defn delete-team-invitation
+  [{:keys [email team-id] :as params}]
+  (us/assert ::us/email email)
+  (us/assert ::us/uuid team-id)
+  (ptk/reify ::delete-team-invitation
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/mutation! :delete-team-invitation params)
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -784,6 +834,14 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (rx/of (rt/nav :dashboard-team-members {:team-id team-id}))))))
+
+(defn go-to-team-invitations
+  []
+  (ptk/reify ::go-to-team-invitations
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (rx/of (rt/nav :dashboard-team-invitations {:team-id team-id}))))))
 
 (defn go-to-team-settings
   []

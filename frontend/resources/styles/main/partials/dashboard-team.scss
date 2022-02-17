@@ -4,7 +4,7 @@
   padding: 14px;
   box-shadow: 0px 4px 8px rgba($color-black, 0.25);
   border-radius: 8px;
-  width: 414px;
+  width: 500px;
   position: fixed;
 
   form {
@@ -18,12 +18,12 @@
   }
 
   .custom-input {
-    width: 272px;
+    width: 314px;
     margin-right: 10px;
   }
 
   .custom-select {
-    width: 103px;
+    width: 160px;
     overflow: hidden;
   }
 
@@ -40,7 +40,20 @@
   }
 }
 
-.dashboard-team-members {
+.dashboard-team-members,
+.dashboard-team-invitations {
+  .empty-invitations {
+    height: 156px;
+    max-width: 1040px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    border: 1px dashed $color-gray-20;
+    margin-top: 16px;
+  }
+
   .table-row {
     background-color: $color-white;
     height: 63px;
@@ -88,13 +101,16 @@
       .rol-selector {
         &.has-priv {
           border: 1px solid $color-gray-20;
+          cursor: pointer;
         }
         min-width: 160px;
         height: 32px;
         display: flex;
         justify-content: space-between;
+        align-items: center;
         border-radius: 2px;
         padding: 3px 8px;
+        font-size: $fs14;
       }
     }
 
@@ -103,6 +119,30 @@
       .actions-dropdown {
         max-height: 30rem;
         min-width: 180px;
+      }
+    }
+
+    &.status {
+      .status-badge {
+        color: $color-white;
+        border-radius: 12px;
+        min-width: 74px;
+        height: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        &.pending {
+          background-color: $color-warning;
+        }
+
+        &.expired {
+          background-color: $color-gray-20;
+        }
+
+        .status-label {
+          font-size: $fs12;
+        }
       }
     }
   }
