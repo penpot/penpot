@@ -17,11 +17,15 @@
    :width width
    :height height})
 
-(defn position-data-bounding-box
+(defn position-data-points
   [{:keys [position-data] :as shape}]
   (let [points    (->> position-data
                        (mapcat (comp gpr/rect->points position-data->rect)))
-        transform (gtr/transform-matrix shape)
-        points    (gco/transform-points points transform)]
-    (gpr/points->selrect points)))
+        transform (gtr/transform-matrix shape)]
+    (gco/transform-points points transform)))
+
+(defn position-data-bounding-box
+  [shape]
+  (gpr/points->selrect (position-data-points shape)))
+
 

@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.shapes.text
   (:require
    [app.common.attrs :as attrs]
-   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
@@ -123,7 +122,7 @@
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id content points] :as shape} (unchecked-get props "shape")
+  (let [{:keys [id] :as shape} (unchecked-get props "shape")
         edition-ref (mf/use-memo (mf/deps id) #(l/derived (fn [o] (= id (:edition o))) refs/workspace-local))
         edition?    (mf/deref edition-ref)
 
@@ -150,7 +149,7 @@
                                            (gsh/transform-rect mtx)))))]
               (reset! local-position-data position-data))))
 
-        [shape-ref on-change-node] (use-mutable-observer handle-change-foreign-object)
+        [_ on-change-node] (use-mutable-observer handle-change-foreign-object)
 
         show-svg-text? (or (some? (:position-data shape)) (some? @local-position-data))
 
@@ -170,7 +169,7 @@
      (fn []
        ;; Timer to update the shape. We do this so a lot of changes won't produce
        ;; a lot of updates (kind of a debounce)
-       (let [sid (timers/schedule 250 update-position-data)]
+       (let [sid (timers/schedule 100 update-position-data)]
          (fn []
            (rx/dispose! sid)))))
 
