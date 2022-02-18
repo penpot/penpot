@@ -10,7 +10,6 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.loggers.audit :as audit]
-   [app.metrics :as mtx]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.util.services :as sv]
@@ -44,16 +43,8 @@
      ::audit/props {:email email}
      ::audit/profile-id profile-id}))
 
-(defn- annotate-profile-activation
-  "A helper for properly increase the profile-activation metric once the
-  transaction is completed."
-  [metrics]
-  (fn []
-    (let [mobj (get-in metrics [:definitions :profile-activation])]
-      ((::mtx/fn mobj) {:by 1}))))
-
 (defmethod process-token :verify-email
-  [{:keys [conn session metrics] :as cfg} _ {:keys [profile-id] :as claims}]
+  [{:keys [conn session] :as cfg} _ {:keys [profile-id] :as claims}]
   (let [profile (profile/retrieve-profile conn profile-id)
         claims  (assoc claims :profile profile)]
 
@@ -69,7 +60,6 @@
 
     (with-meta claims
       {:transform-response ((:create session) profile-id)
-       :before-complete (annotate-profile-activation metrics)
        ::audit/name "verify-profile-email"
        ::audit/props (audit/profile->props profile)
        ::audit/profile-id (:id profile)})))

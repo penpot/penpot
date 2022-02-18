@@ -10,10 +10,13 @@
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.teams :as teams]
+   [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
+   [app.util.async :as async]
    [app.util.http :as http]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -47,6 +50,8 @@
           :opt-un [::id]))
 
 (sv/defmethod ::upload-file-media-object
+  {::rlimit/permits (cf/get :rlimit-image)
+   ::async/dispatch :default}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (let [file (select-file pool file-id)]
     (teams/check-edition-permissions! pool profile-id (:team-id file))
@@ -167,6 +172,8 @@
           :opt-un [::id ::name]))
 
 (sv/defmethod ::create-file-media-object-from-url
+  {::rlimit/permits (cf/get :rlimit-image)
+   ::async/dispatch :default}
   [{:keys [pool storage] :as cfg} {:keys [profile-id file-id url name] :as params}]
   (let [file (select-file pool file-id)]
     (teams/check-edition-permissions! pool profile-id (:team-id file))
