@@ -185,7 +185,7 @@
                           :transform
                           :transform-inverse
                           :rotation
-                          :dirty?
+                          :position-data
                           :flip-x
                           :flip-y]})
                (clear-local-transform)

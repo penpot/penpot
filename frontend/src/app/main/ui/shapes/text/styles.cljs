@@ -81,7 +81,8 @@
                              :textTransform text-transform
                              :lineHeight (or line-height "inherit")
                              :color "transparent"
-                             :caretColor (or text-color "black")}
+                             :caretColor (or text-color "black")
+                             :overflowWrap "initial"}
 
         base (-> base
                  (obj/set! "--fill-color" fill-color)

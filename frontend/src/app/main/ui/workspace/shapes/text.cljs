@@ -123,7 +123,7 @@
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id dirty?] :as shape} (unchecked-get props "shape")
+  (let [{:keys [id content points] :as shape} (unchecked-get props "shape")
         edition-ref (mf/use-memo (mf/deps id) #(l/derived (fn [o] (= id (:edition o))) refs/workspace-local))
         edition?    (mf/deref edition-ref)
 
@@ -131,9 +131,8 @@
 
         handle-change-foreign-object
         (fn [node]
-          (when (some? node)
-            (let [position-data (utp/calc-position-data node)
-                  parent (dom/get-parent node)
+          (when-let [position-data (utp/calc-position-data node)]
+            (let [parent (dom/get-parent node)
                   parent-transform (dom/get-attribute parent "transform")
                   node-transform (dom/get-attribute node "transform")
 
@@ -153,24 +152,27 @@
 
         [shape-ref on-change-node] (use-mutable-observer handle-change-foreign-object)
 
-        show-svg-text? (or (some? (:position-data shape)) (some? @local-position-data))]
+        show-svg-text? (or (some? (:position-data shape)) (some? @local-position-data))
 
-    ;; When the text is "dirty?" we get recalculate the positions
+        update-position-data
+        (fn []
+          (when (some? @local-position-data)
+            (reset! local-position-data nil)
+            (st/emit! (dch/update-shapes
+                       [id]
+                       (fn [shape]
+                         (-> shape
+                             (assoc :position-data @local-position-data)))
+                       {:save-undo? false}))))]
+
     (mf/use-layout-effect
-     (mf/deps id dirty?)
+     (mf/deps @local-position-data)
      (fn []
-       (let [node (mf/ref-val shape-ref)]
-         (when (and dirty? (some? node))
-           (let [position-data (utp/calc-position-data node)]
-             (when (d/not-empty? position-data)
-               (reset! local-position-data nil)
-               (st/emit! (dch/update-shapes
-                          [id]
-                          (fn [shape]
-                            (-> shape
-                                (dissoc :dirty?)
-                                (assoc :position-data position-data)))
-                          {:save-undo? false}))))))))
+       ;; Timer to update the shape. We do this so a lot of changes won't produce
+       ;; a lot of updates (kind of a debounce)
+       (let [sid (timers/schedule 250 update-position-data)]
+         (fn []
+           (rx/dispose! sid)))))
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
