@@ -14,6 +14,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.interactions :as cti]
+   [app.common.spec.page :as ctp]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
@@ -264,31 +265,34 @@
 (declare prepare-duplicate-change)
 (declare prepare-duplicate-frame-change)
 (declare prepare-duplicate-shape-change)
+(declare prepare-duplicate-flows)
 
 (defn prepare-duplicate-changes
   "Prepare objects to duplicate: generate new id, give them unique names,
   move to the desired position, and recalculate parents and frames as needed."
-  [page-objects all-objects page-id ids delta it]
-  (let [unames         (volatile! (dwc/retrieve-used-names page-objects))
+  [all-objects page ids delta it]
+  (let [shapes         (map (d/getf all-objects) ids)
+        unames         (volatile! (dwc/retrieve-used-names (:objects page)))
         update-unames! (fn [new-name] (vswap! unames conj new-name))
         all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids all-objects %2))) #{} ids)
         ids-map        (into {} (map #(vector % (uuid/next))) all-ids)]
-    (reduce (fn [changes id]
-              (prepare-duplicate-change changes all-objects page-id unames update-unames! ids-map id delta))
-            (-> (pcb/empty-changes it page-id)
-                (pcb/with-objects all-objects))
-            ids)))
+    (-> (reduce (fn [changes shape]
+                  (prepare-duplicate-change changes all-objects page unames update-unames! ids-map shape delta))
+                (-> (pcb/empty-changes it)
+                    (pcb/with-page page)
+                    (pcb/with-objects all-objects))
+                shapes)
+        (prepare-duplicate-flows shapes page ids-map))))
 
 (defn- prepare-duplicate-change
-  [changes objects page-id unames update-unames! ids-map id delta]
-  (let [obj (get objects id)]
-    (if (cph/frame-shape? obj)
-      (prepare-duplicate-frame-change changes objects page-id unames update-unames! ids-map obj delta)
-      (prepare-duplicate-shape-change changes objects page-id unames update-unames! ids-map obj delta (:frame-id obj) (:parent-id obj)))))
+  [changes objects page unames update-unames! ids-map shape delta]
+  (if (cph/frame-shape? shape)
+    (prepare-duplicate-frame-change changes objects page unames update-unames! ids-map shape delta)
+    (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map shape delta (:frame-id shape) (:parent-id shape))))
 
 (defn- prepare-duplicate-frame-change
-  [changes objects page-id unames update-unames! ids-map obj delta]
-  (let [new-id   (ids-map (:id obj))
+  [changes objects page unames update-unames! ids-map obj delta]
+  (let [new-id     (ids-map (:id obj))
         frame-name (dwc/generate-unique-name @unames (:name obj))
         _          (update-unames! frame-name)
 
@@ -306,7 +310,7 @@
         changes (reduce (fn [changes child]
                           (prepare-duplicate-shape-change changes
                                                           objects
-                                                          page-id
+                                                          page
                                                           unames
                                                           update-unames!
                                                           ids-map
@@ -319,7 +323,7 @@
     changes))
 
 (defn- prepare-duplicate-shape-change
-  [changes objects page-id unames update-unames! ids-map obj delta frame-id parent-id]
+  [changes objects page unames update-unames! ids-map obj delta frame-id parent-id]
   (if (some? obj)
     (let [new-id      (ids-map (:id obj))
           parent-id   (or parent-id frame-id)
@@ -337,21 +341,42 @@
 
           changes (pcb/add-obj changes new-obj {:ignore-touched true})
           changes (-> (pcb/add-obj changes new-obj {:ignore-touched true})
-                      (pcb/amend-last-change #(assoc % :old-id (:id obj))))
+                      (pcb/amend-last-change #(assoc % :old-id (:id obj))))]
 
-          changes (reduce (fn [changes child]
-                            (prepare-duplicate-shape-change changes
-                                                            objects
-                                                            page-id
-                                                            unames
-                                                            update-unames!
-                                                            ids-map
-                                                            child
-                                                            delta
-                                                            frame-id
-                                                            new-id))
-                          changes
-                          (map (d/getf objects) (:shapes obj)))]
+          (reduce (fn [changes child]
+                    (prepare-duplicate-shape-change changes
+                                                    objects
+                                                    page
+                                                    unames
+                                                    update-unames!
+                                                    ids-map
+                                                    child
+                                                    delta
+                                                    frame-id
+                                                    new-id))
+                  changes
+                  (map (d/getf objects) (:shapes obj))))
+      changes))
+
+(defn- prepare-duplicate-flows
+  [changes shapes page ids-map]
+  (let [flows            (-> page :options :flows)
+        unames           (volatile! (into #{} (map :name flows)))
+        frames-with-flow (->> shapes
+                              (filter #(= (:type %) :frame))
+                              (filter #(some? (ctp/get-frame-flow flows (:id %)))))]
+    (if-not (empty? frames-with-flow)
+      (let [new-flows (reduce
+                        (fn [flows frame]
+                          (let [name     (dwc/generate-unique-name @unames "Flow-1")
+                                _        (vswap! unames conj name)
+                                new-flow {:id (uuid/next)
+                                          :name name
+                                          :starting-frame (get ids-map (:id frame))}]
+                            (ctp/add-flow flows new-flow)))
+                        flows
+                        frames-with-flow)]
+        (pcb/set-page-option changes :flows new-flows))
       changes)))
 
 (defn duplicate-changes-update-indices
@@ -437,15 +462,15 @@
     ptk/WatchEvent
     (watch [it state _]
       (when (or (not move-delta?) (nil? (get-in state [:workspace-local :transform])))
-        (let [page-id  (:current-page-id state)
-              objects  (wsh/lookup-page-objects state page-id)
+        (let [page     (wsh/lookup-page state)
+              objects  (:objects page)
               selected (wsh/lookup-selected state)
               delta    (if (and move-delta? (= (count selected) 1))
                          (let [obj (get objects (first selected))]
                            (calc-duplicate-delta obj state objects))
                          (gpt/point 0 0))
 
-              changes (->> (prepare-duplicate-changes objects objects page-id selected delta it)
+              changes (->> (prepare-duplicate-changes objects page selected delta it)
                            (duplicate-changes-update-indices objects selected))
 
               id-original (when (= (count selected) 1) (first selected))

@@ -1813,8 +1813,8 @@
 
           ;; Proceed with the standard shape paste process.
           (do-paste [it state mouse-pos media]
-            (let [page-objects  (wsh/lookup-page-objects state)
-                  media-idx     (d/index-by :prev-id media)
+            (let [page         (wsh/lookup-page state)
+                  media-idx    (d/index-by :prev-id media)
 
                   ;; Calculate position for the pasted elements
                   [frame-id parent-id delta index] (calculate-paste-position state mouse-pos in-viewport?)
@@ -1835,10 +1835,9 @@
                                                              :shape-ref
                                                              :touched))))))
 
-                  all-objects (merge page-objects paste-objects)
+                  all-objects (merge (:objects page) paste-objects)
 
-                  page-id  (:current-page-id state)
-                  changes  (-> (dws/prepare-duplicate-changes page-objects all-objects page-id selected delta it)
+                  changes  (-> (dws/prepare-duplicate-changes all-objects page selected delta it)
                                (pcb/amend-changes (partial process-rchange media-idx))
                                (pcb/amend-changes (partial change-add-obj-index paste-objects selected index)))
 

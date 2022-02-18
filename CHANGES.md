@@ -5,6 +5,9 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 ### :bug: Bugs fixed
+
+- Duplicate artboards create new flows if needed [Taiga #2221](https://tree.taiga.io/project/penpot/issue/2221)
+
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
