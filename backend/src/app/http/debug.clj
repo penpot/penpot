@@ -14,14 +14,18 @@
    [app.db :as db]
    [app.rpc.mutations.files :as m.files]
    [app.rpc.queries.profile :as profile]
+   [app.util.async :as async]
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.java.io :as io]
+   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [fipp.edn :as fpp]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [promesa.core :as p]))
 
 ;; (selmer.parser/cache-off!)
 
@@ -201,12 +205,23 @@
     (db/exec-one! conn ["select count(*) as count from server_prop;"])
     {:status 200 :body "Ok"}))
 
+(defn- wrap-async
+  [{:keys [executor] :as cfg} f]
+  (fn [request respond raise]
+    (-> (async/with-dispatch executor
+          (f cfg request))
+        (p/then respond)
+        (p/catch raise))))
+
+(defmethod ig/pre-init-spec ::handlers [_]
+  (s/keys :req-un [::db/pool ::wrk/executor]))
+
 (defmethod ig/init-key ::handlers
   [_ cfg]
-  {:index (partial index cfg)
-   :health-check (partial health-check cfg)
-   :retrieve-file-data (partial retrieve-file-data cfg)
-   :retrieve-file-changes (partial retrieve-file-changes cfg)
-   :retrieve-error (partial retrieve-error cfg)
-   :retrieve-error-list (partial retrieve-error-list cfg)
-   :upload-file-data (partial upload-file-data cfg)})
+  {:index (wrap-async cfg index)
+   :health-check (wrap-async cfg health-check)
+   :retrieve-file-data (wrap-async cfg retrieve-file-data)
+   :retrieve-file-changes (wrap-async cfg retrieve-file-changes)
+   :retrieve-error (wrap-async cfg retrieve-error)
+   :retrieve-error-list (wrap-async cfg retrieve-error-list)
+   :upload-file-data (wrap-async cfg upload-file-data)})

@@ -18,7 +18,6 @@
    [integrant.core :as ig]
    [promesa.core :as p])
   (:import
-   java.time.Duration
    io.lettuce.core.RedisClient
    io.lettuce.core.RedisURI
    io.lettuce.core.api.StatefulConnection
@@ -29,7 +28,10 @@
    io.lettuce.core.codec.StringCodec
    io.lettuce.core.pubsub.RedisPubSubListener
    io.lettuce.core.pubsub.StatefulRedisPubSubConnection
-   io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands))
+   io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands
+   io.lettuce.core.resource.ClientResources
+   io.lettuce.core.resource.DefaultClientResources
+   java.time.Duration))
 
 (def ^:private prefix (cfg/get :tenant))
 
@@ -136,27 +138,35 @@
 (declare impl-redis-sub)
 (declare impl-redis-unsub)
 
+
 (defmethod init-backend :redis
   [{:keys [redis-uri] :as cfg}]
   (let [codec    (RedisCodec/of StringCodec/UTF8 ByteArrayCodec/INSTANCE)
 
-        uri      (RedisURI/create redis-uri)
-        rclient  (RedisClient/create ^RedisURI uri)
+        resources (.. (DefaultClientResources/builder)
+                      (ioThreadPoolSize 4)
+                      (computationThreadPoolSize 4)
+                      (build))
 
-        pub-conn (.connect ^RedisClient rclient ^RedisCodec codec)
-        sub-conn (.connectPubSub ^RedisClient rclient ^RedisCodec codec)]
+        uri       (RedisURI/create redis-uri)
+        rclient   (RedisClient/create ^ClientResources resources ^RedisURI uri)
+
+        pub-conn  (.connect ^RedisClient rclient ^RedisCodec codec)
+        sub-conn  (.connectPubSub ^RedisClient rclient ^RedisCodec codec)]
 
     (.setTimeout ^StatefulRedisConnection pub-conn ^Duration (dt/duration {:seconds 10}))
     (.setTimeout ^StatefulRedisPubSubConnection sub-conn ^Duration (dt/duration {:seconds 10}))
 
     (-> cfg
+        (assoc ::resources resources)
         (assoc ::pub-conn pub-conn)
         (assoc ::sub-conn sub-conn))))
 
 (defmethod stop-backend :redis
-  [{:keys [::pub-conn ::sub-conn] :as cfg}]
+  [{:keys [::pub-conn ::sub-conn ::resources] :as cfg}]
   (.close ^StatefulRedisConnection pub-conn)
-  (.close ^StatefulRedisPubSubConnection sub-conn))
+  (.close ^StatefulRedisPubSubConnection sub-conn)
+  (.shutdown ^ClientResources resources))
 
 (defmethod init-pub-loop :redis
   [{:keys [::pub-conn ::pub-ch]}]

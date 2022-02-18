@@ -37,6 +37,22 @@
   #?(:cljs (instance? lks/LinkedSet o)
      :clj (instance? LinkedSet o)))
 
+#?(:clj
+   (defmethod print-method clojure.lang.PersistentQueue [q, w]
+     ;; Overload the printer for queues so they look like fish
+     (print-method '<- w)
+     (print-method (seq q) w)
+     (print-method '-< w)))
+
+(defn queue
+  ([] #?(:clj clojure.lang.PersistentQueue/EMPTY :cljs #queue []))
+  ([a] (into (queue) [a]))
+  ([a & more] (into (queue) (cons a more))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Structures Manipulation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn deep-merge
   ([a b]
    (if (map? a)
@@ -44,10 +60,6 @@
      b))
   ([a b & rest]
    (reduce deep-merge a (cons b rest))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Data Structures Manipulation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn dissoc-in
   [m [k & ks]]
@@ -151,7 +163,11 @@
   "Given a map, return a map removing key-value
   pairs when value is `nil`."
   [data]
-  (into {} (remove (comp nil? second) data)))
+  (into {} (remove (comp nil? second)) data))
+
+(defn without-qualified
+  [data]
+  (into {} (remove (comp qualified-keyword? first)) data))
 
 (defn without-keys
   "Return a map without the keys provided

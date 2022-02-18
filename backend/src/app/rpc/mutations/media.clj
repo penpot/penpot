@@ -14,7 +14,9 @@
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.teams :as teams]
+   [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
+   [app.util.async :as async]
    [app.util.http :as http]
    [app.util.rlimit :as rlimit]
    [app.util.services :as sv]
@@ -49,7 +51,8 @@
           :opt-un [::id]))
 
 (sv/defmethod ::upload-file-media-object
-  {::rlimit/permits (cf/get :rlimit-image)}
+  {::rlimit/permits (cf/get :rlimit-image)
+   ::async/dispatch :default}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (let [file (select-file conn file-id)]
@@ -144,6 +147,8 @@
           :opt-un [::id ::name]))
 
 (sv/defmethod ::create-file-media-object-from-url
+  {::rlimit/permits (cf/get :rlimit-image)
+   ::async/dispatch :default}
   [{:keys [pool storage] :as cfg} {:keys [profile-id file-id url name] :as params}]
   (db/with-atomic [conn pool]
     (let [file (select-file conn file-id)]

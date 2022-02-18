@@ -250,7 +250,7 @@
   [expr]
   `(try
      {:error nil
-      :result ~expr}
+      :result (deref ~expr)}
      (catch Exception e#
        {:error (handle-error e#)
         :result nil})))

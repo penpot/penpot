@@ -13,7 +13,6 @@
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.websocket :as ws]
-   [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
@@ -100,36 +99,36 @@
   (s/keys :req-un [::file-id ::session-id]))
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::msgbus ::db/pool ::mtx/metrics ::wrk/executor]))
+  (s/keys :req-un [::msgbus ::db/pool ::mtx/metrics]))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [metrics pool] :as cfg}]
-  (let [metrics {:connections (get-in metrics [:definitions :websocket-active-connections])
-                 :messages    (get-in metrics [:definitions :websocket-messages-total])
-                 :sessions    (get-in metrics [:definitions :websocket-session-timing])}]
-    (fn [{:keys [profile-id params] :as req}]
-      (let [params (us/conform ::handler-params params)
-            file   (retrieve-file pool (:file-id params))
-            cfg    (-> (merge cfg params)
-                       (assoc :profile-id profile-id)
-                       (assoc :team-id (:team-id file))
-                       (assoc ::ws/metrics metrics))]
+  [_ {:keys [pool] :as cfg}]
+  (fn [{:keys [profile-id params] :as req} respond raise]
+    (let [params (us/conform ::handler-params params)
+          file   (retrieve-file pool (:file-id params))
+          cfg    (-> (merge cfg params)
+                     (assoc :profile-id profile-id)
+                     (assoc :team-id (:team-id file)))]
 
-        (when-not profile-id
-          (ex/raise :type :authentication
-                    :hint "Authentication required."))
+      (cond
+        (not profile-id)
+        (raise (ex/error :type :authentication
+                         :hint "Authentication required."))
 
-        (when-not file
-          (ex/raise :type :not-found
-                    :code :object-not-found))
+        (not file)
+        (raise (ex/error :type :not-found
+                         :code :object-not-found))
 
-        (when-not (yws/upgrade-request? req)
-          (ex/raise :type :validation
-                    :code :websocket-request-expected
-                    :hint "this endpoint only accepts websocket connections"))
 
+        (not (yws/upgrade-request? req))
+        (raise (ex/error :type :validation
+                         :code :websocket-request-expected
+                         :hint "this endpoint only accepts websocket connections"))
+
+        :else
         (->> (ws/handler handle-message cfg)
-             (yws/upgrade req))))))
+             (yws/upgrade req)
+             (respond))))))
 
 (def ^:private
   sql:retrieve-file

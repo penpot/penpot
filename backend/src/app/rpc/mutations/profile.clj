@@ -15,11 +15,11 @@
    [app.http.oauth :refer [extract-utm-props]]
    [app.loggers.audit :as audit]
    [app.media :as media]
-   [app.metrics :as mtx]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
+   [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
-   [app.util.rlimit :as rlimit]
+   [app.util.async :as async]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
@@ -38,7 +38,6 @@
 (s/def ::theme ::us/string)
 (s/def ::invitation-token ::us/not-empty-string)
 
-(declare annotate-profile-register)
 (declare check-profile-existence!)
 (declare create-profile)
 (declare create-profile-relations)
@@ -102,6 +101,7 @@
   (when-not (contains? cf/flags :registration)
     (ex/raise :type :restriction
               :code :registration-disabled))
+
   (when-let [domains (cf/get :registration-domain-whitelist)]
     (when-not (email-domain-in-whitelist? domains (:email params))
       (ex/raise :type :validation
@@ -116,10 +116,11 @@
 
   (check-profile-existence! pool params)
 
-  (let [params (assoc params
-                      :backend "penpot"
-                      :iss :prepared-register
-                      :exp (dt/in-future "48h"))
+  (let [params {:email (:email params)
+                :invitation-token (:invitation-token params)
+                :backend "penpot"
+                :iss :prepared-register
+                :exp (dt/in-future "48h")}
         token  (tokens :generate params)]
     {:token token}))
 
@@ -136,16 +137,8 @@
     (-> (assoc cfg :conn conn)
         (register-profile params))))
 
-(defn- annotate-profile-register
-  "A helper for properly increase the profile-register metric once the
-  transaction is completed."
-  [metrics]
-  (fn []
-    (let [mobj (get-in metrics [:definitions :profile-register])]
-      ((::mtx/fn mobj) {:by 1}))))
-
 (defn register-profile
-  [{:keys [conn tokens session metrics] :as cfg} {:keys [token] :as params}]
+  [{:keys [conn tokens session] :as cfg} {:keys [token] :as params}]
   (let [claims    (tokens :verify {:token token :iss :prepared-register})
         params    (merge params claims)]
 
@@ -172,7 +165,6 @@
               resp   {:invitation-token token}]
           (with-meta resp
             {:transform-response ((:create session) (:id profile))
-             :before-complete (annotate-profile-register metrics)
              ::audit/props (audit/profile->props profile)
              ::audit/profile-id (:id profile)}))
 
@@ -182,7 +174,6 @@
         (not= "penpot" (:auth-backend profile))
         (with-meta (profile/strip-private-attrs profile)
           {:transform-response ((:create session) (:id profile))
-           :before-complete (annotate-profile-register metrics)
            ::audit/props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})
 
@@ -191,7 +182,6 @@
         (true? is-active)
         (with-meta (profile/strip-private-attrs profile)
           {:transform-response ((:create session) (:id profile))
-           :before-complete (annotate-profile-register metrics)
            ::audit/props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})
 
@@ -214,8 +204,7 @@
                       :extra-data ptoken})
 
           (with-meta profile
-            {:before-complete (annotate-profile-register metrics)
-             ::audit/props (audit/profile->props profile)
+            {::audit/props (audit/profile->props profile)
              ::audit/profile-id (:id profile)}))))))
 
 (defn create-profile
@@ -360,6 +349,7 @@
           :opt-un [::lang ::theme]))
 
 (sv/defmethod ::update-profile
+  {::async/dispatch :default}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (let [profile (update-profile conn params)]

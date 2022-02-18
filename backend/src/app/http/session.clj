@@ -69,14 +69,14 @@
   (assoc response :cookies {cookie-name {:value "" :max-age -1}}))
 
 (defn- middleware
-  [cfg handler]
-  (fn [request]
-    (if-let [{:keys [id profile-id] :as session} (retrieve-from-request cfg request)]
+  [events-ch store handler]
+  (fn [request respond raise]
+    (if-let [{:keys [id profile-id] :as session} (retrieve-from-request store request)]
       (do
         (a/>!! (::events-ch cfg) id)
         (l/set-context! {:profile-id profile-id})
-        (handler (assoc request :profile-id profile-id :session-id id)))
-      (handler request))))
+        (handler (assoc request :profile-id profile-id :session-id id) respond raise))
+      (handler request respond raise))))
 
 ;; --- STATE INIT: SESSION
 
@@ -85,7 +85,8 @@
 
 (defmethod ig/prep-key ::session
   [_ cfg]
-  (d/merge {:buffer-size 128} (d/without-nils cfg)))
+  (d/merge {:buffer-size 128}
+           (d/without-nils cfg)))
 
 (defmethod ig/init-key ::session
   [_ {:keys [pool] :as cfg}]
@@ -94,7 +95,8 @@
                    (assoc :conn pool)
                    (assoc ::events-ch events))]
     (-> cfg
-        (assoc :middleware #(middleware cfg %))
+        (assoc ::events-ch events-ch)
+        (assoc :middleware (partial middleware events-ch store))
         (assoc :create (fn [profile-id]
                          (fn [request response]
                            (let [request (assoc request :profile-id profile-id)
@@ -138,16 +140,11 @@
           :max-batch-size (str (:max-batch-size cfg)))
   (let [input (aa/batch (::events-ch session)
                         {:max-batch-size (:max-batch-size cfg)
-                         :max-batch-age (inst-ms (:max-batch-age cfg))})
-        mcnt  (mtx/create
-               {:name "http_session_update_total"
-                :help "A counter of session update batch events."
-                :registry (:registry metrics)
-                :type :counter})]
+                         :max-batch-age (inst-ms (:max-batch-age cfg))})]
     (a/go-loop []
       (when-let [[reason batch] (a/<! input)]
         (let [result (a/<! (update-sessions cfg batch))]
-          (mcnt :inc)
+          (mtx/run! metrics {:id :session-update-total :inc 1})
           (cond
             (ex/exception? result)
             (l/error :task "updater"
@@ -159,6 +156,7 @@
                      :hint "update sessions"
                      :reason (name reason)
                      :count result))
+
           (recur))))))
 
 (defn- update-sessions
