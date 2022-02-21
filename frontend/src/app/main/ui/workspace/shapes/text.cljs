@@ -122,11 +122,13 @@
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id] :as shape} (unchecked-get props "shape")
+  (let [{:keys [id position-data] :as shape} (unchecked-get props "shape")
         edition-ref (mf/use-memo (mf/deps id) #(l/derived (fn [o] (= id (:edition o))) refs/workspace-local))
         edition?    (mf/deref edition-ref)
 
         local-position-data (mf/use-state nil)
+
+        sid-ref (mf/use-ref nil)
 
         handle-change-foreign-object
         (fn [node]
@@ -149,9 +151,9 @@
                                            (gsh/transform-rect mtx)))))]
               (reset! local-position-data position-data))))
 
-        [_ on-change-node] (use-mutable-observer handle-change-foreign-object)
+        [node-ref on-change-node] (use-mutable-observer handle-change-foreign-object)
 
-        show-svg-text? (or (some? (:position-data shape)) (some? @local-position-data))
+        show-svg-text? (or (some? position-data) (some? @local-position-data))
 
         update-position-data
         (fn []
@@ -173,12 +175,36 @@
          (fn []
            (rx/dispose! sid)))))
 
+    (mf/use-layout-effect
+     (mf/deps show-svg-text?)
+     (fn []
+       (let []
+         (when-not show-svg-text?
+           ;; There is no position data we need to calculate it even if no change has happened
+           ;; this usualy happens the first time a text is rendered
+           (let [update-data
+                 (fn update-data []
+                   (let [node (mf/ref-val node-ref)]
+                     (if (some? node)
+                       (let [position-data (utp/calc-position-data node)]
+                         (reset! local-position-data position-data))
+
+                       ;; No node present, we need to keep waiting
+                       (do (when-let [sid (mf/ref-val sid-ref)] (rx/dispose! sid))
+                           (when-not @local-position-data
+                             (mf/set-ref-val! sid-ref (timers/schedule 100 update-data)))))))]
+             (mf/set-ref-val! sid-ref (timers/schedule 100 update-data))))
+
+         (fn []
+           (when-let [sid (mf/ref-val sid-ref)]
+             (rx/dispose! sid))))))
+
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
      ;; and updates the selrect accordingly
      [:*
       [:g.text-shape {:ref on-change-node
-                      :opacity (when (or edition? show-svg-text?) 0)
+                      :opacity (when show-svg-text? 0)
                       :pointer-events "none"}
 
        ;; The `:key` prop here is mandatory because the
@@ -186,7 +212,7 @@
        ;; the component if the edition flag changes.
        [:& text-resize-content {:shape
                                 (cond-> shape
-                                  (:position-data shape)
+                                  show-svg-text?
                                   (dissoc :transform :transform-inverse))
                                 :edition? edition?
                                 :key (str id edition?)}]]
