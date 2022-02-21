@@ -31,6 +31,57 @@
 (defn with-objects [changes objects]
   (vary-meta changes assoc ::objects objects))
 
+;; Page changes
+
+(defn add-empty-page
+  [chdata id name]
+  (-> chdata
+      (update :redo-changes conj {:type :add-page :id id :name name})
+      (update :undo-changes conj {:type :del-page :id id})))
+
+(defn add-page
+  [chdata id page]
+  (-> chdata
+      (update :redo-changes conj {:type :add-page :id id :page page})
+      (update :undo-changes conj {:type :del-page :id id})))
+
+(defn mod-page
+  [chdata page new-name]
+  (-> chdata
+      (update :redo-changes conj {:type :mod-page :id (:id page) :name new-name})
+      (update :undo-changes conj {:type :mod-page :id (:id page) :name (:name page)})))
+
+(defn del-page
+  [chdata page]
+  (-> chdata
+      (update :redo-changes conj {:type :del-page :id (:id page)})
+      (update :undo-changes conj {:type :add-page :id (:id page) :page page})))
+
+(defn move-page
+  [chdata index prev-index]
+  (let [page-id (::page-id (meta chdata))]
+    (-> chdata
+        (update :redo-changes conj {:type :mov-page :id page-id :index index})
+        (update :undo-changes conj {:type :mov-page :id page-id :index prev-index}))))
+
+(defn set-page-option
+  [chdata option-key option-val]
+  (let [page-id (::page-id (meta chdata))
+        page (::page (meta chdata))
+        old-val (get-in page [:options option-key])]
+
+    (-> chdata
+        (update :redo-changes conj {:type :set-option
+                                    :page-id page-id
+                                    :option option-key
+                                    :value option-val})
+        (update :undo-changes conj {:type :set-option
+                                    :page-id page-id
+                                    :option option-key
+                                    :value old-val}))))
+
+;; Shape changes
+
 (defn add-obj
   ([changes obj]
    (add-obj changes obj nil))
