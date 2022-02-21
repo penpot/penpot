@@ -1163,8 +1163,8 @@
     (watch [it state _]
       (let [prev-index (-> (get-in state [:workspace-data :pages])
                            (d/index-of id))
-            changes    (-> (pcb/empty-changes it id)
-                           (pcb/move-page index prev-index))]
+            changes    (-> (pcb/empty-changes it)
+                           (pcb/move-page id index prev-index))]
         (rx/of (dch/commit-changes changes))))))
 
 ;; --- Shape / Selection Alignment and Distribution
@@ -1837,7 +1837,7 @@
                   ;; Adds a reg-objects operation so the groups are updated. We add all the new objects
                   new-objects-ids (->> changes :redo-changes (filter #(= (:type %) :add-obj)) (mapv :id))
 
-                  changes (pcb/reg-objects changes new-objects-ids)
+                  changes (pcb/resize-parents changes new-objects-ids)
 
                   selected  (->> changes
                                  :redo-changes
