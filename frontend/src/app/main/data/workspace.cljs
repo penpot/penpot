@@ -747,14 +747,21 @@
 
 ;; --- Delete Selected
 
-(def delete-selected
+(defn delete-selected
   "Deselect all and remove all selected shapes."
+  []
   (ptk/reify ::delete-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
-        (rx/of (dwc/delete-shapes selected)
-               (dws/deselect-all))))))
+      (let [selected (wsh/lookup-selected state)
+            hover-guides (get-in state [:workspace-guides :hover])]
+        (cond
+          (d/not-empty? selected)
+          (rx/of (dwc/delete-shapes selected)
+                 (dws/deselect-all))
+
+          (d/not-empty? hover-guides)
+          (rx/of (dwgu/remove-guides hover-guides)))))))
 
 ;; --- Shape Vertical Ordering
 
@@ -2068,4 +2075,5 @@
 ;; Guides
 (d/export dwgu/update-guides)
 (d/export dwgu/remove-guide)
+(d/export dwgu/set-hover-guide)
 

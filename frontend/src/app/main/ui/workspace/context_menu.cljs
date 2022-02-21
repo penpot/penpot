@@ -103,7 +103,8 @@
 (mf/defc context-menu-edit
   []
   (let [do-copy      (st/emitf (dw/copy-selected))
-        do-cut       (st/emitf (dw/copy-selected) dw/delete-selected)
+        do-cut       (st/emitf (dw/copy-selected)
+                               (dw/delete-selected))
         do-paste     (st/emitf dw/paste)
         do-duplicate (st/emitf (dw/duplicate-selected false))]
     [:*
@@ -406,7 +407,7 @@
 
 (mf/defc context-menu-delete
   []
-  (let [do-delete (st/emitf dw/delete-selected)]
+  (let [do-delete (st/emitf (dw/delete-selected))]
     [:& menu-entry {:title (tr "workspace.shape.menu.delete")
                     :shortcut (sc/get-tooltip :delete)
                     :on-click do-delete}]))
