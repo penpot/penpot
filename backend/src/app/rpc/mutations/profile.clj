@@ -157,23 +157,22 @@
 
     (check-profile-existence! conn params)
 
-    (let [is-active (or (:is-active params)
-                        (contains? cf/flags :insecure-register))
-          profile   (->> (assoc params :is-active is-active)
-                         (create-profile conn)
-                         (create-profile-relations conn)
-                         (decode-profile-row))]
+    (let [is-active  (or (:is-active params)
+                         (contains? cf/flags :insecure-register))
+          profile    (->> (assoc params :is-active is-active)
+                          (create-profile conn)
+                          (create-profile-relations conn)
+                          (decode-profile-row))
+
+          invitation (when-let [token (:invitation-token params)]
+                       (tokens :verify {:token token :iss :team-invitation}))]
+
       (cond
-        ;; If invitation token comes in params, this is because the
-        ;; user comes from team-invitation process; in this case,
-        ;; regenerate token and send back to the user a new invitation
-        ;; token (and mark current session as logged).
-        (some? (:invitation-token params))
-        (let [token (:invitation-token params)
-              claims (tokens :verify {:token token :iss :team-invitation})
-              claims (assoc claims
-                            :member-id  (:id profile)
-                            :member-email (:email profile))
+        ;; If invitation token comes in params, this is because the user comes from team-invitation process;
+        ;; in this case, regenerate token and send back to the user a new invitation token (and mark current
+        ;; session as logged). This happens only if the invitation email matches with the register email.
+        (and (some? invitation) (= (:email profile) (:member-email invitation)))
+        (let [claims (assoc invitation :member-id  (:id profile))
               token  (tokens :generate claims)
               resp   {:invitation-token token}]
           (with-meta resp
@@ -311,32 +310,26 @@
             profile)]
 
     (db/with-atomic [conn pool]
-      (let [profile (->> (profile/retrieve-profile-data-by-email conn email)
-                         (validate-profile)
-                         (profile/strip-private-attrs)
-                         (profile/populate-additional-data conn)
-                         (decode-profile-row))]
-        (if-let [token (:invitation-token params)]
-          ;; If the request comes with an invitation token, this means
-          ;; that user wants to accept it with different user. A very
-          ;; strange case but still can happen. In this case, we
-          ;; proceed in the same way as in register: regenerate the
-          ;; invitation token and return it to the user for proper
-          ;; invitation acceptation.
-          (let [claims (tokens :verify {:token token :iss :team-invitation})
-                claims (assoc claims
-                              :member-id  (:id profile)
-                              :member-email (:email profile))
-                token  (tokens :generate claims)]
-            (with-meta {:invitation-token token}
-              {:transform-response ((:create session) (:id profile))
-               ::audit/props (audit/profile->props profile)
-               ::audit/profile-id (:id profile)}))
+      (let [profile    (->> (profile/retrieve-profile-data-by-email conn email)
+                            (validate-profile)
+                            (profile/strip-private-attrs)
+                            (profile/populate-additional-data conn)
+                            (decode-profile-row))
 
-          (with-meta profile
-            {:transform-response ((:create session) (:id profile))
-             ::audit/props (audit/profile->props profile)
-             ::audit/profile-id (:id profile)}))))))
+            invitation (when-let [token (:invitation-token params)]
+                         (tokens :verify {:token token :iss :team-invitation}))
+
+            ;; If invitation member-id does not matches the profile-id, we just proceed to ignore the
+            ;; invitation because invitations matches exactly; and user can't loging with other email and
+            ;; accept invitation with other email
+            response   (if (and (some? invitation) (= (:id profile) (:member-id invitation)))
+                         {:invitation-token (:invitation-token params)}
+                         profile)]
+
+        (with-meta response
+          {:transform-response ((:create session) (:id profile))
+           ::audit/props (audit/profile->props profile)
+           ::audit/profile-id (:id profile)})))))
 
 ;; --- MUTATION: Logout
 
