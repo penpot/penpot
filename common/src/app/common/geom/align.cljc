@@ -6,7 +6,6 @@
 
 (ns app.common.geom.align
   (:require
-   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :refer [get-children]]
    [clojure.spec.alpha :as s]))
@@ -20,8 +19,7 @@
 (defn- recursive-move
   "Move the shape and all its recursive children."
   [shape dpoint objects]
-  (->> (get-children (:id shape) objects)
-       (map (d/getf objects))
+  (->> (get-children objects (:id shape))
        (cons shape)
        (map #(gsh/move % dpoint))))
 
