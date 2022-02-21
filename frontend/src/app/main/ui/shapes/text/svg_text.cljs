@@ -60,7 +60,7 @@
                                              :direction (if (:rtl? data) "rtl" "ltr")
                                              :whiteSpace "pre"}
                                         (attrs/add-fill data (get-gradient-id index)))})]
-          [:& shape-custom-stroke {:shape shape}
+          [:& shape-custom-stroke {:shape shape :index index}
            [:> :text props (:text data)]]))]]))
 
 

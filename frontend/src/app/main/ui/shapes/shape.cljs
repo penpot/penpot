@@ -10,7 +10,6 @@
    [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.custom-stroke :as cs]
    [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.fills :as fills]
    [app.main.ui.shapes.filters :as filters]
@@ -69,6 +68,5 @@
                  (> (count (:fills shape)) 1)
                  (some :fill-color-gradient (:fills shape)))
          [:& fills/fills            {:shape shape :render-id render-id}])
-       [:& cs/stroke-defs         {:shape shape :render-id render-id}]
        [:& frame/frame-clip-def   {:shape shape :render-id render-id}]]
       children]]))
