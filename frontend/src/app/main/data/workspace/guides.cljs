@@ -41,6 +41,12 @@
 (defn remove-guide [guide]
   (us/verify ::csp/guide guide)
   (ptk/reify ::remove-guide
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [sdisj (fnil disj #{})]
+        (-> state
+            (update-in [:workspace-guides :hover] sdisj (:id guide)))))
+
     ptk/WatchEvent
     (watch [it state _]
       (let [page       (wsh/lookup-page state)
@@ -52,6 +58,16 @@
                 (pcb/with-page page)
                 (pcb/set-page-option :guides new-guides))]
         (rx/of (dwc/commit-changes changes))))))
+
+(defn remove-guides
+  [ids]
+  (ptk/reify ::remove-guides
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page       (wsh/lookup-page state)
+            guides     (get-in page [:options :guides] {})
+            guides (-> (select-keys guides ids) (vals))]
+        (rx/from (->> guides (mapv #(remove-guide %))))))))
 
 (defn move-frame-guides
   "Move guides that are inside a frame when that frame is moved"
@@ -86,3 +102,14 @@
              (filter (comp frame-ids? :frame-id))
              (map build-move-event)
              (rx/from))))))
+
+(defn set-hover-guide
+  [id hover?]
+  (ptk/reify ::set-hover-guide
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [sconj (fnil conj #{})
+            sdisj (fnil disj #{})]
+        (if hover?
+          (update-in state [:workspace-guides :hover] sconj id)
+          (update-in state [:workspace-guides :hover] sdisj id))))))

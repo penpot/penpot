@@ -190,7 +190,8 @@
 
    :cut                {:tooltip (ds/meta "X")
                         :command (ds/c-mod "x")
-                        :fn #(st/emit! (dw/copy-selected) dw/delete-selected)}
+                        :fn #(st/emit! (dw/copy-selected)
+                                       (dw/delete-selected))}
 
    :paste              {:tooltip (ds/meta "V")
                         :disabled true
@@ -199,7 +200,7 @@
 
    :delete             {:tooltip (ds/supr)
                         :command ["del" "backspace"]
-                        :fn #(st/emit! dw/delete-selected)}
+                        :fn #(st/emit! (dw/delete-selected))}
 
    :bring-forward      {:tooltip (ds/meta ds/up-arrow)
                         :command (ds/c-mod "up")
