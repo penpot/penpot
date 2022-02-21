@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-08-08 01:35+0000\n"
-"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
-"Language-Team: Portuguese (Brazil) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
+"PO-Revision-Date: 2022-02-22 11:57+0000\n"
+"Last-Translator: John Terroa <joaoterroa2@gmail.com>\n"
+"Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.8-dev\n"
+"X-Generator: Weblate 4.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1986,3 +1986,40 @@ msgstr "Atualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Clique para fechar o caminho"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.assets"
+msgstr "Recursos"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Concordo em subscrever a lista de emails Penpot."
+
+msgid "auth.privacy-policy"
+msgstr "Política de privacidade"
+
+msgid "workspace.undo.entry.multiple.color"
+msgstr "recursos de cor"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.path"
+msgstr "Caminho (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.modify"
+msgstr "Modificado (%s)"
+
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "recursos tipográficos"
+
+msgid "workspace.undo.entry.single.media"
+msgstr "recurso gráfico"
+
+msgid "workspace.undo.entry.single.color"
+msgstr "recurso de cor"
+
+msgid "workspace.undo.entry.multiple.media"
+msgstr "recurso gráfico"
+
+msgid "workspace.undo.entry.multiple.path"
+msgstr "caminhos"
