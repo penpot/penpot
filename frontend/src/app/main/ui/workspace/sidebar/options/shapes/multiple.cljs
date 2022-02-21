@@ -64,7 +64,7 @@
     :fill       :text
     :shadow     :shape
     :blur       :shape
-    :stroke     :ignore
+    :stroke     :shape
     :text       :text}
 
    :image
