@@ -23,9 +23,15 @@
   [props]
   
   (let [render-id (mf/use-ctx muc/render-ctx)
-        {:keys [position-data] :as shape} (obj/get props "shape")
+        {:keys [x y width height position-data] :as shape} (obj/get props "shape")
         transform (str (gsh/transform-matrix shape))
-        group-props (-> #js {:transform transform}
+
+        ;; These position attributes are not really necesary but they are convenient for for the export
+        group-props (-> #js {:transform transform
+                             :x x
+                             :y y
+                             :width width
+                             :height height}
                         (attrs/add-style-attrs shape render-id))
         get-gradient-id
         (fn [index]
@@ -40,21 +46,21 @@
                                :attr :fill-color-gradient
                                :shape data}]))])
 
-     [:& shape-custom-stroke {:shape shape}
-      [:> :g group-props
-       (for [[index data] (d/enumerate position-data)]
-         (let [props (-> #js {:x (:x data)
-                              :y (:y data)
-                              :dominantBaseline "ideographic"
-                              :style (-> #js {:fontFamily (:font-family data)
-                                              :fontSize (:font-size data)
-                                              :fontWeight (:font-weight data)
-                                              :textTransform (:text-transform data)
-                                              :textDecoration (:text-decoration data)
-                                              :fontStyle (:font-style data)
-                                              :direction (if (:rtl? data) "rtl" "ltr")
-                                              :whiteSpace "pre"}
-                                         (attrs/add-fill data (get-gradient-id index)))})]
-           [:> :text props (:text data)]))]]]))
+     [:> :g group-props
+      (for [[index data] (d/enumerate position-data)]
+        (let [props (-> #js {:x (:x data)
+                             :y (:y data)
+                             :dominantBaseline "ideographic"
+                             :style (-> #js {:fontFamily (:font-family data)
+                                             :fontSize (:font-size data)
+                                             :fontWeight (:font-weight data)
+                                             :textTransform (:text-transform data)
+                                             :textDecoration (:text-decoration data)
+                                             :fontStyle (:font-style data)
+                                             :direction (if (:rtl? data) "rtl" "ltr")
+                                             :whiteSpace "pre"}
+                                        (attrs/add-fill data (get-gradient-id index)))})]
+          [:& shape-custom-stroke {:shape shape}
+           [:> :text props (:text data)]]))]]))
 
 

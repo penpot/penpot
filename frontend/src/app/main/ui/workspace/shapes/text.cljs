@@ -178,26 +178,25 @@
     (mf/use-layout-effect
      (mf/deps show-svg-text?)
      (fn []
-       (let []
-         (when-not show-svg-text?
-           ;; There is no position data we need to calculate it even if no change has happened
-           ;; this usualy happens the first time a text is rendered
-           (let [update-data
-                 (fn update-data []
-                   (let [node (mf/ref-val node-ref)]
-                     (if (some? node)
-                       (let [position-data (utp/calc-position-data node)]
-                         (reset! local-position-data position-data))
+       (when-not show-svg-text?
+         ;; There is no position data we need to calculate it even if no change has happened
+         ;; this usualy happens the first time a text is rendered
+         (let [update-data
+               (fn update-data []
+                 (let [node (mf/ref-val node-ref)]
+                   (if (some? node)
+                     (let [position-data (utp/calc-position-data node)]
+                       (reset! local-position-data position-data))
 
-                       ;; No node present, we need to keep waiting
-                       (do (when-let [sid (mf/ref-val sid-ref)] (rx/dispose! sid))
-                           (when-not @local-position-data
-                             (mf/set-ref-val! sid-ref (timers/schedule 100 update-data)))))))]
-             (mf/set-ref-val! sid-ref (timers/schedule 100 update-data))))
+                     ;; No node present, we need to keep waiting
+                     (do (when-let [sid (mf/ref-val sid-ref)] (rx/dispose! sid))
+                         (when-not @local-position-data
+                           (mf/set-ref-val! sid-ref (timers/schedule 100 update-data)))))))]
+           (mf/set-ref-val! sid-ref (timers/schedule 100 update-data))))
 
-         (fn []
-           (when-let [sid (mf/ref-val sid-ref)]
-             (rx/dispose! sid))))))
+       (fn []
+         (when-let [sid (mf/ref-val sid-ref)]
+           (rx/dispose! sid)))))
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
