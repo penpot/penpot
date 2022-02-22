@@ -20,45 +20,54 @@
   [props]
 
   (let [shape     (obj/get props "shape")
-        render-id (obj/get props "render-id")
-        {:keys [x y width height]} (:selrect shape)
-        {:keys [metadata]} shape
-        fill-id (str "fill-" render-id)
-        has-image (or metadata (:fill-image shape))
-        uri (if metadata
-              (cfg/resolve-file-media metadata)
-              (cfg/resolve-file-media (:fill-image shape)))
-        embed (embed/use-data-uris [uri])
-        transform (gsh/transform-matrix shape)
-        pattern-attrs (cond-> #js {:id fill-id
-                                   :patternUnits "userSpaceOnUse"
-                                   :x x
-                                   :y y
-                                   :height height
-                                   :width width
-                                   :data-loading (str (not (contains? embed uri)))}
-                        (= :path (:type shape))
-                        (obj/set! "patternTransform" transform))]
+        render-id (obj/get props "render-id")]
 
-      [:*
-       (for [[index value] (-> (d/enumerate (:fills shape [])) reverse)]
-         (cond (some? (:fill-color-gradient value))
-           (case (:type (:fill-color-gradient value))
-             :linear [:> grad/linear-gradient #js {:id (str (name :fill-color-gradient) "_" render-id "_" index)
-                                                   :gradient (:fill-color-gradient value)
-                                                   :shape shape}]
-             :radial [:> grad/radial-gradient #js {:id (str (name :fill-color-gradient) "_" render-id "_" index)
-                                                   :gradient (:fill-color-gradient value)
-                                                   :shape shape}])))
+    (when (or (some? (:fill-image shape))
+              (#{:image :text} (:type shape))
+              (> (count (:fills shape)) 1)
+              (some :fill-color-gradient (:fills shape)))
 
-       [:> :pattern pattern-attrs
-        [:g
-         (for [[index value] (-> (d/enumerate (:fills shape [])) reverse)]
-           [:> :rect (-> (attrs/extract-fill-attrs value index)
-                         (obj/set! "width" width)
-                         (obj/set! "height" height))])
+      (let [{:keys [x y width height]} (:selrect shape)
+            {:keys [metadata]} shape
+            
+            has-image (or metadata (:fill-image shape))
+            uri (if metadata
+                  (cfg/resolve-file-media metadata)
+                  (cfg/resolve-file-media (:fill-image shape)))
+            embed (embed/use-data-uris [uri])
+            transform (gsh/transform-matrix shape)
+            pattern-attrs (cond-> #js {:patternUnits "userSpaceOnUse"
+                                       :x x
+                                       :y y
+                                       :height height
+                                       :width width
+                                       :data-loading (str (not (contains? embed uri)))}
+                            (= :path (:type shape))
+                            (obj/set! "patternTransform" transform))]
 
-         (when has-image
-           [:image {:xlinkHref (get embed uri uri)
-                    :width width
-                    :height height}])]]]))
+        [:*
+         (for [[_shape-index shape] (d/enumerate (or (:position-data shape) [shape]))]
+           (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
+             (cond (some? (:fill-color-gradient value))
+                   (case (d/name (:type (:fill-color-gradient value)))
+                     "linear" [:> grad/linear-gradient #js {:id (str "fill-color-gradient_" render-id "_" fill-index)
+                                                            :gradient (:fill-color-gradient value)
+                                                            :shape shape}]
+                     "radial" [:> grad/radial-gradient #js {:id (str "fill-color-gradient_" render-id "_" fill-index)
+                                                            :gradient (:fill-color-gradient value)
+                                                            :shape shape}]))))
+
+         (for [[shape-index shape] (d/enumerate (or (:position-data shape) [shape]))]
+           (let [fill-id (str "fill-" shape-index "-" render-id)]
+             [:> :pattern (-> (obj/clone pattern-attrs)
+                              (obj/set! "id" fill-id))
+              [:g
+               (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
+                 [:> :rect (-> (attrs/extract-fill-attrs value render-id fill-index)
+                               (obj/set! "width" width)
+                               (obj/set! "height" height))])
+
+               (when has-image
+                 [:image {:xlinkHref (get embed uri uri)
+                          :width width
+                          :height height}])]]))]))))

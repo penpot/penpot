@@ -155,6 +155,11 @@
 
         show-svg-text? (or (some? position-data) (some? @local-position-data))
 
+        shape
+        (cond-> shape
+          (some? @local-position-data)
+          (assoc :position-data @local-position-data))
+
         update-position-data
         (fn []
           (when (some? @local-position-data)
@@ -171,7 +176,7 @@
      (fn []
        ;; Timer to update the shape. We do this so a lot of changes won't produce
        ;; a lot of updates (kind of a debounce)
-       (let [sid (timers/schedule 100 update-position-data)]
+       (let [sid (timers/schedule 50 update-position-data)]
          (fn []
            (rx/dispose! sid)))))
 
@@ -217,9 +222,5 @@
                                 :key (str id edition?)}]]
 
       (when show-svg-text?
-        (let [shape
-              (cond-> shape
-                (some? @local-position-data)
-                (assoc :position-data @local-position-data))]
-          [:g.text-svg {:pointer-events "none"}
-           [:& svg/text-shape {:shape shape}]]))]]))
+        [:g.text-svg {:pointer-events "none"}
+         [:& svg/text-shape {:shape shape}]])]]))

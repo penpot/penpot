@@ -50,12 +50,14 @@
         (update state :workspace-editor-state dissoc id)))))
 
 (defn finalize-editor-state
-  [{:keys [id] :as shape}]
+  [id]
   (ptk/reify ::finalize-editor-state
     ptk/WatchEvent
     (watch [_ state _]
       (when (dwc/initialized? state)
-        (let [content (-> (get-in state [:workspace-editor-state id])
+        (let [objects (wsh/lookup-page-objects state)
+              shape   (get objects id)
+              content (-> (get-in state [:workspace-editor-state id])
                           (ted/get-editor-current-content))]
           (if (ted/content-has-text? content)
             (let [content (d/merge (ted/export-content content)
@@ -78,8 +80,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [text-state (some->> content ted/import-content)
-            attrs (get-in state [:workspace-local :defaults :font])
-
+            attrs (d/merge txt/default-text-attrs
+                           (get-in state [:workspace-local :defaults :font]))
             editor (cond-> (ted/create-editor-state text-state decorator)
                      (and (nil? content) (some? attrs))
                      (ted/update-editor-current-block-data attrs))]
@@ -95,7 +97,7 @@
             (rx/filter (ptk/type? ::rt/navigate) stream)
             (rx/filter #(= ::finalize-editor-state %) stream))
            (rx/take 1)
-           (rx/map #(finalize-editor-state shape))))))
+           (rx/map #(finalize-editor-state id))))))
 
 (defn select-all
   "Select all content of the current editor. When not editor found this
@@ -145,10 +147,10 @@
 
 ;; --- TEXT EDITION IMPL
 
-(defn- update-shape
-  [shape pred-fn merge-fn attrs]
-  (let [merge-attrs #(merge-fn % attrs)
-        transform   #(txt/transform-nodes pred-fn merge-attrs %)]
+(defn- update-text-content
+  [shape pred-fn update-fn attrs]
+  (let [update-attrs #(update-fn % attrs)
+        transform   #(txt/transform-nodes pred-fn update-attrs %)]
     (-> shape
         (update :content transform))))
 
@@ -160,7 +162,11 @@
       (let [objects   (wsh/lookup-page-objects state)
             shape     (get objects id)
 
-            update-fn #(update-shape % txt/is-root-node? attrs/merge attrs)
+            update-fn
+            (fn [shape]
+              (if (some? (:content shape))
+                (update-text-content shape txt/is-root-node? attrs/merge attrs)
+                (assoc shape :content (attrs/merge {:type "root"} attrs))))
 
             shape-ids (cond (cph/text-shape? shape)  [id]
                             (cph/group-shape? shape) (cph/get-children-ids objects id))]
@@ -187,7 +193,7 @@
                              node
                              attrs))
 
-                update-fn #(update-shape % txt/is-paragraph-node? merge-fn attrs)
+                update-fn #(update-text-content % txt/is-paragraph-node? merge-fn attrs)
                 shape-ids (cond
                             (cph/text-shape? shape)  [id]
                             (cph/group-shape? shape) (cph/get-children-ids objects id))]
@@ -209,12 +215,57 @@
               update-node? (fn [node]
                              (or (txt/is-text-node? node)
                                  (txt/is-paragraph-node? node)))
-
-              update-fn #(update-shape % update-node? attrs/merge attrs)
               shape-ids (cond
                           (cph/text-shape? shape)  [id]
                           (cph/group-shape? shape) (cph/get-children-ids objects id))]
-          (rx/of (dch/update-shapes shape-ids update-fn)))))))
+          (rx/of (dch/update-shapes shape-ids #(update-text-content % update-node? attrs/merge attrs))))))))
+
+(defn migrate-content
+  [content]
+  (txt/transform-nodes
+   #(or (txt/is-text-node? %) (txt/is-paragraph-node? %))
+   (fn [node]
+     (let [color-attrs (select-keys node [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient])]
+       (cond-> node
+         (d/not-empty? color-attrs)
+         (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
+             (assoc :fills [color-attrs])))))
+   content))
+
+(defn update-text-with-function
+  [id update-node-fn]
+  (ptk/reify ::update-text-with-function
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-inline-styles-fn update-node-fn))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (nil? (get-in state [:workspace-editor-state id]))
+        (let [objects   (wsh/lookup-page-objects state)
+              shape     (get objects id)
+
+              update-node?
+              (fn [node]
+                (or (txt/is-text-node? node)
+                    (txt/is-paragraph-node? node)))
+
+              shape-ids
+              (cond
+                (cph/text-shape? shape)  [id]
+                (cph/group-shape? shape) (cph/get-children-ids objects id))
+
+              update-content
+              (fn [content]
+                (->> content
+                     (migrate-content)
+                     (txt/transform-nodes update-node? update-node-fn)))
+
+              update-shape
+              (fn [shape]
+                (d/update-when shape :content update-content))]
+
+          (rx/of (dch/update-shapes shape-ids update-shape)))))))
 
 ;; --- RESIZE UTILS
 

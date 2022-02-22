@@ -202,9 +202,9 @@
 (s/def :internal.shape.text/content
   (s/nilable
    (s/or :text-container
-         (s/keys :req-un [:internal.shape.text/type
-                          :internal.shape.text/children]
-                 :opt-un [:internal.shape.text/key])
+         (s/keys :req-un [:internal.shape.text/type]
+                 :opt-un [:internal.shape.text/key
+                          :internal.shape.text/children])
          :text-content
          (s/keys :req-un [:internal.shape.text/text]))))
 

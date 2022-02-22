@@ -88,9 +88,10 @@
                               :overflowWrap "initial"}
 
          base (-> base
-                  (obj/set! "--fill-color" fill-color)
-                  (obj/set! "--fill-color-gradient" (transit/encode-str (:fill-color-gradient data)))
-                  (obj/set! "--fill-opacity" fill-opacity))]
+                  (obj/set! "--fills" (transit/encode-str (:fills data)))
+                  #_(obj/set! "--fill-color" fill-color)
+                  #_(obj/set! "--fill-color-gradient" (transit/encode-str (:fill-color-gradient data)))
+                  #_(obj/set! "--fill-opacity" fill-opacity))]
 
      (when (and (string? letter-spacing)
                 (pos? (alength letter-spacing)))

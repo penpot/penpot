@@ -210,7 +210,11 @@
      {:ref self-ref
       :style {:cursor (cur/text (:rotation shape))
               :width (:width shape)
-              :height (:height shape)}
+              :height (:height shape)
+              ;; We hide the editor when is blurred because otherwise the selection won't let us see
+              ;; the underlying text. Use opacity because display or visibility won't allow to recover
+              ;; focus afterwards.
+              :opacity (when @blurred 0)}
       :on-click on-click
       :class (dom/classnames
               :align-top    (= (:vertical-align content "top") "top")

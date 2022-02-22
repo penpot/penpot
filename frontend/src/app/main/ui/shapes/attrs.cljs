@@ -205,7 +205,7 @@
                           (= :image (:type shape))
                           (> (count (:fills shape)) 1)
                           (some #(some? (:fill-color-gradient %)) (:fills shape)))
-                      (obj/set! styles "fill" (str "url(#fill-" render-id ")"))
+                  (obj/set! styles "fill" (str "url(#fill-0-" render-id ")"))
 
                       ;; imported svgs can have fill and fill-opacity attributes
                       (obj/contains? svg-styles "fill")
@@ -227,9 +227,8 @@
       (add-style-attrs shape)))
 
 (defn extract-fill-attrs
-  [shape index]
-  (let [render-id (mf/use-ctx muc/render-ctx)
-        fill-styles (-> (obj/get shape "style" (obj/new))
+  [shape render-id index]
+  (let [fill-styles (-> (obj/get shape "style" (obj/new))
                         (add-fill shape render-id index))]
     (-> (obj/new)
         (obj/set! "style" fill-styles))))

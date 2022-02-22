@@ -37,7 +37,7 @@
         (fn [data]
           (-> data
               (dissoc :fill-color :fill-opacity :fill-color-gradient)
-              (assoc :fill-color "#FFFFFF" :fill-opacity 1)))]
+              (assoc :fills [{:fill-color "#FFFFFF" :fill-opacity 1}])))]
     (-> shape
         (d/update-when :position-data #(mapv update-color %))
         (assoc :stroke-color "#FFFFFF" :stroke-opacity 1))))

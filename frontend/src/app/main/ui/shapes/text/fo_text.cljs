@@ -194,13 +194,16 @@
         grow-type (obj/get props "grow-type") ;; This is only needed in workspace
         ;; We add 8px to add a padding for the exporter
         ;; width (+ width 8)
+
         [colors color-mapping color-mapping-inverse] (retrieve-colors shape)
 
         plain-colors? (mf/use-ctx muc/text-plain-colors-ctx)
 
         content (cond-> content
                   plain-colors?
-                  (remap-colors color-mapping))]
+                  (remap-colors color-mapping))
+
+        ]
 
     [:foreignObject
      {:x x

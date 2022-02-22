@@ -119,7 +119,5 @@
                            :text-transform      (str (get "text-transform"))
                            :text-decoration     (str (get "text-decoration"))
                            :font-style          (str (get "font-style"))
-                           :fill-color          (or (get "--fill-color") "#000000")
-                           :fill-color-gradient (transit/decode-str (get "--fill-color-gradient"))
-                           :fill-opacity        (d/parse-double (or (get "--fill-opacity") "1"))
+                           :fills               (transit/decode-str (get "--fills"))
                            :text                text}))))))))))
