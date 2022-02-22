@@ -6,6 +6,7 @@
 ### :sparkles: New features
 ### :bug: Bugs fixed
 
+- Fix display code icon on preview hover [Taiga #2838](https://tree.taiga.io/project/penpot/us/2838)
 - Duplicate artboards create new flows if needed [Taiga #2221](https://tree.taiga.io/project/penpot/issue/2221)
 - Add new invitations section [Taiga #2797](https://tree.taiga.io/project/penpot/us/2797)
 - Ability to add multiple fills to a shape [Taiga #1394](https://tree.taiga.io/project/penpot/us/1394)
