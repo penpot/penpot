@@ -59,6 +59,12 @@
   ([classname node]
    (dom/getElementByClass classname node)))
 
+(defn get-elements-by-class
+  ([classname]
+   (dom/getElementsByClass classname))
+  ([classname node]
+   (dom/getElementsByClass classname node)))
+
 (defn get-element
   [id]
   (dom/getElement id))

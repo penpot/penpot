@@ -339,7 +339,7 @@
 
 
      [:div.row-flex
-      (let [size-options [8 9 10 11 12 14 18 24 36 48 72]
+      (let [size-options [8 9 10 11 12 14 16 18 24 36 48 72]
             size-options (if (= font-size :multiple) (into [""] size-options) size-options)]
         [:& editable-select
          {:value (attr->string font-size)
