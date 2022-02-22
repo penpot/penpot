@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.attrs
   (:require
+   [app.common.data :as d]
    [app.common.spec.radius :as ctr]
    [app.common.spec.shape :refer [stroke-caps-line stroke-caps-marker]]
    [app.main.ui.context :as muc]
@@ -201,16 +202,16 @@
                           (= :image (:type shape))
                           (> (count (:fills shape)) 1)
                           (some #(some? (:fill-color-gradient %)) (:fills shape)))
-                  (obj/set! styles "fill" (str "url(#fill-" render-id ")"))
+                      (obj/set! styles "fill" (str "url(#fill-" render-id ")"))
 
-                  ;; imported svgs can have fill and fill-opacity attributes
-                  (obj/contains? svg-styles "fill")
-                  (-> styles
-                      (obj/set! "fill" (obj/get svg-styles "fill"))
-                      (obj/set! "fillOpacity" (obj/get svg-styles "fillOpacity")))
+                      ;; imported svgs can have fill and fill-opacity attributes
+                      (obj/contains? svg-styles "fill")
+                      (-> styles
+                          (obj/set! "fill" (obj/get svg-styles "fill"))
+                          (obj/set! "fillOpacity" (obj/get svg-styles "fillOpacity")))
 
-                  :else
-                  (add-fill styles (get-in shape [:fills 0]) render-id 0))]
+                      :else
+                      (add-fill styles (d/without-nils (get-in shape [:fills 0])) render-id 0))]
 
      (-> props
          (obj/merge! svg-attrs)
