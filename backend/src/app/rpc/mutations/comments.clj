@@ -12,8 +12,8 @@
    [app.db :as db]
    [app.rpc.queries.comments :as comments]
    [app.rpc.queries.files :as files]
+   [app.rpc.retry :as retry]
    [app.util.blob :as blob]
-   [app.util.retry :as retry]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
@@ -34,8 +34,7 @@
   (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id]))
 
 (sv/defmethod ::create-comment-thread
-  {::retry/enabled true
-   ::retry/max-retries 3
+  {::retry/max-retries 3
    ::retry/matches retry/conflict-db-insert?}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]

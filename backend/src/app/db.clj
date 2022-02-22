@@ -47,13 +47,12 @@
 ;; Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare instrument-jdbc!)
 (declare apply-migrations!)
 
 (s/def ::connection-timeout ::us/integer)
-(s/def ::max-pool-size ::us/integer)
+(s/def ::max-size ::us/integer)
+(s/def ::min-size ::us/integer)
 (s/def ::migrations map?)
-(s/def ::min-pool-size ::us/integer)
 (s/def ::name keyword?)
 (s/def ::password ::us/string)
 (s/def ::read-only ::us/boolean)
@@ -62,19 +61,39 @@
 (s/def ::validation-timeout ::us/integer)
 
 (defmethod ig/pre-init-spec ::pool [_]
-  (s/keys :req-un [::uri ::name ::username ::password]
-          :opt-un [::min-pool-size
-                   ::max-pool-size
+  (s/keys :req-un [::uri ::name
+                   ::min-size
+                   ::max-size
                    ::connection-timeout
-                   ::validation-timeout
-                   ::migrations
+                   ::validation-timeout]
+          :opt-un [::migrations
+                   ::username
+                   ::password
                    ::mtx/metrics
                    ::read-only]))
 
+(defmethod ig/prep-key ::pool
+  [_ cfg]
+  (merge {:name :main
+          :min-size 0
+          :max-size 30
+          :connection-timeout 10000
+          :validation-timeout 10000
+          :idle-timeout 120000 ; 2min
+          :max-lifetime 1800000 ; 30m
+          :read-only false}
+         (d/without-nils cfg)))
+
 (defmethod ig/init-key ::pool
-  [_ {:keys [migrations metrics name read-only] :as cfg}]
-  (l/info :action "initialize connection pool" :name (d/name name) :uri (:uri cfg))
-  (some-> metrics :registry instrument-jdbc!)
+  [_ {:keys [migrations name read-only] :as cfg}]
+  (l/info :hint "initialize connection pool"
+          :name (d/name name)
+          :uri (:uri cfg)
+          :read-only read-only
+          :with-credentials (and (contains? cfg :username)
+                                 (contains? cfg :password))
+          :min-size (:min-size cfg)
+          :max-size (:max-size cfg))
 
   (let [pool (create-pool cfg)]
     (when-not read-only
@@ -84,16 +103,6 @@
 (defmethod ig/halt-key! ::pool
   [_ pool]
   (.close ^HikariDataSource pool))
-
-(defn- instrument-jdbc!
-  [registry]
-  (mtx/instrument-vars!
-   [#'next.jdbc/execute-one!
-    #'next.jdbc/execute!]
-   {:registry registry
-    :type :counter
-    :name "database_query_total"
-    :help "An absolute counter of database queries."}))
 
 (defn- apply-migrations!
   [pool migrations]
@@ -111,22 +120,19 @@
        "SET idle_in_transaction_session_timeout = 300000;"))
 
 (defn- create-datasource-config
-  [{:keys [metrics read-only] :or {read-only false} :as cfg}]
-  (let [dburi    (:uri cfg)
-        username (:username cfg)
-        password (:password cfg)
-        config   (HikariConfig.)]
+  [{:keys [metrics uri] :as cfg}]
+  (let [config (HikariConfig.)]
     (doto config
-      (.setJdbcUrl (str "jdbc:" dburi))
-      (.setPoolName (d/name (:name cfg)))
+      (.setJdbcUrl           (str "jdbc:" uri))
+      (.setPoolName          (d/name (:name cfg)))
       (.setAutoCommit true)
-      (.setReadOnly read-only)
-      (.setConnectionTimeout (:connection-timeout cfg 10000))  ;; 10seg
-      (.setValidationTimeout (:validation-timeout cfg 10000))  ;; 10seg
-      (.setIdleTimeout 120000)       ;; 2min
-      (.setMaxLifetime 1800000)      ;; 30min
-      (.setMinimumIdle     (:min-pool-size cfg 0))
-      (.setMaximumPoolSize (:max-pool-size cfg 50))
+      (.setReadOnly          (:read-only cfg))
+      (.setConnectionTimeout (:connection-timeout cfg))
+      (.setValidationTimeout (:validation-timeout cfg))
+      (.setIdleTimeout       (:idle-timeout cfg))
+      (.setMaxLifetime       (:max-lifetime cfg))
+      (.setMinimumIdle       (:min-size cfg))
+      (.setMaximumPoolSize   (:max-size cfg))
       (.setConnectionInitSql initsql)
       (.setInitializationFailTimeout -1))
 
@@ -136,8 +142,8 @@
            (PrometheusMetricsTrackerFactory.)
            (.setMetricsTrackerFactory config)))
 
-    (when username (.setUsername config username))
-    (when password (.setPassword config password))
+    (some->> ^String (:username cfg) (.setUsername config))
+    (some->> ^String (:password cfg) (.setPassword config))
 
     config))
 
