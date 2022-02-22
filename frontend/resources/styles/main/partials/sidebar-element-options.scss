@@ -355,6 +355,8 @@
 
   & li.checked-element {
     padding-left: 0;
+    display: flex;
+    justify-content: space-around;
 
     & span {
       margin: 0;
