@@ -154,11 +154,21 @@
     left: 40px;
     width: 183px;
     z-index: 12;
-    @include animation(0, 0.2s, fadeInDown);
 
     background-color: $color-white;
     border-radius: $br-small;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+    :first-child {
+      &:hover {
+        border-radius: $br-small $br-small 0px 0px;
+      }
+    }
+    :last-child {
+      &:hover {
+        border-radius: 0px 0px $br-small $br-small;
+      }
+    }
 
     li {
       cursor: pointer;
@@ -193,10 +203,20 @@
     left: 230px;
     width: 270px;
     z-index: 12;
-    @include animation(0, 0.2s, fadeInDown);
     background-color: $color-white;
     border-radius: $br-small;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+    :first-child {
+      &:hover {
+        border-radius: $br-small $br-small 0px 0px;
+      }
+    }
+    :last-child {
+      &:hover {
+        border-radius: 0px 0px $br-small $br-small;
+      }
+    }
 
     &.file {
       top: 40px;

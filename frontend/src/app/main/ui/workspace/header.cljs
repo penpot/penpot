@@ -194,6 +194,13 @@
                        (st/emit! (dm/error (tr "errors.unexpected-error"))))
                      (st/emitf dm/hide)))))))
 
+        on-item-hover
+        (mf/use-callback
+         (fn [item]
+           (fn [event]
+             (dom/stop-propagation event)
+             (reset! show-sub-menu? item))))
+
         on-item-click
         (mf/use-callback
          (fn [item]
@@ -230,18 +237,23 @@
      [:& dropdown {:show @show-menu?
                    :on-close #(reset! show-menu? false)}
       [:ul.menu
-       [:li {:on-click (on-item-click :file)}
+       [:li {:on-click (on-item-click :file)
+             :on-pointer-enter (on-item-hover :file)}
         [:span (tr "workspace.header.menu.option.file")]
         [:span i/arrow-slide]]
-       [:li {:on-click (on-item-click :edit)}
+       [:li {:on-click (on-item-click :edit)
+             :on-pointer-enter (on-item-hover :edit)}
         [:span (tr "workspace.header.menu.option.edit")] [:span i/arrow-slide]]
-       [:li {:on-click (on-item-click :view)}
+       [:li {:on-click (on-item-click :view)
+             :on-pointer-enter (on-item-hover :view)}
         [:span (tr "workspace.header.menu.option.view")] [:span i/arrow-slide]]
-       [:li {:on-click (on-item-click :preferences)}
+       [:li {:on-click (on-item-click :preferences)
+             :on-pointer-enter (on-item-hover :preferences)}
         [:span (tr "workspace.header.menu.option.preferences")] [:span i/arrow-slide]]
        (when (contains? @cf/flags :user-feedback)
          [:*
-          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
+          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))
+                         :on-pointer-enter (st/emitf (rt/nav :settings-feedback))}
            [:span (tr "labels.give-feedback")]]])]]
 
      [:& dropdown {:show (= @show-sub-menu? :file)
