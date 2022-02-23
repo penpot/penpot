@@ -81,7 +81,7 @@
   (s/keys :req-un [::type ::name ::props ::timestamp ::profile-id]
           :opt-un [::context]))
 
-(s/def ::frontend-events (s/every ::event))
+(s/def ::frontend-events (s/every ::frontend-event))
 
 (defmethod ig/init-key ::http-handler
   [_  {:keys [executor pool] :as cfg}]
@@ -129,8 +129,7 @@
                            (:profile-id event)
                            (db/inet ip-addr)
                            (db/tjson (:props event))
-                           (db/tjson (d/without-nils (:context event)))]))
-        events     (us/conform ::events events)]
+                           (db/tjson (d/without-nils (:context event)))]))]
     (when (seq events)
       (->> (into [] prepare-xf events)
            (db/insert-multi! pool :audit-log columns)))))
