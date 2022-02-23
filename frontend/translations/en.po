@@ -617,6 +617,9 @@ msgstr "You can't use your email as password"
 msgid "errors.email-has-permanent-bounces"
 msgstr "The email «%s» has many permanent bounce reports."
 
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "The email «%s» has been reported as spam or permanently bounce."
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "Confirmation email must match"
@@ -1550,6 +1553,9 @@ msgstr "Are you sure you want to delete this member from the team?"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Delete team member"
+
+msgid "modals.invite-member.emails"
+msgstr "Emails, comma separated"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member-confirm.accept"

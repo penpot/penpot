@@ -108,6 +108,15 @@
   (when (some? node)
     (.-value node)))
 
+(defn get-input-value
+  "Extract the value from dom input node taking into account the type."
+  [^js node]
+  (when (some? node)
+    (if (or (= (.-type node) "checkbox")
+            (= (.-type node) "radio"))
+      (.-checked node)
+      (.-value node))))
+
 (defn get-attribute
   "Extract the value of one attribute of a dom node."
   [^js node ^string attr-name]

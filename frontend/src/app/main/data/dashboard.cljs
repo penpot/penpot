@@ -427,8 +427,8 @@
              (rx/catch on-error))))))
 
 (defn invite-team-member
-  [{:keys [email role] :as params}]
-  (us/assert ::us/email email)
+  [{:keys [emails role] :as params}]
+  (us/assert ::us/set-of-emails emails)
   (us/assert ::us/keyword role)
   (ptk/reify ::invite-team-member
     IDeref
@@ -770,7 +770,6 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -890,7 +889,7 @@
                              :team-id team-id})
             action-name   (if in-project? :create-file :create-project)
             action        (if in-project? file-created project-created)]
-        
+
         (->> (rp/mutation! action-name params)
              (rx/map action))))))
 

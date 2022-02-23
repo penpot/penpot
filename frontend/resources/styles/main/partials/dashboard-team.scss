@@ -4,7 +4,7 @@
   padding: 14px;
   box-shadow: 0px 4px 8px rgba($color-black, 0.25);
   border-radius: 8px;
-  width: 500px;
+  width: 450px;
   position: fixed;
 
   form {
@@ -19,12 +19,30 @@
 
   .custom-input {
     width: 314px;
+    height: 14px;
+    font-size: 14px;
     margin-right: 10px;
+
+    input {
+      padding: 0;
+
+      &.empty {
+        margin-top: 10px;
+        &::placeholder {
+          color: $color-gray-20;
+          opacity: 1;
+        }
+      }
+      &::placeholder {
+        color: transparent;
+      }
+    }
   }
 
   .custom-select {
-    width: 160px;
+    width: 155px;
     overflow: hidden;
+    justify-content: normal;
   }
 
   .action-buttons {
@@ -37,6 +55,83 @@
 
   .title {
     color: $color-black;
+  }
+
+  .hint {
+    font-size: 12px;
+
+    &.hidden {
+      display: none;
+    }
+  }
+
+  .invite-member-email-container {
+    border: 1px solid $color-black;
+    width: 273px;
+    margin-right: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0 5px 5px 5px;
+  }
+
+  .invite-member-email-text {
+    margin-bottom: 5px;
+    .around {
+      border: 1px solid $color-gray-20;
+      padding-left: 5px;
+      border-radius: 4px;
+      &.invalid {
+        border: 1px solid $color-danger;
+      }
+
+      .text {
+        display: inline-block;
+        max-width: 85%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 15px;
+        font-size: 14px;
+        color: $color-black;
+      }
+      .icon {
+        cursor: pointer;
+        margin-left: 10px;
+        margin-right: 5px;
+      }
+    }
+  }
+
+  .invite-member-email-input {
+    width: 95%;
+    border: 0;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+    fill: $color-gray-20;
+  }
+
+  .error {
+    background-color: #ffd9e0;
+    width: 100%;
+    display: flex;
+    .icon {
+      background-color: $color-danger;
+      text-align: center;
+      padding: 5px;
+      svg {
+        fill: $color-white;
+        width: 20px;
+        height: 20px;
+        margin: 5px;
+      }
+    }
+    .text {
+      color: $color-black;
+      padding: 5px;
+      font-size: 12px;
+    }
   }
 }
 
