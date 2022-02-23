@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages.changes :as changes]
    [app.common.pages.common :as common]
+   [app.common.pages.focus :as focus]
    [app.common.pages.indices :as indices]
    [app.common.pages.init :as init]))
 
@@ -18,6 +19,11 @@
 (dm/export common/file-version)
 (dm/export common/default-color)
 (dm/export common/component-sync-attrs)
+
+;; Focus
+(dm/export focus/focus-objects)
+(dm/export focus/filter-not-focus)
+(dm/export focus/is-in-focus?)
 
 ;; Indices
 (dm/export indices/calculate-z-index)
@@ -36,3 +42,4 @@
 (dm/export init/make-minimal-shape)
 (dm/export init/make-minimal-group)
 (dm/export init/empty-file-data)
+

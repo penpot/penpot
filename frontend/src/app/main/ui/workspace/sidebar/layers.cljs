@@ -17,6 +17,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.timers :as ts]
@@ -314,11 +315,23 @@
 (mf/defc layers-toolbox
   {:wrap [mf/memo]}
   []
-  (let [page     (mf/deref refs/workspace-page)]
+  (let [page  (mf/deref refs/workspace-page)
+        focus (mf/deref refs/workspace-focus-selected)
+        objects (hooks/with-focus-objects (:objects page) focus)
+        title (when (= 1 (count focus)) (get-in objects [(first focus) :name]))]
     [:div#layers.tool-window
-     [:div.tool-window-bar
-      [:div.tool-window-icon i/layers]
-      [:span (:name page)]]
+     (if (d/not-empty? focus)
+       [:div.tool-window-bar
+        [:div.focus-title
+         [:button.back-button
+          {:on-click #(st/emit! (dw/toggle-focus-mode))}
+          i/arrow-slide ]
+         [:span (or title (tr "workspace.focus.selection"))]
+         [:div.focus-mode (tr "workspace.focus.focus-mode")]]]
+
+       [:div.tool-window-bar
+        [:span (:name page)]])
+
      [:div.tool-window-content
       [:& layers-tree-wrapper {:key (:id page)
-                               :objects (:objects page)}]]]))
+                               :objects objects}]]]))

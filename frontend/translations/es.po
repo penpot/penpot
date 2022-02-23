@@ -3557,3 +3557,15 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "workspace.focus.selection"
+msgstr "Selección"
+
+msgid "workspace.focus.focus-mode"
+msgstr "Modo foco"
+
+msgid "workspace.focus.focus-on"
+msgstr "Activar modo foco"
+
+msgid "workspace.focus.focus-off"
+msgstr "Desactivar modo foco"

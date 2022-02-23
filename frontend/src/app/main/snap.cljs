@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :refer [zero]]
    [app.main.refs :as refs]
@@ -32,21 +33,27 @@
 
 (defn make-remove-snap
   "Creates a filter for the snap data. Used to disable certain layouts"
-  [layout filter-shapes]
+  [layout filter-shapes objects focus]
 
-  (fn [{:keys [type id]}]
+  (fn [{:keys [type id frame-id]}]
     (cond
       (= type :layout)
       (or (not (contains? layout :display-grid))
-          (not (contains? layout :snap-grid)))
+          (not (contains? layout :snap-grid))
+          (and (d/not-empty? focus)
+               (not (contains? focus id))))
 
       (= type :guide)
       (or (not (contains? layout :rules))
-          (not (contains? layout :snap-guides)))
+          (not (contains? layout :snap-guides))
+          (and (d/not-empty? focus)
+               (not (contains? focus frame-id))))
 
       :else
       (or (contains? filter-shapes id)
-          (not (contains? layout :dynamic-alignment))))))
+          (not (contains? layout :dynamic-alignment))
+          (and (d/not-empty? focus)
+               (not (cp/is-in-focus? objects focus id)))))))
 
 (defn- flatten-to-points
   [query-result]
@@ -223,19 +230,19 @@
          (rx/map snap->vector))))
 
 (defn closest-snap-point
-  [page-id shapes layout zoom point]
+  [page-id shapes objects layout zoom focus point]
   (let [frame-id (snap-frame-id shapes)
         filter-shapes (into #{} (map :id shapes))
-        remove-snap? (make-remove-snap layout filter-shapes)]
+        remove-snap? (make-remove-snap layout filter-shapes objects focus)]
     (->> (closest-snap page-id frame-id [point] remove-snap? zoom)
          (rx/map #(or % (gpt/point 0 0)))
          (rx/map #(gpt/add point %)))))
 
 (defn closest-snap-move
-  [page-id shapes objects layout zoom movev]
+  [page-id shapes objects layout zoom focus movev]
   (let [frame-id (snap-frame-id shapes)
         filter-shapes (into #{} (map :id shapes))
-        remove-snap? (make-remove-snap layout filter-shapes)
+        remove-snap? (make-remove-snap layout filter-shapes objects focus)
 
         shape (if (> (count shapes) 1)
                 (->> shapes (map gsh/transform-shape) gsh/selection-rect (gsh/setup {:type :rect}))

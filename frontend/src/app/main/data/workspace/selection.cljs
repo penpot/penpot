@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.math :as mth]
+   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -20,10 +21,13 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.zoom :as dwz]
+   [app.main.refs :as refs]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
+   [clojure.set :as set]
    [linked.set :as lks]
    [potok.core :as ptk]))
 
@@ -161,7 +165,12 @@
   (ptk/reify ::select-shapes
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :selected] ids))
+      (let [objects (wsh/lookup-page-objects state)
+            focus (:workspace-focus-selected state)
+            ids (if (d/not-empty? focus)
+                  (cp/filter-not-focus objects focus ids)
+                  ids)]
+        (assoc-in state [:workspace-local :selected] ids)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -173,8 +182,9 @@
   (ptk/reify ::select-all
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
+      (let [focus (:workspace-focus-selected state)
+            objects  (-> (wsh/lookup-page-objects state)
+                         (cp/focus-objects focus))
 
             selected (let [frame-ids (into #{} (comp
                                                 (map (d/getf objects))
@@ -484,8 +494,8 @@
 
               id-duplicated (when (= (count selected) 1) (first selected))]
 
-          (rx/of (select-shapes selected)
-                 (dch/commit-changes changes)
+          (rx/of (dch/commit-changes changes)
+                 (select-shapes selected)
                  (memorize-duplicated id-original id-duplicated)))))))
 
 (defn change-hover-state
@@ -495,3 +505,54 @@
     (update [_ state]
       (let [hover-value (if value #{id} #{})]
         (assoc-in state [:workspace-local :hover] hover-value)))))
+
+(defn update-focus-shapes
+  [added removed]
+  (ptk/reify ::update-focus-shapes
+    ptk/UpdateEvent
+    (update [_ state]
+
+      (let [objects (wsh/lookup-page-objects state)
+
+            focus (-> (:workspace-focus-selected state)
+                      (set/union added)
+                      (set/difference removed))
+            focus (cph/clean-loops objects focus)]
+
+        (-> state
+            (assoc :workspace-focus-selected focus))))))
+
+(defn toggle-focus-mode
+  []
+  (ptk/reify ::toggle-focus-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [selected (wsh/lookup-selected state)]
+        (cond-> state
+          (and (empty? (:workspace-focus-selected state))
+               (d/not-empty? selected))
+          (assoc :workspace-focus-selected selected)
+
+          (d/not-empty? (:workspace-focus-selected state))
+          (dissoc :workspace-focus-selected))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stopper (rx/filter #(or (= ::toggle-focus-mode (ptk/type %))
+                                    (= :app.main.data.workspace/finalize-page (ptk/type %))) stream)]
+        (when (d/not-empty? (:workspace-focus-selected state))
+          (rx/merge
+           (rx/of dwz/zoom-to-selected-shape
+                  (deselect-all))
+           (->> (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
+                (rx/take-until stopper)
+                (rx/map (comp set keys))
+                (rx/buffer 2 1)
+                (rx/merge-map
+                 (fn [[old-keys new-keys]]
+                   (let [removed (set/difference old-keys new-keys)
+                         added (set/difference new-keys old-keys)]
+
+                     (if (or (d/not-empty? added) (d/not-empty? removed))
+                       (rx/of (update-focus-shapes added removed))
+                       (rx/empty))))))))))))

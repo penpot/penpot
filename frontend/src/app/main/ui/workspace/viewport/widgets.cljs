@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.widgets
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
@@ -165,7 +166,8 @@
 
     [:g.frame-titles
      (for [frame frames]
-       [:& frame-title {:frame frame
+       [:& frame-title {:key (dm/str "frame-title-" (:id frame))
+                        :frame frame
                         :selected? (contains? selected (:id frame))
                         :zoom zoom
                         :show-artboard-names? show-artboard-names?

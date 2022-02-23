@@ -151,15 +151,16 @@
 
 (mf/defc snap-points
   {::mf/wrap [mf/memo]}
-  [{:keys [layout zoom objects selected page-id drawing transform modifiers] :as props}]
+  [{:keys [layout zoom objects selected page-id drawing transform modifiers focus] :as props}]
   (us/assert set? selected)
   (let [shapes  (into [] (keep (d/getf objects)) selected)
 
         filter-shapes
         (into selected (mapcat #(cph/get-children-ids objects %)) selected)
 
-        remove-snap? (mf/with-memo [layout filter-shapes]
-                       (snap/make-remove-snap layout filter-shapes))
+        remove-snap?
+        (mf/with-memo [layout filter-shapes objects focus]
+          (snap/make-remove-snap layout filter-shapes objects focus))
 
         shapes    (if drawing [drawing] shapes)]
     (when (or drawing transform)
