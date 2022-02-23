@@ -375,6 +375,7 @@
               stoper  (rx/filter ms/mouse-up? stream)
               layout  (:workspace-layout state)
               page-id (:current-page-id state)
+              focus   (:workspace-focus-selected state)
               zoom    (get-in state [:workspace-local :zoom] 1)
               objects (wsh/lookup-page-objects state page-id)
               resizing-shapes (map #(get objects %) ids)
@@ -387,7 +388,7 @@
                 (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
                 (rx/map normalize-proportion-lock)
                 (rx/switch-map (fn [[point _ _ :as current]]
-                                 (->> (snap/closest-snap-point page-id resizing-shapes layout zoom point)
+                                 (->> (snap/closest-snap-point page-id resizing-shapes objects layout zoom focus point)
                                       (rx/map #(conj current %)))))
                 (rx/mapcat (partial resize shape initial-position layout))
                 (rx/take-until stoper))
@@ -509,7 +510,6 @@
                     (rx/of (start-move initial selected)))))
                (rx/take-until stopper)))))))
 
-
 (defn- start-move-duplicate
   [from-position]
   (ptk/reify ::start-move-duplicate
@@ -544,6 +544,7 @@
              stopper (rx/filter ms/mouse-up? stream)
              layout  (get state :workspace-layout)
              zoom    (get-in state [:workspace-local :zoom] 1)
+             focus   (:workspace-focus-selected state)
 
              fix-axis (fn [[position shift?]]
                         (let [delta (gpt/to-vec from-position position)]
@@ -564,10 +565,10 @@
                               (rx/throttle 20)
                               (rx/switch-map
                                (fn [pos]
-                                 (->> (snap/closest-snap-move page-id shapes objects layout zoom pos)
+                                 (->> (snap/closest-snap-move page-id shapes objects layout zoom focus pos)
                                       (rx/map #(vector pos %)))))))]
          (if (empty? shapes)
-           (rx/empty)
+           (rx/of (finish-transform))
            (rx/concat
             (->> position
                  (rx/with-latest vector snap-delta)

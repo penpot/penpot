@@ -12,6 +12,7 @@
 - Add new invitations section [Taiga #2797](https://tree.taiga.io/project/penpot/us/2797)
 - Ability to add multiple fills to a shape [Taiga #1394](https://tree.taiga.io/project/penpot/us/1394)
 - Team members redesign [Taiga #2283](https://tree.taiga.io/project/penpot/us/2283)
+- New focus mode in workspace [Taiga #2748](https://tree.taiga.io/project/penpot/us/2748)
 - Changed text shapes to be displayed as natives SVG text elements [Taiga #2759](https://tree.taiga.io/project/penpot/us/2759)
 - Texts now can have strokes, multiple fills and can be used as masks
 

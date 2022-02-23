@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
@@ -97,13 +98,14 @@
             (some #(cph/is-parent? objects % group-id))
             (not))))
 
-(defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids hover-disabled? zoom]
+(defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids hover-disabled? focus zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         ctrl-ref (mf/use-ref @ctrl?)
         transform-ref (mf/use-ref nil)
         selected-ref (mf/use-ref selected)
         hover-disabled-ref (mf/use-ref hover-disabled?)
+        focus-ref (mf/use-ref focus)
 
         query-point
         (mf/use-callback
@@ -157,6 +159,10 @@
      (mf/deps hover-disabled?)
      #(mf/set-ref-val! hover-disabled-ref hover-disabled?))
 
+    (mf/use-effect
+     (mf/deps focus)
+     #(mf/set-ref-val! focus-ref focus))
+
     (hooks/use-stream
      over-shapes-stream
      (mf/deps page-id objects @ctrl?)
@@ -166,6 +172,7 @@
                (contains? #{:group :bool} (get-in objects [id :type])))
 
              selected (mf/ref-val selected-ref)
+             focus (mf/ref-val focus-ref)
 
              remove-xfm (mapcat #(cph/get-parent-ids objects %))
              remove-id? (cond-> (into #{} remove-xfm selected)
@@ -177,6 +184,8 @@
 
              hover-shape (->> ids
                               (filter (comp not remove-id?))
+                              (filter #(or (empty? focus)
+                                           (cp/is-in-focus? objects focus %)))
                               (first)
                               (get objects))]
          (reset! hover hover-shape)

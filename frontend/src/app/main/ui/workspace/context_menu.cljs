@@ -212,6 +212,17 @@
                         :on-click do-create-artboard-from-selection}]
         [:& menu-separator]])]))
 
+(mf/defc context-focus-mode-menu
+  [{:keys []}]
+  (let [focus (mf/deref refs/workspace-focus-selected)
+        do-toggle-focus-mode #(st/emit! (dw/toggle-focus-mode))]
+
+    [:& menu-entry {:title (if (empty? focus)
+                             (tr "workspace.focus.focus-on")
+                             (tr "workspace.focus.focus-off"))
+                    :shortcut (sc/get-tooltip :toggle-focus-mode)
+                    :on-click do-toggle-focus-mode}]))
+
 (mf/defc context-menu-path
   [{:keys [shapes disable-flatten? disable-booleans?]}]
   (let [multiple? (> (count shapes) 1)
@@ -426,6 +437,7 @@
        [:> context-menu-layer-position props]
        [:> context-menu-flip props]
        [:> context-menu-group props]
+       [:> context-focus-mode-menu props]
        [:> context-menu-path props]
        [:> context-menu-layer-options props]
        [:> context-menu-prototype props]
@@ -434,15 +446,23 @@
 
 (mf/defc viewport-context-menu
   []
-  (let [do-paste (st/emitf dw/paste)
-        do-hide-ui (st/emitf (dw/toggle-layout-flags :hide-ui))]
+  (let [focus (mf/deref refs/workspace-focus-selected)
+
+        do-paste (st/emitf dw/paste)
+        do-hide-ui (st/emitf (dw/toggle-layout-flags :hide-ui))
+        do-toggle-focus-mode #(st/emit! (dw/toggle-focus-mode))]
     [:*
      [:& menu-entry {:title (tr "workspace.shape.menu.paste")
                      :shortcut (sc/get-tooltip :paste)
                      :on-click do-paste}]
      [:& menu-entry {:title (tr "workspace.shape.menu.hide-ui")
                      :shortcut (sc/get-tooltip :hide-ui)
-                     :on-click do-hide-ui}]]))
+                     :on-click do-hide-ui}]
+
+     (when (d/not-empty? focus)
+       [:& menu-entry {:title (tr "workspace.focus.focus-off")
+                       :shortcut (sc/get-tooltip :toggle-focus-mode)
+                       :on-click do-toggle-focus-mode}])]))
 
 (mf/defc context-menu
   []

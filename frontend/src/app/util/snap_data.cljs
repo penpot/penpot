@@ -107,6 +107,7 @@
                         (mapv #(array-map
                                 :type :guide
                                 :id (:id guide)
+                                :frame-id (:frame-id guide)
                                 :pt %)))]
     (if-let [frame-id (:frame-id guide)]
       ;; Guide inside frame, we add the information only on that frame

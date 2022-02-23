@@ -80,13 +80,14 @@
 
 (mf/defc frame-grid
   {::mf/wrap [mf/memo]}
-  [{:keys [zoom transform selected]}]
+  [{:keys [zoom transform selected focus]}]
   (let [frames     (mf/deref refs/workspace-frames)
         moving     (when (= :move transform) selected)
         is-moving? #(contains? moving (:id %))]
 
     [:g.grid-display {:style {:pointer-events "none"}}
      (for [frame (remove is-moving? frames)]
-       [:& grid-display-frame {:key (str "grid-" (:id frame))
-                               :zoom zoom
-                               :frame (gsh/transform-shape frame)}])]))
+       (when (or (empty? focus) (contains? focus (:id frame)))
+         [:& grid-display-frame {:key (str "grid-" (:id frame))
+                                 :zoom zoom
+                                 :frame (gsh/transform-shape frame)}]))]))

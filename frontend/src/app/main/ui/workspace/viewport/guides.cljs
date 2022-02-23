@@ -428,6 +428,8 @@
                       (vals)
                       (filter (guide-inside-vbox? vbox))))
 
+        focus (mf/deref refs/workspace-focus-selected)
+
         hover-frame-ref (mf/use-ref nil)
 
         ;; We use the ref to not redraw every guide everytime the hovering frame change
@@ -464,12 +466,15 @@
                          :disabled-guides? disabled-guides?}]
      
      (for [current guides]
-       [:& guide  {:key (str "guide-" (:id current))
-                   :guide current
-                   :vbox vbox
-                   :zoom zoom
-                   :frame-modifier (get modifiers (:frame-id current))
-                   :get-hover-frame get-hover-frame
-                   :on-guide-change on-guide-change
-                   :disabled-guides? disabled-guides?}])]))
+       (when (or (nil? (:frame-id current))
+                 (empty? focus)
+                 (contains? focus (:frame-id current)))
+         [:& guide  {:key (str "guide-" (:id current))
+                     :guide current
+                     :vbox vbox
+                     :zoom zoom
+                     :frame-modifier (get modifiers (:frame-id current))
+                     :get-hover-frame get-hover-frame
+                     :on-guide-change on-guide-change
+                     :disabled-guides? disabled-guides?}]))]))
 

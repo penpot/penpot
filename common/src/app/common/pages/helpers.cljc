@@ -74,6 +74,16 @@
   [objects id]
   (-> objects (get id) :parent-id))
 
+(defn get-parents-seq
+  [objects shape-id]
+
+  (cond
+    (nil? shape-id)
+    nil
+
+    :else
+    (lazy-seq (cons shape-id (get-parents-seq objects (get-in objects [shape-id :parent-id]))))))
+
 (defn get-parent-ids
   "Returns a vector of parents of the specified shape."
   [objects shape-id]
@@ -463,3 +473,4 @@
   [path name]
   (let [path-split (split-path path)]
     (merge-path-item (first path-split) name)))
+
