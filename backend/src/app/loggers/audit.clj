@@ -22,10 +22,9 @@
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [promesa.core :as p]
-   [promesa.exec :as px]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]
+   [promesa.core :as p]
    [promesa.exec :as px]))
 
 (defn parse-client-ip
@@ -110,7 +109,7 @@
                   (l/error ::l/raw (str "spec validation on persist-events:\n" (us/pretty-explain xdata)))
                   (l/error :hint "error on persist-events" :cause cause))))]
 
-      (fn [request respond raise]
+      (fn [request respond _]
         ;; Fire and forget, log error in case of errro
         (-> (px/submit! executor #(handler request))
             (p/catch handle-error))

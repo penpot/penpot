@@ -28,8 +28,7 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [executor] :as cfg}]
-  (let [ftoken   (cf/get :feedback-token ::no-token)
-        enabled? (contains? cf/flags :user-feedback)]
+  (let [enabled? (contains? cf/flags :user-feedback)]
     (if enabled?
       (fn [request respond raise]
         (-> (px/submit! executor #(handler cfg request))
