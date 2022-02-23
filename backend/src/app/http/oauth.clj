@@ -24,6 +24,8 @@
    [integrant.core :as ig]
    [promesa.exec :as px]))
 
+;; TODO: make it fully async (?)
+
 (defn- build-redirect-uri
   [{:keys [provider] :as cfg}]
   (let [public (u/uri (:public-uri cfg))]
@@ -214,9 +216,9 @@
       (redirect-response uri))))
 
 (defn- auth-handler
-  [{:keys [tokens executors] :as cfg} {:keys [params] :as request} respond _]
+  [{:keys [tokens executor] :as cfg} {:keys [params] :as request} respond _]
   (px/run!
-   (:default executors)
+   executor
    (fn []
      (let [invitation (:invitation-token params)
            props      (extract-utm-props params)
@@ -232,9 +234,9 @@
          :body {:redirect-uri uri}})))))
 
 (defn- callback-handler
-  [{:keys [executors] :as cfg} request respond _]
+  [{:keys [executor] :as cfg} request respond _]
   (px/run!
-   (:default executors)
+   executor
    (fn []
      (try
        (let [info     (retrieve-info cfg request)

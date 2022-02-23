@@ -143,6 +143,7 @@
     :pool       (ig/ref :app.db/pool)
     :tokens     (ig/ref :app.tokens/tokens)
     :audit      (ig/ref :app.loggers.audit/collector)
+    :executor   (ig/ref [::default :app.worker/executor])
     :public-uri (cf/get :public-uri)}
 
    :app.rpc/rpc
