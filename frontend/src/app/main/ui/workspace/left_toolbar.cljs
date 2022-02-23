@@ -19,6 +19,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
+   [app.util.timers :as ts]
    [rumext.alpha :as mf]))
 
 (mf/defc image-upload
@@ -124,8 +125,9 @@
          :class (when (contains? layout :textpalette) "selected")
          :on-click (fn []
                      (r/set-resize-type! :bottom)
-                     (st/emit! (dw/remove-layout-flags :colorpalette)
-                               (dw/toggle-layout-flags :textpalette)))}
+                     (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
+                     (ts/schedule 300 #(st/emit! (dw/remove-layout-flags :colorpalette)
+                               (dw/toggle-layout-flags :textpalette))))}
         "Ag"]
        
        [:li.tooltip.tooltip-right
@@ -133,6 +135,7 @@
          :class (when (contains? layout :colorpalette) "selected")
          :on-click (fn []
                      (r/set-resize-type! :bottom)
-                     (st/emit! (dw/remove-layout-flags :textpalette)
-                               (dw/toggle-layout-flags :colorpalette)))}
+                     (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
+                     (ts/schedule 300 #(st/emit! (dw/remove-layout-flags :textpalette)
+                                                 (dw/toggle-layout-flags :colorpalette))))}
         i/palette]]]]))

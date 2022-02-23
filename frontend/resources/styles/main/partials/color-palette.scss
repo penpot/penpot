@@ -5,7 +5,7 @@
 // Copyright (c) UXBOX Labs SL
 
 .color-palette {
-  @include animation(0, 0.5s, fadeInUp);
+  @include animation(0, 0.3s, fadeInUp);
   align-items: center;
   background-color: $color-gray-50;
   border-top: 1px solid $color-gray-60;
@@ -42,7 +42,7 @@
   }
 
   &.fade-out-down {
-    @include animation(0, 0.5s, fadeOutDown);
+    @include animation(0, 0.3s, fadeOutDown);
   }
 
   & .context-menu-items {

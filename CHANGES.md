@@ -12,6 +12,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix color palette animation [Taiga #2852](https://tree.taiga.io/project/penpot/issue/2852)
 - Fix display code icon on preview hover [Taiga #2838](https://tree.taiga.io/project/penpot/us/2838)
 
 ### :arrow_up: Deps updates
