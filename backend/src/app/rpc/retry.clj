@@ -29,17 +29,10 @@
   (if-let [max-retries (::max-retries mdata)]
     (fn [cfg params]
       (letfn [(run [retry]
-                (prn "wrap-retry" "run" retry)
-                (try
-                  (-> (f cfg params)
-                      (p/catch (partial handle-error retry)))
-                  (catch Throwable cause
-                    (prn cause)
-                    (throw cause))))
-
+                (-> (f cfg params)
+                    (p/catch (partial handle-error retry))))
 
               (handle-error [retry cause]
-                (prn "FOOFOFOF" retry (matches cause))
                 (if (matches cause)
                   (let [current-retry (inc retry)]
                     (l/trace :hint "running retry algorithm" :retry current-retry)
