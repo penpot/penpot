@@ -114,10 +114,7 @@
     (if (= :none dname)
       (with-meta
         (fn [cfg params]
-          (try
-            (p/wrap (f cfg params))
-            (catch Throwable cause
-              (p/rejected cause))))
+          (p/do! (f cfg params)))
         mdata)
 
       (let [executor (get executors dname)]
@@ -173,13 +170,14 @@
       (fn [{:keys [::request] :as params}]
         ;; Raise authentication error when rpc method requires auth but
         ;; no profile-id is found in the request.
-        (when (and auth? (not (uuid? (:profile-id params))))
-          (ex/raise :type :authentication
-                    :code :authentication-required
-                    :hint "authentication required for this endpoint"))
+        (p/do!
+         (if (and auth? (not (uuid? (:profile-id params))))
+           (ex/raise :type :authentication
+                     :code :authentication-required
+                     :hint "authentication required for this endpoint")
+           (let [params (us/conform spec (dissoc params ::request))]
+             (f cfg (assoc params ::request request))))))
 
-        (let [params (us/conform spec (dissoc params ::request))]
-          (f cfg (assoc params ::request request))))
       mdata)))
 
 (defn- process-method
