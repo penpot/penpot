@@ -2195,7 +2195,7 @@ msgstr "Fit - Scale down to fit"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fit-all"
-msgstr "Zoom to fil all"
+msgstr "Zoom to fit all"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-full-screen"
