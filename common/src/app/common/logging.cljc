@@ -7,6 +7,7 @@
 (ns app.common.logging
   (:require
    [app.common.exceptions :as ex]
+   [app.common.uuid :as uuid]
    [clojure.pprint :refer [pprint]]
    [cuerdas.core :as str]
    [fipp.edn :as fpp]
@@ -175,7 +176,7 @@
               `(->> (ThreadContext/getImmutableContext)
                     (send-off logging-agent
                               (fn [_# cdata#]
-                                (with-context (-> {} (into cdata#) (into ~context))
+                                (with-context (-> {:id (uuid/next)} (into cdata#) (into ~context))
                                   (->> (or ~raw (build-map-message ~props))
                                        (write-log! ~logger-sym ~level-sym ~cause))))))
 
