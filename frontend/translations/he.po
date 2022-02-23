@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-02-18 17:56+0000\n"
+"PO-Revision-Date: 2022-02-24 19:53+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -3488,3 +3488,15 @@ msgstr "הצגה בייצואים"
 
 msgid "workspace.shape.menu.hide-ui"
 msgstr "הצגת/הסתרת מנשק משתמש"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "הסתרת שמות משטחי יצירה"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "הצגת שמות משטחי יצירה"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "כיוון תקריב כדי להציג הכול"
