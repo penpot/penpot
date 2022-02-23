@@ -22,6 +22,7 @@
 
 ### :sparkles: New features
 
+- Improve usage of file menu [Taiga #2853](https://tree.taiga.io/project/penpot/us/2853)
 - Rotation to snap to 15º intervals with shift [Taiga #2437](https://tree.taiga.io/project/penpot/issue/2437)
 - Support border radius and stroke properties for images [Taiga #497](https://tree.taiga.io/project/penpot/us/497)
 - Disallow using same password as user email [Taiga #2454](https://tree.taiga.io/project/penpot/us/2454)
@@ -54,8 +55,7 @@
 - Fixed components get "dirty" marker when moved [Taiga #2764](https://tree.taiga.io/project/penpot/issue/2764)
 - Fixed cannot align objects in a group that is not part of a frame [Taiga #2762](https://tree.taiga.io/project/penpot/issue/2762)
 - Fix problem with double click on exit path editing [Taiga #2906](https://tree.taiga.io/project/penpot/issue/2906)
-
-### :arrow_up: Deps updates
+- Fixed alignment of layers with children [Taiga #2862](https://tree.taiga.io/project/penpot/issue/2862)
 
 ### :heart: Community contributions by (Thank you!)
 
