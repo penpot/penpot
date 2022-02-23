@@ -318,7 +318,8 @@
                    (update :width + (:width deltas))
                    (update :height + (:height deltas)))))))
 
-(defn update-group-selrect [group children]
+(defn update-group-selrect
+  [group children]
   (let [shape-center (gco/center-shape group)
         ;; Points for every shape inside the group
         points (->> children (mapcat :points))
@@ -346,6 +347,18 @@
         (assoc :flip-y false)
         (apply-transform (gmt/matrix) true))))
 
+(defn update-mask-selrect
+  [masked-group children]
+  (let [mask (first children)]
+    (-> masked-group
+        (assoc :selrect (-> mask :selrect))
+        (assoc :points  (-> mask :points))
+        (assoc :x       (-> mask :selrect :x))
+        (assoc :y       (-> mask :selrect :y))
+        (assoc :width   (-> mask :selrect :width))
+        (assoc :height  (-> mask :selrect :height))
+        (assoc :flip-x  (-> mask :flip-x))
+        (assoc :flip-y  (-> mask :flip-y)))))
 
 ;; --- Modifiers
 
@@ -600,3 +613,4 @@
   (->> shapes
        (map (comp gpr/points->selrect :points transform-shape))
        (gpr/join-selrects)))
+

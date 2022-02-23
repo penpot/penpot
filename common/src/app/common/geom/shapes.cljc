@@ -160,6 +160,7 @@
 (dm/export gtr/transform-rect)
 (dm/export gtr/calculate-adjust-matrix)
 (dm/export gtr/update-group-selrect)
+(dm/export gtr/update-mask-selrect)
 (dm/export gtr/resize-modifiers)
 (dm/export gtr/rotation-modifiers)
 (dm/export gtr/merge-modifiers)
