@@ -252,8 +252,7 @@
         [:span (tr "workspace.header.menu.option.preferences")] [:span i/arrow-slide]]
        (when (contains? @cf/flags :user-feedback)
          [:*
-          [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))
-                         :on-pointer-enter (st/emitf (rt/nav :settings-feedback))}
+          [:li.feedback {:on-click (st/emitf (rt/nav-new-window* {:rname :settings-feedback}))}
            [:span (tr "labels.give-feedback")]]])]]
 
      [:& dropdown {:show (= @show-sub-menu? :file)
