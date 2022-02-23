@@ -103,7 +103,7 @@
                                     :option option-key
                                     :value old-val}))))
 
-;; Shape changes
+;; Shape tree changes
 
 (defn add-obj
   ([changes obj]
@@ -239,6 +239,7 @@
               :parent-id (:frame-id shape)
               :frame-id (:frame-id shape)
               :id id
+              :index (cph/get-position-on-parent objects (:id shape))
               :obj (cond-> shape
                      (contains? shape :shapes)
                      (assoc :shapes []))})))

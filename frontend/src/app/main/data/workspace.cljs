@@ -759,249 +759,93 @@
   (ptk/reify ::vertical-order-selected
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            selected (wsh/lookup-selected state)
-            rchanges (mapv (fn [id]
-                             (let [obj (get objects id)
-                                   parent (get objects (:parent-id obj))
-                                   shapes (:shapes parent)
-                                   cindex (d/index-of shapes id)
-                                   nindex (case loc
-                                            :top (count shapes)
-                                            :down (max 0 (- cindex 1))
-                                            :up (min (count shapes) (+ (inc cindex) 1))
-                                            :bottom 0)]
-                               {:type :mov-objects
-                                :parent-id (:parent-id obj)
-                                :frame-id (:frame-id obj)
-                                :page-id page-id
-                                :index nindex
-                                :shapes [id]}))
-                           selected)
+      (let [page-id         (:current-page-id state)
+            objects         (wsh/lookup-page-objects state page-id)
+            selected-shapes (->> (wsh/lookup-selected state)
+                                 (map (d/getf objects)))
 
-            uchanges (mapv (fn [id]
-                             (let [obj (get objects id)]
-                               {:type :mov-objects
-                                :parent-id (:parent-id obj)
-                                :frame-id (:frame-id obj)
-                                :page-id page-id
-                                :shapes [id]
-                                :index (cph/get-position-on-parent objects id)}))
-                           selected)]
-        ;; TODO: maybe missing the :reg-objects event?
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+            move-shape
+            (fn [changes shape]
+              (let [parent        (get objects (:parent-id shape))
+                    sibling-ids   (:shapes parent)
+                    current-index (d/index-of sibling-ids (:id shape))
+                    new-index     (case loc
+                                    :top (count sibling-ids)
+                                    :down (max 0 (- current-index 1))
+                                    :up (min (count sibling-ids) (+ (inc current-index) 1))
+                                    :bottom 0)]
+                (pcb/change-parent changes
+                                   (:id parent)
+                                   [shape]
+                                   new-index)))
+
+            changes (reduce move-shape
+                            (-> (pcb/empty-changes it page-id)
+                                (pcb/with-objects objects))
+                            selected-shapes)]
+
+        (rx/of (dch/commit-changes changes))))))
 
 
 ;; --- Change Shape Order (D&D Ordering)
 
-(defn relocate-shapes-changes [objects parents parent-id page-id to-index ids
+(defn relocate-shapes-changes [it objects parents parent-id page-id to-index ids
                                groups-to-delete groups-to-unmask shapes-to-detach
                                shapes-to-reroot shapes-to-deroot shapes-to-unconstraint]
-  (let [;; Changes to the shapes that are being move
-        r-mov-change
-        [{:type :mov-objects
-          :parent-id parent-id
-          :page-id page-id
-          :index to-index
-          :shapes (vec (reverse ids))}]
+  (let [shapes (map (d/getf objects) ids)]
 
-        u-mov-change
-        (map (fn [id]
-               (let [obj (get objects id)]
-                 {:type :mov-objects
-                  :parent-id (:parent-id obj)
-                  :page-id page-id
-                  :index (cph/get-position-on-parent objects id)
-                  :shapes [id]}))
-             (reverse ids))
+    (-> (pcb/empty-changes it page-id)
+        (pcb/with-objects objects)
 
-        ;; Changes deleting empty groups
-        r-del-change
-        (map (fn [group-id]
-               {:type :del-obj
-                :page-id page-id
-                :id group-id})
-             groups-to-delete)
+        ; Move the shapes
+        (pcb/change-parent parent-id
+                           (reverse shapes)
+                           to-index)
 
-        u-del-change
-        (concat
-         ;; Create the groups
-         (map (fn [group-id]
-                (let [group (get objects group-id)]
-                  {:type :add-obj
-                   :page-id page-id
-                   :parent-id parent-id
-                   :frame-id (:frame-id group)
-                   :id group-id
-                   :obj (-> group
-                            (assoc :shapes []))}))
-              groups-to-delete)
-         ;; Creates the hierarchy
-         (map (fn [group-id]
-                (let [group (get objects group-id)]
-                  {:type :mov-objects
-                   :page-id page-id
-                   :parent-id (:id group)
-                   :shapes (:shapes group)}))
-              groups-to-delete))
+        ; Remove empty groups
+        (pcb/remove-objects groups-to-delete)
 
-        ;; Changes removing the masks from the groups without mask shape
-        r-mask-change
-        (map (fn [group-id]
-               {:type :mod-obj
-                :page-id page-id
-                :id group-id
-                :operations [{:type :set
-                              :attr :masked-group?
-                              :val false}]})
-             groups-to-unmask)
+        ; Unmask groups whose mask have moved outside
+        (pcb/update-shapes groups-to-unmask
+                           (fn [shape]
+                             (assoc shape :masked-group? false)))
 
-        u-mask-change
-        (map (fn [group-id]
-               (let [group (get objects group-id)]
-                 {:type :mod-obj
-                  :page-id page-id
-                  :id group-id
-                  :operations [{:type :set
-                                :attr :masked-group?
-                                :val (:masked-group? group)}]}))
-             groups-to-unmask)
+        ; Detach shapes moved out of their component
+        (pcb/update-shapes shapes-to-detach
+                           (fn [shape]
+                             (assoc shape :component-id nil
+                                          :component-file nil
+                                          :component-root? nil
+                                          :remote-synced? nil
+                                          :shape-ref nil
+                                          :touched nil)))
 
-        ;; Changes to the components metadata
+        ; Make non root a component moved inside another one
+        (pcb/update-shapes shapes-to-deroot
+                           (fn [shape]
+                             (assoc shape :component-root? nil)))
 
-        detach-keys [:component-id :component-file :component-root? :remote-synced? :shape-ref :touched]
+        ; Make root a subcomponent moved outside its parent component
+        (pcb/update-shapes shapes-to-reroot
+                           (fn [shape]
+                             (assoc shape :component-root? true)))
 
-        r-detach-change
-        (map (fn [id]
-               {:type :mod-obj
-                :page-id page-id
-                :id id
-                :operations (mapv #(hash-map :type :set :attr % :val nil) detach-keys)})
-             shapes-to-detach)
+        ; Reset constraints depending on the new parent
+        (pcb/update-shapes shapes-to-unconstraint
+                           (fn [shape]
+                             (let [parent      (get objects parent-id)
+                                   frame-id    (if (= (:type parent) :frame)
+                                                 (:id parent)
+                                                 (:frame-id parent))
+                                   moved-shape (assoc shape
+                                                      :parent-id parent-id
+                                                      :frame-id frame-id)]
+                               (assoc shape :constraints-h (gsh/default-constraints-h moved-shape)
+                                            :constraints-v (gsh/default-constraints-v moved-shape))))
+                           {:ignore-touched true})
 
-        u-detach-change
-        (map (fn [id]
-               (let [obj (get objects id)]
-                 {:type :mod-obj
-                  :page-id page-id
-                  :id id
-                  :operations (mapv #(hash-map :type :set :attr % :val (get obj %)) detach-keys)}))
-             shapes-to-detach)
-
-        r-deroot-change
-        (map (fn [id]
-               {:type :mod-obj
-                :page-id page-id
-                :id id
-                :operations [{:type :set
-                              :attr :component-root?
-                              :val nil}]})
-             shapes-to-deroot)
-
-        u-deroot-change
-        (map (fn [id]
-               {:type :mod-obj
-                :page-id page-id
-                :id id
-                :operations [{:type :set
-                              :attr :component-root?
-                              :val true}]})
-             shapes-to-deroot)
-
-        r-reroot-change
-        (map (fn [id]
-               {:type :mod-obj
-                :page-id page-id
-                :id id
-                :operations [{:type :set
-                              :attr :component-root?
-                              :val true}]})
-             shapes-to-reroot)
-
-        u-reroot-change
-        (map (fn [id]
-               {:type :mod-obj
-                :page-id page-id
-                :id id
-                :operations [{:type :set
-                              :attr :component-root?
-                              :val nil}]})
-             shapes-to-reroot)
-
-
-        ;; Changes resetting constraints
-
-        r-unconstraint-change
-        (map (fn [id]
-               (let [obj      (get objects id)
-                     parent   (get objects parent-id)
-                     frame-id (if (= (:type parent) :frame)
-                                (:id parent)
-                                (:frame-id parent))]
-                 {:type :mod-obj
-                  :page-id page-id
-                  :id id
-                  :operations [{:type :set
-                                :attr :constraints-h
-                                :val (gsh/default-constraints-h
-                                      (assoc obj :parent-id parent-id :frame-id frame-id))
-                                :ignore-touched true}
-                               {:type :set
-                                :attr :constraints-v
-                                :val (gsh/default-constraints-v
-                                      (assoc obj :parent-id parent-id :frame-id frame-id))
-                                :ignore-touched true}]}))
-             shapes-to-unconstraint)
-
-        u-unconstraint-change
-        (map (fn [id]
-               (let [obj (get objects id)]
-                 {:type :mod-obj
-                  :page-id page-id
-                  :id id
-                  :operations [{:type :set
-                                :attr :constraints-h
-                                :val (:constraints-h obj)
-                                :ignore-touched true}
-                               {:type :set
-                                :attr :constraints-v
-                                :val (:constraints-v obj)
-                                :ignore-touched true}]}))
-             shapes-to-unconstraint)
-
-        r-reg-change
-        [{:type :reg-objects
-          :page-id page-id
-          :shapes (vec parents)}]
-
-        u-reg-change
-        [{:type :reg-objects
-          :page-id page-id
-          :shapes (vec parents)}]
-
-        rchanges (d/concat-vec
-                  r-mov-change
-                  r-del-change
-                  r-mask-change
-                  r-detach-change
-                  r-deroot-change
-                  r-reroot-change
-                  r-unconstraint-change
-                  r-reg-change)
-
-        uchanges (d/concat-vec
-                  u-del-change
-                  u-reroot-change
-                  u-deroot-change
-                  u-detach-change
-                  u-mask-change
-                  u-mov-change
-                  u-unconstraint-change
-                  u-reg-change)]
-    [rchanges uchanges]))
+        ; Resize parent containers that need to
+        (pcb/resize-parents parents))))
 
 (defn relocate-shapes
   [ids parent-id to-index]
@@ -1100,23 +944,21 @@
                     [[] [] []]
                     ids)
 
-            [rchanges uchanges]
-            (relocate-shapes-changes objects
-                                     parents
-                                     parent-id
-                                     page-id
-                                     to-index
-                                     ids
-                                     groups-to-delete
-                                     groups-to-unmask
-                                     shapes-to-detach
-                                     shapes-to-reroot
-                                     shapes-to-deroot
-                                     ids)]
+            changes (relocate-shapes-changes it
+                                             objects
+                                             parents
+                                             parent-id
+                                             page-id
+                                             to-index
+                                             ids
+                                             groups-to-delete
+                                             groups-to-unmask
+                                             shapes-to-detach
+                                             shapes-to-reroot
+                                             shapes-to-deroot
+                                             ids)]
 
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it})
+        (rx/of (dch/commit-changes changes)
                (dwc/expand-collapse parent-id))))))
 
 (defn relocate-selected-shapes
