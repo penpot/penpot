@@ -1668,9 +1668,8 @@
                                (pcb/amend-changes (partial process-rchange media-idx))
                                (pcb/amend-changes (partial change-add-obj-index paste-objects selected index)))
 
-                  ;; Adds a reg-objects operation so the groups are updated. We add all the new objects
+                  ;; Adds a resize-parents operation so the groups are updated. We add all the new objects
                   new-objects-ids (->> changes :redo-changes (filter #(= (:type %) :add-obj)) (mapv :id))
-
                   changes (pcb/resize-parents changes new-objects-ids)
 
                   selected  (->> changes

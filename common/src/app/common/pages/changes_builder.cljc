@@ -7,7 +7,11 @@
 (ns app.common.pages.changes-builder
   (:require
    [app.common.data :as d]
-   [app.common.pages.helpers :as cph]))
+   [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.bool :as gshb]
+   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
+   [app.common.uuid :as uuid]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
@@ -29,7 +33,10 @@
              ::objects (:objects page)))
 
 (defn with-objects [changes objects]
-  (vary-meta changes assoc ::objects objects))
+  (let [file-data (-> (cp/make-file-data (uuid/next) uuid/zero)
+                      (assoc-in [:pages-index uuid/zero :objects] objects))]
+    (vary-meta changes assoc ::file-data file-data
+                             ::applied-changes 0)))
 
 (defn amend-last-change
   "Modify the last redo-changes added with an update function."
@@ -52,7 +59,21 @@
 
 (defn- assert-objects
   [changes]
-  (assert (contains? (meta changes) ::objects) "Call (with-objects) before using this function"))
+  (assert (contains? (meta changes) ::file-data) "Call (with-objects) before using this function"))
+
+(defn- apply-changes-local
+  [changes]
+  (if-let [file-data (::file-data (meta changes))]
+    (let [index         (::applied-changes (meta changes))
+          redo-changes  (:redo-changes changes)
+          new-changes   (if (< index (count redo-changes))
+                          (->> (subvec (:redo-changes changes) index)
+                               (map #(assoc % :page-id uuid/zero)))
+                          [])
+          new-file-data (cp/process-changes file-data new-changes)]
+      (vary-meta changes assoc ::file-data new-file-data
+                               ::applied-changes (count redo-changes)))
+    changes))
 
 ;; Page changes
 
@@ -60,31 +81,36 @@
   [changes id name]
   (-> changes
       (update :redo-changes conj {:type :add-page :id id :name name})
-      (update :undo-changes conj {:type :del-page :id id})))
+      (update :undo-changes conj {:type :del-page :id id})
+      (apply-changes-local)))
 
 (defn add-page
   [changes id page]
   (-> changes
       (update :redo-changes conj {:type :add-page :id id :page page})
-      (update :undo-changes conj {:type :del-page :id id})))
+      (update :undo-changes conj {:type :del-page :id id})
+      (apply-changes-local)))
 
 (defn mod-page
   [changes page new-name]
   (-> changes
       (update :redo-changes conj {:type :mod-page :id (:id page) :name new-name})
-      (update :undo-changes conj {:type :mod-page :id (:id page) :name (:name page)})))
+      (update :undo-changes conj {:type :mod-page :id (:id page) :name (:name page)})
+      (apply-changes-local)))
 
 (defn del-page
   [changes page]
   (-> changes
       (update :redo-changes conj {:type :del-page :id (:id page)})
-      (update :undo-changes conj {:type :add-page :id (:id page) :page page})))
+      (update :undo-changes conj {:type :add-page :id (:id page) :page page})
+      (apply-changes-local)))
 
 (defn move-page
   [changes page-id index prev-index]
   (-> changes
       (update :redo-changes conj {:type :mov-page :id page-id :index index})
-      (update :undo-changes conj {:type :mov-page :id page-id :index prev-index})))
+      (update :undo-changes conj {:type :mov-page :id page-id :index prev-index})
+      (apply-changes-local)))
 
 (defn set-page-option
   [changes option-key option-val]
@@ -101,7 +127,8 @@
         (update :undo-changes conj {:type :set-option
                                     :page-id page-id
                                     :option option-key
-                                    :value old-val}))))
+                                    :value old-val})
+        (apply-changes-local))))
 
 ;; Shape tree changes
 
@@ -132,7 +159,8 @@
 
      (-> changes
          (update :redo-changes conj add-change)
-         (update :undo-changes d/preconj del-change)))))
+         (update :undo-changes d/preconj del-change)
+         (apply-changes-local)))))
 
 (defn change-parent
   ([changes parent-id shapes]
@@ -141,7 +169,8 @@
   ([changes parent-id shapes index]
    (assert-page-id changes)
    (assert-objects changes)
-   (let [objects (::objects (meta changes))
+   (let [objects (-> changes meta ::file-data (get-in [:pages-index uuid/zero :objects]))
+
          set-parent-change
          (cond-> {:type :mov-objects
                   :parent-id parent-id
@@ -163,7 +192,8 @@
 
      (-> changes
          (update :redo-changes conj set-parent-change)
-         (update :undo-changes #(reduce mk-undo-change % shapes))))))
+         (update :undo-changes #(reduce mk-undo-change % shapes))
+         (apply-changes-local)))))
 
 (defn update-shapes
   "Calculate the changes and undos to be done when a function is applied to a
@@ -174,15 +204,15 @@
   ([changes ids update-fn {:keys [attrs ignore-geometry?] :or {attrs nil ignore-geometry? false}}]
    (assert-page-id changes)
    (assert-objects changes)
-   (let [objects (::objects (meta changes))
+   (let [objects (-> changes meta ::file-data (get-in [:pages-index uuid/zero :objects]))
 
          generate-operation
-         (fn [changes attr old new ignore-geometry?]
+         (fn [operations attr old new ignore-geometry?]
            (let [old-val (get old attr)
                  new-val (get new attr)]
              (if (= old-val new-val)
-               changes
-               (-> changes
+               operations
+               (-> operations
                    (update :rops conj {:type :set :attr attr :val new-val :ignore-geometry ignore-geometry?})
                    (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
 
@@ -213,14 +243,15 @@
                (seq uops)
                (update :undo-changes d/preconj (assoc change :operations uops)))))]
 
-     (reduce update-shape changes ids))))
+     (-> (reduce update-shape changes ids)
+         (apply-changes-local)))))
 
 (defn remove-objects
   [changes ids]
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
-        objects (::objects (meta changes))
+        objects (-> changes meta ::file-data (get-in [:pages-index uuid/zero :objects]))
 
         add-redo-change
         (fn [change-set id]
@@ -260,14 +291,63 @@
         (update :redo-changes #(reduce add-redo-change % ids))
         (update :undo-changes #(as-> % $
                                  (reduce add-undo-change-parent $ ids)
-                                 (reduce add-undo-change-shape $ ids))))))
+                                 (reduce add-undo-change-shape $ ids)))
+        (apply-changes-local))))
 
 (defn resize-parents
   [changes ids]
   (assert-page-id changes)
+  (assert-objects changes)
   (let [page-id (::page-id (meta changes))
-        shapes  (vec ids)]
-        (-> changes
-            (update :redo-changes conj {:type :reg-objects :page-id page-id :shapes shapes})
-            (update :undo-changes conj {:type :reg-objects :page-id page-id :shapes shapes}))))
+        objects (-> changes meta ::file-data (get-in [:pages-index uuid/zero :objects]))
+
+        xform   (comp
+                  (mapcat #(cons % (cph/get-parent-ids objects %)))
+                  (map (d/getf objects))
+                  (filter #(contains? #{:group :bool} (:type %)))
+                  (distinct))
+        all-parents (sequence xform ids)
+
+        generate-operation
+        (fn [operations attr old new]
+          (let [old-val (get old attr)
+                new-val (get new attr)]
+            (if (= old-val new-val)
+              operations
+              (-> operations
+                  (update :rops conj {:type :set :attr attr :val new-val :ignore-touched true})
+                  (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
+
+        resize-parent
+        (fn [changes parent]
+          (let [children (->> parent :shapes (map (d/getf objects)))
+                resized-parent (cond
+                                 (empty? children)
+                                 changes
+
+                                 (= (:type parent) :bool)
+                                 (gshb/update-bool-selrect parent children objects)
+
+                                 (= (:type parent) :group)
+                                 (if (:masked-group? parent)
+                                   (gsh/update-mask-selrect parent children)
+                                   (gsh/update-group-selrect parent children)))
+
+                {rops :rops uops :uops}
+                (reduce #(generate-operation %1 %2 parent resized-parent)
+                        {:rops [] :uops []}
+                        (keys parent))
+
+                change {:type :mod-obj
+                        :page-id page-id
+                        :id (:id parent)}]
+
+            (if (seq rops)
+              (-> changes
+                  (update :redo-changes conj (assoc change :operations rops))
+                  (update :undo-changes conj (assoc change :operations uops)))
+              changes)))]
+
+    (-> (reduce resize-parent changes all-parents)
+        (apply-changes-local))))
 
