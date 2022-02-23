@@ -24,6 +24,7 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]
+   [promesa.core :as p]
    [promesa.exec :as px]))
 
 (defn parse-client-ip
@@ -82,52 +83,62 @@
 (s/def ::timestamp dt/instant?)
 (s/def ::context (s/map-of ::us/keyword any?))
 
-(s/def ::event
+(s/def ::frontend-event
   (s/keys :req-un [::type ::name ::props ::timestamp ::profile-id]
           :opt-un [::context]))
 
-(s/def ::events (s/every ::event))
+(s/def ::frontend-events (s/every ::frontend-event))
 
 (defmethod ig/init-key ::http-handler
-  [_  {:keys [executor] :as cfg}]
-  (fn [{:keys [params profile-id] :as request}]
-    (when (contains? cf/flags :audit-log)
-      (let [events  (->> (:events params)
-                         (remove #(not= profile-id (:profile-id %)))
-                         (us/conform ::events))
-            ip-addr (parse-client-ip request)
-            cfg     (-> cfg
-                        (assoc :source "frontend")
-                        (assoc :events events)
-                        (assoc :ip-addr ip-addr))]
-        (px/run! executor #(persist-http-events cfg))))
-    {:status 204 :body ""}))
+  [_  {:keys [executor pool] :as cfg}]
+  (if (or (db/read-only? pool) (not (contains? cf/flags :audit-log)))
+    (do
+      (l/warn :hint "audit log http handler disabled or db is read-only")
+      (fn [_ respond _]
+        (respond {:status 204 :body ""})))
+
+
+    (letfn [(handler [{:keys [params profile-id] :as request}]
+              (let [events  (->> (:events params)
+                                 (remove #(not= profile-id (:profile-id %)))
+                                 (us/conform ::frontend-events))
+
+                    ip-addr (parse-client-ip request)
+                    cfg     (-> cfg
+                                (assoc :source "frontend")
+                                (assoc :events events)
+                                (assoc :ip-addr ip-addr))]
+                (persist-http-events cfg)))
+
+            (handle-error [cause]
+              (let [xdata (ex-data cause)]
+                (if (= :spec-validation (:code xdata))
+                  (l/error ::l/raw (str "spec validation on persist-events:\n" (us/pretty-explain xdata)))
+                  (l/error :hint "error on persist-events" :cause cause))))]
+
+      (fn [request respond _]
+        ;; Fire and forget, log error in case of errro
+        (-> (px/submit! executor #(handler request))
+            (p/catch handle-error))
+
+        (respond {:status 204 :body ""})))))
 
 (defn- persist-http-events
   [{:keys [pool events ip-addr source] :as cfg}]
-  (try
-    (let [columns    [:id :name :source :type :tracked-at :profile-id :ip-addr :props :context]
-          prepare-xf (map (fn [event]
-                            [(uuid/next)
-                             (:name event)
-                             source
-                             (:type event)
-                             (:timestamp event)
-                             (:profile-id event)
-                             (db/inet ip-addr)
-                             (db/tjson (:props event))
-                             (db/tjson (d/without-nils (:context event)))]))
-          events     (us/conform ::events events)]
-      (when (seq events)
-        (->> (into [] prepare-xf events)
-             (db/insert-multi! pool :audit-log columns))))
-    (catch Throwable e
-      (let [xdata (ex-data e)]
-        (if (= :spec-validation (:code xdata))
-          (l/error ::l/raw (str "spec validation on persist-events:\n"
-                                (:explain xdata)))
-          (l/error :hint "error on persist-events"
-                   :cause e))))))
+  (let [columns    [:id :name :source :type :tracked-at :profile-id :ip-addr :props :context]
+        prepare-xf (map (fn [event]
+                          [(uuid/next)
+                           (:name event)
+                           source
+                           (:type event)
+                           (:timestamp event)
+                           (:profile-id event)
+                           (db/inet ip-addr)
+                           (db/tjson (:props event))
+                           (db/tjson (d/without-nils (:context event)))]))]
+    (when (seq events)
+      (->> (into [] prepare-xf events)
+           (db/insert-multi! pool :audit-log columns)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Collector

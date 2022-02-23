@@ -138,7 +138,8 @@
     :signature-max-age (dt/duration {:hours 24 :minutes 5})}
 
    :app.http.feedback/handler
-   {:pool (ig/ref :app.db/pool)}
+   {:pool     (ig/ref :app.db/pool)
+    :executor (ig/ref [::default :app.worker/executor])}
 
    :app.http.oauth/handler
    {:rpc        (ig/ref :app.rpc/rpc)
@@ -287,7 +288,7 @@
 
    :app.loggers.audit/http-handler
    {:pool     (ig/ref :app.db/pool)
-    :executor (ig/ref [::default :app.worker/executor])}
+    :executor (ig/ref [::worker :app.worker/executor])}
 
    :app.loggers.audit/collector
    {:pool     (ig/ref :app.db/pool)
