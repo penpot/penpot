@@ -38,14 +38,17 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool sprops version] :as cfg}]
-  (fn [_]
+  (fn [{:keys [send?] :or {send? true}}]
     ;; Sleep randomly between 0 to 10s
-    (thread-sleep (rand-int 10000))
+    (when send?
+      (thread-sleep (rand-int 10000)))
 
-    (let [instance-id (:instance-id sprops)]
-      (-> (get-stats pool version)
-          (assoc :instance-id instance-id)
-          (send! cfg)))))
+    (let [instance-id (:instance-id sprops)
+          stats       (-> (get-stats pool version)
+                          (assoc :instance-id instance-id))]
+      (when send?
+        (send! stats cfg))
+      stats)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPL
@@ -137,12 +140,28 @@
   (->> [sql:team-averages]
        (db/exec-one! conn)))
 
+(defn- retrieve-enabled-auth-providers
+  [conn]
+  (let [sql  (str "select auth_backend as backend, count(*) as total "
+                 "  from profile group by 1")
+        rows (db/exec! conn [sql])]
+    (->> rows
+         (map (fn [{:keys [backend total]}]
+                (let [backend (or backend "penpot")]
+                  [(keyword (str "auth-backend-" backend))
+                   total])))
+         (into {}))))
+
 (defn- retrieve-jvm-stats
   []
   (let [^Runtime runtime (Runtime/getRuntime)]
     {:jvm-heap-current (.totalMemory runtime)
      :jvm-heap-max     (.maxMemory runtime)
-     :jvm-cpus         (.availableProcessors runtime)}))
+     :jvm-cpus         (.availableProcessors runtime)
+     :os-arch          (System/getProperty "os.arch")
+     :os-name          (System/getProperty "os.name")
+     :os-version       (System/getProperty "os.version")
+     :user-tz          (System/getProperty "user.timezone")}))
 
 (defn get-stats
   [conn version]
@@ -161,6 +180,7 @@
          :total-touched-files (retrieve-num-touched-files conn)}
         (d/merge
          (retrieve-team-averages conn)
-         (retrieve-jvm-stats))
+         (retrieve-jvm-stats)
+         (retrieve-enabled-auth-providers conn))
         (d/without-nils))))
 
