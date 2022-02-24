@@ -7,11 +7,11 @@
 (ns app.main.ui.measurements
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 ;; ------------------------------------------------
@@ -97,7 +97,7 @@
 
 (mf/defc size-display [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
-        size-label (str/fmt "%s x %s" (mth/round width) (mth/round height))
+        size-label (dm/str (mth/round width) " x " (mth/round height))
 
         rect-height (/ size-display-height zoom)
         rect-width (/ (if (<= (count size-label) 9)
@@ -201,7 +201,7 @@
             center-y (+ y1 (/ (- y2 y1) 2))
             distance (gpt/distance (gpt/point x1 y1) (gpt/point x2 y2))]
         (when-not (mth/almost-zero? distance)
-          [:g.distance-line {:key (str "line-%s-%s-%s-%s" x1 y1 x2 y2)}
+          [:g.distance-line {:key (dm/str "line-" x1 "-" y1 "-" x2 "-" y2)}
            [:line
             {:x1 x1
              :y1 y1
@@ -214,7 +214,7 @@
             {:x center-x
              :y center-y
              :zoom zoom
-             :distance (str (mth/round distance) "px")
+             :distance (dm/str (mth/round distance) "px")
              :bounds bounds}]])))))
 
 (mf/defc selection-guides [{:keys [bounds selrect zoom]}]

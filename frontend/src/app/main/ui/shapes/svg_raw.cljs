@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.svg-raw
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.shapes.attrs :as usa]
    [app.util.object :as obj]
@@ -102,12 +103,12 @@
         svg-root?
         [:& svg-root {:shape shape}
          (for [item childs]
-           [:& shape-wrapper {:shape item :key (:id item)}])]
+           [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 
         svg-tag?
         [:& svg-element {:shape shape}
          (for [item childs]
-           [:& shape-wrapper {:shape item :key (:id item)}])]
+           [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 
         svg-leaf?
         content

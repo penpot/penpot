@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.gradients
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -42,7 +43,7 @@
 
     [:> :linearGradient props
      (for [{:keys [offset color opacity]} (:stops gradient)]
-       [:stop {:key (str id "-stop-" offset)
+       [:stop {:key (dm/str id "-stop-" offset)
                :offset (or offset 0)
                :stop-color color
                :stop-opacity opacity}])]))
@@ -90,7 +91,7 @@
                 (add-metadata gradient))]
     [:> :radialGradient props
      (for [{:keys [offset color opacity]} (:stops gradient)]
-       [:stop {:key (str id "-stop-" offset)
+       [:stop {:key (dm/str id "-stop-" offset)
                :offset (or offset 0)
                :stop-color color
                :stop-opacity opacity}])]))
@@ -101,7 +102,8 @@
   (let [attr   (obj/get props "attr")
         shape  (obj/get props "shape")
         id     (obj/get props "id")
-        id     (or id (str (name attr) "_" (mf/use-ctx muc/render-ctx)))
+        id'    (mf/use-ctx muc/render-ctx)
+        id     (or id (dm/str (name attr) "_" id'))
         gradient (get shape attr)
         gradient-props #js {:id id
                             :gradient gradient

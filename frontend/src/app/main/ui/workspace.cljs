@@ -103,7 +103,7 @@
          (st/emit! (dw/finalize-page page-id))))))
 
   (when (mf/deref trimmed-page-ref)
-    [:& workspace-content {:key page-id
+    [:& workspace-content {:key (dm/str page-id)
                            :file file
                            :layout layout}]))
 
@@ -153,7 +153,7 @@
 
          (if (and (and file project)
                   (:initialized file))
-           [:& workspace-page {:key (str "page-" page-id)
+           [:& workspace-page {:key (dm/str "page-" page-id)
                                :page-id page-id
                                :file file
                                :layout layout}]

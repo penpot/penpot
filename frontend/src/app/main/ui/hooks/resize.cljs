@@ -9,6 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.main.refs :as refs]
+   [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.storage :refer [storage]]
    [rumext.alpha :as mf]))
@@ -23,7 +24,7 @@
 (defn use-resize-hook
   [key initial min-val max-val axis negate? resize-type]
 
-  (let [current-file-id (mf/deref refs/current-file-id)
+  (let [current-file-id (mf/use-ctx ctx/current-file-id)
         size-state (mf/use-state (or (get-in @storage [::saved-resize current-file-id key]) initial))
         parent-ref (mf/use-ref nil)
 

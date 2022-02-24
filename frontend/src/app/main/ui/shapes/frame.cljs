@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.frame
   (:require
+   [app.common.data.macros :as dm]
    [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
    [debug :refer [debug?]]
@@ -13,12 +14,12 @@
 
 (defn frame-clip-id
   [shape render-id]
-  (str "frame-clip-" (:id shape) "-" render-id))
+  (dm/str "frame-clip-" (:id shape) "-" render-id))
 
 (defn frame-clip-url
   [shape render-id]
   (when (= :frame (:type shape))
-    (str "url(#" (frame-clip-id shape render-id) ")")))
+    (dm/str "url(#" (frame-clip-id shape render-id) ")")))
 
 (mf/defc frame-clip-def
   [{:keys [shape render-id]}]
@@ -33,7 +34,7 @@
   (let [shape (obj/get props "shape")]
     (when (:thumbnail shape)
       [:image.frame-thumbnail
-       {:id (str "thumbnail-" (:id shape))
+       {:id (dm/str "thumbnail-" (:id shape))
         :xlinkHref (:thumbnail shape)
         :x (:x shape)
         :y (:y shape)
@@ -63,5 +64,5 @@
 
        (for [item childs]
          [:& shape-wrapper {:shape item
-                            :key (:id item)}])])))
+                            :key (dm/str (:id item))}])])))
 
