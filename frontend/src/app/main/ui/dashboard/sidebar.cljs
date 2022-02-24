@@ -7,11 +7,12 @@
 (ns app.main.ui.dashboard.sidebar
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
@@ -99,7 +100,7 @@
         on-drop-success
         (mf/use-callback
          (mf/deps (:id item))
-         (st/emitf (dm/success (tr "dashboard.success-move-file"))
+         (st/emitf (msg/success (tr "dashboard.success-move-file"))
                    (dd/go-to-files (:id item))))
 
         on-drop
@@ -172,7 +173,7 @@
 
     [:form.sidebar-search
      [:input.input-text
-      {:key :images-search-box
+      {:key "images-search-box"
        :id "search-input"
        :type "text"
        :placeholder (tr "dashboard.search-placeholder")
@@ -213,11 +214,11 @@
       [:span.team-text (tr "dashboard.your-penpot")]]
 
      (for [team (remove :is-default (vals teams))]
-       [:* {:key (:id team)}
-        [:li.team-name {:on-click (partial team-selected (:id team))}
-         [:span.team-icon
-          [:img {:src (cf/resolve-team-photo-url team)}]]
-         [:span.team-text {:title (:name team)} (:name team)]]])
+       [:li.team-name {:on-click (partial team-selected (:id team))
+                       :key (dm/str (:id team))}
+        [:span.team-icon
+         [:img {:src (cf/resolve-team-photo-url team)}]]
+        [:span.team-text {:title (:name team)} (:name team)]])
 
      [:hr]
      [:li.action {:on-click on-create-clicked :data-test "create-new-team"}
@@ -247,13 +248,13 @@
         (fn [{:keys [code] :as error}]
           (condp = code
             :no-enough-members-for-leave
-            (rx/of (dm/error (tr "errors.team-leave.insufficient-members")))
+            (rx/of (msg/error (tr "errors.team-leave.insufficient-members")))
 
             :member-does-not-exist
-            (rx/of (dm/error (tr "errors.team-leave.member-does-not-exists")))
+            (rx/of (msg/error (tr "errors.team-leave.member-does-not-exists")))
 
             :owner-cant-leave-team
-            (rx/of (dm/error (tr "errors.team-leave.owner-cant-leave")))
+            (rx/of (msg/error (tr "errors.team-leave.owner-cant-leave")))
 
             (rx/throw error)))
 
@@ -442,7 +443,7 @@
          (for [item pinned-projects]
            [:& sidebar-project
             {:item item
-             :key (:id item)
+             :key (dm/str (:id item))
              :id (:id item)
              :team-id (:id team)
              :selected? (= (:id item) (:id project))}])]

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.components.select
   (:require
+   [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
@@ -39,10 +40,10 @@
       [:ul.custom-select-dropdown
        (for [[index item] (map-indexed vector options)]
          (cond
-           (= :separator item) [:hr {:key (str (:id @state) "-" index)}]
+           (= :separator item) [:hr {:key (dm/str (:id @state) "-" index)}]
            :else (let [[value label] (as-key-value item)]
                    [:li.checked-element
-                    {:key (str (:id @state) "-" index)
+                    {:key (dm/str (:id @state) "-" index)
                      :class (when (= value (-> @state :current-value)) "is-selected")
                      :on-click (select-item value)}
                     [:span.check-icon i/tick]
