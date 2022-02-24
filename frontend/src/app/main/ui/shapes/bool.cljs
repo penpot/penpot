@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.bool
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.hooks :refer [use-equal-memo]]
    [app.main.ui.shapes.export :as use]
@@ -45,4 +46,4 @@
                [:> "penpot:bool" {}
                 (for [item (->> (:shapes shape) (mapv #(get childs %)))]
                   [:& shape-wrapper {:shape item
-                                     :key (:id item)}])])])))
+                                     :key (dm/str (:id item))}])])])))

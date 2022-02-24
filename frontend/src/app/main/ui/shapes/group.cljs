@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.group
   (:require
+   [app.common.data.macros :as dm]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.mask :refer [mask-url clip-url mask-factory]]
    [app.util.object :as obj]
@@ -49,7 +50,7 @@
 
           (for [item childs]
             [:& shape-wrapper {:shape item
-                               :key (:id item)}])]]))))
+                               :key (dm/str (:id item))}])]]))))
 
 
 
