@@ -84,7 +84,6 @@
 
         ;; REFS
         viewport-ref      (mf/use-ref nil)
-        raw-position-ref  (mf/use-ref nil) ;; Stores the raw position of the cursor
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -110,6 +109,8 @@
         ;; Only when we have all the selected shapes in one frame
         selected-frame    (when (= (count selected-frames) 1) (get base-objects (first selected-frames)))
 
+        editing-shape     (when edition (get base-objects edition))
+
         create-comment?   (= :comments drawing-tool)
         drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
@@ -128,7 +129,7 @@
         on-pointer-down   (actions/on-pointer-down)
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
         on-pointer-leave  (actions/on-pointer-leave in-viewport?)
-        on-pointer-move   (actions/on-pointer-move viewport-ref raw-position-ref zoom move-stream)
+        on-pointer-move   (actions/on-pointer-move viewport-ref zoom move-stream)
         on-pointer-up     (actions/on-pointer-up)
         on-move-selected  (actions/on-move-selected hover hover-ids selected space?)
         on-menu-selected  (actions/on-menu-selected hover hover-ids selected)
@@ -159,13 +160,15 @@
         show-artboard-names?     (contains? layout :display-artboard-names)
         show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
 
+        show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
+
         disabled-guides?         (or drawing-tool transform)]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
     (hooks/setup-viewport-size viewport-ref)
     (hooks/setup-cursor cursor alt? ctrl? space? panning drawing-tool drawing-path? node-editing?)
     (hooks/setup-keyboard alt? ctrl? space?)
-    (hooks/setup-hover-shapes page-id move-stream raw-position-ref base-objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
+    (hooks/setup-hover-shapes page-id move-stream base-objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path?)
     (hooks/setup-active-frames base-objects vbox hover active-frames)
@@ -176,6 +179,10 @@
       [:& wtr/frame-renderer {:objects base-objects
                               :background background}]
 
+      (when show-text-editor?
+        [:& editor/text-editor-viewport {:shape editing-shape
+                                         :viewport-ref viewport-ref
+                                         :zoom zoom}])
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox
                                      :vport vport
@@ -206,7 +213,8 @@
        :style {:background-color background
                :pointer-events "none"}}
 
-      [:& use/export-page {:options options}]
+      (when (debug? :show-export-metadata)
+        [:& use/export-page {:options options}])
 
       [:& (mf/provider use/include-metadata-ctx) {:value (debug? :show-export-metadata)}
        [:& (mf/provider embed/context) {:value true}
@@ -266,9 +274,6 @@
            :frame selected-frame
            :hover-shape @hover
            :zoom zoom}])
-
-       (when text-editing?
-         [:& editor/text-shape-edit {:shape (get base-objects edition)}])
 
        [:& widgets/frame-titles
         {:objects objects-modified

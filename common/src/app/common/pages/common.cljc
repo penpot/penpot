@@ -250,6 +250,17 @@
           :fill-color-ref-file
           :fill-color-gradient
 
+          :stroke-style
+          :stroke-alignment
+          :stroke-width
+          :stroke-color
+          :stroke-color-ref-id
+          :stroke-color-ref-file
+          :stroke-opacity
+          :stroke-color-gradient
+          :stroke-cap-start
+          :stroke-cap-end
+
           :shadow
 
           :blur

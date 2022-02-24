@@ -109,7 +109,8 @@
 
         (cond-> text?
           (-> (add! :grow-type)
-              (add! :content (comp json/encode uuid->string))))
+              (add! :content (comp json/encode uuid->string))
+              (add! :position-data (comp json/encode uuid->string))))
 
         (cond-> mask?
           (obj/set! "penpot:masked-group" "true"))
@@ -138,19 +139,20 @@
     (into {} (map prefix-entry) m)))
 
 (defn- export-grid-data [{:keys [grids]}]
-  (mf/html
-   [:> "penpot:grids" #js {}
-    (for [{:keys [type display params]} grids]
-      (let [props (->> (dissoc params :color)
-                       (prefix-keys)
-                       (clj->js))]
-        [:> "penpot:grid"
-         (-> props
-             (obj/set! "penpot:color" (get-in params [:color :color]))
-             (obj/set! "penpot:opacity" (get-in params [:color :opacity]))
-             (obj/set! "penpot:type" (d/name type))
-             (cond-> (some? display)
-               (obj/set! "penpot:display" (str display))))]))]))
+  (when (d/not-empty? grids)
+    (mf/html
+     [:> "penpot:grids" #js {}
+      (for [{:keys [type display params]} grids]
+        (let [props (->> (dissoc params :color)
+                         (prefix-keys)
+                         (clj->js))]
+          [:> "penpot:grid"
+           (-> props
+               (obj/set! "penpot:color" (get-in params [:color :color]))
+               (obj/set! "penpot:opacity" (get-in params [:color :opacity]))
+               (obj/set! "penpot:type" (d/name type))
+               (cond-> (some? display)
+                 (obj/set! "penpot:display" (str display))))]))])))
 
 (mf/defc export-flows
   [{:keys [flows]}]

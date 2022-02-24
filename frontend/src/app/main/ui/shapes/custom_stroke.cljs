@@ -6,7 +6,6 @@
 
 (ns app.main.ui.shapes.custom-stroke
   (:require
-   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [app.util.object :as obj]
@@ -25,37 +24,29 @@
     (-> props (obj/merge #js {:style style}))))
 
 (mf/defc inner-stroke-clip-path
-  [{:keys [render-id]}]
-  (let [clip-id (str "inner-stroke-" render-id)
-        shape-id (str "stroke-shape-" render-id)]
+  [{:keys [shape render-id index]}]
+  (let [suffix (if index (str "-" index) "")
+        clip-id (str "inner-stroke-" render-id "-" (:id shape) suffix)
+        shape-id (str "stroke-shape-" render-id "-" (:id shape) suffix)]
     [:> "clipPath" #js {:id clip-id}
      [:use {:xlinkHref (str "#" shape-id)}]]))
 
 (mf/defc outer-stroke-mask
-  [{:keys [shape render-id]}]
-  (let [stroke-mask-id (str "outer-stroke-" render-id)
-        shape-id (str "stroke-shape-" render-id)
+  [{:keys [shape render-id index]}]
+  (let [suffix (if index (str "-" index) "")
+        stroke-mask-id (str "outer-stroke-" render-id "-" (:id shape) suffix)
+        shape-id (str "stroke-shape-" render-id "-" (:id shape) suffix)
         stroke-width (case (:stroke-alignment shape :center)
                        :center (/ (:stroke-width shape 0) 2)
                        :outer (:stroke-width shape 0)
-                       0)
-        margin (gsh/shape-stroke-margin shape stroke-width)
-        bounding-box (-> (gsh/points->selrect (:points shape))
-                         (update :x - (+ stroke-width margin))
-                         (update :y - (+ stroke-width margin))
-                         (update :width + (* 2 (+ stroke-width margin)))
-                         (update :height + (* 2 (+ stroke-width margin))))]
-    [:mask {:id stroke-mask-id
-            :x (:x bounding-box)
-            :y (:y bounding-box)
-            :width (:width bounding-box)
-            :height (:height bounding-box)
-            :maskUnits "userSpaceOnUse"}
+                       0)]
+    [:mask {:id stroke-mask-id}
      [:use {:xlinkHref (str "#" shape-id)
             :style #js {:fill "none" :stroke "white" :strokeWidth (* stroke-width 2)}}]
 
      [:use {:xlinkHref (str "#" shape-id)
-            :style #js {:fill "black"}}]]))
+            :style #js {:fill "black"
+                        :stroke "none"}}]]))
 
 (mf/defc cap-markers
   [{:keys [shape render-id]}]
@@ -160,7 +151,7 @@
          [:rect {:x 3 :y 2.5 :width 0.5 :height 1}]])]))
 
 (mf/defc stroke-defs
-  [{:keys [shape render-id]}]
+  [{:keys [shape render-id index]}]
 
   (let [open-path? (and (= :path (:type shape)) (gsh/open-path? shape))]
     (cond
@@ -168,18 +159,21 @@
            (= :inner (:stroke-alignment shape :center))
            (> (:stroke-width shape 0) 0))
       [:& inner-stroke-clip-path {:shape shape
-                                  :render-id render-id}]
+                                  :render-id render-id
+                                  :index index}]
 
       (and (not open-path?)
            (= :outer (:stroke-alignment shape :center))
            (> (:stroke-width shape 0) 0))
       [:& outer-stroke-mask {:shape shape
-                             :render-id render-id}]
+                             :render-id render-id
+                             :index index}]
 
       (or (some? (:stroke-cap-start shape))
           (some? (:stroke-cap-end shape)))
       [:& cap-markers {:shape shape
-                       :render-id render-id}])))
+                       :render-id render-id
+                       :index index}])))
 
 ;; Outer alignment: display the shape in two layers. One
 ;; without stroke (only fill), and another one only with stroke
@@ -190,40 +184,41 @@
   {::mf/wrap-props false}
   [props]
 
-  (let [render-id    (mf/use-ctx muc/render-ctx)
-        child        (obj/get props "children")
-        base-props   (obj/get child "props")
-        elem-name    (obj/get child "type")
-        stroke-mask-id (str "outer-stroke-" render-id)
-        shape-id (str "stroke-shape-" render-id)
+  (let [render-id      (mf/use-ctx muc/render-ctx)
+        child          (obj/get props "children")
+        base-props     (obj/get child "props")
+        elem-name      (obj/get child "type")
+        shape          (obj/get props "shape")
+        index          (obj/get props "index")
+        stroke-width   (:stroke-width shape)
 
-        style-str (->> (obj/get base-props "style")
-                       (js->clj)
-                       (mapv (fn [[k v]]
-                               (-> (d/name k)
-                                   (str/kebab)
-                                   (str ":" v))))
-                       (str/join ";"))]
+        suffix         (if index (str "-" index) "")
+        stroke-mask-id (str "outer-stroke-" render-id "-" (:id shape) suffix)
+        shape-id       (str "stroke-shape-" render-id "-" (:id shape) suffix)]
 
     [:g.outer-stroke-shape
      [:defs
+      [:& stroke-defs {:shape shape :render-id render-id :index index}]
       [:> elem-name (-> (obj/clone base-props)
                         (obj/set! "id" shape-id)
-                        (obj/set! "data-style" style-str)
-                        (obj/without ["style"]))]]
+                        (obj/set!
+                         "style"
+                         (-> (obj/get base-props "style")
+                             (obj/clone)
+                             (obj/without ["fill" "fillOpacity" "stroke" "strokeWidth" "strokeOpacity" "strokeStyle" "strokeDasharray"]))))]]
 
      [:use {:xlinkHref (str "#" shape-id)
             :mask (str "url(#" stroke-mask-id ")")
             :style (-> (obj/get base-props "style")
                        (obj/clone)
-                       (obj/update! "strokeWidth" * 2)
+                       (obj/set! "strokeWidth" (* stroke-width 2))
                        (obj/without ["fill" "fillOpacity"])
                        (obj/set! "fill" "none"))}]
 
      [:use {:xlinkHref (str "#" shape-id)
             :style (-> (obj/get base-props "style")
                        (obj/clone)
-                       (obj/without ["stroke" "strokeWidth" "strokeOpacity" "strokeStyle" "strokeDasharray"]))}]]))
+                       (obj/set! "stroke" "none"))}]]))
 
 
 ;; Inner alignment: display the shape with double width stroke,
@@ -236,12 +231,14 @@
         base-props (obj/get child "props")
         elem-name  (obj/get child "type")
         shape      (obj/get props "shape")
+        index      (obj/get props "index")
         transform  (obj/get base-props "transform")
 
         stroke-width (:stroke-width shape 0)
 
-        clip-id (str "inner-stroke-" render-id)
-        shape-id (str "stroke-shape-" render-id)
+        suffix (if index (str "-" index) "")
+        clip-id (str "inner-stroke-" render-id "-" (:id shape) suffix)
+        shape-id (str "stroke-shape-" render-id "-" (:id shape) suffix)
 
         clip-path (str "url('#" clip-id "')")
         shape-props (-> base-props
@@ -251,11 +248,11 @@
 
     [:g.inner-stroke-shape {:transform transform}
      [:defs
+      [:& stroke-defs {:shape shape :render-id render-id :index index}]
       [:> elem-name shape-props]]
 
      [:use {:xlinkHref (str "#" shape-id)
             :clipPath clip-path}]]))
-
 
 ; The SVG standard does not implement yet the 'stroke-alignment'
 ; attribute, to define the position of the stroke relative to the
@@ -265,8 +262,10 @@
 (mf/defc shape-custom-stroke
   {::mf/wrap-props false}
   [props]
+
   (let [child (obj/get props "children")
         shape (obj/get props "shape")
+        index (obj/get props "index")
         stroke-width (:stroke-width shape 0)
         stroke-style (:stroke-style shape :none)
         stroke-position (:stroke-alignment shape :center)
@@ -279,11 +278,11 @@
 
     (cond
       (and has-stroke? inner? closed?)
-      [:& inner-stroke {:shape shape}
+      [:& inner-stroke {:shape shape :index index}
        child]
 
       (and has-stroke? outer? closed?)
-      [:& outer-stroke {:shape shape}
+      [:& outer-stroke {:shape shape :index index}
        child]
 
       :else

@@ -185,7 +185,7 @@
          (d/deep-mapm
           (fn [pair] (->> pair (mapv convert)))))))
 
-(def search-data-node? #{:rect :image :path :text :circle})
+(def search-data-node? #{:rect :image :path :circle})
 
 (defn get-svg-data
   [type node]
@@ -199,6 +199,13 @@
              (filter #(contains? data-tags (:tag %)))
              (map #(:attrs %))
              (reduce add-attrs node-attrs)))
+
+      (= type :text)
+      (->> node
+           (node-seq)
+           (filter #(contains? #{:g :foreignObject} (:tag %)))
+           (map #(:attrs %))
+           (reduce add-attrs node-attrs))
 
       (= type :frame)
       (let [svg-node (->> node :content (d/seek #(= "frame-background" (get-in % [:attrs :class]))))]
@@ -481,8 +488,9 @@
 (defn add-text-data
   [props node]
   (-> props
-      (assoc :grow-type (get-meta node :grow-type keyword))
-      (assoc :content   (get-meta node :content (comp string->uuid json/decode)))))
+      (assoc :grow-type     (get-meta node :grow-type keyword))
+      (assoc :content       (get-meta node :content (comp string->uuid json/decode)))
+      (assoc :position-data (get-meta node :position-data (comp string->uuid json/decode)))))
 
 (defn add-group-data
   [props node]

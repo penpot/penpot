@@ -26,8 +26,8 @@
    :text-transform "none"
    :text-align "left"
    :text-decoration "none"
-   :fill-color clr/black
-   :fill-opacity 1})
+   :fills [{:fill-color clr/black
+            :fill-opacity 1}]})
 
 (def typography-fields
   [:font-id

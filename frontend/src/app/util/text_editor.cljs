@@ -95,6 +95,13 @@
         selected (impl/getSelectedBlocks state)]
     (reduce update-blocks state selected)))
 
+(defn update-editor-current-inline-styles-fn
+  [state update-fn]
+  (let [attrs (-> (.getCurrentInlineStyle ^js state)
+                  (txt/styles-to-attrs)
+                  (update-fn))]
+    (impl/applyInlineStyle state (txt/attrs-to-styles attrs))))
+
 (defn editor-split-block
   [state]
   (impl/splitBlockPreservingData state))

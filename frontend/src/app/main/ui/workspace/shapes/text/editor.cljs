@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.shapes.text.editor
   (:require
    ["draft-js" :as draft]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.text :as txt]
    [app.main.data.workspace :as dw]
@@ -61,9 +62,9 @@
     (-> (.getData content)
         (.toJS)
         (js->clj :keywordize-keys true)
-        (sts/generate-text-styles))
+        (sts/generate-text-styles {:show-text? false}))
     (-> (txt/styles-to-attrs styles)
-        (sts/generate-text-styles))))
+        (sts/generate-text-styles {:show-text? false}))))
 
 (def default-decorator
   (ted/create-decorator "PENPOT_SELECTION" selection-component))
@@ -207,9 +208,13 @@
 
     [:div.text-editor
      {:ref self-ref
-      :style {:cursor cur/text
+      :style {:cursor (cur/text (:rotation shape))
               :width (:width shape)
-              :height (:height shape)}
+              :height (:height shape)
+              ;; We hide the editor when is blurred because otherwise the selection won't let us see
+              ;; the underlying text. Use opacity because display or visibility won't allow to recover
+              ;; focus afterwards.
+              :opacity (when @blurred 0)}
       :on-click on-click
       :class (dom/classnames
               :align-top    (= (:vertical-align content "top") "top")
@@ -227,23 +232,34 @@
        :ref on-editor
        :editor-state state}]]))
 
-(mf/defc text-shape-edit
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false
-   ::mf/forward-ref true}
-  [props _]
-  (let [{:keys [id x y width height grow-type] :as shape} (obj/get props "shape")
-        clip-id (str "clip-" id)]
-    [:g.text-editor {:clip-path (str "url(#" clip-id ")")}
-     [:defs
-      ;; This clippath will cut the huge foreign object we use to calculate the automatic resize
-      [:clipPath {:id clip-id}
-       [:rect {:x x :y y
-               :width (+ width 8) :height (+ height 8)
-               :transform (gsh/transform-matrix shape)}]]]
-     [:foreignObject {:transform (gsh/transform-matrix shape)
-                      :x x :y y
-                      :width  (if (#{:auto-width} grow-type) 100000 width)
-                      :height (if (#{:auto-height :auto-width} grow-type) 100000 height)}
+(defn translate-point-from-viewport
+  "Translate a point in the viewport into client coordinates"
+  [pt viewport zoom]
+  (let [vbox     (.. ^js viewport -viewBox -baseVal)
+        box      (gpt/point (.-x vbox) (.-y vbox))
+        zoom     (gpt/point zoom)]
+    (-> (gpt/subtract pt box)
+        (gpt/multiply zoom))))
 
-      [:& text-shape-edit-html {:shape shape :key (str id)}]]]))
+(mf/defc text-editor-viewport
+  {::mf/wrap-props false}
+  [props]
+  (let [shape        (obj/get props "shape")
+        viewport-ref (obj/get props "viewport-ref")
+        zoom         (obj/get props "zoom")
+
+        position
+        (-> (gpt/point (-> shape :selrect :x)
+                       (-> shape :selrect :y))
+            (translate-point-from-viewport (mf/ref-val viewport-ref) zoom))]
+
+    [:div {:style {:position "absolute"
+                   :left (str (:x position) "px")
+                   :top  (str (:y position) "px")
+                   :pointer-events "all"
+                   :transform (str (gsh/transform-matrix shape nil (gpt/point 0 0)))
+                   :transform-origin "center center"}}
+
+     [:div  {:style {:transform (str "scale(" zoom ")")
+                     :transform-origin "top left"}}
+      [:& text-shape-edit-html {:shape shape :key (str (:id shape))}]]]))

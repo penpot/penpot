@@ -6,16 +6,24 @@
 
 (ns app.main.ui.workspace.shapes.text
   (:require
+   [app.common.attrs :as attrs]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.hooks.mutable-observer :refer [use-mutable-observer]]
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.main.ui.shapes.text :as text]
+   [app.main.ui.shapes.text.fo-text :as fo]
+   [app.main.ui.shapes.text.svg-text :as svg]
    [app.util.dom :as dom]
    [app.util.object :as obj]
+   [app.util.svg :as usvg]
    [app.util.text-editor :as ted]
+   [app.util.text-svg-position :as utp]
    [app.util.timers :as timers]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
@@ -29,18 +37,24 @@
 
 (mf/defc text-static-content
   [{:keys [shape]}]
-  [:& text/text-shape {:shape shape
-                       :grow-type (:grow-type shape)}])
+  [:& fo/text-shape {:shape shape
+                     :grow-type (:grow-type shape)}])
 
 (defn- update-with-current-editor-state
   [{:keys [id] :as shape}]
   (let [editor-state-ref (mf/use-memo (mf/deps id) #(l/derived (l/key id) refs/workspace-editor-state))
-        editor-state     (mf/deref editor-state-ref)]
+        editor-state     (mf/deref editor-state-ref)
+
+        content (:content shape)
+        editor-content
+        (when editor-state
+          (-> editor-state
+              (ted/get-editor-current-content)
+              (ted/export-content)))]
+
     (cond-> shape
-      (some? editor-state)
-      (assoc :content (-> editor-state
-                          (ted/get-editor-current-content)
-                          (ted/export-content))))))
+      (some? editor-content)
+      (assoc :content (attrs/merge content editor-content)))))
 
 (mf/defc text-resize-content
   {::mf/wrap-props false}
@@ -99,24 +113,115 @@
     (mf/use-effect
      (fn [] #(mf/set-ref-val! mnt false)))
 
-    [:& text/text-shape {:ref text-ref-cb :shape shape :grow-type (:grow-type shape)}]))
+    [:& fo/text-shape {:ref text-ref-cb
+                       :shape shape
+                       :grow-type (:grow-type shape)
+                       :key (str "shape-" (:id shape))}]))
+
 
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id] :as shape} (unchecked-get props "shape")
+  (let [{:keys [id position-data] :as shape} (unchecked-get props "shape")
         edition-ref (mf/use-memo (mf/deps id) #(l/derived (fn [o] (= id (:edition o))) refs/workspace-local))
-        edition?    (mf/deref edition-ref)]
+        edition?    (mf/deref edition-ref)
+
+        local-position-data (mf/use-state nil)
+
+        sid-ref (mf/use-ref nil)
+
+        handle-change-foreign-object
+        (mf/use-callback
+         (fn [node]
+           (when-let [position-data (utp/calc-position-data node)]
+             (let [parent (dom/get-parent node)
+                   parent-transform (dom/get-attribute parent "transform")
+                   node-transform (dom/get-attribute node "transform")
+
+                   parent-mtx (usvg/parse-transform parent-transform)
+                   node-mtx (usvg/parse-transform node-transform)
+
+                   ;; We need to see what transformation is applied in the DOM to reverse it
+                   ;; before calculating the position data
+                   mtx (-> (gmt/multiply parent-mtx node-mtx)
+                           (gmt/inverse))
+
+                   position-data
+                   (->> position-data
+                        (mapv #(merge % (-> (select-keys % [:x :y :width :height])
+                                            (gsh/transform-rect mtx)))))]
+               (reset! local-position-data position-data)))))
+
+        [node-ref on-change-node] (use-mutable-observer handle-change-foreign-object)
+
+        show-svg-text? (or (some? position-data) (some? @local-position-data))
+
+        shape
+        (cond-> shape
+          (some? @local-position-data)
+          (assoc :position-data @local-position-data))
+
+        update-position-data
+        (fn []
+          (when (some? @local-position-data)
+            (reset! local-position-data nil)
+            (st/emit! (dch/update-shapes
+                       [id]
+                       (fn [shape]
+                         (-> shape
+                             (assoc :position-data @local-position-data)))
+                       {:save-undo? false}))))]
+
+    (mf/use-layout-effect
+     (mf/deps @local-position-data)
+     (fn []
+       ;; Timer to update the shape. We do this so a lot of changes won't produce
+       ;; a lot of updates (kind of a debounce)
+       (let [sid (timers/schedule 50 update-position-data)]
+         (fn []
+           (rx/dispose! sid)))))
+
+    (mf/use-layout-effect
+     (mf/deps show-svg-text?)
+     (fn []
+       (when-not show-svg-text?
+         ;; There is no position data we need to calculate it even if no change has happened
+         ;; this usualy happens the first time a text is rendered
+         (let [update-data
+               (fn update-data []
+                 (let [node (mf/ref-val node-ref)]
+                   (if (some? node)
+                     (let [position-data (utp/calc-position-data node)]
+                       (reset! local-position-data position-data))
+
+                     ;; No node present, we need to keep waiting
+                     (do (when-let [sid (mf/ref-val sid-ref)] (rx/dispose! sid))
+                         (when-not @local-position-data
+                           (mf/set-ref-val! sid-ref (timers/schedule 100 update-data)))))))]
+           (mf/set-ref-val! sid-ref (timers/schedule 100 update-data))))
+
+       (fn []
+         (when-let [sid (mf/ref-val sid-ref)]
+           (rx/dispose! sid)))))
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
      ;; and updates the selrect accordingly
-     [:g.text-shape {:opacity (when edition? 0)
-                     :pointer-events "none"}
+     [:*
+      [:g.text-shape {:ref on-change-node
+                      :opacity (when show-svg-text? 0)
+                      :pointer-events "none"}
 
-      ;; The `:key` prop here is mandatory because the
-      ;; text-resize-content breaks a hooks rule and we can't reuse
-      ;; the component if the edition flag changes.
-      [:& text-resize-content {:shape shape
-                               :edition? edition?
-                               :key (str id edition?)}]]]))
+       ;; The `:key` prop here is mandatory because the
+       ;; text-resize-content breaks a hooks rule and we can't reuse
+       ;; the component if the edition flag changes.
+       [:& text-resize-content {:shape
+                                (cond-> shape
+                                  show-svg-text?
+                                  (dissoc :transform :transform-inverse))
+                                :edition? edition?
+                                :key (str id edition?)}]]
+
+      (when show-svg-text?
+        [:g.text-svg {:pointer-events "none"}
+         [:& svg/text-shape {:shape shape}]])]]))

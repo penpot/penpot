@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.text :as txt]
+   [app.common.transit :as transit]
    [app.main.fonts :as fonts]
    [app.util.color :as uc]
    [app.util.object :as obj]
@@ -18,11 +19,12 @@
   (let [valign (:vertical-align node "top")
         base   #js {:height "100%"
                     :width  "100%"
-                    :fontFamily "sourcesanspro"}]
+                    :fontFamily "sourcesanspro"
+                    :display "flex"}]
     (cond-> base
-      (= valign "top")     (obj/set! "justifyContent" "flex-start")
-      (= valign "center")  (obj/set! "justifyContent" "center")
-      (= valign "bottom")  (obj/set! "justifyContent" "flex-end"))))
+      (= valign "top")     (obj/set! "alignItems" "flex-start")
+      (= valign "center")  (obj/set! "alignItems" "center")
+      (= valign "bottom")  (obj/set! "alignItems" "flex-end"))))
 
 (defn generate-paragraph-set-styles
   [{:keys [grow-type] :as shape}]
@@ -33,12 +35,10 @@
   ;; the property it's known.
   ;; `inline-flex` is similar to flex but `overflows` outside the bounds of the
   ;; parent
-  (let [auto-width?  (= grow-type :auto-width)
-        auto-height? (= grow-type :auto-height)]
+  (let [auto-width?  (= grow-type :auto-width)]
     #js {:display "inline-flex"
          :flexDirection "column"
          :justifyContent "inherit"
-         :minHeight (when-not (or auto-width? auto-height?) "100%")
          :minWidth (when-not auto-width? "100%")
          :marginRight "1px"
          :verticalAlign "top"}))
@@ -58,66 +58,75 @@
       (= grow-type :auto-width) (obj/set! "whiteSpace" "pre"))))
 
 (defn generate-text-styles
-  [data]
-  (let [letter-spacing  (:letter-spacing data 0)
-        text-decoration (:text-decoration data)
-        text-transform  (:text-transform data)
-        line-height     (:line-height data 1.2)
+  ([data]
+   (generate-text-styles data nil))
 
-        font-id         (:font-id data (:font-id txt/default-text-attrs))
-        font-variant-id (:font-variant-id data)
+  ([data {:keys [show-text?] :or {show-text? true}}]
+   (let [letter-spacing  (:letter-spacing data 0)
+         text-decoration (:text-decoration data)
+         text-transform  (:text-transform data)
+         line-height     (:line-height data 1.2)
 
-        font-size       (:font-size data)
-        fill-color      (:fill-color data)
-        fill-opacity    (:fill-opacity data)
+         font-id         (:font-id data (:font-id txt/default-text-attrs))
+         font-variant-id (:font-variant-id data)
 
-        ;; Uncomment this to allow to remove text colors. This could break the texts that already exist
-        ;;[r g b a] (if (nil? fill-color)
-        ;;            [0 0 0 0] ;; Transparent color
-        ;;            (uc/hex->rgba fill-color fill-opacity))
+         font-size       (:font-size data)
+         fill-color      (:fill-color data)
+         fill-opacity    (:fill-opacity data)
 
-        [r g b a]       (uc/hex->rgba fill-color fill-opacity)
-        text-color      (when (and (some? fill-color) (some? fill-opacity))
-                          (str/format "rgba(%s, %s, %s, %s)" r g b a))
-        fontsdb         (deref fonts/fontsdb)
+         [r g b a]       (uc/hex->rgba fill-color fill-opacity)
+         text-color      (when (and (some? fill-color) (some? fill-opacity))
+                           (str/format "rgba(%s, %s, %s, %s)" r g b a))
 
-        base            #js {:textDecoration text-decoration
-                             :textTransform text-transform
-                             :lineHeight (or line-height "inherit")
-                             :color text-color}]
+         fontsdb         (deref fonts/fontsdb)
 
-    (when-let [gradient (:fill-color-gradient data)]
-      (let [text-color (-> (update gradient :type keyword)
-                           (uc/gradient->css))]
-        (-> base
-            (obj/set! "--text-color" text-color)
-            (obj/set! "backgroundImage" "var(--text-color)")
-            (obj/set! "WebkitTextFillColor" "transparent")
-            (obj/set! "WebkitBackgroundClip" "text"))))
+         base            #js {:textDecoration text-decoration
+                              :textTransform text-transform
+                              :lineHeight (or line-height "inherit")
+                              :color (if show-text? text-color "transparent")
+                              :caretColor (or text-color "black")
+                              :overflowWrap "initial"}
 
-    (when (and (string? letter-spacing)
-               (pos? (alength letter-spacing)))
-      (obj/set! base "letterSpacing" (str letter-spacing "px")))
+         fills
+         (cond
+           (some? (:fills data))
+           (:fills data)
 
-    (when (and (string? font-size)
-               (pos? (alength font-size)))
-      (obj/set! base "fontSize" (str font-size "px")))
+           (or (some? (:fill-color data))
+               (some? (:fill-opacity data))
+               (some? (:fill-color-gradient data)))
+           [(d/without-nils (select-keys data [:fill-color :fill-opacity :fill-color-gradient :fill-color-ref-id :fill-color-ref-file]))]
 
-    (when (and (string? font-id)
-               (pos? (alength font-id)))
-      (fonts/ensure-loaded! font-id)
-      (let [font         (get fontsdb font-id)
-            font-family  (str/quote
-                          (or (:family font)
-                              (:font-family data)))
-            font-variant (d/seek #(= font-variant-id (:id %))
-                                 (:variants font))
-            font-style   (or (:style font-variant)
-                             (:font-style data))
-            font-weight  (or (:weight font-variant)
-                             (:font-weight data))]
-        (obj/set! base "fontFamily" font-family)
-        (obj/set! base "fontStyle" font-style)
-        (obj/set! base "fontWeight" font-weight)))
+           (nil? (:fills data))
+           [{:fill-color "#000000" :fill-opacity 1}])
 
-    base))
+         base (cond-> base
+                (some? fills)
+                (obj/set! "--fills" (transit/encode-str fills)))]
+
+     (when (and (string? letter-spacing)
+                (pos? (alength letter-spacing)))
+       (obj/set! base "letterSpacing" (str letter-spacing "px")))
+
+     (when (and (string? font-size)
+                (pos? (alength font-size)))
+       (obj/set! base "fontSize" (str font-size "px")))
+
+     (when (and (string? font-id)
+                (pos? (alength font-id)))
+       (fonts/ensure-loaded! font-id)
+       (let [font         (get fontsdb font-id)
+             font-family  (str/quote
+                           (or (:family font)
+                               (:font-family data)))
+             font-variant (d/seek #(= font-variant-id (:id %))
+                                  (:variants font))
+             font-style   (or (:style font-variant)
+                              (:font-style data))
+             font-weight  (or (:weight font-variant)
+                              (:font-weight data))]
+         (obj/set! base "fontFamily" font-family)
+         (obj/set! base "fontStyle" font-style)
+         (obj/set! base "fontWeight" font-weight)))
+
+     base)))

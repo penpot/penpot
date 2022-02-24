@@ -1,62 +1,59 @@
-foreignObject {
-  .text-editor,
-  .rich-text {
-    color: $color-black;
-    height: 100%;
-    white-space: pre-wrap;
-    font-family: sourcesanspro;
+.text-editor,
+.rich-text {
+  color: $color-black;
+  height: 100%;
+  font-family: sourcesanspro;
 
-    div {
-      line-height: inherit;
-      user-select: text;
-    }
-
-    span {
-      line-height: inherit;
-    }
+  div {
+    line-height: inherit;
+    user-select: text;
   }
 
-  .text-editor {
-    .DraftEditor-root {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    &.align-top {
-      .DraftEditor-root {
-        justify-content: flex-start;
-      }
-    }
-
-    &.align-center {
-      .DraftEditor-root {
-        justify-content: center;
-      }
-    }
-
-    &.align-bottom {
-      .DraftEditor-root {
-        justify-content: flex-end;
-      }
-    }
+  span {
+    line-height: inherit;
   }
+}
 
-  .rich-text .paragraphs {
+.text-editor {
+  .DraftEditor-root {
     height: 100%;
     display: flex;
     flex-direction: column;
+  }
 
-    &.align-top {
+  &.align-top {
+    .DraftEditor-root {
       justify-content: flex-start;
     }
+  }
 
-    &.align-center {
+  &.align-center {
+    .DraftEditor-root {
       justify-content: center;
     }
+  }
 
-    &.align-bottom {
+  &.align-bottom {
+    .DraftEditor-root {
       justify-content: flex-end;
     }
+  }
+}
+
+.rich-text .paragraphs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &.align-top {
+    justify-content: flex-start;
+  }
+
+  &.align-center {
+    justify-content: center;
+  }
+
+  &.align-bottom {
+    justify-content: flex-end;
   }
 }

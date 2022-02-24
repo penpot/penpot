@@ -105,7 +105,9 @@
       text?
       [shape-node
        (dom/query shape-node "foreignObject")
-       (dom/query shape-node ".text-shape")]
+       (dom/query shape-node ".text-shape")
+       (dom/query shape-node ".text-svg")
+       (dom/query shape-node ".text-clip")]
 
       :else
       [shape-node])))
@@ -118,18 +120,26 @@
 
             [text-transform text-width text-height]
             (when (= :text type)
-              (text-corrected-transform shape transform modifiers))]
+              (text-corrected-transform shape transform modifiers))
+
+            text-width (str text-width)
+            text-height (str text-height)]
 
         (doseq [node nodes]
           (cond
-            (dom/class? node "text-shape")
+            (or (dom/class? node "text-shape") (dom/class? node "text-svg"))
             (when (some? text-transform)
               (dom/set-attribute node "transform" (str text-transform)))
 
-            (= (dom/get-tag-name node) "foreignObject")
-            (when (and (some? text-width) (some? text-height))
-              (dom/set-attribute node "width" text-width)
-              (dom/set-attribute node "height" text-height))
+            (or (= (dom/get-tag-name node) "foreignObject")
+                (dom/class? node "text-clip"))
+            (let [cur-width (dom/get-attribute node "width")
+                  cur-height (dom/get-attribute node "height")]
+              (when (and (some? text-width) (not= cur-width text-width))
+                (dom/set-attribute node "width" text-width))
+
+              (when (and (some? text-height) (not= cur-height text-height))
+                (dom/set-attribute node "height" text-height)))
 
             (and (some? transform) (some? node))
             (dom/set-attribute node "transform" (str transform))))))))

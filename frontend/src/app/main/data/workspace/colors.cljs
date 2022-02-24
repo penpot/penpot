@@ -113,81 +113,89 @@
 
 (defn transform-fill
   [state ids color transform]
-  (let [page-id   (:current-page-id state)
-        objects   (wsh/lookup-page-objects state page-id)
+  (let [objects   (wsh/lookup-page-objects state)
 
         is-text?  #(= :text (:type (get objects %)))
         text-ids  (filter is-text? ids)
-        shape-ids (filter (comp not is-text?) ids)
+        shape-ids (remove is-text? ids)
 
-        attrs (cond-> {:fill-color nil
-                       :fill-color-gradient nil
-                       :fill-color-ref-file nil
-                       :fill-color-ref-id nil
-                       :fill-opacity nil}
+        attrs
+        (cond-> {}
+          (contains? color :color)
+          (assoc :fill-color (:color color))
 
-                (contains? color :color)
-                (assoc :fill-color (:color color))
+          (contains? color :id)
+          (assoc :fill-color-ref-id (:id color))
 
-                (contains? color :id)
-                (assoc :fill-color-ref-id (:id color))
+          (contains? color :file-id)
+          (assoc :fill-color-ref-file (:file-id color))
 
-                (contains? color :file-id)
-                (assoc :fill-color-ref-file (:file-id color))
+          (contains? color :gradient)
+          (assoc :fill-color-gradient (:gradient color))
 
-                (contains? color :gradient)
-                (assoc :fill-color-gradient (:gradient color))
+          (contains? color :opacity)
+          (assoc :fill-opacity (:opacity color))
 
-                (contains? color :opacity)
-                (assoc :fill-opacity (:opacity color)))
-        ;; Not nil attrs
-        clean-attrs (d/without-nils attrs)]
+          :always
+          (d/without-nils))
+
+        transform-attrs #(transform % attrs)]
 
     (rx/concat
-     (rx/from (map #(dwt/update-text-attrs {:id % :attrs attrs}) text-ids))
-     (rx/of (dch/update-shapes
-             shape-ids
-             #(transform % clean-attrs))))))
+     (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
+     (rx/of (dch/update-shapes shape-ids transform-attrs)))))
 
 (defn swap-fills [shape index new-index]
   (let [first (get-in shape [:fills index])
         second (get-in shape [:fills new-index])]
     (-> shape
         (assoc-in [:fills index] second)
-        (assoc-in [:fills new-index] first))
-    ))
+        (assoc-in [:fills new-index] first))))
 
 (defn reorder-fills
   [ids index new-index]
   (ptk/reify ::reorder-fills
     ptk/WatchEvent
-    (watch [_ _ _]
-           (rx/of (dch/update-shapes
-                   ids
-                   #(swap-fills % index new-index))))))
+    (watch [_ state _]
+      (let [objects   (wsh/lookup-page-objects state)
+
+            is-text?  #(= :text (:type (get objects %)))
+            text-ids  (filter is-text? ids)
+            shape-ids (remove is-text? ids)
+            transform-attrs #(swap-fills % index new-index)]
+
+        (rx/concat
+         (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
+         (rx/of (dch/update-shapes shape-ids transform-attrs)))))))
 
 (defn change-fill
   [ids color position]
   (ptk/reify ::change-fill
     ptk/WatchEvent
     (watch [_ state _]
-           (let [change (fn [shape attrs] (assoc-in shape [:fills position] (into {} attrs)))]
-             (transform-fill state ids color change)))))
+      (let [change (fn [shape attrs]
+                     (-> shape
+                         (cond-> (not (contains? shape :fills))
+                           (assoc :fills []))
+                         (assoc-in [:fills position] (into {} attrs))))]
+        (transform-fill state ids color change)))))
 
 (defn change-fill-and-clear
   [ids color]
   (ptk/reify ::change-fill-and-clear
     ptk/WatchEvent
     (watch [_ state _]
-           (let [set (fn [shape attrs] (assoc shape :fills [attrs]))]
-             (transform-fill state ids color set)))))
+      (let [set (fn [shape attrs] (assoc shape :fills [attrs]))]
+        (transform-fill state ids color set)))))
 
 (defn add-fill
   [ids color]
   (ptk/reify ::add-fill
     ptk/WatchEvent
     (watch [_ state _]
-      (let [add (fn [shape attrs] (assoc shape :fills (into [attrs] (:fills shape))))]
+      (let [add (fn [shape attrs]
+                  (-> shape
+                      (update :fills #(into [attrs] %))))]
         (transform-fill state ids color add)))))
 
 (defn remove-fill

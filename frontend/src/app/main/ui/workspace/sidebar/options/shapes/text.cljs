@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
@@ -16,6 +15,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu text-fill-attrs root-attrs paragraph-attrs text-attrs]]
    [rumext.alpha :as mf]))
 
@@ -29,19 +29,18 @@
 
         layer-values (select-keys shape layer-attrs)
 
-        fill-values  (dwt/current-text-values
-                      {:editor-state editor-state
-                       :shape shape
-                       :attrs text-fill-attrs})
+        fill-values  (-> (dwt/current-text-values
+                          {:editor-state editor-state
+                           :shape shape
+                           :attrs (conj text-fill-attrs :fills)})
+                         (d/update-in-when [:fill-color-gradient :type] keyword))
 
-        fill-values (d/update-in-when fill-values [:fill-color-gradient :type] keyword)
+        fill-values (if (not (contains? fill-values :fills))
+                      ;; Old fill format
+                      {:fills [fill-values]}
+                      fill-values)
 
-        fill-values (cond-> fill-values
-                      (not (contains? fill-values :fill-color)) (assoc :fill-color clr/black)
-                      (not (contains? fill-values :fill-opacity)) (assoc :fill-opacity 1)
-                      ;; Keep for backwards compatibility
-                      (:fill fill-values) (assoc :fill-color (:fill fill-values))
-                      (:opacity fill-values) (assoc :fill-opacity (:fill fill-values)))
+        stroke-values (select-keys shape stroke-attrs)
 
         text-values (d/merge
                      (select-keys shape [:grow-type])
@@ -76,8 +75,11 @@
      [:& fill-menu
       {:ids ids
        :type type
-       :values fill-values
-       :disable-remove? true}]
+       :values fill-values}]
+
+     [:& stroke-menu {:ids ids
+                      :type type
+                      :values stroke-values}]
 
      [:& shadow-menu
       {:ids ids

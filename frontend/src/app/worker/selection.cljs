@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.text :as gte]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
@@ -23,7 +24,15 @@
 (defn index-shape
   [objects parents-index clip-parents-index]
   (fn [index shape]
-    (let [{:keys [x y width height]} (gsh/points->selrect (:points shape))
+    (let [{:keys [x y width height]}
+          (cond
+            (and (= :text (:type shape))
+                 (some? (:position-data shape))
+                 (d/not-empty? (:position-data shape)))
+            (gte/position-data-bounding-box shape)
+
+            :else
+            (gsh/points->selrect (:points shape)))
           shape-bound #js {:x x :y y :width width :height height}
 
           parents      (get parents-index (:id shape))

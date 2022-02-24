@@ -350,14 +350,13 @@
                                       (kbd/shift? event)
                                       (kbd/alt? event))))))))
 
-(defn on-pointer-move [viewport-ref raw-position-ref zoom move-stream]
+(defn on-pointer-move [viewport-ref zoom move-stream]
   (mf/use-callback
    (mf/deps zoom move-stream)
    (fn [event]
      (let [raw-pt (dom/get-client-position event)
            viewport (mf/ref-val viewport-ref)
            pt     (utils/translate-point-to-viewport viewport zoom raw-pt)]
-       (mf/set-ref-val! raw-position-ref raw-pt)
        (rx/push! move-stream pt)))))
 
 (defn on-mouse-wheel [viewport-ref zoom]

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.gradients
   (:require
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -97,15 +98,16 @@
 (mf/defc gradient
   {::mf/wrap-props false}
   [props]
-  (let [attr (obj/get props "attr")
-        shape (obj/get props "shape")
-        render-id (mf/use-ctx muc/render-ctx)
-        id (str (name attr) "_" render-id)
+  (let [attr   (obj/get props "attr")
+        shape  (obj/get props "shape")
+        id     (obj/get props "id")
+        id     (or id (str (name attr) "_" (mf/use-ctx muc/render-ctx)))
         gradient (get shape attr)
         gradient-props #js {:id id
                             :gradient gradient
                             :shape shape}]
     (when gradient
-      (case (:type gradient)
-        :linear [:> linear-gradient gradient-props]
-        :radial [:> radial-gradient gradient-props]))))
+      (case (d/name (:type gradient))
+        "linear" [:> linear-gradient gradient-props]
+        "radial" [:> radial-gradient gradient-props]
+        nil))))

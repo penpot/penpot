@@ -311,7 +311,11 @@
                     xmldata (bw/eval! dom (fn [elem] (.-outerHTML ^js elem)))
                     nodes   (process-text-nodes page)
                     nodes   (d/index-by :id nodes)
-                    result  (replace-text-nodes xmldata nodes)]
+                    result  (replace-text-nodes xmldata nodes)
+
+                    ;; SVG standard don't allow the entity nbsp. &#160; is equivalent but
+                    ;; compatible with SVG
+                    result (str/replace result "&nbsp;" "&#160;")]
               ;; (println "------- ORIGIN:")
               ;; (cljs.pprint/pprint (xml->clj xmldata))
               ;; (println "------- RESULT:")
