@@ -117,13 +117,31 @@
 
 ;; --- Helpers
 
+(defn to-new-fills
+  [data]
+  [(d/without-nils (select-keys data [:fill-color :fill-opacity :fill-color-gradient :fill-color-ref-id :fill-color-ref-file]))])
+
 (defn- shape-current-values
   [shape pred attrs]
   (let [root  (:content shape)
         nodes (->> (txt/node-seq pred root)
-                   (map #(if (txt/is-text-node? %)
-                           (merge txt/default-text-attrs %)
-                           %)))]
+                   (map (fn [node]
+                          (if (txt/is-text-node? node)
+                            (let [fills
+                                  (cond
+                                    (or (some? (:fill-color node))
+                                        (some? (:fill-opacity node))
+                                        (some? (:fill-color-gradient node)))
+                                    (to-new-fills node)
+
+                                    (some? (:fills node))
+                                    (:fills node)
+
+                                    :else
+                                    (:fills txt/default-text-attrs))]
+                              (-> (merge txt/default-text-attrs node)
+                                  (assoc :fills fills)))
+                            node))))]
     (attrs/get-attrs-multi nodes attrs)))
 
 (defn current-root-values
@@ -140,8 +158,10 @@
 (defn current-text-values
   [{:keys [editor-state attrs shape]}]
   (if editor-state
-    (-> (ted/get-editor-current-inline-styles editor-state)
-        (select-keys attrs))
+    (let [result (-> (ted/get-editor-current-inline-styles editor-state)
+                     (select-keys attrs))
+          result (if (empty? result) txt/default-text-attrs result)]
+      result)
     (shape-current-values shape txt/is-text-node? attrs)))
 
 
@@ -220,24 +240,27 @@
                           (cph/group-shape? shape) (cph/get-children-ids objects id))]
           (rx/of (dch/update-shapes shape-ids #(update-text-content % update-node? attrs/merge attrs))))))))
 
+(defn migrate-node
+  [node]
+  (let [color-attrs (select-keys node [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient])]
+    (cond-> node
+      (d/not-empty? color-attrs)
+      (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
+          (assoc :fills [color-attrs]))
+
+      (nil? (:fills node))
+      (assoc :fills (:fills txt/default-text-attrs)))))
+
 (defn migrate-content
   [content]
-  (txt/transform-nodes
-   #(or (txt/is-text-node? %) (txt/is-paragraph-node? %))
-   (fn [node]
-     (let [color-attrs (select-keys node [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient])]
-       (cond-> node
-         (d/not-empty? color-attrs)
-         (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
-             (assoc :fills [color-attrs])))))
-   content))
+  (txt/transform-nodes (some-fn txt/is-text-node? txt/is-paragraph-node?) migrate-node content))
 
 (defn update-text-with-function
   [id update-node-fn]
   (ptk/reify ::update-text-with-function
     ptk/UpdateEvent
     (update [_ state]
-      (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-inline-styles-fn update-node-fn))
+      (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-inline-styles-fn (comp update-node-fn migrate-node)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -245,10 +268,7 @@
         (let [objects   (wsh/lookup-page-objects state)
               shape     (get objects id)
 
-              update-node?
-              (fn [node]
-                (or (txt/is-text-node? node)
-                    (txt/is-paragraph-node? node)))
+              update-node? (some-fn txt/is-text-node? txt/is-paragraph-node?)
 
               shape-ids
               (cond

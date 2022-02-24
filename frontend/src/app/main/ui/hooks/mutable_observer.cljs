@@ -48,11 +48,10 @@
                  (mf/set-ref-val! prev-obs-ref mutation-obs)
                  (.observe mutation-obs node options))))))]
 
-    (mf/use-effect
-     (fn []
-       (fn []
-         (when-let [^js prev-obs (mf/ref-val prev-obs-ref)]
-           (.disconnect prev-obs)
-           (mf/set-ref-val! prev-obs-ref nil)))))
+    (mf/with-effect
+      (fn []
+        (when-let [^js prev-obs (mf/ref-val prev-obs-ref)]
+          (.disconnect prev-obs)
+          (mf/set-ref-val! prev-obs-ref nil))))
 
     [node-ref set-node]))

@@ -22,9 +22,10 @@
     (.setEnd range node end-i)
     (.getClientRects range)))
 
+;; TODO: Evaluate to change this function to Javascript
 (defn parse-text-nodes
   "Given a text node retrieves the rectangles for everyone of its paragraphs and its text."
-  [parent-node rtl? text-node]
+  [parent-node rtl text-node]
 
   (let [content (.-textContent text-node)
         text-size (.-length content)]
@@ -45,7 +46,7 @@
           ;; If the rects increase means we're in a new paragraph
           (if (> (.-length rects) 1)
             (let [entry {:node parent-node
-                         :position (dom/bounding-rect->rect (if rtl? (second rects) (first rects)))
+                         :position (dom/bounding-rect->rect (if rtl (second rects) (first rects)))
                          :text current}]
               (recur to-i to-i "" (conj result entry)))
             (recur from-i (inc to-i) (str current (nth content to-i)) result)))))))
@@ -86,9 +87,9 @@
       (->> text-nodes
            (mapcat
             (fn [parent-node]
-              (let [rtl? (= "rtl" (.-dir (.-parentElement parent-node)))]
+              (let [rtl (= "rtl" (.-dir (.-parentElement parent-node)))]
                 (->> (.-childNodes parent-node)
-                     (mapcat #(parse-text-nodes parent-node rtl? %))))))
+                     (mapcat #(parse-text-nodes parent-node rtl %))))))
            (mapv #(update % :position translate-rect))))))
 
 (defn calc-position-data
@@ -101,15 +102,15 @@
           (->> text-data
                (mapv (fn [{:keys [node position text]}]
                        (let [{:keys [x y width height]} position
-                             rtl?   (= "rtl" (.-dir (.-parentElement ^js node)))
+                             rtl   (= "rtl" (.-dir (.-parentElement ^js node)))
                              styles (js/getComputedStyle ^js node)
                              get    (fn [prop]
                                       (let [value (.getPropertyValue styles prop)]
                                         (when (and value (not= value ""))
                                           value)))]
                          (d/without-nils
-                          {:rtl?                rtl?
-                           :x                   (if rtl? (+ x width) x)
+                          {:rtl                 rtl
+                           :x                   (if rtl (+ x width) x)
                            :y                   (+ y height)
                            :width               width
                            :height              height

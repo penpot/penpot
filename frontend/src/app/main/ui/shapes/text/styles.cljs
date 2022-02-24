@@ -87,11 +87,22 @@
                               :caretColor (or text-color "black")
                               :overflowWrap "initial"}
 
-         base (-> base
-                  (obj/set! "--fills" (transit/encode-str (:fills data)))
-                  #_(obj/set! "--fill-color" fill-color)
-                  #_(obj/set! "--fill-color-gradient" (transit/encode-str (:fill-color-gradient data)))
-                  #_(obj/set! "--fill-opacity" fill-opacity))]
+         fills
+         (cond
+           (some? (:fills data))
+           (:fills data)
+
+           (or (some? (:fill-color data))
+               (some? (:fill-opacity data))
+               (some? (:fill-color-gradient data)))
+           [(d/without-nils (select-keys data [:fill-color :fill-opacity :fill-color-gradient :fill-color-ref-id :fill-color-ref-file]))]
+
+           (nil? (:fills data))
+           [{:fill-color "#000000" :fill-opacity 1}])
+
+         base (cond-> base
+                (some? fills)
+                (obj/set! "--fills" (transit/encode-str fills)))]
 
      (when (and (string? letter-spacing)
                 (pos? (alength letter-spacing)))

@@ -57,10 +57,9 @@
                                              :textTransform (:text-transform data)
                                              :textDecoration (:text-decoration data)
                                              :fontStyle (:font-style data)
-                                             :direction (if (:rtl? data) "rtl" "ltr")
+                                             :direction (if (:rtl data) "rtl" "ltr")
                                              :whiteSpace "pre"}
-                                        (obj/set! "fill" (str "url(#fill-" index "-" render-id ")"))
-                                        #_(attrs/add-fill data (get-gradient-id index)))})]
+                                        (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})]
           [:& shape-custom-stroke {:shape shape :index index}
            [:> :text props (:text data)]]))]]))
 

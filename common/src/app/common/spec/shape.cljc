@@ -224,7 +224,7 @@
                    :internal.shape.text.position-data/font-size
                    :internal.shape.text.position-data/font-style
                    :internal.shape.text.position-data/font-weight
-                   :internal.shape.text.position-data/rtl?
+                   :internal.shape.text.position-data/rtl
                    :internal.shape.text.position-data/text
                    :internal.shape.text.position-data/text-decoration
                    :internal.shape.text.position-data/text-transform]
@@ -243,7 +243,7 @@
 (s/def :internal.shape.text.position-data/font-size string?)
 (s/def :internal.shape.text.position-data/font-style string?)
 (s/def :internal.shape.text.position-data/font-weight string?)
-(s/def :internal.shape.text.position-data/rtl? boolean?)
+(s/def :internal.shape.text.position-data/rtl boolean?)
 (s/def :internal.shape.text.position-data/text string?)
 (s/def :internal.shape.text.position-data/text-decoration string?)
 (s/def :internal.shape.text.position-data/text-transform string?)

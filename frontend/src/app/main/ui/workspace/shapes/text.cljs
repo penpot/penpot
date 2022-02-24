@@ -131,25 +131,26 @@
         sid-ref (mf/use-ref nil)
 
         handle-change-foreign-object
-        (fn [node]
-          (when-let [position-data (utp/calc-position-data node)]
-            (let [parent (dom/get-parent node)
-                  parent-transform (dom/get-attribute parent "transform")
-                  node-transform (dom/get-attribute node "transform")
+        (mf/use-callback
+         (fn [node]
+           (when-let [position-data (utp/calc-position-data node)]
+             (let [parent (dom/get-parent node)
+                   parent-transform (dom/get-attribute parent "transform")
+                   node-transform (dom/get-attribute node "transform")
 
-                  parent-mtx (usvg/parse-transform parent-transform)
-                  node-mtx (usvg/parse-transform node-transform)
+                   parent-mtx (usvg/parse-transform parent-transform)
+                   node-mtx (usvg/parse-transform node-transform)
 
-                  ;; We need to see what transformation is applied in the DOM to reverse it
-                  ;; before calculating the position data
-                  mtx (-> (gmt/multiply parent-mtx node-mtx)
-                          (gmt/inverse))
+                   ;; We need to see what transformation is applied in the DOM to reverse it
+                   ;; before calculating the position data
+                   mtx (-> (gmt/multiply parent-mtx node-mtx)
+                           (gmt/inverse))
 
-                  position-data
-                  (->> position-data
-                       (mapv #(merge % (-> (select-keys % [:x :y :width :height])
-                                           (gsh/transform-rect mtx)))))]
-              (reset! local-position-data position-data))))
+                   position-data
+                   (->> position-data
+                        (mapv #(merge % (-> (select-keys % [:x :y :width :height])
+                                            (gsh/transform-rect mtx)))))]
+               (reset! local-position-data position-data)))))
 
         [node-ref on-change-node] (use-mutable-observer handle-change-foreign-object)
 

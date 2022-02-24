@@ -6,6 +6,7 @@
 
 (ns app.main.ui.render
   (:require
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -92,12 +93,11 @@
         (mf/with-memo [objects]
           (render/shape-wrapper-factory objects))
 
-        text-shapes
-        (->> objects
-             (filter (fn [[_ shape]] (= :text (:type shape))))
-             (mapv second))
+        is-text? (fn [shape] (= :text (:type shape)))
 
-        render-texts? (and render-texts? (some #(nil? (:position-data %)) text-shapes))]
+        text-shapes (sequence (comp (map second) (filter is-text?)) objects)
+
+        render-texts? (and render-texts? (d/seek (comp nil? :position-data) text-shapes))]
 
     (mf/with-effect [width height]
       (dom/set-page-style {:size (str (mth/ceil width) "px "

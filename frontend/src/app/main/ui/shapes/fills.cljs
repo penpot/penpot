@@ -45,19 +45,18 @@
                             (= :path (:type shape))
                             (obj/set! "patternTransform" transform))]
 
-        [:*
-         (for [[_shape-index shape] (d/enumerate (or (:position-data shape) [shape]))]
+        (for [[shape-index shape] (d/enumerate (or (:position-data shape) [shape]))]
+          [:*
            (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
-             (cond (some? (:fill-color-gradient value))
-                   (case (d/name (:type (:fill-color-gradient value)))
-                     "linear" [:> grad/linear-gradient #js {:id (str "fill-color-gradient_" render-id "_" fill-index)
-                                                            :gradient (:fill-color-gradient value)
-                                                            :shape shape}]
-                     "radial" [:> grad/radial-gradient #js {:id (str "fill-color-gradient_" render-id "_" fill-index)
-                                                            :gradient (:fill-color-gradient value)
-                                                            :shape shape}]))))
+             (when (some? (:fill-color-gradient value))
+               (let [props #js {:id (str "fill-color-gradient_" render-id "_" fill-index)
+                                :gradient (:fill-color-gradient value)
+                                :shape shape}]
+                 (case (d/name (:type (:fill-color-gradient value)))
+                   "linear" [:> grad/linear-gradient props]
+                   "radial" [:> grad/radial-gradient props]))))
 
-         (for [[shape-index shape] (d/enumerate (or (:position-data shape) [shape]))]
+
            (let [fill-id (str "fill-" shape-index "-" render-id)]
              [:> :pattern (-> (obj/clone pattern-attrs)
                               (obj/set! "id" fill-id))
@@ -70,4 +69,4 @@
                (when has-image
                  [:image {:xlinkHref (get embed uri uri)
                           :width width
-                          :height height}])]]))]))))
+                          :height height}])]])])))))
