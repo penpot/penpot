@@ -35,9 +35,6 @@
   (dom/prevent-default event)
   (dom/stop-propagation event))
 
-
-
-
 (mf/defc menu-entry
   [{:keys [title shortcut on-click children selected? icon] :as props}]
   (let [submenu-ref (mf/use-ref nil)

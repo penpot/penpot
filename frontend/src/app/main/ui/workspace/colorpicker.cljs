@@ -30,22 +30,22 @@
 ;; --- Refs
 
 (def picking-color?
-  (l/derived :picking-color? refs/workspace-local))
+  (l/derived :picking-color? refs/workspace-global))
 
 (def picked-color
-  (l/derived :picked-color refs/workspace-local))
+  (l/derived :picked-color refs/workspace-global))
 
 (def picked-color-select
-  (l/derived :picked-color-select refs/workspace-local))
+  (l/derived :picked-color-select refs/workspace-global))
 
 (def viewport
-  (l/derived (l/in [:workspace-local :vport]) st/state))
+  (l/derived :vport refs/workspace-local))
 
 (def editing-spot-state-ref
-  (l/derived (l/in [:workspace-local :editing-stop]) st/state))
+  (l/derived :editing-stop refs/workspace-global))
 
 (def current-gradient-ref
-  (l/derived (l/in [:workspace-local :current-gradient]) st/state))
+  (l/derived :current-gradient refs/workspace-global))
 
 ;; --- Color Picker Modal
 
@@ -387,11 +387,12 @@
         position (or position :left)
         style (calculate-position vport position x y)
 
-        handle-change (fn [new-data]
-                        (reset! dirty? (not= data new-data))
-                        (reset! last-change new-data)
-                        (when on-change
-                          (on-change new-data)))]
+        handle-change
+        (fn [new-data]
+          (reset! dirty? (not= data new-data))
+          (reset! last-change new-data)
+          (when on-change
+            (on-change new-data)))]
 
     (mf/use-effect
      (fn []

@@ -42,21 +42,22 @@
 ;; --- Viewport
 
 (mf/defc viewport
-  [{:keys [local selected layout file] :as props}]
+  [{:keys [local wstate selected layout file] :as props}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
-                edition
-                options-mode
                 panning
-                picking-color?
                 selrect
-                show-distances?
-                tooltip
                 transform
                 vbox
                 vport
                 zoom]} local
+
+        {:keys [edition
+                options-mode
+                tooltip
+                show-distances?
+                picking-color?]} wstate
 
         ;; CONTEXT
         page-id           (mf/use-ctx ctx/current-page-id)
@@ -66,9 +67,9 @@
         options           (mf/deref refs/workspace-page-options)
         base-objects      (mf/deref refs/workspace-page-objects)
         modifiers         (mf/deref refs/workspace-modifiers)
-        objects-modified  (mf/use-memo
-                           (mf/deps base-objects modifiers)
-                           #(gsh/merge-modifiers base-objects modifiers))
+        objects-modified  (mf/with-memo [base-objects modifiers]
+                            (gsh/merge-modifiers base-objects modifiers))
+
         background        (get options :background clr/canvas)
 
         ;; STATE

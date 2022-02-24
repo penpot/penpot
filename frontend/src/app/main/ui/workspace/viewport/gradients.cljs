@@ -32,10 +32,10 @@
 (def gradient-square-stroke-color-selected "var(--color-select)")
 
 (def editing-spot-ref
-  (l/derived (l/in [:workspace-local :editing-stop]) st/state))
+  (l/derived (l/in [:workspace-global :editing-stop]) st/state))
 
 (def current-gradient-ref
-  (l/derived (l/in [:workspace-local :current-gradient]) st/state =))
+  (l/derived (l/in [:workspace-global :current-gradient]) st/state =))
 
 (mf/defc shadow [{:keys [id x y width height offset]}]
   [:filter {:id id
