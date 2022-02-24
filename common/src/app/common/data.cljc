@@ -11,7 +11,6 @@
      (:require-macros [app.common.data]))
   (:require
    [app.common.math :as mth]
-   [cljs.analyzer.api :as aapi]
    [clojure.set :as set]
    [cuerdas.core :as str]
    #?(:cljs [cljs.reader :as r]

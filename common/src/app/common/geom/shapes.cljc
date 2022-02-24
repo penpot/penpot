@@ -6,7 +6,6 @@
 
 (ns app.common.geom.shapes
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bool :as gsb]
