@@ -59,6 +59,23 @@
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}
 
+  :bench
+  {:target :node-script
+   :output-to "target/bench.js"
+   :output-dir "target/bench/"
+   :main cljs.user/main
+
+   :compiler-options
+   {:output-feature-set :es8
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :elide-asserts true
+     :anon-fn-naming-policy :off}}}
+
   :test
   {:target :node-test
    :output-to "target/tests.js"
