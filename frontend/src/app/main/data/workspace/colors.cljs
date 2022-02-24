@@ -14,7 +14,6 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.repo :as rp]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 (def clear-color-for-rename

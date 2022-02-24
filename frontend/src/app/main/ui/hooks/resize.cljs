@@ -8,7 +8,6 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
-   [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.storage :refer [storage]]
