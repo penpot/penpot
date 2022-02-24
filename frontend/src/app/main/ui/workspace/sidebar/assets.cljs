@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.assets
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.media :as cm]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -55,6 +56,10 @@
 ;;       emitting many events and opening an undo transaction. Also move the logic
 ;;       of grouping, deleting, etc. to events in the data module, since now the
 ;;       selection info is in the global state.
+
+(def typography-data
+  (l/derived #(dm/select-keys % [:rename-typography :edit-typography])
+             refs/workspace-global =))
 
 ;; ---- Group assets management ----
 
@@ -1141,7 +1146,7 @@
   (let [state (mf/use-state {:detail-open? false
                              :id nil})
 
-        local-data (mf/deref refs/typography-data)
+        local-data (mf/deref typography-data)
         menu-state (mf/use-state auto-pos-menu-state)
         groups     (group-assets typographies reverse-sort?)
 
@@ -1258,11 +1263,11 @@
 
         handle-rename-typography-clicked
         (fn []
-          (st/emit! #(assoc-in % [:workspace-local :rename-typography] (:id @state))))
+          (st/emit! #(assoc-in % [:workspace-global :rename-typography] (:id @state))))
 
         handle-edit-typography-clicked
         (fn []
-          (st/emit! #(assoc-in % [:workspace-local :edit-typography] (:id @state))))
+          (st/emit! #(assoc-in % [:workspace-global :edit-typography] (:id @state))))
 
         handle-delete-typography
         (mf/use-callback
@@ -1282,9 +1287,9 @@
      (mf/deps local-data)
      (fn []
        (when (:rename-typography local-data)
-         (st/emit! #(update % :workspace-local dissoc :rename-typography)))
+         (st/emit! #(update % :workspace-global dissoc :rename-typography)))
        (when (:edit-typography local-data)
-         (st/emit! #(update % :workspace-local dissoc :edit-typography)))))
+         (st/emit! #(update % :workspace-global dissoc :edit-typography)))))
 
     [:& asset-section {:file-id file-id
                        :title (tr "workspace.assets.typography")
@@ -1365,10 +1370,11 @@
                    (vals (get-in state [:workspace-libraries id :data :typographies])))))
              st/state =))
 
-(defn open-file-ref
+(defn make-open-file-ref
   [id]
-  (-> (l/in [:assets-files-open id])
-      (l/derived refs/workspace-local)))
+  (mf/with-memo [id]
+    (-> (l/in [:assets-files-open id])
+        (l/derived refs/workspace-global))))
 
 (defn apply-filters
   [coll filters reverse-sort?]
@@ -1387,7 +1393,7 @@
 
 (mf/defc file-library
   [{:keys [file local? default-open? filters] :as props}]
-  (let [open-file       (mf/deref (open-file-ref (:id file)))
+  (let [open-file       (mf/deref (make-open-file-ref (:id file)))
         open?           (-> open-file
                             :library
                             (d/nilv default-open?))

@@ -60,7 +60,7 @@
 
 (mf/defc header-options
   [{:keys [section zoom page file index permissions]}]
-  (let [fullscreen? (mf/deref refs/fullscreen?)
+  (let [fullscreen? (mf/deref refs/viewer-fullscreen?)
 
         toggle-fullscreen
         (mf/use-callback

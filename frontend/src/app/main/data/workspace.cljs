@@ -24,7 +24,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -90,7 +90,7 @@
 
 (s/def ::layout-flags (s/coll-of ::layout-flag))
 
-(def default-layout
+(def default-workspace-layout
   #{:sitemap
     :layers
     :element-options
@@ -116,28 +116,12 @@
 
 (s/def ::options-mode #{:design :prototype})
 
-(def workspace-local-default
+(def default-workspace-global
+  {:options-mode :design})
+
+(def default-workspace-local
   {:zoom 1
-   :flags #{}
-   :selected (d/ordered-set)
-   :selected-assets {:components #{}
-                     :graphics #{}
-                     :colors #{}
-                     :typographies #{}}
-   :expanded {}
-   :tooltip nil
-   :options-mode :design
-   :draw-interaction-to nil
-   :left-sidebar? true
-   :right-sidebar? true
-   :color-for-rename nil
-   :selected-palette-colorpicker :recent
-   :selected-palette :recent
-   :selected-palette-size :big
-   :assets-files-open {}
-   :picking-color? false
-   :picked-color nil
-   :picked-color-select false})
+   :selected (d/ordered-set)})
 
 (defn ensure-layout
   [lname]
@@ -152,13 +136,15 @@
                       (set/difference todel)
                       (set/union toadd))))))))
 
-(defn setup-layout
+(defn initialize
   [lname]
   (us/verify (s/nilable ::us/keyword) lname)
-  (ptk/reify ::setup-layout
+  (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-layout #(or % default-layout)))
+      (-> state
+          (update :workspace-layout #(or % default-workspace-layout))
+          (update :workspace-global #(or % default-workspace-global))))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -278,7 +264,7 @@
             page    (get-in state [:workspace-data :pages-index page-id])
             page-id (:id page)
             local   (-> state
-                        (get-in [:workspace-cache page-id] workspace-local-default)
+                        (get-in [:workspace-cache page-id] default-workspace-local)
                         (assoc :selected (d/ordered-set)))]
         (-> state
             (assoc :current-page-id page-id)
@@ -436,7 +422,7 @@
   (ptk/reify ::set-options-mode
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :options-mode] mode))))
+      (assoc-in state [:workspace-global :options-mode] mode))))
 
 ;; --- Tooltip
 
@@ -446,8 +432,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (if (string? content)
-        (assoc-in state [:workspace-local :tooltip] content)
-        (assoc-in state [:workspace-local :tooltip] nil)))))
+        (assoc-in state [:workspace-global :tooltip] content)
+        (assoc-in state [:workspace-global :tooltip] nil)))))
 
 ;; --- Viewport Sizing
 
@@ -1194,41 +1180,42 @@
         (rx/of (rt/nav :workspace pparams qparams))))))
 
 (defn check-in-asset
-  [set element]
-  (if (contains? set element)
-    (disj set element)
-    (conj set element)))
+  [items element]
+  (let [items (or items #{})]
+    (if (contains? items element)
+      (disj set element)
+      (conj set element))))
 
 (defn toggle-selected-assets
   [asset type]
   (ptk/reify ::toggle-selected-assets
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-local :selected-assets type] #(check-in-asset % asset)))))
+      (update-in state [:workspace-global :selected-assets type] #(check-in-asset % asset)))))
 
 (defn select-single-asset
   [asset type]
   (ptk/reify ::select-single-asset
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :selected-assets type] #{asset}))))
+      (assoc-in state [:workspace-global :selected-assets type] #{asset}))))
 
 (defn select-assets
   [assets type]
   (ptk/reify ::select-assets
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :selected-assets type] (into #{} assets)))))
+      (assoc-in state [:workspace-global :selected-assets type] (into #{} assets)))))
 
 (defn unselect-all-assets
   []
   (ptk/reify ::unselect-all-assets
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :selected-assets] {:components #{}
-                                                           :graphics #{}
-                                                           :colors #{}
-                                                           :typographies #{}}))))
+      (assoc-in state [:workspace-global :selected-assets] {:components #{}
+                                                            :graphics #{}
+                                                            :colors #{}
+                                                            :typographies #{}}))))
 
 (defn go-to-component
   [component-id]
@@ -1480,7 +1467,7 @@
         (catch :default e
           (let [data (ex-data e)]
             (if (:not-implemented data)
-              (rx/of (dm/warn (i18n/tr "errors.clipboard-not-implemented")))
+              (rx/of (msg/warn (i18n/tr "errors.clipboard-not-implemented")))
               (js/console.error "ERROR" e))))))))
 
 (defn paste-from-event

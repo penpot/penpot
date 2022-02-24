@@ -22,6 +22,7 @@
    [app.util.timers :as ts]
    [rumext.alpha :as mf]))
 
+
 (mf/defc image-upload
   {::mf/wrap [mf/memo]}
   []
@@ -36,9 +37,8 @@
          (mf/deps file)
          (fn [blobs]
            ;; We don't want to add a ref because that redraws the component
-           ;; for everychange. Better direct access on the callback
-           ;; vbox (get-in @st/state [:workspace-local :vbox])
-           (let [vbox   (:vbox @refs/workspace-local)
+           ;; for everychange. Better direct access on the callback.
+           (let [vbox   (deref @refs/vbox)
                  x      (mth/round (+ (:x vbox) (/ (:width vbox) 2)))
                  y      (mth/round (+ (:y vbox) (/ (:height vbox) 2)))
                  params {:file-id (:id file)
@@ -129,7 +129,7 @@
                      (ts/schedule 300 #(st/emit! (dw/remove-layout-flags :colorpalette)
                                (dw/toggle-layout-flags :textpalette))))}
         "Ag"]
-       
+
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
          :class (when (contains? layout :colorpalette) "selected")
