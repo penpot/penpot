@@ -8,6 +8,7 @@
   "Visually show shape interactions in workspace"
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.spec.interactions :as cti]
@@ -17,7 +18,16 @@
    [app.main.ui.workspace.viewport.outline :refer [outline]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
+   [okulary.core :as l]
    [rumext.alpha :as mf]))
+
+(def interactions-ref
+  (l/derived #(dm/select-keys % [:editing-interaction-index
+                                 :draw-interaction-to
+                                 :draw-interaction-to-frame
+                                 :move-overlay-to
+                                 :move-overlay-index])
+             refs/workspace-local =))
 
 (defn- on-mouse-down
   [event index {:keys [id] :as shape}]
@@ -251,7 +261,7 @@
                 draw-interaction-to
                 draw-interaction-to-frame
                 move-overlay-to
-                move-overlay-index]} (mf/deref refs/interactions-data)
+                move-overlay-index]} (mf/deref interactions-ref)
 
         first-selected (first selected-shapes)
 

@@ -21,7 +21,7 @@
   (ptk/reify ::clear-color-for-rename
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :color-for-rename] nil))))
+      (assoc-in state [:workspace-global :color-for-rename] nil))))
 
 (declare rename-color-result)
 
@@ -40,15 +40,6 @@
     (update [_ state]
       (update-in state [:workspace-file :colors] #(d/replace-by-id % color)))))
 
-(defn change-palette-size
-  [size]
-  (s/assert #{:big :small} size)
-  (ptk/reify ::change-palette-size
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:workspace-local :selected-palette-size] size)))))
-
 (defn change-palette-selected
   "Change the library used by the general palette tool"
   [selected]
@@ -56,7 +47,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-local :selected-palette] selected)))))
+          (assoc-in [:workspace-global :selected-palette] selected)))))
 
 (defn change-palette-selected-colorpicker
   "Change the library used by the color picker"
@@ -65,7 +56,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-local :selected-palette-colorpicker] selected)))))
+          (assoc-in [:workspace-global :selected-palette-colorpicker] selected)))))
 
 (defn show-palette
   "Show the palette tool and change the library it uses"
@@ -75,7 +66,7 @@
     (update [_ state]
       (-> state
           (update :workspace-layout conj :colorpalette)
-          (assoc-in [:workspace-local :selected-palette] selected)))))
+          (assoc-in [:workspace-global :selected-palette] selected)))))
 
 (defn start-picker
   []
@@ -83,7 +74,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-local :picking-color?] true)))))
+          (assoc-in [:workspace-global :picking-color?] true)))))
 
 (defn stop-picker
   []
@@ -91,8 +82,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-local dissoc :picked-color-select :picked-shift?)
-          (assoc-in [:workspace-local :picking-color?] false)))))
+          (update :workspace-global dissoc :picked-color-select :picked-shift?)
+          (assoc-in [:workspace-global :picking-color?] false)))))
 
 (defn pick-color
   [rgba]
@@ -100,7 +91,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-local :picked-color] rgba)))))
+          (assoc-in [:workspace-global :picked-color] rgba)))))
 
 (defn pick-color-select
   [value shift?]
@@ -108,8 +99,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-local :picked-color-select] value)
-          (assoc-in [:workspace-local :picked-shift?] shift?)))))
+          (assoc-in [:workspace-global :picked-color-select] value)
+          (assoc-in [:workspace-global :picked-shift?] shift?)))))
 
 (defn transform-fill
   [state ids color transform]
@@ -295,7 +286,7 @@
       (update [_ state]
         (let [handle-change-color (fn [color] (rx/push! sub color))]
           (-> state
-              (assoc-in [:workspace-local :picking-color?] true)
+              (assoc-in [:workspace-global :picking-color?] true)
               (assoc ::md/modal {:id (random-uuid)
                                  :data {:color clr/black :opacity 1}
                                  :type :colorpicker
@@ -309,8 +300,8 @@
     (update [_ state]
       (let [id (-> state wsh/lookup-selected first)]
         (-> state
-            (assoc-in [:workspace-local :current-gradient] gradient)
-            (assoc-in [:workspace-local :current-gradient :shape-id] id))))))
+            (assoc-in [:workspace-global :current-gradient] gradient)
+            (assoc-in [:workspace-global :current-gradient :shape-id] id))))))
 
 (defn stop-gradient
   []
@@ -318,7 +309,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-local dissoc :current-gradient)))))
+          (update :workspace-global dissoc :current-gradient)))))
 
 (defn update-gradient
   [changes]
@@ -326,7 +317,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:workspace-local :current-gradient] merge changes)))))
+          (update-in [:workspace-global :current-gradient] merge changes)))))
 
 (defn select-gradient-stop
   [spot]
@@ -334,4 +325,4 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-local :editing-stop] spot)))))
+          (assoc-in [:workspace-global :editing-stop] spot)))))

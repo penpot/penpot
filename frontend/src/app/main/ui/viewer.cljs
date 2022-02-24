@@ -73,7 +73,7 @@
         zoom   (:zoom local)
         frames (:frames page)
         frame  (get frames index)
-        fullscreen? (mf/deref refs/fullscreen?)
+        fullscreen? (mf/deref refs/viewer-fullscreen?)
         overlays (:overlays local)
 
         orig-frame
