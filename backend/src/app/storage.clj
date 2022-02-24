@@ -8,6 +8,7 @@
   "Objects storage abstraction layer."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
@@ -248,7 +249,7 @@
   (-> (assoc storage :conn (or conn pool))
       (delete-database-object (if (uuid? id-or-obj) id-or-obj (:id id-or-obj)))))
 
-(d/export impl/resolve-backend)
+(dm/export impl/resolve-backend)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Garbage Collection: Permanently delete objects

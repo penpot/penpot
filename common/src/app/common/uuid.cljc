@@ -7,7 +7,7 @@
 (ns app.common.uuid
   (:refer-clojure :exclude [next uuid zero?])
   (:require
-   #?(:clj [app.common.data :as d])
+   #?(:clj [app.common.data.macros :as dm])
    #?(:clj [clj-uuid :as impl])
    #?(:clj [clojure.core :as c])
    #?(:cljs [app.common.uuid-impl :as impl])
@@ -47,4 +47,4 @@
   ([b a] #?(:clj (UUID. b a) :cljs (c/uuid (impl/custom b a)))))
 
 #?(:clj
-   (d/export impl/get-word-high))
+   (dm/export impl/get-word-high))
