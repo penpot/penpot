@@ -417,45 +417,6 @@
            (not (mth/finite? v))
            (mth/nan? v)) default v)))
 
-
-(defmacro export
-  "A helper macro that allows reexport a var in a current namespace."
-  [v]
-  (if (boolean (:ns &env))
-
-    ;; Code for ClojureScript
-    (let [mdata    (aapi/resolve &env v)
-          arglists (second (get-in mdata [:meta :arglists]))
-          sym      (symbol (core/name v))
-          andsym   (symbol "&")
-          procarg  #(if (= % andsym) % (gensym "param"))]
-      (if (pos? (count arglists))
-        `(def
-           ~(with-meta sym (:meta mdata))
-           (fn ~@(for [args arglists]
-                   (let [args (map procarg args)]
-                     (if (some #(= andsym %) args)
-                       (let [[sargs dargs] (split-with #(not= andsym %) args)]
-                         `([~@sargs ~@dargs] (apply ~v ~@sargs ~@(rest dargs))))
-                       `([~@args] (~v ~@args)))))))
-        `(def ~(with-meta sym (:meta mdata)) ~v)))
-
-    ;; Code for Clojure
-    (let [vr (resolve v)
-          m  (meta vr)
-          n  (:name m)
-          n  (with-meta n
-               (cond-> {}
-                 (:dynamic m) (assoc :dynamic true)
-                 (:protocol m) (assoc :protocol (:protocol m))))]
-      `(let [m# (meta ~vr)]
-         (def ~n (deref ~vr))
-         (alter-meta! (var ~n) merge (dissoc m# :name))
-         ;; (when (:macro m#)
-         ;;   (.setMacro (var ~n)))
-         ~vr))))
-
-
 (defn any-key? [element & rest]
   (some #(contains? element %) rest))
 
@@ -692,4 +653,3 @@
                    (recur acc (step k))
                    acc)))
              acc))))))
-

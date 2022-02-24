@@ -7,15 +7,15 @@
 (ns app.common.uri
   (:refer-clojure :exclude [uri?])
   (:require
-   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [lambdaisland.uri :as u]
    [lambdaisland.uri.normalize :as un]))
 
-(d/export u/uri)
-(d/export u/join)
-(d/export u/query-encode)
-(d/export un/percent-encode)
-(d/export u/uri?)
+(dm/export u/uri)
+(dm/export u/join)
+(dm/export u/query-encode)
+(dm/export un/percent-encode)
+(dm/export u/uri?)
 
 (defn query-string->map
   [s]

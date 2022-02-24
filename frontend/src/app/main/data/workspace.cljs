@@ -8,6 +8,7 @@
   (:require
    [app.common.attrs :as attrs]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.align :as gal]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -1768,18 +1769,18 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :show-distances?] value))))
+      (assoc-in state [:workspace-global :show-distances?] value))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(d/export dwi/start-edit-interaction)
-(d/export dwi/move-edit-interaction)
-(d/export dwi/finish-edit-interaction)
-(d/export dwi/start-move-overlay-pos)
-(d/export dwi/move-overlay-pos)
-(d/export dwi/finish-move-overlay-pos)
+(dm/export dwi/start-edit-interaction)
+(dm/export dwi/move-edit-interaction)
+(dm/export dwi/finish-edit-interaction)
+(dm/export dwi/start-move-overlay-pos)
+(dm/export dwi/move-overlay-pos)
+(dm/export dwi/finish-move-overlay-pos)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CANVAS OPTIONS
@@ -1832,62 +1833,62 @@
 
 ;; Transform
 
-(d/export dwt/start-resize)
-(d/export dwt/update-dimensions)
-(d/export dwt/start-rotate)
-(d/export dwt/increase-rotation)
-(d/export dwt/start-move-selected)
-(d/export dwt/move-selected)
-(d/export dwt/update-position)
-(d/export dwt/flip-horizontal-selected)
-(d/export dwt/flip-vertical-selected)
-(d/export dwly/set-opacity)
+(dm/export dwt/start-resize)
+(dm/export dwt/update-dimensions)
+(dm/export dwt/start-rotate)
+(dm/export dwt/increase-rotation)
+(dm/export dwt/start-move-selected)
+(dm/export dwt/move-selected)
+(dm/export dwt/update-position)
+(dm/export dwt/flip-horizontal-selected)
+(dm/export dwt/flip-vertical-selected)
+(dm/export dwly/set-opacity)
 
 ;; Persistence
 
-(d/export dwp/set-file-shared)
-(d/export dwp/fetch-shared-files)
-(d/export dwp/link-file-to-library)
-(d/export dwp/unlink-file-from-library)
-(d/export dwp/upload-media-asset)
-(d/export dwp/upload-media-workspace)
-(d/export dwp/clone-media-object)
-(d/export dwc/image-uploaded)
+(dm/export dwp/set-file-shared)
+(dm/export dwp/fetch-shared-files)
+(dm/export dwp/link-file-to-library)
+(dm/export dwp/unlink-file-from-library)
+(dm/export dwp/upload-media-asset)
+(dm/export dwp/upload-media-workspace)
+(dm/export dwp/clone-media-object)
+(dm/export dwc/image-uploaded)
 
 ;; Selection
 
-(d/export dws/select-shape)
-(d/export dws/deselect-shape)
-(d/export dws/select-all)
-(d/export dws/deselect-all)
-(d/export dwc/select-shapes)
-(d/export dws/shift-select-shapes)
-(d/export dws/duplicate-selected)
-(d/export dws/handle-area-selection)
-(d/export dws/select-inside-group)
-(d/export dwd/select-for-drawing)
-(d/export dwc/clear-edition-mode)
-(d/export dwc/add-shape)
-(d/export dwc/start-edition-mode)
+(dm/export dws/select-shape)
+(dm/export dws/deselect-shape)
+(dm/export dws/select-all)
+(dm/export dws/deselect-all)
+(dm/export dwc/select-shapes)
+(dm/export dws/shift-select-shapes)
+(dm/export dws/duplicate-selected)
+(dm/export dws/handle-area-selection)
+(dm/export dws/select-inside-group)
+(dm/export dwd/select-for-drawing)
+(dm/export dwc/clear-edition-mode)
+(dm/export dwc/add-shape)
+(dm/export dwc/start-edition-mode)
 
 ;; Groups
 
-(d/export dwg/mask-group)
-(d/export dwg/unmask-group)
-(d/export dwg/group-selected)
-(d/export dwg/ungroup-selected)
+(dm/export dwg/mask-group)
+(dm/export dwg/unmask-group)
+(dm/export dwg/group-selected)
+(dm/export dwg/ungroup-selected)
 
 ;; Boolean
-(d/export dwb/create-bool)
-(d/export dwb/group-to-bool)
-(d/export dwb/bool-to-group)
-(d/export dwb/change-bool-type)
+(dm/export dwb/create-bool)
+(dm/export dwb/group-to-bool)
+(dm/export dwb/bool-to-group)
+(dm/export dwb/change-bool-type)
 
 ;; Shapes to path
-(d/export dwps/convert-selected-to-path)
+(dm/export dwps/convert-selected-to-path)
 
 ;; Guides
-(d/export dwgu/update-guides)
-(d/export dwgu/remove-guide)
-(d/export dwgu/set-hover-guide)
+(dm/export dwgu/update-guides)
+(dm/export dwgu/remove-guide)
+(dm/export dwgu/set-hover-guide)
 
