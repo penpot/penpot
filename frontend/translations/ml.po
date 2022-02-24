@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-02-24 19:53+0000\n"
+"PO-Revision-Date: 2022-02-25 20:56+0000\n"
 "Last-Translator: Joseph V M <shibinjose991@gmail.com>\n"
 "Language-Team: Malayalam <https://hosted.weblate.org/projects/penpot/"
 "frontend/ml/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.11-dev\n"
+"X-Generator: Weblate 4.11.1-dev\n"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -200,3 +200,42 @@ msgstr "കണ്ണിയുള്ള ആർക്കും പ്രാപ്�
 
 msgid "common.share-link.placeholder"
 msgstr "പങ്കുവെക്കാവുന്ന കണ്ണി ഇവിടെ ലഭ്യമാകും"
+
+msgid "common.share-link.remove-link"
+msgstr "കണ്ണി നീക്കുക"
+
+msgid "common.share-link.title"
+msgstr "പ്രോട്ടോടൈപ്പുകൾ പങ്കുവെയ്ക്കുക"
+
+msgid "common.share-link.view-all-pages"
+msgstr "എല്ലാ താളുകളും"
+
+msgid "common.share-link.view-current-page"
+msgstr "ഈ താൾ മാത്രം"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "തിരഞ്ഞെടുത്ത താളുകൾ"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "പങ്കിട്ട ലൈബ്രറിയായി ചേർക്കുക"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "ഇമെയിൽ മാറ്റുക"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(പകർത്തുക)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ പുതിയ സംഘം രൂപീകരിക്കുക"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "നിങ്ങളുടെ പെൻപോട്ട്"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "സംഘത്തെ നീക്കുക"
