@@ -29,7 +29,7 @@ services:
 
     volumes:
       - "user_data:/home/penpot/"
-      - "${PWD}:/home/penpot/penpot"
+      - "${PWD}:/home/penpot/penpot:z"
 
     ports:
       - 3447:3447
@@ -98,7 +98,7 @@ services:
 
     volumes:
       - "user_data:/home/penpot/"
-      - "${PWD}:/home/penpot/penpot"
+      - "${PWD}:/home/penpot/penpot:z"
 
     ports:
       - 6060:6060
@@ -161,8 +161,8 @@ services:
       - POSTGRES_USER=penpot
       - POSTGRES_PASSWORD=penpot
     volumes:
-      - ./files/postgresql.conf:/etc/postgresql.conf
-      - ./files/postgresql_init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./files/postgresql.conf:/etc/postgresql.conf:z
+      - ./files/postgresql_init.sql:/docker-entrypoint-initdb.d/init.sql:z
       - postgres_data:/var/lib/postgresql/data
 
   redis:
