@@ -63,7 +63,6 @@ $height-palette-max: 80px;
 
   .color-palette {
     grid-area: color-palette;
-    min-height: $height-palette-min;
     max-height: $height-palette-max;
     height: var(--height, $height-palette);
   }
