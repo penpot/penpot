@@ -171,6 +171,15 @@
                  (update shape :interactions
                          csi/remove-interaction index)))))))
 
+(defn remove-interactions
+  [ids]
+  (ptk/reify ::remove-interactions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dch/update-shapes ids
+               (fn [shape]
+                 (assoc shape :interactions [])))))))
+
 (defn update-interaction
   [shape index update-fn]
   (ptk/reify ::update-interaction
