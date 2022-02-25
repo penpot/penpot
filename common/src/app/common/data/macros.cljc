@@ -4,6 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
+#_:clj-kondo/ignore
 (ns app.common.data.macros
   "Data retrieval & manipulation specific macros."
   (:refer-clojure :exclude [get-in select-keys str])
@@ -11,6 +12,7 @@
   (:require
    #?(:clj [clojure.core :as c]
       :cljs [cljs.core :as c])
+   [app.common.data :as d]
    [cljs.analyzer.api :as aapi]))
 
 (defmacro select-keys
@@ -126,5 +128,47 @@
          ;; (when (:macro m#)
          ;;   (.setMacro (var ~n)))
          ~vr))))
+
+(defn- interpolate
+  [s params]
+  (loop [items  (->> (re-seq #"([^\%]+)*(\%(\d+)?)?" s)
+                     (remove (fn [[_ seg]] (nil? seg))))
+         result []
+         index  0]
+    (if-let [[_ segment var? sidx] (first items)]
+      (cond
+        (and var? sidx)
+        (let [cidx (dec (d/read-string sidx))]
+          (recur (rest items)
+                 (-> result
+                     (conj segment)
+                     (conj (nth params cidx)))
+                 (inc index)))
+
+        var?
+        (recur (rest items)
+               (-> result
+                   (conj segment)
+                   (conj (nth params index)))
+               (inc index))
+
+        :else
+        (recur (rest items)
+               (conj result segment)
+               (inc index)))
+      result)))
+
+(defmacro fmt
+  "String interpolation helper. Can only be used with strings known at
+  compile time. Can be used with indexed params access or sequential.
+
+  Examples:
+
+    (dm/fmt \"url(%)\" my-url) ; sequential
+    (dm/fmt \"url(%1)\" my-url) ; indexed
+  "
+  [s & params]
+  (cons 'app.common.data.macros/str (interpolate s (vec params))))
+
 
 
