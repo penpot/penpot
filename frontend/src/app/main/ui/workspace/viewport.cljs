@@ -51,10 +51,10 @@
                 transform
                 vbox
                 vport
-                zoom]} local
+                zoom
+                edition]} local
 
-        {:keys [edition
-                options-mode
+        {:keys [options-mode
                 tooltip
                 show-distances?
                 picking-color?]} wstate
