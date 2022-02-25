@@ -52,7 +52,7 @@
         (mf/use-callback
          (mf/deps (:vport local))
          (fn [resize-type size]
-           (when (:vport local)
+           (when (and (:vport local) (not= size (:vport local)))
              (st/emit! (dw/update-viewport-size resize-type size)))))
 
         node-ref (use-resize-observer on-resize)]

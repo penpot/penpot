@@ -209,6 +209,7 @@
         {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
         (use-resize-hook :sitemap 200 38 400 :y false nil)
 
+        size (if @show-pages? size 38)
         toggle-pages
         (mf/use-callback #(reset! show-pages? not))]
 
@@ -217,12 +218,13 @@
      [:div.tool-window-bar
       [:span (tr "workspace.sidebar.sitemap")]
       [:div.add-page {:on-click create} i/close]
-      [:div.collapse-pages {:on-click toggle-pages} i/arrow-slide]]
+      [:div.collapse-pages {:on-click toggle-pages
+                            :style {:transform (when (not @show-pages?) "rotate(-90deg)")}} i/arrow-slide]]
+
+     [:div.tool-window-content
+      [:& pages-list {:file file :key (:id file)}]]
 
      (when @show-pages?
-       [:div.tool-window-content
-        [:& pages-list {:file file :key (:id file)}]])
-
-     [:div.resize-area {:on-pointer-down on-pointer-down
-                        :on-lost-pointer-capture on-lost-pointer-capture
-                        :on-mouse-move on-mouse-move}]]))
+       [:div.resize-area {:on-pointer-down on-pointer-down
+                          :on-lost-pointer-capture on-lost-pointer-capture
+                          :on-mouse-move on-mouse-move}])]))
