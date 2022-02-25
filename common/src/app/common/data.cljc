@@ -6,7 +6,7 @@
 
 (ns app.common.data
   "Data manipulation and query helper functions."
-  (:refer-clojure :exclude [read-string hash-map merge name parse-double group-by])
+  (:refer-clojure :exclude [read-string hash-map merge name parse-double group-by iteration])
   #?(:cljs
      (:require-macros [app.common.data]))
   (:require
