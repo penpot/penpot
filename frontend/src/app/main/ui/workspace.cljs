@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace
   (:require
+   [aap.common-colors :as clr]
    [app.main.data.messages :as dm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.persistence :as dwp]
@@ -115,7 +116,9 @@
   [{:keys [project-id file-id page-id layout-name] :as props}]
   (let [file    (mf/deref refs/workspace-file)
         project (mf/deref refs/workspace-project)
-        layout  (mf/deref refs/workspace-layout)]
+        layout  (mf/deref refs/workspace-layout)
+        background-canvas (or (get-in (mf/deref refs/workspace-data) [:pages-index page-id :options :background])
+                              clr(canvas))]
 
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]
@@ -140,7 +143,7 @@
      [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
-        [:section#workspace
+        [:section#workspace {:style {:background-color background-canvas}}
          (when (not (:hide-ui layout))
            [:& header {:file file
                        :page-id page-id

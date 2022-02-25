@@ -172,6 +172,9 @@
 (def workspace-layout
   (l/derived :workspace-layout st/state))
 
+(def workspace-data
+  (l/derived :workspace-data st/state))
+
 (def current-file-id
   (l/derived :current-file-id st/state))
 
