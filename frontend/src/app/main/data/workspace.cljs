@@ -755,7 +755,7 @@
     (watch [_ state _]
       (let [selected (wsh/lookup-selected state)
             hover-guides (get-in state [:workspace-guides :hover])
-            options-mode (get-in state [:workspace-global :options-mode])]
+            options-mode (get-in state [:workspace-local :options-mode])]
         (cond
           (and (= options-mode :prototype) (d/not-empty? selected))
           (rx/of (dwi/remove-interactions selected))
