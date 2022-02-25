@@ -28,6 +28,7 @@
 
 ### :sparkles: New features
 
+- Open feedback in a new window [Taiga #2901](https://tree.taiga.io/project/penpot/us/2901)
 - Improve usage of file menu [Taiga #2853](https://tree.taiga.io/project/penpot/us/2853)
 - Rotation to snap to 15º intervals with shift [Taiga #2437](https://tree.taiga.io/project/penpot/issue/2437)
 - Support border radius and stroke properties for images [Taiga #497](https://tree.taiga.io/project/penpot/us/497)

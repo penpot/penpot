@@ -25,8 +25,8 @@
 (def over-number-size 50)
 (def over-number-opacity 0.7)
 
-(def font-size 13)
-(def font-family "sourcesanspro")
+(def font-size 12)
+(def font-family "worksans")
 
 ;; ----------------
 ;;   RULES
