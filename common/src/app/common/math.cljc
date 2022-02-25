@@ -6,6 +6,7 @@
 
 (ns app.common.math
   "A collection of math utils."
+  (:refer-clojure :exclude [abs])
   #?(:cljs
      (:require [goog.math :as math])))
 
