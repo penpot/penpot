@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :refer [max-safe-int min-safe-int]]
    [app.common.uuid :as uuid]
@@ -397,32 +398,23 @@
                        (mapv #(usvg/inherit-attributes attrs %)))]
         [shape children]))))
 
-(defn add-svg-child-changes [page-id objects selected frame-id parent-id svg-data [unames [rchs uchs]] [index data]]
+(defn add-svg-child-changes [page-id objects selected frame-id parent-id svg-data [unames changes] [index data]]
   (let [[shape children] (parse-svg-element frame-id svg-data data unames)]
     (if (some? shape)
       (let [shape-id (:id shape)
 
-            [rch1 uch1] (dwc/add-shape-changes page-id objects selected shape false)
+            new-shape (dwc/make-new-shape shape objects selected)
+            changes   (-> changes
+                          (pcb/with-objects objects)
+                          (pcb/add-obj new-shape)
+                          (pcb/change-parent parent-id [new-shape]))
 
-            ;; Mov-objects won't have undo because we "delete" the object in the undo of the
-            ;; previous operation
-            rch2 [{:type :mov-objects
-                   :parent-id parent-id
-                   :frame-id frame-id
-                   :page-id page-id
-                   :index index
-                   :shapes [shape-id]}]
-
-            ;; Careful! the undo changes are concatenated reversed (we undo in reverse order
-            changes [(d/concat-vec rchs rch1 rch2)
-                     (d/concat-vec uch1 uchs)]
-            unames  (conj unames (:name shape))
+            unames  (conj unames (:name new-shape))
 
             reducer-fn (partial add-svg-child-changes page-id objects selected frame-id shape-id svg-data)]
         (reduce reducer-fn [unames changes] (d/enumerate children)))
 
-      ;; Cannot create the data from current tags
-      [unames [rchs uchs]])))
+      [unames changes])))
 
 (declare create-svg-shapes)
 
@@ -493,27 +485,29 @@
               root-id (:id root-shape)
 
               ;; Creates the root shape
-              changes (dwc/add-shape-changes page-id objects selected root-shape false)
+              new-shape (dwc/make-new-shape root-shape objects selected)
+              changes   (-> (pcb/empty-changes it page-id)
+                            (pcb/add-obj new-shape))
 
               root-attrs (-> (:attrs svg-data)
                              (usvg/format-styles))
 
-              ;; Reduces the children to create the changes to add the children shapes
-              [_ [rchanges uchanges]]
+              ;; Reduce the children to create the changes to add the children shapes
+              [_ changes]
               (reduce (partial add-svg-child-changes page-id objects selected frame-id root-id svg-data)
                       [unames changes]
                       (d/enumerate (->> (:content svg-data)
                                         (mapv #(usvg/inherit-attributes root-attrs %)))))
 
-              reg-objects-action {:type :reg-objects
-                                  :page-id page-id
-                                  :shapes (->> rchanges (filter #(= :add-obj (:type %))) (map :id) reverse vec)}
+              changes (pcb/resize-parents changes
+                                          (->> changes
+                                               :redo-changes
+                                               (filter #(= :add-obj (:type %)))
+                                               (map :id)
+                                               reverse
+                                               vec))]
 
-              rchanges (conj rchanges reg-objects-action)]
-
-          (rx/of (dch/commit-changes {:redo-changes rchanges
-                                      :undo-changes uchanges
-                                      :origin it})
+          (rx/of (dch/commit-changes changes)
                  (dwc/select-shapes (d/ordered-set root-id))))
 
         (catch :default e

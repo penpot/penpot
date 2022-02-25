@@ -270,7 +270,7 @@
               :parent-id (:frame-id shape)
               :frame-id (:frame-id shape)
               :id id
-              :index (cph/get-position-on-parent objects (:id shape))
+              :index (cph/get-position-on-parent objects id)
               :obj (cond-> shape
                      (contains? shape :shapes)
                      (assoc :shapes []))})))

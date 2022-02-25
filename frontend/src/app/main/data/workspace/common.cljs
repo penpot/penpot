@@ -11,6 +11,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.pages :as cp]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.interactions :as csi]
@@ -280,40 +281,23 @@
               {:keys [frame-id parent-id]} shape]
           [frame-id parent-id (inc index)])))))
 
-(defn add-shape-changes
-  ([page-id objects selected attrs]
-   (add-shape-changes page-id objects selected attrs true))
-  ([page-id objects selected attrs reg-object?]
-   (let [id    (:id attrs)
-         shape (gpr/setup-proportions attrs)
+(defn make-new-shape
+  [attrs objects selected]
+  (let [default-attrs (if (= :frame (:type attrs))
+                        cp/default-frame-attrs
+                        cp/default-shape-attrs)
 
-         default-attrs (if (= :frame (:type shape))
-                         cp/default-frame-attrs
-                         cp/default-shape-attrs)
+        selected-non-frames
+        (into #{} (filter #(not= (:type (get objects %)) :frame) selected))
 
-         shape    (merge default-attrs shape)
+        [frame-id parent-id index]
+        (get-shape-layer-position objects selected-non-frames attrs)]
 
-         not-frame? #(not (= :frame (get-in objects [% :type])))
-         selected (into #{} (filter not-frame?) selected)
-
-         [frame-id parent-id index] (get-shape-layer-position objects selected attrs)
-
-         redo-changes  (cond-> [{:type :add-obj
-                                 :id id
-                                 :page-id page-id
-                                 :frame-id frame-id
-                                 :parent-id parent-id
-                                 :index index
-                                 :obj shape}]
-                         reg-object?
-                         (conj {:type :reg-objects
-                                :page-id page-id
-                                :shapes [id]}))
-         undo-changes  [{:type :del-obj
-                         :page-id page-id
-                         :id id}]]
-
-     [redo-changes undo-changes])))
+    (-> (merge default-attrs attrs)
+        (gpr/setup-proportions)
+        (assoc :frame-id frame-id
+               :parent-id parent-id
+               :index index))))
 
 (defn add-shape
   ([attrs]
@@ -326,26 +310,23 @@
      (watch [it state _]
        (let [page-id  (:current-page-id state)
              objects  (wsh/lookup-page-objects state page-id)
-
-             id (or (:id attrs) (uuid/next))
-             name (-> objects
-                      (retrieve-used-names)
-                      (generate-unique-name (:name attrs)))
-
              selected (wsh/lookup-selected state)
 
-             [rchanges uchanges] (add-shape-changes
-                                  page-id
-                                  objects
-                                  selected
-                                  (-> attrs
-                                      (assoc :id id )
-                                      (assoc :name name)))]
+             id       (or (:id attrs) (uuid/next))
+             name     (-> objects
+                          (retrieve-used-names)
+                          (generate-unique-name (:name attrs)))
+
+             shape (make-new-shape
+                     (assoc attrs :id id :name name)
+                     objects
+                     selected)
+
+             changes  (-> (pcb/empty-changes it page-id)
+                          (pcb/add-obj shape))]
 
          (rx/concat
-          (rx/of (dch/commit-changes {:redo-changes rchanges
-                                      :undo-changes uchanges
-                                      :origin it})
+          (rx/of (dch/commit-changes changes)
                  (when-not no-select?
                    (select-shapes (d/ordered-set id))))
           (when (= :text (:type attrs))
@@ -361,28 +342,15 @@
 
             to-move-shapes (->> (cph/get-immediate-children objects)
                                 (remove cph/frame-shape?)
-                                (mapv :id)
                                 (d/enumerate)
-                                (filterv (comp shapes second)))
+                                (filterv (comp shapes :id second))
+                                (mapv second))
 
-            rchanges [{:type :mov-objects
-                       :parent-id frame-id
-                       :frame-id frame-id
-                       :page-id page-id
-                       :index 0
-                       :shapes (mapv second to-move-shapes)}]
+            changes (-> (pcb/empty-changes it page-id)
+                        (pcb/with-objects objects)
+                        (pcb/change-parent frame-id to-move-shapes 0))]
 
-            uchanges (->> to-move-shapes
-                          (mapv (fn [[index shape-id]]
-                                  {:type :mov-objects
-                                   :parent-id uuid/zero
-                                   :frame-id uuid/zero
-                                   :page-id page-id
-                                   :index index
-                                   :shapes [shape-id]})))]
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+        (rx/of (dch/commit-changes changes))))))
 
 (s/def ::set-of-uuid
   (s/every ::us/uuid :kind set?))
@@ -395,10 +363,10 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            options (wsh/lookup-page-options state page-id)
+            page    (wsh/lookup-page state page-id)
+            flows   (-> page :options :flows)
 
             ids     (cph/clean-loops objects ids)
-            flows   (:flows options)
 
             groups-to-unmask
             (reduce (fn [group-ids id]
@@ -416,6 +384,8 @@
 
             interacting-shapes
             (filter (fn [shape]
+                      ;; If any of the deleted shapes is the destination of
+                      ;; some interaction, this must be deleted, too.
                       (let [interactions (:interactions shape)]
                         (some #(and (csi/has-destination %)
                                     (contains? ids (:destination %)))
@@ -423,7 +393,26 @@
                     (vals objects))
 
             starting-flows
-            (filter #(contains? ids (:starting-frame %)) flows)
+            (filter (fn [flow]
+                      ;; If any of the deleted is a frame that starts a flow,
+                      ;; this must be deleted, too.
+                      (contains? ids (:starting-frame flow)))
+                    flows)
+
+            all-parents
+            (reduce (fn [res id]
+                      ;; All parents of any deleted shape must be resized.
+                      (into res (cph/get-parent-ids objects id)))
+                    (d/ordered-set)
+                    ids)
+
+            all-children
+            (->> ids ;; Children of deleted shapes must be also deleted.
+                 (reduce (fn [res id]
+                           (into res (cph/get-children-ids objects id)))
+                         [])
+                 (reverse)
+                 (into (d/ordered-set)))
 
             empty-parents-xform
             (comp
@@ -435,142 +424,36 @@
              (take-while some?)
              (map :id))
 
-            all-parents
-            (reduce (fn [res id]
-                      (into res (cph/get-parent-ids objects id)))
-                    (d/ordered-set)
-                    ids)
-
-            all-children
-            (->> ids
-                 (reduce (fn [res id]
-                           (into res (cph/get-children-ids objects id)))
-                         [])
-                 (reverse)
-                 (into (d/ordered-set)))
-
             empty-parents
+            ;; Any parent whose children are all deleted, must be deleted too.
             (into (d/ordered-set) empty-parents-xform all-parents)
 
-            mk-del-obj-xf
-            (comp (filter (partial contains? objects))
-                  (map (fn [id]
-                         {:type :del-obj
-                          :page-id page-id
-                          :id id})))
+            changes (-> (pcb/empty-changes it page-id)
+                        (pcb/with-page page)
+                        (pcb/with-objects objects)
+                        (pcb/remove-objects all-children)
+                        (pcb/remove-objects ids)
+                        (pcb/remove-objects empty-parents)
+                        (pcb/resize-parents all-parents)
+                        (pcb/update-shapes groups-to-unmask
+                                           (fn [shape]
+                                             (assoc shape :masked-group? false)))
+                        (pcb/update-shapes (map :id interacting-shapes)
+                                           (fn [shape]
+                                             (update shape :interactions
+                                               (fn [interactions]
+                                                 (when interactions
+                                                   (d/removev #(and (csi/has-destination %)
+                                                                    (contains? ids (:destination %)))
+                                                              interactions))))))
+                        (cond->
+                          (seq starting-flows)
+                          (pcb/set-page-option :flows
+                                               (reduce #(csp/remove-flow %1 (:id %2))
+                                                       flows
+                                                       starting-flows))))]
 
-            mk-add-obj-xf
-            (comp (filter (partial contains? objects))
-                  (map (fn [id]
-                         (let [item (get objects id)]
-                           {:type :add-obj
-                            :id (:id item)
-                            :page-id page-id
-                            :index (cph/get-position-on-parent objects id)
-                            :frame-id (:frame-id item)
-                            :parent-id (:parent-id item)
-                            :obj item}))))
-
-            mk-mod-touched-xf
-            (comp (filter (partial contains? objects))
-                  (map (fn [id]
-                         (let [parent (get objects id)]
-                           {:type :mod-obj
-                            :page-id page-id
-                            :id (:id parent)
-                            :operations [{:type :set-touched
-                                          :touched (:touched parent)}]}))))
-
-            mk-mod-int-del-xf
-            (comp (filter some?)
-                  (map (fn [obj]
-                         {:type :mod-obj
-                          :page-id page-id
-                          :id (:id obj)
-                          :operations [{:type :set
-                                        :attr :interactions
-                                        :val (vec (remove (fn [interaction]
-                                                            (and (csi/has-destination interaction)
-                                                                 (contains? ids (:destination interaction))))
-                                                          (:interactions obj)))}]})))
-            mk-mod-int-add-xf
-            (comp (filter some?)
-                  (map (fn [obj]
-                         {:type :mod-obj
-                          :page-id page-id
-                          :id (:id obj)
-                          :operations [{:type :set
-                                        :attr :interactions
-                                        :val (:interactions obj)}]})))
-
-            mk-mod-del-flow-xf
-            (comp (filter some?)
-                  (map (fn [flow]
-                         {:type :set-option
-                          :page-id page-id
-                          :option :flows
-                          :value (csp/remove-flow flows (:id flow))})))
-
-            mk-mod-add-flow-xf
-            (comp (filter some?)
-                  (map (fn [_]
-                         {:type :set-option
-                          :page-id page-id
-                          :option :flows
-                          :value flows})))
-
-            mk-mod-unmask-xf
-            (comp (filter (partial contains? objects))
-                  (map (fn [id]
-                         {:type :mod-obj
-                          :page-id page-id
-                          :id id
-                          :operations [{:type :set
-                                        :attr :masked-group?
-                                        :val false}]})))
-
-            mk-mod-mask-xf
-            (comp (filter (partial contains? objects))
-                  (map (fn [id]
-                         {:type :mod-obj
-                          :page-id page-id
-                          :id id
-                          :operations [{:type :set
-                                        :attr :masked-group?
-                                        :val true}]})))
-
-            rchanges
-            (-> []
-                (into mk-del-obj-xf all-children)
-                (into mk-del-obj-xf ids)
-                (into mk-del-obj-xf empty-parents)
-                (conj {:type :reg-objects
-                       :page-id page-id
-                       :shapes (vec all-parents)})
-                (into mk-mod-unmask-xf groups-to-unmask)
-                (into mk-mod-int-del-xf interacting-shapes)
-                (into mk-mod-del-flow-xf starting-flows))
-
-            uchanges
-            (-> []
-                (into mk-add-obj-xf (reverse empty-parents))
-                (into mk-add-obj-xf (reverse ids))
-                (into mk-add-obj-xf (reverse all-children))
-                (conj {:type :reg-objects
-                       :page-id page-id
-                       :shapes (vec all-parents)})
-                (into mk-mod-touched-xf (reverse all-parents))
-                (into mk-mod-mask-xf groups-to-unmask)
-                (into mk-mod-int-add-xf interacting-shapes)
-                (into mk-mod-add-flow-xf starting-flows))]
-
-        ;; (println "================ rchanges")
-        ;; (cljs.pprint/pprint rchanges)
-        ;; (println "================ uchanges")
-        ;; (cljs.pprint/pprint uchanges)
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+        (rx/of (dch/commit-changes changes))))))
 
 ;; --- Add shape to Workspace
 
