@@ -42,8 +42,8 @@
         file     (obj/get props "file")
         layout   (obj/get props "layout")
 
-        {:keys [vport] :as local} (mf/deref refs/workspace-local)
-        {:keys [options-mode] :as wstate} (mf/deref refs/workspace-global)
+        {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
+        {:keys [options-mode] :as wglobal} (obj/get props "wglobal")
 
         colorpalette? (:colorpalette layout)
         textpalette?  (:textpalette layout)
@@ -51,7 +51,7 @@
 
         on-resize
         (mf/use-callback
-         (mf/deps (:vport local))
+         (mf/deps vport)
          (fn [resize-type size]
            (when vport
              (st/emit! (dw/update-viewport-size resize-type size)))))
@@ -70,8 +70,8 @@
          [:& coordinates/coordinates {:colorpalette? colorpalette?}])
 
        [:& viewport {:file file
-                     :local local
-                     :wstate wstate
+                     :wlocal wlocal
+                     :wglobal wglobal
                      :selected selected
                      :layout layout}]]]
 
@@ -89,22 +89,20 @@
 (def trimmed-page-ref (l/derived :trimmed-page st/state =))
 
 (mf/defc workspace-page
-  [{:keys [file layout page-id] :as props}]
+  [{:keys [file layout page-id wglobal] :as props}]
 
- (mf/use-layout-effect
-   (mf/deps page-id)
+ (mf/with-effect [page-id]
+   (if (nil? page-id)
+     (st/emit! (dw/go-to-page))
+     (st/emit! (dw/initialize-page page-id)))
    (fn []
-     (if (nil? page-id)
-       (st/emit! (dw/go-to-page))
-       (st/emit! (dw/initialize-page page-id)))
-
-     (fn []
-       (when page-id
-         (st/emit! (dw/finalize-page page-id))))))
+     (when page-id
+       (st/emit! (dw/finalize-page page-id)))))
 
   (when (mf/deref trimmed-page-ref)
     [:& workspace-content {:key (dm/str page-id)
                            :file file
+                           :wglobal wglobal
                            :layout layout}]))
 
 (mf/defc workspace-loader
@@ -117,7 +115,10 @@
   [{:keys [project-id file-id page-id layout-name] :as props}]
   (let [file    (mf/deref refs/workspace-file)
         project (mf/deref refs/workspace-project)
-        layout  (mf/deref refs/workspace-layout)]
+        layout  (mf/deref refs/workspace-layout)
+        wglobal (mf/deref refs/workspace-global)
+
+        background-color (:background-color wglobal)]
 
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]
@@ -142,7 +143,7 @@
      [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
-        [:section#workspace
+        [:section#workspace {:style {:background-color background-color}}
          (when (not (:hide-ui layout))
            [:& header {:file file
                        :page-id page-id
@@ -156,6 +157,7 @@
            [:& workspace-page {:key (dm/str "page-" page-id)
                                :page-id page-id
                                :file file
+                               :wglobal wglobal
                                :layout layout}]
            [:& workspace-loader])]]]]]))
 

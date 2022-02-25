@@ -120,8 +120,7 @@
   {:options-mode :design})
 
 (def default-workspace-local
-  {:zoom 1
-   :selected (d/ordered-set)})
+  {:zoom 1})
 
 (defn ensure-layout
   [lname]
@@ -258,19 +257,20 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [;; we maintain a cache of page state for user convenience
-            ;; with the exception of the selection; when user abandon
-            ;; the current page, the selection is lost
-            page    (get-in state [:workspace-data :pages-index page-id])
-            page-id (:id page)
-            local   (-> state
-                        (get-in [:workspace-cache page-id] default-workspace-local)
+      (if-let [{:keys [id] :as page} (get-in state [:workspace-data :pages-index page-id])]
+        ;; we maintain a cache of page state for user convenience with
+        ;; the exception of the selection; when user abandon the
+        ;; current page, the selection is lost
+        (let [local (-> state
+                        (get-in [:workspace-cache id] default-workspace-local)
                         (assoc :selected (d/ordered-set)))]
-        (-> state
-            (assoc :current-page-id page-id)
-            (assoc :trimmed-page (select-keys page [:id :name]))
-            (assoc :workspace-local local)
-            (update-in [:route :params :query] assoc :page-id (str page-id)))))))
+          (-> state
+              (assoc :current-page-id id)
+              (assoc :trimmed-page (dm/select-keys page [:id :name]))
+              (assoc :workspace-local local)
+              (update :workspace-global assoc :background-color (-> page :options :background))
+              (update-in [:route :params :query] assoc :page-id (dm/str id))))
+        state))))
 
 (defn finalize-page
   [page-id]
