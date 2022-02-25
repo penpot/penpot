@@ -21,7 +21,8 @@
 (def initial-state
   {:current-file-id current-file-id
    :current-page-id nil
-   :workspace-local dw/workspace-local-default
+   :workspace-global dw/default-workspace-global
+   :workspace-local dw/default-workspace-local
    :workspace-data {:id current-file-id
                     :components {}
                     :pages []
