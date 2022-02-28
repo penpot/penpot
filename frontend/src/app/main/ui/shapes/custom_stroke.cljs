@@ -323,7 +323,6 @@
                          (> (count (:fills shape)) 1)
                          (some :fill-color-gradient (:fills shape)))
         one-fill?    (= (count (:fills shape)) 1)
-        no-fills?    (= (count (:fills shape)) 0)
         last-stroke? (= position (- (count (:strokes shape)) 1))
 
         props        (-> (obj/get child "props")
