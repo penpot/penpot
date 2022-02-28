@@ -63,14 +63,14 @@
                                           :pt %)))
 
         grid-x-data (->> (gg/grid-snap-points frame :x)
-                         (mapv #(array-map :type :grid-x
+                         (mapv #(array-map :type :layout
                                            :id frame-id
                                            :pt %)))
 
         grid-y-data (->> (gg/grid-snap-points frame :y)
-                         (mapv #(array-map :type :grid-y
-                                          :id frame-id
-                                          :pt %)))]
+                         (mapv #(array-map :type :layout
+                                           :id frame-id
+                                           :pt %)))]
 
     (-> page-data
         ;; Update root frame information
