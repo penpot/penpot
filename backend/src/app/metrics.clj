@@ -111,6 +111,12 @@
     :labels ["name"]
     :type :gauge}
 
+   :executors-completed-tasks
+   {:name "penpot_executors_completed_tasks_total"
+    :help "Aproximate number of completed tasks by the executor."
+    :labels ["name"]
+    :type :counter}
+
    :executors-running-threads
    {:name "penpot_executors_running_threads"
     :help "Current number of threads with state RUNNING."
