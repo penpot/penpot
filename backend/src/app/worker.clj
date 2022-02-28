@@ -83,7 +83,7 @@
                     running (.getRunningThreadCount executor)
                     queued  (.getQueuedSubmissionCount executor)
                     steals  (.getStealCount executor)
-                    steals-increment (- steals (or (get-in @state [key :steals]) 9))
+                    steals-increment (- steals (or (get-in @state [key :steals]) 0))
                     steals-increment (if (neg? steals-increment) 0 steals-increment)]
 
                 (mtx/run! metrics {:id :executors-active-threads :labels labels :val active})
