@@ -92,7 +92,6 @@
         file-id              (mf/use-ctx ctx/current-file-id)
         shapes               (mf/deref refs/selected-objects)
         shapes-with-children (mf/deref refs/selected-shapes-with-children)]
-        ;; TODO: review performance]
 
     [:& options-content {:shapes shapes
                          :selected selected
