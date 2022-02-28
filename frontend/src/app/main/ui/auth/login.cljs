@@ -30,9 +30,11 @@
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)
+(s/def ::invitation-token ::us/not-empty-string)
 
 (s/def ::login-form
-  (s/keys :req-un [::email ::password]))
+  (s/keys :req-un [::email ::password]
+          :opt-un [::invitation-token]))
 
 (defn- login-with-oauth
   [event provider params]
@@ -62,29 +64,39 @@
 
 (mf/defc login-form
   [{:keys [params] :as props}]
-  (let [error (mf/use-state false)
-        form  (fm/use-form :spec ::login-form
-                           :inital {})
+  (let [initial (mf/use-memo (mf/deps params) (constantly params))
+
+        error   (mf/use-state false)
+        form    (fm/use-form :spec ::login-form :initial initial)
 
         on-error
         (fn [_]
           (reset! error (tr "errors.wrong-credentials")))
 
+        on-succes
+        (fn [data]
+          (prn "SUCCESS" data)
+          (when-let [token (:invitation-token data)]
+            (st/emit! (rt/nav :auth-verify-token {} {:token token}))))
+
         on-submit
         (mf/use-callback
-         (mf/deps form)
-         (fn [_]
+         (fn [form _event]
            (reset! error nil)
            (let [params (with-meta (:clean-data @form)
-                          {:on-error on-error})]
+                          {:on-error on-error
+                           :on-success on-succes})]
              (st/emit! (du/login params)))))
 
         on-submit-ldap
         (mf/use-callback
          (mf/deps form)
          (fn [event]
-           (let [params (merge (:clean-data @form) params)]
-             (login-with-ldap event (with-meta params {:on-error on-error})))))]
+           (reset! error nil)
+           (let [params (:clean-data @form)]
+             (login-with-ldap event (with-meta params
+                                      {:on-error on-error
+                                       :on-success on-succes})))))]
 
     [:*
      (when-let [message @error]
