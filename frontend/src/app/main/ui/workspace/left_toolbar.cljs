@@ -38,7 +38,7 @@
          (fn [blobs]
            ;; We don't want to add a ref because that redraws the component
            ;; for everychange. Better direct access on the callback.
-           (let [vbox   (deref @refs/vbox)
+           (let [vbox   (deref refs/vbox)
                  x      (mth/round (+ (:x vbox) (/ (:width vbox) 2)))
                  y      (mth/round (+ (:y vbox) (/ (:height vbox) 2)))
                  params {:file-id (:id file)
