@@ -59,8 +59,8 @@
   (case (ctr/radius-mode shape)
 
     :radius-1
-    (obj/merge! attrs #js {:rx (:rx shape)
-                           :ry (:ry shape)})
+    (obj/merge! attrs #js {:rx (:rx shape 0)
+                           :ry (:ry shape 0)})
 
     :radius-4
     (let [[r1 r2 r3 r4] (truncate-radius shape)

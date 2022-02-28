@@ -63,6 +63,7 @@
   "Adds as metadata properties that we cannot deduce from the exported SVG"
   [props shape]
   (let [add! (add-factory shape)
+        frame? (= :frame (:type shape))
         group? (= :group (:type shape))
         rect?  (= :rect (:type shape))
         image? (= :image (:type shape))
@@ -94,7 +95,7 @@
         (add! :constraints-v)
         (add! :fixed-scroll)
 
-        (cond-> (and (or rect? image?) (some? (:r1 shape)))
+        (cond-> (and (or rect? image? frame?) (some? (:r1 shape)))
           (-> (add! :r1)
               (add! :r2)
               (add! :r3)
