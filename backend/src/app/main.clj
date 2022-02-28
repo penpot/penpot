@@ -40,13 +40,14 @@
    {:parallelism (cf/get :worker-executor-parallelism 10)
     :prefix :worker}
 
-   :app.worker/executors-monitor
-   {:executors
-    {:default  (ig/ref [::default :app.worker/executor])
-     :blocking (ig/ref [::blocking :app.worker/executor])
-     :worker   (ig/ref [::worker :app.worker/executor])}
+   :app.worker/executors
+   {:default  (ig/ref [::default :app.worker/executor])
+    :worker   (ig/ref [::worker :app.worker/executor])
+    :blocking (ig/ref [::blocking :app.worker/executor])}
 
-    :metrics   (ig/ref :app.metrics/metrics)}
+   :app.worker/executors-monitor
+   {:metrics   (ig/ref :app.metrics/metrics)
+    :executors (ig/ref :app.worker/executors)}
 
    :app.migrations/migrations
    {}
@@ -155,9 +156,7 @@
     :msgbus     (ig/ref :app.msgbus/msgbus)
     :public-uri (cf/get :public-uri)
     :audit      (ig/ref :app.loggers.audit/collector)
-    :executors
-    {:default  (ig/ref [::default :app.worker/executor])
-     :blocking (ig/ref [::blocking :app.worker/executor])}}
+    :executors  (ig/ref :app.worker/executors)}
 
    :app.worker/worker
    {:executor (ig/ref [::worker :app.worker/executor])

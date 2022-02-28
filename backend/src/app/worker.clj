@@ -75,30 +75,40 @@
   (s/keys :req-un [::executors ::mtx/metrics]))
 
 (defmethod ig/init-key ::executors-monitor
-  [_ {:keys [executors metrics interval] :or {interval 2500}}]
-  (letfn [(log-stats [scheduler]
+  [_ {:keys [executors metrics interval] :or {interval 3000}}]
+  (letfn [(log-stats [scheduler state]
             (doseq [[key ^ForkJoinPool executor] executors]
-              (let [labels (into-array String [(name key)])]
-                (mtx/run! metrics {:id :executors-active-threads
-                                   :labels labels
-                                   :val (.getPoolSize executor)})
-                (mtx/run! metrics {:id :executors-running-threads
-                                   :labels labels
-                                   :val (.getRunningThreadCount executor)})
-                (mtx/run! metrics {:id :executors-queued-submissions
-                                   :labels labels
-                                   :val (.getQueuedSubmissionCount executor)})))
+              (let [labels  (into-array String [(name key)])
+                    active  (.getActiveThreadCount executor)
+                    running (.getRunningThreadCount executor)
+                    queued  (.getQueuedSubmissionCount executor)
+                    steals  (.getStealCount executor)
+                    steals-increment (- steals (or (get-in @state [key :steals]) 9))
+                    steals-increment (if (neg? steals-increment) 0 steals-increment)]
+
+                (mtx/run! metrics {:id :executors-active-threads :labels labels :val active})
+                (mtx/run! metrics {:id :executors-running-threads :labels labels :val running})
+                (mtx/run! metrics {:id :executors-queued-submissions :labels labels :val queued})
+                (mtx/run! metrics {:id :executors-completed-tasks :labels labels :inc steals-increment})
+
+                (swap! state update key assoc
+                       :running running
+                       :active active
+                       :queued queued
+                       :steals steals)))
 
             (when-not (.isShutdown scheduler)
-              (px/schedule! scheduler interval (partial log-stats scheduler))))]
+              (px/schedule! scheduler interval (partial log-stats scheduler state))))]
 
-    (let [scheduler (px/scheduled-pool 1)]
-      (px/schedule! scheduler interval (partial log-stats scheduler))
-      scheduler)))
+    (let [scheduler (px/scheduled-pool 1)
+          state     (atom {})]
+      (px/schedule! scheduler interval (partial log-stats scheduler state))
+      {::scheduler scheduler
+       ::state state})))
 
 (defmethod ig/halt-key! ::executors-monitor
-  [_ instance]
-  (.shutdown ^ExecutorService instance))
+  [_ {:keys [::scheduler]}]
+  (.shutdown ^ExecutorService scheduler))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Worker
