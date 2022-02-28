@@ -26,7 +26,7 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [request respond raise]
+  (fn [request respond _]
     (try
       (let [body  (parse-json (slurp (:body request)))
             mtype (get body "Type")]
