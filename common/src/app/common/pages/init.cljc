@@ -73,7 +73,14 @@
     :name "Artboard-1"
     :fills [{:fill-color clr/white
              :fill-opacity 1}]
-    :strokes []}
+    :strokes []
+    :stroke-style :none
+    :stroke-alignment :center
+    :stroke-width 0
+    :stroke-color clr/black
+    :stroke-opacity 0
+    :rx 0
+    :ry 0}
 
    {:type :text
     :name "Text-1"

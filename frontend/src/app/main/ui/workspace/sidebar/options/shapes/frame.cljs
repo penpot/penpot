@@ -17,6 +17,7 @@
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.radius :refer [border-radius]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.util.dom :as dom]
@@ -25,10 +26,12 @@
 
 (declare +size-presets+)
 
+
 (mf/defc measures-menu
   [{:keys [shape] :as props}]
 
   (let [show-presets-dropdown? (mf/use-state false)
+        id (:id shape)
 
         on-preset-selected
         (fn [width height]
@@ -63,9 +66,7 @@
         select-all #(-> % (dom/get-target) (.select))]
 
     [:div.element-set
-
      [:div.element-set-content
-
       [:div.row-flex
        [:div.presets.custom-select.flex-grow {:on-click #(reset! show-presets-dropdown? true)}
         [:span (tr "workspace.options.size-presets")]
@@ -125,7 +126,10 @@
                            :on-change on-pos-y-change
                            :value (-> (:y shape)
                                       (math/precision 2)
-                                      (d/coalesce-str "0"))}]]]]]))
+                                      (d/coalesce-str "0"))}]]]
+
+      ;; RADIUS
+      [:& border-radius {:ids [id] :values shape}]]]))
 
 (def +size-presets+
   [{:name "APPLE"}

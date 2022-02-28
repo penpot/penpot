@@ -27,9 +27,18 @@
   [{:keys [shape render-id]}]
   (when (= :frame (:type shape))
     (let [{:keys [x y width height]} shape
-          padding (filters/calculate-padding shape)]
+          padding (filters/calculate-padding shape)
+          props (-> (attrs/extract-style-attrs shape)
+                    (obj/merge!
+                     #js {:x (- x padding)
+                          :y (- y padding)
+                          :width (+ width (* 2 padding))
+                          :height (+ height (* 2 padding))}))
+          path? (some? (.-d props))]
       [:clipPath {:id (frame-clip-id shape render-id) :class "frame-clip"}
-       [:rect {:x (- x padding) :y (- y padding) :width (+ width (* 2 padding)) :height (+ height (* 2 padding))}]])))
+       (if path?
+         [:> :path props]
+         [:> :rect props])])))
 
 (mf/defc frame-thumbnail
   {::mf/wrap-props false}
@@ -49,25 +58,28 @@
 (defn frame-shape
   [shape-wrapper]
   (mf/fnc frame-shape
-    {::mf/wrap-props false}
-    [props]
-    (let [childs     (unchecked-get props "childs")
-          shape      (unchecked-get props "shape")
-          {:keys [x y width height]} shape
+          {::mf/wrap-props false}
+          [props]
+          (let [childs     (unchecked-get props "childs")
+                shape      (unchecked-get props "shape")
+                {:keys [x y width height]} shape
 
-          props (-> (attrs/extract-style-attrs shape)
-                    (obj/merge!
-                     #js {:x x
-                          :y y
-                          :width width
-                          :height height
-                          :className "frame-background"}))]
+                props (-> (attrs/extract-style-attrs shape)
+                          (obj/merge!
+                           #js {:x x
+                                :y y
+                                :width width
+                                :height height
+                                :className "frame-background"}))
+                path? (some? (.-d props))]
+            
+            [:*
+             [:& shape-custom-strokes {:shape shape}
+              (if path?
+                [:> :path props]
+                [:> :rect props])
 
-      [:*
-       [:& shape-custom-strokes {:shape shape}
-        [:> :rect props]]
-
-       (for [item childs]
-         [:& shape-wrapper {:shape item
-                            :key (dm/str (:id item))}])])))
+              (for [item childs]
+                [:& shape-wrapper {:shape item
+                                   :key (dm/str (:id item))}])]])))
 
