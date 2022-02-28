@@ -311,7 +311,7 @@
 
         clean-attrs (d/without-nils attrs)]
     (cond-> shape
-      (not (empty? clean-attrs))
+      (d/not-empty? clean-attrs)
       (assoc :fills [clean-attrs]))))
 
 ;; Add fills to shapes
@@ -341,7 +341,7 @@
 
         clean-attrs (d/without-nils attrs)]
     (cond-> shape
-      (not (empty? clean-attrs))
+      (d/not-empty? clean-attrs)
       (assoc :strokes [clean-attrs]))))
 
 ;; Add strokes to shapes
