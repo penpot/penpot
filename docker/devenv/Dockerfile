@@ -158,6 +158,14 @@ RUN set -ex; \
     tar -xf /tmp/babashka.tar.gz; \
     rm -rf /tmp/babashka.tar.gz;
 
+RUN set -ex; \
+    curl -LfsSo /usr/bin/local/mc https://dl.min.io/client/mc/release/linux-amd64/mc; \
+    chmod +x /usr/bin/local/mc; \
+    /usr/bin/local/mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin; \
+    /usr/bin/local/mc admin user add penpot-s3 penpot-devenv penpot-devenv; \
+    /usr/bin/local/mc admin policy set penpot-s3 readwrite user=penpot-devenv; \
+    /usr/bin/local/mc mb penpot-s3/penpot -p;
+
 WORKDIR /home
 
 EXPOSE 3447
