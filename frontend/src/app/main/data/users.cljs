@@ -170,13 +170,15 @@
                       (get-redirect-event))
                (rx/observe-on :async)))))))
 
+(s/def ::invitation-token ::us/not-empty-string)
 (s/def ::login-params
-  (s/keys :req-un [::email ::password]))
+  (s/keys :req-un [::email ::password]
+          :opt-un [::invitation-token]))
 
 (declare login-from-register)
 
 (defn login
-  [{:keys [email password] :as data}]
+  [{:keys [email password invitation-token] :as data}]
   (us/verify ::login-params data)
   (ptk/reify ::login
     ptk/WatchEvent
@@ -184,9 +186,10 @@
       (let [{:keys [on-error on-success]
              :or {on-error rx/throw
                   on-success identity}} (meta data)
+
             params {:email email
                     :password password
-                    :scope "webapp"}]
+                    :invitation-token invitation-token}]
 
         ;; NOTE: We can't take the profile value from login because
         ;; there are cases when login is successfull but the cookie is
@@ -197,31 +200,32 @@
         ;; the returned profile is an NOT authenticated profile, we
         ;; proceed to logout and show an error message.
 
-        (rx/merge
-         (->> (rp/mutation :login params)
-              (rx/map fetch-profile)
-              (rx/catch on-error))
+        (->> (rp/mutation :login (d/without-nils params))
+             (rx/merge-map (fn [data]
+                             (rx/merge
+                              (rx/of (fetch-profile))
+                              (->> stream
+                                   (rx/filter profile-fetched?)
+                                   (rx/take 1)
+                                   (rx/map deref)
+                                   (rx/filter (complement is-authenticated?))
+                                   (rx/tap on-error)
+                                   (rx/map #(ex/raise :type :authentication))
+                                   (rx/observe-on :async))
 
-         (->> stream
-              (rx/filter profile-fetched?)
-              (rx/take 1)
-              (rx/map deref)
-              (rx/filter (complement is-authenticated?))
-              (rx/tap on-error)
-              (rx/map #(ex/raise :type :authentication))
-              (rx/observe-on :async))
+                              (->> stream
+                                   (rx/filter profile-fetched?)
+                                   (rx/take 1)
+                                   (rx/map deref)
+                                   (rx/filter is-authenticated?)
+                                   (rx/map (fn [profile]
+                                             (with-meta (merge data profile)
+                                               {::ev/source "login"})))
+                                   (rx/tap on-success)
+                                   (rx/map logged-in)
+                                   (rx/observe-on :async)))))
+             (rx/catch on-error))))))
 
-         (->> stream
-              (rx/filter profile-fetched?)
-              (rx/take 1)
-              (rx/map deref)
-              (rx/filter is-authenticated?)
-              (rx/map (fn [profile]
-                        (with-meta profile
-                          {::ev/source "login"})))
-              (rx/tap on-success)
-              (rx/map logged-in)
-              (rx/observe-on :async)))))))
 
 (defn login-from-token
   [{:keys [profile] :as tdata}]

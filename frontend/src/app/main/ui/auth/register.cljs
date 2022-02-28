@@ -60,7 +60,7 @@
     :email-already-exists
     (swap! form assoc-in [:errors :email]
            {:message "errors.email-already-exists"})
-    
+
     :email-as-password
     (swap! form assoc-in [:errors :password]
            {:message "errors.email-as-password"})

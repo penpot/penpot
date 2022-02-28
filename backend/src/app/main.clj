@@ -26,7 +26,7 @@
 
    ;; Default thread pool for IO operations
    [::default :app.worker/executor]
-   {:parallelism (cf/get :default-executor-parallelism 120)
+   {:parallelism (cf/get :default-executor-parallelism 60)
     :prefix :default}
 
    ;; Constrained thread pool. Should only be used from high demand
@@ -56,7 +56,6 @@
 
    :app.migrations/all
    {:main (ig/ref :app.migrations/migrations)}
-
 
    :app.msgbus/msgbus
    {:backend   (cf/get :msgbus-backend :redis)

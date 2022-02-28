@@ -94,7 +94,6 @@
         (sto/put-object {:content (sto/content data)
                          :content-type mtype
                          :reference :file-media-object
-                         :touched-at (dt/now)
                          :expired-at (dt/in-future {:minutes 30})}))))
 
 ;; NOTE: we use the `on conflict do update` instead of `do nothing`

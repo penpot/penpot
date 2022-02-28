@@ -278,7 +278,9 @@
           :opt-un [::scope ::invitation-token]))
 
 (sv/defmethod ::login
-  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
+  {:auth false
+   ::async/dispatch :default
+   ::rlimit/permits (cf/get :rlimit-password)}
   [{:keys [pool session tokens] :as cfg} {:keys [email password] :as params}]
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")

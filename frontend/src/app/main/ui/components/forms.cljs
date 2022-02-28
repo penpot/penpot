@@ -174,7 +174,6 @@
   [{:keys [options label form default data-test] :as props
     :or {default ""}}]
   (let [input-name (get props :name)
-
         form      (or form (mf/use-ctx form-ctx))
         value     (or (get-in @form [:data input-name]) default)
         cvalue    (d/seek #(= value (:value %)) options)

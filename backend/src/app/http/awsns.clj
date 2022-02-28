@@ -26,25 +26,30 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [request]
-    (let [body  (parse-json (slurp (:body request)))
-          mtype (get body "Type")]
-      (cond
-        (= mtype "SubscriptionConfirmation")
-        (let [surl   (get body "SubscribeURL")
-              stopic (get body "TopicArn")]
-          (l/info :action "subscription received" :topic stopic :url surl)
-          (http/send! {:uri surl :method :post :timeout 10000}))
+  (fn [request respond _]
+    (try
+      (let [body  (parse-json (slurp (:body request)))
+            mtype (get body "Type")]
+        (cond
+          (= mtype "SubscriptionConfirmation")
+          (let [surl   (get body "SubscribeURL")
+                stopic (get body "TopicArn")]
+            (l/info :action "subscription received" :topic stopic :url surl)
+            (http/send! {:uri surl :method :post :timeout 10000}))
 
-        (= mtype "Notification")
-        (when-let [message (parse-json (get body "Message"))]
-          (let [notification (parse-notification cfg message)]
-            (process-report cfg notification)))
+          (= mtype "Notification")
+          (when-let [message (parse-json (get body "Message"))]
+            (let [notification (parse-notification cfg message)]
+              (process-report cfg notification)))
 
-        :else
-        (l/warn :hint "unexpected data received"
-                :report (pr-str body)))
-      {:status 200 :body ""})))
+          :else
+          (l/warn :hint "unexpected data received"
+                  :report (pr-str body))))
+      (catch Throwable cause
+        (l/error :hint "unexpected exception on awsns handler"
+                 :cause cause)))
+
+    (respond {:status 200 :body ""})))
 
 (defn- parse-bounce
   [data]
