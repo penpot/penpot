@@ -13,27 +13,28 @@
    [app.rpc.queries.share-link :as slnk]
    [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [promesa.core :as p]))
 
 ;; --- Query: View Only Bundle
 
 (defn- retrieve-project
-  [conn id]
-  (db/get-by-id conn :project id {:columns [:id :name :team-id]}))
+  [pool id]
+  (db/get-by-id pool :project id {:columns [:id :name :team-id]}))
 
 (defn- retrieve-bundle
-  [{:keys [conn] :as cfg} file-id]
-  (let [file    (files/retrieve-file cfg file-id)
-        project (retrieve-project conn (:project-id file))
-        libs    (files/retrieve-file-libraries cfg false file-id)
-        users   (teams/retrieve-users conn (:team-id project))
+  [{:keys [pool] :as cfg} file-id]
+  (p/let [file    (files/retrieve-file cfg file-id)
+          project (retrieve-project pool (:project-id file))
+          libs    (files/retrieve-file-libraries cfg false file-id)
+          users   (teams/retrieve-users pool (:team-id project))
 
-        links   (->> (db/query conn :share-link {:file-id file-id})
-                     (mapv slnk/decode-share-link-row))
+          links   (->> (db/query pool :share-link {:file-id file-id})
+                       (mapv slnk/decode-share-link-row))
 
-        fonts   (db/query conn :team-font-variant
-                          {:team-id (:team-id project)
-                           :deleted-at nil})]
+          fonts   (db/query pool :team-font-variant
+                            {:team-id (:team-id project)
+                             :deleted-at nil})]
     {:file file
      :users users
      :fonts fonts
@@ -50,34 +51,31 @@
 
 (sv/defmethod ::view-only-bundle {:auth false}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [cfg    (assoc cfg :conn conn)
-          slink  (slnk/retrieve-share-link conn file-id share-id)
-          perms  (files/get-permissions conn profile-id file-id share-id)
+  (p/let [slink  (slnk/retrieve-share-link pool file-id share-id)
+          perms  (files/get-permissions pool profile-id file-id share-id)
+          bundle (p/-> (retrieve-bundle cfg file-id)
+                       (assoc :permissions perms))]
 
-          bundle (some-> (retrieve-bundle cfg file-id)
-                         (assoc :permissions perms))]
+    ;; When we have neither profile nor share, we just return a not
+    ;; found response to the user.
+    (when (and (not profile-id)
+               (not slink))
+      (ex/raise :type :not-found
+                :code :object-not-found))
 
-      ;; When we have neither profile nor share, we just return a not
-      ;; found response to the user.
-      (when (and (not profile-id)
-                 (not slink))
-        (ex/raise :type :not-found
-                  :code :object-not-found))
+    ;; When we have only profile, we need to check read permissions
+    ;; on file.
+    (when (and profile-id (not slink))
+      (files/check-read-permissions! pool profile-id file-id))
 
-      ;; When we have only profile, we need to check read permissions
-      ;; on file.
-      (when (and profile-id (not slink))
-        (files/check-read-permissions! conn profile-id file-id))
+    (cond-> bundle
+      (some? slink)
+      (assoc :share slink)
 
-      (cond-> bundle
-        (some? slink)
-        (assoc :share slink)
-
-        (and (some? slink)
-             (not (contains? (:flags slink) "view-all-pages")))
-        (update-in [:file :data] (fn [data]
-                                   (let [allowed-pages (:pages slink)]
-                                     (-> data
-                                         (update :pages (fn [pages] (filterv #(contains? allowed-pages %) pages)))
-                                         (update :pages-index (fn [index] (select-keys index allowed-pages)))))))))))
+      (and (some? slink)
+           (not (contains? (:flags slink) "view-all-pages")))
+      (update-in [:file :data] (fn [data]
+                                 (let [allowed-pages (:pages slink)]
+                                   (-> data
+                                       (update :pages (fn [pages] (filterv #(contains? allowed-pages %) pages)))
+                                       (update :pages-index (fn [index] (select-keys index allowed-pages))))))))))

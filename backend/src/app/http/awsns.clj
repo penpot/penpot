@@ -11,45 +11,53 @@
    [app.common.logging :as l]
    [app.db :as db]
    [app.db.sql :as sql]
-   [app.util.http :as http]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [jsonista.core :as j]))
+   [jsonista.core :as j]
+   [promesa.exec :as px]))
 
 (declare parse-json)
+(declare handle-request)
 (declare parse-notification)
 (declare process-report)
 
+(s/def ::http-client fn?)
+
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool]))
+  (s/keys :req-un [::db/pool ::http-client]))
 
 (defmethod ig/init-key ::handler
-  [_ cfg]
+  [_ {:keys [executor] :as cfg}]
   (fn [request respond _]
-    (try
-      (let [body  (parse-json (slurp (:body request)))
-            mtype (get body "Type")]
-        (cond
-          (= mtype "SubscriptionConfirmation")
-          (let [surl   (get body "SubscribeURL")
-                stopic (get body "TopicArn")]
-            (l/info :action "subscription received" :topic stopic :url surl)
-            (http/send! {:uri surl :method :post :timeout 10000}))
+    (let [data (slurp (:body request))]
+      (px/run! executor #(handle-request cfg data))
+      (respond {:status 200 :body ""}))))
 
-          (= mtype "Notification")
-          (when-let [message (parse-json (get body "Message"))]
-            (let [notification (parse-notification cfg message)]
-              (process-report cfg notification)))
+(defn handle-request
+  [{:keys [http-client] :as cfg} data]
+  (try
+    (let [body  (parse-json data)
+          mtype (get body "Type")]
+      (cond
+        (= mtype "SubscriptionConfirmation")
+        (let [surl   (get body "SubscribeURL")
+              stopic (get body "TopicArn")]
+          (l/info :action "subscription received" :topic stopic :url surl)
+          (http-client {:uri surl :method :post :timeout 10000} {:sync? true}))
 
-          :else
-          (l/warn :hint "unexpected data received"
-                  :report (pr-str body))))
-      (catch Throwable cause
-        (l/error :hint "unexpected exception on awsns handler"
-                 :cause cause)))
+        (= mtype "Notification")
+        (when-let [message (parse-json (get body "Message"))]
+          (let [notification (parse-notification cfg message)]
+            (process-report cfg notification)))
 
-    (respond {:status 200 :body ""})))
+        :else
+        (l/warn :hint "unexpected data received"
+                :report (pr-str body))))
+
+    (catch Throwable cause
+      (l/error :hint "unexpected exception on awsns"
+               :cause cause))))
 
 (defn- parse-bounce
   [data]

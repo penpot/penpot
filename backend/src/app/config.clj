@@ -47,7 +47,7 @@
    :database-username "penpot"
    :database-password "penpot"
 
-   :default-blob-version 3
+   :default-blob-version 4
    :loggers-zmq-uri "tcp://localhost:45556"
 
    :file-change-snapshot-every 5
@@ -65,8 +65,8 @@
    :assets-path "/internal/assets/"
 
    :rlimit-password 10
-   :rlimit-image 2
-   :rlimit-font 5
+   :rlimit-image 10
+   :rlimit-font 10
 
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
    :smtp-default-from "Penpot <no-reply@example.com>"

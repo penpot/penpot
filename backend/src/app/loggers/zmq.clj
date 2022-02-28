@@ -37,7 +37,11 @@
                                (keep prepare)))
         mult   (a/mult output)]
     (when endpoint
-      (a/thread (start-rcv-loop {:out buffer :endpoint endpoint})))
+      (let [thread (Thread. #(start-rcv-loop {:out buffer :endpoint endpoint}))]
+        (.setDaemon thread false)
+        (.setName thread "penpot/zmq-logger-receiver")
+        (.start thread)))
+
     (a/pipe buffer output)
     (with-meta
       (fn [cmd ch]
@@ -62,7 +66,7 @@
   ([] (start-rcv-loop nil))
   ([{:keys [out endpoint] :or {endpoint "tcp://localhost:5556"}}]
    (let [out    (or out (a/chan 1))
-         zctx   (ZContext.)
+         zctx   (ZContext. 1)
          socket (.. zctx (createSocket SocketType/SUB))]
      (.. socket (connect ^String endpoint))
      (.. socket (subscribe ""))
@@ -75,7 +79,7 @@
            (recur)
            (do
              (.close ^java.lang.AutoCloseable socket)
-             (.close ^java.lang.AutoCloseable zctx))))))))
+             (.destroy ^ZContext zctx))))))))
 
 (s/def ::logger-name string?)
 (s/def ::level string?)

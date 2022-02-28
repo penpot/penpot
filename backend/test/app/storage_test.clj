@@ -37,69 +37,74 @@
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         content (sto/content "content")
-        object  (sto/put-object storage {:content content
-                                         :content-type "text/plain"
-                                         :other "data"})]
+        object  @(sto/put-object! storage {::sto/content content
+                                           :content-type "text/plain"
+                                           :other "data"})]
     (t/is (sto/storage-object? object))
-    (t/is (fs/path? (sto/get-object-path storage object)))
+    (t/is (fs/path? @(sto/get-object-path storage object)))
     (t/is (nil? (:expired-at object)))
     (t/is (= :tmp (:backend object)))
     (t/is (= "data" (:other (meta object))))
     (t/is (= "text/plain" (:content-type (meta object))))
-    (t/is (= "content" (slurp (sto/get-object-data storage object))))
-    (t/is (= "content" (slurp (sto/get-object-path storage object))))
+    (t/is (= "content" (slurp @(sto/get-object-data storage object))))
+    (t/is (= "content" (slurp @(sto/get-object-path storage object))))
     ))
 
 (t/deftest put-and-retrieve-expired-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         content (sto/content "content")
-        object  (sto/put-object storage {:content content
-                                         :content-type "text/plain"
-                                         :expired-at (dt/in-future {:seconds 1})})]
+        object  @(sto/put-object! storage {::sto/content content
+                                           ::sto/expired-at (dt/in-future {:seconds 1})
+                                           :content-type "text/plain"
+                                           })]
     (t/is (sto/storage-object? object))
     (t/is (dt/instant? (:expired-at object)))
     (t/is (dt/is-after? (:expired-at object) (dt/now)))
-    (t/is (= object (sto/get-object storage (:id object))))
+    (t/is (= object @(sto/get-object storage (:id object))))
 
     (th/sleep 1000)
-    (t/is (nil? (sto/get-object storage (:id object))))
-    (t/is (nil? (sto/get-object-data storage object)))
-    (t/is (nil? (sto/get-object-url storage object)))
-    (t/is (nil? (sto/get-object-path storage object)))
+    (t/is (nil? @(sto/get-object storage (:id object))))
+    (t/is (nil? @(sto/get-object-data storage object)))
+    (t/is (nil? @(sto/get-object-url storage object)))
+    (t/is (nil? @(sto/get-object-path storage object)))
     ))
 
 (t/deftest put-and-delete-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         content (sto/content "content")
-        object  (sto/put-object storage {:content content
-                                         :content-type "text/plain"
-                                         :expired-at (dt/in-future {:seconds 1})})]
+        object  @(sto/put-object! storage {::sto/content content
+                                           :content-type "text/plain"
+                                           :expired-at (dt/in-future {:seconds 1})})]
     (t/is (sto/storage-object? object))
-    (t/is (true? (sto/del-object storage object)))
+    (t/is (true? @(sto/del-object! storage object)))
 
     ;; retrieving the same object should be not nil because the
     ;; deletion is not immediate
-    (t/is (some? (sto/get-object-data storage object)))
-    (t/is (some? (sto/get-object-url storage object)))
-    (t/is (some? (sto/get-object-path storage object)))
+    (t/is (some? @(sto/get-object-data storage object)))
+    (t/is (some? @(sto/get-object-url storage object)))
+    (t/is (some? @(sto/get-object-path storage object)))
 
     ;; But you can't retrieve the object again because in database is
     ;; marked as deleted/expired.
-    (t/is (nil? (sto/get-object storage (:id object))))
+    (t/is (nil? @(sto/get-object storage (:id object))))
     ))
 
 (t/deftest test-deleted-gc-task
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
-        content (sto/content "content")
-        object1 (sto/put-object storage {:content content
-                                         :content-type "text/plain"
-                                         :expired-at (dt/now)})
-        object2 (sto/put-object storage {:content content
-                                         :content-type "text/plain"
-                                         :expired-at (dt/in-past {:hours 2})})]
+        content1 (sto/content "content1")
+        content2 (sto/content "content2")
+        object1  @(sto/put-object! storage {::sto/content content1
+                                            ::sto/expired-at (dt/now)
+                                            :content-type "text/plain"
+                                            })
+        object2  @(sto/put-object! storage {::sto/content content2
+                                            ::sto/expired-at (dt/in-past {:hours 2})
+                                            :content-type "text/plain"
+                                            })]
+
     (th/sleep 200)
 
     (let [task (:app.storage/gc-deleted-task th/*system*)
@@ -147,22 +152,24 @@
       (t/is (uuid? (:media-id result-1)))
       (t/is (uuid? (:media-id result-2)))
 
+      (t/is (= (:media-id result-1) (:media-id result-2)))
+
       ;; now we proceed to manually delete one file-media-object
       (db/exec-one! th/*pool* ["delete from file_media_object where id = ?" (:id result-1)])
 
       ;; check that we still have all the storage objects
       (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object"])]
-        (t/is (= 4 (:count res))))
+        (t/is (= 2 (:count res))))
 
       ;; now check if the storage objects are touched
       (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where touched_at is not null"])]
-        (t/is (= 4 (:count res))))
+        (t/is (= 2 (:count res))))
 
       ;; run the touched gc task
       (let [task (:app.storage/gc-touched-task th/*system*)
             res  (task {})]
         (t/is (= 2 (:freeze res)))
-        (t/is (= 2 (:delete res))))
+        (t/is (= 0 (:delete res))))
 
       ;; now check that there are no touched objects
       (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where touched_at is not null"])]
@@ -170,8 +177,8 @@
 
       ;; now check that all objects are marked to be deleted
       (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is not null"])]
-        (t/is (= 2 (:count res))))
-    )))
+        (t/is (= 0 (:count res))))
+      )))
 
 
 (t/deftest test-touched-gc-task-2
@@ -249,7 +256,7 @@
         (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is not null"])]
           (t/is (= 4 (:count res))))))))
 
-(t/deftest test-touched-gc-task-without-delete
+(t/deftest test-touched-gc-task-3
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         prof    (th/create-profile* 1)
@@ -285,9 +292,23 @@
       ;; run the touched gc task
       (let [task (:app.storage/gc-touched-task th/*system*)
             res  (task {})]
-        (t/is (= 4 (:freeze res)))
+        (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
       ;; check that we have all object in the db
       (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is null"])]
-        (t/is (= 4 (:count res)))))))
+        (t/is (= 2 (:count res)))))
+
+    ;; now we proceed to manually delete all team_font_variant
+    (db/exec-one! th/*pool* ["delete from file_media_object"])
+
+    ;; run the touched gc task
+    (let [task (:app.storage/gc-touched-task th/*system*)
+          res  (task {})]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 2 (:delete res))))
+
+    ;; check that we have all no objects
+    (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is null"])]
+      (t/is (= 0 (:count res))))))
+

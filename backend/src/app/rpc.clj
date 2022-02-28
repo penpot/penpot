@@ -110,11 +110,11 @@
   "Wraps service method into async flow, with the ability to dispatching
   it to a preconfigured executor service."
   [{:keys [executors] :as cfg} f mdata]
-  (let [dname (::async/dispatch mdata :none)]
+  (let [dname (::async/dispatch mdata :default)]
     (if (= :none dname)
       (with-meta
         (fn [cfg params]
-          (p/do! (f cfg params)))
+          (p/do (f cfg params)))
         mdata)
 
       (let [executor (get executors dname)]

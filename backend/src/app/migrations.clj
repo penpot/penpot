@@ -211,6 +211,9 @@
 
    {:name "0067-add-team-invitation-table"
     :fn (mg/resource "app/migrations/sql/0067-add-team-invitation-table.sql")}
+
+   {:name "0068-mod-storage-object-table"
+    :fn (mg/resource "app/migrations/sql/0068-mod-storage-object-table.sql")}
    ])
 
 

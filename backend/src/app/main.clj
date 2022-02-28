@@ -29,16 +29,20 @@
    {:parallelism (cf/get :default-executor-parallelism 60)
     :prefix :default}
 
-   ;; Constrained thread pool. Should only be used from high demand
-   ;; RPC methods.
+   ;; Constrained thread pool. Should only be used from high resources
+   ;; demanding operations.
    [::blocking :app.worker/executor]
-   {:parallelism (cf/get :blocking-executor-parallelism 20)
+   {:parallelism (cf/get :blocking-executor-parallelism 10)
     :prefix :blocking}
 
    ;; Dedicated thread pool for backround tasks execution.
    [::worker :app.worker/executor]
    {:parallelism (cf/get :worker-executor-parallelism 10)
     :prefix :worker}
+
+   :app.worker/scheduler
+   {:parallelism 1
+    :prefix :scheduler}
 
    :app.worker/executors
    {:default  (ig/ref [::default :app.worker/executor])
@@ -47,6 +51,7 @@
 
    :app.worker/executors-monitor
    {:metrics   (ig/ref :app.metrics/metrics)
+    :scheduler (ig/ref :app.worker/scheduler)
     :executors (ig/ref :app.worker/executors)}
 
    :app.migrations/migrations
@@ -68,14 +73,19 @@
    :app.storage/gc-deleted-task
    {:pool     (ig/ref :app.db/pool)
     :storage  (ig/ref :app.storage/storage)
+    :executor (ig/ref [::worker :app.worker/executor])
     :min-age  (dt/duration {:hours 2})}
 
    :app.storage/gc-touched-task
-   {:pool     (ig/ref :app.db/pool)}
+   {:pool (ig/ref :app.db/pool)}
 
-   :app.http.session/session
+   :app.http/client
+   {:executor (ig/ref [::default :app.worker/executor])}
+
+   :app.http/session
    {:pool     (ig/ref :app.db/pool)
-    :tokens   (ig/ref :app.tokens/tokens)}
+    :tokens   (ig/ref :app.tokens/tokens)
+    :executor (ig/ref [::default :app.worker/executor])}
 
    :app.http.session/gc-task
    {:pool        (ig/ref :app.db/pool)
@@ -85,41 +95,44 @@
    {:pool           (ig/ref :app.db/pool)
     :metrics        (ig/ref :app.metrics/metrics)
     :executor       (ig/ref [::worker :app.worker/executor])
-    :session        (ig/ref :app.http.session/session)
+    :session        (ig/ref :app.http/session)
     :max-batch-age  (cf/get :http-session-updater-batch-max-age)
     :max-batch-size (cf/get :http-session-updater-batch-max-size)}
 
    :app.http.awsns/handler
-   {:tokens  (ig/ref :app.tokens/tokens)
-    :pool    (ig/ref :app.db/pool)}
+   {:tokens      (ig/ref :app.tokens/tokens)
+    :pool        (ig/ref :app.db/pool)
+    :http-client (ig/ref :app.http/client)
+    :executor    (ig/ref [::worker :app.worker/executor])}
 
    :app.http/server
    {:port        (cf/get :http-server-port)
     :host        (cf/get :http-server-host)
     :router      (ig/ref :app.http/router)
     :metrics     (ig/ref :app.metrics/metrics)
-
+    :executor    (ig/ref [::default :app.worker/executor])
+    :session     (ig/ref :app.http/session)
     :max-threads (cf/get :http-server-max-threads)
     :min-threads (cf/get :http-server-min-threads)}
 
    :app.http/router
-   {:assets               (ig/ref :app.http.assets/handlers)
-    :feedback             (ig/ref :app.http.feedback/handler)
-    :session              (ig/ref :app.http.session/session)
-    :sns-webhook          (ig/ref :app.http.awsns/handler)
-    :oauth                (ig/ref :app.http.oauth/handler)
-    :debug                (ig/ref :app.http.debug/handlers)
-    :ws                   (ig/ref :app.http.websocket/handler)
-    :metrics              (ig/ref :app.metrics/metrics)
-    :public-uri           (cf/get :public-uri)
-    :storage              (ig/ref :app.storage/storage)
-    :tokens               (ig/ref :app.tokens/tokens)
-    :audit-http-handler   (ig/ref :app.loggers.audit/http-handler)
-    :rpc                  (ig/ref :app.rpc/rpc)}
+   {:assets        (ig/ref :app.http.assets/handlers)
+    :feedback      (ig/ref :app.http.feedback/handler)
+    :awsns-handler (ig/ref :app.http.awsns/handler)
+    :oauth         (ig/ref :app.http.oauth/handler)
+    :debug         (ig/ref :app.http.debug/handlers)
+    :ws            (ig/ref :app.http.websocket/handler)
+    :metrics       (ig/ref :app.metrics/metrics)
+    :public-uri    (cf/get :public-uri)
+    :storage       (ig/ref :app.storage/storage)
+    :tokens        (ig/ref :app.tokens/tokens)
+    :audit-handler (ig/ref :app.loggers.audit/http-handler)
+    :rpc           (ig/ref :app.rpc/rpc)
+    :executor      (ig/ref [::default :app.worker/executor])}
 
    :app.http.debug/handlers
    {:pool (ig/ref :app.db/pool)
-    :executor (ig/ref [::default :app.worker/executor])}
+    :executor (ig/ref [::worker :app.worker/executor])}
 
    :app.http.websocket/handler
    {:pool     (ig/ref :app.db/pool)
@@ -139,24 +152,26 @@
     :executor (ig/ref [::default :app.worker/executor])}
 
    :app.http.oauth/handler
-   {:rpc        (ig/ref :app.rpc/rpc)
-    :session    (ig/ref :app.http.session/session)
-    :pool       (ig/ref :app.db/pool)
-    :tokens     (ig/ref :app.tokens/tokens)
-    :audit      (ig/ref :app.loggers.audit/collector)
-    :executor   (ig/ref [::default :app.worker/executor])
-    :public-uri (cf/get :public-uri)}
+   {:rpc         (ig/ref :app.rpc/rpc)
+    :session     (ig/ref :app.http/session)
+    :pool        (ig/ref :app.db/pool)
+    :tokens      (ig/ref :app.tokens/tokens)
+    :audit       (ig/ref :app.loggers.audit/collector)
+    :executor    (ig/ref [::default :app.worker/executor])
+    :http-client (ig/ref :app.http/client)
+    :public-uri  (cf/get :public-uri)}
 
    :app.rpc/rpc
-   {:pool       (ig/ref :app.db/pool)
-    :session    (ig/ref :app.http.session/session)
-    :tokens     (ig/ref :app.tokens/tokens)
-    :metrics    (ig/ref :app.metrics/metrics)
-    :storage    (ig/ref :app.storage/storage)
-    :msgbus     (ig/ref :app.msgbus/msgbus)
-    :public-uri (cf/get :public-uri)
-    :audit      (ig/ref :app.loggers.audit/collector)
-    :executors  (ig/ref :app.worker/executors)}
+   {:pool        (ig/ref :app.db/pool)
+    :session     (ig/ref :app.http/session)
+    :tokens      (ig/ref :app.tokens/tokens)
+    :metrics     (ig/ref :app.metrics/metrics)
+    :storage     (ig/ref :app.storage/storage)
+    :msgbus      (ig/ref :app.msgbus/msgbus)
+    :public-uri  (cf/get :public-uri)
+    :audit       (ig/ref :app.loggers.audit/collector)
+    :http-client (ig/ref :app.http/client)
+    :executors   (ig/ref :app.worker/executors)}
 
    :app.worker/worker
    {:executor (ig/ref [::worker :app.worker/executor])
@@ -164,11 +179,12 @@
     :metrics  (ig/ref :app.metrics/metrics)
     :pool     (ig/ref :app.db/pool)}
 
-   :app.worker/scheduler
+   :app.worker/cron
    {:executor   (ig/ref [::worker :app.worker/executor])
+    :scheduler  (ig/ref :app.worker/scheduler)
     :tasks      (ig/ref :app.worker/registry)
     :pool       (ig/ref :app.db/pool)
-    :schedule
+    :entries
     [{:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :file-media-gc}
 
@@ -261,7 +277,8 @@
    {:pool        (ig/ref :app.db/pool)
     :version     (:full cf/version)
     :uri         (cf/get :telemetry-uri)
-    :sprops      (ig/ref :app.setup/props)}
+    :sprops      (ig/ref :app.setup/props)
+    :http-client (ig/ref :app.http/client)}
 
    :app.srepl/server
    {:port (cf/get :srepl-port)
@@ -279,16 +296,17 @@
 
    :app.loggers.audit/http-handler
    {:pool     (ig/ref :app.db/pool)
-    :executor (ig/ref [::worker :app.worker/executor])}
+    :executor (ig/ref [::default :app.worker/executor])}
 
    :app.loggers.audit/collector
    {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref [::worker :app.worker/executor])}
 
    :app.loggers.audit/archive-task
-   {:uri      (cf/get :audit-log-archive-uri)
-    :tokens   (ig/ref :app.tokens/tokens)
-    :pool     (ig/ref :app.db/pool)}
+   {:uri         (cf/get :audit-log-archive-uri)
+    :tokens      (ig/ref :app.tokens/tokens)
+    :pool        (ig/ref :app.db/pool)
+    :http-client (ig/ref :app.http/client)}
 
    :app.loggers.audit/gc-task
    {:max-age  (cf/get :audit-log-gc-max-age cf/deletion-delay)
@@ -300,10 +318,9 @@
     :executor (ig/ref [::worker :app.worker/executor])}
 
    :app.loggers.mattermost/reporter
-   {:uri      (cf/get :error-report-webhook)
-    :receiver (ig/ref :app.loggers.zmq/receiver)
-    :pool     (ig/ref :app.db/pool)
-    :executor (ig/ref [::worker :app.worker/executor])}
+   {:uri         (cf/get :error-report-webhook)
+    :receiver    (ig/ref :app.loggers.zmq/receiver)
+    :http-client (ig/ref :app.http/client)}
 
    :app.loggers.database/reporter
    {:receiver (ig/ref :app.loggers.zmq/receiver)
@@ -312,6 +329,8 @@
 
    :app.storage/storage
    {:pool     (ig/ref :app.db/pool)
+    :executor (ig/ref [::default :app.worker/executor])
+
     :backends
     {:assets-s3 (ig/ref [::assets :app.storage.s3/backend])
      :assets-db (ig/ref [::assets :app.storage.db/backend])
@@ -328,12 +347,14 @@
    {:region   (cf/get :storage-fdata-s3-region)
     :bucket   (cf/get :storage-fdata-s3-bucket)
     :endpoint (cf/get :storage-fdata-s3-endpoint)
-    :prefix   (cf/get :storage-fdata-s3-prefix)}
+    :prefix   (cf/get :storage-fdata-s3-prefix)
+    :executor (ig/ref [::default :app.worker/executor])}
 
    [::assets :app.storage.s3/backend]
    {:region   (cf/get :storage-assets-s3-region)
     :endpoint (cf/get :storage-assets-s3-endpoint)
-    :bucket   (cf/get :storage-assets-s3-bucket)}
+    :bucket   (cf/get :storage-assets-s3-bucket)
+    :executor (ig/ref [::default :app.worker/executor])}
 
    [::assets :app.storage.fs/backend]
    {:directory (cf/get :storage-assets-fs-directory)}

@@ -89,16 +89,6 @@
   (when-let [token (get-in cookies [token-cookie-name :value])]
     (rss/delete-session store token)))
 
-(defn- retrieve-session
-  [store token]
-  (when token
-    (rss/read-session store token)))
-
-(defn- retrieve-from-request
-  [store {:keys [cookies] :as request}]
-  (->> (get-in cookies [token-cookie-name :value])
-       (retrieve-session store)))
-
 (defn- add-cookies
   [response token]
   (let [cors?   (contains? cfg/flags :cors)
@@ -132,40 +122,55 @@
                                                          :value ""
                                                          :max-age -1}})))
 
+;; NOTE: for now the session middleware is synchronous and is
+;; processed on jetty threads. This is because of probably a bug on
+;; jetty that causes NPE on upgrading connection to websocket from
+;; thread not managed by jetty. We probably can fix it running
+;; websocket server in different port as standalone service.
+
 (defn- middleware
-  [events-ch store handler]
-  (fn [request respond raise]
-    (if-let [{:keys [id profile-id] :as session} (retrieve-from-request store request)]
-      (do
-        (a/>!! events-ch id)
-        (l/set-context! {:profile-id profile-id})
-        (handler (assoc request :profile-id profile-id :session-id id) respond raise))
-      (handler request respond raise))))
+  [{:keys [::events-ch ::store] :as cfg} handler]
+  (letfn [(get-session [{:keys [cookies] :as request}]
+            (if-let [token (get-in cookies [token-cookie-name :value])]
+              (if-let [{:keys [id profile-id]} (rss/read-session store token)]
+                (assoc request :session-id id :profile-id profile-id)
+                request)
+              request))]
+
+    (fn [request respond raise]
+      (try
+        (let [{:keys [session-id profile-id] :as request} (get-session request)]
+          (when (and session-id profile-id)
+            (a/offer! events-ch session-id))
+          (handler request respond raise))
+        (catch Throwable cause
+          (raise cause))))))
 
 ;; --- STATE INIT: SESSION
 
 (s/def ::tokens fn?)
-(defmethod ig/pre-init-spec ::session [_]
-  (s/keys :req-un [::db/pool ::tokens]))
+(defmethod ig/pre-init-spec :app.http/session [_]
+  (s/keys :req-un [::db/pool ::tokens ::wrk/executor]))
 
-(defmethod ig/prep-key ::session
+(defmethod ig/prep-key :app.http/session
   [_ cfg]
   (d/merge {:buffer-size 128}
            (d/without-nils cfg)))
 
-(defmethod ig/init-key ::session
+(defmethod ig/init-key :app.http/session
   [_ {:keys [pool tokens] :as cfg}]
   (let [events-ch (a/chan (a/dropping-buffer (:buffer-size cfg)))
         store     (if (db/read-only? pool)
                     (->MemoryStore (atom {}) tokens)
-                    (->DatabaseStore pool tokens))]
+                    (->DatabaseStore pool tokens))
+
+        cfg       (assoc cfg ::store store ::events-ch events-ch)]
 
     (when (db/read-only? pool)
       (l/warn :hint "sessions module initialized with in-memory store"))
 
     (-> cfg
-        (assoc ::events-ch events-ch)
-        (assoc :middleware (partial middleware events-ch store))
+        (assoc :middleware (partial middleware cfg))
         (assoc :create (fn [profile-id]
                          (fn [request response]
                            (let [token (create-session store request profile-id)]
@@ -177,10 +182,9 @@
                              (assoc :body "")
                              (clear-cookies)))))))
 
-(defmethod ig/halt-key! ::session
+(defmethod ig/halt-key! :app.http/session
   [_ data]
   (a/close! (::events-ch data)))
-
 
 ;; --- STATE INIT: SESSION UPDATER
 
@@ -192,8 +196,7 @@
 
 (defmethod ig/pre-init-spec ::updater [_]
   (s/keys :req-un [::db/pool ::wrk/executor ::mtx/metrics ::session]
-          :opt-un [::max-batch-age
-                   ::max-batch-size]))
+          :opt-un [::max-batch-age ::max-batch-size]))
 
 (defmethod ig/prep-key ::updater
   [_ cfg]

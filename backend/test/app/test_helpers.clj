@@ -61,7 +61,7 @@
                            :app.http.oauth/gitlab
                            :app.http.oauth/github
                            :app.http.oauth/all
-                           :app.worker/scheduler
+                           :app.worker/cron
                            :app.worker/worker)
                    (d/deep-merge
                     {:app.tasks.file-media-gc/handler {:max-age (dt/duration 300)}}))

@@ -52,7 +52,7 @@
         ))))
 
 (defn wrap-rlimit
-  [{:keys [metrics] :as cfg} f mdata]
+  [{:keys [metrics executors] :as cfg} f mdata]
   (if-let [permits (::permits mdata)]
     (let [sem (semaphore {:permits permits
                           :metrics metrics
@@ -60,7 +60,7 @@
       (l/debug :hint "wrapping rlimit" :handler (::sv/name mdata) :permits permits)
       (fn [cfg params]
         (-> (acquire! sem)
-            (p/then (fn [_] (f cfg params)))
+            (p/then (fn [_] (f cfg params)) (:default executors))
             (p/finally (fn [_ _] (release! sem))))))
     f))
 

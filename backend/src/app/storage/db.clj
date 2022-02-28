@@ -10,7 +10,8 @@
    [app.db :as db]
    [app.storage.impl :as impl]
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:import
    java.io.ByteArrayInputStream))
 
@@ -30,26 +31,23 @@
 ;; --- API IMPL
 
 (defmethod impl/put-object :db
-  [{:keys [conn] :as storage} {:keys [id] :as object} content]
-  (let [data (impl/slurp-bytes content)]
-    (db/insert! conn :storage-data {:id id :data data})
-    object))
-
-(defmethod impl/copy-object :db
-  [{:keys [conn] :as storage} src-object dst-object]
-  (db/exec-one! conn ["insert into storage_data (id, data) select ? as id, data from storage_data  where id=?"
-                      (:id dst-object)
-                      (:id src-object)]))
+  [{:keys [conn executor] :as storage} {:keys [id] :as object} content]
+  (px/with-dispatch executor
+    (let [data (impl/slurp-bytes content)]
+      (db/insert! conn :storage-data {:id id :data data})
+      object)))
 
 (defmethod impl/get-object-data :db
-  [{:keys [conn] :as backend} {:keys [id] :as object}]
-  (let [result (db/exec-one! conn ["select data from storage_data where id=?" id])]
-    (ByteArrayInputStream. (:data result))))
+  [{:keys [conn executor] :as backend} {:keys [id] :as object}]
+  (px/with-dispatch executor
+    (let [result (db/exec-one! conn ["select data from storage_data where id=?" id])]
+      (ByteArrayInputStream. (:data result)))))
 
 (defmethod impl/get-object-bytes :db
-  [{:keys [conn] :as backend} {:keys [id] :as object}]
-  (let [result (db/exec-one! conn ["select data from storage_data where id=?" id])]
-    (:data result)))
+  [{:keys [conn executor] :as backend} {:keys [id] :as object}]
+  (px/with-dispatch executor
+    (let [result (db/exec-one! conn ["select data from storage_data where id=?" id])]
+      (:data result))))
 
 (defmethod impl/get-object-url :db
   [_ _]

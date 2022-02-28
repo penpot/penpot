@@ -80,12 +80,6 @@
            data)))
 
 #?(:clj
-   (defn set-context!
-     [data]
-     (ThreadContext/putAll (data->context-map data))
-     nil))
-
-#?(:clj
    (defmacro with-context
      [data & body]
      `(let [data# (data->context-map ~data)]
@@ -173,12 +167,11 @@
              ~level-sym  (get-level ~level)]
          (when (enabled? ~logger-sym ~level-sym)
            ~(if async
-              `(->> (ThreadContext/getImmutableContext)
-                    (send-off logging-agent
-                              (fn [_# cdata#]
-                                (with-context (-> {:id (uuid/next)} (into cdata#) (into ~context))
-                                  (->> (or ~raw (build-map-message ~props))
-                                       (write-log! ~logger-sym ~level-sym ~cause))))))
+              `(send-off logging-agent
+                         (fn [_#]
+                           (with-context (into {:id (uuid/next)} ~context)
+                            (->> (or ~raw (build-map-message ~props))
+                                 (write-log! ~logger-sym ~level-sym ~cause)))))
 
               `(let [message# (or ~raw (build-map-message ~props))]
                  (write-log! ~logger-sym ~level-sym ~cause message#))))))))

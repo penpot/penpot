@@ -9,52 +9,47 @@
   (:require
    [app.common.logging :as l]
    [app.config :as cf]
-   [app.db :as db]
    [app.loggers.database :as ldb]
-   [app.util.async :as aa]
-   [app.util.http :as http]
    [app.util.json :as json]
-   [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [promesa.core :as p]))
 
 (defonce enabled (atom true))
 
 (defn- send-mattermost-notification!
-  [cfg {:keys [host id public-uri] :as event}]
-  (try
-    (let [uri  (:uri cfg)
-          text (str "Exception on (host: " host ", url: " public-uri "/dbg/error/" id ")\n"
-                    (when-let [pid (:profile-id event)]
-                      (str "- profile-id: #uuid-" pid "\n")))
-          rsp  (http/send! {:uri uri
-                            :method :post
-                            :headers {"content-type" "application/json"}
-                            :body (json/write-str {:text text})})]
-      (when (not= (:status rsp) 200)
-        (l/error :hint "error on sending data to mattermost"
-                 :response (pr-str rsp))))
-
-    (catch Exception e
-      (l/error :hint "unexpected exception on error reporter"
-               :cause e))))
+  [{:keys [http-client] :as cfg} {:keys [host id public-uri] :as event}]
+  (let [uri  (:uri cfg)
+        text (str "Exception on (host: " host ", url: " public-uri "/dbg/error/" id ")\n"
+                  (when-let [pid (:profile-id event)]
+                    (str "- profile-id: #uuid-" pid "\n")))]
+    (p/then
+     (http-client {:uri uri
+                   :method :post
+                   :headers {"content-type" "application/json"}
+                   :body (json/write-str {:text text})})
+     (fn [{:keys [status] :as rsp}]
+       (when (not= status 200)
+         (l/warn :hint "error on sending data to mattermost"
+                 :response (pr-str rsp)))))))
 
 (defn handle-event
-  [{:keys [executor] :as cfg} event]
-  (aa/with-thread executor
-    (try
-      (let [event (ldb/parse-event event)]
-        (when @enabled
-          (send-mattermost-notification! cfg event)))
-      (catch Exception e
-        (l/warn :hint "unexpected exception on error reporter" :cause e)))))
+  [cfg event]
+  (let [ch (a/chan)]
+    (-> (p/let [event (ldb/parse-event event)]
+          (send-mattermost-notification! cfg event))
+        (p/finally (fn [_ cause]
+                     (when cause
+                       (l/warn :hint "unexpected exception on error reporter" :cause cause))
+                     (a/close! ch))))
+    ch))
 
-
+(s/def ::http-client fn?)
 (s/def ::uri ::cf/error-report-webhook)
 
 (defmethod ig/pre-init-spec ::reporter [_]
-  (s/keys :req-un [::wrk/executor ::db/pool ::receiver]
+  (s/keys :req-un [::http-client ::receiver]
           :opt-un [::uri]))
 
 (defmethod ig/init-key ::reporter

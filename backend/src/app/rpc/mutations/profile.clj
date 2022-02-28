@@ -24,7 +24,8 @@
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [promesa.exec :as px]))
 
 ;; --- Helpers & Specs
 
@@ -345,6 +346,7 @@
         (profile/decode-profile-row)
         (profile/strip-private-attrs))))
 
+
 (s/def ::update-profile
   (s/keys :req-un [::id ::fullname]
           :opt-un [::lang ::theme]))
@@ -410,32 +412,33 @@
 (s/def ::update-profile-photo
   (s/keys :req-un [::profile-id ::file]))
 
+;; TODO: properly handle resource usage, transactions and storage
+
 (sv/defmethod ::update-profile-photo
   {::rlimit/permits (cf/get :rlimit-image)}
-  [{:keys [pool storage] :as cfg} {:keys [profile-id file] :as params}]
-  (db/with-atomic [conn pool]
-    (media/validate-media-type (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
-    (media/run {:cmd :info :input {:path (:tempfile file)
-                                   :mtype (:content-type file)}})
+  [{:keys [pool storage executors] :as cfg} {:keys [profile-id file] :as params}]
 
+  ;; Validate incoming mime type
+  (media/validate-media-type! (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
+
+  ;; Perform file validation
+  @(px/with-dispatch (:blocking executors)
+     (media/run {:cmd :info :input {:path (:tempfile file) :mtype (:content-type file)}}))
+
+  (db/with-atomic [conn pool]
     (let [profile (db/get-by-id conn :profile profile-id)
-          storage (media/configure-assets-storage storage conn)
-          cfg     (assoc cfg :storage storage)
-          photo   (teams/upload-photo cfg params)]
+          cfg     (update cfg :storage media/configure-assets-storage conn)
+          photo   @(teams/upload-photo cfg params)]
 
       ;; Schedule deletion of old photo
       (when-let [id (:photo-id profile)]
-        (sto/del-object storage id))
+        @(sto/touch-object! storage id))
 
       ;; Save new photo
-      (update-profile-photo conn profile-id photo))))
-
-(defn- update-profile-photo
-  [conn profile-id sobj]
-  (db/update! conn :profile
-              {:photo-id (:id sobj)}
-              {:id profile-id})
-  nil)
+      (db/update! conn :profile
+                  {:photo-id (:id photo)}
+                  {:id profile-id})
+      nil)))
 
 
 ;; --- MUTATION: Request Email Change

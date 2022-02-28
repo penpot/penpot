@@ -247,7 +247,7 @@
   ([ds table params where opts]
    (exec-one! ds
               (sql/update table params where opts)
-              (assoc opts :return-keys true))))
+              (merge {:return-keys true} opts))))
 
 (defn delete!
   ([ds table params] (delete! ds table params nil))

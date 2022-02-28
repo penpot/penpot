@@ -19,7 +19,8 @@
    [app.storage.impl :as simpl]
    [app.util.blob :as blob]
    [app.util.services :as sv]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [promesa.core :as p]))
 
 (declare decode-row)
 (declare decode-row-xf)
@@ -34,7 +35,6 @@
 (s/def ::profile-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::search-term ::us/string)
-
 
 ;; --- Query: File Permissions
 
@@ -188,21 +188,23 @@
 
 (defn- retrieve-data*
   [{:keys [storage] :as cfg} file]
-  (when-let [backend (simpl/resolve-backend storage (:data-backend file))]
-    (simpl/get-object-bytes backend file)))
+  (p/do
+    (when-let [backend (simpl/resolve-backend storage (:data-backend file))]
+      (simpl/get-object-bytes backend file))))
 
 (defn retrieve-data
   [cfg file]
   (if (bytes? (:data file))
     file
-    (assoc file :data (retrieve-data* cfg file))))
+    (p/->> (retrieve-data* cfg file)
+           (assoc file :data))))
 
 (defn retrieve-file
-  [{:keys [conn] :as cfg} id]
-  (->> (db/get-by-id conn :file id)
-       (retrieve-data cfg)
-       (decode-row)
-       (pmg/migrate-file)))
+  [{:keys [pool] :as cfg} id]
+  (p/->> (db/get-by-id pool :file id)
+         (retrieve-data cfg)
+         (decode-row)
+         (pmg/migrate-file)))
 
 (s/def ::file
   (s/keys :req-un [::profile-id ::id]))
@@ -210,13 +212,10 @@
 (sv/defmethod ::file
   "Retrieve a file by its ID. Only authenticated users."
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [cfg   (assoc cfg :conn conn)
-          perms (get-permissions conn profile-id id)]
-
-      (check-read-permissions! perms)
-      (some-> (retrieve-file cfg id)
-              (assoc :permissions perms)))))
+  (let [perms (get-permissions pool profile-id id)]
+    (check-read-permissions! perms)
+    (p/-> (retrieve-file cfg id)
+          (assoc :permissions perms))))
 
 (declare trim-file-data)
 
@@ -232,13 +231,11 @@
   need force download all shapes when only a small subset is
   necesseary."
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [cfg   (assoc cfg :conn conn)
-          perms (get-permissions conn profile-id id)]
-      (check-read-permissions! perms)
-      (some-> (retrieve-file cfg id)
-              (trim-file-data params)
-              (assoc :permissions perms)))))
+  (let [perms (get-permissions pool profile-id id)]
+    (check-read-permissions! perms)
+    (p/-> (retrieve-file cfg id)
+          (trim-file-data params)
+          (assoc :permissions perms))))
 
 (defn- trim-file-data
   [file {:keys [page-id object-id]}]
@@ -263,15 +260,12 @@
   "Retrieves the first page of the file. Used mainly for render
   thumbnails on dashboard."
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
-  (db/with-atomic [conn pool]
-    (check-read-permissions! conn profile-id file-id)
-
-    (let [cfg     (assoc cfg :conn conn)
-          file    (retrieve-file cfg file-id)
+  (check-read-permissions! pool profile-id file-id)
+  (p/let [file    (retrieve-file cfg file-id)
           page-id (get-in file [:data :pages 0])]
-      (cond-> (get-in file [:data :pages-index page-id])
-        (true? (:strip-frames-with-thumbnails props))
-        (strip-frames-with-thumbnails)))))
+    (cond-> (get-in file [:data :pages-index page-id])
+      (true? (:strip-frames-with-thumbnails props))
+      (strip-frames-with-thumbnails))))
 
 (defn strip-frames-with-thumbnails
   "Remove unnecesary shapes from frames that have thumbnail."
@@ -354,22 +348,20 @@
     WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
 
 (defn retrieve-file-libraries
-  [{:keys [conn] :as cfg} is-indirect file-id]
+  [{:keys [pool] :as cfg} is-indirect file-id]
   (let [xform (comp
                (map #(assoc % :is-indirect is-indirect))
                (map #(retrieve-data cfg %))
                (map decode-row))]
-    (into #{} xform (db/exec! conn [sql:file-libraries file-id]))))
+    (into #{} xform (db/exec! pool [sql:file-libraries file-id]))))
 
 (s/def ::file-libraries
   (s/keys :req-un [::profile-id ::file-id]))
 
 (sv/defmethod ::file-libraries
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [cfg (assoc cfg :conn conn)]
-      (check-read-permissions! conn profile-id file-id)
-      (retrieve-file-libraries cfg false file-id))))
+  (check-read-permissions! pool profile-id file-id)
+  (retrieve-file-libraries cfg false file-id))
 
 ;; --- QUERY: team-recent-files
 
@@ -399,9 +391,8 @@
 
 (sv/defmethod ::team-recent-files
   [{:keys [pool] :as cfg} {:keys [profile-id team-id]}]
-  (with-open [conn (db/open pool)]
-    (teams/check-read-permissions! conn profile-id team-id)
-    (db/exec! conn [sql:team-recent-files team-id])))
+  (teams/check-read-permissions! pool profile-id team-id)
+  (db/exec! pool [sql:team-recent-files team-id]))
 
 
 ;; --- QUERY: get the thumbnail for an frame
@@ -417,10 +408,8 @@
 
 (sv/defmethod ::file-frame-thumbnail
   [{:keys [pool]} {:keys [profile-id file-id frame-id]}]
-  (with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id file-id)
-    (db/exec-one! conn [sql:file-frame-thumbnail file-id frame-id])))
-
+  (check-read-permissions! pool profile-id file-id)
+  (db/exec-one! pool [sql:file-frame-thumbnail file-id frame-id]))
 
 ;; --- Helpers
 
