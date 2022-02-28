@@ -5,6 +5,7 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 
+- Add border radius to our artboars [Taiga #2056](https://tree.taiga.io/project/penpot/us/2056)
 - Persist color palette and color picker across refresh [Taiga #1660](https://tree.taiga.io/project/penpot/issue/1660)
 - Ability to add multiple strokes to a shape [Taiga #2778](https://tree.taiga.io/project/penpot/us/2778)
 - Scroll to selected size in font size selector [Taiga #2825](https://tree.taiga.io/project/penpot/us/2825)
