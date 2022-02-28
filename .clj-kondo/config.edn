@@ -1,5 +1,7 @@
 {:lint-as
  {promesa.core/let clojure.core/let
+  promesa.core/->> clojure.core/->>
+  promesa.core/-> clojure.core/->
   rumext.alpha/defc clojure.core/defn
   rumext.alpha/fnc clojure.core/fn
   app.common.data/export clojure.core/def
