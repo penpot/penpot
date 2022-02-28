@@ -16,7 +16,8 @@
 (s/def ::r3 ::us/safe-number)
 (s/def ::r4 ::us/safe-number)
 
-;; Rectangle shapes may define the radius of the corners in two modes:
+;; There are some shapes that admit border radius, as rectangles
+;; frames and images. Those shapes may define the radius of the corners in two modes:
 ;; - radius-1 all corners have the same radius (although we store two
 ;;   values :rx and :ry because svg uses it this way).
 ;; - radius-4 each corner (top-left, top-right, bottom-right, bottom-left)
@@ -25,14 +26,21 @@
 
 ;; A shape never will have both :rx and :r1 simultaneously
 
-;; All operations take into account that the shape may not be a rectangle, and so
-;; it hasn't :rx nor :r1. In this case operations must leave shape untouched.
+;; All operations take into account that the shape may not be a one of those 
+;; shapes that has border radius, and so it hasn't :rx nor :r1. 
+;; In this case operations must leave shape untouched.
+
+(defn has-radius?
+  [shape]
+  (#{:rect :image :frame} (:type shape)))
 
 (defn radius-mode
   [shape]
   (cond (:rx shape) :radius-1
         (:r1 shape) :radius-4
-        :else       nil))
+        :else       (if (has-radius? shape)
+                      :radius-1
+                      nil)))
 
 (defn radius-1?
   [shape]
@@ -75,7 +83,7 @@
     (-> (dissoc :r1 :r2 :r3 :r4)
         (assoc :rx 0 :ry 0))
 
-    (:rx shape)
+    :always
     (assoc :rx value :ry value)))
 
 (defn set-radius-4
@@ -85,6 +93,6 @@
     (-> (dissoc :rx :rx)
         (assoc :r1 0 :r2 0 :r3 0 :r4 0))
 
-    (attr shape)
+    :always
     (assoc attr value)))
 

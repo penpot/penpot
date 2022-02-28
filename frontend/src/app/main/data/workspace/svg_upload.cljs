@@ -29,7 +29,7 @@
 
 (defonce default-rect {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
 (defonce default-circle {:r 0 :cx 0 :cy 0})
-(defonce default-image {:x 0 :y 0 :width 1 :height 1})
+(defonce default-image {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
 
 (defn- assert-valid-num [attr num]
   (when (or (nil? num)
@@ -270,8 +270,8 @@
          :name name
          :frame-id frame-id}
         (cond->
-            (contains? attrs :rx) (assoc :rx (d/parse-double (:rx attrs)))
-            (contains? attrs :ry) (assoc :ry (d/parse-double (:ry attrs))))
+            (contains? attrs :rx) (assoc :rx (d/parse-double (:rx attrs 0)))
+            (contains? attrs :ry) (assoc :ry (d/parse-double (:ry attrs 0))))
 
         (merge metadata)
         (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))

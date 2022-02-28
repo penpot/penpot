@@ -62,7 +62,7 @@
      (when (ctr/radius-1? shape)
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
-        [:div.attributes-value (mth/precision (:rx shape) 2) "px"]
+        [:div.attributes-value (mth/precision (:rx shape 0) 2) "px"]
         [:& copy-button {:data (copy-data shape :rx)}]])
 
      (when (ctr/radius-4? shape)
