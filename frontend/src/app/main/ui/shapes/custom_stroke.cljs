@@ -316,9 +316,8 @@
         [:& stroke-defs {:shape shape :render-id render-id :index index}]]
        child])))
 
-(defn build-stroke-props [position shape child value]
-  (let [render-id    (mf/use-ctx muc/render-ctx)
-        url-fill?    (or (some? (:fill-image shape))
+(defn build-stroke-props [position shape child value render-id]
+  (let [url-fill?    (or (some? (:fill-image shape))
                          (= :image (:type shape))
                          (> (count (:fills shape)) 1)
                          (some :fill-color-gradient (:fills shape)))
@@ -348,23 +347,25 @@
                          (obj/set! "fillOpacity" "none")))))
 
         props (-> props
-                  (add-style
-                   (obj/get (attrs/extract-stroke-attrs value position) "style")))]
+                  (add-style (obj/get (attrs/extract-stroke-attrs value position render-id) "style")))]
     props))
 
 (mf/defc shape-custom-strokes
   {::mf/wrap-props false}
   [props]
-  (let [child (obj/get props "children")
-        shape (obj/get props "shape")
-        elem-name (obj/get child "type")]
+  (let [child     (obj/get props "children")
+        shape     (obj/get props "shape")
+        elem-name (obj/get child "type")
+        render-id (mf/use-ctx muc/render-ctx)]
 
     (cond
-      (seq (:strokes shape))
+      (d/not-empty? (:strokes shape))
       [:*
        (for [[index value] (-> (d/enumerate (:strokes shape)) reverse)]
-         [:& shape-custom-stroke {:shape (assoc value :points (:points shape)) :index index}
-          [:> elem-name (build-stroke-props index shape child value)]])]
+         (let [props (build-stroke-props index shape child value render-id)
+               shape (assoc value :points (:points shape))]
+           [:& shape-custom-stroke {:shape shape :index index}
+            [:> elem-name props]]))]
 
       :else
       [:& shape-custom-stroke {:shape shape :index 0}

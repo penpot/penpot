@@ -233,9 +233,8 @@
         (obj/set! "style" fill-styles))))
 
 (defn extract-stroke-attrs
-  [shape index]
-  (let [render-id (mf/use-ctx muc/render-ctx)
-        stroke-styles (-> (obj/get shape "style" (obj/new))
+  [shape index render-id]
+  (let [stroke-styles (-> (obj/get shape "style" (obj/new))
                           (add-stroke shape render-id index))]
     (-> (obj/new)
         (obj/set! "style" stroke-styles))))
