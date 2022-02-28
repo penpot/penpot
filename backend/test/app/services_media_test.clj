@@ -41,8 +41,8 @@
       (t/is (uuid? media-id))
       (t/is (uuid? thumbnail-id))
       (let [storage (:app.storage/storage th/*system*)
-            mobj1   (sto/get-object storage media-id)
-            mobj2   (sto/get-object storage thumbnail-id)]
+            mobj1   @(sto/get-object storage media-id)
+            mobj2   @(sto/get-object storage thumbnail-id)]
         (t/is (sto/storage-object? mobj1))
         (t/is (sto/storage-object? mobj2))
         (t/is (= 122785 (:size mobj1)))
@@ -79,8 +79,8 @@
       (t/is (uuid? media-id))
       (t/is (uuid? thumbnail-id))
       (let [storage (:app.storage/storage th/*system*)
-            mobj1   (sto/get-object storage media-id)
-            mobj2   (sto/get-object storage thumbnail-id)]
+            mobj1   @(sto/get-object storage media-id)
+            mobj2   @(sto/get-object storage thumbnail-id)]
         (t/is (sto/storage-object? mobj1))
         (t/is (sto/storage-object? mobj2))
         (t/is (= 312043 (:size mobj1)))

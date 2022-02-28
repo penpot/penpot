@@ -23,47 +23,77 @@
    [promesa.exec :as px])
   (:import
    java.util.concurrent.ExecutorService
+   java.util.concurrent.Executors
    java.util.concurrent.ForkJoinPool
-   java.util.concurrent.ForkJoinWorkerThread
+   java.util.concurrent.Future
    java.util.concurrent.ForkJoinPool$ForkJoinWorkerThreadFactory
-   java.util.concurrent.atomic.AtomicLong
-   java.util.concurrent.Executors))
+   java.util.concurrent.ForkJoinWorkerThread
+   java.util.concurrent.ScheduledExecutorService
+   java.util.concurrent.ThreadFactory
+   java.util.concurrent.atomic.AtomicLong))
 
 (set! *warn-on-reflection* true)
 
 (s/def ::executor #(instance? ExecutorService %))
+(s/def ::scheduler #(instance? ScheduledExecutorService %))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Executor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare ^:private get-fj-thread-factory)
+(declare ^:private get-thread-factory)
+
 (s/def ::prefix keyword?)
 (s/def ::parallelism ::us/integer)
-(s/def ::min-threads ::us/integer)
-(s/def ::max-threads ::us/integer)
 (s/def ::idle-timeout ::us/integer)
 
 (defmethod ig/pre-init-spec ::executor [_]
-  (s/keys :req-un [::prefix ::parallelism]))
+  (s/keys :req-un [::prefix]
+          :opt-un [::parallelism]))
 
-(defn- get-thread-factory
+(defmethod ig/init-key ::executor
+  [_ {:keys [parallelism prefix]}]
+  (let [counter  (AtomicLong. 0)]
+    (if parallelism
+      (ForkJoinPool. (int parallelism) (get-fj-thread-factory prefix counter) nil false)
+      (Executors/newCachedThreadPool (get-thread-factory prefix counter)))))
+
+(defmethod ig/halt-key! ::executor
+  [_ instance]
+  (.shutdown ^ExecutorService instance))
+
+(defmethod ig/pre-init-spec ::scheduler [_]
+  (s/keys :req-un [::prefix]
+          :opt-un [::parallelism]))
+
+(defmethod ig/init-key ::scheduler
+  [_ {:keys [parallelism prefix] :or {parallelism 1}}]
+  (let [counter (AtomicLong. 0)]
+    (px/scheduled-pool parallelism (get-thread-factory prefix counter))))
+
+(defmethod ig/halt-key! ::scheduler
+  [_ instance]
+  (.shutdown ^ExecutorService instance))
+
+(defn- get-fj-thread-factory
   ^ForkJoinPool$ForkJoinWorkerThreadFactory
   [prefix counter]
   (reify ForkJoinPool$ForkJoinWorkerThreadFactory
     (newThread [_ pool]
       (let [^ForkJoinWorkerThread thread (.newThread ForkJoinPool/defaultForkJoinWorkerThreadFactory pool)
-            ^String thread-name (str (name prefix) "-" (.getAndIncrement ^AtomicLong counter))]
+            ^String thread-name (str "penpot/" (name prefix) "-" (.getAndIncrement ^AtomicLong counter))]
         (.setName thread thread-name)
         thread))))
 
-(defmethod ig/init-key ::executor
-  [_ {:keys [parallelism prefix]}]
-  (let [counter (AtomicLong. 0)]
-    (ForkJoinPool. (int parallelism) (get-thread-factory prefix counter) nil false)))
-
-(defmethod ig/halt-key! ::executor
-  [_ instance]
-  (.shutdown ^ForkJoinPool instance))
+(defn- get-thread-factory
+  ^ThreadFactory
+  [prefix counter]
+  (reify ThreadFactory
+    (newThread [_ runnable]
+      (doto (Thread. runnable)
+        (.setDaemon true)
+        (.setName (str "penpot/" (name prefix) "-" (.getAndIncrement ^AtomicLong counter)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Executor Monitor
@@ -72,11 +102,11 @@
 (s/def ::executors (s/map-of keyword? ::executor))
 
 (defmethod ig/pre-init-spec ::executors-monitor [_]
-  (s/keys :req-un [::executors ::mtx/metrics]))
+  (s/keys :req-un [::executors ::scheduler ::mtx/metrics]))
 
 (defmethod ig/init-key ::executors-monitor
-  [_ {:keys [executors metrics interval] :or {interval 3000}}]
-  (letfn [(log-stats [scheduler state]
+  [_ {:keys [executors metrics interval scheduler] :or {interval 3000}}]
+  (letfn [(log-stats [state]
             (doseq [[key ^ForkJoinPool executor] executors]
               (let [labels  (into-array String [(name key)])
                     running (.getRunningThreadCount executor)
@@ -97,18 +127,17 @@
                        :queued queued
                        :steals steals)))
 
-            (when-not (.isShutdown scheduler)
-              (px/schedule! scheduler interval (partial log-stats scheduler state))))]
+            (when (and (not (.isShutdown scheduler))
+                       (not (:shutdown @state)))
+              (px/schedule! scheduler interval (partial log-stats state))))]
 
-    (let [scheduler (px/scheduled-pool 1)
-          state     (atom {})]
-      (px/schedule! scheduler interval (partial log-stats scheduler state))
-      {::scheduler scheduler
-       ::state state})))
+    (let [state (atom {})]
+      (px/schedule! scheduler interval (partial log-stats state))
+      {:state state})))
 
 (defmethod ig/halt-key! ::executors-monitor
-  [_ {:keys [::scheduler]}]
-  (.shutdown ^ExecutorService scheduler))
+  [_ {:keys [state]}]
+  (swap! state assoc :shutdown true))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Worker
@@ -252,7 +281,6 @@
     (db/exec-one! conn [sql:insert-new-task id (d/name task) props (d/name queue) priority max-retries interval])
     id))
 
-
 ;; --- RUNNER
 
 (def ^:private
@@ -392,13 +420,12 @@
   [{:keys [executor] :as cfg}]
   (aa/thread-call executor #(event-loop-fn* cfg)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scheduler
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare schedule-task)
-(declare synchronize-schedule)
+(declare schedule-cron-task)
+(declare synchronize-cron-entries)
 
 (s/def ::fn (s/or :var var? :fn fn?))
 (s/def ::id keyword?)
@@ -406,79 +433,85 @@
 (s/def ::props (s/nilable map?))
 (s/def ::task keyword?)
 
-(s/def ::scheduled-task
+(s/def ::cron-task
   (s/keys :req-un [::cron ::task]
           :opt-un [::props ::id]))
 
-(s/def ::schedule (s/coll-of (s/nilable ::scheduled-task)))
+(s/def ::entries (s/coll-of (s/nilable ::cron-task)))
 
-(defmethod ig/pre-init-spec ::scheduler [_]
-  (s/keys :req-un [::executor ::db/pool ::schedule ::tasks]))
+(defmethod ig/pre-init-spec ::cron [_]
+  (s/keys :req-un [::executor ::scheduler ::db/pool ::entries ::tasks]))
 
-(defmethod ig/init-key ::scheduler
-  [_ {:keys [schedule tasks pool] :as cfg}]
-  (let [scheduler (Executors/newScheduledThreadPool (int 1))]
-    (if (db/read-only? pool)
-      (l/warn :hint "scheduler not started, db is read-only")
-      (let [schedule  (->> schedule
-                           (filter some?)
-                           ;; If id is not defined, use the task as id.
-                           (map (fn [{:keys [id task] :as item}]
-                                  (if (some? id)
-                                    (assoc item :id (d/name id))
-                                    (assoc item :id (d/name task)))))
-                           (map (fn [{:keys [task] :as item}]
-                                  (let [f (get tasks task)]
-                                    (when-not f
-                                      (ex/raise :type :internal
-                                                :code :task-not-found
-                                                :hint (str/fmt "task %s not configured" task)))
-                                    (-> item
-                                        (dissoc :task)
-                                        (assoc :fn f))))))
-            cfg       (assoc cfg
-                             :scheduler scheduler
-                             :schedule schedule)]
-        (l/info :hint "scheduler started"
-                :registred-tasks (count schedule))
+(defmethod ig/init-key ::cron
+  [_ {:keys [entries tasks pool] :as cfg}]
+  (if (db/read-only? pool)
+    (l/warn :hint "scheduler not started, db is read-only")
+    (let [running (atom #{})
+          entries (->> entries
+                       (filter some?)
+                       ;; If id is not defined, use the task as id.
+                       (map (fn [{:keys [id task] :as item}]
+                              (if (some? id)
+                                (assoc item :id (d/name id))
+                                (assoc item :id (d/name task)))))
+                       (map (fn [{:keys [task] :as item}]
+                              (let [f (get tasks task)]
+                                (when-not f
+                                  (ex/raise :type :internal
+                                            :code :task-not-found
+                                            :hint (str/fmt "task %s not configured" task)))
+                                (-> item
+                                    (dissoc :task)
+                                    (assoc :fn f))))))
 
-        (synchronize-schedule cfg)
-        (run! (partial schedule-task cfg)
-              (filter some? schedule))))
+          cfg     (assoc cfg :entries entries :running running)]
 
-    (reify
-      java.lang.AutoCloseable
-      (close [_]
-        (.shutdownNow ^ExecutorService scheduler)))))
+        (l/info :hint "cron started" :registred-tasks (count entries))
+        (synchronize-cron-entries cfg)
 
-(defmethod ig/halt-key! ::scheduler
+        (->> (filter some? entries)
+             (run! (partial schedule-cron-task cfg)))
+
+        (reify
+          clojure.lang.IDeref
+          (deref [_] @running)
+
+          java.lang.AutoCloseable
+          (close [_]
+            (doseq [item @running]
+              (when-not (.isDone ^Future item)
+                (.cancel ^Future item true))))))))
+
+
+(defmethod ig/halt-key! ::cron
   [_ instance]
-  (.close ^java.lang.AutoCloseable instance))
+  (when instance
+    (.close ^java.lang.AutoCloseable instance)))
 
-(def sql:upsert-scheduled-task
+(def sql:upsert-cron-task
   "insert into scheduled_task (id, cron_expr)
    values (?, ?)
        on conflict (id)
        do update set cron_expr=?")
 
-(defn- synchronize-schedule-item
+(defn- synchronize-cron-item
   [conn {:keys [id cron]}]
   (let [cron (str cron)]
     (l/debug :action "initialize scheduled task" :id id :cron cron)
-    (db/exec-one! conn [sql:upsert-scheduled-task id cron cron])))
+    (db/exec-one! conn [sql:upsert-cron-task id cron cron])))
 
-(defn- synchronize-schedule
+(defn- synchronize-cron-entries
   [{:keys [pool schedule]}]
   (db/with-atomic [conn pool]
-    (run! (partial synchronize-schedule-item conn) schedule)))
+    (run! (partial synchronize-cron-item conn) schedule)))
 
-(def sql:lock-scheduled-task
+(def sql:lock-cron-task
   "select id from scheduled_task where id=? for update skip locked")
 
-(defn- execute-scheduled-task
+(defn- execute-cron-task
   [{:keys [executor pool] :as cfg} {:keys [id] :as task}]
   (letfn [(run-task [conn]
-            (when (db/exec-one! conn [sql:lock-scheduled-task (d/name id)])
+            (when (db/exec-one! conn [sql:lock-cron-task (d/name id)])
               (l/debug :action "execute scheduled task" :id id)
               ((:fn task) task)))
 
@@ -491,10 +524,10 @@
                          ::l/context (get-error-context cause task)
                          :task-id id
                          :cause cause))))]
-    (try
+
       (px/run! executor handle-task)
-      (finally
-        (schedule-task cfg task)))))
+      (px/run! executor #(schedule-cron-task cfg task))
+      nil))
 
 (defn- ms-until-valid
   [cron]
@@ -503,10 +536,16 @@
         next (dt/next-valid-instant-from cron now)]
     (inst-ms (dt/diff now next))))
 
-(defn- schedule-task
-  [{:keys [scheduler] :as cfg} {:keys [cron] :as task}]
-  (let [ms (ms-until-valid cron)]
-    (px/schedule! scheduler ms (partial execute-scheduled-task cfg task))))
+(def ^:private
+  xf-without-done
+  (remove #(.isDone ^Future %)))
+
+(defn- schedule-cron-task
+  [{:keys [scheduler running] :as cfg} {:keys [cron] :as task}]
+  (let [ft (px/schedule! scheduler
+                         (ms-until-valid cron)
+                         (partial execute-cron-task cfg task))]
+    (swap! running #(into #{ft} xf-without-done %))))
 
 ;; --- INSTRUMENTATION
 

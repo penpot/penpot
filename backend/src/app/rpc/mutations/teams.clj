@@ -24,7 +24,9 @@
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.core :as fs]))
+   [datoteka.core :as fs]
+   [promesa.core :as p]
+   [promesa.exec :as px]))
 
 ;; --- Helpers & Specs
 
@@ -276,7 +278,6 @@
 
       nil)))
 
-
 ;; --- Mutation: Update Team Photo
 
 (declare upload-photo)
@@ -289,21 +290,25 @@
 
 (sv/defmethod ::update-team-photo
   {::rlimit/permits (cf/get :rlimit-image)}
-  [{:keys [pool storage] :as cfg} {:keys [profile-id file team-id] :as params}]
+  [{:keys [pool storage executors] :as cfg} {:keys [profile-id file team-id] :as params}]
+
+  ;; Validate incoming mime type
+  (media/validate-media-type! (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
+
+  ;; Perform file validation
+  @(px/with-dispatch (:blocking executors)
+     (media/run {:cmd :info :input {:path (:tempfile file) :mtype (:content-type file)}}))
+
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
-    (media/validate-media-type (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
-    (media/run {:cmd :info :input {:path (:tempfile file)
-                                   :mtype (:content-type file)}})
-
     (let [team    (teams/retrieve-team conn profile-id team-id)
-          storage (media/configure-assets-storage storage conn)
-          cfg     (assoc cfg :storage storage)
-          photo   (upload-photo cfg params)]
+          cfg     (update cfg :storage media/configure-assets-storage conn)
+          photo   @(upload-photo cfg params)]
 
-      ;; Schedule deletion of old photo
+      ;; Mark object as touched for make it ellegible for tentative
+      ;; garbage collection.
       (when-let [id (:photo-id team)]
-        (sto/del-object storage id))
+        @(sto/touch-object! storage id))
 
       ;; Save new photo
       (db/update! conn :team
@@ -313,17 +318,33 @@
       (assoc team :photo-id (:id photo)))))
 
 (defn upload-photo
-  [{:keys [storage] :as cfg} {:keys [file]}]
-  (let [thumb (media/run {:cmd :profile-thumbnail
+  [{:keys [storage executors] :as cfg} {:keys [file]}]
+  (letfn [(generate-thumbnail [path mtype]
+            (px/with-dispatch (:blocking executors)
+              (media/run {:cmd :profile-thumbnail
                           :format :jpeg
                           :quality 85
                           :width 256
                           :height 256
-                          :input {:path (fs/path (:tempfile file))
-                                  :mtype (:content-type file)}})]
-    (sto/put-object storage
-                    {:content (sto/content (:data thumb) (:size thumb))
-                     :content-type (:mtype thumb)})))
+                          :input {:path path :mtype mtype}})))
+
+          ;; Function responsible of calculating cryptographyc hash of
+          ;; the provided data. Even though it uses the hight
+          ;; performance BLAKE2b algorithm, we prefer to schedule it
+          ;; to be executed on the blocking executor.
+          (calculate-hash [data]
+            (px/with-dispatch (:blocking executors)
+              (sto/calculate-hash data)))]
+
+    (p/let [thumb   (generate-thumbnail (fs/path (:tempfile file))
+                                        (:content-type file))
+            hash    (calculate-hash (:data thumb))
+            content (-> (sto/content (:data thumb) (:size thumb))
+                        (sto/wrap-with-hash hash))]
+      (sto/put-object! storage {::sto/content content
+                                ::sto/deduplicate? true
+                                :bucket "profile"
+                                :content-type (:mtype thumb)}))))
 
 
 ;; --- Mutation: Invite Member

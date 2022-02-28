@@ -7,18 +7,18 @@
 (ns app.main.errors
   "Generic error handling"
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.config :as cf]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.sentry :as sentry]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as ts]
-   [cljs.pprint :refer [pprint]]
-   [cuerdas.core :as str]
    [expound.alpha :as expound]
+   [fipp.edn :as fpp]
    [potok.core :as ptk]))
 
 (defn on-error
@@ -33,7 +33,7 @@
 
     :else
     (let [hint (ex-message error)
-          msg  (str "Internal Error: " hint)]
+          msg  (dm/str "Internal Error: " hint)]
       (sentry/capture-exception error)
       (ts/schedule (st/emitf (rt/assign-exception error)))
 
@@ -51,7 +51,7 @@
   [_]
   (let [msg (tr "errors.auth.unable-to-login")]
     (st/emit! (du/logout {:capture-redirect true}))
-    (ts/schedule 500 (st/emitf (dm/warn msg)))))
+    (ts/schedule 500 (st/emitf (msg/warn msg)))))
 
 
 ;; That are special case server-errors that should be treated
@@ -73,7 +73,7 @@
   [error]
   (ts/schedule
    (st/emitf
-    (dm/show {:content "Unexpected validation error."
+    (msg/show {:content "Unexpected validation error."
               :type :error
               :timeout 3000})))
 
@@ -81,7 +81,7 @@
   (js/console.group "Validation Error:")
   (ex/ignoring
    (js/console.info
-    (with-out-str (pprint (dissoc error :explain)))))
+    (with-out-str (fpp/pprint (dissoc error :explain)))))
 
   (when-let [explain (:explain error)]
     (js/console.group "Spec explain:")
@@ -96,7 +96,7 @@
   [_]
   (ts/schedule
    (st/emitf
-    (dm/show {:content "SVG is invalid or malformed"
+    (msg/show {:content "SVG is invalid or malformed"
               :type :error
               :timeout 3000}))))
 
@@ -104,7 +104,7 @@
   [_]
   (ts/schedule
    (st/emitf
-    (dm/show {:content "There was an error with the comment"
+    (msg/show {:content "There was an error with the comment"
               :type :error
               :timeout 3000}))))
 
@@ -114,15 +114,15 @@
 (defmethod ptk/handle-error :assertion
   [{:keys [message hint] :as error}]
   (let [message (or message hint)
-        message (str "Internal Assertion Error: " message)
-        context (str/fmt "ns: '%s'\nname: '%s'\nfile: '%s:%s'"
-                              (:ns error)
-                              (:name error)
-                              (str cf/public-uri "js/cljs-runtime/" (:file error))
-                              (:line error))]
+        message (dm/str "Internal Assertion Error: " message)
+        context (dm/fmt "ns: '%'\nname: '%'\nfile: '%:%'"
+                        (:ns error)
+                        (:name error)
+                        (dm/str cf/public-uri "js/cljs-runtime/" (:file error))
+                        (:line error))]
     (ts/schedule
      (st/emitf
-      (dm/show {:content "Internal error: assertion."
+      (msg/show {:content "Internal error: assertion."
                 :type :error
                 :timeout 3000})))
 
@@ -138,17 +138,23 @@
 (defmethod ptk/handle-error :server-error
   [{:keys [data hint] :as error}]
   (let [hint (or hint (:hint data) (:message data))
-        info (with-out-str (pprint data))
-        msg  (str "Internal Server Error: " hint)]
+        info (with-out-str (fpp/pprint (dissoc data :explain)))
+        msg  (dm/str "Internal Server Error: " hint)]
 
     (ts/schedule
-     (st/emitf
-      (dm/show {:content "Something wrong has happened (on backend)."
-                :type :error
-                :timeout 3000})))
+     #(st/emit!
+       (msg/show {:content "Something wrong has happened (on backend)."
+                 :type :error
+                 :timeout 3000})))
 
     (js/console.group msg)
     (js/console.info info)
+
+    (when-let [explain (:explain data)]
+      (js/console.group "Spec explain:")
+      (js/console.log explain)
+      (js/console.groupEnd "Spec explain:"))
+
     (js/console.groupEnd msg)))
 
 (defn on-unhandled-error
@@ -156,7 +162,7 @@
   (if (instance? ExceptionInfo error)
     (-> error sentry/capture-exception ex-data ptk/handle-error)
     (let [hint (ex-message error)
-          msg  (str "Unhandled Internal Error: " hint)]
+          msg  (dm/str "Unhandled Internal Error: " hint)]
       (sentry/capture-exception error)
       (ts/schedule (st/emitf (rt/assign-exception error)))
       (js/console.group msg)

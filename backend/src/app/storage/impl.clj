@@ -7,31 +7,26 @@
 (ns app.storage.impl
   "Storage backends abstraction layer."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [buddy.core.codecs :as bc]
-   [clojure.java.io :as io]
-   [cuerdas.core :as str])
+   [buddy.core.hash :as bh]
+   [clojure.java.io :as io])
   (:import
    java.nio.ByteBuffer
    java.util.UUID
    java.io.ByteArrayInputStream
    java.io.InputStream
-   java.nio.file.Files))
+   java.nio.file.Files
+   org.apache.commons.io.input.BoundedInputStream
+   ))
 
 ;; --- API Definition
 
 (defmulti put-object (fn [cfg _ _] (:type cfg)))
 
 (defmethod put-object :default
-  [cfg _ _]
-  (ex/raise :type :internal
-            :code :invalid-storage-backend
-            :context cfg))
-
-(defmulti copy-object (fn [cfg _ _] (:type cfg)))
-
-(defmethod copy-object :default
   [cfg _ _]
   (ex/raise :type :internal
             :code :invalid-storage-backend
@@ -106,63 +101,26 @@
                     :code :invalid-id-type
                     :hint "id should be string or uuid")))
 
+(defprotocol IContentObject
+  (size [_] "get object size"))
 
-(defprotocol IContentObject)
+(defprotocol IContentHash
+  (get-hash [_] "get precalculated hash"))
 
-(defn- path->content
-  [path]
-  (let [size (Files/size path)]
-    (reify
-      IContentObject
-      io/IOFactory
-      (make-reader [_ opts]
-	    (io/make-reader path opts))
-      (make-writer [_ _]
-        (throw (UnsupportedOperationException. "not implemented")))
-      (make-input-stream [_ opts]
-        (io/make-input-stream path opts))
-      (make-output-stream [_ _]
-        (throw (UnsupportedOperationException. "not implemented")))
-      clojure.lang.Counted
-      (count [_] size)
-
-    java.lang.AutoCloseable
-    (close [_]))))
-
-(defn string->content
-  [^String v]
-  (let [data (.getBytes v "UTF-8")
-        bais (ByteArrayInputStream. ^bytes data)]
-    (reify
-      IContentObject
-      io/IOFactory
-      (make-reader [_ opts]
-	    (io/make-reader bais opts))
-      (make-writer [_ _]
-        (throw (UnsupportedOperationException. "not implemented")))
-      (make-input-stream [_ opts]
-        (io/make-input-stream bais opts))
-      (make-output-stream [_ _]
-        (throw (UnsupportedOperationException. "not implemented")))
-
-      clojure.lang.Counted
-      (count [_]
-        (alength data))
-
-    java.lang.AutoCloseable
-    (close [_]))))
-
-(defn- input-stream->content
-  [^InputStream is size]
+(defn- make-content
+  [^InputStream is ^long size]
   (reify
     IContentObject
+    (size [_] size)
+
     io/IOFactory
-    (make-reader [_ opts]
-      (io/make-reader is opts))
+    (make-reader [this opts]
+      (io/make-reader this opts))
     (make-writer [_ _]
       (throw (UnsupportedOperationException. "not implemented")))
-    (make-input-stream [_ opts]
-      (io/make-input-stream is opts))
+    (make-input-stream [_ _]
+      (doto (BoundedInputStream. is size)
+        (.setPropagateClose false)))
     (make-output-stream [_ _]
       (throw (UnsupportedOperationException. "not implemented")))
 
@@ -178,25 +136,62 @@
   ([data size]
    (cond
      (instance? java.nio.file.Path data)
-     (path->content data)
+     (make-content (io/input-stream data)
+                   (Files/size data))
 
      (instance? java.io.File data)
-     (path->content (.toPath ^java.io.File data))
+     (content (.toPath ^java.io.File data) nil)
 
      (instance? String data)
-     (string->content data)
+     (let [data (.getBytes data "UTF-8")
+           bais (ByteArrayInputStream. ^bytes data)]
+       (make-content bais (alength data)))
 
      (bytes? data)
-     (input-stream->content (ByteArrayInputStream. ^bytes data) (alength ^bytes data))
+     (let [size (alength ^bytes data)
+           bais (ByteArrayInputStream. ^bytes data)]
+       (make-content bais size))
 
      (instance? InputStream data)
      (do
        (when-not size
          (throw (UnsupportedOperationException. "size should be provided on InputStream")))
-       (input-stream->content data size))
+       (make-content data size))
 
      :else
      (throw (UnsupportedOperationException. "type not supported")))))
+
+(defn wrap-with-hash
+  [content ^String hash]
+  (when-not (satisfies? IContentObject content)
+    (throw (UnsupportedOperationException. "`content` should be an instance of IContentObject")))
+
+  (when-not (satisfies? io/IOFactory content)
+    (throw (UnsupportedOperationException. "`content` should be an instance of IOFactory")))
+
+  (reify
+    IContentObject
+    (size [_] (size content))
+
+    IContentHash
+    (get-hash [_] hash)
+
+    io/IOFactory
+    (make-reader [_ opts]
+      (io/make-reader content opts))
+    (make-writer [_ opts]
+      (io/make-writer content opts))
+    (make-input-stream [_ opts]
+      (io/make-input-stream content opts))
+    (make-output-stream [_ opts]
+      (io/make-output-stream content opts))
+
+    clojure.lang.Counted
+    (count [_] (count content))
+
+    java.lang.AutoCloseable
+    (close [_]
+      (.close ^java.lang.AutoCloseable content))))
 
 (defn content?
   [v]
@@ -209,15 +204,29 @@
     (io/copy input output)
     (.toByteArray output)))
 
-(defn resolve-backend
-  [{:keys [conn pool] :as storage} backend-id]
-  (when backend-id
-    (let [backend (get-in storage [:backends backend-id])]
-      (when-not backend
-        (ex/raise :type :internal
-                  :code :backend-not-configured
-                  :hint (str/fmt "backend '%s' not configured" backend-id)))
-      (assoc backend
-             :conn (or conn pool)
-             :id backend-id))))
+(defn calculate-hash
+  [path-or-stream]
+  (let [result (cond
+                 (instance? InputStream path-or-stream)
+                 (let [result (-> (bh/blake2b-256 path-or-stream)
+                                  (bc/bytes->hex))]
+                   (.reset path-or-stream)
+                   result)
 
+                 :else
+                 (with-open [is (io/input-stream path-or-stream)]
+                   (-> (bh/blake2b-256 is)
+                       (bc/bytes->hex))))]
+    (str "blake2b:" result)))
+
+(defn resolve-backend
+  [{:keys [conn pool executor] :as storage} backend-id]
+  (let [backend (get-in storage [:backends backend-id])]
+    (when-not backend
+      (ex/raise :type :internal
+                :code :backend-not-configured
+                :hint (dm/fmt "backend '%' not configured" backend-id)))
+    (assoc backend
+           :executor executor
+           :conn (or conn pool)
+           :id backend-id)))

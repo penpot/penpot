@@ -27,7 +27,7 @@
       (task-fn nil)
 
       (t/is (:called? @mock))
-      (let [[data] (-> @mock :call-args)]
+      (let [[_ data] (-> @mock :call-args)]
         (t/is (contains? data :total-fonts))
         (t/is (contains? data :total-users))
         (t/is (contains? data :total-projects))

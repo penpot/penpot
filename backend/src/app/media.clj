@@ -42,13 +42,14 @@
                    :internal.http.upload/tempfile
                    :internal.http.upload/content-type]))
 
-(defn validate-media-type
-  ([mtype] (validate-media-type mtype cm/valid-image-types))
+(defn validate-media-type!
+  ([mtype] (validate-media-type! mtype cm/valid-image-types))
   ([mtype allowed]
    (when-not (contains? allowed mtype)
      (ex/raise :type :validation
                :code :media-type-not-allowed
-               :hint "Seems like you are uploading an invalid media object"))))
+               :hint "Seems like you are uploading an invalid media object"))
+   mtype))
 
 (defmulti process :cmd)
 (defmulti process-error class)

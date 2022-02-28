@@ -11,7 +11,6 @@
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.util.async :as aa]
-   [app.util.http :as http]
    [app.util.json :as json]
    [app.worker :as wrk]
    [clojure.core.async :as a]
@@ -62,13 +61,14 @@
                         (str "\n" (:trace error))))]]}]}))
 
 (defn- send-log
-  [uri payload i]
+  [{:keys [http-client uri]} payload i]
   (try
-    (let [response (http/send! {:uri uri
-                                :timeout 6000
-                                :method :post
-                                :headers {"content-type" "application/json"}
-                                :body (json/write payload)})]
+    (let [response (http-client {:uri uri
+                                 :timeout 6000
+                                 :method :post
+                                 :headers {"content-type" "application/json"}
+                                 :body (json/write payload)}
+                                {:sync? true})]
       (cond
         (= (:status response) 204)
         true
@@ -89,11 +89,11 @@
       false)))
 
 (defn- handle-event
-  [{:keys [executor uri]} event]
+  [{:keys [executor] :as cfg} event]
   (aa/with-thread executor
     (let [payload (prepare-payload event)]
       (loop [i 1]
-        (when (and (not (send-log uri payload i)) (< i 20))
+        (when (and (not (send-log cfg payload i)) (< i 20))
           (Thread/sleep (* i 2000))
           (recur (inc i)))))))
 

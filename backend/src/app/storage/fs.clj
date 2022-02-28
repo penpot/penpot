@@ -14,7 +14,8 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:import
    java.io.InputStream
    java.io.OutputStream
@@ -47,62 +48,57 @@
 ;; --- API IMPL
 
 (defmethod impl/put-object :fs
-  [backend {:keys [id] :as object} content]
-  (let [base (fs/path (:directory backend))
-        path (fs/path (impl/id->path id))
-        full (fs/normalize (fs/join base path))]
-    (when-not (fs/exists? (fs/parent full))
-      (fs/create-dir (fs/parent full)))
-    (with-open [^InputStream src  (io/input-stream content)
-                ^OutputStream dst (io/output-stream full)]
-      (io/copy src dst))))
-
-(defmethod impl/copy-object :fs
-  [backend src-object dst-object]
-  (let [base (fs/path (:directory backend))
-        path (fs/path (impl/id->path (:id dst-object)))
-        full (fs/normalize (fs/join base path))]
-    (when-not (fs/exists? (fs/parent full))
-      (fs/create-dir (fs/parent full)))
-    (with-open [^InputStream src  (impl/get-object-data backend src-object)
-                ^OutputStream dst (io/output-stream full)]
-      (io/copy src dst))))
+  [{:keys [executor] :as backend} {:keys [id] :as object} content]
+  (px/with-dispatch executor
+    (let [base (fs/path (:directory backend))
+          path (fs/path (impl/id->path id))
+          full (fs/normalize (fs/join base path))]
+      (when-not (fs/exists? (fs/parent full))
+        (fs/create-dir (fs/parent full)))
+      (with-open [^InputStream src  (io/input-stream content)
+                  ^OutputStream dst (io/output-stream full)]
+        (io/copy src dst)))))
 
 (defmethod impl/get-object-data :fs
-  [backend {:keys [id] :as object}]
-  (let [^Path base (fs/path (:directory backend))
-        ^Path path (fs/path (impl/id->path id))
-        ^Path full (fs/normalize (fs/join base path))]
-    (when-not (fs/exists? full)
-      (ex/raise :type :internal
-                :code :filesystem-object-does-not-exists
-                :path (str full)))
-    (io/input-stream full)))
+  [{:keys [executor] :as backend} {:keys [id] :as object}]
+  (px/with-dispatch executor
+    (let [^Path base (fs/path (:directory backend))
+          ^Path path (fs/path (impl/id->path id))
+          ^Path full (fs/normalize (fs/join base path))]
+      (when-not (fs/exists? full)
+        (ex/raise :type :internal
+                  :code :filesystem-object-does-not-exists
+                  :path (str full)))
+      (io/input-stream full))))
 
 (defmethod impl/get-object-bytes :fs
-  [backend object]
-  (fs/slurp-bytes (impl/get-object-data backend object)))
+  [{:keys [executor] :as backend} object]
+  (px/with-dispatch executor
+    (fs/slurp-bytes (impl/get-object-data backend object))))
 
 (defmethod impl/get-object-url :fs
-  [{:keys [uri] :as backend} {:keys [id] :as object} _]
-  (update uri :path
-          (fn [existing]
-            (if (str/ends-with? existing "/")
-              (str existing (impl/id->path id))
-              (str existing "/" (impl/id->path id))))))
+  [{:keys [uri executor] :as backend} {:keys [id] :as object} _]
+  (px/with-dispatch executor
+    (update uri :path
+            (fn [existing]
+              (if (str/ends-with? existing "/")
+                (str existing (impl/id->path id))
+                (str existing "/" (impl/id->path id)))))))
 
 (defmethod impl/del-object :fs
-  [backend {:keys [id] :as object}]
-  (let [base (fs/path (:directory backend))
-        path (fs/path (impl/id->path id))
-        path (fs/join base path)]
-    (Files/deleteIfExists ^Path path)))
+  [{:keys [executor] :as backend} {:keys [id] :as object}]
+  (px/with-dispatch executor
+    (let [base (fs/path (:directory backend))
+          path (fs/path (impl/id->path id))
+          path (fs/join base path)]
+      (Files/deleteIfExists ^Path path))))
 
 (defmethod impl/del-objects-in-bulk :fs
-  [backend ids]
-  (let [base (fs/path (:directory backend))]
-    (doseq [id ids]
-      (let [path (fs/path (impl/id->path id))
-            path (fs/join base path)]
-        (Files/deleteIfExists ^Path path)))))
+  [{:keys [executor] :as backend} ids]
+  (px/with-dispatch executor
+    (let [base (fs/path (:directory backend))]
+      (doseq [id ids]
+        (let [path (fs/path (impl/id->path id))
+              path (fs/join base path)]
+          (Files/deleteIfExists ^Path path))))))
 

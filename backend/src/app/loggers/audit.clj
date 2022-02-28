@@ -16,7 +16,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.util.async :as aa]
-   [app.util.http :as http]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.core.async :as a]
@@ -221,11 +220,12 @@
 
 (declare archive-events)
 
+(s/def ::http-client fn?)
 (s/def ::uri ::us/string)
 (s/def ::tokens fn?)
 
 (defmethod ig/pre-init-spec ::archive-task [_]
-  (s/keys :req-un [::db/pool ::tokens]
+  (s/keys :req-un [::db/pool ::tokens ::http-client]
           :opt-un [::uri]))
 
 (defmethod ig/init-key ::archive-task
@@ -257,7 +257,7 @@
       for update skip locked;")
 
 (defn archive-events
-  [{:keys [pool uri tokens] :as cfg}]
+  [{:keys [pool uri tokens http-client] :as cfg}]
   (letfn [(decode-row [{:keys [props ip-addr context] :as row}]
             (cond-> row
               (db/pgobject? props)
@@ -293,7 +293,7 @@
                            :method :post
                            :headers headers
                            :body body}
-                  resp    (http/send! params)]
+                  resp    (http-client params {:sync? true})]
               (if (= (:status resp) 204)
                 true
                 (do

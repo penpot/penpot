@@ -14,7 +14,6 @@
    [app.db :as db]
    [app.rpc.mutations.files :as m.files]
    [app.rpc.queries.profile :as profile]
-   [app.util.async :as async]
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
@@ -25,7 +24,8 @@
    [datoteka.core :as fs]
    [fipp.edn :as fpp]
    [integrant.core :as ig]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [promesa.exec :as px]))
 
 ;; (selmer.parser/cache-off!)
 
@@ -208,8 +208,7 @@
 (defn- wrap-async
   [{:keys [executor] :as cfg} f]
   (fn [request respond raise]
-    (-> (async/with-dispatch executor
-          (f cfg request))
+    (-> (px/submit! executor #(f cfg request))
         (p/then respond)
         (p/catch raise))))
 

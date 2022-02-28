@@ -18,7 +18,6 @@
    java.nio.ByteBuffer
    org.eclipse.jetty.io.EofException))
 
-
 (declare decode-beat)
 (declare encode-beat)
 (declare process-heartbeat)

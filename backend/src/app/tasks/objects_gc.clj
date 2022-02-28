@@ -9,10 +9,9 @@
   of deleted objects."
   (:require
    [app.common.logging :as l]
-   [app.config :as cf]
    [app.db :as db]
+   [app.media :as media]
    [app.storage :as sto]
-   [app.storage.impl :as simpl]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -56,16 +55,12 @@
 ;; --- IMPL: file deletion
 
 (defmethod delete-objects "file"
-  [{:keys [conn max-age table storage] :as cfg}]
-  (let [sql     (str/fmt sql:delete-objects
-                         {:table table :limit 50})
-        result  (db/exec! conn [sql max-age])
-        backend (simpl/resolve-backend storage (cf/get :fdata-storage-backend))]
+  [{:keys [conn max-age table] :as cfg}]
+  (let [sql    (str/fmt sql:delete-objects {:table table :limit 50})
+        result (db/exec! conn [sql max-age])]
 
     (doseq [{:keys [id] :as item} result]
-      (l/trace :hint "delete object" :table table :id id)
-      (when backend
-        (simpl/del-object backend item)))
+      (l/trace :hint "delete object" :table table :id id))
 
     (count result)))
 
@@ -76,13 +71,13 @@
   (let [sql     (str/fmt sql:delete-objects
                          {:table table :limit 50})
         fonts   (db/exec! conn [sql max-age])
-        storage (assoc storage :conn conn)]
+        storage (media/configure-assets-storage storage conn)]
     (doseq [{:keys [id] :as font} fonts]
       (l/trace :hint "delete object" :table table :id id)
-      (some->> (:woff1-file-id font) (sto/del-object storage))
-      (some->> (:woff2-file-id font) (sto/del-object storage))
-      (some->> (:otf-file-id font)   (sto/del-object storage))
-      (some->> (:ttf-file-id font)   (sto/del-object storage)))
+      (some->> (:woff1-file-id font) (sto/touch-object! storage) deref)
+      (some->> (:woff2-file-id font) (sto/touch-object! storage) deref)
+      (some->> (:otf-file-id font)   (sto/touch-object! storage) deref)
+      (some->> (:ttf-file-id font)   (sto/touch-object! storage) deref))
     (count fonts)))
 
 ;; --- IMPL: team deletion
@@ -96,7 +91,7 @@
 
     (doseq [{:keys [id] :as team} teams]
       (l/trace :hint "delete object" :table table :id id)
-      (some->> (:photo-id team) (sto/del-object storage)))
+      (some->> (:photo-id team) (sto/touch-object! storage) deref))
 
     (count teams)))
 
@@ -135,7 +130,7 @@
 
       ;; Mark as deleted the storage object related with the photo-id
       ;; field.
-      (some->> (:photo-id profile) (sto/del-object storage))
+      (some->> (:photo-id profile) (sto/touch-object! storage) deref)
 
       ;; And finally, permanently delete the profile.
       (db/delete! conn :profile {:id id}))

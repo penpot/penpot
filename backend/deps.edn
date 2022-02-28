@@ -19,8 +19,8 @@
   io.lettuce/lettuce-core {:mvn/version "6.1.6.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
-  funcool/yetti {:git/tag "v4.0" :git/sha "59ed2a7"
-                 :git/url "https://github.com/funcool/yetti.git"
+  funcool/yetti {:git/tag "v5.0" :git/sha "f7d61e2"
+                 :git/url "https://github.com/funcool/yetti"
                  :exclusions [org.slf4j/slf4j-api]}
 
   com.github.seancorfield/next.jdbc {:mvn/version "1.2.772"}

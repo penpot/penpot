@@ -9,7 +9,6 @@ CREATE TABLE team_invitation (
   PRIMARY KEY(team_id, email_to)
 );
 
-
 ALTER TABLE team_invitation
   ALTER COLUMN email_to SET STORAGE external,
   ALTER COLUMN role SET STORAGE external;

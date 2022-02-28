@@ -15,7 +15,6 @@
    [app.config :as cfg]
    [app.db :as db]
    [app.util.async :refer [thread-sleep]]
-   [app.util.http :as http]
    [app.util.json :as json]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
@@ -27,6 +26,7 @@
 (declare get-stats)
 (declare send!)
 
+(s/def ::http-client fn?)
 (s/def ::version ::us/string)
 (s/def ::uri ::us/string)
 (s/def ::instance-id ::us/uuid)
@@ -34,7 +34,7 @@
   (s/keys :req-un [::instance-id]))
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::version ::uri ::sprops]))
+  (s/keys :req-un [::db/pool ::http-client ::version ::uri ::sprops]))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool sprops version] :as cfg}]
@@ -47,7 +47,8 @@
           stats       (-> (get-stats pool version)
                           (assoc :instance-id instance-id))]
       (when send?
-        (send! stats cfg))
+        (send! cfg stats))
+
       stats)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -55,11 +56,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- send!
-  [data cfg]
-  (let [response (http/send! {:method :post
-                              :uri (:uri cfg)
-                              :headers {"content-type" "application/json"}
-                              :body (json/write-str data)})]
+  [{:keys [http-client uri] :as cfg} data]
+  (let [response (http-client {:method :post
+                               :uri uri
+                               :headers {"content-type" "application/json"}
+                               :body (json/write-str data)}
+                               {:sync? true})]
     (when (> (:status response) 206)
       (ex/raise :type :internal
                 :code :invalid-response

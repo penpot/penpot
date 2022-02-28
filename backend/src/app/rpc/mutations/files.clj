@@ -17,12 +17,13 @@
    [app.rpc.permissions :as perms]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as proj]
+   [app.rpc.rlimit :as rlimit]
    [app.storage.impl :as simpl]
-   [app.util.async :as async]
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [promesa.core :as p]))
 
 (declare create-file)
 
@@ -126,7 +127,6 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
-
     (mark-file-deleted conn params)))
 
 (defn mark-file-deleted
@@ -273,7 +273,7 @@
          (contains? o :changes-with-metadata)))))
 
 (sv/defmethod ::update-file
-  {::async/dispatch :blocking}
+  {::rlimit/permits 20}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (db/xact-lock! conn id)
@@ -295,8 +295,9 @@
 
 (defn- delete-from-storage
   [{:keys [storage] :as cfg} file]
-  (when-let [backend (simpl/resolve-backend storage (:data-backend file))]
-    (simpl/del-object backend file)))
+  (p/do
+    (when-let [backend (simpl/resolve-backend storage (:data-backend file))]
+      (simpl/del-object backend file))))
 
 (defn- update-file
   [{:keys [conn metrics] :as cfg} {:keys [file changes changes-with-metadata session-id profile-id] :as params}]
@@ -353,7 +354,7 @@
 
     ;; We need to delete the data from external storage backend
     (when-not (nil? (:data-backend file))
-      (delete-from-storage cfg file))
+      @(delete-from-storage cfg file))
 
     (db/update! conn :project
                 {:modified-at ts}

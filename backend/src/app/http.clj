@@ -29,6 +29,7 @@
 ;; HTTP SERVER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::session map?)
 (s/def ::handler fn?)
 (s/def ::router some?)
 (s/def ::port ::us/integer)
@@ -47,7 +48,7 @@
          (d/without-nils cfg)))
 
 (defmethod ig/pre-init-spec ::server [_]
-  (s/keys :req-un [::port ::host ::name ::min-threads ::max-threads]
+  (s/keys :req-un [::port ::host ::name ::min-threads ::max-threads ::session]
           :opt-un [::mtx/metrics ::router ::handler]))
 
 (defn- instrument-metrics
@@ -59,37 +60,39 @@
     server))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [handler router port name metrics host] :as opts}]
+  [_ {:keys [handler router port name metrics host] :as cfg}]
   (l/info :hint "starting http server"
           :port port :host host :name name
-          :min-threads (:min-threads opts)
-          :max-threads (:max-threads opts))
+          :min-threads (:min-threads cfg)
+          :max-threads (:max-threads cfg))
   (let [options {:http/port port
                  :http/host host
-                 :thread-pool/max-threads (:max-threads opts)
-                 :thread-pool/min-threads (:min-threads opts)
+                 :thread-pool/max-threads (:max-threads cfg)
+                 :thread-pool/min-threads (:min-threads cfg)
                  :ring/async true}
         handler (cond
                   (fn? handler)  handler
-                  (some? router) (wrap-router router)
+                  (some? router) (wrap-router cfg router)
                   :else (ex/raise :type :internal
                                   :code :invalid-argument
                                   :hint "Missing `handler` or `router` option."))
         server  (-> (yt/server handler (d/without-nils options))
                     (cond-> metrics (instrument-metrics metrics)))]
-    (assoc opts :server (yt/start! server))))
+    (assoc cfg :server (yt/start! server))))
 
 (defmethod ig/halt-key! ::server
-  [_ {:keys [server name port] :as opts}]
+  [_ {:keys [server name port] :as cfg}]
   (l/info :msg "stoping http server" :name name :port port)
   (yt/stop! server))
 
 (defn- wrap-router
-  [router]
+  [{:keys [session] :as cfg} router]
   (let [default (rr/routes
                  (rr/create-resource-handler {:path "/"})
                  (rr/create-default-handler))
-        options {:middleware [middleware/wrap-server-timing]
+        options {:middleware [[middleware/wrap-server-timing]
+                              [middleware/cookies]
+                              [(:middleware session)]]
                  :inject-match? false
                  :inject-router? false}
         handler (rr/ring-handler router default options)]
@@ -106,28 +109,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::rpc map?)
-(s/def ::session map?)
 (s/def ::oauth map?)
 (s/def ::storage map?)
 (s/def ::assets map?)
 (s/def ::feedback fn?)
 (s/def ::ws fn?)
-(s/def ::audit-http-handler fn?)
+(s/def ::audit-handler fn?)
 (s/def ::debug map?)
+(s/def ::awsns-handler fn?)
 
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::rpc ::session ::mtx/metrics ::ws
-                   ::oauth ::storage ::assets ::feedback
-                   ::debug ::audit-http-handler]))
+  (s/keys :req-un [::rpc ::mtx/metrics ::ws ::oauth ::storage ::assets
+                   ::feedback ::awsns-handler ::debug ::audit-handler]))
 
 (defmethod ig/init-key ::router
   [_ {:keys [ws session rpc oauth metrics assets feedback debug] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
     ["/assets" {:middleware [[middleware/format-response-body]
-                             [middleware/errors errors/handle]
-                             [middleware/cookies]
-                             (:middleware session)]}
+                             [middleware/errors errors/handle]]}
      ["/by-id/:id" {:get (:objects-handler assets)}]
      ["/by-file-media-id/:id" {:get (:file-objects-handler assets)}]
      ["/by-file-media-id/:id/thumbnail" {:get (:file-thumbnails-handler assets)}]]
@@ -136,9 +136,7 @@
                           [middleware/params]
                           [middleware/keyword-params]
                           [middleware/format-response-body]
-                          [middleware/errors errors/handle]
-                          [middleware/cookies]
-                          [(:middleware session)]]}
+                          [middleware/errors errors/handle]]}
      ["" {:get (:index debug)}]
      ["/error-by-id/:id" {:get (:retrieve-error debug)}]
      ["/error/:id" {:get (:retrieve-error debug)}]
@@ -148,15 +146,13 @@
      ["/file/changes" {:get (:retrieve-file-changes debug)}]]
 
     ["/webhooks"
-     ["/sns" {:post (:sns-webhook cfg)}]]
+     ["/sns" {:post (:awsns-handler cfg)}]]
 
     ["/ws/notifications"
      {:middleware [[middleware/params]
                    [middleware/keyword-params]
                    [middleware/format-response-body]
-                   [middleware/errors errors/handle]
-                   [middleware/cookies]
-                   [(:middleware session)]]
+                   [middleware/errors errors/handle]]
       :get ws}]
 
     ["/api" {:middleware [[middleware/cors]
@@ -165,8 +161,7 @@
                           [middleware/keyword-params]
                           [middleware/format-response-body]
                           [middleware/parse-request-body]
-                          [middleware/errors errors/handle]
-                          [middleware/cookies]]}
+                          [middleware/errors errors/handle]]}
 
      ["/health" {:get (:health-check debug)}]
      ["/_doc" {:get (doc/handler rpc)}]
@@ -175,10 +170,9 @@
      ["/auth/oauth/:provider" {:post (:handler oauth)}]
      ["/auth/oauth/:provider/callback" {:get (:callback-handler oauth)}]
 
-     ["/audit/events" {:middleware [(:middleware session)]
-                       :post (:audit-http-handler cfg)}]
+     ["/audit/events" {:post (:audit-handler cfg)}]
 
-     ["/rpc" {:middleware [(:middleware session)]}
+     ["/rpc"
       ["/query/:type" {:get (:query-handler rpc)
                        :post (:query-handler rpc)}]
       ["/mutation/:type" {:post (:mutation-handler rpc)}]]]]))

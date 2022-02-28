@@ -23,9 +23,9 @@
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
 
-        sobject (sto/put-object storage {:content (sto/content "content")
-                                         :content-type "text/plain"
-                                         :other "data"})
+        sobject @(sto/put-object! storage {::sto/content (sto/content "content")
+                                           :content-type "text/plain"
+                                           :other "data"})
         profile (th/create-profile* 1 {:is-active true})
         project (th/create-project* 1 {:team-id (:default-team-id profile)
                                        :profile-id (:id profile)})
@@ -92,15 +92,17 @@
 
         ))))
 
-(t/deftest duplicate-file-with-deleted-rels
+(t/deftest duplicate-file-with-deleted-relations
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
-        sobject (sto/put-object storage {:content (sto/content "content")
-                                         :content-type "text/plain"
-                                         :other "data"})
+        sobject @(sto/put-object! storage {::sto/content (sto/content "content")
+                                           :content-type "text/plain"
+                                           :other "data"})
         profile (th/create-profile* 1 {:is-active true})
+
         project (th/create-project* 1 {:team-id (:default-team-id profile)
                                        :profile-id (:id profile)})
+
         file1   (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:id project)})
         file2   (th/create-file* 2 {:profile-id (:id profile)
@@ -112,16 +114,10 @@
 
         mobj    (th/create-file-media-object* {:file-id (:id file1)
                                                :is-local false
-                                               :media-id (:id sobject)})
+                                               :media-id (:id sobject)})]
 
-        _       (th/mark-file-deleted* {:id (:id file2)})
-        _       (sto/del-object storage (:id sobject))]
-
-    (th/update-file*
-     {:file-id (:id file1)
-      :profile-id (:id profile)
-      :changes [{:type :add-media
-                 :object (select-keys mobj [:id :width :height :mtype :name])}]})
+    (th/mark-file-deleted* {:id (:id file2)})
+    @(sto/del-object! storage sobject)
 
     (let [data {::th/type :duplicate-file
                 :profile-id (:id profile)
@@ -140,7 +136,7 @@
         (t/is (= "file 1 (copy)" (:name result)))
         (t/is (not= (:id file1) (:id result)))
 
-        ;; Check that the deleted library is not duplicated
+        ;; Check that there are no relation to a deleted library
         (let [[item :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id result)})]
           (t/is (= 0 (count rows))))
 
@@ -158,9 +154,10 @@
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
 
-        sobject (sto/put-object storage {:content (sto/content "content")
-                                         :content-type "text/plain"
-                                         :other "data"})
+        sobject @(sto/put-object! storage {::sto/content (sto/content "content")
+                                           :content-type "text/plain"
+                                           :other "data"})
+
         profile (th/create-profile* 1 {:is-active true})
         project (th/create-project* 1 {:team-id (:default-team-id profile)
                                        :profile-id (:id profile)})
@@ -175,6 +172,7 @@
         mobj    (th/create-file-media-object* {:file-id (:id file1)
                                                :is-local false
                                                :media-id (:id sobject)})]
+
 
     (th/update-file*
      {:file-id (:id file1)
@@ -229,9 +227,9 @@
 (t/deftest duplicate-project-with-deleted-files
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
-        sobject (sto/put-object storage {:content (sto/content "content")
-                                         :content-type "text/plain"
-                                         :other "data"})
+        sobject @(sto/put-object! storage {::sto/content (sto/content "content")
+                                           :content-type "text/plain"
+                                           :other "data"})
         profile (th/create-profile* 1 {:is-active true})
         project (th/create-project* 1 {:team-id (:default-team-id profile)
                                        :profile-id (:id profile)})
@@ -246,12 +244,6 @@
         mobj    (th/create-file-media-object* {:file-id (:id file1)
                                                :is-local false
                                                :media-id (:id sobject)})]
-
-    (th/update-file*
-     {:file-id (:id file1)
-      :profile-id (:id profile)
-      :changes [{:type :add-media
-                 :object (select-keys mobj [:id :width :height :mtype :name])}]})
 
     (th/mark-file-deleted* {:id (:id file1)})
 
@@ -432,7 +424,7 @@
 
       ;; project1 now should have 2 file
       (let [[item1 item2 :as rows] (db/query th/*pool* :file {:project-id (:id project1)}
-                                      {:order-by [:created-at]})]
+                                             {:order-by [:created-at]})]
         ;; (clojure.pprint/pprint rows)
         (t/is (= 2 (count rows)))
         (t/is (= (:id item1) (:id file2))))
@@ -610,6 +602,3 @@
         (t/is (= (:library-file-id item1) (:id file2))))
 
       )))
-
-
-

@@ -174,12 +174,18 @@
                             :type :image
                             :metadata {:id (:id fmo1)}}}]})]
 
+      ;; Check that reference storage objets on filemediaobjects
+      ;; are the same because of deduplication feature.
+      (t/is (= (:media-id fmo1) (:media-id fmo2)))
+      (t/is (= (:thumbnail-id fmo1) (:thumbnail-id fmo2)))
 
-
-      ;; If we launch gc-touched-task, we should have 4 items to freeze.
+      ;; If we launch gc-touched-task, we should have 2 items to
+      ;; freeze because of the deduplication (we have uploaded 2 times
+      ;; 2 two same files).
       (let [task (:app.storage/gc-touched-task th/*system*)
             res  (task {})]
-        (t/is (= 4 (:freeze res)))
+
+        (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
       ;; run the task immediately
@@ -205,27 +211,26 @@
         (t/is (= 1 (count rows))))
 
       ;; The underlying storage objects are still available.
-      (t/is (some? (sto/get-object storage (:media-id fmo2))))
-      (t/is (some? (sto/get-object storage (:thumbnail-id fmo2))))
-      (t/is (some? (sto/get-object storage (:media-id fmo1))))
-      (t/is (some? (sto/get-object storage (:thumbnail-id fmo1))))
+      (t/is (some? @(sto/get-object storage (:media-id fmo2))))
+      (t/is (some? @(sto/get-object storage (:thumbnail-id fmo2))))
+      (t/is (some? @(sto/get-object storage (:media-id fmo1))))
+      (t/is (some? @(sto/get-object storage (:thumbnail-id fmo1))))
 
       ;; now, we have deleted the unused file-media-object, if we
       ;; execute the touched-gc task, we should see that two of them
       ;; are marked to be deleted.
       (let [task (:app.storage/gc-touched-task th/*system*)
             res  (task {})]
-        (t/is (= 0 (:freeze res)))
-        (t/is (= 2 (:delete res))))
-
+        (t/is (= 2 (:freeze res)))
+        (t/is (= 0 (:delete res))))
 
       ;; Finally, check that some of the objects that are marked as
       ;; deleted we are unable to retrieve them using standard storage
       ;; public api.
-      (t/is (nil? (sto/get-object storage (:media-id fmo2))))
-      (t/is (nil? (sto/get-object storage (:thumbnail-id fmo2))))
-      (t/is (some? (sto/get-object storage (:media-id fmo1))))
-      (t/is (some? (sto/get-object storage (:thumbnail-id fmo1))))
+      (t/is (some? @(sto/get-object storage (:media-id fmo2))))
+      (t/is (some? @(sto/get-object storage (:thumbnail-id fmo2))))
+      (t/is (some? @(sto/get-object storage (:media-id fmo1))))
+      (t/is (some? @(sto/get-object storage (:thumbnail-id fmo1))))
 
       )))
 
