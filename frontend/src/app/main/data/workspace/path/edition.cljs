@@ -61,15 +61,11 @@
             point-change (->> (map hash-map old-points new-points) (reduce merge))]
 
         (when (and (some? new-content) (some? shape))
-          (let [[rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
+          (let [changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
             (if (empty? new-content)
-              (rx/of (dch/commit-changes {:redo-changes rch
-                                          :undo-changes uch
-                                          :origin it})
+              (rx/of (dch/commit-changes changes)
                      dwc/clear-edition-mode)
-              (rx/of (dch/commit-changes {:redo-changes rch
-                                          :undo-changes uch
-                                          :origin it})
+              (rx/of (dch/commit-changes changes)
                      (selection/update-selection point-change)
                      (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler))))))))))
 

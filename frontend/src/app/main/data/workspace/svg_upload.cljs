@@ -407,7 +407,7 @@
             changes   (-> changes
                           (pcb/with-objects objects)
                           (pcb/add-obj new-shape)
-                          (pcb/change-parent parent-id [new-shape]))
+                          (pcb/change-parent parent-id [new-shape] index))
 
             unames  (conj unames (:name new-shape))
 

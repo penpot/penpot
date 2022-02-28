@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.path.shapes-to-path
   (:require
-   [app.common.pages.changes-builder :as cb]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.path.shapes-to-path :as upsp]
    [app.main.data.workspace.changes :as dch]
@@ -28,9 +28,9 @@
                   selected)
 
             changes
-            (-> (cb/empty-changes it page-id)
-                (cb/with-objects objects)
-                (cb/remove-objects children-ids)
-                (cb/update-shapes selected #(upsp/convert-to-path % objects)))]
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (pcb/remove-objects children-ids)
+                (pcb/update-shapes selected #(upsp/convert-to-path % objects)))]
 
         (rx/of (dch/commit-changes changes))))))

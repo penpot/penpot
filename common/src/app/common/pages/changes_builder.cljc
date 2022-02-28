@@ -26,6 +26,10 @@
     :undo-changes []
     :origin origin}))
 
+(defn set-save-undo?
+  [changes save-undo?]
+  (assoc changes :save-undo? save-undo?))
+
 (defn with-page [changes page]
   (vary-meta changes assoc
              ::page page
@@ -266,10 +270,10 @@
             (d/preconj
              change-set
              {:type :add-obj
+              :id id
               :page-id page-id
               :parent-id (:frame-id shape)
               :frame-id (:frame-id shape)
-              :id id
               :index (cph/get-position-on-parent objects id)
               :obj (cond-> shape
                      (contains? shape :shapes)

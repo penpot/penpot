@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -673,26 +674,13 @@
                                (remove #(or (nil? %)
                                             (= (:frame-id %) frame-id))))
 
-            rch [{:type :mov-objects
-                  :page-id page-id
-                  :parent-id frame-id
-                  :shapes (mapv :id moving-shapes)}]
+            changes (-> (pcb/empty-changes it page-id)
+                        (pcb/with-objects objects)
+                        (pcb/change-parent frame-id moving-shapes))]
 
-
-            uch (->> moving-shapes
-                     (reverse)
-                     (mapv (fn [shape]
-                             {:type :mov-objects
-                              :page-id page-id
-                              :parent-id (:parent-id shape)
-                              :index (cph/get-index-in-parent objects (:id shape))
-                              :shapes [(:id shape)]})))]
-
-        (when-not (empty? uch)
+        (when-not (empty? changes)
           (rx/of dwu/pop-undo-into-transaction
-                 (dch/commit-changes {:redo-changes rch
-                                      :undo-changes uch
-                                      :origin it})
+                 (dch/commit-changes changes)
                  (dwu/commit-undo-transaction)
                  (dwc/expand-collapse frame-id)))))))
 

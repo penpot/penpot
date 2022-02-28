@@ -34,13 +34,11 @@
          (when (and (seq points) (some? shape))
            (let [new-content (-> (tool-fn (:content shape) points)
                                  (ups/close-subpaths))
-                 [rch uch] (changes/generate-path-changes objects page-id shape (:content shape) new-content)]
+                 changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
 
              (rx/concat
               (rx/of (dch/update-shapes [id] upsp/convert-to-path))
-              (rx/of (dch/commit-changes {:redo-changes rch
-                                          :undo-changes uch
-                                          :origin it})
+              (rx/of (dch/commit-changes changes)
                      (when (empty? new-content)
                        dwc/clear-edition-mode))))))))))
 

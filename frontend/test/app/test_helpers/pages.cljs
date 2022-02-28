@@ -12,6 +12,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries-helpers :as dwlh]))
 
 ;; ---- Helpers to manage pages and objects
@@ -21,8 +22,8 @@
 (def initial-state
   {:current-file-id current-file-id
    :current-page-id nil
-   :workspace-global dw/default-workspace-global
-   :workspace-local dw/default-workspace-local
+   :workspace-layout layout/default-layout
+   :workspace-global layout/default-global
    :workspace-data {:id current-file-id
                     :components {}
                     :pages []
@@ -87,12 +88,12 @@
          shapes (dwg/shapes-for-grouping (:objects page) ids)]
      (if (empty? shapes)
        state
-       (let [[group rchanges uchanges]
-             (dwg/prepare-create-group (:objects page) (:id page) shapes prefix true)]
+       (let [[group changes]
+             (dwg/prepare-create-group nil (:objects page) (:id page) shapes prefix true)]
 
          (swap! idmap assoc label (:id group))
          (update state :workspace-data
-                 cp/process-changes rchanges))))))
+                 cp/process-changes (:redo-changes changes)))))))
 
 (defn make-component
   [state label ids]
@@ -101,7 +102,8 @@
         shapes  (dwg/shapes-for-grouping objects ids)
 
         [group rchanges uchanges]
-        (dwlh/generate-add-component shapes
+        (dwlh/generate-add-component nil
+                                     shapes
                                      (:objects page)
                                      (:id page)
                                      current-file-id)]

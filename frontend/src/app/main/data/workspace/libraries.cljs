@@ -288,7 +288,7 @@
             shapes   (dwg/shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group rchanges uchanges]
-                (dwlh/generate-add-component shapes objects page-id file-id)]
+                (dwlh/generate-add-component it shapes objects page-id file-id)]
             (when-not (empty? rchanges)
               (rx/of (dch/commit-changes {:redo-changes rchanges
                                           :undo-changes uchanges

@@ -131,7 +131,7 @@
   "If there is exactly one id, and it's a group, use it as root. Otherwise,
   create a group that contains all ids. Then, make a component with it,
   and link all shapes to their corresponding one in the component."
-  [shapes objects page-id file-id]
+  [it shapes objects page-id file-id]
   (if (and (= (count shapes) 1)
            (:component-id (first shapes)))
     empty-changes
@@ -140,7 +140,8 @@
           (if (and (= (count shapes) 1)
                    (= (:type (first shapes)) :group))
             [(first shapes) [] []]
-            (dwg/prepare-create-group objects page-id shapes name true))
+            (let [[group changes] (dwg/prepare-create-group it objects page-id shapes name true)]
+              [group (:redo-changes changes) (:undo-changes changes)]))
 
           ;; Asserts for documentation purposes
           _ (us/assert vector? rchanges)

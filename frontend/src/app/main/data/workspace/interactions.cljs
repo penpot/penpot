@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.interactions :as csi]
@@ -27,12 +28,8 @@
   (ptk/reify ::add-flow
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id (:current-page-id state)
-            flows   (get-in state [:workspace-data
-                                   :pages-index
-                                   page-id
-                                   :options
-                                   :flows] [])
+      (let [page    (wsh/lookup-page state)
+            flows   (get-in page [:options :flows] [])
 
             unames  (into #{} (map :name flows))
             name    (dwc/generate-unique-name unames "Flow-1")
@@ -42,15 +39,10 @@
                       :starting-frame starting-frame}]
 
         (rx/of (dch/commit-changes
-                {:redo-changes [{:type :set-option
-                                 :page-id page-id
-                                 :option :flows
-                                 :value (csp/add-flow flows new-flow)}]
-                 :undo-changes [{:type :set-option
-                                 :page-id page-id
-                                 :option :flows
-                                 :value flows}]
-                 :origin it}))))))
+                 (-> (pcb/empty-changes it)
+                     (pcb/with-page page)
+                     (pcb/set-page-option :flows
+                                          (csp/add-flow flows new-flow)))))))))
 
 (defn add-flow-selected-frame
   []
@@ -66,22 +58,13 @@
   (ptk/reify ::remove-flow
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id (:current-page-id state)
-            flows   (get-in state [:workspace-data
-                                   :pages-index
-                                   page-id
-                                   :options
-                                   :flows] [])]
+      (let [page    (wsh/lookup-page state)
+            flows   (get-in page [:options :flows] [])]
         (rx/of (dch/commit-changes
-                {:redo-changes [{:type :set-option
-                                 :page-id page-id
-                                 :option :flows
-                                 :value (csp/remove-flow flows flow-id)}]
-                 :undo-changes [{:type :set-option
-                                 :page-id page-id
-                                 :option :flows
-                                 :value flows}]
-                 :origin it}))))))
+                 (-> (pcb/empty-changes it)
+                     (pcb/with-page page)
+                     (pcb/set-page-option :flows
+                                          (csp/remove-flow flows flow-id)))))))))
 
 (defn rename-flow
   [flow-id name]
@@ -90,24 +73,14 @@
   (ptk/reify ::rename-flow
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id (:current-page-id state)
-            flows   (get-in state [:workspace-data
-                                   :pages-index
-                                   page-id
-                                   :options
-                                   :flows] [])]
+      (let [page    (wsh/lookup-page state)
+            flows   (get-in page [:options :flows] [])]
         (rx/of (dch/commit-changes
-                {:redo-changes [{:type :set-option
-                                 :page-id page-id
-                                 :option :flows
-                                 :value (csp/update-flow flows flow-id
-                                                         #(csp/rename-flow % name))}]
-                 :undo-changes [{:type :set-option
-                                 :page-id page-id
-                                 :option :flows
-                                 :value flows}]
-                 :origin it}))))))
-
+                 (-> (pcb/empty-changes it)
+                     (pcb/with-page page)
+                     (pcb/set-page-option :flows
+                                          (csp/update-flow flows flow-id
+                                                           #(csp/rename-flow % name))))))))))
 
 (defn start-rename-flow
   [id]

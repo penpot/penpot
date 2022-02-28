@@ -6,9 +6,9 @@
 
 (ns app.main.data.workspace.changes
   (:require
-   [app.common.data :as d]
    [app.common.logging :as log]
    [app.common.pages :as cp]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.spec :as us]
    [app.common.spec.change :as spec.change]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -31,78 +31,38 @@
 
 (def commit-changes? (ptk/type? ::commit-changes))
 
-(defn- generate-operation
-  "Given an object old and new versions and an attribute will append into changes
-  the set and undo operations"
-  [changes attr old new ignore-geometry?]
-  (let [old-val (get old attr)
-        new-val (get new attr)]
-    (if (= old-val new-val)
-      changes
-      (-> changes
-          (update :rops conj {:type :set :attr attr :val new-val :ignore-geometry ignore-geometry?})
-          (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
-
-(defn- update-shape-changes
-  "Calculate the changes and undos to be done when a function is applied to a
-  single object"
-  [changes page-id objects update-fn attrs id ignore-geometry?]
-  (let [old-obj (get objects id)
-        new-obj (update-fn old-obj)
-
-        attrs (or attrs (d/concat-set (keys old-obj) (keys new-obj)))
-
-        {rops :rops uops :uops}
-        (reduce #(generate-operation %1 %2 old-obj new-obj ignore-geometry?)
-                {:rops [] :uops []}
-                attrs)
-
-        uops (cond-> uops
-               (seq uops)
-               (conj {:type :set-touched :touched (:touched old-obj)}))
-
-        change {:type :mod-obj :page-id page-id :id id}]
-
-    (cond-> changes
-      (seq rops)
-      (update :redo-changes conj (assoc change :operations rops))
-
-      (seq uops)
-      (update :undo-changes conj (assoc change :operations uops)))))
-
 (defn update-shapes
-  ([ids f] (update-shapes ids f nil nil))
-  ([ids f keys] (update-shapes ids f nil keys))
-  ([ids f page-id {:keys [reg-objects? save-undo? attrs ignore-tree]
-                   :or {reg-objects? false save-undo? true attrs nil}}]
+  ([ids update-fn] (update-shapes ids update-fn nil nil))
+  ([ids update-fn keys] (update-shapes ids update-fn nil keys))
+  ([ids update-fn page-id {:keys [reg-objects? save-undo? attrs ignore-tree]
+                           :or {reg-objects? false save-undo? true attrs nil}}]
 
    (us/assert ::coll-of-uuid ids)
-   (us/assert fn? f)
+   (us/assert fn? update-fn)
 
    (ptk/reify ::update-shapes
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id   (or page-id (:current-page-id state))
-             objects   (wsh/lookup-page-objects state page-id)
-             changes   {:redo-changes []
-                        :undo-changes []
-                        :origin it
-                        :save-undo? save-undo?}
-
+             objects   (wsh/lookup-page-objects state)
              ids       (into [] (filter some?) ids)
 
              changes   (reduce
-                        #(update-shape-changes %1 page-id objects f attrs %2 (get ignore-tree %2))
-                        changes ids)]
+                         (fn [changes id]
+                           (pcb/update-shapes changes
+                                              [id]
+                                              update-fn
+                                              {:attrs attrs
+                                               :ignore-geometry? (get ignore-tree id)}))
+                         (-> (pcb/empty-changes it page-id)
+                             (pcb/set-save-undo? save-undo?)
+                             (pcb/with-objects objects))
+                         ids)]
 
-         (when-not (empty? (:redo-changes changes))
-           (let [reg-objs {:type :reg-objects
-                           :page-id page-id
-                           :shapes ids}
-                 changes  (cond-> changes
+         (when (seq (:redo-changes changes))
+           (let [changes  (cond-> changes
                             reg-objects?
-                            (-> (update :redo-changes conj reg-objs)
-                                (update :undo-changes conj reg-objs)))]
+                            (pcb/resize-parents ids))]
              (rx/of (commit-changes changes)))))))))
 
 (defn update-indices
@@ -125,6 +85,7 @@
     (ptk/reify ::commit-changes
       cljs.core/IDeref
       (-deref [_]
+
         {:file-id file-id
          :hint-events @st/last-events
          :hint-origin (ptk/type origin)
