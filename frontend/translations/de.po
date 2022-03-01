@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-11-01 03:34+0000\n"
-"Last-Translator: Marius <hi@mariusscheel.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"PO-Revision-Date: 2022-03-02 18:54+0000\n"
+"Last-Translator: nautilusx <translate@disroot.org>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.9-dev\n"
+"X-Generator: Weblate 4.11.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -69,7 +69,7 @@ msgstr "Schön, Sie wiederzusehen!"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Einloggen mit Github"
+msgstr "Anmelden mit GitHub"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
@@ -77,7 +77,7 @@ msgstr "Einloggen mit Gitlab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "Einloggen mit Google"
+msgstr "Anmelden mit Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
@@ -85,7 +85,7 @@ msgstr "Anmelden mit LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "Einloggen mit OpenID (SSO)"
+msgstr "Anmelden mit OpenID (SSO)"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -1071,7 +1071,7 @@ msgid "labels.give-feedback"
 msgstr "Feedback geben"
 
 msgid "labels.go-back"
-msgstr "Zurück!"
+msgstr "Zurück"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
@@ -1528,7 +1528,7 @@ msgstr "Entfernen Sie “%s” als gemeinsam genutzte Bibliothek"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
-msgstr "Komponente aktualisieren"
+msgstr "Aktualisieren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
@@ -1982,7 +1982,7 @@ msgstr "Dynamische Ausrichtung deaktivieren"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-scale-text"
-msgstr "Textskalierung ausschalten"
+msgstr "Textskalierung deaktivieren"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-grid"
@@ -1994,7 +1994,7 @@ msgstr "Dynamische Ausrichtung aktivieren"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-scale-text"
-msgstr "Textskalierung einschalten"
+msgstr "Textskalierung aktivieren"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-grid"
@@ -2210,7 +2210,7 @@ msgstr "Komponente"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
-msgstr "Constraints"
+msgstr "Beschränkungen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.bottom"
@@ -2258,7 +2258,7 @@ msgstr "Exportieren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "Form exportieren"
+msgstr "Exportieren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3219,3 +3219,266 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 Schriftart hinzugefügt"
+msgstr[1] "%s Schriftarten hinzugefügt"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Zu aktualisierende Komponenten:"
+
+msgid "errors.auth.unable-to-login"
+msgstr ""
+"Anscheinend sind Sie nicht authentifiziert oder die Sitzung ist abgelaufen."
+
+msgid "errors.email-as-password"
+msgstr "Sie können Ihre E-Mail-Adresse nicht als Passwort verwenden"
+
+msgid "errors.team-leave.insufficient-members"
+msgstr ""
+"Nicht genügend Mitglieder, um das Team zu verlassen, wahrscheinlich wollen "
+"Sie es löschen."
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "Das Mitglied, das Sie zuzuordnen möchten, existiert nicht."
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "Komponente"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Maske"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "Über Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Hilfezentrum"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "Bibliotheken & Vorlagen"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Ihr Konto"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "Ausrichten an Hilfslinien deaktivieren"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "An Hilfslinien ausrichten"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Namen der Zeichenflächen anzeigen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Schriftartenpalette anzeigen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "Füllen - Skalieren zum Füllen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "Anpassen - Verkleinern zum Einpassen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-full-screen"
+msgstr "Vollbild"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-duration"
+msgstr "Dauer"
+
+msgid "workspace.options.recent-fonts"
+msgstr "Aktuell"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "In Exporten anzeigen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Auswahl auf Zeichenfläche"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Alle ablehnen"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Alle hochladen"
+
+msgid "dashboard.import.import-warning"
+msgstr "Einige Dateien enthielten ungültige Objekte, die entfernt wurden."
+
+msgid "common.share-link.placeholder"
+msgstr "Link zum Teilen wird hier erscheinen"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Hier gibt es noch keine Dateien. Wenn Sie einige Vorlagen ausprobieren "
+"möchten, können Sie zum Abschnitt [Bibliotheken & Vorlagen](https://penpot."
+"app/libraries-templates.html) gehen"
+
+msgid "labels.next"
+msgstr "Weiter"
+
+msgid "onboarding.choice.team-up"
+msgstr "Team bilden"
+
+msgid "onboarding.choice.title"
+msgstr "Willkommen bei Penpot"
+
+msgid "onboarding.team-input-placeholder"
+msgstr "Neuen Teamnamen eingeben"
+
+msgid "onboarding.team.skip-and-invite-later"
+msgstr "Überspringen und später einladen"
+
+msgid "onboarding.welcome.desc3"
+msgstr ""
+"Während Sie Penpot als das genießen, was es ist, werden wir es weiter "
+"verbessern und neue Versionen unserer hoffnungsvollen Pläne veröffentlichen."
+
+msgid "onboarding.templates.subtitle"
+msgstr "Hier sind einige Vorlagen."
+
+msgid "onboarding.templates.title"
+msgstr "Beginnen Sie mit dem Entwerfen"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "RGB-komplementär"
+
+msgid "workspace.options.grid.params.color"
+msgstr "Farbe"
+
+msgid "workspace.options.opacity"
+msgstr "Deckkraft"
+
+msgid "workspace.options.width"
+msgstr "Breite"
+
+msgid "workspace.options.x"
+msgstr "X"
+
+msgid "workspace.options.y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"Sie sind dabei, Komponenten in einer gemeinsam genutzten Bibliothek zu "
+"aktualisieren. Dies kann sich auf andere Dateien auswirken, die diese "
+"verwenden."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "Scrollposition beibehalten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Komponenten in einer gemeinsamen Bibliothek aktualisieren"
+
+msgid "onboarding.choice.fly-solo"
+msgstr "Allein starten"
+
+msgid "onboarding.choice.desc"
+msgstr "Wie wollen Sie beginnen?"
+
+msgid "onboarding.choice.fly-solo-desc"
+msgstr "Steigen Sie in Penpot ein und beginnen Sie, selbst zu gestalten."
+
+msgid "onboarding.choice.team-up-desc"
+msgstr ""
+"Arbeiten Sie mit jemandem zusammen? Bilden Sie ein Team und laden Sie Leute "
+"ein, gemeinsam an Projekten zu arbeiten und Gestaltungselemente zu teilen."
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "Datei"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "Ansicht"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Namen von Zeichenflächen ausblenden"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "Schriftartenpalette ausblenden"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "Bearbeiten"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Zurücksetzen"
+
+msgid "workspace.options.height"
+msgstr "Höhe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation"
+msgstr "Animation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "Auflösen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "Keine"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Schattenfarbe"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Benutzeroberfläche ein-/ausblenden"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-linear"
+msgstr "Linear"
+
+msgid "workspace.options.stroke-width"
+msgstr "Konturbreite"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "Ebene auswählen"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "Typografien (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Instanzen trennen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Hauptkomponenten aktualisieren"
+
+msgid "workspace.options.stroke-color"
+msgstr "Konturfarbe"
+
+msgid "onboarding.welcome.desc1"
+msgstr "Hurra! Sie sind bereits ein Penpot-Benutzer :)"
+
+msgid "onboarding.welcome.title"
+msgstr "Willkommen bei Penpot"
