@@ -106,7 +106,7 @@
 
            on-message
            (fn [_ message]
-             (mtx/run! metrics {:id :websocket-messages-total :labels ["send"] :inc 1})
+             (mtx/run! metrics {:id :websocket-messages-total :labels ["recv"] :inc 1})
              (try
                (let [message (t/decode-str message)]
                  (a/offer! input-ch message))
