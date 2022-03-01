@@ -52,6 +52,7 @@
    [app.util.http :as http]
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
+   [app.util.storage :refer [storage]]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
@@ -245,6 +246,8 @@
             (rx/observe-on :async))))))
 
 (declare go-to-page)
+(declare load-flag)
+
 (defn initialize-page
   [page-id]
   (us/assert ::us/uuid page-id)
@@ -268,6 +271,12 @@
               (assoc :current-page-id id)
               (assoc :trimmed-page (dm/select-keys page [:id :name]))
               (assoc :workspace-local local)
+              (update :workspace-layout
+                      #(if (load-flag :colorpalette false)
+                         (conj % :colorpalette)
+                         (disj % :colorpalette)))
+              (assoc-in [:workspace-local :selected-palette] (load-flag :selected-palette :recent))
+              (assoc-in [:workspace-local :selected-palette-colorpicker] (load-flag :selected-palette-colorpicker :recent))
               (update :workspace-global assoc :background-color (-> page :options :background))
               (update-in [:route :params :query] assoc :page-id (dm/str id))))
         state))))
@@ -386,6 +395,27 @@
              (rx/ignore))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Local storage Flags Manipulation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def storeable-layout-flags #{:colorpalette})
+(def storeable-workspace-local-flags #{:selected-palette :selected-palette-colorpicker})
+
+(defn store-layout-flags!
+  [state flags]
+  (doseq [item (filter storeable-layout-flags flags)]
+    (swap! storage assoc item (contains? (:workspace-layout state) item))))
+
+(defn store-workspace-local-flag!
+  [flag value]
+  (when (contains? storeable-workspace-local-flags flag)
+    (swap! storage assoc flag value)))
+
+(defn load-flag
+  [flag default]
+  (or (flag @storage) default))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace State Manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -396,23 +426,34 @@
   (ptk/reify ::toggle-layout-flags
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-layout
-              (fn [stored]
-                (reduce (fn [flags flag]
-                          (if (contains? flags flag)
-                            (disj flags flag)
-                            (conj flags flag)))
-                        stored
-                        (d/concat-set flags)))))))
+      (let [new-state (update state :workspace-layout
+                              (fn [stored]
+                                (reduce (fn [flags flag]
+                                          (if (contains? flags flag)
+                                            (disj flags flag)
+                                            (conj flags flag)))
+                                        stored
+                                        (d/concat-set flags))))]
+        (store-layout-flags! new-state flags)
+        new-state))))
 
 (defn remove-layout-flags
   [& flags]
   (ptk/reify ::remove-layout-flags
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-layout
-              (fn [stored]
-                (reduce disj stored (d/concat-set flags)))))))
+      (let [new-state (update state :workspace-layout
+                              (fn [stored]
+                                (reduce disj stored (d/concat-set flags))))]
+        (store-layout-flags! (:workspace-layout new-state) flags)
+        new-state))))
+
+;; --- Set workspace flag
+
+(defn set-workspace-local-flag!
+  [state flag value]
+  (store-workspace-local-flag! flag value)
+  (assoc-in state [:workspace-local flag] value))
 
 ;; --- Set element options mode
 
