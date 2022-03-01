@@ -107,6 +107,30 @@
 (s/def ::shapes
   (s/every uuid? :kind vector?))
 
+(s/def ::fill
+  (s/keys :opt-un [::fill-color
+                   ::fill-opacity
+                   ::fill-color-gradient
+                   ::fill-color-ref-file
+                   ::fill-color-ref-id]))
+
+(s/def ::fills
+  (s/coll-of ::fill :kind vector?))
+
+(s/def ::stroke
+  (s/keys :opt-un [::stroke-color
+                   ::stroke-color-ref-file
+                   ::stroke-color-ref-id
+                   ::stroke-opacity
+                   ::stroke-style
+                   ::stroke-width
+                   ::stroke-alignment
+                   ::stroke-cap-start
+                   ::stroke-cap-end]))
+
+(s/def ::strokes
+  (s/coll-of ::stroke :kind vector?))
+
 (s/def ::transform ::gmt/matrix)
 (s/def ::transform-inverse ::gmt/matrix)
 (s/def ::opacity ::us/safe-number)
@@ -140,6 +164,7 @@
                    ::points
                    ::blocked
                    ::collapsed
+                   ::fills
                    ::fill-color
                    ::fill-opacity
                    ::fill-color-gradient
@@ -169,6 +194,7 @@
                    ::y
                    ::exports
                    ::shapes
+                   ::strokes
                    ::stroke-color
                    ::stroke-color-ref-file
                    ::stroke-color-ref-id
