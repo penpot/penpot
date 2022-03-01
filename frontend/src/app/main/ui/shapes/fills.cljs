@@ -30,9 +30,11 @@
       (let [{:keys [x y width height]} (:selrect shape)
             {:keys [metadata]} shape
 
-            has-image (or metadata (:fill-image shape))
-            uri (if metadata
+            has-image? (or metadata (:fill-image shape))
+            uri (cond
+                  metadata
                   (cfg/resolve-file-media metadata)
+                  (:fill-image shape)
                   (cfg/resolve-file-media (:fill-image shape)))
             embed (embed/use-data-uris [uri])
             transform (gsh/transform-matrix shape)
@@ -66,7 +68,7 @@
                                (obj/set! "width" width)
                                (obj/set! "height" height))])
 
-               (when has-image
+               (when has-image?
                  [:image {:xlinkHref (get embed uri uri)
                           :width width
                           :height height}])]])])))))

@@ -34,6 +34,7 @@
                              (rx/map identity obs)))
 
              sub (->> (rx/from urls)
+                      (rx/filter some?)
                       (url-mapping)
                       (rx/reduce conj {})
                       (rx/subs (fn [data]
