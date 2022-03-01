@@ -12,12 +12,13 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.export :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.comments :refer [comments-menu]]
    [app.main.ui.viewer.interactions :refer [flows-menu interactions-menu]]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
 (mf/defc zoom-widget
@@ -88,6 +89,7 @@
 
        [:div.view-options])
 
+     [:& export-progress-widget]
      [:& zoom-widget
       {:zoom zoom
        :on-increase (st/emitf dv/increase-zoom)

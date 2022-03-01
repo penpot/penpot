@@ -260,6 +260,10 @@ msgstr ""
 "¡Oh, no! ¡Aún no tienes archivos! Si quieres probar con alguna plantilla ve a "
 "[Bibliotecas y plantillas](https://penpot.app/libraries-templates.html)"
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exportar"
+
 msgid "dashboard.export-frames"
 msgstr "Exportar tableros a PDF..."
 
@@ -303,6 +307,26 @@ msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 
 msgid "dashboard.export.title"
 msgstr "Exportar ficheros"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Exportar selección"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.selected"
+msgstr "%s de %s elementos seleccionados"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "No hay elementos con configuraciones de exportación."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr " Puedes añadir configuraciones de exportación a elementos desde las propiedades de diseño (al final del lateral derecho)."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Información sobre cómo configurar exportaciones en Penpot."
 
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Fuente eliminada."
@@ -2497,16 +2521,34 @@ msgid "workspace.options.export"
 msgstr "Exportar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "Exportar selección"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "Exportar"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Exportar 1 elemento"
+msgstr[1] "Exportar %s elementos"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
 msgstr "Sufijo"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object"
-msgstr "Exportando"
+msgstr "Exportando..."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "Exportación lenta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "Reintentar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-error"
+msgstr "Exportación fallida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"

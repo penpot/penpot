@@ -42,6 +42,9 @@
 (def share-links
   (l/derived :share-links st/state))
 
+(def export
+  (l/derived :export st/state))
+
 ;; ---- Dashboard refs
 
 (def dashboard-local
@@ -98,12 +101,34 @@
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 
+;; TODO: rename to workspace-selected (?)
 (def selected-shapes
   (l/derived wsh/lookup-selected st/state =))
 
 (defn make-selected-ref
   [id]
   (l/derived #(contains? % id) selected-shapes))
+
+(def export-in-progress?
+  (l/derived :export-in-progress? export))
+
+(def export-error?
+  (l/derived :export-error? export))
+
+(def export-progress
+  (l/derived :export-progress export))
+
+(def exports
+  (l/derived :exports export))
+
+(def export-detail-visibililty
+  (l/derived :export-detail-visibililty export))
+
+(def export-widget-visibililty
+  (l/derived :export-widget-visibililty export))
+
+(def export-health
+  (l/derived :export-health export))
 
 (def selected-zoom
   (l/derived :zoom workspace-local))
@@ -233,11 +258,7 @@
 
 (defn objects-by-id
   [ids]
-  (let [selector
-        (fn [state]
-          (let [objects (wsh/lookup-page-objects state)]
-            (into [] (keep (d/getf objects)) ids)))]
-    (l/derived selector st/state =)))
+  (l/derived #(wsh/lookup-shapes % ids) st/state =))
 
 (defn- set-content-modifiers [state]
   (fn [id shape]

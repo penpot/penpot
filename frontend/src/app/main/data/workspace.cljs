@@ -116,15 +116,16 @@
             (rx/take 1)
             (rx/map deref)
             (rx/mapcat (fn [bundle]
-                         (rx/merge
-                          (rx/of (dwn/initialize file-id)
-                                 (dwp/initialize-file-persistence file-id)
-                                 (dwc/initialize-indices bundle))
+                         (let [team-id (-> bundle :project :team-id)]
+                           (rx/merge
+                            (rx/of (dwn/initialize team-id file-id)
+                                   (dwp/initialize-file-persistence file-id)
+                                   (dwc/initialize-indices bundle))
 
-                          (->> stream
-                               (rx/filter #(= ::dwc/index-initialized %))
-                               (rx/take 1)
-                               (rx/map #(file-initialized bundle)))))))))
+                            (->> stream
+                                 (rx/filter #(= ::dwc/index-initialized %))
+                                 (rx/take 1)
+                                 (rx/map #(file-initialized bundle))))))))))
 
     ptk/EffectEvent
     (effect [_ _ _]
@@ -982,7 +983,7 @@
             pages (get-in state [:workspace-data
                                  :pages-index])
             file-thumbnails (->> pages
-                     (mapcat #(extract-file-thumbnails-from-page state selected %)))]        
+                     (mapcat #(extract-file-thumbnails-from-page state selected %)))]
         (rx/concat
          (rx/from
           (for [ft file-thumbnails]

@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.uri :as u]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.util.http :as http]
    [beicon.core :as rx]))
 
@@ -40,7 +40,7 @@
                :status status
                :data body})))
 
-(def ^:private base-uri cfg/public-uri)
+(def ^:private base-uri cf/public-uri)
 
 (defn- send-query!
   "A simple helper for send and receive transit data on the penpot
@@ -105,23 +105,44 @@
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
 
-(defmethod query :export
-  [_ params]
+(defn- send-export-command
+  [& {:keys [cmd params blob?]}]
   (->> (http/send! {:method :post
                     :uri (u/join base-uri "export")
-                    :body (http/transit-data params)
+                    :body (http/transit-data (assoc params :cmd cmd))
                     :credentials "include"
-                    :response-type :blob})
+                    :response-type (if blob? :blob :text)})
+       (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
 
-(defmethod query :export-frames
+(defmethod query :export-shapes-simple
   [_ params]
-  (->> (http/send! {:method :post
-                    :uri (u/join base-uri "export-frames")
-                    :body (http/transit-data params)
-                    :credentials "include"
-                    :response-type :blob})
-       (rx/mapcat handle-response)))
+  (let [params (merge {:wait true} params)]
+    (->> (rx/of params)
+         (rx/mapcat #(send-export-command :cmd :export-shapes :params % :blob? false))
+         (rx/mapcat #(send-export-command :cmd :get-resource :params % :blob? true)))))
+
+(defmethod query :export-shapes-multiple
+  [_ params]
+  (send-export-command :cmd :export-shapes :params params :blob? false))
+
+(defmethod query :download-export-resource
+  [_ id]
+  (send-export-command :cmd :get-resource :params {:id id} :blob? true))
+
+(defmethod query :export-frames
+  [_ exports]
+  (let [params {:uri (str base-uri)
+                :cmd :export-frames
+                :wait false
+                :exports exports}]
+    (->> (http/send! {:method :post
+                      :uri (u/join base-uri "export")
+                      :body (http/transit-data params)
+                      :credentials "include"
+                      :response-type :blob})
+         (rx/mapcat handle-response)
+         (rx/ignore))))
 
 (derive :upload-file-media-object ::multipart-upload)
 (derive :update-profile-photo ::multipart-upload)

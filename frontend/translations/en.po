@@ -256,6 +256,10 @@ msgstr ""
 "Oh no! You have no files yet! If you want to try with some templates go "
 "to [Libraries & templates](https://penpot.app/libraries-templates.html)"
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exportar"
+
 msgid "dashboard.export-frames"
 msgstr "Export artboards to PDF..."
 
@@ -299,6 +303,26 @@ msgstr "Include shared library assets in file libraries"
 
 msgid "dashboard.export.title"
 msgstr "Export files"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Export selection"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.selected"
+msgstr "%s de %s elements selected"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "There are no elements with export settings."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr "You can add export settings to elements from the design properties (at the bottom of the right sidebar)."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Info how to set exports at Penpot."
 
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Font deleted"
@@ -2481,16 +2505,38 @@ msgid "workspace.options.export"
 msgstr "Export"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "Export selection"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "Export"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Export 1 element"
+msgstr[1] "Export %s elements"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
 msgstr "Suffix"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object"
 msgstr "Exporting…"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "Export unexpectedly slow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-error"
+msgstr "Export failed"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "Export unexpectedly slow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "Retry"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"

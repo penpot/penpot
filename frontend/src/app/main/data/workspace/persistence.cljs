@@ -30,7 +30,6 @@
    [app.main.store :as st]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.object :as obj]
    [app.util.time :as dt]
    [app.util.uri :as uu]
    [beicon.core :as rx]
@@ -71,7 +70,7 @@
             on-dirty
             (fn []
               ;; Enable reload stoper
-              (obj/set! js/window "onbeforeunload" (constantly false))
+              (swap! st/ongoing-tasks conj :workspace-change)
               (st/emit! (update-persistence-status {:status :pending})))
 
             on-saving
@@ -81,7 +80,7 @@
             on-saved
             (fn []
               ;; Disable reload stoper
-              (obj/set! js/window "onbeforeunload" nil)
+              (swap! st/ongoing-tasks disj :workspace-change)
               (st/emit! (update-persistence-status {:status :saved})))]
         (->> (rx/merge
               (->> stream

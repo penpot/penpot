@@ -7,9 +7,11 @@
 (ns app.main.ui.workspace.header
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
+   [app.main.data.exports :as de]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
@@ -17,6 +19,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.export :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
@@ -30,10 +33,11 @@
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
-;; --- Zoom Widget
 
 (def workspace-persistence-ref
   (l/derived :workspace-persistence st/state))
+
+;; --- Persistence state Widget
 
 (mf/defc persistence-state-widget
   {::mf/wrap [mf/memo]}
@@ -59,6 +63,8 @@
        [:div.error {:title "There was an error saving the data. Please refresh if this persists."}
         [:span.icon i/msg-warning]
         [:span.label (tr "workspace.header.save-error")]])]))
+
+;; --- Zoom Widget
 
 (mf/defc zoom-widget-workspace
   {::mf/wrap [mf/memo]}
@@ -150,6 +156,11 @@
                              (dom/prevent-default event)
                              (reset! editing? true))
 
+        on-export-shapes
+        (mf/use-callback
+         (fn [_]
+           (st/emit! (de/show-workspace-export-dialog))))
+
         on-export-file
         (mf/use-callback
          (mf/deps file team-id)
@@ -178,21 +189,20 @@
          (mf/deps file frames)
          (fn [_]
            (when (seq frames)
-             (let [filename  (str (:name file) ".pdf")
-                   frame-ids (mapv :id frames)]
-               (st/emit! (dm/info (tr "workspace.options.exporting-object")
-                                  {:timeout nil}))
-               (->> (rp/query! :export-frames
-                               {:name     (:name file)
-                                :file-id  (:id file)
-                                :page-id   page-id
-                                :frame-ids frame-ids})
+             (let [filename (dm/str (:name file) ".pdf")
+                   xform    (comp (map :id)
+                                  (map (fn [id]
+                                         {:file-id  (:id file)
+                                          :page-id   page-id
+                                          :frame-id id})))]
+               (st/emit! (msg/info (tr "workspace.options.exporting-object") {:timeout nil}))
+               (->> (rp/query! :export-frames (into [] xform frames))
                     (rx/subs
                      (fn [body]
                        (dom/trigger-download filename body))
                      (fn [_error]
-                       (st/emit! (dm/error (tr "errors.unexpected-error"))))
-                     (st/emitf dm/hide)))))))
+                       (st/emit! (msg/error (tr "errors.unexpected-error"))))
+                     (st/emitf msg/hide)))))))
 
         on-item-hover
         (mf/use-callback
@@ -269,6 +279,9 @@
           [:span (tr "dashboard.remove-shared")]]
          [:li {:on-click on-add-shared}
           [:span (tr "dashboard.add-shared")]])
+       [:li.export-file {:on-click on-export-shapes}
+        [:span (tr "dashboard.export-shapes")]
+        [:span.shortcut (sc/get-tooltip :export-shapes)]]
        [:li.export-file {:on-click on-export-file}
         [:span (tr "dashboard.export-single")]]
        (when (seq frames)
@@ -397,9 +410,9 @@
 
 (mf/defc header
   [{:keys [file layout project page-id] :as props}]
-  (let [team-id  (:team-id project)
-        zoom     (mf/deref refs/selected-zoom)
-        params   {:page-id page-id :file-id (:id file) :section "interactions"}
+  (let [team-id             (:team-id project)
+        zoom                (mf/deref refs/selected-zoom)
+        params              {:page-id page-id :file-id (:id file) :section "interactions"}
 
         go-back
         (mf/use-callback
@@ -429,6 +442,7 @@
      [:div.right-area
       [:div.options-section
        [:& persistence-state-widget]
+       [:& export-progress-widget]
        [:button.document-history
         {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
          :class (when (contains? layout :document-history) "selected")

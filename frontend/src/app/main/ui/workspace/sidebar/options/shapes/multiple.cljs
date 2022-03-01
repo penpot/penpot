@@ -14,6 +14,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
@@ -36,7 +37,8 @@
     :shadow     :children
     :blur       :children
     :stroke     :shape
-    :text       :children}
+    :text       :children
+    :exports    :shape}
 
    :group
    {:measure    :shape
@@ -46,7 +48,8 @@
     :shadow     :shape
     :blur       :shape
     :stroke     :children
-    :text       :children}
+    :text       :children
+    :exports    :shape}
 
    :path
    {:measure    :shape
@@ -56,7 +59,8 @@
     :shadow     :shape
     :blur       :shape
     :stroke     :shape
-    :text       :ignore}
+    :text       :ignore
+    :exports    :shape}
 
    :text
    {:measure    :shape
@@ -66,7 +70,8 @@
     :shadow     :shape
     :blur       :shape
     :stroke     :shape
-    :text       :text}
+    :text       :text
+    :exports    :shape}
 
    :image
    {:measure    :shape
@@ -76,7 +81,8 @@
     :shadow     :shape
     :blur       :shape
     :stroke     :ignore
-    :text       :ignore}
+    :text       :ignore
+    :exports    :shape}
 
    :rect
    {:measure    :shape
@@ -86,7 +92,8 @@
     :shadow     :shape
     :blur       :shape
     :stroke     :shape
-    :text       :ignore}
+    :text       :ignore
+    :exports    :shape}
 
    :circle
    {:measure    :shape
@@ -96,7 +103,8 @@
     :shadow     :shape
     :blur       :shape
     :stroke     :shape
-    :text       :ignore}
+    :text       :ignore
+    :exports    :shape}
 
    :svg-raw
    {:measure    :shape
@@ -106,7 +114,8 @@
     :shadow     :shape
     :blur       :shape
     :stroke     :shape
-    :text       :ignore}
+    :text       :ignore
+    :exports    :shape}
 
    :bool
    {:measure    :shape
@@ -116,7 +125,8 @@
     :shadow     :shape
     :blur       :shape
     :stroke     :shape
-    :text       :ignore}})
+    :text       :ignore
+    :exports    :shape}})
 
 (def group->attrs
   {:measure    measure-attrs
@@ -126,7 +136,8 @@
    :shadow     shadow-attrs
    :blur       blur-attrs
    :stroke     stroke-attrs
-   :text       ot/attrs})
+   :text       ot/attrs
+   :exports    exports-attrs})
 
 (def shadow-keys [:style :color :offset-x :offset-y :blur :spread])
 
@@ -211,11 +222,13 @@
     (dissoc :content)))
 
 (mf/defc options
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children"]))]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children" "page-id" "file-id"]))]
    ::mf/wrap-props false}
   [props]
   (let [shapes (unchecked-get props "shapes")
         shapes-with-children (unchecked-get props "shapes-with-children")
+        page-id (unchecked-get props "page-id")
+        file-id (unchecked-get props "file-id")
         objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
         show-caps (some #(and (= :path (:type %)) (gsh/open-path? %)) shapes)
 
@@ -235,7 +248,8 @@
          shadow-ids     shadow-values
          blur-ids       blur-values
          stroke-ids     stroke-values
-         text-ids       text-values]
+         text-ids       text-values
+         exports-ids    exports-values]
         (mf/use-memo
          (mf/deps objects-no-measures)
          (fn []
@@ -248,7 +262,8 @@
              (get-attrs shapes objects-no-measures :shadow)
              (get-attrs shapes objects-no-measures :blur)
              (get-attrs shapes objects-no-measures :stroke)
-             (get-attrs shapes objects-no-measures :text)])))]
+             (get-attrs shapes objects-no-measures :text)
+             (get-attrs shapes objects-no-measures :exports)])))]
 
     [:div.options
      (when-not (empty? measure-ids)
@@ -273,4 +288,7 @@
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
 
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:type type :ids text-ids :values text-values}])]))
+       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
+
+     (when-not (empty? exports-ids)
+       [:& exports-menu {:type type :ids exports-ids :values exports-values :page-id page-id :file-id file-id}])]))
