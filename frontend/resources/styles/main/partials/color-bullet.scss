@@ -5,30 +5,26 @@
 // Copyright (c) UXBOX Labs SL
 
 .color-cell {
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+  justify-items: center;
+  width: 65px;
+
   .color-bullet {
-    // Creates strange artifacts
     border: 2px solid $color-gray-60;
-    // box-shadow: 0 0 0 2px $color-gray-60;
-    border-radius: 50%;
+    position: relative;
+    width: var(--bullet-size);
+    height: var(--bullet-size);
 
     &:hover {
       border-color: $color-primary;
     }
   }
 
-  &.cell-big .color-bullet {
-    width: 50px;
-    height: 50px;
-  }
-
-  &.cell-small .color-bullet {
-    width: 40px;
-    height: 40px;
-  }
-
-  .color-bullet.color-big {
-    width: 50px;
-    height: 50px;
+  & > * {
+    overflow: hidden;
   }
 }
 
@@ -41,7 +37,6 @@
 ul.palette-menu .color-bullet {
   width: 20px;
   height: 20px;
-  border-radius: 12px;
   border: 1px solid $color-gray-10;
   margin-right: 5px;
   background-size: 8px;
@@ -67,14 +62,12 @@ ul.palette-menu .color-bullet {
   grid-area: color;
   width: 20px;
   height: 20px;
-  border-radius: 12px;
   border: 1px solid $color-gray-10;
   background-size: 8px;
 }
 
 .asset-section .asset-list-item .color-bullet {
   border: 1px solid $color-gray-20;
-  border-radius: 10px;
   height: 20px;
   margin-right: $size-1;
   width: 20px;
@@ -91,36 +84,29 @@ ul.palette-menu .color-bullet {
 .color-bullet {
   display: flex;
   flex-direction: row;
-  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
-    left center;
-  background-color: $color-white;
+  border-radius: 50%;
 
-  & > * {
+  & .color-bullet-wrapper {
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+      left center;
+    background-color: $color-white;
+    clip-path: circle(50%);
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+  }
+
+  &.is-gradient {
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+      left center;
+    background-color: $color-white;
+  }
+
+  & .color-bullet-wrapper > * {
     width: 100%;
     height: 100%;
   }
-}
-
-.color-bullet.is-library-color .color-bullet-left,
-.selected-colors .color-bullet .color-bullet-left {
-  border-radius: 10px 0 0 10px;
-}
-
-.color-bullet.is-library-color .color-bullet-right,
-.selected-colors .color-bullet .color-bullet-right {
-  border-radius: 0 10px 10px 0;
-}
-
-.color-palette .color-bullet .color-bullet-left {
-  border-radius: 25px 0 0 25px;
-}
-
-.color-palette .color-bullet .color-bullet-right {
-  border-radius: 0 25px 25px 0;
-}
-
-.color-data .color-bullet.is-library-color {
-  border-radius: 50%;
 }
 
 .color-data .color-bullet.multiple {
@@ -133,7 +119,7 @@ ul.palette-menu .color-bullet {
 
 .color-data .color-bullet {
   border: 1px solid $color-gray-30;
-  border-radius: $br-small;
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -143,10 +129,6 @@ ul.palette-menu .color-bullet {
   height: 20px;
   margin: 5px 4px 0 0;
   width: 20px;
-
-  &.color-name {
-    border-radius: 10px;
-  }
 
   &.palette-th {
     align-items: center;
@@ -196,5 +178,13 @@ ul.palette-menu .color-bullet {
     width: 8px;
     height: 8px;
     fill: $color-black;
+  }
+}
+
+.color-data .color-bullet.is-not-library-color {
+  border-radius: $br-small;
+
+  & .color-bullet-wrapper {
+    clip-path: none;
   }
 }

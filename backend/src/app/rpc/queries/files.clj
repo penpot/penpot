@@ -7,7 +7,7 @@
 (ns app.rpc.queries.files
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -26,6 +26,7 @@
 
 ;; --- Helpers & Specs
 
+(s/def ::frame-id ::us/uuid)
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::project-id ::us/uuid)
@@ -242,13 +243,10 @@
 (defn- trim-file-data
   [file {:keys [page-id object-id]}]
   (let [page    (get-in file [:data :pages-index page-id])
-        objects (->> (:objects page)
-                     (cp/get-object-with-children object-id)
-                     (map #(dissoc % :thumbnail)))
-
-        objects (d/index-by :id objects)
+        objects (->> (cph/get-children-with-self (:objects page) object-id)
+                     (map #(dissoc % :thumbnail))
+                     (d/index-by :id))
         page    (assoc page :objects objects)]
-
     (-> file
         (update :data assoc :pages-index {page-id page})
         (update :data assoc :pages [page-id]))))
@@ -395,6 +393,7 @@
    )
    select * from recent_files where row_num <= 10;")
 
+
 (s/def ::team-recent-files
   (s/keys :req-un [::profile-id ::team-id]))
 
@@ -403,6 +402,25 @@
   (with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (db/exec! conn [sql:team-recent-files team-id])))
+
+
+;; --- QUERY: get the thumbnail for an frame
+
+(def ^:private sql:file-frame-thumbnail
+  "select data
+     from file_frame_thumbnail
+    where file_id = ?
+      and frame_id = ?")
+
+(s/def ::file-frame-thumbnail
+  (s/keys :req-un [::profile-id ::file-id ::frame-id]))
+
+(sv/defmethod ::file-frame-thumbnail
+  [{:keys [pool]} {:keys [profile-id file-id frame-id]}]
+  (with-open [conn (db/open pool)]
+    (check-read-permissions! conn profile-id file-id)
+    (db/exec-one! conn [sql:file-frame-thumbnail file-id frame-id])))
+
 
 ;; --- Helpers
 

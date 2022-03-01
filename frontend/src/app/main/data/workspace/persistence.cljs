@@ -9,7 +9,10 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.spec.change :as spec.change]
+   [app.common.spec.file :as spec.file]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -200,7 +203,7 @@
                        :updated-at (dt/now)))))))
 
 (s/def ::shapes-changes-persisted
-  (s/keys :req-un [::revn ::cp/changes]))
+  (s/keys :req-un [::revn ::spec.change/changes]))
 
 (defn shapes-persisted-event? [event]
   (= (ptk/type event) ::changes-persisted))
@@ -238,7 +241,7 @@
 (s/def ::version ::us/integer)
 (s/def ::revn ::us/integer)
 (s/def ::ordering ::us/integer)
-(s/def ::data ::cp/data)
+(s/def ::data ::spec.file/data)
 
 (s/def ::file ::dd/file)
 (s/def ::project ::dd/project)
@@ -656,7 +659,7 @@
                                (rx/map extract-frame-changes)
                                (rx/share))
 
-            frames (-> state wsh/lookup-page-objects cp/select-frames)
+            frames (-> state wsh/lookup-page-objects cph/get-frames)
             no-thumb-frames (->> frames
                                  (filter (comp nil? :thumbnail))
                                  (mapv :id))]

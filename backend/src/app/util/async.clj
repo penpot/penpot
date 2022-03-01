@@ -7,7 +7,8 @@
 (ns app.util.async
   (:require
    [clojure.core.async :as a]
-   [clojure.spec.alpha :as s])
+   [clojure.spec.alpha :as s]
+   [promesa.exec :as px])
   (:import
    java.util.concurrent.Executor))
 
@@ -54,12 +55,15 @@
         (a/close! c)
         c))))
 
-
 (defmacro with-thread
   [executor & body]
   (if (= executor ::default)
     `(a/thread-call (^:once fn* [] (try ~@body (catch Exception e# e#))))
     `(thread-call ~executor (^:once fn* [] ~@body))))
+
+(defmacro with-dispatch
+  [executor & body]
+  `(px/submit! ~executor (^:once fn* [] ~@body)))
 
 (defn batch
   [in {:keys [max-batch-size

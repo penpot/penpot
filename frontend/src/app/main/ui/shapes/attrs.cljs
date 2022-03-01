@@ -6,8 +6,8 @@
 
 (ns app.main.ui.shapes.attrs
   (:require
-   [app.common.pages.spec :as spec]
-   [app.common.types.radius :as ctr]
+   [app.common.spec.radius :as ctr]
+   [app.common.spec.shape :refer [stroke-caps-line stroke-caps-marker]]
    [app.main.ui.context :as muc]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
@@ -81,6 +81,10 @@
 
 (defn add-fill [attrs shape render-id]
   (let [fill-attrs (cond
+                     (contains? shape :fill-image)
+                     (let [fill-image-id (str "fill-image-" render-id)]
+                       {:fill (str/format "url(#%s)" fill-image-id)})
+
                      (contains? shape :fill-color-gradient)
                      (let [fill-color-gradient-id (str "fill-color-gradient_" render-id)]
                        {:fill (str/format "url(#%s)" fill-color-gradient-id)})
@@ -88,14 +92,10 @@
                      (contains? shape :fill-color)
                      {:fill (:fill-color shape)}
 
-                     (contains? shape :fill-image)
-                     (let [fill-image-id (str "fill-image-" render-id)]
-                       {:fill (str/format "url(#%s)" fill-image-id) })
-
                      ;; If contains svg-attrs the origin is svg. If it's not svg origin
                      ;; we setup the default fill as transparent (instead of black)
                      (and (not (contains? shape :svg-attrs))
-                          (not (#{ :svg-raw :group } (:type shape))))
+                          (not (#{:svg-raw :group} (:type shape))))
                      {:fill "none"}
 
                      :else
@@ -131,7 +131,7 @@
               ;; For simple line caps we use svg stroke-line-cap attribute. This
               ;; only works if all caps are the same and we are not using the tricks
               ;; for inner or outer strokes.
-              (and (spec/stroke-caps-line (:stroke-cap-start shape))
+              (and (stroke-caps-line (:stroke-cap-start shape))
                    (= (:stroke-cap-start shape) (:stroke-cap-end shape))
                    (not (#{:inner :outer} (:stroke-alignment shape)))
                    (not= :dotted stroke-style))
@@ -141,15 +141,15 @@
               (assoc :strokeLinecap "round")
 
               ;; For other cap types we use markers.
-              (and (or (spec/stroke-caps-marker (:stroke-cap-start shape))
-                       (and (spec/stroke-caps-line (:stroke-cap-start shape))
+              (and (or (stroke-caps-marker (:stroke-cap-start shape))
+                       (and (stroke-caps-line (:stroke-cap-start shape))
                             (not= (:stroke-cap-start shape) (:stroke-cap-end shape))))
                    (not (#{:inner :outer} (:stroke-alignment shape))))
               (assoc :markerStart
                      (str/format "url(#marker-%s-%s)" render-id (name (:stroke-cap-start shape))))
 
-              (and (or (spec/stroke-caps-marker (:stroke-cap-end shape))
-                       (and (spec/stroke-caps-line (:stroke-cap-end shape))
+              (and (or (stroke-caps-marker (:stroke-cap-end shape))
+                       (and (stroke-caps-line (:stroke-cap-end shape))
                             (not= (:stroke-cap-start shape) (:stroke-cap-end shape))))
                    (not (#{:inner :outer} (:stroke-alignment shape))))
               (assoc :markerEnd
@@ -206,3 +206,16 @@
   [shape]
   (-> (obj/new)
       (add-style-attrs shape)))
+
+(defn extract-fill-attrs
+  [shape]
+  (let [render-id (mf/use-ctx muc/render-ctx)
+        fill-styles (-> (obj/get shape "style" (obj/new))
+                        (add-fill shape render-id))]
+    (-> (obj/new)
+        (obj/set! "style" fill-styles))))
+
+(defn extract-border-radius-attrs
+  [shape]
+   (-> (obj/new)
+       (add-border-radius shape)))

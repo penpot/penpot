@@ -8,7 +8,7 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.path.commands :as upc]
    [app.common.path.shapes-to-path :as upsp]
    [app.common.spec :as us]
@@ -255,10 +255,10 @@
   (ptk/reify ::setup-frame-path
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)
-            content (get-in state [:workspace-drawing :object :content] [])
+      (let [objects  (wsh/lookup-page-objects state)
+            content  (get-in state [:workspace-drawing :object :content] [])
             position (get-in content [0 :params] nil)
-            frame-id  (cp/frame-id-by-position objects position)]
+            frame-id (cph/frame-id-by-position objects position)]
         (-> state
             (assoc-in [:workspace-drawing :object :frame-id] frame-id))))))
 

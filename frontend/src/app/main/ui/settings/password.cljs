@@ -22,6 +22,9 @@
     :old-password-not-match
     (swap! form assoc-in [:errors :password-old]
            {:message (tr "errors.wrong-old-password")})
+    :email-as-password
+    (swap! form assoc-in [:errors :password-1]
+       {:message (tr "errors.email-as-password")})
 
     (let [msg (tr "generic.error")]
       (st/emit! (dm/error msg)))))
@@ -89,7 +92,8 @@
         :label (t locale "labels.confirm-password")}]]
 
      [:& fm/submit-button
-      {:label (t locale "dashboard.update-settings")}]]))
+      {:label (t locale "dashboard.update-settings")
+       :data-test "submit-password"}]]))
 
 ;; --- Password Page
 

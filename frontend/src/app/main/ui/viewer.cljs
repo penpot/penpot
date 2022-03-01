@@ -230,6 +230,8 @@
                  :section section}]
 
      [:div.viewer-content
+      [:div.thumbnail-close {:on-click #(st/emit! dv/close-thumbnails-panel)
+                             :class (dom/classnames :invisible (not (:show-thumbnails local false)))}]
       [:& thumbnails-panel {:frames frames
                             :show? (:show-thumbnails local false)
                             :page page

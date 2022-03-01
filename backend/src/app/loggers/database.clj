@@ -27,8 +27,9 @@
 (defonce enabled (atom true))
 
 (defn- persist-on-database!
-  [{:keys [pool]} {:keys [id] :as event}]
-  (db/insert! pool :server-error-report {:id id :content (db/tjson event)}))
+  [{:keys [pool] :as cfg} {:keys [id] :as event}]
+  (when-not (db/read-only? pool)
+    (db/insert! pool :server-error-report {:id id :content (db/tjson event)})))
 
 (defn- parse-event-data
   [event]

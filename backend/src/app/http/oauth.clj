@@ -21,7 +21,10 @@
    [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [promesa.exec :as px]))
+
+;; TODO: make it fully async (?)
 
 (defn- build-redirect-uri
   [{:keys [provider] :as cfg}]
@@ -213,28 +216,35 @@
       (redirect-response uri))))
 
 (defn- auth-handler
-  [{:keys [tokens] :as cfg} {:keys [params] :as request}]
-  (let [invitation (:invitation-token params)
-        props      (extract-utm-props params)
-        state      (tokens :generate
-                           {:iss :oauth
-                            :invitation-token invitation
-                            :props props
-                            :exp (dt/in-future "15m")})
-        uri        (build-auth-uri cfg state)]
-    {:status 200
-     :body {:redirect-uri uri}}))
+  [{:keys [tokens executor] :as cfg} {:keys [params] :as request} respond _]
+  (px/run!
+   executor
+   (fn []
+     (let [invitation (:invitation-token params)
+           props      (extract-utm-props params)
+           state      (tokens :generate
+                              {:iss :oauth
+                               :invitation-token invitation
+                               :props props
+                               :exp (dt/in-future "15m")})
+           uri        (build-auth-uri cfg state)]
+
+       (respond
+        {:status 200
+         :body {:redirect-uri uri}})))))
 
 (defn- callback-handler
-  [cfg request]
-  (try
-    (let [info     (retrieve-info cfg request)
-          profile  (retrieve-profile cfg info)]
-      (generate-redirect cfg request info profile))
-    (catch Exception e
-      (l/warn :hint "error on oauth process"
-              :cause e)
-      (generate-error-redirect cfg e))))
+  [{:keys [executor] :as cfg} request respond _]
+  (px/run!
+   executor
+   (fn []
+     (try
+       (let [info     (retrieve-info cfg request)
+             profile  (retrieve-profile cfg info)]
+         (respond (generate-redirect cfg request info profile)))
+       (catch Exception cause
+         (l/warn :hint "error on oauth process" :cause cause)
+         (respond (generate-error-redirect cfg cause)))))))
 
 ;; --- INIT
 
@@ -250,15 +260,19 @@
 
 (defn wrap-handler
   [cfg handler]
-  (fn [request]
+  (fn [request respond raise]
     (let [provider (get-in request [:path-params :provider])
           provider (get-in @cfg [:providers provider])]
-      (when-not provider
-        (ex/raise :type :not-found
-                  :context {:provider provider}
-                  :hint "provider not configured"))
-      (-> (assoc @cfg :provider provider)
-          (handler request)))))
+      (if provider
+        (handler (assoc @cfg :provider provider)
+                 request
+                 respond
+                 raise)
+        (raise
+         (ex/error
+          :type :not-found
+          :provider provider
+          :hint "provider not configured"))))))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

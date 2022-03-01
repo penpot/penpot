@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.media :as cm]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.config :as cfg]
@@ -43,18 +43,18 @@
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
-; TODO: refactor to remove duplicate code and less parameter passing.
-;  - Move all state to [:workspace-local :assets-bar file-id :open-boxes {}
-;                                                            :open-groups {}
-;                                                            :reverse-sort?
-;                                                            :listing-thumbs?
-;                                                            :selected-assets {}]
-;  - Move selection code to independent functions that receive the state as a parameter.
-;
-; TODO: change update operations to admit multiple ids, thus avoiding the need of
-;       emitting many events and opening an undo transaction. Also move the logic
-;       of grouping, deleting, etc. to events in the data module, since now the
-;       selection info is in the global state.
+;; TODO: refactor to remove duplicate code and less parameter passing.
+;;  - Move all state to [:workspace-local :assets-bar file-id :open-boxes {}
+;;                                                            :open-groups {}
+;;                                                            :reverse-sort?
+;;                                                            :listing-thumbs?
+;;                                                            :selected-assets {}]
+;;  - Move selection code to independent functions that receive the state as a parameter.
+;;
+;; TODO: change update operations to admit multiple ids, thus avoiding the need of
+;;       emitting many events and opening an undo transaction. Also move the logic
+;;       of grouping, deleting, etc. to events in the data module, since now the
+;;       selection info is in the global state.
 
 ;; ---- Group assets management ----
 
@@ -74,7 +74,7 @@
               (compare (d/name key1) (d/name key2))))]
     (when-not (empty? assets)
       (reduce (fn [groups asset]
-                (let [path-vector (cp/split-path (or (:path asset) ""))]
+                (let [path-vector (cph/split-path (or (:path asset) ""))]
                   (update-in groups (conj path-vector "")
                              (fn [group]
                                (if-not group
@@ -86,30 +86,30 @@
 (defn add-group
   [asset group-name]
   (-> (:path asset)
-      (cp/merge-path-item group-name)
-      (cp/merge-path-item (:name asset))))
+      (cph/merge-path-item group-name)
+      (cph/merge-path-item (:name asset))))
 
 (defn rename-group
   [asset path last-path]
   (-> (:path asset)
       (str/slice 0 (count path))
-      (cp/split-path)
+      (cph/split-path)
       butlast
       (vec)
       (conj last-path)
-      (cp/join-path)
+      (cph/join-path)
       (str (str/slice (:path asset) (count path)))
-      (cp/merge-path-item (:name asset))))
+      (cph/merge-path-item (:name asset))))
 
 (defn ungroup
   [asset path]
   (-> (:path asset)
       (str/slice 0 (count path))
-      (cp/split-path)
+      (cph/split-path)
       butlast
-      (cp/join-path)
+      (cph/join-path)
       (str (str/slice (:path asset) (count path)))
-      (cp/merge-path-item (:name asset))))
+      (cph/merge-path-item (:name asset))))
 
 (s/def ::asset-name ::us/not-empty-string)
 (s/def ::name-group-form
@@ -121,8 +121,8 @@
   [{:keys [path last-path accept] :as ctx
     :or {path "" last-path ""}}]
   (let [initial (mf/use-memo
-                  (mf/deps last-path)
-                  (constantly {:asset-name last-path}))
+                 (mf/deps last-path)
+                 (constantly {:asset-name last-path}))
         form  (fm/use-form :spec ::name-group-form
                            :initial initial)
 
@@ -225,27 +225,27 @@
 (mf/defc asset-group-title
   [{:keys [file-id box path group-open? on-rename on-ungroup]}]
   (when-not (empty? path)
-    (let [[other-path last-path truncated] (cp/compact-path path 35)
+    (let [[other-path last-path truncated] (cph/compact-path path 35)
           menu-state (mf/use-state auto-pos-menu-state)
 
           on-fold-group
           (mf/use-callback
-            (mf/deps file-id box path group-open?)
-            (fn [event]
-              (dom/stop-propagation event)
-              (st/emit! (dwl/set-assets-group-open file-id
-                                                   box
-                                                   path
-                                                   (not group-open?)))))
+           (mf/deps file-id box path group-open?)
+           (fn [event]
+             (dom/stop-propagation event)
+             (st/emit! (dwl/set-assets-group-open file-id
+                                                  box
+                                                  path
+                                                  (not group-open?)))))
           on-context-menu
           (mf/use-callback
-            (fn [event]
-              (swap! menu-state #(open-auto-pos-menu % event))))
+           (fn [event]
+             (swap! menu-state #(open-auto-pos-menu % event))))
 
           on-close-menu
           (mf/use-callback
-            (fn []
-              (swap! menu-state close-auto-pos-menu)))]
+           (fn []
+             (swap! menu-state close-auto-pos-menu)))]
 
       [:div.group-title {:class (when-not group-open? "closed")
                          :on-click on-fold-group
@@ -268,38 +268,38 @@
 (mf/defc components-item
   [{:keys [component renaming listing-thumbs? selected-components
            on-asset-click on-context-menu on-drag-start do-rename cancel-rename]}]
-     [:div {:key (:id component)
-            :class-name (dom/classnames
-                          :selected (contains? selected-components (:id component))
-                          :grid-cell @listing-thumbs?
-                          :enum-item (not @listing-thumbs?))
-            :id (str "component-shape-id-" (:id component))
-            :draggable true
-            :on-click #(on-asset-click % (:id component) nil)
-            :on-context-menu (on-context-menu (:id component))
-            :on-drag-start (partial on-drag-start component)}
-      [:& component-svg {:group (get-in component [:objects (:id component)])
-                         :objects (:objects component)}]
-      (let [renaming? (= renaming (:id component))]
-        [:& editable-label
-         {:class-name (dom/classnames
-                        :cell-name @listing-thumbs?
-                        :item-name (not @listing-thumbs?)
-                        :editing renaming?)
-          :value (cp/merge-path-item (:path component) (:name component))
-          :tooltip (cp/merge-path-item (:path component) (:name component))
-          :display-value (if @listing-thumbs?
-                           (:name component)
-                           (cp/compact-name (:path component)
-                                            (:name component)))
-          :editing? renaming?
-          :disable-dbl-click? true
-          :on-change do-rename
-          :on-cancel cancel-rename}])])
+  [:div {:key (:id component)
+         :class-name (dom/classnames
+                      :selected (contains? selected-components (:id component))
+                      :grid-cell @listing-thumbs?
+                      :enum-item (not @listing-thumbs?))
+         :id (str "component-shape-id-" (:id component))
+         :draggable true
+         :on-click #(on-asset-click % (:id component) nil)
+         :on-context-menu (on-context-menu (:id component))
+         :on-drag-start (partial on-drag-start component)}
+   [:& component-svg {:group (get-in component [:objects (:id component)])
+                      :objects (:objects component)}]
+   (let [renaming? (= renaming (:id component))]
+     [:& editable-label
+      {:class-name (dom/classnames
+                    :cell-name @listing-thumbs?
+                    :item-name (not @listing-thumbs?)
+                    :editing renaming?)
+       :value (cph/merge-path-item (:path component) (:name component))
+       :tooltip (cph/merge-path-item (:path component) (:name component))
+       :display-value (if @listing-thumbs?
+                        (:name component)
+                        (cph/compact-name (:path component)
+                                          (:name component)))
+       :editing? renaming?
+       :disable-dbl-click? true
+       :on-change do-rename
+       :on-cancel cancel-rename}])])
 
 (mf/defc components-group
   [{:keys [file-id prefix groups open-groups renaming listing-thumbs? selected-components on-asset-click
-    on-drag-start do-rename cancel-rename on-rename-group on-ungroup on-context-menu]}]
+           on-drag-start do-rename cancel-rename on-rename-group on-ungroup on-context-menu]}]
   (let [group-open? (get open-groups prefix true)]
 
     [:*
@@ -313,9 +313,9 @@
        [:*
         (let [components (get groups "" [])]
           [:div {:class-name (dom/classnames
-                               :asset-grid @listing-thumbs?
-                               :big @listing-thumbs?
-                               :asset-enum (not @listing-thumbs?))}
+                              :asset-grid @listing-thumbs?
+                              :big @listing-thumbs?
+                              :asset-enum (not @listing-thumbs?))}
            (for [component components]
              [:& components-item {:component component
                                   :renaming renaming
@@ -329,7 +329,7 @@
         (for [[path-item content] groups]
           (when-not (empty? path-item)
             [:& components-group {:file-id file-id
-                                  :prefix (cp/merge-path-item prefix path-item)
+                                  :prefix (cph/merge-path-item prefix path-item)
                                   :groups content
                                   :open-groups open-groups
                                   :renaming renaming
@@ -361,119 +361,119 @@
 
         on-duplicate
         (mf/use-callback
-          (mf/deps @state)
-          (fn []
-            (if (empty? selected-components)
-              (st/emit! (dwl/duplicate-component {:id (:component-id @state)}))
-              (do
-                (st/emit! (dwu/start-undo-transaction))
-                (apply st/emit! (map #(dwl/duplicate-component {:id %}) selected-components))
-                (st/emit! (dwu/commit-undo-transaction))))))
+         (mf/deps @state)
+         (fn []
+           (if (empty? selected-components)
+             (st/emit! (dwl/duplicate-component {:id (:component-id @state)}))
+             (do
+               (st/emit! (dwu/start-undo-transaction))
+               (apply st/emit! (map #(dwl/duplicate-component {:id %}) selected-components))
+               (st/emit! (dwu/commit-undo-transaction))))))
 
         on-delete
         (mf/use-callback
-          (mf/deps @state file-id multi-components? multi-assets?)
-          (fn []
-            (if (or multi-components? multi-assets?)
-              (on-assets-delete)
-              (st/emit! (dwu/start-undo-transaction)
-                        (dwl/delete-component {:id (:component-id @state)})
-                        (dwl/sync-file file-id file-id)
-                        (dwu/commit-undo-transaction)))))
+         (mf/deps @state file-id multi-components? multi-assets?)
+         (fn []
+           (if (or multi-components? multi-assets?)
+             (on-assets-delete)
+             (st/emit! (dwu/start-undo-transaction)
+                       (dwl/delete-component {:id (:component-id @state)})
+                       (dwl/sync-file file-id file-id)
+                       (dwu/commit-undo-transaction)))))
 
         on-rename
         (mf/use-callback
-          (mf/deps @state)
-          (fn []
-            (swap! state assoc :renaming (:component-id @state))))
+         (mf/deps @state)
+         (fn []
+           (swap! state assoc :renaming (:component-id @state))))
 
         do-rename
         (mf/use-callback
-          (mf/deps @state)
-          (fn [new-name]
-            (st/emit! (dwl/rename-component (:renaming @state) new-name))
-            (swap! state assoc :renaming nil)))
+         (mf/deps @state)
+         (fn [new-name]
+           (st/emit! (dwl/rename-component (:renaming @state) new-name))
+           (swap! state assoc :renaming nil)))
 
         cancel-rename
         (mf/use-callback
-          (fn []
-            (swap! state assoc :renaming nil)))
+         (fn []
+           (swap! state assoc :renaming nil)))
 
         on-context-menu
         (mf/use-callback
-          (mf/deps selected-components on-clear-selection)
-          (fn [component-id]
-            (fn [event]
-              (when local?
-                (when-not (contains? selected-components component-id)
-                  (on-clear-selection))
-                (swap! state assoc :component-id component-id)
-                (swap! menu-state #(open-auto-pos-menu % event))))))
+         (mf/deps selected-components on-clear-selection)
+         (fn [component-id]
+           (fn [event]
+             (when local?
+               (when-not (contains? selected-components component-id)
+                 (on-clear-selection))
+               (swap! state assoc :component-id component-id)
+               (swap! menu-state #(open-auto-pos-menu % event))))))
 
         on-close-menu
         (mf/use-callback
-          (fn []
-            (swap! menu-state close-auto-pos-menu)))
+         (fn []
+           (swap! menu-state close-auto-pos-menu)))
 
         create-group
         (mf/use-callback
-          (mf/deps components selected-components on-clear-selection)
-          (fn [group-name]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> components
-                        (filter #(if multi-components?
-                                   (contains? selected-components (:id %))
-                                   (= (:component-id @state) (:id %))))
-                        (map #(dwl/rename-component
-                                (:id %)
-                                (add-group % group-name)))))
-            (st/emit! (dwu/commit-undo-transaction))))
+         (mf/deps components selected-components on-clear-selection)
+         (fn [group-name]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> components
+                       (filter #(if multi-components?
+                                  (contains? selected-components (:id %))
+                                  (= (:component-id @state) (:id %))))
+                       (map #(dwl/rename-component
+                              (:id %)
+                              (add-group % group-name)))))
+           (st/emit! (dwu/commit-undo-transaction))))
 
         rename-group
         (mf/use-callback
-          (mf/deps components)
-          (fn [path last-path]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> components
-                        (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/rename-component
-                                (:id %)
-                                (rename-group % path last-path)))))
-            (st/emit! (dwu/commit-undo-transaction))))
+         (mf/deps components)
+         (fn [path last-path]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> components
+                       (filter #(str/starts-with? (:path %) path))
+                       (map #(dwl/rename-component
+                              (:id %)
+                              (rename-group % path last-path)))))
+           (st/emit! (dwu/commit-undo-transaction))))
 
         on-group
         (mf/use-callback
-          (mf/deps components selected-components)
-          (fn [event]
-            (dom/stop-propagation event)
-            (modal/show! :name-group-dialog {:accept create-group})))
+         (mf/deps components selected-components)
+         (fn [event]
+           (dom/stop-propagation event)
+           (modal/show! :name-group-dialog {:accept create-group})))
 
         on-rename-group
         (mf/use-callback
-          (mf/deps components)
-          (fn [event path last-path]
-            (dom/stop-propagation event)
-            (modal/show! :name-group-dialog {:path path
-                                             :last-path last-path
-                                             :accept rename-group})))
+         (mf/deps components)
+         (fn [event path last-path]
+           (dom/stop-propagation event)
+           (modal/show! :name-group-dialog {:path path
+                                            :last-path last-path
+                                            :accept rename-group})))
 
         on-ungroup
         (mf/use-callback
-          (mf/deps components)
-          (fn [path]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> components
-                        (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/rename-component
-                                (:id %)
-                                (ungroup % path)))))
-            (st/emit! (dwu/commit-undo-transaction))))
+         (mf/deps components)
+         (fn [path]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> components
+                       (filter #(str/starts-with? (:path %) path))
+                       (map #(dwl/rename-component
+                              (:id %)
+                              (ungroup % path)))))
+           (st/emit! (dwu/commit-undo-transaction))))
 
         on-drag-start
         (mf/use-callback
@@ -522,9 +522,9 @@
            on-asset-click on-context-menu on-drag-start do-rename cancel-rename]}]
   [:div {:key (:id object)
          :class-name (dom/classnames
-                       :selected (contains? selected-objects (:id object))
-                       :grid-cell @listing-thumbs?
-                       :enum-item (not @listing-thumbs?))
+                      :selected (contains? selected-objects (:id object))
+                      :grid-cell @listing-thumbs?
+                      :enum-item (not @listing-thumbs?))
          :draggable true
          :on-click #(on-asset-click % (:id object) nil)
          :on-context-menu (on-context-menu (:id object))
@@ -535,15 +535,15 @@
    (let [renaming? (= renaming (:id object))]
      [:& editable-label
       {:class-name (dom/classnames
-                     :cell-name @listing-thumbs?
-                     :item-name (not @listing-thumbs?)
-                     :editing renaming?)
-       :value (cp/merge-path-item (:path object) (:name object))
-       :tooltip (cp/merge-path-item (:path object) (:name object))
+                    :cell-name @listing-thumbs?
+                    :item-name (not @listing-thumbs?)
+                    :editing renaming?)
+       :value (cph/merge-path-item (:path object) (:name object))
+       :tooltip (cph/merge-path-item (:path object) (:name object))
        :display-value (if @listing-thumbs?
                         (:name object)
-                        (cp/compact-name (:path object)
-                                         (:name object)))
+                        (cph/compact-name (:path object)
+                                          (:name object)))
        :editing? renaming?
        :disable-dbl-click? true
        :on-change do-rename
@@ -566,8 +566,8 @@
        [:*
         (let [objects (get groups "" [])]
           [:div {:class-name (dom/classnames
-                               :asset-grid @listing-thumbs?
-                               :asset-enum (not @listing-thumbs?))}
+                              :asset-grid @listing-thumbs?
+                              :asset-enum (not @listing-thumbs?))}
            (for [object objects]
              [:& graphics-item {:object object
                                 :renaming renaming
@@ -581,7 +581,7 @@
         (for [[path-item content] groups]
           (when-not (empty? path-item)
             [:& graphics-group {:file-id file-id
-                                :prefix (cp/merge-path-item prefix path-item)
+                                :prefix (cph/merge-path-item prefix path-item)
                                 :groups content
                                 :open-groups open-groups
                                 :renaming renaming
@@ -638,96 +638,96 @@
 
         on-rename
         (mf/use-callback
-          (mf/deps @state)
-          (fn []
-            (swap! state assoc :renaming (:object-id @state))))
+         (mf/deps @state)
+         (fn []
+           (swap! state assoc :renaming (:object-id @state))))
 
         cancel-rename
         (mf/use-callback
-          (fn []
-            (swap! state assoc :renaming nil)))
+         (fn []
+           (swap! state assoc :renaming nil)))
 
         do-rename
         (mf/use-callback
-          (mf/deps @state)
-          (fn [new-name]
-            (st/emit! (dwl/rename-media (:renaming @state) new-name))
-            (swap! state assoc :renaming nil)))
+         (mf/deps @state)
+         (fn [new-name]
+           (st/emit! (dwl/rename-media (:renaming @state) new-name))
+           (swap! state assoc :renaming nil)))
 
         on-context-menu
         (mf/use-callback
-          (mf/deps selected-objects on-clear-selection)
-          (fn [object-id]
-            (fn [event]
-              (when local?
-                (when-not (contains? selected-objects object-id)
-                  (on-clear-selection))
-                (swap! state assoc :object-id object-id)
-                (swap! menu-state #(open-auto-pos-menu % event))))))
+         (mf/deps selected-objects on-clear-selection)
+         (fn [object-id]
+           (fn [event]
+             (when local?
+               (when-not (contains? selected-objects object-id)
+                 (on-clear-selection))
+               (swap! state assoc :object-id object-id)
+               (swap! menu-state #(open-auto-pos-menu % event))))))
 
         on-close-menu
         (mf/use-callback
-          (fn []
-            (swap! menu-state close-auto-pos-menu)))
+         (fn []
+           (swap! menu-state close-auto-pos-menu)))
 
         create-group
         (mf/use-callback
-          (mf/deps objects selected-objects on-clear-selection)
-          (fn [group-name]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> objects
-                        (filter #(if multi-objects?
-                                   (contains? selected-objects (:id %))
-                                   (= (:object-id @state) (:id %))))
-                        (map #(dwl/rename-media
-                                (:id %)
-                                (add-group % group-name)))))
-            (st/emit! (dwu/commit-undo-transaction))))
+         (mf/deps objects selected-objects on-clear-selection)
+         (fn [group-name]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> objects
+                       (filter #(if multi-objects?
+                                  (contains? selected-objects (:id %))
+                                  (= (:object-id @state) (:id %))))
+                       (map #(dwl/rename-media
+                              (:id %)
+                              (add-group % group-name)))))
+           (st/emit! (dwu/commit-undo-transaction))))
 
         rename-group
         (mf/use-callback
-          (mf/deps objects)
-          (fn [path last-path]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> objects
-                        (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/rename-media
-                                (:id %)
-                                (rename-group % path last-path)))))
-            (st/emit! (dwu/commit-undo-transaction))))
+         (mf/deps objects)
+         (fn [path last-path]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> objects
+                       (filter #(str/starts-with? (:path %) path))
+                       (map #(dwl/rename-media
+                              (:id %)
+                              (rename-group % path last-path)))))
+           (st/emit! (dwu/commit-undo-transaction))))
 
         on-group
         (mf/use-callback
-          (mf/deps objects selected-objects)
-          (fn [event]
-            (dom/stop-propagation event)
-            (modal/show! :name-group-dialog {:accept create-group})))
+         (mf/deps objects selected-objects)
+         (fn [event]
+           (dom/stop-propagation event)
+           (modal/show! :name-group-dialog {:accept create-group})))
 
         on-rename-group
         (mf/use-callback
-          (mf/deps objects)
-          (fn [event path last-path]
-            (dom/stop-propagation event)
-            (modal/show! :name-group-dialog {:path path
-                                             :last-path last-path
-                                             :accept rename-group})))
+         (mf/deps objects)
+         (fn [event path last-path]
+           (dom/stop-propagation event)
+           (modal/show! :name-group-dialog {:path path
+                                            :last-path last-path
+                                            :accept rename-group})))
         on-ungroup
         (mf/use-callback
-          (mf/deps objects)
-          (fn [path]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> objects
-                        (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/rename-media
-                                (:id %)
-                                (ungroup % path)))))
-            (st/emit! (dwu/commit-undo-transaction))))
+         (mf/deps objects)
+         (fn [path]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> objects
+                       (filter #(str/starts-with? (:path %) path))
+                       (map #(dwl/rename-media
+                              (:id %)
+                              (ungroup % path)))))
+           (st/emit! (dwu/commit-undo-transaction))))
 
         on-drag-start
         (mf/use-callback
@@ -742,39 +742,39 @@
                        :box :graphics
                        :assets-count (count objects)
                        :open? open?}
-      (when local?
-        [:& asset-section-block {:role :title-button}
-         [:div.assets-button {:on-click add-graphic}
-          i/plus
-          [:& file-uploader {:accept cm/str-image-types
-                             :multi true
-                             :ref input-ref
-                             :on-selected on-file-selected}]]])
+     (when local?
+       [:& asset-section-block {:role :title-button}
+        [:div.assets-button {:on-click add-graphic}
+         i/plus
+         [:& file-uploader {:accept cm/str-image-types
+                            :multi true
+                            :ref input-ref
+                            :on-selected on-file-selected}]]])
 
-       [:& asset-section-block {:role :content}
-        [:& graphics-group {:file-id file-id
-                            :prefix ""
-                            :groups groups
-                            :open-groups open-groups
-                            :renaming (:renaming @state)
-                            :listing-thumbs? listing-thumbs?
-                            :selected-objects selected-objects
-                            :on-asset-click (partial on-asset-click groups)
-                            :on-drag-start on-drag-start
-                            :do-rename do-rename
-                            :cancel-rename cancel-rename
-                            :on-rename-group on-rename-group
-                            :on-ungroup on-ungroup
-                            :on-context-menu on-context-menu}]
-          (when local?
-            [:& auto-pos-menu
-             {:on-close on-close-menu
-              :state @menu-state
-              :options [(when-not (or multi-objects? multi-assets?)
-                          [(tr "workspace.assets.rename") on-rename])
-                        [(tr "workspace.assets.delete") on-delete]
-                        (when-not multi-assets?
-                          [(tr "workspace.assets.group") on-group])]}])]]))
+     [:& asset-section-block {:role :content}
+      [:& graphics-group {:file-id file-id
+                          :prefix ""
+                          :groups groups
+                          :open-groups open-groups
+                          :renaming (:renaming @state)
+                          :listing-thumbs? listing-thumbs?
+                          :selected-objects selected-objects
+                          :on-asset-click (partial on-asset-click groups)
+                          :on-drag-start on-drag-start
+                          :do-rename do-rename
+                          :cancel-rename cancel-rename
+                          :on-rename-group on-rename-group
+                          :on-ungroup on-ungroup
+                          :on-context-menu on-context-menu}]
+      (when local?
+        [:& auto-pos-menu
+         {:on-close on-close-menu
+          :state @menu-state
+          :options [(when-not (or multi-objects? multi-assets?)
+                      [(tr "workspace.assets.rename") on-rename])
+                    [(tr "workspace.assets.delete") on-delete]
+                    (when-not multi-assets?
+                      [(tr "workspace.assets.group") on-group])]}])]]))
 
 
 ;; ---- Colors box ----
@@ -808,7 +808,7 @@
         edit-color
         (fn [new-color]
           (let [old-data (-> (select-keys color [:id :file-id])
-                             (assoc :name (cp/merge-path-item (:path color) (:name color))))
+                             (assoc :name (cph/merge-path-item (:path color) (:name color))))
                 updated-color (merge new-color old-data)]
             (st/emit! (dwl/update-color updated-color file-id))))
 
@@ -856,31 +856,31 @@
 
         on-context-menu
         (mf/use-callback
-          (mf/deps color selected-colors on-clear-selection)
-          (fn [event]
-            (when local?
-              (when-not (contains? selected-colors (:id color))
-                (on-clear-selection))
-              (swap! menu-state #(open-auto-pos-menu % event)))))
+         (mf/deps color selected-colors on-clear-selection)
+         (fn [event]
+           (when local?
+             (when-not (contains? selected-colors (:id color))
+               (on-clear-selection))
+             (swap! menu-state #(open-auto-pos-menu % event)))))
 
         on-close-menu
         (mf/use-callback
-          (fn []
-            (swap! menu-state close-auto-pos-menu)))]
+         (fn []
+           (swap! menu-state close-auto-pos-menu)))]
 
     (mf/use-effect
-      (mf/deps (:editing @state))
-      #(when (:editing @state)
-         (let [input (mf/ref-val input-ref)]
-           (dom/select-text! input))
-         nil))
+     (mf/deps (:editing @state))
+     #(when (:editing @state)
+        (let [input (mf/ref-val input-ref)]
+          (dom/select-text! input))
+        nil))
 
     [:div.asset-list-item {:class-name (dom/classnames
-                                         :selected (contains? selected-colors (:id color)))
+                                        :selected (contains? selected-colors (:id color)))
                            :on-context-menu on-context-menu
                            :on-click (when-not (:editing @state)
                                        #(on-asset-click % (:id color)
-                                                       (partial apply-color (:id color))))}
+                                                        (partial apply-color (:id color))))}
      [:& bc/color-bullet {:color color}]
 
      (if (:editing @state)
@@ -890,7 +890,7 @@
          :on-blur input-blur
          :on-key-down input-key-down
          :auto-focus true
-         :default-value (cp/merge-path-item (:path color) (:name color))}]
+         :default-value (cph/merge-path-item (:path color) (:name color))}]
 
        [:div.name-block {:on-double-click rename-color-clicked}
         (:name color)
@@ -898,15 +898,15 @@
           [:span default-name])])
      (when local?
        [:& auto-pos-menu
-         {:on-close on-close-menu
-          :state @menu-state
-          :options [(when-not (or multi-colors? multi-assets?)
-                      [(tr "workspace.assets.rename") rename-color-clicked])
-                    (when-not (or multi-colors? multi-assets?)
-                      [(tr "workspace.assets.edit") edit-color-clicked])
-                    [(tr "workspace.assets.delete") delete-color]
-                    (when-not multi-assets?
-                      [(tr "workspace.assets.group") (on-group (:id color))])]}])]))
+        {:on-close on-close-menu
+         :state @menu-state
+         :options [(when-not (or multi-colors? multi-assets?)
+                     [(tr "workspace.assets.rename") rename-color-clicked])
+                   (when-not (or multi-colors? multi-assets?)
+                     [(tr "workspace.assets.edit") edit-color-clicked])
+                   [(tr "workspace.assets.delete") delete-color]
+                   (when-not multi-assets?
+                     [(tr "workspace.assets.group") (on-group (:id color))])]}])]))
 
 (mf/defc colors-group
   [{:keys [file-id prefix groups open-groups local? selected-colors
@@ -945,7 +945,7 @@
         (for [[path-item content] groups]
           (when-not (empty? path-item)
             [:& colors-group {:file-id file-id
-                              :prefix (cp/merge-path-item prefix path-item)
+                              :prefix (cph/merge-path-item prefix path-item)
                               :key (str "group-" path-item)
                               :groups content
                               :open-groups open-groups
@@ -995,99 +995,99 @@
 
         create-group
         (mf/use-callback
-          (mf/deps colors selected-colors on-clear-selection file-id)
-          (fn [color-id]
-            (fn [group-name]
-              (on-clear-selection)
-              (st/emit! (dwu/start-undo-transaction))
-              (apply st/emit!
-                     (->> colors
-                          (filter #(if multi-colors?
-                                     (contains? selected-colors (:id %))
-                                     (= color-id (:id %))))
-                          (map #(dwl/update-color
-                                  (assoc % :name
-                                         (add-group % group-name))
-                                  file-id))))
-              (st/emit! (dwu/commit-undo-transaction)))))
+         (mf/deps colors selected-colors on-clear-selection file-id)
+         (fn [color-id]
+           (fn [group-name]
+             (on-clear-selection)
+             (st/emit! (dwu/start-undo-transaction))
+             (apply st/emit!
+                    (->> colors
+                         (filter #(if multi-colors?
+                                    (contains? selected-colors (:id %))
+                                    (= color-id (:id %))))
+                         (map #(dwl/update-color
+                                (assoc % :name
+                                       (add-group % group-name))
+                                file-id))))
+             (st/emit! (dwu/commit-undo-transaction)))))
 
         rename-group
         (mf/use-callback
-          (mf/deps colors)
-          (fn [path last-path]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> colors
-                        (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/update-color
-                                (assoc % :name
-                                       (rename-group % path last-path))
-                                file-id))))
-            (st/emit! (dwu/commit-undo-transaction))))
+         (mf/deps colors)
+         (fn [path last-path]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> colors
+                       (filter #(str/starts-with? (:path %) path))
+                       (map #(dwl/update-color
+                              (assoc % :name
+                                     (rename-group % path last-path))
+                              file-id))))
+           (st/emit! (dwu/commit-undo-transaction))))
 
         on-group
         (mf/use-callback
-          (mf/deps colors selected-colors)
-          (fn [color-id]
-            (fn [event]
-              (dom/stop-propagation event)
-              (modal/show! :name-group-dialog {:accept (create-group color-id)}))))
+         (mf/deps colors selected-colors)
+         (fn [color-id]
+           (fn [event]
+             (dom/stop-propagation event)
+             (modal/show! :name-group-dialog {:accept (create-group color-id)}))))
 
         on-rename-group
         (mf/use-callback
-          (mf/deps colors)
-          (fn [event path last-path]
-            (dom/stop-propagation event)
-            (modal/show! :name-group-dialog {:path path
-                                             :last-path last-path
-                                             :accept rename-group})))
+         (mf/deps colors)
+         (fn [event path last-path]
+           (dom/stop-propagation event)
+           (modal/show! :name-group-dialog {:path path
+                                            :last-path last-path
+                                            :accept rename-group})))
         on-ungroup
         (mf/use-callback
-          (mf/deps colors)
-          (fn [path]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> colors
-                        (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/update-color
-                                (assoc % :name
-                                       (ungroup % path))
-                                file-id))))
-            (st/emit! (dwu/commit-undo-transaction))))]
+         (mf/deps colors)
+         (fn [path]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> colors
+                       (filter #(str/starts-with? (:path %) path))
+                       (map #(dwl/update-color
+                              (assoc % :name
+                                     (ungroup % path))
+                              file-id))))
+           (st/emit! (dwu/commit-undo-transaction))))]
 
     [:& asset-section {:file-id file-id
                        :title (tr "workspace.assets.colors")
                        :box :colors
                        :assets-count (count colors)
                        :open? open?}
-      (when local?
-        [:& asset-section-block {:role :title-button}
-         [:div.assets-button {:on-click add-color-clicked}
-          i/plus]])
+     (when local?
+       [:& asset-section-block {:role :title-button}
+        [:div.assets-button {:on-click add-color-clicked}
+         i/plus]])
 
-       [:& asset-section-block {:role :content}
-        [:& colors-group {:file-id file-id
-                          :prefix ""
-                          :groups groups
-                          :open-groups open-groups
-                          :local? local?
-                          :selected-colors selected-colors
-                          :multi-colors? multi-colors?
-                          :multi-assets? multi-assets?
-                          :on-asset-click (partial on-asset-click groups)
-                          :on-assets-delete on-assets-delete
-                          :on-clear-selection on-clear-selection
-                          :on-group on-group
-                          :on-rename-group on-rename-group
-                          :on-ungroup on-ungroup
-                          :colors colors}]]]))
+     [:& asset-section-block {:role :content}
+      [:& colors-group {:file-id file-id
+                        :prefix ""
+                        :groups groups
+                        :open-groups open-groups
+                        :local? local?
+                        :selected-colors selected-colors
+                        :multi-colors? multi-colors?
+                        :multi-assets? multi-assets?
+                        :on-asset-click (partial on-asset-click groups)
+                        :on-assets-delete on-assets-delete
+                        :on-clear-selection on-clear-selection
+                        :on-group on-group
+                        :on-rename-group on-rename-group
+                        :on-ungroup on-ungroup
+                        :colors colors}]]]))
 
 ;; ---- Typography box ----
 
 (mf/defc typographies-group
-  [{:keys [file-id prefix groups open-groups file local? selected-typographies local
+  [{:keys [file-id prefix groups open-groups file local? selected-typographies local-data
            editing-id on-asset-click handle-change apply-typography
            on-rename-group on-ungroup on-context-menu]}]
   (let [group-open? (get open-groups prefix true)]
@@ -1115,19 +1115,19 @@
                :on-click  #(on-asset-click % (:id typography)
                                            (partial apply-typography typography))
                :editing? (= editing-id (:id typography))
-               :focus-name? (= (:rename-typography local) (:id typography))}])])
+               :focus-name? (= (:rename-typography local-data) (:id typography))}])])
 
         (for [[path-item content] groups]
           (when-not (empty? path-item)
             [:& typographies-group {:file-id file-id
-                                    :prefix (cp/merge-path-item prefix path-item)
+                                    :prefix (cph/merge-path-item prefix path-item)
                                     :groups content
                                     :open-groups open-groups
                                     :file file
                                     :local? local?
                                     :selected-typographies selected-typographies
                                     :editing-id editing-id
-                                    :local local
+                                    :local-data local-data
                                     :on-asset-click on-asset-click
                                     :handle-change handle-change
                                     :apply-typography apply-typography
@@ -1141,11 +1141,9 @@
   (let [state (mf/use-state {:detail-open? false
                              :id nil})
 
+        local-data (mf/deref refs/typography-data)
         menu-state (mf/use-state auto-pos-menu-state)
-
-        local    (deref refs/workspace-local)
-
-        groups        (group-assets typographies reverse-sort?)
+        groups     (group-assets typographies reverse-sort?)
 
         selected-typographies (:typographies selected-assets)
         multi-typographies?   (> (count selected-typographies) 1)
@@ -1171,88 +1169,92 @@
         (fn [typography _event]
           (let [ids (wsh/lookup-selected @st/state)
                 attrs (merge
-                        {:typography-ref-file file-id
-                         :typography-ref-id (:id typography)}
-                        (dissoc typography :id :name))]
-            (run! #(st/emit! (dwt/update-text-attrs {:id % :editor (get-in local [:editors %]) :attrs attrs}))
+                       {:typography-ref-file file-id
+                        :typography-ref-id (:id typography)}
+                       (dissoc typography :id :name))]
+            (run! #(st/emit!
+                    (dwt/update-text-attrs
+                     {:id %
+                      :editor (get @refs/workspace-editor-state %)
+                      :attrs attrs}))
                   ids)))
 
         create-group
         (mf/use-callback
-          (mf/deps typographies selected-typographies on-clear-selection file-id)
-          (fn [group-name]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> typographies
-                        (filter #(if multi-typographies?
-                                   (contains? selected-typographies (:id %))
-                                   (= (:id @state) (:id %))))
-                        (map #(dwl/update-typography
-                                (assoc % :name
-                                       (add-group % group-name))
-                                file-id))))
-            (st/emit! (dwu/commit-undo-transaction))))
+         (mf/deps typographies selected-typographies on-clear-selection file-id)
+         (fn [group-name]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> typographies
+                       (filter #(if multi-typographies?
+                                  (contains? selected-typographies (:id %))
+                                  (= (:id @state) (:id %))))
+                       (map #(dwl/update-typography
+                              (assoc % :name
+                                     (add-group % group-name))
+                              file-id))))
+           (st/emit! (dwu/commit-undo-transaction))))
 
         rename-group
         (mf/use-callback
-          (mf/deps typographies)
-          (fn [path last-path]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> typographies
-                        (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/update-typography
-                                (assoc % :name
-                                       (rename-group % path last-path))
-                                file-id))))
-            (st/emit! (dwu/commit-undo-transaction))))
+         (mf/deps typographies)
+         (fn [path last-path]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> typographies
+                       (filter #(str/starts-with? (:path %) path))
+                       (map #(dwl/update-typography
+                              (assoc % :name
+                                     (rename-group % path last-path))
+                              file-id))))
+           (st/emit! (dwu/commit-undo-transaction))))
 
         on-group
         (mf/use-callback
-          (mf/deps typographies selected-typographies)
-          (fn [event]
-            (dom/stop-propagation event)
-            (modal/show! :name-group-dialog {:accept create-group})))
+         (mf/deps typographies selected-typographies)
+         (fn [event]
+           (dom/stop-propagation event)
+           (modal/show! :name-group-dialog {:accept create-group})))
 
         on-rename-group
         (mf/use-callback
-          (mf/deps typographies)
-          (fn [event path last-path]
-            (dom/stop-propagation event)
-            (modal/show! :name-group-dialog {:path path
-                                             :last-path last-path
-                                             :accept rename-group})))
+         (mf/deps typographies)
+         (fn [event path last-path]
+           (dom/stop-propagation event)
+           (modal/show! :name-group-dialog {:path path
+                                            :last-path last-path
+                                            :accept rename-group})))
         on-ungroup
         (mf/use-callback
-          (mf/deps typographies)
-          (fn [path]
-            (on-clear-selection)
-            (st/emit! (dwu/start-undo-transaction))
-            (apply st/emit!
-                   (->> typographies
-                        (filter #(str/starts-with? (:path %) path))
-                        (map #(dwl/update-typography
-                                (assoc % :name
-                                       (ungroup % path))
-                                file-id))))
-            (st/emit! (dwu/commit-undo-transaction))))
+         (mf/deps typographies)
+         (fn [path]
+           (on-clear-selection)
+           (st/emit! (dwu/start-undo-transaction))
+           (apply st/emit!
+                  (->> typographies
+                       (filter #(str/starts-with? (:path %) path))
+                       (map #(dwl/update-typography
+                              (assoc % :name
+                                     (ungroup % path))
+                              file-id))))
+           (st/emit! (dwu/commit-undo-transaction))))
 
         on-context-menu
         (mf/use-callback
-          (mf/deps selected-typographies on-clear-selection)
-          (fn [id event]
-            (when local?
-              (when-not (contains? selected-typographies id)
-                (on-clear-selection))
-              (swap! state assoc :id id)
-              (swap! menu-state #(open-auto-pos-menu % event)))))
+         (mf/deps selected-typographies on-clear-selection)
+         (fn [id event]
+           (when local?
+             (when-not (contains? selected-typographies id)
+               (on-clear-selection))
+             (swap! state assoc :id id)
+             (swap! menu-state #(open-auto-pos-menu % event)))))
 
         on-close-menu
         (mf/use-callback
-          (fn []
-            (swap! menu-state close-auto-pos-menu)))
+         (fn []
+           (swap! menu-state close-auto-pos-menu)))
 
         handle-rename-typography-clicked
         (fn []
@@ -1273,14 +1275,15 @@
                        (dwl/sync-file file-id file-id)
                        (dwu/commit-undo-transaction)))))
 
-        editing-id (or (:rename-typography local) (:edit-typography local))]
+        editing-id (or (:rename-typography local-data)
+                       (:edit-typography local-data))]
 
     (mf/use-effect
-     (mf/deps local)
+     (mf/deps local-data)
      (fn []
-       (when (:rename-typography local)
+       (when (:rename-typography local-data)
          (st/emit! #(update % :workspace-local dissoc :rename-typography)))
-       (when (:edit-typography local)
+       (when (:edit-typography local-data)
          (st/emit! #(update % :workspace-local dissoc :edit-typography)))))
 
     [:& asset-section {:file-id file-id
@@ -1288,40 +1291,40 @@
                        :box :typographies
                        :assets-count (count typographies)
                        :open? open?}
+     (when local?
+       [:& asset-section-block {:role :title-button}
+        [:div.assets-button {:on-click add-typography}
+         i/plus]])
+
+     [:& asset-section-block {:role :content}
+      [:& typographies-group {:file-id file-id
+                              :prefix ""
+                              :groups groups
+                              :open-groups open-groups
+                              :state state
+                              :file file
+                              :local? local?
+                              :selected-typographies selected-typographies
+                              :editing-id editing-id
+                              :local-data local-data
+                              :on-asset-click (partial on-asset-click groups)
+                              :handle-change handle-change
+                              :apply-typography apply-typography
+                              :on-rename-group on-rename-group
+                              :on-ungroup on-ungroup
+                              :on-context-menu on-context-menu}]
+
       (when local?
-        [:& asset-section-block {:role :title-button}
-         [:div.assets-button {:on-click add-typography}
-          i/plus]])
-
-       [:& asset-section-block {:role :content}
-        [:& typographies-group {:file-id file-id
-                                :prefix ""
-                                :groups groups
-                                :open-groups open-groups
-                                :state state
-                                :file file
-                                :local? local?
-                                :selected-typographies selected-typographies
-                                :editing-id editing-id
-                                :local local
-                                :on-asset-click (partial on-asset-click groups)
-                                :handle-change handle-change
-                                :apply-typography apply-typography
-                                :on-rename-group on-rename-group
-                                :on-ungroup on-ungroup
-                                :on-context-menu on-context-menu}]
-
-        (when local?
-          [:& auto-pos-menu
-           {:on-close on-close-menu
-            :state @menu-state
-            :options [(when-not (or multi-typographies? multi-assets?)
-                        [(tr "workspace.assets.rename") handle-rename-typography-clicked])
-                      (when-not (or multi-typographies? multi-assets?)
-                        [(tr "workspace.assets.edit") handle-edit-typography-clicked])
-                      [(tr "workspace.assets.delete") handle-delete-typography]
-                      (when-not multi-assets?
-                        [(tr "workspace.assets.group") on-group])]}])]]))
+        [:& auto-pos-menu
+         {:on-close on-close-menu
+          :state @menu-state
+          :options [(when-not (or multi-typographies? multi-assets?)
+                      [(tr "workspace.assets.rename") handle-rename-typography-clicked])
+                    (when-not (or multi-typographies? multi-assets?)
+                      [(tr "workspace.assets.edit") handle-edit-typography-clicked])
+                    [(tr "workspace.assets.delete") handle-delete-typography]
+                    (when-not multi-assets?
+                      [(tr "workspace.assets.group") on-group])]}])]]))
 
 
 ;; --- Assets toolbox ----
@@ -1374,12 +1377,12 @@
          (filter (fn [item]
                    (or (matches-search (:name item "!$!") (:term filters))
                        (matches-search (:value item "!$!") (:term filters)))))
-         ; Sort by folder order, but putting all "root" items always first,
-         ; independently of sort order.
-         (sort-by #(str/lower (cp/merge-path-item (if (empty? (:path %))
-                                                    (if reverse-sort? "z" "a")
-                                                    (:path %))
-                                                  (:name %)))
+                                        ; Sort by folder order, but putting all "root" items always first,
+                                        ; independently of sort order.
+         (sort-by #(str/lower (cph/merge-path-item (if (empty? (:path %))
+                                                     (if reverse-sort? "z" "a")
+                                                     (:path %))
+                                                   (:name %)))
                   comp-fn))))
 
 (mf/defc file-library
@@ -1525,16 +1528,16 @@
 
       (if local?
         [:*
-          [:span (tr "workspace.assets.file-library")]
-          (when shared?
-            [:span.tool-badge (tr "workspace.assets.shared")])]
+         [:span (tr "workspace.assets.file-library")]
+         (when shared?
+           [:span.tool-badge (tr "workspace.assets.shared")])]
         [:*
-          [:span (:name file)]
-          [:span.tool-link.tooltip.tooltip-left {:alt "Open library file"}
-           [:a {:href (str "#" url)
-                :target "_blank"
-                :on-click dom/stop-propagation}
-            i/chain]]])]
+         [:span (:name file)]
+         [:span.tool-link.tooltip.tooltip-left {:alt "Open library file"}
+          [:a {:href (str "#" url)
+               :target "_blank"
+               :on-click dom/stop-propagation}
+           i/chain]]])]
 
      (when open?
        (let [show-components?   (and (or (= (:box filters) :all)
@@ -1655,33 +1658,33 @@
 
     [:div.assets-bar
      [:div.tool-window
-       [:div.tool-window-content
-        [:div.assets-bar-title
-         (tr "workspace.assets.assets")
-         [:div.libraries-button {:on-click #(modal/show! :libraries-dialog {})}
-          i/text-align-justify
-          (tr "workspace.assets.libraries")]]
+      [:div.tool-window-content
+       [:div.assets-bar-title
+        (tr "workspace.assets.assets")
+        [:div.libraries-button {:on-click #(modal/show! :libraries-dialog {})}
+         i/text-align-justify
+         (tr "workspace.assets.libraries")]]
 
-        [:div.search-block
-          [:input.search-input
-           {:placeholder (tr "workspace.assets.search")
-            :type "text"
-            :value (:term @filters)
-            :on-change on-search-term-change}]
-          (if (str/empty? (:term @filters))
-            [:div.search-icon
-             i/search]
-            [:div.search-icon.close
-             {:on-click on-search-clear-click}
-             i/close])]
+       [:div.search-block
+        [:input.search-input
+         {:placeholder (tr "workspace.assets.search")
+          :type "text"
+          :value (:term @filters)
+          :on-change on-search-term-change}]
+        (if (str/empty? (:term @filters))
+          [:div.search-icon
+           i/search]
+          [:div.search-icon.close
+           {:on-click on-search-clear-click}
+           i/close])]
 
-        [:select.input-select {:value (:box @filters)
-                               :on-change on-box-filter-change}
-         [:option {:value ":all"} (tr "workspace.assets.box-filter-all")]
-         [:option {:value ":components"} (tr "workspace.assets.components")]
-         [:option {:value ":graphics"} (tr "workspace.assets.graphics")]
-         [:option {:value ":colors"} (tr "workspace.assets.colors")]
-         [:option {:value ":typographies"} (tr "workspace.assets.typography")]]]]
+       [:select.input-select {:value (:box @filters)
+                              :on-change on-box-filter-change}
+        [:option {:value ":all"} (tr "workspace.assets.box-filter-all")]
+        [:option {:value ":components"} (tr "workspace.assets.components")]
+        [:option {:value ":graphics"} (tr "workspace.assets.graphics")]
+        [:option {:value ":colors"} (tr "workspace.assets.colors")]
+        [:option {:value ":typographies"} (tr "workspace.assets.typography")]]]]
 
      [:div.libraries-wrapper
       [:& file-library

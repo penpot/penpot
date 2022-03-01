@@ -30,7 +30,7 @@
         ;; the onboarding templates modal.
         on-fly-solo
         (fn []
-          (tm/schedule 400  #(st/emit! (modal/show {:type :onboarding-templates}))))
+          (tm/schedule 400  #(st/emit! (modal/hide))))
 
         ;; When user choices the option of `team up`, we proceed to show
         ;; the team creation modal.
@@ -42,15 +42,16 @@
     [:div.modal-overlay
      [:div.modal-container.onboarding.final.animated.fadeInUp
       [:div.modal-top
-       [:h1 (tr "onboarding.welcome.title")]
+       [:h1 {:data-test "onboarding-welcome-title"} (tr "onboarding.welcome.title")]
        [:p (tr "onboarding.welcome.desc3")]]
       [:div.modal-columns
        [:div.modal-left
-        [:div.content-button {:on-click on-fly-solo}
+        [:div.content-button {:on-click on-fly-solo
+                              :data-test "fly-solo-op"}
          [:h2 (tr "onboarding.choice.fly-solo")]
          [:p (tr "onboarding.choice.fly-solo-desc")]]]
        [:div.modal-right
-        [:div.content-button {:on-click on-team-up}
+        [:div.content-button {:on-click on-team-up :data-test "team-up-button"}
          [:h2 (tr "onboarding.choice.team-up")]
          [:p (tr "onboarding.choice.team-up-desc")]]]]
       [:img.deco {:src "images/deco-left.png" :border "0"}]
@@ -71,7 +72,7 @@
     [:div.modal-overlay
      [:div.modal-container.onboarding-team
       [:div.title
-       [:h2 (tr "onboarding.choice.team-up")]
+       [:h2 {:data-test "onboarding-choice-team-up"} (tr "onboarding.choice.team-up")]
        [:p (tr "onboarding.choice.team-up-desc")]]
 
       [:& fm/form {:form form
@@ -120,14 +121,12 @@
         on-success
         (mf/use-callback
          (fn [_form response]
-           (let [project-id (:default-project-id response)
-                 team-id    (:id response)]
+           (let [team-id    (:id response)]
              (st/emit!
               (modal/hide)
               (rt/nav :dashboard-projects {:team-id team-id}))
              (tm/schedule 400 #(st/emit!
-                                (modal/show {:type :onboarding-templates
-                                             :project-id project-id}))))))
+                                (modal/hide))))))
 
         on-error
         (mf/use-callback

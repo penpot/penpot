@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.path.commands :as upc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
@@ -92,7 +92,7 @@
   (l/derived :workspace-drawing st/state))
 
 (def selected-shapes
-  (l/derived wsh/lookup-selected st/state))
+  (l/derived wsh/lookup-selected st/state =))
 
 (defn make-selected-ref
   [id]
@@ -124,6 +124,11 @@
                               :move-overlay-index])
              workspace-local =))
 
+(def typography-data
+  (l/derived #(select-keys % [:rename-typography
+                              :edit-typography])
+             workspace-local =))
+
 (def local-displacement
   (l/derived #(select-keys % [:modifiers :selected])
              workspace-local =))
@@ -152,14 +157,20 @@
 (def current-hover
   (l/derived :hover workspace-local))
 
-(def editors
-  (l/derived :editors workspace-local))
+(def context-menu
+  (l/derived :context-menu workspace-local))
+
+(def current-hover-ids
+  (l/derived :hover-ids context-menu))
 
 (def selected-assets
   (l/derived :selected-assets workspace-local))
 
 (def workspace-layout
   (l/derived :workspace-layout st/state))
+
+(def current-file-id
+  (l/derived :current-file-id st/state))
 
 (def workspace-file
   (l/derived (fn [state]
@@ -182,6 +193,11 @@
                (get-in state [:workspace-data :recent-colors] []))
              st/state))
 
+(def workspace-recent-fonts
+  (l/derived (fn [state]
+               (get-in state [:workspace-data :recent-fonts] []))
+             st/state))
+
 (def workspace-file-typography
   (l/derived (fn [state]
                (when-let [file (:workspace-data state)]
@@ -202,7 +218,7 @@
                              :media
                              :typographies
                              :components]))
-             st/state))
+             st/state =))
 
 (def workspace-libraries
   (l/derived :workspace-libraries st/state))
@@ -230,7 +246,7 @@
   (l/derived :options workspace-page))
 
 (def workspace-frames
-  (l/derived cp/select-frames workspace-page-objects =))
+  (l/derived cph/get-frames workspace-page-objects =))
 
 (def workspace-editor
   (l/derived :workspace-editor st/state))
@@ -260,9 +276,11 @@
 (defn select-bool-children [id]
   (let [selector
         (fn [state]
-          (let [objects (wsh/lookup-page-objects state)
-                modifiers (:workspace-modifiers state)]
-            (as-> (cp/select-children id objects) $
+          (let [objects   (wsh/lookup-page-objects state)
+                modifiers (:workspace-modifiers state)
+                children  (->> (cph/get-children-ids objects id)
+                               (select-keys objects))]
+            (as-> children $
               (gsh/merge-modifiers $ modifiers)
               (d/mapm (set-content-modifiers state) $))))]
     (l/derived selector st/state =)))
@@ -277,7 +295,7 @@
 (defn is-child-selected?
   [id]
   (letfn [(selector [{:keys [selected objects]}]
-            (let [children (cp/get-children id objects)]
+            (let [children (cph/get-children-ids objects id)]
               (some #(contains? selected %) children)))]
     (l/derived selector selected-data =)))
 
@@ -291,7 +309,7 @@
 (def selected-shapes-with-children
   (letfn [(selector [{:keys [selected objects]}]
             (let [xform (comp (remove nil?)
-                              (mapcat #(cp/get-children % objects)))
+                              (mapcat #(cph/get-children-ids objects %)))
                   shapes (into selected xform selected)]
               (mapv (d/getf objects) shapes)))]
     (l/derived selector selected-data =)))

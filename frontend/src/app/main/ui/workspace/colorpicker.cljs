@@ -167,6 +167,11 @@
         (fn [color]
           (let [editing-stop (:editing-stop @state)
                 is-gradient? (some? (:gradient color))]
+
+            (if is-gradient?
+              (st/emit! (dc/start-gradient (:gradient color)))
+              (st/emit! (dc/stop-gradient)))
+
             (if (and (some? editing-stop) (not is-gradient?))
               (handle-change-color (color->components (:color color) (:opacity color)))
               (do (reset! dirty? false)
@@ -226,9 +231,9 @@
 
     ;; Updates color when used el pixel picker
     (mf/use-effect
-     (mf/deps picking-color? picked-color-select)
+     (mf/deps picking-color? picked-color picked-color-select)
      (fn []
-       (when (and picking-color? picked-color-select)
+       (when (and picking-color? picked-color picked-color-select)
          (let [[r g b alpha] picked-color
                hex (uc/rgb->hex [r g b])
                [h s v] (uc/hex->hsv hex)]
@@ -358,7 +363,7 @@
   "Calculates the style properties for the given coordinates and position"
   [{vh :height} position x y]
   (let [;; picker height in pixels
-        h 360
+        h 430
         ;; Checks for overflow outside the viewport height
         overflow-fix (max 0 (+ y (- 50) h (- vh)))]
     (cond

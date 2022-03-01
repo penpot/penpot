@@ -7,12 +7,13 @@
 (ns app.main.ui.workspace.sidebar.layers
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.shape-icon :as si]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -23,31 +24,6 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
-
-;; --- Helpers
-
-(mf/defc element-icon
-  [{:keys [shape] :as props}]
-  (case (:type shape)
-    :frame i/artboard
-    :image i/image
-    :line i/line
-    :circle i/circle
-    :path i/curve
-    :rect i/box
-    :text i/text
-    :group (if (some? (:component-id shape))
-             i/component
-             (if (:masked-group? shape)
-               i/mask
-               i/folder))
-    :bool (case (:bool-type shape)
-            :difference   i/bool-difference
-            :exclude      i/bool-exclude
-            :intersection i/bool-intersection
-            #_:default    i/bool-union)
-    :svg-raw i/file-svg
-    nil))
 
 ;; --- Layer Name
 
@@ -82,18 +58,16 @@
                       (when (kbd/enter? event) (accept-edit))
                       (when (kbd/esc? event) (cancel-edit)))]
 
-    (mf/use-effect
-      (mf/deps shape-for-rename)
-      #(when (and (= shape-for-rename (:id shape))
-                  (not (:edition @local)))
-         (start-edit)))
+    (mf/with-effect [shape-for-rename]
+      (when (and (= shape-for-rename (:id shape))
+                 (not (:edition @local)))
+        (start-edit)))
 
-    (mf/use-effect
-      (mf/deps (:edition @local))
-      #(when (:edition @local)
-         (let [name-input (mf/ref-val name-ref)]
-           (dom/select-text! name-input))
-         nil))
+    (mf/with-effect [(:edition @local)]
+      (when (:edition @local)
+        (let [name-input (mf/ref-val name-ref)]
+          (dom/select-text! name-input)
+          nil)))
 
     (if (:edition @local)
       [:input.element-name
@@ -116,9 +90,10 @@
 
 (mf/defc layer-item
   [{:keys [index item selected objects] :as props}]
-  (let [id        (:id item)
-        selected? (contains? selected id)
-        container? (or (= (:type item) :frame) (= (:type item) :group))
+  (let [id         (:id item)
+        selected?  (contains? selected id)
+        container? (or (cph/frame-shape? item)
+                       (cph/group-shape? item))
 
         disable-drag (mf/use-state false)
 
@@ -184,7 +159,7 @@
           (if (= side :center)
             (st/emit! (dw/relocate-selected-shapes (:id item) 0))
             (let [to-index  (if (= side :top) (inc index) index)
-                  parent-id (cp/get-parent (:id item) objects)]
+                  parent-id (cph/get-parent-id objects (:id item))]
               (st/emit! (dw/relocate-selected-shapes parent-id to-index)))))
 
         on-hold
@@ -204,12 +179,17 @@
                               :name (:name item)})]
 
     (mf/use-effect
-     (mf/deps selected)
+     (mf/deps selected? selected)
      (fn []
-       (let [subid
-             (when (and (= (count selected) 1) selected?)
-               (ts/schedule-on-idle
-                #(.scrollIntoView (mf/ref-val dref) #js {:block "nearest", :behavior "smooth"})))]
+       (let [single? (= (count selected) 1)
+             node (mf/ref-val dref)
+
+             subid
+             (when (and single? selected?)
+               (ts/schedule
+                100
+                #(dom/scroll-into-view! node #js {:block "nearest", :behavior "smooth"})))]
+
          #(when (some? subid)
             (rx/dispose! subid)))))
 
@@ -227,12 +207,12 @@
                                                      :icon-layer (= (:type item) :icon))
                               :on-click select-shape
                               :on-double-click #(dom/stop-propagation %)}
-      [:& element-icon {:shape item}]
+      [:& si/element-icon {:shape item}]
       [:& layer-name {:shape item
                       :on-start-edit #(reset! disable-drag true)
                       :on-stop-edit #(reset! disable-drag false)}]
 
-      [:div.element-actions
+      [:div.element-actions {:class (when (:shapes item) "is-parent")}
        [:div.toggle-element {:class (when (:hidden item) "selected")
                              :on-click toggle-visibility}
         (if (:hidden item) i/eye-closed i/eye)]
@@ -271,6 +251,7 @@
   {::mf/wrap [#(mf/memo % =)]}
   [{:keys [objects] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
+        selected (hooks/use-equal-memo selected)
         root (get objects uuid/zero)]
     [:ul.element-list
      [:& hooks/sortable-container {}

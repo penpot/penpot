@@ -10,7 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :refer [zero]]
    [app.main.refs :as refs]
    [app.main.worker :as uw]
@@ -19,20 +19,38 @@
    [beicon.core :as rx]
    [clojure.set :as set]))
 
-(def ^:const snap-accuracy 5)
+(def ^:const snap-accuracy 10)
 (def ^:const snap-path-accuracy 10)
 (def ^:const snap-distance-accuracy 10)
 
 (defn- remove-from-snap-points
-  [remove-id?]
+  [remove-snap?]
   (fn [query-result]
     (->> query-result
-         (map (fn [[value data]] [value (remove (comp remove-id? second) data)]))
+         (map (fn [[value data]] [value (remove remove-snap? data)]))
          (filter (fn [[_ data]] (seq data))))))
+
+(defn make-remove-snap
+  "Creates a filter for the snap data. Used to disable certain layouts"
+  [layout filter-shapes]
+
+  (fn [{:keys [type id]}]
+    (cond
+      (= type :layout)
+      (or (not (contains? layout :display-grid))
+          (not (contains? layout :snap-grid)))
+
+      (= type :guide)
+      (or (not (contains? layout :rules))
+          (not (contains? layout :snap-guides)))
+
+      :else
+      (or (contains? filter-shapes id)
+          (not (contains? layout :dynamic-alignment))))))
 
 (defn- flatten-to-points
   [query-result]
-  (mapcat (fn [[_ data]] (map (fn [[point _]] point) data)) query-result))
+  (mapcat (fn [[_ data]] (map :pt data)) query-result))
 
 (defn- calculate-distance [query-result point coord]
   (->> query-result
@@ -57,19 +75,19 @@
       ;; Otherwise the root frame is the common
       :else zero)))
 
-(defn get-snap-points [page-id frame-id filter-shapes point coord]
+(defn get-snap-points [page-id frame-id remove-snap? point coord]
   (let [value (get point coord)]
     (->> (uw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
-                   :coord coord
+                   :axis coord
                    :ranges [[(- value 0.5) (+ value 0.5)]]})
-         (rx/first)
-         (rx/map (remove-from-snap-points filter-shapes))
+         (rx/take 1)
+         (rx/map (remove-from-snap-points remove-snap?))
          (rx/map flatten-to-points))))
 
 (defn- search-snap
-  [page-id frame-id points coord filter-shapes zoom]
+  [page-id frame-id points coord remove-snap? zoom]
   (let [snap-accuracy (/ snap-accuracy zoom)
         ranges (->> points
                     (map coord)
@@ -78,10 +96,10 @@
     (->> (uw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
-                   :coord coord
+                   :axis coord
                    :ranges ranges})
-         (rx/first)
-         (rx/map (remove-from-snap-points filter-shapes))
+         (rx/take 1)
+         (rx/map (remove-from-snap-points remove-snap?))
          (rx/map (get-min-distance-snap points coord)))))
 
 (defn snap->vector [[[from-x to-x] [from-y to-y]]]
@@ -91,12 +109,11 @@
       (gpt/to-vec from to))))
 
 (defn- closest-snap
-  [page-id frame-id points filter-shapes zoom]
-  (let [snap-x (search-snap page-id frame-id points :x filter-shapes zoom)
-        snap-y (search-snap page-id frame-id points :y filter-shapes zoom)]
+  [page-id frame-id points remove-snap? zoom]
+  (let [snap-x (search-snap page-id frame-id points :x remove-snap? zoom)
+        snap-y (search-snap page-id frame-id points :y remove-snap? zoom)]
     (->> (rx/combine-latest snap-x snap-y)
          (rx/map snap->vector))))
-
 
 (defn sr-distance [coord sr1 sr2]
   (let [c1 (if (= coord :x) :x1 :y1)
@@ -185,9 +202,9 @@
                  :frame-id (->> shapes first :frame-id)
                  :include-frames? true
                  :rect area-selrect})
-       (rx/map #(cp/clean-loops objects %))
+       (rx/map #(cph/clean-loops objects %))
        (rx/map #(set/difference % (into #{} (map :id shapes))))
-       (rx/map (fn [ids] (map #(get objects %) ids)))))
+       (rx/map #(map (d/getf objects) %))))
 
 (defn closest-distance-snap
   [page-id shapes objects zoom movev]
@@ -209,12 +226,8 @@
   [page-id shapes layout zoom point]
   (let [frame-id (snap-frame-id shapes)
         filter-shapes (into #{} (map :id shapes))
-        filter-shapes (fn [id] (if (= id :layout)
-                                 (or (not (contains? layout :display-grid))
-                                     (not (contains? layout :snap-grid)))
-                                 (or (filter-shapes id)
-                                     (not (contains? layout :dynamic-alignment)))))]
-    (->> (closest-snap page-id frame-id [point] filter-shapes zoom)
+        remove-snap? (make-remove-snap layout filter-shapes)]
+    (->> (closest-snap page-id frame-id [point] remove-snap? zoom)
          (rx/map #(or % (gpt/point 0 0)))
          (rx/map #(gpt/add point %)))))
 
@@ -222,11 +235,8 @@
   [page-id shapes objects layout zoom movev]
   (let [frame-id (snap-frame-id shapes)
         filter-shapes (into #{} (map :id shapes))
-        filter-shapes (fn [id] (if (= id :layout)
-                                 (or (not (contains? layout :display-grid))
-                                     (not (contains? layout :snap-grid)))
-                                 (or (filter-shapes id)
-                                     (not (contains? layout :dynamic-alignment)))))
+        remove-snap? (make-remove-snap layout filter-shapes)
+
         shape (if (> (count shapes) 1)
                 (->> shapes (map gsh/transform-shape) gsh/selection-rect (gsh/setup {:type :rect}))
                 (->> shapes (first)))
@@ -236,7 +246,7 @@
                            ;; Move the points in the translation vector
                            (map #(gpt/add % movev)))]
 
-    (->> (rx/merge (closest-snap page-id frame-id shapes-points filter-shapes zoom)
+    (->> (rx/merge (closest-snap page-id frame-id shapes-points remove-snap? zoom)
                    (when (contains? layout :dynamic-alignment)
                      (closest-distance-snap page-id shapes objects zoom movev)))
          (rx/reduce gpt/min)

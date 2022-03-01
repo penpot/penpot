@@ -51,7 +51,9 @@
     :rx 0
     :ry 0}
 
-   {:type :image}
+   {:type :image
+    :rx 0
+    :ry 0}
 
    {:type :circle
     :name "Circle-1"

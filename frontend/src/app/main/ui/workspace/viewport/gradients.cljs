@@ -35,7 +35,7 @@
   (l/derived (l/in [:workspace-local :editing-stop]) st/state))
 
 (def current-gradient-ref
-  (l/derived (l/in [:workspace-local :current-gradient]) st/state))
+  (l/derived (l/in [:workspace-local :current-gradient]) st/state =))
 
 (mf/defc shadow [{:keys [id x y width height offset]}]
   [:filter {:id id
@@ -158,17 +158,19 @@
                        (rx/filter ms/pointer-event?)
                        (rx/filter #(= :viewport (:source %)))
                        (rx/map :pt)
-                       (rx/subs #(case @moving-point
-                                   :from-p (when on-change-start (on-change-start %))
-                                   :to-p (when on-change-finish (on-change-finish %))
-                                   :width-p (when on-change-width
-                                              (let [width-v (gpt/unit (gpt/to-vec from-p width-p))
-                                                    distance (gpt/point-line-distance % from-p to-p)
-                                                    new-width-p (gpt/add
-                                                                 from-p
-                                                                 (gpt/multiply width-v (gpt/point distance)))]
-                                                (on-change-width new-width-p)))
-                                   nil)))]
+                       (rx/subs
+                        (fn [pt]
+                          (case @moving-point
+                            :from-p (when on-change-start (on-change-start pt))
+                            :to-p (when on-change-finish (on-change-finish pt))
+                            :width-p (when on-change-width
+                                       (let [width-v (gpt/unit (gpt/to-vec from-p width-p))
+                                             distance (gpt/point-line-distance pt from-p to-p)
+                                             new-width-p (gpt/add
+                                                          from-p
+                                                          (gpt/multiply width-v (gpt/point distance)))]
+                                         (on-change-width new-width-p)))
+                            nil))))]
          (fn [] (rx/dispose! subs)))))
     [:g.gradient-handlers
      [:defs
@@ -229,9 +231,15 @@
 
 
 (mf/defc gradient-handlers
+  {::mf/wrap [mf/memo]}
   [{:keys [id zoom]}]
-  (let [shape (mf/deref (refs/object-by-id id))
+  (let [current-change (mf/use-state {})
+        shape-ref (mf/use-memo (mf/deps id) #(refs/object-by-id id))
+        shape (mf/deref shape-ref)
+
         gradient (mf/deref current-gradient-ref)
+        gradient (merge gradient @current-change)
+
         editing-spot (mf/deref editing-spot-ref)
 
         transform (gsh/transform-matrix shape)
@@ -261,31 +269,43 @@
 
         width-p (gpt/add from-p width-v)
 
-        change! (fn [changes]
-                  (st/emit! (dc/update-gradient changes)))
+        change!
+        (mf/use-callback
+         (fn [changes]
+           (swap! current-change merge changes)
+           (st/emit! (dc/update-gradient changes))))
 
-        on-change-start (fn [point]
-                          (let [point (gpt/transform point transform-inverse)
-                                start-x (/ (- (:x point) x) width)
-                                start-y (/ (- (:y point) y) height)
-                                start-x (mth/precision start-x 2)
-                                start-y (mth/precision start-y 2)]
-                            (change! {:start-x start-x :start-y start-y})))
+        on-change-start
+        (mf/use-callback
+         (mf/deps transform-inverse width height)
+         (fn [point]
+           (let [point (gpt/transform point transform-inverse)
+                 start-x (/ (- (:x point) x) width)
+                 start-y (/ (- (:y point) y) height)
+                 start-x (mth/precision start-x 2)
+                 start-y (mth/precision start-y 2)]
+             (change! {:start-x start-x :start-y start-y}))))
 
-        on-change-finish (fn [point]
-                           (let [point (gpt/transform point transform-inverse)
-                                 end-x (/ (- (:x point) x) width)
-                                 end-y (/ (- (:y point) y) height)
-                                 end-x (mth/precision end-x 2)
-                                 end-y (mth/precision end-y 2)]
-                             (change! {:end-x end-x :end-y end-y})))
+        on-change-finish
+        (mf/use-callback
+         (mf/deps transform-inverse width height)
+         (fn [point]
+           (let [point (gpt/transform point transform-inverse)
+                 end-x (/ (- (:x point) x) width)
+                 end-y (/ (- (:y point) y) height)
+                 end-x (mth/precision end-x 2)
+                 end-y (mth/precision end-y 2)]
+             (change! {:end-x end-x :end-y end-y}))))
 
-        on-change-width (fn [point]
-                          (let [scale-factor-y (/ gradient-length (/ height 2))
-                                norm-dist (/ (gpt/distance point from-p)
-                                             (* (/ width 2) scale-factor-y))]
-                            (when (and norm-dist (mth/finite? norm-dist))
-                              (change! {:width norm-dist}))))]
+        on-change-width
+        (mf/use-callback
+         (mf/deps gradient-length width height)
+         (fn [point]
+           (let [scale-factor-y (/ gradient-length (/ height 2))
+                 norm-dist (/ (gpt/distance point from-p)
+                              (* (/ width 2) scale-factor-y))]
+             (when (and norm-dist (mth/finite? norm-dist))
+               (change! {:width norm-dist})))))]
 
     (when (and gradient
                (= id (:shape-id gradient))

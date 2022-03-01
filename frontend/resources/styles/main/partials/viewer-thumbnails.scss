@@ -6,7 +6,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  z-index: 10;
+  z-index: 11;
 
   &.invisible {
     visibility: hidden;
@@ -178,4 +178,15 @@
       font-size: $fs12;
     }
   }
+}
+
+.thumbnail-close {
+  grid-row: 1 / span 2;
+  grid-column: 1 / span 1;
+  z-index: 11;
+}
+
+.thumbnail-close.invisible {
+  visibility: hidden;
+  pointer-events: none;
 }

@@ -12,10 +12,11 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.guides :as dwg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -143,9 +144,7 @@
        (let [objects (wsh/lookup-page-objects state)
              shapes  (->> shapes
                           (remove #(get % :blocked false))
-                          (mapcat (fn [shape]
-                                    (->> (cp/get-children (:id shape) objects)
-                                         (map #(get objects %)))))
+                          (mapcat #(cph/get-children objects (:id %)))
                           (concat shapes))
 
              update-shape
@@ -162,12 +161,14 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects           (wsh/lookup-page-objects state)
-            children-ids      (->> ids (mapcat #(cp/get-children % objects)))
-            ids-with-children (d/concat-vec children-ids ids)
+            ids-with-children (into (vec ids) (mapcat #(cph/get-children-ids objects %)) ids)
             object-modifiers  (get state :workspace-modifiers)
-            ignore-tree       (get-ignore-tree object-modifiers objects ids)]
+            shapes            (map (d/getf objects) ids)
+            ignore-tree       (->> (map #(get-ignore-tree object-modifiers objects %) shapes)
+                                   (reduce merge {}))]
 
         (rx/of (dwu/start-undo-transaction)
+               (dwg/move-frame-guides ids-with-children)
                (dch/update-shapes
                  ids-with-children
                  (fn [shape]
@@ -199,7 +200,7 @@
           shape
 
           (nil? root)
-          (cp/get-root-shape shape objects)
+          (cph/get-root-shape objects shape)
 
           :else root)
 
@@ -209,7 +210,7 @@
           transformed-shape
 
           (nil? transformed-root)
-          (cp/get-root-shape transformed-shape objects)
+          (cph/get-root-shape objects transformed-shape)
 
           :else transformed-root)
 
@@ -246,7 +247,7 @@
     (reduce set-child modif-tree children)))
 
 (defn- get-ignore-tree
-  "Retrieves a map with the flag `ignore-tree` given a tree of modifiers"
+  "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
   ([modif-tree objects shape]
    (get-ignore-tree modif-tree objects shape nil nil {}))
 
@@ -262,7 +263,7 @@
          ignore-tree (assoc ignore-tree shape-id ignore-geometry?)
 
          set-child
-         (fn [modif-tree child]
+         (fn [ignore-tree child]
            (get-ignore-tree modif-tree objects child root transformed-root ignore-tree))]
 
      (reduce set-child ignore-tree children))))
@@ -433,24 +434,25 @@
             group           (gsh/selection-rect shapes)
             group-center    (gsh/center-selrect group)
             initial-angle   (gpt/angle @ms/mouse-position group-center)
-            calculate-angle (fn [pos ctrl?]
+            calculate-angle (fn [pos ctrl? shift?]
                               (let [angle (- (gpt/angle pos group-center) initial-angle)
                                     angle (if (neg? angle) (+ 360 angle) angle)
-                                    modval (mod angle 45)
-                                    angle (if ctrl?
-                                            (if (< 22.5 modval)
-                                              (+ angle (- 45 modval))
-                                              (- angle modval))
-                                            angle)
                                     angle (if (= angle 360)
                                             0
+                                            angle)
+                                    angle (if ctrl?
+                                            (* (mth/floor (/ angle 45)) 45)
+                                            angle)
+                                    angle (if shift?
+                                            (* (mth/floor (/ angle 15)) 15)
                                             angle)]
                                 angle))]
         (rx/concat
          (->> ms/mouse-position
               (rx/with-latest vector ms/mouse-position-ctrl)
-              (rx/map (fn [[pos ctrl?]]
-                        (let [delta-angle (calculate-angle pos ctrl?)]
+              (rx/with-latest vector ms/mouse-position-shift)
+              (rx/map (fn [[[pos ctrl?] shift?]]
+                        (let [delta-angle (calculate-angle pos ctrl? shift?)]
                           (set-rotation-modifiers delta-angle shapes group-center))))
               (rx/take-until stoper))
          (rx/of (apply-modifiers (map :id shapes))
@@ -519,7 +521,7 @@
     (watch [_ _ stream]
       (->> stream
            (rx/filter (ptk/type? ::dws/duplicate-selected))
-           (rx/first)
+           (rx/take 1)
            (rx/map #(start-move from-position))))))
 
 (defn- start-move
@@ -602,13 +604,14 @@
       (watch [_ state stream]
         (if (= same-event (get-in state [:workspace-local :current-move-selected]))
           (let [selected (wsh/lookup-selected state {:omit-blocked? true})
+                nudge (get-in state [:profile :props :nudge] {:big 10 :small 1})
                 move-events (->> stream
                                  (rx/filter (ptk/type? ::move-selected))
                                  (rx/filter #(= direction (deref %))))
                 stopper (->> move-events
                              (rx/debounce 100)
-                             (rx/first))
-                scale (if shift? (gpt/point 10) (gpt/point 1))
+                             (rx/take 1))
+                scale (if shift? (gpt/point (:big nudge)) (gpt/point (:small nudge)))
                 mov-vec (gpt/multiply (get-displacement direction) scale)]
 
             (rx/concat
@@ -658,10 +661,10 @@
       (let [position @ms/mouse-position
             page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            frame-id (cp/frame-id-by-position objects position)
+            frame-id (cph/frame-id-by-position objects position)
 
             moving-shapes (->> ids
-                               (cp/clean-loops objects)
+                               (cph/clean-loops objects)
                                (map #(get objects %))
                                (remove #(or (nil? %)
                                             (= (:frame-id %) frame-id))))
@@ -678,7 +681,7 @@
                              {:type :mov-objects
                               :page-id page-id
                               :parent-id (:parent-id shape)
-                              :index (cp/get-index-in-parent objects (:id shape))
+                              :index (cph/get-index-in-parent objects (:id shape))
                               :shapes [(:id shape)]})))]
 
         (when-not (empty? uch)

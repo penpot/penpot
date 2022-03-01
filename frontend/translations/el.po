@@ -2163,7 +2163,7 @@ msgstr "Ιστορικό (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.layers"
-msgstr "στρώσεις (%s)"
+msgstr "στρώσεις"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
@@ -2179,7 +2179,7 @@ msgstr "Χάρτης ιστοτόπου"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.assets"
-msgstr "Στοιχεία (%s)"
+msgstr "Στοιχεία"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"

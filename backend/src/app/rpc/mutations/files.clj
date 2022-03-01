@@ -18,6 +18,7 @@
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as proj]
    [app.storage.impl :as simpl]
+   [app.util.async :as async]
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -27,6 +28,8 @@
 
 ;; --- Helpers & Specs
 
+(s/def ::frame-id ::us/uuid)
+(s/def ::file-id ::us/uuid)
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
@@ -270,6 +273,7 @@
          (contains? o :changes-with-metadata)))))
 
 (sv/defmethod ::update-file
+  {::async/dispatch :blocking}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (db/xact-lock! conn id)
@@ -305,24 +309,21 @@
               :context {:incoming-revn (:revn params)
                         :stored-revn (:revn file)}))
 
-  (let [mtx1    (get-in metrics [:definitions :update-file-changes])
-        mtx2    (get-in metrics [:definitions :update-file-bytes-processed])
-
-        changes (if changes-with-metadata
+  (let [changes (if changes-with-metadata
                   (mapcat :changes changes-with-metadata)
                   changes)
 
         changes (vec changes)
 
         ;; Trace the number of changes processed
-        _       ((::mtx/fn mtx1) {:by (count changes)})
+        _       (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
         ts      (dt/now)
         file    (-> (files/retrieve-data cfg file)
                     (update :revn inc)
                     (update :data (fn [data]
                                     ;; Trace the length of bytes of processed data
-                                    ((::mtx/fn mtx2) {:by (alength data)})
+                                    (mtx/run! metrics {:id :update-file-bytes-processed :inc (alength data)})
                                     (-> data
                                         (blob/decode)
                                         (assoc :id (:id file))
@@ -472,3 +473,25 @@
                       {:id id})))
 
       nil)))
+
+
+;; --- Mutation: Upsert frame thumbnail
+
+(def sql:upsert-frame-thumbnail
+  "insert into file_frame_thumbnail(file_id, frame_id, data)
+   values (?, ?, ?)
+       on conflict(file_id, frame_id) do
+          update set data = ?;")
+
+(s/def ::data ::us/string)
+(s/def ::upsert-frame-thumbnail
+  (s/keys :req-un [::profile-id ::file-id ::frame-id ::data]))
+
+(sv/defmethod ::upsert-frame-thumbnail
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id frame-id data]}]
+  (db/with-atomic [conn pool]
+    (files/check-edition-permissions! conn profile-id file-id)
+    (db/exec-one! conn [sql:upsert-frame-thumbnail file-id frame-id data data])
+    nil))
+
+

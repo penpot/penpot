@@ -17,6 +17,7 @@
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
+   [app.main.ui.hooks.resize :as r]
    [app.util.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -38,9 +39,17 @@
                        :command (ds/a-mod "h")
                        :fn #(st/emit! (dw/go-to-layout :document-history))}
 
-   :toggle-palette    {:tooltip (ds/alt "P")
-                       :command (ds/a-mod "p")
-                       :fn #(st/emit! (dw/toggle-layout-flags :colorpalette))}
+   :toggle-colorpalette {:tooltip (ds/alt "P")
+                         :command (ds/a-mod "p")
+                         :fn #(do (r/set-resize-type! :bottom)
+                                  (st/emit! (dw/remove-layout-flags :textpalette)
+                                            (dw/toggle-layout-flags :colorpalette)))}
+
+   :toggle-textpalette  {:tooltip (ds/alt "T")
+                         :command (ds/a-mod "t")
+                         :fn #(do (r/set-resize-type! :bottom)
+                                  (st/emit! (dw/remove-layout-flags :colorpalette)
+                                            (dw/toggle-layout-flags :textpalette)))}
 
    :toggle-rules      {:tooltip (ds/meta-shift "R")
                        :command (ds/c-mod "shift+r")
@@ -58,6 +67,10 @@
                        :command (ds/c-mod "shift+'")
                        :fn #(st/emit! (dw/toggle-layout-flags :snap-grid))}
 
+   :toggle-snap-guide {:tooltip (ds/meta-shift "G")
+                       :command (ds/c-mod "shift+G")
+                       :fn #(st/emit! (dw/toggle-layout-flags :snap-guides))}
+
    :toggle-alignment  {:tooltip (ds/meta "\\")
                        :command (ds/c-mod "\\")
                        :fn #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}
@@ -67,7 +80,7 @@
                        :fn #(st/emit! (dw/toggle-layout-flags :scale-text))}
 
    :increase-zoom      {:tooltip "+"
-                        :command "+"
+                        :command ["+" "="]
                         :fn #(st/emit! (dw/increase-zoom nil))}
 
    :decrease-zoom      {:tooltip "-"
@@ -177,7 +190,8 @@
 
    :cut                {:tooltip (ds/meta "X")
                         :command (ds/c-mod "x")
-                        :fn #(st/emit! (dw/copy-selected) dw/delete-selected)}
+                        :fn #(st/emit! (dw/copy-selected)
+                                       (dw/delete-selected))}
 
    :paste              {:tooltip (ds/meta "V")
                         :disabled true
@@ -186,7 +200,7 @@
 
    :delete             {:tooltip (ds/supr)
                         :command ["del" "backspace"]
-                        :fn #(st/emit! dw/delete-selected)}
+                        :fn #(st/emit! (dw/delete-selected))}
 
    :bring-forward      {:tooltip (ds/meta ds/up-arrow)
                         :command (ds/c-mod "up")
@@ -334,9 +348,15 @@
                           :command (ds/c-mod "alt+l")
                           :fn #(st/emit! (dw/toggle-proportion-lock))}
 
-   :create-artboard-from-selection   {:tooltip (ds/meta (ds/alt "G"))
-                          :command (ds/c-mod "alt+g")
-                          :fn #(st/emit! (dw/create-artboard-from-selection))}})
+   :create-artboard-from-selection {:tooltip (ds/meta (ds/alt "G"))
+                                    :command (ds/c-mod "alt+g")
+                                    :fn #(st/emit! (dw/create-artboard-from-selection))}
+
+   :hide-ui {:tooltip "\\"
+             :command "\\"
+             :fn #(st/emit! (dw/toggle-layout-flags :hide-ui))}
+
+   })
 
 (def opacity-shortcuts
   (into {} (->>

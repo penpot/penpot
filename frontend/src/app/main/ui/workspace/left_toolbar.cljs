@@ -14,6 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -75,17 +76,20 @@
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
          :class (when (= selected-drawtool :frame) "selected")
-         :on-click (partial select-drawtool :frame)}
+         :on-click (partial select-drawtool :frame)
+         :data-test "artboard-btn"}
         i/artboard]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
          :class (when (= selected-drawtool :rect) "selected")
-         :on-click (partial select-drawtool :rect)}
+         :on-click (partial select-drawtool :rect)
+         :data-test "rect-btn"}
         i/box]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
          :class (when (= selected-drawtool :circle) "selected")
-         :on-click (partial select-drawtool :circle)}
+         :on-click (partial select-drawtool :circle)
+         :data-test "ellipse-btn"}
         i/circle]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
@@ -98,12 +102,14 @@
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
          :class (when (= selected-drawtool :curve) "selected")
-         :on-click (partial select-drawtool :curve)}
+         :on-click (partial select-drawtool :curve)
+         :data-test "curve-btn"}
         i/pencil]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
          :class (when (= selected-drawtool :path) "selected")
-         :on-click (partial select-drawtool :path)}
+         :on-click (partial select-drawtool :path)
+         :data-test "path-btn"}
         i/pen]
 
        [:li.tooltip.tooltip-right
@@ -114,22 +120,19 @@
 
       [:ul.left-toolbar-options.panels
        [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.sidebar.layers" (sc/get-tooltip :toggle-layers))
-         :class (when (contains? layout :layers) "selected")
-         :on-click (st/emitf (dw/go-to-layout :layers))}
-        i/layers]
+        {:alt (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+         :class (when (contains? layout :textpalette) "selected")
+         :on-click (fn []
+                     (r/set-resize-type! :bottom)
+                     (st/emit! (dw/remove-layout-flags :colorpalette)
+                               (dw/toggle-layout-flags :textpalette)))}
+        "Ag"]
+       
        [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.assets" (sc/get-tooltip :toggle-assets))
-         :class (when (contains? layout :assets) "selected")
-         :on-click (st/emitf (dw/go-to-layout :assets))}
-        i/library]
-       [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
-         :class (when (contains? layout :document-history) "selected")
-         :on-click (st/emitf (dw/go-to-layout :document-history))}
-        i/recent]
-       [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-palette))
+        {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
          :class (when (contains? layout :colorpalette) "selected")
-         :on-click (st/emitf (dw/toggle-layout-flags :colorpalette))}
+         :on-click (fn []
+                     (r/set-resize-type! :bottom)
+                     (st/emit! (dw/remove-layout-flags :textpalette)
+                               (dw/toggle-layout-flags :colorpalette)))}
         i/palette]]]]))

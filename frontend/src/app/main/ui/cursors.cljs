@@ -30,6 +30,9 @@
 (def pointer-node (cursor-ref :pointer-node 0 0 10 32))
 (def resize-alt (cursor-ref :resize-alt))
 (def text (cursor-ref :text))
+(def zoom (cursor-ref :zoom))
+(def zoom-in (cursor-ref :zoom-in))
+(def zoom-out (cursor-ref :zoom-out))
 
 ;; Dynamic cursors
 (def resize-ew (cursor-fn :resize-h 0))
@@ -38,6 +41,9 @@
 (def resize-nwse (cursor-fn :resize-h 135))
 (def rotate (cursor-fn :rotate 90))
 
+;;
+(def resize-ew-2 (cursor-fn :resize-h-2 0))
+(def resize-ns-2 (cursor-fn :resize-h-2 90))
 
 (mf/defc debug-preview
   {::mf/wrap-props false}

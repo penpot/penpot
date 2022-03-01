@@ -221,7 +221,7 @@
          [:span.team-text {:title (:name team)} (:name team)]]])
 
      [:hr]
-     [:li.action {:on-click on-create-clicked}
+     [:li.action {:on-click on-create-clicked :data-test "create-new-team"}
       (tr "dashboard.create-new-team")]]))
 
 (s/def ::member-id ::us/uuid)
@@ -349,21 +349,21 @@
            :on-accept delete-fn}))]
 
     [:ul.dropdown.options-dropdown
-     [:li {:on-click go-members} (tr "labels.members")]
-     [:li {:on-click go-settings} (tr "labels.settings")]
+     [:li {:on-click go-members :data-test "team-members"} (tr "labels.members")]
+     [:li {:on-click go-settings :data-test "team-settings"} (tr "labels.settings")]
      [:hr]
-     [:li {:on-click on-rename-clicked} (tr "labels.rename")]
+     [:li {:on-click on-rename-clicked :data-test "rename-team"} (tr "labels.rename")]
 
      (cond
        (get-in team [:permissions :is-owner])
-       [:li {:on-click on-leave-as-owner-clicked} (tr "dashboard.leave-team")]
+       [:li {:on-click on-leave-as-owner-clicked :data-test "leave-team"} (tr "dashboard.leave-team")]
 
        (> (count members) 1)
        [:li {:on-click on-leave-clicked}  (tr "dashboard.leave-team")])
 
 
      (when (get-in team [:permissions :is-owner])
-       [:li {:on-click on-delete-clicked} (tr "dashboard.delete-team")])]))
+       [:li {:on-click on-delete-clicked :data-test "delete-team"} (tr "dashboard.delete-team")])]))
 
 
 (mf/defc sidebar-team-switch
@@ -466,13 +466,14 @@
 
      [:div.sidebar-content-section
       [:ul.sidebar-nav.no-overflow
-       [:li.recent-projects
+       [:li
         {:on-click go-fonts
+         :data-test "fonts"
          :class-name (when fonts? "current")}
         [:span.element-title (tr "labels.fonts")]]]]
 
      [:hr]
-     [:div.sidebar-content-section
+     [:div.sidebar-content-section {:data-test "pinned-projects"}
       (if (seq pinned-projects)
         [:ul.sidebar-nav
          (for [item pinned-projects]
@@ -501,28 +502,42 @@
              (st/emit! section))))]
 
     [:div.profile-section
-     [:div.profile {:on-click #(reset! show true)}
+     [:div.profile {:on-click #(reset! show true)
+                    :data-test "profile-btn"}
       [:img {:src photo}]
       [:span (:fullname profile)]
 
      [:& dropdown {:on-close #(reset! show false)
                    :show @show}
       [:ul.dropdown
-       [:li {:on-click (partial on-click :settings-profile)}
+       [:li {:on-click (partial on-click :settings-profile)
+             :data-test "profile-profile-opt"}
         [:span.icon i/user]
-        [:span.text (tr "labels.profile")]]
-       [:li {:on-click (partial on-click :settings-password)}
-        [:span.icon i/lock]
-        [:span.text (tr "labels.password")]]
-       [:li {:on-click #(on-click (du/logout) %)}
-        [:span.icon i/exit]
-        [:span.text (tr "labels.logout")]]
+        [:span.text (tr "labels.your-account")]]
+       [:li.separator {:on-click #(dom/open-new-window "https://help.penpot.app")
+                       :data-test "help-center-profile-opt"}
+        [:span.icon i/help]
+        [:span.text (tr "labels.help-center")]]
+       [:li {:on-click #(dom/open-new-window "https://penpot.app/libraries-templates.html")
+             :data-test "libraries-templates-profile-opt"}
+        [:span.icon i/download]
+        [:span.text (tr "labels.libraries-and-templates")]]
+       ;;[:li {:on-click #(dom/open-new-window "https://penpot.app?no-redirect=1")
+       [:li {:on-click #(dom/open-new-window "https://landing-next.penpot.app?no-redirect=1")
+             :data-test "about-penpot-profile-opt"} ;; Parameter ?no-redirect is to force stay in landing page
+        [:span.icon i/logo-icon]                    ;; instead of redirecting to app
+        [:span.text (tr "labels.about-penpot")]]
 
        (when (contains? @cf/flags :user-feedback)
-         [:li.feedback {:on-click (partial on-click :settings-feedback)}
+         [:li.separator {:on-click (partial on-click :settings-feedback)
+                         :data-test "feedback-profile-opt"}
           [:span.icon i/msg-info]
-          [:span.text (tr "labels.give-feedback")]
-          ])]]]
+          [:span.text (tr "labels.give-feedback")]])
+
+       [:li.separator {:on-click #(on-click (du/logout) %)
+                       :data-test "logout-profile-opt"}
+        [:span.icon i/exit]
+        [:span.text (tr "labels.logout")]]]]]
 
      (when (and team profile)
        [:& comments-section {:profile profile

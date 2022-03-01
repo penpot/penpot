@@ -6,11 +6,12 @@
 
 (ns app.main.ui.shapes.image
   (:require
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.config :as cfg]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
    [app.main.ui.shapes.embed :as embed]
-   [app.util.dom :as dom]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
@@ -23,22 +24,40 @@
         uri   (cfg/resolve-file-media metadata)
         embed (embed/use-data-uris [uri])
 
-        transform (geom/transform-matrix shape)
+        transform (gsh/transform-matrix shape)
+
+        fill-attrs (-> (attrs/extract-fill-attrs shape)
+                       (obj/set! "width" width)
+                       (obj/set! "height" height))
+
+        render-id  (mf/use-ctx muc/render-ctx)
+        fill-image-id (str "fill-image-" render-id)
+        shape (assoc shape :fill-image fill-image-id)
         props (-> (attrs/extract-style-attrs shape)
+                  (obj/merge! (attrs/extract-border-radius-attrs shape))
                   (obj/merge!
                    #js {:x x
                         :y y
                         :transform transform
                         :width width
-                        :height height
-                        :preserveAspectRatio "none"
-                        :data-loading (str (not (contains? embed uri)))}))
+                        :height height}))
+        path? (some? (.-d props))]
 
-        on-drag-start (fn [event]
-                        ;; Prevent browser dragging of the image
-                        (dom/prevent-default event))]
-
-    [:> "image" (obj/merge!
-                 props
-                 #js {:xlinkHref (get embed uri uri)
-                      :onDragStart on-drag-start})]))
+    [:g
+      [:defs
+       [:pattern {:id fill-image-id
+                  :patternUnits "userSpaceOnUse"
+                  :x x
+                  :y y
+                  :height height
+                  :width width
+                  :data-loading (str (not (contains? embed uri)))}
+        [:g
+         [:> :rect fill-attrs]
+         [:image {:xlinkHref (get embed uri uri)
+                  :width width
+                  :height height}]]]]
+     [:& shape-custom-stroke {:shape shape}
+      (if path?
+        [:> :path props]
+        [:> :rect props])]]))

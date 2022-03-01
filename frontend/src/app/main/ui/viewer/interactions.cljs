@@ -9,8 +9,8 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.pages :as cp]
-   [app.common.types.page-options :as cto]
+   [app.common.pages.helpers :as cph]
+   [app.common.spec.page :as csp]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
@@ -35,10 +35,9 @@
 
           update-fn #(d/update-when %1 %2 assoc-in [:modifiers :displacement] modifier)]
 
-      (->> (cp/get-children frame-id objects)
+      (->> (cph/get-children-ids objects frame-id)
            (into [frame-id])
            (reduce update-fn objects)))))
-
 
 (mf/defc viewport
   {::mf/wrap [mf/memo]}
@@ -107,7 +106,7 @@
         frames       (:frames page)
         frame        (get frames index)
         current-flow (mf/use-state
-                       (cto/get-frame-flow flows (:id frame)))
+                       (csp/get-frame-flow flows (:id frame)))
 
         show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))

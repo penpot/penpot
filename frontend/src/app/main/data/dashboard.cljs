@@ -835,3 +835,14 @@
         
         (->> (rp/mutation! action-name params)
              (rx/map action))))))
+
+(defn open-selected-file
+  []
+  (ptk/reify ::open-selected-file
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [files (get-in state [:dashboard-local :selected-files])]
+        (if (= 1 (count files))
+          (let [file (get-in state [:dashboard-files (first files)])]
+            (rx/of (go-to-workspace file)))
+          (rx/empty))))))

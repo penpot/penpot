@@ -148,12 +148,12 @@
             (dom/remove-attribute node "transform")))))))
 
 (defn format-viewbox [vbox]
-  (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
+  (str/join " " [(:x vbox 0)
                  (:y vbox 0)
                  (:width vbox 0)
                  (:height vbox 0)]))
 
-(defn translate-point-to-viewport [viewport zoom pt]
+(defn translate-point-to-viewport-raw [viewport zoom pt]
   (let [vbox     (.. ^js viewport -viewBox -baseVal)
         brect    (dom/get-bounding-rect viewport)
         brect    (gpt/point (d/parse-integer (:left brect))
@@ -162,8 +162,11 @@
         zoom     (gpt/point zoom)]
     (-> (gpt/subtract pt brect)
         (gpt/divide zoom)
-        (gpt/add box)
-        (gpt/round 0))))
+        (gpt/add box))))
+
+(defn translate-point-to-viewport [viewport zoom pt]
+  (-> (translate-point-to-viewport-raw viewport zoom pt)
+      (gpt/round 0)))
 
 (defn get-cursor [cursor]
   (case cursor
@@ -176,4 +179,7 @@
     :pencil cur/pencil
     :create-shape cur/create-shape
     :duplicate cur/duplicate
+    :zoom cur/zoom
+    :zoom-in cur/zoom-in
+    :zooom-out cur/zoom-out
     cur/pointer-inner))

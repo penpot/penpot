@@ -28,10 +28,11 @@
 
 (defn on-mouse-down
   [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
-   node-editing? drawing-path? create-comment? space? viewport-ref zoom]
+   node-editing? drawing-path? create-comment? space? viewport-ref zoom panning]
   (mf/use-callback
    (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
-            node-editing? drawing-path? create-comment? space? viewport-ref zoom)
+            node-editing? drawing-path? create-comment? @space? viewport-ref zoom
+            panning)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
                (dom/class? (dom/get-target bevent) "viewport-selrect"))
@@ -42,62 +43,75 @@
              shift? (kbd/shift? event)
              alt?   (kbd/alt? event)
 
-             left-click?   (= 1 (.-which event))
-             middle-click? (= 2 (.-which event))
+             left-click?   (and (not panning) (= 1 (.-which event)))
+             middle-click? (and (not panning) (= 2 (.-which event)))
 
              frame? (= :frame type)
              selected? (contains? selected id)]
 
-         (when middle-click?
-           (dom/prevent-default bevent)
-           (if ctrl?
-             (let [raw-pt   (dom/get-client-position event)
-                   viewport (mf/ref-val viewport-ref)
-                   pt       (utils/translate-point-to-viewport viewport zoom raw-pt)]
-               (st/emit! (dw/start-zooming pt)))
-             (st/emit! (dw/start-panning))))
+         (cond
+           middle-click?
+           (do
+             (dom/prevent-default bevent)
+             (if ctrl?
+               (let [raw-pt   (dom/get-client-position event)
+                     viewport (mf/ref-val viewport-ref)
+                     pt       (utils/translate-point-to-viewport viewport zoom raw-pt)]
+                 (st/emit! (dw/start-zooming pt)))
+               (st/emit! (dw/start-panning))))
 
-         (when left-click?
-           (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
 
-           (when (and (not= edition id) text-editing?)
-             (st/emit! dw/clear-edition-mode))
+           left-click?
+           (do
+             (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
 
-           (when (and (not text-editing?)
-                      (not blocked)
-                      (not hidden)
-                      (not create-comment?)
-                      (not drawing-path?))
-             (cond
-               drawing-tool
-               (st/emit! (dd/start-drawing drawing-tool))
+             (when (and (not= edition id) text-editing?)
+               (st/emit! dw/clear-edition-mode))
 
-               node-editing?
-               ;; Handle path node area selection
-               (st/emit! (dwdp/handle-area-selection shift?))
+             (when (and (not text-editing?)
+                        (not blocked)
+                        (not hidden)
+                        (not create-comment?)
+                        (not drawing-path?))
+               (cond
+                 node-editing?
+                 ;; Handle path node area selection
+                 (st/emit! (dwdp/handle-area-selection shift?))
 
-               @space?
-               (st/emit! (dw/start-panning))
+                 (and @space? ctrl?)
+                 (let [raw-pt   (dom/get-client-position event)
+                       viewport (mf/ref-val viewport-ref)
+                       pt       (utils/translate-point-to-viewport viewport zoom raw-pt)]
+                   (st/emit! (dw/start-zooming pt)))
 
-               (or (not id) (and frame? (not selected?)))
-               (st/emit! (dw/handle-area-selection shift?))
+                 @space?
+                 (st/emit! (dw/start-panning))
 
-               (not drawing-tool)
-               (st/emit! (when (or shift? (not selected?))
-                           (dw/select-shape id shift?))
-                         (dw/start-move-selected))))))))))
+                 drawing-tool
+                 (st/emit! (dd/start-drawing drawing-tool))
+
+                 (or (not id) (and frame? (not selected?)) ctrl?)
+                 (st/emit! (dw/handle-area-selection shift? ctrl?))
+
+                 (not drawing-tool)
+                 (st/emit! (when (or shift? (not selected?))
+                             (dw/select-shape id shift?))
+                           (dw/start-move-selected)))))))))))
 
 (defn on-move-selected
-  [hover hover-ids selected]
+  [hover hover-ids selected space?]
   (mf/use-callback
-   (mf/deps @hover @hover-ids selected)
+   (mf/deps @hover @hover-ids selected @space?)
    (fn [bevent]
      (let [event (.-nativeEvent bevent)
            shift? (kbd/shift? event)
+           ctrl?  (kbd/ctrl? event)
            left-click?   (= 1 (.-which event))]
 
        (when (and left-click?
+                  (not ctrl?)
                   (not shift?)
+                  (not @space?)
                   (or (not @hover)
                       (= :frame (:type @hover))
                       (some #(contains? selected %) @hover-ids)))
@@ -130,9 +144,9 @@
      (reset! frame-hover nil))))
 
 (defn on-click
-  [hover selected edition drawing-path? drawing-tool]
+  [hover selected edition drawing-path? drawing-tool space?]
   (mf/use-callback
-   (mf/deps @hover selected edition drawing-path? drawing-tool)
+   (mf/deps @hover selected edition drawing-path? drawing-tool @space?)
    (fn [event]
      (when (or (dom/class? (dom/get-target event) "viewport-controls")
                (dom/class? (dom/get-target event) "viewport-selrect"))
@@ -147,7 +161,8 @@
 
          (when (and hovering?
                     (not shift?)
-                    (not frame?)
+                    (or ctrl? (not frame?))
+                    (not @space?)
                     (not selected?)
                     (not edition)
                     (not drawing-path?)
@@ -171,24 +186,28 @@
 
        (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?))
 
-       (when (and (not drawing-path?) shape)
-         (cond frame?
-               (st/emit! (dw/select-shape id shift?))
+       ;; Emit asynchronously so the double click to exit shapes won't break
+       (timers/schedule
+        #(when (and (not drawing-path?) shape)
+           (cond
+             frame?
+             (st/emit! (dw/select-shape id shift?))
 
-               (and group? (> (count @hover-ids) 1))
-               (let [selected (get objects (second @hover-ids))]
-                 (reset! hover selected)
-                 (reset! hover-ids (into [] (rest @hover-ids)))
-                 (st/emit! (dw/select-shape (:id selected))))
+             (and group? (> (count @hover-ids) 1))
+             (let [selected (get objects (second @hover-ids))]
+               (reset! hover selected)
+               (reset! hover-ids (into [] (rest @hover-ids)))
 
-               (not= id edition)
-               (st/emit! (dw/select-shape id)
-                         (dw/start-editing-selected))))))))
+               (st/emit! (dw/select-shape (:id selected))))
+
+             (not= id edition)
+             (st/emit! (dw/select-shape id)
+                       (dw/start-editing-selected)))))))))
 
 (defn on-context-menu
-  [hover]
+  [hover hover-ids]
   (mf/use-callback
-   (mf/deps @hover)
+   (mf/deps @hover @hover-ids)
    (fn [event]
      (when (or (dom/class? (dom/get-target event) "viewport-controls")
                (dom/class? (dom/get-target event) "viewport-selrect"))
@@ -200,18 +219,19 @@
           #(st/emit!
             (if (some? @hover)
               (dw/show-shape-context-menu {:position position
-                                           :shape @hover})
+                                           :shape @hover
+                                           :hover-ids @hover-ids})
               (dw/show-context-menu {:position position})))))))))
 
 (defn on-menu-selected
   [hover hover-ids selected]
   (mf/use-callback
-   (mf/deps @hover hover-ids selected)
+   (mf/deps @hover @hover-ids selected)
    (fn [event]
      (dom/prevent-default event)
      (dom/stop-propagation event)
      (let [position (dom/get-client-position event)]
-       (st/emit! (dw/show-shape-context-menu {:position position}))))))
+       (st/emit! (dw/show-shape-context-menu {:position position :hover-ids @hover-ids}))))))
 
 (defn on-mouse-up
   [disable-paste]
@@ -228,17 +248,17 @@
            middle-click? (= 2 (.-which event))]
 
        (when left-click?
-         (st/emit! (dw/finish-panning)
-                   (ms/->MouseEvent :up ctrl? shift? alt?)))
+         (st/emit! (ms/->MouseEvent :up ctrl? shift? alt?)))
 
        (when middle-click?
          (dom/prevent-default event)
 
          ;; We store this so in Firefox the middle button won't do a paste of the content
          (reset! disable-paste true)
-         (timers/schedule #(reset! disable-paste false))
-         (st/emit! (dw/finish-panning)
-                   (dw/finish-zooming)))))))
+         (timers/schedule #(reset! disable-paste false)))
+       
+       (st/emit! (dw/finish-panning)
+                 (dw/finish-zooming))))))
 
 (defn on-pointer-enter [in-viewport?]
   (mf/use-callback
@@ -251,58 +271,58 @@
      (reset! in-viewport? false))))
 
 (defn on-pointer-down []
- (mf/use-callback
-  (fn [event]
+  (mf/use-callback
+   (fn [event]
     ;; We need to handle editor related stuff here because
     ;; handling on editor dom node does not works properly.
-    (let [target  (dom/get-target event)
-          editor (.closest ^js target ".public-DraftEditor-content")]
+     (let [target  (dom/get-target event)
+           editor (.closest ^js target ".public-DraftEditor-content")]
       ;; Capture mouse pointer to detect the movements even if cursor
       ;; leaves the viewport or the browser itself
       ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
-      (if editor
-        (.setPointerCapture editor (.-pointerId event))
-        (.setPointerCapture target (.-pointerId event)))))))
+       (if editor
+         (.setPointerCapture editor (.-pointerId event))
+         (.setPointerCapture target (.-pointerId event)))))))
 
 (defn on-pointer-up []
- (mf/use-callback
-  (fn [event]
-    (let [target (dom/get-target event)]
+  (mf/use-callback
+   (fn [event]
+     (let [target (dom/get-target event)]
       ; Release pointer on mouse up
-      (.releasePointerCapture target (.-pointerId event))))))
+       (.releasePointerCapture target (.-pointerId event))))))
 
 (defn on-key-down []
- (mf/use-callback
-  (fn [event]
-    (let [bevent   (.getBrowserEvent ^js event)
-          key      (.-key ^js event)
-          ctrl?    (kbd/ctrl? event)
-          shift?   (kbd/shift? event)
-          alt?     (kbd/alt? event)
-          meta?    (kbd/meta? event)
-          target   (dom/get-target event)
-          editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
-                       (= "rich-text" (obj/get target "className"))
-                       (= "INPUT" (obj/get target "tagName"))
-                       (= "TEXTAREA" (obj/get target "tagName")))]
+  (mf/use-callback
+   (fn [event]
+     (let [bevent   (.getBrowserEvent ^js event)
+           key      (.-key ^js event)
+           ctrl?    (kbd/ctrl? event)
+           shift?   (kbd/shift? event)
+           alt?     (kbd/alt? event)
+           meta?    (kbd/meta? event)
+           target   (dom/get-target event)
+           editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
+                        (= "rich-text" (obj/get target "className"))
+                        (= "INPUT" (obj/get target "tagName"))
+                        (= "TEXTAREA" (obj/get target "tagName")))]
 
-      (when-not (.-repeat bevent)
-        (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta? editing?)))))))
+       (when-not (.-repeat bevent)
+         (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta? editing?)))))))
 
 (defn on-key-up []
- (mf/use-callback
-  (fn [event]
-    (let [key    (.-key event)
-          ctrl?  (kbd/ctrl? event)
-          shift? (kbd/shift? event)
-          alt?   (kbd/alt? event)
-          meta?  (kbd/meta? event)
-          target   (dom/get-target event)
-          editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
-                       (= "rich-text" (obj/get target "className"))
-                       (= "INPUT" (obj/get target "tagName"))
-                       (= "TEXTAREA" (obj/get target "tagName")))]
-      (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta? editing?))))))
+  (mf/use-callback
+   (fn [event]
+     (let [key    (.-key event)
+           ctrl?  (kbd/ctrl? event)
+           shift? (kbd/shift? event)
+           alt?   (kbd/alt? event)
+           meta?  (kbd/meta? event)
+           target   (dom/get-target event)
+           editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
+                        (= "rich-text" (obj/get target "className"))
+                        (= "INPUT" (obj/get target "tagName"))
+                        (= "TEXTAREA" (obj/get target "tagName")))]
+       (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta? editing?))))))
 
 (defn on-mouse-move [viewport-ref zoom]
   (let [last-position (mf/use-var nil)]
@@ -330,13 +350,14 @@
                                       (kbd/shift? event)
                                       (kbd/alt? event))))))))
 
-(defn on-pointer-move [viewport-ref zoom move-stream]
+(defn on-pointer-move [viewport-ref raw-position-ref zoom move-stream]
   (mf/use-callback
    (mf/deps zoom move-stream)
    (fn [event]
      (let [raw-pt (dom/get-client-position event)
            viewport (mf/ref-val viewport-ref)
            pt     (utils/translate-point-to-viewport viewport zoom raw-pt)]
+       (mf/set-ref-val! raw-position-ref raw-pt)
        (rx/push! move-stream pt)))))
 
 (defn on-mouse-wheel [viewport-ref zoom]
@@ -386,29 +407,29 @@
                                                      :y #(+ % delta-y)})))))))))
 
 (defn on-drag-enter []
- (mf/use-callback
-  (fn [e]
-    (when (or (dnd/has-type? e "penpot/shape")
-              (dnd/has-type? e "penpot/component")
-              (dnd/has-type? e "Files")
-              (dnd/has-type? e "text/uri-list")
-              (dnd/has-type? e "text/asset-id"))
-      (dom/prevent-default e)))))
+  (mf/use-callback
+   (fn [e]
+     (when (or (dnd/has-type? e "penpot/shape")
+               (dnd/has-type? e "penpot/component")
+               (dnd/has-type? e "Files")
+               (dnd/has-type? e "text/uri-list")
+               (dnd/has-type? e "text/asset-id"))
+       (dom/prevent-default e)))))
 
 (defn on-drag-over []
- (mf/use-callback
-  (fn [e]
-    (when (or (dnd/has-type? e "penpot/shape")
-              (dnd/has-type? e "penpot/component")
-              (dnd/has-type? e "Files")
-              (dnd/has-type? e "text/uri-list")
-              (dnd/has-type? e "text/asset-id"))
-      (dom/prevent-default e)))))
+  (mf/use-callback
+   (fn [e]
+     (when (or (dnd/has-type? e "penpot/shape")
+               (dnd/has-type? e "penpot/component")
+               (dnd/has-type? e "Files")
+               (dnd/has-type? e "text/uri-list")
+               (dnd/has-type? e "text/asset-id"))
+       (dom/prevent-default e)))))
 
 (defn on-image-uploaded []
- (mf/use-callback
-  (fn [image position]
-    (st/emit! (dw/image-uploaded image position)))))
+  (mf/use-callback
+   (fn [image position]
+     (st/emit! (dw/image-uploaded image position)))))
 
 (defn on-drop [file viewport-ref zoom]
   (let [on-image-uploaded (on-image-uploaded)]
@@ -483,19 +504,11 @@
              (st/emit! (dw/upload-media-workspace params)))))))))
 
 (defn on-paste [disable-paste in-viewport?]
- (mf/use-callback
-  (fn [event]
+  (mf/use-callback
+   (fn [event]
     ;; We disable the paste just after mouse-up of a middle button so when panning won't
     ;; paste the content into the workspace
-    (let [tag-name (-> event dom/get-target dom/get-tag-name)]
-      (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste))
-        (st/emit! (dw/paste-from-event event @in-viewport?)))))))
+     (let [tag-name (-> event dom/get-target dom/get-tag-name)]
+       (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste))
+         (st/emit! (dw/paste-from-event event @in-viewport?)))))))
 
-(defn on-resize [viewport-ref]
- (mf/use-callback
-  (fn [_]
-    (let [node (mf/ref-val viewport-ref)
-          prnt (dom/get-parent node)
-          size (dom/get-client-size prnt)]
-      ;; We schedule the event so it fires after `initialize-page` event
-      (timers/schedule #(st/emit! (dw/update-viewport-size size)))))))

@@ -18,6 +18,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.time :as dt]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -104,7 +105,7 @@
      (when (or @show-buttons?
                (seq @content))
        [:div.buttons
-        [:input.btn-primary {:type "button" :value "Post" :on-click on-submit}]
+        [:input.btn-primary {:type "button" :value "Post" :on-click on-submit :disabled (str/empty-or-nil? @content)}]
         [:input.btn-secondary {:type "button" :value "Cancel" :on-click on-cancel}]])]))
 
 (mf/defc draft-thread
@@ -154,7 +155,8 @@
         [:input.btn-primary
          {:on-click on-submit
           :type "button"
-          :value "Post"}]
+          :value "Post"
+          :disabled (str/empty-or-nil? content)}]
         [:input.btn-secondary
          {:on-click on-esc
           :type "button"
@@ -300,7 +302,7 @@
      (mf/deps thread comments-map)
      (fn []
        (when-let [node (mf/ref-val ref)]
-         (.scrollIntoViewIfNeeded ^js node))))
+         (dom/scroll-into-view-if-needed! node))))
 
     (when (some? comment)
       [:div.thread-content

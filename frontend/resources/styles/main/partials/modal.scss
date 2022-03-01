@@ -105,6 +105,26 @@
     }
   }
 
+  .modal-item-element {
+    display: flex;
+    padding-bottom: 3px;
+    margin-left: 10px;
+    font-size: $fs14;
+    color: $color-info;
+
+    .modal-component-icon {
+      margin-right: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      svg {
+        width: 16px;
+        height: 16px;
+        fill: $color-info;
+      }
+    }
+  }
+
   .modal-content {
     display: flex;
     flex-direction: column;
@@ -1204,5 +1224,85 @@
 
   .modal-overlay {
     background-color: rgba(0, 0, 0, 0.9);
+  }
+}
+
+// Nudge modal
+
+.nudge-modal-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  left: calc(50vw - 107px);
+  top: calc(50vh - 57px);
+  height: 110px;
+  width: 215px;
+  padding: 8px 20px;
+  background-color: $color-white;
+  box-shadow: 0px 2px 8px 0px rgb(0 0 0 / 20%);
+  z-index: 1000;
+
+  &.transparent {
+    background-color: rgba($color-white, 0);
+  }
+
+  .nudge-modal-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    height: 100%;
+    width: 100%;
+
+    .nudge-modal-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 7px;
+
+      .modal-close-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+
+        svg {
+          height: 12px;
+          width: 12px;
+          transform: rotate(45deg);
+        }
+      }
+
+      .nudge-modal-title {
+        padding: 0;
+        margin: 0;
+        color: $color-black;
+        font-size: $fs12;
+      }
+    }
+
+    .nudge-modal-body {
+      display: flex;
+      justify-content: space-between;
+
+      .nudge-subtitle {
+        margin: 0;
+      }
+
+      input {
+        width: 72px;
+        background-color: transparent;
+        border: none;
+        border-bottom: 1px solid $color-black;
+        margin-bottom: 12px;
+
+        &:active,
+        &:focus,
+        &:hover {
+          border-bottom: 1px solid $color-primary;
+        }
+      }
+    }
   }
 }

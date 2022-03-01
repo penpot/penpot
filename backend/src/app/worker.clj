@@ -22,44 +22,100 @@
    [integrant.core :as ig]
    [promesa.exec :as px])
   (:import
-   org.eclipse.jetty.util.thread.QueuedThreadPool
    java.util.concurrent.ExecutorService
-   java.util.concurrent.Executors
-   java.util.concurrent.Executor))
+   java.util.concurrent.ForkJoinPool
+   java.util.concurrent.ForkJoinWorkerThread
+   java.util.concurrent.ForkJoinPool$ForkJoinWorkerThreadFactory
+   java.util.concurrent.atomic.AtomicLong
+   java.util.concurrent.Executors))
 
-(s/def ::executor #(instance? Executor %))
+(set! *warn-on-reflection* true)
+
+(s/def ::executor #(instance? ExecutorService %))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Executor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::name keyword?)
+(s/def ::prefix keyword?)
+(s/def ::parallelism ::us/integer)
 (s/def ::min-threads ::us/integer)
 (s/def ::max-threads ::us/integer)
 (s/def ::idle-timeout ::us/integer)
 
 (defmethod ig/pre-init-spec ::executor [_]
-  (s/keys :req-un [::min-threads ::max-threads ::idle-timeout ::name]))
+  (s/keys :req-un [::prefix ::parallelism]))
+
+(defn- get-thread-factory
+  ^ForkJoinPool$ForkJoinWorkerThreadFactory
+  [prefix counter]
+  (reify ForkJoinPool$ForkJoinWorkerThreadFactory
+    (newThread [_ pool]
+      (let [^ForkJoinWorkerThread thread (.newThread ForkJoinPool/defaultForkJoinWorkerThreadFactory pool)
+            ^String thread-name (str (name prefix) "-" (.getAndIncrement ^AtomicLong counter))]
+        (.setName thread thread-name)
+        thread))))
 
 (defmethod ig/init-key ::executor
-  [_ {:keys [min-threads max-threads idle-timeout name]}]
-  (doto (QueuedThreadPool. (int max-threads)
-                           (int min-threads)
-                           (int idle-timeout))
-    (.setStopTimeout 500)
-    (.setName (d/name name))
-    (.start)))
+  [_ {:keys [parallelism prefix]}]
+  (let [counter (AtomicLong. 0)]
+    (ForkJoinPool. (int parallelism) (get-thread-factory prefix counter) nil false)))
 
 (defmethod ig/halt-key! ::executor
   [_ instance]
-  (.stop ^QueuedThreadPool instance))
+  (.shutdown ^ForkJoinPool instance))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Executor Monitor
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::executors (s/map-of keyword? ::executor))
+
+(defmethod ig/pre-init-spec ::executors-monitor [_]
+  (s/keys :req-un [::executors ::mtx/metrics]))
+
+(defmethod ig/init-key ::executors-monitor
+  [_ {:keys [executors metrics interval] :or {interval 3000}}]
+  (letfn [(log-stats [scheduler state]
+            (doseq [[key ^ForkJoinPool executor] executors]
+              (let [labels  (into-array String [(name key)])
+                    active  (.getActiveThreadCount executor)
+                    running (.getRunningThreadCount executor)
+                    queued  (.getQueuedSubmissionCount executor)
+                    steals  (.getStealCount executor)
+                    steals-increment (- steals (or (get-in @state [key :steals]) 0))
+                    steals-increment (if (neg? steals-increment) 0 steals-increment)]
+
+                (mtx/run! metrics {:id :executors-active-threads :labels labels :val active})
+                (mtx/run! metrics {:id :executors-running-threads :labels labels :val running})
+                (mtx/run! metrics {:id :executors-queued-submissions :labels labels :val queued})
+                (mtx/run! metrics {:id :executors-completed-tasks :labels labels :inc steals-increment})
+
+                (swap! state update key assoc
+                       :running running
+                       :active active
+                       :queued queued
+                       :steals steals)))
+
+            (when-not (.isShutdown scheduler)
+              (px/schedule! scheduler interval (partial log-stats scheduler state))))]
+
+    (let [scheduler (px/scheduled-pool 1)
+          state     (atom {})]
+      (px/schedule! scheduler interval (partial log-stats scheduler state))
+      {::scheduler scheduler
+       ::state state})))
+
+(defmethod ig/halt-key! ::executors-monitor
+  [_ {:keys [::scheduler]}]
+  (.shutdown ^ExecutorService scheduler))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Worker
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare event-loop-fn)
-(declare instrument-tasks)
+(declare event-loop)
 
 (s/def ::queue keyword?)
 (s/def ::parallelism ::us/integer)
@@ -85,13 +141,10 @@
             :queue :default}
            (d/without-nils cfg)))
 
-(defmethod ig/init-key ::worker
-  [_ {:keys [pool poll-interval name queue] :as cfg}]
-  (l/info :action "start worker"
-          :name (d/name name)
-          :queue (d/name queue))
-  (let [close-ch (a/chan 1)
-        poll-ms  (inst-ms poll-interval)]
+(defn- event-loop
+  "Main, worker eventloop"
+  [{:keys [pool poll-interval close-ch] :as cfg}]
+  (let [poll-ms (inst-ms poll-interval)]
     (a/go-loop []
       (let [[val port] (a/alts! [close-ch (event-loop-fn cfg)] :priority true)]
         (cond
@@ -100,7 +153,7 @@
           (or (= port close-ch) (nil? val))
           (l/debug :hint "stop condition found")
 
-          (db/pool-closed? pool)
+          (db/closed? pool)
           (do
             (l/debug :hint "eventloop aborted because pool is closed")
             (a/close! close-ch))
@@ -132,13 +185,26 @@
           (= ::empty val)
           (do
             (a/<! (a/timeout poll-ms))
-            (recur)))))
+            (recur)))))))
+
+(defmethod ig/init-key ::worker
+  [_ {:keys [pool name queue] :as cfg}]
+  (let [close-ch (a/chan 1)
+        cfg      (assoc cfg :close-ch close-ch)]
+    (if (db/read-only? pool)
+      (l/warn :hint "worker not started, db is read-only"
+              :name (d/name name)
+              :queue (d/name queue))
+      (do
+        (l/info :hint "worker started"
+                :name (d/name name)
+                :queue (d/name queue))
+        (event-loop cfg)))
 
     (reify
       java.lang.AutoCloseable
       (close [_]
         (a/close! close-ch)))))
-
 
 (defmethod ig/halt-key! ::worker
   [_ instance]
@@ -350,31 +416,35 @@
   (s/keys :req-un [::executor ::db/pool ::schedule ::tasks]))
 
 (defmethod ig/init-key ::scheduler
-  [_ {:keys [schedule tasks] :as cfg}]
-  (let [scheduler (Executors/newScheduledThreadPool (int 1))
-        schedule  (->> schedule
-                       (filter some?)
-                       ;; If id is not defined, use the task as id.
-                       (map (fn [{:keys [id task] :as item}]
-                              (if (some? id)
-                                (assoc item :id (d/name id))
-                                (assoc item :id (d/name task)))))
-                       (map (fn [{:keys [task] :as item}]
-                              (let [f (get tasks task)]
-                                (when-not f
-                                  (ex/raise :type :internal
-                                            :code :task-not-found
-                                            :hint (str/fmt "task %s not configured" task)))
-                                (-> item
-                                    (dissoc :task)
-                                    (assoc :fn f))))))
-        cfg       (assoc cfg
-                         :scheduler scheduler
-                         :schedule schedule)]
+  [_ {:keys [schedule tasks pool] :as cfg}]
+  (let [scheduler (Executors/newScheduledThreadPool (int 1))]
+    (if (db/read-only? pool)
+      (l/warn :hint "scheduler not started, db is read-only")
+      (let [schedule  (->> schedule
+                           (filter some?)
+                           ;; If id is not defined, use the task as id.
+                           (map (fn [{:keys [id task] :as item}]
+                                  (if (some? id)
+                                    (assoc item :id (d/name id))
+                                    (assoc item :id (d/name task)))))
+                           (map (fn [{:keys [task] :as item}]
+                                  (let [f (get tasks task)]
+                                    (when-not f
+                                      (ex/raise :type :internal
+                                                :code :task-not-found
+                                                :hint (str/fmt "task %s not configured" task)))
+                                    (-> item
+                                        (dissoc :task)
+                                        (assoc :fn f))))))
+            cfg       (assoc cfg
+                             :scheduler scheduler
+                             :schedule schedule)]
+        (l/info :hint "scheduler started"
+                :registred-tasks (count schedule))
 
-    (synchronize-schedule cfg)
-    (run! (partial schedule-task cfg)
-          (filter some? schedule))
+        (synchronize-schedule cfg)
+        (run! (partial schedule-task cfg)
+              (filter some? schedule))))
 
     (reify
       java.lang.AutoCloseable
@@ -404,11 +474,6 @@
 
 (def sql:lock-scheduled-task
   "select id from scheduled_task where id=? for update skip locked")
-
-(defn exception->string
-  [error]
-  (with-out-str
-    (.printStackTrace ^Throwable error (java.io.PrintWriter. *out*))))
 
 (defn- execute-scheduled-task
   [{:keys [executor pool] :as cfg} {:keys [id] :as task}]
@@ -445,59 +510,27 @@
 
 ;; --- INSTRUMENTATION
 
-(defn instrument!
-  [registry]
-  (mtx/instrument-vars!
-   [#'submit!]
-   {:registry registry
-    :type :counter
-    :labels ["name"]
-    :name "tasks_submit_total"
-    :help "A counter of task submissions."
-    :wrap (fn [rootf mobj]
-            (let [mdata (meta rootf)
-                  origf (::original mdata rootf)]
-              (with-meta
-                (fn [conn params]
-                  (let [tname (:name params)]
-                    (mobj :inc [tname])
-                    (origf conn params)))
-                {::original origf})))})
-
-  (mtx/instrument-vars!
-   [#'app.worker/run-task]
-   {:registry registry
-    :type :summary
-    :quantiles []
-    :name "tasks_checkout_timing"
-    :help "Latency measured between scheduled_at and execution time."
-    :wrap (fn [rootf mobj]
-            (let [mdata (meta rootf)
-                  origf (::original mdata rootf)]
-              (with-meta
-                (fn [tasks item]
-                  (let [now (inst-ms (dt/now))
-                        sat (inst-ms (:scheduled-at item))]
-                    (mobj :observe (- now sat))
-                    (origf tasks item)))
-                {::original origf})))}))
-
+(defn- wrap-task-handler
+  [metrics tname f]
+  (let [labels (into-array String [tname])]
+    (fn [params]
+      (let [start (System/nanoTime)]
+        (try
+          (f params)
+          (finally
+            (mtx/run! metrics
+                      {:id :tasks-timing
+                       :val (/ (- (System/nanoTime) start) 1000000)
+                       :labels labels})))))))
 
 (defmethod ig/pre-init-spec ::registry [_]
   (s/keys :req-un [::mtx/metrics ::tasks]))
 
 (defmethod ig/init-key ::registry
   [_ {:keys [metrics tasks]}]
-  (let [mobj (mtx/create
-              {:registry (:registry metrics)
-               :type :summary
-               :labels ["name"]
-               :quantiles []
-               :name "tasks_timing"
-               :help "Background task execution timing."})]
-    (reduce-kv (fn [res k v]
-                 (let [tname (name k)]
-                   (l/debug :action "register task" :name tname)
-                   (assoc res k (mtx/wrap-summary v mobj [tname]))))
-               {}
-               tasks)))
+  (reduce-kv (fn [res k v]
+               (let [tname (name k)]
+                 (l/debug :hint "register task" :name tname)
+                 (assoc res k (wrap-task-handler metrics tname v))))
+             {}
+             tasks))

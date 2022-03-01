@@ -48,20 +48,24 @@
      [:h2 (t locale "labels.language")]
 
      [:div.fields-row
-      [:& fm/select {:options (into [{:label "Auto (browser)" :value ""}]
+      [:& fm/select {:options (into [{:label "Auto (browser)" :value "default"}]
                                     i18n/supported-locales)
                      :label (t locale "dashboard.select-ui-language")
                      :default ""
-                     :name :lang}]]
-
-     [:h2 (t locale "dashboard.theme-change")]
-     [:div.fields-row
+                     :name :lang
+                     :data-test "setting-lang"}]]
+     
+     ;; TODO: Do not show as long as we only have one theme
+     #_[:h2 (t locale "dashboard.theme-change")]
+     #_[:div.fields-row
       [:& fm/select {:label (t locale "dashboard.select-ui-theme")
                      :name :theme
                      :default "default"
-                     :options [{:label "Default" :value "default"}]}]]
+                     :options [{:label "Default" :value "default"}]
+                     :data-test "theme-lang"}]]
      [:& fm/submit-button
-      {:label (t locale "dashboard.update-settings")}]]))
+      {:label (t locale "dashboard.update-settings")
+       :data-test "submit-lang-change"}]]))
 
 ;; --- Password Page
 
@@ -72,4 +76,5 @@
 
   [:div.dashboard-settings
    [:div.form-container
+    {:data-test "settings-form"}
     [:& options-form {:locale locale}]]])

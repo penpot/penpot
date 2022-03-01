@@ -24,7 +24,8 @@
   (ptk/reify ::handle-finish-drawing
     ptk/WatchEvent
     (watch [_ state _]
-      (let [shape (get-in state [:workspace-drawing :object])]
+      (let [tool (get-in state [:workspace-drawing :tool])
+            shape (get-in state [:workspace-drawing :object])]
         (rx/concat
          (when (:initialized? shape)
            (let [page-id (:current-page-id state)
@@ -55,7 +56,7 @@
                 (rx/of (dwu/start-undo-transaction))
                 (rx/empty))
 
-              (rx/of (dwc/add-shape shape))
+              (rx/of (dwc/add-shape shape {:no-select? (= tool :curve)}))
 
               (if (= :frame (:type shape))
                 (->> (uw/ask! {:cmd :selection/query

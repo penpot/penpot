@@ -30,7 +30,7 @@
      [:div.dashboard-title
       [:h1 (tr "dashboard.projects-title")]]
 
-     [:a.btn-secondary.btn-small {:on-click create}
+     [:a.btn-secondary.btn-small {:on-click create :data-test "new-project-button"}
       (tr "dashboard.new-project")]]))
 
 (mf/defc project-item
@@ -140,11 +140,11 @@
            i/pin)])
 
       [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
-       {:on-click create-file :alt (tr "dashboard.new-file")}
+       {:on-click create-file :alt (tr "dashboard.new-file") :data-test "project-new-file"}
        i/close]
 
       [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
-       {:on-click on-menu-click :alt (tr "dashboard.options")}
+       {:on-click on-menu-click :alt (tr "dashboard.options") :data-test "project-options"}
        i/actions]]
 
      [:& line-grid

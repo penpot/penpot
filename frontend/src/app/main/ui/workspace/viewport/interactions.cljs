@@ -9,8 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
-   [app.common.types.interactions :as cti]
+   [app.common.pages.helpers :as cph]
+   [app.common.spec.interactions :as cti]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -210,7 +210,7 @@
           (st/emit! (dw/start-move-overlay-pos index)))]
 
     (when dest-shape
-      (let [orig-frame (cp/get-frame orig-shape objects)
+      (let [orig-frame (cph/get-frame objects orig-shape)
             marker-x   (+ (:x orig-frame) (:x position))
             marker-y   (+ (:y orig-frame) (:y position))
             width      (:width dest-shape)
@@ -326,7 +326,7 @@
                                           :objects objects
                                           :hover-disabled? hover-disabled?}]))])))
           (when (and shape
-                     (not (cp/unframed-shape? shape))
+                     (not (cph/unframed-shape? shape))
                      (not (#{:move :rotate} current-transform)))
             [:& interaction-handle {:key (:id shape)
                                     :index nil

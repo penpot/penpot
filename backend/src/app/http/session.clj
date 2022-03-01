@@ -11,97 +11,167 @@
    [app.common.logging :as l]
    [app.config :as cfg]
    [app.db :as db]
+   [app.db.sql :as sql]
    [app.metrics :as mtx]
    [app.util.async :as aa]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [ring.middleware.session.store :as rss]))
 
-;; A default cookie name for storing the session. We don't allow
-;; configure it.
-(def cookie-name "auth-token")
+;; A default cookie name for storing the session. We don't allow to configure it.
+(def token-cookie-name "auth-token")
+
+;; A cookie that we can use to check from other sites of the same domain if a user
+;; is registered. Is not intended for on premise installations, although nothing
+;; prevents using it if some one wants to.
+(def authenticated-cookie-name "authenticated")
+
+(deftype DatabaseStore [pool tokens]
+  rss/SessionStore
+  (read-session [_ token]
+    (db/exec-one! pool (sql/select :http-session {:id token})))
+
+  (write-session [_ _ data]
+    (let [profile-id (:profile-id data)
+          user-agent (:user-agent data)
+          token      (tokens :generate {:iss "authentication"
+                                        :iat (dt/now)
+                                        :uid profile-id})
+
+          now        (dt/now)
+          params     {:user-agent user-agent
+                      :profile-id profile-id
+                      :created-at now
+                      :updated-at now
+                      :id token}]
+      (db/insert! pool :http-session params)
+      token))
+
+  (delete-session [_ token]
+    (db/delete! pool :http-session {:id token})
+    nil))
+
+(deftype MemoryStore [cache tokens]
+  rss/SessionStore
+  (read-session [_ token]
+    (get @cache token))
+
+  (write-session [_ _ data]
+    (let [profile-id (:profile-id data)
+          user-agent (:user-agent data)
+          token      (tokens :generate {:iss "authentication"
+                                        :iat (dt/now)
+                                        :uid profile-id})
+          params     {:user-agent user-agent
+                      :profile-id profile-id
+                      :id token}]
+
+      (swap! cache assoc token params)
+      token))
+
+  (delete-session [_ token]
+    (swap! cache dissoc token)
+    nil))
 
 ;; --- IMPL
 
 (defn- create-session
-  [{:keys [conn tokens] :as cfg} {:keys [profile-id headers] :as request}]
-  (let [token  (tokens :generate {:iss "authentication"
-                                  :iat (dt/now)
-                                  :uid profile-id})
-        now    (dt/now)
-        params {:user-agent (get headers "user-agent")
-                :profile-id profile-id
-                :created-at now
-                :updated-at now
-                :id token}]
-    (db/insert! conn :http-session params)))
+  [store request profile-id]
+  (let [params {:user-agent (get-in request [:headers "user-agent"])
+                :profile-id profile-id}]
+    (rss/write-session store nil params)))
 
 (defn- delete-session
-  [{:keys [conn] :as cfg} {:keys [cookies] :as request}]
-  (when-let [token (get-in cookies [cookie-name :value])]
-    (db/delete! conn :http-session {:id token}))
-  nil)
+  [store {:keys [cookies] :as request}]
+  (when-let [token (get-in cookies [token-cookie-name :value])]
+    (rss/delete-session store token)))
 
 (defn- retrieve-session
-  [{:keys [conn] :as cfg} id]
-  (when id
-    (db/exec-one! conn ["select id, profile_id from http_session where id = ?" id])))
+  [store token]
+  (when token
+    (rss/read-session store token)))
 
 (defn- retrieve-from-request
-  [cfg {:keys [cookies] :as request}]
-  (->> (get-in cookies [cookie-name :value])
-       (retrieve-session cfg)))
+  [store {:keys [cookies] :as request}]
+  (->> (get-in cookies [token-cookie-name :value])
+       (retrieve-session store)))
 
 (defn- add-cookies
-  [response {:keys [id] :as session}]
+  [response token]
   (let [cors?   (contains? cfg/flags :cors)
-        secure? (contains? cfg/flags :secure-session-cookies)]
-    (assoc response :cookies {cookie-name {:path "/"
-                                           :http-only true
-                                           :value id
-                                           :same-site (if cors? :none :lax)
-                                           :secure secure?}})))
+        secure? (contains? cfg/flags :secure-session-cookies)
+        authenticated-cookie-domain (cfg/get :authenticated-cookie-domain)]
+    (update response :cookies
+            (fn [cookies]
+              (cond-> cookies
+                :always
+                (assoc token-cookie-name {:path "/"
+                                          :http-only true
+                                          :value token
+                                          :same-site (if cors? :none :lax)
+                                          :secure secure?})
+
+                (some? authenticated-cookie-domain)
+                (assoc authenticated-cookie-name {:domain authenticated-cookie-domain
+                                                  :path "/"
+                                                  :value true
+                                                  :same-site :strict
+                                                  :secure secure?}))))))
 
 (defn- clear-cookies
   [response]
-  (assoc response :cookies {cookie-name {:value "" :max-age -1}}))
+  (let [authenticated-cookie-domain (cfg/get :authenticated-cookie-domain)]
+    (assoc response :cookies {token-cookie-name {:path "/"
+                                                 :value ""
+                                                 :max-age -1}
+                              authenticated-cookie-name {:domain authenticated-cookie-domain
+                                                         :path "/"
+                                                         :value ""
+                                                         :max-age -1}})))
 
 (defn- middleware
-  [cfg handler]
-  (fn [request]
-    (if-let [{:keys [id profile-id] :as session} (retrieve-from-request cfg request)]
+  [events-ch store handler]
+  (fn [request respond raise]
+    (if-let [{:keys [id profile-id] :as session} (retrieve-from-request store request)]
       (do
-        (a/>!! (::events-ch cfg) id)
+        (a/>!! events-ch id)
         (l/set-context! {:profile-id profile-id})
-        (handler (assoc request :profile-id profile-id :session-id id)))
-      (handler request))))
+        (handler (assoc request :profile-id profile-id :session-id id) respond raise))
+      (handler request respond raise))))
 
 ;; --- STATE INIT: SESSION
 
+(s/def ::tokens fn?)
 (defmethod ig/pre-init-spec ::session [_]
-  (s/keys :req-un [::db/pool]))
+  (s/keys :req-un [::db/pool ::tokens]))
 
 (defmethod ig/prep-key ::session
   [_ cfg]
-  (d/merge {:buffer-size 128} (d/without-nils cfg)))
+  (d/merge {:buffer-size 128}
+           (d/without-nils cfg)))
 
 (defmethod ig/init-key ::session
-  [_ {:keys [pool] :as cfg}]
-  (let [events (a/chan (a/dropping-buffer (:buffer-size cfg)))
-        cfg    (-> cfg
-                   (assoc :conn pool)
-                   (assoc ::events-ch events))]
+  [_ {:keys [pool tokens] :as cfg}]
+  (let [events-ch (a/chan (a/dropping-buffer (:buffer-size cfg)))
+        store     (if (db/read-only? pool)
+                    (->MemoryStore (atom {}) tokens)
+                    (->DatabaseStore pool tokens))]
+
+    (when (db/read-only? pool)
+      (l/warn :hint "sessions module initialized with in-memory store"))
+
     (-> cfg
-        (assoc :middleware #(middleware cfg %))
+        (assoc ::events-ch events-ch)
+        (assoc :middleware (partial middleware events-ch store))
         (assoc :create (fn [profile-id]
                          (fn [request response]
-                           (let [request (assoc request :profile-id profile-id)
-                                 session (create-session cfg request)]
-                             (add-cookies response session)))))
+                           (let [token (create-session store request profile-id)]
+                             (add-cookies response token)))))
         (assoc :delete (fn [request response]
-                         (delete-session cfg request)
+                         (delete-session store request)
                          (-> response
                              (assoc :status 204)
                              (assoc :body "")
@@ -138,16 +208,11 @@
           :max-batch-size (str (:max-batch-size cfg)))
   (let [input (aa/batch (::events-ch session)
                         {:max-batch-size (:max-batch-size cfg)
-                         :max-batch-age (inst-ms (:max-batch-age cfg))})
-        mcnt  (mtx/create
-               {:name "http_session_update_total"
-                :help "A counter of session update batch events."
-                :registry (:registry metrics)
-                :type :counter})]
+                         :max-batch-age (inst-ms (:max-batch-age cfg))})]
     (a/go-loop []
       (when-let [[reason batch] (a/<! input)]
         (let [result (a/<! (update-sessions cfg batch))]
-          (mcnt :inc)
+          (mtx/run! metrics {:id :session-update-total :inc 1})
           (cond
             (ex/exception? result)
             (l/error :task "updater"
@@ -159,6 +224,7 @@
                      :hint "update sessions"
                      :reason (name reason)
                      :count result))
+
           (recur))))))
 
 (defn- update-sessions

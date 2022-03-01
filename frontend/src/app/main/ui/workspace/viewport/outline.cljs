@@ -8,7 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.main.refs :as refs]
    [app.util.object :as obj]
    [app.util.path.format :as upf]
@@ -89,7 +89,7 @@
         transform (mf/deref refs/current-transform)
 
         outlines-ids  (->> (set/union selected hover)
-                           (cp/clean-loops objects))
+                           (cph/clean-loops objects))
 
         show-outline? (fn [shape] (and (not (:hidden shape))
                                        (not (:blocked shape))))

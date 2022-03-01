@@ -213,9 +213,20 @@
     (.-innerText el)))
 
 (defn query
-  [^js el ^string query]
-  (when (some? el)
-    (.querySelector el query)))
+  ([^string query]
+   (query globals/document query))
+
+  ([^js el ^string query]
+   (when (some? el)
+     (.querySelector el query))))
+
+(defn query-all
+  ([^string query]
+   (query-all globals/document query))
+
+  ([^js el ^string query]
+   (when (some? el)
+     (.querySelectorAll el query))))
 
 (defn get-client-position
   [^js event]
@@ -245,6 +256,13 @@
      :bottom (.-bottom ^js rect)
      :width (.-width ^js rect)
      :height (.-height ^js rect)}))
+
+(defn bounding-rect->rect
+  [{:keys [left top width height]}]
+  {:x left
+   :y top
+   :width width
+   :height height})
 
 (defn get-window-size
   []
@@ -396,21 +414,19 @@
 
 (defn scroll-into-view!
   ([^js element]
-   (when (some? element)
-     (.scrollIntoView element false)))
+   (scroll-into-view! element false))
 
-  ([^js element scroll-top]
+  ([^js element options]
    (when (some? element)
-     (.scrollIntoView element scroll-top))))
+     (.scrollIntoView element options))))
 
 (defn scroll-into-view-if-needed!
   ([^js element]
-   (when (some? element)
-     (.scrollIntoViewIfNeeded ^js element false)))
+   (scroll-into-view-if-needed! element false))
 
-  ([^js element scroll-top]
+  ([^js element options]
    (when (some? element)
-     (.scrollIntoViewIfNeeded ^js element scroll-top))))
+     (.scrollIntoViewIfNeeded ^js element options))))
 
 (defn is-in-viewport?
   [^js element]

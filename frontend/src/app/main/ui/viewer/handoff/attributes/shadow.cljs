@@ -35,22 +35,18 @@
   (let [color-format (mf/use-state :hex)]
     [:div.attributes-shadow-block
      [:div.attributes-shadow-row
-      [:div.attributes-label (->> shadow :style d/name (str "handoff.attributes.shadow.style.") (tr))]
-      [:div.attributes-shadow
-       [:div.attributes-label (tr "handoff.attributes.shadow.shorthand.offset-x")]
-       [:div.attributes-value (str (:offset-x shadow))]]
+      [:div.attributes-label (->> shadow :style d/name (str "workspace.options.shadow-options.") (tr))]
+      [:div.attributes-shadow {:title  (tr "workspace.options.shadow-options.offsetx")}
+       [:div.attributes-value (str (:offset-x shadow) "px")]]
 
-      [:div.attributes-shadow
-       [:div.attributes-label (tr "handoff.attributes.shadow.shorthand.offset-y")]
-       [:div.attributes-value (str (:offset-y shadow))]]
+      [:div.attributes-shadow {:title  (tr "workspace.options.shadow-options.offsety")}
+       [:div.attributes-value (str (:offset-y shadow) "px")]]
 
-      [:div.attributes-shadow
-       [:div.attributes-label (tr "handoff.attributes.shadow.shorthand.blur")]
-       [:div.attributes-value (str (:blur shadow))]]
+      [:div.attributes-shadow {:title  (tr "workspace.options.shadow-options.blur")}
+       [:div.attributes-value (str (:blur shadow) "px")]]
 
-      [:div.attributes-shadow
-       [:div.attributes-label (tr "handoff.attributes.shadow.shorthand.spread")]
-       [:div.attributes-value (str (:spread shadow))]]
+      [:div.attributes-shadow {:title  (tr "workspace.options.shadow-options.spread")}
+       [:div.attributes-value (str (:spread shadow) "px")]]
 
       [:& copy-button {:data (shadow-copy-data shadow)}]]
 
@@ -60,12 +56,10 @@
 
 (mf/defc shadow-panel [{:keys [shapes]}]
   (let [shapes (->> shapes (filter has-shadow?))]
-    (when (seq shapes)
+    (when (and (seq shapes) (> (count shapes) 0))
       [:div.attributes-block
        [:div.attributes-block-title
-        [:div.attributes-block-title-text (tr "handoff.attributes.shadow")]
-        (when (= (count shapes) 1)
-          [:& copy-button {:data (shape-copy-data (first shapes))}])]
+        [:div.attributes-block-title-text (tr "handoff.attributes.shadow")]]
 
        [:div.attributes-shadow-blocks
         (for [shape shapes]

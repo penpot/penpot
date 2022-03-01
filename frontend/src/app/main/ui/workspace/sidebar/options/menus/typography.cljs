@@ -9,10 +9,12 @@
    ["react-virtualized" :as rvt]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
+   [app.main.data.fonts :as fts]
    [app.main.data.shortcuts :as dsc]
    [app.main.fonts :as fonts]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
@@ -92,14 +94,15 @@
 ;;     (conj backends id)))
 
 (mf/defc font-selector
-  [{:keys [on-select on-close current-font] :as props}]
-  (let [selected (mf/use-state current-font)
-        state    (mf/use-state {:term "" :backends #{}})
+  [{:keys [on-select on-close current-font show-recent] :as props}]
+  (let [selected     (mf/use-state current-font)
+        state        (mf/use-state {:term "" :backends #{}})
 
-        flist    (mf/use-ref)
-        input    (mf/use-ref)
+        flist        (mf/use-ref)
+        input        (mf/use-ref)
 
-        fonts    (mf/use-memo (mf/deps @state) #(filter-fonts @state @fonts/fonts))
+        fonts        (mf/use-memo (mf/deps @state) #(filter-fonts @state @fonts/fonts))
+        recent-fonts (mf/deref refs/workspace-recent-fonts)
 
         select-next
         (mf/use-callback
@@ -140,8 +143,11 @@
          (mf/deps on-select on-close)
          (fn [font]
            (on-select font)
-           (on-close)))
-        ]
+           (on-close)))]
+
+    (mf/use-effect
+     (fn []
+       (st/emit! (fts/load-recent-fonts))))
 
     (mf/use-effect
      (mf/deps fonts)
@@ -183,6 +189,16 @@
                 :ref input
                 :spell-check false
                 :on-change on-filter-change}]
+       (when (and recent-fonts show-recent)
+         [:hr]
+         [*
+          [:p.title (tr "workspace.options.recent-fonts")]
+          (for [font recent-fonts]
+            [:& font-item {:key (:id font)
+                           :font font
+                           :style {}
+                           :on-click on-select-and-close
+                           :current? (= (:id font) (:id @selected))}])])
 
        #_[:div.options
           {:on-click #(swap! state assoc :show-options true)
@@ -233,7 +249,7 @@
                     :current? (= (:id font) (:id selected))}])))
 
 (mf/defc font-options
-  [{:keys [values on-change on-blur] :as props}]
+  [{:keys [values on-change on-blur show-recent] :as props}]
   (let [{:keys [font-id font-size font-variant-id]} values
 
         font-id         (or font-id (:font-id txt/default-text-attrs))
@@ -242,12 +258,14 @@
 
         fonts           (mf/deref fonts/fontsdb)
         font            (get fonts font-id)
+        recent-fonts    (mf/deref refs/workspace-recent-fonts)
+        last-font       (mf/use-ref nil)
 
         open-selector?  (mf/use-state false)
 
         change-font
         (mf/use-callback
-         (mf/deps on-change fonts)
+         (mf/deps on-change fonts recent-fonts)
          (fn [new-font-id]
            (let [{:keys [family] :as font} (get fonts new-font-id)
                  {:keys [id name weight style]} (fonts/get-default-variant font)]
@@ -255,7 +273,8 @@
                          :font-family family
                          :font-variant-id (or id name)
                          :font-weight weight
-                         :font-style style}))))
+                         :font-style style})
+             (mf/set-ref-val! last-font font))))
 
         on-font-size-change
         (mf/use-callback
@@ -293,6 +312,8 @@
            (reset! open-selector? false)
            (when (some? on-blur)
              (on-blur))
+           (when (mf/ref-val last-font)
+             (st/emit! (fts/add-recent-font (mf/ref-val last-font))))
            ))]
 
     [:*
@@ -300,7 +321,8 @@
        [:& font-selector
         {:current-font font
          :on-close on-font-selector-close
-         :on-select on-font-select}])
+         :on-select on-font-select
+         :show-recent show-recent}])
 
      [:div.row-flex
       [:div.input-select.font-option
@@ -415,12 +437,13 @@
       i/titlecase]]))
 
 (mf/defc typography-options
-  [{:keys [ids editor values on-change on-blur]}]
+  [{:keys [ids editor values on-change on-blur show-recent]}]
   (let [opts #js {:editor editor
                   :ids ids
                   :values values
                   :on-change on-change
-                  :on-blur on-blur}]
+                  :on-blur on-blur
+                  :show-recent show-recent}]
     [:div.element-set-content
      [:> font-options opts]
      [:div.row-flex
@@ -438,14 +461,18 @@
   (let [open?          (mf/use-state editing?)
         hover-detach   (mf/use-state false)
         name-input-ref (mf/use-ref)
+        on-change-ref  (mf/use-ref nil)
 
         name-ref (mf/use-ref (:name typography))
 
         on-name-blur
-        (fn [event]
-          (let [content (dom/get-target-val event)]
-            (when-not (str/blank? content)
-              (on-change {:name content}))))
+        (mf/use-callback
+         (mf/deps on-change)
+         (fn [event]
+           (let [content (dom/get-target-val event)]
+             (when-not (str/blank? content)
+               (let [[path name] (cph/parse-path-name content)]
+                 (on-change {:name name :path path}))))))
 
         handle-go-to-edit
         (fn []
@@ -474,12 +501,19 @@
              (dom/select-text! node))))))
 
     (mf/use-effect
+     (mf/deps on-change)
+     (fn []
+       (mf/set-ref-val! on-change-ref {:on-change on-change})))
+
+    (mf/use-effect
      (fn []
        (fn []
          (let [content (mf/ref-val name-ref)]
            ;; On destroy we check if it changed
            (when (and (some? content) (not= content (:name typography)))
-             (on-change {:name content}))))))
+             (let [{:keys [on-change]} (mf/ref-val on-change-ref)
+                 [path name] (cph/parse-path-name content)]
+             (on-change {:name name :path path})))))))
 
     [:*
      [:div.element-set-options-group.typography-entry
@@ -552,7 +586,7 @@
            [:input.element-name.adv-typography-name
             {:type "text"
              :ref name-input-ref
-             :default-value (cp/merge-path-item (:path typography) (:name typography))
+             :default-value (cph/merge-path-item (:path typography) (:name typography))
              :on-blur on-name-blur
              :on-change on-name-change}]
 
@@ -561,4 +595,5 @@
              i/actions]]]
 
          [:& typography-options {:values typography
-                                 :on-change on-change}]])]]))
+                                 :on-change on-change
+                                 :show-recent false}]])]]))

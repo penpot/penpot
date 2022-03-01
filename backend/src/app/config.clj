@@ -41,9 +41,7 @@
     data))
 
 (def defaults
-  {:http-server-port 6060
-   :http-server-host "0.0.0.0"
-   :host "devenv"
+  {:host "devenv"
    :tenant "dev"
    :database-uri "postgresql://postgres/penpot"
    :database-username "penpot"
@@ -106,12 +104,21 @@
 (s/def ::file-change-snapshot-every ::us/integer)
 (s/def ::file-change-snapshot-timeout ::dt/duration)
 
+(s/def ::default-executor-parallelism ::us/integer)
+(s/def ::blocking-executor-parallelism ::us/integer)
+(s/def ::worker-executor-parallelism ::us/integer)
+
 (s/def ::secret-key ::us/string)
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::assets-path ::us/string)
+(s/def ::authenticated-cookie-domain ::us/string)
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
 (s/def ::database-username (s/nilable ::us/string))
+(s/def ::database-readonly ::us/boolean)
+(s/def ::database-min-pool-size ::us/integer)
+(s/def ::database-max-pool-size ::us/integer)
+
 (s/def ::default-blob-version ::us/integer)
 (s/def ::error-report-webhook ::us/string)
 (s/def ::user-feedback-destination ::us/string)
@@ -134,6 +141,8 @@
 (s/def ::host ::us/string)
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-server-host ::us/string)
+(s/def ::http-server-min-threads ::us/integer)
+(s/def ::http-server-max-threads ::us/integer)
 (s/def ::http-session-idle-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-size ::us/integer)
@@ -179,9 +188,11 @@
 (s/def ::storage-assets-fs-directory ::us/string)
 (s/def ::storage-assets-s3-bucket ::us/string)
 (s/def ::storage-assets-s3-region ::us/keyword)
+(s/def ::storage-assets-s3-endpoint ::us/string)
 (s/def ::storage-fdata-s3-bucket ::us/string)
 (s/def ::storage-fdata-s3-region ::us/keyword)
 (s/def ::storage-fdata-s3-prefix ::us/string)
+(s/def ::storage-fdata-s3-endpoint ::us/string)
 (s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-with-taiga ::us/boolean)
 (s/def ::tenant ::us/string)
@@ -198,11 +209,18 @@
                    ::allow-demo-users
                    ::audit-log-archive-uri
                    ::audit-log-gc-max-age
+                   ::authenticated-cookie-domain
                    ::database-password
                    ::database-uri
                    ::database-username
+                   ::database-readonly
+                   ::database-min-pool-size
+                   ::database-max-pool-size
                    ::default-blob-version
                    ::error-report-webhook
+                   ::default-executor-parallelism
+                   ::blocking-executor-parallelism
+                   ::worker-executor-parallelism
                    ::file-change-snapshot-every
                    ::file-change-snapshot-timeout
                    ::user-feedback-destination
@@ -225,6 +243,8 @@
                    ::host
                    ::http-server-host
                    ::http-server-port
+                   ::http-server-max-threads
+                   ::http-server-min-threads
                    ::http-session-idle-max-age
                    ::http-session-updater-batch-max-age
                    ::http-session-updater-batch-max-size
@@ -274,10 +294,12 @@
                    ::storage-assets-fs-directory
                    ::storage-assets-s3-bucket
                    ::storage-assets-s3-region
+                   ::storage-assets-s3-endpoint
                    ::fdata-storage-backend
                    ::storage-fdata-s3-bucket
                    ::storage-fdata-s3-region
                    ::storage-fdata-s3-prefix
+                   ::storage-fdata-s3-endpoint
                    ::telemetry-enabled
                    ::telemetry-uri
                    ::telemetry-referer

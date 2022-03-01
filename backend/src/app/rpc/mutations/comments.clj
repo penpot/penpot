@@ -7,12 +7,13 @@
 (ns app.rpc.mutations.comments
   (:require
    [app.common.exceptions :as ex]
+   [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.db :as db]
    [app.rpc.queries.comments :as comments]
    [app.rpc.queries.files :as files]
+   [app.rpc.retry :as retry]
    [app.util.blob :as blob]
-   [app.util.retry :as retry]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
@@ -26,15 +27,14 @@
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
-(s/def ::position ::us/point)
+(s/def ::position ::gpt/point)
 (s/def ::content ::us/string)
 
 (s/def ::create-comment-thread
   (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id]))
 
 (sv/defmethod ::create-comment-thread
-  {::retry/enabled true
-   ::retry/max-retries 3
+  {::retry/max-retries 3
    ::retry/matches retry/conflict-db-insert?}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]

@@ -7,7 +7,7 @@
    [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.pages.migrations :as pmg]
-   [app.common.pages.spec :as spec]
+   [app.common.spec.file :as spec.file]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
@@ -86,7 +86,7 @@
 
           (validate-item [{:keys [id data modified-at] :as file}]
             (let [data   (blob/decode data)
-                  valid? (s/valid? ::spec/data data)]
+                  valid? (s/valid? ::spec.file/data data)]
 
               (l/debug :hint "validated file"
                        :file-id id
@@ -98,7 +98,7 @@
                        :valid valid?)
 
               (when (and (not valid?) verbose?)
-                (let [edata (-> (s/explain-data ::spec/data data)
+                (let [edata (-> (s/explain-data ::spec.file/data data)
                                 (update ::s/problems #(take 5 %)))]
                   (binding [s/*explain-out* expound/printer]
                     (l/warn ::l/raw (with-out-str (s/explain-out edata))))))

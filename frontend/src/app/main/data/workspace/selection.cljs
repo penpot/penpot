@@ -10,9 +10,9 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.types.interactions :as cti]
+   [app.common.spec.interactions :as cti]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
@@ -47,51 +47,64 @@
       (assoc-in state [:workspace-local :selrect] selrect))))
 
 (defn handle-area-selection
-  [preserve?]
-  (letfn [(data->selrect [data]
-            (let [start (:start data)
-                  stop (:stop data)
-                  start-x (min (:x start) (:x stop))
-                  start-y (min (:y start) (:y stop))
-                  end-x (max (:x start) (:x stop))
-                  end-y (max (:y start) (:y stop))]
-              {:type :rect
-               :x start-x
-               :y start-y
-               :width (mth/abs (- end-x start-x))
-               :height (mth/abs (- end-y start-y))}))]
-    (ptk/reify ::handle-area-selection
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [zoom (get-in state [:workspace-local :zoom] 1)
-              stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
-              stoper (->> stream (rx/filter stop?))
+  [preserve? ignore-groups?]
+  (ptk/reify ::handle-area-selection
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [zoom (get-in state [:workspace-local :zoom] 1)
+            stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
+            stoper (->> stream (rx/filter stop?))
 
-              calculate-selrect
-              (fn [data pos]
-                (if data
-                  (assoc data :stop pos)
-                  {:start pos :stop pos}))
+            init-selrect
+            {:type :rect
+             :x1 (:x @ms/mouse-position)
+             :y1 (:y @ms/mouse-position)
+             :x2 (:x @ms/mouse-position)
+             :y2 (:y @ms/mouse-position)}
 
-              selrect-stream
-              (->> ms/mouse-position
-                   (rx/scan calculate-selrect nil)
-                   (rx/map data->selrect)
-                   (rx/filter #(or (> (:width %) (/ 10 zoom))
-                                   (> (:height %) (/ 10 zoom))))
-                   (rx/take-until stoper))]
-          (rx/concat
-           (if preserve?
-             (rx/empty)
-             (rx/of (deselect-all)))
+            calculate-selrect
+            (fn [selrect [delta space?]]
+              (let [result
+                    (cond-> selrect
+                      :always
+                      (-> (update :x2 + (:x delta))
+                          (update :y2 + (:y delta)))
 
-           (rx/merge
-            (->> selrect-stream (rx/map update-selrect))
-            (->> selrect-stream
-                 (rx/debounce 50)
-                 (rx/map #(select-shapes-by-current-selrect preserve?))))
+                      space?
+                      (-> (update :x1 + (:x delta))
+                          (update :y1 + (:y delta))))]
+                (assoc result
+                       :x (min (:x1 result) (:x2 result))
+                       :y (min (:y1 result) (:y2 result))
+                       :width (mth/abs (- (:x2 result) (:x1 result)))
+                       :height (mth/abs (- (:y2 result) (:y1 result))))))
 
-           (rx/of (update-selrect nil))))))))
+            selrect-stream
+            (->> ms/mouse-position
+                 (rx/buffer 2 1)
+                 (rx/map (fn [[from to]] (when (and from to) (gpt/to-vec from to))))
+                 (rx/filter some?)
+                 (rx/with-latest-from ms/keyboard-space)
+                 (rx/scan calculate-selrect init-selrect)
+                 (rx/filter #(or (> (:width %) (/ 10 zoom))
+                                 (> (:height %) (/ 10 zoom))))
+                 (rx/take-until stoper))]
+        (rx/concat
+         (if preserve?
+           (rx/empty)
+           (rx/of (deselect-all)))
+
+         (rx/merge
+          (->> selrect-stream
+               (rx/map update-selrect))
+
+          (->> selrect-stream
+               (rx/buffer-time 100)
+               (rx/map #(last %))
+               (rx/dedupe)
+               (rx/map #(select-shapes-by-current-selrect preserve? ignore-groups?))))
+
+         (rx/of (update-selrect nil)))))))
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
@@ -138,7 +151,7 @@
                            (conj id))]
          (-> state
              (assoc-in [:workspace-local :selected]
-                       (cp/expand-region-selection objects selection))))))))
+                       (cph/expand-region-selection objects selection))))))))
 
 (defn select-shapes
   [ids]
@@ -150,7 +163,7 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-       (let [objects (wsh/lookup-page-objects state)]
+      (let [objects (wsh/lookup-page-objects state)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
 (defn select-all
@@ -158,39 +171,23 @@
   (ptk/reify ::select-all
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page-id      (:current-page-id state)
-            objects      (wsh/lookup-page-objects state page-id)
-            new-selected (let [selected-objs
-                               (->> (wsh/lookup-selected state)
-                                    (map #(get objects %)))
+      (let [page-id  (:current-page-id state)
+            objects  (wsh/lookup-page-objects state page-id)
 
-                               frame-ids
-                               (reduce #(conj %1 (:frame-id %2))
-                                       #{}
-                                       selected-objs)
+            selected (let [frame-ids (into #{} (comp
+                                                (map (d/getf objects))
+                                                (map :frame-id))
+                                           (wsh/lookup-selected state))
+                           frame-id  (if (= 1 (count frame-ids))
+                                       (first frame-ids)
+                                       uuid/zero)]
+                       (cph/get-immediate-children objects frame-id))
 
-                               common-frame-id
-                               (when (= (count frame-ids) 1) (first frame-ids))]
+            selected (into (d/ordered-set)
+                           (comp (remove :blocked) (map :id))
+                           selected)]
 
-                           (if (and common-frame-id
-                                    (not= (:id common-frame-id) uuid/zero))
-                             (-> (get objects common-frame-id)
-                                 :shapes)
-                             (->> (cp/select-toplevel-shapes objects
-                                                             {:include-frames? true
-                                                              :include-frame-children? false})
-                                  (map :id))))
-
-            is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
-                                                              :pages-index page-id
-                                                              :objects shape-id
-                                                              :blocked] false)))
-
-            selected-ids (into lks/empty-linked-set
-                               (comp (filter some?)
-                                     (filter is-not-blocked))
-                               new-selected)]
-        (rx/of (select-shapes selected-ids))))))
+        (rx/of (select-shapes selected))))))
 
 (defn deselect-all
   "Clear all possible state of drawing, edition
@@ -216,7 +213,7 @@
 ;; --- Select Shapes (By selrect)
 
 (defn select-shapes-by-current-selrect
-  [preserve?]
+  [preserve? ignore-groups?]
   (ptk/reify ::select-shapes-by-current-selrect
     ptk/WatchEvent
     (watch [_ state _]
@@ -235,8 +232,9 @@
                  :page-id page-id
                  :rect selrect
                  :include-frames? true
+                 :ignore-groups? ignore-groups?
                  :full-frame? true})
-               (rx/map #(cp/clean-loops objects %))
+               (rx/map #(cph/clean-loops objects %))
                (rx/map #(into initial-set (filter (comp not blocked?)) %))
                (rx/map select-shapes)))))))
 
@@ -256,7 +254,7 @@
             ;; in the later vector position
             selected (->> children
                           reverse
-                           (d/seek #(geom/has-point? % position)))]
+                          (d/seek #(geom/has-point? % position)))]
         (when selected
           (rx/of (select-shape (:id selected))))))))
 
@@ -300,11 +298,8 @@
   [objects page-id unames ids delta]
   (let [unames         (volatile! unames)
         update-unames! (fn [new-name] (vswap! unames conj new-name))
-        all-ids        (reduce (fn [ids-set id]
-                                 (into ids-set (cons id (cp/get-children id objects))))
-                               #{}
-                               ids)
-        ids-map        (into {} (map #(vector % (uuid/next)) all-ids))]
+        all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids objects %2))) #{} ids)
+        ids-map        (into {} (map #(vector % (uuid/next))) all-ids)]
     (loop [ids   (seq ids)
            chgs  []]
       (if ids
@@ -312,8 +307,8 @@
               result (prepare-duplicate-change objects page-id unames update-unames! ids-map id delta)
               result (if (vector? result) result [result])]
           (recur
-            (next ids)
-            (into chgs result)))
+           (next ids)
+           (into chgs result)))
         chgs))))
 
 (defn duplicate-changes-update-indices
@@ -323,7 +318,7 @@
   (let [process-id
         (fn [index-map id]
           (let [parent-id    (get-in objects [id :parent-id])
-                parent-index (cp/position-on-parent id objects)]
+                parent-index (cph/get-position-on-parent objects id)]
             (update index-map parent-id (fnil conj []) [id parent-index])))
         index-map (reduce process-id {} ids)]
     (-> changes (update-indices index-map))))
@@ -331,7 +326,7 @@
 (defn- prepare-duplicate-change
   [objects page-id unames update-unames! ids-map id delta]
   (let [obj (get objects id)]
-    (if (= :frame (:type obj))
+    (if (cph/frame-shape? obj)
       (prepare-duplicate-frame-change objects page-id unames update-unames! ids-map obj delta)
       (prepare-duplicate-shape-change objects page-id unames update-unames! ids-map obj delta (:frame-id obj) (:parent-id obj)))))
 
@@ -384,12 +379,12 @@
                         (mapcat #(prepare-duplicate-shape-change objects page-id unames update-unames! ids-map % delta new-id new-id)))
 
         new-frame  (-> obj
-                      (assoc :id new-id
-                             :name frame-name
-                             :frame-id uuid/zero
-                             :shapes [])
-                      (geom/move delta)
-                      (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
+                       (assoc :id new-id
+                              :name frame-name
+                              :frame-id uuid/zero
+                              :shapes [])
+                       (geom/move delta)
+                       (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
         fch {:type :add-obj
              :old-id (:id obj)
@@ -435,7 +430,7 @@
 
       ;; The default is leave normal shapes in place, but put
       ;; new frames to the right of the original.
-      (if (= (:type obj) :frame)
+      (if (cph/frame-shape? obj)
         (gpt/point (+ (:width obj) 50) 0)
         (gpt/point 0 0))
 

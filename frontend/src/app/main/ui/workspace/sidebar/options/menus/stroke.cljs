@@ -8,7 +8,6 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
-   [app.common.pages.spec :as spec]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
@@ -127,7 +126,7 @@
 
         update-cap-attr
         (fn [& kvs]
-          #(if (spec/has-caps? %)
+          #(if (= :path (:type %))
              (apply (partial assoc %) kvs)
              %))
 

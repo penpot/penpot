@@ -5,15 +5,35 @@
 // Copyright (c) UXBOX Labs SL
 
 .workspace-header {
+  position: relative;
   align-items: center;
   background-color: $color-gray-50;
   border-bottom: 1px solid $color-gray-60;
   display: flex;
-  height: 48px;
   padding: $size-1 $size-4 $size-1 55px;
-  position: relative;
-  z-index: 12;
   justify-content: space-between;
+
+  display: grid;
+  grid-template-areas: "left center right";
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: 100%;
+  padding: 0;
+
+  .left-area {
+    grid-area: left;
+    display: flex;
+    height: 100%;
+  }
+
+  .center-area {
+    grid-area: center;
+  }
+
+  .right-area {
+    grid-area: right;
+    display: flex;
+    height: 100%;
+  }
 
   .main-icon {
     align-items: center;
@@ -23,9 +43,6 @@
     display: flex;
     height: 100%;
     justify-content: center;
-    left: 0;
-    position: absolute;
-    top: 0;
     width: 48px;
 
     a {
@@ -46,6 +63,7 @@
   }
 
   .menu-section {
+    margin-left: 1rem;
     display: flex;
     justify-content: flex-start;
     align-items: center;
@@ -75,6 +93,8 @@
     justify-content: flex-end;
     align-items: center;
     position: relative;
+    padding-right: 1rem;
+    border-right: 1px solid black;
 
     > * {
       margin-left: $size-5;
@@ -132,13 +152,23 @@
     position: absolute;
     top: 40px;
     left: 40px;
-    width: 270px;
+    width: 183px;
     z-index: 12;
-    @include animation(0, 0.2s, fadeInDown);
 
     background-color: $color-white;
     border-radius: $br-small;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+    :first-child {
+      &:hover {
+        border-radius: $br-small $br-small 0px 0px;
+      }
+    }
+    :last-child {
+      &:hover {
+        border-radius: 0px 0px $br-small $br-small;
+      }
+    }
 
     li {
       cursor: pointer;
@@ -158,11 +188,6 @@
         margin: 0 $size-1;
       }
 
-      .shortcut {
-        color: $color-gray-20;
-        font-size: $fs12;
-      }
-
       &:hover {
         background-color: $color-primary-lighter;
       }
@@ -173,8 +198,68 @@
     }
   }
 
+  .sub-menu {
+    position: absolute;
+    left: 230px;
+    width: 270px;
+    z-index: 12;
+    background-color: $color-white;
+    border-radius: $br-small;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+    :first-child {
+      &:hover {
+        border-radius: $br-small $br-small 0px 0px;
+      }
+    }
+    :last-child {
+      &:hover {
+        border-radius: 0px 0px $br-small $br-small;
+      }
+    }
+
+    &.file {
+      top: 40px;
+    }
+
+    &.edit {
+      top: 77px;
+    }
+
+    &.view {
+      top: 114px;
+    }
+
+    &.preferences {
+      top: 150px;
+    }
+
+    li {
+      cursor: pointer;
+      font-size: $fs14;
+      padding: $size-2;
+      display: flex;
+      justify-content: space-between;
+
+      span {
+        color: $color-gray-60;
+        margin: 0 $size-1;
+      }
+
+      .shortcut {
+        color: $color-gray-20;
+        font-size: $fs12;
+      }
+
+      &:hover {
+        background-color: $color-primary-lighter;
+      }
+    }
+  }
+
   .active-users {
-    align-items: center;
+    flex: 1;
+    justify-content: center;
     display: flex;
     margin: 0;
 
@@ -189,6 +274,26 @@
         height: 25px;
         width: 25px;
       }
+    }
+  }
+
+  & button.document-history {
+    background: $color-gray-60;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+    height: 24px;
+    padding: 3px;
+    width: 24px;
+
+    & svg {
+      width: 18px;
+      fill: $color-gray-20;
+      height: 18px;
+    }
+
+    &.selected svg {
+      fill: $color-primary;
     }
   }
 }

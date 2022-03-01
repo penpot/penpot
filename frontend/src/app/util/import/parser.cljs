@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.types.interactions :as cti]
+   [app.common.spec.interactions :as cti]
    [app.common.uuid :as uuid]
    [app.util.color :as uc]
    [app.util.json :as json]
@@ -364,7 +364,11 @@
   (let [fill (:fill svg-data)
         hide-fill-on-export (get-meta node :hide-fill-on-export str->bool)
         gradient (when (str/starts-with? fill "url")
-                   (parse-gradient node fill))]
+                   (parse-gradient node fill))
+        meta-fill-color (get-meta node :fill-color)
+        meta-fill-opacity (get-meta node :fill-opacity)
+        meta-fill-color-gradient (get-meta node :fill-color-gradient)]
+
     (cond-> props
       :always
       (assoc :fill-color nil
@@ -380,7 +384,16 @@
              :fill-opacity (-> svg-data (:fill-opacity "1") d/parse-double))
 
       (some? hide-fill-on-export)
-      (assoc :hide-fill-on-export hide-fill-on-export))))
+      (assoc :hide-fill-on-export hide-fill-on-export)
+
+      (some? meta-fill-color)
+      (assoc :fill-color meta-fill-color
+             :fill-opacity (d/parse-double meta-fill-opacity))
+
+      (some? meta-fill-color-gradient)
+      (assoc :fill-color-gradient meta-fill-color-gradient
+             :fill-color nil
+             :fill-opacity nil))))
 
 (defn add-stroke
   [props node svg-data]
@@ -514,6 +527,20 @@
 (defn parse-flows [node]
   (let [flows-node (get-data node :penpot:flows)]
     (->> flows-node :content (mapv parse-flow-node))))
+
+(defn parse-guide-node [node]
+  (let [attrs (-> node :attrs remove-penpot-prefix)]
+    (println attrs)
+    (let [id (uuid/next)]
+      [id
+       {:id       id
+        :frame-id (when (:frame-id attrs) (-> attrs :frame-id uuid))
+        :axis     (-> attrs :axis keyword)
+        :position (-> attrs :position d/parse-double)}])))
+
+(defn parse-guides [node]
+  (let [guides-node (get-data node :penpot:guides)]
+    (->> guides-node :content (map parse-guide-node) (into {}))))
 
 (defn extract-from-data
   ([node tag]
@@ -749,7 +776,9 @@
             (add-rect-data node svg-data))
 
           (cond-> (some? (get-in node [:attrs :penpot:media-id]))
-            (add-image-data type node))
+            (->
+             (add-rect-data node svg-data)
+             (add-image-data type node)))
 
           (cond-> (= :text type)
             (add-text-data node))
@@ -764,7 +793,8 @@
         grids      (->> (parse-grids node)
                         (group-by :type)
                         (d/mapm (fn [_ v] (-> v first :params))))
-        flows      (parse-flows node)]
+        flows      (parse-flows node)
+        guides     (parse-guides node)]
     (cond-> {}
       (some? background)
       (assoc-in [:options :background] background)
@@ -773,7 +803,10 @@
       (assoc-in [:options :saved-grids] grids)
 
       (d/not-empty? flows)
-      (assoc-in [:options :flows] flows))))
+      (assoc-in [:options :flows] flows)
+
+      (d/not-empty? guides)
+      (assoc-in [:options :guides] guides))))
 
 (defn parse-interactions
   [node]

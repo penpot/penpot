@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.cursors :as cur]
@@ -25,7 +26,7 @@
   (:import goog.events.EventType))
 
 (defn format-viewbox [vbox]
-  (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
+  (str/join " " [(:x vbox 0)
                  (:y vbox 0)
                  (:width vbox 0)
                  (:height vbox 0)]))
@@ -101,14 +102,16 @@
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (st/emit! (dwc/pick-color-select true (kbd/shift? event)))))
+           (st/emit! (dwu/start-undo-transaction)
+                     (dwc/pick-color-select true (kbd/shift? event)))))
 
         handle-mouse-up-picker
         (mf/use-callback
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (st/emit! (dwc/stop-picker))
+           (st/emit! (dwu/commit-undo-transaction)
+                     (dwc/stop-picker))
            (modal/disallow-click-outside!)))
 
         handle-image-load

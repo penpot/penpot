@@ -22,7 +22,7 @@
   []
   [:header.dashboard-header
    [:div.dashboard-title
-    [:h1 (tr "dashboard.your-account-title")]]])
+    [:h1 {:data-test "account-title"} (tr "dashboard.your-account-title")]]])
 
 (mf/defc settings
   [{:keys [route] :as props}]

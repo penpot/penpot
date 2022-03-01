@@ -5,8 +5,68 @@
 // Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
+$width-left-toolbar: 48px;
+
+$width-settings-bar: 256px;
+$width-settings-bar-min: 255px;
+$width-settings-bar-max: 500px;
+
+$height-palette: 79px;
+$height-palette-min: 54px;
+$height-palette-max: 80px;
+
 #workspace {
+  width: 100vw;
+  height: 100vh;
   user-select: none;
+
+  display: grid;
+  grid-template-areas:
+    "header header header header"
+    "toolbar left-sidebar viewport right-sidebar"
+    "toolbar left-sidebar color-palette right-sidebar";
+
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
+
+  .workspace-header {
+    grid-area: header;
+    height: 48px;
+  }
+
+  .left-toolbar {
+    grid-area: toolbar;
+    width: $width-left-toolbar;
+  }
+
+  .settings-bar.settings-bar-left {
+    min-width: $width-settings-bar;
+    max-width: 500px;
+    width: var(--width, $width-settings-bar);
+    grid-area: left-sidebar;
+  }
+
+  .settings-bar.settings-bar-right {
+    min-width: $width-settings-bar;
+    max-width: 500px;
+    width: $width-settings-bar;
+    grid-area: right-sidebar;
+  }
+
+  .workspace-loader {
+    grid-area: viewport;
+  }
+
+  .workspace-content {
+    grid-area: viewport;
+  }
+
+  .color-palette {
+    grid-area: color-palette;
+    min-height: $height-palette-min;
+    max-height: $height-palette-max;
+    height: var(--height, $height-palette);
+  }
 }
 
 .workspace-context-menu {
@@ -34,11 +94,11 @@
       margin: 2px;
     }
 
-    span:first-child {
+    span {
       color: $color-gray-60;
     }
 
-    span:last-child {
+    span.shortcut {
       color: $color-gray-20;
       font-size: $fs12;
     }
@@ -57,13 +117,46 @@
       }
     }
   }
+
+  .icon-menu-item {
+    display: flex;
+    justify-content: flex-start;
+
+    &:hover {
+      background-color: $color-primary-lighter;
+    }
+
+    span.title {
+      margin-left: 5px;
+    }
+
+    .selected-icon {
+      svg {
+        width: 10px;
+        height: 10px;
+      }
+    }
+
+    .shape-icon {
+      margin-left: 3px;
+      svg {
+        width: 13px;
+        height: 13px;
+      }
+    }
+
+    .icon-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      margin: 0;
+    }
+  }
 }
 
 .workspace-loader {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
 
   svg#loader-pencil {
     fill: $color-gray-50;
@@ -73,12 +166,8 @@
 .workspace-content {
   background-color: $color-canvas;
   display: flex;
-  height: 100%;
-  width: calc(100% - #{$width-left-toolbar} - 2 * #{$width-settings-bar});
   padding: 0;
   margin: 0;
-  position: fixed;
-  right: $width-settings-bar;
 
   &.scrolling {
     cursor: grab;
@@ -104,10 +193,10 @@
   .coordinates {
     background-color: $color-dark-bg;
     border-radius: $br-small;
-    bottom: -10px;
+    bottom: 0px;
     padding-left: 5px;
     position: fixed;
-    right: calc(#{$width-settings-bar} + 10px);
+    right: calc(#{$width-settings-bar} + 14px);
     text-align: center;
     width: 125px;
     white-space: nowrap;
@@ -137,14 +226,12 @@
   }
 
   .workspace-viewport {
-    height: calc(100% - 40px);
     overflow: hidden;
     transition: none;
-    width: 100%;
-
     display: grid;
-    grid-template-rows: 20px 100%;
-    grid-template-columns: 20px 100%;
+    grid-template-rows: 20px 1fr;
+    grid-template-columns: 20px 1fr;
+    flex: 1;
   }
 
   .viewport {
@@ -175,10 +262,14 @@
 
     .render-shapes {
       position: absolute;
+      width: 100%;
+      height: 100%;
     }
 
     .viewport-controls {
       position: absolute;
+      width: 100%;
+      height: 100%;
     }
   }
 

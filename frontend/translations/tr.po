@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-11-25 13:50+0000\n"
+"PO-Revision-Date: 2022-01-15 16:53+0000\n"
 "Last-Translator: Oğuz Ersen <oguzersen@protonmail.com>\n"
 "Language-Team: Turkish "
 "<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.10-dev\n"
+"X-Generator: Weblate 4.10.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -267,10 +267,10 @@ msgid "dashboard.export-frames"
 msgstr "Çalışma yüzeylerini PDF olarak dışarı aktar..."
 
 msgid "dashboard.export-multi"
-msgstr "%s dosyayı dışarı aktar"
+msgstr "Penpot %s dosyalarını dışa aktar"
 
 msgid "dashboard.export-single"
-msgstr "Dosyayı dışarı aktar"
+msgstr "Penpot dosyasını dışa aktar"
 
 msgid "dashboard.export.detail"
 msgstr "* Bileşenleri, grafikleri, renkleri ve/veya tipografileri içerebilir."
@@ -310,8 +310,18 @@ msgstr "Dosyaları dışarı aktar"
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Yazı tipi silindi"
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Hepsini kapat"
+
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "Kurulu özel yazı tipiniz bulunmamaktadır."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 yazı tipi eklendi"
+msgstr[1] "%s yazı tipi eklendi"
 
 #, markdown
 msgid "dashboard.fonts.hero-text1"
@@ -332,8 +342,12 @@ msgstr ""
 "lisanslama](https://www.typography.com/faq) hakkında daha fazla bilgi almak "
 "isteyebilirsiniz."
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Tümünü karşıya yükle"
+
 msgid "dashboard.import"
-msgstr "Dosyaları içeri aktar"
+msgstr "Penpot dosyalarını içe aktar"
 
 msgid "dashboard.import.analyze-error"
 msgstr "Oops! Bu dosyayı içeri aktaramadık"
@@ -343,6 +357,9 @@ msgstr "Dosya içeri aktarılırken bir sorun oluştu. Dosya içeri aktarılmad�
 
 msgid "dashboard.import.import-message"
 msgstr "%s dosya başarıyla içeri aktarıldı."
+
+msgid "dashboard.import.import-warning"
+msgstr "Bazı dosyalar kaldırılmış geçersiz nesneler içeriyordu."
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "Renkler işleniyor"
@@ -579,6 +596,9 @@ msgstr "Emin misin?"
 msgid "ds.updated-at"
 msgstr "Güncellendi: %s"
 
+msgid "errors.auth.unable-to-login"
+msgstr "Kimliğiniz doğrulanmamış veya oturumun süresi dolmuş gibi görünüyor."
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Tarayıcın bu işlemi gerçekleştiremiyor"
@@ -656,6 +676,15 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "Kayıt olma şu anda devre dışı."
+
+msgid "errors.team-leave.insufficient-members"
+msgstr "Takımdan ayrılmak için yeterli üye yok, onu silmek isteyebilirsiniz."
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "Atamaya çalıştığınız üye mevcut değil."
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "Sahip takımdan ayrılamaz, sahip rolünü yeniden atamanız gerekir."
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Hizmet şartlarımızı ve gizlilik politikamızı kabul etmelisin."
@@ -1858,7 +1887,7 @@ msgstr "Yatay olarak ortaya hizala (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hdistribute"
-msgstr "Yatayda dağıt"
+msgstr "Yatayda dağıt (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
@@ -1878,7 +1907,7 @@ msgstr "Dikey olarak ortaya hizala (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vdistribute"
-msgstr "Dikeyde dağıt"
+msgstr "Dikeyde dağıt (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
@@ -2434,6 +2463,26 @@ msgid "workspace.options.interaction-after-delay"
 msgstr "Gecikmeden sonra"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation"
+msgstr "Canlandırma"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "Çöz"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "Hiçbiri"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "İt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "Kaydır"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
 msgstr "Arka plan üst katmanı ekle"
 
@@ -2456,6 +2505,38 @@ msgstr "Gecikme"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-destination"
 msgstr "Hedef"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-duration"
+msgstr "Süre"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing"
+msgstr "Yumuşatma"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease"
+msgstr "Yumuşat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "Yumuşak giriş"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "Yumuşak giriş çıkış"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "Yumuşak çıkış"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-linear"
+msgstr "Doğrusal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-in"
+msgstr "Giriş"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-enter"
@@ -2482,6 +2563,10 @@ msgid "workspace.options.interaction-none"
 msgstr "(ayarlanmadı)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "Uzaklık efekti"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-on-click"
 msgstr "Tıklandığında"
 
@@ -2496,6 +2581,10 @@ msgstr "Üst katmanı aç: %s"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
 msgstr "URL'yi aç"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-out"
+msgstr "Çıkış"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-bottom-center"
@@ -2986,6 +3075,10 @@ msgid "workspace.shape.menu.copy"
 msgstr "Kopyala"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Çalışma yüzeyi için seçim"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-component"
 msgstr "Bileşen oluştur"
 
@@ -3004,6 +3097,10 @@ msgstr "Akış başlangıcını sil"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Örneği ayır"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Örnekleri ayır"
 
 msgid "workspace.shape.menu.difference"
 msgstr "Fark"
@@ -3112,7 +3209,7 @@ msgstr "Geçmiş (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.layers"
-msgstr "Katmanlar (%s)"
+msgstr "Katmanlar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
@@ -3128,7 +3225,7 @@ msgstr "Site haritası"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.assets"
-msgstr "Varlıklar(%s)"
+msgstr "Varlıklar"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"

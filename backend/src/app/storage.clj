@@ -18,11 +18,9 @@
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
    [app.util.time :as dt]
-   [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]
-   [integrant.core :as ig]
-   [promesa.exec :as px]))
+   [integrant.core :as ig]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Storage Module State
@@ -40,7 +38,7 @@
                    :db ::sdb/backend))))
 
 (defmethod ig/pre-init-spec ::storage [_]
-  (s/keys :req-un [::wrk/executor ::db/pool ::backends]))
+  (s/keys :req-un [::db/pool ::backends]))
 
 (defmethod ig/prep-key ::storage
   [_ {:keys [backends] :as cfg}]
@@ -53,78 +51,74 @@
       (assoc :backends (d/without-nils backends))))
 
 (s/def ::storage
-  (s/keys :req-un [::backends ::wrk/executor ::db/pool]))
+  (s/keys :req-un [::backends ::db/pool]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Database Objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defrecord StorageObject [id size created-at expired-at backend])
+(defrecord StorageObject [id size created-at expired-at touched-at backend])
 
 (defn storage-object?
   [v]
   (instance? StorageObject v))
 
-(def ^:private
-  sql:insert-storage-object
-  "insert into storage_object (id, size, backend, metadata)
-   values (?, ?, ?, ?::jsonb)
-   returning *")
+(s/def ::storage-object storage-object?)
+(s/def ::storage-content impl/content?)
 
-(def ^:private
-  sql:insert-storage-object-with-expiration
-  "insert into storage_object (id, size, backend, metadata, deleted_at)
-   values (?, ?, ?, ?::jsonb, ?)
-   returning *")
 
-(defn- insert-object
-  [conn id size backend mdata expiration]
-  (if expiration
-    (db/exec-one! conn [sql:insert-storage-object-with-expiration id size backend mdata expiration])
-    (db/exec-one! conn [sql:insert-storage-object id size backend mdata])))
+(defn- clone-database-object
+  ;; If we in this condition branch, this means we come from the
+  ;; clone-object, so we just need to clone it with a new backend.
+  [{:keys [conn backend]} object]
+  (let [id     (uuid/random)
+        mdata  (meta object)
+        result (db/insert! conn :storage-object
+                           {:id id
+                            :size (:size object)
+                            :backend (name backend)
+                            :metadata (db/tjson mdata)
+                            :deleted-at (:expired-at object)
+                            :touched-at (:touched-at object)})]
+    (assoc object
+           :id (:id result)
+           :backend backend
+           :created-at (:created-at result)
+           :touched-at (:touched-at result))))
 
 (defn- create-database-object
   [{:keys [conn backend]} {:keys [content] :as object}]
-  (if (instance? StorageObject object)
-    ;; If we in this condition branch, this means we come from the
-    ;; clone-object, so we just need to clone it with a new backend.
-    (let [id     (uuid/random)
-          mdata  (meta object)
-          result (insert-object conn
-                                id
-                                (:size object)
-                                (name backend)
-                                (db/tjson mdata)
-                                (:expired-at object))]
-      (assoc object
-             :id (:id result)
-             :backend backend
-             :created-at (:created-at result)))
-    (let [id     (uuid/random)
-          mdata  (dissoc object :content :expired-at)
-          result (insert-object conn
-                                id
-                                (count content)
-                                (name backend)
-                                (db/tjson mdata)
-                                (:expired-at object))]
-      (StorageObject. (:id result)
-                      (:size result)
-                      (:created-at result)
-                      (:deleted-at result)
-                      backend
-                      mdata
-                      nil))))
+  (us/assert ::storage-content content)
+  (let [id     (uuid/random)
+        mdata  (dissoc object :content :expired-at :touched-at)
+
+        result (db/insert! conn :storage-object
+                           {:id id
+                            :size (count content)
+                            :backend (name backend)
+                            :metadata (db/tjson mdata)
+                            :deleted-at (:expired-at object)
+                            :touched-at (:touched-at object)})]
+
+    (StorageObject. (:id result)
+                    (:size result)
+                    (:created-at result)
+                    (:deleted-at result)
+                    (:touched-at result)
+                    backend
+                    mdata
+                    nil)))
 
 (def ^:private sql:retrieve-storage-object
   "select * from storage_object where id = ? and (deleted_at is null or deleted_at > now())")
 
 (defn row->storage-object [res]
-  (let [mdata (some-> (:metadata res) (db/decode-transit-pgobject))]
+  (let [mdata (or (some-> (:metadata res) (db/decode-transit-pgobject)) {})]
     (StorageObject. (:id res)
                     (:size res)
                     (:created-at res)
                     (:deleted-at res)
+                    (:touched-at res)
                     (keyword (:backend res))
                     mdata
                     nil)))
@@ -141,10 +135,6 @@
   [{:keys [conn] :as storage} id]
   (let [result (db/exec-one! conn [sql:delete-storage-object id])]
     (pos? (:next.jdbc/update-count result))))
-
-(defn- register-recheck
-  [{:keys [pool] :as storage} backend id]
-  (db/insert! pool :storage-pending {:id id :backend (name backend)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
@@ -170,16 +160,12 @@
 
 (defn put-object
   "Creates a new object with the provided content."
-  [{:keys [pool conn backend executor] :as storage} {:keys [content] :as params}]
+  [{:keys [pool conn backend] :as storage} {:keys [content] :as params}]
   (us/assert ::storage storage)
-  (us/assert impl/content? content)
+  (us/assert ::storage-content content)
+  (us/assert ::us/keyword backend)
   (let [storage (assoc storage :conn (or conn pool))
         object  (create-database-object storage params)]
-
-    ;; Schedule to execute in background; in an other transaction and
-    ;; register the currently created storage object id for a later
-    ;; recheck.
-    (px/run! executor #(register-recheck storage backend (:id object)))
 
     ;; Store the data finally on the underlying storage subsystem.
     (-> (impl/resolve-backend storage backend)
@@ -190,10 +176,12 @@
 (defn clone-object
   "Creates a clone of the provided object using backend based efficient
   method. Always clones objects to the configured default."
-  [{:keys [pool conn] :as storage} object]
+  [{:keys [pool conn backend] :as storage} object]
   (us/assert ::storage storage)
+  (us/assert ::storage-object object)
+  (us/assert ::us/keyword backend)
   (let [storage (assoc storage :conn (or conn pool))
-        object* (create-database-object storage object)]
+        object* (clone-database-object storage object)]
     (if (= (:backend object) (:backend storage))
       ;; if the source and destination backends are the same, we
       ;; proceed to use the fast path with specific copy
@@ -269,7 +257,7 @@
 ;; A task responsible to permanently delete already marked as deleted
 ;; storage files.
 
-(declare sql:retrieve-deleted-objects)
+(declare sql:retrieve-deleted-objects-chunk)
 
 (s/def ::min-age ::dt/duration)
 
@@ -278,44 +266,46 @@
 
 (defmethod ig/init-key ::gc-deleted-task
   [_ {:keys [pool storage min-age] :as cfg}]
-  (letfn [(group-by-backend [rows]
-            (let [conj (fnil conj [])]
-              [(reduce (fn [acc {:keys [id backend]}]
-                         (update acc (keyword backend) conj id))
-                       {}
-                       rows)
-               (count rows)]))
+  (letfn [(retrieve-deleted-objects-chunk [conn cursor]
+            (let [min-age (db/interval min-age)
+                  rows    (db/exec! conn [sql:retrieve-deleted-objects-chunk min-age cursor])]
+              [(some-> rows peek :created-at)
+               (some->> (seq rows) (d/group-by' #(-> % :backend keyword) :id) seq)]))
 
           (retrieve-deleted-objects [conn]
-            (let [min-age (db/interval min-age)
-                  rows    (db/exec! conn [sql:retrieve-deleted-objects min-age])]
-              (some-> (seq rows) (group-by-backend))))
+            (->> (d/iteration (fn [cursor]
+                                (retrieve-deleted-objects-chunk conn cursor))
+                              :initk (dt/now)
+                              :vf second
+                              :kf first)
+                 (sequence cat)))
 
-          (delete-in-bulk [conn [backend ids]]
+          (delete-in-bulk [conn backend ids]
             (let [backend (impl/resolve-backend storage backend)
                   backend (assoc backend :conn conn)]
               (impl/del-objects-in-bulk backend ids)))]
 
     (fn [_]
       (db/with-atomic [conn pool]
-        (loop [n 0]
-          (if-let [[groups total] (retrieve-deleted-objects conn)]
+        (loop [total  0
+               groups (retrieve-deleted-objects conn)]
+          (if-let [[backend ids] (first groups)]
             (do
-              (run! (partial delete-in-bulk conn) groups)
-              (recur (+ n ^long total)))
+              (delete-in-bulk conn backend ids)
+              (recur (+ total (count ids))
+                     (rest groups)))
             (do
-              (l/info :task "gc-deleted"
-                      :hint "permanently delete items"
-                      :count n)
-              {:deleted n})))))))
+              (l/info :task "gc-deleted" :count total)
+              {:deleted total})))))))
 
-(def sql:retrieve-deleted-objects
+(def sql:retrieve-deleted-objects-chunk
   "with items_part as (
      select s.id
        from storage_object as s
       where s.deleted_at is not null
         and s.deleted_at < (now() - ?::interval)
-      order by s.deleted_at
+        and s.created_at < ?
+      order by s.created_at desc
       limit 100
    )
    delete from storage_object
@@ -326,157 +316,105 @@
 ;; Garbage Collection: Analyze touched objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; This task is part of the garbage collection of storage objects and
-;; is responsible on analyzing the touched objects and mark them for deletion
-;; if corresponds.
+;; This task is part of the garbage collection of storage objects and is responsible on analyzing the touched
+;; objects and mark them for deletion if corresponds.
 ;;
-;; When file_media_object is deleted, the depending storage_object are
-;; marked as touched. This means that some files that depend on a
-;; concrete storage_object are no longer exists and maybe this
-;; storage_object is no longer necessary and can be eligible for
-;; elimination. This task periodically analyzes touched objects and
-;; mark them as freeze (means that has other references and the object
-;; is still valid) or deleted (no more references to this object so is
-;; ready to be deleted).
+;; For example: when file_media_object is deleted, the depending storage_object are marked as touched. This
+;; means that some files that depend on a concrete storage_object are no longer exists and maybe this
+;; storage_object is no longer necessary and can be eligible for elimination. This task periodically analyzes
+;; touched objects and mark them as freeze (means that has other references and the object is still valid) or
+;; deleted (no more references to this object so is ready to be deleted).
 
-(declare sql:retrieve-touched-objects)
+(declare sql:retrieve-touched-objects-chunk)
+(declare sql:retrieve-file-media-object-nrefs)
+(declare sql:retrieve-team-font-variant-nrefs)
 
 (defmethod ig/pre-init-spec ::gc-touched-task [_]
   (s/keys :req-un [::db/pool]))
 
 (defmethod ig/init-key ::gc-touched-task
   [_ {:keys [pool] :as cfg}]
-  (letfn [(group-results [rows]
-            (let [conj (fnil conj [])]
-              (reduce (fn [acc {:keys [id nrefs]}]
-                        (if (pos? nrefs)
-                          (update acc :to-freeze conj id)
-                          (update acc :to-delete conj id)))
-                      {}
-                      rows)))
+  (letfn [(has-team-font-variant-nrefs? [conn id]
+            (-> (db/exec-one! conn [sql:retrieve-team-font-variant-nrefs id id id id]) :nrefs pos?))
 
-          (retrieve-touched [conn]
-            (let [rows (db/exec! conn [sql:retrieve-touched-objects])]
-              (some-> (seq rows) (group-results))))
-
-          (mark-delete-in-bulk [conn ids]
-            (db/exec-one! conn ["update storage_object set deleted_at=now(), touched_at=null where id = ANY(?)"
-                                (db/create-array conn "uuid" (into-array java.util.UUID ids))]))
+          (has-file-media-object-nrefs? [conn id]
+            (-> (db/exec-one! conn [sql:retrieve-file-media-object-nrefs id id]) :nrefs pos?))
 
           (mark-freeze-in-bulk [conn ids]
             (db/exec-one! conn ["update storage_object set touched_at=null where id = ANY(?)"
-                                (db/create-array conn "uuid" (into-array java.util.UUID ids))]))]
+                                (db/create-array conn "uuid" ids)]))
+
+          (mark-delete-in-bulk [conn ids]
+            (db/exec-one! conn ["update storage_object set deleted_at=now(), touched_at=null where id = ANY(?)"
+                                (db/create-array conn "uuid" ids)]))
+
+          (retrieve-touched-chunk [conn cursor]
+            (let [rows (->> (db/exec! conn [sql:retrieve-touched-objects-chunk cursor])
+                            (mapv #(d/update-when % :metadata db/decode-transit-pgobject)))
+                  kw   (fn [o] (if (keyword? o) o (keyword o)))]
+              (when (seq rows)
+                [(-> rows peek :created-at)
+                 ;; NOTE: we use the :file-media-object as default value for backward compatibility because when we
+                 ;; deploy it we can have old backend instances running in the same time as the new one and we can
+                 ;; still have storage-objects created without reference value.  And we know that if it does not
+                 ;; have value, it means :file-media-object.
+                 (d/group-by' #(or (some-> % :metadata :reference kw) :file-media-object) :id rows)])))
+
+          (retrieve-touched [conn]
+            (->> (d/iteration (fn [cursor]
+                                (retrieve-touched-chunk conn cursor))
+                              :initk (dt/now)
+                              :vf second
+                              :kf first)
+                 (sequence cat)))
+
+          (process-objects! [conn pred-fn ids]
+            (loop [to-freeze #{}
+                   to-delete #{}
+                   ids       (seq ids)]
+              (if-let [id (first ids)]
+                (if (pred-fn conn id)
+                  (recur (conj to-freeze id) to-delete (rest ids))
+                  (recur to-freeze (conj to-delete id) (rest ids)))
+
+                (do
+                  (some->> (seq to-freeze) (mark-freeze-in-bulk conn))
+                  (some->> (seq to-delete) (mark-delete-in-bulk conn))
+                  [(count to-freeze) (count to-delete)]))))
+          ]
 
     (fn [_]
       (db/with-atomic [conn pool]
-        (loop [cntf 0
-               cntd 0]
-          (if-let [{:keys [to-delete to-freeze]} (retrieve-touched conn)]
+        (loop [to-freeze 0
+               to-delete 0
+               groups    (retrieve-touched conn)]
+          (if-let [[reference ids] (first groups)]
+            (let [[f d] (case reference
+                          :file-media-object (process-objects! conn has-file-media-object-nrefs? ids)
+                          :team-font-variant (process-objects! conn has-team-font-variant-nrefs? ids)
+                          (ex/raise :type :internal
+                                    :code :unexpected-unknown-reference
+                                    :hint (format "unknown reference %s" (pr-str reference))))]
+              (recur (+ to-freeze f)
+                     (+ to-delete d)
+                     (rest groups)))
             (do
-              (when (seq to-delete) (mark-delete-in-bulk conn to-delete))
-              (when (seq to-freeze) (mark-freeze-in-bulk conn to-freeze))
-              (recur (+ cntf (count to-freeze))
-                     (+ cntd (count to-delete))))
-            (do
-              (l/info :task "gc-touched"
-                      :hint "mark freeze"
-                      :count cntf)
-              (l/info :task "gc-touched"
-                      :hint "mark for deletion"
-                      :count cntd)
-              {:freeze cntf :delete cntd})))))))
+              (l/info :task "gc-touched" :to-freeze to-freeze :to-delete to-delete)
+              {:freeze to-freeze :delete to-delete})))))))
 
-(def sql:retrieve-touched-objects
-  "select so.id,
-          ((select count(*) from file_media_object where media_id = so.id) +
-           (select count(*) from file_media_object where thumbnail_id = so.id)) as nrefs
-     from storage_object as so
+(def sql:retrieve-touched-objects-chunk
+  "select so.* from storage_object as so
     where so.touched_at is not null
-    order by so.touched_at
-    limit 100;")
+      and so.created_at < ?
+    order by so.created_at desc
+    limit 500;")
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Recheck Stalled Task
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def sql:retrieve-file-media-object-nrefs
+  "select ((select count(*) from file_media_object where media_id = ?) +
+           (select count(*) from file_media_object where thumbnail_id = ?)) as nrefs")
 
-;; Because the physical storage (filesystem, s3, ... except db) is not
-;; transactional, in some situations we can found physical object
-;; leakage. That situations happens when the transaction that writes
-;; the file aborts, leaving the file written to the underlying storage
-;; but the reference on the database is lost with the rollback.
-;;
-;; For this situations we need to write a "log" of inserted files that
-;; are checked in some time in future. If physical file exists but the
-;; database refence does not exists means that leaked file is found
-;; and is immediately deleted. The responsibility of this task is
-;; check that write log for possible leaked files.
-
-(def recheck-min-age (dt/duration {:hours 1}))
-
-(declare sql:retrieve-pending-to-recheck)
-(declare sql:exists-storage-object)
-
-(defmethod ig/pre-init-spec ::recheck-task [_]
-  (s/keys :req-un [::storage ::db/pool]))
-
-(defmethod ig/init-key ::recheck-task
-  [_ {:keys [pool storage] :as cfg}]
-  (letfn [(group-results [rows]
-            (let [conj (fnil conj [])]
-              (reduce (fn [acc {:keys [id exist] :as row}]
-                        (cond-> (update acc :all conj id)
-                          (false? exist)
-                          (update :to-delete conj (dissoc row :exist))))
-                      {}
-                      rows)))
-
-          (group-by-backend [rows]
-            (let [conj (fnil conj [])]
-              (reduce (fn [acc {:keys [id backend]}]
-                        (update acc (keyword backend) conj id))
-                      {}
-                      rows)))
-
-          (retrieve-pending [conn]
-            (let [rows (db/exec! conn [sql:retrieve-pending-to-recheck (db/interval recheck-min-age)])]
-              (some-> (seq rows) (group-results))))
-
-          (delete-group [conn [backend ids]]
-            (let [backend (impl/resolve-backend storage backend)
-                  backend (assoc backend :conn conn)]
-              (impl/del-objects-in-bulk backend ids)))
-
-          (delete-all [conn ids]
-            (let [ids (db/create-array conn "uuid" (into-array java.util.UUID ids))]
-              (db/exec-one! conn ["delete from storage_pending where id = ANY(?)" ids])))]
-
-    (fn [_]
-      (db/with-atomic [conn pool]
-        (loop [n 0 d 0]
-          (if-let [{:keys [all to-delete]} (retrieve-pending conn)]
-            (let [groups (group-by-backend to-delete)]
-              (run! (partial delete-group conn) groups)
-              (delete-all conn all)
-              (recur (+ n (count all))
-                     (+ d (count to-delete))))
-            (do
-              (l/info :task "recheck"
-                      :hint "recheck items"
-                      :processed n
-                      :deleted d)
-              {:processed n :deleted d})))))))
-
-(def sql:retrieve-pending-to-recheck
-  "select sp.id,
-          sp.backend,
-          sp.created_at,
-          (case when count(so.id) > 0 then true
-                else false
-            end) as exist
-     from storage_pending as sp
-     left join storage_object as so
-            on (so.id = sp.id)
-    where sp.created_at < now() - ?::interval
-    group by 1,2,3
-    order by sp.created_at asc
-    limit 100")
+(def sql:retrieve-team-font-variant-nrefs
+  "select ((select count(*) from team_font_variant where woff1_file_id = ?) +
+           (select count(*) from team_font_variant where woff2_file_id = ?) +
+           (select count(*) from team_font_variant where otf_file_id = ?) +
+           (select count(*) from team_font_variant where ttf_file_id = ?)) as nrefs")

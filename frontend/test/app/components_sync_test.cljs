@@ -3,7 +3,6 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.pages.helpers :as cph]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.libraries-helpers :as dwlh]

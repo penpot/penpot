@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.types.radius
+(ns app.common.spec.radius
   (:require
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))

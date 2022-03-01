@@ -10,8 +10,8 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
-   [app.common.pages :as cp]
-   [app.common.types.interactions :as cti]
+   [app.common.pages.helpers :as cph]
+   [app.common.spec.interactions :as cti]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -330,7 +330,8 @@
       {::mf/wrap-props false}
       [props]
       (let [shape  (unchecked-get props "shape")
-            childs (select-keys objects (cp/get-children (:id shape) objects))
+            childs (->> (cph/get-children-ids objects (:id shape))
+                        (select-keys objects))
             props  (obj/merge! #js {} props
                                #js {:childs childs
                                     :objects objects})]
@@ -399,7 +400,7 @@
         update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)
 
         frame-id     (:id frame)
-        modifier-ids (into [frame-id] (cp/get-children frame-id objects))
+        modifier-ids (into [frame-id] (cph/get-children-ids objects frame-id))
         objects      (reduce update-fn objects modifier-ids)
         frame        (assoc-in frame [:modifiers :displacement] modifier)
 

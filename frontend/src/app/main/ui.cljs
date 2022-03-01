@@ -29,7 +29,8 @@
 
 (mf/defc on-main-error
   [{:keys [error] :as props}]
-  (mf/use-effect (st/emitf (rt/assign-exception error)))
+  (mf/with-effect
+    (st/emit! (rt/assign-exception error)))
   [:span "Internal application error"])
 
 (mf/defc main-page

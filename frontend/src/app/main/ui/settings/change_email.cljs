@@ -86,7 +86,8 @@
 
        [:div.modal-header
         [:div.modal-header-title
-         [:h2 (tr "modals.change-email.title")]]
+         [:h2 {:data-test "change-email-title"} 
+          (tr "modals.change-email.title")]]
         [:div.modal-close-button
          {:on-click on-close} i/close]]
 
@@ -108,7 +109,7 @@
                         :trim true}]]]]
 
        [:div.modal-footer
-        [:div.action-buttons
+        [:div.action-buttons {:data-test "change-email-submit"}
          [:& fm/submit-button
           {:label (tr "modals.change-email.submit")}]]]]]]))
 

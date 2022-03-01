@@ -283,7 +283,6 @@
 
 (defn setup-interactions
   [file]
-
   (letfn [(add-interactions
             [file [id interactions]]
             (->> interactions
@@ -294,7 +293,6 @@
             (let [interactions (:interactions file)
                   file (dissoc file :interactions)]
               (->> interactions (reduce add-interactions file))))]
-
     (-> file process-interactions)))
 
 (defn resolve-media

@@ -12,6 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks.resize :refer [use-resize-observer]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
    [app.main.ui.workspace.colorpicker]
@@ -20,35 +21,18 @@
    [app.main.ui.workspace.header :refer [header]]
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [app.main.ui.workspace.libraries]
-   [app.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
+   [app.main.ui.workspace.nudge]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
+   [app.main.ui.workspace.textpalette :refer [textpalette]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
+   [debug :refer [debug?]]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 ;; --- Workspace
-
-(mf/defc workspace-rules
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
-  [props]
-  (let [zoom  (or (obj/get props "zoom") 1)
-        vbox  (obj/get props "vbox")
-        vport (obj/get props "vport")
-        colorpalette? (obj/get props "colorpalette?")]
-
-    [:*
-     [:div.empty-rule-square]
-     [:& horizontal-rule {:zoom zoom
-                          :vbox vbox
-                          :vport vport}]
-     [:& vertical-rule {:zoom zoom
-                        :vbox vbox
-                        :vport vport}]
-     [:& coordinates/coordinates {:colorpalette? colorpalette?}]]))
 
 (mf/defc workspace-content
   {::mf/wrap-props false}
@@ -56,32 +40,49 @@
   (let [selected (mf/deref refs/selected-shapes)
         local    (mf/deref refs/viewport-data)
 
-        {:keys [zoom vbox vport options-mode]} local
+        {:keys [options-mode]} local
         file   (obj/get props "file")
-        layout (obj/get props "layout")]
+        layout (obj/get props "layout")
+
+        colorpalette? (:colorpalette layout)
+        textpalette? (:textpalette layout)
+        hide-ui? (:hide-ui layout)
+
+        on-resize
+        (mf/use-callback
+         (mf/deps (:vport local))
+         (fn [resize-type size]
+           (when (and (:vport local) (not= size (:vport local)))
+             (st/emit! (dw/update-viewport-size resize-type size)))))
+
+        node-ref (use-resize-observer on-resize)]
     [:*
-     (when (:colorpalette layout)
+     (when (and colorpalette? (not hide-ui?))
        [:& colorpalette])
 
-     [:section.workspace-content
+     (when (and textpalette? (not hide-ui?))
+       [:& textpalette])
+
+     [:section.workspace-content {:ref node-ref}
       [:section.workspace-viewport
-       (when (contains? layout :rules)
-         [:& workspace-rules {:zoom zoom
-                              :vbox vbox
-                              :vport vport
-                              :colorpalette? (contains? layout :colorpalette)}])
+       (when (debug? :coordinates)
+         [:& coordinates/coordinates {:colorpalette? colorpalette?}])
 
        [:& viewport {:file file
                      :local local
                      :selected selected
                      :layout layout}]]]
 
-     [:& left-toolbar {:layout layout}]
-
-     ;; Aside
-     [:& left-sidebar {:layout layout}]
-     [:& right-sidebar {:section options-mode
-                        :selected selected}]]))
+     (when-not hide-ui?
+       [:*
+        [:& left-toolbar {:layout layout}]
+        (if (:collapse-left-sidebar layout)
+          [:button.collapse-sidebar.collapsed {:on-click #(st/emit! (dw/toggle-layout-flags :collapse-left-sidebar))}
+           i/arrow-slide]
+          [:& left-sidebar {:layout layout}])
+        [:& right-sidebar {:section options-mode
+                           :selected selected
+                           :layout layout}]])]))
 
 (def trimmed-page-ref (l/derived :trimmed-page st/state =))
 
@@ -117,39 +118,34 @@
         layout  (mf/deref refs/workspace-layout)]
 
     ;; Setting the layout preset by its name
-    (mf/use-effect
-     (mf/deps layout-name)
-     (fn []
-       (st/emit! (dw/setup-layout layout-name))))
+    (mf/with-effect [layout-name]
+      (st/emit! (dw/setup-layout layout-name)))
 
-    (mf/use-effect
-     (mf/deps project-id file-id)
-     (fn []
-       (st/emit! (dw/initialize-file project-id file-id))
-       (fn []
-         (st/emit! ::dwp/force-persist
-                   (dw/finalize-file project-id file-id)))))
+    (mf/with-effect [project-id file-id]
+      (st/emit! (dw/initialize-file project-id file-id))
+      (fn []
+        (st/emit! ::dwp/force-persist
+                  (dw/finalize-file project-id file-id))))
 
     ;; Close any non-modal dialog that may be still open
-    (mf/use-effect
-     (fn [] (st/emit! dm/hide)))
+    (mf/with-effect
+      (st/emit! dm/hide))
 
     ;; Set properly the page title
-    (mf/use-effect
-     (mf/deps (:name file))
-     (fn []
-       (when (:name file)
-         (dom/set-html-title (tr "title.workspace" (:name file))))))
+    (mf/with-effect [(:name file)]
+      (when (:name file)
+        (dom/set-html-title (tr "title.workspace" (:name file)))))
 
     [:& (mf/provider ctx/current-file-id) {:value (:id file)}
      [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:section#workspace
-         [:& header {:file file
-                     :page-id page-id
-                     :project project
-                     :layout layout}]
+         (when (not (:hide-ui layout))
+           [:& header {:file file
+                       :page-id page-id
+                       :project project
+                       :layout layout}])
 
          [:& context-menu]
 
@@ -160,4 +156,6 @@
                                :file file
                                :layout layout}]
            [:& workspace-loader])]]]]]))
+
+
 

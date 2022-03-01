@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.util.quadtree :as qdt]
    [app.worker.impl :as impl]
@@ -86,7 +87,7 @@
         changed-ids (into #{}
                           (comp (filter #(not= % uuid/zero))
                                 (filter changes?)
-                                (mapcat #(into [%] (cp/get-children % new-objects))))
+                                (mapcat #(into [%] (cph/get-children-ids new-objects %))))
                           (set/union (set (keys old-objects))
                                      (set (keys new-objects))))
 
@@ -105,7 +106,7 @@
     (assoc data :index index :z-index z-index)))
 
 (defn- query-index
-  [{index :index z-index :z-index} rect frame-id full-frame? include-frames? clip-children? reverse?]
+  [{index :index z-index :z-index} rect frame-id full-frame? include-frames? ignore-groups? clip-children? reverse?]
   (let [result (-> (qdt/search index (clj->js rect))
                    (es6-iterator-seq))
 
@@ -117,6 +118,7 @@
                (or (not frame-id) (= frame-id (:frame-id shape)))
                (case (:type shape)
                  :frame   include-frames?
+                 (:bool :group) (not ignore-groups?)
                  true)
 
                (or (not full-frame?)
@@ -170,8 +172,10 @@
     nil))
 
 (defmethod impl/handler :selection/update-index
-  [{:keys [page-id old-objects new-objects] :as message}]
-  (let [update-page-index
+  [{:keys [page-id old-page new-page] :as message}]
+  (let [old-objects (:objects old-page)
+        new-objects (:objects new-page)
+        update-page-index
         (fn [index]
           (let [old-bounds (:bounds index)
                 new-bounds (objects-bounds new-objects)]
@@ -187,10 +191,10 @@
   nil)
 
 (defmethod impl/handler :selection/query
-  [{:keys [page-id rect frame-id reverse? full-frame? include-frames? clip-children?]
+  [{:keys [page-id rect frame-id reverse? full-frame? include-frames? ignore-groups? clip-children?]
     :or {reverse? false full-frame? false include-frames? false clip-children? true} :as message}]
   (when-let [index (get @state page-id)]
-    (query-index index rect frame-id full-frame? include-frames? clip-children? reverse?)))
+    (query-index index rect frame-id full-frame? include-frames? ignore-groups? clip-children? reverse?)))
 
 (defmethod impl/handler :selection/query-z-index
   [{:keys [page-id objects ids]}]

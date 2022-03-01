@@ -8,7 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
+   [app.common.geom.shapes.rect :as gshr]
+   [app.common.pages.helpers :as cph]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.path.shortcuts :as psc]
@@ -31,10 +32,9 @@
         on-key-up         (actions/on-key-up)
         on-mouse-move     (actions/on-mouse-move viewport-ref zoom)
         on-mouse-wheel    (actions/on-mouse-wheel viewport-ref zoom)
-        on-resize         (actions/on-resize viewport-ref)
         on-paste          (actions/on-paste disable-paste in-viewport?)]
     (mf/use-layout-effect
-     (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-resize on-paste)
+     (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-paste)
      (fn []
        (let [node (mf/ref-val viewport-ref)
              keys [(events/listen js/document EventType.KEYDOWN on-key-down)
@@ -43,7 +43,6 @@
                    ;; bind with passive=false to allow the event to be cancelled
                    ;; https://stackoverflow.com/a/57582286/3219895
                    (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
-                   (events/listen js/window EventType.RESIZE on-resize)
                    (events/listen js/window EventType.PASTE on-paste)]]
 
          (fn []
@@ -52,20 +51,21 @@
 
 (defn setup-viewport-size [viewport-ref]
   (mf/use-layout-effect
-  (fn []
-    (let [node (mf/ref-val viewport-ref)
-          prnt (dom/get-parent node)
-          size (dom/get-client-size prnt)]
-      ;; We schedule the event so it fires after `initialize-page` event
-      (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
+   (fn []
+     (let [node (mf/ref-val viewport-ref)
+           prnt (dom/get-parent node)
+           size (dom/get-client-size prnt)]
+       ;; We schedule the event so it fires after `initialize-page` event
+       (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
 
-(defn setup-cursor [cursor alt? panning drawing-tool drawing-path? path-editing?]
+(defn setup-cursor [cursor alt? ctrl? space? panning drawing-tool drawing-path? path-editing?]
   (mf/use-effect
-   (mf/deps @cursor @alt? panning drawing-tool drawing-path? path-editing?)
+   (mf/deps @cursor @alt? @ctrl? @space? panning drawing-tool drawing-path? path-editing?)
    (fn []
      (let [new-cursor
            (cond
-             panning                         (utils/get-cursor :hand)
+             (and @ctrl? @space?)            (utils/get-cursor :zoom)
+             (or panning @space?)            (utils/get-cursor :hand)
              (= drawing-tool :comments)      (utils/get-cursor :comments)
              (= drawing-tool :frame)         (utils/get-cursor :create-artboard)
              (= drawing-tool :rect)          (utils/get-cursor :create-rectangle)
@@ -80,16 +80,35 @@
        (when (not= @cursor new-cursor)
          (reset! cursor new-cursor))))))
 
-(defn setup-resize [layout viewport-ref]
-  (let [on-resize (actions/on-resize viewport-ref)]
-    (mf/use-layout-effect (mf/deps layout) on-resize)))
-
 (defn setup-keyboard [alt? ctrl? space?]
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
   (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %))
   (hooks/use-stream ms/keyboard-space #(reset! space? %)))
 
-(defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids hover-disabled? zoom]
+(defn group-empty-space?
+  "Given a group `group-id` check if `hover-ids` contains any of its children. If it doesn't means
+  we're hovering over empty space for the group "
+  [group-id objects hover-ids]
+
+  (and (contains? #{:group :bool} (get-in objects [group-id :type]))
+
+       ;; If there are no children in the hover-ids we're in the empty side
+       (->> hover-ids
+            (remove #(contains? #{:group :bool} (get-in objects [% :type])))
+            (some #(cph/is-parent? objects % group-id))
+            (not))))
+
+(defn check-text-collision?
+  "Checks if he current position `pos` overlaps any of the text-nodes for the given `text-id`"
+  [objects pos text-id]
+  (and (= :text (get-in objects [text-id :type]))
+       (let [collisions
+             (->> (dom/query-all (str "#shape-" text-id " .text-node"))
+                  (map dom/get-bounding-rect)
+                  (map dom/bounding-rect->rect))]
+         (not (some #(gshr/contains-point? % pos) collisions)))))
+
+(defn setup-hover-shapes [page-id move-stream raw-position-ref objects transform selected ctrl? hover hover-ids hover-disabled? zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         ctrl-ref (mf/use-ref @ctrl?)
@@ -159,14 +178,21 @@
 
              selected (mf/ref-val selected-ref)
 
-             remove-xfm (mapcat #(cp/get-parents % objects))
+             remove-xfm (mapcat #(cph/get-parent-ids objects %))
              remove-id? (cond-> (into #{} remove-xfm selected)
+                          :always
+                          (into (filter #(check-text-collision? objects (mf/ref-val raw-position-ref) %)) ids)
+
+                          (not @ctrl?)
+                          (into (filter #(group-empty-space? % objects ids)) ids)
+
                           @ctrl?
                           (into (filter is-group?) ids))
 
-             ids         (filterv (comp not remove-id?) ids)
-             hover-shape (get objects (first ids))]
-
+             hover-shape (->> ids
+                              (filter (comp not remove-id?))
+                              (first)
+                              (get objects))]
          (reset! hover hover-shape)
          (reset! hover-ids ids))))))
 

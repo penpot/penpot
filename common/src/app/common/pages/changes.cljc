@@ -5,6 +5,7 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.pages.changes
+  #_:clj-kondo/ignore
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -13,9 +14,9 @@
    [app.common.pages.common :refer [component-sync-attrs]]
    [app.common.pages.helpers :as cph]
    [app.common.pages.init :as init]
-   [app.common.pages.spec :as spec]
-   [app.common.spec :as us]))
-
+   [app.common.spec :as us]
+   [app.common.spec.change :as spec.change]
+   [app.common.spec.shape :as spec.shape]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific helpers
@@ -47,7 +48,7 @@
    ;; When verify? false we spec the schema validation. Currently used to make just
    ;; 1 validation even if the changes are applied twice
    (when verify?
-     (us/assert ::spec/changes items))
+     (us/assert ::spec.change/changes items))
 
    (let [result (reduce #(or (process-change %1 %2) %1) data items)]
      ;; Validate result shapes (only on the backend)
@@ -57,7 +58,7 @@
             (doseq [[id shape] (:objects page)]
               (when-not (= shape (get-in data [:pages-index page-id :objects id]))
                 ;; If object has change verify is correct
-                (us/verify ::spec/shape shape))))))
+                (us/verify ::spec.shape/shape shape))))))
 
      result)))
 
@@ -159,10 +160,8 @@
             (let [lookup    (d/getf objects)
                   update-fn #(d/update-when %1 %2 update-group %1)
                   xform     (comp
-                             (mapcat #(cons % (cph/get-parents % objects)))
-                             (map lookup)
-                             (filter #(contains? #{:group :bool} (:type %)))
-                             (map :id)
+                             (mapcat #(cons % (cph/get-parent-ids objects %)))
+                             (filter #(contains? #{:group :bool} (-> % lookup :type)))
                              (distinct))]
 
               (->> (sequence xform shapes)
@@ -203,11 +202,16 @@
 
 (defmethod process-change :mov-objects
   [data {:keys [parent-id shapes index page-id component-id ignore-touched]}]
-  (letfn [(is-valid-move? [objects shape-id]
-            (let [invalid-targets (cph/calculate-invalid-targets shape-id objects)]
+  (letfn [(calculate-invalid-targets [objects shape-id]
+            (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
+              (->> (get-in objects [shape-id :shapes])
+                   (reduce reduce-fn #{shape-id}))))
+
+          (is-valid-move? [objects shape-id]
+            (let [invalid-targets (calculate-invalid-targets objects shape-id)]
               (and (contains? objects shape-id)
                    (not (invalid-targets parent-id))
-                   (cph/valid-frame-target shape-id parent-id objects))))
+                   (cph/valid-frame-target? objects parent-id shape-id))))
 
           (insert-items [prev-shapes index shapes]
             (let [prev-shapes (or prev-shapes [])]

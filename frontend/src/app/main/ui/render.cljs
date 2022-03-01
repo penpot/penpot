@@ -10,7 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.fonts :as df]
    [app.main.render :as render]
@@ -60,7 +60,7 @@
                      (gpt/negate)
                      (gmt/translate-matrix))
 
-        mod-ids  (cons frame-id (cp/get-children frame-id objects))
+        mod-ids  (cons frame-id (cph/get-children-ids objects frame-id))
         updt-fn  #(-> %1
                       (assoc-in [%2 :modifiers :displacement] modifier)
                       (update %2 gsh/transform-shape))
@@ -78,28 +78,24 @@
         vbox (str/join " " coords)
 
         frame-wrapper
-        (mf/use-memo
-         (mf/deps objects)
-         #(render/frame-wrapper-factory objects))
+        (mf/with-memo [objects]
+          (render/frame-wrapper-factory objects))
 
         group-wrapper
-        (mf/use-memo
-         (mf/deps objects)
-         #(render/group-wrapper-factory objects))
+        (mf/with-memo [objects]
+          (render/group-wrapper-factory objects))
 
         shape-wrapper
-        (mf/use-memo
-         (mf/deps objects)
-         #(render/shape-wrapper-factory objects))
+        (mf/with-memo [objects]
+          (render/shape-wrapper-factory objects))
 
         text-shapes
         (->> objects
              (filter (fn [[_ shape]] (= :text (:type shape))))
              (mapv second))]
 
-    (mf/use-effect
-     (mf/deps width height)
-     #(dom/set-page-style {:size (str (mth/ceil width) "px "
+    (mf/with-effect [width height]
+      (dom/set-page-style {:size (str (mth/ceil width) "px "
                                       (mth/ceil height) "px")}))
 
     [:& (mf/provider embed/context) {:value false}
@@ -137,7 +133,7 @@
   [objects object-id]
   (if (uuid/zero? object-id)
     (let [object   (get objects object-id)
-          shapes   (cp/select-toplevel-shapes objects {:include-frames? true})
+          shapes   (cph/get-immediate-children objects)
           srect    (gsh/selection-rect shapes)
           object   (merge object (select-keys srect [:x :y :width :height]))
           object   (gsh/transform-shape object)
@@ -148,20 +144,19 @@
 (mf/defc render-object
   [{:keys [file-id page-id object-id render-texts?] :as props}]
   (let [objects (mf/use-state nil)]
-    (mf/use-effect
-     (mf/deps file-id page-id object-id)
-     (fn []
-       (->> (rx/zip
-             (repo/query! :font-variants {:file-id file-id})
-             (repo/query! :trimmed-file {:id file-id :page-id page-id :object-id object-id}))
-            (rx/subs
-             (fn [[fonts {:keys [data]}]]
-               (when (seq fonts)
-                 (st/emit! (df/fonts-fetched fonts)))
-               (let [objs (get-in data [:pages-index page-id :objects])
-                     objs (adapt-root-frame objs object-id)]
-                 (reset! objects objs)))))
-       (constantly nil)))
+
+    (mf/with-effect [file-id page-id object-id]
+      (->> (rx/zip
+            (repo/query! :font-variants {:file-id file-id})
+            (repo/query! :trimmed-file {:id file-id :page-id page-id :object-id object-id}))
+           (rx/subs
+            (fn [[fonts {:keys [data]}]]
+              (when (seq fonts)
+                (st/emit! (df/fonts-fetched fonts)))
+              (let [objs (get-in data [:pages-index page-id :objects])
+                    objs (adapt-root-frame objs object-id)]
+                (reset! objects objs)))))
+      (constantly nil))
 
     (when @objects
       [:& object-svg {:objects @objects
@@ -172,14 +167,13 @@
 (mf/defc render-sprite
   [{:keys [file-id component-id] :as props}]
   (let [file (mf/use-state nil)]
-    (mf/use-effect
-     (mf/deps file-id)
-     (fn []
-       (->> (repo/query! :file {:id file-id})
-            (rx/subs
-             (fn [result]
-               (reset! file result))))
-       (constantly nil)))
+
+    (mf/with-effect [file-id]
+      (->> (repo/query! :file {:id file-id})
+           (rx/subs
+            (fn [result]
+              (reset! file result))))
+      (constantly nil))
 
     (when @file
       [:*

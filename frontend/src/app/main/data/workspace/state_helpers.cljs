@@ -7,7 +7,13 @@
 (ns app.main.data.workspace.state-helpers
   (:require
    [app.common.data :as d]
-   [app.common.pages :as cp]))
+   [app.common.pages.helpers :as cph]))
+
+(defn lookup-page
+  ([state]
+   (lookup-page state (:current-page-id state)))
+  ([state page-id]
+   (get-in state [:workspace-data :pages-index page-id])))
 
 (defn lookup-page-objects
   ([state]
@@ -37,7 +43,7 @@
            :or   {omit-blocked? false}}]
    (let [objects (lookup-page-objects state)
          selected (->> (get-in state [:workspace-local :selected])
-                       (cp/clean-loops objects))
+                       (cph/clean-loops objects))
          selectable? (fn [id]
                        (and (contains? objects id)
                             (or (not omit-blocked?)

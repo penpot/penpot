@@ -15,11 +15,11 @@
    [app.http.oauth :refer [extract-utm-props]]
    [app.loggers.audit :as audit]
    [app.media :as media]
-   [app.metrics :as mtx]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
+   [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
-   [app.util.rlimit :as rlimit]
+   [app.util.async :as async]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
@@ -38,7 +38,6 @@
 (s/def ::theme ::us/string)
 (s/def ::invitation-token ::us/not-empty-string)
 
-(declare annotate-profile-register)
 (declare check-profile-existence!)
 (declare create-profile)
 (declare create-profile-relations)
@@ -102,6 +101,7 @@
   (when-not (contains? cf/flags :registration)
     (ex/raise :type :restriction
               :code :registration-disabled))
+
   (when-let [domains (cf/get :registration-domain-whitelist)]
     (when-not (email-domain-in-whitelist? domains (:email params))
       (ex/raise :type :validation
@@ -116,10 +116,17 @@
 
   (check-profile-existence! pool params)
 
-  (let [params (assoc params
-                      :backend "penpot"
-                      :iss :prepared-register
-                      :exp (dt/in-future "48h"))
+  (when (= (str/lower (:email params))
+           (str/lower (:password params)))
+    (ex/raise :type :validation
+              :code :email-as-password
+              :hint "you can't use your email as password"))
+
+  (let [params {:email (:email params)
+                :invitation-token (:invitation-token params)
+                :backend "penpot"
+                :iss :prepared-register
+                :exp (dt/in-future "48h")}
         token  (tokens :generate params)]
     {:token token}))
 
@@ -136,43 +143,33 @@
     (-> (assoc cfg :conn conn)
         (register-profile params))))
 
-(defn- annotate-profile-register
-  "A helper for properly increase the profile-register metric once the
-  transaction is completed."
-  [metrics]
-  (fn []
-    (let [mobj (get-in metrics [:definitions :profile-register])]
-      ((::mtx/fn mobj) {:by 1}))))
-
 (defn register-profile
-  [{:keys [conn tokens session metrics] :as cfg} {:keys [token] :as params}]
+  [{:keys [conn tokens session] :as cfg} {:keys [token] :as params}]
   (let [claims    (tokens :verify {:token token :iss :prepared-register})
         params    (merge params claims)]
 
     (check-profile-existence! conn params)
 
-    (let [is-active (or (:is-active params)
-                        (contains? cf/flags :insecure-register))
-          profile   (->> (assoc params :is-active is-active)
-                         (create-profile conn)
-                         (create-profile-relations conn)
-                         (decode-profile-row))]
+    (let [is-active  (or (:is-active params)
+                         (contains? cf/flags :insecure-register))
+          profile    (->> (assoc params :is-active is-active)
+                          (create-profile conn)
+                          (create-profile-relations conn)
+                          (decode-profile-row))
+
+          invitation (when-let [token (:invitation-token params)]
+                       (tokens :verify {:token token :iss :team-invitation}))]
+
       (cond
-        ;; If invitation token comes in params, this is because the
-        ;; user comes from team-invitation process; in this case,
-        ;; regenerate token and send back to the user a new invitation
-        ;; token (and mark current session as logged).
-        (some? (:invitation-token params))
-        (let [token (:invitation-token params)
-              claims (tokens :verify {:token token :iss :team-invitation})
-              claims (assoc claims
-                            :member-id  (:id profile)
-                            :member-email (:email profile))
+        ;; If invitation token comes in params, this is because the user comes from team-invitation process;
+        ;; in this case, regenerate token and send back to the user a new invitation token (and mark current
+        ;; session as logged). This happens only if the invitation email matches with the register email.
+        (and (some? invitation) (= (:email profile) (:member-email invitation)))
+        (let [claims (assoc invitation :member-id  (:id profile))
               token  (tokens :generate claims)
               resp   {:invitation-token token}]
           (with-meta resp
             {:transform-response ((:create session) (:id profile))
-             :before-complete (annotate-profile-register metrics)
              ::audit/props (audit/profile->props profile)
              ::audit/profile-id (:id profile)}))
 
@@ -182,7 +179,6 @@
         (not= "penpot" (:auth-backend profile))
         (with-meta (profile/strip-private-attrs profile)
           {:transform-response ((:create session) (:id profile))
-           :before-complete (annotate-profile-register metrics)
            ::audit/props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})
 
@@ -191,7 +187,6 @@
         (true? is-active)
         (with-meta (profile/strip-private-attrs profile)
           {:transform-response ((:create session) (:id profile))
-           :before-complete (annotate-profile-register metrics)
            ::audit/props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})
 
@@ -214,8 +209,7 @@
                       :extra-data ptoken})
 
           (with-meta profile
-            {:before-complete (annotate-profile-register metrics)
-             ::audit/props (audit/profile->props profile)
+            {::audit/props (audit/profile->props profile)
              ::audit/profile-id (:id profile)}))))))
 
 (defn create-profile
@@ -284,7 +278,9 @@
           :opt-un [::scope ::invitation-token]))
 
 (sv/defmethod ::login
-  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
+  {:auth false
+   ::async/dispatch :default
+   ::rlimit/permits (cf/get :rlimit-password)}
   [{:keys [pool session tokens] :as cfg} {:keys [email password] :as params}]
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
@@ -305,32 +301,26 @@
             profile)]
 
     (db/with-atomic [conn pool]
-      (let [profile (->> (profile/retrieve-profile-data-by-email conn email)
-                         (validate-profile)
-                         (profile/strip-private-attrs)
-                         (profile/populate-additional-data conn)
-                         (decode-profile-row))]
-        (if-let [token (:invitation-token params)]
-          ;; If the request comes with an invitation token, this means
-          ;; that user wants to accept it with different user. A very
-          ;; strange case but still can happen. In this case, we
-          ;; proceed in the same way as in register: regenerate the
-          ;; invitation token and return it to the user for proper
-          ;; invitation acceptation.
-          (let [claims (tokens :verify {:token token :iss :team-invitation})
-                claims (assoc claims
-                              :member-id  (:id profile)
-                              :member-email (:email profile))
-                token  (tokens :generate claims)]
-            (with-meta {:invitation-token token}
-              {:transform-response ((:create session) (:id profile))
-               ::audit/props (audit/profile->props profile)
-               ::audit/profile-id (:id profile)}))
+      (let [profile    (->> (profile/retrieve-profile-data-by-email conn email)
+                            (validate-profile)
+                            (profile/strip-private-attrs)
+                            (profile/populate-additional-data conn)
+                            (decode-profile-row))
 
-          (with-meta profile
-            {:transform-response ((:create session) (:id profile))
-             ::audit/props (audit/profile->props profile)
-             ::audit/profile-id (:id profile)}))))))
+            invitation (when-let [token (:invitation-token params)]
+                         (tokens :verify {:token token :iss :team-invitation}))
+
+            ;; If invitation member-id does not matches the profile-id, we just proceed to ignore the
+            ;; invitation because invitations matches exactly; and user can't loging with other email and
+            ;; accept invitation with other email
+            response   (if (and (some? invitation) (= (:id profile) (:member-id invitation)))
+                         {:invitation-token (:invitation-token params)}
+                         profile)]
+
+        (with-meta response
+          {:transform-response ((:create session) (:id profile))
+           ::audit/props (audit/profile->props profile)
+           ::audit/profile-id (:id profile)})))))
 
 ;; --- MUTATION: Logout
 
@@ -360,6 +350,7 @@
           :opt-un [::lang ::theme]))
 
 (sv/defmethod ::update-profile
+  {::async/dispatch :default}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (let [profile (update-profile conn params)]
@@ -381,6 +372,11 @@
   (db/with-atomic [conn pool]
     (let [profile    (validate-password! conn params)
           session-id (:app.rpc/session-id params)]
+      (when (= (str/lower (:email profile))
+               (str/lower (:password params)))
+        (ex/raise :type :validation
+                  :code :email-as-password
+                  :hint "you can't use your email as password"))
       (update-profile-password! conn (assoc profile :password password))
       (invalidate-profile-session! conn (:id profile) session-id)
       nil)))

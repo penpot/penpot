@@ -80,13 +80,14 @@
         [:span.element-title (tr "labels.password")]]
 
        [:li {:class (when options? "current")
-             :on-click go-settings-options}
+             :on-click go-settings-options
+             :data-test "settings-profile"}
         i/tree
         [:span.element-title (tr "labels.settings")]]
 
        [:hr]
 
-       [:li {:on-click show-release-notes}
+       [:li {:on-click show-release-notes :data-test "release-notes"}
         i/pencil
         [:span.element-title (tr "labels.release-notes")]]
 

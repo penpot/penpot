@@ -56,7 +56,7 @@
   (s/keys :req-un [::email ::password]
           :opt-un [::invitation-token]))
 
-(sv/defmethod ::login-with-ldap {:auth false :rlimit :password}
+(sv/defmethod ::login-with-ldap {:auth false}
   [{:keys [pool session tokens] :as cfg} params]
   (db/with-atomic [conn pool]
     (let [info (authenticate params)
