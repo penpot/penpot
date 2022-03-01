@@ -51,7 +51,7 @@
      (when-not name-only?
        [:*
         [:div.typography-font (:name font-data)]
-        [:div.typography-data (str (:font-size typography) "pt | " (:name variant-data))]])]))
+        [:div.typography-data (str (:font-size typography) "px | " (:name variant-data))]])]))
 
 (mf/defc palette
   [{:keys [selected-ids current-file-id file-typographies shared-libs]}]
