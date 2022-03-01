@@ -7,6 +7,7 @@
 (ns app.main.store
   (:require-macros [app.main.store])
   (:require
+   [app.util.object :as obj]
    [beicon.core :as rx]
    [okulary.core :as l]
    [potok.core :as ptk]))
@@ -59,4 +60,10 @@
   [& events]
   #(apply ptk/emit! state events))
 
+(defonce ongoing-tasks (l/atom #{}))
 
+(add-watch ongoing-tasks ::ongoing-tasks
+           (fn [_ _ _ events]
+             (if (empty? events)
+               (obj/set! js/window "onbeforeunload" nil)
+               (obj/set! js/window "onbeforeunload" (constantly false)))))

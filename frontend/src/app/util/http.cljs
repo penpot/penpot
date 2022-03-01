@@ -131,7 +131,7 @@
 (defn transit-data
   [data]
   (reify IBodyData
-    (-get-body-data [_] (t/encode-str data))
+    (-get-body-data [_] (t/encode-str data {:type :json-verbose}))
     (-update-headers [_ headers]
       (assoc headers "content-type" "application/transit+json"))))
 

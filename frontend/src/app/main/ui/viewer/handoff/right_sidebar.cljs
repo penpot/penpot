@@ -20,8 +20,8 @@
   [{:keys [frame page file selected]}]
   (let [expanded      (mf/use-state false)
         section       (mf/use-state :info #_:code)
-
         shapes        (resolve-shapes (:objects page) selected)
+
         first-shape   (first shapes)
 
         selected-type (or (:type first-shape) :not-found)

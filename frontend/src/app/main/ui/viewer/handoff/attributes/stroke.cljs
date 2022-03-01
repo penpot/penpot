@@ -11,7 +11,7 @@
    [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
    [app.util.color :as uc]
-   [app.util.i18n :refer [t]]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
@@ -52,7 +52,7 @@
     :format #(uc/color->background (shape->color shape))}))
 
 (mf/defc stroke-block
-  [{:keys [shape locale]}]
+  [{:keys [shape]}]
   (let [color-format (mf/use-state :hex)
         color (shape->color shape)]
     [:*
@@ -65,19 +65,19 @@
            stroke-style (if (= stroke-style :svg) :solid stroke-style)
            stroke-alignment (or stroke-alignment :center)]
        [:div.attributes-stroke-row
-        [:div.attributes-label (t locale "handoff.attributes.stroke.width")]
+        [:div.attributes-label (tr "handoff.attributes.stroke.width")]
         [:div.attributes-value (:stroke-width shape) "px"]
-        [:div.attributes-value (->> stroke-style d/name (str "handoff.attributes.stroke.style.") (t locale))]
-        [:div.attributes-label (->> stroke-alignment d/name (str "handoff.attributes.stroke.alignment.") (t locale))]
+        [:div.attributes-value (->> stroke-style d/name (str "handoff.attributes.stroke.style.") (tr))]
+        [:div.attributes-label (->> stroke-alignment d/name (str "handoff.attributes.stroke.alignment.") (tr))]
         [:& copy-button {:data (copy-stroke-data shape)}]])]))
 
 (mf/defc stroke-panel
-  [{:keys [shapes locale]}]
+  [{:keys [shapes]}]
   (let [shapes (->> shapes (filter has-stroke?))]
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
-        [:div.attributes-block-title-text (t locale "handoff.attributes.stroke")]
+        [:div.attributes-block-title-text (tr "handoff.attributes.stroke")]
         (when (= (count shapes) 1)
           [:& copy-button {:data (copy-stroke-data (first shapes))}])]
 
@@ -85,8 +85,6 @@
          (if (seq (:strokes shape))
            (for [value (:strokes shape [])]
              [:& stroke-block {:key (str "stroke-color-" (:id shape))
-                               :shape value
-                               :locale locale}])
+                               :shape value}])
            [:& stroke-block {:key (str "stroke-color-" (:id shape))
-                             :shape shape
-                             :locale locale}]))])))
+                             :shape shape}]))])))

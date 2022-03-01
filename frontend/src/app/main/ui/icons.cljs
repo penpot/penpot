@@ -39,6 +39,7 @@
 (def chat (icon-xref :chat))
 (def checkbox-checked (icon-xref :checkbox-checked))
 (def checkbox-unchecked (icon-xref :checkbox-unchecked))
+(def checkbox-intermediate (icon-xref :checkbox-intermediate))
 (def circle (icon-xref :circle))
 (def close (icon-xref :close))
 (def code (icon-xref :code))

@@ -96,7 +96,6 @@
     height: 30px;
     justify-content: center;
     margin-right: 16px;
-    width: 30px;
 
     svg {
       transform: rotate(45deg);
@@ -140,7 +139,7 @@
   .modal-footer {
     display: flex;
     height: 63px;
-    padding: 0px 16px;
+    padding: 0px 18px;
     border-top: 1px solid $color-gray-10;
 
     .action-buttons {
@@ -235,11 +234,16 @@
 }
 
 .import-dialog,
-.export-dialog {
+.export-dialog,
+.export-shapes-dialog {
   background-color: $color-white;
   border: 1px solid $color-gray-20;
   width: 30rem;
   min-height: 14rem;
+
+  &.no-shapes {
+    width: 39rem;
+  }
 
   p {
     font-size: $fs14;
@@ -259,9 +263,9 @@
     border: 1px solid $color-gray-20;
     background: $color-white;
     border-radius: 3px;
-    padding: 0.3rem 1.25rem;
+    padding: 0.5rem 2.25rem;
     cursor: pointer;
-    margin-right: 8px;
+    margin-right: 18px;
 
     &:hover {
       background: $color-gray-20;
@@ -274,7 +278,7 @@
     border: 1px solid $color-primary;
     color: $color-black;
     cursor: pointer;
-    padding: 0.3rem 1.25rem;
+    padding: 0.5rem 2.25rem;
 
     &[disabled] {
       border: 1px solid #e3e3e3;
@@ -295,17 +299,12 @@
     padding-left: 2rem;
 
     h2 {
-      font-size: $fs14;
+      font-size: $fs18;
     }
   }
 
   .modal-content {
     padding: 1rem;
-  }
-
-  svg {
-    max-width: 18px;
-    max-height: 18px;
   }
 
   .file-entry {
@@ -514,6 +513,38 @@
 
     &.selected {
       border: 1px solid $color-primary;
+    }
+
+    &.table-row {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      height: 45px;
+      justify-content: space-between;
+      padding: 0px 0px;
+      width: 100%;
+    }
+
+    .table-field {
+      flex-grow: 0;
+      padding: 0px 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 50px;
+
+      &.check {
+        width: 30px;
+      }
+
+      &.scale {
+        flex-grow: 1;
+        width: 15%;
+      }
+
+      &.name {
+        flex-grow: 1;
+        width: 40%;
+      }
     }
   }
 
@@ -1303,6 +1334,219 @@
           border-bottom: 1px solid $color-primary;
         }
       }
+    }
+  }
+}
+
+// Export shapes
+
+.export-progress-modal-overlay {
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  right: 1rem;
+  top: 3rem;
+  padding: 16px 18px;
+  background-color: $color-white;
+  border: 1px solid $color-gray-20;
+  border-radius: 3px;
+  z-index: 1000;
+
+  &.transparent {
+    background-color: rgba($color-white, 0);
+  }
+
+  .export-progress-modal-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    height: 100%;
+    width: 100%;
+
+    .progress-bar {
+      margin-top: 1rem;
+    }
+
+    .export-progress-modal-header {
+      align-items: center;
+      display: flex;
+      justify-content: stretch;
+      margin-bottom: 7px;
+
+      .modal-close-button {
+        display: flex;
+        justify-content: center;
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 2px 0;
+
+        svg {
+          height: 18px;
+          width: 18px;
+          transform: rotate(45deg);
+        }
+      }
+
+      .export-progress-modal-title {
+        padding: 0;
+        margin: 0;
+        color: $color-black;
+        flex-grow: 1;
+        font-size: $fs16;
+      }
+
+      .progress {
+        color: $color-gray-30;
+        font-size: $fs16;
+        margin-bottom: 0;
+        padding-right: 16px;
+        text-align: right;
+      }
+
+      .retry {
+        font-size: $fs12;
+        margin-right: 16px;
+        padding: 4px 12px;
+      }
+    }
+  }
+}
+
+.export-shapes-dialog {
+  .modal-content {
+    padding: 0;
+  }
+
+  .body {
+    overflow-y: auto;
+    margin: 0.5rem 0.5rem 0.5rem 0;
+  }
+
+  .field {
+    flex-grow: 0;
+    margin: 10px 0;
+    padding: 0px 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 50px;
+
+    &.image {
+      align-items: center;
+      border: 1px solid $color-gray-10;
+      border-radius: 3px;
+      display: flex;
+      justify-content: center;
+      height: 32px;
+      width: 32px;
+
+      svg {
+        height: 20px;
+        width: 24px;
+      }
+    }
+
+    &.check {
+      cursor: pointer;
+      height: 18px;
+      padding: 0;
+      width: 30px;
+      svg {
+        fill: $color-white;
+        max-width: 18px;
+        max-height: 18px;
+      }
+
+      & .checked {
+        svg {
+          background-color: $color-primary;
+        }
+      }
+
+      & .unchecked {
+        svg {
+          background-color: $color-gray-10;
+        }
+      }
+    }
+
+    &.title {
+      flex-grow: 1;
+      font-size: $fs12;
+      color: $color-black;
+    }
+
+    &.name {
+      flex-grow: 1;
+      font-size: $fs16;
+      color: $color-black;
+      width: 45%;
+      white-space: nowrap;
+    }
+
+    &.scale {
+      width: 25%;
+    }
+
+    &.scale,
+    &.extension {
+      color: $color-gray-30;
+      font-size: $fs12;
+    }
+  }
+
+  .header {
+    align-items: center;
+    border-bottom: 1px solid $color-gray-10;
+    display: flex;
+    flex-wrap: wrap;
+    height: 32px;
+    justify-content: space-between;
+    padding: 0.5rem 2rem;
+    margin: 0;
+    width: 100%;
+
+    .field {
+      margin: 0;
+    }
+  }
+
+  .row {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    height: 3rem;
+    margin: 0 0.5rem 0 2rem;
+    width: calc(100% - 2.5rem);
+
+    &:not(:first-child) {
+      border-top: 1px solid $color-gray-10;
+    }
+  }
+
+  .modal-footer {
+    padding: 18px;
+  }
+
+  .no-selection {
+    padding: 2rem 1rem 2rem 2rem;
+
+    img {
+      color: $color-primary-dark;
+      float: right;
+      margin-left: 4rem;
+      width: 176px;
+    }
+
+    a {
+      font-size: $fs12;
+    }
+
+    p {
+      color: $color-gray-40;
+      font-size: $fs16;
+      padding: 1rem 0 0 0;
     }
   }
 }

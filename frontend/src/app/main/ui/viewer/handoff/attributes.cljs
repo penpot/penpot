@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.handoff.attributes
   (:require
    [app.common.geom.shapes :as gsh]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.viewer.handoff.attributes.blur :refer [blur-panel]]
    [app.main.ui.viewer.handoff.attributes.fill :refer [fill-panel]]
    [app.main.ui.viewer.handoff.attributes.image :refer [image-panel]]
@@ -16,7 +17,6 @@
    [app.main.ui.viewer.handoff.attributes.svg :refer [svg-panel]]
    [app.main.ui.viewer.handoff.attributes.text :refer [text-panel]]
    [app.main.ui.viewer.handoff.exports :refer [exports]]
-   [app.util.i18n :as i18n]
    [rumext.alpha :as mf]))
 
 (def type->options
@@ -31,8 +31,9 @@
 
 (mf/defc attributes
   [{:keys [page-id file-id shapes frame]}]
-  (let [locale  (mf/deref i18n/locale)
-        shapes  (->> shapes (map #(gsh/translate-to-frame % frame)))
+  (let [shapes  (hooks/use-equal-memo shapes)
+        shapes  (mf/with-memo [shapes]
+                  (mapv #(gsh/translate-to-frame % frame) shapes))
         type    (if (= (count shapes) 1) (-> shapes first :type) :multiple)
         options (type->options type)]
     [:div.element-options
@@ -47,10 +48,9 @@
              :text   text-panel
              :svg    svg-panel)
         {:shapes shapes
-         :frame frame
-         :locale locale}])
-     (when-not (= :multiple type)
-       [:& exports
-        {:shape (first shapes)
-         :page-id page-id
-         :file-id file-id}])]))
+         :frame frame}])
+     [:& exports
+      {:shapes shapes
+       :type type
+       :page-id page-id
+       :file-id file-id}]]))

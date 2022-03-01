@@ -6,6 +6,7 @@
 
 (ns app.main.ui.viewer.handoff.selection-feedback
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.measurements :refer [selection-guides size-display measurement]]
    [rumext.alpha :as mf]))
@@ -21,10 +22,8 @@
 
 (defn resolve-shapes
   [objects ids]
-  (let [resolve-shape #(get objects %)]
-    (into [] (comp (map resolve-shape)
-                   (filter some?))
-          ids)))
+  (let [resolve-shape (d/getf objects)]
+    (into [] (keep resolve-shape) ids)))
 
 ;; ------------------------------------------------
 ;; HELPERS

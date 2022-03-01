@@ -9,7 +9,7 @@
    [app.common.spec.radius :as ctr]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.util.code-gen :as cg]
-   [app.util.i18n :refer [t]]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
@@ -32,41 +32,41 @@
    (cg/generate-css-props shape properties params)))
 
 (mf/defc layout-block
-  [{:keys [shape locale]}]
+  [{:keys [shape]}]
   (let [selrect (:selrect shape)
         {:keys [width height x y]} selrect]
     [:*
      [:div.attributes-unit-row
-      [:div.attributes-label (t locale "handoff.attributes.layout.width")]
+      [:div.attributes-label (tr "handoff.attributes.layout.width")]
       [:div.attributes-value width "px"]
       [:& copy-button {:data (copy-data selrect :width)}]]
 
      [:div.attributes-unit-row
-      [:div.attributes-label (t locale "handoff.attributes.layout.height")]
+      [:div.attributes-label (tr "handoff.attributes.layout.height")]
       [:div.attributes-value height "px"]
       [:& copy-button {:data (copy-data selrect :height)}]]
 
      (when (not= (:x shape) 0)
        [:div.attributes-unit-row
-        [:div.attributes-label (t locale "handoff.attributes.layout.left")]
+        [:div.attributes-label (tr "handoff.attributes.layout.left")]
         [:div.attributes-value x "px"]
         [:& copy-button {:data (copy-data selrect :x)}]])
 
      (when (not= (:y shape) 0)
        [:div.attributes-unit-row
-        [:div.attributes-label (t locale "handoff.attributes.layout.top")]
+        [:div.attributes-label (tr "handoff.attributes.layout.top")]
         [:div.attributes-value y "px"]
         [:& copy-button {:data (copy-data selrect :y)}]])
 
      (when (ctr/radius-1? shape)
        [:div.attributes-unit-row
-        [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
+        [:div.attributes-label (tr "handoff.attributes.layout.radius")]
         [:div.attributes-value (:rx shape 0) "px"]
         [:& copy-button {:data (copy-data shape :rx)}]])
 
      (when (ctr/radius-4? shape)
        [:div.attributes-unit-row
-        [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
+        [:div.attributes-label (tr "handoff.attributes.layout.radius")]
         [:div.attributes-value
          (:r1 shape) ", "
          (:r2 shape) ", "
@@ -76,19 +76,18 @@
 
      (when (not= (:rotation shape 0) 0)
        [:div.attributes-unit-row
-        [:div.attributes-label (t locale "handoff.attributes.layout.rotation")]
+        [:div.attributes-label (tr "handoff.attributes.layout.rotation")]
         [:div.attributes-value (:rotation shape) "deg"]
         [:& copy-button {:data (copy-data shape :rotation)}]])]))
 
 
 (mf/defc layout-panel
-  [{:keys [shapes locale]}]
+  [{:keys [shapes]}]
   [:div.attributes-block
    [:div.attributes-block-title
-    [:div.attributes-block-title-text (t locale "handoff.attributes.layout")]
+    [:div.attributes-block-title-text (tr "handoff.attributes.layout")]
     (when (= (count shapes) 1)
       [:& copy-button {:data (copy-data (first shapes))}])]
 
    (for [shape shapes]
-     [:& layout-block {:shape shape
-                       :locale locale}])])
+     [:& layout-block {:shape shape}])])

@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.media :as di]
+   [app.main.data.websocket :as ws]
    [app.main.repo :as rp]
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
@@ -167,7 +168,8 @@
         (when (is-authenticated? profile)
           (->> (rx/of (profile-fetched profile)
                       (fetch-teams)
-                      (get-redirect-event))
+                      (get-redirect-event)
+                      (ws/initialize))
                (rx/observe-on :async)))))))
 
 (s/def ::invitation-token ::us/not-empty-string)
@@ -268,10 +270,12 @@
 
      ptk/WatchEvent
      (watch [_ _ _]
-       ;; NOTE: We need the `effect` of the current event to be
-       ;; executed before the redirect.
-       (->> (rx/of (rt/nav :auth-login))
-            (rx/observe-on :async)))
+       (rx/merge
+        ;; NOTE: We need the `effect` of the current event to be
+        ;; executed before the redirect.
+        (->> (rx/of (rt/nav :auth-login))
+             (rx/observe-on :async))
+        (rx/of (ws/finalize))))
 
      ptk/EffectEvent
      (effect [_ _ _]

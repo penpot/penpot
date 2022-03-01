@@ -12,7 +12,6 @@
    [app.config :as cf]
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
-   [app.main.sentry :as sentry]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
@@ -26,7 +25,7 @@
   [error]
   (cond
     (instance? ExceptionInfo error)
-    (-> error sentry/capture-exception ex-data ptk/handle-error)
+    (-> error ex-data ptk/handle-error)
 
     (map? error)
     (ptk/handle-error error)
@@ -34,7 +33,6 @@
     :else
     (let [hint (ex-message error)
           msg  (dm/str "Internal Error: " hint)]
-      (sentry/capture-exception error)
       (ts/schedule (st/emitf (rt/assign-exception error)))
 
       (js/console.group msg)
@@ -68,7 +66,8 @@
 ;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From
 ;; the user perspective a error flash message should be visualized but
-;; user can continue operate on the application.
+;; user can continue operate on the application. Can happen in backend
+;; and frontend.
 (defmethod ptk/handle-error :validation
   [error]
   (ts/schedule
@@ -92,6 +91,7 @@
 
 
 ;; Error on parsing an SVG
+;; TODO: looks unused and deprecated
 (defmethod ptk/handle-error :svg-parser
   [_]
   (ts/schedule
@@ -100,6 +100,7 @@
               :type :error
               :timeout 3000}))))
 
+;; TODO: should be handled in the event and not as general error handler
 (defmethod ptk/handle-error :comment-error
   [_]
   (ts/schedule
@@ -160,10 +161,9 @@
 (defn on-unhandled-error
   [error]
   (if (instance? ExceptionInfo error)
-    (-> error sentry/capture-exception ex-data ptk/handle-error)
+    (-> error ex-data ptk/handle-error)
     (let [hint (ex-message error)
           msg  (dm/str "Unhandled Internal Error: " hint)]
-      (sentry/capture-exception error)
       (ts/schedule (st/emitf (rt/assign-exception error)))
       (js/console.group msg)
       (ex/ignoring (js/console.error error))

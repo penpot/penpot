@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.shortcuts
   (:require
    [app.main.data.events :as ev]
+   [app.main.data.exports :as de]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -61,9 +62,14 @@
                          :command (ds/c-mod "shift+r")
                          :fn #(st/emit! (toggle-layout-flag :rules))}
 
-   :select-all          {:tooltip (ds/meta "A")
-                         :command (ds/c-mod "a")
-                         :fn #(st/emit! (dw/select-all))}
+   :export-shapes     {:tooltip (ds/meta-shift "E")
+                       :command (ds/c-mod "shift+e")
+                       :fn #(st/emit!
+                             (de/show-workspace-export-dialog))}
+
+   :select-all        {:tooltip (ds/meta "A")
+                       :command (ds/c-mod "a")
+                       :fn #(st/emit! (dw/select-all))}
 
    :toggle-grid         {:tooltip (ds/meta "'")
                          :command (ds/c-mod "'")
@@ -329,7 +335,7 @@
    :align-vcenter        {:tooltip (ds/alt "V")
                           :command "alt+v"
                           :fn #(st/emit! (dw/align-objects :vcenter))}
-  
+
    :align-bottom         {:tooltip (ds/alt "S")
                           :command "alt+s"
                           :fn #(st/emit! (dw/align-objects :vbottom))}
@@ -365,7 +371,7 @@
    :toggle-focus-mode    {:command "f"
                           :tooltip "F"
                           :fn #(st/emit! (dw/toggle-focus-mode))}
-   
+
    :thumbnail-set {:tooltip (ds/shift "T")
                    :command "shift+t"
                    :fn #(st/emit! (dw/toggle-file-thumbnail-selected))}
