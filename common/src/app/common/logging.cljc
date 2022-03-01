@@ -36,12 +36,12 @@
        (reduce-kv #(.with ^MapMessage %1 (name %2) %3) message m))))
 
 #?(:clj
-  (def logger-context
-    (LogManager/getContext false)))
+   (def logger-context
+     (LogManager/getContext false)))
 
 #?(:clj
-  (def logging-agent
-    (agent nil :error-mode :continue)))
+   (def logging-agent
+     (agent nil :error-mode :continue)))
 
 (defn- simple-prune
   ([s] (simple-prune s (* 1024 1024)))

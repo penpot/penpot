@@ -350,7 +350,6 @@
           :opt-un [::lang ::theme]))
 
 (sv/defmethod ::update-profile
-  {::async/dispatch :default}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (let [profile (update-profile conn params)]

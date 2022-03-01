@@ -6,6 +6,7 @@
 
 (ns app.common.spec.change
   (:require
+   [app.common.spec :as us]
    [app.common.spec.color :as color]
    [app.common.spec.file :as file]
    [app.common.spec.page :as page]
@@ -124,16 +125,25 @@
 (defmethod change-spec :add-recent-color [_]
   (s/keys :req-un [:internal.changes.add-recent-color/color]))
 
-(s/def :internal.changes.media/object ::file/media-object)
 
+(s/def :internal.changes.add-media/object ::file/media-object)
 (defmethod change-spec :add-media [_]
-  (s/keys :req-un [:internal.changes.media/object]))
+  (s/keys :req-un [:internal.changes.add-media/object]))
 
-(s/def :internal.changes.media.mod/object
-  (s/and ::file/media-object #(contains? % :id)))
+
+(s/def :internal.changes.mod-media/width ::us/safe-integer)
+(s/def :internal.changes.mod-media/height ::us/safe-integer)
+(s/def :internal.changes.mod-media/path (s/nilable string?))
+(s/def :internal.changes.mod-media/mtype string?)
+(s/def :internal.changes.mod-media/object
+  (s/keys :req-un [::id]
+          :opt-un [:internal.changes.mod-media/width
+                   :internal.changes.mod-media/height
+                   :internal.changes.mod-media/path
+                   :internal.changes.mod-media/mtype]))
 
 (defmethod change-spec :mod-media [_]
-  (s/keys :req-un [:internal.changes.media.mod/object]))
+  (s/keys :req-un [:internal.changes.mod-media/object]))
 
 (defmethod change-spec :del-media [_]
   (s/keys :req-un [::id]))
