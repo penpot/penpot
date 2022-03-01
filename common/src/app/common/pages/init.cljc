@@ -63,7 +63,11 @@
    {:type :path
     :name "Path-1"
     :fills []
-    :strokes []}
+    :strokes [{:stroke-style :solid
+               :stroke-alignment :center
+               :stroke-width 2
+               :stroke-color clr/black
+               :stroke-opacity 1}]}
 
    {:type :frame
     :name "Artboard-1"
