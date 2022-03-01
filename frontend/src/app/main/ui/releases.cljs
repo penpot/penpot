@@ -10,8 +10,9 @@
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.releases.common :as rc]
-   [app.main.ui.releases.v1-10]
+   [app.main.ui.releases.v1-12]
    [app.main.ui.releases.v1-11]
+   [app.main.ui.releases.v1-10]
    [app.main.ui.releases.v1-4]
    [app.main.ui.releases.v1-5]
    [app.main.ui.releases.v1-6]
@@ -82,4 +83,4 @@
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "1.11")))
+  (rc/render-release-notes (assoc params :version "1.12")))
