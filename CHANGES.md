@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 1.12.1-beta
+### :boom: Breaking changes
+
+### :sparkles: New features
+
+### :bug: Bugs fixed
+
+- Fix length of names in sidebar [Taiga #2962](https://tree.taiga.io/project/penpot/issue/2962)
+
+### :heart: Community contributions by (Thank you!)
+
 ## 1.12.0-beta
 
 ### :boom: Breaking changes
