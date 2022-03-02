@@ -19,6 +19,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [clojure.set :refer [union]]
    [rumext.alpha :as mf]))
 
 (def measure-attrs
@@ -29,6 +30,17 @@
    :rx :ry
    :r1 :r2 :r3 :r4
    :selrect])
+
+(def ^:private type->options
+  {:bool    #{:size :position :rotation}
+   :circle  #{:size :position :rotation}
+   :frame   #{:size :position :rotation :radius :presets}
+   :group   #{:size :position :rotation}
+   :image   #{:size :position :rotation :radius}
+   :path    #{:size :position :rotation}
+   :rect    #{:size :position :rotation :radius}
+   :svg-raw #{:size :position :rotation}
+   :text    #{:size :position :rotation}})
 
 (defn- attr->string [attr values]
   (let [value (attr values)]
@@ -42,8 +54,11 @@
 
 ;; -- User/drawing coords
 (mf/defc measures-menu
-  [{:keys [options ids ids-with-children values type] :as props}]
-  (let [options (or options #{:size :position :rotation :radius})
+  [{:keys [ids ids-with-children values type all-types] :as props}]
+  (let [options (if (= type :multiple)
+                  (reduce #(union %1 %2) (map #(get type->options %) all-types))
+                  (get type->options type))
+
         ids-with-children (or ids-with-children ids)
 
         old-shapes (deref (refs/objects-by-id ids))
@@ -183,9 +198,11 @@
     [:*
      [:div.element-set
       [:div.element-set-content
+
        ;; FRAME PRESETS
-       (when (= type :frame)
-         [:div.row-flex
+       (when (and (options :presets)
+                  (or (nil? all-types) (= (count all-types) 1))) ;; Dont' show presets if multi selected
+         [:div.row-flex                                          ;; some frames and some non frames
           [:div.presets.custom-select.flex-grow {:on-click #(reset! show-presets-dropdown? true)}
            [:span (tr "workspace.options.size-presets")]
            [:span.dropdown-button i/arrow-down]
@@ -251,7 +268,7 @@
                               :precision 2}]]])
 
        ;; ROTATION
-       (when (and (options :rotation) (not (= type :frame)))
+       (when (options :rotation)
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.rotation")]
           [:div.input-element.degrees {:title (tr "workspace.options.rotation")}
@@ -274,7 +291,7 @@
               :value (attr->string :rotation values)}]])
 
        ;; RADIUS
-       (when (and (options :radius) (some? radius-mode))
+       (when (options :radius)
          [:div.row-flex
           [:div.radius-options
            [:div.radius-icon.tooltip.tooltip-bottom
@@ -343,7 +360,7 @@
                 :on-click select-all
                 :on-change on-radius-r4-change
                 :value (attr->string :r4 values)}]]])])]]]))
-   
+
      (def +size-presets+
        [{:name "APPLE"}
         {:name "iPhone 12/12 Pro"

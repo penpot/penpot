@@ -30,17 +30,11 @@
 ;; shapes that has border radius, and so it hasn't :rx nor :r1. 
 ;; In this case operations must leave shape untouched.
 
-(defn has-radius?
-  [shape]
-  (#{:rect :image :frame} (:type shape)))
-
 (defn radius-mode
   [shape]
-  (cond (:rx shape) :radius-1
-        (:r1 shape) :radius-4
-        :else       (if (has-radius? shape)
-                      :radius-1
-                      nil)))
+  (if (:r1 shape)
+    :radius-4
+    :radius-1))
 
 (defn radius-1?
   [shape]

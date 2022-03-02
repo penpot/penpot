@@ -25,8 +25,7 @@
     [:*
      [:& measures-menu {:ids [(:id shape)]
                         :values measure-values
-                        :type type
-                        :options #{:size :position :rotation :presets :radius}}]
+                        :type type}]
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]
