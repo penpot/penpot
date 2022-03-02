@@ -6,6 +6,8 @@
 
 (ns app.main.ui.workspace.sidebar.options
   (:require
+   [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -55,28 +57,37 @@
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
   [{:keys [selected section shapes shapes-with-children page-id file-id]}]
-  [:div.tool-window
-   [:div.tool-window-content
-    [:& tab-container {:on-change-tab #(st/emit! (udw/set-options-mode %))
-                       :selected section}
-     [:& tab-element {:id :design
-                      :title (tr "workspace.options.design")}
-      [:div.element-options
-       [:& align-options]
-       [:& bool-options]
-       (case (count selected)
-         0 [:& page/options]
-         1 [:& shape-options {:shape (first shapes)
-                              :page-id page-id
-                              :file-id file-id
-                              :shapes-with-children shapes-with-children}]
-         [:& multiple/options {:shapes-with-children shapes-with-children
-                               :shapes shapes}])]]
+  (let [drawing           (mf/deref refs/workspace-drawing)
+        base-objects      (-> (mf/deref refs/workspace-page-objects))
+        modifiers         (mf/deref refs/workspace-modifiers)
+        objects-modified  (mf/with-memo [base-objects modifiers]
+                            (gsh/merge-modifiers base-objects modifiers))
+        selected-shapes   (into [] (keep (d/getf objects-modified)) selected)]
+    [:div.tool-window
+     [:div.tool-window-content
+      [:& tab-container {:on-change-tab #(st/emit! (udw/set-options-mode %))
+                         :selected section}
+       [:& tab-element {:id :design
+                        :title (tr "workspace.options.design")}
+        [:div.element-options
+         [:& align-options]
+         [:& bool-options]
+         (cond
+           (d/not-empty? drawing) [:& shape-options {:shape (:object drawing)
+                                                     :page-id page-id
+                                                     :file-id file-id}]
+           (= 0 (count selected)) [:& page/options]
+           (= 1 (count selected)) [:& shape-options {:shape (first selected-shapes)
+                                                     :page-id page-id
+                                                     :file-id file-id
+                                                     :shapes-with-children shapes-with-children}]
+           :else [:& multiple/options {:shapes-with-children shapes-with-children
+                                       :shapes selected-shapes}])]]
 
-     [:& tab-element {:id :prototype
-                      :title (tr "workspace.options.prototype")}
-      [:div.element-options
-       [:& interactions-menu {:shape (first shapes)}]]]]]])
+       [:& tab-element {:id :prototype
+                        :title (tr "workspace.options.prototype")}
+        [:div.element-options
+         [:& interactions-menu {:shape (first shapes)}]]]]]]))
 
 ;; TODO: this need optimizations, selected-objects and
 ;; selected-objects-with-children are derefed always but they only

@@ -54,14 +54,17 @@
 
 ;; -- User/drawing coords
 (mf/defc measures-menu
-  [{:keys [ids ids-with-children values type all-types] :as props}]
+  [{:keys [ids ids-with-children values type all-types shape] :as props}]
+         
   (let [options (if (= type :multiple)
                   (reduce #(union %1 %2) (map #(get type->options %) all-types))
                   (get type->options type))
 
         ids-with-children (or ids-with-children ids)
 
-        old-shapes (deref (refs/objects-by-id ids))
+        old-shapes (if (= type :multiple)
+                     (deref (refs/objects-by-id ids))
+                     [shape])
         frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
 
         shapes (as-> old-shapes $
@@ -77,6 +80,10 @@
                  (cond-> values
                    (not= (:width values) :multiple) (assoc :width width)
                    (not= (:height values) :multiple) (assoc :height height)))
+
+        values (let [{:keys [rotation]} (-> shapes first)]
+                 (cond-> values
+                   (not= (:rotation values) :multiple) (assoc :rotation rotation)))
 
         proportion-lock (:proportion-lock values)
 
@@ -134,7 +141,6 @@
          (fn [value]
            (st/emit! (udw/increase-rotation ids value))))
 
-
         on-switch-to-radius-1
         (mf/use-callback
          (mf/deps ids)
@@ -154,7 +160,6 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [value]
-           (prn "entro en on radius 1")
            (st/emit! (dch/update-shapes ids-with-children #(ctr/set-radius-1 % value)))))
 
         on-radius-multi-change

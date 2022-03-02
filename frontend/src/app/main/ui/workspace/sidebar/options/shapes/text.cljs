@@ -62,7 +62,8 @@
      [:& measures-menu
       {:ids ids
        :type type
-       :values (select-keys shape measure-attrs)}]
+       :values (select-keys shape measure-attrs)
+       :shape shape}]
 
      [:& constraints-menu
       {:ids ids

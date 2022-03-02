@@ -41,7 +41,7 @@
         [comp-ids       comp-values]       [[(:id shape)] (select-keys shape component-attrs)]]
 
     [:div.options
-     [:& measures-menu {:type type :ids measure-ids :values measure-values}]
+     [:& measures-menu {:type type :ids measure-ids :values measure-values :shape shape}]
      [:& component-menu {:ids comp-ids :values comp-values}]
      [:& constraints-menu {:ids constraint-ids :values constraint-values}]
      [:& layer-menu {:type type :ids layer-ids :values layer-values}]
