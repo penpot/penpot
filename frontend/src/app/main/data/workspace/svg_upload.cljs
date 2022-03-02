@@ -399,7 +399,7 @@
             new-shape (dwc/make-new-shape shape objects selected)
             changes   (-> changes
                           (pcb/with-objects objects)
-                          (pcb/add-obj new-shape)
+                          (pcb/add-object new-shape)
                           (pcb/change-parent parent-id [new-shape] index))
 
             unames  (conj unames (:name new-shape))
@@ -480,7 +480,7 @@
               ;; Creates the root shape
               new-shape (dwc/make-new-shape root-shape objects selected)
               changes   (-> (pcb/empty-changes it page-id)
-                            (pcb/add-obj new-shape))
+                            (pcb/add-object new-shape))
 
               root-attrs (-> (:attrs svg-data)
                              (usvg/format-styles))
