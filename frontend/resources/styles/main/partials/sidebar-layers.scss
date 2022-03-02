@@ -183,7 +183,7 @@
 }
 
 input.element-name {
-  max-width: 130px;
+  max-width: 75%;
   width: 100%;
 }
 
@@ -191,7 +191,7 @@ span.element-name {
   color: $color-gray-20;
   display: block;
   font-size: $fs12;
-  max-width: 130px;
+  max-width: 75%;
   min-width: 40px;
   min-height: 16px;
   overflow-x: hidden;
