@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.main.snap :as snap]
@@ -28,8 +27,6 @@
 (mf/defc snap-point
   [{:keys [point zoom]}]
   (let [{:keys [x y]} point
-        x (mth/round x)
-        y (mth/round y)
         cross-width (/ 3 zoom)]
     [:g
      [:line {:x1 (- x cross-width)
@@ -45,15 +42,15 @@
 
 (mf/defc snap-line
   [{:keys [snap point zoom]}]
-  [:line {:x1 (mth/round (:x snap))
-          :y1 (mth/round (:y snap))
-          :x2 (mth/round (:x point))
-          :y2 (mth/round (:y point))
+  [:line {:x1 (:x snap)
+          :y1 (:y snap)
+          :x2 (:x point)
+          :y2 (:y point)
           :style {:stroke line-color :stroke-width (str (/ line-width zoom))}
           :opacity line-opacity}])
 
 (defn get-snap
-  [coord {:keys [shapes page-id remove-snap? modifiers]}]
+  [coord {:keys [shapes page-id remove-snap? zoom modifiers]}]
   (let [shape (if (> (count shapes) 1)
                 (->> shapes (map gsh/transform-shape) gsh/selection-rect (gsh/setup {:type :rect}))
                 (->> shapes (first)))
@@ -69,7 +66,7 @@
                         (->> (sp/shape-snap-points shape)
                              (map #(vector frame-id %)))))
          (rx/flat-map (fn [[frame-id point]]
-                        (->> (snap/get-snap-points page-id frame-id remove-snap? point coord)
+                        (->> (snap/get-snap-points page-id frame-id remove-snap? zoom point coord)
                              (rx/map #(vector point % coord)))))
          (rx/reduce conj []))))
 
@@ -119,12 +116,19 @@
     (mf/use-effect
      (fn []
        (let [sub (->> subject
-                      (rx/switch-map #(rx/combine-latest (get-snap :x %)
-                                                         (get-snap :y %)))
-                      (rx/map (fn [result]
-                                (apply d/concat-vec (seq result))))
-                      (rx/subs #(let [rs (filter (fn [[_ snaps _]] (> (count snaps) 0)) %)]
-                                  (reset! state rs))))]
+                      (rx/switch-map
+                       (fn [props]
+                         (->> (get-snap :y props)
+                              (rx/combine-latest (get-snap :x props)))))
+
+                      (rx/map
+                       (fn [result]
+                         (apply d/concat-vec (seq result))))
+
+                      (rx/subs
+                       (fn [data]
+                         (let [rs (filter (fn [[_ snaps _]] (> (count snaps) 0)) data)]
+                           (reset! state rs)))))]
 
          ;; On unmount callback
          #(rx/dispose! sub))))

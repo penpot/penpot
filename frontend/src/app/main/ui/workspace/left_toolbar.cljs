@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.left-toolbar
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.math :as mth]
    [app.common.media :as cm]
    [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
@@ -40,8 +39,8 @@
            ;; We don't want to add a ref because that redraws the component
            ;; for everychange. Better direct access on the callback.
            (let [vbox   (deref refs/vbox)
-                 x      (mth/round (+ (:x vbox) (/ (:width vbox) 2)))
-                 y      (mth/round (+ (:y vbox) (/ (:height vbox) 2)))
+                 x      (+ (:x vbox) (/ (:width vbox) 2))
+                 y      (+ (:y vbox) (/ (:height vbox) 2))
                  params {:file-id (:id file)
                          :blobs (seq blobs)
                          :position (gpt/point x y)}]

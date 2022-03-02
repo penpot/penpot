@@ -7,7 +7,6 @@
 (ns app.main.ui.viewer.handoff.attributes.stroke
   (:require
    [app.common.data :as d]
-   [app.common.math :as mth]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
@@ -67,7 +66,7 @@
            stroke-alignment (or stroke-alignment :center)]
        [:div.attributes-stroke-row
         [:div.attributes-label (t locale "handoff.attributes.stroke.width")]
-        [:div.attributes-value (mth/precision (:stroke-width shape) 2) "px"]
+        [:div.attributes-value (:stroke-width shape) "px"]
         [:div.attributes-value (->> stroke-style d/name (str "handoff.attributes.stroke.style.") (t locale))]
         [:div.attributes-label (->> stroke-alignment d/name (str "handoff.attributes.stroke.alignment.") (t locale))]
         [:& copy-button {:data (copy-stroke-data shape)}]])]))

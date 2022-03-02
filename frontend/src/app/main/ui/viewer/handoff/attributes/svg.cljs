@@ -6,15 +6,11 @@
 
 (ns app.main.ui.viewer.handoff.attributes.svg
   (:require
-   #_[app.common.math :as mth]
-   #_[app.main.ui.icons :as i]
-   #_[app.util.code-gen :as cg]
    [app.common.data :as d]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
-
 
 (defn map->css [attr]
   (->> attr

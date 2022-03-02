@@ -209,7 +209,7 @@
      ;; and updates the selrect accordingly
      [:*
       [:g.text-shape {:ref on-change-node
-                      :opacity (when show-svg-text? 0)
+                      :opacity (when show-svg-text? 0.2)
                       :pointer-events "none"}
 
        ;; The `:key` prop here is mandatory because the

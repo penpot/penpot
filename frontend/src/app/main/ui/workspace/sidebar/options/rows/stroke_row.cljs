@@ -97,7 +97,6 @@
        [:> numeric-input
         {:min 0
          :value (-> (:stroke-width stroke) width->string)
-         :precision 2
          :placeholder (tr "settings.multiple")
          :on-change (on-stroke-width-change index)
          :on-click select-all

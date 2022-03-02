@@ -91,8 +91,8 @@
 (def empty-selrect
   {:x  0    :y  0
    :x1 0    :y1 0
-   :x2 1    :y2 1
-   :width 1 :height 1})
+   :x2 0.01    :y2 0.01
+   :width 0.01 :height 0.01})
 
 (defn make-minimal-shape
   [type]
@@ -111,16 +111,16 @@
       (not= :path (:type shape))
       (assoc :x 0
              :y 0
-             :width 1
-             :height 1
+             :width 0.01
+             :height 0.01
              :selrect {:x 0
                        :y 0
                        :x1 0
                        :y1 0
-                       :x2 1
-                       :y2 1
-                       :width 1
-                       :height 1}))))
+                       :x2 0.01
+                       :y2 0.01
+                       :width 0.01
+                       :height 0.01}))))
 
 (defn make-minimal-group
   [frame-id selection-rect group-name]

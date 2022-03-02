@@ -108,9 +108,12 @@
   (= v base))
 
 (defn translate-matrix
-  [{x :x y :y :as pt}]
-  (assert (gpt/point? pt))
-  (Matrix. 1 0 0 1 x y))
+  ([{x :x y :y :as pt}]
+   (assert (gpt/point? pt))
+   (Matrix. 1 0 0 1 x y))
+  
+  ([x y]
+   (translate-matrix (gpt/point x y))))
 
 (defn scale-matrix
   ([pt center]

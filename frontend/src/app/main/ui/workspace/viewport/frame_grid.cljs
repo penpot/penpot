@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.viewport.frame-grid
   (:require
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
    [app.util.geom.grid :as gg]
@@ -58,10 +57,10 @@
     [:g.grid
      (for [{:keys [x y width height] :as area} (gg/grid-areas frame grid)]
        [:rect {:key (str key "-" x "-" y)
-               :x (mth/round x)
-               :y (mth/round y)
-               :width (- (mth/round (+ x width)) (mth/round x))
-               :height (- (mth/round (+ y height)) (mth/round y))
+               :x x
+               :y y
+               :width (- (+ x width) x)
+               :height (- (+ y height) y)
                :style style}])]))
 
 (mf/defc grid-display-frame

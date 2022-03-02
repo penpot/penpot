@@ -281,9 +281,7 @@
          (fn [point]
            (let [point (gpt/transform point transform-inverse)
                  start-x (/ (- (:x point) x) width)
-                 start-y (/ (- (:y point) y) height)
-                 start-x (mth/precision start-x 2)
-                 start-y (mth/precision start-y 2)]
+                 start-y (/ (- (:y point) y) height)]
              (change! {:start-x start-x :start-y start-y}))))
 
         on-change-finish
@@ -292,9 +290,7 @@
          (fn [point]
            (let [point (gpt/transform point transform-inverse)
                  end-x (/ (- (:x point) x) width)
-                 end-y (/ (- (:y point) y) height)
-                 end-x (mth/precision end-x 2)
-                 end-y (mth/precision end-y 2)]
+                 end-y (/ (- (:y point) y) height)]
              (change! {:end-x end-x :end-y end-y}))))
 
         on-change-width

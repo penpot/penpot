@@ -83,7 +83,7 @@
          base            #js {:textDecoration text-decoration
                               :textTransform text-transform
                               :lineHeight (or line-height "inherit")
-                              :color (if show-text? text-color "transparent")
+                              :color (if show-text? text-color "red")
                               :caretColor (or text-color "black")
                               :overflowWrap "initial"}
 

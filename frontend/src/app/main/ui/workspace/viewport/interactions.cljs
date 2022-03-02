@@ -146,12 +146,12 @@
 
           :else
           (connect-to-point orig-shape
-                            {:x (+ (:x2 (:selrect orig-shape)) 100)
-                             :y (+ (- (:y1 (:selrect orig-shape)) 50)
+                            {:x (+ (:x2 (:selrect orig-shape)) (/ 100 zoom))
+                             :y (+ (- (:y1 (:selrect orig-shape)) (/ 50 zoom))
                                    (/ (* level 32) zoom))}))
 
-        orig-dx (if (= orig-pos :right) 100 -100)
-        dest-dx (if (= dest-pos :right) 100 -100)
+        orig-dx (/ (if (= orig-pos :right) 100 -100) zoom)
+        dest-dx (/ (if (= dest-pos :right) 100 -100) zoom)
 
         path ["M" orig-x orig-y "C" (+ orig-x orig-dx) orig-y (+ dest-x dest-dx) dest-y dest-x dest-y]
         pdata (str/join " " path)
@@ -182,7 +182,8 @@
                :d pdata}]
 
        (when dest-shape
-         [:& outline {:shape dest-shape
+         [:& outline {:zoom zoom
+                      :shape dest-shape
                       :color "var(--color-primary)"}])
 
        [:& interaction-marker {:index index

@@ -7,8 +7,7 @@
 (ns app.common.geom.shapes.common
   (:require
    [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.math :as mth]))
+   [app.common.geom.point :as gpt]))
 
 (defn center-rect
   [{:keys [x y width height]}]

@@ -7,7 +7,6 @@
 (ns app.common.geom.shapes.rect
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.common :as gco]
    [app.common.math :as mth]))
 
 (defn rect->points [{:keys [x y width height]}]
@@ -130,10 +129,3 @@
        (>= (:y1 sr2) (:y1 sr1))
        (<= (:y2 sr2) (:y2 sr1))))
 
-(defn round-selrect
-  [selrect]
-  (-> selrect
-      (update :x mth/round)
-      (update :y mth/round)
-      (update :width mth/round)
-      (update :height mth/round)))

@@ -27,8 +27,8 @@
         shapev  (gpt/point width height)
         deltav  (gpt/to-vec initial point)
         scalev  (-> (gpt/divide (gpt/add shapev deltav) shapev)
-                    (update :x truncate-zero 1)
-                    (update :y truncate-zero 1))
+                    (update :x truncate-zero 0.01)
+                    (update :y truncate-zero 0.01))
         scalev  (if lock?
                   (let [v (max (:x scalev) (:y scalev))]
                     (gpt/point v v))
@@ -45,9 +45,7 @@
 (defn move-drawing
   [{:keys [x y]}]
   (fn [state]
-    (let [x (mth/precision x 0)
-          y (mth/precision y 0)]
-      (update-in state [:workspace-drawing :object] gsh/absolute-move (gpt/point x y)))))
+    (update-in state [:workspace-drawing :object] gsh/absolute-move (gpt/point x y))))
 
 (defn handle-drawing-box []
   (ptk/reify ::handle-drawing-box
@@ -72,7 +70,7 @@
 
             shape (-> state
                       (get-in [:workspace-drawing :object])
-                      (gsh/setup {:x (:x initial) :y (:y initial) :width 1 :height 1})
+                      (gsh/setup {:x (:x initial) :y (:y initial) :width 0.01 :height 0.01})
                       (assoc :frame-id fid)
                       (assoc :initialized? true)
                       (assoc :click-draw? true))]
@@ -85,7 +83,7 @@
               (rx/map move-drawing))
 
          (->> ms/mouse-position
-              (rx/filter #(> (gpt/distance % initial) 2))
+              (rx/filter #(> (gpt/distance % initial) (/ 2 zoom)))
               (rx/with-latest vector ms/mouse-position-shift)
               (rx/switch-map
                (fn [[point :as current]]

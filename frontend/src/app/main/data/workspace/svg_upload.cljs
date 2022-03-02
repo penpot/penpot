@@ -11,7 +11,6 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :refer [max-safe-int min-safe-int]]

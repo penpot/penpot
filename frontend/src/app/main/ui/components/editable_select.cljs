@@ -7,7 +7,7 @@
 (ns app.main.ui.components.editable-select
   (:require
    [app.common.data :as d]
-   [app.common.math :as math]
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
@@ -29,8 +29,8 @@
         max-val (get params :max)
 
         num? (fn [val] (and (number? val)
-                            (not (math/nan? val))
-                            (math/finite? val)))
+                            (not (mth/nan? val))
+                            (mth/finite? val)))
 
         emit-blur? (mf/use-ref nil)
         font-size-wrapper-ref (mf/use-ref)
@@ -58,8 +58,7 @@
         handle-change-input
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value)
-                value (-> (or (d/parse-double value) value)
-                          (math/precision 2))]
+                value (or (d/parse-double value) value)]
             (set-value value)))
 
         on-node-load
@@ -89,8 +88,7 @@
                (when (or up? down?)
                  (dom/prevent-default event)
                  (let [value (-> event dom/get-target dom/get-value)
-                       value (-> (or (d/parse-double value) value)
-                                 (math/precision 2))
+                       value (or (d/parse-double value) value)
 
                        increment (cond
                                    (kbd/shift? event)
@@ -102,8 +100,7 @@
                                    :else
                                    (if up? 1 -1))
 
-                       new-value (-> (+ value increment)
-                                     (math/precision 2))
+                       new-value (+ value increment)
 
                        new-value (cond
                                    (and (num? min-val) (< new-value min-val)) min-val
@@ -135,7 +132,7 @@
       (let [wrapper-node (mf/ref-val font-size-wrapper-ref)
             node (dom/get-element-by-class "checked-element is-selected" wrapper-node)
             nodes (dom/get-elements-by-class "checked-element-value" wrapper-node)
-            closest (fn [a b] (first (sort-by #(math/abs (- % b)) a)))
+            closest (fn [a b] (first (sort-by #(mth/abs (- % b)) a)))
             closest-value (str (closest options value))]
         (when (:is-open? @state)
           (if  (some? node)

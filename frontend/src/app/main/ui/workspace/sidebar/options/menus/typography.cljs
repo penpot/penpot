@@ -386,7 +386,6 @@
        {:min -200
         :max 200
         :step 0.1
-        :precision 2
         :value (attr->string line-height)
         :placeholder (tr "settings.multiple")
         :on-change #(handle-change % :line-height)
@@ -400,7 +399,6 @@
        {:min -200
         :max 200
         :step 0.1
-        :precision 2
         :value (attr->string letter-spacing)
         :placeholder (tr "settings.multiple")
         :on-change #(handle-change % :letter-spacing)

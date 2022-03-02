@@ -7,7 +7,6 @@
 (ns debug
   (:require
    [app.common.data :as d]
-   [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
@@ -130,7 +129,7 @@
                             ts (/ 1000 (* (- cur @last)))
                             val (+ @avg (* (- ts @avg) 0.1))]
 
-                        (obj/set! node "innerText" (mth/precision val 0))
+                        (obj/set! node "innerText" val)
                         (vreset! last cur)
                         (vreset! avg val)
                         (do-thing)))))]

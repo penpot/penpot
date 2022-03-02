@@ -49,12 +49,12 @@
        [:div.input-wrapper
         [:span
          [:p.nudge-subtitle (tr "modals.small-nudge")]
-         [:> numeric-input {:min 1
+         [:> numeric-input {:min 0.01
                             :value (:small nudge)
                             :on-change update-small}]]]
        [:div.input-wrapper
         [:span
          [:p.nudge-subtitle (tr "modals.big-nudge")]
-         [:> numeric-input {:min 1
+         [:> numeric-input {:min 0.01
                             :value (:big nudge)
                             :on-change update-big}]]]]]]))

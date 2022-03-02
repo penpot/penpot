@@ -8,7 +8,7 @@
   "Performance profiling for react components."
   (:require-macros [app.util.perf])
   (:require
-   [app.common.math :as math]
+   [app.common.math :as mth]
    [rumext.alpha :as mf]
    [goog.functions :as f]
    ["react" :as react]

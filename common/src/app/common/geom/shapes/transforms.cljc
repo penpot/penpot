@@ -249,8 +249,8 @@
 
         ;; This rectangle is the new data for the current rectangle. We want to change our rectangle
         ;; to have this width, height, x, y
-        new-width  (max 1 (:width points-temp-dim))
-        new-height (max 1 (:height points-temp-dim))
+        new-width  (max 0.01 (:width points-temp-dim))
+        new-height (max 0.01 (:height points-temp-dim))
         selrect    (gco/make-centered-selrect center new-width new-height)
 
         rect-points  (gpr/rect->points selrect)
@@ -263,7 +263,7 @@
 (defn- apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
-  [shape transform-mtx round-coords?]
+  [shape transform-mtx]
 
   (let [points'  (:points shape)
         points   (gco/transform-points points' transform-mtx)
@@ -276,8 +276,8 @@
           [(gpr/points->selrect points) nil nil]
           (adjust-rotated-transform shape points))
 
-        selrect (cond-> selrect
-                  round-coords? gpr/round-selrect)
+        ;;selrect (cond-> selrect
+        ;;          round-coords? gpr/round-selrect)
 
         ;; Redondear los points?
         base-rotation  (or (:rotation shape) 0)
@@ -345,7 +345,7 @@
         ;; need to remove the flip flags
         (assoc :flip-x false)
         (assoc :flip-y false)
-        (apply-transform (gmt/matrix) true))))
+        (apply-transform (gmt/matrix)))))
 
 (defn update-mask-selrect
   [masked-group children]
@@ -525,7 +525,6 @@
                                             (d/parse-double)
                                             (* (get-in modifiers [:resize-vector :x] 1))
                                             (* (get-in modifiers [:resize-vector-2 :x] 1))
-                                            (mth/precision 2)
                                             (str))]
                           (attrs/merge attrs {:font-size font-size})))]
       (update shape :content #(txt/transform-nodes
@@ -535,35 +534,32 @@
     shape))
 
 (defn apply-modifiers
-  [shape modifiers round-coords?]
+  [shape modifiers]
   (let [center (gco/center-shape shape)
         transform (modifiers->transform center modifiers)]
-    (apply-transform shape transform round-coords?)))
+    (apply-transform shape transform)))
 
 (defn transform-shape
-  ([shape]
-   (transform-shape shape nil))
+  [shape]
+  (let [modifiers (:modifiers shape)]
+    (cond
+      (nil? modifiers)
+      shape
 
-  ([shape {:keys [round-coords?] :or {round-coords? true}}]
-   (let [modifiers (:modifiers shape)]
-     (cond
-       (nil? modifiers)
-       shape
+      (empty-modifiers? modifiers)
+      (dissoc shape :modifiers)
 
-       (empty-modifiers? modifiers)
-       (dissoc shape :modifiers)
+      :else
+      (let [shape     (apply-displacement shape)
+            modifiers (:modifiers shape)]
+        (cond-> shape
+          (not (empty-modifiers? modifiers))
+          (-> (set-flip modifiers)
+              (apply-modifiers modifiers)
+              (apply-text-resize modifiers))
 
-       :else
-       (let [shape     (apply-displacement shape)
-             modifiers (:modifiers shape)]
-         (cond-> shape
-           (not (empty-modifiers? modifiers))
-           (-> (set-flip modifiers)
-               (apply-modifiers modifiers round-coords?)
-               (apply-text-resize modifiers))
-
-           :always
-           (dissoc :modifiers)))))))
+          :always
+          (dissoc :modifiers))))))
 
 (defn transform-selrect
   [selrect {:keys [displacement resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]

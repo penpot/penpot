@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
+   [app.main.ui.formats :as fmt]
    [rumext.alpha :as mf]))
 
 ;; ------------------------------------------------
@@ -97,7 +98,7 @@
 
 (mf/defc size-display [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
-        size-label (dm/str (mth/round width) " x " (mth/round height))
+        size-label (dm/str (fmt/format-number width) " x " (fmt/format-number height))
 
         rect-height (/ size-display-height zoom)
         rect-width (/ (if (<= (count size-label) 9)
@@ -164,7 +165,7 @@
              :height distance-pill-height
              :style {:fill distance-text-color
                      :font-size font-size}}
-      distance]]))
+      (fmt/format-pixels distance)]]))
 
 (mf/defc selection-rect [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
@@ -214,7 +215,7 @@
             {:x center-x
              :y center-y
              :zoom zoom
-             :distance (dm/str (mth/round distance) "px")
+             :distance distance
              :bounds bounds}]])))))
 
 (mf/defc selection-guides [{:keys [bounds selrect zoom]}]

@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
   (:require
    [app.common.data :as d]
-   [app.common.math :as math]
    [app.common.pages :as cp]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
@@ -54,8 +53,7 @@
     ""
     (str (-> opacity
              (d/coalesce 1)
-             (* 100)
-             (math/round)))))
+             (* 100)))))
 
 (defn remove-multiple [v]
   (if (= v :multiple) nil v))

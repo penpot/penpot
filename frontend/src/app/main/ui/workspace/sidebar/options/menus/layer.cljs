@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.sidebar.options.menus.layer
   (:require
    [app.common.data :as d]
-   [app.common.math :as mth]
    [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
@@ -23,8 +22,7 @@
     ""
     (str (-> opacity
              (d/coalesce 1)
-             (* 100)
-             (mth/round)))))
+             (* 100)))))
 
 (defn select-all [event]
   (dom/select-text! (dom/get-target event)))

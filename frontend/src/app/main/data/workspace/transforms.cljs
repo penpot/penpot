@@ -495,12 +495,13 @@
     (watch [_ state stream]
       (let [initial  (deref ms/mouse-position)
             selected (wsh/lookup-selected state {:omit-blocked? true})
-            stopper  (rx/filter ms/mouse-up? stream)]
+            stopper  (rx/filter ms/mouse-up? stream)
+            zoom    (get-in state [:workspace-local :zoom] 1)]
         (when-not (empty? selected)
           (->> ms/mouse-position
                (rx/map #(gpt/to-vec initial %))
                (rx/map #(gpt/length %))
-               (rx/filter #(> % 1))
+               (rx/filter #(> % (/ 10 zoom)))
                (rx/take 1)
                (rx/with-latest vector ms/mouse-position-alt)
                (rx/mapcat

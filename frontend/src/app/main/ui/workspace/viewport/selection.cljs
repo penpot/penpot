@@ -67,37 +67,17 @@
        :position :top-left
        :props {:cx x :cy y}}
 
-      (when show-resize-point?
-        {:type :resize-point
-         :position :top-left
-         :props {:cx x :cy y :align align}})
-
       {:type :rotation
        :position :top-right
        :props {:cx (+ x width) :cy y}}
-
-      (when show-resize-point?
-        {:type :resize-point
-         :position :top-right
-         :props {:cx (+ x width) :cy y :align align}})
 
       {:type :rotation
        :position :bottom-right
        :props {:cx (+ x width) :cy (+ y height)}}
 
-      (when show-resize-point?
-        {:type :resize-point
-         :position :bottom-right
-         :props {:cx (+ x width) :cy (+ y height) :align align}})
-
       {:type :rotation
        :position :bottom-left
        :props {:cx x :cy (+ y height)}}
-
-      (when show-resize-point?
-        {:type :resize-point
-         :position :bottom-left
-         :props {:cx x :cy (+ y height) :align align}})
 
       (when min-side-top?
         {:type :resize-side
@@ -117,7 +97,30 @@
       (when min-side-side?
         {:type :resize-side
          :position :left
-         :props {:x x :y (+ y height) :length height :angle 270 :align align}})]
+         :props {:x x :y (+ y height) :length height :angle 270 :align align}})
+
+      (when show-resize-point?
+        {:type :resize-point
+         :position :top-left
+         :props {:cx x :cy y :align align}})
+
+      (when show-resize-point?
+        {:type :resize-point
+         :position :top-right
+         :props {:cx (+ x width) :cy y :align align}})
+
+      (when show-resize-point?
+        {:type :resize-point
+         :position :bottom-right
+         :props {:cx (+ x width) :cy (+ y height) :align align}})
+
+      (when show-resize-point?
+        {:type :resize-point
+         :position :bottom-left
+         :props {:cx x :cy (+ y height) :align align}})
+
+
+      ]
 
      (filterv (comp not nil?)))))
 
@@ -136,6 +139,8 @@
             :width size
             :height size
             :fill (if (debug? :rotation-handler) "blue" "none")
+            :stroke (if (debug? :rotation-handler) "blue" "none")
+            :stroke-width 0
             :transform transform
             :on-mouse-down on-rotate}]))
 
@@ -168,6 +173,8 @@
                  :height resize-point-circle-radius
                  :transform (when rotation (str/fmt "rotate(%s, %s, %s)" rotation cx' cy'))
                  :style {:fill (if (debug? :resize-handler) "red" "none")
+                         :stroke (if (debug? :resize-handler) "red" "none")
+                         :stroke-width 0
                          :cursor cursor}
                  :on-mouse-down #(on-resize {:x cx' :y cy'} %)}])
 
@@ -176,7 +183,10 @@
                  :cx cx'
                  :cy cy'
                  :style {:fill (if (debug? :resize-handler) "red" "none")
-                         :cursor cursor}}])]))
+                         :stroke (if (debug? :resize-handler) "red" "none")
+                         :stroke-width 0
+                         :cursor cursor}}]
+       )]))
 
 (mf/defc resize-side-handler
   "The side handler is always rendered horizontally and then rotated"
@@ -202,6 +212,8 @@
                                      (gmt/rotate-matrix angle (gpt/point x y)))
             :on-mouse-down #(on-resize res-point %)
             :style {:fill (if (debug? :resize-handler) "yellow" "none")
+                    :stroke (if (debug? :resize-handler) "yellow" "none")
+                    :stroke-width 0
                     :cursor (if (#{:left :right} position)
                               (cur/resize-ew rotation)
                               (cur/resize-ns rotation)) }}]))
@@ -292,7 +304,7 @@
                   :pointer-events "visible"
                   :style {:stroke color
                           :stroke-width (/ 0.5 zoom)
-                          :stroke-opacity "1"
+                          :stroke-opacity 1
                           :fill "none"}}]]))
 
 (mf/defc multiple-handlers
@@ -344,7 +356,7 @@
 (mf/defc single-handlers
   [{:keys [shape zoom color disable-handlers] :as props}]
   (let [shape-id (:id shape)
-        shape (geom/transform-shape shape {:round-coords? false})
+        shape (geom/transform-shape shape)
 
         on-resize
         (fn [current-position _initial-position event]

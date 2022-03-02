@@ -22,7 +22,7 @@
 
 (def ^:const snap-accuracy 10)
 (def ^:const snap-path-accuracy 10)
-(def ^:const snap-distance-accuracy 10)
+(def ^:const snap-distance-accuracy 20)
 
 (defn- remove-from-snap-points
   [remove-snap?]
@@ -82,13 +82,13 @@
       ;; Otherwise the root frame is the common
       :else zero)))
 
-(defn get-snap-points [page-id frame-id remove-snap? point coord]
+(defn get-snap-points [page-id frame-id remove-snap? zoom point coord]
   (let [value (get point coord)]
     (->> (uw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
                    :axis coord
-                   :ranges [[(- value 0.5) (+ value 0.5)]]})
+                   :ranges [[(- value (/ 0.5 zoom)) (+ value (/ 0.5 zoom))]]})
          (rx/take 1)
          (rx/map (remove-from-snap-points remove-snap?))
          (rx/map flatten-to-points))))
@@ -238,6 +238,18 @@
          (rx/map #(or % (gpt/point 0 0)))
          (rx/map #(gpt/add point %)))))
 
+(defn combine-snaps-points
+  ([] nil)
+  ([p1] p1)
+  ([p1 p2]
+   (cond
+     (nil? p2) p1
+     (nil? p1) p2
+
+     :else
+     (gpt/point (mth/max-abs (:x p1) (:x p2))
+                (mth/max-abs (:y p1) (:y p2))))))
+
 (defn closest-snap-move
   [page-id shapes objects layout zoom focus movev]
   (let [frame-id (snap-frame-id shapes)
@@ -256,7 +268,7 @@
     (->> (rx/merge (closest-snap page-id frame-id shapes-points remove-snap? zoom)
                    (when (contains? layout :dynamic-alignment)
                      (closest-distance-snap page-id shapes objects zoom movev)))
-         (rx/reduce gpt/min)
+         (rx/reduce combine-snaps-points)
          (rx/map #(or % (gpt/point 0 0))))))
 
 
@@ -360,8 +372,8 @@
           dy (if (not= 0 (:y snap-delta))
                (- (+ (:y snap-pos) (:y snap-delta)) (:y position))
                0)]
+      (-> position
+          (update :x + dx)
+          (update :y + dy)))
 
-      (cond-> position
-        (<= (mth/abs dx) snap-accuracy) (update :x + dx)
-        (<= (mth/abs dy) snap-accuracy) (update :y + dy)))
     position))
