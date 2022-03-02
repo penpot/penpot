@@ -241,7 +241,7 @@
 
     [:div.options
      (when-not (empty? measure-ids)
-       [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values}])
+       [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
      (when-not (empty? constraint-ids)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
