@@ -214,6 +214,7 @@
         objects-no-measures (hooks/use-equal-memo objects-no-measures)
 
         type :multiple
+        all-types (into #{} (map :type shapes))
 
         [measure-ids    measure-values]    (get-attrs shapes objects :measure)
 
@@ -240,7 +241,7 @@
 
     [:div.options
      (when-not (empty? measure-ids)
-       [:& measures-menu {:type type :ids measure-ids :values measure-values}])
+       [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values}])
 
      (when-not (empty? constraint-ids)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])

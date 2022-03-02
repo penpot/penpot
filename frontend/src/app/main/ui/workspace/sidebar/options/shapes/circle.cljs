@@ -27,8 +27,7 @@
     [:*
      [:& measures-menu {:ids ids
                         :type type
-                        :values measure-values
-                        :options #{:size :position :rotation}}]
+                        :values measure-values}]
      [:& constraints-menu {:ids ids
                            :values constraint-values}]
      [:& layer-menu {:ids ids
