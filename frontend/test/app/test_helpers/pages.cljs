@@ -101,7 +101,7 @@
         objects (wsh/lookup-page-objects state (:id page))
         shapes  (dwg/shapes-for-grouping objects ids)
 
-        [group rchanges uchanges]
+        [group changes]
         (dwlh/generate-add-component nil
                                      shapes
                                      (:objects page)
@@ -110,5 +110,5 @@
 
     (swap! idmap assoc label (:id group))
     (update state :workspace-data
-            cp/process-changes rchanges)))
+            cp/process-changes (:redo-changes changes))))
 

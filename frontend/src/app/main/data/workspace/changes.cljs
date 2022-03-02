@@ -102,10 +102,6 @@
             (us/assert ::spec.change/changes redo-changes)
             (us/assert ::spec.change/changes undo-changes)
 
-            ;; (prn "====== commit-changes ======" path)
-            ;; (cljs.pprint/pprint redo-changes)
-            ;; (cljs.pprint/pprint undo-changes)
-
             (update-in state path cp/process-changes redo-changes false)
 
             (catch :default e

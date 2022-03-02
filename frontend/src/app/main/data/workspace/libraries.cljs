@@ -11,6 +11,7 @@
    [app.common.geom.shapes :as geom]
    [app.common.logging :as log]
    [app.common.pages :as cp]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.change :as spec.change]
@@ -34,7 +35,7 @@
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
-(log/set-level! :warn)
+(log/set-level! :debug)
 
 (defn- log-changes
   [changes file]
@@ -57,7 +58,7 @@
                 prefix (if (:component-id change) "[C] " "[P] ")
 
                 extract (cond-> {:type (:type change)
-                                 :change change}
+                                 :raw-change change}
                           shape
                           (assoc :shape (str prefix (:name shape)))
                           (:operations change)
@@ -100,25 +101,20 @@
 
       ptk/WatchEvent
       (watch [it _ _]
-        (let [rchg {:type :add-color
-                    :color color}
-              uchg {:type :del-color
-                    :id id}]
+        (let [changes (-> (pcb/empty-changes it)
+                          (pcb/add-color color))]
           (rx/of #(assoc-in % [:workspace-local :color-for-rename] id)
-                 (dch/commit-changes {:redo-changes [rchg]
-                                      :undo-changes [uchg]
-                                      :origin it})))))))
+                 (dch/commit-changes changes)))))))
+
 (defn add-recent-color
   [color]
   (us/assert ::spec.color/recent-color color)
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
     (watch [it _ _]
-      (let [rchg {:type :add-recent-color
-                  :color color}]
-        (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-changes []
-                                    :origin it}))))))
+      (let [changes (-> (pcb/empty-changes it)
+                        (pcb/add-recent-color color))]
+        (rx/of (dch/commit-changes changes))))))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
@@ -127,23 +123,20 @@
       (assoc-in state [:workspace-local :color-for-rename] nil))))
 
 (defn update-color
-  [{:keys [id] :as color} file-id]
+  [color file-id]
   (us/assert ::spec.color/color color)
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-color
     ptk/WatchEvent
     (watch [it state _]
-      (let [[path name] (cph/parse-path-name (:name color))
-            color (assoc color :path path :name name)
-            prev (get-in state [:workspace-data :colors id])
-            rchg {:type :mod-color
-                  :color color}
-            uchg {:type :mod-color
-                  :color prev}]
+      (let [data        (get state :workspace-data)
+            [path name] (cph/parse-path-name (:name color))
+            color       (assoc color :path path :name name)
+            changes     (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/update-color color))]
         (rx/of (dwu/start-undo-transaction)
-               (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-changes [uchg]
-                                    :origin it})
+               (dch/commit-changes changes)
                (sync-file (:current-file-id state) file-id)
                (dwu/commit-undo-transaction))))))
 
@@ -153,29 +146,22 @@
   (ptk/reify ::delete-color
     ptk/WatchEvent
     (watch [it state _]
-      (let [prev (get-in state [:workspace-data :colors id])
-            rchg {:type :del-color
-                  :id id}
-            uchg {:type :add-color
-                  :color prev}]
-        (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-changes [uchg]
-                                    :origin it}))))))
+      (let [data    (get state :workspace-data)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/delete-color id))]
+        (rx/of (dch/commit-changes changes))))))
 
 (defn add-media
-  [{:keys [id] :as media}]
+  [media]
   (us/assert ::spec.file/media-object media)
   (ptk/reify ::add-media
     ptk/WatchEvent
     (watch [it _ _]
-      (let [obj  (select-keys media [:id :name :width :height :mtype])
-            rchg {:type :add-media
-                  :object obj}
-            uchg {:type :del-media
-                  :id id}]
-        (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-changes [uchg]
-                                    :origin it}))))))
+      (let [obj     (select-keys media [:id :name :width :height :mtype])
+            changes (-> (pcb/empty-changes it)
+                        (pcb/add-media obj))]
+        (rx/of (dch/commit-changes changes))))))
 
 (defn rename-media
   [id new-name]
@@ -184,22 +170,14 @@
   (ptk/reify ::rename-media
     ptk/WatchEvent
     (watch [it state _]
-      (let [object (get-in state [:workspace-data :media id])
+      (let [data        (get state :workspace-data)
             [path name] (cph/parse-path-name new-name)
-
-            rchanges [{:type :mod-media
-                       :object {:id id
-                                :name name
-                                :path path}}]
-
-            uchanges [{:type :mod-media
-                       :object {:id id
-                                :name (:name object)
-                                :path (:path object)}}]]
-
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+            object      (get-in data [:media id])
+            new-object  (assoc object :path path :name name)
+            changes     (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/update-media new-object))]
+        (rx/of (dch/commit-changes changes))))))
 
 (defn delete-media
   [{:keys [id] :as params}]
@@ -207,14 +185,11 @@
   (ptk/reify ::delete-media
     ptk/WatchEvent
     (watch [it state _]
-      (let [prev (get-in state [:workspace-data :media id])
-            rchg {:type :del-media
-                  :id id}
-            uchg {:type :add-media
-                  :object prev}]
-        (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-changes [uchg]
-                                    :origin it}))))))
+      (let [data        (get state :workspace-data)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/delete-media id))]
+        (rx/of (dch/commit-changes changes))))))
 
 (defn add-typography
   ([typography] (add-typography typography true))
@@ -227,13 +202,9 @@
 
        ptk/WatchEvent
        (watch [it _ _]
-         (let [rchg {:type :add-typography
-                     :typography typography}
-               uchg {:type :del-typography
-                     :id (:id typography)}]
-           (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                       :undo-changes [uchg]
-                                       :origin it})
+         (let [changes (-> (pcb/empty-changes it)
+                           (pcb/add-typography typography))]
+           (rx/of (dch/commit-changes changes)
                   #(cond-> %
                      edit?
                      (assoc-in [:workspace-global :rename-typography] (:id typography))))))))))
@@ -245,15 +216,12 @@
   (ptk/reify ::update-typography
     ptk/WatchEvent
     (watch [it state _]
-      (let [prev        (get-in state [:workspace-data :typographies (:id typography)])
-            rchg        {:type :mod-typography
-                         :typography typography}
-            uchg        {:type :mod-typography
-                         :typography prev}]
+      (let [data    (get state :workspace-data)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/update-typography typography))]
         (rx/of (dwu/start-undo-transaction)
-               (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-changes [uchg]
-                                    :origin it})
+               (dch/commit-changes changes)
                (sync-file (:current-file-id state) file-id)
                (dwu/commit-undo-transaction))))))
 
@@ -263,15 +231,11 @@
   (ptk/reify ::delete-typography
     ptk/WatchEvent
     (watch [it state _]
-      (let [prev (get-in state [:workspace-data :typographies id])
-            rchg {:type :del-typography
-                  :id id}
-            uchg {:type :add-typography
-                  :typography prev}]
-        (rx/of (dch/commit-changes {:redo-changes [rchg]
-                                    :undo-changes [uchg]
-                                    :origin it}))))))
-
+      (let [data    (get state :workspace-data)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/delete-typography id))]
+        (rx/of (dch/commit-changes changes))))))
 
 (defn- add-component2
   "This is the second step of the component creation."
@@ -287,12 +251,10 @@
             objects  (wsh/lookup-page-objects state page-id)
             shapes   (dwg/shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
-          (let [[group rchanges uchanges]
+          (let [[group changes]
                 (dwlh/generate-add-component it shapes objects page-id file-id)]
-            (when-not (empty? rchanges)
-              (rx/of (dch/commit-changes {:redo-changes rchanges
-                                          :undo-changes uchanges
-                                          :origin it})
+            (when-not (empty? (:redo-changes changes))
+              (rx/of (dch/commit-changes changes)
                      (dwc/select-shapes (d/ordered-set (:id group)))))))))))
 
 (defn add-component
@@ -317,31 +279,27 @@
   (ptk/reify ::rename-component
     ptk/WatchEvent
     (watch [it state _]
-      ;; NOTE: we need to ensure the component exists, because there
-      ;; are small posibilities of race conditions with component
-      ;; deletion.
-      (when-let [component (get-in state [:workspace-data :components id])]
-        (let [[path name] (cph/parse-path-name new-name)
-              objects     (get component :objects)
-              ;; Give the same name to the root shape
-              new-objects (assoc-in objects
-                                    [(:id component) :name]
-                                    name)
+      (let [data        (get state :workspace-data)
+            [path name] (cph/parse-path-name new-name)
 
-              rchanges [{:type :mod-component
-                         :id id
-                         :name name
-                         :path path
-                         :objects new-objects}]
+            update-fn
+            (fn [component]
+              ;; NOTE: we need to ensure the component exists,
+              ;; because there are small posibilities of race
+              ;; conditions with component deletion.
+              (when component
+                (-> component
+                    (assoc :path path)
+                    (assoc :name name)
+                    (update :objects 
+                            ;; Give the same name to the root shape
+                            #(assoc-in % [id :name] name)))))
 
-              uchanges [{:type :mod-component
-                         :id id
-                         :name (:name component)
-                         :path (:path component)
-                         :objects objects}]]
-          (rx/of (dch/commit-changes {:redo-changes rchanges
-                                      :undo-changes uchanges
-                                      :origin it})))))))
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/update-component id update-fn))]
+
+          (rx/of (dch/commit-changes changes))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
@@ -358,18 +316,15 @@
             [new-shape new-shapes _updated-shapes]
             (dwlh/duplicate-component component)
 
-            rchanges [{:type :add-component
-                       :id (:id new-shape)
-                       :name new-name
-                       :path (:path component)
-                       :shapes new-shapes}]
+            changes (-> (pcb/empty-changes it nil) ;; no objects are changed
+                        (pcb/with-objects nil)     ;; in the current page
+                        (pcb/add-component (:id new-shape)
+                                           (:path component)
+                                           new-name
+                                           new-shapes
+                                           []))]
 
-            uchanges [{:type :del-component
-                       :id (:id new-shape)}]]
-
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+        (rx/of (dch/commit-changes changes))))))
 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
@@ -378,20 +333,12 @@
   (ptk/reify ::delete-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [component (get-in state [:workspace-data :components id])
+      (let [data        (get state :workspace-data)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/delete-component id))]
 
-            rchanges [{:type :del-component
-                       :id id}]
-
-            uchanges [{:type :add-component
-                       :id id
-                       :name (:name component)
-                       :path (:path component)
-                       :shapes (vals (:objects component))}]]
-
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+        (rx/of (dch/commit-changes changes))))))
 
 (defn instantiate-component
   "Create a new shape in the current page, from the component with the given id
@@ -450,26 +397,11 @@
                               (get component :objects)
                               update-new-shape)
 
-            rchanges (mapv (fn [obj]
-                             {:type :add-obj
-                              :id (:id obj)
-                              :page-id page-id
-                              :frame-id (:frame-id obj)
-                              :parent-id (:parent-id obj)
-                              :ignore-touched true
-                              :obj obj})
-                           new-shapes)
+            changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                            (pcb/empty-changes it page-id)
+                            new-shapes)]
 
-            uchanges (mapv (fn [obj]
-                             {:type :del-obj
-                              :id (:id obj)
-                              :page-id page-id
-                              :ignore-touched true})
-                           new-shapes)]
-
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it})
+        (rx/of (dch/commit-changes changes)
                (dwc/select-shapes (d/ordered-set (:id new-shape))))))))
 
 (defn detach-component
@@ -484,12 +416,12 @@
             page-id   (get state :current-page-id)
             container (cph/get-container file :page page-id)
 
-            [rchanges uchanges]
-            (dwlh/generate-detach-instance container id)]
+            changes   (-> (pcb/empty-changes it)
+                          (pcb/with-container container)
+                          (pcb/with-objects (:objects container))
+                          (dwlh/generate-detach-instance container id))]
 
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+        (rx/of (dch/commit-changes changes))))))
 
 (def detach-selected-components
   (ptk/reify ::detach-selected-components
@@ -503,17 +435,15 @@
                            (wsh/lookup-selected)
                            (cph/clean-loops objects))
 
-            [rchanges uchanges]
-            (reduce (fn [changes id]
-                      (dwlh/concat-changes
-                       changes
-                       (dwlh/generate-detach-instance container id)))
-                    dwlh/empty-changes
-                    selected)]
+            changes (reduce
+                      (fn [changes id]
+                        (dwlh/generate-detach-instance changes container id))
+                      (-> (pcb/empty-changes it)
+                          (pcb/with-container container)
+                          (pcb/with-objects objects))
+                      selected)]
 
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+        (rx/of (dch/commit-changes changes))))))
 
 (defn nav-to-component-file
   [file-id]
@@ -559,15 +489,16 @@
             page-id   (:current-page-id state)
             container (cph/get-container file :page page-id)
 
-            [rchanges uchanges]
-            (dwlh/generate-sync-shape-direct libraries container id true)]
+            changes
+            (-> (pcb/empty-changes it)
+                (pcb/with-container container)
+                (pcb/with-objects (:objects container))
+                (dwlh/generate-sync-shape-direct libraries container id true))]
 
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
-                                                                 rchanges
-                                                                 file))
-        (rx/of (dch/commit-changes {:redo-changes rchanges
-                                    :undo-changes uchanges
-                                    :origin it}))))))
+                                                                 (:redo-changes changes)
+                                                                   file))
+          (rx/of (dch/commit-changes changes))))))
 
 (defn update-component
   "Modify the component linked to the shape with the given id, in the
@@ -592,8 +523,10 @@
             container     (cph/get-container local-file :page page-id)
             shape         (cph/get-shape container id)
 
-            [rchanges uchanges]
-            (dwlh/generate-sync-shape-inverse libraries container id)
+            changes
+            (-> (pcb/empty-changes it)
+                (pcb/with-container container)
+                (dwlh/generate-sync-shape-inverse libraries container id))
 
             file-id   (:component-file shape)
             file      (dwlh/get-file state file-id)
@@ -602,35 +535,33 @@
                        (filter :local-change?)
                        (map #(dissoc % :local-change?)))
 
-            local-rchanges (into [] xf-filter rchanges)
-            local-uchanges (into [] xf-filter uchanges)
+            local-changes (-> changes
+                              (update :redo-changes #(into [] xf-filter %))
+                              (update :undo-changes #(into [] xf-filter %)))
 
             xf-remove (comp
                        (remove :local-change?)
                        (map #(dissoc % :local-change?)))
 
-            rchanges (into [] xf-remove rchanges)
-            uchanges (into [] xf-remove uchanges)]
+            nonlocal-changes (-> changes
+                                 (update :redo-changes #(into [] xf-remove %))
+                                 (update :undo-changes #(into [] xf-remove %)))]
 
         (log/debug :msg "UPDATE-COMPONENT finished"
-                   :js/local-rchanges (log-changes
-                                       local-rchanges
+                   :js/local-changes (log-changes
+                                       (:redo-changes local-changes)
                                        file)
-                   :js/rchanges (log-changes
-                                 rchanges
-                                 file))
+                   :js/nonlocal-changes (log-changes
+                                          (:redo-changes nonlocal-changes)
+                                          file))
 
         (rx/of
-         (when (seq local-rchanges)
-           (dch/commit-changes {:redo-changes local-rchanges
-                                :undo-changes local-uchanges
-                                :origin it
-                                :file-id (:id local-file)}))
-         (when (seq rchanges)
-           (dch/commit-changes {:redo-changes rchanges
-                                :undo-changes uchanges
-                                :origin it
-                                :file-id file-id})))))))
+         (when (seq (:redo-changes local-changes))
+           (dch/commit-changes (assoc local-changes
+                                      :file-id (:id local-file))))
+         (when (seq (:redo-changes nonlocal-changes))
+           (dch/commit-changes (assoc nonlocal-changes
+                                      :file-id file-id))))))))
 
 (defn update-component-sync
   [shape-id file-id]
@@ -679,33 +610,27 @@
                 :file (dwlh/pretty-file file-id state)
                 :library (dwlh/pretty-file library-id state))
       (let [file            (dwlh/get-file state file-id)
-            library-changes [(dwlh/generate-sync-library file-id :components library-id state)
-                             (dwlh/generate-sync-library file-id :colors library-id state)
-                             (dwlh/generate-sync-library file-id :typographies library-id state)]
-            file-changes    [(dwlh/generate-sync-file file-id :components library-id state)
-                             (dwlh/generate-sync-file file-id :colors library-id state)
-                             (dwlh/generate-sync-file file-id :typographies library-id state)]
 
-            xf-fcat  (comp (remove nil?) (map first) (mapcat identity))
-            rchanges (d/concat-vec
-                      (sequence xf-fcat library-changes)
-                      (sequence xf-fcat file-changes))
+            changes         (-> (pcb/empty-changes it))
+            library-changes (-> changes
+                                (dwlh/generate-sync-library file-id :components library-id state)
+                                (dwlh/generate-sync-library file-id :colors library-id state)
+                                (dwlh/generate-sync-library file-id :typographies library-id state))
+            file-changes    (-> library-changes
+                                (dwlh/generate-sync-file file-id :components library-id state)
+                                (dwlh/generate-sync-file file-id :colors library-id state)
+                                (dwlh/generate-sync-file file-id :typographies library-id state))
 
-            xf-scat  (comp (remove nil?) (map second) (mapcat identity))
-            uchanges (d/concat-vec
-                      (sequence xf-scat library-changes)
-                      (sequence xf-scat file-changes))]
+            changes         (pcb/concat-changes library-changes file-changes)]
 
         (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
-                                                           rchanges
+                                                           (:redo-changes changes)
                                                            file))
         (rx/concat
          (rx/of (dm/hide-tag :sync-dialog))
-         (when rchanges
-           (rx/of (dch/commit-changes {:redo-changes rchanges
-                                       :undo-changes uchanges
-                                       :origin it
-                                       :file-id file-id})))
+         (when (seq (:redo-changes changes))
+           (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
+                                             :file-id file-id))))
          (when (not= file-id library-id)
             ;; When we have just updated the library file, give some time for the
             ;; update to finish, before marking this file as synced.
@@ -717,7 +642,7 @@
                       (rp/mutation :update-sync
                                    {:file-id file-id
                                     :library-id library-id})))
-         (when (some? library-changes)
+         (when (seq (:redo-changes library-changes))
            (rx/of (sync-file-2nd-stage file-id library-id))))))))
 
 (defn sync-file-2nd-stage
@@ -738,19 +663,15 @@
       (log/info :msg "SYNC-FILE (2nd stage)"
                 :file (dwlh/pretty-file file-id state)
                 :library (dwlh/pretty-file library-id state))
-      (let [file                  (dwlh/get-file state file-id)
-            [rchanges1 uchanges1] (dwlh/generate-sync-file file-id :components library-id state)
-            [rchanges2 uchanges2] (dwlh/generate-sync-library file-id :components library-id state)
-            rchanges              (d/concat-vec rchanges1 rchanges2)
-            uchanges              (d/concat-vec uchanges1 uchanges2)]
-        (when rchanges
+      (let [file    (dwlh/get-file state file-id)
+            changes (-> (pcb/empty-changes it)
+                        (dwlh/generate-sync-file file-id :components library-id state)
+                        (dwlh/generate-sync-library file-id :components library-id state))]
+        (when (seq (:redo-changes changes))
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
-                                                                         rchanges
+                                                                         (:redo-changes changes)
                                                                          file))
-          (rx/of (dch/commit-changes {:redo-changes rchanges
-                                      :undo-changes uchanges
-                                      :origin it
-                                      :file-id file-id})))))))
+          (rx/of (dch/commit-changes (assoc changes :file-id file-id))))))))
 
 (def ignore-sync
   (ptk/reify ::ignore-sync

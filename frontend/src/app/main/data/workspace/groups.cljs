@@ -88,7 +88,7 @@
 
         changes   (-> (pcb/empty-changes it page-id)
                       (pcb/with-objects objects)
-                      (pcb/add-obj group)
+                      (pcb/add-object group)
                       (pcb/change-parent (:id group) shapes)
                       (pcb/remove-objects ids-to-delete))]
 
