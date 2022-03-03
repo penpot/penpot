@@ -25,6 +25,7 @@
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
+   [promesa.core :as p]
    [promesa.exec :as px]))
 
 ;; --- Helpers & Specs
@@ -415,31 +416,34 @@
 ;; TODO: properly handle resource usage, transactions and storage
 
 (sv/defmethod ::update-profile-photo
-  {::rlimit/permits (cf/get :rlimit-image)}
-  [{:keys [pool storage executors] :as cfg} {:keys [profile-id file] :as params}]
-
+  [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
+  (let [cfg (update cfg :storage media/configure-assets-storage)]
+    (update-profile-photo cfg params)))
 
-  ;; Perform file validation
-  @(px/with-dispatch (:blocking executors)
-     (media/run {:cmd :info :input {:path (:tempfile file) :mtype (:content-type file)}}))
+(defn update-profile-photo
+  [{:keys [pool storage executors] :as cfg} {:keys [profile-id file] :as params}]
+  (p/do
+    ;; Perform file validation, this operation executes some
+    ;; comandline helpers for true check of the image file. And it
+    ;; raises an exception if somethig is wrong with the file.
+    (px/with-dispatch (:blocking executors)
+      (media/run {:cmd :info :input {:path (:tempfile file) :mtype (:content-type file)}}))
 
-  (db/with-atomic [conn pool]
-    (let [profile (db/get-by-id conn :profile profile-id)
-          cfg     (update cfg :storage media/configure-assets-storage conn)
-          photo   @(teams/upload-photo cfg params)]
+    (p/let [profile (px/with-dispatch (:default executors)
+                      (db/get-by-id pool :profile profile-id))
+            photo   (teams/upload-photo cfg params)]
 
       ;; Schedule deletion of old photo
       (when-let [id (:photo-id profile)]
-        @(sto/touch-object! storage id))
+        (sto/touch-object! storage id))
 
       ;; Save new photo
-      (db/update! conn :profile
+      (db/update! pool :profile
                   {:photo-id (:id photo)}
                   {:id profile-id})
       nil)))
-
 
 ;; --- MUTATION: Request Email Change
 
