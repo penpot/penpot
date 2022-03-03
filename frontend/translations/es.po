@@ -467,7 +467,7 @@ msgstr "Cambiar contraseña"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.pin-unpin"
-msgstr "Fijar/Desfijar"
+msgstr "Anclar/Desanclar"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
