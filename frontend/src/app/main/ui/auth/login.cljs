@@ -25,8 +25,7 @@
 (def show-alt-login-buttons?
   (or cf/google-client-id
       cf/gitlab-client-id
-      cf/github-client-id
-      cf/oidc-client-id))
+      cf/github-client-id))
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)
@@ -136,28 +135,32 @@
   [{:keys [params] :as props}]
   [:div.auth-buttons
    (when cf/google-client-id
-     [:a.btn-ocean.btn-large.btn-google-auth
+     [:a.btn-primary.btn-large.btn-google-auth
       {:on-click #(login-with-oauth % :google params)}
+      [:img.logo
+       {:src "/images/icons/brand-google.svg"}]
       (tr "auth.login-with-google-submit")])
 
    (when cf/gitlab-client-id
-     [:a.btn-ocean.btn-large.btn-gitlab-auth
+     [:a.btn-primary.btn-large.btn-gitlab-auth
       {:on-click #(login-with-oauth % :gitlab params)}
       [:img.logo
        {:src "/images/icons/brand-gitlab.svg"}]
       (tr "auth.login-with-gitlab-submit")])
 
    (when cf/github-client-id
-     [:a.btn-ocean.btn-large.btn-github-auth
+     [:a.btn-primary.btn-large.btn-github-auth
       {:on-click #(login-with-oauth % :github params)}
       [:img.logo
        {:src "/images/icons/brand-github.svg"}]
-      (tr "auth.login-with-github-submit")])
+      (tr "auth.login-with-github-submit")])])
 
-   (when cf/oidc-client-id
-     [:a.btn-ocean.btn-large.btn-github-auth
-      {:on-click #(login-with-oauth % :oidc params)}
-      (tr "auth.login-with-oidc-submit")])])
+(mf/defc login-button-oidc
+  [{:keys [params] :as props}]
+  (when cf/oidc-client-id
+    [:div.link-entry.link-oidc
+     [:a {:on-click #(login-with-oauth % :oidc params)}
+      (tr "auth.login-with-oidc-submit")]]))
 
 (mf/defc login-page
   [{:keys [params] :as props}]
@@ -166,15 +169,30 @@
     [:h1 {:data-test "login-title"} (tr "auth.login-title")]
     [:div.subtitle (tr "auth.login-subtitle")]
 
-    [:& login-form {:params params}]
-
     (when show-alt-login-buttons?
       [:*
-       [:span.separator (tr "labels.or")]
+       [:span.separator
+        [:span.line]
+        [:span.text (tr "labels.continue-with")]
+        [:span.line]]
 
        [:div.buttons
-        [:& login-buttons {:params params}]]])
+        [:& login-buttons {:params params}]]
 
+       [:span.separator
+        [:span.line]
+        [:span.text (tr "labels.or")]
+        [:span.line]]])
+
+    [:& login-form {:params params}]
+
+    (when cf/oidc-client-id
+      [:div.links
+       [:& login-button-oidc]])
+    
+    [:span.separator
+     [:span.line]]
+    
     [:div.links
      [:div.link-entry
       [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))

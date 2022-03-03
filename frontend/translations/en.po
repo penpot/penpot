@@ -67,15 +67,15 @@ msgstr "Great to see you again!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Login with GitHub"
+msgstr "GitHub"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Login with Gitlab"
+msgstr "Gitlab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "Login with Google"
+msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
@@ -1231,8 +1231,11 @@ msgstr "Old password"
 msgid "labels.only-yours"
 msgstr "Only yours"
 
+msgid "labels.continue-with"
+msgstr "Continue with"
+
 msgid "labels.or"
-msgstr "or"
+msgstr "or email"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.owner"

@@ -121,14 +121,30 @@
    (when (contains? @cf/flags :demo-warning)
      [:& demo-warning])
 
+   (when login/show-alt-login-buttons?
+     [:*
+      [:span.separator
+       [:span.line]
+       [:span.text (tr "labels.continue-with")]
+       [:span.line]]
+
+      [:div.buttons
+       [:& login/login-buttons {:params params}]]
+
+      [:span.separator
+       [:span.line]
+       [:span.text (tr "labels.or")]
+       [:span.line]]])
+
    [:& register-form {:params params}]
 
-    (when login/show-alt-login-buttons?
-      [:*
-       [:span.separator (tr "labels.or")]
+   (when cf/oidc-client-id
+     [:div.links
+      [:& login/login-button-oidc]])
 
-       [:div.buttons
-        [:& login/login-buttons {:params params}]]])
+   [:span.separator
+    [:span.line]]
+
 
    [:div.links
     [:div.link-entry

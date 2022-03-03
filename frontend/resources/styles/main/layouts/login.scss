@@ -72,20 +72,44 @@
     width: 412px;
 
     .auth-buttons {
-      margin-top: $size-6;
+      margin: $size-6 0 $size-4 0;
+      display: flex;
+      justify-content: center;
+      column-gap: 17px;
     }
 
     form {
-      margin: 2rem 0;
+      margin: 2rem 0 0.5rem 0;
     }
   }
 
+  .btn-large {
+    flex-grow: 1;
+    font-size: 14px;
+    font-family: sourcesanspro;
+    font-style: normal;
+    font-weight: normal;
+  }
+
   .btn-google-auth {
+    background-color: #4285f4;
+    color: $color-white;
     margin-bottom: $size-4;
     text-decoration: none;
+    .logo {
+      width: 20px;
+      height: 20px;
+      margin-right: 1rem;
+    }
+    &:hover {
+      background-color: #2065d7;
+      color: $color-white;
+    }
   }
 
   .btn-gitlab-auth {
+    background-color: #fc6d26;
+    color: $color-white;
     margin-bottom: $size-4;
     text-decoration: none;
 
@@ -93,10 +117,17 @@
       width: 20px;
       height: 20px;
       margin-right: 1rem;
+    }
+
+    &:hover {
+      background-color: #ee5f18;
+      color: $color-white;
     }
   }
 
   .btn-github-auth {
+    background-color: #4c4c4c;
+    color: $color-white;
     margin-bottom: $size-4;
     text-decoration: none;
 
@@ -105,6 +136,15 @@
       height: 20px;
       margin-right: 1rem;
     }
+
+    &:hover {
+      background-color: #2f2f2f;
+      color: $color-white;
+    }
+  }
+
+  .link-oidc {
+    text-align: center;
   }
 
   .separator {
@@ -112,6 +152,18 @@
     justify-content: center;
     width: 100%;
     text-transform: uppercase;
+    text-align: center;
+
+    .text {
+      margin: 0 10px;
+      color: $color-gray-40;
+    }
+
+    .line {
+      border: 1px solid $color-gray-10;
+      flex-grow: 10;
+      margin: auto;
+    }
   }
 
   .links {
