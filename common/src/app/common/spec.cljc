@@ -161,14 +161,14 @@
 
 (def email-re #"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 
+(defn parse-email
+  [s]
+  (some->> s (re-seq email-re) first))
+
 (s/def ::email
   (s/conformer
    (fn [v]
-     (if (string? v)
-       (if-let [matches (re-seq email-re v)]
-         (first matches)
-         (do ::s/invalid))
-       ::s/invalid))
+     (or (parse-email v) ::s/invalid))
    str))
 
 (s/def ::set-of-emails
