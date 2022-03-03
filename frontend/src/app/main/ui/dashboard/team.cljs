@@ -101,7 +101,7 @@
                  (= :profile-is-muted code))
             (st/emit! (dm/error (tr "errors.profile-is-muted"))
                       (modal/hide))
-            
+
             (and (= :validation type)
                  (or (= :member-is-muted code)
                      (= :email-has-permanent-bounces code)))
@@ -123,25 +123,20 @@
      [:& fm/form {:on-submit on-submit :form form}
       [:div.title
        [:span.text (tr "modals.invite-member.title")]]
-      
+
       (when-not (= "" @error-text)
         [:div.error
          [:span.icon i/msg-error]
-         [:span.text @error-text]]
-        )
-      
+         [:span.text @error-text]])
 
       [:div.form-row
        [:& fm/multi-input {:type "email"
                            :name :emails
                            :auto-focus? true
-                           :hint (tr "modals.invite-member.emails")
-                           :class "invite-member-email-input"
-                           :container-class "invite-member-email-container"
-                           :row-class "invite-member-email-text"
-                           :row-invalid-class "invalid"}]
-       [:& fm/select {:name :role
-                      :options roles}]]
+                           :trim true
+                           :valid-item-fn us/parse-email
+                           :label (tr "modals.invite-member.emails")}]
+       [:& fm/select {:name :role :options roles}]]
 
       [:div.action-buttons
        [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))

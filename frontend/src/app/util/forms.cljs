@@ -121,6 +121,13 @@
                      (assoc-in [:data field] (if trim? (str/trim value) value))
                      (update :errors dissoc field))))))
 
+(defn update-input-value!
+  [form field value]
+  (swap! form (fn [state]
+                (-> state
+                    (assoc-in [:data field] value)
+                    (update :errors dissoc field)))))
+
 (defn on-input-blur
   [form field]
   (fn [_]

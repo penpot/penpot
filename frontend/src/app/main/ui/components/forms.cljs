@@ -7,12 +7,14 @@
 (ns app.main.ui.components.forms
   (:require
    [app.common.data :as d]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [cljs.core :as c]
    [clojure.string]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
@@ -225,92 +227,112 @@
                           (on-submit form event))}
       children]]))
 
-
-
-(mf/defc multi-input-row
-  [{:keys [item, remove-item!, class, invalid-class]}]
-  (let [valid (val item)
-        text (key item)]
-    [:div {:class class}
-     [:span.around {:class (when-not valid invalid-class)}
-      [:span.text text]
-      [:span.icon {:on-click #(remove-item! (key item))} i/cross]]]))
+(defn- conj-dedup
+  "A helper that adds item into a vector and removes possible
+  duplicates. This is not very efficient implementation but is ok for
+  handling form input that will have a small number of items."
+  [coll item]
+  (into [] (distinct) (conj coll item)))
 
 (mf/defc multi-input
-  [{:keys [form hint class container-class row-class row-invalid-class] :as props}]
-  (let [multi-input-name     (get props :name)
-        single-input-name    (keyword (str "single-" (name multi-input-name)))
-        single-input-element (dom/get-element (name single-input-name))
-        hint-element         (dom/get-element-by-class "hint")
-        form                 (or form (mf/use-ctx form-ctx))
-        value                (get-in @form [:data multi-input-name] "")
-        single-mail-value    (get-in @form [:data single-input-name] "")
-        items                (mf/use-state  {})
+  [{:keys [form label class name trim valid-item-fn] :as props}]
+  (let [form       (or form (mf/use-ctx form-ctx))
+        input-name (get props :name)
+        touched?   (get-in @form [:touched input-name])
+        error      (get-in @form [:errors input-name])
+        focus?     (mf/use-state false)
 
-        comma-items
-        (fn [items]
-          (if (= "" single-mail-value)
-            (str/join "," (keys items))
-            (str/join "," (conj (keys items) single-mail-value))))
+        items      (mf/use-state [])
+        value      (mf/use-state "")
+        result     (hooks/use-equal-memo @items)
 
-        update-multi-input
-        (fn [all]
-          (fm/on-input-change form multi-input-name all true)
+        empty?     (and (str/empty? @value)
+                        (zero? (count @items)))
 
-          (if (= "" all)
-            (do
-              (dom/add-class! single-input-element "empty")
-              (dom/add-class! hint-element "hidden"))
-            (do
-              (dom/remove-class! single-input-element "empty")
-              (dom/remove-class! hint-element "hidden")))
+        klass      (str (get props :class) " "
+                        (dom/classnames
+                         :focus          @focus?
+                         :valid          (and touched? (not error))
+                         :invalid        (and touched? error)
+                         :empty          empty?
+                         :custom-multi-input true
+                         :custom-input   true))
 
-          (dom/focus! single-input-element))
+        in-klass  (str class " "
+                       (dom/classnames
+                        :no-padding (pos? (count @items))))
+
+        on-focus
+        (mf/use-fn #(reset! focus? true))
+
+        on-change
+        (mf/use-fn
+         (fn [event]
+           (let [content (-> event dom/get-target dom/get-input-value)]
+             (reset! value content))))
+
+        update-form!
+        (mf/use-fn
+         (mf/deps form)
+         (fn [items]
+           (let [value (str/join " " (map :text items))]
+             (fm/update-input-value! form input-name value))))
+
+        on-key-up
+        (mf/use-fn
+         (mf/deps @value)
+         (fn [event]
+           (cond
+             (or (kbd/enter? event)
+                 (kbd/comma? event))
+             (do
+               (dom/prevent-default event)
+               (dom/stop-propagation event)
+               (let [val (cond-> @value trim str/trim)]
+                 (reset! value "")
+                 (swap! items conj-dedup {:text val :valid (valid-item-fn val)})))
+
+             (and (kbd/backspace? event)
+                  (str/empty? @value))
+             (do
+               (dom/prevent-default event)
+               (dom/stop-propagation event)
+               (swap! items (fn [items] (if (c/empty? items) items (pop items))))))))
+
+        on-blur
+        (mf/use-fn
+         (fn [_]
+           (reset! focus? false)
+           (when-not (get-in @form [:touched input-name])
+             (swap! form assoc-in [:touched input-name] true))))
 
         remove-item!
-        (fn [item]
-          (swap! items
-                 (fn [items]
-                   (let [temp-items (dissoc items item)
-                         all (comma-items temp-items)]
-                     (update-multi-input all)
-                     temp-items))))
+        (mf/use-fn
+         (fn [item]
+           (swap! items #(into #{} (remove (fn [x] (= x item))) %))))]
 
-        add-item!
-        (fn [item valid]
-          (swap! items assoc item valid))
+    (mf/with-effect [result]
+      (if (every? :valid result)
+        (update-form! result)
+        (update-form! [])))
 
-        input-key-down (fn [event]
-                         (let [target (dom/event->target event)
-                               value (dom/get-value target)
-                               valid (and (not (= value "")) (dom/valid? target))]
+    [:div {:class klass}
+     (when-let [items (seq @items)]
+       [:div.selected-items
+        (for [item items]
+          [:div.selected-item {:key (:text item)}
+           [:span.around {:class (when-not (:valid item) "invalid")}
+            [:span.text (:text item)]
+            [:span.icon {:on-click #(remove-item! item)} i/cross]]])])
 
-                           (when (kbd/comma? event)
-                             (dom/prevent-default event)
-                             (add-item! value valid)
-                             (fm/on-input-change form single-input-name ""))))
-
-        input-key-up #(update-multi-input (comma-items @items))
-
-        single-props (-> props
-                         (dissoc :hint :row-class :row-invalid-class :container-class :class)
-                         (assoc
-                          :label hint
-                          :name single-input-name
-                          :on-key-down input-key-down
-                          :on-key-up input-key-up
-                          :class (str/join " " [class "empty"])))]
-
-    [:div {:class container-class}
-     (when (string? hint)
-       [:span.hint.hidden hint])
-     (for [item @items]
-       [:& multi-input-row {:item item
-                            :remove-item! remove-item!
-                            :class row-class
-                            :invalid-class row-invalid-class}])
-     [:& input single-props]
-     [:input {:id (name multi-input-name)
-              :read-only true
-              :type "hidden"
-              :value value}]]))
+     [:input {:id (name input-name)
+              :class in-klass
+              :type "text"
+              :auto-focus true
+              :on-focus on-focus
+              :on-blur on-blur
+              :on-key-up on-key-up
+              :value @value
+              :on-change on-change
+              :placeholder (when empty? label)}]
+     [:label {:for (name input-name)} label]]))

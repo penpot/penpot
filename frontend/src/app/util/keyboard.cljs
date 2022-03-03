@@ -36,6 +36,7 @@
 (def ctrlKey? (or (is-key? "Control")
                   (is-key? "Meta")))
 (def comma? (is-key? ","))
+(def backspace? (is-key? "Backspace"))
 
 (defn editing? [e]
   (.-editing ^js e))
