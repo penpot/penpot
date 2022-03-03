@@ -10,7 +10,6 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
    [app.media :as media]
@@ -18,7 +17,6 @@
    [app.rpc.permissions :as perms]
    [app.rpc.queries.profile :as profile]
    [app.rpc.queries.teams :as teams]
-   [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -280,7 +278,8 @@
 
 ;; --- Mutation: Update Team Photo
 
-(declare upload-photo)
+(declare ^:private upload-photo)
+(declare ^:private update-team-photo)
 
 (s/def ::content-type ::media/image-content-type)
 (s/def ::file (s/and ::media/upload (s/keys :req-un [::content-type])))
@@ -289,29 +288,32 @@
   (s/keys :req-un [::profile-id ::team-id ::file]))
 
 (sv/defmethod ::update-team-photo
-  {::rlimit/permits (cf/get :rlimit-image)}
-  [{:keys [pool storage executors] :as cfg} {:keys [profile-id file team-id] :as params}]
-
+  [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
+  (let [cfg (update cfg :storage media/configure-assets-storage)]
+    (update-team-photo cfg params)))
 
-  ;; Perform file validation
-  @(px/with-dispatch (:blocking executors)
-     (media/run {:cmd :info :input {:path (:tempfile file) :mtype (:content-type file)}}))
+(defn update-team-photo
+  [{:keys [pool storage executors] :as cfg} {:keys [profile-id file team-id] :as params}]
+  (p/do
+    ;; Perform file validation, this operation executes some
+    ;; comandline helpers for true check of the image file. And it
+    ;; raises an exception if somethig is wrong with the file.
+    (px/with-dispatch (:blocking executors)
+      (media/run {:cmd :info :input {:path (:tempfile file) :mtype (:content-type file)}}))
 
-  (db/with-atomic [conn pool]
-    (teams/check-edition-permissions! conn profile-id team-id)
-    (let [team    (teams/retrieve-team conn profile-id team-id)
-          cfg     (update cfg :storage media/configure-assets-storage conn)
-          photo   @(upload-photo cfg params)]
+    (p/let [team  (px/with-dispatch (:default executors)
+                    (teams/retrieve-team pool profile-id team-id))
+            photo (upload-photo cfg params)]
 
       ;; Mark object as touched for make it ellegible for tentative
       ;; garbage collection.
       (when-let [id (:photo-id team)]
-        @(sto/touch-object! storage id))
+        (sto/touch-object! storage id))
 
       ;; Save new photo
-      (db/update! conn :team
+      (db/update! pool :team
                   {:photo-id (:id photo)}
                   {:id team-id})
 

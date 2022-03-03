@@ -45,7 +45,7 @@
       mobj)))
 
 (defn- serve-object
-  "Helper function that returns the appropriate responde depending on
+  "Helper function that returns the appropriate response depending on
   the storage object backend type."
   [{:keys [storage] :as cfg} obj]
   (let [mdata   (meta obj)
