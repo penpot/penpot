@@ -84,7 +84,7 @@
                         :fn #(st/emit! (dw/increase-zoom nil))}
 
    :decrease-zoom      {:tooltip "-"
-                        :command "-"
+                        :command ["-" "_"]
                         :fn #(st/emit! (dw/decrease-zoom nil))}
 
    :group              {:tooltip (ds/meta "G")
