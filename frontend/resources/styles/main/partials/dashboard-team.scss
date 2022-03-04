@@ -23,8 +23,12 @@
   }
 
   .custom-select {
-    width: 160px;
+    width: 180px;
     overflow: hidden;
+    justify-content: normal;
+    select {
+      height: auto;
+    }
   }
 
   .action-buttons {
@@ -37,6 +41,42 @@
 
   .title {
     color: $color-black;
+  }
+
+  .hint {
+    font-size: 12px;
+
+    &.hidden {
+      display: none;
+    }
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+    fill: $color-gray-20;
+  }
+
+  .error {
+    background-color: #ffd9e0;
+    width: 100%;
+    display: flex;
+    .icon {
+      background-color: $color-danger;
+      text-align: center;
+      padding: 5px;
+      svg {
+        fill: $color-white;
+        width: 20px;
+        height: 20px;
+        margin: 5px;
+      }
+    }
+    .text {
+      color: $color-black;
+      padding: 5px;
+      font-size: 12px;
+    }
   }
 }
 

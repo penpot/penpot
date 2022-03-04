@@ -45,6 +45,7 @@
 (def component (icon-xref :component))
 (def copy (icon-xref :copy))
 (def curve (icon-xref :curve))
+(def cross (icon-xref :cross))
 (def download (icon-xref :download))
 (def easing-linear (icon-xref :easing-linear))
 (def easing-ease (icon-xref :easing-ease))

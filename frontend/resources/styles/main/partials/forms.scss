@@ -227,6 +227,66 @@ textarea {
   }
 }
 
+.custom-multi-input {
+  border-radius: 2px;
+  border: 1px solid $color-gray-20;
+  max-height: 300px;
+  overflow-y: auto;
+
+  &.invalid {
+    label {
+      color: unset;
+    }
+  }
+
+  input {
+    border: 0px;
+
+    &.no-padding {
+      padding-top: 0px;
+    }
+  }
+
+  .selected-items {
+    padding-top: 25px;
+    padding-left: 15px;
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .selected-item {
+    width: 100%;
+
+    &:not(:last-child) {
+      margin-right: 3px;
+    }
+
+    .around {
+      border: 1px solid $color-gray-20;
+      padding-left: 5px;
+      border-radius: 4px;
+      &.invalid {
+        border: 1px solid $color-danger;
+      }
+
+      .text {
+        display: inline-block;
+        max-width: 85%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 15px;
+        font-size: 14px;
+        color: $color-black;
+      }
+      .icon {
+        cursor: pointer;
+        margin-left: 10px;
+        margin-right: 5px;
+      }
+    }
+  }
+}
+
 .custom-select {
   display: flex;
   flex-direction: column;

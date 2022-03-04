@@ -73,10 +73,10 @@
         ]
        (filterv identity)))
 
-(s/def ::email ::us/email)
+(s/def ::emails (s/and ::us/set-of-emails d/not-empty?))
 (s/def ::role  ::us/keyword)
 (s/def ::invite-member-form
-  (s/keys :req-un [::role ::email]))
+  (s/keys :req-un [::role ::emails]))
 
 (mf/defc invite-member-modal
   {::mf/register modal/components
@@ -87,29 +87,29 @@
         initial (mf/use-memo (constantly {:role "editor"}))
         form    (fm/use-form :spec ::invite-member-form
                              :initial initial)
+        error-text (mf/use-state  "")
+
         on-success
         (st/emitf (dm/success (tr "notifications.invitation-email-sent"))
                   (modal/hide)
                   (dd/fetch-team-invitations))
 
         on-error
-        (fn [form {:keys [type code] :as error}]
-          (let [email (get @form [:data :email])]
-            (cond
-              (and (= :validation type)
-                   (= :profile-is-muted code))
-              (dm/error (tr "errors.profile-is-muted"))
+        (fn [{:keys [type code] :as error}]
+          (cond
+            (and (= :validation type)
+                 (= :profile-is-muted code))
+            (st/emit! (dm/error (tr "errors.profile-is-muted"))
+                      (modal/hide))
 
-              (and (= :validation type)
-                   (= :member-is-muted code))
-              (dm/error (tr "errors.member-is-muted"))
+            (and (= :validation type)
+                 (or (= :member-is-muted code)
+                     (= :email-has-permanent-bounces code)))
+            (swap! error-text (tr "errors.email-spam-or-permanent-bounces" (:email error)))
 
-              (and (= :validation type)
-                   (= :email-has-permanent-bounces code))
-              (dm/error (tr "errors.email-has-permanent-bounces" email))
-
-              :else
-              (dm/error (tr "errors.generic")))))
+            :else
+            (st/emit! (dm/error (tr "errors.generic"))
+                      (modal/hide))))
 
         on-submit
         (fn [form]
@@ -118,17 +118,25 @@
                         :on-error   (partial on-error form)}]
             (st/emit! (dd/invite-team-member (with-meta params mdata))
                       (dd/fetch-team-invitations))))]
-
+    
     [:div.modal.dashboard-invite-modal.form-container
      [:& fm/form {:on-submit on-submit :form form}
       [:div.title
        [:span.text (tr "modals.invite-member.title")]]
 
+      (when-not (= "" @error-text)
+        [:div.error
+         [:span.icon i/msg-error]
+         [:span.text @error-text]])
+
       [:div.form-row
-       [:& fm/input {:name :email
-                     :label (tr "labels.email")}]
-       [:& fm/select {:name :role
-                      :options roles}]]
+       [:& fm/multi-input {:type "email"
+                           :name :emails
+                           :auto-focus? true
+                           :trim true
+                           :valid-item-fn us/parse-email
+                           :label (tr "modals.invite-member.emails")}]
+       [:& fm/select {:name :role :options roles}]]
 
       [:div.action-buttons
        [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))

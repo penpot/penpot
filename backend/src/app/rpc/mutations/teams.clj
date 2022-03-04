@@ -354,15 +354,20 @@
 (declare create-team-invitation)
 
 (s/def ::email ::us/email)
+(s/def ::emails ::us/set-of-emails)
 (s/def ::invite-team-member
-  (s/keys :req-un [::profile-id ::team-id ::email ::role]))
+  (s/keys :req-un [::profile-id ::team-id ::role]
+          :opt-un [::email ::emails]))
 
 (sv/defmethod ::invite-team-member
-  [{:keys [pool] :as cfg} {:keys [profile-id team-id email role] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id email emails role] :as params}]
   (db/with-atomic [conn pool]
     (let [perms    (teams/get-permissions conn profile-id team-id)
           profile  (db/get-by-id conn :profile profile-id)
-          team     (db/get-by-id conn :team team-id)]
+          team     (db/get-by-id conn :team team-id)
+          emails   (or emails #{})
+          emails   (if email (conj emails email) emails)
+          ]
 
       (when-not (:is-admin perms)
         (ex/raise :type :validation
@@ -373,14 +378,16 @@
         (ex/raise :type :validation
                   :code :profile-is-muted
                   :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
-
-      (create-team-invitation
-       (assoc cfg
-              :email email
-              :conn conn
-              :team team
-              :profile profile
-              :role role))
+      
+      (doseq [email emails]
+        (create-team-invitation
+         (assoc cfg
+                :email email
+                :conn conn
+                :team team
+                :profile profile
+                :role role))
+        )      
       nil)))
 
 (def sql:upsert-team-invitation
@@ -408,12 +415,14 @@
     (when (and member (not (eml/allow-send-emails? conn member)))
       (ex/raise :type :validation
                 :code :member-is-muted
+                :email email
                 :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
 
     ;; Secondly check if the invited member email is part of the global spam/bounce report.
     (when (eml/has-bounce-reports? conn email)
       (ex/raise :type :validation
                 :code :email-has-permanent-bounces
+                :email email
                 :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
 
 

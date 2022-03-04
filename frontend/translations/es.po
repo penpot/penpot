@@ -620,6 +620,9 @@ msgstr "No puedes usar tu email como password"
 msgid "errors.email-has-permanent-bounces"
 msgstr "El email «%s» tiene varios reportes de rebote permanente."
 
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "El correo de confirmación debe coincidir"
@@ -1552,6 +1555,9 @@ msgstr "¿Seguro que quieres eliminar este integrante del equipo?"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Eliminar integrante del equipo"
+
+msgid "modals.invite-member.emails"
+msgstr "Emails, separados por coma"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member-confirm.accept"
