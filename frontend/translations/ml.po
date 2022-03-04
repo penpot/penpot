@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-02-25 20:56+0000\n"
+"PO-Revision-Date: 2022-03-05 20:57+0000\n"
 "Last-Translator: Joseph V M <shibinjose991@gmail.com>\n"
 "Language-Team: Malayalam <https://hosted.weblate.org/projects/penpot/"
 "frontend/ml/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.11.1-dev\n"
+"X-Generator: Weblate 4.12-dev\n"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -239,3 +239,38 @@ msgstr "നിങ്ങളുടെ പെൻപോട്ട്"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.delete-team"
 msgstr "സംഘത്തെ നീക്കുക"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.empty-files"
+msgstr "നിങ്ങൾക്കിതുവരെയും ഇവിടെ ഫയലുകളില്ല"
+
+msgid "dashboard.export-multi"
+msgstr "പെൻപോട്ട് %s ഫയലുകൾ എക്സ്പോർട്ട് ചെയ്യുക"
+
+msgid "dashboard.draft-title"
+msgstr "ഡ്രാഫ്റ്റ്"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "പകർപ്പ്"
+
+msgid "dashboard.export-single"
+msgstr "പെൻപോട്ട് ഫയൽ എക്സ്പോർട്ട് ചെയ്യുക"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "%s ഫയലുകളുടെ പകർപ്പ്"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"ഇതുവരെയും ഇവിടെ ഫയലുകളില്ല. നിങ്ങൾക്ക് ചില ടെമ്പ്ലേറ്റുകൾ "
+"പരീക്ഷിക്കണമെന്നുണ്ടെങ്കിൽ [ലൈബ്രറികളുടെയും ടെമ്പ്ലേറ്റുകളുടെയും "
+"വിഭാഗത്തിലേക്ക്] (https://penpot.app/libraries-templates.html) പോകാവുന്നതാണ്"
+
+msgid "dashboard.export-frames"
+msgstr "ആർട്ട്ബോർഡുകൾ പിഡിഎഫായി എക്സ്പോർട്ട് ചെയ്യുക...."
+
+msgid "dashboard.export.detail"
+msgstr "* ഘടകങ്ങൾ, ഗ്രാഫിക്സ്, നിറങ്ങൾ അല്ലെങ്കിൽ മുദ്രണകലകൾ എന്നിവ ഉൾപ്പെടാം."
