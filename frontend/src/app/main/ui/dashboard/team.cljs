@@ -118,7 +118,7 @@
                         :on-error   (partial on-error form)}]
             (st/emit! (dd/invite-team-member (with-meta params mdata))
                       (dd/fetch-team-invitations))))]
-
+    
     [:div.modal.dashboard-invite-modal.form-container
      [:& fm/form {:on-submit on-submit :form form}
       [:div.title

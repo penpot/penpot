@@ -141,9 +141,9 @@
                   :focus     @focus?
                   :valid     (and touched? (not error))
                   :invalid   (and touched? error)
-                  :disabled  disabled
+                  :disabled  disabled)
                   ;; :empty     (str/empty? value)
-                  )
+
 
         on-focus  #(reset! focus? true)
         on-change (fn [event]
@@ -278,7 +278,7 @@
            (let [value (str/join " " (map :text items))]
              (fm/update-input-value! form input-name value))))
 
-        on-key-up
+        on-key-down
         (mf/use-fn
          (mf/deps @value)
          (fn [event]
@@ -309,12 +309,13 @@
         remove-item!
         (mf/use-fn
          (fn [item]
-           (swap! items #(into #{} (remove (fn [x] (= x item))) %))))]
+           (swap! items #(into [] (remove (fn [x] (= x item))) %))))]
 
-    (mf/with-effect [result]
-      (if (every? :valid result)
-        (update-form! result)
-        (update-form! [])))
+    (mf/with-effect [result @value]
+      (let [val (cond-> @value trim str/trim)
+            values (conj-dedup result {:text val :valid (valid-item-fn val)})
+            values (filterv #(:valid %) values)]
+        (update-form! values)))
 
     [:div {:class klass}
      (when-let [items (seq @items)]
@@ -331,7 +332,7 @@
               :auto-focus true
               :on-focus on-focus
               :on-blur on-blur
-              :on-key-up on-key-up
+              :on-key-down on-key-down
               :value @value
               :on-change on-change
               :placeholder (when empty? label)}]

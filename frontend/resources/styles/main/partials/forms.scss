@@ -230,6 +230,8 @@ textarea {
 .custom-multi-input {
   border-radius: 2px;
   border: 1px solid $color-gray-20;
+  max-height: 300px;
+  overflow-y: auto;
 
   &.invalid {
     label {
@@ -253,7 +255,7 @@ textarea {
   }
 
   .selected-item {
-    // margin-bottom: 5px;
+    width: 100%;
 
     &:not(:last-child) {
       margin-right: 3px;

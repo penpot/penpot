@@ -4,7 +4,7 @@
   padding: 14px;
   box-shadow: 0px 4px 8px rgba($color-black, 0.25);
   border-radius: 8px;
-  width: 450px;
+  width: 500px;
   position: fixed;
 
   form {
@@ -23,9 +23,12 @@
   }
 
   .custom-select {
-    width: 155px;
+    width: 180px;
     overflow: hidden;
     justify-content: normal;
+    select {
+      height: auto;
+    }
   }
 
   .action-buttons {
