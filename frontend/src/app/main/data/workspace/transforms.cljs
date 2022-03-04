@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
@@ -145,7 +146,8 @@
              shapes  (->> shapes
                           (remove #(get % :blocked false))
                           (mapcat #(cph/get-children objects (:id %)))
-                          (concat shapes))
+                          (concat shapes)
+                          (filter #((cpc/editable-attrs (:type %)) :rotation)))
 
              update-shape
              (fn [modifiers shape]

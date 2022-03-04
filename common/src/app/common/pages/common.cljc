@@ -247,8 +247,6 @@
           :width :height
           :x :y
           :rotation
-          :rx :ry
-          :r1 :r2 :r3 :r4
           :selrect
 
           :constraints-h
