@@ -59,7 +59,8 @@
                                              :fontStyle (:font-style data)
                                              :direction (if (:rtl data) "rtl" "ltr")
                                              :whiteSpace "pre"}
-                                        (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})]
+                                        (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
+              shape (assoc shape :fills (:fills data))]
           [:& shape-custom-strokes {:shape shape}
            [:> :text props (:text data)]]))]]))
 

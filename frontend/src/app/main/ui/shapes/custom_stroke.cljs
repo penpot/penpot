@@ -329,7 +329,6 @@
 
         props (cond
                 (and last-stroke? url-fill?)
-                ;; TODO: check this zero
                 (obj/set! props "fill" (str "url(#fill-0-" render-id ")"))
 
                 (and last-stroke? one-fill?)
