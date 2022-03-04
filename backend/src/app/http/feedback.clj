@@ -7,7 +7,6 @@
 (ns app.http.feedback
   "A general purpose feedback module."
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.config :as cf]
@@ -18,7 +17,9 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [yetti.request :as yrq]
+   [yetti.response :as yrs]))
 
 (declare ^:private send-feedback)
 (declare ^:private handler)
@@ -42,9 +43,8 @@
 (defn- handler
   [{:keys [pool] :as cfg} {:keys [profile-id] :as request}]
   (let [ftoken (cf/get :feedback-token ::no-token)
-        token  (get-in request [:headers "x-feedback-token"])
-        params (d/merge (:params request)
-                        (:body-params request))]
+        token  (yrq/get-header request "x-feedback-token")
+        params (::yrq/params request)]
     (cond
       (uuid? profile-id)
       (let [profile (profile/retrieve-profile-data pool profile-id)
@@ -54,7 +54,7 @@
       (= token ftoken)
       (send-feedback cfg nil params))
 
-    {:status 204 :body ""}))
+    (yrs/response 204)))
 
 (s/def ::content ::us/string)
 (s/def ::from    ::us/email)

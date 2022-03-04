@@ -83,6 +83,9 @@
    {:executor (ig/ref [::default :app.worker/executor])}
 
    :app.http/session
+   {:store (ig/ref :app.http.session/store)}
+
+   :app.http.session/store
    {:pool     (ig/ref :app.db/pool)
     :tokens   (ig/ref :app.tokens/tokens)
     :executor (ig/ref [::default :app.worker/executor])}
@@ -110,14 +113,12 @@
     :host        (cf/get :http-server-host)
     :router      (ig/ref :app.http/router)
     :metrics     (ig/ref :app.metrics/metrics)
-    :executor    (ig/ref [::default :app.worker/executor])
-    :session     (ig/ref :app.http/session)
-    :max-threads (cf/get :http-server-max-threads)
-    :min-threads (cf/get :http-server-min-threads)}
+    :executors   (ig/ref :app.worker/executors)}
 
    :app.http/router
    {:assets        (ig/ref :app.http.assets/handlers)
     :feedback      (ig/ref :app.http.feedback/handler)
+    :session       (ig/ref :app.http/session)
     :awsns-handler (ig/ref :app.http.awsns/handler)
     :oauth         (ig/ref :app.http.oauth/handler)
     :debug         (ig/ref :app.http.debug/handlers)

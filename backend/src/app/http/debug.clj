@@ -25,7 +25,9 @@
    [fipp.edn :as fpp]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [yetti.request :as yrq]
+   [yetti.response :as yrs]))
 
 ;; (selmer.parser/cache-off!)
 
@@ -41,11 +43,10 @@
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
-
-  {:status 200
-   :headers {"content-type" "text/html"}
-   :body (-> (io/resource "templates/debug.tmpl")
-             (tmpl/render {}))})
+  (yrs/response :status  200
+                :headers {"content-type" "text/html"}
+                :body    (-> (io/resource "templates/debug.tmpl")
+                             (tmpl/render {}))))
 
 
 (def sql:retrieve-range-of-changes
@@ -61,13 +62,14 @@
               :code :enpty-data
               :hint "empty response"))
 
-  (cond-> {:status 200
-           :headers {"content-type" "application/transit+json"}
-           :body body}
+  (cond-> (yrs/response :status  200
+                        :body    body
+                        :headers {"content-type" "application/transit+json"})
     (contains? params :download)
     (update :headers assoc "content-disposition" "attachment")))
 
-(defn retrieve-file-data
+
+(defn- retrieve-file-data
   [{:keys [pool]} {:keys [params] :as request}]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
@@ -87,7 +89,7 @@
             (update :headers assoc "content-type" "application/octet-stream"))
         (prepare-response request (some-> data blob/decode))))))
 
-(defn upload-file-data
+(defn- upload-file-data
   [{:keys [pool]} {:keys [profile-id params] :as request}]
   (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
         data       (some-> params :file :tempfile fs/slurp-bytes blob/decode)]
@@ -99,10 +101,16 @@
                                    :project-id project-id
                                    :profile-id profile-id
                                    :data data})
-        {:status 200
-         :body "OK"})
-      {:status 500
-       :body "error"})))
+        (yrs/response 200 "OK"))
+      (yrs/response 500 "ERROR"))))
+
+(defn file-data
+  [cfg request]
+  (case (yrq/method request)
+    :get (retrieve-file-data cfg request)
+    :post (upload-file-data cfg request)
+    (ex/raise :type :http
+              :code :method-not-found)))
 
 (defn retrieve-file-changes
   [{:keys [pool]} request]
@@ -175,12 +183,11 @@
                          (retrieve-report)
                          (render-template))]
       (if result
-        {:status 200
-         :headers {"content-type" "text/html; charset=utf-8"
-                   "x-robots-tag" "noindex"}
-         :body result}
-        {:status 404
-         :body "not found"}))))
+        (yrs/response :status 200
+                      :body result
+                      :headers {"content-type" "text/html; charset=utf-8"
+                                "x-robots-tag" "noindex"})
+        (yrs/response 404 "not found")))))
 
 (def sql:error-reports
   "select id, created_at from server_error_report order by created_at desc limit 100")
@@ -192,18 +199,18 @@
               :code :only-admins-allowed))
   (let [items (db/exec! pool [sql:error-reports])
         items (map #(update % :created-at dt/format-instant :rfc1123) items)]
-    {:status 200
-     :headers {"content-type" "text/html; charset=utf-8"
-               "x-robots-tag" "noindex"}
-     :body (-> (io/resource "templates/error-list.tmpl")
-               (tmpl/render {:items items}))}))
+    (yrs/response :status 200
+                  :body (-> (io/resource "templates/error-list.tmpl")
+                            (tmpl/render {:items items}))
+                  :headers {"content-type" "text/html; charset=utf-8"
+                            "x-robots-tag" "noindex"})))
 
 (defn health-check
   "Mainly a task that performs a health check."
   [{:keys [pool]} _]
   (db/with-atomic [conn pool]
     (db/exec-one! conn ["select count(*) as count from server_prop;"])
-    {:status 200 :body "Ok"}))
+    (yrs/response 200 "OK")))
 
 (defn- wrap-async
   [{:keys [executor] :as cfg} f]
@@ -219,8 +226,7 @@
   [_ cfg]
   {:index (wrap-async cfg index)
    :health-check (wrap-async cfg health-check)
-   :retrieve-file-data (wrap-async cfg retrieve-file-data)
    :retrieve-file-changes (wrap-async cfg retrieve-file-changes)
    :retrieve-error (wrap-async cfg retrieve-error)
    :retrieve-error-list (wrap-async cfg retrieve-error-list)
-   :upload-file-data (wrap-async cfg upload-file-data)})
+   :file-data (wrap-async cfg file-data)})

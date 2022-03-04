@@ -22,7 +22,8 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [yetti.response :as yrs]))
 
 (defn- build-redirect-uri
   [{:keys [provider] :as cfg}]
@@ -175,9 +176,7 @@
 
 (defn- redirect-response
   [uri]
-  {:status 302
-   :headers {"location" (str uri)}
-   :body ""})
+  (yrs/response :status 302 :headers {"location" (str uri)}))
 
 (defn- generate-error-redirect
   [cfg error]
@@ -233,7 +232,7 @@
                        :props props
                        :exp (dt/in-future "15m")})
         uri   (build-auth-uri cfg state)]
-    (respond {:status 200 :body {:redirect-uri uri}})))
+    (respond (yrs/response 200 {:redirect-uri uri}))))
 
 (defn- callback-handler
   [cfg request respond _]

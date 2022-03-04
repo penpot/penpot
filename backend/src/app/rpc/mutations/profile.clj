@@ -407,43 +407,32 @@
 
 (declare update-profile-photo)
 
-(s/def ::content-type ::media/image-content-type)
-(s/def ::file (s/and ::media/upload (s/keys :req-un [::content-type])))
-
+(s/def ::file ::media/upload)
 (s/def ::update-profile-photo
   (s/keys :req-un [::profile-id ::file]))
-
-;; TODO: properly handle resource usage, transactions and storage
 
 (sv/defmethod ::update-profile-photo
   [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
-  (media/validate-media-type! (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
+  (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
   (let [cfg (update cfg :storage media/configure-assets-storage)]
     (update-profile-photo cfg params)))
 
 (defn update-profile-photo
-  [{:keys [pool storage executors] :as cfg} {:keys [profile-id file] :as params}]
-  (p/do
-    ;; Perform file validation, this operation executes some
-    ;; comandline helpers for true check of the image file. And it
-    ;; raises an exception if somethig is wrong with the file.
-    (px/with-dispatch (:blocking executors)
-      (media/run {:cmd :info :input {:path (:tempfile file) :mtype (:content-type file)}}))
+  [{:keys [pool storage executors] :as cfg} {:keys [profile-id] :as params}]
+  (p/let [profile (px/with-dispatch (:default executors)
+                    (db/get-by-id pool :profile profile-id))
+          photo   (teams/upload-photo cfg params)]
 
-    (p/let [profile (px/with-dispatch (:default executors)
-                      (db/get-by-id pool :profile profile-id))
-            photo   (teams/upload-photo cfg params)]
+    ;; Schedule deletion of old photo
+    (when-let [id (:photo-id profile)]
+      (sto/touch-object! storage id))
 
-      ;; Schedule deletion of old photo
-      (when-let [id (:photo-id profile)]
-        (sto/touch-object! storage id))
-
-      ;; Save new photo
-      (db/update! pool :profile
-                  {:photo-id (:id photo)}
-                  {:id profile-id})
-      nil)))
+    ;; Save new photo
+    (db/update! pool :profile
+                {:photo-id (:id photo)}
+                {:id profile-id})
+    nil))
 
 ;; --- MUTATION: Request Email Change
 

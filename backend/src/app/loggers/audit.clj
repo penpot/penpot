@@ -24,13 +24,15 @@
    [integrant.core :as ig]
    [lambdaisland.uri :as u]
    [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [yetti.request :as yrq]
+   [yetti.response :as yrs]))
 
 (defn parse-client-ip
-  [{:keys [headers] :as request}]
-  (or (some-> (get headers "x-forwarded-for") (str/split ",") first)
-      (get headers "x-real-ip")
-      (get request :remote-addr)))
+  [request]
+  (or (some-> (yrq/get-header request "x-forwarded-for") (str/split ",") first)
+      (yrq/get-header request "x-real-ip")
+      (yrq/remote-addr request)))
 
 (defn profile->props
   [profile]
@@ -87,11 +89,10 @@
     (do
       (l/warn :hint "audit log http handler disabled or db is read-only")
       (fn [_ respond _]
-        (respond {:status 204 :body ""})))
+        (respond (yrs/response 204))))
 
-
-    (letfn [(handler [{:keys [params profile-id] :as request}]
-              (let [events  (->> (:events params)
+    (letfn [(handler [{:keys [profile-id] :as request}]
+              (let [events  (->> (:events (:params request))
                                  (remove #(not= profile-id (:profile-id %)))
                                  (us/conform ::frontend-events))
 
@@ -113,7 +114,7 @@
         (-> (px/submit! executor #(handler request))
             (p/catch handle-error))
 
-        (respond {:status 204 :body ""})))))
+        (respond (yrs/response 204))))))
 
 (defn- persist-http-events
   [{:keys [pool events ip-addr source] :as cfg}]

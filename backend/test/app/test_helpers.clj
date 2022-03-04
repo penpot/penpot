@@ -30,6 +30,7 @@
    [expound.alpha :as expound]
    [integrant.core :as ig]
    [mockery.core :as mk]
+   [yetti.request :as yrq]
    [promesa.core :as p])
   (:import org.postgresql.ds.PGSimpleDataSource))
 
@@ -55,12 +56,20 @@
                    (dissoc :app.srepl/server
                            :app.http/server
                            :app.http/router
-                           :app.notifications/handler
-                           :app.loggers.sentry/reporter
+                           :app.http.awsns/handler
+                           :app.http.session/updater
                            :app.http.oauth/google
                            :app.http.oauth/gitlab
                            :app.http.oauth/github
                            :app.http.oauth/all
+                           :app.worker/executors-monitor
+                           :app.http.oauth/handler
+                           :app.notifications/handler
+                           :app.loggers.sentry/reporter
+                           :app.loggers.mattermost/reporter
+                           :app.loggers.loki/reporter
+                           :app.loggers.database/reporter
+                           :app.loggers.zmq/receiver
                            :app.worker/cron
                            :app.worker/worker)
                    (d/deep-merge
@@ -71,7 +80,11 @@
     (try
       (binding [*system* system
                 *pool*   (:app.db/pool system)]
-        (next))
+        (mk/with-mocks [mock1 {:target 'app.rpc.mutations.profile/derive-password
+                               :return identity}
+                        mock2 {:target 'app.rpc.mutations.profile/verify-password
+                               :return (fn [a b] {:valid (= a b)})}]
+          (next)))
       (finally
         (ig/halt! system)))))
 

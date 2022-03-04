@@ -19,7 +19,9 @@
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
-   [ring.middleware.session.store :as rss]))
+   [promesa.core :as p]
+   [promesa.exec :as px]
+   [yetti.request :as yrq]))
 
 ;; A default cookie name for storing the session. We don't allow to configure it.
 (def token-cookie-name "auth-token")
@@ -29,65 +31,100 @@
 ;; prevents using it if some one wants to.
 (def authenticated-cookie-name "authenticated")
 
-(deftype DatabaseStore [pool tokens]
-  rss/SessionStore
-  (read-session [_ token]
-    (db/exec-one! pool (sql/select :http-session {:id token})))
+(defprotocol ISessionStore
+  (read-session [store key])
+  (write-session [store key data])
+  (delete-session [store key]))
 
-  (write-session [_ _ data]
-    (let [profile-id (:profile-id data)
-          user-agent (:user-agent data)
-          token      (tokens :generate {:iss "authentication"
-                                        :iat (dt/now)
-                                        :uid profile-id})
+(defn- make-database-store
+  [{:keys [pool tokens executor]}]
+  (reify ISessionStore
+    (read-session [_ token]
+      (px/with-dispatch executor
+        (db/exec-one! pool (sql/select :http-session {:id token}))))
 
-          now        (dt/now)
-          params     {:user-agent user-agent
-                      :profile-id profile-id
-                      :created-at now
-                      :updated-at now
-                      :id token}]
-      (db/insert! pool :http-session params)
-      token))
+    (write-session [_ _ data]
+      (px/with-dispatch executor
+        (let [profile-id (:profile-id data)
+              user-agent (:user-agent data)
+              token      (tokens :generate {:iss "authentication"
+                                            :iat (dt/now)
+                                            :uid profile-id})
 
-  (delete-session [_ token]
-    (db/delete! pool :http-session {:id token})
-    nil))
+              now        (dt/now)
+              params     {:user-agent user-agent
+                          :profile-id profile-id
+                          :created-at now
+                          :updated-at now
+                          :id token}]
+          (db/insert! pool :http-session params)
+          token)))
 
-(deftype MemoryStore [cache tokens]
-  rss/SessionStore
-  (read-session [_ token]
-    (get @cache token))
+    (delete-session [_ token]
+      (px/with-dispatch executor
+        (db/delete! pool :http-session {:id token})
+        nil))))
 
-  (write-session [_ _ data]
-    (let [profile-id (:profile-id data)
-          user-agent (:user-agent data)
-          token      (tokens :generate {:iss "authentication"
-                                        :iat (dt/now)
-                                        :uid profile-id})
-          params     {:user-agent user-agent
-                      :profile-id profile-id
-                      :id token}]
+(defn make-inmemory-store
+  [{:keys [tokens]}]
+  (let [cache (atom {})]
+    (reify ISessionStore
+      (read-session [_ token]
+        (p/do (get @cache token)))
 
-      (swap! cache assoc token params)
-      token))
+      (write-session [_ _ data]
+        (p/do
+          (let [profile-id (:profile-id data)
+                user-agent (:user-agent data)
+                token      (tokens :generate {:iss "authentication"
+                                              :iat (dt/now)
+                                              :uid profile-id})
+                params     {:user-agent user-agent
+                            :profile-id profile-id
+                            :id token}]
 
-  (delete-session [_ token]
-    (swap! cache dissoc token)
-    nil))
+            (swap! cache assoc token params)
+            token)))
+
+      (delete-session [_ token]
+        (p/do
+          (swap! cache dissoc token)
+          nil)))))
+
+(s/def ::tokens fn?)
+(defmethod ig/pre-init-spec ::store [_]
+  (s/keys :req-un [::db/pool ::wrk/executor ::tokens]))
+
+(defmethod ig/init-key ::store
+  [_ {:keys [pool] :as cfg}]
+  (if (db/read-only? pool)
+    (make-inmemory-store cfg)
+    (make-database-store cfg)))
+
+(defmethod ig/halt-key! ::store
+  [_ _])
 
 ;; --- IMPL
 
-(defn- create-session
+(defn- create-session!
   [store request profile-id]
-  (let [params {:user-agent (get-in request [:headers "user-agent"])
+  (let [params {:user-agent (yrq/get-header request "user-agent")
                 :profile-id profile-id}]
-    (rss/write-session store nil params)))
+    (write-session store nil params)))
 
-(defn- delete-session
+(defn- delete-session!
   [store {:keys [cookies] :as request}]
   (when-let [token (get-in cookies [token-cookie-name :value])]
-    (rss/delete-session store token)))
+    (delete-session store token)))
+
+(defn- retrieve-session
+  [store request]
+  (when-let [cookie (yrq/get-cookie request token-cookie-name)]
+    (-> (read-session store (:value cookie))
+        (p/then (fn [session]
+                  (when session
+                    {:session-id (:id session)
+                     :profile-id (:profile-id session)}))))))
 
 (defn- add-cookies
   [response token]
@@ -114,43 +151,40 @@
 (defn- clear-cookies
   [response]
   (let [authenticated-cookie-domain (cfg/get :authenticated-cookie-domain)]
-    (assoc response :cookies {token-cookie-name {:path "/"
-                                                 :value ""
-                                                 :max-age -1}
-                              authenticated-cookie-name {:domain authenticated-cookie-domain
-                                                         :path "/"
-                                                         :value ""
-                                                         :max-age -1}})))
+    (assoc response :cookies
+           {token-cookie-name {:path "/"
+                               :value ""
+                               :max-age -1}
+            authenticated-cookie-name {:domain authenticated-cookie-domain
+                                       :path "/"
+                                       :value ""
+                                       :max-age -1}})))
 
-;; NOTE: for now the session middleware is synchronous and is
-;; processed on jetty threads. This is because of probably a bug on
-;; jetty that causes NPE on upgrading connection to websocket from
-;; thread not managed by jetty. We probably can fix it running
-;; websocket server in different port as standalone service.
+(defn- make-middleware
+  [{:keys [::events-ch store] :as cfg}]
+  {:name :session-middleware
+   :wrap (fn [handler]
+           (fn [request respond raise]
+             (try
+               (-> (retrieve-session store request)
+                   (p/then' #(merge request %))
+                   (p/finally (fn [request cause]
+                                (if cause
+                                  (raise cause)
+                                  (do
+                                    (when-let [session-id (:session-id request)]
+                                      (a/offer! events-ch session-id))
+                                    (handler request respond raise))))))
+               (catch Throwable cause
+                 (raise cause)))))})
 
-(defn- middleware
-  [{:keys [::events-ch ::store] :as cfg} handler]
-  (letfn [(get-session [{:keys [cookies] :as request}]
-            (if-let [token (get-in cookies [token-cookie-name :value])]
-              (if-let [{:keys [id profile-id]} (rss/read-session store token)]
-                (assoc request :session-id id :profile-id profile-id)
-                request)
-              request))]
-
-    (fn [request respond raise]
-      (try
-        (let [{:keys [session-id profile-id] :as request} (get-session request)]
-          (when (and session-id profile-id)
-            (a/offer! events-ch session-id))
-          (handler request respond raise))
-        (catch Throwable cause
-          (raise cause))))))
 
 ;; --- STATE INIT: SESSION
 
-(s/def ::tokens fn?)
+(s/def ::store #(satisfies? ISessionStore %))
+
 (defmethod ig/pre-init-spec :app.http/session [_]
-  (s/keys :req-un [::db/pool ::tokens ::wrk/executor]))
+  (s/keys :req-un [::store]))
 
 (defmethod ig/prep-key :app.http/session
   [_ cfg]
@@ -158,29 +192,23 @@
            (d/without-nils cfg)))
 
 (defmethod ig/init-key :app.http/session
-  [_ {:keys [pool tokens] :as cfg}]
+  [_ {:keys [store] :as cfg}]
   (let [events-ch (a/chan (a/dropping-buffer (:buffer-size cfg)))
-        store     (if (db/read-only? pool)
-                    (->MemoryStore (atom {}) tokens)
-                    (->DatabaseStore pool tokens))
-
-        cfg       (assoc cfg ::store store ::events-ch events-ch)]
-
-    (when (db/read-only? pool)
-      (l/warn :hint "sessions module initialized with in-memory store"))
+        cfg       (assoc cfg ::events-ch events-ch)]
 
     (-> cfg
-        (assoc :middleware (partial middleware cfg))
+        (assoc :middleware (make-middleware cfg))
         (assoc :create (fn [profile-id]
                          (fn [request response]
-                           (let [token (create-session store request profile-id)]
+                           (p/let [token (create-session! store request profile-id)]
                              (add-cookies response token)))))
         (assoc :delete (fn [request response]
-                         (delete-session store request)
-                         (-> response
-                             (assoc :status 204)
-                             (assoc :body "")
-                             (clear-cookies)))))))
+                         (p/do
+                           (delete-session! store request)
+                           (-> response
+                               (assoc :status 204)
+                               (assoc :body nil)
+                               (clear-cookies))))))))
 
 (defmethod ig/halt-key! :app.http/session
   [_ data]

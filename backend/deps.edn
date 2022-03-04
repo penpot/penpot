@@ -19,12 +19,12 @@
   io.lettuce/lettuce-core {:mvn/version "6.1.6.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
-  funcool/yetti {:git/tag "v5.0" :git/sha "f7d61e2"
-                 :git/url "https://github.com/funcool/yetti"
+  funcool/yetti {:git/tag "v6.0" :git/sha "4c8690e"
+                 :git/url "https://github.com/funcool/yetti.git"
                  :exclusions [org.slf4j/slf4j-api]}
 
   com.github.seancorfield/next.jdbc {:mvn/version "1.2.772"}
-  metosin/reitit-ring {:mvn/version "0.5.16"}
+  metosin/reitit-core {:mvn/version "0.5.16"}
   org.postgresql/postgresql {:mvn/version "42.3.3"}
   com.zaxxer/HikariCP {:mvn/version "5.0.1"}
   funcool/datoteka {:mvn/version "2.0.0"}

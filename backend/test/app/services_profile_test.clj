@@ -110,8 +110,8 @@
                   :profile-id (:id profile)
                   :file {:filename "sample.jpg"
                          :size 123123
-                         :tempfile (th/tempfile "app/test_files/sample.jpg")
-                         :content-type "image/jpeg"}}
+                         :path (th/tempfile "app/test_files/sample.jpg")
+                         :mtype "image/jpeg"}}
             out  (th/mutation! data)]
 
         ;; (th/print-result! out)

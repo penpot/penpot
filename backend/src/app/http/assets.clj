@@ -18,7 +18,8 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [yetti.response :as yrs]))
 
 (def ^:private cache-max-age
   (dt/duration {:hours 24}))
@@ -53,27 +54,25 @@
     (case (:type backend)
       :db
       (p/let [body (sto/get-object-bytes storage obj)]
-        {:status 200
-         :headers {"content-type" (:content-type mdata)
-                   "cache-control" (str "max-age=" (inst-ms cache-max-age))}
-         :body body})
+        (yrs/response :status  200
+                      :body    body
+                      :headers {"content-type" (:content-type mdata)
+                                "cache-control" (str "max-age=" (inst-ms cache-max-age))}))
 
       :s3
       (p/let [{:keys [host port] :as url} (sto/get-object-url storage obj {:max-age signature-max-age})]
-        {:status 307
-         :headers {"location" (str url)
-                   "x-host"   (cond-> host port (str ":" port))
-                   "cache-control" (str "max-age=" (inst-ms cache-max-age))}
-         :body ""})
+        (yrs/response :status  307
+                      :headers {"location" (str url)
+                                "x-host"   (cond-> host port (str ":" port))
+                                "cache-control" (str "max-age=" (inst-ms cache-max-age))}))
 
       :fs
       (p/let [purl (u/uri (:assets-path cfg))
               purl (u/join purl (sto/object->relative-path obj))]
-        {:status 204
-         :headers {"x-accel-redirect" (:path purl)
-                   "content-type" (:content-type mdata)
-                   "cache-control" (str "max-age=" (inst-ms cache-max-age))}
-         :body ""}))))
+        (yrs/response :status  204
+                      :headers {"x-accel-redirect" (:path purl)
+                                "content-type" (:content-type mdata)
+                                "cache-control" (str "max-age=" (inst-ms cache-max-age))})))))
 
 (defn objects-handler
   "Handler that servers storage objects by id."
@@ -84,7 +83,7 @@
                 obj (sto/get-object storage id)]
           (if obj
             (serve-object cfg obj)
-            {:status 404 :body ""})))
+            (yrs/response 404))))
 
       (p/bind p/wrap)
       (p/then' respond)
@@ -98,7 +97,7 @@
           obj  (sto/get-object storage (kf mobj))]
     (if obj
       (serve-object cfg obj)
-      {:status 404 :body ""})))
+      (yrs/response 404))))
 
 (defn file-objects-handler
   "Handler that serves storage objects by file media id."

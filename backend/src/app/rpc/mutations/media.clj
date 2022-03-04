@@ -20,7 +20,6 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [datoteka.core :as fs]
    [promesa.core :as p]
    [promesa.exec :as px]))
 
@@ -41,9 +40,7 @@
 (declare create-file-media-object)
 (declare select-file)
 
-(s/def ::content-type ::media/image-content-type)
-(s/def ::content (s/and ::media/upload (s/keys :req-un [::content-type])))
-
+(s/def ::content ::media/upload)
 (s/def ::is-local ::us/boolean)
 
 (s/def ::upload-file-media-object
@@ -95,14 +92,14 @@
 
 (defn create-file-media-object
   [{:keys [storage pool executors] :as cfg} {:keys [id file-id is-local name content] :as params}]
-  (media/validate-media-type! (:content-type content))
+  (media/validate-media-type! content)
 
   (letfn [;; Function responsible to retrieve the file information, as
           ;; it is synchronous operation it should be wrapped into
           ;; with-dispatch macro.
-          (get-info [path mtype]
+          (get-info [content]
             (px/with-dispatch (:blocking executors)
-              (media/run {:cmd :info :input {:path path :mtype mtype}})))
+              (media/run {:cmd :info :input content})))
 
           ;; Function responsible of calculating cryptographyc hash of
           ;; the provided data. Even though it uses the hight
@@ -114,16 +111,16 @@
 
           ;; Function responsible of generating thumnail. As it is synchronous
           ;; opetation, it should be wrapped into with-dispatch macro
-          (generate-thumbnail [info path]
+          (generate-thumbnail [info]
             (px/with-dispatch (:blocking executors)
               (media/run (assoc thumbnail-options
                                 :cmd :generic-thumbnail
-                                :input {:mtype (:mtype info) :path path}))))
+                                :input info))))
 
-          (create-thumbnail [info path]
+          (create-thumbnail [info]
             (when (and (not (svg-image? info))
                        (big-enough-for-thumbnail? info))
-              (p/let [thumb   (generate-thumbnail info path)
+              (p/let [thumb   (generate-thumbnail info)
                       hash    (calculate-hash (:data thumb))
                       content (-> (sto/content (:data thumb) (:size thumb))
                                   (sto/wrap-with-hash hash))]
@@ -134,8 +131,8 @@
                                   :content-type (:mtype thumb)
                                   :bucket "file-media-object"}))))
 
-          (create-image [info path]
-            (p/let [data    (cond-> path (= (:mtype info) "image/svg+xml") slurp)
+          (create-image [info]
+            (p/let [data    (cond-> (:path info) (= (:mtype info) "image/svg+xml") slurp)
                     hash    (calculate-hash data)
                     content (-> (sto/content data)
                                 (sto/wrap-with-hash hash))]
@@ -157,11 +154,9 @@
                                   (:height info)
                                   (:mtype info)])))]
 
-    (p/let [path  (fs/path (:tempfile content))
-            info  (get-info path (:content-type content))
-            thumb (create-thumbnail info path)
-            image (create-image info path)]
-
+    (p/let [info  (get-info content)
+            thumb (create-thumbnail info)
+            image (create-image info)]
       (insert-into-database info image thumb))))
 
 ;; --- Create File Media Object (from URL)
@@ -208,6 +203,14 @@
                :mtype mtype
                :format format}))
 
+          (get-upload-object [sobj]
+            (p/let [path  (sto/get-object-path storage sobj)
+                    mdata (meta sobj)]
+              {:filename "tempfile"
+               :size (:size sobj)
+               :path path
+               :mtype (:content-type mdata)}))
+
           (download-media [uri]
             (p/let [{:keys [body headers]} (http-client {:method :get :uri uri} {:response-type :input-stream})
                     {:keys [size mtype]} (parse-and-validate-size headers)]
@@ -217,12 +220,7 @@
                                     ::sto/expired-at (dt/in-future {:minutes 30})
                                     :content-type mtype
                                     :bucket "file-media-object"})
-                  (p/then (fn [sobj]
-                            (p/let [path (sto/get-object-path storage sobj)]
-                              {:filename "tempfile"
-                               :size (:size sobj)
-                               :tempfile path
-                               :content-type (:content-type (meta sobj))}))))))]
+                  (p/then get-upload-object))))]
 
     (p/let [content (download-media url)]
       (->> (merge params {:content content :name (or name (:filename content))})
@@ -240,7 +238,6 @@
   (db/with-atomic [conn pool]
     (let [file (select-file conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
-
       (-> (assoc cfg :conn conn)
           (clone-file-media-object params)))))
 
