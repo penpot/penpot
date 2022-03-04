@@ -268,7 +268,7 @@
                               :precision 2}]]])
 
        ;; ROTATION
-       (when (options :rotation)
+       (when (and (not= type :frame) (options :rotation))
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.rotation")]
           [:div.input-element.degrees {:title (tr "workspace.options.rotation")}
