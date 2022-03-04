@@ -249,6 +249,8 @@
         (update :data assoc :pages [page-id]))))
 
 (declare strip-frames-with-thumbnails)
+(declare extract-file-thumbnail)
+(declare get-first-page-data)
 
 (s/def ::strip-frames-with-thumbnails ::us/boolean)
 
@@ -256,16 +258,37 @@
   (s/keys :req-un [::profile-id ::file-id]
           :opt-un [::strip-frames-with-thumbnails]))
 
+(s/def ::file-data-for-thumbnail
+  (s/keys :req-un [::profile-id ::file-id]
+          :opt-un [::strip-frames-with-thumbnails]))
+
+(sv/defmethod ::file-data-for-thumbnail
+  "Retrieves the data for generate the thumbnail of the file. Used mainly for render
+  thumbnails on dashboard."
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
+  (check-read-permissions! pool profile-id file-id)
+  (p/let [file    (retrieve-file cfg file-id)
+          data (get-first-page-data file props)
+          file-thumbnail (extract-file-thumbnail (get-in file [:data :pages-index]))]
+
+    (assoc data :file-thumbnail file-thumbnail)))
+
 (sv/defmethod ::page
   "Retrieves the first page of the file. Used mainly for render
   thumbnails on dashboard."
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
   (check-read-permissions! pool profile-id file-id)
   (p/let [file    (retrieve-file cfg file-id)
-          page-id (get-in file [:data :pages 0])]
-    (cond-> (get-in file [:data :pages-index page-id])
-      (true? (:strip-frames-with-thumbnails props))
-      (strip-frames-with-thumbnails))))
+          data (get-first-page-data file props)]
+    data))
+
+(defn get-first-page-data
+  [file props]
+  (let [page-id (get-in file [:data :pages 0])
+        data (cond-> (get-in file [:data :pages-index page-id])
+               (true? (:strip-frames-with-thumbnails props))
+               (strip-frames-with-thumbnails))]
+    data))
 
 (defn strip-frames-with-thumbnails
   "Remove unnecesary shapes from frames that have thumbnail."
@@ -294,6 +317,16 @@
 
     (update data :objects update-objects)))
 
+
+(defn extract-file-thumbnail
+  "Extract the frame marked as file-thumbnail"
+  [pages]  
+  (->> pages
+       vals
+       (mapcat :objects)
+       vals
+       (filter :file-thumbnail)
+       first))
 
 ;; --- Query: Shared Library Files
 

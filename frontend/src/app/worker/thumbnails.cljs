@@ -29,11 +29,10 @@
     (rx/throw {:type :unexpected
                :code (:error response)})))
 
-(defn- request-page
-  [file-id page-id]
-  (let [uri (u/join (cfg/get-public-uri) "api/rpc/query/page")
+(defn- request-thumbnail
+  [file-id]
+  (let [uri (u/join (cfg/get-public-uri) "api/rpc/query/file-data-for-thumbnail")
         params {:file-id file-id
-                :id page-id
                 :strip-frames-with-thumbnails true}]
     (->> (http/send!
           {:method :get
@@ -45,20 +44,23 @@
 
 (defonce cache (atom {}))
 
-(defn render-page
+(defn render-frame
   [data ckey]
   (let [prev (get @cache ckey)]
     (if (= (:data prev) data)
       (:result prev)
-      (let [elem   (mf/element render/page-svg #js {:data data :width "290" :height "150" :thumbnails? true})
+      (let [file-thumbnail (:file-thumbnail data)
+            elem (if file-thumbnail
+                   (mf/element render/file-thumbnail-svg #js {:data file-thumbnail :width "290" :height "150"})
+                   (mf/element render/page-svg #js {:data data :width "290" :height "150" :thumbnails? true}))
             result (rds/renderToStaticMarkup elem)]
         (swap! cache assoc ckey {:data data :result result})
         result))))
 
 (defmethod impl/handler :thumbnails/generate
-  [{:keys [file-id page-id] :as message}]
-  (->> (request-page file-id page-id)
+  [{:keys [file-id] :as message}]
+  (->> (request-thumbnail file-id)
        (rx/map
         (fn [data]
-          {:svg (render-page data #{file-id page-id})
+          {:svg (render-frame data #{file-id})
            :fonts @fonts/loaded}))))

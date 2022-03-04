@@ -38,12 +38,12 @@
 (def ^:const CACHE-NAME "penpot")
 (def ^:const CACHE-URL "https://penpot.app/cache/")
 
+
 (defn use-thumbnail-cache
   "Creates some hooks to handle the files thumbnails cache"
   [file]
 
   (let [cache-url (str CACHE-URL (:id file) "/" (:revn file) ".svg")
-
         get-thumbnail
         (mf/use-callback
          (mf/deps cache-url)
@@ -83,14 +83,12 @@
                (if (some? thumb-data)
                  (rx/of thumb-data)
                  (->> (wrk/ask! {:cmd :thumbnails/generate
-                                 :file-id (:id file)
-                                 :page-id (get-in file [:data :pages 0])})
+                                 :file-id (:id file)})
                       (rx/tap cache-thumbnail)))))
 
             ;; If we have a problem we delegate to the thumbnail generation
             (rx/catch #(wrk/ask! {:cmd :thumbnails/generate
-                                  :file-id (:id file)
-                                  :page-id (get-in file [:data :pages 0])})))))))
+                                  :file-id (:id file)})))))))
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap [mf/memo]}

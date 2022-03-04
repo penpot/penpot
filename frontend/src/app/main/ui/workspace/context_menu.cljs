@@ -164,6 +164,22 @@
                      :on-click do-flip-horizontal}]
      [:& menu-separator]]))
 
+(mf/defc context-menu-thumbnail
+  [{:keys [shapes]}]
+  (let [single?   (= (count shapes) 1)
+        has-frame? (->> shapes (d/seek #(= :frame (:type %))))
+        is-frame? (and single? has-frame?)
+        do-toggle-thumbnail (st/emitf (dw/toggle-file-thumbnail-selected))]
+    (when is-frame?
+      [:*
+       (if (every? :file-thumbnail shapes)
+         [:& menu-entry {:title (tr "workspace.shape.menu.thumbnail-remove")
+                         :on-click do-toggle-thumbnail}]
+         [:& menu-entry {:title (tr "workspace.shape.menu.thumbnail-set")
+                         :shortcut (sc/get-tooltip :thumbnail-set)
+                         :on-click do-toggle-thumbnail}])
+       [:& menu-separator]])))
+
 (mf/defc context-menu-group
   [{:keys [shapes]}]
 
@@ -436,6 +452,7 @@
        [:> context-menu-edit props]
        [:> context-menu-layer-position props]
        [:> context-menu-flip props]
+       [:> context-menu-thumbnail props]
        [:> context-menu-group props]
        [:> context-focus-mode-menu props]
        [:> context-menu-path props]
