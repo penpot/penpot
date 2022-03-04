@@ -77,9 +77,8 @@
              [:& shape-custom-strokes {:shape shape}
               (if path?
                 [:> :path props]
-                [:> :rect props])
-
-              (for [item childs]
-                [:& shape-wrapper {:shape item
-                                   :key (dm/str (:id item))}])]])))
+                [:> :rect props])]
+             (for [item childs]
+               [:& shape-wrapper {:shape item
+                                  :key (dm/str (:id item))}])])))
 
