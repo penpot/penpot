@@ -8,6 +8,7 @@
 ### :bug: Bugs fixed
 
 - Fix length of names in sidebar [Taiga #2962](https://tree.taiga.io/project/penpot/issue/2962)
+- Fix issues on loki integration
 
 ### :heart: Community contributions by (Thank you!)
 

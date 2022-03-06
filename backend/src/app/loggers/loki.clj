@@ -52,8 +52,8 @@
   (let [labels {:host    (cfg/get :host)
                 :tenant  (cfg/get :tenant)
                 :version (:full cfg/version)
-                :logger  (:logger event)
-                :level   (:level event)}]
+                :logger  (:logger/name event)
+                :level   (:logger/level event)}]
     {:streams
      [{:stream labels
        :values [[(str (* (inst-ms (:created-at event)) 1000000))
