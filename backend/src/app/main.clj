@@ -314,9 +314,9 @@
     :pool     (ig/ref :app.db/pool)}
 
    :app.loggers.loki/reporter
-   {:uri      (cf/get :loggers-loki-uri)
-    :receiver (ig/ref :app.loggers.zmq/receiver)
-    :executor (ig/ref [::worker :app.worker/executor])}
+   {:uri         (cf/get :loggers-loki-uri)
+    :receiver    (ig/ref :app.loggers.zmq/receiver)
+    :http-client (ig/ref :app.http/client)}
 
    :app.loggers.mattermost/reporter
    {:uri         (cf/get :error-report-webhook)

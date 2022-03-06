@@ -10,41 +10,50 @@
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.util.async :as aa]
    [app.util.json :as json]
-   [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
-(declare handle-event)
+(declare ^:private handle-event)
+(declare ^:private start-rcv-loop)
 
 (s/def ::uri ::us/string)
 (s/def ::receiver fn?)
+(s/def ::http-client fn?)
 
 (defmethod ig/pre-init-spec ::reporter [_]
-  (s/keys :req-un [::wrk/executor ::receiver]
+  (s/keys :req-un [ ::receiver ::http-client]
           :opt-un [::uri]))
 
 (defmethod ig/init-key ::reporter
   [_ {:keys [receiver uri] :as cfg}]
   (when uri
     (l/info :msg "initializing loki reporter" :uri uri)
-    (let [input (a/chan (a/dropping-buffer 512))]
+    (let [input (a/chan (a/dropping-buffer 2048))]
       (receiver :sub input)
-      (a/go-loop []
-        (let [msg (a/<! input)]
-          (if (nil? msg)
-            (l/info :msg "stoping error reporting loop")
-            (do
-              (a/<! (handle-event cfg msg))
-              (recur)))))
+
+      (doto (Thread. #(start-rcv-loop cfg input))
+        (.setDaemon true)
+        (.setName "penpot/loki-sender")
+        (.start))
+
       input)))
 
 (defmethod ig/halt-key! ::reporter
   [_ output]
   (when output
     (a/close! output)))
+
+(defn- start-rcv-loop
+  [cfg input]
+  (loop []
+    (let [msg (a/<!! input)]
+      (when-not (nil? msg)
+        (handle-event cfg msg)
+        (recur))))
+
+  (l/info :msg "stoping error reporting loop"))
 
 (defn- prepare-payload
   [event]
@@ -60,40 +69,25 @@
                       (when-let [error (:trace event)]
                         (str "\n" error)))]]}]}))
 
-(defn- send-log
-  [{:keys [http-client uri]} payload i]
-  (try
-    (let [response (http-client {:uri uri
-                                 :timeout 6000
-                                 :method :post
-                                 :headers {"content-type" "application/json"}
-                                 :body (json/write payload)}
-                                {:sync? true})]
-      (cond
-        (= (:status response) 204)
-        true
 
-        (= (:status response) 400)
-        (do
-          (l/error :hint "error on sending log to loki (no retry)"
-                   :rsp (pr-str response))
-          true)
-
-        :else
-        (do
-          (l/error :hint "error on sending log to loki" :try i
-                   :rsp (pr-str response))
-          false)))
-    (catch Exception e
-      (l/error :hint "error on sending message to loki" :cause e :try i)
-      false)))
+(defn- make-request
+  [{:keys [http-client uri] :as cfg} payload]
+  (http-client {:uri uri
+                :timeout 3000
+                :method :post
+                :headers {"content-type" "application/json"}
+                :body (json/write payload)}
+               {:sync? true}))
 
 (defn- handle-event
-  [{:keys [executor] :as cfg} event]
-  (aa/with-thread executor
-    (let [payload (prepare-payload event)]
-      (loop [i 1]
-        (when (and (not (send-log cfg payload i)) (< i 20))
-          (Thread/sleep (* i 2000))
-          (recur (inc i)))))))
-
+  [cfg event]
+  (try
+    (let [payload  (prepare-payload event)
+          response (make-request cfg payload)]
+      (when-not (= 204 (:status response))
+        (map? response)
+        (l/error :hint "error on sending log to loki (unexpected response)"
+                 :response (pr-str response))))
+    (catch Throwable cause
+      (l/error :hint "error on sending log to loki (unexpected exception)"
+               :cause cause))))

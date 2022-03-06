@@ -337,5 +337,3 @@
        (glog/removeHandler l default-console-handler)
        (glog/addHandler l default-console-handler)
        nil)))
-
-
