@@ -14,6 +14,8 @@
 
 (defonce components (atom {}))
 
+;; TODO: rename `:type` to `:name`
+
 (defn show
   ([props]
    (show (uuid/next) (:type props) props))
@@ -21,6 +23,10 @@
    (show (uuid/next) type props))
   ([id type props]
    (ptk/reify ::show-modal
+     IDeref
+     (-deref [_]
+       (merge (dissoc props :type) {:name type}))
+
      ptk/UpdateEvent
      (update [_ state]
        (assoc state ::modal {:id id

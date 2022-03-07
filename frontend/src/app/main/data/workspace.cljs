@@ -417,25 +417,26 @@
 ;; Workspace State Manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- Toggle layout flag
+;; --- Layout Flags
 
-(defn toggle-layout-flags
-  [& flags]
-  (ptk/reify ::toggle-layout-flags
+(defn toggle-layout-flag
+  [flag]
+  (ptk/reify ::toggle-layout-flag
+    IDeref
+    (-deref [this]
+      {:name flag})
+
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-layout
-              (fn [stored]
-                (reduce (fn [flags flag]
-                          (if (contains? flags flag)
-                            (disj flags flag)
-                            (conj flags flag)))
-                        stored
-                        (d/concat-set flags)))))))
+              (fn [flags]
+                (if (contains? flags flag)
+                  (disj flags flag)
+                  (conj flags flag)))))))
 
-(defn remove-layout-flags
-  [& flags]
-  (ptk/reify ::remove-layout-flags
+(defn remove-layout-flag
+  [flag]
+  (ptk/reify ::remove-layout-flag
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-layout

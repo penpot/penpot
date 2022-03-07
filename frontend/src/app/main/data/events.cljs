@@ -110,7 +110,9 @@
 (derive :app.main.data.workspace.persistence/set-file-shard ::generic-action)
 (derive :app.main.data.workspace/create-page ::generic-action)
 (derive :app.main.data.workspace/set-workspace-layout ::generic-action)
-
+(derive :app.main.data.workspace/toggle-layout-flag ::generic-action)
+(derive :app.main.data.modal/show-modal ::generic-action)
+(derive :app.main.data.workspace.guides/update-guides ::generic-action)
 
 (defmulti process-event ptk/type)
 (defmethod process-event :default [_] nil)
@@ -141,7 +143,8 @@
 
     {:type    "action"
      :name    (or (::name mdata) (name type))
-     :props   (merge data (d/without-nils (::props mdata)))
+     :props   (merge (d/without-nils data)
+                     (d/without-nils (::props mdata)))
      :context (d/without-nils
                {:event-origin (::origin mdata)
                 :event-namespace (namespace type)
