@@ -50,7 +50,7 @@
       (assoc :host (cf/get :host))
       (assoc :public-uri (cf/get :public-uri))
       (assoc :version (:full cf/version))
-      (assoc :id (uuid/next))))
+      (update :id #(or % (uuid/next)))))
 
 (defn handle-event
   [{:keys [executor] :as cfg} event]
