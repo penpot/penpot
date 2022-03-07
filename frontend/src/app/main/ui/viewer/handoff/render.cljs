@@ -80,8 +80,9 @@
   (let [shape-container (shape-container-factory objects)
         frame-shape     (frame/frame-shape shape-container)
         frame-wrapper   (shape-wrapper-factory frame-shape)]
-    (mf/fnc frame-container
-      {::mf/wrap-props false}
+    (mf/fnc  frame-container
+      {::mf/wrap-props false
+       ::mf/wrap [mf/memo]}
       [props]
       (let [shape (unchecked-get props "shape")
             childs (mapv #(get objects %) (:shapes shape))
