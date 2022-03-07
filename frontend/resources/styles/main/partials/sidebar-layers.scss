@@ -183,21 +183,19 @@
 }
 
 input.element-name {
-  max-width: 130px;
-  width: 100%;
+  max-width: 75%;
 }
 
 span.element-name {
   color: $color-gray-20;
   display: block;
   font-size: $fs12;
-  max-width: 130px;
+  max-width: 75%;
   min-width: 40px;
   min-height: 16px;
   overflow-x: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  width: 100%;
 }
 
 .element-actions {
