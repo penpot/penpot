@@ -72,12 +72,13 @@
     [:span.btn-close {:on-click on-close} i/close]]])
 
 (mf/defc thumbnail-item
-  {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
+  {::mf/wrap [mf/memo
+              #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [selected? frame on-click index objects]}]
   [:div.thumbnail-item {:on-click #(on-click % index)}
    [:div.thumbnail-preview
     {:class (dom/classnames :selected selected?)}
-    [:& render/frame-svg {:frame frame :objects objects}]]
+    [:& render/frame-svg {:frame frame :objects objects :show-thumbnails? true}]]
    [:div.thumbnail-info
     [:span.name {:title (:name frame)} (:name frame)]]])
 
@@ -101,9 +102,9 @@
              (on-close))))]
 
     [:section.viewer-thumbnails
-     {:class (dom/classnames :expanded @expanded?
-                             :invisible (not show?))
-
+     {;; This is better as an inline-style so it won't make a reflow of every frame inside
+      :style {:display (when (not show?) "none")}
+      :class (dom/classnames :expanded @expanded?)
       :ref container}
 
      [:& thumbnails-summary {:on-toggle-expand #(swap! expanded? not)

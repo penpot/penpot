@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.spec.page :as csp]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
@@ -446,10 +447,10 @@
 
 (mf/defc viewport-context-menu
   []
-  (let [focus (mf/deref refs/workspace-focus-selected)
-
-        do-paste (st/emitf dw/paste)
-        do-hide-ui (st/emitf (dw/toggle-layout-flags :hide-ui))
+  (let [focus      (mf/deref refs/workspace-focus-selected)
+        do-paste   #(st/emit! dw/paste)
+        do-hide-ui #(st/emit! (-> (dw/toggle-layout-flag :hide-ui)
+                                  (vary-meta assoc ::ev/origin "workspace-context-menu")))
         do-toggle-focus-mode #(st/emit! (dw/toggle-focus-mode))]
     [:*
      [:& menu-entry {:title (tr "workspace.shape.menu.paste")

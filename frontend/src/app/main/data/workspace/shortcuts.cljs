@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.shortcuts
   (:require
+   [app.main.data.events :as ev]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -23,6 +24,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn toggle-layout-flag
+  [flag]
+  (-> (dw/toggle-layout-flag flag)
+      (vary-meta assoc ::ev/origin "workspace-shortcuts")))
 
 ;; Shortcuts format https://github.com/ccampbell/mousetrap
 
@@ -42,18 +48,18 @@
    :toggle-colorpalette {:tooltip (ds/alt "P")
                          :command (ds/a-mod "p")
                          :fn #(do (r/set-resize-type! :bottom)
-                                  (st/emit! (dw/remove-layout-flags :textpalette)
-                                            (dw/toggle-layout-flags :colorpalette)))}
+                                  (st/emit! (dw/remove-layout-flag :textpalette)
+                                            (toggle-layout-flag :colorpalette)))}
 
    :toggle-textpalette  {:tooltip (ds/alt "T")
                          :command (ds/a-mod "t")
                          :fn #(do (r/set-resize-type! :bottom)
-                                  (st/emit! (dw/remove-layout-flags :colorpalette)
-                                            (dw/toggle-layout-flags :textpalette)))}
+                                  (st/emit! (dw/remove-layout-flag :colorpalette)
+                                            (toggle-layout-flag :textpalette)))}
 
    :toggle-rules      {:tooltip (ds/meta-shift "R")
                        :command (ds/c-mod "shift+r")
-                       :fn #(st/emit! (dw/toggle-layout-flags :rules))}
+                       :fn #(st/emit! (toggle-layout-flag :rules))}
 
    :select-all        {:tooltip (ds/meta "A")
                        :command (ds/c-mod "a")
@@ -61,23 +67,23 @@
 
    :toggle-grid       {:tooltip (ds/meta "'")
                        :command (ds/c-mod "'")
-                       :fn #(st/emit! (dw/toggle-layout-flags :display-grid))}
+                       :fn #(st/emit! (toggle-layout-flag :display-grid))}
 
    :toggle-snap-grid  {:tooltip (ds/meta-shift "'")
                        :command (ds/c-mod "shift+'")
-                       :fn #(st/emit! (dw/toggle-layout-flags :snap-grid))}
+                       :fn #(st/emit! (toggle-layout-flag :snap-grid))}
 
    :toggle-snap-guide {:tooltip (ds/meta-shift "G")
                        :command (ds/c-mod "shift+G")
-                       :fn #(st/emit! (dw/toggle-layout-flags :snap-guides))}
+                       :fn #(st/emit! (toggle-layout-flag :snap-guides))}
 
    :toggle-alignment  {:tooltip (ds/meta "\\")
                        :command (ds/c-mod "\\")
-                       :fn #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}
+                       :fn #(st/emit! (toggle-layout-flag :dynamic-alignment))}
 
    :toggle-scale-text {:tooltip "K"
                        :command "k"
-                       :fn #(st/emit! (dw/toggle-layout-flags :scale-text))}
+                       :fn #(st/emit! (toggle-layout-flag :scale-text))}
 
    :increase-zoom      {:tooltip "+"
                         :command ["+" "="]
@@ -354,7 +360,7 @@
 
    :hide-ui              {:tooltip "\\"
                           :command "\\"
-                          :fn #(st/emit! (dw/toggle-layout-flags :hide-ui))}
+                          :fn #(st/emit! (toggle-layout-flag :hide-ui))}
 
    :toggle-focus-mode    {:command "f"
                           :tooltip "F"

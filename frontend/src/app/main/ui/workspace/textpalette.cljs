@@ -95,7 +95,7 @@
 
         {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
         (use-resize-hook :palette 72 54 80 :y true :bottom)]
-    
+
     [:div.color-palette {:ref parent-ref
                          :class (dom/classnames :no-text (< size 72))
                          :style #js {"--height" (str size "px")}}
