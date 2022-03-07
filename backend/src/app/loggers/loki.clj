@@ -52,14 +52,14 @@
   (let [labels {:host    (cfg/get :host)
                 :tenant  (cfg/get :tenant)
                 :version (:full cfg/version)
-                :logger  (:logger event)
-                :level   (:level event)}]
+                :logger  (:logger/name event)
+                :level   (:logger/level event)}]
     {:streams
      [{:stream labels
        :values [[(str (* (inst-ms (:created-at event)) 1000000))
                  (str (:message event)
-                      (when-let [error (:error event)]
-                        (str "\n" (:trace error))))]]}]}))
+                      (when-let [error (:trace event)]
+                        (str "\n" error)))]]}]}))
 
 (defn- send-log
   [uri payload i]

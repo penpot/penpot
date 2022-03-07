@@ -79,9 +79,9 @@
   (letfn [(log-stats [scheduler state]
             (doseq [[key ^ForkJoinPool executor] executors]
               (let [labels  (into-array String [(name key)])
-                    active  (.getActiveThreadCount executor)
                     running (.getRunningThreadCount executor)
                     queued  (.getQueuedSubmissionCount executor)
+                    active  (.getPoolSize executor)
                     steals  (.getStealCount executor)
                     steals-increment (- steals (or (get-in @state [key :steals]) 0))
                     steals-increment (if (neg? steals-increment) 0 steals-increment)]

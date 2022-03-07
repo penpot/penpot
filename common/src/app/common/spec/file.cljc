@@ -17,12 +17,18 @@
 (s/def :internal.media-object/height ::us/safe-integer)
 (s/def :internal.media-object/mtype string?)
 
+;; NOTE: This is marked as nilable for backward compatibility, but
+;; right now is just exists or not exists. We can thin in a gradual
+;; migration and then mark it as not nilable.
+(s/def :internal.media-object/path (s/nilable string?))
+
 (s/def ::media-object
   (s/keys :req-un [::id
                    ::name
                    :internal.media-object/width
                    :internal.media-object/height
-                   :internal.media-object/mtype]))
+                   :internal.media-object/mtype]
+          :opt-un [:internal.media-object/path]))
 
 (s/def ::colors
   (s/map-of uuid? ::color/color))
