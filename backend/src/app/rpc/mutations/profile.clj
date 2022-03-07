@@ -608,7 +608,8 @@
       (db/update! conn :profile
                   {:props (db/tjson props)}
                   {:id profile-id})
-      nil)))
+
+      (profile/filter-profile-props props))))
 
 
 ;; --- MUTATION: Delete Profile

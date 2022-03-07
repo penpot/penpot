@@ -36,7 +36,7 @@
 
         handle-collapse
         (fn []
-          (st/emit! (dw/toggle-layout-flags :collapse-left-sidebar)))]
+          (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))]
 
     [:aside.settings-bar.settings-bar-left {:ref parent-ref
                                             :class (dom/classnames

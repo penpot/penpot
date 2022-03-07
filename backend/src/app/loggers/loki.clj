@@ -57,8 +57,8 @@
      [{:stream labels
        :values [[(str (* (inst-ms (:created-at event)) 1000000))
                  (str (:message event)
-                      (when-let [error (:error event)]
-                        (str "\n" (:trace error))))]]}]}))
+                      (when-let [error (:trace event)]
+                        (str "\n" error)))]]}]}))
 
 (defn- send-log
   [{:keys [http-client uri]} payload i]

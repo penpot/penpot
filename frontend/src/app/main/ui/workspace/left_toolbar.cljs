@@ -9,6 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.media :as cm]
+   [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
@@ -46,16 +47,16 @@
                          :position (gpt/point x y)}]
              (st/emit! (dw/upload-media-workspace params)))))]
 
-       [:li.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
-         :on-click on-click}
-        [:*
-         i/image
-         [:& file-uploader {:input-id "image-upload"
-                            :accept cm/str-image-types
-                            :multi true
-                            :ref ref
-                            :on-selected on-files-selected}]]]))
+    [:li.tooltip.tooltip-right
+     {:alt (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
+      :on-click on-click}
+     [:*
+      i/image
+      [:& file-uploader {:input-id "image-upload"
+                         :accept cm/str-image-types
+                         :multi true
+                         :ref ref
+                         :on-selected on-files-selected}]]]))
 
 (mf/defc left-toolbar
   {::mf/wrap [mf/memo]
@@ -126,8 +127,9 @@
          :on-click (fn []
                      (r/set-resize-type! :bottom)
                      (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
-                     (ts/schedule 300 #(st/emit! (dw/remove-layout-flags :colorpalette)
-                               (dw/toggle-layout-flags :textpalette))))}
+                     (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :colorpalette)
+                                                 (-> (dw/toggle-layout-flag :textpalette)
+                                                     (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))}
         "Ag"]
 
        [:li.tooltip.tooltip-right
@@ -136,6 +138,7 @@
          :on-click (fn []
                      (r/set-resize-type! :bottom)
                      (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
-                     (ts/schedule 300 #(st/emit! (dw/remove-layout-flags :textpalette)
-                                                 (dw/toggle-layout-flags :colorpalette))))}
+                     (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :textpalette)
+                                                 (-> (dw/toggle-layout-flag :colorpalette)
+                                                     (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))}
         i/palette]]]]))

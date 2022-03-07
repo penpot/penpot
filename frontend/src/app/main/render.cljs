@@ -217,7 +217,7 @@
 
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects frame zoom] :or {zoom 1} :as props}]
+  [{:keys [objects frame zoom show-thumbnails?] :or {zoom 1} :as props}]
   (let [frame-id          (:id frame)
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
@@ -253,7 +253,13 @@
            :xmlns "http://www.w3.org/2000/svg"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")}
-     [:& wrapper {:shape frame :view-box vbox}]]))
+     (if (or (not show-thumbnails?) (nil? (:thumbnail frame)))
+       [:& wrapper {:shape frame :view-box vbox}]
+
+       ;; Render the frame thumbnail
+       (let [frame (gsh/transform-shape frame)]
+         [:> shape-container {:shape frame}
+          [:& frame/frame-thumbnail {:shape frame}]]))]))
 
 (mf/defc component-svg
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}

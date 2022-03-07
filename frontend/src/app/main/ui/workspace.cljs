@@ -79,7 +79,7 @@
        [:*
         [:& left-toolbar {:layout layout}]
         (if (:collapse-left-sidebar layout)
-          [:button.collapse-sidebar.collapsed {:on-click #(st/emit! (dw/toggle-layout-flags :collapse-left-sidebar))}
+          [:button.collapse-sidebar.collapsed {:on-click #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar))}
            i/arrow-slide]
           [:& left-sidebar {:layout layout}])
         [:& right-sidebar {:section options-mode

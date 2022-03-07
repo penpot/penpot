@@ -52,7 +52,7 @@ services:
       - PENPOT_SMTP_PASSWORD=
       - PENPOT_SMTP_SSL=false
       - PENPOT_SMTP_TLS=false
-      - PENPOT_FLAGS="enable-cors enable-insecure-register enable-terms-and-privacy-checkbox"
+      - PENPOT_FLAGS="enable-cors enable-insecure-register enable-audit-log"
 
       # LDAP setup
       - PENPOT_LDAP_HOST=ldap
@@ -119,7 +119,7 @@ services:
       - PENPOT_SMTP_PASSWORD=
       - PENPOT_SMTP_SSL=false
       - PENPOT_SMTP_TLS=false
-      - PENPOT_FLAGS="enable-cors"
+      - PENPOT_FLAGS="enable-cors enable-audit-log"
 
       # LDAP setup
       - PENPOT_LDAP_HOST=ldap

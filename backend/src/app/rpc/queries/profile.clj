@@ -75,7 +75,7 @@
   [conn profile]
   (merge profile (retrieve-additional-data conn (:id profile))))
 
-(defn- filter-profile-props
+(defn filter-profile-props
   [props]
   (into {} (filter (fn [[k _]] (simple-ident? k))) props))
 
