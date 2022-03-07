@@ -81,7 +81,7 @@
     (update [_ state]
       (let [text-state (some->> content ted/import-content)
             attrs (d/merge txt/default-text-attrs
-                           (get-in state [:workspace-local :defaults :font]))
+                           (get-in state [:workspace-global :default-font]))
             editor (cond-> (ted/create-editor-state text-state decorator)
                      (and (nil? content) (some? attrs))
                      (ted/update-editor-current-block-data attrs))]
@@ -406,5 +406,5 @@
       (let [multiple? (->> data vals (d/seek #(= % :multiple)))]
         (cond-> state
           (not multiple?)
-          (assoc-in [:workspace-local :defaults :font] data))))))
+          (assoc-in [:workspace-global :default-font] data))))))
 

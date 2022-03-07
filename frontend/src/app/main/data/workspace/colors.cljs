@@ -9,8 +9,8 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.main.data.modal :as md]
-   [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.repo :as rp]
@@ -46,7 +46,12 @@
   (ptk/reify ::change-palette-selected
     ptk/UpdateEvent
     (update [_ state]
-      (dw/set-workspace-local-flag! state :selected-palette selected))))
+      (assoc-in state [:workspace-global :selected-palette] selected))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [wglobal (:workspace-global state)]
+        (layout/persist-layout-state! wglobal)))))
 
 (defn change-palette-selected-colorpicker
   "Change the library used by the color picker"
@@ -54,7 +59,12 @@
   (ptk/reify ::change-palette-selected-colorpicker
     ptk/UpdateEvent
     (update [_ state]
-      (dw/set-workspace-local-flag! state :selected-palette-colorpicker selected))))
+      (assoc-in state [:workspace-global :selected-palette-colorpicker] selected))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [wglobal (:workspace-global state)]
+        (layout/persist-layout-state! wglobal)))))
 
 (defn show-palette
   "Show the palette tool and change the library it uses"
@@ -62,9 +72,16 @@
   (ptk/reify ::show-palette
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (update :workspace-layout conj :colorpalette)
-          (dw/set-workspace-local-flag! :selected-palette selected)))))
+      (assoc-in state [:workspace-global :selected-palette] selected))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (layout/toggle-layout-flag :colorpalette :force? true)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [wglobal (:workspace-global state)]
+        (layout/persist-layout-state! wglobal)))))
 
 (defn start-picker
   []

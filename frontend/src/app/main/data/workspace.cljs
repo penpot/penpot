@@ -34,6 +34,7 @@
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.layers :as dwly]
+   [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.path :as dwdp]
@@ -53,12 +54,10 @@
    [app.util.http :as http]
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
-   [app.util.storage :refer [storage]]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
@@ -74,68 +73,8 @@
 
 ;; --- Initialize Workspace
 
-(s/def ::layout-flag
-  #{:sitemap
-    :layers
-    :comments
-    :assets
-    :document-history
-    :colorpalette
-    :element-options
-    :rules
-    :display-grid
-    :snap-grid
-    :scale-text
-    :dynamic-alignment
-    :display-artboard-names
-    :snap-guides})
-
-(s/def ::layout-flags (s/coll-of ::layout-flag))
-
-(def default-workspace-layout
-  #{:sitemap
-    :layers
-    :element-options
-    :rules
-    :display-grid
-    :snap-grid
-    :dynamic-alignment
-    :display-artboard-names
-    :snap-guides})
-
-(def layout-presets
-  {:assets
-   {:del #{:sitemap :layers :document-history}
-    :add #{:assets}}
-
-   :document-history
-   {:del #{:assets :layers :sitemap}
-    :add #{:document-history}}
-
-   :layers
-   {:del #{:document-history :assets}
-    :add #{:sitemap :layers}}})
-
-(s/def ::options-mode #{:design :prototype})
-
-(def default-workspace-global
-  {:options-mode :design})
-
 (def default-workspace-local
   {:zoom 1})
-
-(defn ensure-layout
-  [lname]
-  (ptk/reify ::ensure-layout
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-layout
-              (fn [stored]
-                (let [todel (get-in layout-presets [lname :del] #{})
-                      toadd (get-in layout-presets [lname :add] #{})]
-                  (-> stored
-                      (set/difference todel)
-                      (set/union toadd))))))))
 
 (defn initialize
   [lname]
@@ -144,14 +83,14 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-layout #(or % default-workspace-layout))
-          (update :workspace-global #(or % default-workspace-global))))
+          (update :workspace-layout #(or % layout/default-layout))
+          (update :workspace-global #(or % layout/default-global))))
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (if (and lname (contains? layout-presets lname))
-        (rx/of (ensure-layout lname))
-        (rx/of (ensure-layout :layers))))))
+      (if (and lname (contains? layout/presets lname))
+        (rx/of (layout/ensure-layout lname))
+        (rx/of (layout/ensure-layout :layers))))))
 
 (defn initialize-file
   [project-id file-id]
@@ -247,7 +186,6 @@
             (rx/observe-on :async))))))
 
 (declare go-to-page)
-(declare load-flag)
 
 (defn initialize-page
   [page-id]
@@ -272,12 +210,8 @@
               (assoc :current-page-id id)
               (assoc :trimmed-page (dm/select-keys page [:id :name]))
               (assoc :workspace-local local)
-              (update :workspace-layout
-                      #(if (load-flag :colorpalette false)
-                         (conj % :colorpalette)
-                         (disj % :colorpalette)))
-              (assoc-in [:workspace-local :selected-palette] (load-flag :selected-palette :recent))
-              (assoc-in [:workspace-local :selected-palette-colorpicker] (load-flag :selected-palette-colorpicker :recent))
+              (update :workspace-layout layout/load-layout-flags)
+              (update :workspace-global layout/load-layout-state)
               (update :workspace-global assoc :background-color (-> page :options :background))
               (update-in [:route :params :query] assoc :page-id (dm/str id))))
         state))))
@@ -396,75 +330,38 @@
              (rx/ignore))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Local storage Flags Manipulation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def storeable-layout-flags #{:colorpalette})
-(def storeable-workspace-local-flags #{:selected-palette :selected-palette-colorpicker})
-
-(defn store-layout-flags!
-  [state flags]
-  (doseq [item (filter storeable-layout-flags flags)]
-    (swap! storage assoc item (contains? (:workspace-layout state) item))))
-
-(defn store-workspace-local-flag!
-  [flag value]
-  (when (contains? storeable-workspace-local-flags flag)
-    (swap! storage assoc flag value)))
-
-(defn load-flag
-  [flag default]
-  (or (flag @storage) default))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace State Manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- Toggle layout flag
+;; --- Layout Flags
 
-(defn toggle-layout-flags
-  [& flags]
-  (ptk/reify ::toggle-layout-flags
+(dm/export layout/toggle-layout-flag)
+(dm/export layout/remove-layout-flag)
+
+;; --- Nudge
+
+(defn update-nudge
+  [{:keys [big small] :as params}]
+  (ptk/reify ::update-nudge
+    IDeref
+    (-deref [_] (d/without-nils params))
+
     ptk/UpdateEvent
     (update [_ state]
-      (let [new-state (update state :workspace-layout
-                              (fn [stored]
-                                (reduce (fn [flags flag]
-                                          (if (contains? flags flag)
-                                            (disj flags flag)
-                                            (conj flags flag)))
-                                        stored
-                                        (d/concat-set flags))))]
-        (store-layout-flags! new-state flags)
-        new-state))))
+      (update-in state [:profile :props :nudge]
+                 (fn [nudge]
+                   (cond-> nudge
+                     (number? big) (assoc :big big)
+                     (number? small) (assoc :small small)))))
 
-(defn remove-layout-flags
-  [& flags]
-  (ptk/reify ::remove-layout-flags
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [new-state (update state :workspace-layout
-                              (fn [stored]
-                                (reduce disj stored (d/concat-set flags))))]
-        (store-layout-flags! (:workspace-layout new-state) flags)
-        new-state))))
-
-;; --- Set workspace flag
-
-(defn set-workspace-local-flag!
-  [state flag value]
-  (store-workspace-local-flag! flag value)
-  (assoc-in state [:workspace-local flag] value))
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [nudge (get-in state [:profile :props :nudge])]
+        (rx/of (du/update-profile-props {:nudge nudge}))))))
 
 ;; --- Set element options mode
 
-(defn set-options-mode
-  [mode]
-  (us/assert ::options-mode mode)
-  (ptk/reify ::set-options-mode
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-global :options-mode] mode))))
+(dm/export layout/set-options-mode)
 
 ;; --- Tooltip
 
@@ -1100,8 +997,8 @@
 
 (defn go-to-layout
   [layout]
-  (us/verify ::layout-flag layout)
-  (ptk/reify ::set-workspace-layout
+  (us/verify ::layout/flag layout)
+  (ptk/reify ::go-to-layout
     IDeref
     (-deref [_] {:layout layout})
 
@@ -1154,7 +1051,7 @@
 
 (defn go-to-component
   [component-id]
-  (ptk/reify ::set-workspace-layout-component
+  (ptk/reify ::go-to-component
     IDeref
     (-deref [_] {:layout :assets})
 
