@@ -24,6 +24,7 @@
    [app.config :as cfg]
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
+   [app.main.data.users :as du]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -438,8 +439,29 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-layout
-              (fn [stored]
-                (reduce disj stored (d/concat-set flags)))))))
+              (fn [flags]
+                (disj flags flag))))))
+
+;; --- Nudge
+
+(defn update-nudge
+  [{:keys [big small] :as params}]
+  (ptk/reify ::update-nudge
+    IDeref
+    (-deref [_] (d/without-nils params))
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:profile :props :nudge]
+                 (fn [nudge]
+                   (cond-> nudge
+                     (number? big) (assoc :big big)
+                     (number? small) (assoc :small small)))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [nudge (get-in state [:profile :props :nudge])]
+        (rx/of (du/update-profile-props {:nudge nudge}))))))
 
 ;; --- Set element options mode
 

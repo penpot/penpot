@@ -385,6 +385,20 @@
                          (rx/empty)))
              (rx/ignore))))))
 
+(defn update-profile-props
+  [props]
+  (ptk/reify ::update-profile-props
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:profile :props] merge props))
+
+    ;; TODO: for the release 1.13 we should skip fetching profile and just use
+    ;; the response value of update-profile-props RPC call
+    ptk/WatchEvent
+    (watch [_ state _]
+      (->> (rp/mutation :update-profile-props {:props props})
+           (rx/map (constantly (fetch-profile)))))))
+
 (defn mark-onboarding-as-viewed
   ([] (mark-onboarding-as-viewed nil))
   ([{:keys [version]}]
@@ -459,6 +473,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:profile :props] assoc :nudge value))
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [props {:nudge value}]
