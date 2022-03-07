@@ -37,7 +37,6 @@
         on-close     (mf/use-fn #(modal/hide!))]
 
     (mf/with-effect
-      ;; (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
       (->> (events/listen js/document EventType.KEYDOWN on-keydown)
            (partial events/unlistenByKey)))
 
