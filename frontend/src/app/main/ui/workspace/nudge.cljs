@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.nudge
   (:require
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
+   [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
@@ -19,34 +19,32 @@
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
+(defn- on-keydown
+  [event]
+  (when (k/enter? event)
+    (dom/prevent-default event)
+    (dom/stop-propagation event)
+    (modal/hide!)))
 
 (mf/defc nudge-modal
   {::mf/register modal/components
    ::mf/register-as :nudge-option}
   []
-  (let [profile (mf/deref refs/profile)
-        nudge (get-in profile [:props :nudge] {:big 10 :small 1})
-        update-nudge (fn [value size] (let [update-nudge (if (= :big size)
-                                                           {:big value :small (:small nudge)}
-                                                           {:small value :big (:big nudge)})]
-                                        (st/emit! (du/update-nudge update-nudge))))
-        update-big   (fn [value] (update-nudge value :big))
-        update-small (fn [value] (update-nudge value :small))
-        close        #(modal/hide!)]
+  (let [profile      (mf/deref refs/profile)
+        nudge        (or (get-in profile [:props :nudge]) {:big 10 :small 1})
+        update-big   (mf/use-fn #(st/emit! (dw/update-nudge {:big %})))
+        update-small (mf/use-fn #(st/emit! (dw/update-nudge {:small %})))
+        on-close     (mf/use-fn #(modal/hide!))]
+
     (mf/with-effect
-      (letfn [(on-keydown [event]
-                (when (k/enter? event)
-                  (dom/prevent-default event)
-                  (dom/stop-propagation event)
-                  (close)))]
-        (->> (events/listen js/document EventType.KEYDOWN on-keydown)
-             (partial events/unlistenByKey))))
+      (->> (events/listen js/document EventType.KEYDOWN on-keydown)
+           (partial events/unlistenByKey)))
 
     [:div.nudge-modal-overlay
      [:div.nudge-modal-container
       [:div.nudge-modal-header
        [:p.nudge-modal-title (tr "modals.nudge-title")]
-       [:button.modal-close-button {:on-click close} i/close]]
+       [:button.modal-close-button {:on-click on-close} i/close]]
       [:div.nudge-modal-body
        [:div.input-wrapper
         [:span

@@ -282,4 +282,4 @@
 (defn ^:export hide-ui
   []
   (st/emit!
-   (dw/toggle-layout-flags :hide-ui)))
+   (dw/toggle-layout-flag :hide-ui)))

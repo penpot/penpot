@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.spec.page :as csp]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
@@ -34,9 +35,6 @@
   [event]
   (dom/prevent-default event)
   (dom/stop-propagation event))
-
-
-
 
 (mf/defc menu-entry
   [{:keys [title shortcut on-click children selected? icon] :as props}]
@@ -437,8 +435,9 @@
 
 (mf/defc viewport-context-menu
   []
-  (let [do-paste (st/emitf dw/paste)
-        do-hide-ui (st/emitf (dw/toggle-layout-flags :hide-ui))]
+  (let [do-paste   #(st/emit! dw/paste)
+        do-hide-ui #(st/emit! (-> (dw/toggle-layout-flag :hide-ui)
+                                  (vary-meta assoc ::ev/origin "workspace-context-menu")))]
     [:*
      [:& menu-entry {:title (tr "workspace.shape.menu.paste")
                      :shortcut (sc/get-tooltip :paste)

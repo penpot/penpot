@@ -385,6 +385,20 @@
                          (rx/empty)))
              (rx/ignore))))))
 
+(defn update-profile-props
+  [props]
+  (ptk/reify ::update-profile-props
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:profile :props] merge props))
+
+    ;; TODO: for the release 1.13 we should skip fetching profile and just use
+    ;; the response value of update-profile-props RPC call
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/mutation :update-profile-props {:props props})
+           (rx/map (constantly (fetch-profile)))))))
+
 (defn mark-onboarding-as-viewed
   ([] (mark-onboarding-as-viewed nil))
   ([{:keys [version]}]
@@ -450,20 +464,6 @@
       (watch [_ _ _]
         (->> (rp/query :team-users {:team-id team-id})
              (rx/map #(partial fetched %)))))))
-
-;; --- Update Nudge
-
-(defn update-nudge
-  [value]
-  (ptk/reify ::update-nudge
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:profile :props] assoc :nudge value))
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [props {:nudge value}]
-        (->> (rp/mutation :update-profile-props {:props props})
-             (rx/map (constantly (fetch-profile))))))))
 
 ;; --- EVENT: request-account-deletion
 
