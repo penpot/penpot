@@ -395,7 +395,7 @@
     ;; TODO: for the release 1.13 we should skip fetching profile and just use
     ;; the response value of update-profile-props RPC call
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ _ _]
       (->> (rp/mutation :update-profile-props {:props props})
            (rx/map (constantly (fetch-profile)))))))
 

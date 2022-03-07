@@ -423,8 +423,7 @@
   [flag]
   (ptk/reify ::toggle-layout-flag
     IDeref
-    (-deref [this]
-      {:name flag})
+    (-deref [_] {:name flag})
 
     ptk/UpdateEvent
     (update [_ state]
