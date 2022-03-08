@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.bool
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as cb]
@@ -35,8 +34,8 @@
   (let [shapes (mapv #(stp/convert-to-path % objects) shapes)
         head (if (= bool-type :difference) (first shapes) (last shapes))
         head (cond-> head
-               (and (contains? head :svg-attrs) (nil? (:fill-color head)))
-               (assoc :fill-color clr/black))
+               (and (contains? head :svg-attrs) (empty? (:fills head)))
+               (assoc :fills stp/default-bool-fills))
 
         head-data (select-keys head stp/style-properties)
 
@@ -61,8 +60,8 @@
                     (mapv #(stp/convert-to-path % objects)))
         head (if (= bool-type :difference) (first shapes) (last shapes))
         head (cond-> head
-               (and (contains? head :svg-attrs) (nil? (:fill-color head)))
-               (assoc :fill-color clr/black))
+               (and (contains? head :svg-attrs) (empty? (:fills head)))
+               (assoc :fills stp/default-bool-fills))
         head-data (select-keys head stp/style-properties)]
 
     (-> group
