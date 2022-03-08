@@ -181,9 +181,12 @@
                   :ignore-tree ignore-tree
                   ;; Attributes that can change in the transform. This way we don't have to check
                   ;; all the attributes
-                  :attrs [:selrect :points
-                          :x :y
-                          :width :height
+                  :attrs [:selrect
+                          :points
+                          :x
+                          :y
+                          :width
+                          :height
                           :content
                           :transform
                           :transform-inverse

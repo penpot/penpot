@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.gradients
   "Gradients handlers and renders"
   (:require
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -300,7 +301,7 @@
            (let [scale-factor-y (/ gradient-length (/ height 2))
                  norm-dist (/ (gpt/distance point from-p)
                               (* (/ width 2) scale-factor-y))]
-             (when (and norm-dist (mth/finite? norm-dist))
+             (when (and norm-dist (d/num? norm-dist))
                (change! {:width norm-dist})))))]
 
     (when (and gradient

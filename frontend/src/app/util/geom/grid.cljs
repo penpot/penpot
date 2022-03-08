@@ -6,6 +6,7 @@
 
 (ns app.util.geom.grid
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]))
 
@@ -39,7 +40,7 @@
 
         gutter (if (= :stretch type)
                  (let [gutter (/ (- width (* width' size) (* margin 2)) (dec size))]
-                   (if (mth/finite? gutter) gutter 0))
+                   (if (d/num? gutter) gutter 0))
                  gutter)
 
         next-v (fn [cur-val]

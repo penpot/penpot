@@ -6,9 +6,9 @@
 
 (ns app.main.ui.components.numeric-input
   (:require
-   [app.main.ui.formats :as fmt]
    [app.common.data :as d]
    [app.common.spec :as us]
+   [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
@@ -17,11 +17,6 @@
    [goog.events :as events]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
-
-(defn num? [val]
-  (and (number? val)
-       (not (mth/nan? val))
-       (mth/finite? val)))
 
 (mf/defc numeric-input
   {::mf/wrap-props false
@@ -81,15 +76,15 @@
             (let [input-node (mf/ref-val ref)
                   new-value (-> (dom/get-value input-node)
                                 (sm/expr-eval value))]
-              (when (num? new-value)
+              (when (d/num? new-value)
                 (-> new-value
                     (cljs.core/max us/min-safe-int)
                     (cljs.core/min us/max-safe-int)
                     (cond->
-                      (num? min-val)
+                      (d/num? min-val)
                       (cljs.core/max min-val)
 
-                      (num? max-val)
+                      (d/num? max-val)
                       (cljs.core/min max-val)))))))
 
         update-input
@@ -120,18 +115,18 @@
 
                      new-value (+ current-value increment)
                      new-value (cond
-                                 (and wrap-value? (num? max-val) (num? min-val)
+                                 (and wrap-value? (d/num? max-val min-val)
                                       (> new-value max-val) up?)
                                  (-> new-value (- max-val) (+ min-val) (- step-val))
 
-                                 (and wrap-value? (num? min-val) (num? max-val)
+                                 (and wrap-value? (d/num? max-val min-val)
                                       (< new-value min-val) down?)
                                  (-> new-value (- min-val) (+ max-val) (+ step-val))
 
-                                 (and (num? min-val) (< new-value min-val))
+                                 (and (d/num? min-val) (< new-value min-val))
                                  min-val
 
-                                 (and (num? max-val) (> new-value max-val))
+                                 (and (d/num? max-val) (> new-value max-val))
                                  max-val
 
                                  :else new-value)]

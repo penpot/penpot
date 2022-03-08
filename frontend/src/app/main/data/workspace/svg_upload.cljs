@@ -32,9 +32,7 @@
 (defonce default-image {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
 
 (defn- assert-valid-num [attr num]
-  (when (or (nil? num)
-            (mth/nan? num)
-            (not (mth/finite? num))
+  (when (or (not (d/num? num))
             (>= num max-safe-int )
             (<= num  min-safe-int))
     (ex/raise (str (d/name attr) " attribute invalid: " num)))
@@ -229,14 +227,9 @@
   (let [points (-> (gsh/rect->points rect-data)
                    (gsh/transform-points transform))
 
-        center (gsh/center-points points)
-
-        rect-shape (-> (gsh/make-centered-rect center (:width rect-data) (:height rect-data))
-                       (update :width max 1)
-                       (update :height max 1))
-
-        selrect (gsh/rect->selrect rect-shape)
-
+        center      (gsh/center-points points)
+        rect-shape  (gsh/center->rect center (:width rect-data) (:height rect-data))
+        selrect     (gsh/rect->selrect rect-shape)
         rect-points (gsh/rect->points rect-shape)
 
         [shape-transform shape-transform-inv rotation]

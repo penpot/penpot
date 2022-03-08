@@ -187,7 +187,7 @@
 (defmethod pp/simple-dispatch Matrix [obj] (pr obj))
 
 (defn transform-in [pt mtx]
-  (if (some? pt)
+  (if (and (some? pt) (some? mtx))
     (-> (matrix)
         (translate pt)
         (multiply mtx)

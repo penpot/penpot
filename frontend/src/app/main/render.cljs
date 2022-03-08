@@ -59,15 +59,14 @@
 (defn- calculate-dimensions
   [{:keys [objects] :as data} vport]
   (let [shapes    (cph/get-immediate-children objects)
-        to-finite (fn [val fallback] (if (not (mth/finite? val)) fallback val))
         rect      (cond->> (gsh/selection-rect shapes)
                     (some? vport)
                     (gal/adjust-to-viewport vport))]
     (-> rect
-        (update :x to-finite 0)
-        (update :y to-finite 0)
-        (update :width to-finite 100000)
-        (update :height to-finite 100000))))
+        (update :x mth/finite 0)
+        (update :y mth/finite 0)
+        (update :width mth/finite 100000)
+        (update :height mth/finite 100000))))
 
 (declare shape-wrapper-factory)
 

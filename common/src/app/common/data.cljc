@@ -406,15 +406,24 @@
   [v default]
   (if (some? v) v default))
 
+(defn num?
+  "Checks if a value `val` is a number but not an Infinite or NaN"
+  ([val]
+   (and (number? val)
+        (mth/finite? val)
+        (not (mth/nan? val))))
+
+  ([val & vals]
+   (and (num? val)
+        (->> vals (every? num?)))))
+
 (defn check-num
   "Function that checks if a number is nil or nan. Will return 0 when not
   valid and the number otherwise."
   ([v]
    (check-num v 0))
   ([v default]
-   (if (or (not v)
-           (not (mth/finite? v))
-           (mth/nan? v)) default v)))
+   (if (num? v) v default)))
 
 (defn any-key? [element & rest]
   (some #(contains? element %) rest))

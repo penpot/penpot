@@ -195,7 +195,7 @@
         snap-list (d/concat-vec lt-snap gt-snap between-snap)
         min-snap  (reduce best-snap ##Inf snap-list)]
 
-    (if (mth/finite? min-snap) [0 min-snap] nil)))
+    (if (d/num? min-snap) [0 min-snap] nil)))
 
 (defn search-snap-distance [selrect coord shapes-lt shapes-gt zoom]
   (->> (rx/combine-latest shapes-lt shapes-gt)

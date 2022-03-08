@@ -141,15 +141,17 @@
 (dm/export gco/center-selrect)
 (dm/export gco/center-rect)
 (dm/export gco/center-points)
-(dm/export gco/make-centered-rect)
 (dm/export gco/transform-points)
 
+(dm/export gpr/make-rect)
 (dm/export gpr/rect->selrect)
 (dm/export gpr/rect->points)
 (dm/export gpr/points->selrect)
 (dm/export gpr/points->rect)
 (dm/export gpr/center->rect)
+(dm/export gpr/center->selrect)
 (dm/export gpr/join-rects)
+(dm/export gpr/join-selrects)
 (dm/export gpr/contains-selrect?)
 
 (dm/export gtr/move)

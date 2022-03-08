@@ -28,10 +28,6 @@
         min-val (get params :min)
         max-val (get params :max)
 
-        num? (fn [val] (and (number? val)
-                            (not (mth/nan? val))
-                            (mth/finite? val)))
-
         emit-blur? (mf/use-ref nil)
         font-size-wrapper-ref (mf/use-ref)
 
@@ -103,8 +99,8 @@
                        new-value (+ value increment)
 
                        new-value (cond
-                                   (and (num? min-val) (< new-value min-val)) min-val
-                                   (and (num? max-val) (> new-value max-val)) max-val
+                                   (and (d/num? min-val) (< new-value min-val)) min-val
+                                   (and (d/num? max-val) (> new-value max-val)) max-val
                                    :else new-value)]
 
                    (set-value new-value)))))))

@@ -251,7 +251,7 @@
         ;; to have this width, height, x, y
         new-width  (max 0.01 (:width points-temp-dim))
         new-height (max 0.01 (:height points-temp-dim))
-        selrect    (gco/make-centered-selrect center new-width new-height)
+        selrect    (gpr/center->selrect center new-width new-height)
 
         rect-points  (gpr/rect->points selrect)
         [matrix matrix-inverse] (calculate-adjust-matrix points-temp rect-points flip-x flip-y)]

@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.viewport.scroll-bars
   (:require
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
@@ -169,7 +168,7 @@
                                         :y2 (+ vbox-y (:height vbox))
                                         :width (:width vbox)
                                         :height (:height vbox)}
-                 containing-rect               (gpr/join-selrects [base-objects-rect vbox-rect])
+                 containing-rect               (gsh/join-selrects [base-objects-rect vbox-rect])
                  height-factor                 (/ (:height containing-rect) vbox-height)
                  width-factor                  (/ (:width containing-rect) vbox-width)]
              (mf/set-ref-val! start-ref start-pt)

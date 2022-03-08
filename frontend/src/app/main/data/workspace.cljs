@@ -395,8 +395,8 @@
                   srect   (gsh/selection-rect shapes)
                   local   (assoc local :vport size :zoom 1)]
               (cond
-                (or (not (mth/finite? (:width srect)))
-                    (not (mth/finite? (:height srect))))
+                (or (not (d/num? (:width srect)))
+                    (not (d/num? (:height srect))))
                 (assoc local :vbox (assoc size :x 0 :y 0))
 
                 (or (> (:width srect) width)
