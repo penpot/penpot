@@ -480,7 +480,7 @@
                       (merge data)
                       (merge {:x x :y y})
                       (assoc :frame-id frame-id)
-                      (gsh/setup-selrect))]
+                      (cp/setup-rect-selrect))]
         (rx/of (add-shape shape))))))
 
 (defn image-uploaded

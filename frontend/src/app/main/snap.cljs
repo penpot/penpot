@@ -256,16 +256,14 @@
         filter-shapes (into #{} (map :id shapes))
         remove-snap? (make-remove-snap layout filter-shapes objects focus)
 
-        shape (if (> (count shapes) 1)
-                (->> shapes (map gsh/transform-shape) gsh/selection-rect (gsh/setup {:type :rect}))
-                (->> shapes (first)))
+        snap-points
+        (->> shapes
+             (gsh/selection-rect)
+             (sp/selrect-snap-points)
+             ;; Move the points in the translation vector
+             (map #(gpt/add % movev)))]
 
-        shapes-points (->> shape
-                           (sp/shape-snap-points)
-                           ;; Move the points in the translation vector
-                           (map #(gpt/add % movev)))]
-
-    (->> (rx/merge (closest-snap page-id frame-id shapes-points remove-snap? zoom)
+    (->> (rx/merge (closest-snap page-id frame-id snap-points remove-snap? zoom)
                    (when (contains? layout :dynamic-alignment)
                      (closest-distance-snap page-id shapes objects zoom movev)))
          (rx/reduce combine-snaps-points)

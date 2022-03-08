@@ -333,11 +333,8 @@
                                                (command->point command :c2)]]
                                     (->> (curve-extremities curve)
                                          (mapv #(curve-values curve %)))))
-                  [])
-         selrect (gpr/points->selrect points)]
-     (-> selrect
-         (update :width #(if (mth/almost-zero? %) 1 %))
-         (update :height #(if (mth/almost-zero? %) 1 %))))))
+                  [])]
+     (gpr/points->selrect points))))
 
 (defn content->selrect [content]
   (let [calc-extremities
@@ -371,20 +368,26 @@
 
         set-tr
         (fn [params px py]
-          (-> params
-              (update px + dx)
-              (update py + dy)))
+          (cond-> params
+            (d/num? dx)
+            (update px + dx)
+
+            (d/num? dy)
+            (update py + dy)))
 
         transform-params
-        (fn [{:keys [x c1x c2x] :as params}]
+        (fn [{:keys [x y c1x c1y c2x c2y] :as params}]
           (cond-> params
-            (some? x)   (set-tr :x :y)
-            (some? c1x) (set-tr :c1x :c1y)
-            (some? c2x) (set-tr :c2x :c2y)))]
+            (d/num? x y)   (set-tr :x :y)
+            (d/num? c1x c1y) (set-tr :c1x :c1y)
+            (d/num? c2x c2y) (set-tr :c2x :c2y)))
 
-    (into []
-          (map #(update % :params transform-params))
-          content)))
+        update-command
+        (fn [command]
+          (update command :params transform-params))]
+
+    (->> content
+         (into [] (map update-command)))))
 
 (defn transform-content
   [content transform]

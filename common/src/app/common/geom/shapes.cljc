@@ -17,39 +17,6 @@
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]))
 
-;; --- Setup (Initialize)
-;; FIXME: Is this the correct place for these functions?
-
-(defn- setup-rect
-  "A specialized function for setup rect-like shapes."
-  [shape {:keys [x y width height]}]
-  (let [rect    {:x x :y y :width width :height height}
-        points  (gpr/rect->points rect)
-        selrect (gpr/points->selrect points)]
-    (assoc shape
-           :x x
-           :y y
-           :width width
-           :height height
-           :points points
-           :selrect selrect)))
-
-(defn- setup-image
-  [{:keys [metadata] :as shape} props]
-  (-> (setup-rect shape props)
-      (assoc
-       :proportion (/ (:width metadata)
-                      (:height metadata))
-       :proportion-lock true)))
-
-(defn setup
-  "A function that initializes the first coordinates for
-  the shape. Used mainly for draw operations."
-  [shape props]
-  (case (:type shape)
-    :image (setup-image shape props)
-    (setup-rect shape props)))
-
 ;; --- Outer Rect
 
 (defn selection-rect
@@ -120,13 +87,6 @@
 
 (defn distance-shapes [shape other]
   (distance-selrect (:selrect shape) (:selrect other)))
-
-(defn setup-selrect [shape]
-  (let [selrect (gpr/rect->selrect shape)
-        points  (gpr/rect->points shape)]
-    (-> shape
-        (assoc :selrect selrect
-               :points points))))
 
 (defn shape-stroke-margin
   [shape stroke-width]

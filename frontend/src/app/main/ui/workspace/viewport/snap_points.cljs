@@ -51,23 +51,25 @@
 
 (defn get-snap
   [coord {:keys [shapes page-id remove-snap? zoom modifiers]}]
-  (let [shape (if (> (count shapes) 1)
-                (->> shapes (map gsh/transform-shape) gsh/selection-rect (gsh/setup {:type :rect}))
-                (->> shapes (first)))
-
-        shape (if modifiers
-                (-> shape (merge (get modifiers (:id shape))) gsh/transform-shape)
-                shape)
+  (let [shapes-sr
+        (->> shapes
+             ;; Merge modifiers into shapes
+             (map #(merge % (get modifiers (:id %))))
+             ;; Create the bounding rectangle for the shapes
+             (gsh/selection-rect))
 
         frame-id (snap/snap-frame-id shapes)]
 
-    (->> (rx/of shape)
-         (rx/flat-map (fn [shape]
-                        (->> (sp/shape-snap-points shape)
-                             (map #(vector frame-id %)))))
-         (rx/flat-map (fn [[frame-id point]]
-                        (->> (snap/get-snap-points page-id frame-id remove-snap? zoom point coord)
-                             (rx/map #(vector point % coord)))))
+    (->> (rx/of shapes-sr)
+         (rx/flat-map
+          (fn [selrect]
+            (->> (sp/selrect-snap-points selrect)
+                 (map #(vector frame-id %)))))
+
+         (rx/flat-map
+          (fn [[frame-id point]]
+            (->> (snap/get-snap-points page-id frame-id remove-snap? zoom point coord)
+                 (rx/map #(vector point % coord)))))
          (rx/reduce conj []))))
 
 (defn- flip

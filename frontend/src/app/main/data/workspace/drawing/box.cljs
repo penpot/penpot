@@ -9,6 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.drawing.common :as common]
@@ -70,7 +71,10 @@
 
             shape (-> state
                       (get-in [:workspace-drawing :object])
-                      (gsh/setup {:x (:x initial) :y (:y initial) :width 0.01 :height 0.01})
+                      (cp/setup-shape {:x (:x initial)
+                                       :y (:y initial)
+                                       :width 0.01
+                                       :height 0.01})
                       (assoc :frame-id fid)
                       (assoc :initialized? true)
                       (assoc :click-draw? true))]

@@ -104,6 +104,7 @@
   :group #{:proportion-lock
            :width :height
            :x :y
+           :rotation
            :selrect
 
            :constraints-h

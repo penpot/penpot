@@ -9,6 +9,7 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.common :refer [file-version default-color]]
    [app.common.uuid :as uuid]))
 
@@ -146,3 +147,40 @@
          (assoc :id file-id)
          (update :pages conj page-id)
          (update :pages-index assoc page-id pd)))))
+
+(defn setup-rect-selrect
+  "Initializes the selrect and points for a shape"
+  [shape]
+  (let [selrect (gsh/rect->selrect shape)
+        points  (gsh/rect->points shape)]
+    (-> shape
+        (assoc :selrect selrect
+               :points points))))
+
+(defn- setup-rect
+  "A specialized function for setup rect-like shapes."
+  [shape {:keys [x y width height]}]
+  (-> shape
+      (assoc :x x :y y :width width :height height)
+      (setup-rect-selrect)))
+
+(defn- setup-image
+  [{:keys [metadata] :as shape} props]
+  (-> (setup-rect shape props)
+      (assoc
+       :proportion (/ (:width metadata)
+                      (:height metadata))
+       :proportion-lock true)))
+
+(defn setup-shape
+  "A function that initializes the first coordinates for
+  the shape. Used mainly for draw operations."
+  ([props]
+   (setup-shape {:type :rect} props))
+
+  ([shape props]
+   (case (:type shape)
+     :image (setup-image shape props)
+     (setup-rect shape props))))
+
+

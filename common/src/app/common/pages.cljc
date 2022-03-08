@@ -42,4 +42,5 @@
 (dm/export init/make-minimal-shape)
 (dm/export init/make-minimal-group)
 (dm/export init/empty-file-data)
-
+(dm/export init/setup-shape)
+(dm/export init/setup-rect-selrect)

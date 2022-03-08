@@ -84,7 +84,7 @@
 
           (fix-empty-points [shape]
             (let [shape (cond-> shape
-                          (empty? (:selrect shape)) (gsh/setup-selrect))]
+                          (empty? (:selrect shape)) (cp/setup-rect-selrect))]
               (cond-> shape
                 (empty? (:points shape))
                 (assoc :points (gsh/rect->points (:selrect shape))))))

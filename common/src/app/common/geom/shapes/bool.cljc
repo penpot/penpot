@@ -30,15 +30,13 @@
   "Calculates the selrect+points for the boolean shape"
   [shape children objects]
 
-  (let [content (calc-bool-content shape objects)
-        [points selrect]
-        (if (empty? content)
-          (let [selrect (gtr/selection-rect children)
-                points (gpr/rect->points selrect)]
-            [points selrect])
-          (gsp/content->points+selrect shape content))]
-    (-> shape
-        (assoc :selrect selrect)
-        (assoc :points points)
-        (assoc :bool-content content))))
+  (let [bool-content     (calc-bool-content shape objects)
+        shape            (assoc shape :bool-content bool-content)
+        [points selrect] (gsp/content->points+selrect shape bool-content)]
+
+    (if (and (some? selrect) (d/not-empty? points))
+      (-> shape
+          (assoc :selrect selrect)
+          (assoc :points points))
+      (gtr/update-group-selrect shape children))))
 

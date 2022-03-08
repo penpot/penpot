@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.drawing.common
   (:require
+   [app.common.pages :as cp]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
@@ -49,7 +50,7 @@
                    (assoc :height 17 :width 4 :grow-type :auto-width)
 
                    click-draw?
-                   (gsh/setup-selrect)
+                   (cp/setup-rect-selrect)
 
                    :always
                    (-> (gsh/transform-shape)

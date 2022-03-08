@@ -21,38 +21,38 @@
 
 ;; --- Relative Movement
 
-(defn- move-selrect [selrect pt]
-  (when (and (some? selrect) (some? pt))
-    (let [dx (.-x pt)
-          dy (.-y pt)
-          {:keys [x y x1 y1 x2 y2 width height]} selrect]
-      {:x     (if (some? x) (+ dx x) x)
-       :y     (if (some? y) (+ dy y) y)
-       :x1    (if (some? x1) (+ dx x1) x1)
-       :y1    (if (some? y1) (+ dy y1) y1)
-       :x2    (if (some? x2) (+ dx x2) x2)
-       :y2    (if (some? y2) (+ dy y2) y2)
-       :width width
-       :height height})))
+(defn- move-selrect [{:keys [x y x1 y1 x2 y2 width height] :as selrect} {dx :x dy :y :as pt}]
+  (if (and (some? selrect) (some? pt) (d/num? dx dy))
+    {:x      (if (d/num? x)  (+ dx x)  x)
+     :y      (if (d/num? y)  (+ dy y)  y)
+     :x1     (if (d/num? x1) (+ dx x1) x1)
+     :y1     (if (d/num? y1) (+ dy y1) y1)
+     :x2     (if (d/num? x2) (+ dx x2) x2)
+     :y2     (if (d/num? y2) (+ dy y2) y2)
+     :width  width
+     :height height}
+    selrect))
 
 (defn- move-points [points move-vec]
-  (->> points
-       (mapv #(gpt/add % move-vec))))
+  (cond->> points
+    (d/num? (:x move-vec) (:y move-vec))
+    (mapv #(gpt/add % move-vec))))
 
 (defn move-position-data
   [position-data dx dy]
 
-  (->> position-data
-       (mapv #(-> %
-                  (update :x + dx)
-                  (update :y + dy)))))
+  (cond->> position-data
+    (d/num? dx dy)
+    (mapv #(-> %
+               (update :x + dx)
+               (update :y + dy)))))
 
 (defn move
   "Move the shape relatively to its current
   position applying the provided delta."
   [{:keys [type] :as shape} {dx :x dy :y}]
-  (let [dx       (d/check-num dx)
-        dy       (d/check-num dy)
+  (let [dx       (d/check-num dx 0)
+        dy       (d/check-num dy 0)
         move-vec (gpt/point dx dy)]
 
     (-> shape
@@ -138,9 +138,12 @@
 (defn transform-matrix
   "Returns a transformation matrix without changing the shape properties.
   The result should be used in a `transform` attribute in svg"
-  ([shape] (transform-matrix shape nil))
-  ([shape params] (transform-matrix shape params (or (gco/center-shape shape)
-                                                     (gpt/point 0 0))))
+  ([shape]
+   (transform-matrix shape nil))
+
+  ([shape params]
+   (transform-matrix shape params (or (gco/center-shape shape) (gpt/point 0 0))))
+
   ([{:keys [flip-x flip-y] :as shape} {:keys [no-flip]} shape-center]
    (-> (gmt/matrix)
        (gmt/translate shape-center)
@@ -276,10 +279,6 @@
           [(gpr/points->selrect points) nil nil]
           (adjust-rotated-transform shape points))
 
-        ;;selrect (cond-> selrect
-        ;;          round-coords? gpr/round-selrect)
-
-        ;; Redondear los points?
         base-rotation  (or (:rotation shape) 0)
         modif-rotation (or (get-in shape [:modifiers :rotation]) 0)
         rotation       (mod (+ base-rotation modif-rotation) 360)]
@@ -296,8 +295,10 @@
               (assoc :transform-inverse transform-inverse)))
         (cond-> (not transform)
           (dissoc :transform :transform-inverse))
-        (assoc :selrect selrect)
-        (assoc :points points)
+        (cond-> (some? selrect)
+          (assoc :selrect selrect))
+        (cond-> (d/not-empty? points)
+          (assoc :points points))
         (assoc :rotation rotation))))
 
 (defn- update-group-viewbox
@@ -568,11 +569,7 @@
 
         displacement
         (when (some? displacement)
-          (gmt/multiply resize-transform-inverse displacement)
-          #_(-> (gpt/point 0 0)
-              (gpt/transform displacement)
-              (gpt/transform resize-transform-inverse)
-              (gmt/translate-matrix)))
+          (gmt/multiply resize-transform-inverse displacement))
 
         resize-origin
         (when (some? resize-origin)
