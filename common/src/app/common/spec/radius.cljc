@@ -33,7 +33,7 @@
 
 (defn has-radius?
   [shape]
-  ((get editable-attrs (:type shape)) :rx))
+  (contains? (get editable-attrs (:type shape)) :rx))
 
 (defn radius-mode
   [shape]

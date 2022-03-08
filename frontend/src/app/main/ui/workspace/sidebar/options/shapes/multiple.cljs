@@ -180,7 +180,7 @@
               :shape    (let [;; Get the editable attrs from the shape, ensuring that all attributes
                               ;; are present, with value nil if they are not present in the shape.
                               shape-values (merge
-                                             (into {} (map #(hash-map % nil) editable-attrs))
+                                             (into {} (map #(vector % nil)) editable-attrs)
                                              (select-keys shape editable-attrs))]
                           [(conj ids id)
                            (merge-attrs values shape-values)])
