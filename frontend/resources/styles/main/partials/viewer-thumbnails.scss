@@ -185,3 +185,7 @@
   grid-column: 1 / span 1;
   z-index: 11;
 }
+
+.thumbnail-close.invisible {
+  display: none;
+}
