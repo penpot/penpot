@@ -27,7 +27,7 @@
 ;;   - children: read it from all the children, and then merging it.
 ;;   - ignore: do not read this attribute from this shape.
 ;;   - text: read it from all the content nodes, and then merging it.
-(def type->props
+(def type->read-mode
   {:frame
    {:measure    :shape
     :layer      :shape
@@ -118,7 +118,7 @@
     :stroke     :shape
     :text       :ignore}})
 
-(def props->attrs
+(def group->attrs
   {:measure    measure-attrs
    :layer      layer-attrs
    :constraint constraint-attrs
@@ -157,36 +157,47 @@
   (when v (select-keys v blur-keys)))
 
 (defn get-attrs*
-  "Given a `type` of options that we want to extract and the shapes to extract them from
+  "Given a group of attributes that we want to extract and the shapes to extract them from
   returns a list of tuples [id, values] with the extracted properties for the shapes that
   applies (some of them ignore some attributes)"
-  [shapes objects attr-type]
-  (let [attrs (props->attrs attr-type)
+  [shapes objects attr-group]
+  (let [attrs (group->attrs attr-group)
+
         merge-attrs
         (fn [v1 v2]
           (cond
-            (= attr-type :shadow) (attrs/get-attrs-multi [v1 v2] attrs shadow-eq shadow-sel)
-            (= attr-type :blur)   (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
-            :else                 (attrs/get-attrs-multi [v1 v2] attrs)))
+            (= attr-group :shadow) (attrs/get-attrs-multi [v1 v2] attrs shadow-eq shadow-sel)
+            (= attr-group :blur)   (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
+            :else                  (attrs/get-attrs-multi [v1 v2] attrs)))
 
         extract-attrs
         (fn [[ids values] {:keys [id type content] :as shape}]
-          (let [props (get-in type->props [type attr-type])]
-            (case props
+          (let [read-mode      (get-in type->read-mode [type attr-group])
+                editable-attrs (filter (get cpc/editable-attrs (:type shape)) attrs)]
+            (case read-mode
               :ignore   [ids values]
-              :shape    (let [editable-attrs (filter (get cpc/editable-attrs (:type shape)) attrs)]
+
+              :shape    (let [;; Get the editable attrs from the shape, ensuring that all attributes
+                              ;; are present, with value nil if they are not present in the shape.
+                              shape-values (merge
+                                             (into {} (map #(vector % nil)) editable-attrs)
+                                             (select-keys shape editable-attrs))]
                           [(conj ids id)
-                           (merge-attrs values (select-keys shape editable-attrs))])
+                           (merge-attrs values shape-values)])
+
               :text     [(conj ids id)
                          (-> values
                              (merge-attrs (select-keys shape attrs))
                              (merge-attrs (merge
-                                           (select-keys txt/default-text-attrs attrs)
-                                           (attrs/get-attrs-multi (txt/node-seq content) attrs))))]
+                                            (select-keys txt/default-text-attrs attrs)
+                                            (attrs/get-attrs-multi (txt/node-seq content) attrs))))]
+
               :children (let [children (->> (:shapes shape []) (map #(get objects %)))
-                              [new-ids new-values] (get-attrs* children objects attr-type)]
+                              [new-ids new-values] (get-attrs* children objects attr-group)]
                           [(d/concat-vec ids new-ids) (merge-attrs values new-values)])
+
               [])))]
+
     (reduce extract-attrs [[] []] shapes)))
 
 (def get-attrs (memoize get-attrs*))

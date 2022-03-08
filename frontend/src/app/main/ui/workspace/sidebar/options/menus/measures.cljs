@@ -34,7 +34,7 @@
 (def ^:private type->options
   {:bool    #{:size :position :rotation}
    :circle  #{:size :position :rotation}
-   :frame   #{:size :position :rotation :radius :presets}
+   :frame   #{:presets :size :position :radius}
    :group   #{:size :position :rotation}
    :image   #{:size :position :rotation :radius}
    :path    #{:size :position :rotation}
@@ -141,26 +141,36 @@
          (fn [value]
            (st/emit! (udw/increase-rotation ids value))))
 
+        change-radius
+        (mf/use-callback
+          (mf/deps ids-with-children)
+          (fn [update-fn]
+            (dch/update-shapes ids-with-children
+                               (fn [shape]
+                                 (if (ctr/has-radius? shape)
+                                   (update-fn shape)
+                                   shape)))))
+
         on-switch-to-radius-1
         (mf/use-callback
          (mf/deps ids)
          (fn [_value]
            (if all-equal?
-             (st/emit! (dch/update-shapes ids-with-children ctr/switch-to-radius-1))
+             (st/emit! (change-radius ctr/switch-to-radius-1))
              (reset! radius-multi? true))))
 
         on-switch-to-radius-4
         (mf/use-callback
          (mf/deps ids)
          (fn [_value]
-           (st/emit! (dch/update-shapes ids-with-children ctr/switch-to-radius-4))
+           (st/emit! (change-radius ctr/switch-to-radius-4))
            (reset! radius-multi? false)))
 
         on-radius-1-change
         (mf/use-callback
          (mf/deps ids)
          (fn [value]
-           (st/emit! (dch/update-shapes ids-with-children #(ctr/set-radius-1 % value)))))
+           (st/emit! (change-radius #(ctr/set-radius-1 % value)))))
 
         on-radius-multi-change
         (mf/use-callback
@@ -168,16 +178,15 @@
          (fn [event]
            (let [value (-> event dom/get-target dom/get-value d/parse-integer)]
              (when (some? value)
-               (st/emit! (dch/update-shapes ids-with-children ctr/switch-to-radius-1)
-                         (dch/update-shapes ids-with-children #(ctr/set-radius-1 % value)))
+               (st/emit! (change-radius ctr/switch-to-radius-1)
+                         (change-radius #(ctr/set-radius-1 % value)))
                (reset! radius-multi? false)))))
 
         on-radius-4-change
         (mf/use-callback
          (mf/deps ids)
          (fn [value attr]
-           (st/emit! (dch/update-shapes ids-with-children #(ctr/set-radius-4 % attr value)))))
-
+           (st/emit! (change-radius #(ctr/set-radius-4 % attr value)))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
@@ -273,7 +282,7 @@
                               :precision 2}]]])
 
        ;; ROTATION
-       (when (and (not= type :frame) (options :rotation))
+       (when (options :rotation)
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.rotation")]
           [:div.input-element.degrees {:title (tr "workspace.options.rotation")}

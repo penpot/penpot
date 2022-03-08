@@ -6,8 +6,9 @@
 
 (ns app.common.spec.radius
   (:require
-   [app.common.spec :as us]
-   [clojure.spec.alpha :as s]))
+    [app.common.pages.common :refer [editable-attrs]]
+    [app.common.spec :as us]
+    [clojure.spec.alpha :as s]))
 
 (s/def ::rx ::us/safe-number)
 (s/def ::ry ::us/safe-number)
@@ -29,6 +30,10 @@
 ;; All operations take into account that the shape may not be a one of those 
 ;; shapes that has border radius, and so it hasn't :rx nor :r1. 
 ;; In this case operations must leave shape untouched.
+
+(defn has-radius?
+  [shape]
+  (contains? (get editable-attrs (:type shape)) :rx))
 
 (defn radius-mode
   [shape]
