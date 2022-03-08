@@ -6,6 +6,7 @@
 
 (ns app.common.path.shapes-to-path
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -38,6 +39,7 @@
          :fill-color-ref-file
          :fill-color-ref-id
          :fill-image
+         :fills
          :stroke-color
          :stroke-color-ref-file
          :stroke-color-ref-id
@@ -46,7 +48,10 @@
          :stroke-width
          :stroke-alignment
          :stroke-cap-start
-         :stroke-cap-end]))
+         :stroke-cap-end
+         :strokes]))
+
+(def default-bool-fills [{:fill-color clr/black}])
 
 (defn make-corner-arc
   "Creates a curvle corner for border radius"
