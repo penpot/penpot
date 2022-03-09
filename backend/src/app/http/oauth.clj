@@ -57,7 +57,8 @@
                 :grant_type "authorization_code"
                 :redirect_uri (build-redirect-uri cfg)}
         req    {:method :post
-                :headers {"content-type" "application/x-www-form-urlencoded"}
+                :headers {"content-type" "application/x-www-form-urlencoded"
+                          "accept" "application/json"}
                 :uri (:token-uri provider)
                 :body (u/map->query-string params)}]
     (p/then
@@ -69,8 +70,8 @@
             :type (get data :token_type)})
          (ex/raise :type :internal
                    :code :unable-to-retrieve-token
-                   ::http-status status
-                   ::http-body body))))))
+                   :http-status status
+                   :http-body body))))))
 
 (defn- retrieve-user-info
   [{:keys [provider http-client] :as cfg} tdata]
@@ -92,11 +93,14 @@
            (l/warn :hint "received incomplete profile info object (please set correct scopes)"
                    :info (pr-str info))
            (ex/raise :type :internal
-                     :code :unable-to-auth
-                     :hint "no user info"))
+                     :code :incomplete-user-info
+                     :hint "inconmplete user info"
+                     :info info))
          info)
+
        (ex/raise :type :internal
                  :code :unable-to-retrieve-user-info
+                 :hint "unable to retrieve user info"
                  :http-status status
                  :http-body body)))))
 
@@ -104,7 +108,6 @@
 (s/def ::email ::us/not-empty-string)
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::props (s/map-of ::us/keyword any?))
-
 (s/def ::info
   (s/keys :req-un [::backend
                    ::email
@@ -112,7 +115,7 @@
                    ::props]))
 
 (defn retrieve-info
-  [{:keys [tokens provider] :as cfg} request]
+  [{:keys [tokens provider] :as cfg} {:keys [params] :as request}]
   (letfn [(validate-oidc [info]
             ;; If the provider is OIDC, we can proceed to check
             ;; roles if they are defined.
@@ -143,9 +146,15 @@
               (map? (:props state))
               (update :props merge (:props state))))]
 
-    (let [state  (get-in request [:params :state])
-          state  (tokens :verify {:token state :iss :oauth})
-          code   (get-in request [:params :code])]
+    (when-let [error (get params :error)]
+      (ex/raise :type :internal
+                :code :error-on-retrieving-code
+                :error-id error
+                :error-desc (get params :error_description)))
+
+    (let [state  (get params :state)
+          code   (get params :code)
+          state  (tokens :verify {:token state :iss :oauth})]
       (-> (p/resolved code)
           (p/then #(retrieve-access-token cfg %))
           (p/then #(retrieve-user-info cfg %))
