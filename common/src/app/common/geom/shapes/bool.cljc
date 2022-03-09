@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes.path :as gsp]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.path.bool :as pb]
    [app.common.path.shapes-to-path :as stp]))

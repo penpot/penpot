@@ -9,13 +9,13 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]))
 
-(defn- selrect-snap-points [{:keys [x y width height]}]
+(defn selrect-snap-points [{:keys [x y width height]}]
   #{(gpt/point x y)
     (gpt/point (+ x width) y)
     (gpt/point (+ x width) (+ y height))
     (gpt/point x (+ y height))})
 
-(defn- frame-snap-points [{:keys [x y width height] :as selrect}]
+(defn frame-snap-points [{:keys [x y width height] :as selrect}]
   (into (selrect-snap-points selrect)
         #{(gpt/point (+ x (/ width 2)) y)
           (gpt/point (+ x width) (+ y (/ height 2)))

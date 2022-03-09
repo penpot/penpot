@@ -6,10 +6,10 @@
 
 (ns app.main.data.workspace.drawing.common
   (:require
-   [app.common.pages :as cp]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages :as cp]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.undo :as dwu]
    [app.main.worker :as uw]

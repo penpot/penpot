@@ -31,11 +31,8 @@
     ;; Displays in the console log the events through the application
     :events
 
-    ;; Display the boxes that represent the rotation handlers
-    :rotation-handler
-
-    ;; Display the boxes that represent the resize handlers
-    :resize-handler
+    ;; Display the boxes that represent the rotation and resize handlers
+    :handlers
 
     ;; Displays the center of a selection
     :selection-center

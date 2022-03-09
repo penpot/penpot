@@ -51,18 +51,21 @@
                 :fill "none"}}])))
 
 (defn- handlers-for-selection [{:keys [x y width height]} {:keys [type]} zoom]
-  (let [zoom-width (* width zoom)
-        zoom-height (* height zoom)
+  (let [threshold-small (/ 25 zoom)
+        threshold-tiny (/ 10 zoom)
 
-        align (when (or (<= zoom-width small-selrect-side)
-                        (<= zoom-height small-selrect-side))
-                :outside)
-        show-resize-point? (or (not= type :path)
-                               (and
-                                (> zoom-width min-selrect-side)
-                                (> zoom-height min-selrect-side)))
-        min-side-top? (or (not= type :path) (> zoom-height min-selrect-side))
-        min-side-side? (or (not= type :path) (> zoom-width min-selrect-side))]
+        small-width? (<= width threshold-small)
+        tiny-width?  (<= width threshold-tiny)
+
+        small-height? (<= height threshold-small)
+        tiny-height?  (<= height threshold-tiny)
+
+        vertical-line? (and (= type :path) tiny-width?)
+        horizontal-line? (and (= type :path) tiny-height?)
+
+        align (if (or small-width? small-height?)
+                :outside
+                :inside)]
     (->>
      [ ;; TOP-LEFT
       {:type :rotation
@@ -81,42 +84,66 @@
        :position :bottom-left
        :props {:cx x :cy (+ y height)}}
 
-      (when min-side-top?
-        {:type :resize-side
-         :position :top
-         :props {:x x :y y :length width :angle 0 :align align}})
+      (when-not horizontal-line?
+        (let [x (if small-width? (+ x (/ (- width threshold-small) 2)) x)
+              length (if small-width? threshold-small width)]
+          {:type :resize-side
+           :position :top
+           :props {:x x
+                   :y y
+                   :length length
+                   :angle 0
+                   :align align}}))
 
-      (when min-side-side?
-        {:type :resize-side
-         :position :right
-         :props {:x (+ x width) :y y :length height :angle 90 :align align}})
+      (when-not horizontal-line?
+        (let [x (if small-width? (+ x (/ (+ width threshold-small) 2)) (+ x width))
+              length (if small-width? threshold-small width)]
+          {:type :resize-side
+           :position :bottom
+           :props {:x x
+                   :y (+ y height)
+                   :length length
+                   :angle 180
+                   :align align}}))
 
-      (when min-side-top?
-        {:type :resize-side
-         :position :bottom
-         :props {:x (+ x width) :y (+ y height) :length width :angle 180 :align align}})
+      (when-not vertical-line?
+        (let [y (if small-height? (+ y (/ (- height threshold-small) 2)) y)
+              length (if small-height? threshold-small height)]
+          {:type :resize-side
+           :position :right
+           :props {:x (+ x width)
+                   :y y
+                   :length length
+                   :angle 90
+                   :align align}}))
 
-      (when min-side-side?
-        {:type :resize-side
-         :position :left
-         :props {:x x :y (+ y height) :length height :angle 270 :align align}})
+      (when-not vertical-line?
+        (let [y (if small-height? (+ y (/ (+ height threshold-small) 2)) (+ y height))
+              length (if small-height? threshold-small height)]
+          {:type :resize-side
+           :position :left
+           :props {:x x
+                   :y y
+                   :length length
+                   :angle 270
+                   :align align}}))
 
-      (when show-resize-point?
+      (when (and (not tiny-width?) (not tiny-height?))
         {:type :resize-point
          :position :top-left
          :props {:cx x :cy y :align align}})
 
-      (when show-resize-point?
+      (when (and (not tiny-width?) (not tiny-height?))
         {:type :resize-point
          :position :top-right
          :props {:cx (+ x width) :cy y :align align}})
 
-      (when show-resize-point?
+      (when (and (not tiny-width?) (not tiny-height?))
         {:type :resize-point
          :position :bottom-right
          :props {:cx (+ x width) :cy (+ y height) :align align}})
 
-      (when show-resize-point?
+      (when (and (not tiny-width?) (not tiny-height?))
         {:type :resize-point
          :position :bottom-left
          :props {:cx x :cy (+ y height) :align align}})]
@@ -137,8 +164,7 @@
             :y y
             :width size
             :height size
-            :fill (if (debug? :rotation-handler) "blue" "none")
-            :stroke (if (debug? :rotation-handler) "blue" "none")
+            :fill (if (debug? :handlers) "blue" "none")
             :stroke-width 0
             :transform transform
             :on-mouse-down on-rotate}]))
@@ -171,8 +197,7 @@
                  :width resize-point-circle-radius
                  :height resize-point-circle-radius
                  :transform (when rotation (str/fmt "rotate(%s, %s, %s)" rotation cx' cy'))
-                 :style {:fill (if (debug? :resize-handler) "red" "none")
-                         :stroke (if (debug? :resize-handler) "red" "none")
+                 :style {:fill (if (debug? :handlers) "red" "none")
                          :stroke-width 0
                          :cursor cursor}
                  :on-mouse-down #(on-resize {:x cx' :y cy'} %)}])
@@ -181,8 +206,7 @@
                  :r (/ resize-point-circle-radius zoom)
                  :cx cx'
                  :cy cy'
-                 :style {:fill (if (debug? :resize-handler) "red" "none")
-                         :stroke (if (debug? :resize-handler) "red" "none")
+                 :style {:fill (if (debug? :handlers) "red" "none")
                          :stroke-width 0
                          :cursor cursor}}])]))
 
@@ -192,25 +216,18 @@
   (let [res-point (if (#{:top :bottom} position)
                     {:y y}
                     {:x x})
-        target-length (max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
 
-        width (if (< target-length 6) length target-length)
         height (/ resize-side-height zoom)
-
-        offset-x (/ (- length width) 2)
         offset-y (if (= align :outside) (- height) (- (/ height 2)))
-
-        target-x (+ x offset-x)
         target-y (+ y offset-y)]
-    [:rect {:x target-x
+    [:rect {:x x
             :y target-y
-            :width width
+            :width length
             :height height
             :transform (gmt/multiply transform
                                      (gmt/rotate-matrix angle (gpt/point x y)))
             :on-mouse-down #(on-resize res-point %)
-            :style {:fill (if (debug? :resize-handler) "yellow" "none")
-                    :stroke (if (debug? :resize-handler) "yellow" "none")
+            :style {:fill (if (debug? :handlers) "yellow" "none")
                     :stroke-width 0
                     :cursor (if (#{:left :right} position)
                               (cur/resize-ew rotation)
