@@ -31,11 +31,11 @@
       (l/derived st/state)))
 
 (def selected-palette-ref
-  (-> (l/in [:workspace-local :selected-palette])
+  (-> (l/in [:workspace-global :selected-palette])
       (l/derived st/state)))
 
 (def selected-palette-size-ref
-  (-> (l/in [:workspace-local :selected-palette-size])
+  (-> (l/in [:workspace-global :selected-palette-size])
       (l/derived st/state)))
 
 ;; --- Components
