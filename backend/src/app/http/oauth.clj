@@ -97,8 +97,8 @@
          info)
        (ex/raise :type :internal
                  :code :unable-to-retrieve-user-info
-                 ::http-status status
-                 ::http-body body)))))
+                 :http-status status
+                 :http-body body)))))
 
 (s/def ::backend ::us/not-empty-string)
 (s/def ::email ::us/not-empty-string)
@@ -224,15 +224,18 @@
       (redirect-response uri))))
 
 (defn- auth-handler
-  [{:keys [tokens] :as cfg} {:keys [params] :as request} respond _]
-  (let [props (extract-utm-props params)
-        state (tokens :generate
-                      {:iss :oauth
-                       :invitation-token (:invitation-token params)
-                       :props props
-                       :exp (dt/in-future "15m")})
-        uri   (build-auth-uri cfg state)]
-    (respond (yrs/response 200 {:redirect-uri uri}))))
+  [{:keys [tokens] :as cfg} {:keys [params] :as request} respond raise]
+  (try
+    (let [props (extract-utm-props params)
+          state (tokens :generate
+                        {:iss :oauth
+                         :invitation-token (:invitation-token params)
+                         :props props
+                         :exp (dt/in-future "15m")})
+          uri   (build-auth-uri cfg state)]
+      (respond (yrs/response 200 {:redirect-uri uri})))
+    (catch Throwable cause
+      (raise cause))))
 
 (defn- callback-handler
   [cfg request respond _]
@@ -242,7 +245,7 @@
               (generate-redirect cfg request info profile)))
 
           (handle-error [cause]
-            (l/warn :hint "error on oauth process" :cause cause)
+            (l/error :hint "error on oauth process" :cause cause)
             (respond (generate-error-redirect cfg cause)))]
 
     (-> (process-request)
@@ -394,7 +397,7 @@
               :scopes        #{"openid" "profile" "email"}
               :auth-uri      (str base "/oauth/authorize")
               :token-uri     (str base "/oauth/token")
-              :user-uri      (str base "/api/v4/user")
+              :user-uri      (str base "/oauth/userinfo")
               :name          "gitlab"}]
     (if (and (string? (:client-id opts))
              (string? (:client-secret opts)))
