@@ -259,7 +259,7 @@
 ;; A task responsible to permanently delete already marked as deleted
 ;; storage files. The storage objects are practically never marked to
 ;; be deleted directly by the api call. The touched-gc is responsible
-;; collect the usage of the object and mark it as deleted.
+;; of collecting the usage of the object and mark it as deleted.
 
 (declare sql:retrieve-deleted-objects-chunk)
 

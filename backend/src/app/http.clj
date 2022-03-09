@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
+   [app.config :as cf]
    [app.http.doc :as doc]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
@@ -35,9 +36,7 @@
 (s/def ::host ::us/string)
 (s/def ::name ::us/string)
 (s/def ::executors (s/map-of keyword? ::wrk/executor))
-
-;; (s/def ::max-threads ::cf/http-server-max-threads)
-;; (s/def ::min-threads ::cf/http-server-min-threads)
+(s/def ::io-threads ::cf/http-server-io-threads)
 
 (defmethod ig/prep-key ::server
   [_ cfg]
@@ -48,7 +47,7 @@
 
 (defmethod ig/pre-init-spec ::server [_]
   (s/keys :req-un [::port ::host ::name ::executors]
-          :opt-un [::router ::handler]))
+          :opt-un [::router ::handler ::io-threads]))
 
 (defmethod ig/init-key ::server
   [_ {:keys [handler router port name host executors] :as cfg}]
@@ -97,7 +96,7 @@
       (handler request respond
                (fn [cause]
                  (l/error :hint "unexpected error processing request"
-                          ::l/context (errors/get-error-context request cause)
+                          ::l/context (errors/get-context request)
                           :query-string (yrq/query request)
                           :cause cause)
                  (respond (yrs/response 500 "internal server error")))))))

@@ -113,7 +113,8 @@
     :host        (cf/get :http-server-host)
     :router      (ig/ref :app.http/router)
     :metrics     (ig/ref :app.metrics/metrics)
-    :executors   (ig/ref :app.worker/executors)}
+    :executors   (ig/ref :app.worker/executors)
+    :io-threads  (cf/get :http-server-io-threads)}
 
    :app.http/router
    {:assets        (ig/ref :app.http.assets/handlers)

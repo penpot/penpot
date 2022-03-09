@@ -262,10 +262,3 @@
     :gauge   (make-gauge props)
     :summary (make-summary props)
     :histogram (make-histogram props)))
-
-;; (defn instrument-jetty!
-;;   [^CollectorRegistry registry ^StatisticsHandler handler]
-;;   (doto (JettyStatisticsCollector. handler)
-;;     (.register registry))
-;;   nil)
-

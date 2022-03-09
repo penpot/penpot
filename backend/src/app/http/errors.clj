@@ -21,18 +21,17 @@
       (yrq/get-header request "x-real-ip")
       (yrq/remote-addr request)))
 
-(defn get-error-context
-  [request error]
-  (let [data (ex-data error)]
-    (merge
-     {:path          (:uri request)
-      :method        (:request-method request)
-      :params        (:params request)
-      :ip-addr       (parse-client-ip request)
-      :profile-id    (:profile-id request)}
-     (let [headers (:headers request)]
-       {:user-agent (get headers "user-agent")
-        :frontend-version (get headers "x-frontend-version" "unknown")}))))
+(defn get-context
+  [request]
+  (merge
+   {:path          (:uri request)
+    :method        (:request-method request)
+    :params        (:params request)
+    :ip-addr       (parse-client-ip request)
+    :profile-id    (:profile-id request)}
+   (let [headers (:headers request)]
+     {:user-agent (get headers "user-agent")
+      :frontend-version (get headers "x-frontend-version" "unknown")})))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -61,7 +60,7 @@
   (let [edata (ex-data error)
         explain (us/pretty-explain edata)]
     (l/error ::l/raw (ex-message error)
-             ::l/context (get-error-context request error)
+             ::l/context (get-context request)
              :cause error)
     (yrs/response :status 500
                   :body   {:type :server-error
@@ -87,7 +86,7 @@
       (handle-exception (:handling edata) request)
       (do
         (l/error ::l/raw (ex-message error)
-                 ::l/context (get-error-context request error)
+                 ::l/context (get-context request)
                  :cause error)
         (yrs/response 500 {:type :server-error
                            :code :unexpected
@@ -98,7 +97,7 @@
   [error request]
   (let [state (.getSQLState ^java.sql.SQLException error)]
     (l/error ::l/raw (ex-message error)
-             ::l/context (get-error-context request error)
+             ::l/context (get-context request)
              :cause error)
     (cond
       (= state "57014")

@@ -141,8 +141,7 @@
 (s/def ::host ::us/string)
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-server-host ::us/string)
-(s/def ::http-server-min-threads ::us/integer)
-(s/def ::http-server-max-threads ::us/integer)
+(s/def ::http-server-io-threads ::us/integer)
 (s/def ::http-session-idle-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-size ::us/integer)
@@ -243,8 +242,7 @@
                    ::host
                    ::http-server-host
                    ::http-server-port
-                   ::http-server-max-threads
-                   ::http-server-min-threads
+                   ::http-server-io-threads
                    ::http-session-idle-max-age
                    ::http-session-updater-batch-max-age
                    ::http-session-updater-batch-max-size
