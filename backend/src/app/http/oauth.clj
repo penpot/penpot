@@ -385,14 +385,13 @@
         (assoc-in cfg [:providers "github"] opts))
       cfg)))
 
-
 (defn- initialize-gitlab-provider
   [cfg]
   (let [base (cf/get :gitlab-base-uri "https://gitlab.com")
         opts {:base-uri      base
               :client-id     (cf/get :gitlab-client-id)
               :client-secret (cf/get :gitlab-client-secret)
-              :scopes        #{"read_user"}
+              :scopes        #{"openid" "profile" "email"}
               :auth-uri      (str base "/oauth/authorize")
               :token-uri     (str base "/oauth/token")
               :user-uri      (str base "/api/v4/user")
