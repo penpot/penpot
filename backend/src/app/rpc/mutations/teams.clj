@@ -22,7 +22,6 @@
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.core :as fs]
    [promesa.core :as p]
    [promesa.exec :as px]))
 
@@ -281,54 +280,49 @@
 (declare ^:private upload-photo)
 (declare ^:private update-team-photo)
 
-(s/def ::content-type ::media/image-content-type)
-(s/def ::file (s/and ::media/upload (s/keys :req-un [::content-type])))
-
+(s/def ::file ::media/upload)
 (s/def ::update-team-photo
   (s/keys :req-un [::profile-id ::team-id ::file]))
 
 (sv/defmethod ::update-team-photo
   [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
-  (media/validate-media-type! (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
+  (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
   (let [cfg (update cfg :storage media/configure-assets-storage)]
     (update-team-photo cfg params)))
 
 (defn update-team-photo
-  [{:keys [pool storage executors] :as cfg} {:keys [profile-id file team-id] :as params}]
-  (p/do
-    ;; Perform file validation, this operation executes some
-    ;; comandline helpers for true check of the image file. And it
-    ;; raises an exception if somethig is wrong with the file.
-    (px/with-dispatch (:blocking executors)
-      (media/run {:cmd :info :input {:path (:tempfile file) :mtype (:content-type file)}}))
+  [{:keys [pool storage executors] :as cfg} {:keys [profile-id team-id] :as params}]
+  (p/let [team  (px/with-dispatch (:default executors)
+                  (teams/retrieve-team pool profile-id team-id))
+          photo (upload-photo cfg params)]
 
-    (p/let [team  (px/with-dispatch (:default executors)
-                    (teams/retrieve-team pool profile-id team-id))
-            photo (upload-photo cfg params)]
+    ;; Mark object as touched for make it ellegible for tentative
+    ;; garbage collection.
+    (when-let [id (:photo-id team)]
+      (sto/touch-object! storage id))
 
-      ;; Mark object as touched for make it ellegible for tentative
-      ;; garbage collection.
-      (when-let [id (:photo-id team)]
-        (sto/touch-object! storage id))
+    ;; Save new photo
+    (db/update! pool :team
+                {:photo-id (:id photo)}
+                {:id team-id})
 
-      ;; Save new photo
-      (db/update! pool :team
-                  {:photo-id (:id photo)}
-                  {:id team-id})
-
-      (assoc team :photo-id (:id photo)))))
+    (assoc team :photo-id (:id photo))))
 
 (defn upload-photo
   [{:keys [storage executors] :as cfg} {:keys [file]}]
-  (letfn [(generate-thumbnail [path mtype]
+  (letfn [(get-info [content]
+            (px/with-dispatch (:blocking executors)
+              (media/run {:cmd :info :input content})))
+
+          (generate-thumbnail [info]
             (px/with-dispatch (:blocking executors)
               (media/run {:cmd :profile-thumbnail
                           :format :jpeg
                           :quality 85
                           :width 256
                           :height 256
-                          :input {:path path :mtype mtype}})))
+                          :input info})))
 
           ;; Function responsible of calculating cryptographyc hash of
           ;; the provided data. Even though it uses the hight
@@ -338,8 +332,8 @@
             (px/with-dispatch (:blocking executors)
               (sto/calculate-hash data)))]
 
-    (p/let [thumb   (generate-thumbnail (fs/path (:tempfile file))
-                                        (:content-type file))
+    (p/let [info    (get-info file)
+            thumb   (generate-thumbnail info)
             hash    (calculate-hash (:data thumb))
             content (-> (sto/content (:data thumb) (:size thumb))
                         (sto/wrap-with-hash hash))]

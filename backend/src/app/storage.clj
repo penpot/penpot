@@ -257,7 +257,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; A task responsible to permanently delete already marked as deleted
-;; storage files.
+;; storage files. The storage objects are practically never marked to
+;; be deleted directly by the api call. The touched-gc is responsible
+;; collect the usage of the object and mark it as deleted.
 
 (declare sql:retrieve-deleted-objects-chunk)
 
@@ -308,7 +310,7 @@
         and s.deleted_at < (now() - ?::interval)
         and s.created_at < ?
       order by s.created_at desc
-      limit 100
+      limit 25
    )
    delete from storage_object
     where id in (select id from items_part)
@@ -318,9 +320,9 @@
 ;; Garbage Collection: Analyze touched objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; This task is part of the garbage collection of storage objects and
-;; is responsible on analyzing the touched objects and mark them for
-;; deletion if corresponds.
+;; This task is part of the garbage collection process of storage
+;; objects and is responsible on analyzing the touched objects and
+;; mark them for deletion if corresponds.
 ;;
 ;; For example: when file_media_object is deleted, the depending
 ;; storage_object are marked as touched. This means that some files

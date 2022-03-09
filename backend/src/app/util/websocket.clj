@@ -13,10 +13,10 @@
    [app.metrics :as mtx]
    [app.util.time :as dt]
    [clojure.core.async :as a]
+   [yetti.util :as yu]
    [yetti.websocket :as yws])
   (:import
-   java.nio.ByteBuffer
-   org.eclipse.jetty.io.EofException))
+   java.nio.ByteBuffer))
 
 (declare decode-beat)
 (declare encode-beat)
@@ -48,15 +48,17 @@
                          output-buff-size 64
                          idle-timeout 30000}
                     :as options}]
-   (fn [_]
+   (fn [{:keys [::yws/channel] :as request}]
      (let [input-ch   (a/chan input-buff-size)
            output-ch  (a/chan output-buff-size)
            pong-ch    (a/chan (a/sliding-buffer 6))
            close-ch   (a/chan)
+
            options    (-> options
                           (assoc ::input-ch input-ch)
                           (assoc ::output-ch output-ch)
                           (assoc ::close-ch close-ch)
+                          (assoc ::channel channel)
                           (dissoc ::metrics))
 
            terminated (atom false)
@@ -76,32 +78,9 @@
            on-error
            (fn [_ error]
              (on-terminate)
-             (when-not (or (instance? org.eclipse.jetty.websocket.api.exceptions.WebSocketTimeoutException error)
-                           (instance? java.nio.channels.ClosedChannelException error))
+             ;; TODO: properly log timeout exceptions
+             (when-not (instance? java.nio.channels.ClosedChannelException error)
                (l/error :hint (ex-message error) :cause error)))
-
-           on-connect
-           (fn [conn]
-             (mtx/run! metrics {:id :websocket-active-connections :inc 1})
-
-             (let [wsp (atom (assoc options ::conn conn))]
-               ;; Handle heartbeat
-               (yws/idle-timeout! conn (dt/duration idle-timeout))
-               (-> @wsp
-                   (assoc ::pong-ch pong-ch)
-                   (assoc ::on-close on-terminate)
-                   (process-heartbeat))
-
-               ;; Forward all messages from output-ch to the websocket
-               ;; connection
-               (a/go-loop []
-                 (when-let [val (a/<! output-ch)]
-                   (mtx/run! metrics {:id :websocket-messages-total :labels ["send"] :inc 1})
-                   (a/<! (ws-send! conn (t/encode-str val)))
-                   (recur)))
-
-               ;; React on messages received from the client
-               (process-input wsp handle-message)))
 
            on-message
            (fn [_ message]
@@ -116,35 +95,55 @@
                  (on-terminate))))
 
            on-pong
-           (fn [_ buffer]
-             (a/>!! pong-ch buffer))]
+           (fn [_ buffers]
+             (a/>!! pong-ch (yu/copy-many buffers)))]
 
-       {:on-connect on-connect
-        :on-error on-error
-        :on-close on-terminate
-        :on-text on-message
-        :on-pong on-pong}))))
+       (mtx/run! metrics {:id :websocket-active-connections :inc 1})
+
+       (let [wsp (atom options)]
+         ;; Handle heartbeat
+         (yws/idle-timeout! channel (dt/duration idle-timeout))
+         (-> @wsp
+             (assoc ::pong-ch pong-ch)
+             (assoc ::on-close on-terminate)
+             (process-heartbeat))
+
+         ;; Forward all messages from output-ch to the websocket
+         ;; connection
+         (a/go-loop []
+           (when-let [val (a/<! output-ch)]
+             (mtx/run! metrics {:id :websocket-messages-total :labels ["send"] :inc 1})
+             (a/<! (ws-send! channel (t/encode-str val)))
+             (recur)))
+
+         ;; React on messages received from the client
+         (process-input wsp handle-message)
+
+         {:on-error on-error
+          :on-close on-terminate
+          :on-text on-message
+          :on-pong on-pong})))))
 
 (defn- ws-send!
-  [conn s]
+  [channel s]
   (let [ch (a/chan 1)]
     (try
-      (yws/send! conn s (fn [e]
-                          (when e (a/offer! ch e))
-                          (a/close! ch)))
-      (catch EofException cause
+      (yws/send! channel s (fn [e]
+                             (when e (a/offer! ch e))
+                             (a/close! ch)))
+      (catch java.io.IOException cause
         (a/offer! ch cause)
         (a/close! ch)))
     ch))
 
 (defn- ws-ping!
-  [conn s]
+  [channel s]
   (let [ch (a/chan 1)]
     (try
-      (yws/ping! conn s (fn [e]
+      (yws/ping! channel s (fn [e]
                           (when e (a/offer! ch e))
                           (a/close! ch)))
-      (catch EofException cause
+      (catch java.io.IOException cause
         (a/offer! ch cause)
         (a/close! ch)))
     ch))
@@ -184,19 +183,19 @@
       (a/<! (handler wsp {:type :disconnect})))))
 
 (defn- process-heartbeat
-  [{:keys [::conn ::close-ch ::on-close ::pong-ch
+  [{:keys [::channel ::close-ch ::on-close ::pong-ch
            ::heartbeat-interval ::max-missed-heartbeats]
     :or {heartbeat-interval 2000
          max-missed-heartbeats 4}}]
   (let [beats (atom #{})]
     (a/go-loop [i 0]
       (let [[_ port] (a/alts! [close-ch (a/timeout heartbeat-interval)])]
-        (when (and (yws/connected? conn)
+        (when (and (yws/connected? channel)
                    (not= port close-ch))
-          (a/<! (ws-ping! conn (encode-beat i)))
+          (a/<! (ws-ping! channel (encode-beat i)))
           (let [issued (swap! beats conj (long i))]
             (if (>= (count issued) max-missed-heartbeats)
-              (on-close conn -1 "heartbeat-timeout")
+              (on-close channel -1 "heartbeat-timeout")
               (recur (inc i)))))))
 
     (a/go-loop []

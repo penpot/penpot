@@ -51,7 +51,6 @@
 
     (count result)))
 
-
 ;; --- IMPL: file deletion
 
 (defmethod delete-objects "file"

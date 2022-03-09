@@ -23,8 +23,6 @@
    io.prometheus.client.Histogram$Child
    io.prometheus.client.exporter.common.TextFormat
    io.prometheus.client.hotspot.DefaultExports
-   io.prometheus.client.jetty.JettyStatisticsCollector
-   org.eclipse.jetty.server.handler.StatisticsHandler
    java.io.StringWriter))
 
 (set! *warn-on-reflection* true)
@@ -265,9 +263,9 @@
     :summary (make-summary props)
     :histogram (make-histogram props)))
 
-(defn instrument-jetty!
-  [^CollectorRegistry registry ^StatisticsHandler handler]
-  (doto (JettyStatisticsCollector. handler)
-    (.register registry))
-  nil)
+;; (defn instrument-jetty!
+;;   [^CollectorRegistry registry ^StatisticsHandler handler]
+;;   (doto (JettyStatisticsCollector. handler)
+;;     (.register registry))
+;;   nil)
 

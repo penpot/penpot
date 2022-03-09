@@ -10,49 +10,41 @@
    [app.common.transit :as t]
    [app.config :as cf]
    [app.util.json :as json]
-   [ring.core.protocols :as rp]
-   [ring.middleware.cookies :refer [wrap-cookies]]
-   [ring.middleware.keyword-params :refer [wrap-keyword-params]]
-   [ring.middleware.multipart-params :refer [wrap-multipart-params]]
-   [ring.middleware.params :refer [wrap-params]]
-   [yetti.adapter :as yt]))
+   [cuerdas.core :as str]
+   [yetti.adapter :as yt]
+   [yetti.middleware :as ymw]
+   [yetti.request :as yrq]
+   [yetti.response :as yrs])
+  (:import java.io.OutputStream))
 
-(defn wrap-server-timing
+(def server-timing
+  {:name ::server-timing
+   :compile (constantly ymw/wrap-server-timing)})
+
+(def params
+  {:name ::params
+   :compile (constantly ymw/wrap-params)})
+
+(defn wrap-parse-request
   [handler]
-  (letfn [(get-age [start]
-            (float (/ (- (System/nanoTime) start) 1000000000)))
+  (letfn [(process-request [request]
+            (let [header (yrq/get-header request "content-type")]
+              (cond
+                (str/starts-with? header "application/transit+json")
+                (with-open [is (-> request yrq/body yrq/body-stream)]
+                  (let [params (t/read! (t/reader is))]
+                    (-> request
+                        (assoc :body-params params)
+                        (update :params merge params))))
 
-          (update-headers [headers start]
-            (assoc headers "Server-Timing" (str "total;dur=" (get-age start))))]
+                (str/starts-with? header "application/json")
+                (with-open [is (-> request yrq/body yrq/body-stream)]
+                  (let [params (json/read is)]
+                    (-> request
+                        (assoc :body-params params)
+                        (update :params merge params))))
 
-    (fn [request respond raise]
-      (let [start (System/nanoTime)]
-        (handler request #(respond (update % :headers update-headers start)) raise)))))
-
-(defn wrap-parse-request-body
-  [handler]
-  (letfn [(parse-transit [body]
-            (let [reader (t/reader body)]
-              (t/read! reader)))
-
-          (parse-json [body]
-            (json/read body))
-
-          (handle-request [{:keys [headers body] :as request}]
-            (let [ctype (get headers "content-type")]
-              (case ctype
-                "application/transit+json"
-                (let [params (parse-transit body)]
-                  (-> request
-                      (assoc :body-params params)
-                      (update :params merge params)))
-
-                "application/json"
-                (let [params (parse-json body)]
-                  (-> request
-                      (assoc :body-params params)
-                      (update :params merge params)))
-
+                :else
                 request)))
 
           (handle-exception [cause]
@@ -60,20 +52,20 @@
                         :code :unable-to-parse-request-body
                         :hint "malformed params"}]
               (l/error :hint (ex-message cause) :cause cause)
-              {:status 400
-               :headers {"content-type" "application/transit+json"}
-               :body (t/encode-str data {:type :json-verbose})}))]
+              (yrs/response :status 400
+                            :headers {"content-type" "application/transit+json"}
+                            :body (t/encode-str data {:type :json-verbose}))))]
 
     (fn [request respond raise]
       (try
-        (let [request (handle-request request)]
+        (let [request (process-request request)]
           (handler request respond raise))
         (catch Exception cause
           (respond (handle-exception cause)))))))
 
-(def parse-request-body
-  {:name ::parse-request-body
-   :compile (constantly wrap-parse-request-body)})
+(def parse-request
+  {:name ::parse-request
+   :compile (constantly wrap-parse-request)})
 
 (defn buffered-output-stream
   "Returns a buffered output stream that ignores flush calls. This is
@@ -87,56 +79,51 @@
       (proxy-super flush)
       (proxy-super close))))
 
-(def ^:const buffer-size (:http/output-buffer-size yt/base-defaults))
+(def ^:const buffer-size (:xnio/buffer-size yt/defaults))
 
-(defn wrap-format-response-body
+(defn wrap-format-response
   [handler]
   (letfn [(transit-streamable-body [data opts]
-            (reify rp/StreamableResponseBody
-              (write-body-to-stream [_ _ output-stream]
-                ;; Use the same buffer as jetty output buffer size
+            (reify yrs/StreamableResponseBody
+              (-write-body-to-stream [_ _ output-stream]
                 (try
                   (with-open [bos (buffered-output-stream output-stream buffer-size)]
                     (let [tw (t/writer bos opts)]
                       (t/write! tw data)))
-                  (catch org.eclipse.jetty.io.EofException _cause
+
+                  (catch java.io.IOException _cause
                     ;; Do nothing, EOF means client closes connection abruptly
                     nil)
                   (catch Throwable cause
                     (l/warn :hint "unexpected error on encoding response"
-                            :cause cause))))))
+                            :cause cause))
+                  (finally
+                    (.close ^OutputStream output-stream))))))
 
-          (impl-format-response-body [response {:keys [query-params] :as request}]
-            (let [body   (:body response)
-                  opts   {:type (if (contains? query-params "transit_verbose") :json-verbose :json)}]
-              (cond
-                (:ws response)
-                response
-
-                (coll? body)
-                (-> response
-                    (update :headers assoc "content-type" "application/transit+json")
-                    (assoc :body (transit-streamable-body body opts)))
-
-                (nil? body)
-                (assoc response :status 204 :body "")
-
-                :else
+          (format-response [response request]
+            (let [body (yrs/body response)]
+              (if (coll? body)
+                (let [qs   (yrq/query request)
+                      opts {:type (if (str/includes? qs "verbose") :json-verbose :json)}]
+                  (-> response
+                      (update :headers assoc "content-type" "application/transit+json")
+                      (assoc :body (transit-streamable-body body opts))))
                 response)))
 
-          (handle-response [response request]
+          (process-response [response request]
             (cond-> response
-              (map? response) (impl-format-response-body request)))]
+              (map? response) (format-response request)))]
 
     (fn [request respond raise]
       (handler request
                (fn [response]
-                 (respond (handle-response response request)))
+                 (let [response (process-response response request)]
+                   (respond response)))
                raise))))
 
-(def format-response-body
-  {:name ::format-response-body
-   :compile (constantly wrap-format-response-body)})
+(def format-response
+  {:name ::format-response
+   :compile (constantly wrap-format-response)})
 
 (defn wrap-errors
   [handler on-error]
@@ -148,51 +135,46 @@
   {:name ::errors
    :compile (constantly wrap-errors)})
 
-(def cookies
-  {:name ::cookies
-   :compile (constantly wrap-cookies)})
-
-(def params
-  {:name ::params
-   :compile (constantly wrap-params)})
-
-(def multipart-params
-  {:name ::multipart-params
-   :compile (constantly wrap-multipart-params)})
-
-(def keyword-params
-  {:name ::keyword-params
-   :compile (constantly wrap-keyword-params)})
-
-(def server-timing
-  {:name ::server-timing
-   :compile (constantly wrap-server-timing)})
-
 (defn wrap-cors
   [handler]
   (if-not (contains? cf/flags :cors)
     handler
-    (letfn [(add-cors-headers [response request]
-              (-> response
-                  (update
-                   :headers
-                   (fn [headers]
-                     (-> headers
-                         (assoc "access-control-allow-origin" (get-in request [:headers "origin"]))
-                         (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
-                         (assoc "access-control-allow-credentials" "true")
-                         (assoc "access-control-expose-headers" "x-requested-with, content-type, cookie")
-                         (assoc "access-control-allow-headers" "x-frontend-version, content-type, accept, x-requested-width"))))))]
+    (letfn [(add-headers [headers request]
+              (let [origin (yrq/get-header request "origin")]
+                (-> headers
+                    (assoc "access-control-allow-origin" origin)
+                    (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
+                    (assoc "access-control-allow-credentials" "true")
+                    (assoc "access-control-expose-headers" "x-requested-with, content-type, cookie")
+                    (assoc "access-control-allow-headers" "x-frontend-version, content-type, accept, x-requested-width"))))
+
+            (update-response [response request]
+              (update response :headers add-headers request))]
+
       (fn [request respond raise]
-        (if (= (:request-method request) :options)
-          (-> {:status 200 :body ""}
-              (add-cors-headers request)
+        (if (= (yrq/method request) :options)
+          (-> (yrs/response 200)
+              (update-response request)
               (respond))
           (handler request
                    (fn [response]
-                     (respond (add-cors-headers response request)))
+                     (respond (update-response response request)))
                    raise))))))
 
 (def cors
   {:name ::cors
    :compile (constantly wrap-cors)})
+
+(defn compile-restrict-methods
+  [data _]
+  (when-let [allowed (:allowed-methods data)]
+    (fn [handler]
+      (fn [request respond raise]
+        (let [method (yrq/method request)]
+          (if (contains? allowed method)
+            (handler request respond raise)
+            (respond (yrs/response 405))))))))
+
+(def restrict-methods
+  {:name ::restrict-methods
+   :compile compile-restrict-methods})

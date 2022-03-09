@@ -87,7 +87,7 @@
 (s/def ::time-millis integer?)
 (s/def ::message string?)
 (s/def ::context-map map?)
-(s/def ::throw map?)
+(s/def ::thrown map?)
 
 (s/def ::log4j-event
   (s/keys :req-un [::logger-name ::level ::thread ::time-millis ::message]
@@ -101,8 +101,8 @@
             :logger/name  (:logger-name event)
             :logger/level (str/lower (:level event))}
 
-           (when-let [thrown (:thrown event)]
-             {:trace (:extended-stack-trace thrown)})
+           (when-let [trace (-> event :thrown :extended-stack-trace)]
+             {:trace trace})
 
            (:context-map event))
     (do

@@ -120,8 +120,8 @@
 (t/deftest file-media-gc-task
   (letfn [(create-file-media-object [{:keys [profile-id file-id]}]
             (let [mfile  {:filename "sample.jpg"
-                          :tempfile (th/tempfile "app/test_files/sample.jpg")
-                          :content-type "image/jpeg"
+                          :path (th/tempfile "app/test_files/sample.jpg")
+                          :mtype "image/jpeg"
                           :size 312043}
                   params {::th/type :upload-file-media-object
                           :profile-id profile-id

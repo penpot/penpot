@@ -32,7 +32,6 @@
 (s/def ::weight valid-weight)
 (s/def ::style valid-style)
 (s/def ::font-id ::us/uuid)
-(s/def ::content-type ::media/font-content-type)
 (s/def ::data (s/map-of ::us/string any?))
 
 (s/def ::create-font-variant
