@@ -27,21 +27,12 @@
     (merge
      {:path          (:uri request)
       :method        (:request-method request)
-      :hint          (ex-message error)
       :params        (:params request)
-
-      :spec-problems (some->> data ::s/problems (take 10) seq vec)
-      :spec-value    (some->> data ::s/value)
-      :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))
       :ip-addr       (parse-client-ip request)
       :profile-id    (:profile-id request)}
-
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
-        :frontend-version (get headers "x-frontend-version" "unknown")})
-
-     (when (and data (::s/problems data))
-       {:spec-explain (us/pretty-explain data)}))))
+        :frontend-version (get headers "x-frontend-version" "unknown")}))))
 
 (defmulti handle-exception
   (fn [err & _rest]

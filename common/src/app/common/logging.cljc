@@ -8,8 +8,10 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
+   [app.common.spec :as us]
    [clojure.pprint :refer [pprint]]
    [cuerdas.core :as str]
+   [clojure.spec.alpha :as s]
    [fipp.edn :as fpp]
    #?(:clj [io.aviso.exception :as ie])
    #?(:cljs [goog.log :as glog]))
@@ -152,6 +154,18 @@
      [logger level]
      (.isEnabled ^Logger logger ^Level level)))
 
+#?(:clj
+   (defn get-error-context
+     [error]
+     (when-let [data (ex-data error)]
+       (merge
+        {:hint          (ex-message error)
+         :spec-problems (some->> data ::s/problems (take 10) seq vec)
+         :spec-value    (some->> data ::s/value)
+         :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))}
+        (when (and data (::s/problems data))
+          {:spec-explain (us/pretty-explain data)})))))
+
 (defmacro log
   [& {:keys [level cause ::logger ::async ::raw ::context] :or {async true} :as props}]
   (if (:ns &env) ; CLJS
@@ -169,7 +183,9 @@
            ~(if async
               `(send-off logging-agent
                          (fn [_#]
-                           (with-context (into {:id (uuid/next)} ~context)
+                           (with-context (merge {:id (uuid/next)}
+                                                (get-error-context ~cause)
+                                                ~context)
                             (->> (or ~raw (build-map-message ~props))
                                  (write-log! ~logger-sym ~level-sym ~cause)))))
 
