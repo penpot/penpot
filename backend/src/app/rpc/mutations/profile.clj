@@ -100,7 +100,8 @@
 
 (sv/defmethod ::prepare-register-profile {:auth false}
   [{:keys [pool tokens] :as cfg} params]
-  (when-not (contains? cf/flags :registration)
+  (when-not (or (contains? :invitation-token params)
+                (contains? cf/flags :registration))
     (ex/raise :type :restriction
               :code :registration-disabled))
 
