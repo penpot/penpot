@@ -19,6 +19,9 @@
 - New focus mode in workspace [Taiga #2748](https://tree.taiga.io/project/penpot/us/2748)
 - Changed text shapes to be displayed as natives SVG text elements [Taiga #2759](https://tree.taiga.io/project/penpot/us/2759)
 - Texts now can have strokes, multiple fills and can be used as masks
+- Add the ability to specify the attr for retrieve the email on OIDC integration [#1460](https://github.com/penpot/penpot/issues/1460)
+- Allow registration with invitation token when registration is disabled
+- Add the ability to disable standard, password login [Taiga #2999](https://tree.taiga.io/project/penpot/us/2999)
 
 ### :bug: Bugs fixed
 

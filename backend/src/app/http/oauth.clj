@@ -75,34 +75,51 @@
 
 (defn- retrieve-user-info
   [{:keys [provider http-client] :as cfg} tdata]
-  (p/then
-   (http-client {:uri (:user-uri provider)
-                 :headers {"Authorization" (str (:type tdata) " " (:token tdata))}
-                 :timeout 6000
-                 :method :get})
-   (fn [{:keys [status body] :as res}]
-     (if (= 200 status)
-       (let [info (json/read body)
-             info {:backend (:name provider)
-                   :email (get info :email)
-                   :fullname (get info :name)
-                   :props (->> (dissoc info :name :email)
-                               (qualify-props provider))}]
+  (letfn [(retrieve []
+            (http-client {:uri (:user-uri provider)
+                          :headers {"Authorization" (str (:type tdata) " " (:token tdata))}
+                          :timeout 6000
+                          :method :get}))
 
-         (when-not (s/valid? ::info info)
-           (l/warn :hint "received incomplete profile info object (please set correct scopes)"
-                   :info (pr-str info))
-           (ex/raise :type :internal
-                     :code :incomplete-user-info
-                     :hint "inconmplete user info"
-                     :info info))
-         info)
+          (validate-response [{:keys [status body] :as res}]
+            (when-not (= 200 status)
+              (ex/raise :type :internal
+                        :code :unable-to-retrieve-user-info
+                        :hint "unable to retrieve user info"
+                        :http-status status
+                        :http-body body))
+            res)
 
-       (ex/raise :type :internal
-                 :code :unable-to-retrieve-user-info
-                 :hint "unable to retrieve user info"
-                 :http-status status
-                 :http-body body)))))
+          (get-email [info]
+            (let [attr-kw (cf/get :oidc-email-attr :email)]
+              (get info attr-kw)))
+
+          (get-name [info]
+            (let [attr-kw (cf/get :oidc-name-attr :name)]
+              (get info attr-kw)))
+
+          (process-response [{:keys [body]}]
+            (let [info (json/read body)]
+              {:backend  (:name provider)
+               :email    (get-email info)
+               :fullname (get-name info)
+               :props (->> (dissoc info :name :email)
+                           (qualify-props provider))}))
+
+          (validate-info [info]
+            (when-not (s/valid? ::info info)
+              (l/warn :hint "received incomplete profile info object (please set correct scopes)"
+                      :info (pr-str info))
+              (ex/raise :type :internal
+                        :code :incomplete-user-info
+                        :hint "inconmplete user info"
+                        :info info))
+            info)]
+
+    (-> (retrieve)
+        (p/then' validate-response)
+        (p/then' process-response)
+        (p/then' validate-info))))
 
 (s/def ::backend ::us/not-empty-string)
 (s/def ::email ::us/not-empty-string)

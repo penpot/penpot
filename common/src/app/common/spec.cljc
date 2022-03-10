@@ -140,22 +140,26 @@
 
 ;; --- SPEC: set of Keywords
 
-(s/def ::set-of-keywords
-  (s/conformer
-   (fn [s]
-     (let [xform (comp
-                  (map (fn [s]
-                         (cond
-                           (string? s) (keyword s)
-                           (keyword? s) s
-                           :else nil)))
-                  (filter identity))]
-       (cond
-         (set? s)    (into #{} xform s)
-         (string? s) (into #{} xform (str/words s))
-         :else       ::s/invalid)))
-   (fn [s]
-     (str/join " " (map name s)))))
+(letfn [(conform-fn [dest s]
+          (let [xform (keep (fn [s]
+                              (cond
+                                (string? s) (keyword s)
+                                (keyword? s) s
+                                :else nil)))]
+            (cond
+              (set? s)    (into dest xform s)
+              (string? s) (into dest xform (str/words s))
+              :else       ::s/invalid)))]
+
+  (s/def ::set-of-keywords
+    (s/conformer
+     (fn [s] (conform-fn #{} s))
+     (fn [s] (str/join " " (map name s)))))
+
+  (s/def ::vec-of-keywords
+    (s/conformer
+     (fn [s] (conform-fn [] s))
+     (fn [s] (str/join " " (map name s))))))
 
 ;; --- SPEC: email
 

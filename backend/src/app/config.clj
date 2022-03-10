@@ -90,7 +90,7 @@
 
 (s/def ::flags ::us/set-of-keywords)
 
-;; DEPRECATED PROPERTIES: should be removed in 1.10
+;; DEPRECATED PROPERTIES
 (s/def ::registration-enabled ::us/boolean)
 (s/def ::smtp-enabled ::us/boolean)
 (s/def ::telemetry-enabled ::us/boolean)
@@ -138,6 +138,8 @@
 (s/def ::oidc-scopes ::us/set-of-str)
 (s/def ::oidc-roles ::us/set-of-str)
 (s/def ::oidc-roles-attr ::us/keyword)
+(s/def ::oidc-email-attr ::us/keyword)
+(s/def ::oidc-name-attr ::us/keyword)
 (s/def ::host ::us/string)
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-server-host ::us/string)
@@ -238,6 +240,8 @@
                    ::oidc-user-uri
                    ::oidc-scopes
                    ::oidc-roles-attr
+                   ::oidc-email-attr
+                   ::oidc-name-attr
                    ::oidc-roles
                    ::host
                    ::http-server-host
