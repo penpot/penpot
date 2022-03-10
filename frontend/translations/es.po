@@ -3279,6 +3279,12 @@ msgstr "Voltear horizontal"
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Voltear vertical"
 
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Poner como miniatura"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Quitar miniatura"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flow-start"
 msgstr "Inicio de flujo"

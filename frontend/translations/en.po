@@ -3265,6 +3265,12 @@ msgstr "Flip horizontal"
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Flip vertical"
 
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Set as thumbnail"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Remove thumbnail"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flow-start"
 msgstr "Flow start"
