@@ -18,7 +18,7 @@
    [rumext.alpha :as mf]))
 
 (def selected-palette-ref
-  (-> (l/in [:workspace-local :selected-palette-colorpicker])
+  (-> (l/in [:workspace-global :selected-palette-colorpicker])
       (l/derived st/state)))
 
 (mf/defc libraries
