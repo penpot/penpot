@@ -6,6 +6,7 @@
 
 (ns app.main.ui.auth
   (:require
+   [app.config :as cf]
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
@@ -14,6 +15,23 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
+
+(mf/defc terms-login
+  []
+  (let [show-all?     (and cf/terms-of-service-uri cf/privacy-policy-uri)
+        show-terms?   (some? cf/terms-of-service-uri)
+        show-privacy? (some? cf/privacy-policy-uri)]
+
+    (when show-all?
+      [:div.terms-login
+       (when show-terms?
+         [:a {:href cf/terms-of-service-uri :target "_blank"} "Terms of service"])
+
+       (when show-all?
+         [:span "and"])
+
+       (when show-privacy?
+         [:a {:href cf/privacy-policy-uri :target "_blank"} "Privacy policy"])])))
 
 (mf/defc auth
   [{:keys [route] :as props}]
@@ -48,7 +66,5 @@
         :auth-recovery
         [:& recovery-page {:params params}])
 
-      [:div.terms-login
-       [:a {:href "https://penpot.app/terms.html" :target "_blank"} "Terms of service"]
-       [:span "and"]
-       [:a {:href "https://penpot.app/privacy.html" :target "_blank"} "Privacy policy"]]]]))
+      [:& terms-login {}]]]))
+

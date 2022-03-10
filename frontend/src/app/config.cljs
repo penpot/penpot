@@ -86,6 +86,9 @@
 (def browser              (atom (parse-browser)))
 (def platform             (atom (parse-platform)))
 
+(def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" nil))
+(def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" nil))
+
 ;; maintain for backward compatibility
 (let [login-with-ldap (obj/get global "penpotLoginWithLDAP" false)
       registration    (obj/get global "penpotRegistrationEnabled" true)]
@@ -135,5 +138,3 @@
    (str (cond-> (u/join public-uri "assets/by-file-media-id/")
           (true? thumbnail?) (u/join (str id "/thumbnail"))
           (false? thumbnail?) (u/join (str id))))))
-
-
