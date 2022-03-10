@@ -171,12 +171,13 @@
 (defn transform-point-center
   "Transform a point around the shape center"
   [point center matrix]
-  (when point
+  (if (and (some? point) (some? matrix) (some? center))
     (gpt/transform
      point
      (gmt/multiply (gmt/translate-matrix center)
                    matrix
-                   (gmt/translate-matrix (gpt/negate center))))))
+                   (gmt/translate-matrix (gpt/negate center))))
+    point))
 
 (defn transform-rect
   "Transform a rectangles and changes its attributes"
@@ -465,24 +466,28 @@
                                (normalize-scale (:y resize-v2))))
 
 
-         resize-transform (:resize-transform modifiers (gmt/matrix))
-         resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
+         resize-transform (:resize-transform modifiers)
+         resize-transform-inverse (:resize-transform-inverse modifiers)
 
          rt-modif (:rotation modifiers)]
 
      (cond-> (gmt/matrix)
        (some? resize-1)
        (-> (gmt/translate origin-1)
-           (gmt/multiply resize-transform)
+           (cond-> (some? resize-transform)
+             (gmt/multiply resize-transform))
            (gmt/scale resize-1)
-           (gmt/multiply resize-transform-inverse)
+           (cond-> (some? resize-transform-inverse)
+             (gmt/multiply resize-transform-inverse))
            (gmt/translate (gpt/negate origin-1)))
 
        (some? resize-2)
        (-> (gmt/translate origin-2)
-           (gmt/multiply resize-transform)
+           (cond-> (some? resize-transform)
+             (gmt/multiply resize-transform))
            (gmt/scale resize-2)
-           (gmt/multiply resize-transform-inverse)
+           (cond-> (some? resize-transform-inverse)
+             (gmt/multiply resize-transform-inverse))
            (gmt/translate (gpt/negate origin-2)))
 
        (some? displacement)
@@ -562,8 +567,8 @@
           :always
           (dissoc :modifiers))))))
 
-(defn transform-selrect
-  [selrect {:keys [displacement resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]
+(defn transform-bounds
+  [points center {:keys [displacement resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]
   ;; FIXME: Improve Performance
   (let [resize-transform-inverse (or resize-transform-inverse (gmt/matrix))
 
@@ -573,19 +578,16 @@
 
         resize-origin
         (when (some? resize-origin)
-          (transform-point-center resize-origin (gco/center-selrect selrect) resize-transform-inverse))
+          (transform-point-center resize-origin center resize-transform-inverse))
 
         resize-origin-2
         (when (some? resize-origin-2)
-          (transform-point-center resize-origin-2 (gco/center-selrect selrect) resize-transform-inverse))]
+          (transform-point-center resize-origin-2 center resize-transform-inverse))]
 
     (if (and (nil? displacement) (nil? resize-origin) (nil? resize-origin-2))
-      selrect
+      points
 
-      (cond-> selrect
-        :always
-        (gpr/rect->points)
-
+      (cond-> points
         (some? displacement)
         (gco/transform-points displacement)
 
@@ -593,11 +595,15 @@
         (gco/transform-points resize-origin (gmt/scale-matrix resize-vector))
 
         (some? resize-origin-2)
-        (gco/transform-points resize-origin-2 (gmt/scale-matrix resize-vector-2))
+        (gco/transform-points resize-origin-2 (gmt/scale-matrix resize-vector-2))))))
 
-        :always
-        (gpr/points->selrect)))))
-
+(defn transform-selrect
+  [selrect modifiers]
+  (let [center (gco/center-selrect selrect)]
+    (-> selrect
+        (gpr/rect->points)
+        (transform-bounds center modifiers)
+        (gpr/points->selrect))))
 
 (defn selection-rect
   "Returns a rect that contains all the shapes and is aware of the

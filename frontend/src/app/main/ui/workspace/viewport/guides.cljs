@@ -9,12 +9,14 @@
    [app.common.colors :as colors]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.cursors :as cur]
+   [app.main.ui.formats :as fmt]
    [app.main.ui.workspace.viewport.rules :as rules]
    [app.util.dom :as dom]
    [rumext.alpha :as mf]))
@@ -47,6 +49,8 @@
 
         frame-ref (mf/use-memo (mf/deps frame-id) #(refs/object-by-id frame-id))
         frame (mf/deref frame-ref)
+
+        snap-pixel? (mf/deref refs/snap-pixel?)
 
         on-pointer-enter
         (mf/use-callback
@@ -88,7 +92,7 @@
 
         on-mouse-move
         (mf/use-callback
-         (mf/deps position zoom)
+         (mf/deps position zoom snap-pixel?)
          (fn [event]
            
            (when-let [_ (mf/ref-val dragging-ref)]
@@ -100,7 +104,10 @@
                                   (+ position delta)
                                   (+ start-pos delta))
 
-                   ;; TODO: Change when pixel-grid flag exists
+                   new-position (if snap-pixel?
+                                  (mth/round new-position)
+                                  new-position)
+
                    new-frame-id (:id (get-hover-frame))]
                (swap! state assoc
                       :new-position new-position
@@ -364,7 +371,7 @@
                     :style {:font-size (/ rules/font-size zoom)
                             :font-family rules/font-family
                             :fill colors/black}}
-             (str pos)]]))])))
+             (fmt/format-number pos)]]))])))
 
 (mf/defc new-guide-area
   [{:keys [vbox zoom axis get-hover-frame disabled-guides?]}]

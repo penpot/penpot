@@ -128,6 +128,7 @@
 (dm/export gtr/merge-modifiers)
 (dm/export gtr/transform-shape)
 (dm/export gtr/transform-selrect)
+(dm/export gtr/transform-bounds)
 (dm/export gtr/modifiers->transform)
 (dm/export gtr/empty-modifiers?)
 

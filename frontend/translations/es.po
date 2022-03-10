@@ -2246,6 +2246,18 @@ msgstr "Mostrar reglas"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Mostrar paleta de textos"
 
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Ocultar rejilla de pixeles"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Mostrar rejilla de pixeles"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Desactivar ajuste al pixel"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Activar ajuste al pixel"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
 msgstr "Restablecer"

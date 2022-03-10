@@ -114,23 +114,29 @@
 (declare get-ignore-tree)
 
 (defn- set-modifiers
-  ([ids] (set-modifiers ids nil false))
-  ([ids modifiers] (set-modifiers ids modifiers false))
+  ([ids]
+   (set-modifiers ids nil false))
+
+  ([ids modifiers]
+   (set-modifiers ids modifiers false))
+
   ([ids modifiers ignore-constraints]
    (us/verify (s/coll-of uuid?) ids)
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (let [modifiers (or modifiers (get-in state [:workspace-local :modifiers] {}))
-             page-id   (:current-page-id state)
-             objects   (wsh/lookup-page-objects state page-id)
-             ids       (into #{} (remove #(get-in objects [% :blocked] false)) ids)
+       (let [modifiers   (or modifiers (get-in state [:workspace-local :modifiers] {}))
+             page-id     (:current-page-id state)
+             objects     (wsh/lookup-page-objects state page-id)
+             ids         (into #{} (remove #(get-in objects [% :blocked] false)) ids)
+             layout      (get state :workspace-layout)
+             snap-pixel? (contains? layout :snap-pixel-grid)
 
              setup-modifiers
              (fn [state id]
                (let [shape (get objects id)]
                  (update state :workspace-modifiers
-                         #(set-modifiers-recursive % objects shape modifiers ignore-constraints))))]
+                         #(set-modifiers-recursive % objects shape modifiers ignore-constraints snap-pixel?))))]
 
          (reduce setup-modifiers state ids))))))
 
@@ -235,9 +241,77 @@
 
     [root transformed-root ignore-geometry?]))
 
+(defn set-pixel-precision
+  "Adjust modifiers so they adjust to the pixel grid"
+  [modifiers shape]
+
+  (if (or (some? (:resize-transform modifiers))
+          (some? (:resize-transform-2 modifiers)))
+    ;; If we're working with a rotation we don't handle pixel precision because
+    ;; the transformation won't have the precision anyway
+    modifiers
+
+    (let [center (gsh/center-shape shape)
+          base-bounds (-> (:points shape) (gsh/points->rect))
+
+          raw-bounds
+          (-> (gsh/transform-bounds (:points shape) center modifiers)
+              (gsh/points->rect))
+
+          target-p (gpt/round (gpt/point raw-bounds))
+
+          ratio-width (/ (mth/round (:width raw-bounds)) (:width raw-bounds))
+          ratio-height (/ (mth/round (:height raw-bounds)) (:height raw-bounds))
+
+          modifiers
+          (-> modifiers
+              (d/without-nils)
+              (d/update-in-when
+               [:resize-vector :x] #(* % ratio-width))
+
+              ;; If the resize-vector-2 modifier arrives means the resize-vector
+              ;; will only resize on the x axis
+              (cond-> (nil? (:resize-vector-2 modifiers))
+                (d/update-in-when
+                 [:resize-vector :y] #(* % ratio-height)))
+
+              (d/update-in-when
+               [:resize-vector-2 :y] #(* % ratio-height)))
+
+          origin (get modifiers :resize-origin)
+          origin-2 (get modifiers :resize-origin-2)
+
+          resize-v  (get modifiers :resize-vector)
+          resize-v-2  (get modifiers :resize-vector-2)
+          displacement  (get modifiers :displacement)
+
+          target-p-inv
+          (-> target-p
+              (gpt/transform
+               (cond-> (gmt/matrix)
+                 (some? displacement)
+                 (gmt/multiply (gmt/inverse displacement))
+
+                 (and (some? resize-v) (some? origin))
+                 (gmt/scale (gpt/inverse resize-v) origin)
+
+                 (and (some? resize-v-2) (some? origin-2))
+                 (gmt/scale (gpt/inverse resize-v-2) origin-2))))
+
+          delta-v (gpt/subtract target-p-inv (gpt/point base-bounds))
+
+          modifiers
+          (-> modifiers
+              (d/update-when :displacement #(gmt/multiply (gmt/translate-matrix delta-v) %))
+              (cond-> (nil? (:displacement modifiers))
+                (assoc :displacement (gmt/translate-matrix delta-v))))]
+      modifiers)))
+
 (defn- set-modifiers-recursive
-  [modif-tree objects shape modifiers ignore-constraints]
+  [modif-tree objects shape modifiers ignore-constraints snap-pixel?]
+
   (let [children (map (d/getf objects) (:shapes shape))
+        modifiers (cond-> modifiers snap-pixel? (set-pixel-precision shape))
         transformed-rect (gsh/transform-selrect (:selrect shape) modifiers)
 
         set-child
@@ -245,7 +319,7 @@
           (let [child-modifiers (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)]
             (cond-> modif-tree
               (not (gsh/empty-modifiers? child-modifiers))
-              (set-modifiers-recursive objects child child-modifiers ignore-constraints))))
+              (set-modifiers-recursive objects child child-modifiers ignore-constraints snap-pixel?))))
 
         modif-tree
         (-> modif-tree
@@ -283,7 +357,6 @@
           (dissoc :workspace-modifiers)
           (update :workspace-local dissoc :current-move-selected)))))
 
-
 ;; -- Resize --------------------------------------------------------
 
 (defn start-resize
@@ -294,8 +367,8 @@
                   {:keys [rotation]} shape
 
                   shape-center (gsh/center-shape shape)
-                  shape-transform (:transform shape (gmt/matrix))
-                  shape-transform-inverse (:transform-inverse shape (gmt/matrix))
+                  shape-transform (:transform shape)
+                  shape-transform-inverse (:transform-inverse shape)
 
                   rotation (or rotation 0)
 
@@ -411,13 +484,15 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data :pages-index page-id :objects])]
+            objects (get-in state [:workspace-data :pages-index page-id :objects])
+            layout  (get state :workspace-layout)
+            snap-pixel? (contains? layout :snap-pixel-grid)]
 
         (reduce (fn [state id]
                   (let [shape (get objects id)
                         modifiers (gsh/resize-modifiers shape attr value)]
                     (update state :workspace-modifiers
-                            #(set-modifiers-recursive % objects shape modifiers false))))
+                            #(set-modifiers-recursive % objects shape modifiers false snap-pixel?))))
                 state
                 ids)))
 

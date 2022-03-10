@@ -54,11 +54,14 @@
     (watch [_ state stream]
       (let [stoper? #(or (ms/mouse-up? %) (= % :interrupt))
             stoper  (rx/filter stoper? stream)
-            initial @ms/mouse-position
+            layout  (get state :workspace-layout)
+            snap-pixel? (contains? layout :snap-pixel-grid)
+
+            initial (cond-> @ms/mouse-position
+                      snap-pixel? gpt/round)
 
             page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            layout  (get state :workspace-layout)
             focus   (:workspace-focus-selected state)
             zoom    (get-in state [:workspace-local :zoom] 1)
 
@@ -95,7 +98,7 @@
                       (rx/map #(conj current %)))))
               (rx/map
                (fn [[_ shift? point]]
-                 #(update-drawing % point shift?)))
+                 #(update-drawing % (cond-> point snap-pixel? gpt/round) shift?)))
 
               (rx/take-until stoper))
          (rx/of common/handle-finish-drawing))))))

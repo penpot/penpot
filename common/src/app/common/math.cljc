@@ -106,6 +106,11 @@
   #?(:cljs (js/Math.round v)
      :clj (Math/round (float v))))
 
+(defn half-round
+  "Returns a value rounded to the next point or half point"
+  [v]
+  (/ (round (* v 2)) 2))
+
 (defn ceil
   "Returns the smallest integer greater than
   or equal to a given number."

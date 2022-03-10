@@ -376,6 +376,20 @@
            (tr "workspace.header.menu.enable-dynamic-alignment"))]
         [:span.shortcut (sc/get-tooltip :toggle-alignment)]]
 
+       [:li {:on-click #(st/emit! (toggle-flag :show-pixel-grid))}
+        [:span
+         (if (contains? layout :show-pixel-grid)
+           (tr "workspace.header.menu.hide-pixel-grid")
+           (tr "workspace.header.menu.show-pixel-grid"))]
+        [:span.shortcut (sc/get-tooltip :show-pixel-grid)]]
+
+       [:li {:on-click #(st/emit! (toggle-flag :snap-pixel-grid))}
+        [:span
+         (if (contains? layout :snap-pixel-grid)
+           (tr "workspace.header.menu.disable-snap-pixel-grid")
+           (tr "workspace.header.menu.enable-snap-pixel-grid"))]
+        [:span.shortcut (sc/get-tooltip :snap-pixel-grid)]]
+
        [:li {:on-click #(st/emit! (modal/show {:type :nudge-option}))}
         [:span (tr "modals.nudge-title")]]]]]))
 

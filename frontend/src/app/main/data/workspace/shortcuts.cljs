@@ -33,17 +33,17 @@
 ;; Shortcuts format https://github.com/ccampbell/mousetrap
 
 (def base-shortcuts
-  {:toggle-layers     {:tooltip (ds/alt "L")
-                       :command (ds/a-mod "l")
-                       :fn #(st/emit! (dw/go-to-layout :layers))}
+  {:toggle-layers       {:tooltip (ds/alt "L")
+                         :command (ds/a-mod "l")
+                         :fn #(st/emit! (dw/go-to-layout :layers))}
 
-   :toggle-assets     {:tooltip (ds/alt "I")
-                       :command (ds/a-mod "i")
-                       :fn #(st/emit! (dw/go-to-layout :assets))}
+   :toggle-assets       {:tooltip (ds/alt "I")
+                         :command (ds/a-mod "i")
+                         :fn #(st/emit! (dw/go-to-layout :assets))}
 
-   :toggle-history    {:tooltip (ds/alt "H")
-                       :command (ds/a-mod "h")
-                       :fn #(st/emit! (dw/go-to-layout :document-history))}
+   :toggle-history      {:tooltip (ds/alt "H")
+                         :command (ds/a-mod "h")
+                         :fn #(st/emit! (dw/go-to-layout :document-history))}
 
    :toggle-colorpalette {:tooltip (ds/alt "P")
                          :command (ds/a-mod "p")
@@ -57,250 +57,250 @@
                                   (st/emit! (dw/remove-layout-flag :colorpalette)
                                             (toggle-layout-flag :textpalette)))}
 
-   :toggle-rules      {:tooltip (ds/meta-shift "R")
-                       :command (ds/c-mod "shift+r")
-                       :fn #(st/emit! (toggle-layout-flag :rules))}
+   :toggle-rules        {:tooltip (ds/meta-shift "R")
+                         :command (ds/c-mod "shift+r")
+                         :fn #(st/emit! (toggle-layout-flag :rules))}
 
-   :select-all        {:tooltip (ds/meta "A")
-                       :command (ds/c-mod "a")
-                       :fn #(st/emit! (dw/select-all))}
+   :select-all          {:tooltip (ds/meta "A")
+                         :command (ds/c-mod "a")
+                         :fn #(st/emit! (dw/select-all))}
 
-   :toggle-grid       {:tooltip (ds/meta "'")
-                       :command (ds/c-mod "'")
-                       :fn #(st/emit! (toggle-layout-flag :display-grid))}
+   :toggle-grid         {:tooltip (ds/meta "'")
+                         :command (ds/c-mod "'")
+                         :fn #(st/emit! (toggle-layout-flag :display-grid))}
 
-   :toggle-snap-grid  {:tooltip (ds/meta-shift "'")
-                       :command (ds/c-mod "shift+'")
-                       :fn #(st/emit! (toggle-layout-flag :snap-grid))}
+   :toggle-snap-grid    {:tooltip (ds/meta-shift "'")
+                         :command (ds/c-mod "shift+'")
+                         :fn #(st/emit! (toggle-layout-flag :snap-grid))}
 
-   :toggle-snap-guide {:tooltip (ds/meta-shift "G")
-                       :command (ds/c-mod "shift+G")
-                       :fn #(st/emit! (toggle-layout-flag :snap-guides))}
+   :toggle-snap-guide   {:tooltip (ds/meta-shift "G")
+                         :command (ds/c-mod "shift+G")
+                         :fn #(st/emit! (toggle-layout-flag :snap-guides))}
 
-   :toggle-alignment  {:tooltip (ds/meta "\\")
-                       :command (ds/c-mod "\\")
-                       :fn #(st/emit! (toggle-layout-flag :dynamic-alignment))}
+   :toggle-alignment    {:tooltip (ds/meta "\\")
+                         :command (ds/c-mod "\\")
+                         :fn #(st/emit! (toggle-layout-flag :dynamic-alignment))}
 
-   :toggle-scale-text {:tooltip "K"
-                       :command "k"
-                       :fn #(st/emit! (toggle-layout-flag :scale-text))}
+   :toggle-scale-text   {:tooltip "K"
+                         :command "k"
+                         :fn #(st/emit! (toggle-layout-flag :scale-text))}
 
-   :increase-zoom      {:tooltip "+"
-                        :command ["+" "="]
-                        :fn #(st/emit! (dw/increase-zoom nil))}
+   :increase-zoom        {:tooltip "+"
+                          :command ["+" "="]
+                          :fn #(st/emit! (dw/increase-zoom nil))}
 
-   :decrease-zoom      {:tooltip "-"
-                        :command ["-" "_"]
-                        :fn #(st/emit! (dw/decrease-zoom nil))}
+   :decrease-zoom        {:tooltip "-"
+                          :command ["-" "_"]
+                          :fn #(st/emit! (dw/decrease-zoom nil))}
 
-   :group              {:tooltip (ds/meta "G")
-                        :command (ds/c-mod "g")
-                        :fn #(st/emit! dw/group-selected)}
+   :group                {:tooltip (ds/meta "G")
+                          :command (ds/c-mod "g")
+                          :fn #(st/emit! dw/group-selected)}
 
-   :ungroup            {:tooltip (ds/shift "G")
-                        :command "shift+g"
-                        :fn #(st/emit! dw/ungroup-selected)}
+   :ungroup              {:tooltip (ds/shift "G")
+                          :command "shift+g"
+                          :fn #(st/emit! dw/ungroup-selected)}
 
-   :mask               {:tooltip (ds/meta "M")
-                        :command (ds/c-mod "m")
-                        :fn #(st/emit! dw/mask-group)}
+   :mask                 {:tooltip (ds/meta "M")
+                          :command (ds/c-mod "m")
+                          :fn #(st/emit! dw/mask-group)}
 
-   :unmask             {:tooltip (ds/meta-shift "M")
-                        :command (ds/c-mod "shift+m")
-                        :fn #(st/emit! dw/unmask-group)}
+   :unmask               {:tooltip (ds/meta-shift "M")
+                          :command (ds/c-mod "shift+m")
+                          :fn #(st/emit! dw/unmask-group)}
 
-   :create-component   {:tooltip (ds/meta "K")
-                        :command (ds/c-mod "k")
-                        :fn #(st/emit! (dwl/add-component))}
+   :create-component     {:tooltip (ds/meta "K")
+                          :command (ds/c-mod "k")
+                          :fn #(st/emit! (dwl/add-component))}
 
-   :detach-component   {:tooltip (ds/meta-shift "K")
-                        :command (ds/c-mod "shift+k")
-                        :fn #(st/emit! dwl/detach-selected-components)}
+   :detach-component     {:tooltip (ds/meta-shift "K")
+                          :command (ds/c-mod "shift+k")
+                          :fn #(st/emit! dwl/detach-selected-components)}
 
-   :flip-vertical      {:tooltip (ds/shift "V")
-                        :command "shift+v"
-                        :fn #(st/emit! (dw/flip-vertical-selected))}
+   :flip-vertical        {:tooltip (ds/shift "V")
+                          :command "shift+v"
+                          :fn #(st/emit! (dw/flip-vertical-selected))}
 
-   :flip-horizontal    {:tooltip (ds/shift "H")
-                        :command "shift+h"
-                        :fn #(st/emit! (dw/flip-horizontal-selected))}
+   :flip-horizontal      {:tooltip (ds/shift "H")
+                          :command "shift+h"
+                          :fn #(st/emit! (dw/flip-horizontal-selected))}
 
-   :reset-zoom         {:tooltip (ds/shift "0")
-                        :command "shift+0"
-                        :fn #(st/emit! dw/reset-zoom)}
+   :reset-zoom           {:tooltip (ds/shift "0")
+                          :command "shift+0"
+                          :fn #(st/emit! dw/reset-zoom)}
 
-   :fit-all            {:tooltip (ds/shift "1")
-                        :command "shift+1"
-                        :fn #(st/emit! dw/zoom-to-fit-all)}
+   :fit-all              {:tooltip (ds/shift "1")
+                          :command "shift+1"
+                          :fn #(st/emit! dw/zoom-to-fit-all)}
 
-   :zoom-selected      {:tooltip (ds/shift "2")
-                        :command "shift+2"
-                        :fn #(st/emit! dw/zoom-to-selected-shape)}
+   :zoom-selected        {:tooltip (ds/shift "2")
+                          :command "shift+2"
+                          :fn #(st/emit! dw/zoom-to-selected-shape)}
 
-   :duplicate          {:tooltip (ds/meta "D")
-                        :command (ds/c-mod "d")
-                        :fn #(st/emit! (dw/duplicate-selected true))}
+   :duplicate            {:tooltip (ds/meta "D")
+                          :command (ds/c-mod "d")
+                          :fn #(st/emit! (dw/duplicate-selected true))}
 
-   :undo               {:tooltip (ds/meta "Z")
-                        :command (ds/c-mod "z")
-                        :fn #(st/emit! dwc/undo)}
+   :undo                 {:tooltip (ds/meta "Z")
+                          :command (ds/c-mod "z")
+                          :fn #(st/emit! dwc/undo)}
 
-   :redo               {:tooltip (ds/meta "Y")
-                        :command [(ds/c-mod "shift+z") (ds/c-mod "y")]
-                        :fn #(st/emit! dwc/redo)}
+   :redo                 {:tooltip (ds/meta "Y")
+                          :command [(ds/c-mod "shift+z") (ds/c-mod "y")]
+                          :fn #(st/emit! dwc/redo)}
 
-   :clear-undo         {:tooltip (ds/meta "Q")
-                        :command (ds/c-mod "q")
-                        :fn #(st/emit! dwu/reinitialize-undo)}
+   :clear-undo           {:tooltip (ds/meta "Q")
+                          :command (ds/c-mod "q")
+                          :fn #(st/emit! dwu/reinitialize-undo)}
 
-   :draw-frame         {:tooltip "A"
-                        :command "a"
-                        :fn #(st/emit! (dwd/select-for-drawing :frame))}
+   :draw-frame           {:tooltip "A"
+                          :command "a"
+                          :fn #(st/emit! (dwd/select-for-drawing :frame))}
 
-   :move               {:tooltip "V"
-                        :command "v"
-                        :fn #(st/emit! :interrupt)}
+   :move                 {:tooltip "V"
+                          :command "v"
+                          :fn #(st/emit! :interrupt)}
 
-   :draw-rect          {:tooltip "R"
-                        :command "r"
-                        :fn #(st/emit! (dwd/select-for-drawing :rect))}
+   :draw-rect            {:tooltip "R"
+                          :command "r"
+                          :fn #(st/emit! (dwd/select-for-drawing :rect))}
 
-   :draw-ellipse       {:tooltip "E"
-                        :command "e"
-                        :fn #(st/emit! (dwd/select-for-drawing :circle))}
+   :draw-ellipse         {:tooltip "E"
+                          :command "e"
+                          :fn #(st/emit! (dwd/select-for-drawing :circle))}
 
-   :draw-text          {:tooltip "T"
-                        :command "t"
-                        :fn #(st/emit! dwtxt/start-edit-if-selected
-                                       (dwd/select-for-drawing :text))}
+   :draw-text            {:tooltip "T"
+                          :command "t"
+                          :fn #(st/emit! dwtxt/start-edit-if-selected
+                                         (dwd/select-for-drawing :text))}
 
-   :draw-path          {:tooltip "P"
-                        :command "p"
-                        :fn #(st/emit! (dwd/select-for-drawing :path))}
+   :draw-path            {:tooltip "P"
+                          :command "p"
+                          :fn #(st/emit! (dwd/select-for-drawing :path))}
 
-   :draw-curve         {:tooltip (ds/shift "C")
-                        :command "shift+c"
-                        :fn #(st/emit! (dwd/select-for-drawing :curve))}
+   :draw-curve           {:tooltip (ds/shift "C")
+                          :command "shift+c"
+                          :fn #(st/emit! (dwd/select-for-drawing :curve))}
 
-   :add-comment        {:tooltip "C"
-                        :command "c"
-                        :fn #(st/emit! (dwd/select-for-drawing :comments))}
+   :add-comment          {:tooltip "C"
+                          :command "c"
+                          :fn #(st/emit! (dwd/select-for-drawing :comments))}
 
-   :insert-image       {:tooltip (ds/shift "K")
-                        :command "shift+k"
-                        :fn #(-> "image-upload" dom/get-element dom/click)}
+   :insert-image         {:tooltip (ds/shift "K")
+                          :command "shift+k"
+                          :fn #(-> "image-upload" dom/get-element dom/click)}
 
-   :copy               {:tooltip (ds/meta "C")
-                        :command (ds/c-mod "c")
-                        :fn #(st/emit! (dw/copy-selected))}
+   :copy                 {:tooltip (ds/meta "C")
+                          :command (ds/c-mod "c")
+                          :fn #(st/emit! (dw/copy-selected))}
 
-   :cut                {:tooltip (ds/meta "X")
-                        :command (ds/c-mod "x")
-                        :fn #(st/emit! (dw/copy-selected)
-                                       (dw/delete-selected))}
+   :cut                  {:tooltip (ds/meta "X")
+                          :command (ds/c-mod "x")
+                          :fn #(st/emit! (dw/copy-selected)
+                                         (dw/delete-selected))}
 
-   :paste              {:tooltip (ds/meta "V")
-                        :disabled true
-                        :command (ds/c-mod "v")
-                        :fn (constantly nil)}
+   :paste                {:tooltip (ds/meta "V")
+                          :disabled true
+                          :command (ds/c-mod "v")
+                          :fn (constantly nil)}
 
-   :delete             {:tooltip (ds/supr)
-                        :command ["del" "backspace"]
-                        :fn #(st/emit! (dw/delete-selected))}
+   :delete               {:tooltip (ds/supr)
+                          :command ["del" "backspace"]
+                          :fn #(st/emit! (dw/delete-selected))}
 
-   :bring-forward      {:tooltip (ds/meta ds/up-arrow)
-                        :command (ds/c-mod "up")
-                        :fn #(st/emit! (dw/vertical-order-selected :up))}
+   :bring-forward        {:tooltip (ds/meta ds/up-arrow)
+                          :command (ds/c-mod "up")
+                          :fn #(st/emit! (dw/vertical-order-selected :up))}
 
-   :bring-backward     {:tooltip (ds/meta ds/down-arrow)
-                        :command (ds/c-mod "down")
-                        :fn #(st/emit! (dw/vertical-order-selected :down))}
+   :bring-backward       {:tooltip (ds/meta ds/down-arrow)
+                          :command (ds/c-mod "down")
+                          :fn #(st/emit! (dw/vertical-order-selected :down))}
 
-   :bring-front        {:tooltip (ds/meta-shift ds/up-arrow)
-                        :command (ds/c-mod "shift+up")
-                        :fn #(st/emit! (dw/vertical-order-selected :top))}
+   :bring-front          {:tooltip (ds/meta-shift ds/up-arrow)
+                          :command (ds/c-mod "shift+up")
+                          :fn #(st/emit! (dw/vertical-order-selected :top))}
 
-   :bring-back         {:tooltip (ds/meta-shift ds/down-arrow)
-                        :command (ds/c-mod "shift+down")
-                        :fn #(st/emit! (dw/vertical-order-selected :bottom))}
+   :bring-back           {:tooltip (ds/meta-shift ds/down-arrow)
+                          :command (ds/c-mod "shift+down")
+                          :fn #(st/emit! (dw/vertical-order-selected :bottom))}
 
-   :move-fast-up       {:tooltip (ds/shift ds/up-arrow)
-                        :command "shift+up"
-                        :fn #(st/emit! (dwt/move-selected :up true))}
+   :move-fast-up         {:tooltip (ds/shift ds/up-arrow)
+                          :command "shift+up"
+                          :fn #(st/emit! (dwt/move-selected :up true))}
 
-   :move-fast-down     {:tooltip (ds/shift ds/down-arrow)
-                        :command "shift+down"
-                        :fn #(st/emit! (dwt/move-selected :down true))}
+   :move-fast-down       {:tooltip (ds/shift ds/down-arrow)
+                          :command "shift+down"
+                          :fn #(st/emit! (dwt/move-selected :down true))}
 
-   :move-fast-right    {:tooltip (ds/shift ds/right-arrow)
-                        :command "shift+right"
-                        :fn #(st/emit! (dwt/move-selected :right true))}
+   :move-fast-right      {:tooltip (ds/shift ds/right-arrow)
+                          :command "shift+right"
+                          :fn #(st/emit! (dwt/move-selected :right true))}
 
-   :move-fast-left     {:tooltip (ds/shift ds/left-arrow)
-                        :command "shift+left"
-                        :fn #(st/emit! (dwt/move-selected :left true))}
+   :move-fast-left       {:tooltip (ds/shift ds/left-arrow)
+                          :command "shift+left"
+                          :fn #(st/emit! (dwt/move-selected :left true))}
 
-   :move-unit-up       {:tooltip ds/up-arrow
-                        :command "up"
-                        :fn #(st/emit! (dwt/move-selected :up false))}
+   :move-unit-up         {:tooltip ds/up-arrow
+                          :command "up"
+                          :fn #(st/emit! (dwt/move-selected :up false))}
 
-   :move-unit-down     {:tooltip ds/down-arrow
-                        :command "down"
-                        :fn #(st/emit! (dwt/move-selected :down false))}
+   :move-unit-down       {:tooltip ds/down-arrow
+                          :command "down"
+                          :fn #(st/emit! (dwt/move-selected :down false))}
 
-   :move-unit-left     {:tooltip ds/right-arrow
-                        :command "right"
-                        :fn #(st/emit! (dwt/move-selected :right false))}
+   :move-unit-left       {:tooltip ds/right-arrow
+                          :command "right"
+                          :fn #(st/emit! (dwt/move-selected :right false))}
 
-   :move-unit-right    {:tooltip ds/left-arrow
-                        :command "left"
-                        :fn #(st/emit! (dwt/move-selected :left false))}
+   :move-unit-right      {:tooltip ds/left-arrow
+                          :command "left"
+                          :fn #(st/emit! (dwt/move-selected :left false))}
 
-   :open-color-picker  {:tooltip "I"
-                        :command "i"
-                        :fn #(st/emit! (mdc/picker-for-selected-shape))}
+   :open-color-picker    {:tooltip "I"
+                          :command "i"
+                          :fn #(st/emit! (mdc/picker-for-selected-shape))}
 
-   :open-viewer        {:tooltip "G V"
-                        :command "g v"
-                        :fn #(st/emit! (dw/go-to-viewer))}
+   :open-viewer          {:tooltip "G V"
+                          :command "g v"
+                          :fn #(st/emit! (dw/go-to-viewer))}
 
-   :open-handoff       {:tooltip "G H"
-                        :command "g h"
-                        :fn #(st/emit! (dw/go-to-viewer {:section :handoff}))}
+   :open-handoff         {:tooltip "G H"
+                          :command "g h"
+                          :fn #(st/emit! (dw/go-to-viewer {:section :handoff}))}
 
-   :open-comments      {:tooltip "G C"
-                        :command "g c"
-                        :fn #(st/emit! (dw/go-to-viewer {:section :comments}))}
+   :open-comments        {:tooltip "G C"
+                          :command "g c"
+                          :fn #(st/emit! (dw/go-to-viewer {:section :comments}))}
 
-   :open-dashboard     {:tooltip "G D"
-                        :command "g d"
-                        :fn #(st/emit! (dw/go-to-dashboard))}
+   :open-dashboard       {:tooltip "G D"
+                          :command "g d"
+                          :fn #(st/emit! (dw/go-to-dashboard))}
 
-   :escape             {:tooltip (ds/esc)
-                        :command "escape"
-                        :fn #(st/emit! :interrupt (dw/deselect-all true))}
+   :escape               {:tooltip (ds/esc)
+                          :command "escape"
+                          :fn #(st/emit! :interrupt (dw/deselect-all true))}
 
-   :start-editing      {:tooltip (ds/enter)
-                        :command "enter"
-                        :fn #(st/emit! (dw/start-editing-selected))}
+   :start-editing        {:tooltip (ds/enter)
+                          :command "enter"
+                          :fn #(st/emit! (dw/start-editing-selected))}
 
-   :start-measure      {:tooltip (ds/alt "")
-                        :command ["alt" "."]
-                        :type "keydown"
-                        :fn #(st/emit! (dw/toggle-distances-display true))}
+   :start-measure        {:tooltip (ds/alt "")
+                          :command ["alt" "."]
+                          :type "keydown"
+                          :fn #(st/emit! (dw/toggle-distances-display true))}
 
-   :stop-measure       {:tooltip (ds/alt "")
-                        :command ["alt" "."]
-                        :type "keyup"
-                        :fn #(st/emit! (dw/toggle-distances-display false))}
+   :stop-measure         {:tooltip (ds/alt "")
+                          :command ["alt" "."]
+                          :type "keyup"
+                          :fn #(st/emit! (dw/toggle-distances-display false))}
 
-   :bool-union         {:tooltip (ds/meta (ds/alt "U"))
-                        :command (ds/c-mod "alt+u")
-                        :fn #(st/emit! (dw/create-bool :union))}
+   :bool-union           {:tooltip (ds/meta (ds/alt "U"))
+                          :command (ds/c-mod "alt+u")
+                          :fn #(st/emit! (dw/create-bool :union))}
 
-   :bool-difference    {:tooltip (ds/meta (ds/alt "D"))
-                        :command (ds/c-mod "alt+d")
-                        :fn #(st/emit! (dw/create-bool :difference))}
+   :bool-difference      {:tooltip (ds/meta (ds/alt "D"))
+                          :command (ds/c-mod "alt+d")
+                          :fn #(st/emit! (dw/create-bool :difference))}
 
    :bool-intersection    {:tooltip (ds/meta (ds/alt "I"))
                           :command (ds/c-mod "alt+i")
@@ -329,7 +329,7 @@
    :align-vcenter        {:tooltip (ds/alt "V")
                           :command "alt+v"
                           :fn #(st/emit! (dw/align-objects :vcenter))}
-
+  
    :align-bottom         {:tooltip (ds/alt "S")
                           :command "alt+s"
                           :fn #(st/emit! (dw/align-objects :vbottom))}
@@ -354,9 +354,9 @@
                           :command (ds/c-mod "alt+l")
                           :fn #(st/emit! (dw/toggle-proportion-lock))}
 
-   :create-artboard-from-selection {:tooltip (ds/meta (ds/alt "G"))
-                                    :command (ds/c-mod "alt+g")
-                                    :fn #(st/emit! (dw/create-artboard-from-selection))}
+   :artboard-selection   {:tooltip (ds/meta (ds/alt "G"))
+                          :command (ds/c-mod "alt+g")
+                          :fn #(st/emit! (dw/create-artboard-from-selection))}
 
    :hide-ui              {:tooltip "\\"
                           :command "\\"
@@ -368,8 +368,16 @@
    
    :thumbnail-set {:tooltip (ds/shift "T")
                    :command "shift+t"
-                   :fn #(st/emit! (dw/toggle-file-thumbnail-selected))}})
+                   :fn #(st/emit! (dw/toggle-file-thumbnail-selected))}
 
+   :show-pixel-grid      {:tooltip (ds/shift ",")
+                          :command "shift+,"
+                          :fn #(st/emit! (toggle-layout-flag :show-pixel-grid))}
+
+   :snap-pixel-grid      {:command ","
+                          :tooltip ","
+                          :fn #(st/emit! (toggle-layout-flag :snap-pixel-grid))}
+   })
 
 (def opacity-shortcuts
   (into {} (->>

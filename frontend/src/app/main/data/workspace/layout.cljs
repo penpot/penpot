@@ -27,7 +27,9 @@
     :scale-text
     :dynamic-alignment
     :display-artboard-names
-    :snap-guides})
+    :snap-guides
+    :show-pixel-grid
+    :snap-pixel-grid})
 
 (def presets
   {:assets
@@ -53,7 +55,9 @@
     :snap-grid
     :dynamic-alignment
     :display-artboard-names
-    :snap-guides})
+    :snap-guides
+    :show-pixel-grid
+    :snap-pixel-grid})
 
 (def default-global
   {:options-mode :design})

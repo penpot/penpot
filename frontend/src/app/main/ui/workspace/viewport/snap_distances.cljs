@@ -45,6 +45,7 @@
 (def pill-text-font-size 12)
 (def pill-text-height 20)
 (def pill-text-border-radius 4)
+(def pill-text-padding 4)
 
 (mf/defc shape-distance-segment
   "Displays a segment between two selrects with the distance between them"
@@ -55,12 +56,13 @@
                     (get sr2 (if (= :x coord) :x1 :y1)))
 
         distance (- to-c from-c)
-        distance-str (str distance)
+        distance-str (fmt/format-number distance)
         half-point (half-point coord sr1 sr2)
         width (-> distance-str
                   count
                   (* (/ pill-text-width-letter zoom))
-                  (+ (/ pill-text-width-margin zoom)))]
+                  (+ (/ pill-text-width-margin zoom))
+                  (+ (* (/ pill-text-width-margin zoom) 2)))]
 
     [:g.distance-segment
      (let [point [(+ from-c (/ distance 2))

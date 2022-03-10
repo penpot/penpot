@@ -225,7 +225,7 @@
      (when (not has-frame?)
        [:*
         [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
-                        :shortcut (sc/get-tooltip :create-artboard-from-selection)
+                        :shortcut (sc/get-tooltip :artboard-selection)
                         :on-click do-create-artboard-from-selection}]
         [:& menu-separator]])]))
 
