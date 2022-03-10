@@ -281,10 +281,14 @@
           :opt-un [::scope ::invitation-token]))
 
 (sv/defmethod ::login
-  {:auth false
-   ::async/dispatch :default
-   ::rlimit/permits (cf/get :rlimit-password)}
+  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
   [{:keys [pool session tokens] :as cfg} {:keys [email password] :as params}]
+
+  (when-not (contains? cf/flags :login)
+    (ex/raise :type :restriction
+              :code :login-disabled
+              :hint "login is disabled in this instance"))
+
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
               (ex/raise :type :validation

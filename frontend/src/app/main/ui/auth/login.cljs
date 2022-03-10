@@ -96,7 +96,6 @@
              (login-with-ldap event (with-meta params
                                       {:on-error on-error
                                        :on-success on-succes})))))]
-
     [:*
      (when-let [message @error]
        [:& msgs/inline-banner
