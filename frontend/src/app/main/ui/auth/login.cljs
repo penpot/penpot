@@ -121,9 +121,10 @@
          :label (tr "auth.password")}]]
 
       [:div.buttons-stack
-       [:& fm/submit-button
-        {:label (tr "auth.login-submit")
-         :data-test "login-submit"}]
+       (when (contains? @cf/flags :login)
+         [:& fm/submit-button
+          {:label (tr "auth.login-submit")
+           :data-test "login-submit"}])
 
        (when (contains? @cf/flags :login-with-ldap)
          [:& fm/submit-button
@@ -152,7 +153,14 @@
       {:on-click #(login-with-oauth % :github params)}
       [:img.logo
        {:src "/images/icons/brand-github.svg"}]
-      (tr "auth.login-with-github-submit")])])
+      (tr "auth.login-with-github-submit")])
+
+    (when cf/oidc-client-id
+     [:a.btn-primary.btn-large.btn-github-auth
+      {:on-click #(login-with-oauth % :oidc params)}
+      [:img.logo
+       {:src "/images/icons/brand-github.svg"}]
+      (tr "auth.login-with-oidc-submit")])])
 
 (mf/defc login-button-oidc
   [{:keys [params] :as props}]
@@ -178,25 +186,23 @@
        [:div.buttons
         [:& login-buttons {:params params}]]
 
-       [:span.separator
-        [:span.line]
-        [:span.text (tr "labels.or")]
-        [:span.line]]])
+       (when (or (contains? @cf/flags :login)
+                 (contains? @cf/flags :login-with-ldap))
+         [:span.separator
+          [:span.line]
+          [:span.text (tr "labels.or")]
+          [:span.line]])])
 
-    [:& login-form {:params params}]
+    (when (or (contains? @cf/flags :login)
+              (contains? @cf/flags :login-with-ldap))
+      [:& login-form {:params params}])
 
-    (when cf/oidc-client-id
-      [:div.links
-       [:& login-button-oidc]])
-    
-    [:span.separator
-     [:span.line]]
-    
     [:div.links
-     [:div.link-entry
-      [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))
-           :data-test "forgot-password"}
-       (tr "auth.forgot-password")]]
+     (when (contains? @cf/flags :login)
+       [:div.link-entry
+        [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))
+             :data-test "forgot-password"}
+         (tr "auth.forgot-password")]])
 
      (when (contains? @cf/flags :registration)
        [:div.link-entry

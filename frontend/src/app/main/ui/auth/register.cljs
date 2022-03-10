@@ -131,20 +131,14 @@
       [:div.buttons
        [:& login/login-buttons {:params params}]]
 
-      [:span.separator
-       [:span.line]
-       [:span.text (tr "labels.or")]
-       [:span.line]]])
+      (when (or (contains? @cf/flags :login)
+                (contains? @cf/flags :login-with-ldap))
+        [:span.separator
+         [:span.line]
+         [:span.text (tr "labels.or")]
+         [:span.line]])])
 
    [:& register-form {:params params}]
-
-   (when cf/oidc-client-id
-     [:div.links
-      [:& login/login-button-oidc]])
-
-   [:span.separator
-    [:span.line]]
-
 
    [:div.links
     [:div.link-entry

@@ -83,7 +83,7 @@ msgstr "Login with LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "Login with OpenID (SSO)"
+msgstr "OpenID Connect"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -1235,7 +1235,7 @@ msgid "labels.continue-with"
 msgstr "Continue with"
 
 msgid "labels.or"
-msgstr "or email"
+msgstr "or"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.owner"
