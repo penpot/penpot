@@ -263,7 +263,17 @@
             attrs (merge attrs color-attrs)]
 
         (rx/of (dch/update-shapes ids (fn [shape]
-                                        (assoc-in shape [:strokes index] (merge (get-in shape [:strokes index]) attrs)))))))))
+                                        (let [new-attrs (merge (get-in shape [:strokes index]) attrs)
+                                              new-attrs (cond-> new-attrs
+                                                          (not (contains? new-attrs :stroke-width))
+                                                          (assoc :stroke-width 1)
+
+                                                          (not (contains? new-attrs :stroke-style))
+                                                          (assoc :stroke-style :solid)
+
+                                                          (not (contains? new-attrs :stroke-alignment))
+                                                          (assoc :stroke-alignment :center))]
+                                          (assoc-in shape [:strokes index] new-attrs)))))))))
 
 (defn add-stroke
   [ids stroke]
