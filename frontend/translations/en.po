@@ -58,10 +58,6 @@ msgid "auth.login-submit"
 msgstr "Login"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-subtitle"
-msgstr "Enter your details below"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
 msgstr "Great to see you again!"
 

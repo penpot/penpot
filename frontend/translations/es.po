@@ -60,10 +60,6 @@ msgid "auth.login-submit"
 msgstr "Entrar"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-subtitle"
-msgstr "Introduce tus datos aquí"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
 msgstr "¡Un placer verte de nuevo!"
 

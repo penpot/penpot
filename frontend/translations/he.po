@@ -57,10 +57,6 @@ msgid "auth.login-submit"
 msgstr "כניסה"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-subtitle"
-msgstr "נא למלא את הפרטים שלך להלן"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
 msgstr "שמחים לראות אותך שוב!"
 

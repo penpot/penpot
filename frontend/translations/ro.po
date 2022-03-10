@@ -61,10 +61,6 @@ msgid "auth.login-submit"
 msgstr "Intră în cont"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-subtitle"
-msgstr "Introduceți detaliile dvs. mai jos"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
 msgstr "Mă bucur să te văd din nou!"
 

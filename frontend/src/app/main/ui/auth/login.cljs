@@ -25,7 +25,8 @@
 (def show-alt-login-buttons?
   (or cf/google-client-id
       cf/gitlab-client-id
-      cf/github-client-id))
+      cf/github-client-id
+      cf/oidc-client-id))
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)
@@ -137,29 +138,25 @@
    (when cf/google-client-id
      [:a.btn-primary.btn-large.btn-google-auth
       {:on-click #(login-with-oauth % :google params)}
-      [:img.logo
-       {:src "/images/icons/brand-google.svg"}]
+      [:span.logo i/brand-google]
       (tr "auth.login-with-google-submit")])
-
-   (when cf/gitlab-client-id
-     [:a.btn-primary.btn-large.btn-gitlab-auth
-      {:on-click #(login-with-oauth % :gitlab params)}
-      [:img.logo
-       {:src "/images/icons/brand-gitlab.svg"}]
-      (tr "auth.login-with-gitlab-submit")])
 
    (when cf/github-client-id
      [:a.btn-primary.btn-large.btn-github-auth
       {:on-click #(login-with-oauth % :github params)}
-      [:img.logo
-       {:src "/images/icons/brand-github.svg"}]
+      [:span.logo i/brand-github]
       (tr "auth.login-with-github-submit")])
 
-    (when cf/oidc-client-id
+   (when cf/gitlab-client-id
+     [:a.btn-primary.btn-large.btn-gitlab-auth
+      {:on-click #(login-with-oauth % :gitlab params)}
+      [:span.logo i/brand-gitlab]
+      (tr "auth.login-with-gitlab-submit")])
+
+   (when cf/oidc-client-id
      [:a.btn-primary.btn-large.btn-github-auth
       {:on-click #(login-with-oauth % :oidc params)}
-      [:img.logo
-       {:src "/images/icons/brand-github.svg"}]
+      [:span.logo i/brand-openid]
       (tr "auth.login-with-oidc-submit")])])
 
 (mf/defc login-button-oidc
@@ -174,7 +171,6 @@
   [:div.generic-form.login-form
    [:div.form-container
     [:h1 {:data-test "login-title"} (tr "auth.login-title")]
-    [:div.subtitle (tr "auth.login-subtitle")]
 
     (when show-alt-login-buttons?
       [:*

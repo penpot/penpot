@@ -60,10 +60,6 @@ msgid "auth.login-submit"
 msgstr "Oturum aç"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-subtitle"
-msgstr "Bilgilerini aşağıdaki alana gir"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
 msgstr "Seni tekrar görmek süper!"
 
