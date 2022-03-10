@@ -313,6 +313,14 @@
   [v]
   (instance? clojure.lang.ExceptionInfo v))
 
+(defn ex-type
+  [e]
+  (:type (ex-data e)))
+
+(defn ex-code
+  [e]
+  (:code (ex-data e)))
+
 (defn ex-of-type?
   [e type]
   (let [data (ex-data e)]
