@@ -9,9 +9,8 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
-   [app.common.pages.changes-builder :as cb]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -65,7 +64,7 @@
                    result)))))))
 
 (defn prepare-create-group
-  [objects page-id shapes base-name keep-name?]
+  [it objects page-id shapes base-name keep-name?]
   (let [frame-id  (:frame-id (first shapes))
         parent-id (:parent-id (first shapes))
         gname     (if (and keep-name?
@@ -78,62 +77,22 @@
         selrect   (gsh/selection-rect shapes)
         group     (-> (cp/make-minimal-group frame-id selrect gname)
                       (gsh/setup selrect)
-                      (assoc :shapes (mapv :id shapes)))
-
-        rchanges  [{:type :add-obj
-                    :id (:id group)
-                    :page-id page-id
-                    :frame-id frame-id
-                    :parent-id parent-id
-                    :obj group
-                    :index (::index (first shapes))}
-
-                   {:type :mov-objects
-                    :page-id page-id
-                    :parent-id (:id group)
-                    :shapes (mapv :id shapes)}]
-
-        uchanges  (-> (mapv (fn [obj]
-                              {:type :mov-objects
-                               :page-id page-id
-                               :parent-id (:parent-id obj)
-                               :index (::index obj)
-                               :shapes [(:id obj)]})
-                            shapes)
-                      (conj {:type :del-obj
-                             :id (:id group)
-                             :page-id page-id}))
+                      (assoc :shapes (mapv :id shapes)
+                             :parent-id parent-id
+                             :frame-id frame-id
+                             :index (::index (first shapes))))
 
         ;; Look at the `get-empty-groups-after-group-creation`
         ;; docstring to understand the real purpose of this code
         ids-to-delete (get-empty-groups-after-group-creation objects parent-id shapes)
 
-        delete-group
-        (fn [changes id]
-          (conj changes {:type :del-obj
-                         :id id
-                         :page-id page-id}))
+        changes   (-> (pcb/empty-changes it page-id)
+                      (pcb/with-objects objects)
+                      (pcb/add-obj group)
+                      (pcb/change-parent (:id group) shapes)
+                      (pcb/remove-objects ids-to-delete))]
 
-        add-deleted-group
-        (fn [changes id]
-          (let [obj (-> (get objects id)
-                        (dissoc :shapes))]
-            (into [{:type :add-obj
-                    :id id
-                    :page-id page-id
-                    :frame-id (:frame-id obj)
-                    :parent-id (:parent-id obj)
-                    :obj obj
-                    :index (::index obj)}]
-                  changes)))
-
-        rchanges (->> ids-to-delete
-                      (reduce delete-group rchanges))
-
-        uchanges (->> ids-to-delete
-                      (reduce add-deleted-group uchanges))]
-
-    [group rchanges uchanges]))
+    [group changes]))
 
 (defn prepare-remove-group
   [it page-id group objects]
@@ -159,36 +118,13 @@
                             :shape-ref
                             :touched))]
 
-    (cond-> (-> (cb/empty-changes it page-id)
-                (cb/with-objects objects)
-                (cb/change-parent parent-id children index-in-parent)
-                (cb/remove-objects [(:id group)]))
+    (cond-> (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (pcb/change-parent parent-id children index-in-parent)
+                (pcb/remove-objects [(:id group)]))
 
       (some? ids-to-detach)
-      (cb/update-shapes ids-to-detach detach-fn))))
-
-(defn prepare-remove-mask
-  [page-id mask]
-  (let [rchanges [{:type :mod-obj
-                   :page-id page-id
-                   :id (:id mask)
-                   :operations [{:type :set
-                                 :attr :masked-group?
-                                 :val nil}]}
-                  {:type :reg-objects
-                   :page-id page-id
-                   :shapes [(:id mask)]}]
-        uchanges [{:type :mod-obj
-                   :page-id page-id
-                   :id (:id mask)
-                   :operations [{:type :set
-                                 :attr :masked-group?
-                                 :val (:masked-group? mask)}]}
-                  {:type :reg-objects
-                   :page-id page-id
-                   :shapes [(:id mask)]}]]
-    [rchanges uchanges]))
-
+      (pcb/update-shapes ids-to-detach detach-fn))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GROUPS
@@ -204,11 +140,9 @@
             selected (cph/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
-          (let [[group rchanges uchanges]
-                (prepare-create-group objects page-id shapes "Group-1" false)]
-            (rx/of (dch/commit-changes {:redo-changes rchanges
-                                        :undo-changes uchanges
-                                        :origin it})
+          (let [[group changes]
+                (prepare-create-group it objects page-id shapes "Group-1" false)]
+            (rx/of (dch/commit-changes changes)
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (def ungroup-selected
@@ -237,85 +171,39 @@
   (ptk/reify ::mask-group
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            selected (wsh/lookup-selected state)
-            selected (cph/clean-loops objects selected)
-            shapes   (shapes-for-grouping objects selected)]
+      (let [page-id     (:current-page-id state)
+            objects     (wsh/lookup-page-objects state page-id)
+            selected    (wsh/lookup-selected state)
+            selected    (cph/clean-loops objects selected)
+            shapes      (shapes-for-grouping objects selected)
+            first-shape (first shapes)]
         (when-not (empty? shapes)
           (let [;; If the selected shape is a group, we can use it. If not,
                 ;; create a new group and set it as masked.
-                [group rchanges uchanges]
+                [group changes]
                 (if (and (= (count shapes) 1)
                          (= (:type (first shapes)) :group))
-                  [(first shapes) [] []]
-                  (prepare-create-group objects page-id shapes "Group-1" true))
+                  [first-shape (-> (pcb/empty-changes it page-id)
+                                   (pcb/with-objects objects))]
+                  (prepare-create-group it objects page-id shapes "Group-1" true))
 
-                ;; Assertions just for documentation purposes
-                _ (us/assert vector? rchanges)
-                _ (us/assert vector? uchanges)
+                changes  (-> changes
+                             (pcb/update-shapes (:shapes group)
+                                                (fn [shape]
+                                                  (assoc shape
+                                                         :constraints-h :scale
+                                                         :constraints-v :scale)))
+                             (pcb/update-shapes [(:id group)]
+                                                (fn [group]
+                                                  (assoc group
+                                                         :masked-group? true
+                                                         :selrect (:selrect first-shape)
+                                                         :points (:points first-shape)
+                                                         :transform (:transform first-shape)
+                                                         :transform-inverse (:transform-inverse first-shape))))
+                             (pcb/resize-parents [(:id group)]))]
 
-                children (map #(get objects %) (:shapes group))
-
-                rchanges (d/concat-vec
-                          rchanges
-                          (for [child children]
-                            {:type :mod-obj
-                             :page-id page-id
-                             :id (:id child)
-                             :operations [{:type :set
-                                           :attr :constraints-h
-                                           :val :scale}
-                                          {:type :set
-                                           :attr :constraints-v
-                                           :val :scale}]})
-                          [{:type :mod-obj
-                            :page-id page-id
-                            :id (:id group)
-                            :operations [{:type :set
-                                          :attr :masked-group?
-                                          :val true}
-                                         {:type :set
-                                          :attr :selrect
-                                          :val (-> shapes first :selrect)}
-                                         {:type :set
-                                          :attr :points
-                                          :val (-> shapes first :points)}
-                                         {:type :set
-                                          :attr :transform
-                                          :val (-> shapes first :transform)}
-                                         {:type :set
-                                          :attr :transform-inverse
-                                          :val (-> shapes first :transform-inverse)}]}
-                           {:type :reg-objects
-                            :page-id page-id
-                            :shapes [(:id group)]}])
-
-                uchanges (d/concat-vec
-                          uchanges
-                          (for [child children]
-                            {:type :mod-obj
-                             :page-id page-id
-                             :id (:id child)
-                             :operations [{:type :set
-                                           :attr :constraints-h
-                                           :val (:constraints-h child)}
-                                          {:type :set
-                                           :attr :constraints-v
-                                           :val (:constraints-v child)}]})
-                          [{:type :mod-obj
-                            :page-id page-id
-                            :id (:id group)
-                            :operations [{:type :set
-                                          :attr :masked-group?
-                                          :val nil}]}
-                           {:type :reg-objects
-                            :page-id page-id
-                            :shapes [(:id group)]}])]
-
-            (rx/of (dch/commit-changes {:redo-changes rchanges
-                                        :undo-changes uchanges
-                                        :origin it})
+            (rx/of (dch/commit-changes changes)
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (def unmask-group
@@ -325,13 +213,18 @@
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
 
-            changes-in-bulk (->> (wsh/lookup-selected state)
-                                 (map  #(get objects %))
-                                 (filter #(or (= :bool (:type %)) (= :group (:type %))))
-                                 (map #(prepare-remove-mask page-id %)))
-            rchanges-in-bulk (into [] (mapcat first) changes-in-bulk)
-            uchanges-in-bulk (into [] (mapcat second) changes-in-bulk)]
+            masked-groups (->> (wsh/lookup-selected state)
+                               (map  #(get objects %))
+                               (filter #(or (= :bool (:type %)) (= :group (:type %)))))
 
-        (rx/of (dch/commit-changes {:redo-changes rchanges-in-bulk
-                                    :undo-changes uchanges-in-bulk
-                                    :origin it}))))))
+            changes (reduce (fn [changes mask]
+                              (-> changes
+                                  (pcb/update-shapes [(:id mask)]
+                                                     (fn [shape]
+                                                       (dissoc shape :masked-group?)))
+                                  (pcb/resize-parents [(:id mask)])))
+                            (-> (pcb/empty-changes it page-id)
+                                (pcb/with-objects objects))
+                            masked-groups)]
+
+        (rx/of (dch/commit-changes changes))))))

@@ -8,8 +8,10 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -72,15 +74,8 @@
   (ptk/reify ::set-default-grid
     ptk/WatchEvent
     (watch [it state _]
-      (let [pid (:current-page-id state)
-            prev-value (get-in state [:workspace-data :pages-index pid :options :saved-grids type])]
+      (let [page (wsh/lookup-page state)]
         (rx/of (dch/commit-changes
-                {:redo-changes [{:type :set-option
-                                 :page-id pid
-                                 :option [:saved-grids type]
-                                 :value params}]
-                 :undo-changes [{:type :set-option
-                                 :page-id pid
-                                 :option [:saved-grids type]
-                                 :value prev-value}]
-                 :origin it}))))))
+                 (-> (pcb/empty-changes it)
+                     (pcb/with-page page)
+                     (pcb/set-page-option [:saved-grids type] params))))))))
