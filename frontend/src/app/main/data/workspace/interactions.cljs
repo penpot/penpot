@@ -29,8 +29,8 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [page    (wsh/lookup-page state)
-            flows   (get-in page [:options :flows] [])
 
+            flows   (get-in page [:options :flows] [])
             unames  (into #{} (map :name flows))
             name    (dwc/generate-unique-name unames "Flow-1")
 
@@ -41,8 +41,7 @@
         (rx/of (dch/commit-changes
                  (-> (pcb/empty-changes it)
                      (pcb/with-page page)
-                     (pcb/set-page-option :flows
-                                          (csp/add-flow flows new-flow)))))))))
+                     (pcb/update-page-option :flows csp/add-flow new-flow))))))))
 
 (defn add-flow-selected-frame
   []
@@ -58,13 +57,11 @@
   (ptk/reify ::remove-flow
     ptk/WatchEvent
     (watch [it state _]
-      (let [page    (wsh/lookup-page state)
-            flows   (get-in page [:options :flows] [])]
+      (let [page (wsh/lookup-page state)]
         (rx/of (dch/commit-changes
                  (-> (pcb/empty-changes it)
                      (pcb/with-page page)
-                     (pcb/set-page-option :flows
-                                          (csp/remove-flow flows flow-id)))))))))
+                     (pcb/update-page-option :flows csp/remove-flow flow-id))))))))
 
 (defn rename-flow
   [flow-id name]
@@ -73,14 +70,12 @@
   (ptk/reify ::rename-flow
     ptk/WatchEvent
     (watch [it state _]
-      (let [page    (wsh/lookup-page state)
-            flows   (get-in page [:options :flows] [])]
+      (let [page (wsh/lookup-page state) ]
         (rx/of (dch/commit-changes
                  (-> (pcb/empty-changes it)
                      (pcb/with-page page)
-                     (pcb/set-page-option :flows
-                                          (csp/update-flow flows flow-id
-                                                           #(csp/rename-flow % name))))))))))
+                     (pcb/update-page-option :flows csp/update-flow flow-id
+                                             #(csp/rename-flow % name)))))))))
 
 (defn start-rename-flow
   [id]

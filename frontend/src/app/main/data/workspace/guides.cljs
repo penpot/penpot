@@ -28,14 +28,11 @@
   (ptk/reify ::update-guides
     ptk/WatchEvent
     (watch [it state _]
-      (let [page       (wsh/lookup-page state)
-            guides     (get-in page [:options :guides] {})
-            new-guides (assoc guides (:id guide) guide)
-
+      (let [page (wsh/lookup-page state)
             changes
             (-> (pcb/empty-changes it)
                 (pcb/with-page page)
-                (pcb/set-page-option :guides new-guides))]
+                (pcb/update-page-option :guides assoc (:id guide) guide))]
         (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guide [guide]
@@ -49,14 +46,11 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [page       (wsh/lookup-page state)
-            guides     (get-in page [:options :guides] {})
-            new-guides (dissoc guides (:id guide))
-
+      (let [page (wsh/lookup-page state)
             changes
             (-> (pcb/empty-changes it)
                 (pcb/with-page page)
-                (pcb/set-page-option :guides new-guides))]
+                (pcb/update-page-option :guides dissoc (:id guide)))]
         (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guides

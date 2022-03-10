@@ -376,17 +376,18 @@
                               (filter #(= (:type %) :frame))
                               (filter #(some? (ctp/get-frame-flow flows (:id %)))))]
     (if-not (empty? frames-with-flow)
-      (let [new-flows (reduce
-                        (fn [flows frame]
-                          (let [name     (dwc/generate-unique-name @unames "Flow-1")
-                                _        (vswap! unames conj name)
-                                new-flow {:id (uuid/next)
-                                          :name name
-                                          :starting-frame (get ids-map (:id frame))}]
-                            (ctp/add-flow flows new-flow)))
-                        flows
-                        frames-with-flow)]
-        (pcb/set-page-option changes :flows new-flows))
+      (let [update-flows (fn [flows]
+                           (reduce
+                             (fn [flows frame]
+                               (let [name     (dwc/generate-unique-name @unames "Flow-1")
+                                     _        (vswap! unames conj name)
+                                     new-flow {:id (uuid/next)
+                                               :name name
+                                               :starting-frame (get ids-map (:id frame))}]
+                                 (ctp/add-flow flows new-flow)))
+                             flows
+                             frames-with-flow))]
+        (pcb/update-page-option changes :flows update-flows))
       changes)))
 
 (defn duplicate-changes-update-indices

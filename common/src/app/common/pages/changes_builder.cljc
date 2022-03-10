@@ -40,7 +40,7 @@
   (let [file-data (-> (cp/make-file-data (uuid/next) uuid/zero)
                       (assoc-in [:pages-index uuid/zero :objects] objects))]
     (vary-meta changes assoc ::file-data file-data
-                             ::applied-changes 0)))
+                             ::applied-changes-count 0)))
 
 (defn amend-last-change
   "Modify the last redo-changes added with an update function."
@@ -68,7 +68,7 @@
 (defn- apply-changes-local
   [changes]
   (if-let [file-data (::file-data (meta changes))]
-    (let [index         (::applied-changes (meta changes))
+    (let [index         (::applied-changes-count (meta changes))
           redo-changes  (:redo-changes changes)
           new-changes   (if (< index (count redo-changes))
                           (->> (subvec (:redo-changes changes) index)
@@ -76,7 +76,7 @@
                           [])
           new-file-data (cp/process-changes file-data new-changes)]
       (vary-meta changes assoc ::file-data new-file-data
-                               ::applied-changes (count redo-changes)))
+                               ::applied-changes-count (count redo-changes)))
     changes))
 
 ;; Page changes
@@ -134,6 +134,25 @@
                                     :value old-val})
         (apply-changes-local))))
 
+(defn update-page-option
+  [changes option-key update-fn & args]
+  (assert-page changes)
+  (let [page-id (::page-id (meta changes))
+        page (::page (meta changes))
+        old-val (get-in page [:options option-key])
+        new-val (apply update-fn old-val args)]
+
+    (-> changes
+        (update :redo-changes conj {:type :set-option
+                                    :page-id page-id
+                                    :option option-key
+                                    :value new-val})
+        (update :undo-changes conj {:type :set-option
+                                    :page-id page-id
+                                    :option option-key
+                                    :value old-val})
+        (apply-changes-local))))
+
 ;; Shape tree changes
 
 (defn add-obj
@@ -173,7 +192,7 @@
   ([changes parent-id shapes index]
    (assert-page-id changes)
    (assert-objects changes)
-   (let [objects (-> changes meta ::file-data (get-in [:pages-index uuid/zero :objects]))
+   (let [objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
 
          set-parent-change
          (cond-> {:type :mov-objects
@@ -208,7 +227,7 @@
   ([changes ids update-fn {:keys [attrs ignore-geometry?] :or {attrs nil ignore-geometry? false}}]
    (assert-page-id changes)
    (assert-objects changes)
-   (let [objects (-> changes meta ::file-data (get-in [:pages-index uuid/zero :objects]))
+   (let [objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
 
          generate-operation
          (fn [operations attr old new ignore-geometry?]
@@ -255,7 +274,7 @@
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
-        objects (-> changes meta ::file-data (get-in [:pages-index uuid/zero :objects]))
+        objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
 
         add-redo-change
         (fn [change-set id]
@@ -303,7 +322,7 @@
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
-        objects (-> changes meta ::file-data (get-in [:pages-index uuid/zero :objects]))
+        objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
 
         xform   (comp
                   (mapcat #(cons % (cph/get-parent-ids objects %)))

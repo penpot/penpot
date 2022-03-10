@@ -288,7 +288,9 @@
                         cp/default-shape-attrs)
 
         selected-non-frames
-        (into #{} (filter #(not= (:type (get objects %)) :frame) selected))
+        (into #{} (comp (map (d/getf objects))
+                        (remove cph/frame-shape?))
+              selected)
 
         [frame-id parent-id index]
         (get-shape-layer-position objects selected-non-frames attrs)]
@@ -364,7 +366,6 @@
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
             page    (wsh/lookup-page state page-id)
-            flows   (-> page :options :flows)
 
             ids     (cph/clean-loops objects ids)
 
@@ -397,7 +398,7 @@
                       ;; If any of the deleted is a frame that starts a flow,
                       ;; this must be deleted, too.
                       (contains? ids (:starting-frame flow)))
-                    flows)
+                    (-> page :options :flows))
 
             all-parents
             (reduce (fn [res id]
@@ -448,10 +449,10 @@
                                                               interactions))))))
                         (cond->
                           (seq starting-flows)
-                          (pcb/set-page-option :flows
-                                               (reduce #(csp/remove-flow %1 (:id %2))
-                                                       flows
-                                                       starting-flows))))]
+                          (pcb/update-page-option :flows (fn [flows]
+                                                           (reduce #(csp/remove-flow %1 (:id %2))
+                                                                   flows
+                                                                   starting-flows)))))]
 
         (rx/of (dch/commit-changes changes))))))
 
