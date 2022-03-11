@@ -170,6 +170,10 @@
 (def uppercase (icon-xref :uppercase))
 (def user (icon-xref :user))
 
+(def brand-openid (icon-xref :brand-openid))
+(def brand-github (icon-xref :brand-github))
+(def brand-gitlab (icon-xref :brand-gitlab))
+(def brand-google (icon-xref :brand-google))
 
 (def loader-pencil
   (mf/html

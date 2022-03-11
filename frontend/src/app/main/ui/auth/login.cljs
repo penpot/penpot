@@ -97,7 +97,6 @@
              (login-with-ldap event (with-meta params
                                       {:on-error on-error
                                        :on-success on-succes})))))]
-
     [:*
      (when-let [message @error]
        [:& msgs/inline-banner
@@ -123,9 +122,10 @@
          :label (tr "auth.password")}]]
 
       [:div.buttons-stack
-       [:& fm/submit-button
-        {:label (tr "auth.login-submit")
-         :data-test "login-submit"}]
+       (when (contains? @cf/flags :login)
+         [:& fm/submit-button
+          {:label (tr "auth.login-submit")
+           :data-test "login-submit"}])
 
        (when (contains? @cf/flags :login-with-ldap)
          [:& fm/submit-button
@@ -136,50 +136,69 @@
   [{:keys [params] :as props}]
   [:div.auth-buttons
    (when cf/google-client-id
-     [:a.btn-ocean.btn-large.btn-google-auth
+     [:a.btn-primary.btn-large.btn-google-auth
       {:on-click #(login-with-oauth % :google params)}
+      [:span.logo i/brand-google]
       (tr "auth.login-with-google-submit")])
 
-   (when cf/gitlab-client-id
-     [:a.btn-ocean.btn-large.btn-gitlab-auth
-      {:on-click #(login-with-oauth % :gitlab params)}
-      [:img.logo
-       {:src "/images/icons/brand-gitlab.svg"}]
-      (tr "auth.login-with-gitlab-submit")])
-
    (when cf/github-client-id
-     [:a.btn-ocean.btn-large.btn-github-auth
+     [:a.btn-primary.btn-large.btn-github-auth
       {:on-click #(login-with-oauth % :github params)}
-      [:img.logo
-       {:src "/images/icons/brand-github.svg"}]
+      [:span.logo i/brand-github]
       (tr "auth.login-with-github-submit")])
 
+   (when cf/gitlab-client-id
+     [:a.btn-primary.btn-large.btn-gitlab-auth
+      {:on-click #(login-with-oauth % :gitlab params)}
+      [:span.logo i/brand-gitlab]
+      (tr "auth.login-with-gitlab-submit")])
+
    (when cf/oidc-client-id
-     [:a.btn-ocean.btn-large.btn-github-auth
+     [:a.btn-primary.btn-large.btn-github-auth
       {:on-click #(login-with-oauth % :oidc params)}
+      [:span.logo i/brand-openid]
       (tr "auth.login-with-oidc-submit")])])
+
+(mf/defc login-button-oidc
+  [{:keys [params] :as props}]
+  (when cf/oidc-client-id
+    [:div.link-entry.link-oidc
+     [:a {:on-click #(login-with-oauth % :oidc params)}
+      (tr "auth.login-with-oidc-submit")]]))
 
 (mf/defc login-page
   [{:keys [params] :as props}]
   [:div.generic-form.login-form
    [:div.form-container
     [:h1 {:data-test "login-title"} (tr "auth.login-title")]
-    [:div.subtitle (tr "auth.login-subtitle")]
-
-    [:& login-form {:params params}]
 
     (when show-alt-login-buttons?
       [:*
-       [:span.separator (tr "labels.or")]
+       [:span.separator
+        [:span.line]
+        [:span.text (tr "labels.continue-with")]
+        [:span.line]]
 
        [:div.buttons
-        [:& login-buttons {:params params}]]])
+        [:& login-buttons {:params params}]]
+
+       (when (or (contains? @cf/flags :login)
+                 (contains? @cf/flags :login-with-ldap))
+         [:span.separator
+          [:span.line]
+          [:span.text (tr "labels.or")]
+          [:span.line]])])
+
+    (when (or (contains? @cf/flags :login)
+              (contains? @cf/flags :login-with-ldap))
+      [:& login-form {:params params}])
 
     [:div.links
-     [:div.link-entry
-      [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))
-           :data-test "forgot-password"}
-       (tr "auth.forgot-password")]]
+     (when (contains? @cf/flags :login)
+       [:div.link-entry
+        [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))
+             :data-test "forgot-password"}
+         (tr "auth.forgot-password")]])
 
      (when (contains? @cf/flags :registration)
        [:div.link-entry

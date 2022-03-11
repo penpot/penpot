@@ -162,7 +162,8 @@
             (let [context (dissoc report
                                   :trace :cause :params :data :spec-problems
                                   :spec-explain :spec-value :error :explain :hint)
-                  params  {:context (with-out-str (fpp/pprint context {:width 300}))
+                  params  {:context (with-out-str
+                                      (fpp/pprint context {:width 200}))
                            :hint    (:hint report)
                            :spec-explain  (:spec-explain report)
                            :spec-problems (:spec-problems report)

@@ -19,7 +19,6 @@
    [app.rpc.queries.profile :as profile]
    [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
-   [app.util.async :as async]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
@@ -101,8 +100,14 @@
 (sv/defmethod ::prepare-register-profile {:auth false}
   [{:keys [pool tokens] :as cfg} params]
   (when-not (contains? cf/flags :registration)
-    (ex/raise :type :restriction
-              :code :registration-disabled))
+    (if-not (contains? params :invitation-token)
+      (ex/raise :type :restriction
+                :code :registration-disabled)
+      (let [invitation (tokens :verify {:token (:invitation-token params) :iss :team-invitation})]
+        (when-not (= (:email params) (:member-email invitation))
+          (ex/raise :type :restriction
+                    :code :email-does-not-match-invitation
+                    :hint "email should match the invitation")))))
 
   (when-let [domains (cf/get :registration-domain-whitelist)]
     (when-not (email-domain-in-whitelist? domains (:email params))
@@ -129,6 +134,7 @@
                 :backend "penpot"
                 :iss :prepared-register
                 :exp (dt/in-future "48h")}
+
         token  (tokens :generate params)]
     {:token token}))
 
@@ -149,7 +155,6 @@
   [{:keys [conn tokens session] :as cfg} {:keys [token] :as params}]
   (let [claims    (tokens :verify {:token token :iss :prepared-register})
         params    (merge params claims)]
-
     (check-profile-existence! conn params)
 
     (let [is-active  (or (:is-active params)
@@ -158,10 +163,8 @@
                           (create-profile conn)
                           (create-profile-relations conn)
                           (decode-profile-row))
-
           invitation (when-let [token (:invitation-token params)]
                        (tokens :verify {:token token :iss :team-invitation}))]
-
       (cond
         ;; If invitation token comes in params, this is because the user comes from team-invitation process;
         ;; in this case, regenerate token and send back to the user a new invitation token (and mark current
@@ -280,10 +283,14 @@
           :opt-un [::scope ::invitation-token]))
 
 (sv/defmethod ::login
-  {:auth false
-   ::async/dispatch :default
-   ::rlimit/permits (cf/get :rlimit-password)}
+  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
   [{:keys [pool session tokens] :as cfg} {:keys [email password] :as params}]
+
+  (when-not (contains? cf/flags :login)
+    (ex/raise :type :restriction
+              :code :login-disabled
+              :hint "login is disabled in this instance"))
+
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
               (ex/raise :type :validation

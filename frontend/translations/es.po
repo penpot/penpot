@@ -60,24 +60,20 @@ msgid "auth.login-submit"
 msgstr "Entrar"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-subtitle"
-msgstr "Introduce tus datos aquí"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
 msgstr "¡Un placer verte de nuevo!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Entrar con Github"
+msgstr "Github"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Entrar con Gitlab"
+msgstr "Gitlab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "Entrar con Google"
+msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
@@ -85,7 +81,7 @@ msgstr "Entrar con LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "Entrar con OpenID (SSO)"
+msgstr "OpenID Connect"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -1231,6 +1227,9 @@ msgstr "Contraseña anterior"
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.only-yours"
 msgstr "Sólo los tuyos"
+
+msgid "labels.continue-with"
+msgstr "Continúa con"
 
 msgid "labels.or"
 msgstr "o"

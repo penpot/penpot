@@ -7,6 +7,7 @@
 (ns app.services-profile-test
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.rpc.mutations.profile :as profile]
    [app.test-helpers :as th]
@@ -194,6 +195,56 @@
       (let [{:keys [result error]} (th/mutation! data)]
         (t/is (nil? error))))
     ))
+
+(t/deftest prepare-and-register-with-invitation-and-disabled-registration-1
+  (with-redefs [app.config/flags [:disable-registration]]
+    (let [tokens-fn (:app.tokens/tokens th/*system*)
+          itoken    (tokens-fn :generate
+                               {:iss :team-invitation
+                                :exp (dt/in-future "48h")
+                                :role :editor
+                                :team-id uuid/zero
+                                :member-email "user@example.com"})
+          data  {::th/type :prepare-register-profile
+                 :invitation-token itoken
+                 :email "user@example.com"
+                 :password "foobar"}
+
+          {:keys [result error] :as out} (th/mutation! data)]
+      (t/is (nil? error))
+      (t/is (map? result))
+      (t/is (string? (:token result)))
+
+      (let [rtoken (:token result)
+            data   {::th/type :register-profile
+                    :token rtoken
+                    :fullname "foobar"}
+
+            {:keys [result error] :as out} (th/mutation! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? error))
+        (t/is (map? result))
+        (t/is (string? (:invitation-token result)))))))
+
+(t/deftest prepare-and-register-with-invitation-and-disabled-registration-2
+  (with-redefs [app.config/flags [:disable-registration]]
+    (let [tokens-fn (:app.tokens/tokens th/*system*)
+          itoken    (tokens-fn :generate
+                               {:iss :team-invitation
+                                :exp (dt/in-future "48h")
+                                :role :editor
+                                :team-id uuid/zero
+                                :member-email "user2@example.com"})
+
+          data  {::th/type :prepare-register-profile
+                 :invitation-token itoken
+                 :email "user@example.com"
+                 :password "foobar"}
+          {:keys [result error] :as out} (th/mutation! data)]
+      (t/is (th/ex-info? error))
+      (t/is (= :restriction (th/ex-type error)))
+      (t/is (= :email-does-not-match-invitation (th/ex-code error))))))
+
 
 (t/deftest prepare-register-with-registration-disabled
   (th/with-mocks {#'app.config/flags nil}

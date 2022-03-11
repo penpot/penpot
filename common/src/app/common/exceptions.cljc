@@ -23,11 +23,12 @@
                    ::cause]))
 
 (defn error
-  [& {:keys [hint cause ::data] :as params}]
+  [& {:keys [hint cause ::data type] :as params}]
   (s/assert ::error-params params)
   (let [payload (-> params
                     (dissoc :cause ::data)
-                    (merge data))]
+                    (merge data))
+        hint    (or hint (pr-str type))]
     (ex-info hint payload cause)))
 
 (defmacro raise

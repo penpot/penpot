@@ -7,9 +7,7 @@
 (ns app.http
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
    [app.http.doc :as doc]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
@@ -31,40 +29,46 @@
 
 (s/def ::handler fn?)
 (s/def ::router some?)
-(s/def ::port ::us/integer)
-(s/def ::host ::us/string)
-(s/def ::name ::us/string)
-(s/def ::executors (s/map-of keyword? ::wrk/executor))
+(s/def ::port integer?)
+(s/def ::host string?)
+(s/def ::name string?)
 
-;; (s/def ::max-threads ::cf/http-server-max-threads)
-;; (s/def ::min-threads ::cf/http-server-min-threads)
+(s/def ::max-body-size integer?)
+(s/def ::max-multipart-body-size integer?)
+(s/def ::io-threads integer?)
+(s/def ::worker-threads integer?)
 
 (defmethod ig/prep-key ::server
   [_ cfg]
   (merge {:name "http"
           :port 6060
-          :host "0.0.0.0"}
+          :host "0.0.0.0"
+          :max-body-size (* 1024 1024 24)             ; 24 MiB
+          :max-multipart-body-size (* 1024 1024 120)} ; 120 MiB
          (d/without-nils cfg)))
 
 (defmethod ig/pre-init-spec ::server [_]
-  (s/keys :req-un [::port ::host ::name ::executors]
-          :opt-un [::router ::handler]))
+  (s/and
+   (s/keys :req-un [::port ::host ::name ::max-body-size ::max-multipart-body-size]
+           :opt-un [::router ::handler ::io-threads ::worker-threads ::wrk/executor])
+   (fn [cfg]
+     (or (contains? cfg :router)
+         (contains? cfg :handler)))))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [handler router port name host executors] :as cfg}]
-  (l/info :hint "starting http server"
-          :port port :host host :name name)
-
+  [_ {:keys [handler router port name host] :as cfg}]
+  (l/info :hint "starting http server" :port port :host host :name name)
   (let [options {:http/port port
                  :http/host host
-                 :ring/async true
-                 :xnio/dispatch (:default executors)}
-        handler (cond
-                  (fn? handler)  handler
-                  (some? router) (wrap-router cfg router)
-                  :else (ex/raise :type :internal
-                                  :code :invalid-argument
-                                  :hint "Missing `handler` or `router` option."))
+                 :http/max-body-size (:max-body-size cfg)
+                 :http/max-multipart-body-size (:max-multipart-body-size cfg)
+                 :xnio/io-threads (:io-threads cfg)
+                 :xnio/worker-threads (:worker-threads cfg)
+                 :xnio/dispatch (:executor cfg)
+                 :ring/async true}
+        handler (if (some? router)
+                  (wrap-router cfg router)
+                  handler)
         server  (yt/server handler (d/without-nils options))]
     (assoc cfg :server (yt/start! server))))
 
@@ -97,7 +101,7 @@
       (handler request respond
                (fn [cause]
                  (l/error :hint "unexpected error processing request"
-                          ::l/context (errors/get-error-context request cause)
+                          ::l/context (errors/get-context request)
                           :query-string (yrq/query request)
                           :cause cause)
                  (respond (yrs/response 500 "internal server error")))))))

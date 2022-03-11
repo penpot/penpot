@@ -90,7 +90,7 @@
 
 (s/def ::flags ::us/set-of-keywords)
 
-;; DEPRECATED PROPERTIES: should be removed in 1.10
+;; DEPRECATED PROPERTIES
 (s/def ::registration-enabled ::us/boolean)
 (s/def ::smtp-enabled ::us/boolean)
 (s/def ::telemetry-enabled ::us/boolean)
@@ -138,11 +138,15 @@
 (s/def ::oidc-scopes ::us/set-of-str)
 (s/def ::oidc-roles ::us/set-of-str)
 (s/def ::oidc-roles-attr ::us/keyword)
+(s/def ::oidc-email-attr ::us/keyword)
+(s/def ::oidc-name-attr ::us/keyword)
 (s/def ::host ::us/string)
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-server-host ::us/string)
-(s/def ::http-server-min-threads ::us/integer)
-(s/def ::http-server-max-threads ::us/integer)
+(s/def ::http-server-max-body-size ::us/integer)
+(s/def ::http-server-max-multipart-body-size ::us/integer)
+(s/def ::http-server-io-threads ::us/integer)
+(s/def ::http-server-worker-threads ::us/integer)
 (s/def ::http-session-idle-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-size ::us/integer)
@@ -239,12 +243,16 @@
                    ::oidc-user-uri
                    ::oidc-scopes
                    ::oidc-roles-attr
+                   ::oidc-email-attr
+                   ::oidc-name-attr
                    ::oidc-roles
                    ::host
                    ::http-server-host
                    ::http-server-port
-                   ::http-server-max-threads
-                   ::http-server-min-threads
+                   ::http-server-max-body-size
+                   ::http-server-max-multipart-body-size
+                   ::http-server-io-threads
+                   ::http-server-worker-threads
                    ::http-session-idle-max-age
                    ::http-session-updater-batch-max-age
                    ::http-session-updater-batch-max-size
@@ -339,8 +347,8 @@
       (when (ex/ex-info? e)
         (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
         (println "Error on validating configuration:")
-        (println (:explain (ex-data e))
-        (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")))
+        (println (us/pretty-explain (ex-data e)))
+        (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"))
       (throw e))))
 
 (def version

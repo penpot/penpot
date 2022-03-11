@@ -64,10 +64,6 @@ msgid "auth.login-submit"
 msgstr "Masuk"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-subtitle"
-msgstr "Masukkan detail anda di bawah ini"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
 msgstr "Senang bertemu denganmu lagi!"
 
