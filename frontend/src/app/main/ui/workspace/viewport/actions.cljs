@@ -160,14 +160,13 @@
          (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))
 
          (when (and hovering?
-                    (not shift?)
-                    (or ctrl? (not frame?))
+                    (or (not frame?) ctrl?)
                     (not @space?)
                     (not selected?)
                     (not edition)
                     (not drawing-path?)
                     (not drawing-tool))
-           (st/emit! (dw/select-shape (:id @hover)))))))))
+           (st/emit! (dw/select-shape (:id @hover) shift?))))))))
 
 (defn on-double-click
   [hover hover-ids drawing-path? objects edition]

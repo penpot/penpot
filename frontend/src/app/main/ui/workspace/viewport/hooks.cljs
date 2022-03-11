@@ -165,7 +165,7 @@
 
     (hooks/use-stream
      over-shapes-stream
-     (mf/deps page-id objects @ctrl?)
+     (mf/deps page-id objects)
      (fn [ids]
        (let [is-group?
              (fn [id]
@@ -174,12 +174,14 @@
              selected (mf/ref-val selected-ref)
              focus (mf/ref-val focus-ref)
 
+             ctrl? (mf/ref-val ctrl-ref)
+
              remove-xfm (mapcat #(cph/get-parent-ids objects %))
              remove-id? (cond-> (into #{} remove-xfm selected)
-                          (not @ctrl?)
+                          (not ctrl?)
                           (into (filter #(group-empty-space? % objects ids)) ids)
 
-                          @ctrl?
+                          ctrl?
                           (into (filter is-group?) ids))
 
              hover-shape (->> ids
