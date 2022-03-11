@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.12.2-beta
+### :boom: Breaking changes
+
+### :sparkles: New features
+
+### :bug: Bugs fixed
+
+- Fix issue with guides over shape handlers [Taiga #3032](https://tree.taiga.io/project/penpot/issue/3032)
+
+
 ## 1.12.1-beta
 ### :boom: Breaking changes
 
