@@ -7,10 +7,7 @@
 (ns app.http
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
-   [app.config :as cf]
    [app.http.doc :as doc]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]

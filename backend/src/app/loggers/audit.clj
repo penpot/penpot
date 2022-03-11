@@ -298,8 +298,9 @@
               (if (= (:status resp) 204)
                 true
                 (do
-                  (l/warn :hint "unable to archive events"
-                          :resp-status (:status resp))
+                  (l/error :hint "unable to archive events"
+                           :resp-status (:status resp)
+                           :resp-body (:body resp))
                   false))))
 
           (mark-as-archived [conn rows]
