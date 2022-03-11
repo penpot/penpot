@@ -259,9 +259,11 @@
               (gsh/points->rect))
 
           target-p (gpt/round (gpt/point raw-bounds))
+          target-width (max 1 (mth/round (:width raw-bounds)))
+          target-height (max 1 (mth/round (:height raw-bounds)))
 
-          ratio-width (/ (mth/round (:width raw-bounds)) (:width raw-bounds))
-          ratio-height (/ (mth/round (:height raw-bounds)) (:height raw-bounds))
+          ratio-width (/ target-width (:width raw-bounds))
+          ratio-height (/ target-height (:height raw-bounds))
 
           modifiers
           (-> modifiers

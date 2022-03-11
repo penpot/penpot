@@ -192,7 +192,7 @@
     (if (>= y 0) 2 3)))
 
 (defn round
-  "Change the precision of the point coordinates."
+  "Round the coordinates of the point to a precision"
   ([point]
    (round point 0))
 
@@ -201,6 +201,13 @@
    (assert (number? decimals))
    (Point. (mth/precision x decimals)
            (mth/precision y decimals))))
+
+(defn half-round
+  "Round the coordinates to the closest half-point"
+  [{:keys [x y] :as p}]
+  (assert (point? p))
+  (Point. (mth/half-round x)
+          (mth/half-round y)))
 
 (defn transform
   "Transform a point applying a matrix transformation."

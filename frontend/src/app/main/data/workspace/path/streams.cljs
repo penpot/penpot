@@ -18,6 +18,7 @@
    [potok.core :as ptk]))
 
 (defonce drag-threshold 5)
+(def zoom-half-pixel-precision 8)
 
 (defn dragging? [start zoom]
   (fn [current]
@@ -26,19 +27,38 @@
 (defn finish-edition? [event]
   (= (ptk/type event) :app.main.data.workspace.common/clear-edition-mode))
 
+(defn to-pixel-snap [position]
+  (let [zoom  (get-in @st/state [:workspace-local :zoom] 1)
+        layout      (get @st/state :workspace-layout)
+        snap-pixel? (contains? layout :snap-pixel-grid)]
+
+    (cond
+      (or (not snap-pixel?) (not (gpt/point? position)))
+      position
+
+      (>= zoom zoom-half-pixel-precision)
+      (gpt/half-round position)
+
+      :else
+      (gpt/round position))))
+
 (defn drag-stream
   ([to-stream]
    (drag-stream to-stream (rx/empty)))
 
   ([to-stream not-drag-stream]
-   (let [start @ms/mouse-position
+   (let [
          zoom  (get-in @st/state [:workspace-local :zoom] 1)
-         mouse-up (->> st/stream (rx/filter #(or (finish-edition? %)
-                                                 (ms/mouse-up? %))))
+
+         start (-> @ms/mouse-position to-pixel-snap)
+         mouse-up (->> st/stream
+                       (rx/filter #(or (finish-edition? %)
+                                       (ms/mouse-up? %))))
 
          position-stream
          (->> ms/mouse-position
               (rx/take-until mouse-up)
+              (rx/map to-pixel-snap)
               (rx/filter (dragging? start zoom))
               (rx/take 1))]
 
@@ -52,10 +72,6 @@
 
       (->> position-stream
            (rx/merge-map (fn [] to-stream)))))))
-
-(defn to-dec [num]
-  (let [k 50]
-    (* (mth/floor (/ num k)) k)))
 
 (defn move-points-stream
   [snap-toggled start-point selected-points points]
@@ -73,6 +89,7 @@
               (gpt/add position snap))
             position))]
     (->> ms/mouse-position
+         (rx/map to-pixel-snap)
          (rx/map check-path-snap))))
 
 (defn get-angle [node handler opposite]
@@ -116,6 +133,7 @@
                   (merge position (gpt/add position snap)))))
             position))]
     (->> ms/mouse-position
+         (rx/map to-pixel-snap)
          (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
          (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %))))
          (rx/map check-path-snap))))
@@ -136,6 +154,7 @@
              (rx/map snap/create-ranges))]
 
     (->> ms/mouse-position
+         (rx/map to-pixel-snap)
          (rx/with-latest vector ranges-stream)
          (rx/map (fn [[position ranges]]
                    (if snap-toggled
