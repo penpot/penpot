@@ -258,9 +258,17 @@
           (-> (gsh/transform-bounds (:points shape) center modifiers)
               (gsh/points->rect))
 
-          target-p (gpt/round (gpt/point raw-bounds))
+          flip-x? (neg? (get-in modifiers [:resize-vector :x]))
+          flip-y? (neg? (get-in modifiers [:resize-vector :y]))
+
           target-width (max 1 (mth/round (:width raw-bounds)))
           target-height (max 1 (mth/round (:height raw-bounds)))
+          target-p (cond-> (gpt/round (gpt/point raw-bounds))
+                     flip-x?
+                     (update :x + target-width)
+
+                     flip-y?
+                     (update :y + target-height))
 
           ratio-width (/ target-width (:width raw-bounds))
           ratio-height (/ target-height (:height raw-bounds))
