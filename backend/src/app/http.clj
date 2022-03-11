@@ -35,8 +35,8 @@
 (s/def ::port ::us/integer)
 (s/def ::host ::us/string)
 (s/def ::name ::us/string)
-(s/def ::executors (s/map-of keyword? ::wrk/executor))
 (s/def ::io-threads ::cf/http-server-io-threads)
+(s/def ::worker-threads integer?)
 
 (defmethod ig/prep-key ::server
   [_ cfg]
@@ -46,18 +46,21 @@
          (d/without-nils cfg)))
 
 (defmethod ig/pre-init-spec ::server [_]
-  (s/keys :req-un [::port ::host ::name ::executors]
-          :opt-un [::router ::handler ::io-threads]))
+  (s/keys :req-un [::port ::host ::name]
+          :opt-un [::router ::handler ::io-threads ::worker-threads ::wrk/executor]))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [handler router port name host executors] :as cfg}]
+  [_ {:keys [handler router port name host executor io-threads worker-threads] :as cfg}]
   (l/info :hint "starting http server"
           :port port :host host :name name)
 
-  (let [options {:http/port port
-                 :http/host host
-                 :ring/async true
-                 :xnio/dispatch (:default executors)}
+  (let [options (d/without-nils
+                 {:http/port port
+                  :http/host host
+                  :ring/async true
+                  :xnio/io-threads io-threads
+                  :xnio/worker-threads worker-threads
+                  :xnio/dispatch executor})
         handler (cond
                   (fn? handler)  handler
                   (some? router) (wrap-router cfg router)
