@@ -256,7 +256,7 @@
         current-transform (mf/deref refs/current-transform)
 
         selrect (:selrect shape)
-        transform (geom/transform-matrix shape {:no-flip true})]
+        transform (gsh/transform-matrix shape {:no-flip true})]
 
     (when (not (#{:move :rotate} current-transform))
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
@@ -355,9 +355,9 @@
   (let [shape (mf/use-memo
                (mf/deps shapes)
                #(->> shapes
-                     (map geom/transform-shape)
-                     (geom/selection-rect)
-                     (geom/setup {:type :rect})))]
+                     (map gsh/transform-shape)
+                     (gsh/selection-rect)
+                     (cp/setup-shape)))]
 
     [:& controls-selection
      {:shape shape
@@ -394,8 +394,7 @@
 
 (mf/defc single-selection
   [{:keys [shape zoom color disable-handlers on-move-selected on-context-menu] :as props}]
-  (let [shape (geom/transform-shape shape {:round-coords? false})]
-
+  (let [shape (gsh/transform-shape shape)]
     [:& controls-selection
      {:shape shape
       :zoom zoom

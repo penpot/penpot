@@ -346,6 +346,13 @@
            (tr "workspace.header.menu.hide-artboard-names")
            (tr "workspace.header.menu.show-artboard-names"))]]
 
+       [:li {:on-click #(st/emit! (toggle-flag :show-pixel-grid))}
+        [:span
+         (if (contains? layout :show-pixel-grid)
+           (tr "workspace.header.menu.hide-pixel-grid")
+           (tr "workspace.header.menu.show-pixel-grid"))]
+        [:span.shortcut (sc/get-tooltip :show-pixel-grid)]]
+
        [:li {:on-click #(st/emit! (-> (toggle-flag :hide-ui)
                                       (vary-meta assoc ::ev/origin "workspace-menu")))}
         [:span
@@ -375,13 +382,6 @@
            (tr "workspace.header.menu.disable-dynamic-alignment")
            (tr "workspace.header.menu.enable-dynamic-alignment"))]
         [:span.shortcut (sc/get-tooltip :toggle-alignment)]]
-
-       [:li {:on-click #(st/emit! (toggle-flag :show-pixel-grid))}
-        [:span
-         (if (contains? layout :show-pixel-grid)
-           (tr "workspace.header.menu.hide-pixel-grid")
-           (tr "workspace.header.menu.show-pixel-grid"))]
-        [:span.shortcut (sc/get-tooltip :show-pixel-grid)]]
 
        [:li {:on-click #(st/emit! (toggle-flag :snap-pixel-grid))}
         [:span
