@@ -250,14 +250,29 @@
            :zoom zoom}])
 
        (when show-selection-handlers?
+         [:& selection/selection-area
+          {:shapes selected-shapes
+           :zoom zoom
+           :edition edition
+           :disable-handlers (or drawing-tool edition @space? @ctrl?)
+           :on-move-selected on-move-selected
+           :on-context-menu on-menu-selected}])
+
+       (when show-rules?
+         [:& guides/viewport-guides
+          {:zoom zoom
+           :vbox vbox
+           :hover-frame frame-parent
+           :modifiers modifiers
+           :disabled-guides? disabled-guides?}])
+
+       (when show-selection-handlers?
          [:& selection/selection-handlers
           {:selected selected
            :shapes selected-shapes
            :zoom zoom
            :edition edition
-           :disable-handlers (or drawing-tool edition @space?)
-           :on-move-selected on-move-selected
-           :on-context-menu on-menu-selected}])
+           :disable-handlers (or drawing-tool edition @space?)}])
 
        (when show-measures?
          [:& msr/measurement
@@ -363,16 +378,7 @@
          :viewport-ref viewport-ref}]
 
        (when show-rules?
-         [:*
-          [:& rules/rules
-           {:zoom zoom
-            :vbox vbox
-            :selected-shapes selected-shapes}]
-
-          [:& guides/viewport-guides
-           {:zoom zoom
-            :vbox vbox
-            :hover-frame frame-parent
-            :modifiers modifiers
-            :disabled-guides? disabled-guides?}]])]]]))
-
+         [:& rules/rules
+          {:zoom zoom
+           :vbox vbox
+           :selected-shapes selected-shapes}])]]]))
