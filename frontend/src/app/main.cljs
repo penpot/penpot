@@ -53,7 +53,7 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (rx/merge
-       (rx/of (ptk/event ::ev/initialize)
+       (rx/of (ev/initialize)
               (du/initialize-profile))
        (->> stream
             (rx/filter du/profile-fetched?)
@@ -79,6 +79,7 @@
   []
   (mf/unmount (dom/get-element "app"))
   (mf/unmount (dom/get-element "modal"))
+  (st/emit! (ev/initialize))
   (init-ui))
 
 (defn ^:dev/after-load after-load
@@ -91,4 +92,3 @@
  (fn [_ _ old-value current-value]
    (when (not= old-value current-value)
      (reinit))))
-
