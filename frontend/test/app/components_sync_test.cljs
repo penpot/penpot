@@ -12,7 +12,8 @@
    [beicon.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cljs.test :as t :include-macros true]
-   [linked.core :as lks]))
+   [linked.core :as lks]
+   [potok.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -34,38 +35,30 @@
 
             update-shape (fn [shape]
                            (merge shape {:fill-color clr/test
-                                         :fill-opacity 0.5}))]
+                                         :fill-opacity 0.5}))
 
-        (->> state
-             (the/do-watch-update (dwc/update-shapes [(:id shape1)]
-                                                      update-shape))
-             (rx/do
-               (fn [new-state]
-                 (let [shape1 (thp/get-shape new-state :shape1)
+            store (the/prepare-store state done
+             (fn [new-state]
+               (let [shape1 (thp/get-shape new-state :shape1)
 
-                       [[group shape1] [c-group c-shape1] component]
-                       (thl/resolve-instance-and-main
-                         new-state
-                         (:id instance1))
+                     [[group shape1] [c-group c-shape1] component]
+                     (thl/resolve-instance-and-main
+                       new-state
+                       (:id instance1))
 
-                       file (dwlh/get-local-file new-state)]
+                     file (dwlh/get-local-file new-state)]
 
-                   (t/is (= (:fill-color shape1) clr/test))
-                   (t/is (= (:fill-opacity shape1) 0.5))
-                   (t/is (= (:touched shape1) #{:fill-group}))
-                   (t/is (= (:fill-color c-shape1) clr/white))
-                   (t/is (= (:fill-opacity c-shape1) 1))
-                   (t/is (= (:touched c-shape1) nil)))))
+                 (t/is (= (:fill-color shape1) clr/test))
+                 (t/is (= (:fill-opacity shape1) 0.5))
+                 (t/is (= (:touched shape1) #{:fill-group}))
+                 (t/is (= (:fill-color c-shape1) clr/white))
+                 (t/is (= (:fill-opacity c-shape1) 1))
+                 (t/is (= (:touched c-shape1) nil)))))]
 
-             (rx/subs
-               done
-               #(do
-                  (println (.-stack %))
-                  (done)))))
-
-        (catch :default e
-          (println (.-stack e))
-          (done)))))
+        (ptk/emit!
+          store
+          (dwc/update-shapes [(:id shape1)] update-shape)
+          :the/end)))))
 
 (t/deftest test-reset-changes
   (t/async done
@@ -84,40 +77,29 @@
 
             update-shape (fn [shape]
                            (merge shape {:fill-color clr/test
-                                         :fill-opacity 0.5}))]
+                                         :fill-opacity 0.5}))
 
-        (->> state
-             (the/do-watch-update (dwc/update-shapes [(:id shape1)]
-                                                      update-shape))
+            store (the/prepare-store state done
+              (fn [new-state]
+                (let [shape1 (thp/get-shape new-state :shape1)
 
-             (rx/mapcat #(the/do-watch-update
-                           (dwl/reset-component (:id instance1)) %))
+                      [[group shape1] [c-group c-shape1] component]
+                      (thl/resolve-instance-and-main
+                        new-state
+                        (:id instance1))
 
-             (rx/do
-               (fn [new-state]
-                 (let [shape1 (thp/get-shape new-state :shape1)
+                      file (dwlh/get-local-file new-state)]
 
-                       [[group shape1] [c-group c-shape1] component]
-                       (thl/resolve-instance-and-main
-                         new-state
-                         (:id instance1))
+                  (t/is (= (:fill-color shape1) clr/white))
+                  (t/is (= (:fill-opacity shape1) 1))
+                  (t/is (= (:touched shape1) nil))
+                  (t/is (= (:fill-color c-shape1) clr/white))
+                  (t/is (= (:fill-opacity c-shape1) 1))
+                  (t/is (= (:touched c-shape1) nil)))))]
 
-                       file (dwlh/get-local-file new-state)]
-
-                   (t/is (= (:fill-color shape1) clr/white))
-                   (t/is (= (:fill-opacity shape1) 1))
-                   (t/is (= (:touched shape1) nil))
-                   (t/is (= (:fill-color c-shape1) clr/white))
-                   (t/is (= (:fill-opacity c-shape1) 1))
-                   (t/is (= (:touched c-shape1) nil)))))
-
-             (rx/subs
-               done
-               #(do
-                  (println (.-stack %))
-                  (done)))))
-
-        (catch :default e
-          (println (.-stack e))
-          (done)))))
+        (ptk/emit!
+          store
+          (dwc/update-shapes [(:id shape1)] update-shape)
+          (dwl/reset-component (:id instance1))
+          :the/end)))))
 
