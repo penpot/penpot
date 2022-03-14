@@ -34,7 +34,7 @@
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
-(log/set-level! :debug)
+(log/set-level! :warn)
 
 (defn- log-changes
   [changes file]
@@ -610,15 +610,18 @@
                 :library (dwlh/pretty-file library-id state))
       (let [file            (dwlh/get-file state file-id)
 
-            changes         (-> (pcb/empty-changes it))
-            library-changes (-> changes
-                                (dwlh/generate-sync-library file-id :components library-id state)
-                                (dwlh/generate-sync-library file-id :colors library-id state)
-                                (dwlh/generate-sync-library file-id :typographies library-id state))
-            file-changes    (-> library-changes
-                                (dwlh/generate-sync-file file-id :components library-id state)
-                                (dwlh/generate-sync-file file-id :colors library-id state)
-                                (dwlh/generate-sync-file file-id :typographies library-id state))
+            library-changes (reduce
+                              pcb/concat-changes
+                              (pcb/empty-changes it)
+                              [(dwlh/generate-sync-library it file-id :components library-id state)
+                               (dwlh/generate-sync-library it file-id :colors library-id state)
+                               (dwlh/generate-sync-library it file-id :typographies library-id state)])
+            file-changes    (reduce
+                              pcb/concat-changes
+                              (pcb/empty-changes it)
+                              [(dwlh/generate-sync-file it file-id :components library-id state)
+                               (dwlh/generate-sync-file it file-id :colors library-id state)
+                               (dwlh/generate-sync-file it file-id :typographies library-id state)])
 
             changes         (pcb/concat-changes library-changes file-changes)]
 
@@ -663,9 +666,11 @@
                 :file (dwlh/pretty-file file-id state)
                 :library (dwlh/pretty-file library-id state))
       (let [file    (dwlh/get-file state file-id)
-            changes (-> (pcb/empty-changes it)
-                        (dwlh/generate-sync-file file-id :components library-id state)
-                        (dwlh/generate-sync-library file-id :components library-id state))]
+            changes (reduce
+                     pcb/concat-changes
+                     (pcb/empty-changes it)
+                     [(dwlh/generate-sync-file it file-id :components library-id state)
+                      (dwlh/generate-sync-library it file-id :components library-id state)])]
         (when (seq (:redo-changes changes))
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
                                                                          (:redo-changes changes)

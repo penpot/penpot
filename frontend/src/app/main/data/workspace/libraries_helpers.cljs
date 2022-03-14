@@ -22,8 +22,6 @@
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
 
-;; (defonce empty-changes [[] []])
-
 (defonce color-sync-attrs
   [[:fill-color-ref-id   :fill-color-ref-file   :color    :fill-color]
    [:fill-color-ref-id   :fill-color-ref-file   :gradient :fill-color-gradient]
@@ -128,7 +126,7 @@
   [it shapes objects page-id file-id]
   (if (and (= (count shapes) 1)
            (:component-id (first shapes)))
-    (pcb/empty-changes it)
+    [(first shapes) (pcb/empty-changes it)]
     (let [name        (if (= 1 (count shapes)) (:name (first shapes)) "Component-1")
           [path name] (cph/parse-path-name name)
 
@@ -185,7 +183,7 @@
 (defn generate-sync-file
   "Generate changes to synchronize all shapes in all pages of the given file,
   that use assets of the given type in the given library."
-  [changes file-id asset-type library-id state]
+  [it file-id asset-type library-id state]
   (s/assert #{:colors :components :typographies} asset-type)
   (s/assert ::us/uuid file-id)
   (s/assert ::us/uuid library-id)
@@ -197,21 +195,23 @@
 
   (let [file (get-file state file-id)]
     (loop [pages (vals (get file :pages-index))
-           changes changes]
+           changes (pcb/empty-changes it)]
       (if-let [page (first pages)]
         (recur (next pages)
-               (generate-sync-container changes
-                                        asset-type
-                                        library-id
-                                        state
-                                        (cph/make-container page :page)))
+               (pcb/concat-changes
+                 changes
+                 (generate-sync-container it
+                                          asset-type
+                                          library-id
+                                          state
+                                          (cph/make-container page :page))))
         changes))))
 
 (defn generate-sync-library
   "Generate changes to synchronize all shapes in all components of the
   local library of the given file, that use assets of the given type in
   the given library."
-  [changes file-id asset-type library-id state]
+  [it file-id asset-type library-id state]
 
   (log/info :msg "Sync local components with library"
             :asset-type asset-type
@@ -220,20 +220,22 @@
 
   (let [file (get-file state file-id)]
     (loop [local-components (vals (get file :components))
-           changes changes]
+           changes (pcb/empty-changes it)]
       (if-let [local-component (first local-components)]
         (recur (next local-components)
-               (generate-sync-container changes
-                                        asset-type
-                                        library-id
-                                        state
-                                        (cph/make-container local-component :component)))
+               (pcb/concat-changes
+                 changes
+                 (generate-sync-container it
+                                          asset-type
+                                          library-id
+                                          state
+                                          (cph/make-container local-component :component))))
         changes))))
 
 (defn- generate-sync-container
   "Generate changes to synchronize all shapes in a particular container (a page
   or a component) that use assets of the given type in the given library."
-  [changes asset-type library-id state container]
+  [it asset-type library-id state container]
 
   (if (cph/page? container)
     (log/debug :msg "Sync page in local file" :page-id (:id container))
@@ -243,7 +245,9 @@
         linked-shapes        (->> (vals (:objects container))
                                   (filter has-asset-reference?))]
     (loop [shapes (seq linked-shapes)
-           changes changes]
+           changes (-> (pcb/empty-changes it)
+                       (pcb/with-container container)
+                       (pcb/with-objects (:objects container)))]
       (if-let [shape (first shapes)]
         (recur (next shapes)
                (generate-sync-shape asset-type
@@ -530,12 +534,14 @@
         component     (cph/get-component libraries
                                          (:component-file shape-inst)
                                          (:component-id shape-inst))
-        shape-main    (cph/get-shape component (:shape-ref shape-inst))
+        shape-main    (when component
+                        (cph/get-shape component (:shape-ref shape-inst)))
 
         initial-root? (:component-root? shape-inst)
 
         root-inst     shape-inst
-        root-main     (cph/get-component-root component)]
+        root-main     (when component
+                        (cph/get-component-root component))]
 
     (if component
       (generate-sync-shape-direct-recursive changes
@@ -549,7 +555,7 @@
                                             initial-root?)
       ; If the component is not found, because the master component has been
       ; deleted or the library unlinked, detach the instance.
-      (generate-detach-instance changes shape-id container))))
+      (generate-detach-instance changes container shape-id))))
 
 (defn- generate-sync-shape-direct-recursive
   [changes container shape-inst component shape-main root-inst root-main reset? initial-root?]
@@ -559,7 +565,7 @@
 
   (if (nil? shape-main)
     ;; This should not occur, but protect against it in any case
-    (generate-detach-instance changes (:id shape-inst) container)
+    (generate-detach-instance changes container (:id shape-inst))
     (let [omit-touched?        (not reset?)
           clear-remote-synced? (and initial-root? reset?)
           set-remote-synced?   (and (not initial-root?) reset?)
