@@ -33,26 +33,20 @@
 ### :heart: Community contributions by (Thank you!)
 
 ## 1.12.2-beta
-### :boom: Breaking changes
-
-### :sparkles: New features
 
 ### :bug: Bugs fixed
 
 - Fix issue with guides over shape handlers [Taiga #3032](https://tree.taiga.io/project/penpot/issue/3032)
 - Fix problem with shift+ctrl+click to select [#1671](https://github.com/penpot/penpot/issues/1671)
+- Fix ellipsis in long page names [Taiga #2962](https://tree.taiga.io/project/penpot/issue/2962)
 
 ## 1.12.1-beta
-### :boom: Breaking changes
-
-### :sparkles: New features
 
 ### :bug: Bugs fixed
 
 - Fix length of names in sidebar [Taiga #2962](https://tree.taiga.io/project/penpot/issue/2962)
 - Fix issues on loki integration
 
-### :heart: Community contributions by (Thank you!)
 
 ## 1.12.0-beta
 
