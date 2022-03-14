@@ -133,6 +133,19 @@
                      (dissoc ::context)
                      (cond-> origin (assoc :origin origin)))}))))
 
+(defn- filter-props
+  "Removes complex data types from props."
+  [data]
+  (into {}
+        (map (fn [[k v :as kv]]
+               (cond
+                 (map? v)    [k :placeholder/map]
+                 (vector? v) [k :placeholder/vec]
+                 (set? v)    [k :placeholder/set]
+                 (coll? v)   [k :placeholder/coll]
+                 :else       kv)))
+        data))
+
 (defmethod process-event ::generic-action
   [event]
   (let [type  (ptk/type event)
@@ -143,8 +156,9 @@
 
     {:type    "action"
      :name    (or (::name mdata) (name type))
-     :props   (merge (d/without-nils data)
-                     (d/without-nils (::props mdata)))
+     :props   (-> (merge (d/without-nils data)
+                         (d/without-nils (::props mdata)))
+                  (filter-props))
      :context (d/without-nils
                {:event-origin (::origin mdata)
                 :event-namespace (namespace type)
