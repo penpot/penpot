@@ -332,9 +332,15 @@
                 (obj/set! props "fill" (str "url(#fill-0-" render-id ")"))
 
                 (and last-stroke? one-fill?)
-                (obj/merge!
-                 props
-                 (attrs/extract-fill-attrs (get-in shape [:fills 0]) render-id 0))
+                (let [fill-props
+                      (attrs/extract-fill-attrs (get-in shape [:fills 0]) render-id 0)
+
+                      style (-> (obj/get props "style")
+                                (obj/clone)
+                                (obj/merge! (obj/get fill-props "style")))]
+                  (cond-> (obj/merge! props fill-props)
+                    (some? style)
+                    (obj/set! "style" style)))
 
                 :else
                 (-> props
