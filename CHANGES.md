@@ -5,6 +5,7 @@
 ### :boom: Breaking changes
 ### :sparkles: New features
 
+- Set the artboard layer fixed at the top side of the layers [Taiga #2636](https://tree.taiga.io/project/penpot/us/2636)
 - Set an artboard as the file thumbnail [Taiga #1526](https://tree.taiga.io/project/penpot/us/1526)
 - Social login redesign [Taiga #2974](https://tree.taiga.io/project/penpot/task/2974)
 - Add border radius to our artboars [Taiga #2056](https://tree.taiga.io/project/penpot/us/2056)
