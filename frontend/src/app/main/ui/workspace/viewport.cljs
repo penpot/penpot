@@ -274,22 +274,6 @@
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
 
-       (when show-rules?
-         [:& guides/viewport-guides
-          {:zoom zoom
-           :vbox vbox
-           :hover-frame frame-parent
-           :modifiers modifiers
-           :disabled-guides? disabled-guides?}])
-
-       (when show-selection-handlers?
-         [:& selection/selection-handlers
-          {:selected selected
-           :shapes selected-shapes
-           :zoom zoom
-           :edition edition
-           :disable-handlers (or drawing-tool edition @space?)}])
-
        (when show-measures?
          [:& msr/measurement
           {:bounds vbox
@@ -396,4 +380,30 @@
          [:& rules/rules
           {:zoom zoom
            :vbox vbox
-           :selected-shapes selected-shapes}])]]]))
+           :selected-shapes selected-shapes}])
+
+       (when show-rules?
+         [:& guides/viewport-guides
+          {:zoom zoom
+           :vbox vbox
+           :hover-frame frame-parent
+           :modifiers modifiers
+           :disabled-guides? disabled-guides?}])
+
+       (when show-selection-handlers?
+         [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
+          [:defs
+           (let [rule-area-size (/ rules/rule-area-size zoom)]
+             ;; This clip is so the handlers are not over the rules
+             [:clipPath {:id "clip-handlers"}
+              [:rect {:x (+ (:x vbox) rule-area-size)
+                      :y (+ (:y vbox) rule-area-size)
+                      :width (- (:width vbox) (* rule-area-size 2))
+                      :height (- (:height vbox) (* rule-area-size 2))}]])]
+
+          [:& selection/selection-handlers
+           {:selected selected
+            :shapes selected-shapes
+            :zoom zoom
+            :edition edition
+            :disable-handlers (or drawing-tool edition @space?)}]])]]]))

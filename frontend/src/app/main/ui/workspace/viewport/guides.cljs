@@ -232,7 +232,7 @@
      :width (/ guide-creation-width zoom)
      :height (:height vbox)}
 
-    {:x (+ (:x vbox) (+ guide-creation-margin-top zoom))
+    {:x (+ (:x vbox) (/ guide-creation-margin-top zoom))
      :y (:y vbox)
      :width (:width vbox)
      :height (/ guide-creation-height zoom)}))
