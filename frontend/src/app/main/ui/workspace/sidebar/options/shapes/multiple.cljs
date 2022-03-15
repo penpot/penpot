@@ -13,6 +13,7 @@
    [app.common.text :as txt]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
@@ -280,6 +281,9 @@
 
      (when-not (empty? stroke-ids)
        [:& stroke-menu {:type type :ids stroke-ids :show-caps show-caps :values stroke-values}])
+     
+     (when-not (empty? shapes)
+       [:& color-selection-menu {:type type :shapes (vals objects-no-measures)}])
 
      (when-not (empty? shadow-ids)
        [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])

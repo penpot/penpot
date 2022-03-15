@@ -10,6 +10,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu fill-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
@@ -58,7 +59,6 @@
                        :attrs text-attrs}))]
 
     [:*
-
      [:& measures-menu
       {:ids ids
        :type type
@@ -81,6 +81,9 @@
      [:& stroke-menu {:ids ids
                       :type type
                       :values stroke-values}]
+
+     (when (= :multiple (:fills fill-values))
+       [:& color-selection-menu {:type type :shapes [shape]}])
 
      [:& shadow-menu
       {:ids ids

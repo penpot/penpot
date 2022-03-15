@@ -236,5 +236,13 @@
                    (events/listen globals/window EventType.CLICK on-click)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
+    
+    (mf/use-layout-effect
+     (mf/deps handle-mouse-wheel)
+     (fn []
+       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:pasive false})]]
+         #(doseq [key keys]
+            (events/unlistenByKey key)))))
+
 
     [:> :input props]))

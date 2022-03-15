@@ -4,6 +4,9 @@
 
 ### :boom: Breaking changes
 ### :sparkles: New features
+
+- Added selected colors widget in right sidebar [Taiga #2485](https://tree.taiga.io/project/penpot/us/2485)
+
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
