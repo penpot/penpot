@@ -295,3 +295,97 @@ span.element-name {
     padding: 1px;
   }
 }
+
+#layers {
+  .tool-window-bar {
+    display: flex;
+    justify-content: space-between;
+    height: 32px;
+    margin-top: 8px;
+
+    &.search {
+      .search-box {
+        border: 1px solid $color-primary;
+        border-radius: 4px;
+        height: 32px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        input {
+          border: 0;
+          width: 100%;
+          background-color: $color-gray-50;
+          color: $color-white;
+          font-size: 12px;
+          height: 16px;
+        }
+        span {
+          height: 16px;
+          overflow: hidden;
+        }
+        .filter,
+        .clear {
+          width: 35px;
+          &.active {
+            svg {
+              fill: $color-primary;
+            }
+          }
+        }
+      }
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+      margin: 0 2px 0 5px;
+      cursor: pointer;
+    }
+  }
+}
+.active-filters {
+  margin-top: 5px;
+  line-height: 26px;
+  font-size: 11px;
+  margin: 0 0.5rem;
+  span {
+    background-color: $color-primary;
+    color: $color-black;
+    padding: 3px 5px;
+    margin: 0 2px;
+    border-radius: 4px;
+    cursor: pointer;
+    svg {
+      width: 7px;
+      height: 7px;
+      vertical-align: middle;
+      margin-left: 5px;
+    }
+  }
+}
+
+.filters-container {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  top: 40px;
+  left: 8px;
+  background-color: $color-white;
+  color: $color-gray-50;
+  border-radius: 4px;
+  span {
+    padding: 10px 20px 10px 10px;
+    border-radius: 4px;
+    svg {
+      width: 16px;
+      height: 16px;
+      margin-right: 10px;
+      vertical-align: middle;
+      fill: $color-gray-30;
+    }
+
+    &:hover {
+      background-color: $color-primary-lighter;
+    }
+  }
+}

@@ -3365,6 +3365,30 @@ msgstr "History (%s)"
 msgid "workspace.sidebar.layers"
 msgstr "Layers"
 
+msgid "workspace.sidebar.layers.search"
+msgstr "Search layers"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "Artboards"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "Groups"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "Masks"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "Components"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "Texts"
+
+msgid "workspace.sidebar.layers.images"
+msgstr "Images"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Shapes"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Imported SVG Attributes"
