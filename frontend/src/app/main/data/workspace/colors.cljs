@@ -390,3 +390,32 @@
     (update [_ state]
       (-> state
           (assoc-in [:workspace-global :editing-stop] spot)))))
+
+(defn color-att->text
+  [color]
+  {:fill-color (:color color)
+   :fill-opacity (:opacity color)
+   :fill-color-ref-id (:id color)
+   :fill-color-ref-file (:file-id color)
+   :fill-color-gradient (:gradient color)})
+
+(defn change-text-color
+  [old-color new-color index node]
+  (let [fills (:fills node)
+        parsed-color (d/without-nils (color-att->text old-color))
+        parsed-new-color (d/without-nils (color-att->text new-color))
+        has-color? (d/index-of fills parsed-color)]
+    (cond-> node
+      (some? has-color?)
+      (assoc-in [:fills index] parsed-new-color))))
+
+(defn change-color-in-selected
+  [new-color shapes-by-color old-color]
+  (ptk/reify ::change-color-in-selected
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rx/from shapes-by-color)
+           (rx/map (fn [shape] (case (:prop shape)
+                                 :fill (change-fill [(:shape-id shape)] new-color (:index shape))
+                                 :stroke (change-stroke [(:shape-id shape)] new-color (:index shape))
+                                 :content (dwt/update-text-with-function (:shape-id shape) (partial change-text-color old-color new-color (:index shape))))))))))

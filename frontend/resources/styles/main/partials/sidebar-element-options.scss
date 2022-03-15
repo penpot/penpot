@@ -1534,3 +1534,44 @@
     margin-right: $size-2;
   }
 }
+
+.expand-colors {
+  cursor: pointer;
+  display: flex;
+
+  .text {
+    color: $color-gray-30;
+    font-size: 0.75rem;
+    padding-left: 10px;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: $color-gray-20;
+    stroke: $color-gray-20;
+  }
+}
+
+.selected-colors {
+  .color-data {
+    margin-bottom: 0;
+    padding-bottom: 5px;
+
+    svg {
+      visibility: hidden;
+    }
+
+    .percentil {
+      margin-bottom: 0;
+    }
+  }
+
+  .color-data:hover {
+    background-color: $color-gray-60;
+
+    svg {
+      visibility: visible;
+    }
+  }
+}

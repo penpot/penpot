@@ -14,6 +14,7 @@
    [app.main.ui.components.color-input :refer [color-input]]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
@@ -45,7 +46,7 @@
                  :on-change handle-change-color
                  :on-close handle-close
                  :data color}]
-      (handle-open)
+      (handle-open color)
       (modal/show! :colorpicker props))))
 
 (defn opacity->string [opacity]
@@ -53,13 +54,16 @@
     ""
     (str (-> opacity
              (d/coalesce 1)
-             (* 100)))))
+             (* 100)
+             (fmt/format-number)))))
 
 (defn remove-multiple [v]
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [index color disable-gradient disable-opacity on-change on-reorder on-detach on-open on-close title on-remove disable-drag select-all on-blur]}]
+  [{:keys [index color disable-gradient disable-opacity on-change
+           on-reorder on-detach on-open on-close title on-remove
+           disable-drag select-all on-blur select-only]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         file-colors     (mf/deref refs/workspace-file-colors)
         shared-libs     (mf/deref refs/workspace-libraries)
@@ -92,7 +96,11 @@
         handle-pick-color (fn [color]
                             (when on-change (on-change (merge uc/empty-color color))))
 
-        handle-open (fn [] (when on-open (on-open)))
+        handle-select (fn []
+                        (select-only color))
+
+        handle-open (fn [color]
+                      (when on-open (on-open (merge uc/empty-color color))))
 
         handle-close (fn [value opacity id file-id]
                        (when on-close (on-close value opacity id file-id)))
@@ -104,14 +112,12 @@
         handle-opacity-change (fn [value]
                                 (change-opacity (/ value 100)))
 
-        handle-click-color (mf/use-callback
-                            (mf/deps color)
-                            (color-picker-callback color
-                                                   disable-gradient
-                                                   disable-opacity
-                                                   handle-pick-color
-                                                   handle-open
-                                                   handle-close))
+        handle-click-color (color-picker-callback color
+                                                  disable-gradient
+                                                  disable-opacity
+                                                  handle-pick-color
+                                                  handle-open
+                                                  handle-close)
 
         prev-color (h/use-previous color)
 
@@ -155,14 +161,23 @@
            {:on-mouse-enter #(reset! hover-detach true)
             :on-mouse-leave #(reset! hover-detach false)
             :on-click detach-value}
-           (if @hover-detach i/unchain i/chain)])]
+           (if @hover-detach i/unchain i/chain)])
+
+        (when select-only
+          [:div.element-set-actions-button {:on-click handle-select}
+           i/pointer-inner])]
 
        ;; Rendering a gradient
        (and (not (uc/multiple? color))
             (:gradient color)
             (get-in color [:gradient :type]))
-       [:div.color-info
-        [:div.color-name (cb/gradient-type->string (get-in color [:gradient :type]))]]
+       [:*
+        [:div.color-info
+         [:div.color-name (cb/gradient-type->string (get-in color [:gradient :type]))]]
+        (when select-only
+          [:div.element-set-actions-button {:on-click handle-select}
+           i/pointer-inner])]
+  
 
        ;; Rendering a plain color/opacity
        :else
@@ -186,7 +201,10 @@
                               :on-blur on-blur
                               :on-change handle-opacity-change
                               :min 0
-                              :max 100}]])])
+                              :max 100}]])
+        (when select-only
+          [:div.element-set-actions-button {:on-click handle-select}
+           i/pointer-inner])])
      (when (some? on-remove)
        [:div.element-set-actions-button.remove {:on-click on-remove} i/minus])]))
 

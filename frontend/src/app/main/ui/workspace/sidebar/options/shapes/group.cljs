@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-attrs component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
@@ -49,14 +50,18 @@
      (when-not (empty? fill-ids)
        [:& fill-menu {:type type :ids fill-ids :values fill-values}])
 
+     (when-not (empty? stroke-ids)
+       [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
+
+     (when (> (count objects) 2)
+       [:& color-selection-menu {:type type
+                                 :shapes (vals objects)}])
+
      (when-not (empty? shadow-ids)
        [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])
 
      (when-not (empty? blur-ids)
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
-
-     (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
 
      (when-not (empty? text-ids)
        [:& ot/text-menu {:type type :ids text-ids :values text-values}])
