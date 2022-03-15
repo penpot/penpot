@@ -168,3 +168,10 @@
           nm (str/trim (str/lower name))]
       (str/includes? nm st))))
 
+(defn tap
+  "Works like rx/tap but for normal collections"
+  ;; Signature for transducer use
+  ([f]
+   (map #(do (f %) %)))
+  ([f coll]
+   (map #(do (f %) %) coll)))

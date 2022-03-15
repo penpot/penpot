@@ -69,6 +69,8 @@
          (rx/flat-map
           (fn [[frame-id point]]
             (->> (snap/get-snap-points page-id frame-id remove-snap? zoom point coord)
+                 (rx/map #(mapcat second %))
+                 (rx/map #(map :pt %))
                  (rx/map #(vector point % coord)))))
          (rx/reduce conj []))))
 
@@ -157,22 +159,29 @@
 
 (mf/defc snap-points
   {::mf/wrap [mf/memo]}
-  [{:keys [layout zoom objects selected page-id drawing transform modifiers focus] :as props}]
+  [{:keys [layout zoom objects selected page-id drawing modifiers focus] :as props}]
   (us/assert set? selected)
   (let [shapes  (into [] (keep (d/getf objects)) selected)
 
         filter-shapes
         (into selected (mapcat #(cph/get-children-ids objects %)) selected)
 
-        remove-snap?
+        remove-snap-base?
         (mf/with-memo [layout filter-shapes objects focus]
           (snap/make-remove-snap layout filter-shapes objects focus))
 
+        remove-snap?
+        (mf/use-callback
+         (mf/deps remove-snap-base?)
+         (fn [{:keys [type grid] :as snap}]
+           (or (remove-snap-base? snap)
+               (and (= type :layout) (= grid :square))
+               (= type :guide))))
+
         shapes    (if drawing [drawing] shapes)]
-    (when (or drawing transform)
-      [:& snap-feedback {:shapes shapes
-                         :page-id page-id
-                         :remove-snap? remove-snap?
-                         :zoom zoom
-                         :modifiers modifiers}])))
+    [:& snap-feedback {:shapes shapes
+                       :page-id page-id
+                       :remove-snap? remove-snap?
+                       :zoom zoom
+                       :modifiers modifiers}]))
 

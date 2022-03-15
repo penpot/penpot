@@ -9,7 +9,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
+   [app.common.math :as mth :refer [close?]]
    [app.common.pages :refer [make-minimal-shape]]
    [clojure.test :as t]))
 

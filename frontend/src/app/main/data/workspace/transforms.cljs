@@ -678,7 +678,9 @@
            (rx/of (finish-transform))
            (rx/concat
             (->> position
+                 ;; We ask for the snap position but we continue even if the result is not available
                  (rx/with-latest vector snap-delta)
+                 ;; We try to use the previous snap so we don't have to wait for the result of the new
                  (rx/map snap/correct-snap-point)
                  (rx/map #(hash-map :displacement (gmt/translate-matrix %)))
                  (rx/map (partial set-modifiers ids))

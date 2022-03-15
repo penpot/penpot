@@ -55,10 +55,6 @@
           (and (d/not-empty? focus)
                (not (cp/is-in-focus? objects focus id)))))))
 
-(defn- flatten-to-points
-  [query-result]
-  (mapcat (fn [[_ data]] (map :pt data)) query-result))
-
 (defn- calculate-distance [query-result point coord]
   (->> query-result
        (map (fn [[value _]] [(mth/abs (- value (coord point))) [(coord point) value]]))))
@@ -90,8 +86,7 @@
                    :axis coord
                    :ranges [[(- value (/ 0.5 zoom)) (+ value (/ 0.5 zoom))]]})
          (rx/take 1)
-         (rx/map (remove-from-snap-points remove-snap?))
-         (rx/map flatten-to-points))))
+         (rx/map (remove-from-snap-points remove-snap?)))))
 
 (defn- search-snap
   [page-id frame-id points coord remove-snap? zoom]
@@ -369,7 +364,12 @@
                0)
           dy (if (not= 0 (:y snap-delta))
                (- (+ (:y snap-pos) (:y snap-delta)) (:y position))
-               0)]
+               0)
+
+          ;; If the deltas (dx,dy) are bigger than the snap-accuracy means the stored snap
+          ;; is not valid, so we change to 0
+          dx (if (> (mth/abs dx) snap-accuracy) 0 dx)
+          dy (if (> (mth/abs dy) snap-accuracy) 0 dy)]
       (-> position
           (update :x + dx)
           (update :y + dy)))

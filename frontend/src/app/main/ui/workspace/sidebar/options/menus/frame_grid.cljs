@@ -205,7 +205,7 @@
          [:> numeric-input
           {:placeholder "Auto"
            :value (or (:item-length params) "")
-           :default nil
+           :nillable true
            :on-change handle-change-item-length}]])
 
       (when (#{:row :column} type)
@@ -214,11 +214,15 @@
                         :class "pixels"
                         :value (:gutter params)
                         :min 0
+                        :nillable true
+                        :default 0
                         :placeholder "0"
                         :on-change (handle-change :params :gutter)}]
          [:& input-row {:label (tr "workspace.options.grid.params.margin")
                         :class "pixels"
                         :min 0
+                        :nillable true
+                        :default 0
                         :placeholder "0"
                         :value (:margin params)
                         :on-change (handle-change :params :margin)}]])

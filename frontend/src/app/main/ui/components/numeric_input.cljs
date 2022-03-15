@@ -31,6 +31,7 @@
         on-blur      (obj/get props "onBlur")
         title        (obj/get props "title")
         default-val  (obj/get props "default")
+        nillable     (obj/get props "nillable")
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -71,21 +72,27 @@
 
         parse-value
         (mf/use-callback
-          (mf/deps ref min-val max-val value)
+          (mf/deps ref min-val max-val value nillable default-val)
           (fn []
             (let [input-node (mf/ref-val ref)
                   new-value (-> (dom/get-value input-node)
                                 (sm/expr-eval value))]
-              (when (d/num? new-value)
+              (cond
+                (d/num? new-value)
                 (-> new-value
                     (cljs.core/max us/min-safe-int)
                     (cljs.core/min us/max-safe-int)
                     (cond->
-                      (d/num? min-val)
+                        (d/num? min-val)
                       (cljs.core/max min-val)
 
                       (d/num? max-val)
-                      (cljs.core/min max-val)))))))
+                      (cljs.core/min max-val)))
+
+                nillable
+                default-val
+
+                :else value))))
 
         update-input
         (mf/use-callback
@@ -109,8 +116,14 @@
          (fn [event up? down?]
            (let [current-value (parse-value)]
              (when current-value
-               (let [increment (if (kbd/shift? event)
+               (let [increment (cond
+                                 (kbd/shift? event)
                                  (if up? (* step-val 10) (* step-val -10))
+
+                                 (kbd/alt? event)
+                                 (if up? (* step-val 0.1) (* step-val -0.1))
+
+                                 :else
                                  (if up? step-val (- step-val)))
 
                      new-value (+ current-value increment)
@@ -154,14 +167,19 @@
         (mf/use-callback
          (mf/deps set-delta)
          (fn [event]
-           (set-delta event (< (.-deltaY event) 0) (> (.-deltaY event) 0))))
+           (let [input-node (mf/ref-val ref)]
+             (when (dom/active? input-node)
+               (let [event (.getBrowserEvent ^js event)]
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (set-delta event (< (.-deltaY event) 0) (> (.-deltaY event) 0)))))))
 
         handle-blur
         (mf/use-callback
          (mf/deps parse-value apply-value update-input on-blur)
          (fn [_]
            (let [new-value (or (parse-value) default-val)]
-             (if new-value
+             (if (or nillable new-value)
                (apply-value new-value)
                (update-input new-value)))
            (when on-blur (on-blur))))
@@ -176,13 +194,12 @@
                    (dom/blur! current)))))))
 
         props (-> props
-                  (obj/without ["value" "onChange"])
+                  (obj/without ["value" "onChange" "nillable"])
                   (obj/set! "className" "input-text")
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
                   (obj/set! "defaultValue" (fmt/format-number value))
                   (obj/set! "title" title)
-                  (obj/set! "onWheel" handle-mouse-wheel)
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur))]
 
@@ -204,6 +221,13 @@
             (handle-blur)))))
 
     (mf/use-layout-effect
+     (mf/deps handle-mouse-wheel)
+     (fn []
+       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:pasive false})]]
+         #(doseq [key keys]
+            (events/unlistenByKey key)))))
+
+    (mf/use-layout-effect
      (fn []
        (let [keys [(events/listen globals/window EventType.POINTERDOWN on-click)
                    (events/listen globals/window EventType.MOUSEDOWN on-click)
@@ -212,4 +236,3 @@
             (events/unlistenByKey key)))))
 
     [:> :input props]))
-
