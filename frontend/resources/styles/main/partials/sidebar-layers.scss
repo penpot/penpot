@@ -108,6 +108,21 @@
   }
 }
 
+.element-list li.sticky {
+  > :first-child {
+    position: sticky;
+    top: 0px;
+    background-color: $color-gray-50;
+    z-index: 1;
+    &.selected {
+      background-color: #1f1f1f;
+    }
+    &:hover {
+      background-color: #31efb8;
+    }
+  }
+}
+
 .element-list li.component {
   .element-list-body {
     span.element-name {
@@ -156,6 +171,10 @@
       transform: rotate(-45deg);
       top: -1px;
       left: -4px;
+    }
+
+    &.sticky {
+      margin-top: 32px;
     }
   }
 

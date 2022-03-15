@@ -99,8 +99,8 @@
         disable-drag (mf/use-state false)
 
         expanded-iref (mf/use-memo
-                        (mf/deps id)
-                        (make-collapsed-iref id))
+                       (mf/deps id)
+                       (make-collapsed-iref id))
 
         expanded? (mf/deref expanded-iref)
 
@@ -197,12 +197,13 @@
     [:li {:on-context-menu on-context-menu
           :ref dref
           :class (dom/classnames
-                   :component (not (nil? (:component-id item)))
-                   :masked (:masked-group? item)
-                   :dnd-over (= (:over dprops) :center)
-                   :dnd-over-top (= (:over dprops) :top)
-                   :dnd-over-bot (= (:over dprops) :bot)
-                   :selected selected?)}
+                  :component (not (nil? (:component-id item)))
+                  :masked (:masked-group? item)
+                  :dnd-over (= (:over dprops) :center)
+                  :dnd-over-top (= (:over dprops) :top)
+                  :dnd-over-bot (= (:over dprops) :bot)
+                  :selected selected?
+                  :type-frame (= :frame (:type item)))}
 
      [:div.element-list-body {:class (dom/classnames :selected selected?
                                                      :icon-layer (= (:type item) :icon))
@@ -318,7 +319,22 @@
   (let [page  (mf/deref refs/workspace-page)
         focus (mf/deref refs/workspace-focus-selected)
         objects (hooks/with-focus-objects (:objects page) focus)
-        title (when (= 1 (count focus)) (get-in objects [(first focus) :name]))]
+        title (when (= 1 (count focus)) (get-in objects [(first focus) :name]))
+        
+        on-scroll
+        (fn [event]
+          (let [target (dom/get-target event)
+                target-top (:top (dom/get-bounding-rect target))
+                frames (dom/get-elements-by-class "type-frame")
+                last-hidden-frame (->> frames
+                                       (filter #(< (- (:top (dom/get-bounding-rect %)) target-top) 0))
+                                       last)]            
+            (doseq [frame frames]              
+              (dom/remove-class! frame "sticky"))
+            
+            (when last-hidden-frame
+              (dom/add-class! last-hidden-frame "sticky"))))]
+    
     [:div#layers.tool-window
      (if (d/not-empty? focus)
        [:div.tool-window-bar
@@ -332,6 +348,6 @@
        [:div.tool-window-bar
         [:span (:name page)]])
 
-     [:div.tool-window-content
+     [:div.tool-window-content {:on-scroll on-scroll}
       [:& layers-tree-wrapper {:key (:id page)
                                :objects objects}]]]))
