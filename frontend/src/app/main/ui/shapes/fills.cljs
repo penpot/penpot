@@ -31,19 +31,26 @@
             {:keys [metadata]} shape
 
             has-image? (or metadata (:fill-image shape))
+
             uri (cond
                   metadata
                   (cfg/resolve-file-media metadata)
+
                   (:fill-image shape)
                   (cfg/resolve-file-media (:fill-image shape)))
+
             embed (embed/use-data-uris [uri])
             transform (gsh/transform-matrix shape)
+
+            ;; When true the image has not loaded yet
+            loading? (and (some? uri) (not (contains? embed uri)))
+
             pattern-attrs (cond-> #js {:patternUnits "userSpaceOnUse"
                                        :x x
                                        :y y
                                        :height height
                                        :width width
-                                       :data-loading (str (not (contains? embed uri)))}
+                                       :data-loading loading?}
                             (= :path (:type shape))
                             (obj/set! "patternTransform" transform))]
 
