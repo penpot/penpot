@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.selection
   "Selection handlers component."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -18,7 +19,6 @@
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
-   [cuerdas.core :as str]
    [debug :refer [debug?]]
    [rumext.alpha :as mf]
    [rumext.util :refer [map->obj]]))
@@ -43,7 +43,7 @@
         :y y
         :width width
         :height height
-        :transform transform
+        :transform (str transform)
         :on-mouse-down on-move-selected
         :on-context-menu on-context-menu
         :style {:stroke color
@@ -93,7 +93,8 @@
                    :y y
                    :length length
                    :angle 0
-                   :align align}}))
+                   :align align
+                   :show-handler? tiny-width?}}))
 
       (when-not horizontal-line?
         (let [x (if small-width? (+ x (/ (+ width threshold-small) 2)) (+ x width))
@@ -104,7 +105,8 @@
                    :y (+ y height)
                    :length length
                    :angle 180
-                   :align align}}))
+                   :align align
+                   :show-handler? tiny-width?}}))
 
       (when-not vertical-line?
         (let [y (if small-height? (+ y (/ (- height threshold-small) 2)) y)
@@ -115,7 +117,8 @@
                    :y y
                    :length length
                    :angle 90
-                   :align align}}))
+                   :align align
+                   :show-handler? tiny-height?}}))
 
       (when-not vertical-line?
         (let [y (if small-height? (+ y (/ (+ height threshold-small) 2)) (+ y height))
@@ -126,7 +129,8 @@
                    :y y
                    :length length
                    :angle 270
-                   :align align}}))
+                   :align align
+                   :show-handler? tiny-height?}}))
 
       (when (and (not tiny-width?) (not tiny-height?))
         {:type :resize-point
@@ -166,11 +170,11 @@
             :height size
             :fill (if (debug? :handlers) "blue" "none")
             :stroke-width 0
-            :transform transform
+            :transform (str transform)
             :on-mouse-down on-rotate}]))
 
 (mf/defc resize-point-handler
-  [{:keys [cx cy zoom position on-resize transform rotation color overflow-text align]}]
+  [{:keys [cx cy zoom position on-resize transform rotation color align]}]
   (let [cursor (if (#{:top-left :bottom-right} position)
                  (cur/resize-nesw rotation) (cur/resize-nwse rotation))
         {cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)]
@@ -181,7 +185,7 @@
                        :strokeWidth "1px"
                        :vectorEffect "non-scaling-stroke"}
                :fill "var(--color-white)"
-               :stroke (if (and (= position :bottom-right) overflow-text) "red" color)
+               :stroke color
                :cx cx'
                :cy cy'}]
 
@@ -196,7 +200,7 @@
                  :y cy'
                  :width resize-point-circle-radius
                  :height resize-point-circle-radius
-                 :transform (when rotation (str/fmt "rotate(%s, %s, %s)" rotation cx' cy'))
+                 :transform (when rotation (dm/fmt "rotate(%, %, %)" rotation cx' cy'))
                  :style {:fill (if (debug? :handlers) "red" "none")
                          :stroke-width 0
                          :cursor cursor}
@@ -212,26 +216,37 @@
 
 (mf/defc resize-side-handler
   "The side handler is always rendered horizontally and then rotated"
-  [{:keys [x y length align angle zoom position rotation transform on-resize]}]
+  [{:keys [x y length align angle zoom position rotation transform on-resize color show-handler?]}]
   (let [res-point (if (#{:top :bottom} position)
                     {:y y}
                     {:x x})
 
         height (/ resize-side-height zoom)
         offset-y (if (= align :outside) (- height) (- (/ height 2)))
-        target-y (+ y offset-y)]
-    [:rect {:x x
-            :y target-y
-            :width length
-            :height height
-            :transform (gmt/multiply transform
-                                     (gmt/rotate-matrix angle (gpt/point x y)))
-            :on-mouse-down #(on-resize res-point %)
-            :style {:fill (if (debug? :handlers) "yellow" "none")
-                    :stroke-width 0
-                    :cursor (if (#{:left :right} position)
-                              (cur/resize-ew rotation)
-                              (cur/resize-ns rotation)) }}]))
+        target-y (+ y offset-y)
+        transform-str (str (gmt/multiply transform (gmt/rotate-matrix angle (gpt/point x y))))]
+    [:g.resize-handler
+     (when show-handler?
+       [:circle {:r (/ resize-point-radius zoom)
+                 :style {:fillOpacity 1
+                         :stroke color
+                         :strokeWidth "1px"
+                         :fill "var(--color-white)"
+                         :vectorEffect "non-scaling-stroke"}
+                 :cx (+ x (/ length 2))
+                 :cy y
+                 :transform transform-str}])
+     [:rect {:x x
+             :y target-y
+             :width length
+             :height height
+             :transform transform-str
+             :on-mouse-down #(on-resize res-point %)
+             :style {:fill (if (debug? :handlers) "yellow" "none")
+                     :stroke-width 0
+                     :cursor (if (#{:left :right} position)
+                               (cur/resize-ew rotation)
+                               (cur/resize-ns rotation)) }}]]))
 
 (defn minimum-selrect [{:keys [x y width height] :as selrect}]
   (let [final-width (max width min-selrect-side)
@@ -262,7 +277,7 @@
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
        ;; Selection rect
        [:& selection-rect {:rect selrect
-                           :transform transform
+                           :transform (str transform)
                            :zoom zoom
                            :color color
                            :on-move-selected on-move-selected
@@ -271,7 +286,7 @@
 (mf/defc controls-handlers
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [overflow-text] :as shape} (obj/get props "shape")
+  (let [shape             (obj/get props "shape")
         zoom              (obj/get props "zoom")
         color             (obj/get props "color")
         on-resize         (obj/get props "on-resize")
@@ -291,15 +306,14 @@
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect shape zoom)]
-         (let [common-props {:key (str (name type) "-" (name position))
+         (let [common-props {:key (dm/str (name type) "-" (name position))
                              :zoom zoom
                              :position position
                              :on-rotate on-rotate
                              :on-resize (partial on-resize position)
                              :transform transform
                              :rotation rotation
-                             :color color
-                             :overflow-text overflow-text}
+                             :color color}
                props (map->obj (merge common-props props))]
            (case type
              :rotation (when (not= :frame (:type shape)) [:> rotation-handler props])
@@ -313,7 +327,7 @@
   (let [{:keys [x y width height]} shape]
     [:g.controls
      [:rect.main {:x x :y y
-                  :transform (gsh/transform-matrix shape)
+                  :transform (str (gsh/transform-matrix shape))
                   :width width
                   :height height
                   :pointer-events "visible"

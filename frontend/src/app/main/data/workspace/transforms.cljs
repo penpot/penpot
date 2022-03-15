@@ -121,7 +121,7 @@
    (set-modifiers ids modifiers false))
 
   ([ids modifiers ignore-constraints]
-   (set-modifiers ids modifiers false false))
+   (set-modifiers ids modifiers ignore-constraints false))
 
   ([ids modifiers ignore-constraints ignore-snap-pixel]
    (us/verify (s/coll-of uuid?) ids)
@@ -264,8 +264,18 @@
           flip-x? (neg? (get-in modifiers [:resize-vector :x]))
           flip-y? (neg? (get-in modifiers [:resize-vector :y]))
 
-          target-width (max 1 (mth/round (:width raw-bounds)))
-          target-height (max 1 (mth/round (:height raw-bounds)))
+          path? (= :path (:type shape))
+          vertical-line? (and path? (<= (:width raw-bounds) 0.01))
+          horizontal-line? (and path? (<= (:height raw-bounds) 0.01))
+
+          target-width (if vertical-line?
+                         (:width raw-bounds)
+                         (max 1 (mth/round (:width raw-bounds))))
+
+          target-height (if horizontal-line?
+                          (:height raw-bounds)
+                          (max 1 (mth/round (:height raw-bounds))))
+
           target-p (cond-> (gpt/round (gpt/point raw-bounds))
                      flip-x?
                      (update :x + target-width)

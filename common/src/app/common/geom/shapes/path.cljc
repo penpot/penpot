@@ -981,7 +981,6 @@
                     (gpr/points->selrect))]
     [points selrect]))
 
-
 (defn open-path?
   [shape]
 
