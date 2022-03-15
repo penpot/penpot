@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
@@ -24,6 +25,7 @@
 
   (let [render-id (mf/use-ctx muc/render-ctx)
         {:keys [x y width height position-data] :as shape} (obj/get props "shape")
+
         transform (str (gsh/transform-matrix shape))
 
         ;; These position attributes are not really necesary but they are convenient for for the export
@@ -48,8 +50,8 @@
 
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
-        (let [props (-> #js {:x (:x data)
-                             :y (:y data)
+        (let [props (-> #js {:x (mth/round (:x data))
+                             :y (mth/round (:y data))
                              :dominantBaseline "ideographic"
                              :style (-> #js {:fontFamily (:font-family data)
                                              :fontSize (:font-size data)
@@ -61,7 +63,18 @@
                                              :whiteSpace "pre"}
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
               shape (assoc shape :fills (:fills data))]
-          [:& shape-custom-strokes {:shape shape}
-           [:> :text props (:text data)]]))]]))
 
+          [:*
+           #_[:rect {:x (:x data)
+                   :y (- (:y data) (:height data))
+                   :width (:width data)
+                   :height (:height data)
+                   :style {:fill "none" :stroke-width 1 :stroke "red"}}]
+           [:line {:x1 (mth/round (:x data))
+                   :y1 (mth/round (:y data))
+                   :x2 (mth/round (+ (:x data) (:width data)))
+                   :y2 (mth/round (:y data))
+                   :style {:fill "none" :stroke-width 0.5 :stroke "blue"}}]
 
+           [:& shape-custom-strokes {:shape shape}
+            [:> :text props (:text data)]]]))]]))

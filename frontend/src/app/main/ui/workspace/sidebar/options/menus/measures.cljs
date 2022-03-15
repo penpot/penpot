@@ -201,8 +201,8 @@
          (fn []
            (when (and (= radius-mode :radius-1)
                       (= @radius-multi? false))
-          ;; when going back from radius-multi to normal radius-1,
-          ;; restore focus to the newly created numeric-input
+             ;; when going back from radius-multi to normal radius-1,
+             ;; restore focus to the newly created numeric-input
              (let [radius-input (mf/ref-val radius-input-ref)]
                (dom/focus! radius-input)))))
 

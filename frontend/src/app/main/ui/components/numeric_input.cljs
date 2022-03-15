@@ -30,7 +30,7 @@
         on-change    (obj/get props "onChange")
         on-blur      (obj/get props "onBlur")
         title        (obj/get props "title")
-        default-val  (obj/get props "default" 0)
+        default-val  (obj/get props "default")
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
