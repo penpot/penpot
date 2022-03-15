@@ -567,13 +567,13 @@
     (->> flows-node :content (mapv parse-flow-node))))
 
 (defn parse-guide-node [node]
-  (let [attrs (-> node :attrs remove-penpot-prefix)]
-    (let [id (uuid/next)]
-      [id
-       {:id       id
-        :frame-id (when (:frame-id attrs) (-> attrs :frame-id uuid))
-        :axis     (-> attrs :axis keyword)
-        :position (-> attrs :position d/parse-double)}])))
+  (let [attrs (-> node :attrs remove-penpot-prefix)
+        id (uuid/next)]
+    [id
+     {:id       id
+      :frame-id (when (:frame-id attrs) (-> attrs :frame-id uuid))
+      :axis     (-> attrs :axis keyword)
+      :position (-> attrs :position d/parse-double)}]))
 
 (defn parse-guides [node]
   (let [guides-node (get-data node :penpot:guides)]
