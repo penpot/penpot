@@ -411,13 +411,14 @@
         width (:width new-size)
         height (:height new-size)
 
-        shape-transform (:transform shape (gmt/matrix))
-        shape-transform-inv (:transform-inverse shape (gmt/matrix))
+        shape-transform (:transform shape)
+        shape-transform-inv (:transform-inverse shape)
         shape-center (gco/center-shape shape)
         {sr-width :width sr-height :height} (:selrect shape)
 
-        origin (-> (gpt/point (:selrect shape))
-                   (transform-point-center shape-center shape-transform))
+        origin (cond-> (gpt/point (:selrect shape))
+                 (some? shape-transform)
+                 (transform-point-center shape-center shape-transform))
 
         scalev (gpt/divide (gpt/point width height)
                            (gpt/point sr-width sr-height))]

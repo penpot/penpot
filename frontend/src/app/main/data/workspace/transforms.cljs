@@ -121,6 +121,9 @@
    (set-modifiers ids modifiers false))
 
   ([ids modifiers ignore-constraints]
+   (set-modifiers ids modifiers false false))
+
+  ([ids modifiers ignore-constraints ignore-snap-pixel]
    (us/verify (s/coll-of uuid?) ids)
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
@@ -130,7 +133,7 @@
              objects     (wsh/lookup-page-objects state page-id)
              ids         (into #{} (remove #(get-in objects [% :blocked] false)) ids)
              layout      (get state :workspace-layout)
-             snap-pixel? (contains? layout :snap-pixel-grid)
+             snap-pixel? (and (not ignore-snap-pixel) (contains? layout :snap-pixel-grid))
 
              setup-modifiers
              (fn [state id]
@@ -485,7 +488,8 @@
                   (finish-transform))))))))
 
 (defn update-dimensions
-  "Change size of shapes, from the sideber options form."
+  "Change size of shapes, from the sideber options form.
+  Will ignore pixel snap used in the options side panel"
   [ids attr value]
   (us/verify (s/coll-of ::us/uuid) ids)
   (us/verify #{:width :height} attr)
@@ -495,16 +499,14 @@
     (update [_ state]
       (let [page-id (:current-page-id state)
             objects (get-in state [:workspace-data :pages-index page-id :objects])
-            layout  (get state :workspace-layout)
-            snap-pixel? (contains? layout :snap-pixel-grid)]
 
-        (reduce (fn [state id]
-                  (let [shape (get objects id)
-                        modifiers (gsh/resize-modifiers shape attr value)]
-                    (update state :workspace-modifiers
-                            #(set-modifiers-recursive % objects shape modifiers false snap-pixel?))))
-                state
-                ids)))
+            update-modifiers
+            (fn [state id]
+              (let [shape (get objects id)
+                    modifiers (gsh/resize-modifiers shape attr value)]
+                (update state :workspace-modifiers
+                        #(set-modifiers-recursive % objects shape modifiers false false))))]
+        (reduce update-modifiers state ids)))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -746,8 +748,10 @@
             cpos (gpt/point (:x bbox) (:y bbox))
             pos  (gpt/point (or (:x position) (:x bbox))
                             (or (:y position) (:y bbox)))
-            displ   (gmt/translate-matrix (gpt/subtract pos cpos))]
-        (rx/of (set-modifiers [id] {:displacement displ})
+            delta (gpt/subtract pos cpos)
+            displ   (gmt/translate-matrix delta)]
+
+        (rx/of (set-modifiers [id] {:displacement displ} false true)
                (apply-modifiers [id]))))))
 
 (defn- calculate-frame-for-move
