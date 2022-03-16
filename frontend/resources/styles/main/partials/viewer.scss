@@ -7,19 +7,19 @@
 }
 
 .viewer-section {
-  height: calc(100vh - 48px);
-  &.fullscreen {
-    height: 100vh;
-  }
+  align-items: center;
+  display: flex;
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  height: 100vh;
   flex-flow: wrap;
-
+  justify-content: center;
   overflow: auto;
+  padding-bottom: 48px;
+
+  &.fullscreen {
+    padding-bottom: 0;
+  }
 
   & .viewer-wrapper {
     position: relative;
