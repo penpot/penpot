@@ -15,7 +15,9 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.state-helpers :as wsh]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]))
 
@@ -52,30 +54,11 @@
 (declare reposition-shape)
 (declare make-change)
 
-(defn get-local-file
-  [state]
-  (get state :workspace-data))
-
-(defn get-file
-  [state file-id]
-  (if (= file-id (:current-file-id state))
-    (get state :workspace-data)
-    (get-in state [:workspace-libraries file-id :data])))
-
-(defn get-libraries
-  "Retrieve all libraries, including the local file."
-  [state]
-  (let [{:keys [id] :as local} (:workspace-data state)]
-    (-> (:workspace-libraries state)
-        (assoc id {:id id
-                   :data local}))))
-
 (defn pretty-file
   [file-id state]
   (if (= file-id (:current-file-id state))
     "<local>"
     (str "<" (get-in state [:workspace-libraries file-id :name]) ">")))
-
 
 ;; ---- Create a new component ----
 
@@ -146,7 +129,7 @@
                                          name
                                          new-shapes
                                          updated-shapes))]
-      [group changes])))
+      [group new-shape changes])))
 
 (defn duplicate-component
   "Clone the root shape of the component and all children. Generate new
@@ -157,6 +140,60 @@
                       nil
                       (get component :objects)
                       identity)))
+
+(defn generate-instantiate-component
+  "Generate changes to create a new instance from a component."
+  [it file-id component-id position page libraries]
+  (let [component       (cph/get-component libraries file-id component-id)
+        component-shape (cph/get-shape component component-id)
+
+        orig-pos  (gpt/point (:x component-shape) (:y component-shape))
+        delta     (gpt/subtract position orig-pos)
+
+        objects   (:objects page)
+        unames    (volatile! (dwc/retrieve-used-names objects))
+
+        frame-id (cph/frame-id-by-position objects (gpt/add orig-pos delta))
+
+        update-new-shape
+        (fn [new-shape original-shape]
+          (let [new-name (dwc/generate-unique-name @unames (:name new-shape))]
+
+            (when (nil? (:parent-id original-shape))
+              (vswap! unames conj new-name))
+
+            (cond-> new-shape
+              true
+              (as-> $
+                (geom/move $ delta)
+                (assoc $ :frame-id frame-id)
+                (assoc $ :parent-id
+                       (or (:parent-id $) (:frame-id $)))
+                (dissoc $ :touched))
+
+              (nil? (:shape-ref original-shape))
+              (assoc :shape-ref (:id original-shape))
+
+              (nil? (:parent-id original-shape))
+              (assoc :component-id (:id original-shape)
+                     :component-file file-id
+                     :component-root? true
+                     :name new-name)
+
+              (some? (:parent-id original-shape))
+              (dissoc :component-root?))))
+
+        [new-shape new-shapes _]
+        (cph/clone-object component-shape
+                          nil
+                          (get component :objects)
+                          update-new-shape)
+
+        changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                        (pcb/empty-changes it (:id page))
+                        new-shapes)]
+
+    [new-shape changes]))
 
 (defn generate-detach-instance
   "Generate changes to remove the links between a shape and all its children
@@ -193,7 +230,7 @@
             :file (pretty-file file-id state)
             :library (pretty-file library-id state))
 
-  (let [file (get-file state file-id)]
+  (let [file (wsh/get-file state file-id)]
     (loop [pages (vals (get file :pages-index))
            changes (pcb/empty-changes it)]
       (if-let [page (first pages)]
@@ -218,7 +255,7 @@
             :file (pretty-file file-id state)
             :library (pretty-file library-id state))
 
-  (let [file (get-file state file-id)]
+  (let [file (wsh/get-file state file-id)]
     (loop [local-components (vals (get file :components))
            changes (pcb/empty-changes it)]
       (if-let [local-component (first local-components)]
@@ -305,7 +342,7 @@
 (defmethod generate-sync-shape :components
   [_ changes _library-id state container shape]
   (let [shape-id  (:id shape)
-        libraries (get-libraries state)]
+        libraries (wsh/get-libraries state)]
     (generate-sync-shape-direct changes libraries container shape-id false)))
 
 (defn- generate-sync-text-shape

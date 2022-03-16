@@ -250,7 +250,7 @@
             objects  (wsh/lookup-page-objects state page-id)
             shapes   (dwg/shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
-          (let [[group changes]
+          (let [[group _ changes]
                 (dwlh/generate-add-component it shapes objects page-id file-id)]
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
@@ -306,7 +306,7 @@
   (ptk/reify ::duplicate-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [libraries      (dwlh/get-libraries state)
+      (let [libraries      (wsh/get-libraries state)
             component      (cph/get-component libraries id)
             all-components (-> state :workspace-data :components vals)
             unames         (into #{} (map :name) all-components)
@@ -349,57 +349,16 @@
   (ptk/reify ::instantiate-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [libraries       (dwlh/get-libraries state)
-            component       (cph/get-component libraries file-id component-id)
-            component-shape (cph/get-shape component component-id)
+      (let [page      (wsh/lookup-page state)
+            libraries (wsh/get-libraries state)
 
-            orig-pos  (gpt/point (:x component-shape) (:y component-shape))
-            delta     (gpt/subtract position orig-pos)
-
-            page-id   (:current-page-id state)
-            objects   (wsh/lookup-page-objects state page-id)
-            unames    (volatile! (dwc/retrieve-used-names objects))
-
-            frame-id (cph/frame-id-by-position objects (gpt/add orig-pos delta))
-
-            update-new-shape
-            (fn [new-shape original-shape]
-              (let [new-name (dwc/generate-unique-name @unames (:name new-shape))]
-
-                (when (nil? (:parent-id original-shape))
-                  (vswap! unames conj new-name))
-
-                (cond-> new-shape
-                  true
-                  (as-> $
-                        (geom/move $ delta)
-                    (assoc $ :frame-id frame-id)
-                    (assoc $ :parent-id
-                           (or (:parent-id $) (:frame-id $)))
-                    (dissoc $ :touched))
-
-                  (nil? (:shape-ref original-shape))
-                  (assoc :shape-ref (:id original-shape))
-
-                  (nil? (:parent-id original-shape))
-                  (assoc :component-id (:id original-shape)
-                         :component-file file-id
-                         :component-root? true
-                         :name new-name)
-
-                  (some? (:parent-id original-shape))
-                  (dissoc :component-root?))))
-
-            [new-shape new-shapes _]
-            (cph/clone-object component-shape
-                              nil
-                              (get component :objects)
-                              update-new-shape)
-
-            changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                            (pcb/empty-changes it page-id)
-                            new-shapes)]
-
+            [new-shape changes]
+            (dwlh/generate-instantiate-component it
+                                                 file-id
+                                                 component-id
+                                                 position
+                                                 page
+                                                 libraries)]
         (rx/of (dch/commit-changes changes)
                (dwc/select-shapes (d/ordered-set (:id new-shape))))))))
 
@@ -411,7 +370,7 @@
   (ptk/reify ::detach-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [file      (dwlh/get-local-file state)
+      (let [file      (wsh/get-local-file state)
             page-id   (get state :current-page-id)
             container (cph/get-container file :page page-id)
 
@@ -428,7 +387,7 @@
     (watch [it state _]
       (let [page-id   (:current-page-id state)
             objects   (wsh/lookup-page-objects state page-id)
-            file      (dwlh/get-local-file state)
+            file      (wsh/get-local-file state)
             container (cph/get-container file :page page-id)
             selected  (->> state
                            (wsh/lookup-selected)
@@ -482,8 +441,8 @@
     ptk/WatchEvent
     (watch [it state _]
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
-      (let [file      (dwlh/get-local-file state)
-            libraries (dwlh/get-libraries state)
+      (let [file      (wsh/get-local-file state)
+            libraries (wsh/get-libraries state)
 
             page-id   (:current-page-id state)
             container (cph/get-container file :page page-id)
@@ -516,8 +475,8 @@
       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
       (let [page-id       (get state :current-page-id)
 
-            local-file    (dwlh/get-local-file state)
-            libraries     (dwlh/get-libraries state)
+            local-file    (wsh/get-local-file state)
+            libraries     (wsh/get-libraries state)
 
             container     (cph/get-container local-file :page page-id)
             shape         (cph/get-shape container id)
@@ -528,7 +487,7 @@
                 (dwlh/generate-sync-shape-inverse libraries container id))
 
             file-id   (:component-file shape)
-            file      (dwlh/get-file state file-id)
+            file      (wsh/get-file state file-id)
 
             xf-filter (comp
                        (filter :local-change?)
@@ -608,7 +567,7 @@
       (log/info :msg "SYNC-FILE"
                 :file (dwlh/pretty-file file-id state)
                 :library (dwlh/pretty-file library-id state))
-      (let [file            (dwlh/get-file state file-id)
+      (let [file            (wsh/get-file state file-id)
 
             library-changes (reduce
                               pcb/concat-changes
@@ -665,7 +624,7 @@
       (log/info :msg "SYNC-FILE (2nd stage)"
                 :file (dwlh/pretty-file file-id state)
                 :library (dwlh/pretty-file library-id state))
-      (let [file    (dwlh/get-file state file-id)
+      (let [file    (wsh/get-file state file-id)
             changes (reduce
                      pcb/concat-changes
                      (pcb/empty-changes it)

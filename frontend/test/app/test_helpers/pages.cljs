@@ -10,10 +10,10 @@
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.layout :as layout]
-   [app.main.data.workspace.libraries-helpers :as dwlh]))
+   [app.main.data.workspace.libraries-helpers :as dwlh]
+   [app.main.data.workspace.state-helpers :as wsh]))
 
 ;; ---- Helpers to manage pages and objects
 
@@ -96,19 +96,53 @@
                  cp/process-changes (:redo-changes changes)))))))
 
 (defn make-component
-  [state label ids]
+  [state instance-label component-label shape-ids]
   (let [page    (current-page state)
         objects (wsh/lookup-page-objects state (:id page))
-        shapes  (dwg/shapes-for-grouping objects ids)
+        shapes  (dwg/shapes-for-grouping objects shape-ids)
 
-        [group changes]
+        [group component-root changes]
         (dwlh/generate-add-component nil
                                      shapes
                                      (:objects page)
                                      (:id page)
                                      current-file-id)]
 
-    (swap! idmap assoc label (:id group))
+    (swap! idmap assoc instance-label (:id group)
+                       component-label (:id component-root))
     (update state :workspace-data
             cp/process-changes (:redo-changes changes))))
+
+(defn instantiate-component
+  ([state label component-id]
+   (instantiate-component state label component-id current-file-id))
+  ([state label component-id file-id]
+   (let [page      (current-page state)
+         libraries (wsh/get-libraries state)
+
+         [new-shape changes]
+         (dwlh/generate-instantiate-component nil
+                                              file-id
+                                              component-id
+                                              (gpt/point 100 100)
+                                              page
+                                              libraries)]
+
+     (swap! idmap assoc label (:id new-shape))
+     (update state :workspace-data
+             cp/process-changes (:redo-changes changes)))))
+
+(defn move-to-library
+  [state label name]
+  (let [library-id (uuid/next)
+        data       (get state :workspace-data)]
+    (swap! idmap assoc label library-id)
+    (-> state
+        (update :workspace-libraries
+                assoc library-id {:id library-id
+                                  :name name
+                                  :data {:id library-id
+                                         :components (:components data)}})
+        (update :workspace-data
+                assoc :components {} :pages [] :pages-index {}))))
 

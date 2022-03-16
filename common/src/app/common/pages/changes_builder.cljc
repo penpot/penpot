@@ -7,6 +7,7 @@
 (ns app.common.pages.changes-builder
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bool :as gshb]
    [app.common.pages :as cp]
@@ -93,6 +94,11 @@
 (defn- assert-library
   [changes]
   (assert (contains? (meta changes) ::library-data) "Call (with-library-data) before using this function"))
+
+(defn- lookup-objects
+  [changes]
+  (let [data (::file-data (meta changes))]
+    (dm/get-in data [:pages-index uuid/zero :objects])))
 
 (defn- apply-changes-local
   [changes]
@@ -221,7 +227,7 @@
   ([changes parent-id shapes index]
    (assert-page-id changes)
    (assert-objects changes)
-   (let [objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
+   (let [objects (lookup-objects changes)
 
          set-parent-change
          (cond-> {:type :mov-objects
@@ -253,12 +259,13 @@
   ([changes ids update-fn]
    (update-shapes changes ids update-fn nil))
 
-  ([changes ids update-fn {:keys [attrs ignore-geometry?] :or {attrs nil ignore-geometry? false}}]
+  ([changes ids update-fn {:keys [attrs ignore-geometry? ignore-touched]
+                           :or {ignore-geometry? false ignore-touched false}}]
    (assert-container-id changes)
    (assert-objects changes)
    (let [page-id      (::page-id (meta changes))
          component-id (::component-id (meta changes))
-         objects      (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
+         objects (lookup-objects changes)
 
          generate-operation
          (fn [operations attr old new ignore-geometry?]
@@ -267,8 +274,11 @@
              (if (= old-val new-val)
                operations
                (-> operations
-                   (update :rops conj {:type :set :attr attr :val new-val :ignore-geometry ignore-geometry?})
-                   (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
+                   (update :rops conj {:type :set :attr attr :val new-val
+                                       :ignore-geometry ignore-geometry?
+                                       :ignore-touched ignore-touched})
+                   (update :uops conj {:type :set :attr attr :val old-val
+                                       :ignore-touched true})))))
 
          update-shape
          (fn [changes id]
@@ -310,7 +320,7 @@
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
-        objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
+        objects (lookup-objects changes)
 
         add-redo-change
         (fn [change-set id]
@@ -358,7 +368,7 @@
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
-        objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
+        objects (lookup-objects changes)
 
         xform   (comp
                   (mapcat #(cons % (cph/get-parent-ids objects %)))
@@ -504,8 +514,28 @@
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
-        objects (-> changes meta ::file-data (get-in [:pages-index uuid/zero :objects]))]
+        objects (lookup-objects changes)
+        lookupf (d/getf objects)
 
+        mk-change (fn [shape]
+                    {:type :mod-obj
+                     :page-id page-id
+                     :id (:id shape)
+                     :operations [{:type :set
+                                   :attr :component-id
+                                   :val (:component-id shape)}
+                                  {:type :set
+                                   :attr :component-file
+                                   :val (:component-file shape)}
+                                  {:type :set
+                                   :attr :component-root?
+                                   :val (:component-root? shape)}
+                                  {:type :set
+                                   :attr :shape-ref
+                                   :val (:shape-ref shape)}
+                                  {:type :set
+                                   :attr :touched
+                                   :val (:touched shape)}]}) ]
     (-> changes
         (update :redo-changes
                 (fn [redo-changes]
@@ -515,52 +545,16 @@
                              :path path
                              :name name
                              :shapes new-shapes})
-                      (into (map (fn [updated-shape]
-                                   {:type :mod-obj
-                                    :page-id page-id
-                                    :id (:id updated-shape)
-                                    :operations [{:type :set
-                                                  :attr :component-id
-                                                  :val (:component-id updated-shape)}
-                                                 {:type :set
-                                                  :attr :component-file
-                                                  :val (:component-file updated-shape)}
-                                                 {:type :set
-                                                  :attr :component-root?
-                                                  :val (:component-root? updated-shape)}
-                                                 {:type :set
-                                                  :attr :shape-ref
-                                                  :val (:shape-ref updated-shape)}
-                                                 {:type :set
-                                                  :attr :touched
-                                                  :val (:touched updated-shape)}]})
-                                 updated-shapes)))))
+                      (into (map mk-change) updated-shapes))))
         (update :undo-changes 
                 (fn [undo-changes]
                   (-> undo-changes
                       (conj {:type :del-component
                              :id id})
-                      (into (map (fn [updated-shape]
-                                   (let [original-shape (get objects (:id updated-shape))]
-                                     {:type :mod-obj
-                                      :page-id page-id
-                                      :id (:id updated-shape)
-                                      :operations [{:type :set
-                                                    :attr :component-id
-                                                    :val (:component-id original-shape)}
-                                                   {:type :set
-                                                    :attr :component-file
-                                                    :val (:component-file original-shape)}
-                                                   {:type :set
-                                                    :attr :component-root?
-                                                    :val (:component-root? original-shape)}
-                                                   {:type :set
-                                                    :attr :shape-ref
-                                                    :val (:shape-ref original-shape)}
-                                                   {:type :set
-                                                    :attr :touched
-                                                    :val (:touched original-shape)}]}))
-                                 updated-shapes)))))
+                      (into (comp (map :id)
+                                  (map lookupf)
+                                  (map mk-change))
+                            updated-shapes))))
         (apply-changes-local))))
 
 (defn update-component

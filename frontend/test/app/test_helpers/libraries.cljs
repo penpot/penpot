@@ -10,6 +10,7 @@
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries-helpers :as dwlh]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.test-helpers.pages :as thp]))
 
 ;; ---- Helpers to manage libraries and synchronization
@@ -85,7 +86,7 @@
   (let [page          (thp/current-page state)
         root-inst     (cph/get-shape page root-inst-id)
 
-        libs          (dwlh/get-libraries state)
+        libs          (wsh/get-libraries state)
         component     (cph/get-component libs (:component-id root-inst))
 
         shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
@@ -115,11 +116,44 @@
 
     [shapes-inst shapes-main component]))
 
+(defn resolve-instance-and-main-allow-dangling
+  "Get the shape with the given id and all its children, and also
+   the main component and all its shapes. Allows shapes with the
+   corresponding component shape missing."
+  [state root-inst-id]
+  (let [page          (thp/current-page state)
+        root-inst     (cph/get-shape page root-inst-id)
+
+        libs          (wsh/get-libraries state)
+        component     (cph/get-component libs (:component-id root-inst))
+
+        shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
+        shapes-main   (cph/get-children-with-self (:objects component) (:shape-ref root-inst))
+
+        unique-refs   (into #{} (map :shape-ref) shapes-inst)
+
+        main-exists?  (fn [shape]
+                        (let [component-shape
+                              (cph/get-component-shape (:objects page) shape)
+
+                              component
+                              (cph/get-component libs (:component-id component-shape))
+
+                              main-shape
+                              (cph/get-shape component (:shape-ref shape))]
+
+                        (t/is (some? main-shape))))]
+
+    ;; Validate that the instance tree is well constructed
+    (is-instance-root (first shapes-inst))
+
+    [shapes-inst shapes-main component]))
+
 (defn resolve-component
   "Get the component with the given id and all its shapes." 
   [state component-id]
   (let [page        (thp/current-page state)
-        libs        (dwlh/get-libraries state)
+        libs        (wsh/get-libraries state)
         component   (cph/get-component libs component-id)
         root-main   (cph/get-component-root component)
         shapes-main (cph/get-children-with-self (:objects component) (:id root-main))]
