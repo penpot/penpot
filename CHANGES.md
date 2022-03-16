@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.12.4-beta
+
+### :bug: Bugs fixed
+
+- Fix crash on iOS when displaying viewer [#1522](https://github.com/penpot/penpot/issues/1522)
+
 ## 1.12.3-beta
 
 ### :bug: Bugs fixed
