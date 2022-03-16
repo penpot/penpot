@@ -71,8 +71,8 @@
          font-variant-id (:font-variant-id data)
 
          font-size       (:font-size data)
-         fill-color      (:fill-color data)
-         fill-opacity    (:fill-opacity data)
+         fill-color      (or (-> data :fills first :fill-color) (:fill-color data))
+         fill-opacity    (or (-> data :fills first :fill-opacity) (:fill-opacity data))
 
          [r g b a]       (uc/hex->rgba fill-color fill-opacity)
          text-color      (when (and (some? fill-color) (some? fill-opacity))
@@ -83,7 +83,7 @@
          base            #js {:textDecoration text-decoration
                               :textTransform text-transform
                               :lineHeight (or line-height "inherit")
-                              :color (if show-text? text-color "red")
+                              :color (if show-text? text-color "transparent")
                               :caretColor (or text-color "black")
                               :overflowWrap "initial"}
 

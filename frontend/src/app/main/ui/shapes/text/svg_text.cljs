@@ -64,17 +64,5 @@
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
               shape (assoc shape :fills (:fills data))]
 
-          [:*
-           #_[:rect {:x (:x data)
-                   :y (- (:y data) (:height data))
-                   :width (:width data)
-                   :height (:height data)
-                   :style {:fill "none" :stroke-width 1 :stroke "red"}}]
-           [:line {:x1 (mth/round (:x data))
-                   :y1 (mth/round (:y data))
-                   :x2 (mth/round (+ (:x data) (:width data)))
-                   :y2 (mth/round (:y data))
-                   :style {:fill "none" :stroke-width 0.5 :stroke "blue"}}]
-
-           [:& shape-custom-strokes {:shape shape}
-            [:> :text props (:text data)]]]))]]))
+          [:& shape-custom-strokes {:shape shape}
+           [:> :text props (:text data)]]))]]))
