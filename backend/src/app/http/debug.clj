@@ -92,7 +92,7 @@
 (defn- upload-file-data
   [{:keys [pool]} {:keys [profile-id params] :as request}]
   (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
-        data       (some-> params :file :tempfile fs/slurp-bytes blob/decode)]
+        data       (some-> params :file :path fs/slurp-bytes blob/decode)]
 
     (if (and data project-id)
       (let [fname (str "imported-file-" (dt/now))]
