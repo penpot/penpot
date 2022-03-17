@@ -46,8 +46,7 @@
    (drag-stream to-stream (rx/empty)))
 
   ([to-stream not-drag-stream]
-   (let [
-         zoom  (get-in @st/state [:workspace-local :zoom] 1)
+   (let [zoom  (get-in @st/state [:workspace-local :zoom] 1)
 
          start (-> @ms/mouse-position to-pixel-snap)
          mouse-up (->> st/stream
