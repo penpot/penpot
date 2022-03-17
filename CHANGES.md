@@ -46,6 +46,7 @@
 - Fix color palette animation [Taiga #2852](https://tree.taiga.io/project/penpot/issue/2852)
 - Fix display code icon on preview hover [Taiga #2838](https://tree.taiga.io/project/penpot/us/2838)
 - Fix crash on iOS when displaying viewer [#1522](https://github.com/penpot/penpot/issues/1522)
+- Fix problem when importing a SVG with text [#1532](https://github.com/penpot/penpot/issues/1532)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
