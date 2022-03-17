@@ -47,6 +47,7 @@
 - Fix display code icon on preview hover [Taiga #2838](https://tree.taiga.io/project/penpot/us/2838)
 - Fix crash on iOS when displaying viewer [#1522](https://github.com/penpot/penpot/issues/1522)
 - Fix problem when importing a SVG with text [#1532](https://github.com/penpot/penpot/issues/1532)
+- Fix problem when adding shadows to imported text [#Taiga 3057](https://tree.taiga.io/project/penpot/issue/3057)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
