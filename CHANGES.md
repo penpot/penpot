@@ -48,6 +48,7 @@
 - Fix crash on iOS when displaying viewer [#1522](https://github.com/penpot/penpot/issues/1522)
 - Fix problem when importing a SVG with text [#1532](https://github.com/penpot/penpot/issues/1532)
 - Fix problem when adding shadows to imported text [#Taiga 3057](https://tree.taiga.io/project/penpot/issue/3057)
+- Fix problem when importing SVG's with uses with overriding properties [#Taiga 2884](https://tree.taiga.io/project/penpot/issue/2884)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

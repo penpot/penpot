@@ -88,12 +88,12 @@
     (get-in shape [:svg-attrs :fill-opacity])
     (-> (update :svg-attrs dissoc :fill-opacity)
         (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :fill-opacity])
-                                                (d/parse-double))))
+                                               (d/parse-double))))
 
     (get-in shape [:svg-attrs :style :fill-opacity])
     (-> (update-in [:svg-attrs :style] dissoc :fill-opacity)
         (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :style :fill-opacity])
-                                                (d/parse-double))))))
+                                               (d/parse-double))))))
 
 (defn setup-stroke [shape]
   (let [stroke-linecap (-> (or (get-in shape [:svg-attrs :stroke-linecap])
@@ -105,11 +105,25 @@
         (cond-> shape
           (uc/color? (str/trim (get-in shape [:svg-attrs :stroke])))
           (-> (update :svg-attrs dissoc :stroke)
-              (assoc-in [:strokes 0 :stroke-color] (get-in shape [:svg-attrs :stroke])))
+              (assoc-in [:strokes 0 :stroke-color] (-> (get-in shape [:svg-attrs :stroke])
+                                                       (str/trim)
+                                                       (uc/parse-color))))
 
           (uc/color? (str/trim (get-in shape [:svg-attrs :style :stroke])))
           (-> (update-in [:svg-attrs :style] dissoc :stroke)
-              (assoc-in [:strokes 0 :stroke-color] (get-in shape [:svg-attrs :style :stroke])))
+              (assoc-in [:strokes 0 :stroke-color] (-> (get-in shape [:svg-attrs :style :stroke])
+                                                       (str/trim)
+                                                       (uc/parse-color))))
+
+          (get-in shape [:svg-attrs :stroke-opacity])
+          (-> (update :svg-attrs dissoc :stroke-opacity)
+              (assoc-in [:strokes 0 :stroke-opacity] (-> (get-in shape [:svg-attrs :stroke-opacity])
+                                                         (d/parse-double))))
+
+          (get-in shape [:svg-attrs :style :stroke-opacity])
+          (-> (update-in [:svg-attrs :style] dissoc :stroke-opacity)
+              (assoc-in [:fills 0 :stroke-opacity] (-> (get-in shape [:svg-attrs :style :stroke-opacity])
+                                                       (d/parse-double))))
 
           (get-in shape [:svg-attrs :stroke-width])
           (-> (update :svg-attrs dissoc :stroke-width)
@@ -123,14 +137,13 @@
 
           (and stroke-linecap (= (:type shape) :path))
           (-> (update-in [:svg-attrs :style] dissoc :stroke-linecap)
-              (cond->
-                (#{:round :square} stroke-linecap)
+              (cond-> (#{:round :square} stroke-linecap)
                 (assoc :stroke-cap-start stroke-linecap
                        :stroke-cap-end   stroke-linecap))))]
 
-    (if (d/any-key? (get-in [:strokes 0] shape) :stroke-color :stroke-opacity :stroke-width :stroke-cap-start :stroke-cap-end)
-      (assoc-in shape [:strokes 0 :stroke-style] :svg)
-      shape)))
+    (cond-> shape
+      (d/any-key? (get-in shape [:strokes 0]) :stroke-color :stroke-opacity :stroke-width :stroke-cap-start :stroke-cap-end)
+      (assoc-in [:strokes 0 :stroke-style] :svg))))
 
 (defn setup-opacity [shape]
   (cond-> shape
@@ -352,8 +365,9 @@
         use-tag? (and (= :use tag) (contains? defs href-id))]
 
     (if use-tag?
-      (let [use-data (get defs href-id)
-
+      (let [;; Merge the data of the use definition with the properties passed as attributes
+            use-data (-> (get defs href-id)
+                         (update :attrs #(d/deep-merge % (dissoc attrs :xlink:href :href))))
             displacement (gpt/point (d/parse-double (:x attrs "0")) (d/parse-double (:y attrs "0")))
             disp-matrix (str (gmt/translate-matrix displacement))
             element-data (-> element-data
