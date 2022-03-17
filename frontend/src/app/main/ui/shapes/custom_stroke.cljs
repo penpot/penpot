@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.custom-stroke
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
@@ -316,44 +317,51 @@
         [:& stroke-defs {:shape shape :render-id render-id :index index}]]
        child])))
 
-(defn build-stroke-props [position shape child value render-id]
+(defn build-fill-props [shape child render-id]
   (let [url-fill?    (or (some? (:fill-image shape))
                          (= :image (:type shape))
                          (> (count (:fills shape)) 1)
                          (some :fill-color-gradient (:fills shape)))
-        one-fill?    (= (count (:fills shape)) 1)
-        last-stroke? (= position (- (count (:strokes shape)) 1))
 
         props        (-> (obj/get child "props")
                          (obj/clone))
 
-        props (cond
-                (and last-stroke? url-fill?)
-                (obj/set! props "fill" (str "url(#fill-0-" render-id ")"))
+        props        (cond-> props
+                       (d/not-empty? (:shadow shape))
+                       (obj/set! "filter" (dm/fmt "url(#filter_%)" render-id)))]
 
-                (and last-stroke? one-fill?)
-                (let [fill-props
-                      (attrs/extract-fill-attrs (get-in shape [:fills 0]) render-id 0)
-
-                      style (-> (obj/get props "style")
+    (cond
+      url-fill?
+      (let [props (obj/set! props
+                            "style"
+                            (-> (obj/get props "style")
                                 (obj/clone)
-                                (obj/merge! (obj/get fill-props "style")))]
-                  (cond-> (obj/merge! props fill-props)
-                    (some? style)
-                    (obj/set! "style" style)))
+                                (obj/without ["fill" "fillOpacity"])))]
+        (obj/set! props "fill" (dm/fmt "url(#fill-0-%)" render-id)))
 
-                :else
-                (-> props
-                    (obj/without ["fill" "fillOpacity"])
-                    (obj/set!
-                     "style"
-                     (-> (obj/get props "style")
-                         (obj/set! "fill" "none")
-                         (obj/set! "fillOpacity" "none")))))
+      (d/not-empty? (:fills shape))
+      (let [fill-props
+            (attrs/extract-fill-attrs (get-in shape [:fills 0]) render-id 0)
 
-        props (-> props
-                  (add-style (obj/get (attrs/extract-stroke-attrs value position render-id) "style")))]
-    props))
+            style (-> (obj/get props "style")
+                      (obj/clone)
+                      (obj/merge! (obj/get fill-props "style")))]
+
+        (cond-> (obj/merge! props fill-props)
+          (some? style)
+          (obj/set! "style" style))))))
+
+(defn build-stroke-props [position child value render-id]
+  (let [props (-> (obj/get child "props")
+                  (obj/clone)
+                  (obj/without ["fill" "fillOpacity"]))]
+    (-> props
+        (obj/set!
+         "style"
+         (-> (obj/get props "style")
+             (obj/set! "fill" "none")
+             (obj/set! "fillOpacity" "none")))
+        (add-style (obj/get (attrs/extract-stroke-attrs value position render-id) "style")))))
 
 (mf/defc shape-custom-strokes
   {::mf/wrap-props false}
@@ -361,17 +369,22 @@
   (let [child     (obj/get props "children")
         shape     (obj/get props "shape")
         elem-name (obj/get child "type")
-        render-id (mf/use-ctx muc/render-ctx)]
+        render-id (mf/use-ctx muc/render-ctx)
+        stroke-props (-> (obj/new)
+                         (obj/set! "id" (dm/fmt "strokes-%" (:id shape)))
+                         (cond->
+                          (some? (:blur shape))
+                           (obj/set! "filter" (dm/fmt "url(#filter_blur_%)" render-id))))]
 
-    (cond
+    [:*
+     [:g {:id (dm/fmt "fills-%" (:id shape))}
+      [:> elem-name (build-fill-props shape child render-id)]]
+
+     (when
       (d/not-empty? (:strokes shape))
-      [:*
-       (for [[index value] (-> (d/enumerate (:strokes shape)) reverse)]
-         (let [props (build-stroke-props index shape child value render-id)
-               shape (assoc value :points (:points shape))]
-           [:& shape-custom-stroke {:shape shape :index index}
-            [:> elem-name props]]))]
-
-      :else
-      [:& shape-custom-stroke {:shape shape :index 0}
-       child])))
+       [:> :g stroke-props
+        (for [[index value] (-> (d/enumerate (:strokes shape)) reverse)]
+          (let [props (build-stroke-props index child value render-id)
+                shape (assoc value :points (:points shape))]
+            [:& shape-custom-stroke {:shape shape :index index}
+             [:> elem-name props]]))])]))
