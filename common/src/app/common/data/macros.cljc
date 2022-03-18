@@ -132,7 +132,7 @@
 (defn- interpolate
   [s params]
   (loop [items  (->> (re-seq #"([^\%]+)*(\%(\d+)?)?" s)
-                     (remove (fn [[_ seg]] (nil? seg))))
+                     (remove (fn [[full seg]] (and (nil? seg) (not full)))))
          result []
          index  0]
     (if-let [[_ segment var? sidx] (first items)]
@@ -156,7 +156,8 @@
         (recur (rest items)
                (conj result segment)
                (inc index)))
-      result)))
+
+      (remove nil? result))))
 
 (defmacro fmt
   "String interpolation helper. Can only be used with strings known at

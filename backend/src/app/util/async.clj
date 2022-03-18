@@ -38,6 +38,13 @@
        (throw r#)
        r#)))
 
+(defmacro with-closing
+  [ch & body]
+  `(try
+     ~@body
+     (finally
+       (some-> ~ch a/close!))))
+
 (defn thread-call
   [^Executor executor f]
   (let [c (a/chan 1)]

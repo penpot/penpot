@@ -54,15 +54,21 @@
            pong-ch    (a/chan (a/sliding-buffer 6))
            close-ch   (a/chan)
 
-           options    (-> options
-                          (assoc ::input-ch input-ch)
-                          (assoc ::output-ch output-ch)
-                          (assoc ::close-ch close-ch)
-                          (assoc ::channel channel)
-                          (dissoc ::metrics))
+           options    (atom
+                       (-> options
+                           (assoc ::input-ch input-ch)
+                           (assoc ::output-ch output-ch)
+                           (assoc ::close-ch close-ch)
+                           (assoc ::channel channel)
+                           (dissoc ::metrics)))
 
            terminated (atom false)
            created-at (dt/now)
+
+           on-open
+           (fn [channel]
+             (mtx/run! metrics {:id :websocket-active-connections :inc 1})
+             (yws/idle-timeout! channel (dt/duration idle-timeout)))
 
            on-terminate
            (fn [& _args]
@@ -79,7 +85,8 @@
            (fn [_ error]
              (on-terminate)
              ;; TODO: properly log timeout exceptions
-             (when-not (instance? java.nio.channels.ClosedChannelException error)
+             (when-not (or (instance? java.nio.channels.ClosedChannelException error)
+                           (instance? java.net.SocketException error))
                (l/error :hint (ex-message error) :cause error)))
 
            on-message
@@ -98,31 +105,28 @@
            (fn [_ buffers]
              (a/>!! pong-ch (yu/copy-many buffers)))]
 
-       (mtx/run! metrics {:id :websocket-active-connections :inc 1})
+       ;; launch heartbeat process
+       (-> @options
+           (assoc ::pong-ch pong-ch)
+           (assoc ::on-close on-terminate)
+           (process-heartbeat))
 
-       (let [wsp (atom options)]
-         ;; Handle heartbeat
-         (yws/idle-timeout! channel (dt/duration idle-timeout))
-         (-> @wsp
-             (assoc ::pong-ch pong-ch)
-             (assoc ::on-close on-terminate)
-             (process-heartbeat))
+       ;; Forward all messages from output-ch to the websocket
+       ;; connection
+       (a/go-loop []
+         (when-let [val (a/<! output-ch)]
+           (mtx/run! metrics {:id :websocket-messages-total :labels ["send"] :inc 1})
+           (a/<! (ws-send! channel (t/encode-str val)))
+           (recur)))
 
-         ;; Forward all messages from output-ch to the websocket
-         ;; connection
-         (a/go-loop []
-           (when-let [val (a/<! output-ch)]
-             (mtx/run! metrics {:id :websocket-messages-total :labels ["send"] :inc 1})
-             (a/<! (ws-send! channel (t/encode-str val)))
-             (recur)))
+       ;; React on messages received from the client
+       (process-input options handle-message)
 
-         ;; React on messages received from the client
-         (process-input wsp handle-message)
-
-         {:on-error on-error
-          :on-close on-terminate
-          :on-text on-message
-          :on-pong on-pong})))))
+       {:on-open on-open
+        :on-error on-error
+        :on-close on-terminate
+        :on-text on-message
+        :on-pong on-pong}))))
 
 (defn- ws-send!
   [channel s]
@@ -160,14 +164,21 @@
     (.rewind buffer)
     (.getLong buffer)))
 
+(defn- wrap-handler
+  [handler]
+  (fn [wsp message]
+    (locking wsp
+      (handler wsp message))))
+
 (defn- process-input
   [wsp handler]
-  (let [{:keys [::input-ch ::output-ch ::close-ch]} @wsp]
+  (let [{:keys [::input-ch ::output-ch ::close-ch]} @wsp
+        handler (wrap-handler handler)]
     (a/go
       (a/<! (handler wsp {:type :connect}))
       (a/<! (a/go-loop []
-              (when-let [request (a/<! input-ch)]
-                (let [[val port] (a/alts! [(handler wsp request) close-ch])]
+              (when-let [message (a/<! input-ch)]
+                (let [[val port] (a/alts! [(handler wsp message) close-ch])]
                   (when-not (= port close-ch)
                     (cond
                       (ex/ex-info? val)
@@ -177,8 +188,7 @@
                       (a/>! output-ch {:type :error :error {:message (ex-message val)}})
 
                       (map? val)
-                      (a/>! output-ch (cond-> val (:request-id request) (assoc :request-id (:request-id request)))))
-
+                      (a/>! output-ch (cond-> val (:request-id message) (assoc :request-id (:request-id message)))))
                     (recur))))))
       (a/<! (handler wsp {:type :disconnect})))))
 

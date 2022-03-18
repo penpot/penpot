@@ -16,6 +16,7 @@
    ;; because of some strange interaction with cljs.spec.alpha and
    ;; modules splitting.
    [app.common.exceptions :as ex]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]
    [expound.alpha :as expound]))
@@ -95,6 +96,7 @@
 
     :else
     ::s/invalid))
+
 
 ;; --- Default Specs
 
@@ -191,6 +193,15 @@
 
    (fn [v]
      (str/join " " v))))
+
+(s/def ::uri
+  (s/conformer
+   (fn [s]
+     (cond
+       (u/uri? s) s
+       (string? s) (u/uri s)
+       :else ::s/invalid))
+   str))
 
 ;; --- SPEC: set-of-str
 

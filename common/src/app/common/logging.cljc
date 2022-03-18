@@ -181,16 +181,18 @@
              ~level-sym  (get-level ~level)]
          (when (enabled? ~logger-sym ~level-sym)
            ~(if async
-              `(send-off logging-agent
-                         (fn [_#]
-                           (with-context (merge {:id (uuid/next)}
-                                                (get-error-context ~cause)
-                                                ~context)
-                            (->> (or ~raw (build-map-message ~props))
-                                 (write-log! ~logger-sym ~level-sym ~cause)))))
-
+              `(do
+                 (send-off logging-agent
+                           (fn [_#]
+                             (with-context (into {:id (uuid/next)}
+                                                 (get-error-context ~cause)
+                                                 ~context)
+                               (->> (or ~raw (build-map-message ~props))
+                                    (write-log! ~logger-sym ~level-sym ~cause)))))
+                 nil)
               `(let [message# (or ~raw (build-map-message ~props))]
-                 (write-log! ~logger-sym ~level-sym ~cause message#))))))))
+                 (write-log! ~logger-sym ~level-sym ~cause message#)
+                 nil)))))))
 
 (defmacro info
   [& params]

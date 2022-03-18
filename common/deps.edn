@@ -6,11 +6,11 @@
   org.clojure/clojurescript {:mvn/version "1.11.4"}
 
   ;; Logging
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.17.1"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.17.1"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.17.1"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.17.1"}
-  org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.17.1"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.17.2"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.17.2"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.17.2"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.17.2"}
+  org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.17.2"}
   org.slf4j/slf4j-api {:mvn/version "2.0.0-alpha1"}
 
   selmer/selmer {:mvn/version "1.12.50"}
