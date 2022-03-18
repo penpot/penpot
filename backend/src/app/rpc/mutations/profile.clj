@@ -419,6 +419,7 @@
   (s/keys :req-un [::profile-id ::file]))
 
 (sv/defmethod ::update-profile-photo
+  {::rlimit/permits (cf/get :rlimit-image)}
   [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})

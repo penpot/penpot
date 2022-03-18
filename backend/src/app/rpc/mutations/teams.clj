@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
    [app.media :as media]
@@ -17,6 +18,7 @@
    [app.rpc.permissions :as perms]
    [app.rpc.queries.profile :as profile]
    [app.rpc.queries.teams :as teams]
+   [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -285,6 +287,7 @@
   (s/keys :req-un [::profile-id ::team-id ::file]))
 
 (sv/defmethod ::update-team-photo
+  {::rlimit/permits (cf/get :rlimit-image)}
   [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
@@ -372,7 +375,7 @@
         (ex/raise :type :validation
                   :code :profile-is-muted
                   :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
-      
+
       (doseq [email emails]
         (create-team-invitation
          (assoc cfg
@@ -381,7 +384,7 @@
                 :team team
                 :profile profile
                 :role role))
-        )      
+        )
       nil)))
 
 (def sql:upsert-team-invitation
