@@ -16,46 +16,34 @@
    [app.config :as cf]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [lambdaisland.uri :as u]
    [promesa.core :as p]))
 
-(defn create-cookie
-  [uri token]
-  (let [domain (str (:host uri)
-                (when (:port uri)
-                  (str ":" (:port uri))))]
-    {:domain domain
-     :key "auth-token"
-     :value token}))
-
 (defn screenshot-object
-  [{:keys [file-id page-id object-id token scale type]}]
-  (letfn [(handle [page]
-            (let [path   (str "/render-object/" file-id "/" page-id "/" object-id)
-                  uri    (-> (u/uri (cf/get :public-uri))
-                             (assoc :path "/")
-                             (assoc :fragment path))
-                  cookie (create-cookie uri token)]
-              (screenshot page (str uri) cookie)))
-
-          (screenshot [page uri cookie]
-            (l/info :uri uri)
-            (let [viewport {:width 1920
-                            :height 1080
-                            :scale scale}
-                  options  {:viewport viewport
-                            :cookie cookie}]
-              (p/do!
-               (bw/configure-page! page options)
-               (bw/navigate! page uri)
-               (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
-               (bw/wait-for page "#screenshot")
-               (p/let [dom (bw/select page "#screenshot")]
-                 (case type
-                   :png  (bw/screenshot dom {:omit-background? true :type type})
-                   :jpeg (bw/screenshot dom {:omit-background? false :type type}))))))]
-
-    (bw/exec! handle)))
+  [{:keys [file-id page-id object-id token scale type uri]}]
+  (p/let [path (str "/render-object/" file-id "/" page-id "/" object-id)
+          uri  (-> (or uri (cf/get :public-uri))
+                   (assoc :path "/")
+                   (assoc :fragment path))]
+    (bw/exec!
+     #js {:screen #js {:width bw/default-viewport-width
+                       :height bw/default-viewport-height}
+          :viewport #js {:width bw/default-viewport-width
+                         :height bw/default-viewport-height}
+          :locale "en-US"
+          :storageState #js {:cookies (bw/create-cookies uri {:token token})}
+          :deviceScaleFactor scale
+          :userAgent bw/default-user-agent}
+     (fn [page]
+       (l/info :uri uri)
+       (p/do!
+        (bw/nav! page (str uri))
+        (p/let [node (bw/select page "#screenshot")]
+          (bw/wait-for node)
+          (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
+          (bw/sleep page 2000) ; the good old fix with sleep
+          (case type
+            :png  (bw/screenshot node {:omit-background? true :type type})
+            :jpeg (bw/screenshot node {:omit-background? false :type type}))))))))
 
 (s/def ::name ::us/string)
 (s/def ::suffix ::us/string)
@@ -65,25 +53,32 @@
 (s/def ::object-id ::us/uuid)
 (s/def ::scale ::us/number)
 (s/def ::token ::us/string)
-(s/def ::filename ::us/string)
+(s/def ::origin ::us/string)
+(s/def ::uri ::us/uri)
 
-(s/def ::render-params
+(s/def ::params
   (s/keys :req-un [::name ::suffix ::type ::object-id ::page-id ::scale ::token ::file-id]
-          :opt-un [::filename]))
+          :opt-un [::origin ::uri]))
 
 (defn render
   [params]
-  (us/assert ::render-params params)
+  (us/verify ::params params)
+  (when (and (:origin params)
+             (not (contains? (cf/get :origin-white-list) (:origin params))))
+    (ex/raise :type :validation
+              :code :invalid-origin
+              :hint "invalid origin"
+              :origin (:origin params)))
+
   (p/let [content (screenshot-object params)]
-    {:content content
-     :filename (or (:filename params)
-                   (str (:name params)
-                        (:suffix params "")
-                        (case (:type params)
-                          :png ".png"
-                          :jpeg ".jpg")))
-     :length (alength content)
-     :mime-type (case (:type params)
-                  :png "image/png"
-                  :jpeg "image/jpeg")}))
+    {:data content
+     :name (str (:name params)
+                (:suffix params "")
+                (case (:type params)
+                  :png ".png"
+                  :jpeg ".jpg"))
+     :size (alength content)
+     :mtype (case (:type params)
+              :png "image/png"
+              :jpeg "image/jpeg")}))
 

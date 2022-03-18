@@ -15,12 +15,10 @@
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.config :as cf]
-   [app.renderer.bitmap :refer [create-cookie]]
    [app.util.shell :as sh]
    [cljs.spec.alpha :as s]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
-   [lambdaisland.uri :as u]
    [promesa.core :as p]))
 
 (l/set-level! :trace)
@@ -114,7 +112,7 @@
 
 
 (defn- render-object
-  [{:keys [page-id file-id object-id token scale suffix type]}]
+  [{:keys [page-id file-id object-id token scale suffix type uri]}]
   (letfn [(convert-to-ppm [pngpath]
             (l/trace :fn :convert-to-ppm)
             (let [basepath (path/dirname pngpath)
@@ -306,7 +304,7 @@
             (-> (bw/select-all page "#screenshot foreignObject")
                 (p/then (fn [nodes] (p/all (map (partial process-text-node page) nodes))))))
 
-          (extract-svg [page]
+          (extract [page]
             (p/let [dom     (bw/select page "#screenshot")
                     xmldata (bw/eval! dom (fn [elem] (.-outerHTML ^js elem)))
                     nodes   (process-text-nodes page)
@@ -322,35 +320,32 @@
               ;; (cljs.pprint/pprint (xml->clj result))
               ;; (println "-------")
               result))
+          ]
 
-          (render-in-page [page {:keys [uri cookie] :as rctx}]
-            (let [viewport {:width 1920
-                            :height 1080
-                            :scale 4}
-                  options  {:viewport viewport
-                            :timeout 15000
-                            :cookie cookie}]
-              (p/do!
-               (bw/configure-page! page options)
-               (bw/navigate! page uri)
-               (bw/wait-for page "#screenshot")
-               (bw/sleep page 2000)
-               ;; (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
-               page)))
-
-          (handle [rctx page]
-            (p/let [page (render-in-page page rctx)]
-              (extract-svg page)))]
-
-    (let [path   (str "/render-object/" file-id "/" page-id "/" object-id "?render-texts=true")
-          uri    (-> (u/uri (cf/get :public-uri))
+    (p/let [path (str "/render-object/" file-id "/" page-id "/" object-id "?render-texts=true")
+            uri  (-> (or uri (cf/get :public-uri))
                      (assoc :path "/")
-                     (assoc :fragment path))
-          cookie (create-cookie uri token)
-          rctx   {:cookie cookie
-                  :uri (str uri)}]
-      (l/info :uri (:uri rctx))
-      (bw/exec! (partial handle rctx)))))
+                     (assoc :fragment path))]
+
+      (bw/exec!
+       #js {:screen #js {:width bw/default-viewport-width
+                         :height bw/default-viewport-height}
+            :viewport #js {:width bw/default-viewport-width
+                           :height bw/default-viewport-height}
+            :locale "en-US"
+            :storageState #js {:cookies (bw/create-cookies uri {:token token})}
+            :deviceScaleFactor scale
+            :userAgent bw/default-user-agent}
+       (fn [page]
+         (l/info :uri uri)
+         (p/do!
+          (bw/nav! page uri)
+          (p/let [dom (bw/select page "#screenshot")]
+            (js/console.log "FFFF" dom)
+            (bw/wait-for dom)
+            (bw/sleep page 2000))
+
+          (extract page)))))))
 
 (s/def ::name ::us/string)
 (s/def ::suffix ::us/string)
@@ -360,21 +355,20 @@
 (s/def ::object-id ::us/uuid)
 (s/def ::scale ::us/number)
 (s/def ::token ::us/string)
-(s/def ::filename ::us/string)
+(s/def ::uri ::us/uri)
 
-(s/def ::render-params
+(s/def ::params
   (s/keys :req-un [::name ::suffix ::type ::object-id ::page-id ::file-id ::scale ::token]
-          :opt-un [::filename]))
+          :opt-un [::uri]))
 
 (defn render
   [params]
-  (us/assert ::render-params params)
+  (us/assert ::params params)
   (p/let [content (render-object params)]
-    {:content content
-     :filename (or (:filename params)
-                   (str (:name params)
-                        (:suffix params "")
-                        ".svg"))
-     :length (alength content)
-     :mime-type "image/svg+xml"}))
+    {:data content
+     :name (str (:name params)
+                (:suffix params "")
+                ".svg")
+     :size (alength content)
+     :mtype "image/svg+xml"}))
 

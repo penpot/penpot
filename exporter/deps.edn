@@ -2,7 +2,7 @@
  :deps
  {penpot/common       {:local/root "../common"}
   binaryage/devtools  {:mvn/version "RELEASE"}
-  metosin/reitit-core {:mvn/version "0.5.15"}
+  metosin/reitit-core {:mvn/version "0.5.16"}
   funcool/beicon      {:mvn/version "2021.07.05-1"}
   }
  :aliases
@@ -14,7 +14,7 @@
 
   :dev
   {:extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.17.3"}}}
+   {thheller/shadow-cljs {:mvn/version "2.17.8"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
