@@ -10,9 +10,11 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.teams :as teams]
+   [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -39,6 +41,7 @@
                    ::font-id ::font-family ::font-weight ::font-style]))
 
 (sv/defmethod ::create-font-variant
+  {::rlimit/permits (cf/get :rlimit-font)}
   [{:keys [pool] :as cfg} {:keys [team-id profile-id] :as params}]
   (let [cfg (update cfg :storage media/configure-assets-storage)]
     (teams/check-edition-permissions! pool profile-id team-id)

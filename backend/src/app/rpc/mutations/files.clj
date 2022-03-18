@@ -273,7 +273,7 @@
          (contains? o :changes-with-metadata)))))
 
 (sv/defmethod ::update-file
-  {::rlimit/permits 20}
+  {::rlimit/permits (cf/get :rlimit-file-update)}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (db/xact-lock! conn id)

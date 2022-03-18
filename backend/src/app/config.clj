@@ -63,11 +63,6 @@
    :storage-assets-fs-directory "assets"
 
    :assets-path "/internal/assets/"
-
-   :rlimit-password 10
-   :rlimit-image 10
-   :rlimit-font 10
-
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
    :smtp-default-from "Penpot <no-reply@example.com>"
 
@@ -175,6 +170,7 @@
 (s/def ::redis-uri ::us/string)
 (s/def ::registration-domain-whitelist ::us/set-of-str)
 (s/def ::rlimit-font ::us/integer)
+(s/def ::rlimit-file-update ::us/integer)
 (s/def ::rlimit-image ::us/integer)
 (s/def ::rlimit-password ::us/integer)
 (s/def ::smtp-default-from ::us/string)
@@ -281,6 +277,7 @@
                    ::registration-domain-whitelist
                    ::registration-enabled
                    ::rlimit-font
+                   ::rlimit-file-update
                    ::rlimit-image
                    ::rlimit-password
                    ::sentry-dsn
