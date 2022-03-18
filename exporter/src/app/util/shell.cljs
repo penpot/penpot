@@ -7,7 +7,7 @@
 (ns app.util.shell
   "Shell & FS utilities."
   (:require
-   ["child_process" :as chp]
+   ["child_process" :as proc]
    ["fs" :as fs]
    ["os" :as os]
    ["path" :as path]
@@ -18,51 +18,44 @@
 
 (defn create-tmpdir!
   [prefix]
-  (p/create
-   (fn [resolve reject]
-     (fs/mkdtemp (path/join (os/tmpdir) prefix)
-                 (fn [err dir]
-                   (if err
-                     (reject err)
-                     (resolve dir)))))))
+  (-> (.mkdtemp fs/promises prefix)
+      (p/then (fn [result]
+                (path/join (os/tmpdir) result)))))
+
+
+(defn move!
+  [origin-path dest-path]
+  (.rename fs/promises origin-path dest-path))
+
+(defn stat
+  [path]
+  (-> (.stat fs/promises path)
+      (p/then (fn [data]
+                {:created-at (inst-ms (.-ctime ^js data))
+                 :size (.-size data)}))
+      (p/catch (constantly nil))))
+
+(defn rmdir!
+  [path]
+  (.rm fs/promises path #js {:recursive true}))
 
 (defn write-file!
   [fpath content]
-  (p/create
-   (fn [resolve reject]
-     (fs/writeFile fpath content (fn [err]
-                                   (if err
-                                     (reject err)
-                                     (resolve nil)))))))
+  (.writeFile fs/promises fpath content))
+
 (defn read-file
   [fpath]
-  (p/create
-   (fn [resolve reject]
-     (fs/readFile fpath (fn [err content]
-                          (if err
-                            (reject err)
-                            (resolve content)))))))
+  (.readFile fs/promises fpath))
 
 (defn run-cmd!
   [cmd]
   (p/create
    (fn [resolve reject]
      (l/trace :fn :run-cmd :cmd cmd)
-     (chp/exec cmd #js {:encoding "buffer"}
-               (fn [error stdout stderr]
-                 ;; (l/trace :fn :run-cmd :stdout stdout)
-                 (if error
-                   (reject error)
-                   (resolve stdout)))))))
-
-(defn rmdir!
-  [path]
-  (p/create
-   (fn [resolve reject]
-     (fs/rmdir path #js {:recursive true}
-               (fn [err]
-                 (if err
-                   (reject err)
-                   (resolve nil)))))))
-
+     (proc/exec cmd #js {:encoding "buffer"}
+                (fn [error stdout stderr]
+                  ;; (l/trace :fn :run-cmd :stdout stdout)
+                  (if error
+                    (reject error)
+                    (resolve stdout)))))))
 

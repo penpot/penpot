@@ -13,38 +13,41 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.version :as v]
+   [app.common.uri :as u]
    [cljs.core :as c]
    [cljs.pprint]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [lambdaisland.uri :as u]))
+   [cuerdas.core :as str]))
 
 (def defaults
   {:public-uri "http://localhost:3449"
    :tenant "dev"
    :host "devenv"
    :http-server-port 6061
-   :browser-concurrency 5
-   :browser-strategy :incognito})
+   :http-server-host "localhost"
+   :redis-uri "redis://redis/0"
+   :exporter-domain-whitelist #{"localhost2:3449"}})
 
-(s/def ::browser-concurrency ::us/integer)
-(s/def ::browser-executable-path ::us/string)
-(s/def ::browser-strategy ::us/keyword)
 (s/def ::http-server-port ::us/integer)
-(s/def ::public-uri ::us/string)
-(s/def ::sentry-dsn ::us/string)
+(s/def ::http-server-host ::us/string)
+(s/def ::public-uri ::us/uri)
 (s/def ::tenant ::us/string)
 (s/def ::host ::us/string)
 
+(s/def ::exporter-domain-whitelist ::us/set-of-str)
+(s/def ::exporter-browser-pool-max ::us/integer)
+(s/def ::exporter-browser-pool-min ::us/integer)
+
 (s/def ::config
   (s/keys :opt-un [::public-uri
-                   ::sentry-dsn
                    ::host
                    ::tenant
                    ::http-server-port
-                   ::browser-concurrency
-                   ::browser-strategy
-                   ::browser-executable-path]))
+                   ::http-server-host
+                   ::exporter-browser-pool-max
+                   ::exporter-browser-pool-min
+                   ::exporter-domain-whitelist]))
+
 (defn- read-env
   [prefix]
   (let [env    (unchecked-get process "env")
@@ -62,10 +65,14 @@
 
 (defn- prepare-config
   []
-  (let [env  (read-env "penpot")
-        env  (d/without-nils env)
-        data (merge defaults env)]
-    (us/conform ::config data)))
+  (try
+    (let [env  (read-env "penpot")
+          env  (d/without-nils env)
+          data (merge defaults env)]
+      (us/conform ::config data))
+    (catch :default cause
+      (js/console.log (us/pretty-explain (ex-data cause)))
+      (throw cause))))
 
 (def config
   (atom (prepare-config)))
