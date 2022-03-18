@@ -11,6 +11,9 @@
 ## 1.13.0-beta
 
 ### :boom: Breaking changes
+
+- We've changed the behaviour of the border-radius so it works as CSS that [has some limits](https://www.w3.org/TR/css-backgrounds-3/#corner-overlap).
+
 ### :sparkles: New features
 
 - Exporting big files flow [Taiga #2218](https://tree.taiga.io/project/penpot/us/2218)
@@ -49,6 +52,7 @@
 - Fix problem when importing a SVG with text [#1532](https://github.com/penpot/penpot/issues/1532)
 - Fix problem when adding shadows to imported text [#Taiga 3057](https://tree.taiga.io/project/penpot/issue/3057)
 - Fix problem when importing SVG's with uses with overriding properties [#Taiga 2884](https://tree.taiga.io/project/penpot/issue/2884)
+- Fix inconsistency with radius in SVG an CSS [#1587](https://github.com/penpot/penpot/issues/1587)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

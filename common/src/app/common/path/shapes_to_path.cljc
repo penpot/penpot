@@ -11,9 +11,11 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gsc]
+   [app.common.geom.shapes.corners :as gso]
    [app.common.geom.shapes.path :as gsp]
    [app.common.path.bool :as pb]
-   [app.common.path.commands :as pc]))
+   [app.common.path.commands :as pc]
+   [app.common.spec.radius :as ctr]))
 
 (def ^:const bezier-circle-c 0.551915024494)
 
@@ -93,7 +95,7 @@
 
 (defn circle->path
   "Creates the bezier curves to approximate a circle shape"
-  [x y width height]
+  [{:keys [x y width height]}]
   (let [mx (+ x (/ width 2))
         my (+ y (/ height 2))
         ex (+ x width)
@@ -116,35 +118,50 @@
      (pc/make-curve-to p4 (assoc p3 :x c1x) (assoc p4 :y c2y))
      (pc/make-curve-to p1 (assoc p4 :y c1y) (assoc p1 :x c1x))]))
 
+(defn draw-rounded-rect-path
+  ([x y width height r]
+   (draw-rounded-rect-path x y width height r r r r))
+
+  ([x y width height r1 r2 r3 r4]
+   (let [p1 (gpt/point x (+ y r1))
+         p2 (gpt/point (+ x r1) y)
+
+         p3 (gpt/point (+ width x (- r2)) y)
+         p4 (gpt/point (+ width x) (+ y r2))
+
+         p5 (gpt/point (+ width x) (+ height y (- r3)))
+         p6 (gpt/point (+ width x (- r3)) (+ height y))
+
+         p7 (gpt/point (+ x r4) (+ height y))
+         p8 (gpt/point x (+ height y (- r4)))]
+     (-> []
+         (conj (pc/make-move-to p1))
+         (cond-> (not= p1 p2)
+           (conj (make-corner-arc p1 p2 :top-left r1)))
+         (conj (pc/make-line-to p3))
+         (cond-> (not= p3 p4)
+           (conj (make-corner-arc p3 p4 :top-right r2)))
+         (conj (pc/make-line-to p5))
+         (cond-> (not= p5 p6)
+           (conj (make-corner-arc p5 p6 :bottom-right r3)))
+         (conj (pc/make-line-to p7))
+         (cond-> (not= p7 p8)
+           (conj (make-corner-arc p7 p8 :bottom-left r4)))
+         (conj (pc/make-line-to p1))))))
+
 (defn rect->path
   "Creates a bezier curve that approximates a rounded corner rectangle"
-  [x y width height r1 r2 r3 r4 rx]
-  (let [[r1 r2 r3 r4] (->> [r1 r2 r3 r4] (mapv #(or % rx 0)))
-        p1 (gpt/point x (+ y r1))
-        p2 (gpt/point (+ x r1) y)
+  [{:keys [x y width height] :as shape}]
+  (case (ctr/radius-mode shape)
+    :radius-1
+    (let [radius (gso/shape-corners-1 shape)]
+      (draw-rounded-rect-path x y width height radius))
 
-        p3 (gpt/point (+ width x (- r2)) y)
-        p4 (gpt/point (+ width x) (+ y r2))
+    :radius-4
+    (let [[r1 r2 r3 r4] (gso/shape-corners-4 shape)]
+      (draw-rounded-rect-path x y width height r1 r2 r3 r4))
 
-        p5 (gpt/point (+ width x) (+ height y (- r3)))
-        p6 (gpt/point (+ width x (- r3)) (+ height y))
-
-        p7 (gpt/point (+ x r4) (+ height y))
-        p8 (gpt/point x (+ height y (- r4)))]
-    (-> []
-        (conj (pc/make-move-to p1))
-        (cond-> (not= p1 p2)
-          (conj (make-corner-arc p1 p2 :top-left r1)))
-        (conj (pc/make-line-to p3))
-        (cond-> (not= p3 p4)
-          (conj (make-corner-arc p3 p4 :top-right r2)))
-        (conj (pc/make-line-to p5))
-        (cond-> (not= p5 p6)
-          (conj (make-corner-arc p5 p6 :bottom-right r3)))
-        (conj (pc/make-line-to p7))
-        (cond-> (not= p7 p8)
-          (conj (make-corner-arc p7 p8 :bottom-left r4)))
-        (conj (pc/make-line-to p1)))))
+    []))
 
 (declare convert-to-path)
 
@@ -192,9 +209,9 @@
   "Transforms the given shape to a path"
   ([shape]
    (convert-to-path shape {}))
-  ([{:keys [type x y width height r1 r2 r3 r4 rx metadata] :as shape} objects]
+  ([{:keys [type metadata] :as shape} objects]
    (assert (map? objects))
-   (case (:type shape)
+   (case type
      :group
      (group-to-path shape objects)
 
@@ -204,8 +221,8 @@
      (:rect :circle :image :text)
      (let [new-content
            (case type
-             :circle (circle->path x y width height)
-             #_:else (rect->path x y width height r1 r2 r3 r4 rx))
+             :circle (circle->path shape)
+             #_:else (rect->path shape))
 
            ;; Apply the transforms that had the shape
            transform (:transform shape)

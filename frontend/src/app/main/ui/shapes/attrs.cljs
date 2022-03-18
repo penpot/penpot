@@ -7,6 +7,8 @@
 (ns app.main.ui.shapes.attrs
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.geom.shapes :as gsh]
    [app.common.spec.radius :as ctr]
    [app.common.spec.shape :refer [stroke-caps-line stroke-caps-marker]]
    [app.main.ui.context :as muc]
@@ -26,58 +28,30 @@
 
     (->> values (map #(+ % width)) (str/join ","))))
 
-(defn- truncate-side
-  [shape ra-attr rb-attr dimension-attr]
-  (let [ra        (ra-attr shape)
-        rb        (rb-attr shape)
-        dimension (dimension-attr shape)]
-    (if (<= (+ ra rb) dimension)
-      [ra rb]
-      [(/ (* ra dimension) (+ ra rb))
-       (/ (* rb dimension) (+ ra rb))])))
 
-(defn- truncate-radius
-  [shape]
-  (let [[r-top-left r-top-right]
-        (truncate-side shape :r1 :r2 :width)
-
-        [r-right-top r-right-bottom]
-        (truncate-side shape :r2 :r3 :height)
-
-        [r-bottom-right r-bottom-left]
-        (truncate-side shape :r3 :r4 :width)
-
-        [r-left-bottom r-left-top]
-        (truncate-side shape :r4 :r1 :height)]
-
-    [(min r-top-left r-left-top)
-     (min r-top-right r-right-top)
-     (min r-right-bottom r-bottom-right)
-     (min r-bottom-left r-left-bottom)]))
-
-(defn add-border-radius [attrs shape]
+(defn add-border-radius [attrs {:keys [x y width height] :as shape}]
   (case (ctr/radius-mode shape)
-
     :radius-1
-    (obj/merge! attrs #js {:rx (:rx shape 0)
-                           :ry (:ry shape 0)})
+    (let [radius (gsh/shape-corners-1 shape)]
+      (obj/merge! attrs #js {:rx radius :ry radius}))
 
     :radius-4
-    (let [[r1 r2 r3 r4] (truncate-radius shape)
-          top    (- (:width shape) r1 r2)
-          right  (- (:height shape) r2 r3)
-          bottom (- (:width shape) r3 r4)
-          left   (- (:height shape) r4 r1)]
-      (obj/merge! attrs #js {:d (str "M" (+ (:x shape) r1) "," (:y shape) " "
-                                     "h" top " "
-                                     "a" r2 "," r2 " 0 0 1 " r2 "," r2 " "
-                                     "v" right " "
-                                     "a" r3 "," r3 " 0 0 1 " (- r3) "," r3 " "
-                                     "h" (- bottom) " "
-                                     "a" r4 "," r4 " 0 0 1 " (- r4) "," (- r4) " "
-                                     "v" (- left) " "
-                                     "a" r1 "," r1 " 0 0 1 " r1 "," (- r1) " "
-                                     "z")}))
+    (let [[r1 r2 r3 r4] (gsh/shape-corners-4 shape)
+          top    (- width r1 r2)
+          right  (- height r2 r3)
+          bottom (- width r3 r4)
+          left   (- height r4 r1)]
+      (obj/merge! attrs #js {:d (dm/str
+                                 "M" (+ x r1) "," y " "
+                                 "h" top " "
+                                 "a" r2 "," r2 " 0 0 1 " r2 "," r2 " "
+                                 "v" right " "
+                                 "a" r3 "," r3 " 0 0 1 " (- r3) "," r3 " "
+                                 "h" (- bottom) " "
+                                 "a" r4 "," r4 " 0 0 1 " (- r4) "," (- r4) " "
+                                 "v" (- left) " "
+                                 "a" r1 "," r1 " 0 0 1 " r1 "," (- r1) " "
+                                 "z")}))
     attrs))
 
 (defn add-fill
