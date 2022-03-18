@@ -7,22 +7,16 @@
 (ns app.main.ui.components.numeric-input
   (:require
    [app.common.data :as d]
-   [app.common.math :as math]
    [app.common.spec :as us]
+   [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.simple-math :as sm]
-   [app.util.strings :as ust]
    [goog.events :as events]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
-
-(defn num? [val]
-  (and (number? val)
-       (not (math/nan? val))
-       (math/finite? val)))
 
 (mf/defc numeric-input
   {::mf/wrap-props false
@@ -36,8 +30,8 @@
         on-change    (obj/get props "onChange")
         on-blur      (obj/get props "onBlur")
         title        (obj/get props "title")
-        default-val  (obj/get props "default" 0)
-        precision    (obj/get props "precision")
+        default-val  (obj/get props "default")
+        nillable     (obj/get props "nillable")
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -78,34 +72,34 @@
 
         parse-value
         (mf/use-callback
-          (mf/deps ref min-val max-val value)
+          (mf/deps ref min-val max-val value nillable default-val)
           (fn []
             (let [input-node (mf/ref-val ref)
                   new-value (-> (dom/get-value input-node)
                                 (sm/expr-eval value))]
-              (when (num? new-value)
+              (cond
+                (d/num? new-value)
                 (-> new-value
-                    (cond-> (number? precision)
-                      (math/precision precision))
-                    (cond-> (nil? precision)
-                      (math/round))
                     (cljs.core/max us/min-safe-int)
                     (cljs.core/min us/max-safe-int)
                     (cond->
-                      (num? min-val)
+                        (d/num? min-val)
                       (cljs.core/max min-val)
 
-                      (num? max-val)
-                      (cljs.core/min max-val)))))))
+                      (d/num? max-val)
+                      (cljs.core/min max-val)))
+
+                nillable
+                default-val
+
+                :else value))))
 
         update-input
         (mf/use-callback
           (mf/deps ref)
           (fn [new-value]
             (let [input-node (mf/ref-val ref)]
-              (dom/set-value! input-node (if (some? precision)
-                                           (ust/format-precision new-value precision)
-                                           (str new-value))))))
+              (dom/set-value! input-node (fmt/format-number new-value)))))
 
         apply-value
         (mf/use-callback
@@ -122,24 +116,30 @@
          (fn [event up? down?]
            (let [current-value (parse-value)]
              (when current-value
-               (let [increment (if (kbd/shift? event)
+               (let [increment (cond
+                                 (kbd/shift? event)
                                  (if up? (* step-val 10) (* step-val -10))
+
+                                 (kbd/alt? event)
+                                 (if up? (* step-val 0.1) (* step-val -0.1))
+
+                                 :else
                                  (if up? step-val (- step-val)))
 
                      new-value (+ current-value increment)
                      new-value (cond
-                                 (and wrap-value? (num? max-val) (num? min-val)
+                                 (and wrap-value? (d/num? max-val min-val)
                                       (> new-value max-val) up?)
                                  (-> new-value (- max-val) (+ min-val) (- step-val))
 
-                                 (and wrap-value? (num? min-val) (num? max-val)
+                                 (and wrap-value? (d/num? max-val min-val)
                                       (< new-value min-val) down?)
                                  (-> new-value (- min-val) (+ max-val) (+ step-val))
 
-                                 (and (num? min-val) (< new-value min-val))
+                                 (and (d/num? min-val) (< new-value min-val))
                                  min-val
 
-                                 (and (num? max-val) (> new-value max-val))
+                                 (and (d/num? max-val) (> new-value max-val))
                                  max-val
 
                                  :else new-value)]
@@ -167,14 +167,19 @@
         (mf/use-callback
          (mf/deps set-delta)
          (fn [event]
-           (set-delta event (< (.-deltaY event) 0) (> (.-deltaY event) 0))))
+           (let [input-node (mf/ref-val ref)]
+             (when (dom/active? input-node)
+               (let [event (.getBrowserEvent ^js event)]
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (set-delta event (< (.-deltaY event) 0) (> (.-deltaY event) 0)))))))
 
         handle-blur
         (mf/use-callback
          (mf/deps parse-value apply-value update-input on-blur)
          (fn [_]
            (let [new-value (or (parse-value) default-val)]
-             (if new-value
+             (if (or nillable new-value)
                (apply-value new-value)
                (update-input new-value)))
            (when on-blur (on-blur))))
@@ -189,21 +194,20 @@
                    (dom/blur! current)))))))
 
         props (-> props
-                  (obj/without ["value" "onChange"])
+                  (obj/without ["value" "onChange" "nillable"])
                   (obj/set! "className" "input-text")
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
-                  (obj/set! "defaultValue" value-str)
+                  (obj/set! "defaultValue" (fmt/format-number value))
                   (obj/set! "title" title)
-                  (obj/set! "onWheel" handle-mouse-wheel)
                   (obj/set! "onKeyDown" handle-key-down)
                   (obj/set! "onBlur" handle-blur))]
 
     (mf/use-effect
-     (mf/deps value-str)
+     (mf/deps value)
      (fn []
        (when-let [input-node (mf/ref-val ref)]
-         (dom/set-value! input-node value-str))))
+         (dom/set-value! input-node (fmt/format-number value)))))
 
     (mf/use-effect
      (mf/deps handle-blur)
@@ -217,6 +221,13 @@
             (handle-blur)))))
 
     (mf/use-layout-effect
+     (mf/deps handle-mouse-wheel)
+     (fn []
+       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:pasive false})]]
+         #(doseq [key keys]
+            (events/unlistenByKey key)))))
+
+    (mf/use-layout-effect
      (fn []
        (let [keys [(events/listen globals/window EventType.POINTERDOWN on-click)
                    (events/listen globals/window EventType.MOUSEDOWN on-click)
@@ -225,4 +236,3 @@
             (events/unlistenByKey key)))))
 
     [:> :input props]))
-

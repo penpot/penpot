@@ -163,7 +163,7 @@
                  (:width vbox 0)
                  (:height vbox 0)]))
 
-(defn translate-point-to-viewport-raw [viewport zoom pt]
+(defn translate-point-to-viewport [viewport zoom pt]
   (let [vbox     (.. ^js viewport -viewBox -baseVal)
         brect    (dom/get-bounding-rect viewport)
         brect    (gpt/point (d/parse-integer (:left brect))
@@ -173,10 +173,6 @@
     (-> (gpt/subtract pt brect)
         (gpt/divide zoom)
         (gpt/add box))))
-
-(defn translate-point-to-viewport [viewport zoom pt]
-  (-> (translate-point-to-viewport-raw viewport zoom pt)
-      (gpt/round 0)))
 
 (defn get-cursor [cursor]
   (case cursor

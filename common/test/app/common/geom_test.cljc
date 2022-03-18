@@ -7,6 +7,7 @@
 (ns app.common.geom-test
   (:require
    [clojure.test :as t]
+   [app.common.math :as mth]
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]))
 
@@ -67,7 +68,7 @@
           p2 (gpt/point 10 10)
           angle (gpt/angle-with-other p1 p2)]
       (t/is (number? angle))
-      (t/is (= angle 45.0)))))
+      (t/is (mth/close? angle 45.0)))))
 
 (t/deftest matrix-constructors-test
   (let [m (gmt/matrix)]

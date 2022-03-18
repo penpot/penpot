@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.colorpalette
   (:require
-   [app.common.math :as mth]
    [app.main.data.workspace.colors :as mdc]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -57,7 +56,7 @@
   (let [state      (mf/use-state {:show-menu false})
 
         width      (:width @state 0)
-        visible    (mth/round (/ width 66))
+        visible    (/ width 66)
 
         offset     (:offset @state 0)
         max-offset (- (count current-colors)
@@ -75,7 +74,7 @@
            (swap! state update :offset
                   (fn [offset]
                     (if (pos? offset)
-                      (max (- offset (mth/round (/ visible 2))) 0)
+                      (max (- offset (/ visible 2)) 0)
                       offset)))))
 
         on-right-arrow-click
@@ -85,7 +84,7 @@
            (swap! state update :offset
                   (fn [offset]
                     (if (< offset max-offset)
-                      (min max-offset (+ offset (mth/round (/ visible 2))))
+                      (min max-offset (+ offset (/ visible 2)))
                       offset)))))
 
         on-scroll

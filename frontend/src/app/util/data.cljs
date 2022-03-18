@@ -167,4 +167,3 @@
     (let [st (str/trim (str/lower search-term))
           nm (str/trim (str/lower name))]
       (str/includes? nm st))))
-

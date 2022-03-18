@@ -141,6 +141,9 @@
 (def workspace-layout
   (l/derived :workspace-layout st/state))
 
+(def snap-pixel?
+  (l/derived #(contains? % :snap-pixel-grid) workspace-layout))
+
 (def workspace-file
   "A ref to a striped vision of file (without data)."
   (l/derived (fn [state]

@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as hooks]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
@@ -131,9 +132,9 @@
       
 
       (let [{:keys [start end]} (get-rule-params vbox axis)
-            minv (max (mth/round start) -100000)
+            minv (max start -100000)
             minv (* (mth/ceil (/ minv step)) step)
-            maxv (min (mth/round end) 100000)
+            maxv (min end 100000)
             maxv (* (mth/floor (/ maxv step)) step)]
 
         (for [step-val (range minv (inc maxv) step)]
@@ -149,7 +150,7 @@
                      :style {:font-size (/ font-size zoom)
                              :font-family font-family
                              :fill colors/gray-30}}
-              (str (mth/round step-val))]
+              (fmt/format-number step-val)]
 
              [:line {:key (str "line-" (d/name axis) "-"  step-val)
                      :x1 line-x1
@@ -184,7 +185,7 @@
             :style {:font-size (/ font-size zoom)
                     :font-family font-family
                     :fill selection-area-color}}
-     (str (mth/round (:x1 selection-rect)))]
+     (fmt/format-number (:x1 selection-rect))]
 
     [:rect {:x (:x2 selection-rect)
             :y (:y vbox)
@@ -200,7 +201,7 @@
             :style {:font-size (/ font-size zoom)
                     :font-family font-family
                     :fill selection-area-color}}
-     (str (mth/round (:x2 selection-rect)))]]
+     (fmt/format-number (:x2 selection-rect))]]
 
    (let [center-x (+ (:x vbox) (/ rule-area-half-size zoom))
          center-y (- (+ (:y selection-rect) (/ (:height selection-rect) 2)) (/ rule-area-half-size zoom))]
@@ -234,7 +235,7 @@
               :style {:font-size (/ font-size zoom)
                       :font-family font-family
                       :fill selection-area-color}}
-       (str (mth/round (:y2 selection-rect)))]
+       (fmt/format-number (:y2 selection-rect))]
 
       [:text {:x (+ center-x (/ (:height selection-rect) 2) )
               :y center-y
@@ -243,7 +244,7 @@
               :style {:font-size (/ font-size zoom)
                       :font-family font-family
                       :fill selection-area-color}}
-       (str (mth/round (:y1 selection-rect)))]])])
+       (fmt/format-number (:y1 selection-rect))]])])
 
 (mf/defc rules
   {::mf/wrap-props false

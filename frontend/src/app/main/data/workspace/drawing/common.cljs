@@ -6,8 +6,10 @@
 
 (ns app.main.data.workspace.drawing.common
   (:require
-   [app.common.geom.point :as gpt]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.common.pages :as cp]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.undo :as dwu]
    [app.main.worker :as uw]
@@ -29,27 +31,30 @@
         (rx/concat
          (when (:initialized? shape)
            (let [page-id (:current-page-id state)
-                 shape-click-width (case (:type shape)
-                                     :text 3
-                                     20)
-                 shape-click-height (case (:type shape)
-                                      :text 16
-                                      20)
-                 shape (if (:click-draw? shape)
-                         (-> shape
-                             (assoc-in [:modifiers :resize-vector]
-                                       (gpt/point shape-click-width shape-click-height))
-                             (assoc-in [:modifiers :resize-origin]
-                                       (gpt/point (:x shape) (:y shape))))
-                         shape)
 
-                 shape (cond-> shape
-                         (= (:type shape) :text) (assoc :grow-type
-                                                        (if (:click-draw? shape) :auto-width :fixed)))
+                 click-draw? (:click-draw? shape)
+                 text? (= :text (:type shape))
 
-                 shape (-> shape
-                           (gsh/transform-shape)
-                           (dissoc :initialized? :click-draw?))]
+                 min-side (min 100
+                               (mth/floor (get-in state [:workspace-local :vbox :width]))
+                               (mth/floor (get-in state [:workspace-local :vbox :height])))
+
+                 shape
+                 (cond-> shape
+                   (and click-draw? (not text?))
+                   (-> (assoc :width min-side :height min-side)
+                       (assoc-in [:modifiers :displacement]
+                                 (gmt/translate-matrix (- (/ min-side 2)) (- (/ min-side 2)))))
+
+                   (and click-draw? text?)
+                   (assoc :height 17 :width 4 :grow-type :auto-width)
+
+                   click-draw?
+                   (cp/setup-rect-selrect)
+
+                   :always
+                   (-> (gsh/transform-shape)
+                       (dissoc :initialized? :click-draw?)))]
              ;; Add & select the created shape to the workspace
              (rx/concat
               (if (= :text (:type shape))

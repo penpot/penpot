@@ -6,7 +6,6 @@
 
 (ns app.main.ui.viewer.handoff.attributes.common
   (:require
-   [app.common.math :as mth]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet color-name]]
    [app.main.ui.components.copy-button :refer [copy-button]]
@@ -50,9 +49,9 @@
       (if (:gradient color)
         [:& color-name {:color color}]
         (case format
-          :rgba (let [[r g b a] (->> (uc/hex->rgba (:color color) (:opacity color)) (map #(mth/precision % 2)))]
+          :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
                   [:div (str/fmt "%s, %s, %s, %s" r g b a)])
-          :hsla (let [[h s l a] (->> (uc/hex->hsla (:color color) (:opacity color)) (map #(mth/precision % 2)))]
+          :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))]
                   [:div (str/fmt "%s, %s, %s, %s" h s l a)])
           [:*
            [:& color-name {:color color}]

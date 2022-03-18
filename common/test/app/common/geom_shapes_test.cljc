@@ -9,7 +9,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :refer [close?]]
+   [app.common.math :as mth :refer [close?]]
    [app.common.pages :refer [make-minimal-shape]]
    [clojure.test :as t]))
 
@@ -52,7 +52,7 @@
   (t/testing "Shape without modifiers should stay the same"
     (t/are [type]
         (let [shape-before (create-test-shape type)
-              shape-after  (gsh/transform-shape shape-before {:round-coords? false})]
+              shape-after  (gsh/transform-shape shape-before)]
           (= shape-before shape-after))
 
       :rect :path))
@@ -61,7 +61,7 @@
     (t/are [type]
         (let [modifiers {:displacement (gmt/translate-matrix (gpt/point 10 -10))}]
           (let [shape-before (create-test-shape type {:modifiers modifiers})
-                shape-after  (gsh/transform-shape shape-before {:round-coords? false})]
+                shape-after  (gsh/transform-shape shape-before)]
             (t/is (not= shape-before shape-after))
 
             (t/is (close? (get-in shape-before [:selrect :x])
@@ -82,7 +82,7 @@
     (t/are [type]
         (let [modifiers {:displacement (gmt/matrix)}
               shape-before (create-test-shape type {:modifiers modifiers})
-              shape-after  (gsh/transform-shape shape-before {:round-coords? false})]
+              shape-after  (gsh/transform-shape shape-before)]
           (t/are [prop]
               (t/is (close? (get-in shape-before [:selrect prop])
                             (get-in shape-after [:selrect prop])))
@@ -95,7 +95,7 @@
                          :resize-vector (gpt/point 2 2)
                          :resize-transform (gmt/matrix)}
               shape-before (create-test-shape type {:modifiers modifiers})
-              shape-after  (gsh/transform-shape shape-before {:round-coords? false})]
+              shape-after  (gsh/transform-shape shape-before)]
           (t/is (not= shape-before shape-after))
 
           (t/is (close? (get-in shape-before [:selrect :x])
@@ -117,7 +117,7 @@
                          :resize-vector (gpt/point 1 1)
                          :resize-transform (gmt/matrix)}
               shape-before (create-test-shape type {:modifiers modifiers})
-              shape-after  (gsh/transform-shape shape-before {:round-coords? false})]
+              shape-after  (gsh/transform-shape shape-before)]
           (t/are [prop]
               (t/is (close? (get-in shape-before [:selrect prop])
                             (get-in shape-after [:selrect prop])))
@@ -130,7 +130,7 @@
                          :resize-vector (gpt/point 0 0)
                          :resize-transform (gmt/matrix)}
               shape-before (create-test-shape type {:modifiers modifiers})
-              shape-after  (gsh/transform-shape shape-before {:round-coords? false})]
+              shape-after  (gsh/transform-shape shape-before)]
           (t/is (> (get-in shape-before [:selrect :width])
                    (get-in shape-after  [:selrect :width])))
           (t/is (> (get-in shape-after  [:selrect :width]) 0))
@@ -144,7 +144,7 @@
     (t/are [type]
         (let [modifiers {:rotation 30}
               shape-before (create-test-shape type {:modifiers modifiers})
-              shape-after  (gsh/transform-shape shape-before {:round-coords? false})]
+              shape-after  (gsh/transform-shape shape-before)]
 
           (t/is (not= shape-before shape-after))
 
@@ -168,7 +168,7 @@
     (t/are [type]
         (let [modifiers {:rotation 0}
               shape-before (create-test-shape type {:modifiers modifiers})
-              shape-after  (gsh/transform-shape shape-before {:round-coords? false})]
+              shape-after  (gsh/transform-shape shape-before)]
           (t/are [prop]
               (t/is (close? (get-in shape-before [:selrect prop])
                             (get-in shape-after [:selrect prop])))
@@ -180,7 +180,7 @@
         (let [modifiers {:displacement (gmt/matrix)}
               shape-before (-> (create-test-shape type {:modifiers modifiers})
                                (assoc :selrect selrect))
-              shape-after  (gsh/transform-shape shape-before {:round-coords? false})]
+              shape-after  (gsh/transform-shape shape-before)]
           (= (:selrect shape-before)
              (:selrect shape-after)))
 

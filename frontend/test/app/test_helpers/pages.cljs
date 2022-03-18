@@ -70,7 +70,7 @@
    (let [page  (current-page state)
          frame (cph/get-frame (:objects page))
          shape (-> (cp/make-minimal-shape type)
-                   (gsh/setup {:x 0 :y 0 :width 1 :height 1})
+                   (cp/setup-shape {:x 0 :y 0 :width 1 :height 1})
                    (merge props))]
      (swap! idmap assoc label (:id shape))
      (update state :workspace-data

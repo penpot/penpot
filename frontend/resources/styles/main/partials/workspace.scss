@@ -241,12 +241,13 @@ $height-palette-max: 80px;
     position: relative;
 
     .viewport-overlays {
+      cursor: initial;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
       position: absolute;
       width: 100%;
-      height: 100%;
       z-index: 10;
-      pointer-events: none;
-      cursor: initial;
 
       .pixel-overlay {
         height: 100%;

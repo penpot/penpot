@@ -395,8 +395,8 @@
                   srect   (gsh/selection-rect shapes)
                   local   (assoc local :vport size :zoom 1)]
               (cond
-                (or (not (mth/finite? (:width srect)))
-                    (not (mth/finite? (:height srect))))
+                (or (not (d/num? (:width srect)))
+                    (not (d/num? (:height srect))))
                 (assoc local :vbox (assoc size :x 0 :y 0))
 
                 (or (> (:width srect) width)
@@ -1574,7 +1574,7 @@
             page-id (:current-page-id state)
             frame-id (-> (wsh/lookup-page-objects state page-id)
                          (cph/frame-id-by-position @ms/mouse-position))
-            shape (gsh/setup-selrect
+            shape (cp/setup-rect-selrect
                    {:id id
                     :type :text
                     :name "Text"
@@ -1667,7 +1667,7 @@
                 shape    (-> (cp/make-minimal-shape :frame)
                              (merge {:x (:x srect) :y (:y srect) :width (:width srect) :height (:height srect)})
                              (assoc :frame-id frame-id)
-                             (gsh/setup-selrect))]
+                             (cp/setup-rect-selrect))]
             (rx/of
              (dwu/start-undo-transaction)
              (dwc/add-shape shape)

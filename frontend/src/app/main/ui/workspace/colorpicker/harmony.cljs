@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.colorpicker.harmony
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.math :as math]
+   [app.common.math :as mth]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
    [app.util.color :as uc]
    [app.util.dom :as dom]
@@ -28,9 +28,9 @@
     (.clearRect ctx 0 0 width height)
 
     (doseq [degrees (range 0 360 step)]
-      (let [degrees-rad (math/radians degrees)
-            x (* radius (math/cos (- degrees-rad)))
-            y (* radius (math/sin (- degrees-rad)))]
+      (let [degrees-rad (mth/radians degrees)
+            x (* radius (mth/cos (- degrees-rad)))
+            y (* radius (mth/sin (- degrees-rad)))]
         (obj/set! ctx "strokeStyle" (str/format "hsl(%s, 100%, 50%)" degrees))
         (.beginPath ctx)
         (.moveTo ctx cx cy)
@@ -43,15 +43,15 @@
       (obj/set! ctx "fillStyle" grd)
 
       (.beginPath ctx)
-      (.arc ctx cx cy radius 0 (* 2 math/PI) true)
+      (.arc ctx cx cy radius 0 (* 2 mth/PI) true)
       (.closePath ctx)
       (.fill ctx))))
 
 (defn color->point
   [canvas-side hue saturation]
-  (let [hue-rad (math/radians (- hue))
-        comp-x (* saturation (math/cos hue-rad))
-        comp-y (* saturation (math/sin hue-rad))
+  (let [hue-rad (mth/radians (- hue))
+        comp-x (* saturation (mth/cos hue-rad))
+        comp-y (* saturation (mth/sin hue-rad))
         x (+ (/ canvas-side 2) (* comp-x (/ canvas-side 2)))
         y (+ (/ canvas-side 2) (* comp-y (/ canvas-side 2)))]
     (gpt/point x y)))
@@ -68,15 +68,15 @@
         calculate-pos (fn [ev]
                         (let [{:keys [left right top bottom]} (-> ev dom/get-target dom/get-bounding-rect)
                               {:keys [x y]} (-> ev dom/get-client-position)
-                              px (math/clamp (/ (- x left) (- right left)) 0 1)
-                              py (math/clamp (/ (- y top) (- bottom top)) 0 1)
+                              px (mth/clamp (/ (- x left) (- right left)) 0 1)
+                              py (mth/clamp (/ (- y top) (- bottom top)) 0 1)
 
                               px (- (* 2 px) 1)
                               py (- (* 2 py) 1)
 
-                              angle (math/degrees (math/atan2 px py))
-                              new-hue (math/precision (mod (- angle 90 ) 360) 2)
-                              new-saturation (math/clamp (math/distance [px py] [0 0]) 0 1)
+                              angle (mth/degrees (mth/atan2 px py))
+                              new-hue (mod (- angle 90 ) 360)
+                              new-saturation (mth/clamp (mth/distance [px py] [0 0]) 0 1)
                               hex (uc/hsv->hex [new-hue new-saturation value])
                               [r g b] (uc/hex->rgb hex)]
                           (on-change {:hex hex

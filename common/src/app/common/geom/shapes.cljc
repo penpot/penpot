@@ -17,39 +17,6 @@
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]))
 
-;; --- Setup (Initialize)
-;; FIXME: Is this the correct place for these functions?
-
-(defn- setup-rect
-  "A specialized function for setup rect-like shapes."
-  [shape {:keys [x y width height]}]
-  (let [rect    {:x x :y y :width width :height height}
-        points  (gpr/rect->points rect)
-        selrect (gpr/points->selrect points)]
-    (assoc shape
-           :x x
-           :y y
-           :width width
-           :height height
-           :points points
-           :selrect selrect)))
-
-(defn- setup-image
-  [{:keys [metadata] :as shape} props]
-  (-> (setup-rect shape props)
-      (assoc
-       :proportion (/ (:width metadata)
-                      (:height metadata))
-       :proportion-lock true)))
-
-(defn setup
-  "A function that initializes the first coordinates for
-  the shape. Used mainly for draw operations."
-  [shape props]
-  (case (:type shape)
-    :image (setup-image shape props)
-    (setup-rect shape props)))
-
 ;; --- Outer Rect
 
 (defn selection-rect
@@ -106,12 +73,12 @@
              :width (- x2 x1)
              :height (- y2 y1)
              :type :rect}))
-        {frame-x1 :x1 frame-x2 :x2 frame-y1 :y1 frame-y2 :y2} bounds
+        {bound-x1 :x1 bound-x2 :x2 bound-y1 :y1 bound-y2 :y2} bounds
         {sr-x1 :x1 sr-x2 :x2 sr-y1 :y1 sr-y2 :y2} selrect]
-    {:left   (make-selrect frame-x1 sr-y1 (- sr-x1 2) sr-y2)
-     :top    (make-selrect sr-x1 frame-y1 sr-x2 (- sr-y1 2))
-     :right  (make-selrect (+ sr-x2 2) sr-y1 frame-x2 sr-y2)
-     :bottom (make-selrect sr-x1 (+ sr-y2 2) sr-x2 frame-y2)}))
+    {:left   (make-selrect bound-x1 sr-y1 sr-x1 sr-y2)
+     :top    (make-selrect sr-x1 bound-y1 sr-x2 sr-y1)
+     :right  (make-selrect sr-x2 sr-y1 bound-x2 sr-y2)
+     :bottom (make-selrect sr-x1 sr-y2 sr-x2 bound-y2)}))
 
 (defn distance-selrect [selrect other]
   (let [{:keys [x1 y1]} other
@@ -120,13 +87,6 @@
 
 (defn distance-shapes [shape other]
   (distance-selrect (:selrect shape) (:selrect other)))
-
-(defn setup-selrect [shape]
-  (let [selrect (gpr/rect->selrect shape)
-        points  (gpr/rect->points shape)]
-    (-> shape
-        (assoc :selrect selrect
-               :points points))))
 
 (defn shape-stroke-margin
   [shape stroke-width]
@@ -141,15 +101,17 @@
 (dm/export gco/center-selrect)
 (dm/export gco/center-rect)
 (dm/export gco/center-points)
-(dm/export gco/make-centered-rect)
 (dm/export gco/transform-points)
 
+(dm/export gpr/make-rect)
 (dm/export gpr/rect->selrect)
 (dm/export gpr/rect->points)
 (dm/export gpr/points->selrect)
 (dm/export gpr/points->rect)
 (dm/export gpr/center->rect)
+(dm/export gpr/center->selrect)
 (dm/export gpr/join-rects)
+(dm/export gpr/join-selrects)
 (dm/export gpr/contains-selrect?)
 
 (dm/export gtr/move)
@@ -166,6 +128,7 @@
 (dm/export gtr/merge-modifiers)
 (dm/export gtr/transform-shape)
 (dm/export gtr/transform-selrect)
+(dm/export gtr/transform-bounds)
 (dm/export gtr/modifiers->transform)
 (dm/export gtr/empty-modifiers?)
 

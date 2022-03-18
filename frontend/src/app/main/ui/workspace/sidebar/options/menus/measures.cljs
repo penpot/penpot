@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as math]
    [app.common.spec.radius :as ctr]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
@@ -41,14 +40,6 @@
    :rect    #{:size :position :rotation :radius}
    :svg-raw #{:size :position :rotation}
    :text    #{:size :position :rotation}})
-
-(defn- attr->string [attr values]
-  (let [value (attr values)]
-    (if (= value :multiple)
-      ""
-      (str (-> value
-               (d/coalesce 0)
-               (math/precision 2))))))
 
 (declare +size-presets+)
 
@@ -204,8 +195,8 @@
          (fn []
            (when (and (= radius-mode :radius-1)
                       (= @radius-multi? false))
-          ;; when going back from radius-multi to normal radius-1,
-          ;; restore focus to the newly created numeric-input
+             ;; when going back from radius-multi to normal radius-1,
+             ;; restore focus to the newly created numeric-input
              (let [radius-input (mf/ref-val radius-input-ref)]
                (dom/focus! radius-input)))))
 
@@ -239,20 +230,20 @@
          [:div.row-flex
           [:span.element-set-subtitle (tr "workspace.options.size")]
           [:div.input-element.width {:title (tr "workspace.options.width")}
-           [:> numeric-input {:min 1
+           [:> numeric-input {:min 0.01
                               :no-validate true
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-width-change
-                              :value (attr->string :width values)}]]
+                              :value (:width values)}]]
 
           [:div.input-element.height {:title (tr "workspace.options.height")}
-           [:> numeric-input {:min 1
+           [:> numeric-input {:min 0.01
                               :no-validate true
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-height-change
-                              :value (attr->string :height values)}]]
+                              :value (:height values)}]]
 
           [:div.lock-size {:class (dom/classnames
                                    :selected (true? proportion-lock)
@@ -271,15 +262,13 @@
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-pos-x-change
-                              :value (attr->string :x values)
-                              :precision 2}]]
+                              :value (:x values)}]]
           [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-pos-y-change
-                              :value (attr->string :y values)
-                              :precision 2}]]])
+                              :value (:y values)}]]])
 
        ;; ROTATION
        (when (options :rotation)
@@ -290,19 +279,12 @@
             {:no-validate true
              :min 0
              :max 359
+             :default 0
              :data-wrap true
              :placeholder "--"
              :on-click select-all
              :on-change on-rotation-change
-             :value (attr->string :rotation values)}]]
-          #_[:input.slidebar
-             {:type "range"
-              :min "0"
-              :max "359"
-              :step "10"
-              :no-validate true
-              :on-change on-rotation-change
-              :value (attr->string :rotation values)}]])
+             :value (:rotation values)}]]])
 
        ;; RADIUS
        (when (options :radius)
@@ -330,13 +312,14 @@
                :min 0
                :on-click select-all
                :on-change on-radius-1-change
-               :value (attr->string :rx values)}]]
+               :value (:rx values)}]]
 
             @radius-multi?
             [:div.input-element.mini {:title (tr "workspace.options.radius")}
              [:input.input-text
               {:type "number"
                :placeholder "--"
+               :min 0
                :on-click select-all
                :on-change on-radius-multi-change
                :value ""}]]
@@ -349,7 +332,7 @@
                 :min 0
                 :on-click select-all
                 :on-change on-radius-r1-change
-                :value (attr->string :r1 values)}]]
+                :value (:r1 values)}]]
 
              [:div.input-element.mini {:title (tr "workspace.options.radius")}
               [:> numeric-input
@@ -357,7 +340,7 @@
                 :min 0
                 :on-click select-all
                 :on-change on-radius-r2-change
-                :value (attr->string :r2 values)}]]
+                :value (:r2 values)}]]
 
              [:div.input-element.mini {:title (tr "workspace.options.radius")}
               [:> numeric-input
@@ -365,7 +348,7 @@
                 :min 0
                 :on-click select-all
                 :on-change on-radius-r3-change
-                :value (attr->string :r3 values)}]]
+                :value (:r3 values)}]]
 
              [:div.input-element.mini {:title (tr "workspace.options.radius")}
               [:> numeric-input
@@ -373,7 +356,7 @@
                 :min 0
                 :on-click select-all
                 :on-change on-radius-r4-change
-                :value (attr->string :r4 values)}]]])])]]]))
+                :value (:r4 values)}]]])])]]]))
 
      (def +size-presets+
        [{:name "APPLE"}

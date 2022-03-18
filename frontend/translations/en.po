@@ -2230,6 +2230,18 @@ msgstr "Show rules"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Show fonts palette"
 
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Hide pixel grid"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Show pixel grid"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Disable snap to pixel"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Enable snap to pixel"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
 msgstr "Reset"

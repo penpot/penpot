@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.frame-grid
   (:require
-   [app.common.math :as mth]
    [app.main.data.workspace.grid :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -71,8 +70,7 @@
            (let [{:keys [margin gutter item-length]} (:params grid)
                  frame-length (if (= :column (:type grid)) frame-width frame-height)
                  item-length  (if (nil? size)
-                                (-> (gg/calculate-default-item-length frame-length margin gutter)
-                                    (mth/precision 2))
+                                (gg/calculate-default-item-length frame-length margin gutter)
                                 item-length)]
              (-> grid
                  (update :params assoc :size size :item-length item-length)
@@ -140,7 +138,7 @@
 
       (if (= type :square)
         [:div.input-element.pixels {:title (tr "workspace.options.size")}
-         [:> numeric-input {:min 1
+         [:> numeric-input {:min 0.01
                             :value (or (:size params) "")
                             :no-validate true
                             :on-change (handle-change :params :size)}]]
@@ -162,7 +160,7 @@
       (when (= :square type)
         [:& input-row {:label (tr "workspace.options.grid.params.size")
                        :class "pixels"
-                       :min 1
+                       :min 0.01
                        :value (:size params)
                        :on-change (handle-change :params :size)}])
 
@@ -207,7 +205,7 @@
          [:> numeric-input
           {:placeholder "Auto"
            :value (or (:item-length params) "")
-           :default nil
+           :nillable true
            :on-change handle-change-item-length}]])
 
       (when (#{:row :column} type)
@@ -216,11 +214,15 @@
                         :class "pixels"
                         :value (:gutter params)
                         :min 0
+                        :nillable true
+                        :default 0
                         :placeholder "0"
                         :on-change (handle-change :params :gutter)}]
          [:& input-row {:label (tr "workspace.options.grid.params.margin")
                         :class "pixels"
                         :min 0
+                        :nillable true
+                        :default 0
                         :placeholder "0"
                         :value (:margin params)
                         :on-change (handle-change :params :margin)}]])

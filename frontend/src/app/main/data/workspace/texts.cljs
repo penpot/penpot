@@ -289,14 +289,6 @@
 
 ;; --- RESIZE UTILS
 
-(defn update-overflow-text [id value]
-  (ptk/reify ::update-overflow-text
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)]
-        (update-in state [:workspace-data :pages-index page-id :objects id] assoc :overflow-text value)))))
-
-
 (def start-edit-if-selected
   (ptk/reify ::start-edit-if-selected
     ptk/UpdateEvent
@@ -325,22 +317,13 @@
                 update-fn
                 (fn [shape]
                   (let [[new-width new-height] (get changes-map (:id shape))
-                        {:keys [selrect grow-type overflow-text]} (gsh/transform-shape shape)
+                        {:keys [selrect grow-type]} (gsh/transform-shape shape)
                         {shape-width :width shape-height :height} selrect
 
                         modifier-width (gsh/resize-modifiers shape :width new-width)
                         modifier-height (gsh/resize-modifiers shape :height new-height)]
 
                     (cond-> shape
-                      (and overflow-text (not= :fixed grow-type))
-                      (assoc :overflow-text false)
-
-                      (and (= :fixed grow-type) (not overflow-text) (> new-height shape-height))
-                      (assoc :overflow-text true)
-
-                      (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
-                      (assoc :overflow-text false)
-
                       (and (not-changed? shape-width new-width) (= grow-type :auto-width))
                       (-> (assoc :modifiers modifier-width)
                           (gsh/transform-shape))

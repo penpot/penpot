@@ -53,6 +53,19 @@
         (assoc-in [frame-id :x] (rt/make-tree))
         (assoc-in [frame-id :y] (rt/make-tree)))))
 
+(defn get-grids-snap-points
+  [frame coord]
+  (let [grid->snap (fn [[grid-type position]]
+                     {:type :layout
+                      :id (:id frame)
+                      :grid grid-type
+                      :pt position})]
+    (->> (:grids frame)
+         (mapcat (fn [grid]
+                   (->> (gg/grid-snap-points frame grid coord)
+                        (mapv #(vector (:type grid) %)))))
+         (mapv grid->snap))))
+
 (defn- add-frame
   [page-data frame]
   (let [frame-id (:id frame)
@@ -61,17 +74,8 @@
                         (mapv #(array-map :type :shape
                                           :id frame-id
                                           :pt %)))
-
-        grid-x-data (->> (gg/grid-snap-points frame :x)
-                         (mapv #(array-map :type :layout
-                                           :id frame-id
-                                           :pt %)))
-
-        grid-y-data (->> (gg/grid-snap-points frame :y)
-                         (mapv #(array-map :type :layout
-                                           :id frame-id
-                                           :pt %)))]
-
+        grid-x-data (get-grids-snap-points frame :x)
+        grid-y-data (get-grids-snap-points frame :y)]
     (-> page-data
         ;; Update root frame information
         (assoc-in [uuid/zero :objects-data frame-id] frame-data)
@@ -107,6 +111,7 @@
                         (mapv #(array-map
                                 :type :guide
                                 :id (:id guide)
+                                :axis (:axis guide)
                                 :frame-id (:frame-id guide)
                                 :pt %)))]
     (if-let [frame-id (:frame-id guide)]

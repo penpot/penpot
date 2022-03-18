@@ -9,6 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.drawing.common :as common]
@@ -27,8 +28,8 @@
         shapev  (gpt/point width height)
         deltav  (gpt/to-vec initial point)
         scalev  (-> (gpt/divide (gpt/add shapev deltav) shapev)
-                    (update :x truncate-zero 1)
-                    (update :y truncate-zero 1))
+                    (update :x truncate-zero 0.01)
+                    (update :y truncate-zero 0.01))
         scalev  (if lock?
                   (let [v (max (:x scalev) (:y scalev))]
                     (gpt/point v v))
@@ -45,9 +46,7 @@
 (defn move-drawing
   [{:keys [x y]}]
   (fn [state]
-    (let [x (mth/precision x 0)
-          y (mth/precision y 0)]
-      (update-in state [:workspace-drawing :object] gsh/absolute-move (gpt/point x y)))))
+    (update-in state [:workspace-drawing :object] gsh/absolute-move (gpt/point x y))))
 
 (defn handle-drawing-box []
   (ptk/reify ::handle-drawing-box
@@ -55,11 +54,14 @@
     (watch [_ state stream]
       (let [stoper? #(or (ms/mouse-up? %) (= % :interrupt))
             stoper  (rx/filter stoper? stream)
-            initial @ms/mouse-position
+            layout  (get state :workspace-layout)
+            snap-pixel? (contains? layout :snap-pixel-grid)
+
+            initial (cond-> @ms/mouse-position
+                      snap-pixel? gpt/round)
 
             page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            layout  (get state :workspace-layout)
             focus   (:workspace-focus-selected state)
             zoom    (get-in state [:workspace-local :zoom] 1)
 
@@ -72,7 +74,10 @@
 
             shape (-> state
                       (get-in [:workspace-drawing :object])
-                      (gsh/setup {:x (:x initial) :y (:y initial) :width 1 :height 1})
+                      (cp/setup-shape {:x (:x initial)
+                                       :y (:y initial)
+                                       :width 0.01
+                                       :height 0.01})
                       (assoc :frame-id fid)
                       (assoc :initialized? true)
                       (assoc :click-draw? true))]
@@ -85,7 +90,7 @@
               (rx/map move-drawing))
 
          (->> ms/mouse-position
-              (rx/filter #(> (gpt/distance % initial) 2))
+              (rx/filter #(> (gpt/distance % initial) (/ 2 zoom)))
               (rx/with-latest vector ms/mouse-position-shift)
               (rx/switch-map
                (fn [[point :as current]]
@@ -93,7 +98,7 @@
                       (rx/map #(conj current %)))))
               (rx/map
                (fn [[_ shift? point]]
-                 #(update-drawing % point shift?)))
+                 #(update-drawing % (cond-> point snap-pixel? gpt/round) shift?)))
 
               (rx/take-until stoper))
          (rx/of common/handle-finish-drawing))))))

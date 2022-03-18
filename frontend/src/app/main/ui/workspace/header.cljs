@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.header
   (:require
    [app.common.data :as d]
-   [app.common.math :as mth]
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
@@ -18,6 +17,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.formats :as fmt]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.presence :refer [active-sessions]]
@@ -71,7 +71,7 @@
     :as props}]
   (let [show-dropdown? (mf/use-state false)]
     [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
-     [:span.label {} (str (mth/round (* 100 zoom)) "%")]
+     [:span.label (fmt/format-percent zoom {:precision 0})]
      [:span.icon i/arrow-down]
      [:& dropdown {:show @show-dropdown?
                    :on-close #(reset! show-dropdown? false)}
@@ -82,7 +82,7 @@
                                (dom/stop-propagation event)
                                (dom/prevent-default event)
                                (on-decrease))} "-"]
-         [:p.zoom-size {} (str (mth/round (* 100 zoom)) "%")]
+         [:p.zoom-size {} (fmt/format-percent zoom {:precision 0})]
          [:button {:on-click (fn [event]
                                (dom/stop-propagation event)
                                (dom/prevent-default event)
@@ -346,6 +346,13 @@
            (tr "workspace.header.menu.hide-artboard-names")
            (tr "workspace.header.menu.show-artboard-names"))]]
 
+       [:li {:on-click #(st/emit! (toggle-flag :show-pixel-grid))}
+        [:span
+         (if (contains? layout :show-pixel-grid)
+           (tr "workspace.header.menu.hide-pixel-grid")
+           (tr "workspace.header.menu.show-pixel-grid"))]
+        [:span.shortcut (sc/get-tooltip :show-pixel-grid)]]
+
        [:li {:on-click #(st/emit! (-> (toggle-flag :hide-ui)
                                       (vary-meta assoc ::ev/origin "workspace-menu")))}
         [:span
@@ -375,6 +382,13 @@
            (tr "workspace.header.menu.disable-dynamic-alignment")
            (tr "workspace.header.menu.enable-dynamic-alignment"))]
         [:span.shortcut (sc/get-tooltip :toggle-alignment)]]
+
+       [:li {:on-click #(st/emit! (toggle-flag :snap-pixel-grid))}
+        [:span
+         (if (contains? layout :snap-pixel-grid)
+           (tr "workspace.header.menu.disable-snap-pixel-grid")
+           (tr "workspace.header.menu.enable-snap-pixel-grid"))]
+        [:span.shortcut (sc/get-tooltip :snap-pixel-grid)]]
 
        [:li {:on-click #(st/emit! (modal/show {:type :nudge-option}))}
         [:span (tr "modals.nudge-title")]]]]]))

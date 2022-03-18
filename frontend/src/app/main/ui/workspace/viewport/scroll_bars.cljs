@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.viewport.scroll-bars
   (:require
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
@@ -131,7 +130,7 @@
              (let [viewport            (mf/ref-val viewport-ref)
                    start-pt            (mf/ref-val start-ref)
                    current-pt          (dom/get-client-position event)
-                   current-pt-viewport (utils/translate-point-to-viewport-raw viewport zoom current-pt)
+                   current-pt-viewport (utils/translate-point-to-viewport viewport zoom current-pt)
                    y-delta               (/ (* (mf/ref-val height-factor-ref) (- (:y current-pt) (:y start-pt))) zoom)
                    x-delta               (/ (* (mf/ref-val width-factor-ref) (- (:x current-pt) (:x start-pt))) zoom)
                    new-v-scrollbar-y   (-> current-pt-viewport
@@ -156,8 +155,9 @@
          (fn [event axis]
            (let [viewport              (mf/ref-val viewport-ref)
                  start-pt              (dom/get-client-position event)
-                 new-v-scrollbar-y     (-> (utils/translate-point-to-viewport-raw viewport zoom start-pt) :y)
-                 new-h-scrollbar-x     (-> (utils/translate-point-to-viewport-raw viewport zoom start-pt) :x)
+                 viewport-point        (utils/translate-point-to-viewport viewport zoom start-pt)
+                 new-h-scrollbar-x     (:x viewport-point)
+                 new-v-scrollbar-y     (:y viewport-point)
                  v-scrollbar-y-padding (- v-scrollbar-y new-v-scrollbar-y)
                  h-scrollbar-x-padding (- h-scrollbar-x new-h-scrollbar-x)
                  vbox-rect             {:x vbox-x
@@ -168,7 +168,7 @@
                                         :y2 (+ vbox-y (:height vbox))
                                         :width (:width vbox)
                                         :height (:height vbox)}
-                 containing-rect               (gpr/join-selrects [base-objects-rect vbox-rect])
+                 containing-rect               (gsh/join-selrects [base-objects-rect vbox-rect])
                  height-factor                 (/ (:height containing-rect) vbox-height)
                  width-factor                  (/ (:width containing-rect) vbox-width)]
              (mf/set-ref-val! start-ref start-pt)
@@ -206,7 +206,7 @@
                 :x v-scrollbar-x
                 :y v-scrollbar-y
                 :style {:stroke "white"
-                        :stroke-width 0.15}}]])
+                        :stroke-width (/ 0.15 zoom)}}]])
      (when show-h-scroll?
        [:g.h-scroll
         [:rect {:on-mouse-move #(on-mouse-move % :x)
@@ -220,4 +220,4 @@
                 :x h-scrollbar-x
                 :y h-scrollbar-y
                 :style {:stroke "white"
-                        :stroke-width 0.15}}]])]))
+                        :stroke-width (/ 0.15 zoom)}}]])]))

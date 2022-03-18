@@ -21,6 +21,11 @@
 (def conjv (fnil conj []))
 (def conjs (fnil conj #{}))
 
+(defn- raise
+  [err-str]
+  #?(:clj (throw (Exception. err-str))
+     :cljs (throw (js/Error. err-str))))
+
 (defn- commit-change
   ([file change]
    (commit-change file change nil))
@@ -75,10 +80,12 @@
 
     (commit-change file change {:add-container? true :fail-on-spec? fail-on-spec?})))
 
-(defn setup-rect-selrect [obj]
-  (let [rect      (select-keys obj [:x :y :width :height])
+(defn setup-rect-selrect [{:keys [x y width height transform] :as obj}]
+  (when-not (d/num? x y width height)
+    (raise "Coords not valid for object"))
+
+  (let [rect      (gsh/make-rect x y width height)
         center    (gsh/center-rect rect)
-        transform (:transform obj (gmt/matrix))
         selrect   (gsh/rect->selrect rect)
 
         points (-> (gsh/rect->points rect)
@@ -89,17 +96,13 @@
         (assoc :points points))))
 
 (defn- setup-path-selrect
-  [obj]
-  (let [content (:content obj)
-        center  (:center obj)
+  [{:keys [content center transform transform-inverse] :as obj}]
 
-        transform-inverse
-        (->> (:transform-inverse obj (gmt/matrix))
-             (gmt/transform-in center))
+  (when (or (empty? content) (nil? center))
+    (raise "Path not valid"))
 
-        transform
-        (->> (:transform obj (gmt/matrix))
-             (gmt/transform-in center))
+  (let [transform (gmt/transform-in center transform)
+        transform-inverse (gmt/transform-in center transform-inverse)
 
         content' (gsh/transform-content content transform-inverse)
         selrect  (gsh/content->selrect content')
@@ -310,21 +313,30 @@
         children (->> bool :shapes (mapv #(lookup-shape file %)))
 
         file
-        (let [objects (lookup-objects file)
-              bool' (gsh/update-bool-selrect bool children objects)]
+        (cond
+          (empty? children)
           (commit-change
            file
-           {:type :mod-obj
-            :id bool-id
-            :operations
-            [{:type :set :attr :selrect :val (:selrect bool')}
-             {:type :set :attr :points  :val (:points bool')}
-             {:type :set :attr :x       :val (-> bool' :selrect :x)}
-             {:type :set :attr :y       :val (-> bool' :selrect :y)}
-             {:type :set :attr :width   :val (-> bool' :selrect :width)}
-             {:type :set :attr :height  :val (-> bool' :selrect :height)}]}
+           {:type :del-obj
+            :id bool-id}
+           {:add-container? true})
 
-           {:add-container? true}))]
+          :else
+          (let [objects (lookup-objects file)
+                bool' (gsh/update-bool-selrect bool children objects)]
+            (commit-change
+             file
+             {:type :mod-obj
+              :id bool-id
+              :operations
+              [{:type :set :attr :selrect :val (:selrect bool')}
+               {:type :set :attr :points  :val (:points bool')}
+               {:type :set :attr :x       :val (-> bool' :selrect :x)}
+               {:type :set :attr :y       :val (-> bool' :selrect :y)}
+               {:type :set :attr :width   :val (-> bool' :selrect :width)}
+               {:type :set :attr :height  :val (-> bool' :selrect :height)}]}
+
+             {:add-container? true})))]
 
     (-> file
         (update :parent-stack pop))))

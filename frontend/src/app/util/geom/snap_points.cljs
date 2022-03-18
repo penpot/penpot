@@ -9,25 +9,28 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]))
 
-(defn- selrect-snap-points [{:keys [x y width height]}]
+(defn selrect-snap-points [{:keys [x y width height] :as selrect}]
   #{(gpt/point x y)
     (gpt/point (+ x width) y)
     (gpt/point (+ x width) (+ y height))
-    (gpt/point x (+ y height))})
+    (gpt/point x (+ y height))
+    (gsh/center-selrect selrect)})
 
-(defn- frame-snap-points [{:keys [x y width height] :as selrect}]
-  (into (selrect-snap-points selrect)
-        #{(gpt/point (+ x (/ width 2)) y)
-          (gpt/point (+ x width) (+ y (/ height 2)))
-          (gpt/point (+ x (/ width 2)) (+ y height))
-          (gpt/point x (+ y (/ height 2)))}))
+(defn frame-snap-points [{:keys [x y width height blocked hidden] :as selrect}]
+  (when (and (not blocked) (not hidden))
+    (into (selrect-snap-points selrect)
+          #{(gpt/point (+ x (/ width 2)) y)
+            (gpt/point (+ x width) (+ y (/ height 2)))
+            (gpt/point (+ x (/ width 2)) (+ y height))
+            (gpt/point x (+ y (/ height 2)))})))
 
 (defn shape-snap-points
-  [shape]
-  (let [shape (gsh/transform-shape shape)]
-    (case (:type shape)
-      :frame (-> shape :selrect frame-snap-points)
-      (into #{(gsh/center-shape shape)} (:points shape)))))
+  [{:keys [hidden blocked] :as shape}]
+  (when (and (not blocked) (not hidden))
+    (let [shape (gsh/transform-shape shape)]
+      (case (:type shape)
+        :frame (-> shape :selrect frame-snap-points)
+        (into #{(gsh/center-shape shape)} (:points shape))))))
 
 (defn guide-snap-points
   [guide]

@@ -6,6 +6,7 @@
 
 (ns app.util.geom.grid
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]))
 
@@ -39,13 +40,13 @@
 
         gutter (if (= :stretch type)
                  (let [gutter (/ (- width (* width' size) (* margin 2)) (dec size))]
-                   (if (mth/finite? gutter) gutter 0))
+                   (if (d/num? gutter) gutter 0))
                  gutter)
 
         next-v (fn [cur-val]
                  (+ offset v (* (+ width' gutter) cur-val)))]
 
-    [size width' next-v]))
+    [size width' next-v gutter]))
 
 (defn- calculate-column-grid
   [{:keys [width height x y] :as frame} params]
@@ -68,6 +69,20 @@
                      (let [[row _] (as-row-col cur-val)] (+ y (* row size))))]
 
     [(* col-size row-size) size size next-x next-y]))
+
+(defn grid-gutter
+  [{:keys [x y width height]} {:keys [type params] :as grid}]
+
+  (case type
+    :column
+    (let [[_ _ _ gutter] (calculate-generic-grid x width params)]
+      gutter)
+
+    :row
+    (let [[_ _ _ gutter] (calculate-generic-grid y height params)]
+      gutter)
+
+    nil))
 
 (defn grid-areas
   "Given a frame and the grid parameters returns the areas defined on the grid"
@@ -92,28 +107,25 @@
 
 (defn grid-snap-points
   "Returns the snap points for a given grid"
-  ([shape coord]
-   (mapcat #(grid-snap-points shape % coord) (:grids shape)))
+  [shape {:keys [type params] :as grid} coord]
+  (when (:display grid)
+    (case type
+      :square
+      (let [{:keys [x y width height]} shape
+            size (-> params :size)]
+        (when (> size 0)
+          (if (= coord :x)
+            (mapcat #(vector (gpt/point (+ x %) y)
+                             (gpt/point (+ x %) (+ y height))) (range size width size))
+            (mapcat #(vector (gpt/point x (+ y %))
+                             (gpt/point (+ x width) (+ y %))) (range size height size)))))
 
-  ([shape {:keys [type params] :as grid} coord]
-   (when (:display grid)
-     (case type
-       :square
-       (let [{:keys [x y width height]} shape
-             size (-> params :size)]
-         (when (> size 0)
-           (if (= coord :x)
-             (mapcat #(vector (gpt/point (+ x %) y)
-                              (gpt/point (+ x %) (+ y height))) (range size width size))
-             (mapcat #(vector (gpt/point x (+ y %))
-                              (gpt/point (+ x width) (+ y %))) (range size height size)))))
+      :column
+      (when (= coord :x)
+        (->> (grid-areas shape grid)
+             (mapcat grid-area-points)))
 
-       :column
-       (when (= coord :x)
-         (->> (grid-areas shape grid)
-              (mapcat grid-area-points)))
-
-       :row
-       (when (= coord :y)
-         (->> (grid-areas shape grid)
-              (mapcat grid-area-points)))))))
+      :row
+      (when (= coord :y)
+        (->> (grid-areas shape grid)
+             (mapcat grid-area-points))))))

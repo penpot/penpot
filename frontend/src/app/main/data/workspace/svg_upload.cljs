@@ -11,7 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
+   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :refer [max-safe-int min-safe-int]]
@@ -33,9 +33,7 @@
 (defonce default-image {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
 
 (defn- assert-valid-num [attr num]
-  (when (or (nil? num)
-            (mth/nan? num)
-            (not (mth/finite? num))
+  (when (or (not (d/num? num))
             (>= num max-safe-int )
             (<= num  min-safe-int))
     (ex/raise (str (d/name attr) " attribute invalid: " num)))
@@ -168,7 +166,7 @@
         (assoc :svg-attrs attrs)
         (assoc :svg-viewbox (-> (select-keys svg-data [:width :height])
                                 (assoc :x offset-x :y offset-y)))
-        (gsh/setup-selrect))))
+        (cp/setup-rect-selrect))))
 
 (defn create-svg-root [frame-id svg-data]
   (let [{:keys [name x y width height offset-x offset-y]} svg-data]
@@ -180,7 +178,7 @@
          :height height
          :x (+ x offset-x)
          :y (+ y offset-y)}
-        (gsh/setup-selrect)
+        (cp/setup-rect-selrect)
         (assoc :svg-attrs (-> (:attrs svg-data)
                               (dissoc :viewBox :xmlns)
                               (d/without-keys usvg/inheritable-props))))))
@@ -200,7 +198,7 @@
         (assoc :svg-attrs (d/without-keys attrs usvg/inheritable-props))
         (assoc :svg-viewbox (-> (select-keys svg-data [:width :height])
                                 (assoc :x offset-x :y offset-y)))
-        (gsh/setup-selrect))))
+        (cp/setup-rect-selrect))))
 
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))
@@ -230,14 +228,9 @@
   (let [points (-> (gsh/rect->points rect-data)
                    (gsh/transform-points transform))
 
-        center (gsh/center-points points)
-
-        rect-shape (-> (gsh/make-centered-rect center (:width rect-data) (:height rect-data))
-                       (update :width max 1)
-                       (update :height max 1))
-
-        selrect (gsh/rect->selrect rect-shape)
-
+        center      (gsh/center-points points)
+        rect-shape  (gsh/center->rect center (:width rect-data) (:height rect-data))
+        selrect     (gsh/rect->selrect rect-shape)
         rect-points (gsh/rect->points rect-shape)
 
         [shape-transform shape-transform-inv rotation]

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.frame-grid
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
@@ -42,27 +43,71 @@
              :fill (str "url(#" grid-id ")")}]]))
 
 (mf/defc layout-grid
-  [{:keys [key frame grid]}]
+  [{:keys [key frame grid zoom]}]
   (let [{color-value :color color-opacity :opacity} (-> grid :params :color)
         ;; Support for old color format
         color-value (or color-value (:value (get-in grid [:params :color :value])))
-        gutter (-> grid :params :gutter)
-        gutter? (and (not (nil? gutter)) (not= gutter 0))
+        gutter (gg/grid-gutter frame grid)
+        gutter? (and (not (nil? gutter)) (not (mth/almost-zero? gutter)))]
 
-        style (if gutter?
-                #js {:fill color-value
-                     :opacity color-opacity}
-                #js {:stroke color-value
-                     :strokeOpacity color-opacity
-                     :fill "none"})]
     [:g.grid
-     (for [{:keys [x y width height] :as area} (gg/grid-areas frame grid)]
-       [:rect {:key (str key "-" x "-" y)
-               :x (mth/round x)
-               :y (mth/round y)
-               :width (- (mth/round (+ x width)) (mth/round x))
-               :height (- (mth/round (+ y height)) (mth/round y))
-               :style style}])]))
+     (for [[idx {:keys [x y width height] :as area}] (d/enumerate (gg/grid-areas frame grid))]
+       (cond
+         gutter?
+         [:rect {:key (str key "-" x "-" y)
+                 :x x
+                 :y y
+                 :width (- (+ x width) x)
+                 :height (- (+ y height) y)
+                 :style {:fill color-value
+                         :stroke-width 0
+                         :opacity color-opacity}}]
+
+         (and (not gutter?) (= :column (:type grid)))
+         [:*
+          (when (= idx 0)
+            [:line {:key (str key "-" x "-" y "-start")
+                    :x1 x
+                    :y1 y
+                    :x2 x
+                    :y2 (+ y height)
+                    :style {:stroke color-value
+                            :stroke-width (/ 1 zoom)
+                            :strokeOpacity color-opacity
+                            :fill "none"}}])
+
+          [:line {:key (str key "-" x "-" y "-end")
+                  :x1 (+ x width)
+                  :y1 y
+                  :x2 (+ x width)
+                  :y2 (+ y height)
+                  :style {:stroke color-value
+                          :stroke-width (/ 1 zoom)
+                          :strokeOpacity color-opacity
+                          :fill "none"}}]]
+
+         (and (not gutter?) (= :row (:type grid)))
+         [:*
+          (when (= idx 0)
+            [:line {:key (str key "-" x "-" y "-start")
+                    :x1 x
+                    :y1 y
+                    :x2 (+ x width)
+                    :y2 y
+                    :style {:stroke color-value
+                            :stroke-width (/ 1 zoom)
+                            :strokeOpacity color-opacity
+                            :fill "none"}}])
+
+          [:line {:key (str key "-" x "-" y "-end")
+                  :x1 x
+                  :y1 (+ y height)
+                  :x2 (+ x width)
+                  :y2 (+ y height)
+                  :style {:stroke color-value
+                          :stroke-width (/ 1 zoom)
+                          :strokeOpacity color-opacity
+                          :fill "none"}}]]))]))
 
 (mf/defc grid-display-frame
   [{:keys [frame zoom]}]

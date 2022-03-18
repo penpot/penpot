@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
-   [app.common.math :as mth]
    [app.common.path.commands :as upc]
    [clojure.set :as set]))
 
@@ -402,9 +401,7 @@
                (rest segments))))))
 
 (defn calculate-merge-points [group-segments points]
-  (let [index-merge-point (fn [group] (vector group (-> (gpt/center-points group)
-                                                        (update :x mth/round)
-                                                        (update :y mth/round))))
+  (let [index-merge-point (fn [group] (vector group (gpt/center-points group)))
         index-group (fn [point] (vector point (d/seek #(contains? % point) group-segments)))
 
         group->merge-point (into {} (map index-merge-point) group-segments)

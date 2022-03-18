@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.thumbnail-renderer
   (:require
+   [app.common.math :as mth]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.store :as st]
    [app.util.dom :as dom]
@@ -20,6 +21,10 @@
 
   (let [thumbnail-img (mf/use-ref nil)
         thumbnail-canvas (mf/use-ref nil)
+
+        {:keys [width height]} shape
+        fixed-width (mth/clamp width 250 2000)
+        fixed-height (/ (* height fixed-width) width)
 
         on-dom-rendered
         (mf/use-callback
@@ -71,23 +76,23 @@
                  _ (.rect canvas-context 0 0 canvas-width canvas-height)
                  _ (set! (.-fillStyle canvas-context) background)
                  _ (.fill canvas-context)
-                 _ (.drawImage canvas-context img-node 0 0)
+                 _ (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
 
-                 data (.toDataURL canvas-node "image/jpeg" 0.8)]
+                 data (.toDataURL canvas-node "image/jpg" 1)]
              (on-thumbnail-data data))))]
 
     [:div.frame-renderer {:ref on-dom-rendered
                           :style {:display "none"}}
      [:img.thumbnail-img
       {:ref thumbnail-img
-       :width (:width shape)
-       :height (:height shape)
+       :width width
+       :height height
        :on-load on-image-load}]
 
      [:canvas.thumbnail-canvas
       {:ref thumbnail-canvas
-       :width (:width shape)
-       :height (:height shape)}]]))
+       :width fixed-width
+       :height fixed-height}]]))
 
 (mf/defc frame-renderer
   "Component in charge of creating thumbnails and storing them"

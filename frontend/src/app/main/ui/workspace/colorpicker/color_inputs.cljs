@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.colorpicker.color-inputs
   (:require
-   [app.common.math :as math]
+   [app.common.math :as mth]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [rumext.alpha :as mf]))
@@ -52,7 +52,7 @@
         on-change-property
         (fn [property max-value]
           (fn [e]
-            (let [val (-> e dom/get-target-val (math/clamp 0 max-value))
+            (let [val (-> e dom/get-target-val (mth/clamp 0 max-value))
                   val (if (#{:s} property) (/ val 100) val)]
               (when (not (nil? val))
                 (if (#{:r :g :b} property)
@@ -72,7 +72,7 @@
 
         on-change-opacity
         (fn [e]
-          (when-let [new-alpha (-> e dom/get-target-val (math/clamp 0 100) (/ 100))]
+          (when-let [new-alpha (-> e dom/get-target-val (mth/clamp 0 100) (/ 100))]
             (on-change {:alpha new-alpha})))]
 
 
@@ -86,9 +86,9 @@
            (when (and property-val property-ref)
              (when-let [node (mf/ref-val property-ref)]
                (case ref-key
-                 (:s :alpha) (dom/set-value! node (math/round (* property-val 100)))
+                 (:s :alpha) (dom/set-value! node (* property-val 100))
                  :hex (dom/set-value! node property-val)
-                 (dom/set-value! node (math/round property-val)))))))))
+                 (dom/set-value! node property-val))))))))
 
     [:div.color-values
      {:class (when disable-opacity "disable-opacity")}
@@ -156,7 +156,7 @@
                             :min 0
                             :step 1
                             :max 100
-                            :default-value (if (= alpha :multiple) "" (math/precision alpha 2))
+                            :default-value (if (= alpha :multiple) "" alpha)
                             :on-change on-change-opacity}])
 
      [:label.hex-label {:for "hex-value"} "HEX"]

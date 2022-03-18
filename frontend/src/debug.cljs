@@ -7,7 +7,6 @@
 (ns debug
   (:require
    [app.common.data :as d]
-   [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
@@ -32,11 +31,8 @@
     ;; Displays in the console log the events through the application
     :events
 
-    ;; Display the boxes that represent the rotation handlers
-    :rotation-handler
-
-    ;; Display the boxes that represent the resize handlers
-    :resize-handler
+    ;; Display the boxes that represent the rotation and resize handlers
+    :handlers
 
     ;; Displays the center of a selection
     :selection-center
@@ -130,7 +126,7 @@
                             ts (/ 1000 (* (- cur @last)))
                             val (+ @avg (* (- ts @avg) 0.1))]
 
-                        (obj/set! node "innerText" (mth/precision val 0))
+                        (obj/set! node "innerText" val)
                         (vreset! last cur)
                         (vreset! avg val)
                         (do-thing)))))]

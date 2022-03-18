@@ -32,8 +32,8 @@
                :pattern-units "userSpaceOnUse"}
      [:path {:d "M 1 0 L 0 0 0 1"
              :style {:fill "none"
-                     :stroke "var(--color-info)"
-                     :stroke-opacity "0.2"
+                     :stroke "var(--color-gray-20)"
+                     :stroke-opacity "1"
                      :stroke-width (str (/ 1 zoom))}}]]]
    [:rect {:x (:x vbox)
            :y (:y vbox)

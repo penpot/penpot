@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.colorpicker.slider-selector
   (:require
-   [app.common.math :as math]
+   [app.common.math :as mth]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
@@ -41,13 +41,13 @@
             (let [{:keys [left right top bottom]} (-> ev dom/get-target dom/get-bounding-rect)
                   {:keys [x y]} (-> ev dom/get-client-position)
                   unit-value (if vertical?
-                               (math/clamp (/ (- bottom y) (- bottom top)) 0 1)
-                               (math/clamp (/ (- x left) (- right left)) 0 1))
+                               (mth/clamp (/ (- bottom y) (- bottom top)) 0 1)
+                               (mth/clamp (/ (- x left) (- right left)) 0 1))
                   unit-value (if reverse?
-                               (math/abs (- unit-value 1.0))
+                               (mth/abs (- unit-value 1.0))
                                unit-value)
                   value (+ min-value (* unit-value (- max-value min-value)))]
-              (on-change (math/precision value 2)))))]
+              (on-change value))))]
 
     [:div.slider-selector
      {:class (str (if vertical? "vertical " "") class)
@@ -60,7 +60,7 @@
                                (- max-value min-value)) 100)
 
            value-percent (if reverse?
-                           (math/abs (- value-percent 100))
+                           (mth/abs (- value-percent 100))
                            value-percent)
            value-percent-str (str value-percent "%")
 
