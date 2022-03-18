@@ -65,6 +65,7 @@
 
    :app.msgbus/msgbus
    {:backend   (cf/get :msgbus-backend :redis)
+    :executor  (ig/ref [::default :app.worker/executor])
     :redis-uri (cf/get :redis-uri)}
 
    :app.tokens/tokens

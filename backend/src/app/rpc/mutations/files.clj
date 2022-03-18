@@ -386,31 +386,33 @@
                                (assoc :changes []))))))))
 
 (defn- send-notifications
-  [{:keys [msgbus conn] :as cfg} {:keys [file changes session-id] :as params}]
-  (let [lchanges (filter library-change? changes)]
+  [{:keys [conn] :as cfg} {:keys [file changes session-id] :as params}]
+  (let [lchanges  (filter library-change? changes)
+        msgbus-fn (:msgbus cfg)]
+
 
     ;; Asynchronously publish message to the msgbus
-    (msgbus :pub {:topic (:id file)
-                  :message
-                  {:type :file-change
-                   :profile-id (:profile-id params)
-                   :file-id (:id file)
-                   :session-id (:session-id params)
-                   :revn (:revn file)
-                   :changes changes}})
+    (msgbus-fn :cmd :pub
+               :topic (:id file)
+               :message {:type :file-change
+                         :profile-id (:profile-id params)
+                         :file-id (:id file)
+                         :session-id (:session-id params)
+                         :revn (:revn file)
+                         :changes changes})
 
     (when (and (:is-shared file) (seq lchanges))
       (let [team-id (retrieve-team-id conn (:project-id file))]
         ;; Asynchronously publish message to the msgbus
-        (msgbus :pub {:topic team-id
-                      :message
-                      {:type :library-change
-                       :profile-id (:profile-id params)
-                       :file-id (:id file)
-                       :session-id session-id
-                       :revn (:revn file)
-                       :modified-at (dt/now)
-                       :changes lchanges}})))))
+        (msgbus-fn :cmd :pub
+                   :topic team-id
+                   :message {:type :library-change
+                             :profile-id (:profile-id params)
+                             :file-id (:id file)
+                             :session-id session-id
+                             :revn (:revn file)
+                             :modified-at (dt/now)
+                             :changes lchanges})))))
 
 (defn- retrieve-team-id
   [conn project-id]
