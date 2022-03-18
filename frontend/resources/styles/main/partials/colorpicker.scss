@@ -344,6 +344,7 @@
       justify-content: space-between;
       margin-right: -8px;
       max-height: 5.5rem;
+      overflow: auto;
     }
 
     .selected-colors::after {
