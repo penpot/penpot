@@ -6,6 +6,7 @@
 
 (ns app.main.data.exports
   (:require
+   [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -92,8 +93,31 @@
         (rx/of (modal/show :export-shapes {:exports (vec exports)
                                            :filename filename}))))))
 
+(defn show-workspace-export-frames-dialog
+  ([frames]
+   (ptk/reify ::show-workspace-export-frames-dialog
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [file-id  (:current-file-id state)
+             page-id  (:current-page-id state)
+             filename (-> (wsh/lookup-page state page-id)
+                          :name
+                          (dm/str ".pdf"))
+
+             exports  (for [frame  frames]
+                        {:enabled true
+                         :page-id page-id
+                         :file-id file-id
+                         :frame-id (:id frame)
+                         :shape frame
+                         :name (:name frame)})]
+
+         (rx/of (modal/show :export-frames
+                            {:exports (vec exports)
+                             :filename filename})))))))
+
 (defn- initialize-export-status
-  [exports filename resource-id]
+  [exports filename resource-id query]
   (ptk/reify ::initialize-export-status
     ptk/UpdateEvent
     (update [_ state]
@@ -106,7 +130,8 @@
                             :detail-visible true
                             :exports exports
                             :filename filename
-                            :last-update (dt/now)}))))
+                            :last-update (dt/now)
+                            :query query}))))
 
 (defn- update-export-status
   [{:keys [progress status resource-id name] :as data}]
@@ -154,7 +179,7 @@
                           (dissoc state :export))))))))))
 
 (defn request-multiple-export
-  [{:keys [filename exports] :as params}]
+  [{:keys [filename exports query] :as params}]
   (ptk/reify ::request-multiple-export
     ptk/WatchEvent
     (watch [_ state _]
@@ -187,11 +212,11 @@
 
          ;; Launch the exportation process and stores the resource id
          ;; locally.
-         (->> (rp/query! :export-shapes-multiple params)
+         (->> (rp/query! query params)
               (rx/tap (fn [{:keys [id]}]
                         (vreset! resource-id id)))
               (rx/map (fn [{:keys [id]}]
-                        (initialize-export-status exports filename id))))
+                        (initialize-export-status exports filename id query))))
 
          ;; We proceed to update the export state with incoming
          ;; progress updates. We delay the stoper for give some time
@@ -220,6 +245,6 @@
   (ptk/reify ::retry-last-export
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [exports filename]} (:export state)]
-        (rx/of (request-multiple-export {:exports exports :filename filename}))))))
+      (let [{:keys [exports filename query]} (:export state)]
+        (rx/of (request-multiple-export {:exports exports :filename filename :query query}))))))
 
