@@ -55,6 +55,7 @@
         on-progress (fn [progress]
                       (let [data {:type :export-update
                                   :resource-id (:id resource)
+                                  :name (:name resource)
                                   :status "running"
                                   :progress progress}]
                         (redis/pub! topic data)))
@@ -62,6 +63,7 @@
         on-complete (fn [resource]
                       (let [data {:type :export-update
                                   :resource-id (:id resource)
+                                  :name (:name resource)
                                   :size (:size resource)
                                   :status "ended"}]
                         (redis/pub! topic data)))
@@ -69,6 +71,7 @@
         on-error    (fn [cause]
                       (let [data {:type :export-update
                                   :resource-id (:id resource)
+                                  :name (:name resource)
                                   :status "error"
                                   :cause (ex-message cause)}]
                         (redis/pub! topic data)))

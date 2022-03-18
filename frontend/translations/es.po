@@ -308,23 +308,27 @@ msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 msgid "dashboard.export.title"
 msgstr "Exportar ficheros"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+#:src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Exportar a PDF"
+
+#: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
 msgstr "Exportar selección"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
-msgid "dashboard.export-shapes.selected"
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
 msgstr "%s de %s elementos seleccionados"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+#: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.no-elements"
 msgstr "No hay elementos con configuraciones de exportación."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+#: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
 msgstr " Puedes añadir configuraciones de exportación a elementos desde las propiedades de diseño (al final del lateral derecho)."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+#: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
 msgstr "Información sobre cómo configurar exportaciones en Penpot."
 

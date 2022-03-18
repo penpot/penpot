@@ -7,11 +7,9 @@
 (ns app.main.ui.workspace.header
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
@@ -105,7 +103,7 @@
 ;; --- Header Users
 
 (mf/defc menu
-  [{:keys [layout project file team-id page-id] :as props}]
+  [{:keys [layout project file team-id] :as props}]
   (let [show-menu?     (mf/use-state false)
         show-sub-menu? (mf/use-state false)
         editing?       (mf/use-state false)
@@ -188,21 +186,7 @@
         (mf/use-callback
          (mf/deps file frames)
          (fn [_]
-           (when (seq frames)
-             (let [filename (dm/str (:name file) ".pdf")
-                   xform    (comp (map :id)
-                                  (map (fn [id]
-                                         {:file-id  (:id file)
-                                          :page-id   page-id
-                                          :frame-id id})))]
-               (st/emit! (msg/info (tr "workspace.options.exporting-object") {:timeout nil}))
-               (->> (rp/query! :export-frames (into [] xform frames))
-                    (rx/subs
-                     (fn [body]
-                       (dom/trigger-download filename body))
-                     (fn [_error]
-                       (st/emit! (msg/error (tr "errors.unexpected-error"))))
-                     (st/emitf msg/hide)))))))
+           (st/emit! (de/show-workspace-export-frames-dialog frames))))
 
         on-item-hover
         (mf/use-callback

@@ -21,10 +21,8 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
-(mf/defc export-shapes-dialog
-  {::mf/register modal/components
-   ::mf/register-as :export-shapes}
-  [{:keys [exports filename]}]
+(mf/defc export-multiple-dialog
+  [{:keys [exports filename title query no-selection]}]
   (let [lstate          (mf/deref refs/export)
         in-progress?    (:in-progress lstate)
 
@@ -45,7 +43,8 @@
         (fn [event]
           (dom/prevent-default event)
           (st/emit! (modal/hide)
-                    (de/request-multiple-export {:filename filename :exports enabled-exports})))
+                    (de/request-multiple-export {:filename filename :exports enabled-exports :query query})))
+
         on-toggle-enabled
         (fn [index]
           (swap! exports update-in [index :enabled] not))
@@ -53,15 +52,14 @@
         change-all
         (fn [_]
           (swap! exports (fn [exports]
-                           (mapv #(assoc % :enabled (not all-checked?)) exports))))
-        ]
+                           (mapv #(assoc % :enabled (not all-checked?)) exports))))]
     [:div.modal-overlay
-     [:div.modal-container.export-shapes-dialog
-      {:class (when (empty? all-exports) "no-shapes")}
+     [:div.modal-container.export-multiple-dialog
+      {:class (when (empty? all-exports) "empty")}
 
       [:div.modal-header
        [:div.modal-header-title
-        [:h2 (tr "dashboard.export-shapes.title")]]
+        [:h2 title]]
 
        [:div.modal-close-button
         {:on-click cancel-fn} i/close]]
@@ -76,7 +74,7 @@
                all-checked? [:span i/checkbox-checked]
                all-unchecked? [:span i/checkbox-unchecked]
                :else [:span i/checkbox-intermediate])]
-            [:div.field.title (tr "dashboard.export-shapes.selected"
+            [:div.field.title (tr "dashboard.export-multiple.selected"
                                   (c (count enabled-exports))
                                   (c (count all-exports)))]]
 
@@ -90,22 +88,27 @@
                     [:span.unchecked i/checkbox-unchecked])]
 
                  [:div.field.image
-                  [:svg {:view-box (dm/str x " " y " " width " " height)
-                         :width 24
-                         :height 20
-                         :version "1.1"
-                         :xmlns "http://www.w3.org/2000/svg"
-                         :xmlnsXlink "http://www.w3.org/1999/xlink"
-                         ;; Fix Chromium bug about color of html texts
-                         ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
-                         :style {:-webkit-print-color-adjust :exact}}
+                  (if (some? (:thumbnail shape))
+                    [:img {:src (:thumbnail shape)}]
+                    [:svg {:view-box (dm/str x " " y " " width " " height)
+                           :width 24
+                           :height 20
+                           :version "1.1"
+                           :xmlns "http://www.w3.org/2000/svg"
+                           :xmlnsXlink "http://www.w3.org/1999/xlink"
+                           ;; Fix Chromium bug about color of html texts
+                           ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
+                           :style {:-webkit-print-color-adjust :exact}}
 
-                   [:& shape-wrapper {:shape shape}]]]
+                     [:& shape-wrapper {:shape shape}]])]
 
                  [:div.field.name (cond-> (:name shape) suffix (str suffix))]
-                 [:div.field.scale (dm/str (* width (:scale export)) "x"
-                                           (* height (:scale export)) "px ")]
-                 [:div.field.extension (-> export :type d/name str/upper)]]))]
+                 (when (:scale export)
+                   [:div.field.scale (dm/str (* width (:scale export)) "x"
+                                             (* height (:scale export)) "px ")])
+
+                 (when (:type export)
+                   [:div.field.extension (-> export :type d/name str/upper)])]))]
 
            [:div.modal-footer
             [:div.action-buttons
@@ -124,13 +127,30 @@
                         (tr "labels.export"))
                :on-click (when-not in-progress? accept-fn)}]]]]
 
-          [:div.no-selection
-           [:img {:src "images/export-no-shapes.png" :border "0"}]
-           [:p (tr "dashboard.export-shapes.no-elements")]
-           [:p (tr "dashboard.export-shapes.how-to")]
-           [:p [:a {:target "_blank"
-                    :href "https://help.penpot.app/user-guide/exporting/ "}
-                (tr "dashboard.export-shapes.how-to-link")]]])]]]]))
+          [:& no-selection])]]]]))
+
+(mf/defc shapes-no-selection []
+  [:div.no-selection
+   [:img {:src "images/export-no-shapes.png" :border "0"}]
+   [:p (tr "dashboard.export-shapes.no-elements")]
+   [:p (tr "dashboard.export-shapes.how-to")]
+   [:p [:a {:target "_blank"
+            :href "https://help.penpot.app/user-guide/exporting/ "}
+        (tr "dashboard.export-shapes.how-to-link")]]])
+
+(mf/defc export-shapes-dialog
+  {::mf/register modal/components
+   ::mf/register-as :export-shapes}
+  [{:keys [exports filename]}]
+  (let [title (tr "dashboard.export-shapes.title")]
+    (export-multiple-dialog {:exports exports :filename filename :title title :query :export-shapes-multiple :no-selection shapes-no-selection})))
+
+(mf/defc export-frames
+  {::mf/register modal/components
+   ::mf/register-as :export-frames}
+  [{:keys [exports filename]}]
+  (let [title (tr "dashboard.export-frames.title")]
+    (export-multiple-dialog {:exports exports :filename filename :title title :query :export-frames})))
 
 (mf/defc export-progress-widget
   {::mf/wrap [mf/memo]}

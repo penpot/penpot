@@ -235,13 +235,13 @@
 
 .import-dialog,
 .export-dialog,
-.export-shapes-dialog {
+.export-multiple-dialog {
   background-color: $color-white;
   border: 1px solid $color-gray-20;
   width: 30rem;
   min-height: 14rem;
 
-  &.no-shapes {
+  &.empty {
     width: 39rem;
   }
 
@@ -1338,7 +1338,7 @@
   }
 }
 
-// Export shapes
+// Export multiple
 
 .export-progress-modal-overlay {
   display: flex;
@@ -1413,7 +1413,7 @@
   }
 }
 
-.export-shapes-dialog {
+.export-multiple-dialog {
   .modal-content {
     padding: 0;
   }
