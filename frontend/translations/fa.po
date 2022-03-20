@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-18 15:58+0000\n"
+"PO-Revision-Date: 2022-03-21 13:56+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -742,3 +742,46 @@ msgstr "پایین"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type.center"
 msgstr "مرکز"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "نام کامل"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "ورود از اینجا"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-subtitle"
+msgstr "مشخصات خود را در زیر وارد کنید"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "ورود با OpenID"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "یک رمزعبور جدید تایپ کنید"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "توکن بازیابی نامعتبر است."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "پروفایل تأیید نشده است، لطفاً قبل از ادامه، پروفایل را تأیید کنید."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "با موفقیت به تیم پیوست"
+
+msgid "auth.privacy-policy"
+msgstr "سیاست حفظ حریم‌خصوصی"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "ایجاد حساب‌کاربری"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "رایگان است، منبع‌باز است"
