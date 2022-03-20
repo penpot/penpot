@@ -213,6 +213,10 @@
                    (.reset path-or-stream)
                    result)
 
+                 (string? path-or-stream)
+                 (-> (bh/blake2b-256 path-or-stream)
+                     (bc/bytes->hex))
+
                  :else
                  (with-open [is (io/input-stream path-or-stream)]
                    (-> (bh/blake2b-256 is)
