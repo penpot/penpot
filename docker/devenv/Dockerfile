@@ -159,12 +159,9 @@ RUN set -ex; \
     rm -rf /tmp/babashka.tar.gz;
 
 RUN set -ex; \
-    curl -LfsSo /usr/bin/local/mc https://dl.min.io/client/mc/release/linux-amd64/mc; \
-    chmod +x /usr/bin/local/mc; \
-    /usr/bin/local/mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin; \
-    /usr/bin/local/mc admin user add penpot-s3 penpot-devenv penpot-devenv; \
-    /usr/bin/local/mc admin policy set penpot-s3 readwrite user=penpot-devenv; \
-    /usr/bin/local/mc mb penpot-s3/penpot -p;
+    curl -LfsSo /tmp/mc https://dl.min.io/client/mc/release/linux-amd64/mc --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15"; \
+    mv /tmp/mc /usr/local/bin/; \
+    chmod +x /usr/local/bin/mc;
 
 WORKDIR /home
 
