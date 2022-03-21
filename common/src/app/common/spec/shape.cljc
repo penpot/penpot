@@ -53,6 +53,7 @@
 
 (s/def ::hide-fill-on-export boolean?)
 
+(s/def ::file-thumbnail boolean?)
 (s/def ::masked-group? boolean?)
 (s/def ::font-family string?)
 (s/def ::font-size ::us/safe-integer)
@@ -301,7 +302,8 @@
 
 (defmethod shape-spec :frame [_]
   (s/and ::shape-attrs
-         (s/keys :opt-un [::hide-fill-on-export])))
+         (s/keys :opt-un [::file-thumbnail
+                          ::hide-fill-on-export])))
 
 (s/def ::shape
   (s/and (s/multi-spec shape-spec :type)

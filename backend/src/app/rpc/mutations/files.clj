@@ -320,7 +320,7 @@
         _       (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
         ts      (dt/now)
-        file    (-> (files/retrieve-data cfg file)
+        file    (-> file
                     (update :revn inc)
                     (update :data (fn [data]
                                     ;; Trace the length of bytes of processed data
