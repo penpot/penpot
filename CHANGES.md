@@ -37,6 +37,7 @@
 - Add the ability to specify the attr for retrieve the email on OIDC integration [#1460](https://github.com/penpot/penpot/issues/1460)
 - Allow registration with invitation token when registration is disabled
 - Add the ability to disable standard, password login [Taiga #2999](https://tree.taiga.io/project/penpot/us/2999)
+- Don't stop SVG import when an image cannot be imported [#1531](https://github.com/penpot/penpot/issues/1531)
 
 ### :bug: Bugs fixed
 

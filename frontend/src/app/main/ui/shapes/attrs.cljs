@@ -180,6 +180,11 @@
                           (obj/set! "fill" (obj/get svg-styles "fill"))
                           (obj/set! "fillOpacity" (obj/get svg-styles "fillOpacity")))
 
+                      (obj/contains? svg-attrs "fill")
+                      (-> styles
+                          (obj/set! "fill" (obj/get svg-attrs "fill"))
+                          (obj/set! "fillOpacity" (obj/get svg-attrs "fillOpacity")))
+
                       ;; If contains svg-attrs the origin is svg. If it's not svg origin
                       ;; we setup the default fill as transparent (instead of black)
                       (and (contains? shape :svg-attrs)
@@ -187,8 +192,11 @@
                            (empty? (:fills shape)))
                       styles
 
+                      (d/not-empty? (:fills shape))
+                      (add-fill styles (d/without-nils (get-in shape [:fills 0])) render-id 0)
+
                       :else
-                      (add-fill styles (d/without-nils (get-in shape [:fills 0])) render-id 0))]
+                      styles)]
 
      (-> props
          (obj/merge! svg-attrs)
