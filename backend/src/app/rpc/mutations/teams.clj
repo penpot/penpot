@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
+   [app.loggers.audit :as audit]
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.permissions :as perms]
@@ -357,14 +358,14 @@
           :opt-un [::email ::emails]))
 
 (sv/defmethod ::invite-team-member
+  "A rpc call that allow to send a single or multiple invitations to
+  join the team."
   [{:keys [pool] :as cfg} {:keys [profile-id team-id email emails role] :as params}]
   (db/with-atomic [conn pool]
     (let [perms    (teams/get-permissions conn profile-id team-id)
           profile  (db/get-by-id conn :profile profile-id)
           team     (db/get-by-id conn :team team-id)
-          emails   (or emails #{})
-          emails   (if email (conj emails email) emails)
-          ]
+          emails   (cond-> (or emails #{}) (string? email) (conj email))]
 
       (when-not (:is-admin perms)
         (ex/raise :type :validation
@@ -385,7 +386,9 @@
                 :profile profile
                 :role role))
         )
-      nil)))
+
+      (with-meta {}
+        {::audit/props {:invitations (count emails)}}))))
 
 (def sql:upsert-team-invitation
   "insert into team_invitation(team_id, email_to, role, valid_until)
@@ -395,19 +398,19 @@
 
 (defn- create-team-invitation
   [{:keys [conn tokens team profile role email] :as cfg}]
-  (let [member   (profile/retrieve-profile-data-by-email conn email)
+  (let [member    (profile/retrieve-profile-data-by-email conn email)
         token-exp (dt/in-future "48h")
-        itoken   (tokens :generate
-                         {:iss :team-invitation
-                          :exp token-exp
-                          :profile-id (:id profile)
-                          :role role
-                          :team-id (:id team)
-                          :member-email (:email member email)
-                          :member-id (:id member)})
-        ptoken   (tokens :generate-predefined
-                         {:iss :profile-identity
-                          :profile-id (:id profile)})]
+        itoken    (tokens :generate
+                          {:iss :team-invitation
+                           :exp token-exp
+                           :profile-id (:id profile)
+                           :role role
+                           :team-id (:id team)
+                           :member-email (:email member email)
+                           :member-id (:id member)})
+        ptoken    (tokens :generate-predefined
+                          {:iss :profile-identity
+                           :profile-id (:id profile)})]
 
     (when (and member (not (eml/allow-send-emails? conn member)))
       (ex/raise :type :validation
@@ -443,21 +446,14 @@
   (s/and ::create-team (s/keys :req-un [::emails ::role])))
 
 (sv/defmethod ::create-team-and-invite-members
-  [{:keys [pool audit] :as cfg} {:keys [profile-id emails role] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id emails role] :as params}]
   (db/with-atomic [conn pool]
-    (let [team    (create-team conn params)
-          profile (db/get-by-id conn :profile profile-id)]
+    (let [team     (create-team conn params)
+          audit-fn (:audit cfg)
+          profile  (db/get-by-id conn :profile profile-id)]
 
       ;; Create invitations for all provided emails.
       (doseq [email emails]
-        (audit :cmd :submit
-               :type "mutation"
-               :name "create-team-invitation"
-               :profile-id profile-id
-               :props {:email email
-                       :role role
-                       :profile-id profile-id})
-
         (create-team-invitation
          (assoc cfg
                 :conn conn
@@ -465,8 +461,17 @@
                 :profile profile
                 :email email
                 :role role)))
-      team)))
 
+      (with-meta team
+        {:before-complete
+         #(audit-fn :cmd :submit
+                    :type "mutation"
+                    :name "invite-team-member"
+                    :profile-id profile-id
+                    :props {:emails emails
+                            :role role
+                            :profile-id profile-id
+                            :invitations (count emails)})}))))
 
 ;; --- Mutation: Update invitation role
 

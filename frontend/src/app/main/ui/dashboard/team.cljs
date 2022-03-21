@@ -7,10 +7,11 @@
 (ns app.main.ui.dashboard.team
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.main.data.dashboard :as dd]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
@@ -27,15 +28,14 @@
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
-;; TEAM SECTION
-
 (mf/defc header
   {::mf/wrap [mf/memo]}
   [{:keys [section team] :as props}]
-  (let [go-members           (st/emitf (dd/go-to-team-members))
-        go-settings          (st/emitf (dd/go-to-team-settings))
-        go-invitations       (st/emitf (dd/go-to-team-invitations))
-        invite-member        (st/emitf (modal/show {:type ::invite-member :team team}))
+  (let [go-members           (mf/use-fn #(st/emit! (dd/go-to-team-members)))
+        go-settings          (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
+        go-invitations       (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
+        invite-member        (mf/use-fn #(st/emit! (modal/show {:type :invite-members :team team})))
+
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
         invitations-section? (= section :dashboard-team-invitations)
@@ -62,12 +62,16 @@
          (tr "dashboard.invite-profile")]
         [:div.blank-space])]]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INVITATIONS MODAL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn get-available-roles
   [permissions]
   (->> [{:value "editor" :label (tr "labels.editor")}
         (when (:is-admin permissions)
           {:value "admin" :label (tr "labels.admin")})
-        ;; Temporarily disabled viewer role
+        ;; Temporarily disabled viewer roles
         ;; https://tree.taiga.io/project/uxboxproject/issue/1083
         ;; {:value "viewer" :label (tr "labels.viewer")}
         ]
@@ -75,31 +79,34 @@
 
 (s/def ::emails (s/and ::us/set-of-emails d/not-empty?))
 (s/def ::role  ::us/keyword)
-(s/def ::invite-member-form
-  (s/keys :req-un [::role ::emails]))
+(s/def ::team-id ::us/uuid)
 
-(mf/defc invite-member-modal
+(s/def ::invite-member-form
+  (s/keys :req-un [::role ::emails ::team-id]))
+
+(mf/defc invite-members-modal
   {::mf/register modal/components
-   ::mf/register-as ::invite-member}
+   ::mf/register-as :invite-members}
   [{:keys [team]}]
   (let [perms   (:permissions team)
         roles   (mf/use-memo (mf/deps perms) #(get-available-roles perms))
-        initial (mf/use-memo (constantly {:role "editor"}))
+        initial (mf/use-memo (constantly {:role "editor" :team-id (:id team)}))
         form    (fm/use-form :spec ::invite-member-form
                              :initial initial)
         error-text (mf/use-state  "")
 
         on-success
-        (st/emitf (dm/success (tr "notifications.invitation-email-sent"))
-                  (modal/hide)
-                  (dd/fetch-team-invitations))
+        (fn []
+          (st/emit! (msg/success (tr "notifications.invitation-email-sent"))
+                    (modal/hide)
+                    (dd/fetch-team-invitations)))
 
         on-error
         (fn [{:keys [type code] :as error}]
           (cond
             (and (= :validation type)
                  (= :profile-is-muted code))
-            (st/emit! (dm/error (tr "errors.profile-is-muted"))
+            (st/emit! (msg/error (tr "errors.profile-is-muted"))
                       (modal/hide))
 
             (and (= :validation type)
@@ -108,7 +115,7 @@
             (swap! error-text (tr "errors.email-spam-or-permanent-bounces" (:email error)))
 
             :else
-            (st/emit! (dm/error (tr "errors.generic"))
+            (st/emit! (msg/error (tr "errors.generic"))
                       (modal/hide))))
 
         on-submit
@@ -116,9 +123,9 @@
           (let [params (:clean-data @form)
                 mdata  {:on-success (partial on-success form)
                         :on-error   (partial on-error form)}]
-            (st/emit! (dd/invite-team-member (with-meta params mdata))
+            (st/emit! (dd/invite-team-members (with-meta params mdata))
                       (dd/fetch-team-invitations))))]
-    
+
     [:div.modal.dashboard-invite-modal.form-container
      [:& fm/form {:on-submit on-submit :form form}
       [:div.title
@@ -141,7 +148,9 @@
       [:div.action-buttons
        [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))
 
-;; TEAM MEMBERS SECTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MEMBERS SECTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc member-info [{:keys [member profile] :as props}]
   (let [is-you? (= (:id profile) (:id member))]
@@ -210,101 +219,126 @@
   {::mf/wrap [mf/memo]}
   [{:keys [team member members profile] :as props}]
 
-  (let [set-role
-        (fn [role]
-          (let [params {:member-id (:id member) :role role}]
-            (st/emit! (dd/update-team-member-role params))))
-        owner? (get-in team [:permissions :is-owner])
+  (let [owner? (dm/get-in team [:permissions :is-owner])
+        set-role
+        (mf/use-fn
+         (mf/deps member)
+         (fn [role]
+           (let [params {:member-id (:id member) :role role}]
+             (st/emit! (dd/update-team-member-role params)))))
 
-        set-owner-fn (partial set-role :owner)
-        set-admin    (partial set-role :admin)
-        set-editor   (partial set-role :editor)
+
+        set-owner-fn (mf/use-fn (mf/deps set-role) (partial set-role :owner))
+        set-admin    (mf/use-fn (mf/deps set-role) (partial set-role :admin))
+        set-editor   (mf/use-fn (mf/deps set-role) (partial set-role :editor))
         ;; set-viewer   (partial set-role :viewer)
 
         set-owner
-        (fn [member]
-          (st/emit! (modal/show
-                     {:type :confirm
-                      :title (tr "modals.promote-owner-confirm.title")
-                      :message (tr "modals.promote-owner-confirm.message" (:name member))
-                      :scd-message (tr "modals.promote-owner-confirm.hint")
-                      :accept-label (tr "modals.promote-owner-confirm.accept")
-                      :on-accept set-owner-fn
-                      :accept-style :primary})))
+        (mf/use-fn
+         (mf/deps set-owner-fn member)
+         (fn [member]
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (tr "modals.promote-owner-confirm.title")
+                       :message (tr "modals.promote-owner-confirm.message" (:name member))
+                       :scd-message (tr "modals.promote-owner-confirm.hint")
+                       :accept-label (tr "modals.promote-owner-confirm.accept")
+                       :on-accept set-owner-fn
+                       :accept-style :primary}))))
 
         delete-member-fn
-        (st/emitf (dd/delete-team-member {:member-id (:id member)}))
+        (mf/use-fn
+         (mf/deps member)
+         (fn [] (st/emit! (dd/delete-team-member {:member-id (:id member)}))))
 
         on-success
-        (fn []
-          (st/emit! (dd/go-to-projects (:default-team-id profile))
-                    (modal/hide)
-                    (du/fetch-teams)))
+        (mf/use-fn
+         (mf/deps profile)
+         (fn []
+           (st/emit! (dd/go-to-projects (:default-team-id profile))
+                     (modal/hide)
+                     (du/fetch-teams))))
 
         on-error
-        (fn [{:keys [code] :as error}]
-          (condp = code
+        (mf/use-fn
+         (fn [{:keys [code] :as error}]
+           (condp = code
 
-            :no-enough-members-for-leave
-            (rx/of (dm/error (tr "errors.team-leave.insufficient-members")))
+             :no-enough-members-for-leave
+             (rx/of (msg/error (tr "errors.team-leave.insufficient-members")))
 
-            :member-does-not-exist
-            (rx/of (dm/error (tr "errors.team-leave.member-does-not-exists")))
+             :member-does-not-exist
+             (rx/of (msg/error (tr "errors.team-leave.member-does-not-exists")))
 
-            :owner-cant-leave-team
-            (rx/of (dm/error (tr "errors.team-leave.owner-cant-leave")))
+             :owner-cant-leave-team
+             (rx/of (msg/error (tr "errors.team-leave.owner-cant-leave")))
 
-            (rx/throw error)))
+             (rx/throw error))))
 
         delete-fn
-        (fn []
-          (st/emit! (dd/delete-team (with-meta team {:on-success on-success
-                                                     :on-error on-error}))))
+        (mf/use-fn
+         (mf/deps team on-success on-error)
+         (fn []
+           (st/emit! (dd/delete-team (with-meta team {:on-success on-success
+                                                      :on-error on-error})))))
 
         leave-fn
-        (fn [member-id]
-          (let [params (cond-> {} (uuid? member-id) (assoc :reassign-to member-id))]
-            (st/emit! (dd/leave-team (with-meta params
-                                       {:on-success on-success
-                                        :on-error on-error})))))
+        (mf/use-fn
+         (mf/deps on-success on-error)
+         (fn [member-id]
+           (let [params (cond-> {} (uuid? member-id) (assoc :reassign-to member-id))]
+             (st/emit! (dd/leave-team (with-meta params
+                                        {:on-success on-success
+                                         :on-error on-error}))))))
 
         leave-and-close
-        (st/emitf (modal/show
-                   {:type :confirm
-                    :title (tr "modals.leave-confirm.title")
-                    :message  (tr "modals.leave-and-close-confirm.message" (:name team))
-                    :scd-message (tr "modals.leave-and-close-confirm.hint")
-                    :accept-label (tr "modals.leave-confirm.accept")
-                    :on-accept delete-fn}))
+        (mf/use-fn
+         (mf/deps delete-fn)
+         (fn []
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (tr "modals.leave-confirm.title")
+                       :message  (tr "modals.leave-and-close-confirm.message" (:name team))
+                       :scd-message (tr "modals.leave-and-close-confirm.hint")
+                       :accept-label (tr "modals.leave-confirm.accept")
+                       :on-accept delete-fn}))))
 
         change-owner-and-leave
-        (fn []
-          (st/emit! (dd/fetch-team-members)
-                    (modal/show
-                     {:type :leave-and-reassign
-                      :profile profile
-                      :team team
-                      :accept leave-fn})))
+        (mf/use-fn
+         (mf/deps profile team leave-fn)
+         (fn []
+           (st/emit! (dd/fetch-team-members)
+                     (modal/show
+                      {:type :leave-and-reassign
+                       :profile profile
+                       :team team
+                       :accept leave-fn}))))
 
         leave
-        (st/emitf (modal/show
-                   {:type :confirm
-                    :title (tr "modals.leave-confirm.title")
-                    :message  (tr "modals.leave-confirm.message")
-                    :accept-label (tr "modals.leave-confirm.accept")
-                    :on-accept leave-fn}))
+        (mf/use-fn
+         (mf/deps leave-fn)
+         (fn []
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (tr "modals.leave-confirm.title")
+                       :message  (tr "modals.leave-confirm.message")
+                       :accept-label (tr "modals.leave-confirm.accept")
+                       :on-accept leave-fn}))))
 
         preset-leave (cond (= 1 (count members)) leave-and-close
                            (= true owner?) change-owner-and-leave
                            :else leave)
 
         delete
-        (st/emitf (modal/show
-                   {:type :confirm
-                    :title (tr "modals.delete-team-member-confirm.title")
-                    :message  (tr "modals.delete-team-member-confirm.message")
-                    :accept-label (tr "modals.delete-team-member-confirm.accept")
-                    :on-accept delete-member-fn}))]
+        (mf/use-fn
+         (mf/deps delete-member-fn)
+         (fn []
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (tr "modals.delete-team-member-confirm.title")
+                       :message  (tr "modals.delete-team-member-confirm.message")
+                       :accept-label (tr "modals.delete-team-member-confirm.accept")
+                       :on-accept delete-member-fn}))))]
 
     [:div.table-row
      [:div.table-field.name
@@ -361,7 +395,9 @@
                         :team team
                         :members-map members-map}]]]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS SECTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc invitation-role-selector
   [{:keys [can-invite? role status change-to-admin change-to-editor] :as props}]
@@ -418,7 +454,7 @@
                             :pending)
 
         on-success
-        #(st/emit! (dm/success (tr "notifications.invitation-email-sent"))
+        #(st/emit! (msg/success (tr "notifications.invitation-email-sent"))
                    (modal/hide)
                    (dd/fetch-team-invitations))
 
@@ -428,18 +464,18 @@
           (cond
             (and (= :validation type)
                  (= :profile-is-muted code))
-            (dm/error (tr "errors.profile-is-muted"))
+            (msg/error (tr "errors.profile-is-muted"))
 
             (and (= :validation type)
                  (= :member-is-muted code))
-            (dm/error (tr "errors.member-is-muted"))
+            (msg/error (tr "errors.member-is-muted"))
 
             (and (= :validation type)
                  (= :email-has-permanent-bounces code))
-            (dm/error (tr "errors.email-has-permanent-bounces" email))
+            (msg/error (tr "errors.email-has-permanent-bounces" email))
 
             :else
-            (dm/error (tr "errors.generic"))))
+            (msg/error (tr "errors.generic"))))
 
         change-rol
         (fn [role]
@@ -455,20 +491,31 @@
 
         resend-invitation
         (fn []
-          (let [params {:email email :team-id (:id team) :role invitation-role}
+          (let [params {:email email
+                        :team-id (:id team)
+                        :resend? true
+                        :role invitation-role}
                 mdata  {:on-success on-success
                         :on-error (partial on-error email)}]
-            (st/emit! (dd/invite-team-member (with-meta params mdata)))
-            (st/emit! (dd/fetch-team-invitations))))]
+            (st/emit! (dd/invite-team-members (with-meta params mdata))
+                      (dd/fetch-team-invitations))))]
     [:div.table-row
      [:div.table-field.mail email]
-     [:div.table-field.roles [:& invitation-role-selector {:can-invite? can-invite?
-                                                           :role invitation-role
-                                                           :status status
-                                                           :change-to-editor (partial change-rol :editor)
-                                                           :change-to-admin (partial change-rol :admin)}]]
-     [:div.table-field.status [:& invitation-status-badge {:status status}]]
-     [:div.table-field.actions [:& invitation-actions {:can-modify? can-invite? :delete delete-invitation :resend resend-invitation}]]]))
+     [:div.table-field.roles
+      [:& invitation-role-selector
+       {:can-invite? can-invite?
+        :role invitation-role
+        :status status
+        :change-to-editor (partial change-rol :editor)
+        :change-to-admin (partial change-rol :admin)}]]
+
+     [:div.table-field.status
+      [:& invitation-status-badge {:status status}]]
+     [:div.table-field.actions
+      [:& invitation-actions
+       {:can-modify? can-invite?
+        :delete delete-invitation
+        :resend resend-invitation}]]]))
 
 (mf/defc empty-invitation-table [can-invite?]
   [:div.empty-invitations
@@ -513,7 +560,9 @@
       [:& invitation-section {:team team
                               :invitations invitations}]]]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SETTINGS SECTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc team-settings-page
   [{:keys [team] :as props}]

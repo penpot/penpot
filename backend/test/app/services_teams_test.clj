@@ -44,16 +44,15 @@
 
         ;; (th/print-result! out)
 
-        (t/is (nil? (:result out)))
+        (t/is (= {} (:result out)))
         (t/is (= 1 (:call-count (deref mock))))
         (t/is (= 1 (:num invitation))))
-
 
       ;; invite internal user without complaints
       (th/reset-mock! mock)
       (let [data (assoc data :email (:email profile2))
             out  (th/mutation! data)]
-        (t/is (nil? (:result out)))
+        (t/is (= {} (:result out)))
         (t/is (= 1 (:call-count (deref mock)))))
 
       ;; invite user with complaint
@@ -61,7 +60,7 @@
       (th/reset-mock! mock)
       (let [data (assoc data :email "foo@bar.com")
             out  (th/mutation! data)]
-        (t/is (nil? (:result out)))
+        (t/is (= {} (:result out)))
         (t/is (= 1 (:call-count (deref mock)))))
 
       ;; invite user with bounce

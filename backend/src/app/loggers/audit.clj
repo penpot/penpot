@@ -34,6 +34,20 @@
       (yrq/get-header request "x-real-ip")
       (yrq/remote-addr request)))
 
+(defn extract-utm-params
+  "Extracts additional data from params and namespace them under
+  `penpot` ns."
+  [params]
+  (letfn [(process-param [params k v]
+            (let [sk (d/name k)]
+              (cond-> params
+                (str/starts-with? sk "utm_")
+                (assoc (->> sk str/kebab (keyword "penpot")) v)
+
+                (str/starts-with? sk "mtm_")
+                (assoc (->> sk str/kebab (keyword "penpot")) v))))]
+    (reduce-kv process-param {} params)))
+
 (defn profile->props
   [profile]
   (-> profile

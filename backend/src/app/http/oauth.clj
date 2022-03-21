@@ -180,17 +180,6 @@
 
 ;; --- HTTP HANDLERS
 
-(defn extract-utm-props
-  "Extracts additional data from user params."
-  [params]
-  (reduce-kv (fn [params k v]
-               (let [sk (name k)]
-                 (cond-> params
-                   (str/starts-with? sk "utm_")
-                   (assoc (->> sk str/kebab (keyword "penpot")) v))))
-             {}
-             params))
-
 (defn- retrieve-profile
   [{:keys [pool executor] :as cfg} info]
   (px/with-dispatch executor
@@ -252,7 +241,7 @@
 (defn- auth-handler
   [{:keys [tokens] :as cfg} {:keys [params] :as request} respond raise]
   (try
-    (let [props (extract-utm-props params)
+    (let [props (audit/extract-utm-params params)
           state (tokens :generate
                         {:iss :oauth
                          :invitation-token (:invitation-token params)

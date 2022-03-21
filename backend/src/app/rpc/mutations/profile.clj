@@ -12,7 +12,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
-   [app.http.oauth :refer [extract-utm-props]]
    [app.loggers.audit :as audit]
    [app.media :as media]
    [app.rpc.mutations.teams :as teams]
@@ -223,7 +222,7 @@
   [conn params]
   (let [id        (or (:id params) (uuid/next))
 
-        props     (-> (extract-utm-props params)
+        props     (-> (audit/extract-utm-params params)
                       (merge (:props params))
                       (db/tjson))
 
