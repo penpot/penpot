@@ -14,6 +14,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.simple-math :as sm]
+   [cuerdas.core :as str]
    [goog.events :as events]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
@@ -75,7 +76,11 @@
           (mf/deps ref min-val max-val value nillable default-val)
           (fn []
             (let [input-node (mf/ref-val ref)
+                  drop-ending-point #(if (str/ends-with? % ".")
+                                       (str/join "" (drop-last %))
+                                       %)
                   new-value (-> (dom/get-value input-node)
+                                (drop-ending-point)
                                 (sm/expr-eval value))]
               (cond
                 (d/num? new-value)
