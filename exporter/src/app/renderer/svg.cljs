@@ -327,6 +327,7 @@
                   :page-id page-id
                   :object-id object-id
                   :render-texts true
+                  :embed true
                   :route "render-object"}
 
           uri    (-> (or uri (cf/get :public-uri))

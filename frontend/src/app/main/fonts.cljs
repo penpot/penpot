@@ -226,7 +226,7 @@
   font-style: %(style)s;
   font-weight: %(weight)s;
   font-display: block;
-  src: url(/fonts/%(family)s-%(suffix)s.woff) format('woff');
+  src: url(%(baseurl)sfonts/%(family)s-%(suffix)s.woff) format('woff');
 }
 ")
 
@@ -262,7 +262,8 @@
       :else
       (let [{:keys [weight style suffix] :as variant}
             (d/seek #(= (:id %) font-variant-id) variants)
-            font-data {:family family
+            font-data {:baseurl (str cf/public-uri)
+                       :family family
                        :style style
                        :suffix (or suffix font-variant-id)
                        :weight weight}]
