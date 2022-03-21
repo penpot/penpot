@@ -957,35 +957,23 @@
       (let [selected (wsh/lookup-selected state)]
         (rx/of (dch/update-shapes selected #(update % :blocked not)))))))
 
-(defn extract-file-thumbnails-from-page
-  [state selected page]
-  (let [extract-frames (fn [page-id]
-                         (let [objects (wsh/lookup-page-objects state page-id)]
-                           (cph/get-frames objects)))
-        page-id (key page)
-        frames-with-thumbnail (->> (extract-frames page-id)
-                                   (filter (comp true? :file-thumbnail))
-                                   (map :id)
-                                   (remove #(some #{%} selected))
-                                   (map #(into {} {:id % :page-id page-id})))]
-    (when frames-with-thumbnail frames-with-thumbnail)))
-
-
 (defn toggle-file-thumbnail-selected
   []
   (ptk/reify ::toggle-file-thumbnail-selected
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected (wsh/lookup-selected state)
-            pages (get-in state [:workspace-data
-                                 :pages-index])
-            file-thumbnails (->> pages
-                     (mapcat #(extract-file-thumbnails-from-page state selected %)))]
+            pages    (-> state :workspace-data :pages-index vals)
+            extract  (fn [{:keys [objects id] :as page}]
+                       (->> (cph/get-frames objects)
+                            (filter :file-thumbnail)
+                            (map :id)
+                            (remove selected)
+                            (map (fn [frame-id] [id frame-id]))))]
         (rx/concat
-         (rx/from
-          (for [ft file-thumbnails]
-            (dch/update-shapes [(:id ft)] #(update % :file-thumbnail not) (:page-id ft) nil)))
-         (rx/of (dch/update-shapes selected #(update % :file-thumbnail not))))))))
+         (rx/from (for [[page-id frame-id] (mapcat extract pages)]
+                    (dch/update-shapes [frame-id] #(dissoc % :file-thumbnail) page-id nil)))
+         (rx/of (dch/update-shapes selected #(assoc % :file-thumbnail true))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation

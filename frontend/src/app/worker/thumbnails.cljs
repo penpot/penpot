@@ -31,36 +31,28 @@
 
 (defn- request-thumbnail
   [file-id]
-  (let [uri (u/join (cfg/get-public-uri) "api/rpc/query/file-data-for-thumbnail")
-        params {:file-id file-id
-                :strip-frames-with-thumbnails true}]
-    (->> (http/send!
-          {:method :get
-           :uri uri
-           :credentials "include"
-           :query params})
+  (let [uri     (u/join (cfg/get-public-uri) "api/rpc/query/file-data-for-thumbnail")
+        params  {:file-id file-id
+                 :strip-frames-with-thumbnails true}
+        request {:method :get
+                 :uri uri
+                 :credentials "include"
+                 :query params}]
+    (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
-(defonce cache (atom {}))
-
 (defn render-frame
-  [data ckey]
-  (let [prev (get @cache ckey)]
-    (if (= (:data prev) data)
-      (:result prev)
-      (let [file-thumbnail (:file-thumbnail data)
-            elem (if file-thumbnail
-                   (mf/element render/file-thumbnail-svg #js {:data file-thumbnail :width "290" :height "150"})
-                   (mf/element render/page-svg #js {:data data :width "290" :height "150" :thumbnails? true}))
-            result (rds/renderToStaticMarkup elem)]
-        (swap! cache assoc ckey {:data data :result result})
-        result))))
+  [data]
+  (let [elem (if-let [frame (:thumbnail-frame data)]
+               (mf/element render/frame-svg #js {:objects (:objects data) :frame frame})
+               (mf/element render/page-svg #js {:data data :width "290" :height "150" :thumbnails? true}))]
+    (rds/renderToStaticMarkup elem)))
 
 (defmethod impl/handler :thumbnails/generate
   [{:keys [file-id] :as message}]
   (->> (request-thumbnail file-id)
        (rx/map
         (fn [data]
-          {:svg (render-frame data #{file-id})
+          {:svg (render-frame data)
            :fonts @fonts/loaded}))))

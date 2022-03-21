@@ -16,11 +16,9 @@
    [app.rpc.queries.projects :as projects]
    [app.rpc.queries.share-link :refer [retrieve-share-link]]
    [app.rpc.queries.teams :as teams]
-   [app.storage.impl :as simpl]
    [app.util.blob :as blob]
    [app.util.services :as sv]
-   [clojure.spec.alpha :as s]
-   [promesa.core :as p]))
+   [clojure.spec.alpha :as s]))
 
 (declare decode-row)
 (declare decode-row-xf)
@@ -186,25 +184,12 @@
 
 ;; --- Query: File (By ID)
 
-(defn- retrieve-data*
-  [{:keys [storage] :as cfg} file]
-  (p/do
-    (when-let [backend (simpl/resolve-backend storage (:data-backend file))]
-      (simpl/get-object-bytes backend file))))
-
-(defn retrieve-data
-  [cfg file]
-  (if (bytes? (:data file))
-    file
-    (p/->> (retrieve-data* cfg file)
-           (assoc file :data))))
-
 (defn retrieve-file
   [{:keys [pool] :as cfg} id]
-  (p/->> (db/get-by-id pool :file id)
-         (retrieve-data cfg)
+  (let [item (db/get-by-id pool :file id)]
+    (->> item
          (decode-row)
-         (pmg/migrate-file)))
+         (pmg/migrate-file))))
 
 (s/def ::file
   (s/keys :req-un [::profile-id ::id]))
@@ -214,8 +199,8 @@
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
   (let [perms (get-permissions pool profile-id id)]
     (check-read-permissions! perms)
-    (p/-> (retrieve-file cfg id)
-          (assoc :permissions perms))))
+    (-> (retrieve-file cfg id)
+        (assoc :permissions perms))))
 
 (declare trim-file-data)
 
@@ -233,9 +218,9 @@
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
   (let [perms (get-permissions pool profile-id id)]
     (check-read-permissions! perms)
-    (p/-> (retrieve-file cfg id)
-          (trim-file-data params)
-          (assoc :permissions perms))))
+    (-> (retrieve-file cfg id)
+        (trim-file-data params)
+        (assoc :permissions perms))))
 
 (defn- trim-file-data
   [file {:keys [page-id object-id]}]
@@ -248,15 +233,29 @@
         (update :data assoc :pages-index {page-id page})
         (update :data assoc :pages [page-id]))))
 
+;; --- FILE THUMBNAIL
+
 (declare strip-frames-with-thumbnails)
 (declare extract-file-thumbnail)
 (declare get-first-page-data)
+(declare get-thumbnail-data)
 
 (s/def ::strip-frames-with-thumbnails ::us/boolean)
 
 (s/def ::page
   (s/keys :req-un [::profile-id ::file-id]
           :opt-un [::strip-frames-with-thumbnails]))
+
+(sv/defmethod ::page
+  "Retrieves the first page of the file. Used mainly for render
+  thumbnails on dashboard.
+
+  DEPRECATED: still here for backward compatibility."
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
+  (check-read-permissions! pool profile-id file-id)
+  (let [file (retrieve-file cfg file-id)
+        data (get-first-page-data file props)]
+    data))
 
 (s/def ::file-data-for-thumbnail
   (s/keys :req-un [::profile-id ::file-id]
@@ -267,20 +266,29 @@
   thumbnails on dashboard."
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
   (check-read-permissions! pool profile-id file-id)
-  (p/let [file    (retrieve-file cfg file-id)
-          data (get-first-page-data file props)
-          file-thumbnail (extract-file-thumbnail (get-in file [:data :pages-index]))]
+  (let [file (retrieve-file cfg file-id)]
+    (get-thumbnail-data file props)))
 
-    (assoc data :file-thumbnail file-thumbnail)))
+(defn get-thumbnail-data
+  [{:keys [data] :as file} props]
+  (if-let [[page frame] (first
+                         (for [page (-> data :pages-index vals)
+                               frame (-> page :objects cph/get-frames)
+                               :when (:file-thumbnail frame)]
+                           [page frame]))]
+    (let [objects (->> (cph/get-children-with-self (:objects page) (:id frame))
+                       (d/index-by :id))]
+      (cond-> (assoc page :objects objects)
+        (:strip-frames-with-thumbnails props)
+        (strip-frames-with-thumbnails)
 
-(sv/defmethod ::page
-  "Retrieves the first page of the file. Used mainly for render
-  thumbnails on dashboard."
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
-  (check-read-permissions! pool profile-id file-id)
-  (p/let [file    (retrieve-file cfg file-id)
-          data (get-first-page-data file props)]
-    data))
+        :always
+        (assoc :thumbnail-frame frame)))
+
+    (let [page-id (-> data :pages first)]
+      (cond-> (get-in data [:pages-index page-id])
+        (:strip-frames-with-thumbnails props)
+        (strip-frames-with-thumbnails)))))
 
 (defn get-first-page-data
   [file props]
@@ -317,16 +325,6 @@
 
     (update data :objects update-objects)))
 
-
-(defn extract-file-thumbnail
-  "Extract the frame marked as file-thumbnail"
-  [pages]  
-  (->> pages
-       vals
-       (mapcat :objects)
-       vals
-       (filter :file-thumbnail)
-       first))
 
 ;; --- Query: Shared Library Files
 
@@ -384,7 +382,6 @@
   [{:keys [pool] :as cfg} is-indirect file-id]
   (let [xform (comp
                (map #(assoc % :is-indirect is-indirect))
-               (map #(retrieve-data cfg %))
                (map decode-row))]
     (into #{} xform (db/exec! pool [sql:file-libraries file-id]))))
 
