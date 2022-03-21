@@ -25,6 +25,7 @@
 - Add the ability to disable standard, password login [Taiga #2999](https://tree.taiga.io/project/penpot/us/2999)
 
 ### :bug: Bugs fixed
+- Remove a decimal sets value to 0 [Taiga #3059](https://tree.taiga.io/project/penpot/issue/3054)
 - Go to style library file to edit in a new tab [Taiga #2639](https://tree.taiga.io/project/penpot/issue/2639)
 - Inner shadow with border not working properly [Taiga #2883](https://tree.taiga.io/project/penpot/issue/2883)
 - Fix ellipsis in long page names [Taiga #2962](https://tree.taiga.io/project/penpot/issue/2962)
