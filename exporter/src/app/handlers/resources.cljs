@@ -56,9 +56,10 @@
        (.on zip "entry" (fn [data]
                           (let [name (unchecked-get data "name")
                                 num  (swap! progress inc)]
+                            ;; Sample code used for testing failing exports
                             #_(when (= 2 num)
-                              (.abort ^js zip)
-                              (reject (js/Error. "unable to create zip file")))
+                                (.abort ^js zip)
+                                (reject (js/Error. "unable to create zip file")))
                             (on-progress
                              {:total (count items)
                               :done num}))))
