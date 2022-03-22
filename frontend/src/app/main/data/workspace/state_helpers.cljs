@@ -37,7 +37,6 @@
    (get-in state [:workspace-data :components])))
 
 ;; TODO: improve performance of this
-
 (defn lookup-selected
   ([state]
    (lookup-selected state nil))
@@ -68,3 +67,24 @@
   ([state page-id filter-fn]
    (let [objects (lookup-page-objects state page-id)]
      (into [] (filter filter-fn) (vals objects)))))
+
+(defn get-local-file
+  "Get the data content of the file you are currently working with."
+  [state]
+  (get state :workspace-data))
+
+(defn get-file
+  "Get the data content of the given file (it may be the current file
+  or one library)."
+  [state file-id]
+  (if (= file-id (:current-file-id state))
+    (get state :workspace-data)
+    (get-in state [:workspace-libraries file-id :data])))
+
+(defn get-libraries
+  "Retrieve all libraries, including the local file."
+  [state]
+  (let [{:keys [id] :as local} (:workspace-data state)]
+    (-> (:workspace-libraries state)
+        (assoc id {:id id
+                   :data local}))))

@@ -307,7 +307,6 @@
 (defn clean-loops
   "Clean a list of ids from circular references."
   [objects ids]
-
   (let [parent-selected?
         (fn [id]
           (let [parents (get-parent-ids objects id)]

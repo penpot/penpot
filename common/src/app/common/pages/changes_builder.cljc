@@ -7,6 +7,7 @@
 (ns app.common.pages.changes-builder
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bool :as gshb]
    [app.common.pages :as cp]
@@ -30,17 +31,29 @@
   [changes save-undo?]
   (assoc changes :save-undo? save-undo?))
 
-(defn with-page [changes page]
+(defn with-page
+  [changes page]
   (vary-meta changes assoc
              ::page page
-             ::page-id (:id page)
-             ::objects (:objects page)))
+             ::page-id (:id page)))
 
-(defn with-objects [changes objects]
+(defn with-container
+  [changes container]
+  (if (cph/page? container)
+    (vary-meta changes assoc ::page-id (:id container))
+    (vary-meta changes assoc ::component-id (:id container))))
+
+(defn with-objects
+  [changes objects]
   (let [file-data (-> (cp/make-file-data (uuid/next) uuid/zero)
                       (assoc-in [:pages-index uuid/zero :objects] objects))]
     (vary-meta changes assoc ::file-data file-data
                              ::applied-changes-count 0)))
+
+(defn with-library-data
+  [changes data]
+  (vary-meta changes assoc
+             ::library-data data))
 
 (defn amend-last-change
   "Modify the last redo-changes added with an update function."
@@ -53,9 +66,22 @@
   [changes f]
   (update changes :redo-changes #(mapv f %)))
 
+(defn concat-changes
+  [changes1 changes2]
+  {:redo-changes (d/concat-vec (:redo-changes changes1) (:redo-changes changes2))
+   :undo-changes (d/concat-vec (:undo-changes changes1) (:undo-changes changes2))
+   :origin (:origin changes1)})
+
+; TODO: remove this when not needed
 (defn- assert-page-id
   [changes]
   (assert (contains? (meta changes) ::page-id) "Give a page-id or call (with-page) before using this function"))
+
+(defn- assert-container-id
+  [changes]
+  (assert (or (contains? (meta changes) ::page-id)
+              (contains? (meta changes) ::component-id))
+          "Give a page-id or call (with-container) before using this function"))
 
 (defn- assert-page
   [changes]
@@ -64,6 +90,15 @@
 (defn- assert-objects
   [changes]
   (assert (contains? (meta changes) ::file-data) "Call (with-objects) before using this function"))
+
+(defn- assert-library
+  [changes]
+  (assert (contains? (meta changes) ::library-data) "Call (with-library-data) before using this function"))
+
+(defn- lookup-objects
+  [changes]
+  (let [data (::file-data (meta changes))]
+    (dm/get-in data [:pages-index uuid/zero :objects])))
 
 (defn- apply-changes-local
   [changes]
@@ -155,9 +190,9 @@
 
 ;; Shape tree changes
 
-(defn add-obj
+(defn add-object
   ([changes obj]
-   (add-obj changes obj nil))
+   (add-object changes obj nil))
 
   ([changes obj {:keys [index ignore-touched] :or {index ::undefined ignore-touched false}}]
    (assert-page-id changes)
@@ -192,7 +227,7 @@
   ([changes parent-id shapes index]
    (assert-page-id changes)
    (assert-objects changes)
-   (let [objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
+   (let [objects (lookup-objects changes)
 
          set-parent-change
          (cond-> {:type :mov-objects
@@ -224,10 +259,13 @@
   ([changes ids update-fn]
    (update-shapes changes ids update-fn nil))
 
-  ([changes ids update-fn {:keys [attrs ignore-geometry?] :or {attrs nil ignore-geometry? false}}]
-   (assert-page-id changes)
+  ([changes ids update-fn {:keys [attrs ignore-geometry? ignore-touched]
+                           :or {ignore-geometry? false ignore-touched false}}]
+   (assert-container-id changes)
    (assert-objects changes)
-   (let [objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
+   (let [page-id      (::page-id (meta changes))
+         component-id (::component-id (meta changes))
+         objects (lookup-objects changes)
 
          generate-operation
          (fn [operations attr old new ignore-geometry?]
@@ -236,8 +274,11 @@
              (if (= old-val new-val)
                operations
                (-> operations
-                   (update :rops conj {:type :set :attr attr :val new-val :ignore-geometry ignore-geometry?})
-                   (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
+                   (update :rops conj {:type :set :attr attr :val new-val
+                                       :ignore-geometry ignore-geometry?
+                                       :ignore-touched ignore-touched})
+                   (update :uops conj {:type :set :attr attr :val old-val
+                                       :ignore-touched true})))))
 
          update-shape
          (fn [changes id]
@@ -255,9 +296,14 @@
                         (seq uops)
                         (conj {:type :set-touched :touched (:touched old-obj)}))
 
-                 change {:type :mod-obj
-                         :page-id (::page-id (meta changes))
-                         :id id}]
+                 change (cond-> {:type :mod-obj
+                                 :id id}
+
+                          (some? page-id)
+                          (assoc :page-id page-id)
+
+                          (some? component-id)
+                          (assoc :component-id component-id))]
 
              (cond-> changes
                (seq rops)
@@ -274,7 +320,7 @@
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
-        objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
+        objects (lookup-objects changes)
 
         add-redo-change
         (fn [change-set id]
@@ -322,7 +368,7 @@
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
-        objects (get-in (meta changes) [::file-data :pages-index uuid/zero :objects])
+        objects (lookup-objects changes)
 
         xform   (comp
                   (mapcat #(cons % (cph/get-parent-ids objects %)))
@@ -373,4 +419,175 @@
 
     (-> (reduce resize-parent changes all-parents)
         (apply-changes-local))))
+
+;; Library changes
+
+(defn add-recent-color
+  [changes color]
+  (-> changes
+      (update :redo-changes conj {:type :add-recent-color :color color})
+      (apply-changes-local)))
+
+(defn add-color
+  [changes color]
+  (-> changes
+      (update :redo-changes conj {:type :add-color :color color})
+      (update :undo-changes conj {:type :del-color :id (:id color)})
+      (apply-changes-local)))
+
+(defn update-color
+  [changes color]
+  (assert-library changes)
+  (let [library-data (::library-data (meta changes))
+        prev-color (get-in library-data [:colors (:id color)])]
+    (-> changes
+        (update :redo-changes conj {:type :mod-color :color color})
+        (update :undo-changes conj {:type :mod-color :color prev-color})
+        (apply-changes-local))))
+
+(defn delete-color
+  [changes color-id]
+  (assert-library changes)
+  (let [library-data (::library-data (meta changes))
+        prev-color (get-in library-data [:colors color-id])]
+    (-> changes
+        (update :redo-changes conj {:type :del-color :id color-id})
+        (update :undo-changes conj {:type :add-color :color prev-color})
+        (apply-changes-local))))
+
+(defn add-media
+  [changes object]
+  (-> changes
+      (update :redo-changes conj {:type :add-media :object object})
+      (update :undo-changes conj {:type :del-media :id (:id object)})
+      (apply-changes-local)))
+
+(defn update-media
+  [changes object]
+  (assert-library changes)
+  (let [library-data (::library-data (meta changes))
+        prev-object (get-in library-data [:media (:id object)])]
+    (-> changes
+        (update :redo-changes conj {:type :mod-media :object object})
+        (update :undo-changes conj {:type :mod-media :object prev-object})
+        (apply-changes-local))))
+
+(defn delete-media
+  [changes id]
+  (assert-library changes)
+  (let [library-data (::library-data (meta changes))
+        prev-object (get-in library-data [:media id])]
+    (-> changes
+        (update :redo-changes conj {:type :del-media :id id})
+        (update :undo-changes conj {:type :add-media :object prev-object})
+        (apply-changes-local))))
+
+(defn add-typography
+  [changes typography]
+  (-> changes
+      (update :redo-changes conj {:type :add-typography :typography typography})
+      (update :undo-changes conj {:type :del-typography :id (:id typography)})
+      (apply-changes-local)))
+
+(defn update-typography
+  [changes typography]
+  (assert-library changes)
+  (let [library-data (::library-data (meta changes))
+        prev-typography (get-in library-data [:typographies (:id typography)])]
+    (-> changes
+        (update :redo-changes conj {:type :mod-typography :typography typography})
+        (update :undo-changes conj {:type :mod-typography :typography prev-typography})
+        (apply-changes-local))))
+
+(defn delete-typography
+  [changes typography-id]
+  (assert-library changes)
+  (let [library-data (::library-data (meta changes))
+        prev-typography (get-in library-data [:typographies typography-id])]
+    (-> changes
+        (update :redo-changes conj {:type :del-typography :id typography-id})
+        (update :undo-changes conj {:type :add-typography :typography prev-typography})
+        (apply-changes-local))))
+
+(defn add-component
+  [changes id path name new-shapes updated-shapes]
+  (assert-page-id changes)
+  (assert-objects changes)
+  (let [page-id (::page-id (meta changes))
+        objects (lookup-objects changes)
+        lookupf (d/getf objects)
+
+        mk-change (fn [shape]
+                    {:type :mod-obj
+                     :page-id page-id
+                     :id (:id shape)
+                     :operations [{:type :set
+                                   :attr :component-id
+                                   :val (:component-id shape)}
+                                  {:type :set
+                                   :attr :component-file
+                                   :val (:component-file shape)}
+                                  {:type :set
+                                   :attr :component-root?
+                                   :val (:component-root? shape)}
+                                  {:type :set
+                                   :attr :shape-ref
+                                   :val (:shape-ref shape)}
+                                  {:type :set
+                                   :attr :touched
+                                   :val (:touched shape)}]}) ]
+    (-> changes
+        (update :redo-changes
+                (fn [redo-changes]
+                  (-> redo-changes
+                      (conj {:type :add-component
+                             :id id
+                             :path path
+                             :name name
+                             :shapes new-shapes})
+                      (into (map mk-change) updated-shapes))))
+        (update :undo-changes 
+                (fn [undo-changes]
+                  (-> undo-changes
+                      (conj {:type :del-component
+                             :id id})
+                      (into (comp (map :id)
+                                  (map lookupf)
+                                  (map mk-change))
+                            updated-shapes))))
+        (apply-changes-local))))
+
+(defn update-component
+  [changes id update-fn]
+  (assert-library changes)
+  (let [library-data   (::library-data (meta changes))
+        prev-component (get-in library-data [:components id])
+        new-component  (update-fn prev-component)]
+    (if new-component
+      (-> changes
+          (update :redo-changes conj {:type :mod-component
+                                      :id id
+                                      :name (:name new-component)
+                                      :path (:path new-component)
+                                      :objects (:objects new-component)})
+          (update :undo-changes conj {:type :mod-component
+                                      :id id
+                                      :name (:name prev-component)
+                                      :path (:path prev-component)
+                                      :objects (:objects prev-component)}))
+      changes)))
+
+(defn delete-component
+  [changes id]
+  (assert-library changes)
+  (let [library-data   (::library-data (meta changes))
+        prev-component (get-in library-data [:components id])]
+    (-> changes
+        (update :redo-changes conj {:type :del-component
+                                    :id id})
+        (update :undo-changes conj {:type :add-component
+                                    :id id
+                                    :name (:name prev-component)
+                                    :path (:path prev-component)
+                                    :shapes (vals (:objects prev-component))}))))
 
