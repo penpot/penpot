@@ -274,7 +274,7 @@
             (let [min-age (db/interval min-age)
                   rows    (db/exec! conn [sql:retrieve-deleted-objects-chunk min-age cursor])]
               [(some-> rows peek :created-at)
-               (some->> (seq rows) (d/group-by' #(-> % :backend keyword) :id) seq)]))
+               (some->> (seq rows) (d/group-by #(-> % :backend keyword) :id #{}) seq)]))
 
           (retrieve-deleted-objects [conn]
             (->> (d/iteration (fn [cursor]
@@ -383,7 +383,7 @@
                             (mapv #(d/update-when % :metadata db/decode-transit-pgobject)))]
               (when (seq rows)
                 [(-> rows peek :created-at)
-                 (d/group-by' get-bucket :id rows)])))
+                 (d/group-by get-bucket :id #{} rows)])))
 
           (retrieve-touched [conn]
             (->> (d/iteration (fn [cursor]

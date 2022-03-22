@@ -597,19 +597,10 @@
 
 
 (defn group-by
-  ([kf coll] (group-by kf identity coll))
-  ([kf vf coll]
-   (let [conj (fnil conj [])]
-     (reduce (fn [result item]
-               (update result (kf item) conj (vf item)))
-             {}
-             coll))))
-
-(defn group-by'
-  "A variant of group-by that uses a set for collecting results."
-  ([kf coll] (group-by kf identity coll))
-  ([kf vf coll]
-   (let [conj (fnil conj #{})]
+  ([kf coll] (group-by kf identity [] coll))
+  ([kf vf coll] (group-by kf vf [] coll))
+  ([kf vf iv coll]
+   (let [conj (fnil conj iv)]
      (reduce (fn [result item]
                (update result (kf item) conj (vf item)))
              {}
