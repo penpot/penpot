@@ -1750,3 +1750,4 @@
 (dm/export dwz/zoom-to-fit-all)
 (dm/export dwz/decrease-zoom)
 (dm/export dwz/increase-zoom)
+(dm/export dwz/set-zoom)

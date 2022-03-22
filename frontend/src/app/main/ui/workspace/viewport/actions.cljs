@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.actions
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.workspace :as dw]
@@ -362,27 +363,19 @@
   (mf/use-callback
    (mf/deps zoom)
    (fn [event]
-     (let [event (.getBrowserEvent ^js event)
-           raw-pt (dom/get-client-position event)
-           viewport (mf/ref-val viewport-ref)
-           pt    (utils/translate-point-to-viewport viewport zoom raw-pt)
-
-           ctrl? (kbd/ctrl? event)
-           meta? (kbd/meta? event)
+     (let [viewport (mf/ref-val viewport-ref)
+           event  (.getBrowserEvent ^js event)
            target (dom/get-target event)]
-       (cond
-         (or ctrl? meta?)
-         (do
-           (dom/prevent-default event)
-           (dom/stop-propagation event)
-           (let [delta (+ (.-deltaY ^js event)
-                          (.-deltaX ^js event))]
-             (if (pos? delta)
-               (st/emit! (dw/decrease-zoom pt))
-               (st/emit! (dw/increase-zoom pt)))))
+       (when (.contains ^js viewport target)
+         (dom/prevent-default event)
+         (dom/stop-propagation event)
+         (let [pt     (->> (dom/get-client-position event)
+                           (utils/translate-point-to-viewport viewport zoom))
 
-         (.contains ^js viewport target)
-         (let [delta-mode (.-deltaMode ^js event)
+               ctrl? (kbd/ctrl? event)
+               meta? (kbd/meta? event)
+
+               delta-mode (.-deltaMode ^js event)
 
                unit (cond
                       (= delta-mode WheelEvent.DeltaMode.PIXEL) 1
@@ -396,13 +389,16 @@
                delta-x (-> (.-deltaX ^js event)
                            (* unit)
                            (/ zoom))]
-           (dom/prevent-default event)
-           (dom/stop-propagation event)
-           (if (and (not (cfg/check-platform? :macos)) ;; macos sends delta-x automatically, don't need to do it
-                    (kbd/shift? event))
-             (st/emit! (dw/update-viewport-position {:x #(+ % delta-y)}))
-             (st/emit! (dw/update-viewport-position {:x #(+ % delta-x)
-                                                     :y #(+ % delta-y)})))))))))
+           (if (or ctrl? meta?)
+             (let [delta (* -1 (+ (.-deltaY ^js event) (.-deltaX ^js event)))
+                   scale (-> (+ 1 (/ delta 100)) (mth/clamp 0.77 1.3))]
+               (st/emit! (dw/set-zoom pt scale)))
+             (if (and (not (cfg/check-platform? :macos))
+                      ;; macos sends delta-x automatically, don't need to do it
+                      (kbd/shift? event))
+               (st/emit! (dw/update-viewport-position {:x #(+ % delta-y)}))
+               (st/emit! (dw/update-viewport-position {:x #(+ % delta-x)
+                                                       :y #(+ % delta-y)}))))))))))
 
 (defn on-drag-enter []
   (mf/use-callback
