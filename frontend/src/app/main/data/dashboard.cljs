@@ -426,21 +426,21 @@
              (rx/tap #(tm/schedule on-success))
              (rx/catch on-error))))))
 
-(defn invite-team-member
-  [{:keys [emails role] :as params}]
+(defn invite-team-members
+  [{:keys [emails role team-id resend?] :as params}]
   (us/assert ::us/set-of-emails emails)
   (us/assert ::us/keyword role)
-  (ptk/reify ::invite-team-member
+  (us/assert ::us/uuid team-id)
+  (ptk/reify ::invite-team-members
     IDeref
-    (-deref [_] {:role role})
+    (-deref [_] {:role role :team-id team-id :resend? resend?})
 
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-            team-id (:current-team-id state)
-            params  (assoc params :team-id team-id)]
+            params (dissoc params :resend?)]
         (->> (rp/mutation! :invite-team-member params)
              (rx/tap on-success)
              (rx/catch on-error))))))

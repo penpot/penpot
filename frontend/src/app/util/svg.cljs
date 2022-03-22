@@ -458,6 +458,49 @@
     :feTile
     :feTurbulence})
 
+;; By spec: https://www.w3.org/TR/SVG11/single-page.html#struct-GElement
+(defonce svg-group-safe-tags
+  #{:animate
+    :animateColor
+    :animateMotion
+    :animateTransform
+    :set
+    :desc
+    :metadata
+    :title
+    :circle
+    :ellipse
+    :line
+    :path
+    :polygon
+    :polyline
+    :rect
+    :defs
+    :g
+    :svg
+    :symbol
+    :use
+    :linearGradient
+    :radialGradient
+    :a
+    :altGlyphDef
+    :clipPath
+    :color-profile
+    :cursor
+    :filter
+    :font
+    :font-face
+    :foreignObject
+    :image
+    :marker
+    :mask
+    :pattern
+    :script
+    :style
+    :switch
+    :text
+    :view})
+
 ;; Props not supported by react we need to keep them lowercase
 (defonce non-react-props
   #{:mask-type})

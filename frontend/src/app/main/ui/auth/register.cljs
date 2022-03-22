@@ -68,8 +68,8 @@
     (st/emit! (dm/error (tr "errors.generic")))))
 
 (defn- handle-prepare-register-success
-  [_form {:keys [token] :as result}]
-  (st/emit! (rt/nav :auth-register-validate {} {:token token})))
+  [_ params]
+  (st/emit! (rt/nav :auth-register-validate {} params)))
 
 (mf/defc register-form
   [{:keys [params] :as props}]
@@ -83,8 +83,9 @@
         (mf/use-callback
          (fn [form _event]
            (reset! submitted? true)
-           (let [params (:clean-data @form)]
-             (->> (rp/mutation :prepare-register-profile params)
+           (let [cdata (:clean-data @form)]
+             (->> (rp/mutation :prepare-register-profile cdata)
+                  (rx/map #(merge % params))
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs (partial handle-prepare-register-success form)
                            (partial handle-prepare-register-error form))))))
@@ -160,13 +161,6 @@
 (defn- handle-register-error
   [form error]
   (case (:code error)
-    :registration-disabled
-    (st/emit! (dm/error (tr "errors.registration-disabled")))
-
-    :email-has-permanent-bounces
-    (let [email (get @form [:data :email])]
-      (st/emit! (dm/error (tr "errors.email-has-permanent-bounces" email))))
-
     :email-already-exists
     (swap! form assoc-in [:errors :email]
            {:message "errors.email-already-exists"})

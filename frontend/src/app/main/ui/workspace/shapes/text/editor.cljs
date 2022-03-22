@@ -235,11 +235,12 @@
 (defn translate-point-from-viewport
   "Translate a point in the viewport into client coordinates"
   [pt viewport zoom]
-  (let [vbox     (.. ^js viewport -viewBox -baseVal)
-        box      (gpt/point (.-x vbox) (.-y vbox))
-        zoom     (gpt/point zoom)]
-    (-> (gpt/subtract pt box)
-        (gpt/multiply zoom))))
+  (when (some? viewport)
+    (let [vbox     (.. ^js viewport -viewBox -baseVal)
+          box      (gpt/point (.-x vbox) (.-y vbox))
+          zoom     (gpt/point zoom)]
+      (-> (gpt/subtract pt box)
+          (gpt/multiply zoom)))))
 
 (mf/defc text-editor-viewport
   {::mf/wrap-props false}
