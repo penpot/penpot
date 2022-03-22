@@ -4,6 +4,14 @@
 
 ### :boom: Breaking changes
 ### :sparkles: New features
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :heart: Community contributions by (Thank you!)
+
+## 1.13.0-beta
+
+### :boom: Breaking changes
+### :sparkles: New features
 
 - Exporting big files flow [Taiga #2218](https://tree.taiga.io/project/penpot/us/2218)
 - Multiexport from main menu [Taiga #520](https://tree.taiga.io/project/penpot/us/28541)
