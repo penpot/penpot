@@ -98,7 +98,7 @@
                 shape-id (:id boolean-data)
                 changes (-> (pcb/empty-changes it page-id)
                             (pcb/with-objects objects)
-                            (pcb/add-obj boolean-data {:index index})
+                            (pcb/add-object boolean-data {:index index})
                             (pcb/change-parent shape-id shapes))]
             (rx/of (dch/commit-changes changes)
                    (dwc/select-shapes (d/ordered-set shape-id)))))))))

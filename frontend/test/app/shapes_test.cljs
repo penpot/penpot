@@ -12,7 +12,8 @@
    [cljs.pprint :refer [pprint]]
    [cljs.test :as t :include-macros true]
    [clojure.stacktrace :as stk]
-   [linked.core :as lks]))
+   [linked.core :as lks]
+   [potok.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -33,27 +34,20 @@
           shape (thp/get-shape state :shape1)]
       (t/is (= (:name shape) "Rect 1")))))
 
-(t/deftest synctest
-  (t/testing "synctest"
-    (let [state     {:workspace-local {:color-for-rename "something"}}
-          new-state (->> state
-                         (the/do-update
-                           dwl/clear-color-for-rename))]
-      (t/is (= (get-in new-state [:workspace-local :color-for-rename])
-               nil)))))
-
 (t/deftest asynctest
   (t/testing "asynctest"
     (t/async done
       (let [state {}
-            color {:color clr/white}]
-        (->> state
-             (the/do-watch-update
-               (dwl/add-recent-color color))
-             (rx/map
-               (fn [new-state]
-                 (t/is (= (get-in new-state [:workspace-data
-                                             :recent-colors])
-                          [color]))))
-             (rx/subs done done))))))
+            color {:color clr/white}
+
+            store (the/prepare-store state done
+              (fn [new-state]
+                (t/is (= (get-in new-state [:workspace-data
+                                            :recent-colors])
+                         [color]))))]
+
+        (ptk/emit!
+          store
+          (dwl/add-recent-color color)
+          :the/end)))))
 

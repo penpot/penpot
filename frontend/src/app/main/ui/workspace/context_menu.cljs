@@ -395,12 +395,13 @@
                         :shortcut (sc/get-tooltip :create-component)
                         :on-click do-add-component}]
         (when has-component?
-          [:& menu-entry {:title (tr "workspace.shape.menu.detach-instances-in-bulk")
-                          :shortcut (sc/get-tooltip :detach-component)
-                          :on-click do-detach-component-in-bulk}]
-          (when (not single?)
-            [:& menu-entry {:title (tr "workspace.shape.menu.update-components-in-bulk")
-                            :on-click do-update-in-bulk}]))])
+          [:*
+           [:& menu-entry {:title (tr "workspace.shape.menu.detach-instances-in-bulk")
+                           :shortcut (sc/get-tooltip :detach-component)
+                           :on-click do-detach-component-in-bulk}]
+           (when (not single?)
+             [:& menu-entry {:title (tr "workspace.shape.menu.update-components-in-bulk")
+                             :on-click do-update-in-bulk}])])])
 
      (when is-component?
        ;; WARNING: this menu is the same as the context menu at the sidebar.

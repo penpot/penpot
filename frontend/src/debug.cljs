@@ -148,36 +148,51 @@
     (clj->js (get-in @st/state path)))
   nil)
 
-(defn ^:export dump-objects []
-  (let [page-id (get @st/state :current-page-id)
-        objects (get-in @st/state [:workspace-data :pages-index page-id :objects])]
+(defn dump-objects'
+  [state]
+  (let [page-id (get state :current-page-id)
+        objects (get-in state [:workspace-data :pages-index page-id :objects])]
     (logjs "objects" objects)
     nil))
 
-(defn ^:export dump-object [name]
-  (let [page-id (get @st/state :current-page-id)
-        objects (get-in @st/state [:workspace-data :pages-index page-id :objects])
+(defn ^:export dump-objects
+  []
+  (dump-objects' @st/state))
+
+(defn dump-object'
+  [state name]
+  (let [page-id (get state :current-page-id)
+        objects (get-in state [:workspace-data :pages-index page-id :objects])
         result  (or (d/seek (fn [[_ shape]] (= name (:name shape))) objects)
                     (get objects (uuid/uuid name)))]
     (logjs name result)
     nil))
 
-(defn ^:export dump-selected []
-  (let [page-id (get @st/state :current-page-id)
-        objects (get-in @st/state [:workspace-data :pages-index page-id :objects])
-        selected (get-in @st/state [:workspace-local :selected])
+(defn ^:export dump-object
+  [name]
+  (dump-object' @st/state name))
+
+(defn dump-selected'
+  [state]
+  (let [page-id (get state :current-page-id)
+        objects (get-in state [:workspace-data :pages-index page-id :objects])
+        selected (get-in state [:workspace-local :selected])
         result (->> selected (map (d/getf objects)))]
     (logjs "selected" result)
     nil))
 
-(defn ^:export dump-tree
-  ([] (dump-tree false false))
-  ([show-ids] (dump-tree show-ids false))
-  ([show-ids show-touched]
-   (let [page-id    (get @st/state :current-page-id)
-         objects    (get-in @st/state [:workspace-data :pages-index page-id :objects])
-         components (get-in @st/state [:workspace-data :components])
-         libraries  (get @st/state :workspace-libraries)
+(defn ^:export dump-selected
+  []
+  (dump-selected' @st/state))
+
+(defn dump-tree'
+  ([state ] (dump-tree' state false false))
+  ([state show-ids] (dump-tree' state show-ids false))
+  ([state show-ids show-touched]
+   (let [page-id    (get state :current-page-id)
+         objects    (get-in state [:workspace-data :pages-index page-id :objects])
+         components (get-in state [:workspace-data :components])
+         libraries  (get state :workspace-libraries)
          root (d/seek #(nil? (:parent-id %)) (vals objects))]
 
      (letfn [(show-shape [shape-id level objects]
@@ -243,6 +258,11 @@
                   (println (str/format "[%s]" (:name component)))
                   (show-shape (:id component) 0 (:objects component)))))))))
 
+(defn ^:export dump-tree
+  ([] (dump-tree' @st/state))
+  ([show-ids] (dump-tree' @st/state show-ids))
+  ([show-ids show-touched] (dump-tree' @st/state show-ids show-touched)))
+
 (when *assert*
   (defonce debug-subscription
     (->> st/stream
@@ -273,7 +293,6 @@
   (st/emit!
    dw/reset-zoom
    (dw/update-viewport-position {:x (constantly 0) :y (constantly 0)})))
-
 
 (defn ^:export hide-ui
   []

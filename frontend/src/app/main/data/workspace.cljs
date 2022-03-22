@@ -660,8 +660,9 @@
                                    moved-shape (assoc shape
                                                       :parent-id parent-id
                                                       :frame-id frame-id)]
-                               (assoc shape :constraints-h (gsh/default-constraints-h moved-shape)
-                                            :constraints-v (gsh/default-constraints-v moved-shape))))
+                               (assoc shape
+                                      :constraints-h (gsh/default-constraints-h moved-shape)
+                                      :constraints-v (gsh/default-constraints-v moved-shape))))
                            {:ignore-touched true})
 
         ; Resize parent containers that need to

@@ -314,7 +314,7 @@
                        (geom/move delta)
                        (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
-        changes (-> (pcb/add-obj changes new-frame)
+        changes (-> (pcb/add-object changes new-frame)
                     (pcb/amend-last-change #(assoc % :old-id (:id obj))))
 
         changes (reduce (fn [changes child]
@@ -349,8 +349,8 @@
                           (geom/move delta)
                           (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
-          changes (pcb/add-obj changes new-obj {:ignore-touched true})
-          changes (-> (pcb/add-obj changes new-obj {:ignore-touched true})
+          changes (pcb/add-object changes new-obj {:ignore-touched true})
+          changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))]
 
           (reduce (fn [changes child]
