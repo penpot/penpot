@@ -60,17 +60,19 @@
 (s/def ::file-id ::us/uuid)
 (s/def ::object-id ::us/uuid)
 (s/def ::render-text ::us/boolean)
+(s/def ::embed ::us/boolean)
 
 (s/def ::render-object-params
   (s/keys :req-un [::file-id ::page-id ::object-id]
-          :opt-un [::render-text]))
+          :opt-un [::render-text ::embed]))
 
 (defn- render-object
   [params]
-  (let [{:keys [page-id file-id object-id render-texts]} (us/conform ::render-object-params params)]
+  (let [{:keys [page-id file-id object-id render-texts embed]} (us/conform ::render-object-params params)]
     (mf/html
      [:& render/render-object
       {:file-id file-id
        :page-id page-id
        :object-id object-id
-       :render-texts? (and (some? render-texts) (= render-texts "true"))}])))
+       :embed? embed
+       :render-texts? render-texts}])))

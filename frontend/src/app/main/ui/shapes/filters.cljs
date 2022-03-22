@@ -175,7 +175,7 @@
      (if svg-root?
        ;; When is a raw-svg but not the root we use the whole svg as bound for the filter. Is the maximum
        ;; we're allowed to display
-       {:x 0 :y 0 :width width :height height}
+       {:x x :y y :width width :height height}
 
        ;; Otherwise we calculate the bound
        (let [filter-bounds (->> filters
@@ -224,15 +224,14 @@
         filter-y      (/ (- (:y bounds) (:y selrect) padding) (:height selrect))
         filter-width  (/ (+ (:width bounds) (* 2 padding)) (:width selrect))
         filter-height (/ (+ (:height bounds) (* 2 padding)) (:height selrect))]
-    [:*
-     (when (> (count filters) 2)
-       [:filter {:id          filter-id
-                 :x           filter-x
-                 :y           filter-y
-                 :width       filter-width
-                 :height      filter-height
-                 :filterUnits "objectBoundingBox"
-                 :color-interpolation-filters "sRGB"}
-        (for [entry filters]
-          [:& filter-entry {:entry entry}])])]))
+    (when (> (count filters) 2)
+      [:filter {:id          filter-id
+                :x           filter-x
+                :y           filter-y
+                :width       filter-width
+                :height      filter-height
+                :filterUnits "objectBoundingBox"
+                :color-interpolation-filters "sRGB"}
+       (for [entry filters]
+         [:& filter-entry {:entry entry}])])))
 

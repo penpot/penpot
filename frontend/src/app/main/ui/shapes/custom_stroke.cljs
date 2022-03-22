@@ -328,7 +328,13 @@
 
         props        (cond-> props
                        (d/not-empty? (:shadow shape))
-                       (obj/set! "filter" (dm/fmt "url(#filter_%)" render-id)))]
+                       (obj/set! "filter" (dm/fmt "url(#filter_%)" render-id)))
+
+        svg-defs  (:svg-defs shape {})
+        svg-attrs (:svg-attrs shape {})
+
+        [svg-attrs svg-styles]
+        (attrs/extract-svg-attrs render-id svg-defs svg-attrs)]
 
     (cond
       url-fill?
@@ -338,6 +344,25 @@
                                 (obj/clone)
                                 (obj/without ["fill" "fillOpacity"])))]
         (obj/set! props "fill" (dm/fmt "url(#fill-0-%)" render-id)))
+
+      (obj/contains? svg-styles "fill")
+      (let [style
+            (-> (obj/get props "style")
+                (obj/clone)
+                (obj/set! "fill" (obj/get svg-styles "fill"))
+                (obj/set! "fillOpacity" (obj/get svg-styles "fillOpacity")))]
+        (-> props
+            (obj/set! "style" style)))
+
+      (obj/contains? svg-attrs "fill")
+      (let [style
+            (-> (obj/get props "style")
+                (obj/clone)
+                (obj/set! "fill" (obj/get svg-attrs "fill"))
+                (obj/set! "fillOpacity" (obj/get svg-attrs "fillOpacity")))]
+        (-> props
+            (obj/set! "style" style)))
+
 
       (d/not-empty? (:fills shape))
       (let [fill-props

@@ -52,8 +52,8 @@
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects object-id zoom render-texts?]
-    :or {zoom 1}
+  [{:keys [objects object-id zoom render-texts? embed?]
+    :or {zoom 1 embed? false}
     :as props}]
   (let [object   (get objects object-id)
         frame-id (if (= :frame (:type object))
@@ -106,7 +106,7 @@
        {:size (str (mth/ceil width) "px "
                    (mth/ceil height) "px")}))
 
-    [:& (mf/provider embed/context) {:value false}
+    [:& (mf/provider embed/context) {:value embed?}
      [:svg {:id "screenshot"
             :view-box vbox
             :width width
@@ -152,7 +152,7 @@
     objects))
 
 (mf/defc render-object
-  [{:keys [file-id page-id object-id render-texts?] :as props}]
+  [{:keys [file-id page-id object-id render-texts? embed?] :as props}]
   (let [objects (mf/use-state nil)]
 
     (mf/with-effect [file-id page-id object-id]
@@ -171,6 +171,7 @@
     (when @objects
       [:& object-svg {:objects @objects
                       :object-id object-id
+                      :embed? embed?
                       :render-texts? render-texts?
                       :zoom 1}])))
 

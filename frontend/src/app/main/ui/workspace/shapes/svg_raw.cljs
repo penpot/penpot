@@ -9,6 +9,7 @@
    [app.main.refs :as refs]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
+   [app.util.svg :as usvg]
    [rumext.alpha :as mf]))
 
 (defn svg-raw-wrapper-factory
@@ -20,11 +21,9 @@
       [props]
       (let [shape      (unchecked-get props "shape")
             childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
-            childs     (mf/deref childs-ref)]
-
-
-        (if (or (= (get-in shape [:content :tag]) :svg)
-                (and (contains? shape :svg-attrs) (map? (:content shape))))
+            childs     (mf/deref childs-ref)
+            svg-tag (get-in shape [:content :tag])]
+        (if (contains? usvg/svg-group-safe-tags svg-tag)
           [:> shape-container {:shape shape}
            [:& svg-raw-shape {:shape shape
                               :childs childs}]]

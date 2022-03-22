@@ -11,6 +11,9 @@
 ## 1.13.0-beta
 
 ### :boom: Breaking changes
+
+- We've changed the behaviour of the border-radius so it works as CSS that [has some limits](https://www.w3.org/TR/css-backgrounds-3/#corner-overlap).
+
 ### :sparkles: New features
 
 - Exporting big files flow [Taiga #2218](https://tree.taiga.io/project/penpot/us/2218)
@@ -34,6 +37,7 @@
 - Add the ability to specify the attr for retrieve the email on OIDC integration [#1460](https://github.com/penpot/penpot/issues/1460)
 - Allow registration with invitation token when registration is disabled
 - Add the ability to disable standard, password login [Taiga #2999](https://tree.taiga.io/project/penpot/us/2999)
+- Don't stop SVG import when an image cannot be imported [#1531](https://github.com/penpot/penpot/issues/1531)
 
 ### :bug: Bugs fixed
 
@@ -45,6 +49,12 @@
 - Fix ellipsis in long page names [Taiga #2962](https://tree.taiga.io/project/penpot/issue/2962)
 - Fix color palette animation [Taiga #2852](https://tree.taiga.io/project/penpot/issue/2852)
 - Fix display code icon on preview hover [Taiga #2838](https://tree.taiga.io/project/penpot/us/2838)
+- Fix crash on iOS when displaying viewer [#1522](https://github.com/penpot/penpot/issues/1522)
+- Fix problem when importing a SVG with text [#1532](https://github.com/penpot/penpot/issues/1532)
+- Fix problem when adding shadows to imported text [#Taiga 3057](https://tree.taiga.io/project/penpot/issue/3057)
+- Fix problem when importing SVG's with uses with overriding properties [#Taiga 2884](https://tree.taiga.io/project/penpot/issue/2884)
+- Fix inconsistency with radius in SVG an CSS [#1587](https://github.com/penpot/penpot/issues/1587)
+- Fix clickable area in layers [#1680](https://github.com/penpot/penpot/issues/1680)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

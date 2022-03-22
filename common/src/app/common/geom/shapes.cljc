@@ -11,6 +11,7 @@
    [app.common.geom.shapes.bool :as gsb]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
+   [app.common.geom.shapes.corners :as gsc]
    [app.common.geom.shapes.intersect :as gin]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
@@ -153,3 +154,7 @@
 ;; Constraints
 (dm/export gct/default-constraints-h)
 (dm/export gct/default-constraints-v)
+
+;; Corners
+(dm/export gsc/shape-corners-1)
+(dm/export gsc/shape-corners-4)
