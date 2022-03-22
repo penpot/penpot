@@ -21,11 +21,9 @@
    [app.main.ui.routes :as rt]
    [app.main.worker :as worker]
    [app.util.dom :as dom]
-   [app.util.globals :as glob]
    [app.util.i18n :as i18n]
    [app.util.theme :as theme]
    [beicon.core :as rx]
-   [cuerdas.core :as str]
    [debug]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
@@ -68,19 +66,12 @@
             (rx/take 1)
             (rx/map #(ws/initialize)))))))
 
-
-(def essential-only?
-  (let [href (.-href ^js glob/location)]
-    (str/includes? href "essential=t")))
-
 (defn ^:export init
   []
-  (when-not essential-only?
-    (worker/init!)
-    (sentry/init!)
-    (i18n/init! cf/translations)
-    (theme/init! cf/themes))
-
+  (worker/init!)
+  (sentry/init!)
+  (i18n/init! cf/translations)
+  (theme/init! cf/themes)
   (init-ui)
   (st/emit! (initialize)))
 

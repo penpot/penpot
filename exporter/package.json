@@ -15,7 +15,7 @@
     "inflation": "^2.0.0",
     "ioredis": "^4.28.5",
     "luxon": "^2.3.1",
-    "playwright": "^1.19.2",
+    "playwright": "^1.20.0",
     "raw-body": "^2.5.1",
     "xml-js": "^1.6.11",
     "xregexp": "^5.0.2"

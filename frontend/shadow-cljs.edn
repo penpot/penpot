@@ -15,9 +15,15 @@
 
    :modules
    {:shared {:entries []}
+
     :main {:entries [app.main]
            :depends-on #{:shared}
            :init-fn app.main/init}
+
+    :render {:entries [app.render]
+             :depends-on #{:shared}
+             :init-fn app.render/init}
+
     :worker {:entries [app.worker]
              :web-worker true
              :depends-on #{:shared}}}

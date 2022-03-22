@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Penpot - Render</title>
+    <link rel="icon" href="images/favicon.png" />
+
+    <script>
+      window.penpotThemes = {{& themes}};
+      window.penpotVersion = "%version%";
+    </script>
+
+    {{# manifest}}
+    <script src="{{& config}}"></script>
+    <script src="{{& polyfills}}"></script>
+    {{/manifest}}
+  </head>
+  <body>
+    <section id="app" tabindex="1"></section>
+    {{# manifest}}
+    <script src="{{& shared}}"></script>
+    <script src="{{& render}}"></script>
+    {{/manifest}}
+  </body>
+</html>

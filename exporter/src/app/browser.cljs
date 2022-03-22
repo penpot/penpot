@@ -69,13 +69,9 @@
 
 (defn pdf
   ([page] (pdf page {}))
-  ([page {:keys [width height scale save-path]
-          :or {width default-viewport-width
-               height default-viewport-height
-               scale 1}}]
+  ([page {:keys [scale save-path]
+          :or {scale 1}}]
     (.pdf ^js page #js {:path save-path
-                        :width width
-                        :height height
                         :scale scale
                         :printBackground true
                         :preferCSSPageSize true})))

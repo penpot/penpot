@@ -60,7 +60,8 @@
                              :object-id (first ids)}
                    exports  (mapv #(merge % defaults) exports)]
                (if (= 1 (count exports))
-                 (st/emit! (de/request-simple-export {:export (first exports)}))
+                 (let [export (first exports)]
+                   (st/emit! (de/request-simple-export {:export export :filename (:name export)})))
                  (st/emit! (de/request-multiple-export {:exports exports :filename filename})))))))
 
         ;; TODO: maybe move to specific events for avoid to have this logic here?

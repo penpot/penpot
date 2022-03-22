@@ -11,16 +11,21 @@
    [app.common.exceptions :as ex :include-macros true]
    [app.common.logging :as l]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.config :as cf]
    [cljs.spec.alpha :as s]
    [promesa.core :as p]))
 
 (defn pdf-from-object
   [{:keys [file-id page-id object-id token scale type save-path uri] :as params}]
-  (p/let [path (str "/render-object/" file-id "/" page-id "/" object-id)
-          uri  (-> (or uri (cf/get :public-uri))
-                   (assoc :path "/")
-                   (assoc :fragment path))]
+  (p/let [params {:file-id file-id
+                  :page-id page-id
+                  :object-id object-id
+                  :route "render-object"}
+          uri    (-> (or uri (cf/get :public-uri))
+                     (assoc :path "/render.html")
+                     (assoc :query (u/map->query-string params)))]
+
     (bw/exec!
      #js {:screen #js {:width bw/default-viewport-width
                        :height bw/default-viewport-height}
@@ -37,6 +42,7 @@
         (p/let [dom (bw/select page "#screenshot")]
           (bw/wait-for dom)
           (bw/screenshot dom {:full-page? true})
+          (bw/sleep page 2000) ; the good old fix with sleep
           (if save-path
             (bw/pdf page {:save-path save-path})
             (bw/pdf page))))))))
