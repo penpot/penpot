@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-02-18 17:56+0000\n"
 "Last-Translator: Oğuz Ersen <oguzersen@protonmail.com>\n"
-"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
-"tr/>\n"
+"Language-Team: Turkish "
+"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -577,6 +577,10 @@ msgid "dashboard.your-penpot"
 msgstr "Penpot'un"
 
 #: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Güncellenecek bileşenler:"
+
+#: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-cancel"
 msgstr "İptal"
 
@@ -606,6 +610,9 @@ msgstr "E-posta zaten kullanımda"
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.email-already-validated"
 msgstr "E-posta zaten doğrulandı."
+
+msgid "errors.email-as-password"
+msgstr "E-postanızı parola olarak kullanamazsınız"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
@@ -929,6 +936,9 @@ msgstr "Kod"
 msgid "handoff.tabs.code.selected.circle"
 msgstr "Daire"
 
+msgid "handoff.tabs.code.selected.component"
+msgstr "Bileşen"
+
 msgid "handoff.tabs.code.selected.curve"
 msgstr "Eğri"
 
@@ -940,6 +950,9 @@ msgstr "Grup"
 
 msgid "handoff.tabs.code.selected.image"
 msgstr "Görsel"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Maskele"
 
 #: src/app/main/ui/handoff/right_sidebar.cljs
 msgid "handoff.tabs.code.selected.multiple"
@@ -963,6 +976,10 @@ msgstr "Bilgi"
 
 msgid "history.alert-message"
 msgstr "%s sürümünü görüyorsun"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "Penpot Hakkında"
 
 msgid "labels.accept"
 msgstr "Kabul et"
@@ -1102,6 +1119,10 @@ msgstr "Geri bildirimde bulun"
 msgid "labels.go-back"
 msgstr "Geri dön"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Yardım Merkezi"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Çözülmüş yorumları gizle"
@@ -1128,6 +1149,10 @@ msgstr "İç Hata"
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
 msgstr "Dil"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "Kütüphaneler ve Şablonlar"
 
 msgid "labels.link"
 msgstr "Bağlantı"
@@ -1325,6 +1350,10 @@ msgstr "Çalışma alanı"
 msgid "labels.write-new-comment"
 msgstr "Yeni yorum yaz"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Hesabınız"
+
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Görsel yükleniyor…"
@@ -1342,6 +1371,10 @@ msgstr ""
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
 msgstr "Paylaşılmış Kütüphane olarak “%s” Ekle"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "Büyük dürtme"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.confirm-email"
@@ -1526,6 +1559,10 @@ msgstr "Bu takımdan ayrılmak istediğinden emin misin?"
 msgid "modals.leave-confirm.title"
 msgstr "Takımdan ayrıl"
 
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "Dürtme miktarı"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
 msgstr "Terfi ettir"
@@ -1551,6 +1588,20 @@ msgstr ""
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
 msgstr "“%s” Paylaşılan Kütüphanesini Kaldır"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Küçük dürtme"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"Paylaşılan bir kütüphanedeki bileşenleri güncellemek üzeresiniz. Bu, onu "
+"kullanan diğer dosyaları etkileyebilir."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Paylaşılan bir kütüphanedeki bileşenleri güncelle"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
@@ -2055,6 +2106,10 @@ msgid "workspace.header.menu.disable-snap-grid"
 msgstr "Izgaraya tutturmayı kapat"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "Kılavuzlara tutturmayı devre dışı bırak"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Dinamik hizalamayı etkinleştir"
 
@@ -2065,6 +2120,14 @@ msgstr "Metin ölçeklendirmeyi etkinleştir"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-grid"
 msgstr "Izgaraya tuttur"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "Kılavuzlara tuttur"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Çalışma yüzeyi adlarını gizle"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-assets"
@@ -2087,8 +2150,32 @@ msgid "workspace.header.menu.hide-rules"
 msgstr "Cetveli gizle"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "Yazı tipi paletini gizle"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "Düzenle"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "Dosya"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Tercihler"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "Görünüm"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "Tümünü seç"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Çalışma yüzeylerinin adlarını göster"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-assets"
@@ -2111,6 +2198,14 @@ msgid "workspace.header.menu.show-rules"
 msgstr "Cetveli göster"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Yazı tipi paletini göster"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Sıfırla"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.save-error"
 msgstr "Kaydetme hatası"
 
@@ -2129,6 +2224,26 @@ msgstr "Kaydedilmemiş değişiklikler"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.viewer"
 msgstr "Görünüm modu (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "Doldur - Doldurmak için ölçeklendir"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "Sığdır - Sığdırmak için küçült"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "Tümünü doldurmak için yakınlaştır"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-full-screen"
+msgstr "Tam ekran"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "Seçilene yakınlaştır"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -2764,6 +2879,9 @@ msgstr "Tüm köşeler"
 msgid "workspace.options.radius.single-corners"
 msgstr "Tek köşe"
 
+msgid "workspace.options.recent-fonts"
+msgstr "Son kullanılanlar"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.rotation"
 msgstr "Döndür"
@@ -2827,6 +2945,10 @@ msgstr "Gölge grubu"
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Gölge seçimi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "Dışa aktarmalarda göster"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.size"
@@ -3147,6 +3269,9 @@ msgstr "Grup"
 msgid "workspace.shape.menu.hide"
 msgstr "Gizle"
 
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Kullanıcı arayüzünü göster/gizle"
+
 msgid "workspace.shape.menu.intersection"
 msgstr "Kesişme"
 
@@ -3168,6 +3293,10 @@ msgstr "Yol"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Geçersiz kılmaları sıfırla"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "Katman seç"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show"
@@ -3194,6 +3323,10 @@ msgstr "Kilidi aç"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.unmask"
 msgstr "Maskelemeyi kaldır"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Ana bileşenleri güncelle"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
@@ -3262,6 +3395,10 @@ msgstr "Dikdörtgen (%s)"
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
 msgstr "Metin (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "Tipografiler (%s)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
@@ -3392,140 +3529,3 @@ msgstr "Güncelle"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
-
-#: src/app/main/ui/confirm.cljs
-msgid "ds.component-subtitle"
-msgstr "Güncellenecek bileşenler:"
-
-msgid "workspace.shape.menu.hide-ui"
-msgstr "Kullanıcı arayüzünü göster/gizle"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.libraries-and-templates"
-msgstr "Kütüphaneler ve Şablonlar"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.your-account"
-msgstr "Hesabınız"
-
-msgid "handoff.tabs.code.selected.component"
-msgstr "Bileşen"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.help-center"
-msgstr "Yardım Merkezi"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.big-nudge"
-msgstr "Büyük dürtme"
-
-msgid "handoff.tabs.code.selected.mask"
-msgstr "Maskele"
-
-msgid "errors.email-as-password"
-msgstr "E-postanızı parola olarak kullanamazsınız"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.about-penpot"
-msgstr "Penpot Hakkında"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.nudge-title"
-msgstr "Dürtme miktarı"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "modals.update-remote-component-in-bulk.message"
-msgstr "Paylaşılan bir kütüphanedeki bileşenleri güncelle"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-artboard-names"
-msgstr "Çalışma yüzeyi adlarını gizle"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.edit"
-msgstr "Düzenle"
-
-msgid "workspace.options.recent-fonts"
-msgstr "Son kullanılanlar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.update-components-in-bulk"
-msgstr "Ana bileşenleri güncelle"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.small-nudge"
-msgstr "Küçük dürtme"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "modals.update-remote-component-in-bulk.hint"
-msgstr ""
-"Paylaşılan bir kütüphanedeki bileşenleri güncellemek üzeresiniz. Bu, onu "
-"kullanan diğer dosyaları etkileyebilir."
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-guides"
-msgstr "Kılavuzlara tuttur"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.preferences"
-msgstr "Tercihler"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-artboard-names"
-msgstr "Çalışma yüzeylerinin adlarını göster"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-textpalette"
-msgstr "Yazı tipi paletini göster"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-guides"
-msgstr "Kılavuzlara tutturmayı devre dışı bırak"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.file"
-msgstr "Dosya"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.reset-zoom"
-msgstr "Sıfırla"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.zoom-fit-all"
-msgstr "Tümünü doldurmak için yakınlaştır"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.select-layer"
-msgstr "Katman seç"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.zoom-full-screen"
-msgstr "Tam ekran"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-textpalette"
-msgstr "Yazı tipi paletini gizle"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.view"
-msgstr "Görünüm"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
-msgid "workspace.options.show-fill-on-export"
-msgstr "Dışa aktarmalarda göster"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.zoom-fill"
-msgstr "Doldur - Doldurmak için ölçeklendir"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.zoom-fit"
-msgstr "Sığdır - Sığdırmak için küçült"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.zoom-selected"
-msgstr "Seçilene yakınlaştır"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.text-palette"
-msgstr "Tipografiler (%s)"

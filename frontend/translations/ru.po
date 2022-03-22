@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-03-12 23:56+0000\n"
 "Last-Translator: Rodion Borisov <vintprox@gmail.com>\n"
-"Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
-"ru/>\n"
+"Language-Team: Russian "
+"<https://hosted.weblate.org/projects/penpot/frontend/ru/>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -14,6 +14,10 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
 msgstr "Уже есть аккаунт?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr "Перейдите по ссылке в электронном письме, чтобы начать работу с Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -66,12 +70,25 @@ msgid "auth.login-with-gitlab-submit"
 msgstr "Вход через Gitlab"
 
 #: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Войти с Google"
+
+#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
 msgstr "Вход через LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "Войти с OpenID (SSO)"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Введите новый пароль"
+
+#: src/app/main/ui/auth/register.cljs
+#, fuzzy
+msgid "auth.newsletter-subscription"
+msgstr "Я хочу подписаться на рассылку Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
@@ -82,8 +99,17 @@ msgid "auth.notifications.password-changed-successfully"
 msgstr "Пароль изменен успешно"
 
 #: src/app/main/ui/auth/recovery_request.cljs
+#, fuzzy
+msgid "auth.notifications.profile-not-verified"
+msgstr "Профиль не подтверждён: пожалуйста, проверьте почту."
+
+#: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
 msgstr "Ссылка для восстановления пароля отправлена на почту."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Приглашение в команду принято"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.password"
@@ -92,6 +118,9 @@ msgstr "Пароль"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Минимум 8 символов"
+
+msgid "auth.privacy-policy"
+msgstr "Политика конфиденциальности"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
@@ -129,6 +158,63 @@ msgstr "Создать аккаунт"
 msgid "auth.sidebar-tagline"
 msgstr "Open Source решение для дизайна и прототипирования."
 
+msgid "auth.terms-of-service"
+msgstr "Условия использования"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Создавая новый аккаунт, вы соглашаетесь с нашими условиями использования и "
+"политикой конфиденциальности."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Мы отправили письмо с подтверждением на"
+
+#, fuzzy
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Вы точно хотите удалить эту ссылку? После этого она перестанет быть "
+"доступной"
+
+msgid "common.share-link.get-link"
+msgstr "Получить ссылку"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Ссылка скопирована"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Ссылка удалена"
+
+#, fuzzy
+msgid "common.share-link.permissions-can-access"
+msgstr "Могут зайти"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Могут видеть"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Доступ открыт для получателей ссылки"
+
+msgid "common.share-link.placeholder"
+msgstr "Ссылка появится здесь"
+
+msgid "common.share-link.remove-link"
+msgstr "Удалить ссылку"
+
+#, fuzzy
+msgid "common.share-link.title"
+msgstr "Поделиться прототипами"
+
+msgid "common.share-link.view-all-pages"
+msgstr "Все страницы"
+
+msgid "common.share-link.view-current-page"
+msgstr "Только эту страницу"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Выбранные страницы"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Добавить как общую библиотеку"
@@ -137,28 +223,217 @@ msgstr "Добавить как общую библиотеку"
 msgid "dashboard.change-email"
 msgstr "Сменить email адрес"
 
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+#, fuzzy
+msgid "dashboard.copy-suffix"
+msgstr "(копия)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ Создать новую команду"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Ваш Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Удалить команду"
+
 msgid "dashboard.draft-title"
 msgstr "Черновик"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Дублировать"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Дублировать файлы (%s)"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
 msgstr "Файлов пока нет"
 
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Файлов не обнаружено. Вы можете испытать готовые шаблоны в разделе "
+"[\"Libraries & templates\"](https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-frames"
+msgstr "Экспорт кадров в PDF..."
+
+msgid "dashboard.export-multi"
+msgstr "Экспорт файлов Penpot (%s)"
+
+msgid "dashboard.export-single"
+msgstr "Экспорт файла Penpot"
+
+msgid "dashboard.export.detail"
+msgstr "* Могут содержать компоненты, цвета, графику, и/или типографику."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Один или несколько файлов на экспорт используют общие библиотеки. Что нужно "
+"сделать с их ресурсами*?"
+
+msgid "dashboard.export.options.all.message"
+msgstr "Файлы с общих библиотек будут включены в экспорт, сохраняя свою привязку."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Экспорт общих библиотек"
+
+#, fuzzy
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Общие библиотеки не будут включены в экспорт, и вложенные ресурсы не "
+"попадут в библиотеку экспорта. "
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Воспринимать общие библиотеки как обычные объекты"
+
+#, fuzzy
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Ваш файл будет экспортирован с включением всех внешних ресурсов в "
+"библиотеку экспорта."
+
+#, fuzzy
+msgid "dashboard.export.options.merge.title"
+msgstr "Включить общие библиотеки в библиотеку экспорта"
+
+msgid "dashboard.export.title"
+msgstr "Экспорт файлов"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Шрифт удалён"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Отменить все"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Произвольные шрифты не установлены."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "Шрифт добавлен"
+msgstr[1] "Шрифты добавлены (%s)"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Любой загружаемый сюда шрифт будет доступен в файлах, редактируемых "
+"командой. Шрифты из одного и того же семейства будут сгруппированы по "
+"**названию этого семейства**. Для загрузки допустимы следующие форматы: "
+"**TTF, OTF, и WOFF** (используйте один из них)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Вам следует загружать только те шрифты, которые покрыты лицензией на "
+"использование в приложении вроде Penpot. Ознакомьтесь с пунктом \"Content "
+"rights\" в [правилах использования Penpot](https://penpot.app/terms.html) и "
+"с [лицензированием шрифтов](https://www.typography.com/faq), в целом."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Загрузить все"
+
+msgid "dashboard.import"
+msgstr "Импорт файлов Penpot"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Ой! Не вышло импортировать этот файл"
+
+#, fuzzy
+msgid "dashboard.import.import-error"
+msgstr "Есть проблема с импортом файла."
+
+msgid "dashboard.import.import-message"
+msgstr "Файлы импортированы (%s)."
+
+msgid "dashboard.import.import-warning"
+msgstr "Некоторые файлы содержали неверные объекты: таковые были удалены."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Обработка цветов"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Обработка компонентов"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Обработка медиа"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Обработка страницы: %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Обработка типографики"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Загрузка данных на сервер (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Загрузка файла: %s"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Пригласить в команду"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Покинуть команду"
+
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
 msgstr "Общие библиотеки"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "загрузка ваших файлов …"
+
+msgid "dashboard.loading-fonts"
+msgstr "загрузка ваших шрифтов …"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Переместить"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Переместить файлы (%s)"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Перевести в другую команду"
 
 #: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
 msgstr "+ Новый файл"
 
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Новый файл"
+
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.new-project"
 msgstr "+ Новый проект"
 
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Новый проект"
+
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "Совпадений для “%s“ не найдено"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Закреплённые проекты будут здесь"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "dashboard.notifications.email-changed-successfully"
@@ -172,13 +447,33 @@ msgstr "Ваш email адрес успешно подтвержден"
 msgid "dashboard.notifications.password-saved"
 msgstr "Пароль успешно сохранен!"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "Участников: %s"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Открыть в новой вкладке"
+
+#, fuzzy
+msgid "dashboard.options"
+msgstr "Опции"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.password-change"
 msgstr "Изменить пароль"
 
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Закрепить/Открепить"
+
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
 msgstr "Проекты"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.promote-to-owner"
+msgstr "Сделать владельцем"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
@@ -205,6 +500,55 @@ msgstr "Выберите язык интерфейса"
 msgid "dashboard.select-ui-theme"
 msgstr "Выберите тему"
 
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.show-all-files"
+msgstr "Показать все файлы"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "Ваш файл удалён"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "Ваш проект удалён"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "Ваш файл продублирован"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "Ваш проект продублирован"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "Ваш файл перемещён"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "Ваши файлы перемещены"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "Ваш проект перемещён"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.switch-team"
+msgstr "Сменить команду"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "dashboard.team-info"
+msgstr "О команде"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-members"
+msgstr "Члены команды"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-projects"
+msgstr "Командные проекты"
+
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.theme-change"
 msgstr "Тема интерфейса пользователя"
@@ -221,6 +565,10 @@ msgstr "Введите для поиска"
 msgid "dashboard.update-settings"
 msgstr "Обновить настройки"
 
+#: src/app/main/ui/settings.cljs
+msgid "dashboard.your-account-title"
+msgstr "Ваш аккаунт"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.your-email"
 msgstr "Email"
@@ -228,6 +576,14 @@ msgstr "Email"
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.your-name"
 msgstr "Ваше имя"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "Ваш Penpot"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Обновляемые компоненты:"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-cancel"
@@ -245,6 +601,10 @@ msgstr "Вы уверены?"
 msgid "ds.updated-at"
 msgstr "Обновлено: %s"
 
+#, fuzzy
+msgid "errors.auth.unable-to-login"
+msgstr "Кажется, сеанс истёк. Войдите снова."
+
 #: src/app/main/data/workspace.cljs
 #, fuzzy
 msgid "errors.clipboard-not-implemented"
@@ -258,6 +618,14 @@ msgstr "Такой email уже используется"
 msgid "errors.email-already-validated"
 msgstr "Электронная почта уже подтверждена."
 
+msgid "errors.email-as-password"
+msgstr "Нельзя в качестве пароля указывать адрес электронной почты"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "errors.email-has-permanent-bounces"
+msgstr "Получатель «%s» постоянно не доступен."
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "Email для подтверждения должен совпадать"
@@ -265,6 +633,18 @@ msgstr "Email для подтверждения должен совпадать"
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
 msgstr "Что-то пошло не так."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.google-auth-not-enabled"
+msgstr "Вход с Google пока не доступен"
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Неверный цвет"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "Вход c LDAP отключён."
 
 msgid "errors.media-format-unsupported"
 msgstr "Формат изображения не поддерживается (должен быть svg, jpg или png)."
@@ -282,6 +662,11 @@ msgstr "Формат медиа не соответует расширению �
 msgid "errors.media-type-not-allowed"
 msgstr "Неверное медиа."
 
+#: src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "errors.member-is-muted"
+msgstr "Невозможно пригласить адресата с недоступным адресом электронной почты."
+
 msgid "errors.network"
 msgstr "Невозможно подключиться к серверу."
 
@@ -293,13 +678,31 @@ msgstr "Пароль для подтверждения должен совпад
 msgid "errors.password-too-short"
 msgstr "Пароль должен быть минимум 8 символов"
 
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.profile-is-muted"
+msgstr "Ваш адрес электронной почты не доступен."
+
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "Регистрация сейчас отключена."
 
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "Нужно переназначить роль владельца перед тем, как покинуть команду."
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr "Вы должны принять наши правила использования и политику конфиденциальности."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.token-expired"
+msgstr "Токен истёк"
+
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Произошла ошибка."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "Неверный токен"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
@@ -310,12 +713,143 @@ msgid "errors.wrong-old-password"
 msgstr "Старый пароль неверный"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-start"
+msgstr "Войти в чат"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-subtitle"
+msgstr "Поговорим? Заходите в чат Gitter!"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "Подробности"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-go-to"
+msgstr "Зайти в обсуждения"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle1"
+msgstr "Посетите форум для совместного обсуждения планов на Penpot."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle2"
+msgstr ""
+"Там вы можете задавать вопросы, проследить за неоднозначными задачами, и "
+"поучаствовать в принятии решений по проекту."
+
+#: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
+msgid "feedback.discussions-title"
+msgstr "Командный форум"
+
+#: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
+msgid "feedback.subject"
+msgstr "Краткое описание"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subtitle"
+msgstr ""
+"Пожалуйста, опишите причину обращения: проблема в работе, идея, или "
+"сомнение. Человек из нашей команды даст ответ в ближайшее время."
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "Email"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "Произошла ошибка"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur"
+msgstr "Размытие"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur.value"
+msgstr "Значение"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/handoff/attributes/fill.cljs
+msgid "handoff.attributes.fill"
+msgstr "Заливка"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "Скачать оригинал"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "Высота"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "Ширина"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+#, fuzzy
+msgid "handoff.attributes.layout"
+msgstr "Размещение"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "Высота"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "Слева"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "Радиус"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "Вращение"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "Сверху"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "Ширина"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "Тени"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.blur"
+msgstr "Р"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-x"
+msgstr "X"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-y"
+msgstr "Y"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.spread"
+msgstr "Р"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke"
+msgstr "Обводка"
 
 #, permanent
 msgid "handoff.attributes.stroke.alignment.center"
@@ -329,31 +863,250 @@ msgstr "Внутрь"
 msgid "handoff.attributes.stroke.alignment.outer"
 msgstr "Наружу"
 
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "Точечная"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "Смешанная"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "Нет"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Сплошная"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "Толщина"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+#, fuzzy
+msgid "handoff.attributes.typography"
+msgstr "Текст"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "Гарнитура"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "Размер"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+#, fuzzy
+msgid "handoff.attributes.typography.font-style"
+msgstr "Шрифт"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.letter-spacing"
+msgstr "Трекинг"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "Интерлиньяж"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "Оформление"
+
+msgid "handoff.attributes.typography.text-decoration.none"
+msgstr "Нет"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "Перечёркнутый"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "Подчёркнутый"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-transform"
+msgstr "Регистр"
+
+msgid "handoff.attributes.typography.text-transform.lowercase"
+msgstr "Нижний регистр"
+
+msgid "handoff.attributes.typography.text-transform.none"
+msgstr "Какой есть"
+
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "Регистр Заголовка"
+
+msgid "handoff.attributes.typography.text-transform.uppercase"
+msgstr "Верхний регистр"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Код"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "Круг"
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "Компонент"
+
+msgid "handoff.tabs.code.selected.curve"
+msgstr "Кривая"
+
+msgid "handoff.tabs.code.selected.frame"
+msgstr "Кадр"
+
+msgid "handoff.tabs.code.selected.group"
+msgstr "Группа"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "Изображение"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Маска"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code.selected.multiple"
+msgstr "Выделено: %s"
+
+msgid "handoff.tabs.code.selected.path"
+msgstr "Контур"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "Прямоугольник"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "Текст"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "Информация"
+
 msgid "history.alert-message"
 msgstr "Ваша версия %s"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "О Penpot"
+
 msgid "labels.accept"
 msgstr "Принять"
+
+msgid "labels.add-custom-font"
+msgstr "Добавить произвольный шрифт"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "Администратор"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "Все"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.desc-message"
+msgstr "Возможны технические работы. Пожалуйста, зайдите чуть позже."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.main-message"
+msgstr "Bad Gateway"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.cancel"
 msgstr "Отмена"
 
+msgid "labels.centered"
+msgstr "По центру"
+
+msgid "labels.close"
+msgstr "Закрыть"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "labels.comments"
+msgstr "Комментарии"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "Подтвердите пароль"
+
+msgid "labels.content"
+msgstr "Содержимое"
+
+msgid "labels.continue"
+msgstr "Продолжить"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Создать"
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "Создать новую команду"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "Введите имя для новой команды"
+
+msgid "labels.custom-fonts"
+msgstr "Произвольные шрифты"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "Панель управления"
+
+msgid "labels.default"
+msgstr "по умолчанию"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
 msgstr "Удалить"
 
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment"
+msgstr "Удалить комментарий"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment-thread"
+msgstr "Удалить обсуждение"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "Удалить файлы (%s)"
+
 #: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.drafts"
 msgstr "Черновики"
 
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "Редактировать"
+
+msgid "labels.edit-file"
+msgstr "Редактировать"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.editor"
+msgstr "Редактор"
+
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.email"
 msgstr "Email"
+
+msgid "labels.export"
+msgstr "Экспорт"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-disabled"
+msgstr "Обратная связь недоступна"
+
+msgid "labels.font-family"
+msgstr "Гарнитура"
+
+msgid "labels.font-providers"
+msgstr "Поставщики шрифтов"
+
+msgid "labels.font-variants"
+msgstr "Начертания"
+
+msgid "labels.fonts"
+msgstr "Шрифты"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
@@ -362,19 +1115,53 @@ msgstr "Дать обратную связь"
 msgid "labels.go-back"
 msgstr "Назад"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "labels.help-center"
+msgstr "Помощь"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.hide-resolved-comments"
+msgstr "Скрыть решённые комментарии"
+
 msgid "labels.icons"
 msgstr "Иконки"
 
 msgid "labels.images"
 msgstr "Изображения"
 
+msgid "labels.installed-fonts"
+msgstr "Установленные шрифты"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.desc-message"
+msgstr "Что-то пошло не так. Пожалуйста, повторите или обратитесь в поддержку."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.main-message"
+msgstr "Внутренняя ошибка"
+
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
 msgstr "Язык"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "Библиотеки и шаблоны"
+
+msgid "labels.link"
+msgstr "Ссылка"
+
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "Выход"
+
+msgid "labels.manage-fonts"
+msgstr "Управление шрифтами"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "Люди"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.name"
@@ -384,13 +1171,64 @@ msgstr "Имя"
 msgid "labels.new-password"
 msgstr "Новый пароль"
 
+msgid "labels.next"
+msgstr "След."
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+msgid "labels.no-comments-available"
+msgstr "Новых комментариев пока нет"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.auth-info"
+msgstr "Вы вошли как"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.desc-message"
+msgstr "Эта страница не существует, или у вас нет к ней доступа."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.main-message"
+msgstr "Ой!"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-files"
+msgid_plural "labels.num-of-files"
+msgstr[0] "Файл"
+msgstr[1] "Файлы (%s)"
+
+msgid "labels.num-of-frames"
+msgid_plural "labels.num-of-frames"
+msgstr[0] "Кадр"
+msgstr[1] "Кадры (%s)"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-projects"
+msgid_plural "labels.num-of-projects"
+msgstr[0] "Проект"
+msgstr[1] "Проекты (%s)"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.old-password"
 msgstr "Старый пароль"
 
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.only-yours"
+msgstr "Только ваши"
+
+msgid "labels.or"
+msgstr "или"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.owner"
+msgstr "Владелец"
+
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.password"
 msgstr "Пароль"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.permissions"
+msgstr "Разрешения"
 
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.profile"
@@ -411,8 +1249,43 @@ msgstr "примечания к выпуску"
 msgid "labels.remove"
 msgstr "Удалить"
 
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.rename"
+msgstr "Переименовать"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.rename-team"
+msgstr "Переименовать команду"
+
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+msgid "labels.retry"
+msgstr "Заново"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.role"
+msgstr "Роль"
+
 msgid "labels.save"
 msgstr "Сохранить"
+
+msgid "labels.search-font"
+msgstr "Найти шрифт"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.send"
+msgstr "Отправить"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.sending"
+msgstr "Отправка…"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.desc-message"
+msgstr "Мы проводим диагностику наших систем."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.main-message"
+msgstr "Сервис недоступен"
 
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
@@ -426,13 +1299,59 @@ msgstr "Поделиться ссылкой"
 msgid "labels.shared-libraries"
 msgstr "Общие библиотеки"
 
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+#, fuzzy
+msgid "labels.show-all-comments"
+msgstr "Показать все"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+#, fuzzy
+msgid "labels.show-your-comments"
+msgstr "Показать только ваши"
+
 #: src/app/main/ui/static.cljs
 msgid "labels.sign-out"
 msgstr "Выход"
 
+msgid "labels.skip"
+msgstr "Пропустить"
+
+msgid "labels.start"
+msgstr "Начать"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
 msgstr "Обновить"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.update-team"
+msgstr "Обновить команду"
+
+msgid "labels.upload"
+msgstr "Загрузить"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Загрузить произвольные шрифты"
+
+msgid "labels.uploading"
+msgstr "Загрузка…"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "labels.viewer"
+msgstr "Наблюдатель"
+
+#, fuzzy
+msgid "labels.workspace"
+msgstr "Рабочая область"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.write-new-comment"
+msgstr "Написать комментарий"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Ваш аккаунт"
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
@@ -451,6 +1370,10 @@ msgstr ""
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
 msgstr "Добавить “%s” как общую библиотеку"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "Большой сдвиг"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.confirm-email"
@@ -488,6 +1411,92 @@ msgstr "Удалив аккаунт Вы потеряете все прокты 
 msgid "modals.delete-account.title"
 msgstr "Вы уверены, что хотите удалить аккаунт?"
 
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.accept"
+msgstr "Удалить переписку"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.message"
+msgstr ""
+"Вы уверены, что хотите удалить это обсуждение со всеми входящими в него "
+"комментариями?"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.title"
+msgstr "Удалить обсуждение"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.accept"
+msgstr "Удалить файл"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.message"
+msgstr "Точно удалить этот файл?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.title"
+msgstr "Удаление файла"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "Удалить файлы"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "Точно хотите удалить несколько файлов (%s)?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "Удаление файлов (%s)"
+
+#, fuzzy
+msgid "modals.delete-font-variant.message"
+msgstr "Вы действительно хотите удалить это начертание шрифта?"
+
+msgid "modals.delete-font-variant.title"
+msgstr "Удаление начертания шрифта"
+
+#, fuzzy
+msgid "modals.delete-font.message"
+msgstr "Вы действительно хотите удалить этот шрифт?"
+
+msgid "modals.delete-font.title"
+msgstr "Удаление шрифта"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.body"
+msgstr "Вы уверены, что хотите удалить эту страницу?"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.title"
+msgstr "Удаление страницы"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.accept"
+msgstr "Удалить проект"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.message"
+msgstr "Вы уверены, что хотите удалить этот проект?"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.title"
+msgstr "Удаление проекта"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.accept"
+msgstr "Удалить команду"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.message"
+msgstr ""
+"Вы уверены, что хотите удалить эту команду? Все проекты и файлы из этой "
+"команды также будут безвозвратно удалены."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.title"
+msgstr "Удаление команды"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
 msgstr ""
@@ -523,6 +1532,17 @@ msgstr "Вы не можете удалить профиль. Сначала с�
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
 msgstr "Профиль успешно сохранен!"
+
+msgid "onboarding.choice.team-up-desc"
+msgstr ""
+"Вы с кем-то работаете? Создайте команду и пригласите людей для совместного "
+"редактирования проектов и хранения ресурсов."
+
+msgid "onboarding.slide.1.desc1"
+msgstr "Создайте различные взаимодействия для имитации поведения продукта."
+
+msgid "onboarding.slide.1.title"
+msgstr "Оживите свои работы с помощью интерактива"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
@@ -576,6 +1596,9 @@ msgstr "Кадр не найден."
 msgid "viewer.header-interactions"
 msgstr "взаимодействия"
 
+msgid "viewer.header.comments-section"
+msgstr "Комментарии (%s)"
+
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
 msgstr "Не показывать взаимодействия"
@@ -587,6 +1610,13 @@ msgstr "Редактировать страницу"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Полный экран"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Интерактив"
+
+msgid "viewer.header.interactions-section"
+msgstr "Интерактив (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
@@ -671,6 +1701,10 @@ msgstr "Цвета"
 msgid "workspace.assets.components"
 msgstr "Компоненты"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group"
+msgstr "Создать группу"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.delete"
 msgstr "Удалить"
@@ -692,6 +1726,14 @@ msgid "workspace.assets.graphics"
 msgstr "Графика"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group"
+msgstr "Группа"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group-name"
+msgstr "Имя группы"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.libraries"
 msgstr "Библиотеки"
 
@@ -704,12 +1746,54 @@ msgid "workspace.assets.rename"
 msgstr "Переименовать"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename-group"
+msgstr "Переименовать группу"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.search"
 msgstr "Найти ресурсы"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "Выбран ресурс"
+msgstr[1] "Выбраны ресурсы (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.shared"
 msgstr "ОБЩИЕ"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.typography"
+msgstr "Типографика"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-id"
+msgstr "Шрифт"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-size"
+msgstr "Размер"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-variant-id"
+msgstr "Начертание"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.letter-spacing"
+msgstr "Кернинг"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.line-height"
+msgstr "Интерлиньяж"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.text-transform"
+msgstr "Регистр"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "Разгруппировать"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-dynamic-alignment"
@@ -726,6 +1810,10 @@ msgstr "Включить активное выравнивание"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-grid"
 msgstr "Привяка к сетке"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Скрыть имена кадров"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-assets"
@@ -750,6 +1838,10 @@ msgstr "Спрятать линейки"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr ""
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Показать имена кадров"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-assets"
@@ -829,6 +1921,18 @@ msgstr "Искать общие библиотеки"
 msgid "workspace.libraries.shared-libraries"
 msgstr "ОБЩИЕ БИБЛИОТЕКИ"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.libraries.text.multiple-typography"
+msgstr "Несколько типографик"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.libraries.text.multiple-typography-tooltip"
+msgstr "Отвязать все типографики"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.typography"
+msgstr "Типографики (%s)"
+
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
 msgstr ""
@@ -848,6 +1952,10 @@ msgstr "Мои библиотеки"
 
 msgid "workspace.library.store"
 msgstr "Сохраненные библиотеки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.add-interaction"
+msgstr "Нажмите кнопку \"+\" для добавления интерактива."
 
 #: src/app/main/ui/workspace/sidebar/options/page.cljs
 msgid "workspace.options.canvas-background"
@@ -872,6 +1980,18 @@ msgstr "Экспортирую…"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"
 msgstr "Заливка"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.add-flow-start"
+msgstr "Добавить начало потока"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-start"
+msgstr "Начало потока"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-starts"
+msgstr "Начала потоков"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.auto"
@@ -964,6 +2084,18 @@ msgstr "Заливка для группы"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Обводка для группы"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions"
+msgstr "Интерактив"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title.group"
+msgstr "Группировать слои"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title.multiple"
+msgstr "Выделенные слои"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
@@ -1121,6 +2253,58 @@ msgstr "Вертикальное выравнивание"
 msgid "workspace.options.use-play-button"
 msgstr "Нажмите кнопку \"Запуск\" вверху для показа прототипа."
 
+msgid "workspace.path.actions.add-node"
+msgstr "Добавить узел (%s)"
+
+msgid "workspace.path.actions.delete-node"
+msgstr "Удалить узел (%s)"
+
+msgid "workspace.path.actions.draw-nodes"
+msgstr "Показать узлы (%s)"
+
+msgid "workspace.path.actions.join-nodes"
+msgstr "Соединить узлы (%s)"
+
+msgid "workspace.path.actions.make-corner"
+msgstr "В угол (%s)"
+
+msgid "workspace.path.actions.make-curve"
+msgstr "В кривую (%s)"
+
+msgid "workspace.path.actions.merge-nodes"
+msgstr "Объединить узлы (%s)"
+
+msgid "workspace.path.actions.move-nodes"
+msgstr "Сместить узлы (%s)"
+
+msgid "workspace.path.actions.separate-nodes"
+msgstr "Разделить узлы (%s)"
+
+msgid "workspace.path.actions.snap-nodes"
+msgstr "Прилипать узлами (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Выделенное в кадр"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "Удалить начало потока"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flow-start"
+msgstr "Начало потока"
+
+msgid "workspace.shape.menu.path"
+msgstr "Контур"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Преобразовать в контур"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.layers"
+msgstr "Слои"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "workspace.sidebar.sitemap"
 msgstr "Страницы"
@@ -1136,6 +2320,10 @@ msgstr "Ресурсы"
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"
 msgstr "Палитра цветов (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.comments"
+msgstr "Комментарии (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.curve"
@@ -1169,6 +2357,31 @@ msgstr "Прямоугольник (%s)"
 msgid "workspace.toolbar.text"
 msgstr "Текст (%s)"
 
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "Типографики (%s)"
+
+msgid "workspace.undo.entry.multiple.color"
+msgstr "цветовые ресурсы"
+
+msgid "workspace.undo.entry.multiple.frame"
+msgstr "кадры"
+
+msgid "workspace.undo.entry.multiple.media"
+msgstr "графические ресурсы"
+
+msgid "workspace.undo.entry.multiple.path"
+msgstr "контуры"
+
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "типографические ресурсы"
+
+msgid "workspace.undo.entry.single.frame"
+msgstr "кадр"
+
+msgid "workspace.undo.entry.single.path"
+msgstr "контур"
+
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.dismiss"
 msgstr ""
@@ -1184,1217 +2397,3 @@ msgstr ""
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Нажмите для замыкания контура"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.fonts-added"
-msgid_plural "dashboard.fonts.fonts-added"
-msgstr[0] "Шрифт добавлен"
-msgstr[1] "Шрифты добавлены (%s)"
-
-#: src/app/main/ui/confirm.cljs
-msgid "ds.component-subtitle"
-msgstr "Обновляемые компоненты:"
-
-msgid "errors.team-leave.owner-cant-leave"
-msgstr "Нужно переназначить роль владельца перед тем, как покинуть команду."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.libraries-and-templates"
-msgstr "Библиотеки и шаблоны"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.description"
-msgstr "Подробности"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Зайти в обсуждения"
-
-msgid "handoff.tabs.code.selected.component"
-msgstr "Компонент"
-
-msgid "handoff.tabs.code.selected.mask"
-msgstr "Маска"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.about-penpot"
-msgstr "О Penpot"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
-msgid "labels.help-center"
-msgstr "Помощь"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.your-account"
-msgstr "Ваш аккаунт"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.big-nudge"
-msgstr "Большой сдвиг"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-artboard-names"
-msgstr "Скрыть имена кадров"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-artboard-names"
-msgstr "Показать имена кадров"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.text-palette"
-msgstr "Типографики (%s)"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.dismiss-all"
-msgstr "Отменить все"
-
-#, fuzzy
-msgid "errors.auth.unable-to-login"
-msgstr "Кажется, сеанс истёк. Войдите снова."
-
-msgid "workspace.path.actions.delete-node"
-msgstr "Удалить узел (%s)"
-
-#: src/app/main/data/dashboard.cljs
-msgid "dashboard.new-file-prefix"
-msgstr "Новый файл"
-
-msgid "errors.terms-privacy-agreement-invalid"
-msgstr ""
-"Вы должны принять наши правила использования и политику конфиденциальности."
-
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke"
-msgstr "Обводка"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.rotation"
-msgstr "Вращение"
-
-#: src/app/main/ui/workspace/comments.cljs
-msgid "labels.all"
-msgstr "Все"
-
-msgid "labels.centered"
-msgstr "По центру"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.owner"
-msgstr "Владелец"
-
-msgid "dashboard.import"
-msgstr "Импорт файлов Penpot"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Токен истёк"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.no-projects-placeholder"
-msgstr "Закреплённые проекты будут здесь"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-#, fuzzy
-msgid "handoff.attributes.layout"
-msgstr "Размещение"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.radius"
-msgstr "Радиус"
-
-msgid "handoff.attributes.stroke.style.dotted"
-msgstr "Точечная"
-
-msgid "handoff.attributes.stroke.style.mixed"
-msgstr "Смешанная"
-
-msgid "handoff.attributes.stroke.style.solid"
-msgstr "Сплошная"
-
-msgid "handoff.attributes.stroke.style.none"
-msgstr "Нет"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.bad-gateway.desc-message"
-msgstr "Возможны технические работы. Пожалуйста, зайдите чуть позже."
-
-msgid "labels.next"
-msgstr "След."
-
-#: src/app/main/ui/static.cljs
-msgid "labels.service-unavailable.main-message"
-msgstr "Сервис недоступен"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"Вы с кем-то работаете? Создайте команду и пригласите людей для совместного "
-"редактирования проектов и хранения ресурсов."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.libraries.text.multiple-typography-tooltip"
-msgstr "Отвязать все типографики"
-
-#: src/app/main/ui/workspace/libraries.cljs
-msgid "workspace.libraries.typography"
-msgstr "Типографики (%s)"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.flow-start"
-msgstr "Начало потока"
-
-msgid "workspace.shape.menu.path"
-msgstr "Контур"
-
-msgid "labels.custom-fonts"
-msgstr "Произвольные шрифты"
-
-msgid "labels.font-family"
-msgstr "Гарнитура"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "auth.notifications.team-invitation-accepted"
-msgstr "Приглашение в команду принято"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.verification-email-sent"
-msgstr "Мы отправили письмо с подтверждением на"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.create-new-team"
-msgstr "+ Создать новую команду"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.move-to-multi"
-msgstr "Переместить файлы (%s)"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.pin-unpin"
-msgstr "Закрепить/Открепить"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.team-members"
-msgstr "Члены команды"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.top"
-msgstr "Сверху"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.width"
-msgstr "Ширина"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.line-height"
-msgstr "Интерлиньяж"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-confirm.accept"
-msgstr "Удалить файл"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-confirm.message"
-msgstr "Точно удалить этот файл?"
-
-msgid "dashboard.import.analyze-error"
-msgstr "Ой! Не вышло импортировать этот файл"
-
-#, fuzzy
-msgid "dashboard.import.import-error"
-msgstr "Есть проблема с импортом файла."
-
-msgid "dashboard.import.import-message"
-msgstr "Файлы импортированы (%s)."
-
-msgid "dashboard.loading-fonts"
-msgstr "загрузка ваших шрифтов …"
-
-msgid "handoff.tabs.code.selected.rect"
-msgstr "Прямоугольник"
-
-msgid "handoff.tabs.code.selected.svg-raw"
-msgstr "SVG"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Поговорим? Заходите в чат Gitter!"
-
-msgid "handoff.tabs.code.selected.text"
-msgstr "Текст"
-
-msgid "labels.continue"
-msgstr "Продолжить"
-
-#: src/app/main/ui/dashboard/comments.cljs
-msgid "labels.comments"
-msgstr "Комментарии"
-
-msgid "labels.export"
-msgstr "Экспорт"
-
-#: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
-msgid "labels.viewer"
-msgstr "Наблюдатель"
-
-msgid "modals.delete-font-variant.title"
-msgstr "Удаление начертания шрифта"
-
-msgid "modals.delete-font.title"
-msgstr "Удаление шрифта"
-
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs
-msgid "modals.delete-page.body"
-msgstr "Вы уверены, что хотите удалить эту страницу?"
-
-#: src/app/main/ui/comments.cljs
-msgid "modals.delete-comment-thread.accept"
-msgstr "Удалить переписку"
-
-msgid "labels.edit-file"
-msgstr "Редактировать"
-
-msgid "viewer.header.comments-section"
-msgstr "Комментарии (%s)"
-
-#, fuzzy
-msgid "common.share-link.title"
-msgstr "Поделиться прототипами"
-
-msgid "common.share-link.get-link"
-msgstr "Получить ссылку"
-
-#, fuzzy
-msgid "common.share-link.confirm-deletion-link-description"
-msgstr ""
-"Вы точно хотите удалить эту ссылку? После этого она перестанет быть доступной"
-
-msgid "labels.start"
-msgstr "Начать"
-
-msgid "workspace.undo.entry.single.path"
-msgstr "контур"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.duplicate-multi"
-msgstr "Дублировать файлы (%s)"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.unexpected-token"
-msgstr "Неверный токен"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.role"
-msgstr "Роль"
-
-msgid "workspace.path.actions.add-node"
-msgstr "Добавить узел (%s)"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-oidc-submit"
-msgstr "Войти с OpenID (SSO)"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.check-your-email"
-msgstr "Перейдите по ссылке в электронном письме, чтобы начать работу с Penpot."
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-google-submit"
-msgstr "Войти с Google"
-
-#: src/app/main/ui/auth/register.cljs
-#, fuzzy
-msgid "auth.newsletter-subscription"
-msgstr "Я хочу подписаться на рассылку Penpot."
-
-#: src/app/main/ui/auth/recovery_request.cljs
-#, fuzzy
-msgid "auth.notifications.profile-not-verified"
-msgstr "Профиль не подтверждён: пожалуйста, проверьте почту."
-
-msgid "auth.privacy-policy"
-msgstr "Политика конфиденциальности"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"Создавая новый аккаунт, вы соглашаетесь с нашими условиями использования и "
-"политикой конфиденциальности."
-
-msgid "common.share-link.placeholder"
-msgstr "Ссылка появится здесь"
-
-#: src/app/main/ui/dashboard/grid.cljs
-#, markdown
-msgid "dashboard.empty-placeholder-drafts"
-msgstr ""
-"Файлов не обнаружено. Вы можете испытать готовые шаблоны в разделе ["
-"\"Libraries & templates\"](https://penpot.app/libraries-templates.html)"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.delete-team"
-msgstr "Удалить команду"
-
-#, fuzzy
-msgid "dashboard.export.options.detach.message"
-msgstr ""
-"Общие библиотеки не будут включены в экспорт, и вложенные ресурсы не попадут "
-"в библиотеку экспорта. "
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.upload-all"
-msgstr "Загрузить все"
-
-msgid "dashboard.import.import-warning"
-msgstr "Некоторые файлы содержали неверные объекты: таковые были удалены."
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.move-to-other-team"
-msgstr "Перевести в другую команду"
-
-#: src/app/main/data/dashboard.cljs
-msgid "dashboard.new-project-prefix"
-msgstr "Новый проект"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.num-of-members"
-msgstr "Участников: %s"
-
-msgid "errors.email-as-password"
-msgstr "Нельзя в качестве пароля указывать адрес электронной почты"
-
-#: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
-msgid "errors.member-is-muted"
-msgstr "Невозможно пригласить адресата с недоступным адресом электронной почты."
-
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "errors.profile-is-muted"
-msgstr "Ваш адрес электронной почты не доступен."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Там вы можете задавать вопросы, проследить за неоднозначными задачами, и "
-"поучаствовать в принятии решений по проекту."
-
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur.value"
-msgstr "Значение"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.spread"
-msgstr "Р"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.letter-spacing"
-msgstr "Трекинг"
-
-msgid "workspace.undo.entry.single.frame"
-msgstr "кадр"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.bad-gateway.main-message"
-msgstr "Bad Gateway"
-
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
-msgid "labels.hide-resolved-comments"
-msgstr "Скрыть решённые комментарии"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.create-artboard-from-selection"
-msgstr "Выделенное в кадр"
-
-#: src/app/main/ui/dashboard/team_form.cljs
-msgid "labels.rename-team"
-msgstr "Переименовать команду"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "labels.sending"
-msgstr "Отправка…"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.service-unavailable.desc-message"
-msgstr "Мы проводим диагностику наших систем."
-
-#: src/app/main/ui/dashboard/team_form.cljs
-msgid "labels.update-team"
-msgstr "Обновить команду"
-
-msgid "labels.upload"
-msgstr "Загрузить"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-multi-confirm.accept"
-msgstr "Удалить файлы"
-
-msgid "workspace.path.actions.draw-nodes"
-msgstr "Показать узлы (%s)"
-
-msgid "workspace.path.actions.make-corner"
-msgstr "В угол (%s)"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.delete-flow-start"
-msgstr "Удалить начало потока"
-
-msgid "auth.terms-of-service"
-msgstr "Условия использования"
-
-msgid "common.share-link.link-copied-success"
-msgstr "Ссылка скопирована"
-
-msgid "common.share-link.link-deleted-success"
-msgstr "Ссылка удалена"
-
-#, fuzzy
-msgid "common.share-link.permissions-can-access"
-msgstr "Могут зайти"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "Могут видеть"
-
-msgid "common.share-link.permissions-hint"
-msgstr "Доступ открыт для получателей ссылки"
-
-msgid "common.share-link.remove-link"
-msgstr "Удалить ссылку"
-
-msgid "common.share-link.view-all-pages"
-msgstr "Все страницы"
-
-msgid "common.share-link.view-current-page"
-msgstr "Только эту страницу"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "Выбранные страницы"
-
-#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
-#, fuzzy
-msgid "dashboard.copy-suffix"
-msgstr "(копия)"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.default-team-name"
-msgstr "Ваш Penpot"
-
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.duplicate"
-msgstr "Дублировать"
-
-#, fuzzy
-msgid "dashboard.export.options.merge.message"
-msgstr ""
-"Ваш файл будет экспортирован с включением всех внешних ресурсов в библиотеку "
-"экспорта."
-
-msgid "dashboard.export.options.all.title"
-msgstr "Экспорт общих библиотек"
-
-#, fuzzy
-msgid "dashboard.export.options.merge.title"
-msgstr "Включить общие библиотеки в библиотеку экспорта"
-
-msgid "dashboard.export.title"
-msgstr "Экспорт файлов"
-
-msgid "dashboard.export-multi"
-msgstr "Экспорт файлов Penpot (%s)"
-
-msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Шрифт удалён"
-
-msgid "dashboard.export-frames"
-msgstr "Экспорт кадров в PDF..."
-
-msgid "dashboard.export.options.detach.title"
-msgstr "Воспринимать общие библиотеки как обычные объекты"
-
-msgid "dashboard.export-single"
-msgstr "Экспорт файла Penpot"
-
-msgid "dashboard.export.explain"
-msgstr ""
-"Один или несколько файлов на экспорт используют общие библиотеки. Что нужно "
-"сделать с их ресурсами*?"
-
-msgid "dashboard.export.detail"
-msgstr "* Могут содержать компоненты, цвета, графику, и/или типографику."
-
-msgid "dashboard.export.options.all.message"
-msgstr ""
-"Файлы с общих библиотек будут включены в экспорт, сохраняя свою привязку."
-
-msgid "dashboard.fonts.empty-placeholder"
-msgstr "Произвольные шрифты не установлены."
-
-#, markdown
-msgid "dashboard.fonts.hero-text1"
-msgstr ""
-"Любой загружаемый сюда шрифт будет доступен в файлах, редактируемых "
-"командой. Шрифты из одного и того же семейства будут сгруппированы по **"
-"названию этого семейства**. Для загрузки допустимы следующие форматы: **TTF, "
-"OTF, и WOFF** (используйте один из них)."
-
-#, markdown
-msgid "dashboard.fonts.hero-text2"
-msgstr ""
-"Вам следует загружать только те шрифты, которые покрыты лицензией на "
-"использование в приложении вроде Penpot. Ознакомьтесь с пунктом \"Content "
-"rights\" в [правилах использования Penpot](https://penpot.app/terms.html) и "
-"с [лицензированием шрифтов](https://www.typography.com/faq), в целом."
-
-msgid "dashboard.import.progress.process-colors"
-msgstr "Обработка цветов"
-
-msgid "dashboard.import.progress.process-components"
-msgstr "Обработка компонентов"
-
-msgid "dashboard.import.progress.process-media"
-msgstr "Обработка медиа"
-
-msgid "dashboard.import.progress.process-page"
-msgstr "Обработка страницы: %s"
-
-msgid "dashboard.import.progress.process-typographies"
-msgstr "Обработка типографики"
-
-msgid "dashboard.import.progress.upload-data"
-msgstr "Загрузка данных на сервер (%s/%s)"
-
-msgid "dashboard.import.progress.upload-media"
-msgstr "Загрузка файла: %s"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.invite-profile"
-msgstr "Пригласить в команду"
-
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.leave-team"
-msgstr "Покинуть команду"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.loading-files"
-msgstr "загрузка ваших файлов …"
-
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.move-to"
-msgstr "Переместить"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.open-in-new-tab"
-msgstr "Открыть в новой вкладке"
-
-#, fuzzy
-msgid "dashboard.options"
-msgstr "Опции"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Сделать владельцем"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.team-projects"
-msgstr "Командные проекты"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.show-all-files"
-msgstr "Показать все файлы"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.success-delete-project"
-msgstr "Ваш проект удалён"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgstr "Ваш файл удалён"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgstr "Ваш файл продублирован"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.success-duplicate-project"
-msgstr "Ваш проект продублирован"
-
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-move-file"
-msgstr "Ваш файл перемещён"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-move-files"
-msgstr "Ваши файлы перемещены"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.success-move-project"
-msgstr "Ваш проект перемещён"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Сменить команду"
-
-#: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
-msgid "dashboard.team-info"
-msgstr "О команде"
-
-#: src/app/main/ui/settings.cljs
-msgid "dashboard.your-account-title"
-msgstr "Ваш аккаунт"
-
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.your-penpot"
-msgstr "Ваш Penpot"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
-#, fuzzy
-msgid "errors.email-has-permanent-bounces"
-msgstr "Получатель «%s» постоянно не доступен."
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.google-auth-not-enabled"
-msgstr "Вход с Google пока не доступен"
-
-#: src/app/main/ui/components/color_input.cljs
-msgid "errors.invalid-color"
-msgstr "Неверный цвет"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.ldap-disabled"
-msgstr "Вход c LDAP отключён."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-start"
-msgstr "Войти в чат"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Посетите форум для совместного обсуждения планов на Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
-msgid "feedback.discussions-title"
-msgstr "Командный форум"
-
-#: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
-msgid "feedback.subject"
-msgstr "Краткое описание"
-
-#: src/app/main/ui/handoff/attributes/fill.cljs
-msgid "handoff.attributes.fill"
-msgstr "Заливка"
-
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.download"
-msgstr "Скачать оригинал"
-
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
-msgstr "Высота"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-x"
-msgstr "X"
-
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.width"
-msgstr "Ширина"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.height"
-msgstr "Высота"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.left"
-msgstr "Слева"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow"
-msgstr "Тени"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.blur"
-msgstr "Р"
-
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hex"
-msgstr "HEX"
-
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hsla"
-msgstr "HSLA"
-
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.rgba"
-msgstr "RGBA"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.subtitle"
-msgstr ""
-"Пожалуйста, опишите причину обращения: проблема в работе, идея, или "
-"сомнение. Человек из нашей команды даст ответ в ближайшее время."
-
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur"
-msgstr "Размытие"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-family"
-msgstr "Гарнитура"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-size"
-msgstr "Размер"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.text-decoration"
-msgstr "Оформление"
-
-msgid "handoff.attributes.typography.text-decoration.none"
-msgstr "Нет"
-
-msgid "handoff.attributes.typography.text-decoration.strikethrough"
-msgstr "Перечёркнутый"
-
-msgid "handoff.attributes.typography.text-decoration.underline"
-msgstr "Подчёркнутый"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.text-transform"
-msgstr "Регистр"
-
-msgid "handoff.attributes.typography.text-transform.lowercase"
-msgstr "Нижний регистр"
-
-msgid "handoff.attributes.typography.text-transform.uppercase"
-msgstr "Верхний регистр"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
-
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke.width"
-msgstr "Толщина"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-#, fuzzy
-msgid "handoff.attributes.typography"
-msgstr "Текст"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-#, fuzzy
-msgid "handoff.attributes.typography.font-style"
-msgstr "Шрифт"
-
-msgid "handoff.attributes.typography.text-transform.none"
-msgstr "Какой есть"
-
-msgid "handoff.attributes.typography.text-transform.titlecase"
-msgstr "Регистр Заголовка"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code.selected.multiple"
-msgstr "Выделено: %s"
-
-msgid "handoff.tabs.code.selected.path"
-msgstr "Контур"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.info"
-msgstr "Информация"
-
-msgid "labels.add-custom-font"
-msgstr "Добавить произвольный шрифт"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.admin"
-msgstr "Администратор"
-
-msgid "labels.close"
-msgstr "Закрыть"
-
-msgid "labels.content"
-msgstr "Содержимое"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "labels.create"
-msgstr "Создать"
-
-#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
-msgid "labels.create-team"
-msgstr "Создать новую команду"
-
-#: src/app/main/ui/dashboard/team_form.cljs
-msgid "labels.create-team.placeholder"
-msgstr "Введите имя для новой команды"
-
-#: src/app/main/ui/settings/sidebar.cljs
-msgid "labels.dashboard"
-msgstr "Панель управления"
-
-msgid "labels.default"
-msgstr "по умолчанию"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code"
-msgstr "Код"
-
-msgid "handoff.tabs.code.selected.circle"
-msgstr "Круг"
-
-msgid "handoff.tabs.code.selected.curve"
-msgstr "Кривая"
-
-msgid "handoff.tabs.code.selected.frame"
-msgstr "Кадр"
-
-msgid "handoff.tabs.code.selected.group"
-msgstr "Группа"
-
-msgid "handoff.tabs.code.selected.image"
-msgstr "Изображение"
-
-msgid "labels.fonts"
-msgstr "Шрифты"
-
-#: src/app/main/ui/comments.cljs
-msgid "labels.delete-comment"
-msgstr "Удалить комментарий"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.internal-error.desc-message"
-msgstr "Что-то пошло не так. Пожалуйста, повторите или обратитесь в поддержку."
-
-#: src/app/main/ui/static.cljs
-msgid "labels.internal-error.main-message"
-msgstr "Внутренняя ошибка"
-
-msgid "labels.link"
-msgstr "Ссылка"
-
-#: src/app/main/ui/comments.cljs
-msgid "labels.delete-comment-thread"
-msgstr "Удалить обсуждение"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "labels.delete-multi-files"
-msgstr "Удалить файлы (%s)"
-
-#: src/app/main/ui/comments.cljs
-msgid "labels.edit"
-msgstr "Редактировать"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.editor"
-msgstr "Редактор"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "labels.feedback-disabled"
-msgstr "Обратная связь недоступна"
-
-msgid "labels.font-providers"
-msgstr "Поставщики шрифтов"
-
-msgid "labels.font-variants"
-msgstr "Начертания"
-
-msgid "labels.installed-fonts"
-msgstr "Установленные шрифты"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.not-found.desc-message"
-msgstr "Эта страница не существует, или у вас нет к ней доступа."
-
-#: src/app/main/ui/static.cljs
-msgid "labels.not-found.main-message"
-msgstr "Ой!"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.num-of-files"
-msgid_plural "labels.num-of-files"
-msgstr[0] "Файл"
-msgstr[1] "Файлы (%s)"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.num-of-projects"
-msgid_plural "labels.num-of-projects"
-msgstr[0] "Проект"
-msgstr[1] "Проекты (%s)"
-
-msgid "labels.or"
-msgstr "или"
-
-#: src/app/main/ui/workspace/comments.cljs
-msgid "labels.only-yours"
-msgstr "Только ваши"
-
-msgid "labels.num-of-frames"
-msgid_plural "labels.num-of-frames"
-msgstr[0] "Кадр"
-msgstr[1] "Кадры (%s)"
-
-msgid "labels.manage-fonts"
-msgstr "Управление шрифтами"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.members"
-msgstr "Люди"
-
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
-msgid "labels.no-comments-available"
-msgstr "Новых комментариев пока нет"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.not-found.auth-info"
-msgstr "Вы вошли как"
-
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "labels.rename"
-msgstr "Переименовать"
-
-msgid "labels.search-font"
-msgstr "Найти шрифт"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "labels.send"
-msgstr "Отправить"
-
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
-#, fuzzy
-msgid "labels.show-your-comments"
-msgstr "Показать только ваши"
-
-msgid "labels.skip"
-msgstr "Пропустить"
-
-#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
-msgid "labels.retry"
-msgstr "Заново"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "Разрешения"
-
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
-#, fuzzy
-msgid "labels.show-all-comments"
-msgstr "Показать все"
-
-msgid "labels.upload-custom-fonts"
-msgstr "Загрузить произвольные шрифты"
-
-msgid "labels.uploading"
-msgstr "Загрузка…"
-
-#, fuzzy
-msgid "labels.workspace"
-msgstr "Рабочая область"
-
-#: src/app/main/ui/comments.cljs
-msgid "labels.write-new-comment"
-msgstr "Написать комментарий"
-
-#: src/app/main/ui/comments.cljs
-msgid "modals.delete-comment-thread.message"
-msgstr ""
-"Вы уверены, что хотите удалить это обсуждение со всеми входящими в него "
-"комментариями?"
-
-#: src/app/main/ui/comments.cljs
-msgid "modals.delete-comment-thread.title"
-msgstr "Удалить обсуждение"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-confirm.title"
-msgstr "Удаление файла"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-multi-confirm.message"
-msgstr "Точно хотите удалить несколько файлов (%s)?"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-multi-confirm.title"
-msgstr "Удаление файлов (%s)"
-
-#, fuzzy
-msgid "modals.delete-font-variant.message"
-msgstr "Вы действительно хотите удалить это начертание шрифта?"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "modals.delete-project-confirm.message"
-msgstr "Вы уверены, что хотите удалить этот проект?"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "modals.delete-project-confirm.title"
-msgstr "Удаление проекта"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.delete-team-confirm.message"
-msgstr ""
-"Вы уверены, что хотите удалить эту команду? Все проекты и файлы из этой "
-"команды также будут безвозвратно удалены."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.delete-team-confirm.title"
-msgstr "Удаление команды"
-
-#, fuzzy
-msgid "modals.delete-font.message"
-msgstr "Вы действительно хотите удалить этот шрифт?"
-
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs
-msgid "modals.delete-page.title"
-msgstr "Удаление страницы"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "modals.delete-project-confirm.accept"
-msgstr "Удалить проект"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.delete-team-confirm.accept"
-msgstr "Удалить команду"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Создайте различные взаимодействия для имитации поведения продукта."
-
-msgid "onboarding.slide.1.title"
-msgstr "Оживите свои работы с помощью интерактива"
-
-msgid "viewer.header.interactions-section"
-msgstr "Интерактив (%s)"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.interactions"
-msgstr "Интерактив"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.group"
-msgstr "Группа"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.group-name"
-msgstr "Имя группы"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.rename-group"
-msgstr "Переименовать группу"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.create-group"
-msgstr "Создать группу"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.selected-count"
-msgid_plural "workspace.assets.selected-count"
-msgstr[0] "Выбран ресурс"
-msgstr[1] "Выбраны ресурсы (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.font-size"
-msgstr "Размер"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Начертание"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.letter-spacing"
-msgstr "Кернинг"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.line-height"
-msgstr "Интерлиньяж"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.text-transform"
-msgstr "Регистр"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.ungroup"
-msgstr "Разгруппировать"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.typography"
-msgstr "Типографика"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.font-id"
-msgstr "Шрифт"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.libraries.text.multiple-typography"
-msgstr "Несколько типографик"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.add-interaction"
-msgstr "Нажмите кнопку \"+\" для добавления интерактива."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.flows.add-flow-start"
-msgstr "Добавить начало потока"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.flows.flow-start"
-msgstr "Начало потока"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.flows.flow-starts"
-msgstr "Начала потоков"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interactions"
-msgstr "Интерактив"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-msgid "workspace.options.layer-options.title.group"
-msgstr "Группировать слои"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-msgid "workspace.options.layer-options.title.multiple"
-msgstr "Выделенные слои"
-
-msgid "workspace.path.actions.join-nodes"
-msgstr "Соединить узлы (%s)"
-
-msgid "workspace.path.actions.make-curve"
-msgstr "В кривую (%s)"
-
-msgid "workspace.path.actions.merge-nodes"
-msgstr "Объединить узлы (%s)"
-
-msgid "workspace.path.actions.move-nodes"
-msgstr "Сместить узлы (%s)"
-
-msgid "workspace.path.actions.separate-nodes"
-msgstr "Разделить узлы (%s)"
-
-msgid "workspace.path.actions.snap-nodes"
-msgstr "Прилипать узлами (%s)"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.sidebar.layers"
-msgstr "Слои"
-
-msgid "workspace.shape.menu.transform-to-path"
-msgstr "Преобразовать в контур"
-
-msgid "workspace.undo.entry.multiple.color"
-msgstr "цветовые ресурсы"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.comments"
-msgstr "Комментарии (%s)"
-
-msgid "workspace.undo.entry.multiple.media"
-msgstr "графические ресурсы"
-
-msgid "workspace.undo.entry.multiple.typography"
-msgstr "типографические ресурсы"
-
-msgid "workspace.undo.entry.multiple.path"
-msgstr "контуры"
-
-msgid "workspace.undo.entry.multiple.frame"
-msgstr "кадры"

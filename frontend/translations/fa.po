@@ -2,225 +2,18 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-03-21 13:56+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
-"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
-"fa/>\n"
+"Language-Team: Persian "
+"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
 "X-Generator: Weblate 4.12-dev\n"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
-msgstr "ارتفاع"
-
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.rgba"
-msgstr "RGBA"
-
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.width"
-msgstr "عرض"
-
-#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
-msgid "dashboard.copy-suffix"
-msgstr "(کپی)"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.password"
-msgstr "کلمه‌عبور"
-
-msgid "dashboard.options"
-msgstr "گزینه‌ها"
-
-msgid "dashboard.draft-title"
-msgstr "پیش‌نویس"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.subject"
-msgstr "موضوع"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.pin-unpin"
-msgstr "پین/برداشتن پین"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout"
-msgstr "چیدمان"
-
-#: src/app/main/ui/handoff/attributes/fill.cljs
-msgid "handoff.attributes.fill"
-msgstr "پر"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.height"
-msgstr "ارتفاع"
-
-msgid "handoff.tabs.code.selected.mask"
-msgstr "ماسک"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-x"
-msgstr "X"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow"
-msgstr "سایه"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code"
-msgstr "کد"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "labels.create"
-msgstr "ایجاد"
-
-msgid "labels.accept"
-msgstr "تایید"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.admin"
-msgstr "مدیر"
-
-#: src/app/main/ui/workspace/comments.cljs
-msgid "labels.all"
-msgstr "همه"
-
-#: src/app/main/ui/settings/sidebar.cljs
-msgid "labels.dashboard"
-msgstr "داشبورد"
-
-msgid "labels.icons"
-msgstr "آیکون‌ها"
-
-msgid "labels.fonts"
-msgstr "فونت‌ها"
-
-msgid "labels.images"
-msgstr "تصاویر"
-
-#: src/app/main/ui/settings/options.cljs
-msgid "labels.language"
-msgstr "زبان"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.title"
-msgstr "ایمیل"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-google-submit"
-msgstr "ورود با گوگل"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-subtitle"
-msgstr "ما یک ایمیل با دستورالعمل برای شما ارسال خواهیم کرد"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.notifications.recovery-token-sent"
-msgstr "لینک بازیابی رمزعبور به صندوق ورودی شما ارسال شد."
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"هنگام ایجاد یک حساب‌کاربری جدید، با شرایط خدمات و سیاست حفظ حریم‌خصوصی ما "
-"موافقت می‌کنید."
-
-msgid "common.share-link.confirm-deletion-link-description"
-msgstr ""
-"آیا مطمئنید که می‌خواهید این لینک را حذف کنید؟  اگر این کار را انجام دهید، "
-"دیگر برای کسی در دسترس نیست"
-
-msgid "labels.workspace"
-msgstr "فضای‌کاری"
-
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.delete"
-msgstr "حذف"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.font-size"
-msgstr "اندازه"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.font-id"
-msgstr "فونت"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.libraries"
-msgstr "کتابخانه‌ها"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.file"
-msgstr "فایل"
-
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.rename"
-msgstr "تغییرنام"
-
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.password"
-msgstr "کلمه‌عبور"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.projects"
-msgstr "پروژه‌ها"
-
-msgid "labels.save"
-msgstr "ذخیره"
-
-msgid "labels.or"
-msgstr "یا"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "modals.update-remote-component.accept"
-msgstr "به‌روزرسانی"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.viewer"
-msgstr "بیننده"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.edit"
-msgstr "ویرایش"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "لایه"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
-msgid "workspace.options.blur-options.title"
-msgstr "محو"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.constraints.center"
-msgstr "مرکز"
-
-msgid "workspace.options.grid.params.color"
-msgstr "رنگ"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.columns"
-msgstr "ستون‌ها"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.type.left"
-msgstr "چپ"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.type.right"
-msgstr "راست"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-submit"
-msgstr "ورود"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
 msgstr "از قبل حساب کاربری دارید؟"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.create-demo-account"
-msgstr "ایجاد حساب دمو"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
@@ -231,6 +24,10 @@ msgstr ""
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
 msgstr "تایید کلمه‌عبور"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "ایجاد حساب دمو"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-profile"
@@ -244,6 +41,26 @@ msgstr "ایمیل"
 msgid "auth.forgot-password"
 msgstr "کلمه‌عبور را فراموش کرده‌اید؟"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "نام کامل"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "ورود از اینجا"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "ورود"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-subtitle"
+msgstr "مشخصات خود را در زیر وارد کنید"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "خوشحالم که دوباره شما را می‌بینم!"
+
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "ورود با گیتهاب"
@@ -253,28 +70,63 @@ msgid "auth.login-with-gitlab-submit"
 msgstr "ورود با گیتلب"
 
 #: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "ورود با گوگل"
+
+#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
 msgstr "ورود با LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "ورود با OpenID"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "یک رمزعبور جدید تایپ کنید"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.newsletter-subscription"
 msgstr "من موافقت می‌کنم که در لیست پستی Penpot مشترک شوم."
 
 #: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "توکن بازیابی نامعتبر است."
+
+#: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.password-changed-successfully"
 msgstr "کلمه‌عبور با موفقیت تغییر یافت"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "خوشحالم که دوباره شما را می‌بینم!"
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "پروفایل تأیید نشده است، لطفاً قبل از ادامه، پروفایل را تأیید کنید."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "لینک بازیابی رمزعبور به صندوق ورودی شما ارسال شد."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "با موفقیت به تیم پیوست"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "کلمه‌عبور"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "حداقل ۸ حرف"
 
+msgid "auth.privacy-policy"
+msgstr "سیاست حفظ حریم‌خصوصی"
+
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
 msgstr "بازیابی رمزعبور"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "ما یک ایمیل با دستورالعمل برای شما ارسال خواهیم کرد"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-title"
@@ -288,8 +140,13 @@ msgstr "رمزعبور خود را تغییر دهید"
 msgid "auth.register"
 msgstr "هنوز حسابی ندارید؟"
 
-msgid "auth.terms-of-service"
-msgstr "شرایط استفاده از خدمات"
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "ایجاد حساب‌کاربری"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "رایگان است، منبع‌باز است"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -299,9 +156,23 @@ msgstr "ایجاد حساب"
 msgid "auth.sidebar-tagline"
 msgstr "راه حل منبع-باز برای طراحی و نمونه‌سازی"
 
+msgid "auth.terms-of-service"
+msgstr "شرایط استفاده از خدمات"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"هنگام ایجاد یک حساب‌کاربری جدید، با شرایط خدمات و سیاست حفظ حریم‌خصوصی ما "
+"موافقت می‌کنید."
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "ما یک ایمیل تأیید ارسال کردیم به"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"آیا مطمئنید که می‌خواهید این لینک را حذف کنید؟  اگر این کار را انجام دهید، "
+"دیگر برای کسی در دسترس نیست"
 
 msgid "common.share-link.get-link"
 msgstr "دریافت لینک"
@@ -334,13 +205,13 @@ msgstr "صفحات انتخاب‌شده"
 msgid "dashboard.add-shared"
 msgstr "افزودن به‌عنوان کتابخانه مشترک"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.duplicate"
-msgstr "تکثیر"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.change-email"
 msgstr "تغییر ایمیل"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(کپی)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
@@ -354,9 +225,23 @@ msgstr "Penpot شما"
 msgid "dashboard.delete-team"
 msgstr "حذف تیم"
 
+msgid "dashboard.draft-title"
+msgstr "پیش‌نویس"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "تکثیر"
+
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
 msgstr "شما هنوز هیچ فایلی در اینجا ندارید"
+
+msgid "dashboard.options"
+msgstr "گزینه‌ها"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "پین/برداشتن پین"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
@@ -366,6 +251,10 @@ msgstr "پروژه‌ها"
 msgid "dashboard.search-placeholder"
 msgstr "جستجو…"
 
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "ایمیل"
+
 #: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-cancel"
 msgstr "لغو"
@@ -374,13 +263,17 @@ msgstr "لغو"
 msgid "ds.confirm-ok"
 msgstr "باشه"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.your-email"
-msgstr "ایمیل"
-
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "شرح"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "موضوع"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "ایمیل"
 
 #: src/app/main/ui/handoff/attributes/blur.cljs
 msgid "handoff.attributes.blur.value"
@@ -393,6 +286,30 @@ msgstr "HEX"
 #: src/app/main/ui/handoff/attributes/common.cljs
 msgid "handoff.attributes.color.hsla"
 msgstr "HSLA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/handoff/attributes/fill.cljs
+msgid "handoff.attributes.fill"
+msgstr "پر"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "ارتفاع"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "عرض"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout"
+msgstr "چیدمان"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "ارتفاع"
 
 #: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.left"
@@ -411,8 +328,16 @@ msgid "handoff.attributes.layout.width"
 msgstr "عرض"
 
 #: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "سایه"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
 msgid "handoff.attributes.shadow.shorthand.blur"
 msgstr "B"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-x"
+msgstr "X"
 
 #: src/app/main/ui/handoff/attributes/shadow.cljs
 msgid "handoff.attributes.shadow.shorthand.offset-y"
@@ -451,6 +376,10 @@ msgstr "هیچ‌یک"
 msgid "handoff.attributes.typography.text-transform.none"
 msgstr "هیچ‌یک"
 
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "کد"
+
 msgid "handoff.tabs.code.selected.circle"
 msgstr "دایره"
 
@@ -460,14 +389,23 @@ msgstr "کامپوننت"
 msgid "handoff.tabs.code.selected.curve"
 msgstr "منحنی"
 
+msgid "handoff.tabs.code.selected.frame"
+msgstr "آرت‌برد"
+
 msgid "handoff.tabs.code.selected.group"
 msgstr "گروه"
 
 msgid "handoff.tabs.code.selected.image"
 msgstr "تصویر"
 
+msgid "handoff.tabs.code.selected.mask"
+msgstr "ماسک"
+
 msgid "handoff.tabs.code.selected.path"
 msgstr "مسیر"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "مستطیل"
 
 msgid "handoff.tabs.code.selected.svg-raw"
 msgstr "SVG"
@@ -479,11 +417,16 @@ msgstr "متن"
 msgid "handoff.tabs.info"
 msgstr "اطلاعات"
 
-msgid "handoff.tabs.code.selected.frame"
-msgstr "آرت‌برد"
+msgid "labels.accept"
+msgstr "تایید"
 
-msgid "handoff.tabs.code.selected.rect"
-msgstr "مستطیل"
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "مدیر"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "همه"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.cancel"
@@ -501,6 +444,14 @@ msgstr "محتوا"
 
 msgid "labels.continue"
 msgstr "ادامه"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "ایجاد"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "داشبورد"
 
 msgid "labels.default"
 msgstr "پیش‌فرض"
@@ -525,6 +476,25 @@ msgstr "ویرایشگر"
 msgid "labels.email"
 msgstr "ایمیل"
 
+msgid "labels.font-variants"
+msgstr "استایل‌ها"
+
+msgid "labels.fonts"
+msgstr "فونت‌ها"
+
+msgid "labels.icons"
+msgstr "آیکون‌ها"
+
+msgid "labels.images"
+msgstr "تصاویر"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "labels.language"
+msgstr "زبان"
+
+msgid "labels.link"
+msgstr "لینک"
+
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "خروج"
@@ -537,15 +507,16 @@ msgstr "اعضا"
 msgid "labels.name"
 msgstr "نام"
 
-msgid "labels.font-variants"
-msgstr "استایل‌ها"
-
-msgid "labels.link"
-msgstr "لینک"
-
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
 msgstr "اوپس!"
+
+msgid "labels.or"
+msgstr "یا"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.password"
+msgstr "کلمه‌عبور"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.permissions"
@@ -554,6 +525,10 @@ msgstr "مجوزها"
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.profile"
 msgstr "پروفایل"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "پروژه‌ها"
 
 msgid "labels.recent"
 msgstr "اخیر"
@@ -573,6 +548,9 @@ msgstr "امتحان دوباره"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.role"
 msgstr "نقش"
+
+msgid "labels.save"
+msgstr "ذخیره"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.send"
@@ -599,6 +577,17 @@ msgstr "بارگذاری"
 msgid "labels.uploading"
 msgstr "درحال بارگذاری…"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.viewer"
+msgstr "بیننده"
+
+msgid "labels.workspace"
+msgstr "فضای‌کاری"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.accept"
+msgstr "به‌روزرسانی"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
 msgstr "لغو"
@@ -617,6 +606,10 @@ msgstr "رنگ‌ها"
 msgid "workspace.assets.components"
 msgstr "کامپوننت‌ها"
 
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.delete"
+msgstr "حذف"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.duplicate"
 msgstr "تکثیر"
@@ -633,9 +626,33 @@ msgstr "گرافیک"
 msgid "workspace.assets.group"
 msgstr "گروه"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.libraries"
+msgstr "کتابخانه‌ها"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename"
+msgstr "تغییرنام"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "تایپوگرافی‌ها"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-id"
+msgstr "فونت"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-size"
+msgstr "اندازه"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "ویرایش"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "فایل"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
@@ -679,6 +696,13 @@ msgstr "کتابخانه‌ها"
 msgid "workspace.options.blur-options.background-blur"
 msgstr "پس‌زمینه"
 
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "لایه"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title"
+msgstr "محو"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
 msgstr "کامپوننت"
@@ -686,6 +710,10 @@ msgstr "کامپوننت"
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.bottom"
 msgstr "پایین"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.center"
+msgstr "مرکز"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.left"
@@ -719,6 +747,13 @@ msgstr "خودکار"
 msgid "workspace.options.grid.column"
 msgstr "ستون‌ها"
 
+msgid "workspace.options.grid.params.color"
+msgstr "رنگ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.columns"
+msgstr "ستون‌ها"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.height"
 msgstr "ارتفاع"
@@ -743,45 +778,10 @@ msgstr "پایین"
 msgid "workspace.options.grid.params.type.center"
 msgstr "مرکز"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.fullname"
-msgstr "نام کامل"
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.left"
+msgstr "چپ"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.login-here"
-msgstr "ورود از اینجا"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-subtitle"
-msgstr "مشخصات خود را در زیر وارد کنید"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-oidc-submit"
-msgstr "ورود با OpenID"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.new-password"
-msgstr "یک رمزعبور جدید تایپ کنید"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
-msgstr "توکن بازیابی نامعتبر است."
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.notifications.profile-not-verified"
-msgstr "پروفایل تأیید نشده است، لطفاً قبل از ادامه، پروفایل را تأیید کنید."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "auth.notifications.team-invitation-accepted"
-msgstr "با موفقیت به تیم پیوست"
-
-msgid "auth.privacy-policy"
-msgstr "سیاست حفظ حریم‌خصوصی"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.register-submit"
-msgstr "ایجاد حساب‌کاربری"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "رایگان است، منبع‌باز است"
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.right"
+msgstr "راست"

@@ -257,18 +257,44 @@ msgstr "Todavía no hay ningún archivo aquí"
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"¡Oh, no! ¡Aún no tienes archivos! Si quieres probar con alguna plantilla ve a "
-"[Bibliotecas y plantillas](https://penpot.app/libraries-templates.html)"
+"¡Oh, no! ¡Aún no tienes archivos! Si quieres probar con alguna plantilla ve "
+"a [Bibliotecas y plantillas](https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-frames"
+msgstr "Exportar tableros a PDF..."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Exportar a PDF"
+
+msgid "dashboard.export-multi"
+msgstr "Exportar %s archivos Penpot"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s de %s elementos seleccionados"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "dashboard.export-shapes"
 msgstr "Exportar"
 
-msgid "dashboard.export-frames"
-msgstr "Exportar tableros a PDF..."
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+" Puedes añadir configuraciones de exportación a elementos desde las "
+"propiedades de diseño (al final del lateral derecho)."
 
-msgid "dashboard.export-multi"
-msgstr "Exportar %s archivos Penpot"
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Información sobre cómo configurar exportaciones en Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "No hay elementos con configuraciones de exportación."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Exportar selección"
 
 msgid "dashboard.export-single"
 msgstr "Exportar archivo Penpot"
@@ -307,30 +333,6 @@ msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 
 msgid "dashboard.export.title"
 msgstr "Exportar ficheros"
-
-#:src/app/main/ui/export.cljs
-msgid "dashboard.export-frames.title"
-msgstr "Exportar a PDF"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.title"
-msgstr "Exportar selección"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-multiple.selected"
-msgstr "%s de %s elementos seleccionados"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.no-elements"
-msgstr "No hay elementos con configuraciones de exportación."
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.how-to"
-msgstr " Puedes añadir configuraciones de exportación a elementos desde las propiedades de diseño (al final del lateral derecho)."
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.how-to-link"
-msgstr "Información sobre cómo configurar exportaciones en Penpot."
 
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Fuente eliminada."
@@ -644,12 +646,12 @@ msgstr "No puedes usar tu email como password"
 msgid "errors.email-has-permanent-bounces"
 msgstr "El email «%s» tiene varios reportes de rebote permanente."
 
-msgid "errors.email-spam-or-permanent-bounces"
-msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
-
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "El correo de confirmación debe coincidir"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
@@ -1052,6 +1054,9 @@ msgstr "Contenido"
 msgid "labels.continue"
 msgstr "Continuar"
 
+msgid "labels.continue-with"
+msgstr "Continúa con"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
 msgstr "Crear"
@@ -1085,6 +1090,10 @@ msgstr "Eliminar comentario"
 msgid "labels.delete-comment-thread"
 msgstr "Eliminar hilo"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Eliminar invitation"
+
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete-multi-files"
 msgstr "Borrar %s archivos"
@@ -1108,6 +1117,10 @@ msgstr "Edición"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.email"
 msgstr "Correo electrónico"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Expirada"
 
 msgid "labels.export"
 msgstr "Exportar"
@@ -1166,6 +1179,10 @@ msgstr ""
 msgid "labels.internal-error.main-message"
 msgstr "Error interno"
 
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Invitaciones"
+
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
 msgstr "Idioma"
@@ -1185,24 +1202,12 @@ msgid "labels.manage-fonts"
 msgstr "Administrar fuentes"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.members"
-msgstr "Integrantes"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
 msgstr "Integrante"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.invitations"
-msgstr "Invitaciones"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.status"
-msgstr "Status"
-
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.you"
-msgstr "(tú)"
+msgid "labels.members"
+msgstr "Integrantes"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.name"
@@ -1218,6 +1223,14 @@ msgstr "Siguiente"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
 msgstr "No tienes notificaciones de comentarios pendientes"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "No hay invitaciones"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr "Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.auth-info"
@@ -1256,9 +1269,6 @@ msgstr "Contraseña anterior"
 msgid "labels.only-yours"
 msgstr "Sólo los tuyos"
 
-msgid "labels.continue-with"
-msgstr "Continúa con"
-
 msgid "labels.or"
 msgstr "o"
 
@@ -1269,6 +1279,10 @@ msgstr "Propiedad"
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.password"
 msgstr "Contraseña"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "Pendiente"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.permissions"
@@ -1305,6 +1319,10 @@ msgstr "Renombrar"
 msgid "labels.rename-team"
 msgstr "Renombra el equipo"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "Reenviar invitacion"
+
 #: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "Reintentar"
@@ -1339,34 +1357,6 @@ msgstr "El servicio no está disponible"
 msgid "labels.settings"
 msgstr "Configuración"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.invitations"
-msgstr "Invitaciones"
-
-#:src/app/main/ui/dashboard/team.cljs
-msgid "labels.pending-invitation"
-msgstr "Pendiente"
-
-#:src/app/main/ui/dashboard/team.cljs
-msgid "labels.expired-invitation"
-msgstr "Expirada"
-
-#:src/app/main/ui/dashboard/team.cljs
-msgid "labels.resend-invitation"
-msgstr "Reenviar invitacion"
-
-#:src/app/main/ui/dashboard/team.cljs
-msgid "labels.delete-invitation"
-msgstr "Eliminar invitation"
-
-#:src/app/main/ui/dashboard/team.cljs
-msgid "labels.no-invitations"
-msgstr "No hay invitaciones"
-
-#:src/app/main/ui/dashboard/team.cljs
-msgid "labels.no-invitations-hint"
-msgstr "Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
-
 #: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.share-prototype"
 msgstr "Compartir prototipo"
@@ -1392,6 +1382,10 @@ msgstr "Omitir"
 
 msgid "labels.start"
 msgstr "Comenzar"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Status"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
@@ -1420,6 +1414,10 @@ msgstr "Espacio de trabajo"
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
 msgstr "Escribir un nuevo comentario"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(tú)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.your-account"
@@ -1466,6 +1464,12 @@ msgstr "Cambiar correo"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
 msgstr "Cambiar tu correo"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"Tienes la propiedad de este equipo. Por favor selecciona otra persona "
+"integrante para promover al rol Propiedad."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1583,16 +1587,26 @@ msgstr "¿Seguro que quieres eliminar este integrante del equipo?"
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Eliminar integrante del equipo"
 
-msgid "modals.invite-member.emails"
-msgstr "Emails, separados por coma"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member-confirm.accept"
 msgstr "Enviar invitacion"
 
+msgid "modals.invite-member.emails"
+msgstr "Emails, separados por coma"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member.title"
 msgstr "Invitar a unirse al equipo"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Al ser la única persona integrante de este equipo, el equipo será eliminado "
+"junto con sus proyectos y archivos."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr " ¿Seguro que quieres abandonar el equipo %s?"
 
 msgid "modals.leave-and-reassign.forbiden"
 msgstr ""
@@ -1601,8 +1615,9 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
-msgstr "Tienes la propiedad de este equipo. Por favor selecciona otra persona integrante para promover al rol Propiedad."
-
+msgstr ""
+"Tienes la propiedad de este equipo. Por favor selecciona otra persona "
+"integrante para promover al rol Propiedad."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
@@ -1625,18 +1640,6 @@ msgid "modals.leave-confirm.message"
 msgstr "¿Seguro que quieres abandonar este equipo?"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-close-confirm.message"
-msgstr " ¿Seguro que quieres abandonar el equipo %s?"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-close-confirm.hint"
-msgstr "Al ser la única persona integrante de este equipo, el equipo será eliminado junto con sus proyectos y archivos."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.change-owner-and-leave-confirm.message"
-msgstr "Tienes la propiedad de este equipo. Por favor selecciona otra persona integrante para promover al rol Propiedad."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.title"
 msgstr "Abandonando el equipo"
 
@@ -1649,12 +1652,16 @@ msgid "modals.promote-owner-confirm.accept"
 msgstr "Transferir propiedad"
 
 #: src/app/main/ui/dashboard/team.cljs
-msgid "modals.promote-owner-confirm.message"
-msgstr "Tienes la propiedad de este equipo. ¿Seguro que quieres transferir la propiedad del equipo a %s?"
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Si transfieres la propiedad, tu rol cambiará a Administración, perdiendo "
+"algunos permisos sobre este equipo."
 
 #: src/app/main/ui/dashboard/team.cljs
-msgid "modals.promote-owner-confirm.hint"
-msgstr "Si transfieres la propiedad, tu rol cambiará a Administración, perdiendo algunos permisos sobre este equipo."
+msgid "modals.promote-owner-confirm.message"
+msgstr ""
+"Tienes la propiedad de este equipo. ¿Seguro que quieres transferir la "
+"propiedad del equipo a %s?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
@@ -1915,12 +1922,12 @@ msgid "title.settings.profile"
 msgstr "Perfil - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs
-msgid "title.team-members"
-msgstr "Integrantes - %s - Penpot"
-
-#: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-invitations"
 msgstr "Invitaciones - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-members"
+msgstr "Integrantes - %s - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-settings"
@@ -2158,6 +2165,18 @@ msgstr "Transformar texto"
 msgid "workspace.assets.ungroup"
 msgstr "Desagrupar"
 
+msgid "workspace.focus.focus-mode"
+msgstr "Modo foco"
+
+msgid "workspace.focus.focus-off"
+msgstr "Desactivar modo foco"
+
+msgid "workspace.focus.focus-on"
+msgstr "Activar modo foco"
+
+msgid "workspace.focus.selection"
+msgstr "Selección"
+
 #: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.linear"
 msgstr "Degradado lineal"
@@ -2182,6 +2201,9 @@ msgstr "Desactivar alinear a la rejilla"
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Desactivar alinear a las guias"
 
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Desactivar ajuste al pixel"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Activar alineamiento dinámico"
@@ -2197,6 +2219,9 @@ msgstr "Alinear a la rejilla"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Alinear a las guias"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Activar ajuste al pixel"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
@@ -2217,6 +2242,9 @@ msgstr "Ocultar capas"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
 msgstr "Ocultar paleta de colores"
+
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Ocultar rejilla de pixeles"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-rules"
@@ -2266,6 +2294,9 @@ msgstr "Mostrar capas"
 msgid "workspace.header.menu.show-palette"
 msgstr "Mostrar paleta de colores"
 
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Mostrar rejilla de pixeles"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"
 msgstr "Mostrar reglas"
@@ -2273,18 +2304,6 @@ msgstr "Mostrar reglas"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Mostrar paleta de textos"
-
-msgid "workspace.header.menu.hide-pixel-grid"
-msgstr "Ocultar rejilla de pixeles"
-
-msgid "workspace.header.menu.show-pixel-grid"
-msgstr "Mostrar rejilla de pixeles"
-
-msgid "workspace.header.menu.disable-snap-pixel-grid"
-msgstr "Desactivar ajuste al pixel"
-
-msgid "workspace.header.menu.enable-snap-pixel-grid"
-msgstr "Activar ajuste al pixel"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
@@ -2543,16 +2562,12 @@ msgid "workspace.options.exporting-object"
 msgstr "Exportando..."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
-msgid "workspace.options.exporting-object-slow"
-msgstr "Exportación lenta"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
-msgid "workspace.options.retry"
-msgstr "Reintentar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
 msgstr "Exportación fallida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "Exportación lenta"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"
@@ -2973,6 +2988,10 @@ msgstr "Esquinas individuales"
 msgid "workspace.options.recent-fonts"
 msgstr "Recientes"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "Reintentar"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.rotation"
 msgstr "Rotación"
@@ -3336,12 +3355,6 @@ msgstr "Voltear horizontal"
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Voltear vertical"
 
-msgid "workspace.shape.menu.thumbnail-set"
-msgstr "Poner como miniatura"
-
-msgid "workspace.shape.menu.thumbnail-remove"
-msgstr "Quitar miniatura"
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flow-start"
 msgstr "Inicio de flujo"
@@ -3403,6 +3416,12 @@ msgstr "Mostrar"
 msgid "workspace.shape.menu.show-main"
 msgstr "Ver componente principal"
 
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Quitar miniatura"
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Poner como miniatura"
+
 msgid "workspace.shape.menu.transform-to-path"
 msgstr "Convertir en vector"
 
@@ -3437,8 +3456,8 @@ msgstr "Historial (%s)"
 msgid "workspace.sidebar.layers"
 msgstr "Capas"
 
-msgid "workspace.sidebar.layers.search"
-msgstr "Buscar capas"
+msgid "workspace.sidebar.layers.components"
+msgstr "Componentes"
 
 msgid "workspace.sidebar.layers.frames"
 msgstr "Paneles"
@@ -3446,20 +3465,20 @@ msgstr "Paneles"
 msgid "workspace.sidebar.layers.groups"
 msgstr "Grupos"
 
-msgid "workspace.sidebar.layers.masks"
-msgstr "Máscaras"
-
-msgid "workspace.sidebar.layers.components"
-msgstr "Componentes"
-
-msgid "workspace.sidebar.layers.texts"
-msgstr "Textos"
-
 msgid "workspace.sidebar.layers.images"
 msgstr "Imágenes"
 
+msgid "workspace.sidebar.layers.masks"
+msgstr "Máscaras"
+
+msgid "workspace.sidebar.layers.search"
+msgstr "Buscar capas"
+
 msgid "workspace.sidebar.layers.shapes"
 msgstr "Formas"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "Textos"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
@@ -3650,15 +3669,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-msgid "workspace.focus.selection"
-msgstr "Selección"
-
-msgid "workspace.focus.focus-mode"
-msgstr "Modo foco"
-
-msgid "workspace.focus.focus-on"
-msgstr "Activar modo foco"
-
-msgid "workspace.focus.focus-off"
-msgstr "Desactivar modo foco"

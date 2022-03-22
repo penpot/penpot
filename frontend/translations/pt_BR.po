@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-02-22 11:57+0000\n"
 "Last-Translator: John Terroa <joaoterroa2@gmail.com>\n"
-"Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
-"penpot/frontend/pt_BR/>\n"
+"Language-Team: Portuguese (Brazil) "
+"<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -87,6 +87,10 @@ msgstr "Entrar com OpenID (SSO)"
 msgid "auth.new-password"
 msgstr "Digite uma nova senha"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Concordo em subscrever a lista de emails Penpot."
+
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "O token de recuperação é inválido."
@@ -114,6 +118,9 @@ msgstr "Senha"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Pelo menos 8 caracteres"
+
+msgid "auth.privacy-policy"
+msgstr "Política de privacidade"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
@@ -1855,6 +1862,10 @@ msgid "workspace.sitemap"
 msgstr "Mapa do site"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.assets"
+msgstr "Recursos"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.color-palette"
 msgstr "Paleta de cores (%s)"
 
@@ -1883,6 +1894,10 @@ msgid "workspace.toolbar.move"
 msgstr "Mover (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.path"
+msgstr "Caminho (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.rect"
 msgstr "Retângulo (%s)"
 
@@ -1895,11 +1910,18 @@ msgid "workspace.undo.empty"
 msgstr "Não há mudanças no histórico até agora"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.modify"
+msgstr "Modificado (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.move"
 msgstr "Objetos movidos"
 
 msgid "workspace.undo.entry.multiple.circle"
 msgstr "círculos"
+
+msgid "workspace.undo.entry.multiple.color"
+msgstr "recursos de cor"
 
 msgid "workspace.undo.entry.multiple.component"
 msgstr "componentes"
@@ -1913,11 +1935,17 @@ msgstr "prancheta"
 msgid "workspace.undo.entry.multiple.group"
 msgstr "grupos"
 
+msgid "workspace.undo.entry.multiple.media"
+msgstr "recurso gráfico"
+
 msgid "workspace.undo.entry.multiple.multiple"
 msgstr "objetos"
 
 msgid "workspace.undo.entry.multiple.page"
 msgstr "páginas"
+
+msgid "workspace.undo.entry.multiple.path"
+msgstr "caminhos"
 
 msgid "workspace.undo.entry.multiple.rect"
 msgstr "retângulos"
@@ -1928,12 +1956,18 @@ msgstr "formas"
 msgid "workspace.undo.entry.multiple.text"
 msgstr "textos"
 
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "recursos tipográficos"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.new"
 msgstr "Novo %s"
 
 msgid "workspace.undo.entry.single.circle"
 msgstr "círculo"
+
+msgid "workspace.undo.entry.single.color"
+msgstr "recurso de cor"
 
 msgid "workspace.undo.entry.single.component"
 msgstr "componente"
@@ -1949,6 +1983,9 @@ msgstr "grupo"
 
 msgid "workspace.undo.entry.single.image"
 msgstr "imagem"
+
+msgid "workspace.undo.entry.single.media"
+msgstr "recurso gráfico"
 
 msgid "workspace.undo.entry.single.multiple"
 msgstr "objeto"
@@ -1982,40 +2019,3 @@ msgstr "Atualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Clique para fechar o caminho"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.assets"
-msgstr "Recursos"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "Concordo em subscrever a lista de emails Penpot."
-
-msgid "auth.privacy-policy"
-msgstr "Política de privacidade"
-
-msgid "workspace.undo.entry.multiple.color"
-msgstr "recursos de cor"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.path"
-msgstr "Caminho (%s)"
-
-#: src/app/main/ui/workspace/sidebar/history.cljs
-msgid "workspace.undo.entry.modify"
-msgstr "Modificado (%s)"
-
-msgid "workspace.undo.entry.multiple.typography"
-msgstr "recursos tipográficos"
-
-msgid "workspace.undo.entry.single.media"
-msgstr "recurso gráfico"
-
-msgid "workspace.undo.entry.single.color"
-msgstr "recurso de cor"
-
-msgid "workspace.undo.entry.multiple.media"
-msgstr "recurso gráfico"
-
-msgid "workspace.undo.entry.multiple.path"
-msgstr "caminhos"
