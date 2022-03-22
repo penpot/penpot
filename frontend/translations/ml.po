@@ -1,0 +1,276 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2022-03-05 20:57+0000\n"
+"Last-Translator: Joseph V M <shibinjose991@gmail.com>\n"
+"Language-Team: Malayalam <https://hosted.weblate.org/projects/penpot/"
+"frontend/ml/>\n"
+"Language: ml\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.12-dev\n"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "പാസ്‌വേഡ് സ്ഥിരീകരിക്കുക"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "ഡെമോ അക്കൗണ്ട് സൃഷ്ടിക്കുക"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "ഒന്നുപയോഗിച്ച് നോക്കുന്നോ?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "ഇമെയിൽ"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "പാസ്‌വേഡ് മറന്നോ?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "മുഴുവൻ പേര്"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "ലോഗിൻ"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-subtitle"
+msgstr "നിങ്ങളുടെ വിവരങ്ങൾ ഇവിടെ ചേർക്കുക"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "നിങ്ങളെ വീണ്ടും കാണാൻ കഴിഞ്ഞതിൽ സന്തോഷം!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "ഗിറ്റ്ഹബ്ബ് ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "ഗിറ്റ്ലാബ് ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "ഗൂഗിൾ ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "റിക്കവറി ടോക്കൺ അസാധുവാണ്."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "പാസ്‌വേഡ് വിജയകരമായി മാറ്റി"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "നിലവിൽ അക്കൗണ്ടുണ്ടോ?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"പെൻപോട്ട് ഉപയോഗിക്കാനും സാധൂകരിക്കാനും നിങ്ങളുടെ ഇമെയിൽ പരിശോധിച്ച് അതിലെ "
+"കണ്ണിയിൽ ക്ലിക്ക് ചെയ്യുക."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "ഇവിടെ ലോഗിൻ ചെയ്യുക"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"ഇതൊരു ഡെമോ സേവനമാണ്, ഒരു യഥാർത്ഥ ജോലിക്ക് ഉപയോഗിക്കരുത്, പ്രൊജക്റ്റുകൾ "
+"നിശ്ചിതസമയങ്ങളിൽ മായ്ക്കപ്പെടും."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "ഓപ്പൺഐഡി (SSO) ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "പുതിയൊരു പാസ്‌വേഡ് ചേർക്കുക"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "പെൻപോട്ട് മെയിലിങ് പട്ടികയുടെ വരിക്കാരാകാൻ ഞാൻ സമ്മതിക്കുന്നു."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "പാസ്‌വേഡ്"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "കുറഞ്ഞത് 8 ക്യാരക്റ്ററുകൾ"
+
+msgid "auth.privacy-policy"
+msgstr "സ്വകാര്യതാനയം"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "പാസ്‌വേഡ് മാറ്റുക"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "പ്രൊഫൈൽ സാധൂകരിച്ചിട്ടില്ല, തുടരുന്നതിന് മുൻപ് ദയവായി സാധൂകരിക്കുക."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "വിജയകരമായി സംഘത്തിൽ ചേർന്നു"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "പാസ്‌വേഡ് വീണ്ടെടുക്കുക"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "പാസ്‌വേഡ് വീണ്ടെടുപ്പ് കണ്ണി നിങ്ങളുടെ ഇൻബോക്സിലേക്ക് അയച്ചിട്ടുണ്ട്."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "അക്കൗണ്ട് സൃഷ്ടിക്കുക"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "നിർദ്ദേശങ്ങളടങ്ങിയ ഒരു ഇമെയിൽ ഞങ്ങൾ നിങ്ങൾക്ക് അയയ്ക്കും"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "പാസ്‌വേഡ് മറന്നോ?"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "ഇതുവരെ അക്കൗണ്ട് ഇല്ലേ?"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "ഡിസൈനിങിനും പ്രോട്ടോടൈപ്പിങിനുമുള്ള ഓപ്പൺ സോഴ്സ് പ്രതിവിധി."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"ഒരു അക്കൗണ്ട് സൃഷ്ടിക്കുമ്പോൾ, നിങ്ങൾ ഞങ്ങളുടെ ഉപയോഗനിബന്ധനകളും "
+"സ്വകാര്യതാനയവും അംഗീകരിക്കുന്നു."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "ഇത് സൗജന്യമാണ്, ഇത് ഓപ്പൺ സോഴ്സാണ്"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "അക്കൗണ്ട് സൃഷ്ടിക്കുക"
+
+msgid "auth.terms-of-service"
+msgstr "ഉപയോഗനിബന്ധനകൾ"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"ഈ കണ്ണി നീക്കം ചെയ്യണമെന്നത് നിങ്ങൾക്ക് തീർച്ചയാണോ? നിങ്ങളത് ചെയ്താൽ, അത് "
+"ആർക്കും ലഭ്യമല്ലാതാകും"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "കണ്ണി വിജയകരമായി മായിച്ചു"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "സാധൂകരിക്കാനുള്ള ഇമെയിൽ ഞങ്ങൾ അയച്ചിരിക്കുന്നു"
+
+msgid "common.share-link.get-link"
+msgstr "കണ്ണി നേടുക"
+
+msgid "common.share-link.link-copied-success"
+msgstr "കണ്ണി വിജയകരമായി പകർത്തി"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "പ്രാപ്യമാണ്"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "കാണാവുന്നതാണ്"
+
+msgid "common.share-link.permissions-hint"
+msgstr "കണ്ണിയുള്ള ആർക്കും പ്രാപ്യമാകും"
+
+msgid "common.share-link.placeholder"
+msgstr "പങ്കുവെക്കാവുന്ന കണ്ണി ഇവിടെ ലഭ്യമാകും"
+
+msgid "common.share-link.remove-link"
+msgstr "കണ്ണി നീക്കുക"
+
+msgid "common.share-link.title"
+msgstr "പ്രോട്ടോടൈപ്പുകൾ പങ്കുവെയ്ക്കുക"
+
+msgid "common.share-link.view-all-pages"
+msgstr "എല്ലാ താളുകളും"
+
+msgid "common.share-link.view-current-page"
+msgstr "ഈ താൾ മാത്രം"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "തിരഞ്ഞെടുത്ത താളുകൾ"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "പങ്കിട്ട ലൈബ്രറിയായി ചേർക്കുക"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "ഇമെയിൽ മാറ്റുക"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(പകർത്തുക)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ പുതിയ സംഘം രൂപീകരിക്കുക"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "നിങ്ങളുടെ പെൻപോട്ട്"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "സംഘത്തെ നീക്കുക"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.empty-files"
+msgstr "നിങ്ങൾക്കിതുവരെയും ഇവിടെ ഫയലുകളില്ല"
+
+msgid "dashboard.export-multi"
+msgstr "പെൻപോട്ട് %s ഫയലുകൾ എക്സ്പോർട്ട് ചെയ്യുക"
+
+msgid "dashboard.draft-title"
+msgstr "ഡ്രാഫ്റ്റ്"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "പകർപ്പ്"
+
+msgid "dashboard.export-single"
+msgstr "പെൻപോട്ട് ഫയൽ എക്സ്പോർട്ട് ചെയ്യുക"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "%s ഫയലുകളുടെ പകർപ്പ്"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"ഇതുവരെയും ഇവിടെ ഫയലുകളില്ല. നിങ്ങൾക്ക് ചില ടെമ്പ്ലേറ്റുകൾ "
+"പരീക്ഷിക്കണമെന്നുണ്ടെങ്കിൽ [ലൈബ്രറികളുടെയും ടെമ്പ്ലേറ്റുകളുടെയും "
+"വിഭാഗത്തിലേക്ക്] (https://penpot.app/libraries-templates.html) പോകാവുന്നതാണ്"
+
+msgid "dashboard.export-frames"
+msgstr "ആർട്ട്ബോർഡുകൾ പിഡിഎഫായി എക്സ്പോർട്ട് ചെയ്യുക...."
+
+msgid "dashboard.export.detail"
+msgstr "* ഘടകങ്ങൾ, ഗ്രാഫിക്സ്, നിറങ്ങൾ അല്ലെങ്കിൽ മുദ്രണകലകൾ എന്നിവ ഉൾപ്പെടാം."

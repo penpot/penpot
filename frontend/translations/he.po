@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-01-15 16:53+0000\n"
+"PO-Revision-Date: 2022-02-24 19:53+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 4.10.1\n"
+"X-Generator: Weblate 4.11-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1527,7 +1527,7 @@ msgstr "הסרת „%s” כספריה משותפת"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
-msgstr "עדכון רכיב"
+msgstr "עדכון"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
@@ -2296,7 +2296,7 @@ msgstr "ייצוא"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "ייצוא צורה"
+msgstr "ייצוא"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3360,3 +3360,139 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "מסכה"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "הינד קטן"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "הסתרת לוח גופנים"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "עריכה"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "איפוס"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "מילוי - שינוי גודל כדי למלא"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "התאמה - שינוי גודל כדי להתאים"
+
+msgid "errors.email-as-password"
+msgstr "אין לך אפשרות להשתמש בכתובת הדוא״ל שלך כסיסמה"
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "רכיב"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "רכיבים לעדכון:"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "על Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "מרכז העזרה"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "החשבון שלך"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "ספריות ותבניות"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "כמות ההינד"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "העדפות"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "תצוגה"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "הינד גדול"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "עדכון רכיבים בספרייה משותפת"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "השבתת הצמדה לקווים המנחים"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "קובץ"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "הצגת לוח גופנים"
+
+msgid "workspace.options.recent-fonts"
+msgstr "אחרונים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"פעולה זו תעדכן רכיבים בספרייה משותפת. עשוי להשפיע על קבצים אחרים שמשתמשים בה."
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "הצמדה לקווים מנחים"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "טיפוגרפיות (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "עדכון הרכיבים הראשיים"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "בחירת שכבה"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "התמקדות על הנבחר"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-full-screen"
+msgstr "מסך מלא"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "הצגה בייצואים"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "הצגת/הסתרת מנשק משתמש"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "הסתרת שמות משטחי יצירה"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "הצגת שמות משטחי יצירה"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "כיוון תקריב כדי להציג הכול"
