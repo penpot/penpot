@@ -214,6 +214,9 @@
 
    {:name "0068-mod-storage-object-table"
     :fn (mg/resource "app/migrations/sql/0068-mod-storage-object-table.sql")}
+
+   {:name "0069-add-file-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0069-add-file-thumbnail-table.sql")}
    ])
 
 
