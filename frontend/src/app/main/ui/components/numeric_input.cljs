@@ -76,11 +76,8 @@
           (mf/deps ref min-val max-val value nillable default-val)
           (fn []
             (let [input-node (mf/ref-val ref)
-                  drop-ending-point #(if (str/ends-with? % ".")
-                                       (str/join "" (drop-last %))
-                                       %)
                   new-value (-> (dom/get-value input-node)
-                                (drop-ending-point)
+                                (str/strip-suffix ".")
                                 (sm/expr-eval value))]
               (cond
                 (d/num? new-value)
