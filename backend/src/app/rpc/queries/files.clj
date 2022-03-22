@@ -7,11 +7,14 @@
 (ns app.rpc.queries.files
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.db.sql :as sql]
+   [app.rpc.helpers :as rpch]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as projects]
    [app.rpc.queries.share-link :refer [retrieve-share-link]]
@@ -267,7 +270,9 @@
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
   (check-read-permissions! pool profile-id file-id)
   (let [file (retrieve-file cfg file-id)]
-    (get-thumbnail-data file props)))
+    {:data (get-thumbnail-data file props)
+     :file-id file-id
+     :revn (:revn file)}))
 
 (defn get-thumbnail-data
   [{:keys [data] :as file} props]
@@ -324,7 +329,6 @@
                 objects))]
 
     (update data :objects update-objects)))
-
 
 ;; --- Query: Shared Library Files
 
@@ -424,22 +428,48 @@
   (teams/check-read-permissions! pool profile-id team-id)
   (db/exec! pool [sql:team-recent-files team-id]))
 
+;; --- QUERY: get all file frame thumbnails
 
-;; --- QUERY: get the thumbnail for an frame
+(s/def ::file-frame-thumbnails
+  (s/keys :req-un [::profile-id ::file-id]
+          :opt-un [::frame-id]))
 
-(def ^:private sql:file-frame-thumbnail
-  "select data
-     from file_frame_thumbnail
-    where file_id = ?
-      and frame_id = ?")
-
-(s/def ::file-frame-thumbnail
-  (s/keys :req-un [::profile-id ::file-id ::frame-id]))
-
-(sv/defmethod ::file-frame-thumbnail
+(sv/defmethod ::file-frame-thumbnails
   [{:keys [pool]} {:keys [profile-id file-id frame-id]}]
   (check-read-permissions! pool profile-id file-id)
-  (db/exec-one! pool [sql:file-frame-thumbnail file-id frame-id]))
+  (let [params (cond-> {:file-id file-id}
+                 frame-id (assoc :frame-id frame-id))
+        rows   (db/query pool :file-frame-thumbnail params)]
+    (d/group-by :frame-id :data rows)))
+
+;; --- QUERY: get file thumbnail
+
+(s/def ::revn ::us/integer)
+
+(s/def ::file-thumbnail
+  (s/keys :req-un [::profile-id ::file-id]
+          :opt-un [::revn]))
+
+(sv/defmethod ::file-thumbnail
+  [{:keys [pool]} {:keys [profile-id file-id revn]}]
+  (check-read-permissions! pool profile-id file-id)
+  (let [sql (sql/select :file-thumbnail
+                        (cond-> {:file-id file-id}
+                          revn (assoc :revn revn))
+                        {:limit 1
+                         :order-by [[:revn :desc]]})
+
+        row (db/exec-one! pool sql)]
+
+    (when-not row
+      (ex/raise :type :not-found
+                :code :file-thumbnail-not-found))
+
+    (with-meta {:data (:data row)
+                :props (some-> (:props row) db/decode-transit-pgobject)
+                :revn (:revn row)
+                :file-id (:file-id row)}
+      {:transform-response (rpch/http-cache {:max-age (* 1000 60 60)})})))
 
 ;; --- Helpers
 

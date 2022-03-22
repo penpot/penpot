@@ -16,6 +16,10 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
+(defn- not-found?
+  [{:keys [type]}]
+  (= :not-found type))
+
 (defn- handle-response
   [response]
   (cond
@@ -29,30 +33,70 @@
     (rx/throw {:type :unexpected
                :code (:error response)})))
 
-(defn- request-thumbnail
-  [file-id]
-  (let [uri     (u/join (cfg/get-public-uri) "api/rpc/query/file-data-for-thumbnail")
+(defn- request-data-for-thumbnail
+  [file-id revn]
+  (let [path    "api/rpc/query/file-data-for-thumbnail"
         params  {:file-id file-id
+                 :revn revn
                  :strip-frames-with-thumbnails true}
         request {:method :get
-                 :uri uri
+                 :uri (u/join (cfg/get-public-uri) path)
                  :credentials "include"
                  :query params}]
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
-(defn render-frame
-  [data]
+(defn- request-thumbnail
+  [file-id revn]
+  (let [path    "api/rpc/query/file-thumbnail"
+        params  {:file-id file-id
+                 :revn revn}
+        request {:method :get
+                 :uri (u/join (cfg/get-public-uri) path)
+                 :credentials "include"
+                 :query params}]
+    (->> (http/send! request)
+         (rx/map http/conditional-decode-transit)
+         (rx/mapcat handle-response))))
+
+(defn- render-thumbnail
+  [{:keys [data file-id revn] :as params}]
   (let [elem (if-let [frame (:thumbnail-frame data)]
                (mf/element render/frame-svg #js {:objects (:objects data) :frame frame})
                (mf/element render/page-svg #js {:data data :width "290" :height "150" :thumbnails? true}))]
-    (rds/renderToStaticMarkup elem)))
+    {:data (rds/renderToStaticMarkup elem)
+     :fonts @fonts/loaded
+     :file-id file-id
+     :revn revn}))
+
+(defn- persist-thumbnail
+  [{:keys [file-id data revn fonts]}]
+  (let [path    "api/rpc/mutation/upsert-file-thumbnail"
+        params  {:file-id file-id
+                 :revn revn
+                 :props {:fonts fonts}
+                 :data data}
+        request {:method :post
+                 :uri (u/join (cfg/get-public-uri) path)
+                 :credentials "include"
+                 :body (http/transit-data params)}]
+    (->> (http/send! request)
+         (rx/map http/conditional-decode-transit)
+         (rx/mapcat handle-response)
+         (rx/map (constantly params)))))
 
 (defmethod impl/handler :thumbnails/generate
-  [{:keys [file-id] :as message}]
-  (->> (request-thumbnail file-id)
-       (rx/map
-        (fn [data]
-          {:svg (render-frame data)
-           :fonts @fonts/loaded}))))
+  [{:keys [file-id revn] :as message}]
+  (letfn [(on-result [{:keys [data props]}]
+            {:data data
+             :fonts (:fonts props)})
+
+          (on-cache-miss [_]
+            (->> (request-data-for-thumbnail file-id revn)
+                 (rx/map render-thumbnail)
+                 (rx/mapcat persist-thumbnail)))]
+
+    (->> (request-thumbnail file-id revn)
+         (rx/catch not-found? on-cache-miss)
+         (rx/map on-result))))

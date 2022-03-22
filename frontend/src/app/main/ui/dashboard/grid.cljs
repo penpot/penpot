@@ -27,8 +27,6 @@
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [cuerdas.core :as str]
-   [promesa.core :as p]
    [rumext.alpha :as mf]))
 
 (log/set-level! :warn)
@@ -38,57 +36,15 @@
 (def ^:const CACHE-NAME "penpot")
 (def ^:const CACHE-URL "https://penpot.app/cache/")
 
-
 (defn use-thumbnail-cache
   "Creates some hooks to handle the files thumbnails cache"
   [file]
-
-  (let [cache-url (str CACHE-URL (:id file) "/" (:revn file) ".svg")
-        get-thumbnail
-        (mf/use-callback
-         (mf/deps cache-url)
-         (fn []
-           (p/let [response (.match js/caches cache-url)]
-             (when (some? response)
-               (p/let [blob         (.blob response)
-                       svg-content  (.text blob)
-                       headers      (.-headers response)
-                       fonts-header (or (.get headers "X-PENPOT-FONTS") "")
-                       fonts        (into #{}
-                                          (remove #(= "" %))
-                                          (str/split fonts-header ","))]
-                 {:svg   svg-content
-                  :fonts fonts})))))
-
-        cache-thumbnail
-        (mf/use-callback
-         (mf/deps cache-url)
-         (fn [{:keys [svg fonts]}]
-           (p/let [cache    (.open js/caches CACHE-NAME)
-                   blob     (js/Blob. #js [svg] #js {:type "image/svg"})
-                   fonts    (str/join "," fonts)
-                   headers  (js/Headers. #js {"X-PENPOT-FONTS" fonts})
-                   response (js/Response. blob #js {:headers headers})]
-             (.put cache cache-url response))))]
-
-    (mf/use-callback
-     (mf/deps (:id file) (:revn file))
-     (fn []
-       (->> (rx/from (get-thumbnail))
-            (rx/merge-map
-             (fn [thumb-data]
-               (log/debug :msg "retrieve thumbnail" :file (:id file) :revn (:revn file)
-                          :cache (if (some? thumb-data) :hit :miss))
-
-               (if (some? thumb-data)
-                 (rx/of thumb-data)
-                 (->> (wrk/ask! {:cmd :thumbnails/generate
-                                 :file-id (:id file)})
-                      (rx/tap cache-thumbnail)))))
-
-            ;; If we have a problem we delegate to the thumbnail generation
-            (rx/catch #(wrk/ask! {:cmd :thumbnails/generate
-                                  :file-id (:id file)})))))))
+  (mf/use-fn
+   (mf/deps (:id file) (:revn file))
+   (fn []
+     (wrk/ask! {:cmd :thumbnails/generate
+                :revn (:revn file)
+                :file-id (:id file)}))))
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap [mf/memo]}
@@ -100,10 +56,10 @@
      (mf/deps file)
      (fn []
        (->> (generate)
-            (rx/subs (fn [{:keys [svg fonts]}]
+            (rx/subs (fn [{:keys [data fonts] :as params}]
                        (run! fonts/ensure-loaded! fonts)
                        (when-let [node (mf/ref-val container)]
-                         (dom/set-html! node svg)))))))
+                         (dom/set-html! node data)))))))
 
     [:div.grid-item-th {:style {:background-color (get-in file [:data :options :background])}
                         :ref container}

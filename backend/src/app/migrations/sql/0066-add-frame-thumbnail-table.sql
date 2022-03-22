@@ -8,3 +8,6 @@ CREATE TABLE file_frame_thumbnail (
 
   PRIMARY KEY(file_id, frame_id)
 );
+
+ALTER TABLE file_frame_thumbnail
+  ALTER COLUMN data SET STORAGE external;
