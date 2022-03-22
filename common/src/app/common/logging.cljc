@@ -184,11 +184,15 @@
               `(do
                  (send-off logging-agent
                            (fn [_#]
-                             (with-context (into {:id (uuid/next)}
-                                                 (get-error-context ~cause)
-                                                 ~context)
-                               (->> (or ~raw (build-map-message ~props))
-                                    (write-log! ~logger-sym ~level-sym ~cause)))))
+                             (try
+                               (with-context (-> {:id (uuid/next)}
+                                                 (into ~context)
+                                                 (into (get-error-context ~cause)))
+                                 (->> (or ~raw (build-map-message ~props))
+                                      (write-log! ~logger-sym ~level-sym ~cause)))
+                               (catch Throwable cause#
+                                 (write-log! ~logger-sym (get-level :error) cause#
+                                             "unexpected error on writting log")))))
                  nil)
               `(let [message# (or ~raw (build-map-message ~props))]
                  (write-log! ~logger-sym ~level-sym ~cause message#)
