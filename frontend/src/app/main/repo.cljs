@@ -108,7 +108,7 @@
 (defn- send-export-command
   [& {:keys [cmd params blob?]}]
   (->> (http/send! {:method :post
-                    :uri (u/join base-uri "export")
+                    :uri (u/join base-uri "api/export")
                     :body (http/transit-data (assoc params :cmd cmd))
                     :credentials "include"
                     :response-type (if blob? :blob :text)})
@@ -137,7 +137,7 @@
                 :wait false
                 :exports exports}]
     (->> (http/send! {:method :post
-                      :uri (u/join base-uri "export")
+                      :uri (u/join base-uri "api/export")
                       :body (http/transit-data params)
                       :credentials "include"
                       :response-type :blob})

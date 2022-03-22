@@ -27,10 +27,11 @@
 (defn- get-mtype
   [type]
   (case (d/name type)
-    "zip" "application/zip"
+    "zip"  "application/zip"
+    "pdf"  "application/pdf"
+    "svg"  "image/svg+xml"
     "jpeg" "image/jpeg"
-    "png"  "image/png"
-    "pdf"  "application/pdf"))
+    "png"  "image/png"))
 
 (defn create
   "Generates ephimeral resource object."

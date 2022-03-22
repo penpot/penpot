@@ -65,7 +65,7 @@
 
 (defn- wrap-body-params
   [handler]
-  (let [opts #js {:limit "2mb" :encoding "utf8"}]
+  (let [opts #js {:limit "60mb" :encoding "utf8"}]
     (fn [{:keys [:request/method :request/headers request] :as exchange}]
       (let [ctype (get headers "content-type")]
         (if (= method "post")

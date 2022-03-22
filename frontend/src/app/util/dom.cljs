@@ -6,13 +6,14 @@
 
 (ns app.util.dom
   (:require
-    [app.common.exceptions :as ex]
-    [app.common.geom.point :as gpt]
-    [app.util.globals :as globals]
-    [app.util.object :as obj]
-    [cuerdas.core :as str]
-    [goog.dom :as dom]
-    [promesa.core :as p]))
+   [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
+   [app.common.geom.point :as gpt]
+   [app.util.globals :as globals]
+   [app.util.object :as obj]
+   [cuerdas.core :as str]
+   [goog.dom :as dom]
+   [promesa.core :as p]))
 
 ;; --- Deprecated methods
 
@@ -33,25 +34,25 @@
 
 ;; --- New methods
 
+(declare get-elements-by-tag)
+
 (defn set-html-title
   [^string title]
   (set! (.-title globals/document) title))
 
-(defn set-page-style
-  [style]
-  (let [head (first (.getElementsByTagName ^js globals/document "head"))
-        style-str (str/join "\n"
-                            (map (fn [[k v]]
-                                   (str (name k) ": " v ";"))
-                                 style))]
-    (.insertAdjacentHTML head "beforeend"
-                         (str "<style>"
-                              "  @page {" style-str "}"
-                              "  html, body {"            ; Fix issue having Chromium to add random 1px margin at the bottom
-                              "    overflow: hidden;"     ; https://github.com/puppeteer/puppeteer/issues/2278#issuecomment-410381934
-                              "    font-size: 0;"
-                              "  }"
-                              "</style>"))))
+(defn set-page-style!
+  [styles]
+  (let [node  (first (get-elements-by-tag globals/document "head"))
+        style (reduce-kv (fn [res k v]
+                           (conj res (dm/str (str/css-selector k) ":" v ";")))
+                         []
+                         styles)
+        style (dm/str "<style>\n"
+                      "  @page {" (str/join " " style) "}\n "
+                      "  html, body {font-size:0; margin:0; padding:0}\n "
+                      "</style>")]
+    (.insertAdjacentHTML ^js node "beforeend" style)))
+
 
 (defn get-element-by-class
   ([classname]

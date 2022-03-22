@@ -13,6 +13,7 @@
    [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.config :as cf]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -20,10 +21,14 @@
 
 (defn screenshot-object
   [{:keys [file-id page-id object-id token scale type uri]}]
-  (p/let [path (str "/render-object/" file-id "/" page-id "/" object-id)
-          uri  (-> (or uri (cf/get :public-uri))
-                   (assoc :path "/")
-                   (assoc :fragment path))]
+  (p/let [params {:file-id file-id
+                  :page-id page-id
+                  :object-id object-id
+                  :route "render-object"}
+
+          uri    (-> (or uri (cf/get :public-uri))
+                     (assoc :path "/render.html")
+                     (assoc :query (u/map->query-string params)))]
     (bw/exec!
      #js {:screen #js {:width bw/default-viewport-width
                        :height bw/default-viewport-height}

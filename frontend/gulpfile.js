@@ -136,6 +136,7 @@ function templatePipeline(options) {
   return function() {
     const input = options.input;
     const output = options.output;
+    const name = options.name;
 
     const ts = Math.floor(new Date());
     const th = process.env.APP_THEME || "default";
@@ -154,7 +155,7 @@ function templatePipeline(options) {
 
     return gulp.src(input)
       .pipe(tmpl)
-      .pipe(gulpRename("index.html"))
+      .pipe(gulpRename(name))
       .pipe(gulp.dest(output))
       .pipe(touch());
   };
@@ -191,11 +192,18 @@ gulp.task("svg:sprite:cursors", function() {
 });
 
 gulp.task("template:main", templatePipeline({
+  name: "index.html",
   input: paths.resources + "templates/index.mustache",
   output: paths.output
 }));
 
-gulp.task("templates", gulp.series("svg:sprite:icons", "svg:sprite:cursors", "template:main"));
+gulp.task("template:render", templatePipeline({
+  name: "render.html",
+  input: paths.resources + "templates/render.mustache",
+  output: paths.output
+}));
+
+gulp.task("templates", gulp.series("svg:sprite:icons", "svg:sprite:cursors", "template:main", "template:render"));
 
 gulp.task("polyfills", function() {
   return gulp.src(paths.resources + "polyfills/*.js")
