@@ -597,6 +597,8 @@
                            new-state
                            new-instance-id)]
 
+                     ; TODO: get and check the instance inside component [Rect-2]
+
                      (t/is (not= (:id instance1) (:id instance3)))
                      (t/is (= (:id component) component-id))
                      (t/is (= (:name instance3) "Rect-3"))

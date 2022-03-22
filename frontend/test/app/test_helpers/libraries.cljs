@@ -63,7 +63,7 @@
         shapes-inst (cph/get-children-with-self (:objects page)
                                                 root-inst-id)]
     (is-instance-root (first shapes-inst))
-    (run! is-instance-child (rest shapes-inst))
+    (run! is-instance-inner (rest shapes-inst))
 
     shapes-inst))
 
