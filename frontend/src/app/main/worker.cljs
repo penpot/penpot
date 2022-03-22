@@ -7,11 +7,8 @@
 (ns app.main.worker
   (:require
    [app.config :as cfg]
+   [app.main.errors :as err]
    [app.util.worker :as uw]))
-
-(defn on-error
-  [error]
-  (js/console.error "Error on worker" (pr-str error)))
 
 (defonce instance (atom nil))
 
@@ -19,7 +16,7 @@
   []
   (reset!
    instance
-   (uw/init cfg/worker-uri on-error)))
+   (uw/init cfg/worker-uri err/on-error)))
 
 (defn ask!
   [message]
