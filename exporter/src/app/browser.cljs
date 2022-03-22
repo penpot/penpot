@@ -167,5 +167,4 @@
       (-> (p/do! (.acquire ^js pool))
           (p/then (partial on-acquire pool))
           (p/catch (fn [cause]
-                     (js/console.log "KKK" cause)
                      (p/rejected cause)))))))
