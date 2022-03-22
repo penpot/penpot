@@ -342,13 +342,26 @@
 
 ;; --- MUTATION: Update Profile (own)
 
+(defn- update-profile-newsletter-subscribed
+  [conn profile-id newsletter-subscribed]
+  (let [profile (profile/retrieve-profile-data conn profile-id)
+        props (:props profile)
+        props (assoc props :newsletter-subscribed newsletter-subscribed)
+        ]
+    (db/update! conn :profile
+                {:props (db/tjson props)}
+                {:id profile-id})))
+
 (defn- update-profile
-  [conn {:keys [id fullname lang theme] :as params}]
+  [conn {:keys [id fullname lang theme newsletter-subscribed] :as params}]
   (let [profile (db/update! conn :profile
                             {:fullname fullname
                              :lang lang
                              :theme theme}
-                            {:id id})]
+                            {:id id})
+        profile (if (some? newsletter-subscribed)
+                  (update-profile-newsletter-subscribed conn id newsletter-subscribed)
+                  profile)]
     (-> profile
         (profile/decode-profile-row)
         (profile/strip-private-attrs))))

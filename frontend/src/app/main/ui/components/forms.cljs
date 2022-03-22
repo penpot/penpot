@@ -59,15 +59,15 @@
 
         klass (str more-classes " "
                    (dom/classnames
-                     :focus          @focus?
-                     :valid          (and touched? (not error))
-                     :invalid        (and touched? error)
-                     :disabled       disabled
-                     :empty          (and is-text? (str/empty? value))
-                     :with-icon      (not (nil? help-icon'))
-                     :custom-input   is-text?
-                     :input-radio    is-radio?
-                     :input-checkbox is-checkbox?))
+                    :focus          @focus?
+                    :valid          (and touched? (not error))
+                    :invalid        (and touched? error)
+                    :disabled       disabled
+                    :empty          (and is-text? (str/empty? value))
+                    :with-icon      (not (nil? help-icon'))
+                    :custom-input   is-text?
+                    :input-radio    is-radio?
+                    :input-checkbox is-checkbox?))
 
         swap-text-password
         (fn []
@@ -97,6 +97,7 @@
                          :placeholder label
                          :on-change on-change
                          :type @type')
+                (cond-> (and value is-checkbox?) (assoc :default-checked value))
                   (obj/clj->props))]
 
     [:div
@@ -210,7 +211,7 @@
   (let [form (or form (mf/use-ctx form-ctx))]
     [:input.btn-primary.btn-large
      {:name "submit"
-      :class (when-not (:valid @form) "btn-disabled")
+      :class (when (or (not (:valid @form)) (true? disabled)) "btn-disabled")
       :disabled (or (not (:valid @form)) (true? disabled))
       :on-click on-click
       :value label

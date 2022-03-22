@@ -10,6 +10,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
+   [app.main.ui.onboarding.newsletter]
    [app.main.ui.onboarding.questions]
    [app.main.ui.onboarding.team-choice]
    [app.main.ui.onboarding.templates]
@@ -154,7 +155,7 @@
         skip
         (mf/use-callback
          (st/emitf (modal/hide)
-                   (modal/show {:type :onboarding-choice})
+                   (modal/show {:type :onboarding-newsletter-modal})
                    (du/mark-onboarding-as-viewed)))]
 
     (mf/use-layout-effect

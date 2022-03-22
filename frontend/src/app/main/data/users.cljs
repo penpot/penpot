@@ -304,7 +304,7 @@
       (let [mdata      (meta data)
             on-success (:on-success mdata identity)
             on-error   (:on-error mdata #(rx/throw %))]
-        (->> (rp/mutation :update-profile data)
+        (->> (rp/mutation :update-profile (dissoc data :props))
              (rx/catch on-error)
              (rx/mapcat
               (fn [_]
@@ -391,7 +391,6 @@
                       :release-notes-viewed version}]
          (->> (rp/mutation :update-profile-props {:props props})
               (rx/map (constantly (fetch-profile)))))))))
-
 
 (defn mark-questions-as-answered
   []
