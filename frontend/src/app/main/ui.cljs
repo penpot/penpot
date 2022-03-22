@@ -110,19 +110,7 @@
                                    :index index
                                    :share-id share-id}]))
 
-       :render-object
-       (do
-         (let [file-id      (uuid (get-in route [:path-params :file-id]))
-               page-id      (uuid (get-in route [:path-params :page-id]))
-               object-id    (uuid (get-in route [:path-params :object-id]))
-               embed?       (= (get-in route [:query-params :embed]) "true")
-               render-texts (get-in route [:query-params :render-texts])]
-           [:& render/render-object {:file-id file-id
-                                     :page-id page-id
-                                     :object-id object-id
-                                     :embed? embed?
-                                     :render-texts? (and (some? render-texts) (= render-texts "true"))}]))
-
+       ;; TODO: maybe move to `app.render` entrypoint (handled by render.html)
        :render-sprite
        (do
          (let [file-id      (uuid (get-in route [:path-params :file-id]))
