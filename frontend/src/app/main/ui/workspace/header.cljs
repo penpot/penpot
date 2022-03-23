@@ -186,7 +186,7 @@
         (mf/use-callback
          (mf/deps file frames)
          (fn [_]
-           (st/emit! (de/show-workspace-export-frames-dialog frames))))
+           (st/emit! (de/show-workspace-export-frames-dialog (reverse frames)))))
 
         on-item-hover
         (mf/use-callback
