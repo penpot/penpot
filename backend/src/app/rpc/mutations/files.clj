@@ -58,8 +58,9 @@
          (db/insert! conn :file-profile-rel))))
 
 (defn create-file
-  [conn {:keys [id name project-id is-shared data deleted-at]
+  [conn {:keys [id name project-id is-shared data deleted-at revn]
          :or {is-shared false
+              revn 0
               deleted-at nil}
          :as params}]
   (let [id   (or id (:id data) (uuid/next))
@@ -68,6 +69,7 @@
                          {:id id
                           :project-id project-id
                           :name name
+                          :revn revn
                           :is-shared is-shared
                           :data (blob/encode data)
                           :deleted-at deleted-at})]
@@ -500,13 +502,13 @@
 ;; --- Mutation: Upsert file thumbnail
 
 (def sql:upsert-file-thumbnail
-  "insert into file_thumbnail(file_id, revn, data, props)
-   values (?, ?, ?, ?)
+  "insert into file_thumbnail (file_id, revn, data, props)
+   values (?, ?, ?, ?::jsonb)
        on conflict(file_id, revn) do
-          update set data = ?, updated_at=now();")
+          update set data = ?, props=?, updated_at=now();")
 
-(s/def ::revn  ::us/integer)
-(s/def ::props (s/map-of ::us/keyword any?))
+(s/def ::revn ::us/integer)
+(s/def ::props map?)
 (s/def ::upsert-file-thumbnail
   (s/keys :req-un [::profile-id ::file-id ::revn ::data ::props]))
 
@@ -516,5 +518,5 @@
     (files/check-edition-permissions! conn profile-id file-id)
     (let [props (db/tjson (or props {}))]
       (db/exec-one! conn [sql:upsert-file-thumbnail
-                          file-id revn data props data])
+                          file-id revn data props data props])
       nil)))

@@ -233,14 +233,14 @@
   ([ds table params opts]
    (exec-one! ds
               (sql/insert table params opts)
-              (assoc opts :return-keys true))))
+              (merge {:return-keys true} opts))))
 
 (defn insert-multi!
   ([ds table cols rows] (insert-multi! ds table cols rows nil))
   ([ds table cols rows opts]
    (exec! ds
           (sql/insert-multi table cols rows opts)
-          (assoc opts :return-keys true))))
+          (merge {:return-keys true} opts))))
 
 (defn update!
   ([ds table params where] (update! ds table params where nil))
