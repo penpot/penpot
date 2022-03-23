@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-22 11:53+0000\n"
+"PO-Revision-Date: 2022-03-25 07:03+0000\n"
 "Last-Translator: bingling_sama <bingling_sama@qq.com>\n"
-"Language-Team: Chinese (Simplified) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -77,7 +77,7 @@ msgstr "使用LDAP登录"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "使用OpenID (SSO)登录"
+msgstr "使用OpenID登录"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -262,9 +262,8 @@ msgstr "导出文件"
 msgid "dashboard.export.detail"
 msgstr "* 可能包含组件、图形、颜色和/或排版。"
 
-#, fuzzy
 msgid "dashboard.export.explain"
-msgstr "你想导出的一个或多个文件用到了共享库。你想怎么处理它们的涉及资产？"
+msgstr "你想导出的一个或多个文件用到了共享库。你想怎么处理它们的素材？"
 
 msgid "dashboard.export.options.all.message"
 msgstr "使用了共享库的文件将会在导出时保持引用"
@@ -1399,7 +1398,7 @@ msgstr "如果不能推选另一个成员作为团队所有者，你就无法离
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
-msgstr "你是%s的所有者。"
+msgstr "你是此团队的所有者。在你离开团队之前，请选择其他成员晋升为所有者。"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint2"
@@ -1415,7 +1414,7 @@ msgstr "选择一位成员晋升"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.title"
-msgstr "选择一位成员晋升"
+msgstr "在你离开之前"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.accept"
@@ -1431,15 +1430,15 @@ msgstr "正在退出团队"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
-msgstr "晋升"
+msgstr "转让所有权"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
-msgstr "你确定想要晋升该用户为所有者？"
+msgstr "您是此团队的所有者，你确定想要将所有者转让给该成员？"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
-msgstr "晋升为所有者"
+msgstr "新增团队所有者"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
@@ -2775,3 +2774,197 @@ msgstr "更新"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "组件"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "库&模板"
+
+msgid "labels.close"
+msgstr "关闭"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "帮助中心"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "你的账户"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr "你即将更新共享库中的组件，这可能会影响使用这些组件的其他文档"
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "您尝试分配的成员不存在。"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "全部取消"
+
+msgid "dashboard.export.options.detach.message"
+msgstr "导出文件中将不包含共享库，素材也不会被添加到库中。 "
+
+msgid "labels.export"
+msgstr "导出"
+
+msgid "labels.link"
+msgstr "链接"
+
+msgid "labels.next"
+msgstr "下一个"
+
+msgid "onboarding.choice.desc"
+msgstr "想要如何开始？"
+
+msgid "onboarding.choice.fly-solo"
+msgstr "单飞"
+
+msgid "onboarding.choice.fly-solo-desc"
+msgstr "跳转到Penpot并开始进行您自己的设计。"
+
+msgid "onboarding.choice.team-up"
+msgstr "组建团队"
+
+msgid "onboarding.choice.team-up-desc"
+msgstr "你在和别人合作吗？创建一个团队，邀请成员参与合作，共享设计素材。"
+
+msgid "onboarding.choice.title"
+msgstr "欢迎来到Penpot"
+
+msgid "labels.edit-file"
+msgstr "编辑文档"
+
+#: src/app/main/ui/export.cljs
+#, fuzzy
+msgid "dashboard.export-shapes.title"
+msgstr "导出已选中"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "处理页面中：%s"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "此邮箱[%s]已被标记为垃圾邮件或已被永久拉黑。"
+
+msgid "errors.team-leave.insufficient-members"
+msgstr "离开团队后成员不足，您是否要将其删除？"
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "所有者不能离开团队，您必须转让所有者角色。"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "蒙版"
+
+msgid "labels.continue-with"
+msgstr "继续"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "删除邀请"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr "点击\"邀请加入团队\"，邀请更多成员加入这个团队。"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "待办"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "删除成员"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "重新发送邀请"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "状态"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(你)"
+
+msgid "modals.invite-member.emails"
+msgstr "电子邮件，以逗号分隔"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr "如果你转移所有权，你的角色将变为管理员，失去对这个团队的一些权限。 "
+
+msgid "onboarding.contrib.alt"
+msgstr "开源"
+
+msgid "onboarding.contrib.desc1"
+msgstr "Penpot是开源的，由社区制作并为社区服务。如果你想合作，我们非常欢迎!"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "您可以访问"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "并遵循贡献说明:)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "关于 Penpot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "更新共享库组件"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "导出为PDF"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "成员"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr "你可以在设计选项中为元素添加导出设置（位于右侧边栏底部）"
+
+msgid "dashboard.export.options.merge.message"
+msgstr "导出您的文件时所有的外部素材将会被合并到库中。"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "已到期"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "邀请"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "没有邀请。"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr "你是此团队的所有者。在你离开团队之前，请选择其他成员晋升为所有者。"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "您确定要离开 %s 团队吗？"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr "由于你是这个团队的唯一成员，这个团队将连同其项目和文件一起被删除。"
+
+msgid "labels.continue"
+msgstr "继续"
+
+msgid "labels.default"
+msgstr "默认"
+
+msgid "labels.skip"
+msgstr "跳过"
+
+msgid "labels.start"
+msgstr "开始"
+
+msgid "labels.workspace"
+msgstr "工作区"
