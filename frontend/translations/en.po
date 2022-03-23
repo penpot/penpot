@@ -117,9 +117,6 @@ msgstr "Password"
 msgid "auth.password-length-hint"
 msgstr "At least 8 characters"
 
-msgid "auth.and"
-msgstr "and"
-
 msgid "auth.privacy-policy"
 msgstr "Privacy policy"
 
@@ -1021,6 +1018,9 @@ msgstr "Admin"
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.all"
 msgstr "All"
+
+msgid "labels.and"
+msgstr "and"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"

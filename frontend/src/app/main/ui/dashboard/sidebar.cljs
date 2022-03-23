@@ -26,6 +26,7 @@
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.router :as rt]
    [beicon.core :as rx]
@@ -169,7 +170,14 @@
            (let [search-input (dom/get-element "search-input")]
              (dom/clean-value! search-input)
              (dom/focus! search-input)
-             (emit! (dd/go-to-search)))))]
+             (emit! (dd/go-to-search)))))
+        
+        on-key-press
+        (mf/use-callback
+         (fn [e]
+           (when (kbd/enter? e)
+             (dom/prevent-default e)
+             (dom/stop-propagation e))))]
 
     [:form.sidebar-search
      [:input.input-text
@@ -182,6 +190,7 @@
        :on-focus on-search-focus
        :on-blur on-search-blur
        :on-change on-search-change
+       :on-key-press on-key-press
        :ref #(when % (set! (.-value %) search-term))}]
 
      (if (or @focused? (seq search-term))
