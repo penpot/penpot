@@ -93,11 +93,23 @@ More info:
 Each commit should have:
 
 - A concise subject using imperative mood.
-- The subject should have capitalized the first letter and without
-  period at the end.
+- The subject should have capitalized the first letter, without period
+  at the end and no larger than 65 characters.
 - A blank line between the subject line and the body.
 - An entry on the CHANGES.md file if applicable, referencing the
   github or taiga issue/user-story using the these same rules.
+
+Examples of good commit messags:
+
+- :bug: Fix unexpected error on launching modal
+- :bug: Set proper error message on generic error
+- :sparkles: Enable new modal for profile
+- :zap: Improve performance of dashboard navigation
+- :wrench: Update default backend configuration
+- :books: Add more documentation for authentication process
+- :ambulance: Fix critical bug on user registration process
+- :tada: Add new approach for user registration
+
 
 ## Code of conduct ##
 
