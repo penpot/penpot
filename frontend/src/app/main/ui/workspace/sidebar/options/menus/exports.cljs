@@ -49,7 +49,7 @@
          (fn [event]
            (dom/prevent-default event)
            (if (= :multiple type)
-             (st/emit! (de/show-workspace-export-dialog {:selected ids}))
+             (st/emit! (de/show-workspace-export-dialog {:selected (reverse ids)}))
 
              ;; In other all cases we only allowed to have a single
              ;; shape-id because multiple shape-ids are handled

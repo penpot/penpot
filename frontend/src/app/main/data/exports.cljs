@@ -61,7 +61,7 @@
 
              shapes   (if (seq selected)
                         (wsh/lookup-shapes state selected)
-                        (wsh/filter-shapes state #(pos? (count (:exports %)))))
+                        (reverse (wsh/filter-shapes state #(pos? (count (:exports %))))))
 
              exports  (for [shape  shapes
                             export (:exports shape)]
