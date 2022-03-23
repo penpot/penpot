@@ -7,8 +7,10 @@
 (ns app.browser
   (:require
    ["generic-pool" :as gp]
+   ["generic-pool/lib/errors" :as gpe]
    ["playwright" :as pw]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -16,6 +18,8 @@
    [promesa.core :as p]))
 
 (l/set-level! :trace)
+
+(def TimeoutError gpe/TimeoutError)
 
 ;; --- BROWSER API
 
@@ -117,21 +121,23 @@
 
 (defn init
   []
-  (l/info :msg "initializing browser pool")
-  (let [opts #js {:max (cf/get :exporter-browser-pool-max 5)
-                  :min (cf/get :exporter-browser-pool-min 0)
+  (let [opts #js {:max (cf/get :browser-pool-max 5)
+                  :min (cf/get :browser-pool-min 0)
                   :testOnBorrow true
                   :evictionRunIntervalMillis 5000
                   :numTestsPerEvictionRun 5
-                  :acquireTimeoutMillis 120000 ; 2min
+                  ;; :acquireTimeoutMillis 120000 ; 2min
+                  :acquireTimeoutMillis 10000 ; 10 s
                   :idleTimeoutMillis 10000}]
+
+    (l/info :hint "initializing browser pool" :opts opts)
     (reset! pool (gp/createPool browser-pool-factory opts))
     (p/resolved nil)))
 
 (defn stop
   []
   (when-let [pool (deref pool)]
-    (l/info :msg "finalizing browser pool")
+    (l/info :hint "finalizing browser pool")
     (p/do!
      (.drain ^js pool)
      (.clear ^js pool))))
@@ -139,6 +145,15 @@
 (defn- ex-ignore
   [p]
   (p/handle p (constantly nil)))
+
+(defn- translate-browser-errors
+  [cause]
+  (if (instance? TimeoutError cause)
+    (ex/raise :type :internal
+              :code :timeout
+              :hint (ex-message cause)
+              :cause cause)
+    (p/rejected cause)))
 
 (defn exec!
   [config handle]
@@ -166,5 +181,4 @@
     (when-let [pool (deref pool)]
       (-> (p/do! (.acquire ^js pool))
           (p/then (partial on-acquire pool))
-          (p/catch (fn [cause]
-                     (p/rejected cause)))))))
+          (p/catch translate-browser-errors)))))

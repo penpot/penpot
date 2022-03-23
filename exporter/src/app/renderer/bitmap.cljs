@@ -58,23 +58,15 @@
 (s/def ::object-id ::us/uuid)
 (s/def ::scale ::us/number)
 (s/def ::token ::us/string)
-(s/def ::origin ::us/string)
 (s/def ::uri ::us/uri)
 
 (s/def ::params
   (s/keys :req-un [::name ::suffix ::type ::object-id ::page-id ::scale ::token ::file-id]
-          :opt-un [::origin ::uri]))
+          :opt-un [::uri]))
 
 (defn render
   [params]
   (us/verify ::params params)
-  (when (and (:origin params)
-             (not (contains? (cf/get :origin-white-list) (:origin params))))
-    (ex/raise :type :validation
-              :code :invalid-origin
-              :hint "invalid origin"
-              :origin (:origin params)))
-
   (p/let [content (screenshot-object params)]
     {:data content
      :name (str (:name params)

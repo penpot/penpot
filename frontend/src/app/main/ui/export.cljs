@@ -22,7 +22,7 @@
    [rumext.alpha :as mf]))
 
 (mf/defc export-multiple-dialog
-  [{:keys [exports filename title query no-selection]}]
+  [{:keys [exports filename title query-name no-selection]}]
   (let [lstate          (mf/deref refs/export)
         in-progress?    (:in-progress lstate)
 
@@ -43,7 +43,10 @@
         (fn [event]
           (dom/prevent-default event)
           (st/emit! (modal/hide)
-                    (de/request-multiple-export {:filename filename :exports enabled-exports :query query})))
+                    (de/request-multiple-export
+                     {:filename filename
+                      :exports enabled-exports
+                      :query-name query-name})))
 
         on-toggle-enabled
         (fn [index]
@@ -143,14 +146,23 @@
    ::mf/register-as :export-shapes}
   [{:keys [exports filename]}]
   (let [title (tr "dashboard.export-shapes.title")]
-    (export-multiple-dialog {:exports exports :filename filename :title title :query :export-shapes-multiple :no-selection shapes-no-selection})))
+    [:& export-multiple-dialog
+     {:exports exports
+      :filename filename
+      :title title
+      :query-name :export-shapes-multiple
+      :no-selection shapes-no-selection}]))
 
 (mf/defc export-frames
   {::mf/register modal/components
    ::mf/register-as :export-frames}
   [{:keys [exports filename]}]
   (let [title (tr "dashboard.export-frames.title")]
-    (export-multiple-dialog {:exports exports :filename filename :title title :query :export-frames})))
+    [:& export-multiple-dialog
+     {:exports exports
+      :filename filename
+      :title title
+      :query-name :export-frames-multiple}]))
 
 (mf/defc export-progress-widget
   {::mf/wrap [mf/memo]}

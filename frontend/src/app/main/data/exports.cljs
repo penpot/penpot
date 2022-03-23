@@ -7,6 +7,7 @@
 (ns app.main.data.exports
   (:require
    [app.common.data.macros :as dm]
+   [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -117,7 +118,7 @@
                              :filename filename})))))))
 
 (defn- initialize-export-status
-  [exports filename resource-id query]
+  [exports filename resource-id query-name]
   (ptk/reify ::initialize-export-status
     ptk/UpdateEvent
     (update [_ state]
@@ -131,7 +132,7 @@
                             :exports exports
                             :filename filename
                             :last-update (dt/now)
-                            :query query}))))
+                            :query-name query-name}))))
 
 (defn- update-export-status
   [{:keys [progress status resource-id name] :as data}]
@@ -163,7 +164,7 @@
   (ptk/reify ::request-simple-export
     ptk/UpdateEvent
     (update [_ state]
-      (update state :export assoc :in-progress true))
+      (update state :export assoc :in-progress true :id uuid/zero))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -175,11 +176,17 @@
          (->> (rp/query! :export-shapes-simple params)
               (rx/map (fn [data]
                         (dom/trigger-download filename data)
-                        (fn [state]
-                          (dissoc state :export))))))))))
+                        (clear-export-state uuid/zero)))
+              (rx/catch (fn [cause]
+                          (prn "KKKK" cause)
+                          (rx/concat
+                           (rx/of (clear-export-state uuid/zero))
+                           (rx/throw cause))))))))))
 
 (defn request-multiple-export
-  [{:keys [filename exports query] :as params}]
+  [{:keys [filename exports query-name]
+    :or {query-name :export-shapes-multiple}
+    :as params}]
   (ptk/reify ::request-multiple-export
     ptk/WatchEvent
     (watch [_ state _]
@@ -200,9 +207,9 @@
                  (rx/share))
 
             stoper
-            (->> progress-stream
-                 (rx/filter #(or (= "ended" (:status %))
-                                 (= "error" (:status %)))))]
+            (rx/filter #(or (= "ended" (:status %))
+                            (= "error" (:status %)))
+                       progress-stream)]
 
         (swap! st/ongoing-tasks conj :export)
 
@@ -212,11 +219,11 @@
 
          ;; Launch the exportation process and stores the resource id
          ;; locally.
-         (->> (rp/query! query params)
+         (->> (rp/query! query-name params)
               (rx/tap (fn [{:keys [id]}]
                         (vreset! resource-id id)))
               (rx/map (fn [{:keys [id]}]
-                        (initialize-export-status exports filename id query))))
+                        (initialize-export-status exports filename id query-name))))
 
          ;; We proceed to update the export state with incoming
          ;; progress updates. We delay the stoper for give some time
@@ -245,6 +252,7 @@
   (ptk/reify ::retry-last-export
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [exports filename query]} (:export state)]
-        (rx/of (request-multiple-export {:exports exports :filename filename :query query}))))))
+      (let [params (select-keys (:export state) [:filename :exports :query-name])]
+        (when (seq params)
+          (rx/of (request-multiple-export params)))))))
 

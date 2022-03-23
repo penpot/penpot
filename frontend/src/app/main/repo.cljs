@@ -126,7 +126,7 @@
   [_ params]
   (send-export-command :cmd :export-shapes :params params :blob? false))
 
-(defmethod query :export-frames
+(defmethod query :export-frames-multiple
   [_ params]
   (send-export-command :cmd :export-frames :params (assoc params :uri (str base-uri)) :blob? false))
 

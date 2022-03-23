@@ -159,10 +159,10 @@
         server  (create-server handler)
         port    (cf/get :http-server-port 6061)]
     (.listen server port)
-    (l/info :msg "welcome to penpot"
+    (l/info :hint "welcome to penpot"
             :module "exporter"
             :version (:full @cf/version))
-    (l/info :msg "starting http server" :port port)
+    (l/info :hint "starting http server" :port port)
     (reset! instance server)))
 
 (defn stop
@@ -170,6 +170,6 @@
   (if-let [server @instance]
     (p/create (fn [resolve]
                 (.close server (fn []
-                                 (l/info :msg "shutdown http server")
+                                 (l/info :hint "shutdown http server")
                                  (resolve)))))
     (p/resolved nil)))
