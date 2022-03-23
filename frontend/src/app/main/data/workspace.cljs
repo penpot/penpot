@@ -1437,7 +1437,7 @@
           (calculate-paste-position [state mouse-pos in-viewport?]
             (let [page-objects  (wsh/lookup-page-objects state)
                   selected-objs (map #(get paste-objects %) selected)
-                  has-frame? (d/seek #(= (:type %) :frame) selected-objs)
+                  has-frame?    (d/seek #(= (:type %) :frame) selected-objs)
                   page-selected (wsh/lookup-selected state)
                   wrapper       (gsh/selection-rect selected-objs)
                   orig-pos      (gpt/point (:x1 wrapper) (:y1 wrapper))]
@@ -1524,21 +1524,18 @@
                   ;; Calculate position for the pasted elements
                   [frame-id parent-id delta index] (calculate-paste-position state mouse-pos in-viewport?)
 
-                  paste-objects (->> paste-objects
-                                     (d/mapm (fn [_ shape]
-                                               (-> shape
-                                                   (assoc :frame-id frame-id)
-                                                   (assoc :parent-id parent-id)
+                  process-shape
+                  (fn [_ shape]
+                    (-> shape
+                        (assoc :frame-id frame-id)
+                        (assoc :parent-id parent-id)
 
-                                                   (cond->
-                                                     ;; if foreign instance, detach the shape
-                                                     (foreign-instance? shape paste-objects state)
-                                                     (dissoc :component-id
-                                                             :component-file
-                                                             :component-root?
-                                                             :remote-synced?
-                                                             :shape-ref
-                                                             :touched))))))
+                        ;; if foreign instance, detach the shape
+                        (cond-> (foreign-instance? shape paste-objects state)
+                          (dissoc :component-id :component-file :component-root?
+                                  :remote-synced? :shape-ref :touched))))
+
+                  paste-objects (->> paste-objects (d/mapm process-shape))
 
                   all-objects (merge (:objects page) paste-objects)
 

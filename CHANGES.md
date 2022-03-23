@@ -60,6 +60,7 @@
 - Fix clickable area in layers [#1680](https://github.com/penpot/penpot/issues/1680)
 - Fix problems with trackpad zoom and scroll in MacOS [#1161](https://github.com/penpot/penpot/issues/1161)
 - Fix problem with copy/paste in Safari [#1209](https://github.com/penpot/penpot/issues/1209)
+- Fix paste ordering for frames not being respected [Taiga #3097](https://tree.taiga.io/project/penpot/issue/3097)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
