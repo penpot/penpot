@@ -117,6 +117,9 @@ msgstr "Password"
 msgid "auth.password-length-hint"
 msgstr "At least 8 characters"
 
+msgid "auth.and"
+msgstr "and"
+
 msgid "auth.privacy-policy"
 msgstr "Privacy policy"
 

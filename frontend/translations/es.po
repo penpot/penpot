@@ -121,6 +121,9 @@ msgstr "Contraseña"
 msgid "auth.password-length-hint"
 msgstr "8 caracteres como mínimo"
 
+msgid "auth.and"
+msgstr "y"
+
 msgid "auth.privacy-policy"
 msgstr "Política de privacidad"
 
@@ -161,7 +164,7 @@ msgid "auth.sidebar-tagline"
 msgstr "La solución de código abierto para diseñar y prototipar"
 
 msgid "auth.terms-of-service"
-msgstr "Terminos de servicio"
+msgstr "Términos de servicio"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"

@@ -25,13 +25,13 @@
     (when show-all?
       [:div.terms-login
        (when show-terms?
-         [:a {:href cf/terms-of-service-uri :target "_blank"} "Terms of service"])
+         [:a {:href cf/terms-of-service-uri :target "_blank"} (tr "auth.terms-of-service")])
 
        (when show-all?
-         [:span "and"])
+         [:span (tr "auth.and")])
 
        (when show-privacy?
-         [:a {:href cf/privacy-policy-uri :target "_blank"} "Privacy policy"])])))
+         [:a {:href cf/privacy-policy-uri :target "_blank"} (tr "auth.privacy-policy")])])))
 
 (mf/defc auth
   [{:keys [route] :as props}]
