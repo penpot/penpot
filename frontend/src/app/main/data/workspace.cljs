@@ -556,13 +556,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected     (wsh/lookup-selected state)
-            hover-guides (get-in state [:workspace-guides :hover])
-            options-mode (get-in state [:workspace-global :options-mode])]
+            hover-guides (get-in state [:workspace-guides :hover])]
         (cond
-          (and (= options-mode :prototype) (d/not-empty? selected))
-          (rx/of (dwi/remove-interactions selected))
-
-          (and (= options-mode :design) (d/not-empty? selected))
+          (d/not-empty? selected)
           (rx/of (dwc/delete-shapes selected)
                  (dws/deselect-all))
 
