@@ -41,6 +41,7 @@
 
 ### :bug: Bugs fixed
 
+- Pencil cursor changes when activated [Taiga #2276](https://tree.taiga.io/project/penpot/issue/2276)
 - Fix icon placement in Mixed message [Taiga #3037](https://tree.taiga.io/project/penpot/issue/3037)
 - Fix scroll in comment section [Taiga #3068](https://tree.taiga.io/project/penpot/issue/3068)
 - Remove a decimal sets value to 0 [Taiga #3059](https://tree.taiga.io/project/penpot/issue/3054)

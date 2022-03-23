@@ -62,7 +62,10 @@
   (mf/use-effect
    (mf/deps @cursor @alt? @ctrl? @space? panning drawing-tool drawing-path? path-editing?)
    (fn []
-     (let [new-cursor
+     (let [show-pen? (or (= drawing-tool :path)
+                         (and drawing-path?
+                              (not= drawing-tool :curve)))
+           new-cursor
            (cond
              (and @ctrl? @space?)            (utils/get-cursor :zoom)
              (or panning @space?)            (utils/get-cursor :hand)
@@ -70,8 +73,7 @@
              (= drawing-tool :frame)         (utils/get-cursor :create-artboard)
              (= drawing-tool :rect)          (utils/get-cursor :create-rectangle)
              (= drawing-tool :circle)        (utils/get-cursor :create-ellipse)
-             (or (= drawing-tool :path)
-                 drawing-path?)              (utils/get-cursor :pen)
+             show-pen?                       (utils/get-cursor :pen)
              (= drawing-tool :curve)         (utils/get-cursor :pencil)
              drawing-tool                    (utils/get-cursor :create-shape)
              (and @alt? (not path-editing?)) (utils/get-cursor :duplicate)
