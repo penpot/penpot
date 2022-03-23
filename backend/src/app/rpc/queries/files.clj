@@ -440,7 +440,7 @@
   (let [params (cond-> {:file-id file-id}
                  frame-id (assoc :frame-id frame-id))
         rows   (db/query pool :file-frame-thumbnail params)]
-    (d/group-by :frame-id :data rows)))
+    (d/index-by :frame-id :data rows)))
 
 ;; --- QUERY: get file thumbnail
 
@@ -465,10 +465,11 @@
       (ex/raise :type :not-found
                 :code :file-thumbnail-not-found))
 
-    (with-meta {:data (:data row)
-                :props (some-> (:props row) db/decode-transit-pgobject)
-                :revn (:revn row)
-                :file-id (:file-id row)}
+    (with-meta
+      {:data (:data row)
+       :props (some-> (:props row) db/decode-transit-pgobject)
+       :revn (:revn row)
+       :file-id (:file-id row)}
       {:transform-response (rpch/http-cache {:max-age (* 1000 60 60)})})))
 
 ;; --- Helpers

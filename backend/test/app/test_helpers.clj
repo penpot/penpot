@@ -73,7 +73,7 @@
                            :app.worker/cron
                            :app.worker/worker)
                    (d/deep-merge
-                    {:app.tasks.file-media-gc/handler {:max-age (dt/duration 300)}}))
+                    {:app.tasks.file-gc/handler {:max-age (dt/duration 300)}}))
         _      (ig/load-namespaces config)
         system (-> (ig/prep config)
                    (ig/init))]
@@ -285,7 +285,8 @@
   (let [data (ex-data error)]
     (cond
       (= :spec-validation (:code data))
-      (expound/printer (:data data))
+      (println
+       (us/pretty-explain data))
 
       (= :service-error (:type data))
       (print-error! (.getCause ^Throwable error))
@@ -302,7 +303,7 @@
       (println "====> END ERROR"))
     (do
       (println "====> START RESPONSE")
-      (prn result)
+      (fipp.edn/pprint result)
       (println "====> END RESPONSE"))))
 
 (defn exception?
@@ -373,4 +374,16 @@
     (println "[waiting RETURN]")
     (.readLine cnsl)
     nil))
+
+(defn db-exec!
+  [sql]
+  (db/exec! *pool* sql))
+
+(defn db-insert!
+  [& params]
+  (apply db/insert! *pool* params))
+
+(defn db-query
+  [& params]
+  (apply db/query *pool* params))
 
