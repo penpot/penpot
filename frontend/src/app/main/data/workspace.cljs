@@ -1198,13 +1198,10 @@
   []
   (letfn [;; Sort objects so they have the same relative ordering
           ;; when pasted later.
-          (sort-selected [state data]
-            (let [selected (:selected data)
-                  page-id (:current-page-id state)
-                  objects (get-in state [:workspace-data
-                                         :pages-index
-                                         page-id
-                                         :objects])]
+          (sort-selected-async [state data]
+            (let [selected (wsh/lookup-selected state)
+                  objects  (wsh/lookup-page-objects state)
+                  page-id  (:current-page-id state)]
               (->> (uw/ask! {:cmd :selection/query-z-index
                              :page-id page-id
                              :objects objects
@@ -1215,6 +1212,24 @@
                                          (sort-by second)
                                          (map first)
                                          (into (d/ordered-set)))))))))
+
+          ;; We cannot call to a remote procedure in Safari (for the copy) so we need
+          ;; to calculate it here instead of on the worker
+          (sort-selected-sync [state data]
+            (let [selected (wsh/lookup-selected state)
+                  objects (wsh/lookup-page-objects state)
+                  z-index (cp/calculate-z-index objects)
+                  z-values (->> selected
+                                (map #(vector %
+                                              (+ (get z-index %)
+                                                 (get z-index (get-in objects [% :frame-id]))))))
+                  selected
+                  (->> z-values
+                       (sort-by second)
+                       (map first)
+                       (into (d/ordered-set)))]
+
+              (assoc data :selected selected)))
 
           ;; Retrieve all ids of selected shapes with corresponding
           ;; children; this is needed because each shape should be
@@ -1277,11 +1292,18 @@
                         :file-id (:current-file-id state)
                         :selected selected
                         :objects {}
-                        :images #{}}]
+                        :images #{}}
+
+              sort-results
+              (fn [obs]
+                ;; Safari doesn't allow asynchronous sorting on the copy
+                (if (cfg/check-browser? :safari)
+                  (rx/map (partial sort-selected-sync state) obs)
+                  (rx/mapcat (partial sort-selected-async state) obs)))]
           (->> (rx/from (seq (vals pdata)))
                (rx/merge-map (partial prepare-object objects selected))
                (rx/reduce collect-data initial)
-               (rx/mapcat (partial sort-selected state))
+               (sort-results)
                (rx/map t/encode-str)
                (rx/map wapi/write-to-clipboard)
                (rx/catch on-copy-error)

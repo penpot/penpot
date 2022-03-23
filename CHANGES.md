@@ -59,6 +59,7 @@
 - Fix inconsistency with radius in SVG an CSS [#1587](https://github.com/penpot/penpot/issues/1587)
 - Fix clickable area in layers [#1680](https://github.com/penpot/penpot/issues/1680)
 - Fix problems with trackpad zoom and scroll in MacOS [#1161](https://github.com/penpot/penpot/issues/1161)
+- Fix problem with copy/paste in Safari [#1209](https://github.com/penpot/penpot/issues/1209)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
