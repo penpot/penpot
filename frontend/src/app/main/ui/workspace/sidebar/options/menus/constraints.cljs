@@ -45,12 +45,13 @@
 
         in-frame? (and (some? ids)
                        (not= (:parent-id values) uuid/zero))
+
         ;; TODO: uncomment when fixed-scroll is fully implemented
         ;; first-level? (and in-frame?
         ;;                   (= (:parent-id values) (:frame-id values)))
 
-        constraints-h (get values :constraints-h (gsh/default-constraints-h values))
-        constraints-v (get values :constraints-v (gsh/default-constraints-v values))
+        constraints-h (or (get values :constraints-h) (gsh/default-constraints-h values))
+        constraints-v (or (get values :constraints-v) (gsh/default-constraints-v values))
 
         on-constraint-button-clicked
         (mf/use-callback
