@@ -41,6 +41,7 @@
 
 ### :bug: Bugs fixed
 
+- On dashboard enter on empty search refresh the page [Taiga #2597](https://tree.taiga.io/project/penpot/issue/2597)
 - Pencil cursor changes when activated [Taiga #2276](https://tree.taiga.io/project/penpot/issue/2276)
 - Fix icon placement in Mixed message [Taiga #3037](https://tree.taiga.io/project/penpot/issue/3037)
 - Fix scroll in comment section [Taiga #3068](https://tree.taiga.io/project/penpot/issue/3068)

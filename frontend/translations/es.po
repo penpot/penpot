@@ -121,9 +121,6 @@ msgstr "Contraseña"
 msgid "auth.password-length-hint"
 msgstr "8 caracteres como mínimo"
 
-msgid "auth.and"
-msgstr "y"
-
 msgid "auth.privacy-policy"
 msgstr "Política de privacidad"
 
@@ -1022,6 +1019,9 @@ msgstr "Administración"
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.all"
 msgstr "Todo"
+
+msgid "labels.and"
+msgstr "y"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
