@@ -13,6 +13,7 @@
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.store :as st]
+   [app.util.globals :as glob]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as ts]
@@ -174,6 +175,6 @@
             (.preventDefault ^js event)
             (some-> (unchecked-get event "error")
                     (on-unhandled-error)))]
-    (.addEventListener js/window "error" on-error)
+    (.addEventListener glob/window "error" on-error)
     (fn []
-      (.removeEventListener js/window "error" on-error))))
+      (.removeEventListener glob/window "error" on-error))))

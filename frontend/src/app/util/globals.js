@@ -28,6 +28,10 @@ goog.scope(function() {
       addListener(...args) {
       },
       removeListener(...args) {
+      },
+      addEventListener(...args) {
+      },
+      removeEventListener(...args) {
       }
     }
   }
