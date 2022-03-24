@@ -134,7 +134,7 @@
                         :fn #(st/emit! dw/zoom-to-fit-all)}
 
    :zoom-selected      {:tooltip (ds/shift "2")
-                        :command "shift+2"
+                        :command ["shift+2" "@" "\""]
                         :fn #(st/emit! dw/zoom-to-selected-shape)}
 
    :duplicate          {:tooltip (ds/meta "D")
