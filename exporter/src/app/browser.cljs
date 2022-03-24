@@ -73,12 +73,14 @@
 
 (defn pdf
   ([page] (pdf page {}))
-  ([page {:keys [scale save-path]
-          :or {scale 1}}]
-    (.pdf ^js page #js {:path save-path
-                        :scale scale
-                        :printBackground true
-                        :preferCSSPageSize true})))
+  ([page {:keys [scale save-path page-ranges]
+          :or {page-ranges "1"
+               scale 1}}]
+   (.pdf ^js page #js {:path save-path
+                       :scale scale
+                       :pageRanges page-ranges
+                       :printBackground true
+                       :preferCSSPageSize true})))
 (defn eval!
   [frame f]
   (.evaluate ^js frame f))

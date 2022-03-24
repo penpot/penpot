@@ -7,6 +7,7 @@
 (ns app.main.ui.render
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -103,8 +104,8 @@
 
     (mf/with-effect [width height]
       (dom/set-page-style!
-       {:size (str (mth/ceil width) "px "
-                   (mth/ceil height) "px")}))
+       {:size (dm/str (mth/ceil width) "px "
+                      (mth/ceil height) "px")}))
 
     [:& (mf/provider embed/context) {:value embed?}
      [:svg {:id "screenshot"
