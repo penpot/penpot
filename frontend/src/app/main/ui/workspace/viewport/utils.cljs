@@ -11,8 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.main.ui.cursors :as cur]
-   [app.util.dom :as dom]
-   [cuerdas.core :as str]))
+   [app.util.dom :as dom]))
 
 (defn- text-corrected-transform
   "If we apply a scale directly to the texts it will show deformed so we need to create this
