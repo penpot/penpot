@@ -74,8 +74,8 @@
            [:div.header
             [:div.field.check {:on-click change-all}
              (cond
-               all-checked? [:span i/checkbox-checked]
-               all-unchecked? [:span i/checkbox-unchecked]
+               all-checked? [:span.checked i/checkbox-checked]
+               all-unchecked? [:span.unchecked i/checkbox-unchecked]
                :else [:span i/checkbox-intermediate])]
             [:div.field.title (tr "dashboard.export-multiple.selected"
                                   (c (count enabled-exports))

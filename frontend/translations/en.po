@@ -275,7 +275,7 @@ msgstr "%s de %s elements selected"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "dashboard.export-shapes"
-msgstr "Exportar"
+msgstr "Export"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
