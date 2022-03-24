@@ -425,7 +425,6 @@
                 :email email
                 :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
 
-
     (db/exec-one! conn [sql:upsert-team-invitation
                         (:id team) (str/lower email) (name role) token-exp (name role) token-exp])
 
@@ -437,7 +436,6 @@
                 :team (:name team)
                 :token itoken
                 :extra-data ptoken})))
-
 
 ;; --- Mutation: Create Team & Invite Members
 
@@ -463,7 +461,9 @@
                 :role role)))
 
       (with-meta team
-        {:before-complete
+        {::audit/props {:invitations (count emails)}
+
+         :before-complete
          #(audit-fn :cmd :submit
                     :type "mutation"
                     :name "invite-team-member"
