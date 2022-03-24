@@ -355,3 +355,19 @@
           (update-page [_ page]
             (update page :objects #(d/mapm update-object %)))]
     (update data :pages-index #(d/mapm update-page %))))
+
+;; Add fills and strokes to components
+
+(defmethod migrate 16
+  [data]
+  (letfn [(update-object [_ object]
+            (cond-> object
+              (and (not (= :text (:type object))) (nil? (:strokes object)))
+              (set-strokes)
+
+              (and (not (= :text (:type object))) (nil? (:fills object)))
+              (set-fills)))
+          (update-container [_ container]
+            (update container :objects #(d/mapm update-object %)))]
+    (-> data
+        (update :components  #(d/mapm update-container %)))))
