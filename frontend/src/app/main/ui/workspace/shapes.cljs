@@ -41,7 +41,8 @@
 
 (mf/defc root-shape
   "Draws the root shape of the viewport and recursively all the shapes"
-  {::mf/wrap-props false}
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
   [props]
   (let [objects       (obj/get props "objects")
         active-frames (obj/get props "active-frames")
