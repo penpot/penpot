@@ -6,6 +6,7 @@
 
 (ns app.http.middleware
   (:require
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.config :as cf]
@@ -45,23 +46,17 @@
                         (update :params merge params))))
 
                 :else
-                request)))
-
-          (handle-exception [cause]
-            (let [data {:type :validation
-                        :code :unable-to-parse-request-body
-                        :hint "malformed params"}]
-              (l/error :hint (ex-message cause) :cause cause)
-              (yrs/response :status 400
-                            :headers {"content-type" "application/transit+json"}
-                            :body (t/encode-str data {:type :json-verbose}))))]
+                request)))]
 
     (fn [request respond raise]
       (try
         (let [request (process-request request)]
           (handler request respond raise))
         (catch Exception cause
-          (respond (handle-exception cause)))))))
+          (raise (ex/error :type :validation
+                           :code :malformed-params
+                           :hint (ex-message cause)
+                           :cause cause)))))))
 
 (def parse-request
   {:name ::parse-request
