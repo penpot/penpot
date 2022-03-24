@@ -1420,7 +1420,7 @@
 
   .body {
     overflow-y: auto;
-    margin: 0.5rem 0.5rem 0.5rem 0;
+    margin: 0 0.5rem 0rem 0;
   }
 
   .field {
@@ -1438,6 +1438,7 @@
       display: flex;
       justify-content: center;
       height: 32px;
+      margin: 0 8px;
       width: 32px;
 
       svg {

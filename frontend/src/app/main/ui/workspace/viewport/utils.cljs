@@ -7,11 +7,11 @@
 (ns app.main.ui.workspace.viewport.utils
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.main.ui.cursors :as cur]
-   [app.util.dom :as dom]
-   [cuerdas.core :as str]))
+   [app.util.dom :as dom]))
 
 (defn- text-corrected-transform
   "If we apply a scale directly to the texts it will show deformed so we need to create this
@@ -158,10 +158,10 @@
             (dom/remove-attribute node "transform")))))))
 
 (defn format-viewbox [vbox]
-  (str/join " " [(:x vbox 0)
-                 (:y vbox 0)
-                 (:width vbox 0)
-                 (:height vbox 0)]))
+  (dm/str (:x vbox 0) " "
+          (:y vbox 0) " "
+          (:width vbox 0) " "
+          (:height vbox 0)))
 
 (defn translate-point-to-viewport [viewport zoom pt]
   (let [vbox     (.. ^js viewport -viewBox -baseVal)

@@ -412,6 +412,7 @@
     "image/webp"         "webp"
     "application/zip"    "zip"
     "application/penpot" "penpot"
+    "application/pdf"    "pdf"
     nil))
 
 (defn set-attribute [^js node ^string attr value]

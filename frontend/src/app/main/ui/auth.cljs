@@ -28,7 +28,7 @@
          [:a {:href cf/terms-of-service-uri :target "_blank"} (tr "auth.terms-of-service")])
 
        (when show-all?
-         [:span (tr "auth.and")])
+         [:span (tr "labels.and")])
 
        (when show-privacy?
          [:a {:href cf/privacy-policy-uri :target "_blank"} (tr "auth.privacy-policy")])])))
