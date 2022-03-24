@@ -203,7 +203,7 @@
        (Instant/ofEpochMilli (.readInt rdr))))
 
 
-   "clj/ratio"
+   "ratio"
    (reify ReadHandler
      (read [_ rdr _ _]
        (Ratio. (biginteger (.readObject rdr))
