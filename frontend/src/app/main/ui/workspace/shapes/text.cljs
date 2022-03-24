@@ -27,6 +27,7 @@
    [app.util.timers :as timers]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
+   [debug :refer [debug?]]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -224,4 +225,22 @@
 
       (when show-svg-text?
         [:g.text-svg {:pointer-events "none"}
-         [:& svg/text-shape {:shape shape}]])]]))
+         [:& svg/text-shape {:shape shape}]])
+
+      (when (debug? :text-outline)
+        (for [data (:position-data shape)]
+          (let [{:keys [x y width height]} data]
+            [:*
+             ;; Text fragment bounding box
+             [:rect {:x x
+                     :y (- y height)
+                     :width width
+                     :height height
+                     :style {:fill "none" :stroke "red"}}]
+
+             ;; Text baselineazo
+             [:line {:x1 (mth/round x)
+                     :y1 (mth/round (- (:y data) (:height data)))
+                     :x2 (mth/round (+ x width))
+                     :y2 (mth/round (- (:y data) (:height data)))
+                     :style {:stroke "blue"}}]])))]]))

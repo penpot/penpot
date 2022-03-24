@@ -46,6 +46,9 @@
 
     ;; When active we can check in the browser the export values
     :show-export-metadata
+
+    ;; Show text fragments outlines
+    :text-outline
     })
 
 ;; These events are excluded when we activate the :events flag

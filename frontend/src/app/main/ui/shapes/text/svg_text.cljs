@@ -51,8 +51,8 @@
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
         (let [props (-> #js {:x (mth/round (:x data))
-                             :y (mth/round (:y data))
-                             :dominantBaseline "ideographic"
+                             :y (mth/round (- (:y data) (:height data)))
+                             :alignmentBaseline "text-before-edge"
                              :style (-> #js {:fontFamily (:font-family data)
                                              :fontSize (:font-size data)
                                              :fontWeight (:font-weight data)
