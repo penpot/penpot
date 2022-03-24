@@ -134,7 +134,7 @@
               (kbd/shift? event)
               (st/emit! (dw/shift-select-shapes id))
 
-              (or (kbd/ctrl? event) (kbd/meta? event))
+              (kbd/mod? event)
               (st/emit! (dw/select-shape id true))
 
               (> (count selected) 1)
