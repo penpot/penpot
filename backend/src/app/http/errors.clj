@@ -24,8 +24,8 @@
 (defn get-context
   [request]
   (merge
-   {:path          (:uri request)
-    :method        (:request-method request)
+   {:path          (:path request)
+    :method        (:method request)
     :params        (:params request)
     :ip-addr       (parse-client-ip request)
     :profile-id    (:profile-id request)}
@@ -51,9 +51,10 @@
   [err _]
   (let [data    (ex-data err)
         explain (us/pretty-explain data)]
-    (yrs/response 400 (-> data
-                          (dissoc ::s/problems ::s/value)
-                          (cond-> explain (assoc :explain explain))))))
+    (yrs/response :status 400
+                  :body   (-> data
+                              (dissoc ::s/problems ::s/value)
+                              (cond-> explain (assoc :explain explain))))))
 
 (defmethod handle-exception :assertion
   [error request]
@@ -73,26 +74,6 @@
   [err _]
   (yrs/response 404 (ex-data err)))
 
-(defmethod handle-exception :default
-  [error request]
-  (let [edata (ex-data error)]
-    ;; NOTE: this is a special case for the idle-in-transaction error;
-    ;; when it happens, the connection is automatically closed and
-    ;; next-jdbc combines the two errors in a single ex-info. We only
-    ;; need the :handling error, because the :rollback error will be
-    ;; always "connection closed".
-    (if (and (ex/exception? (:rollback edata))
-             (ex/exception? (:handling edata)))
-      (handle-exception (:handling edata) request)
-      (do
-        (l/error ::l/raw (ex-message error)
-                 ::l/context (get-context request)
-                 :cause error)
-        (yrs/response 500 {:type :server-error
-                           :code :unexpected
-                           :hint (ex-message error)
-                           :data edata})))))
-
 (defmethod handle-exception org.postgresql.util.PSQLException
   [error request]
   (let [state (.getSQLState ^java.sql.SQLException error)]
@@ -101,24 +82,56 @@
              :cause error)
     (cond
       (= state "57014")
-      (yrs/response 504 {:type :server-timeout
+      (yrs/response 504 {:type :server-error
                          :code :statement-timeout
                          :hint (ex-message error)})
 
       (= state "25P03")
-      (yrs/response 504 {:type :server-timeout
+      (yrs/response 504 {:type :server-error
                          :code :idle-in-transaction-timeout
                          :hint (ex-message error)})
 
       :else
       (yrs/response 500 {:type :server-error
-                         :code :psql-exception
+                         :code :unexpected
                          :hint (ex-message error)
                          :state state}))))
 
+(defmethod handle-exception :default
+  [error request]
+  (let [edata (ex-data error)]
+    (cond
+      ;; This means that exception is not a controlled exception.
+      (nil? edata)
+      (do
+        (l/error ::l/raw (ex-message error)
+                 ::l/context (get-context request)
+                 :cause error)
+        (yrs/response 500 {:type :server-error
+                           :code :unexpected
+                           :hint (ex-message error)}))
+
+      ;; This is a special case for the idle-in-transaction error;
+      ;; when it happens, the connection is automatically closed and
+      ;; next-jdbc combines the two errors in a single ex-info. We
+      ;; only need the :handling error, because the :rollback error
+      ;; will be always "connection closed".
+      (and (ex/exception? (:rollback edata))
+           (ex/exception? (:handling edata)))
+      (handle-exception (:handling edata) request)
+
+      :else
+      (do
+        (l/error ::l/raw (ex-message error)
+                 ::l/context (get-context request)
+                 :cause error)
+        (yrs/response 500 {:type :server-error
+                           :code :unhandled
+                           :hint (ex-message error)
+                           :data edata})))))
 (defn handle
-  [error req]
+  [error request]
   (if (or (instance? java.util.concurrent.CompletionException error)
           (instance? java.util.concurrent.ExecutionException error))
-    (handle-exception (.getCause ^Throwable error) req)
-    (handle-exception error req)))
+    (handle-exception (.getCause ^Throwable error) request)
+    (handle-exception error request)))
