@@ -73,7 +73,7 @@
 
         ;; STATE
         alt?              (mf/use-state false)
-        ctrl?             (mf/use-state false)
+        mod?              (mf/use-state false)
         space?            (mf/use-state false)
         cursor            (mf/use-state (utils/get-cursor :pointer-inner))
         hover-ids         (mf/use-state nil)
@@ -163,9 +163,9 @@
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
     (hooks/setup-viewport-size viewport-ref)
-    (hooks/setup-cursor cursor alt? ctrl? space? panning drawing-tool drawing-path? node-editing?)
-    (hooks/setup-keyboard alt? ctrl? space?)
-    (hooks/setup-hover-shapes page-id move-stream raw-position-ref base-objects transform selected ctrl? hover hover-ids @hover-disabled? zoom)
+    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing?)
+    (hooks/setup-keyboard alt? mod? space?)
+    (hooks/setup-hover-shapes page-id move-stream raw-position-ref base-objects transform selected mod? hover hover-ids @hover-disabled? zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path?)
     (hooks/setup-active-frames base-objects vbox hover active-frames)
@@ -244,7 +244,7 @@
          [:& outline/shape-outlines
           {:objects base-objects
            :selected selected
-           :hover (when (or @ctrl? (not= :frame (:type @hover)))
+           :hover (when (or @mod? (not= :frame (:type @hover)))
                     #{(or @frame-hover (:id @hover))})
            :edition edition
            :zoom zoom}])
@@ -254,7 +254,7 @@
           {:shapes selected-shapes
            :zoom zoom
            :edition edition
-           :disable-handlers (or drawing-tool edition @space? @ctrl?)
+           :disable-handlers (or drawing-tool edition @space? @mod?)
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
 

@@ -41,8 +41,10 @@
 
        (let [event  (.-nativeEvent bevent)
              ctrl?  (kbd/ctrl? event)
+             meta?  (kbd/meta? event)
              shift? (kbd/shift? event)
              alt?   (kbd/alt? event)
+             mod?   (kbd/mod? event)
 
              left-click?   (and (not panning) (= 1 (.-which event)))
              middle-click? (and (not panning) (= 2 (.-which event)))
@@ -54,7 +56,7 @@
            middle-click?
            (do
              (dom/prevent-default bevent)
-             (if ctrl?
+             (if mod?
                (let [raw-pt   (dom/get-client-position event)
                      viewport (mf/ref-val viewport-ref)
                      pt       (utils/translate-point-to-viewport viewport zoom raw-pt)]
@@ -64,7 +66,7 @@
 
            left-click?
            (do
-             (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
+             (st/emit! (ms/->MouseEvent :down ctrl? shift? alt? meta?))
 
              (when (and (not= edition id) text-editing?)
                (st/emit! dw/clear-edition-mode))
@@ -79,7 +81,7 @@
                  ;; Handle path node area selection
                  (st/emit! (dwdp/handle-area-selection shift?))
 
-                 (and @space? ctrl?)
+                 (and @space? mod?)
                  (let [raw-pt   (dom/get-client-position event)
                        viewport (mf/ref-val viewport-ref)
                        pt       (utils/translate-point-to-viewport viewport zoom raw-pt)]
@@ -91,8 +93,8 @@
                  drawing-tool
                  (st/emit! (dd/start-drawing drawing-tool))
 
-                 (or (not id) (and frame? (not selected?)) ctrl?)
-                 (st/emit! (dw/handle-area-selection shift? ctrl?))
+                 (or (not id) (and frame? (not selected?)) mod?)
+                 (st/emit! (dw/handle-area-selection shift? mod?))
 
                  (not drawing-tool)
                  (st/emit! (dw/start-move-selected id shift?)))))))))))
@@ -104,11 +106,11 @@
    (fn [bevent]
      (let [event (.-nativeEvent bevent)
            shift? (kbd/shift? event)
-           ctrl?  (kbd/ctrl? event)
+           mod?   (kbd/mod? event)
            left-click?   (= 1 (.-which event))]
 
        (when (and left-click?
-                  (not ctrl?)
+                  (not mod?)
                   (not shift?)
                   (not @space?)
                   (or (not @hover)
@@ -153,12 +155,15 @@
        (let [ctrl? (kbd/ctrl? event)
              shift? (kbd/shift? event)
              alt? (kbd/alt? event)
+             meta? (kbd/meta? event)
+             mod? (kbd/mod? event)
+
              hovering? (some? @hover)
              frame? (= :frame (:type @hover))]
-         (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))
+         (st/emit! (ms/->MouseEvent :click ctrl? shift? alt? meta?))
 
          (when (and hovering?
-                    (or (not frame?) ctrl?)
+                    (or (not frame?) mod?)
                     (not @space?)
                     (not edition)
                     (not drawing-path?)
@@ -174,13 +179,14 @@
      (let [ctrl? (kbd/ctrl? event)
            shift? (kbd/shift? event)
            alt? (kbd/alt? event)
+           meta? (kbd/meta? event)
 
            {:keys [id type] :as shape} @hover
 
            frame? (= :frame type)
            group? (= :group type)]
 
-       (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?))
+       (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt? meta?))
 
        ;; Emit asynchronously so the double click to exit shapes won't break
        (timers/schedule
@@ -239,12 +245,13 @@
            ctrl? (kbd/ctrl? event)
            shift? (kbd/shift? event)
            alt? (kbd/alt? event)
+           meta? (kbd/meta? event)
 
            left-click? (= 1 (.-which event))
            middle-click? (= 2 (.-which event))]
 
        (when left-click?
-         (st/emit! (ms/->MouseEvent :up ctrl? shift? alt?)))
+         (st/emit! (ms/->MouseEvent :up ctrl? shift? alt? meta?)))
 
        (when middle-click?
          (dom/prevent-default event)
@@ -340,11 +347,13 @@
          (st/emit! (ms/->PointerEvent :delta delta
                                       (kbd/ctrl? event)
                                       (kbd/shift? event)
-                                      (kbd/alt? event)))
+                                      (kbd/alt? event)
+                                      (kbd/meta? event)))
          (st/emit! (ms/->PointerEvent :viewport pt
                                       (kbd/ctrl? event)
                                       (kbd/shift? event)
-                                      (kbd/alt? event))))))))
+                                      (kbd/alt? event)
+                                      (kbd/meta? event))))))))
 
 (defn on-pointer-move [viewport-ref raw-position-ref zoom move-stream]
   (mf/use-callback
@@ -369,8 +378,7 @@
          (let [pt     (->> (dom/get-client-position event)
                            (utils/translate-point-to-viewport viewport zoom))
 
-               ctrl? (kbd/ctrl? event)
-               meta? (kbd/meta? event)
+               mod? (kbd/mod? event)
 
                delta-mode (.-deltaMode ^js event)
 
@@ -386,7 +394,7 @@
                delta-x (-> (.-deltaX ^js event)
                            (* unit)
                            (/ zoom))]
-           (if (or ctrl? meta?)
+           (if mod?
              (let [delta (* -1 (+ (.-deltaY ^js event) (.-deltaX ^js event)))
                    scale (-> (+ 1 (/ delta 100)) (mth/clamp 0.77 1.3))]
                (st/emit! (dw/set-zoom pt scale)))

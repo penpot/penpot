@@ -47,15 +47,15 @@
             (st/emit! (drp/create-node-at-position (meta position))))
 
           (let [shift? (kbd/shift? event)
-                ctrl? (kbd/ctrl? event)]
+                mod?   (kbd/mod? event)]
             (cond
               last-p?
               (st/emit! (drp/reset-last-handler))
 
-              (and (= edit-mode :move) ctrl? (not curve?))
+              (and (= edit-mode :move) mod? (not curve?))
               (st/emit! (drp/make-curve position))
 
-              (and (= edit-mode :move) ctrl? curve?)
+              (and (= edit-mode :move) mod? curve?)
               (st/emit! (drp/make-corner position))
 
               (= edit-mode :move)

@@ -1485,7 +1485,7 @@
          (mf/deps extend-selected-assets selected-assets)
          (fn [asset-type asset-groups event asset-id default-click]
            (cond
-             (kbd/ctrl? event)
+             (kbd/mod? event)
              (do
                (dom/stop-propagation event)
                (st/emit! (dw/toggle-selected-assets asset-id asset-type)))

@@ -7,6 +7,7 @@
 - Fix crash on iOS when displaying viewer [#1522](https://github.com/penpot/penpot/issues/1522)
 - Fix problems with trackpad zoom and scroll in MacOS [#1161](https://github.com/penpot/penpot/issues/1161)
 - Fix problem with copy/paste in Safari [#1209](https://github.com/penpot/penpot/issues/1209)
+- Improved command support for MacOS [Taiga #2789](https://tree.taiga.io/project/penpot/issue/2789)
 
 ## 1.12.3-beta
 
