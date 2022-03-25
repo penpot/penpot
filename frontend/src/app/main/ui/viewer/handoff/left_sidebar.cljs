@@ -45,7 +45,7 @@
           (dom/prevent-default event)
           (let [id (:id item)]
             (cond
-              (or (kbd/ctrl? event) (kbd/meta? event))
+              (kbd/mod? event)
               (st/emit! (dv/toggle-selection id))
 
               (kbd/shift? event)

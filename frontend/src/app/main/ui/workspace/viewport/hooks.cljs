@@ -58,16 +58,16 @@
        ;; We schedule the event so it fires after `initialize-page` event
        (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
 
-(defn setup-cursor [cursor alt? ctrl? space? panning drawing-tool drawing-path? path-editing?]
+(defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing?]
   (mf/use-effect
-   (mf/deps @cursor @alt? @ctrl? @space? panning drawing-tool drawing-path? path-editing?)
+   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing?)
    (fn []
      (let [show-pen? (or (= drawing-tool :path)
                          (and drawing-path?
                               (not= drawing-tool :curve)))
            new-cursor
            (cond
-             (and @ctrl? @space?)            (utils/get-cursor :zoom)
+             (and @mod? @space?)            (utils/get-cursor :zoom)
              (or panning @space?)            (utils/get-cursor :hand)
              (= drawing-tool :comments)      (utils/get-cursor :comments)
              (= drawing-tool :frame)         (utils/get-cursor :create-artboard)
@@ -82,9 +82,9 @@
        (when (not= @cursor new-cursor)
          (reset! cursor new-cursor))))))
 
-(defn setup-keyboard [alt? ctrl? space?]
+(defn setup-keyboard [alt? mod? space?]
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
-  (hooks/use-stream ms/keyboard-ctrl #(reset! ctrl? %))
+  (hooks/use-stream ms/keyboard-mod #(reset! mod? %))
   (hooks/use-stream ms/keyboard-space #(reset! space? %)))
 
 (defn group-empty-space?
@@ -100,10 +100,10 @@
             (some #(cph/is-parent? objects % group-id))
             (not))))
 
-(defn setup-hover-shapes [page-id move-stream objects transform selected ctrl? hover hover-ids hover-disabled? focus zoom]
+(defn setup-hover-shapes [page-id move-stream objects transform selected mod? hover hover-ids hover-disabled? focus zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
-        ctrl-ref (mf/use-ref @ctrl?)
+        mod-ref (mf/use-ref @mod?)
         transform-ref (mf/use-ref nil)
         selected-ref (mf/use-ref selected)
         hover-disabled-ref (mf/use-ref hover-disabled?)
@@ -114,7 +114,7 @@
          (mf/deps page-id)
          (fn [point]
            (let [zoom (mf/ref-val zoom-ref)
-                 ctrl? (mf/ref-val ctrl-ref)
+                 mod? (mf/ref-val mod-ref)
                  rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
              (if (mf/ref-val hover-disabled-ref)
                (rx/of nil)
@@ -123,7 +123,7 @@
                   :page-id page-id
                   :rect rect
                   :include-frames? true
-                  :clip-children? (not ctrl?)
+                  :clip-children? (not mod?)
                   :reverse? true}))))) ;; we want the topmost shape to be selected first
 
         over-shapes-stream
@@ -150,8 +150,8 @@
      #(mf/set-ref-val! zoom-ref zoom))
 
     (mf/use-effect
-     (mf/deps @ctrl?)
-     #(mf/set-ref-val! ctrl-ref @ctrl?))
+     (mf/deps @mod?)
+     #(mf/set-ref-val! mod-ref @mod?))
 
     (mf/use-effect
      (mf/deps selected)
@@ -176,14 +176,14 @@
              selected (mf/ref-val selected-ref)
              focus (mf/ref-val focus-ref)
 
-             ctrl? (mf/ref-val ctrl-ref)
+             mod? (mf/ref-val mod-ref)
 
              remove-xfm (mapcat #(cph/get-parent-ids objects %))
              remove-id? (cond-> (into #{} remove-xfm selected)
-                          (not ctrl?)
+                          (not mod?)
                           (into (filter #(group-empty-space? % objects ids)) ids)
 
-                          ctrl?
+                          mod?
                           (into (filter is-group?) ids))
 
              hover-shape (->> ids

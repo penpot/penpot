@@ -58,6 +58,11 @@
 - Fix problem when importing SVG's with uses with overriding properties [#Taiga 2884](https://tree.taiga.io/project/penpot/issue/2884)
 - Fix inconsistency with radius in SVG an CSS [#1587](https://github.com/penpot/penpot/issues/1587)
 - Fix clickable area in layers [#1680](https://github.com/penpot/penpot/issues/1680)
+- Fix problems with trackpad zoom and scroll in MacOS [#1161](https://github.com/penpot/penpot/issues/1161)
+- Fix problem with copy/paste in Safari [#1209](https://github.com/penpot/penpot/issues/1209)
+- Fix paste ordering for frames not being respected [Taiga #3097](https://tree.taiga.io/project/penpot/issue/3097)
+- Improved command support for MacOS [Taiga #2789](https://tree.taiga.io/project/penpot/issue/2789)
+- Fix shift+2 shortcut in MacOS with non-english keyboards [Taiga #3038](https://tree.taiga.io/project/penpot/issue/3038)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
