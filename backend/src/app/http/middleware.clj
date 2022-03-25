@@ -49,14 +49,14 @@
                 request)))]
 
     (fn [request respond raise]
-      (try
-        (let [request (process-request request)]
-          (handler request respond raise))
-        (catch Exception cause
-          (raise (ex/error :type :validation
-                           :code :malformed-params
-                           :hint (ex-message cause)
-                           :cause cause)))))))
+      (when-let [request (try
+                           (process-request request)
+                           (catch Exception cause
+                             (raise (ex/error :type :validation
+                                              :code :malformed-params
+                                              :hint (ex-message cause)
+                                              :cause cause))))]
+        (handler request respond raise)))))
 
 (def parse-request
   {:name ::parse-request
