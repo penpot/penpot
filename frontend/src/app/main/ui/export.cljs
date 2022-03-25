@@ -76,7 +76,7 @@
              (cond
                all-checked? [:span.checked i/checkbox-checked]
                all-unchecked? [:span.unchecked i/checkbox-unchecked]
-               :else [:span i/checkbox-intermediate])]
+               :else [:span.intermediate i/checkbox-intermediate])]
             [:div.field.title (tr "dashboard.export-multiple.selected"
                                   (c (count enabled-exports))
                                   (c (count all-exports)))]]

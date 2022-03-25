@@ -1464,7 +1464,8 @@
         }
       }
 
-      & .unchecked {
+      & .intermediate,
+      .unchecked {
         svg {
           background-color: $color-gray-10;
         }
