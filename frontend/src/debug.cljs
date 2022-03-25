@@ -10,8 +10,11 @@
    [app.common.pages.helpers :as cph]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
+   [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace.path.shortcuts]
+   [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
    [app.util.object :as obj]
    [app.util.timers :as timers]
@@ -19,7 +22,7 @@
    [cljs.pprint :refer [pprint]]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-   [promesa.core :as p]))
+   [promesa.core :as p]   ))
 
 (def debug-options
   #{;; Displays the bounding box for the shapes
@@ -301,3 +304,28 @@
   []
   (st/emit!
    (dw/toggle-layout-flag :hide-ui)))
+
+
+(defn ^:export shortcuts
+  []
+
+  (letfn [(print-shortcuts [shortcuts]
+            (.table js/console
+                    (->> shortcuts
+                         (map (fn [[key {:keys [command]}]]
+                                [(d/name key)
+                                 (if (vector? command)
+                                   (str/join " | " command)
+                                   command)]))
+                         (into {})
+                         (clj->js))))]
+
+    (.log js/console "Workspace")
+    (print-shortcuts app.main.data.workspace.shortcuts/shortcuts)
+
+    (.log js/console "Path")
+    (print-shortcuts app.main.data.workspace.path.shortcuts/shortcuts)
+
+    (.log js/console "Viewer")
+    (print-shortcuts app.main.data.viewer.shortcuts/shortcuts))
+  nil)
