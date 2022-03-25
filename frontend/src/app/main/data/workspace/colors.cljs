@@ -259,7 +259,11 @@
                           (assoc :stroke-color-gradient (:gradient attrs))
 
                           (contains? attrs :opacity)
-                          (assoc :stroke-opacity (:opacity attrs)))
+                          (assoc :stroke-opacity (:opacity attrs))
+
+                          :always
+                          (d/without-nils))
+
             attrs (merge attrs color-attrs)]
 
         (rx/of (dch/update-shapes ids (fn [shape]
