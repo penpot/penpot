@@ -28,7 +28,7 @@
   [{:keys [local file page frame]}]
   (let [on-mouse-wheel
         (fn [event]
-          (when (or (kbd/ctrl? event) (kbd/meta? event))
+          (when (kbd/mod? event)
             (dom/prevent-default event)
             (let [event (.getBrowserEvent ^js event)
                   delta (+ (.-deltaY ^js event)

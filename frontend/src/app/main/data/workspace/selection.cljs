@@ -284,15 +284,27 @@
   (let [shapes         (map (d/getf all-objects) ids)
         unames         (volatile! (dwc/retrieve-used-names (:objects page)))
         update-unames! (fn [new-name] (vswap! unames conj new-name))
-        all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids all-objects %2))) #{} ids)
-        ids-map        (into {} (map #(vector % (uuid/next))) all-ids)]
-    (-> (reduce (fn [changes shape]
-                  (prepare-duplicate-change changes all-objects page unames update-unames! ids-map shape delta))
-                (-> (pcb/empty-changes it)
-                    (pcb/with-page page)
-                    (pcb/with-objects all-objects))
-                shapes)
-        (prepare-duplicate-flows shapes page ids-map))))
+        all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids all-objects %2))) (d/ordered-set) ids)
+        ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
+
+        init-changes
+        (-> (pcb/empty-changes it)
+            (pcb/with-page page)
+            (pcb/with-objects all-objects))
+
+        changes
+        (->> shapes
+             (reduce #(prepare-duplicate-change %1
+                                                all-objects
+                                                page
+                                                unames
+                                                update-unames!
+                                                ids-map
+                                                %2
+                                                delta)
+                     init-changes))]
+
+    (prepare-duplicate-flows changes shapes page ids-map)))
 
 (defn- prepare-duplicate-change
   [changes objects page unames update-unames! ids-map shape delta]
@@ -349,7 +361,6 @@
                           (geom/move delta)
                           (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
-          changes (pcb/add-object changes new-obj {:ignore-touched true})
           changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))]
 

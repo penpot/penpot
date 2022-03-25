@@ -325,7 +325,7 @@
                      selected)
 
              changes  (-> (pcb/empty-changes it page-id)
-                          (pcb/add-object shape))]
+                          (pcb/add-object shape {:index (when (= :frame (:type shape)) 0)}))]
 
          (rx/concat
           (rx/of (dch/commit-changes changes)

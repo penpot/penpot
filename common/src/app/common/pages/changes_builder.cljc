@@ -198,8 +198,7 @@
    (assert-page-id changes)
    (let [obj (cond-> obj
                (not= index ::undefined)
-               (assoc :index index))
-
+               (assoc ::index index))
          add-change
          {:type           :add-obj
           :id             (:id obj)

@@ -81,9 +81,7 @@
                 shapes
 
                 (nil? index)
-                (if (= :frame (:type obj))
-                  (into [id] shapes)
-                  (conj shapes id))
+                (conj shapes id)
 
                 :else
                 (cph/insert-at-index shapes index [id]))))
