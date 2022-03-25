@@ -18,6 +18,7 @@
    [app.main.ui.workspace.shapes :refer [shape-wrapper]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr c]]
+   [app.util.strings :as ust]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
@@ -76,7 +77,7 @@
              (cond
                all-checked? [:span.checked i/checkbox-checked]
                all-unchecked? [:span.unchecked i/checkbox-unchecked]
-               :else [:span i/checkbox-intermediate])]
+               :else [:span.intermediate i/checkbox-intermediate])]
             [:div.field.title (tr "dashboard.export-multiple.selected"
                                   (c (count enabled-exports))
                                   (c (count all-exports)))]]
@@ -107,8 +108,8 @@
 
                  [:div.field.name (cond-> (:name shape) suffix (str suffix))]
                  (when (:scale export)
-                   [:div.field.scale (dm/str (* width (:scale export)) "x"
-                                             (* height (:scale export)) "px ")])
+                   [:div.field.scale (dm/str (ust/format-precision (* width (:scale export)) 2) "x"
+                                             (ust/format-precision (* height (:scale export)) 2) "px ")])
 
                  (when (:type export)
                    [:div.field.extension (-> export :type d/name str/upper)])]))]
