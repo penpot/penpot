@@ -176,6 +176,7 @@
         progress        (:progress state)
         exports         (:exports state)
         total           (count exports)
+        complete?       (= progress total)
         circ            (* 2 Math/PI 12)
         pct             (- circ (* circ (/ progress total)))
 
@@ -188,6 +189,7 @@
                  (not healthy?) clr/warning)
         title  (cond
                  error?          (tr "workspace.options.exporting-object-error")
+                 complete?       (tr "workspace.options.exporting-complete")
                  healthy?        (tr "workspace.options.exporting-object")
                  (not healthy?)  (tr "workspace.options.exporting-object-slow"))
 
