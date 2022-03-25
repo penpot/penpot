@@ -10,6 +10,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
+   [app.main.data.dashboard.shortcuts]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dwc]
@@ -22,7 +23,7 @@
    [cljs.pprint :refer [pprint]]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-   [promesa.core :as p]   ))
+   [promesa.core :as p]))
 
 (def debug-options
   #{;; Displays the bounding box for the shapes
@@ -319,13 +320,16 @@
                                    command)]))
                          (into {})
                          (clj->js))))]
+    (let [style "font-weight: bold; font-size: 1.25rem;"]
+      (.log js/console "%c Dashboard" style)
+      (print-shortcuts app.main.data.dashboard.shortcuts/shortcuts)
 
-    (.log js/console "Workspace")
-    (print-shortcuts app.main.data.workspace.shortcuts/shortcuts)
+      (.log js/console "%c Workspace" style)
+      (print-shortcuts app.main.data.workspace.shortcuts/shortcuts)
 
-    (.log js/console "Path")
-    (print-shortcuts app.main.data.workspace.path.shortcuts/shortcuts)
+      (.log js/console "%c Path" style)
+      (print-shortcuts app.main.data.workspace.path.shortcuts/shortcuts)
 
-    (.log js/console "Viewer")
-    (print-shortcuts app.main.data.viewer.shortcuts/shortcuts))
+      (.log js/console "%c Viewer" style)
+      (print-shortcuts app.main.data.viewer.shortcuts/shortcuts)))
   nil)
