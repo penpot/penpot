@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-25 07:03+0000\n"
+"PO-Revision-Date: 2022-03-27 23:09+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -1543,7 +1543,7 @@ msgstr "העברת בעלות"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
-msgstr "לקדם את המשתמש הזה לבעלים?"
+msgstr "הצוות הזה הוא כרגע בבעלותך. להפוך את %s לבעלים החדשים של הצוות?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
@@ -3660,3 +3660,17 @@ msgstr "בחירה"
 
 msgid "workspace.header.menu.hide-pixel-grid"
 msgstr "הסתרת רשת פיקסלים"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"כיוון שאין עוד חברים בצוות הזה מלבדך, הצוות יימחק על כל המיזמים והקבצים שלו."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"העברת בעלות תשנה את תפקידך לחלק מההנהלה תוך אובדן חלק מההרשאות שלך על הצוות "
+"הזה. "
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "לוחות יצירה"
