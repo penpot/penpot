@@ -33,7 +33,7 @@
         state       (mf/use-state {:menu-open false})
 
         delete-fn   (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
-        navigate-fn (mf/use-callback (mf/deps id) #(st/emit! (dw/go-to-page id)))
+        navigate-fn (mf/use-callback (mf/deps id) #(st/emit! :interrupt (dw/go-to-page id)))
 
         on-context-menu
         (mf/use-callback
