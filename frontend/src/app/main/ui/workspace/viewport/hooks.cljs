@@ -201,25 +201,43 @@
         (mf/use-memo
          (mf/deps modifiers)
          (fn []
-           (d/mapm (fn [id {modifiers :modifiers}]
-                     (let [center (gsh/center-shape (get objects id))]
-                       (gsh/modifiers->transform center modifiers)))
-                   modifiers)))
+           (when (some? modifiers)
+             (d/mapm (fn [id {modifiers :modifiers}]
+                       (let [center (gsh/center-shape (get objects id))]
+                         (gsh/modifiers->transform center modifiers)))
+                     modifiers))))
 
         shapes
         (mf/use-memo
          (mf/deps transforms)
          (fn []
            (->> (keys transforms)
-                (mapv (d/getf objects)))))]
+                (mapv (d/getf objects)))))
+
+        prev-shapes (mf/use-var nil)
+        prev-modifiers (mf/use-var nil)
+        prev-transforms (mf/use-var nil)]
 
     ;; Layout effect is important so the code is executed before the modifiers
     ;; are applied to the shape
     (mf/use-layout-effect
      (mf/deps transforms)
      (fn []
-       (utils/update-transform shapes transforms modifiers)
-       #(utils/remove-transform shapes)))))
+       (when (and (nil? @prev-transforms)
+                  (some? transforms))
+         (utils/start-transform! shapes))
+
+       (when (some? modifiers)
+         (utils/update-transform! shapes transforms modifiers))
+
+       
+       (when (and (some? @prev-modifiers)
+                  (not (some? modifiers)))
+         (utils/remove-transform! @prev-shapes))
+
+       (reset! prev-modifiers modifiers)
+       (reset! prev-transforms transforms)
+       (reset! prev-shapes shapes)))))
 
 (defn inside-vbox [vbox objects frame-id]
   (let [frame (get objects frame-id)]

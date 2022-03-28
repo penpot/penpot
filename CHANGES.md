@@ -65,6 +65,7 @@
 - Fix paste ordering for frames not being respected [Taiga #3097](https://tree.taiga.io/project/penpot/issue/3097)
 - Improved command support for MacOS [Taiga #2789](https://tree.taiga.io/project/penpot/issue/2789)
 - Fix shift+2 shortcut in MacOS with non-english keyboards [Taiga #3038](https://tree.taiga.io/project/penpot/issue/3038)
+- Some fixes to SVG imports [Taiga #3122](https://tree.taiga.io/project/penpot/issue/3122) [#1720](https://github.com/penpot/penpot/issues/1720) [Taiga #2884](https://tree.taiga.io/project/penpot/issue/2884)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

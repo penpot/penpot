@@ -715,7 +715,8 @@
        (gmt/matrix)
 
        ;; Paths doesn't have transform so we have to transform its gradients
-       (if (= :path (:type shape))
+       (if (or (= :path (:type shape))
+               (= :group (:type shape)))
          (gsh/transform-matrix shape)
          (gmt/matrix))
 
