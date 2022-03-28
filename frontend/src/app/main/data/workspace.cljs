@@ -1043,8 +1043,8 @@
   [items element]
   (let [items (or items #{})]
     (if (contains? items element)
-      (disj set element)
-      (conj set element))))
+      (disj items element)
+      (conj items element))))
 
 (defn toggle-selected-assets
   [asset type]
