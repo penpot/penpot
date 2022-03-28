@@ -22,7 +22,7 @@
 (def dissoc-attrs
   [:x :y :width :height
    :rx :ry :r1 :r2 :r3 :r4
-   :metadata :shapes])
+   :metadata])
 
 (def allowed-transform-types
   #{:rect
@@ -199,7 +199,6 @@
                       (map #(convert-to-path % objects)))
         bool-type (:bool-type shape)
         content (pb/content-bool bool-type (mapv :content children))]
-
     (-> shape
         (assoc :type :path)
         (assoc :content content)

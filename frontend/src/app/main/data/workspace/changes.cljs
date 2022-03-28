@@ -104,8 +104,9 @@
 
             (update-in state path cp/process-changes redo-changes false)
 
-            (catch :default e
-              (vreset! error e)
+            (catch :default err
+              (log/error :js/error err)
+              (vreset! error err)
               state))))
 
       ptk/WatchEvent
