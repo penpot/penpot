@@ -13,6 +13,7 @@
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.store :as st]
+   [app.util.globals :as glob]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as ts]
@@ -50,18 +51,6 @@
   (let [msg (tr "errors.auth.unable-to-login")]
     (st/emit! (du/logout {:capture-redirect true}))
     (ts/schedule 500 (st/emitf (msg/warn msg)))))
-
-
-;; That are special case server-errors that should be treated
-;; differently.
-(derive :not-found ::exceptional-state)
-(derive :bad-gateway ::exceptional-state)
-(derive :service-unavailable ::exceptional-state)
-
-(defmethod ptk/handle-error ::exceptional-state
-  [error]
-  (ts/schedule
-   (st/emitf (rt/assign-exception error))))
 
 ;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From
@@ -133,9 +122,22 @@
     (js/console.error (with-out-str (expound/printer error)))
     (js/console.groupEnd message)))
 
+;; That are special case server-errors that should be treated
+;; differently.
+
+(derive :not-found ::exceptional-state)
+(derive :bad-gateway ::exceptional-state)
+(derive :service-unavailable ::exceptional-state)
+
+(defmethod ptk/handle-error ::exceptional-state
+  [error]
+  (ts/schedule
+   (st/emitf (rt/assign-exception error))))
+
 ;; This happens when the backed server fails to process the
 ;; request. This can be caused by an internal assertion or any other
 ;; uncontrolled error.
+
 (defmethod ptk/handle-error :server-error
   [{:keys [data hint] :as error}]
   (let [hint (or hint (:hint data) (:message data))
@@ -145,8 +147,8 @@
     (ts/schedule
      #(st/emit!
        (msg/show {:content "Something wrong has happened (on backend)."
-                 :type :error
-                 :timeout 3000})))
+                  :type :error
+                  :timeout 3000})))
 
     (js/console.group msg)
     (js/console.info info)
@@ -174,6 +176,6 @@
             (.preventDefault ^js event)
             (some-> (unchecked-get event "error")
                     (on-unhandled-error)))]
-    (.addEventListener js/window "error" on-error)
+    (.addEventListener glob/window "error" on-error)
     (fn []
-      (.removeEventListener js/window "error" on-error))))
+      (.removeEventListener glob/window "error" on-error))))

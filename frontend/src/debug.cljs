@@ -10,8 +10,12 @@
    [app.common.pages.helpers :as cph]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
+   [app.main.data.dashboard.shortcuts]
+   [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace.path.shortcuts]
+   [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
    [app.util.object :as obj]
    [app.util.timers :as timers]
@@ -301,3 +305,31 @@
   []
   (st/emit!
    (dw/toggle-layout-flag :hide-ui)))
+
+
+(defn ^:export shortcuts
+  []
+
+  (letfn [(print-shortcuts [shortcuts]
+            (.table js/console
+                    (->> shortcuts
+                         (map (fn [[key {:keys [command]}]]
+                                [(d/name key)
+                                 (if (vector? command)
+                                   (str/join " | " command)
+                                   command)]))
+                         (into {})
+                         (clj->js))))]
+    (let [style "font-weight: bold; font-size: 1.25rem;"]
+      (.log js/console "%c Dashboard" style)
+      (print-shortcuts app.main.data.dashboard.shortcuts/shortcuts)
+
+      (.log js/console "%c Workspace" style)
+      (print-shortcuts app.main.data.workspace.shortcuts/shortcuts)
+
+      (.log js/console "%c Path" style)
+      (print-shortcuts app.main.data.workspace.path.shortcuts/shortcuts)
+
+      (.log js/console "%c Viewer" style)
+      (print-shortcuts app.main.data.viewer.shortcuts/shortcuts)))
+  nil)

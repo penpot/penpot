@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.transit :as t]
    [app.http.doc :as doc]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
@@ -67,7 +68,7 @@
                  :xnio/dispatch (:executor cfg)
                  :ring/async true}
         handler (if (some? router)
-                  (wrap-router cfg router)
+                  (wrap-router router)
                   handler)
         server  (yt/server handler (d/without-nils options))]
     (assoc cfg :server (yt/start! server))))
@@ -81,30 +82,32 @@
   [_ respond _]
   (respond (yrs/response 404)))
 
-(defn- ring-handler
-  [router]
-  (fn [request respond raise]
-    (if-let [match (r/match-by-path router (yrq/path request))]
-      (let [params  (:path-params match)
-            result  (:result match)
-            handler (or (:handler result) not-found-handler)
-            request (-> request
-                        (assoc :path-params params)
-                        (update :params merge params))]
-        (handler request respond raise))
-      (not-found-handler request respond raise))))
-
 (defn- wrap-router
-  [_ router]
-  (let [handler (ring-handler router)]
+  [router]
+  (letfn [(handler [request respond raise]
+            (if-let [match (r/match-by-path router (yrq/path request))]
+              (let [params  (:path-params match)
+                    result  (:result match)
+                    handler (or (:handler result) not-found-handler)
+                    request (-> request
+                                (assoc :path-params params)
+                                (update :params merge params))]
+                (handler request respond raise))
+              (not-found-handler request respond raise)))
+
+          (on-error [cause request respond]
+            (let [{:keys [body] :as response} (errors/handle cause request)]
+              (respond
+               (cond-> response
+                 (map? body)
+                 (-> (update :headers assoc "content-type" "application/transit+json")
+                     (assoc :body (t/encode-str body {:type :json-verbose})))))))]
+
     (fn [request respond _]
-      (handler request respond
-               (fn [cause]
-                 (l/error :hint "unexpected error processing request"
-                          ::l/context (errors/get-context request)
-                          :query-string (yrq/query request)
-                          :cause cause)
-                 (respond (yrs/response 500 "internal server error")))))))
+      (try
+        (handler request respond #(on-error % request respond))
+        (catch Throwable cause
+          (on-error cause request respond))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HTTP ROUTER
@@ -130,6 +133,8 @@
   (rr/router
    [["" {:middleware [[middleware/server-timing]
                       [middleware/format-response]
+                      [middleware/params]
+                      [middleware/parse-request]
                       [middleware/errors errors/handle]
                       [middleware/restrict-methods]]}
      ["/metrics" {:handler (:handler metrics)}]
@@ -138,9 +143,7 @@
       ["/by-file-media-id/:id" {:handler (:file-objects-handler assets)}]
       ["/by-file-media-id/:id/thumbnail" {:handler (:file-thumbnails-handler assets)}]]
 
-     ["/dbg" {:middleware [[middleware/params]
-                           [middleware/parse-request]
-                           (:middleware session)]}
+     ["/dbg" {:middleware [(:middleware session)]}
       ["" {:handler (:index debug)}]
       ["/error-by-id/:id" {:handler (:retrieve-error debug)}]
       ["/error/:id" {:handler (:retrieve-error debug)}]
@@ -152,15 +155,11 @@
       ["/sns" {:handler (:awsns-handler cfg)
                :allowed-methods #{:post}}]]
 
-     ["/ws/notifications" {:middleware [[middleware/params]
-                                        [middleware/parse-request]
-                                        (:middleware session)]
+     ["/ws/notifications" {:middleware [(:middleware session)]
                            :handler ws
                            :allowed-methods #{:get}}]
 
      ["/api" {:middleware [[middleware/cors]
-                           [middleware/params]
-                           [middleware/parse-request]
                            (:middleware session)]}
       ["/health" {:handler (:health-check debug)}]
       ["/_doc" {:handler (doc/handler rpc)

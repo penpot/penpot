@@ -128,9 +128,10 @@
 (defn index-by
   "Return a indexed map of the collection keyed by the result of
   executing the getter over each element of the collection."
-  [getter coll]
-  (persistent!
-   (reduce #(assoc! %1 (getter %2) %2) (transient {}) coll)))
+  ([kf coll] (index-by kf identity coll))
+  ([kf vf coll]
+   (persistent!
+    (reduce #(assoc! %1 (kf %2) (vf %2)) (transient {}) coll))))
 
 (defn index-of-pred
   [coll pred]
@@ -597,19 +598,10 @@
 
 
 (defn group-by
-  ([kf coll] (group-by kf identity coll))
-  ([kf vf coll]
-   (let [conj (fnil conj [])]
-     (reduce (fn [result item]
-               (update result (kf item) conj (vf item)))
-             {}
-             coll))))
-
-(defn group-by'
-  "A variant of group-by that uses a set for collecting results."
-  ([kf coll] (group-by kf identity coll))
-  ([kf vf coll]
-   (let [conj (fnil conj #{})]
+  ([kf coll] (group-by kf identity [] coll))
+  ([kf vf coll] (group-by kf vf [] coll))
+  ([kf vf iv coll]
+   (let [conj (fnil conj iv)]
      (reduce (fn [result item]
                (update result (kf item) conj (vf item)))
              {}

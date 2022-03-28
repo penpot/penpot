@@ -15,7 +15,8 @@
 
 (defn immutable-map->map
   [obj]
-  (into {} (map (fn [[k v]] [(keyword k) v])) (seq obj)))
+  (let [data (into {} (map (fn [[k v]] [(keyword k) v])) (seq obj))]
+    (assoc data :fills (js->clj (:fills data) :keywordize-keys true))))
 
 ;; --- DRAFT-JS HELPERS
 

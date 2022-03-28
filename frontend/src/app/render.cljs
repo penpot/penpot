@@ -29,7 +29,6 @@
           :version (:full @cf/version)
           :public-uri (str cf/public-uri))
 
-
 (defn- parse-params
   [loc]
   (let [href (unchecked-get loc "href")]

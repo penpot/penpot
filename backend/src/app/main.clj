@@ -189,7 +189,7 @@
     :pool       (ig/ref :app.db/pool)
     :entries
     [{:cron #app/cron "0 0 0 * * ?" ;; daily
-      :task :file-media-gc}
+      :task :file-gc}
 
      {:cron #app/cron "0 0 * * * ?"  ;; hourly
       :task :file-xlog-gc}
@@ -231,7 +231,7 @@
     :tasks
     {:sendmail           (ig/ref :app.emails/sendmail-handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
-     :file-media-gc      (ig/ref :app.tasks.file-media-gc/handler)
+     :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
      :storage-deleted-gc (ig/ref :app.storage/gc-deleted-task)
      :storage-touched-gc (ig/ref :app.storage/gc-touched-task)
@@ -262,7 +262,7 @@
     :storage (ig/ref :app.storage/storage)
     :max-age cf/deletion-delay}
 
-   :app.tasks.file-media-gc/handler
+   :app.tasks.file-gc/handler
    {:pool    (ig/ref :app.db/pool)
     :max-age cf/deletion-delay}
 

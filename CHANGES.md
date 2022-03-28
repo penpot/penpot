@@ -43,6 +43,7 @@
 ### :bug: Bugs fixed
 
 - Fix comments modal when changing pages [Taiga #2597](https://tree.taiga.io/project/penpot/issue/2508)
+- Copy paste inside a text layer leaves pasted text transparent [Taiga #3096](https://tree.taiga.io/project/penpot/issue/3096)
 - On dashboard enter on empty search refresh the page [Taiga #2597](https://tree.taiga.io/project/penpot/issue/2597)
 - Pencil cursor changes when activated [Taiga #2276](https://tree.taiga.io/project/penpot/issue/2276)
 - Fix icon placement in Mixed message [Taiga #3037](https://tree.taiga.io/project/penpot/issue/3037)
