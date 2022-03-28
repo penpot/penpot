@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.main.ui.cursors :as cur]
    [app.util.dom :as dom]))
 
@@ -100,7 +101,10 @@
        (dom/query shape-node ".mask-shape")]
 
       group?
-      []
+      (let [shape-defs (dom/query shape-node "defs")]
+        (d/concat-vec
+         (dom/query-all shape-defs ".svg-def")
+         (dom/query-all shape-defs ".svg-mask-wrapper")))
 
       text?
       [shape-node
@@ -112,7 +116,59 @@
       :else
       [shape-node])))
 
-(defn update-transform [shapes transforms modifiers]
+(defn transform-region!
+  [node modifiers]
+
+  (let [{:keys [x y width height]}
+        (-> (gsh/make-selrect
+             (-> (dom/get-attribute node "data-old-x") d/parse-double)
+             (-> (dom/get-attribute node "data-old-y") d/parse-double)
+             (-> (dom/get-attribute node "data-old-width") d/parse-double)
+             (-> (dom/get-attribute node "data-old-height") d/parse-double))
+            (gsh/transform-selrect modifiers))]
+    (dom/set-attribute! node "x" x)
+    (dom/set-attribute! node "y" y)
+    (dom/set-attribute! node "width" width)
+    (dom/set-attribute! node "height" height)))
+
+(defn start-transform!
+  [shapes]
+  (doseq [shape shapes]
+    (when-let [nodes (get-nodes shape)]
+      (doseq [node nodes]
+        (let [old-transform (dom/get-attribute node "transform")]
+          (when (some? old-transform)
+            (dom/set-attribute! node "data-old-transform" old-transform))
+
+          (when (or (= (dom/get-tag-name node) "linearGradient")
+                    (= (dom/get-tag-name node) "radialGradient"))
+            (let [gradient-transform (dom/get-attribute node "gradientTransform")]
+              (when (some? gradient-transform)
+                (dom/set-attribute! node "data-old-gradientTransform" gradient-transform))))
+
+          (when (= (dom/get-tag-name node) "pattern")
+            (let [pattern-transform (dom/get-attribute node "patternTransform")]
+              (when (some? pattern-transform)
+                (dom/set-attribute! node "data-old-patternTransform" pattern-transform))))
+
+          (when (or (= (dom/get-tag-name node) "mask")
+                    (= (dom/get-tag-name node) "filter"))
+            (dom/set-attribute! node "data-old-x" (dom/get-attribute node "x"))
+            (dom/set-attribute! node "data-old-y" (dom/get-attribute node "y"))
+            (dom/set-attribute! node "data-old-width" (dom/get-attribute node "width"))
+            (dom/set-attribute! node "data-old-height" (dom/get-attribute node "height"))))))))
+
+(defn set-transform-att!
+  [node att value]
+  
+  (let [old-att (dom/get-attribute node (dm/str "data-old-" att))
+        new-value (if (some? old-att)
+                    (dm/str value " " old-att)
+                    (str value))]
+    (dom/set-attribute! node att (str new-value))))
+
+(defn update-transform!
+  [shapes transforms modifiers]
   (doseq [{:keys [id type] :as shape} shapes]
     (when-let [nodes (get-nodes shape)]
       (let [transform (get transforms id)
@@ -127,24 +183,38 @@
 
         (doseq [node nodes]
           (cond
-            (or (dom/class? node "text-shape") (dom/class? node "text-svg"))
+            ;; Text shapes need special treatment because their resize only change
+            ;; the text area, not the change size/position
+            (or (dom/class? node "text-shape")
+                (dom/class? node "text-svg"))
             (when (some? text-transform)
-              (dom/set-attribute node "transform" (str text-transform)))
+              (set-transform-att! node "transform" text-transform))
 
             (or (= (dom/get-tag-name node) "foreignObject")
                 (dom/class? node "text-clip"))
             (let [cur-width (dom/get-attribute node "width")
                   cur-height (dom/get-attribute node "height")]
               (when (and (some? text-width) (not= cur-width text-width))
-                (dom/set-attribute node "width" text-width))
-
+                (dom/set-attribute! node "width" text-width))
               (when (and (some? text-height) (not= cur-height text-height))
-                (dom/set-attribute node "height" text-height)))
+                (dom/set-attribute! node "height" text-height)))
+
+            (or (= (dom/get-tag-name node) "mask")
+                (= (dom/get-tag-name node) "filter"))
+            (transform-region! node modifiers)
+
+            (or (= (dom/get-tag-name node) "linearGradient")
+                (= (dom/get-tag-name node) "radialGradient"))
+            (set-transform-att! node "gradientTransform" transform)
+
+            (= (dom/get-tag-name node) "pattern")
+            (set-transform-att! node "patternTransform" transform)
 
             (and (some? transform) (some? node))
-            (dom/set-attribute node "transform" (str transform))))))))
+            (set-transform-att! node "transform" transform)))))))
 
-(defn remove-transform [shapes]
+(defn remove-transform!
+  [shapes]
   (doseq [shape shapes]
     (when-let [nodes (get-nodes shape)]
       (doseq [node nodes]
@@ -155,7 +225,10 @@
             nil
 
             :else
-            (dom/remove-attribute node "transform")))))))
+            (let [old-transform (dom/get-attribute node "data-old-transform")]
+              (when-not (some? old-transform)
+                (dom/remove-attribute! node "data-old-transform")
+                (dom/remove-attribute! node "transform")))))))))
 
 (defn format-viewbox [vbox]
   (dm/str (:x vbox 0) " "

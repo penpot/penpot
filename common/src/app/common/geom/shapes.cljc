@@ -105,6 +105,7 @@
 (dm/export gco/transform-points)
 
 (dm/export gpr/make-rect)
+(dm/export gpr/make-selrect)
 (dm/export gpr/rect->selrect)
 (dm/export gpr/rect->points)
 (dm/export gpr/points->selrect)

@@ -117,8 +117,8 @@
            ;; Note that the "indeterminate" attribute only may be set by code, not as a static attribute.
            ;; See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox#attr-indeterminate
            (if (= hide-fill-on-export? :multiple)
-             (dom/set-attribute checkbox "indeterminate" true)
-             (dom/remove-attribute checkbox "indeterminate")))))
+             (dom/set-attribute! checkbox "indeterminate" true)
+             (dom/remove-attribute! checkbox "indeterminate")))))
 
       [:div.element-set
        [:div.element-set-title

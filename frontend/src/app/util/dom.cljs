@@ -415,11 +415,11 @@
     "application/pdf"    "pdf"
     nil))
 
-(defn set-attribute [^js node ^string attr value]
+(defn set-attribute! [^js node ^string attr value]
   (when (some? node)
     (.setAttribute node attr value)))
 
-(defn remove-attribute [^js node ^string attr]
+(defn remove-attribute! [^js node ^string attr]
   (when (some? node)
     (.removeAttribute node attr)))
 
