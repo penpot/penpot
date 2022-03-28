@@ -25,7 +25,6 @@
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as sgen]
    [clojure.test :as test]
-   [clojure.test :as test]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
    [datoteka.core]
