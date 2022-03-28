@@ -30,7 +30,7 @@
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
-                (pcb/remove-objects children-ids)
-                (pcb/update-shapes selected #(upsp/convert-to-path % objects)))]
+                (pcb/update-shapes selected #(upsp/convert-to-path % objects))
+                (pcb/remove-objects children-ids))]
 
         (rx/of (dch/commit-changes changes))))))
