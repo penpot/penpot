@@ -42,6 +42,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix component contex menu size [Taiga #2480](https://tree.taiga.io/project/penpot/issue/2480)
 - Add shadow to artboard make it lose the fill [Taiga #3139](https://tree.taiga.io/project/penpot/issue/3139)
 - Avoid numeric inputs to change its value without focusing them [Taiga #3140](https://tree.taiga.io/project/penpot/issue/3140)
 - Fix comments modal when changing pages [Taiga #2597](https://tree.taiga.io/project/penpot/issue/2508)
