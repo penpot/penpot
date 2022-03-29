@@ -21,7 +21,7 @@
 
 (def type->options
   {:multiple [:fill :stroke :image :text :shadow :blur]
-   :frame    [:layout :fill :stroke]
+   :frame    [:layout :fill :stroke :shadow :blur]
    :group    [:layout :svg]
    :rect     [:layout :fill :stroke :shadow :blur :svg]
    :circle   [:layout :fill :stroke :shadow :blur :svg]
