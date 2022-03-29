@@ -14,6 +14,7 @@
    [app.common.spec.change :as spec.change]
    [app.common.spec.file :as spec.file]
    [app.common.uuid :as uuid]
+   [app.config :as cfg]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
@@ -653,6 +654,9 @@
 
             frame-changes (->> stream
                                (rx/filter dch/commit-changes?)
+
+                               ;; Async so we wait for additional side-effects of commit-changes
+                               (rx/observe-on :async)
                                (rx/filter (comp not thumbnail-change?))
                                (rx/with-latest-from objects-stream)
                                (rx/map extract-frame-changes)
@@ -678,3 +682,26 @@
                (rx/buffer-until (->> frame-changes (rx/debounce 1000)))
                (rx/flat-map #(reduce set/union %))
                (rx/map #(update-frame-thumbnail %)))))))))
+
+(defn preload-data-uris
+  "Preloads the image data so it's ready when necesary"
+  []
+  (ptk/reify ::preload-data-uris
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [extract-urls
+            (fn [{:keys [metadata fill-image]}]
+              (cond
+                (some? metadata)
+                [(cfg/resolve-file-media metadata)]
+
+                (some? fill-image)
+                [(cfg/resolve-file-media fill-image)]))
+
+            uris (into #{}
+                       (comp (mapcat extract-urls)
+                             (filter some?))
+                       (vals (wsh/lookup-page-objects state)))]
+        (->> (rx/from uris)
+             (rx/merge-map #(http/fetch-data-uri % false))
+             (rx/ignore))))))
