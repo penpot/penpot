@@ -16,6 +16,7 @@
 
 ### :sparkles: New features
 
+- Group assets by drag and drop [Taiga #2831](https://tree.taiga.io/project/penpot/us/2831)
 - Constraints are not well assigned when default and multiselection [Taiga #3069](https://tree.taiga.io/project/penpot/issue/3069)
 - Exporting big files flow [Taiga #2218](https://tree.taiga.io/project/penpot/us/2218)
 - Multiexport from main menu [Taiga #520](https://tree.taiga.io/project/penpot/us/28541)

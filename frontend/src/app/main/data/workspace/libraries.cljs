@@ -139,6 +139,26 @@
                (sync-file (:current-file-id state) file-id)
                (dwu/commit-undo-transaction))))))
 
+(defn rename-color
+  [file-id id new-name]
+  (us/assert ::us/uuid file-id)
+  (us/assert ::us/uuid id)
+  (us/assert ::us/string new-name)
+  (ptk/reify ::rename-color
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data        (get state :workspace-data)
+            [path name] (cph/parse-path-name new-name)
+            object      (get-in data [:colors id])
+            new-object  (assoc object :path path :name name)
+            changes     (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/update-color new-object))]
+        (rx/of (dwu/start-undo-transaction)
+               (dch/commit-changes changes)
+               (sync-file (:current-file-id state) file-id)
+               (dwu/commit-undo-transaction))))))
+
 (defn delete-color
   [{:keys [id] :as params}]
   (us/assert ::us/uuid id)
@@ -177,6 +197,7 @@
                             (pcb/with-library-data data)
                             (pcb/update-media new-object))]
         (rx/of (dch/commit-changes changes))))))
+
 
 (defn delete-media
   [{:keys [id] :as params}]
@@ -223,6 +244,28 @@
                (dch/commit-changes changes)
                (sync-file (:current-file-id state) file-id)
                (dwu/commit-undo-transaction))))))
+
+
+(defn rename-typography
+  [file-id id new-name]
+  (us/assert ::us/uuid file-id)
+  (us/assert ::us/uuid id)
+  (us/assert ::us/string new-name)
+  (ptk/reify ::rename-typography
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data    (get state :workspace-data)
+            [path name] (cph/parse-path-name new-name)
+            object  (get-in data [:typographies id])
+            new-object  (assoc object :path path :name name)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/update-typography new-object))]
+        (rx/of (dwu/start-undo-transaction)
+               (dch/commit-changes changes)
+               (sync-file (:current-file-id state) file-id)
+               (dwu/commit-undo-transaction))))))
+
 
 (defn delete-typography
   [id]
