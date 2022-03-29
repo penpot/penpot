@@ -8,6 +8,7 @@
   "A workspace specific context menu (mouse right click)."
   (:require
    [app.common.data :as d]
+   [app.common.pages.helpers :as cph]
    [app.common.spec.page :as csp]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
@@ -167,13 +168,12 @@
 
 (mf/defc context-menu-thumbnail
   [{:keys [shapes]}]
-  (let [single?   (= (count shapes) 1)
-        has-frame? (->> shapes (d/seek #(= :frame (:type %))))
-        is-frame? (and single? has-frame?)
+  (let [single?    (= (count shapes) 1)
+        has-frame? (some cph/frame-shape? shapes)
         do-toggle-thumbnail (st/emitf (dw/toggle-file-thumbnail-selected))]
-    (when is-frame?
+    (when (and single? has-frame?)
       [:*
-       (if (every? :file-thumbnail shapes)
+       (if (every? :use-for-thumbnail? shapes)
          [:& menu-entry {:title (tr "workspace.shape.menu.thumbnail-remove")
                          :on-click do-toggle-thumbnail}]
          [:& menu-entry {:title (tr "workspace.shape.menu.thumbnail-set")

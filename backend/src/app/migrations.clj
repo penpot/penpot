@@ -217,6 +217,12 @@
 
    {:name "0069-add-file-thumbnail-table"
     :fn (mg/resource "app/migrations/sql/0069-add-file-thumbnail-table.sql")}
+
+   {:name "0070-del-frame-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0070-del-frame-thumbnail-table.sql")}
+
+   {:name "0071-add-file-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0071-add-file-object-thumbnail-table.sql")}
    ])
 
 

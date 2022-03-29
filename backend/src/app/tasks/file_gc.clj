@@ -6,18 +6,19 @@
 
 (ns app.tasks.file-gc
   "A maintenance task that is responsible of: purge unused file media,
-  clean unused frame thumbnails and remove old file thumbnails.  The
+  clean unused object thumbnails and remove old file thumbnails.  The
   file is eligible to be garbage collected after some period of
   inactivity (the default threshold is 72h)."
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.db :as db]
    [app.util.blob :as blob]
    [app.util.time :as dt]
+   [clojure.set :as set]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [integrant.core :as ig]))
 
 (declare ^:private retrieve-candidates)
@@ -117,26 +118,26 @@
       ;; them.
       (db/delete! conn :file-media-object {:id (:id mobj)}))))
 
-(defn- collect-frames
-  [data]
-  (let [xform (comp
-               (map :objects)
-               (mapcat vals)
-               (filter cph/frame-shape?)
-               (keep :id))
-        pages (concat
-               (vals (:pages-index data))
-               (vals (:components data)))]
-    (into #{} xform pages)))
-
 (defn- clean-file-frame-thumbnails!
   [conn file-id data]
-  (let [sql (str "delete from file_frame_thumbnail "
-                 " where file_id=? and not (frame_id=ANY(?))")
-        ids (->> (collect-frames data)
-                 (db/create-array conn "uuid"))
-        res (db/exec-one! conn [sql file-id ids])]
-    (l/debug :hint "delete frame thumbnails" :total (:next.jdbc/update-count res))))
+  (let [stored (->> (db/query conn :file-object-thumbnail
+                              {:file-id file-id}
+                              {:columns [:object-id]})
+                    (into #{} (map :object-id)))
+
+        using  (->> (concat (vals (:pages-index data))
+                            (vals (:components data)))
+                    (into #{} (comp (map :objects)
+                                    (mapcat keys))))
+
+        unused (set/difference stored using)]
+
+    (when (seq unused)
+      (let [sql (str/concat
+                 "delete from file_object_thumbnail "
+                 " where file_id=? and object_id=ANY(?)")
+            res (db/exec-one! conn [sql file-id (db/create-array conn "uuid" unused)])]
+        (l/debug :hint "delete object thumbnails" :total (:next.jdbc/update-count res))))))
 
 (defn- clean-file-thumbnails!
   [conn file-id revn]

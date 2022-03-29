@@ -7,11 +7,11 @@
 (ns app.rpc.queries.files
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.rpc.helpers :as rpch]
@@ -21,7 +21,8 @@
    [app.rpc.queries.teams :as teams]
    [app.util.blob :as blob]
    [app.util.services :as sv]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]))
 
 (declare decode-row)
 (declare decode-row-xf)
@@ -187,12 +188,30 @@
 
 ;; --- Query: File (By ID)
 
+(defn retrieve-object-thumbnails
+  ([{:keys [pool]} file-id]
+   (let [sql (str/concat
+              "select object_id, data "
+              "  from file_object_thumbnail"
+              " where file_id=?")]
+     (->> (db/exec! pool [sql file-id])
+          (d/index-by :object-id :data))))
+
+  ([{:keys [pool]} file-id frame-ids]
+   (with-open [conn (db/open pool)]
+     (let [sql (str/concat
+                "select object_id, data "
+                "  from file_object_thumbnail"
+                " where file_id=? and object_id = ANY(?)")
+           ids (db/create-array conn "uuid" (seq frame-ids))]
+       (->> (db/exec! conn [sql file-id ids])
+            (d/index-by :object-id :data))))))
+
 (defn retrieve-file
   [{:keys [pool] :as cfg} id]
-  (let [item (db/get-by-id pool :file id)]
-    (->> item
-         (decode-row)
-         (pmg/migrate-file))))
+  (->> (db/get-by-id pool :file id)
+       (decode-row)
+       (pmg/migrate-file)))
 
 (s/def ::file
   (s/keys :req-un [::profile-id ::id]))
@@ -202,12 +221,16 @@
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
   (let [perms (get-permissions pool profile-id id)]
     (check-read-permissions! perms)
-    (-> (retrieve-file cfg id)
-        (assoc :permissions perms))))
+    (let [file   (retrieve-file cfg id)
+          thumbs (retrieve-object-thumbnails cfg id)]
+      (-> file
+          (assoc :thumbnails thumbs)
+          (assoc :permissions perms)))))
 
-;; --- FILE THUMBNAIL
 
-(defn- trim-objects
+;; --- QUERY: page
+
+(defn- prune-objects
   "Given the page data and the object-id returns the page data with all
   other not needed objects removed from the `:objects` data
   structure."
@@ -219,70 +242,28 @@
   "Given the page data, removes the `:thumbnail` prop from all
   shapes."
   [page]
-  (update page :objects (fn [objects]
-                          (d/mapm #(dissoc %2 :thumbnail) objects))))
-
-(defn- prune-frames-with-thumbnails
-  "Remove unnecesary shapes from frames that have thumbnail from page
-  data."
-  [page]
-  (let [filter-shape?
-        (fn [objects [id shape]]
-          (let [frame-id (:frame-id shape)]
-            (or (= id uuid/zero)
-                (= frame-id uuid/zero)
-                (not (some? (get-in objects [frame-id :thumbnail]))))))
-
-        ;; We need to remove from the attribute :shapes its children because
-        ;; they will not be sent in the data
-        remove-frame-children
-        (fn [[id shape]]
-          [id (cond-> shape
-                (some? (:thumbnail shape))
-                (assoc :shapes []))])
-
-        update-objects
-        (fn [objects]
-          (into {}
-                (comp (map remove-frame-children)
-                      (filter (partial filter-shape? objects)))
-                objects))]
-
-    (update page :objects update-objects)))
-
-(defn- get-thumbnail-data
-  [{:keys [data] :as file}]
-  (if-let [[page frame] (first
-                         (for [page  (-> data :pages-index vals)
-                               frame (-> page :objects cph/get-frames)
-                               :when (:file-thumbnail frame)]
-                           [page frame]))]
-    (let [objects (->> (cph/get-children-with-self (:objects page) (:id frame))
-                       (d/index-by :id))]
-      (-> (assoc page :objects objects)
-          (assoc :thumbnail-frame frame)))
-
-    (let [page-id (-> data :pages first)]
-      (-> (get-in data [:pages-index page-id])
-          (prune-frames-with-thumbnails)))))
+  (update page :objects d/update-vals #(dissoc % :thumbnail)))
 
 (s/def ::page-id ::us/uuid)
 (s/def ::object-id ::us/uuid)
-(s/def ::prune-frames-with-thumbnails ::us/boolean)
-(s/def ::prune-thumbnails ::us/boolean)
 
 (s/def ::page
-  (s/keys :req-un [::profile-id ::file-id]
-          :opt-un [::page-id
-                   ::object-id
-                   ::prune-frames-with-thumbnails
-                   ::prune-thumbnails]))
+  (s/and
+   (s/keys :req-un [::profile-id ::file-id]
+           :opt-un [::page-id ::object-id])
+   (fn [obj]
+     (if (contains? obj :object-id)
+       (contains? obj :page-id)
+       true))))
 
 (sv/defmethod ::page
   "Retrieves the page data from file and returns it. If no page-id is
   specified, the first page will be returned. If object-id is
   specified, only that object and its children will be returned in the
   page objects data structure.
+
+  If you specify the object-id, the page-id parameter becomes
+  mandatory.
 
   Mainly used for rendering purposes."
   [{:keys [pool] :as cfg} {:keys [profile-id file-id page-id object-id] :as props}]
@@ -291,28 +272,84 @@
         page-id (or page-id (-> file :data :pages first))
         page    (get-in file [:data :pages-index page-id])]
 
-    (cond-> page
-      (:prune-frames-with-thumbnails props)
-      (prune-frames-with-thumbnails)
-
-      (:prune-thumbnails props)
-      (prune-thumbnails)
-
+    (cond-> (prune-thumbnails page)
       (uuid? object-id)
-      (trim-objects object-id))))
+      (prune-objects object-id))))
+
+;; --- QUERY: file-data-for-thumbnail
+
+(defn- get-file-thumbnail-data
+  [cfg {:keys [data id] :as file}]
+  (letfn [;; function responsible on finding the frame marked to be
+          ;; used as thumbnail; the returned frame always have
+          ;; the :page-id set to the page that it belongs.
+          (get-thumbnail-frame [data]
+            (d/seek :use-for-thumbnail?
+                    (for [page  (-> data :pages-index vals)
+                          frame (-> page :objects cph/get-frames)]
+                      (assoc frame :page-id (:id page)))))
+
+          ;; function responsible to filter objects data strucuture of
+          ;; all unneded shapes if a concrete frame is provided. If no
+          ;; frame, the objects is returned untouched.
+          (filter-objects [objects frame-id]
+            (d/index-by :id (cph/get-children-with-self objects frame-id)))
+
+          ;; function responsible of assoc available thumbnails
+          ;; to frames and remove all children shapes from objects if
+          ;; thumbnails is available
+          (assoc-thumbnails [objects thumbnails]
+            (loop [objects objects
+                   frames  (filter cph/frame-shape? (vals objects))]
+
+              (if-let [{:keys [id] :as frame} (first frames)]
+                (let [frame (if-let [thumb (get thumbnails id)]
+                              (assoc frame :thumbnail thumb :shapes [])
+                              (dissoc frame :thumbnail))]
+                  (if (:thumbnail frame)
+                    (recur (-> (assoc objects id frame)
+                               (d/without-keys (cph/get-children-ids objects id)))
+                           (rest frames))
+                    (recur (assoc objects id frame)
+                           (rest frames))))
+
+                objects)))]
+
+    (let [frame     (get-thumbnail-frame data)
+          frame-id  (:id frame)
+          page-id   (or (:page-id frame)
+                        (-> data :pages first))
+          page      (dm/get-in data [:pages-index page-id])
+
+          obj-ids   (or (some-> frame-id list)
+                        (map :id (cph/get-frames page)))
+          thumbs    (retrieve-object-thumbnails cfg id obj-ids)]
+
+      (cond-> page
+        ;; If we have frame, we need to specify it on the page level
+        ;; and remove the all other unrelated objects.
+        (some? frame-id)
+        (-> (assoc :thumbnail-frame-id frame-id)
+            (update :objects filter-objects frame-id))
+
+        ;; Assoc the available thumbnails and prune not visible shapes
+        ;; for avoid transfer unnecesary data.
+        :always
+        (update :objects assoc-thumbnails thumbs)))))
 
 (s/def ::file-data-for-thumbnail
   (s/keys :req-un [::profile-id ::file-id]))
 
 (sv/defmethod ::file-data-for-thumbnail
-  "Retrieves the data for generate the thumbnail of the file. Used mainly for render
-  thumbnails on dashboard. Returns the page data."
+  "Retrieves the data for generate the thumbnail of the file. Used
+  mainly for render thumbnails on dashboard."
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
   (check-read-permissions! pool profile-id file-id)
   (let [file (retrieve-file cfg file-id)]
-    {:page (get-thumbnail-data file)
-     :file-id file-id
-     :revn (:revn file)}))
+    {:file-id file-id
+     :revn (:revn file)
+     :page (get-file-thumbnail-data cfg file)}))
+
 
 ;; --- Query: Shared Library Files
 
@@ -411,20 +448,6 @@
   [{:keys [pool] :as cfg} {:keys [profile-id team-id]}]
   (teams/check-read-permissions! pool profile-id team-id)
   (db/exec! pool [sql:team-recent-files team-id]))
-
-;; --- QUERY: get all file frame thumbnails
-
-(s/def ::file-frame-thumbnails
-  (s/keys :req-un [::profile-id ::file-id]
-          :opt-un [::frame-id]))
-
-(sv/defmethod ::file-frame-thumbnails
-  [{:keys [pool]} {:keys [profile-id file-id frame-id]}]
-  (check-read-permissions! pool profile-id file-id)
-  (let [params (cond-> {:file-id file-id}
-                 frame-id (assoc :frame-id frame-id))
-        rows   (db/query pool :file-frame-thumbnail params)]
-    (d/index-by :frame-id :data rows)))
 
 ;; --- QUERY: get file thumbnail
 

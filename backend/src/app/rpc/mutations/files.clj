@@ -476,30 +476,31 @@
                        :revn revn
                        :data (blob/encode data)}
                       {:id id})))
-
       nil)))
 
+;; --- Mutation: upsert object thumbnail
 
-;; --- Mutation: Upsert frame thumbnail
-
-(def sql:upsert-frame-thumbnail
-  "insert into file_frame_thumbnail(file_id, frame_id, data)
+(def sql:upsert-object-thumbnail
+  "insert into file_object_thumbnail(file_id, object_id, data)
    values (?, ?, ?)
-       on conflict(file_id, frame_id) do
+       on conflict(file_id, object_id) do
           update set data = ?;")
 
-(s/def ::data ::us/string)
-(s/def ::upsert-file-frame-thumbnail
-  (s/keys :req-un [::profile-id ::file-id ::frame-id ::data]))
+(s/def ::data (s/nilable ::us/string))
+(s/def ::object-id ::us/uuid)
+(s/def ::upsert-file-object-thumbnail
+  (s/keys :req-un [::profile-id ::file-id ::object-id ::data]))
 
-(sv/defmethod ::upsert-file-frame-thumbnail
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id frame-id data]}]
+(sv/defmethod ::upsert-file-object-thumbnail
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id object-id data]}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
-    (db/exec-one! conn [sql:upsert-frame-thumbnail file-id frame-id data data])
+    (if data
+      (db/exec-one! conn [sql:upsert-object-thumbnail file-id object-id data data])
+      (db/delete! conn :file-object-thumbnail {:file-id file-id :object-id object-id}))
     nil))
 
-;; --- Mutation: Upsert file thumbnail
+;; --- Mutation: upsert file thumbnail
 
 (def sql:upsert-file-thumbnail
   "insert into file_thumbnail (file_id, revn, data, props)

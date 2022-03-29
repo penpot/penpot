@@ -963,18 +963,23 @@
   (ptk/reify ::toggle-file-thumbnail-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)
-            pages    (-> state :workspace-data :pages-index vals)
-            extract  (fn [{:keys [objects id] :as page}]
-                       (->> (cph/get-frames objects)
-                            (filter :file-thumbnail)
-                            (map :id)
-                            (remove selected)
-                            (map (fn [frame-id] [id frame-id]))))]
+      (let [selected   (wsh/lookup-selected state)
+            pages      (-> state :workspace-data :pages-index vals)
+            get-frames (fn [{:keys [objects id] :as page}]
+                         (->> (cph/get-frames objects)
+                              (sequence
+                               (comp (filter :use-for-thumbnail?)
+                                     (map :id)
+                                     (remove selected)
+                                     (map (partial vector id))))))]
+
         (rx/concat
-         (rx/from (for [[page-id frame-id] (mapcat extract pages)]
-                    (dch/update-shapes [frame-id] #(dissoc % :file-thumbnail) page-id nil)))
-         (rx/of (dch/update-shapes selected #(assoc % :file-thumbnail true))))))))
+         (rx/from
+          (->> (mapcat get-frames pages)
+               (d/group-by first second)
+               (map (fn [[page-id frame-ids]]
+                      (dch/update-shapes frame-ids #(dissoc % :use-for-thumbnail?) {:page-id page-id})))))
+         (rx/of (dch/update-shapes selected #(update % :use-for-thumbnail? not))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation

@@ -101,7 +101,6 @@
 
 (defn preconj
   [coll elem]
-  (assert (or (vector? coll) (nil? coll)))
   (into [elem] coll))
 
 (defn enumerate
@@ -176,7 +175,7 @@
   [data keys]
   (when (map? data)
     (persistent!
-     (reduce #(dissoc! %1 %2) (transient data) keys))))
+     (reduce dissoc! (transient data) keys))))
 
 (defn remove-at-index
   "Takes a vector and returns a vector with an element in the
