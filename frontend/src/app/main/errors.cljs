@@ -17,7 +17,6 @@
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as ts]
-   [expound.alpha :as expound]
    [fipp.edn :as fpp]
    [potok.core :as ptk]))
 
@@ -113,13 +112,12 @@
     (ts/schedule
      (st/emitf
       (msg/show {:content "Internal error: assertion."
-                :type :error
-                :timeout 3000})))
+                 :type :error
+                 :timeout 3000})))
 
     ;; Print to the console some debugging info
     (js/console.group message)
     (js/console.info context)
-    (js/console.error (with-out-str (expound/printer error)))
     (js/console.groupEnd message)))
 
 ;; That are special case server-errors that should be treated

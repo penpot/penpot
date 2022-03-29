@@ -403,16 +403,16 @@
 (defn mtype->extension [mtype]
   ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
   (case mtype
-    "image/apng"         "apng"
-    "image/avif"         "avif"
-    "image/gif"          "gif"
-    "image/jpeg"         "jpg"
-    "image/png"          "png"
-    "image/svg+xml"      "svg"
-    "image/webp"         "webp"
-    "application/zip"    "zip"
-    "application/penpot" "penpot"
-    "application/pdf"    "pdf"
+    "image/apng"         ".apng"
+    "image/avif"         ".avif"
+    "image/gif"          ".gif"
+    "image/jpeg"         ".jpg"
+    "image/png"          ".png"
+    "image/svg+xml"      ".svg"
+    "image/webp"         ".webp"
+    "application/zip"    ".zip"
+    "application/penpot" ".penpot"
+    "application/pdf"    ".pdf"
     nil))
 
 (defn set-attribute! [^js node ^string attr value]
@@ -464,11 +464,11 @@
 
 (defn trigger-download-uri
   [filename mtype uri]
-  (let [link (create-element "a")
+  (let [link      (create-element "a")
         extension (mtype->extension mtype)
-        filename (if extension
-                   (str filename "." extension)
-                   filename)]
+        filename  (if (and extension (not (str/ends-with? filename extension)))
+                    (str/concat filename "." extension)
+                    filename)]
     (obj/set! link "href" uri)
     (obj/set! link "download" filename)
     (obj/set! (.-style ^js link) "display" "none")

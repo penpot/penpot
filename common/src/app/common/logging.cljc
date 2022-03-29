@@ -9,7 +9,6 @@
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.common.spec :as us]
-   [clojure.pprint :refer [pprint]]
    [cuerdas.core :as str]
    [clojure.spec.alpha :as s]
    [fipp.edn :as fpp]

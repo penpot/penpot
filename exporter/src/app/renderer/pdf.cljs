@@ -7,68 +7,62 @@
 (ns app.renderer.pdf
   "A pdf renderer."
   (:require
+   ["path" :as path]
    [app.browser :as bw]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex :include-macros true]
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.util.mime :as mime]
+   [app.util.shell :as sh]
+   [cuerdas.core :as str]
    [cljs.spec.alpha :as s]
    [promesa.core :as p]))
 
-(defn pdf-from-object
-  [{:keys [file-id page-id object-id token scale type save-path uri] :as params}]
-  (p/let [params {:file-id file-id
-                  :page-id page-id
-                  :object-id object-id
-                  :route "render-object"}
-          uri    (-> (or uri (cf/get :public-uri))
-                     (assoc :path "/render.html")
-                     (assoc :query (u/map->query-string params)))]
-
-    (bw/exec!
-     #js {:screen #js {:width bw/default-viewport-width
-                       :height bw/default-viewport-height}
-          :viewport #js {:width bw/default-viewport-width
-                         :height bw/default-viewport-height}
-          :locale "en-US"
-          :storageState #js {:cookies (bw/create-cookies uri {:token token})}
-          :deviceScaleFactor scale
-          :userAgent bw/default-user-agent}
-     (fn [page]
-       (l/info :uri uri)
-       (p/do!
-        (bw/nav! page uri)
-        (p/let [dom (bw/select page "#screenshot")]
-          (bw/wait-for dom)
-          (bw/screenshot dom {:full-page? true})
-          (bw/sleep page 2000) ; the good old fix with sleep
-          (if save-path
-            (bw/pdf page {:save-path save-path})
-            (bw/pdf page))))))))
-
-(s/def ::name ::us/string)
-(s/def ::suffix ::us/string)
-(s/def ::page-id ::us/uuid)
-(s/def ::file-id ::us/uuid)
-(s/def ::object-id ::us/uuid)
-(s/def ::scale ::us/number)
-(s/def ::token ::us/string)
-(s/def ::save-path ::us/string)
-(s/def ::uri ::us/uri)
-
-(s/def ::render-params
-  (s/keys :req-un [::name ::suffix ::object-id ::page-id ::scale ::token ::file-id]
-          :opt-un [::save-path ::uri]))
-
 (defn render
-  [params]
-  (us/assert ::render-params params)
-  (p/let [content (pdf-from-object params)]
-    {:data content
-     :name (str (:name params)
-                (:suffix params "")
-                ".pdf")
-     :size (alength content)
-     :mtype "application/pdf"}))
+  [{:keys [file-id page-id token scale type uri objects] :as params} on-object]
+  (letfn [(prepare-options [uri]
+            #js {:screen #js {:width bw/default-viewport-width
+                              :height bw/default-viewport-height}
+                 :viewport #js {:width bw/default-viewport-width
+                                :height bw/default-viewport-height}
+                 :locale "en-US"
+                 :storageState #js {:cookies (bw/create-cookies uri {:token token})}
+                 :deviceScaleFactor scale
+                 :userAgent bw/default-user-agent})
 
+          (prepare-uri [base-uri object-id]
+            (let [params {:file-id file-id
+                          :page-id page-id
+                          :object-id object-id
+                          :route "objects"}]
+              (-> base-uri
+                  (assoc :path "/render.html")
+                  (assoc :query (u/map->query-string params)))))
+
+          (render-object [page base-uri {:keys [id] :as object}]
+            (p/let [uri  (prepare-uri base-uri id)
+                    tmp  (sh/mktmpdir! "pdf-render")
+                    path (path/join tmp (str/concat id (mime/get-extension type)))]
+              (l/info :uri uri)
+              (bw/nav! page uri)
+              (p/let [dom (bw/select page (dm/str "#screenshot-" id))]
+                (bw/wait-for dom)
+                (bw/screenshot dom {:full-page? true})
+                (bw/sleep page 2000) ; the good old fix with sleep
+                (bw/pdf page {:path path})
+                path)))
+
+          (render [base-uri page]
+            (p/loop [objects (seq objects)]
+              (when-let [object (first objects)]
+                (p/let [uri  (prepare-uri base-uri (:id object))
+                        path (render-object page base-uri object)]
+                  (on-object (assoc object :path path))
+                  (p/recur (rest objects))))))]
+
+    (let [base-uri (or uri (cf/get :public-uri))]
+      (bw/exec! (prepare-options base-uri)
+                (partial render base-uri)))))

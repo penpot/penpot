@@ -56,15 +56,16 @@
                  :uri (u/join (cfg/get-public-uri) path)
                  :credentials "include"
                  :query params}]
+
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
 (defn- render-thumbnail
-  [{:keys [data file-id revn] :as params}]
-  (let [elem (if-let [frame (:thumbnail-frame data)]
-               (mf/element render/frame-svg #js {:objects (:objects data) :frame frame})
-               (mf/element render/page-svg #js {:data data :width "290" :height "150" :thumbnails? true}))]
+  [{:keys [page file-id revn] :as params}]
+  (let [elem (if-let [frame (:thumbnail-frame page)]
+               (mf/element render/frame-svg #js {:objects (:objects page) :frame frame})
+               (mf/element render/page-svg #js {:data page :thumbnails? true}))]
     {:data (rds/renderToStaticMarkup elem)
      :fonts @fonts/loaded
      :file-id file-id
@@ -81,6 +82,7 @@
                  :uri (u/join (cfg/get-public-uri) path)
                  :credentials "include"
                  :body (http/transit-data params)}]
+
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response)

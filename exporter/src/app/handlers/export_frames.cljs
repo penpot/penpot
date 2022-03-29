@@ -7,12 +7,14 @@
 (ns app.handlers.export-frames
   (:require
    ["path" :as path]
-   [app.common.data.macros :as dm]
-   [app.common.exceptions :as exc :include-macros true]
+   [app.common.logging :as l]
+   [app.common.exceptions :as exc]
    [app.common.spec :as us]
+   [app.common.pprint :as pp]
    [app.handlers.resources :as rsc]
+   [app.handlers.export-shapes :refer [prepare-exports]]
    [app.redis :as redis]
-   [app.renderer.pdf :as rp]
+   [app.renderer :as rd]
    [app.util.shell :as sh]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -20,19 +22,17 @@
 
 (declare ^:private handle-export)
 (declare ^:private create-pdf)
-(declare ^:private export-frame)
 (declare ^:private join-pdf)
 (declare ^:private move-file)
-(declare ^:private clean-tmp)
 
 (s/def ::name ::us/string)
 (s/def ::file-id ::us/uuid)
 (s/def ::page-id ::us/uuid)
-(s/def ::frame-id ::us/uuid)
+(s/def ::object-id ::us/uuid)
 (s/def ::uri ::us/uri)
 
 (s/def ::export
-  (s/keys :req-un [::file-id ::page-id ::frame-id ::name]))
+  (s/keys :req-un [::file-id ::page-id ::object-id ::name]))
 
 (s/def ::exports
   (s/every ::export :kind vector? :min-count 1))
@@ -42,42 +42,53 @@
           :opt-un [::uri ::name]))
 
 (defn handler
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports uri] :as params}]
-  (let [xform    (map #(assoc % :token auth-token :uri uri))
-        exports  (sequence xform exports)]
+  [{:keys [:request/auth-token] :as exchange} {:keys [exports uri profile-id] :as params}]
+  ;; NOTE: we need to have the `:type` prop because the exports
+  ;; datastructure preparation uses it for creating the groups.
+  (let [exports  (-> (map #(assoc % :type :pdf :scale 1 :suffix "") exports)
+                     (prepare-exports auth-token uri))]
     (handle-export exchange (assoc params :exports exports))))
 
 (defn handle-export
-  [exchange {:keys [exports wait uri name] :as params}]
-  (let [topic       (-> exports first :file-id str)
+  [exchange {:keys [exports wait uri name profile-id] :as params}]
+  (let [total       (count exports)
+        topic       (str profile-id)
         resource    (rsc/create :pdf (or name (-> exports first :name)))
 
-        on-progress (fn [progress]
-                      (let [data {:type :export-update
-                                  :resource-id (:id resource)
-                                  :name (:name resource)
-                                  :status "running"
-                                  :progress progress}]
-                        (redis/pub! topic data)))
+        on-progress (fn [{:keys [done]}]
+                      (when-not wait
+                        (let [data {:type :export-update
+                                    :resource-id (:id resource)
+                                    :name (:name resource)
+                                    :filename (:filename resource)
+                                    :status "running"
+                                    :total total
+                                    :done done}]
+                          (redis/pub! topic data))))
 
-        on-complete (fn [resource]
-                      (let [data {:type :export-update
-                                  :resource-id (:id resource)
-                                  :name (:name resource)
-                                  :size (:size resource)
-                                  :status "ended"}]
-                        (redis/pub! topic data)))
+        on-complete (fn []
+                      (when-not wait
+                        (let [data {:type :export-update
+                                    :resource-id (:id resource)
+                                    :name (:name resource)
+                                    :filename (:filename resource)
+                                    :status "ended"}]
+                          (redis/pub! topic data))))
 
         on-error    (fn [cause]
-                      (let [data {:type :export-update
-                                  :resource-id (:id resource)
-                                  :name (:name resource)
-                                  :status "error"
-                                  :cause (ex-message cause)}]
-                        (redis/pub! topic data)))
+                      (l/error :hint "unexpected error on frames exportation" :cause cause)
+                      (if wait
+                        (p/rejected cause)
+                        (let [data {:type :export-update
+                                    :resource-id (:id resource)
+                                    :name (:name resource)
+                                    :filename (:filename resource)
+                                    :status "error"
+                                    :cause (ex-message cause)}]
+                          (redis/pub! topic data))))
 
         proc        (create-pdf :resource resource
-                                :items exports
+                                :exports exports
                                 :on-progress on-progress
                                 :on-complete on-complete
                                 :on-error on-error)]
@@ -86,70 +97,46 @@
       (assoc exchange :response/body (dissoc resource :path)))))
 
 (defn create-pdf
-  [& {:keys [resource items on-progress on-complete on-error]
-      :or {on-progress identity
-           on-complete identity
-           on-error identity}}]
-  (p/let [progress (atom 0)
-          tmpdir   (sh/create-tmpdir! "pdfexport")
-          file-id  (-> items first :file-id)
-          items    (into [] (map #(partial export-frame tmpdir %)) items)
-          xform    (map (fn [export-fn]
-                          #(p/finally
-                             (export-fn)
-                             (fn [result _]
-                               (on-progress {:total (count items)
-                                             :done (swap! progress inc)
-                                             :name (:name result)})))))]
-    (-> (reduce (fn [res export-fn]
-                  (p/let [res res
-                          out (export-fn)]
-                    (cons (:path out) res)))
-                (p/resolved nil)
-                (into '() xform items))
-        (p/then (partial join-pdf tmpdir file-id))
+  [& {:keys [resource exports on-progress on-complete on-error]
+      :or {on-progress (constantly nil)
+           on-complete (constantly nil)
+           on-error    p/rejected}}]
+
+  (let [file-id   (-> exports first :file-id)
+        result    (atom [])
+
+        on-object
+        (fn [{:keys [path] :as object}]
+          (let [res (swap! result conj path)]
+            (on-progress {:done (count res)})))]
+
+    (-> (p/loop [exports (seq exports)]
+          (when-let [export (first exports)]
+            (p/let [proc (rd/render export on-object)]
+              (p/recur (rest exports)))))
+
+        (p/then (fn [_] (deref result)))
+        (p/then (partial join-pdf file-id))
         (p/then (partial move-file resource))
-        (p/then (partial clean-tmp tmpdir))
+        (p/then (constantly resource))
         (p/then (fn [resource]
                   (-> (sh/stat (:path resource))
                       (p/then #(merge resource %)))))
+        (p/catch on-error)
         (p/finally (fn [result cause]
-                     (if cause
-                       (on-error cause)
-                       (on-complete result)))))))
-
-(defn- export-frame
-  [tmpdir {:keys [file-id page-id frame-id token uri] :as params}]
-  (let [file-name (dm/fmt "%.pdf" frame-id)
-        save-path (path/join tmpdir file-name)]
-    (-> (rp/render {:name (dm/str frame-id)
-                    :uri  uri
-                    :suffix ""
-                    :token token
-                    :file-id file-id
-                    :page-id page-id
-                    :object-id frame-id
-                    :scale 1
-                    :save-path save-path})
-        (p/then (fn [_]
-                  {:name file-name
-                   :path save-path})))))
+                     (when-not cause
+                       (on-complete)))))))
 
 (defn- join-pdf
-  [tmpdir file-id paths]
-  (let [output-path (path/join tmpdir (str file-id ".pdf"))
-        paths-str   (str/join " " paths)]
-    (-> (sh/run-cmd! (str "pdfunite " paths-str " " output-path))
-        (p/then (constantly output-path)))))
+  [file-id paths]
+  (p/let [tmpdir (sh/mktmpdir! "join-pdf")
+          path   (path/join tmpdir (str/concat file-id ".pdf"))]
+    (sh/run-cmd! (str "pdfunite " (str/join " " paths) " " path))
+    path))
 
 (defn- move-file
   [{:keys [path] :as resource} output-path]
   (p/do
     (sh/move! output-path path)
+    (sh/rmdir! (path/dirname output-path))
     resource))
-
-(defn- clean-tmp
-  [tdpath data]
-  (p/do!
-    (sh/rmdir! tdpath)
-    data))

@@ -13,6 +13,7 @@
    #?(:clj [clojure.core :as c]
       :cljs [cljs.core :as c])
    [app.common.data :as d]
+   [cuerdas.core :as str]
    [cljs.analyzer.api :as aapi]))
 
 (defmacro select-keys
@@ -36,61 +37,9 @@
    `(let [v# (-> ~target ~@(map (fn [key] (list `c/get key)) keys))]
       (if (some? v#) v# ~default))))
 
-
-;; => benchmarking: clojure.core/str
-;; --> WARM:  100000
-;; --> BENCH: 500000
-;; --> TOTAL: 197.82ms
-;; --> MEAN:  395.64ns
-;; => benchmarking: app.commons.data.macros/str
-;; --> WARM:  100000
-;; --> BENCH: 500000
-;; --> TOTAL: 20.31ms
-;; --> MEAN:  40.63ns
-
 (defmacro str
-  "CLJS only macro variant of `str` function that performs string concat much faster."
-  ([a]
-   (if (:ns &env)
-     (list 'js* "\"\"+~{}" a)
-     (list `c/str a)))
-  ([a b]
-   (if (:ns &env)
-     (list 'js* "\"\"+~{}+~{}" a b)
-     (list `c/str a b)))
-  ([a b c]
-   (if (:ns &env)
-     (list 'js* "\"\"+~{}+~{}+~{}" a b c)
-     (list `c/str a b c)))
-  ([a b c d]
-   (if (:ns &env)
-     (list 'js* "\"\"+~{}+~{}+~{}+~{}" a b c d)
-     (list `c/str a b c d)))
-  ([a b c d e]
-   (if (:ns &env)
-     (list 'js* "\"\"+~{}+~{}+~{}+~{}+~{}" a b c d e)
-     (list `c/str a b c d e)))
-  ([a b c d e f]
-   (if (:ns &env)
-     (list 'js* "\"\"+~{}+~{}+~{}+~{}+~{}+~{}" a b c d e f)
-     (list `c/str a b c d e f)))
-  ([a b c d e f g]
-   (if (:ns &env)
-     (list 'js* "\"\"+~{}+~{}+~{}+~{}+~{}+~{}+~{}" a b c d e f g)
-     (list `c/str a b c d e f g)))
-  ([a b c d e f g h]
-   (if (:ns &env)
-     (list 'js* "\"\"+~{}+~{}+~{}+~{}+~{}+~{}+~{}+~{}" a b c d e f g h)
-     (list `c/str a b c d e f g h)))
-  ([a b c d e f g h & rest]
-   (let [all (into [a b c d e f g h] rest)]
-     (if (:ns &env)
-       (let [xf   (map (fn [items] `(str ~@items)))
-             pall (partition-all 8 all)]
-         (if (<= (count all) 64)
-           `(str ~@(sequence xf pall))
-           `(c/str ~@(sequence xf pall))))
-       `(c/str ~@all)))))
+  [& params]
+  `(str/concat ~@params))
 
 (defmacro export
   "A helper macro that allows reexport a var in a current namespace."
@@ -129,36 +78,6 @@
          ;;   (.setMacro (var ~n)))
          ~vr))))
 
-(defn- interpolate
-  [s params]
-  (loop [items  (->> (re-seq #"([^\%]+)*(\%(\d+)?)?" s)
-                     (remove (fn [[full seg]] (and (nil? seg) (not full)))))
-         result []
-         index  0]
-    (if-let [[_ segment var? sidx] (first items)]
-      (cond
-        (and var? sidx)
-        (let [cidx (dec (d/read-string sidx))]
-          (recur (rest items)
-                 (-> result
-                     (conj segment)
-                     (conj (nth params cidx)))
-                 (inc index)))
-
-        var?
-        (recur (rest items)
-               (-> result
-                   (conj segment)
-                   (conj (nth params index)))
-               (inc index))
-
-        :else
-        (recur (rest items)
-               (conj result segment)
-               (inc index)))
-
-      (remove nil? result))))
-
 (defmacro fmt
   "String interpolation helper. Can only be used with strings known at
   compile time. Can be used with indexed params access or sequential.
@@ -169,7 +88,7 @@
     (dm/fmt \"url(%1)\" my-url) ; indexed
   "
   [s & params]
-  (cons 'app.common.data.macros/str (interpolate s (vec params))))
+  `(str/ffmt ~s ~@params))
 
 
 

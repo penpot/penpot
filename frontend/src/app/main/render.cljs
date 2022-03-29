@@ -14,7 +14,8 @@
   (:require
    ["react-dom/server" :as rds]
    [app.common.colors :as clr]
-   [app.common.geom.align :as gal]
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -22,10 +23,12 @@
    [app.common.pages.helpers :as cph]
    [app.config :as cfg]
    [app.main.fonts :as fonts]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.export :as export]
+   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.image :as image]
@@ -57,11 +60,9 @@
     :fill color}])
 
 (defn- calculate-dimensions
-  [{:keys [objects] :as data} vport]
-  (let [shapes    (cph/get-immediate-children objects)
-        rect      (cond->> (gsh/selection-rect shapes)
-                    (some? vport)
-                    (gal/adjust-to-viewport vport))]
+  [objects]
+  (let [shapes (cph/get-immediate-children objects)
+        rect   (gsh/selection-rect shapes)]
     (-> rect
         (update :x mth/finite 0)
         (update :y mth/finite 0)
@@ -156,24 +157,63 @@
    (->> [x y width height]
         (map #(ust/format-precision % viewbox-decimal-precision)))))
 
+(defn adapt-root-frame
+  [objects object]
+  (let [shapes   (cph/get-immediate-children objects)
+        srect    (gsh/selection-rect shapes)
+        object   (merge object (select-keys srect [:x :y :width :height]))
+        object   (gsh/transform-shape object)]
+    (assoc object :fill-color "#f0f0f0")))
+
+(defn adapt-objects-for-shape
+  [objects object-id]
+  (let [object   (get objects object-id)
+        object   (cond->> object
+                   (cph/root-frame? object)
+                   (adapt-root-frame objects))
+
+        ;; Replace the previous object with the new one
+        objects  (assoc objects object-id object)
+
+        modifier (-> (gpt/point (:x object) (:y object))
+                     (gpt/negate)
+                     (gmt/translate-matrix))
+
+        mod-ids  (cons object-id (cph/get-children-ids objects object-id))
+        updt-fn  #(-> %1
+                      (assoc-in [%2 :modifiers :displacement] modifier)
+                      (update %2 gsh/transform-shape))]
+
+    (reduce updt-fn objects mod-ids)))
+
+(defn get-object-bounds
+  [objects object-id]
+  (let [object  (get objects object-id)
+        padding (filters/calculate-padding object)
+        bounds  (-> (filters/get-filters-bounds object)
+                    (update :x - (:horizontal padding))
+                    (update :y - (:vertical padding))
+                    (update :width + (* 2 (:horizontal padding)))
+                    (update :height + (* 2 (:vertical padding))))]
+
+    (if (cph/group-shape? object)
+      (if (:masked-group? object)
+        (get-object-bounds objects (-> object :shapes first))
+        (->> (:shapes object)
+             (into [bounds] (map (partial get-object-bounds objects)))
+             (gsh/join-rects)))
+      bounds)))
+
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [data width height thumbnails? embed? include-metadata?] :as props
-    :or {embed? false include-metadata? false}}]
+  [{:keys [data thumbnails? render-embed? include-metadata?] :as props
+    :or {render-embed? false include-metadata? false}}]
   (let [objects (:objects data)
         shapes  (cph/get-immediate-children objects)
 
-        root-children
-        (->> shapes
-             (remove cph/frame-shape?)
-             (mapcat #(cph/get-children-with-self objects (:id %))))
-
-        vport   (when (and (some? width) (some? height))
-                  {:width width :height height})
-
-        dim     (calculate-dimensions data vport)
+        dim     (calculate-dimensions objects)
         vbox    (format-viewbox dim)
-        background-color (get-in data [:options :background] default-color)
+        bgcolor (dm/get-in data [:options :background] default-color)
 
         frame-wrapper
         (mf/use-memo
@@ -185,7 +225,7 @@
          (mf/deps objects)
          #(shape-wrapper-factory objects))]
 
-    [:& (mf/provider embed/context) {:value embed?}
+    [:& (mf/provider embed/context) {:value render-embed?}
      [:& (mf/provider export/include-metadata-ctx) {:value include-metadata?}
       [:svg {:view-box vbox
              :version "1.1"
@@ -194,12 +234,17 @@
              :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
              :style {:width "100%"
                      :height "100%"
-                     :background background-color}}
+                     :background bgcolor}}
 
        (when include-metadata?
          [:& export/export-page {:options (:options data)}])
 
-       [:& ff/fontfaces-style {:shapes root-children}]
+
+       (let [shapes (->> shapes
+                         (remove cph/frame-shape?)
+                         (mapcat #(cph/get-children-with-self objects (:id %))))]
+         [:& ff/fontfaces-style {:shapes shapes}])
+
        (for [item shapes]
          (let [frame? (= (:type item) :frame)]
            (cond
@@ -213,6 +258,10 @@
              :else
              [:& shape-wrapper {:shape item
                                 :key (:id item)}])))]]]))
+
+
+;; Component that serves for render frame thumbnails, mainly used in
+;; the viewer and handoff
 
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
@@ -260,6 +309,10 @@
          [:> shape-container {:shape frame}
           [:& frame/frame-thumbnail {:shape frame}]]))]))
 
+
+;; Component for rendering a thumbnail of a single componenent. Mainly
+;; used to render thumbnails on assets panel.
+
 (mf/defc component-svg
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [objects group zoom] :or {zoom 1} :as props}]
@@ -304,81 +357,122 @@
      [:> shape-container {:shape group}
       [:& group-wrapper {:shape group :view-box vbox}]]]))
 
+(mf/defc object-svg
+  {::mf/wrap [mf/memo]}
+  [{:keys [objects object zoom render-texts? render-embed?]
+    :or {zoom 1 render-embed? false}
+    :as props}]
+  (let [object (cond-> object
+                 (:hide-fill-on-export object)
+                 (assoc :fills []))
+
+        obj-id (:id object)
+        x      (* (:x object) zoom)
+        y      (* (:y object) zoom)
+        width  (* (:width object) zoom)
+        height (* (:height object) zoom)
+
+        vbox   (dm/str x " " y " " width " " height)
+
+        frame-wrapper
+        (mf/with-memo [objects]
+          (frame-wrapper-factory objects))
+
+        group-wrapper
+        (mf/with-memo [objects]
+          (group-wrapper-factory objects))
+
+        shape-wrapper
+        (mf/with-memo [objects]
+          (shape-wrapper-factory objects))
+
+        text-shapes   (sequence (filter cph/text-shape?) (vals objects))
+        render-texts? (and render-texts? (d/seek (comp nil? :position-data) text-shapes))]
+
+    [:& (mf/provider embed/context) {:value render-embed?}
+     [:svg {:id (dm/str "screenshot-" obj-id)
+            :view-box vbox
+            :width width
+            :height height
+            :version "1.1"
+            :xmlns "http://www.w3.org/2000/svg"
+            :xmlnsXlink "http://www.w3.org/1999/xlink"
+            ;; Fix Chromium bug about color of html texts
+            ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
+            :style {:-webkit-print-color-adjust :exact}}
+
+      (let [shapes (cph/get-children objects obj-id)]
+        [:& ff/fontfaces-style {:shapes shapes}])
+
+      (case (:type object)
+        :frame [:& frame-wrapper {:shape object :view-box vbox}]
+        :group [:> shape-container {:shape object}
+                [:& group-wrapper {:shape object}]]
+        [:& shape-wrapper {:shape object}])]
+
+     ;; Auxiliary SVG for rendering text-shapes
+     (when render-texts?
+       (for [object text-shapes]
+         [:& (mf/provider muc/text-plain-colors-ctx) {:value true}
+          [:svg
+           {:id (dm/str "screenshot-text-" (:id object))
+            :view-box (dm/str "0 0 " (:width object) " " (:height object))
+            :width (:width object)
+            :height (:height object)
+            :version "1.1"
+            :xmlns "http://www.w3.org/2000/svg"
+            :xmlnsXlink "http://www.w3.org/1999/xlink"}
+           [:& shape-wrapper {:shape (assoc object :x 0 :y 0)}]]]))]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SPRITES (DEBUG)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (mf/defc component-symbol
-  {::mf/wrap-props false}
-  [props]
-  (let [id      (obj/get props "id")
-        data    (obj/get props "data")
-        name    (:name data)
-        path    (:path data)
-        objects (:objects data)
-        root    (get objects id)
-        selrect (:selrect root)
+  [{:keys [id data] :as props}]
+  (let [name    (:name data)
+        objects (-> (:objects data)
+                    (adapt-objects-for-shape id))
+        object  (get objects id)
+        selrect (:selrect object)
 
         vbox
         (format-viewbox
          {:width (:width selrect)
           :height (:height selrect)})
 
-        modifier
-        (mf/use-memo
-         (mf/deps (:x root) (:y root))
-         (fn []
-           (-> (gpt/point (:x root) (:y root))
-               (gpt/negate)
-               (gmt/translate-matrix))))
-
-        objects
-        (mf/use-memo
-         (mf/deps modifier id objects)
-         (fn []
-           (let [modifier-ids (cons id (cph/get-children-ids objects id))
-                 update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)]
-             (reduce update-fn objects modifier-ids))))
-
-        root
-        (mf/use-memo
-         (mf/deps modifier root)
-         (fn [] (assoc-in root [:modifiers :displacement] modifier)))
-
         group-wrapper
         (mf/use-memo
          (mf/deps objects)
          (fn [] (group-wrapper-factory objects)))]
 
-    [:> "symbol" #js {:id (str id)
-                      :viewBox vbox
-                      "penpot:path" path}
+    [:> "symbol" #js {:id (str id) :viewBox vbox}
      [:title name]
-     [:> shape-container {:shape root}
-      [:& group-wrapper {:shape root :view-box vbox}]]]))
+     [:> shape-container {:shape object}
+      [:& group-wrapper {:shape object :view-box vbox}]]]))
 
 (mf/defc components-sprite-svg
   {::mf/wrap-props false}
   [props]
   (let [data              (obj/get props "data")
         children          (obj/get props "children")
-        embed?            (obj/get props "embed?")
+        render-embed?     (obj/get props "render-embed?")
         include-metadata? (obj/get props "include-metadata?")]
-    [:& (mf/provider embed/context) {:value embed?}
+    [:& (mf/provider embed/context) {:value render-embed?}
      [:& (mf/provider export/include-metadata-ctx) {:value include-metadata?}
       [:svg {:version "1.1"
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"
              :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
-             :style {:width "100vw"
-                     :height "100vh"
-                     :display (when-not (some? children) "none")}}
+             :style {:display (when-not (some? children) "none")}}
        [:defs
-        (for [[component-id component-data] (:components data)]
-          [:& component-symbol {:id component-id
-                                :key (str component-id)
-                                :data component-data}])]
+        (for [[id data] (:components data)]
+          [:& component-symbol {:id id :key (dm/str id) :data data}])]
 
        children]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; RENDERING
+;; RENDER FOR DOWNLOAD (wrongly called exportation)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- get-image-data [shape]
@@ -426,7 +520,7 @@
    (->> (rx/of data)
         (rx/map
          (fn [data]
-           (let [elem (mf/element page-svg #js {:data data :embed? true :include-metadata? true})]
+           (let [elem (mf/element page-svg #js {:data data :render-embed? true :include-metadata? true})]
              (rds/renderToStaticMarkup elem)))))))
 
 (defn render-components
@@ -445,5 +539,6 @@
      (->> (rx/of data)
           (rx/map
            (fn [data]
-             (let [elem (mf/element components-sprite-svg #js {:data data :embed? true :include-metadata? true})]
+             (let [elem (mf/element components-sprite-svg
+                                    #js {:data data :render-embed? true :include-metadata? true})]
                (rds/renderToStaticMarkup elem))))))))

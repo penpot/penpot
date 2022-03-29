@@ -48,7 +48,7 @@
                 :typographies (str file-id "/typographies.json")
                 :media-list   (str file-id "/media.json")
                 :media        (let [ext (dom/mtype->extension (:mtype media))]
-                                (str file-id "/media/" id "." ext))
+                                (str/concat file-id "/media/" id ext))
                 :components   (str file-id "/components.svg"))
 
          parse-svg?  (and (not= type :media) (str/ends-with? path "svg"))

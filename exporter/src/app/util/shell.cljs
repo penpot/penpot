@@ -16,12 +16,9 @@
 
 (l/set-level! :trace)
 
-(defn create-tmpdir!
+(defn mktmpdir!
   [prefix]
-  (-> (.mkdtemp fs/promises prefix)
-      (p/then (fn [result]
-                (path/join (os/tmpdir) result)))))
-
+  (.mkdtemp fs/promises (path/join (os/tmpdir) prefix)))
 
 (defn move!
   [origin-path dest-path]
