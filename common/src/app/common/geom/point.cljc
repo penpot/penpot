@@ -33,7 +33,6 @@
 (s/def ::point
   (s/and (s/keys :req-un [::x ::y]) point?))
 
-
 (defn ^boolean point-like?
   [{:keys [x y] :as v}]
   (and (map? v)
@@ -60,6 +59,11 @@
      (throw (ex-info "Invalid arguments" {:v v}))))
   ([x y]
    (Point. x y)))
+
+(defn close?
+  [p1 p2]
+  (and (mth/close? (:x p1) (:x p2))
+       (mth/close? (:y p1) (:y p2))))
 
 (defn angle->point [{:keys [x y]} angle distance]
   (point

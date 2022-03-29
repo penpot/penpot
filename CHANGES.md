@@ -68,6 +68,7 @@
 - Fix shift+2 shortcut in MacOS with non-english keyboards [Taiga #3038](https://tree.taiga.io/project/penpot/issue/3038)
 - Some fixes to SVG imports [Taiga #3122](https://tree.taiga.io/project/penpot/issue/3122) [#1720](https://github.com/penpot/penpot/issues/1720) [Taiga #2884](https://tree.taiga.io/project/penpot/issue/2884)
 - Fix drag guides to delete target area [#1679](https://github.com/penpot/penpot/issues/1679)
+- Fix undo when rotating groups [Taiga #3136](https://tree.taiga.io/project/penpot/issue/3136)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

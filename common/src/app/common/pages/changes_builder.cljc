@@ -8,8 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bool :as gshb]
+   [app.common.geom.shapes.rect :as gshr]
+   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]))
@@ -379,8 +383,24 @@
         generate-operation
         (fn [operations attr old new]
           (let [old-val (get old attr)
-                new-val (get new attr)]
-            (if (= old-val new-val)
+                new-val (get new attr)
+
+                equal?  (cond
+                          (and (number? old-val) (number? new-val))
+                          (mth/close? old-val new-val)
+
+                          (and (gmt/matrix? old-val) (gmt/matrix? new-val))
+                          (gmt/close? old-val new-val)
+
+                          (= attr :points)
+                          (every? #(apply gpt/close? %) (d/zip old-val new-val))
+
+                          (= attr :selrect)
+                          (gshr/close-selrect? old-val new-val)
+
+                          :else
+                          (= old-val new-val))]
+            (if equal?
               operations
               (-> operations
                   (update :rops conj {:type :set :attr attr :val new-val :ignore-touched true})
@@ -413,7 +433,7 @@
             (if (seq rops)
               (-> changes
                   (update :redo-changes conj (assoc change :operations rops))
-                  (update :undo-changes conj (assoc change :operations uops)))
+                  (update :undo-changes d/preconj (assoc change :operations uops)))
               changes)))]
 
     (-> (reduce resize-parent changes all-parents)
