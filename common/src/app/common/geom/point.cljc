@@ -21,7 +21,7 @@
 
 (defn s [{:keys [x y]}] (str "(" x "," y ")"))
 
-(defn ^boolean point?
+(defn point?
   "Return true if `v` is Point instance."
   [v]
   (or (instance? Point v)
@@ -33,7 +33,7 @@
 (s/def ::point
   (s/and (s/keys :req-un [::x ::y]) point?))
 
-(defn ^boolean point-like?
+(defn point-like?
   [{:keys [x y] :as v}]
   (and (map? v)
        (not (nil? x))

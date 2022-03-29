@@ -26,7 +26,7 @@
   (toString [_]
     (str "matrix(" a "," b "," c "," d "," e "," f ")")))
 
-(defn ^boolean matrix?
+(defn matrix?
   "Return true if `v` is Matrix instance."
   [v]
   (instance? Matrix v))
@@ -120,7 +120,7 @@
   ([{x :x y :y :as pt}]
    (assert (gpt/point? pt))
    (Matrix. 1 0 0 1 x y))
-  
+
   ([x y]
    (translate-matrix (gpt/point x y))))
 
