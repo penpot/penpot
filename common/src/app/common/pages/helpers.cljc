@@ -17,28 +17,28 @@
 ;; GENERIC SHAPE SELECTORS AND PREDICATES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn ^boolean root-frame?
+(defn root-frame?
   [{:keys [id type]}]
   (and (= type :frame)
        (= id uuid/zero)))
 
-(defn ^boolean frame-shape?
+(defn frame-shape?
   [{:keys [type]}]
   (= type :frame))
 
-(defn ^boolean group-shape?
+(defn group-shape?
   [{:keys [type]}]
   (= type :group))
 
-(defn ^boolean text-shape?
+(defn text-shape?
   [{:keys [type]}]
   (= type :text))
 
-(defn ^boolean image-shape?
+(defn image-shape?
   [{:keys [type]}]
   (= type :image))
 
-(defn ^boolean unframed-shape?
+(defn unframed-shape?
   "Checks if it's a non-frame shape in the top level."
   [shape]
   (and (not (frame-shape? shape))
@@ -218,7 +218,7 @@
   ([libraries library-id component-id]
    (get-in libraries [library-id :data :components component-id])))
 
-(defn ^boolean is-main-of?
+(defn is-main-of?
   [shape-main shape-inst]
   (and (:shape-ref shape-inst)
        (or (= (:shape-ref shape-inst) (:id shape-main))

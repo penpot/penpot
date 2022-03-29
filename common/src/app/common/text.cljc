@@ -63,16 +63,16 @@
         (filter match?)
         (seq))))
 
-(defn ^boolean is-text-node?
+(defn is-text-node?
   [node]
   (and (string? (:text node))
        (not= (:text node) "")))
 
-(defn ^boolean is-paragraph-node?
+(defn is-paragraph-node?
   [node]
   (= "paragraph" (:type node)))
 
-(defn ^boolean is-root-node?
+(defn is-root-node?
   [node]
   (= "root" (:type node)))
 
