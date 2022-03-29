@@ -36,7 +36,7 @@
 
         ;; NOTE: this is necessary because the `cph/get-component`
         ;; expects a map of all libraries, including the local one.
-        libraries       (assoc libraries (:id local-file) local-file)
+        libraries       (assoc libraries (:id local-file) {:data local-file})
 
         component       (cph/get-component libraries library-id component-id)
         show?           (some? component-id)

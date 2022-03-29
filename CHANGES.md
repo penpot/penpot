@@ -19,11 +19,11 @@
 - Constraints are not well assigned when default and multiselection [Taiga #3069](https://tree.taiga.io/project/penpot/issue/3069)
 - Exporting big files flow [Taiga #2218](https://tree.taiga.io/project/penpot/us/2218)
 - Multiexport from main menu [Taiga #520](https://tree.taiga.io/project/penpot/us/28541)
-- Multipexport assets (aka bulk export) [Taiga #520](https://tree.taiga.io/project/penpot/us/520)
+- Multiexport assets (aka bulk export) [Taiga #520](https://tree.taiga.io/project/penpot/us/520)
 - Set the artboard layer fixed at the top side of the layers [Taiga #2636](https://tree.taiga.io/project/penpot/us/2636)
 - Set an artboard as the file thumbnail [Taiga #1526](https://tree.taiga.io/project/penpot/us/1526)
 - Social login redesign [Taiga #2974](https://tree.taiga.io/project/penpot/task/2974)
-- Add border radius to our artboars [Taiga #2056](https://tree.taiga.io/project/penpot/us/2056)
+- Add border radius to our artboards [Taiga #2056](https://tree.taiga.io/project/penpot/us/2056)
 - Allow send multiple team invitations at once [Taiga #2798](https://tree.taiga.io/project/penpot/us/2798)
 - Persist color palette and color picker across refresh [Taiga #1660](https://tree.taiga.io/project/penpot/issue/1660)
 - Ability to add multiple strokes to a shape [Taiga #2778](https://tree.taiga.io/project/penpot/us/2778)
@@ -70,6 +70,7 @@
 - Some fixes to SVG imports [Taiga #3122](https://tree.taiga.io/project/penpot/issue/3122) [#1720](https://github.com/penpot/penpot/issues/1720) [Taiga #2884](https://tree.taiga.io/project/penpot/issue/2884)
 - Fix drag guides to delete target area [#1679](https://github.com/penpot/penpot/issues/1679)
 - Fix undo when rotating groups [Taiga #3136](https://tree.taiga.io/project/penpot/issue/3136)
+- Fix component name in sidebar widget [Taiga #3144](https://tree.taiga.io/project/penpot/issue/3144)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
