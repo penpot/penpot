@@ -390,34 +390,3 @@
               :bool    [:> bool-container {:shape shape :frame frame :objects objects}]
               :svg-raw [:> svg-raw-container {:shape shape :frame frame :objects objects}])))))))
 
-(mf/defc frame-svg
-  {::mf/wrap [mf/memo]}
-  [{:keys [objects frame zoom] :or {zoom 1} :as props}]
-  (let [modifier (-> (gpt/point (:x frame) (:y frame))
-                     (gpt/negate)
-                     (gmt/translate-matrix))
-
-        update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)
-
-        frame-id     (:id frame)
-        modifier-ids (into [frame-id] (cph/get-children-ids objects frame-id))
-        objects      (reduce update-fn objects modifier-ids)
-        frame        (assoc-in frame [:modifiers :displacement] modifier)
-        width        (* (:width frame) zoom)
-        height       (* (:height frame) zoom)
-
-        vbox         (str "0 0 " (:width frame 0)
-                          " "    (:height frame 0))
-        wrapper      (mf/use-memo
-                      (mf/deps objects)
-                      #(frame-container-factory objects))]
-
-    [:svg {:view-box vbox
-           :width width
-           :height height
-           :version "1.1"
-           :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns "http://www.w3.org/2000/svg"}
-     [:& wrapper {:shape frame
-                  :view-box vbox}]]))
-

@@ -19,7 +19,6 @@
    [app.main.ui.onboarding]
    [app.main.ui.onboarding.questions]
    [app.main.ui.releases]
-   [app.main.ui.render :as render]
    [app.main.ui.settings :as settings]
    [app.main.ui.static :as static]
    [app.main.ui.viewer :as viewer]
@@ -109,15 +108,6 @@
                                    :section section
                                    :index index
                                    :share-id share-id}]))
-
-       ;; TODO: maybe move to `app.render` entrypoint (handled by render.html)
-       :render-sprite
-       (do
-         (let [file-id      (uuid (get-in route [:path-params :file-id]))
-               component-id (get-in route [:query-params :component-id])
-               component-id (when (some? component-id) (uuid component-id))]
-           [:& render/render-sprite {:file-id file-id
-                                     :component-id component-id}]))
 
        :workspace
        (let [project-id (some-> params :path :project-id uuid)

@@ -205,107 +205,27 @@
     (-> (retrieve-file cfg id)
         (assoc :permissions perms))))
 
-(declare trim-file-data)
-
-(s/def ::page-id ::us/uuid)
-(s/def ::object-id ::us/uuid)
-
-(s/def ::trimmed-file
-  (s/keys :req-un [::profile-id ::id ::object-id ::page-id]))
-
-(sv/defmethod ::trimmed-file
-  "Retrieve a file by its ID and trims all unnecesary content from
-  it. It is mainly used for rendering a concrete object, so we don't
-  need force download all shapes when only a small subset is
-  necesseary."
-  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
-  (let [perms (get-permissions pool profile-id id)]
-    (check-read-permissions! perms)
-    (-> (retrieve-file cfg id)
-        (trim-file-data params)
-        (assoc :permissions perms))))
-
-(defn- trim-file-data
-  [file {:keys [page-id object-id]}]
-  (let [page    (get-in file [:data :pages-index page-id])
-        objects (->> (cph/get-children-with-self (:objects page) object-id)
-                     (map #(dissoc % :thumbnail))
-                     (d/index-by :id))
-        page    (assoc page :objects objects)]
-    (-> file
-        (update :data assoc :pages-index {page-id page})
-        (update :data assoc :pages [page-id]))))
-
 ;; --- FILE THUMBNAIL
 
-(declare strip-frames-with-thumbnails)
-(declare extract-file-thumbnail)
-(declare get-first-page-data)
-(declare get-thumbnail-data)
+(defn- trim-objects
+  "Given the page data and the object-id returns the page data with all
+  other not needed objects removed from the `:objects` data
+  structure."
+  [{:keys [objects] :as page} object-id]
+  (let [objects (cph/get-children-with-self objects object-id)]
+     (assoc page :objects (d/index-by :id objects))))
 
-(s/def ::strip-frames-with-thumbnails ::us/boolean)
+(defn- prune-thumbnails
+  "Given the page data, removes the `:thumbnail` prop from all
+  shapes."
+  [page]
+  (update page :objects (fn [objects]
+                          (d/mapm #(dissoc %2 :thumbnail) objects))))
 
-(s/def ::page
-  (s/keys :req-un [::profile-id ::file-id]
-          :opt-un [::strip-frames-with-thumbnails]))
-
-(sv/defmethod ::page
-  "Retrieves the first page of the file. Used mainly for render
-  thumbnails on dashboard.
-
-  DEPRECATED: still here for backward compatibility."
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
-  (check-read-permissions! pool profile-id file-id)
-  (let [file (retrieve-file cfg file-id)
-        data (get-first-page-data file props)]
-    data))
-
-(s/def ::file-data-for-thumbnail
-  (s/keys :req-un [::profile-id ::file-id]
-          :opt-un [::strip-frames-with-thumbnails]))
-
-(sv/defmethod ::file-data-for-thumbnail
-  "Retrieves the data for generate the thumbnail of the file. Used mainly for render
-  thumbnails on dashboard."
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
-  (check-read-permissions! pool profile-id file-id)
-  (let [file (retrieve-file cfg file-id)]
-    {:data (get-thumbnail-data file props)
-     :file-id file-id
-     :revn (:revn file)}))
-
-(defn get-thumbnail-data
-  [{:keys [data] :as file} props]
-  (if-let [[page frame] (first
-                         (for [page (-> data :pages-index vals)
-                               frame (-> page :objects cph/get-frames)
-                               :when (:file-thumbnail frame)]
-                           [page frame]))]
-    (let [objects (->> (cph/get-children-with-self (:objects page) (:id frame))
-                       (d/index-by :id))]
-      (cond-> (assoc page :objects objects)
-        (:strip-frames-with-thumbnails props)
-        (strip-frames-with-thumbnails)
-
-        :always
-        (assoc :thumbnail-frame frame)))
-
-    (let [page-id (-> data :pages first)]
-      (cond-> (get-in data [:pages-index page-id])
-        (:strip-frames-with-thumbnails props)
-        (strip-frames-with-thumbnails)))))
-
-(defn get-first-page-data
-  [file props]
-  (let [page-id (get-in file [:data :pages 0])
-        data (cond-> (get-in file [:data :pages-index page-id])
-               (true? (:strip-frames-with-thumbnails props))
-               (strip-frames-with-thumbnails))]
-    data))
-
-(defn strip-frames-with-thumbnails
-  "Remove unnecesary shapes from frames that have thumbnail."
-  [data]
+(defn- prune-frames-with-thumbnails
+  "Remove unnecesary shapes from frames that have thumbnail from page
+  data."
+  [page]
   (let [filter-shape?
         (fn [objects [id shape]]
           (let [frame-id (:frame-id shape)]
@@ -328,7 +248,71 @@
                       (filter (partial filter-shape? objects)))
                 objects))]
 
-    (update data :objects update-objects)))
+    (update page :objects update-objects)))
+
+(defn- get-thumbnail-data
+  [{:keys [data] :as file}]
+  (if-let [[page frame] (first
+                         (for [page  (-> data :pages-index vals)
+                               frame (-> page :objects cph/get-frames)
+                               :when (:file-thumbnail frame)]
+                           [page frame]))]
+    (let [objects (->> (cph/get-children-with-self (:objects page) (:id frame))
+                       (d/index-by :id))]
+      (-> (assoc page :objects objects)
+          (assoc :thumbnail-frame frame)))
+
+    (let [page-id (-> data :pages first)]
+      (-> (get-in data [:pages-index page-id])
+          (prune-frames-with-thumbnails)))))
+
+(s/def ::page-id ::us/uuid)
+(s/def ::object-id ::us/uuid)
+(s/def ::prune-frames-with-thumbnails ::us/boolean)
+(s/def ::prune-thumbnails ::us/boolean)
+
+(s/def ::page
+  (s/keys :req-un [::profile-id ::file-id]
+          :opt-un [::page-id
+                   ::object-id
+                   ::prune-frames-with-thumbnails
+                   ::prune-thumbnails]))
+
+(sv/defmethod ::page
+  "Retrieves the page data from file and returns it. If no page-id is
+  specified, the first page will be returned. If object-id is
+  specified, only that object and its children will be returned in the
+  page objects data structure.
+
+  Mainly used for rendering purposes."
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id page-id object-id] :as props}]
+  (check-read-permissions! pool profile-id file-id)
+  (let [file    (retrieve-file cfg file-id)
+        page-id (or page-id (-> file :data :pages first))
+        page    (get-in file [:data :pages-index page-id])]
+
+    (cond-> page
+      (:prune-frames-with-thumbnails props)
+      (prune-frames-with-thumbnails)
+
+      (:prune-thumbnails props)
+      (prune-thumbnails)
+
+      (uuid? object-id)
+      (trim-objects object-id))))
+
+(s/def ::file-data-for-thumbnail
+  (s/keys :req-un [::profile-id ::file-id]))
+
+(sv/defmethod ::file-data-for-thumbnail
+  "Retrieves the data for generate the thumbnail of the file. Used mainly for render
+  thumbnails on dashboard. Returns the page data."
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
+  (check-read-permissions! pool profile-id file-id)
+  (let [file (retrieve-file cfg file-id)]
+    {:page (get-thumbnail-data file)
+     :file-id file-id
+     :revn (:revn file)}))
 
 ;; --- Query: Shared Library Files
 
