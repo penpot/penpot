@@ -106,8 +106,7 @@
                              (repo/query! :font-variants {:file-id file-id})
                              (repo/query! :page {:file-id file-id
                                                  :page-id page-id
-                                                 :object-id object-id
-                                                 :prune-thumbnails true}))
+                                                 :object-id object-id}))
                             (rx/tap (fn [[fonts]]
                                       (when (seq fonts)
                                         (st/emit! (df/fonts-fetched fonts)))))
@@ -146,8 +145,7 @@
                        (->> (rx/zip
                              (repo/query! :font-variants {:file-id file-id})
                              (repo/query! :page {:file-id file-id
-                                                 :page-id page-id
-                                                 :prune-thumbnails true}))
+                                                 :page-id page-id}))
                             (rx/tap (fn [[fonts]]
                                       (when (seq fonts)
                                         (st/emit! (df/fonts-fetched fonts)))))

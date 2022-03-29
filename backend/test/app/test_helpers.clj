@@ -11,6 +11,7 @@
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.common.pprint :as pp]
    [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
@@ -303,7 +304,7 @@
       (println "====> END ERROR"))
     (do
       (println "====> START RESPONSE")
-      (fipp.edn/pprint result)
+      (pp/pprint result)
       (println "====> END RESPONSE"))))
 
 (defn exception?

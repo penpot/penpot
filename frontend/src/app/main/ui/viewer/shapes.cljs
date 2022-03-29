@@ -7,8 +7,6 @@
 (ns app.main.ui.viewer.shapes
   "The main container for a frame in viewer mode"
   (:require
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.pages.helpers :as cph]
    [app.common.spec.interactions :as cti]

@@ -32,10 +32,9 @@
 (def commit-changes? (ptk/type? ::commit-changes))
 
 (defn update-shapes
-  ([ids update-fn] (update-shapes ids update-fn nil nil))
-  ([ids update-fn keys] (update-shapes ids update-fn nil keys))
-  ([ids update-fn page-id {:keys [reg-objects? save-undo? attrs ignore-tree]
-                           :or {reg-objects? false save-undo? true attrs nil}}]
+  ([ids update-fn] (update-shapes ids update-fn nil))
+  ([ids update-fn {:keys [reg-objects? save-undo? attrs ignore-tree page-id]
+                   :or {reg-objects? false save-undo? true}}]
 
    (us/assert ::coll-of-uuid ids)
    (us/assert fn? update-fn)
