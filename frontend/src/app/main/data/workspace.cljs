@@ -194,7 +194,8 @@
   (ptk/reify ::initialize-page
     ptk/WatchEvent
     (watch [_ state _]
-      (when-not (contains? (get-in state [:workspace-data :pages-index]) page-id)
+      (if (contains? (get-in state [:workspace-data :pages-index]) page-id)
+        (rx/of (dwp/preload-data-uris))
         (let [default-page-id (get-in state [:workspace-data :pages 0])]
           (rx/of (go-to-page default-page-id)))))
 

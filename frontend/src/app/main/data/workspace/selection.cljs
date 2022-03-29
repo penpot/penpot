@@ -503,6 +503,7 @@
 
               id-duplicated (when (= (count selected) 1) (first selected))]
 
+          ;; Warning: This order is important for the focus mode.
           (rx/of (dch/commit-changes changes)
                  (select-shapes selected)
                  (memorize-duplicated id-original id-duplicated)))))))
