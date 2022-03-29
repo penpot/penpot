@@ -32,12 +32,17 @@
 
 (defn- calculate-size
   [frame zoom]
-  (let [{:keys [_ _ width height]} (filters/get-filters-bounds frame)]
+  (let [{:keys [_ _ width height]} (filters/get-filters-bounds frame)
+        padding (filters/calculate-padding frame)
+        x (- (:horizontal padding))
+        y (- (:vertical padding))
+        width (+ width (* 2 (:horizontal padding)))
+        height (+ height (* 2 (:vertical padding)))]
     {:base-width  width
      :base-height height
      :width       (* width zoom)
      :height      (* height zoom)
-     :vbox        (str "0 0 " width " " height)}))
+     :vbox        (str x " " y " " width " " height)}))
 
 (defn- calculate-wrapper
   [size1 size2 zoom]
