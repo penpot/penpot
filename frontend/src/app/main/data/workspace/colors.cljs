@@ -259,10 +259,7 @@
                           (assoc :stroke-color-gradient (:gradient attrs))
 
                           (contains? attrs :opacity)
-                          (assoc :stroke-opacity (:opacity attrs))
-
-                          :always
-                          (d/without-nils))
+                          (assoc :stroke-opacity (:opacity attrs)))
 
             attrs (merge attrs color-attrs)]
 
@@ -276,7 +273,10 @@
                                                           (assoc :stroke-style :solid)
 
                                                           (not (contains? new-attrs :stroke-alignment))
-                                                          (assoc :stroke-alignment :center))]
+                                                          (assoc :stroke-alignment :center)
+
+                                                          :always
+                                                          (d/without-nils))]
                                           (assoc-in shape [:strokes index] new-attrs)))))))))
 
 (defn add-stroke
