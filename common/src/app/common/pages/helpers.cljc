@@ -34,6 +34,10 @@
   [{:keys [type]}]
   (= type :text))
 
+(defn ^boolean image-shape?
+  [{:keys [type]}]
+  (= type :image))
+
 (defn ^boolean unframed-shape?
   "Checks if it's a non-frame shape in the top level."
   [shape]
