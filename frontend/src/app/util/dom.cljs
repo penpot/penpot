@@ -127,7 +127,17 @@
   (when (some? node)
     (.getAttribute ^js node attr-name)))
 
+(defn get-scroll-position
+  [^js event]
+  (when (some? event)
+      {:scroll-height (.-scrollHeight event)
+       :scroll-left   (.-scrollLeft event)
+       :scroll-top    (.-scrollTop event)
+       :scroll-width  (.-scrollWidth event)}))
+
 (def get-target-val (comp get-value get-target))
+
+(def get-target-scroll (comp get-scroll-position get-target))
 
 (defn click
   "Click a node"
