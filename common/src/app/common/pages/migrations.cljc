@@ -304,19 +304,28 @@
 
 (defmethod migrate 14
   [data]
-  (letfn [(update-object [_ {:keys [type] :as object}]
-            (if (= :image type)
-              (let [fill-color   (str/upper (:fill-color object))
-                    fill-opacity (:fill-opacity object)]
-                (cond-> object
-                  (and (= 1 fill-opacity)
-                       (or (= "#B1B2B5" fill-color)
-                           (= "#7B7D85" fill-color)))
-                  (dissoc :fill-color :fill-opacity)))
-              object))
+  (letfn [(process-shape [shape]
+            (let [fill-color   (str/upper (:fill-color shape))
+                  fill-opacity (:fill-opacity shape)]
+              (cond-> shape
+                (and (= 1 fill-opacity)
+                     (or (= "#B1B2B5" fill-color)
+                         (= "#7B7D85" fill-color)))
+                (dissoc :fill-color :fill-opacity))))
 
-          (update-container [_ container]
-            (update container :objects #(d/mapm update-object %)))]
+          (update-container [_ {:keys [objects] :as container}]
+            (loop [objects objects
+                   shapes  (->> (vals objects)
+                                (filter #(= :image (:type %))))]
+              (if-let [shape (first shapes)]
+                (let [{:keys [id frame-id] :as shape'} (process-shape shape)]
+                  (if (identical? shape shape')
+                    (recur objects (rest shapes))
+                    (recur (-> objects
+                               (assoc id shape')
+                               (d/update-when frame-id dissoc :thumbnail))
+                           (rest shapes))))
+                (assoc container :objects objects))))]
 
     (-> data
         (update :pages-index #(d/mapm update-container %))
