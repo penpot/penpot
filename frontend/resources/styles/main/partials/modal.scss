@@ -1209,8 +1209,7 @@
   }
 
   .modal-container {
-    background-image: url("../images/deco-left.png"),
-      url("../images/deco-right.png");
+    background-image: url("../images/deco-left.png"), url("../images/deco-right.png");
     background-repeat: no-repeat;
     background-position: 10% 50px, 90% 50px;
     background-size: 65px;
@@ -1237,18 +1236,8 @@
       --checkbox-border-radius: 3px;
       --dropdown-option-background-color: rgba(0, 195, 139, 1);
       --dropdown-option-active-background-color: rgba(0, 138, 98, 1);
-      --invalid-field-background-color: rgba(
-        238.51780000000002,
-        205.7178,
-        204.11780000000002,
-        1
-      );
-      --message-fail-background-color: rgba(
-        238.51780000000002,
-        205.7178,
-        204.11780000000002,
-        1
-      );
+      --invalid-field-background-color: rgba(238.51780000000002, 205.7178, 204.11780000000002, 1);
+      --message-fail-background-color: rgba(238.51780000000002, 205.7178, 204.11780000000002, 1);
       --message-success-background-color: rgba(171, 232, 197, 1);
     }
   }
@@ -1487,7 +1476,7 @@
     }
 
     &.scale {
-      width: 25%;
+      width: 6.25rem;
     }
 
     &.scale,

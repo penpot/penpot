@@ -45,6 +45,7 @@
 
 ### :bug: Bugs fixed
 
+- Avoid numeric inputs to change its value without focusing them [Taiga #3140](https://tree.taiga.io/project/penpot/issue/3140)
 - Fix comments modal when changing pages [Taiga #2597](https://tree.taiga.io/project/penpot/issue/2508)
 - Copy paste inside a text layer leaves pasted text transparent [Taiga #3096](https://tree.taiga.io/project/penpot/issue/3096)
 - On dashboard enter on empty search refresh the page [Taiga #2597](https://tree.taiga.io/project/penpot/issue/2597)
@@ -68,6 +69,8 @@
 - Fix paste ordering for frames not being respected [Taiga #3097](https://tree.taiga.io/project/penpot/issue/3097)
 - Improved command support for MacOS [Taiga #2789](https://tree.taiga.io/project/penpot/issue/2789)
 - Fix shift+2 shortcut in MacOS with non-english keyboards [Taiga #3038](https://tree.taiga.io/project/penpot/issue/3038)
+- Some fixes to SVG imports [Taiga #3122](https://tree.taiga.io/project/penpot/issue/3122) [#1720](https://github.com/penpot/penpot/issues/1720) [Taiga #2884](https://tree.taiga.io/project/penpot/issue/2884)
+- Fix drag guides to delete target area [#1679](https://github.com/penpot/penpot/issues/1679)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
