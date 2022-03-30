@@ -1,5 +1,6 @@
 {:deps
  {penpot/common {:local/root "../common"}
+  org.clojure/clojure {:mvn/version "1.10.3"}
   org.clojure/core.async {:mvn/version "1.5.648"}
 
   ;; Logging
