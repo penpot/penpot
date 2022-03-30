@@ -48,20 +48,15 @@
 
              changes   (reduce
                          (fn [changes id]
-                           (pcb/update-shapes changes
-                                              [id]
-                                              update-fn
-                                              {:attrs attrs
-                                               :ignore-geometry? (get ignore-tree id)}))
+                           (let [opts {:attrs attrs :ignore-geometry? (get ignore-tree id)}]
+                             (pcb/update-shapes changes [id] update-fn opts)))
                          (-> (pcb/empty-changes it page-id)
                              (pcb/set-save-undo? save-undo?)
                              (pcb/with-objects objects))
                          ids)]
 
          (when (seq (:redo-changes changes))
-           (let [changes  (cond-> changes
-                            reg-objects?
-                            (pcb/resize-parents ids))]
+           (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))]
              (rx/of (commit-changes changes)))))))))
 
 (defn update-indices
