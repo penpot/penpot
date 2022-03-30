@@ -97,9 +97,7 @@
                  (st/emit! (dw/handle-area-selection shift? mod?))
 
                  (not drawing-tool)
-                 (st/emit! (when (or shift? (not selected?))
-                             (dw/select-shape id shift?))
-                           (dw/start-move-selected)))))))))))
+                 (st/emit! (dw/start-move-selected id shift?)))))))))))
 
 (defn on-move-selected
   [hover hover-ids selected space?]
@@ -167,7 +165,6 @@
          (when (and hovering?
                     (or (not frame?) mod?)
                     (not @space?)
-                    (not selected?)
                     (not edition)
                     (not drawing-path?)
                     (not drawing-tool))
