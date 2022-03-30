@@ -156,10 +156,8 @@
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
              mod? (kbd/mod? event)
-
              hovering? (some? @hover)
-             frame? (= :frame (:type @hover))
-             selected? (contains? selected (:id @hover))]
+             frame? (= :frame (:type @hover))]
          (st/emit! (ms/->MouseEvent :click ctrl? shift? alt? meta?))
 
          (when (and hovering?
