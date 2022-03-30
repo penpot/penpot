@@ -530,3 +530,8 @@
       (when onfinish
         (set! (.-onfinish animation) onfinish)))))
 
+(defn is-child?
+  [^js node ^js candidate]
+  (and (some? node)
+       (some? candidate)
+       (.contains node candidate)))
