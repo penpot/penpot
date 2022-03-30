@@ -10,6 +10,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
+   [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
@@ -21,17 +22,14 @@
 (defmulti migrate :version)
 
 (defn migrate-data
-  ([data]
-   (if (= (:version data) cp/file-version)
+  ([data] (migrate-data data cp/file-version))
+  ([data to-version]
+   (if (= (:version data) to-version)
      data
-     (reduce #(migrate-data %1 %2 (inc %2))
-             data
-             (range (:version data 0) cp/file-version))))
-
-  ([data _ to-version]
-   (-> data
-       (assoc :version to-version)
-       (migrate))))
+     (let [migrate-fn #(do
+                         (l/trace :hint "migrate file" :id (:id %) :version-from %2 :version-to (inc %2))
+                         (migrate (assoc %1 :version (inc %2))))]
+       (reduce migrate-fn data (range (:version data 0) to-version))))))
 
 (defn migrate-file
   [file]
