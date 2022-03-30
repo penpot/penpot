@@ -410,8 +410,8 @@
         (fn [changes parent]
           (let [children (->> parent :shapes (map (d/getf objects)))
                 resized-parent (cond
-                                 (empty? children)
-                                 changes
+                                 (empty? children) ;; a parent with no children will be deleted,
+                                 nil               ;; so it does not need resize
 
                                  (= (:type parent) :bool)
                                  (gshb/update-bool-selrect parent children objects)
@@ -419,21 +419,22 @@
                                  (= (:type parent) :group)
                                  (if (:masked-group? parent)
                                    (gsh/update-mask-selrect parent children)
-                                   (gsh/update-group-selrect parent children)))
+                                   (gsh/update-group-selrect parent children)))]
+            (if resized-parent
+              (let [{rops :rops uops :uops}
+                    (reduce #(generate-operation %1 %2 parent resized-parent)
+                            {:rops [] :uops []}
+                            (keys parent))
 
-                {rops :rops uops :uops}
-                (reduce #(generate-operation %1 %2 parent resized-parent)
-                        {:rops [] :uops []}
-                        (keys parent))
+                    change {:type :mod-obj
+                            :page-id page-id
+                            :id (:id parent)}]
 
-                change {:type :mod-obj
-                        :page-id page-id
-                        :id (:id parent)}]
-
-            (if (seq rops)
-              (-> changes
-                  (update :redo-changes conj (assoc change :operations rops))
-                  (update :undo-changes d/preconj (assoc change :operations uops)))
+                (if (seq rops)
+                  (-> changes
+                      (update :redo-changes conj (assoc change :operations rops))
+                      (update :undo-changes d/preconj (assoc change :operations uops)))
+                  changes))
               changes)))]
 
     (-> (reduce resize-parent changes all-parents)
