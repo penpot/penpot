@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.12.3-beta
+
+### :bug: Bugs fixed
+
+- Fix issue with shift+select to deselect shapes [Taiga #3154](https://tree.taiga.io/project/penpot/issue/3154)
+
 ## 1.12.2-beta
 
 ### :bug: Bugs fixed

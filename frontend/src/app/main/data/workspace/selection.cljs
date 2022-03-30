@@ -117,13 +117,7 @@
    (ptk/reify ::select-shape
      ptk/UpdateEvent
      (update [_ state]
-       (update-in state [:workspace-local :selected]
-                  (fn [selected]
-                    (if-not toggle?
-                      (conj (d/ordered-set) id)
-                      (if (contains? selected id)
-                        (disj selected id)
-                        (conj selected id))))))
+       (update-in state [:workspace-local :selected] d/toggle-selection id toggle?))
 
      ptk/WatchEvent
      (watch [_ state _]

@@ -94,9 +94,7 @@
                  (st/emit! (dw/handle-area-selection shift? ctrl?))
 
                  (not drawing-tool)
-                 (st/emit! (when (or shift? (not selected?))
-                             (dw/select-shape id shift?))
-                           (dw/start-move-selected)))))))))))
+                 (st/emit! (dw/start-move-selected id shift?)))))))))))
 
 (defn on-move-selected
   [hover hover-ids selected space?]
@@ -153,16 +151,13 @@
        (let [ctrl? (kbd/ctrl? event)
              shift? (kbd/shift? event)
              alt? (kbd/alt? event)
-
              hovering? (some? @hover)
-             frame? (= :frame (:type @hover))
-             selected? (contains? selected (:id @hover))]
+             frame? (= :frame (:type @hover))]
          (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))
 
          (when (and hovering?
                     (or (not frame?) ctrl?)
                     (not @space?)
-                    (not selected?)
                     (not edition)
                     (not drawing-path?)
                     (not drawing-tool))

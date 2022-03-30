@@ -693,3 +693,13 @@
                    acc)))
              acc))))))
 
+(defn toggle-selection
+  ([set value]
+   (toggle-selection set value false))
+
+  ([set value toggle?]
+   (if-not toggle?
+     (conj (ordered-set) value)
+     (if (contains? set value)
+       (disj set value)
+       (conj set value)))))
