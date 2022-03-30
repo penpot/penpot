@@ -12,7 +12,8 @@
    [app.common.geom.shapes.path :as gsp]
    [app.common.math :as mth]
    [app.common.pages :as cp]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [cuerdas.core :as str]))
 
 ;; TODO: revisit this and rename to file-migrations
 
@@ -300,3 +301,23 @@
             (update page :objects #(d/mapm update-object %)))]
 
     (update data :pages-index #(d/mapm update-page %))))
+
+(defmethod migrate 14
+  [data]
+  (letfn [(update-object [_ {:keys [type] :as object}]
+            (if (= :image type)
+              (let [fill-color   (str/upper (:fill-color object))
+                    fill-opacity (:fill-opacity object)]
+                (cond-> object
+                  (and (= 1 fill-opacity)
+                       (or (= "#B1B2B5" fill-color)
+                           (= "#7B7D85" fill-color)))
+                  (dissoc :fill-color :fill-opacity)))
+              object))
+
+          (update-container [_ container]
+            (update container :objects #(d/mapm update-object %)))]
+
+    (-> data
+        (update :pages-index #(d/mapm update-container %))
+        (update :components #(d/mapm update-container %)))))
