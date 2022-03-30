@@ -17,10 +17,11 @@
    [app.srepl.dev :as dev]
    [app.util.blob :as blob]
    [app.util.time :as dt]
-   [fipp.edn :refer [pprint]]
    [clojure.spec.alpha :as s]
+   [clojure.walk :as walk]
    [cuerdas.core :as str]
-   [expound.alpha :as expound]))
+   [expound.alpha :as expound]
+   [fipp.edn :refer [pprint]]))
 
 (defn update-file
   ([system id f] (update-file system id f false))
@@ -66,86 +67,48 @@
           (db/insert! conn :file params)
           (:id file))))))
 
-(defn verify-files
-  [system {:keys [age sleep chunk-size max-chunks stop-on-error? verbose?]
-           :or {sleep 1000
-                age "72h"
-                chunk-size 10
-                verbose? false
-                stop-on-error? true
-                max-chunks ##Inf}}]
+;; (defn check-image-shapes
+;;   [{:keys [data] :as file} stats]
+;;   (println "=> analizing file:" (:name file) (:id file))
+;;   (swap! stats update :total-files (fnil inc 0))
+;;   (let [affected? (atom false)]
+;;     (walk/prewalk (fn [obj]
+;;                     (when (and (map? obj) (= :image (:type obj)))
+;;                       (when-let [fcolor (some-> obj :fill-color str/upper)]
+;;                         (when (or (= fcolor "#B1B2B5")
+;;                                   (= fcolor "#7B7D85"))
+;;                           (reset! affected? true)
+;;                           (swap! stats update :affected-shapes (fnil inc 0))
+;;                           (println "--> image shape:" ((juxt :id :name :fill-color :fill-opacity) obj)))))
+;;                     obj)
+;;                   data)
+;;     (when @affected?
+;;       (swap! stats update :affected-files (fnil inc 0)))))
 
-  (letfn [(retrieve-chunk [conn cursor]
-            (let [sql (str "select id, name, modified_at, data from file "
-                           " where modified_at > ? and deleted_at is null "
-                           " order by modified_at asc limit ?")
-                  age (if cursor
-                        cursor
-                        (-> (dt/now) (dt/minus age)))]
-              (seq (db/exec! conn [sql age chunk-size]))))
+(defn analyze-files
+  [system {:keys [sleep chunk-size max-chunks on-file]
+           :or {sleep 1000 chunk-size 10 max-chunks ##Inf}}]
+  (let [stats (atom {})]
+    (letfn [(retrieve-chunk [conn cursor]
+              (let [sql (str "select id, name, modified_at, data from file "
+                             " where modified_at < ? and deleted_at is null "
+                             " order by modified_at desc limit ?")]
+                (->> (db/exec! conn [sql cursor chunk-size])
+                     (map #(update % :data blob/decode)))))
 
-          (validate-item [{:keys [id data modified-at] :as file}]
-            (let [data   (blob/decode data)
-                  valid? (s/valid? ::spec.file/data data)]
+            (process-chunk [chunk]
+              (loop [items chunk]
+                (when-let [item (first items)]
+                  (on-file item stats)
+                  (recur (rest items)))))]
 
-              (l/debug :hint "validated file"
-                       :file-id id
-                       :age (-> (dt/diff modified-at (dt/now))
-                                (dt/truncate :minutes)
-                                (str)
-                                (subs 2)
-                                (str/lower))
-                       :valid valid?)
-
-              (when (and (not valid?) verbose?)
-                (let [edata (-> (s/explain-data ::spec.file/data data)
-                                (update ::s/problems #(take 5 %)))]
-                  (binding [s/*explain-out* expound/printer]
-                    (l/warn ::l/raw (with-out-str (s/explain-out edata))))))
-
-              (when (and (not valid?) stop-on-error?)
-                (throw (ex-info "penpot/abort" {})))
-
-              valid?))
-
-          (validate-chunk [chunk]
-            (loop [items   chunk
-                   success 0
-                   errored 0]
-
-              (if-let [item (first items)]
-                (if (validate-item item)
-                  (recur (rest items) (inc success) errored)
-                  (recur (rest items) success (inc errored)))
-                [(:modified-at (last chunk))
-                 success
-                 errored])))
-
-          (fmt-result [ns ne]
-            {:total (+ ns ne)
-             :errors ne
-             :success ns})
-
-          ]
-
-    (try
       (db/with-atomic [conn (:app.db/pool system)]
-        (loop [cursor  nil
-               chunks  0
-               success 0
-               errors 0]
-          (if (< chunks max-chunks)
-            (if-let [chunk (retrieve-chunk conn cursor)]
-              (let [[cursor success' errors'] (validate-chunk chunk)]
+        (loop [cursor (dt/now)
+               chunks 0]
+          (when (< chunks max-chunks)
+            (when-let [chunk (retrieve-chunk conn cursor)]
+              (let [cursor (-> chunk last :modified-at)]
+                (process-chunk chunk)
                 (Thread/sleep (inst-ms (dt/duration sleep)))
-                (recur cursor
-                       (inc chunks)
-                       (+ success success')
-                       (+ errors errors')))
-              (fmt-result success errors))
-            (fmt-result success errors))))
-      (catch Throwable cause
-        (when (not= "penpot/abort" (ex-message cause))
-          (throw cause))
-        :error))))
-
+                (recur cursor (inc chunks))))))
+        @stats))))
