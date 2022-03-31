@@ -43,6 +43,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix duplicate multi selected elements [Taiga #3155](https://tree.taiga.io/project/penpot/issue/3155)
 - Avoid numeric inputs to allow big numbers [Taiga #2858](https://tree.taiga.io/project/penpot/issue/2858)
 - Fix component contex menu size [Taiga #2480](https://tree.taiga.io/project/penpot/issue/2480)
 - Add shadow to artboard make it lose the fill [Taiga #3139](https://tree.taiga.io/project/penpot/issue/3139)
