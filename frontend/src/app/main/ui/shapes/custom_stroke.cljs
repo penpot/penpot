@@ -379,10 +379,7 @@
 
         (cond-> (obj/merge! props fill-props)
           (some? style)
-          (obj/set! "style" style)))
-
-      :else
-      props)))
+          (obj/set! "style" style))))))
 
 (defn build-stroke-props [position child value render-id]
   (let [props (-> (obj/get child "props")
