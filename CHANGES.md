@@ -5,6 +5,7 @@
 ### :bug: Bugs fixed
 
 - Fix issue with shift+select to deselect shapes [Taiga #3154](https://tree.taiga.io/project/penpot/issue/3154)
+- Fix issue with drag-select shapes  [Taiga #3165](https://tree.taiga.io/project/penpot/issue/3165)
 
 ## 1.12.2-beta
 

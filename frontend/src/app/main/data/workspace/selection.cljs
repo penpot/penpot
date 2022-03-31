@@ -104,7 +104,10 @@
                (rx/dedupe)
                (rx/map #(select-shapes-by-current-selrect preserve? ignore-groups?))))
 
-         (rx/of (update-selrect nil)))))))
+         (->> (rx/of (update-selrect nil))
+              ;; We need the async so the current event finishes before updating the selrect
+              ;; otherwise the `on-click` event will trigger with a `nil` selrect
+              (rx/observe-on :async)))))))
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
