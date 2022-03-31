@@ -350,7 +350,7 @@
                                 (obj/without ["fill" "fillOpacity"])))]
         (obj/set! props "fill" (dm/fmt "url(#fill-0-%)" render-id)))
 
-      (obj/contains? svg-styles "fill")
+      (and (some? svg-styles) (obj/contains? svg-styles "fill"))
       (let [style
             (-> (obj/get props "style")
                 (obj/clone)
@@ -359,7 +359,7 @@
         (-> props
             (obj/set! "style" style)))
 
-      (obj/contains? svg-attrs "fill")
+      (and (some? svg-attrs) (obj/contains? svg-attrs "fill"))
       (let [style
             (-> (obj/get props "style")
                 (obj/clone)

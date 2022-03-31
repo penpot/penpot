@@ -175,12 +175,12 @@
                       (obj/set! styles "fill" (str "url(#fill-0-" render-id ")"))
 
                       ;; imported svgs can have fill and fill-opacity attributes
-                      (obj/contains? svg-styles "fill")
+                      (and (some? svg-styles) (obj/contains? svg-styles "fill"))
                       (-> styles
                           (obj/set! "fill" (obj/get svg-styles "fill"))
                           (obj/set! "fillOpacity" (obj/get svg-styles "fillOpacity")))
 
-                      (obj/contains? svg-attrs "fill")
+                      (and (some? svg-attrs) (obj/contains? svg-attrs "fill"))
                       (-> styles
                           (obj/set! "fill" (obj/get svg-attrs "fill"))
                           (obj/set! "fillOpacity" (obj/get svg-attrs "fillOpacity")))
