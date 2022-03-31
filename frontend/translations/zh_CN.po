@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-25 07:03+0000\n"
+"PO-Revision-Date: 2022-04-01 07:10+0000\n"
 "Last-Translator: bingling_sama <bingling_sama@qq.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
@@ -248,7 +248,9 @@ msgstr "暂无文档"
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
-msgstr "现在尚无文件。如果你想尝试一些模板，请点击[库和模板](https://penpot.app/libraries-templates.html)"
+msgstr ""
+"现在尚无文件。如果你想尝试一些模板，请点击[库和模板](https://penpot.app/"
+"libraries-templates.html)"
 
 msgid "dashboard.export-frames"
 msgstr "导出画板到PDF..."
@@ -556,7 +558,6 @@ msgid "ds.confirm-title"
 msgstr "你确定？"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, fuzzy
 msgid "ds.updated-at"
 msgstr "最后更新：%s"
 
@@ -2045,7 +2046,9 @@ msgstr "导出"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "导出形状"
+msgid_plural ""
+msgstr[0] "导出形状"
+msgstr[1] "导出%s形状"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -2838,7 +2841,6 @@ msgid "labels.edit-file"
 msgstr "编辑文档"
 
 #: src/app/main/ui/export.cljs
-#, fuzzy
 msgid "dashboard.export-shapes.title"
 msgstr "导出已选中"
 
@@ -2968,3 +2970,444 @@ msgstr "开始"
 
 msgid "labels.workspace"
 msgstr "工作区"
+
+msgid "workspace.options.grid.params.color"
+msgstr "颜色"
+
+msgid "workspace.options.recent-fonts"
+msgstr "最近的"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "解散"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "无"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing"
+msgstr "平滑"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "滑动"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease"
+msgstr "缓解"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "缓入"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-linear"
+msgstr "线性"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "偏移效果"
+
+msgid "onboarding.team-input-placeholder"
+msgstr "输入新团队名称"
+
+msgid "onboarding.team.skip-and-invite-later"
+msgstr "跳过并稍后邀请"
+
+msgid "onboarding.templates.subtitle"
+msgstr "这里有一些模板。"
+
+msgid "onboarding.templates.title"
+msgstr "开始设计"
+
+msgid "onboarding.welcome.desc3"
+msgstr "当你享受Penpot的时候，我们将不断改进它，发布我们希望的计划的迭代。"
+
+msgid "workspace.options.height"
+msgstr "高度"
+
+msgid "workspace.options.opacity"
+msgstr "不透明度"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "阴影颜色"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "圆形标记"
+
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "隐藏像素网格"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-error"
+msgstr "导出失败"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-out"
+msgstr "外"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "在导出中显示"
+
+msgid "onboarding.slide.1.desc2"
+msgstr "分享给利益相关者，向你的团队提出建议，并开始对你的设计进行用户测试，仅仅使用P"
+"enpot即可。"
+
+#, fuzzy
+msgid "onboarding.welcome.desc2"
+msgstr "Penpot处于第一个测试版，这要归功于核心功能，成熟度，稳定性和整个社区的惊人验"
+"证的组合，我们非常欢迎您。"
+
+msgid "viewer.header.interactions-section"
+msgstr "交互 （%s）"
+
+msgid "workspace.focus.focus-off"
+msgstr "退出禅模式"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "填充 - 填充比例"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-full-screen"
+msgstr "全屏"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "RGB互补"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "导出已选择"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-action"
+msgstr "执行"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-on-click"
+msgstr "点击时"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay"
+msgstr "打开叠加层"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-center"
+msgstr "中心"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-manual"
+msgstr "手册"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-position"
+msgstr "位置"
+
+msgid "onboarding.slide.1.alt"
+msgstr "交互式原型"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "导航到： %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions"
+msgstr "交互"
+
+msgid "onboarding.slide.2.alt"
+msgstr "获取反馈"
+
+msgid "onboarding.slide.2.title"
+msgstr "获取反馈、展示和分享您的工作"
+
+msgid "workspace.focus.focus-on"
+msgstr "关注"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "与参考线对齐"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "启用像素对齐"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "隐藏字体调色板"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.add-interaction"
+msgstr "单击 + 按钮以添加交互。"
+
+msgid "viewer.header.handoff-section"
+msgstr "交接 (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "禁用与参考线对齐"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "禁用像素对齐"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "隐藏画板名称"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "编辑"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-after-delay"
+msgstr "延迟后"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "显示字体调色板"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation"
+msgstr "动画"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "推送"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "鼠标进入"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-in"
+msgstr "在"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "鼠标离开"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to"
+msgstr "导航至"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-none"
+msgstr "(未设定)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-left"
+msgstr "左上角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "右上角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "保留滚动位置"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "顶部中心"
+
+msgid "workspace.options.search-font"
+msgstr "搜索字体"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "钻石标记"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-prev-screen"
+msgstr "上一个屏幕"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-self"
+msgstr "自己"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "切换覆盖层"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-pressing"
+msgstr "按下时"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "重试"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "如何使用Penpot导出"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "导出设置中无任何元素"
+
+msgid "onboarding.slide.0.alt"
+msgstr "创作设计"
+
+msgid "onboarding.slide.0.desc1"
+msgstr "在协作项目中与团队成员们一起创作漂亮的用户界面"
+
+msgid "onboarding.slide.0.desc2"
+msgstr "保持组件、库和设计系统规模上的一致性。"
+
+msgid "onboarding.slide.0.title"
+msgstr "设计库、样式和组件"
+
+msgid "onboarding.slide.1.desc1"
+msgstr "创建丰富的交互以模拟产品行为。"
+
+msgid "onboarding.slide.1.title"
+msgstr "通过交互使您的设计栩栩如生"
+
+msgid "onboarding.slide.3.desc1"
+msgstr "同步你所有组件和样式的设计和代码，并获得代码片段。"
+
+msgid "onboarding.slide.3.desc2"
+msgstr "获取并提供代码规范，如标记（SVG、HTML）或样式（CSS、Less、Stylus...）。"
+
+msgid "onboarding.slide.3.title"
+msgstr "一个共享的事实来源"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+msgid "onboarding.welcome.desc1"
+msgstr "Hooray!你已经是Penpot的用户了 :)"
+
+msgid "onboarding.welcome.title"
+msgstr "欢迎来到Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "邀请函 - %s - Penpot"
+
+msgid "viewer.breaking-change.description"
+msgstr "此共享的链接已失效。创建一个新的链接或向所有者索取一个新的链接。"
+
+msgid "viewer.breaking-change.message"
+msgstr "Sorry!"
+
+msgid "viewer.header.comments-section"
+msgstr "注释 （%s）"
+
+msgid "workspace.focus.focus-mode"
+msgstr "禅模式"
+
+msgid "workspace.focus.selection"
+msgstr "选择"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "文件"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "首选项"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "视图"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "显示画板名称"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "显示像素网格"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "重置"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "缩放以适应所有"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "导出速度意外缓慢"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-background"
+msgstr "添加背景覆盖"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "缓进缓出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "缓出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "左下角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "右下角"
+
+msgid "onboarding.slide.3.alt"
+msgstr "协作且低代码"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-outside"
+msgstr "点击外部时关闭"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay"
+msgstr "关闭覆盖"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-delay"
+msgstr "延迟"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-destination"
+msgstr "目的地"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "ms"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "打开覆盖：%s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-url"
+msgstr "打开网址"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "底部中心"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "切换覆盖：%s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-trigger"
+msgstr "触发器"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "URL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-hovering"
+msgstr "悬停时"
