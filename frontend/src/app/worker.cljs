@@ -54,9 +54,11 @@
 
           (reply-error [cause]
             (if (map? cause)
-              (post {:error cause})
-              (post {:error {:type :unexpected
-                             :code :unhandled-error-on-worker
+              (post {:error {:type :worker-error
+                             :code (or (:type cause) :wrapped)
+                             :data cause}})
+              (post {:error {:type :worker-error
+                             :code :unhandled-error
                              :hint (ex-message cause)
                              :data (ex-data cause)}})))
 

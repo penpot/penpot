@@ -49,12 +49,20 @@
 
 (defmethod handle-exception :validation
   [err _]
-  (let [data    (ex-data err)
-        explain (us/pretty-explain data)]
-    (yrs/response :status 400
-                  :body   (-> data
-                              (dissoc ::s/problems ::s/value)
-                              (cond-> explain (assoc :explain explain))))))
+  (let [{:keys [code] :as data} (ex-data err)]
+    (cond
+      (= code :spec-validation)
+      (let [explain (us/pretty-explain data)]
+        (yrs/response :status 400
+                      :body   (-> data
+                                  (dissoc ::s/problems ::s/value)
+                                  (cond-> explain (assoc :explain explain)))))
+
+      (= code :request-body-too-large)
+      (yrs/response :status 413 :body data)
+
+      :else
+      (yrs/response :status 400 :body data))))
 
 (defmethod handle-exception :assertion
   [error request]
