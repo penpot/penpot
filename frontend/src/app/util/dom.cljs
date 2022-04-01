@@ -6,6 +6,7 @@
 
 (ns app.util.dom
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
@@ -231,20 +232,20 @@
     (.-innerText el)))
 
 (defn query
-  ([^string query]
-   (query globals/document query))
+  ([^string selector]
+   (query globals/document selector))
 
-  ([^js el ^string query]
+  ([^js el ^string selector]
    (when (some? el)
-     (.querySelector el query))))
+     (.querySelector el selector))))
 
 (defn query-all
-  ([^string query]
-   (query-all globals/document query))
+  ([^string selector]
+   (query-all globals/document selector))
 
-  ([^js el ^string query]
+  ([^js el ^string selector]
    (when (some? el)
-     (.querySelectorAll el query))))
+     (.querySelectorAll el selector))))
 
 (defn get-client-position
   [^js event]
@@ -535,3 +536,13 @@
   (and (some? node)
        (some? candidate)
        (.contains node candidate)))
+
+(defn seq-nodes
+  [root-node]
+  (letfn [(branch? [node]
+            (d/not-empty? (get-children node)))
+
+          (get-children [node]
+            (seq (.-children node)))]
+    (->> root-node
+         (tree-seq branch? get-children))))
