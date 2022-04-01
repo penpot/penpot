@@ -9,9 +9,12 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
+   [app.common.pages.helpers :as cph]
+   [app.common.text :as txt]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
@@ -32,12 +35,17 @@
 
 (defn- calculate-size
   [frame zoom]
-  (let [{:keys [_ _ width height]} (filters/get-filters-bounds frame)]
+  (let [{:keys [_ _ width height]} (filters/get-filters-bounds frame)
+        padding (filters/calculate-padding frame)
+        x (- (:horizontal padding))
+        y (- (:vertical padding))
+        width (+ width (* 2 (:horizontal padding)))
+        height (+ height (* 2 (:vertical padding)))]
     {:base-width  width
      :base-height height
      :width       (* width zoom)
      :height      (* height zoom)
-     :vbox        (str "0 0 " width " " height)}))
+     :vbox        (str x " " y " " width " " height)}))
 
 (defn- calculate-wrapper
   [size1 size2 zoom]
@@ -69,6 +77,12 @@
               (mf/deps data page-id)
               (fn []
                 (get-in data [:pages page-id])))
+
+        text-shapes
+        (hooks/use-equal-memo
+         (->> (:objects page)
+              (vals)
+              (filter cph/text-shape?)))
 
         zoom   (:zoom local)
         frames (:frames page)
@@ -213,6 +227,13 @@
               (:id (:frame overlay))))
 
            nil))))
+
+    (mf/use-effect
+     (mf/deps text-shapes)
+     (fn []
+       (let [text-nodes (->> text-shapes (mapcat #(txt/node-seq txt/is-text-node? (:content %))))
+             fonts (into #{} (keep :font-id) text-nodes)]
+         (run! fonts/ensure-loaded! fonts))))
 
     [:div#viewer-layout {:class (dom/classnames
                                  :force-visible (:show-thumbnails local)

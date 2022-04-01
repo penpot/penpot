@@ -523,6 +523,12 @@
       right: 0.5rem;
       left: unset;
       top: 0;
+
+      .context-menu-action {
+        overflow-wrap: break-word;
+        min-width: 223px;
+        white-space: break-spaces;
+      }
     }
   }
 }

@@ -73,44 +73,44 @@
 
         parse-value
         (mf/use-callback
-          (mf/deps ref min-val max-val value nillable default-val)
-          (fn []
-            (let [input-node (mf/ref-val ref)
-                  new-value (-> (dom/get-value input-node)
-                                (str/strip-suffix ".")
-                                (sm/expr-eval value))]
-              (cond
-                (d/num? new-value)
-                (-> new-value
-                    (cljs.core/max us/min-safe-int)
-                    (cljs.core/min us/max-safe-int)
-                    (cond->
-                        (d/num? min-val)
-                      (cljs.core/max min-val)
+         (mf/deps ref min-val max-val value nillable default-val)
+         (fn []
+           (let [input-node (mf/ref-val ref)
+                 new-value (-> (dom/get-value input-node)
+                               (str/strip-suffix ".")
+                               (sm/expr-eval value))]
+             (cond
+               (d/num? new-value)
+               (-> new-value
+                   (cljs.core/max (/ us/min-safe-int 2))
+                   (cljs.core/min (/ us/max-safe-int 2))
+                   (cond->
+                    (d/num? min-val)
+                     (cljs.core/max min-val)
 
-                      (d/num? max-val)
-                      (cljs.core/min max-val)))
+                     (d/num? max-val)
+                     (cljs.core/min max-val)))
 
-                nillable
-                default-val
+               nillable
+               default-val
 
-                :else value))))
+               :else value))))
 
         update-input
         (mf/use-callback
-          (mf/deps ref)
-          (fn [new-value]
-            (let [input-node (mf/ref-val ref)]
-              (dom/set-value! input-node (fmt/format-number new-value)))))
+         (mf/deps ref)
+         (fn [new-value]
+           (let [input-node (mf/ref-val ref)]
+             (dom/set-value! input-node (fmt/format-number new-value)))))
 
         apply-value
         (mf/use-callback
-          (mf/deps on-change update-input value)
-          (fn [new-value]
-            (mf/set-ref-val! dirty-ref false)
-            (when (and (not= new-value value) (some? on-change))
-              (on-change new-value))
-            (update-input new-value)))
+         (mf/deps on-change update-input value)
+         (fn [new-value]
+           (mf/set-ref-val! dirty-ref false)
+           (when (and (not= new-value value) (some? on-change))
+             (on-change new-value))
+           (update-input new-value)))
 
         set-delta
         (mf/use-callback

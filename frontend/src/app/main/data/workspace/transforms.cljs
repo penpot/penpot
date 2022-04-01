@@ -592,31 +592,46 @@
 
 (defn start-move-selected
   "Enter mouse move mode, until mouse button is released."
-  []
-  (ptk/reify ::start-move-selected
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [initial  (deref ms/mouse-position)
-            selected (wsh/lookup-selected state {:omit-blocked? true})
-            stopper  (rx/filter ms/mouse-up? stream)
-            zoom    (get-in state [:workspace-local :zoom] 1)]
-        (when-not (empty? selected)
-          (->> ms/mouse-position
-               (rx/map #(gpt/to-vec initial %))
-               (rx/map #(gpt/length %))
-               (rx/filter #(> % (/ 10 zoom)))
-               (rx/take 1)
-               (rx/with-latest vector ms/mouse-position-alt)
-               (rx/mapcat
-                (fn [[_ alt?]]
-                  (if alt?
-                    ;; When alt is down we start a duplicate+move
-                    (rx/of (start-move-duplicate initial)
-                           (dws/duplicate-selected false))
-                    ;; Otherwise just plain old move
-                    (rx/of (start-move initial selected)))))
-               (rx/take-until stopper)))))))
+  ([]
+   (start-move-selected nil false))
 
+  ([id shift?]
+   (ptk/reify ::start-move-selected
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [initial  (deref ms/mouse-position)
+
+             stopper  (rx/filter ms/mouse-up? stream)
+             zoom    (get-in state [:workspace-local :zoom] 1)
+
+             ;; We toggle the selection so we don't have to wait for the event
+             selected
+             (cond-> (wsh/lookup-selected state {:omit-blocked? true})
+               (some? id)
+               (d/toggle-selection id shift?))]
+
+         (when (or (d/not-empty? selected) (some? id))
+           (->> ms/mouse-position
+                (rx/map #(gpt/to-vec initial %))
+                (rx/map #(gpt/length %))
+                (rx/filter #(> % (/ 10 zoom)))
+                (rx/take 1)
+                (rx/with-latest vector ms/mouse-position-alt)
+                (rx/mapcat
+                 (fn [[_ alt?]]
+                   (rx/concat
+                    (if (some? id)
+                      (rx/of (dws/select-shape id shift?))
+                      (rx/empty))
+
+                    (if alt?
+                      ;; When alt is down we start a duplicate+move
+                      (rx/of (start-move-duplicate initial)
+                             (dws/duplicate-selected false))
+
+                      ;; Otherwise just plain old move
+                      (rx/of (start-move initial selected))))))
+                (rx/take-until stopper))))))))
 (defn- start-move-duplicate
   [from-position]
   (ptk/reify ::start-move-duplicate

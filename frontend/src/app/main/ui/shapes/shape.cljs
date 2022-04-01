@@ -50,14 +50,11 @@
 
         wrapper-props
         (cond-> wrapper-props
-          (some #(= (:type shape) %) [:group :svg-raw])
+          (some #(= (:type shape) %) [:group :svg-raw :frame])
           (obj/set! "filter" (filters/filter-str filter-id shape)))
 
         wrapper-props
         (cond-> wrapper-props
-          (= :frame type)
-          (obj/set! "clipPath" (frame/frame-clip-url shape render-id))
-
           (= :group type)
           (attrs/add-style-attrs shape render-id))]
 

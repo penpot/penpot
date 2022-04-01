@@ -97,9 +97,7 @@
                  (st/emit! (dw/handle-area-selection shift? mod?))
 
                  (not drawing-tool)
-                 (st/emit! (when (or shift? (not selected?))
-                             (dw/select-shape id shift?))
-                           (dw/start-move-selected)))))))))))
+                 (st/emit! (dw/start-move-selected id shift?)))))))))))
 
 (defn on-move-selected
   [hover hover-ids selected space?]
@@ -147,27 +145,25 @@
      (reset! frame-hover nil))))
 
 (defn on-click
-  [hover selected edition drawing-path? drawing-tool space?]
+  [hover selected edition drawing-path? drawing-tool space? selrect]
   (mf/use-callback
-   (mf/deps @hover selected edition drawing-path? drawing-tool @space?)
+   (mf/deps @hover selected edition drawing-path? drawing-tool @space? selrect)
    (fn [event]
-     (when (or (dom/class? (dom/get-target event) "viewport-controls")
-               (dom/class? (dom/get-target event) "viewport-selrect"))
+     (when (and (nil? selrect)
+                (or (dom/class? (dom/get-target event) "viewport-controls")
+                    (dom/class? (dom/get-target event) "viewport-selrect")))
        (let [ctrl? (kbd/ctrl? event)
              shift? (kbd/shift? event)
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
              mod? (kbd/mod? event)
-
              hovering? (some? @hover)
-             frame? (= :frame (:type @hover))
-             selected? (contains? selected (:id @hover))]
+             frame? (= :frame (:type @hover))]
          (st/emit! (ms/->MouseEvent :click ctrl? shift? alt? meta?))
 
          (when (and hovering?
                     (or (not frame?) mod?)
                     (not @space?)
-                    (not selected?)
                     (not edition)
                     (not drawing-path?)
                     (not drawing-tool))
@@ -367,20 +363,22 @@
            pt     (utils/translate-point-to-viewport viewport zoom raw-pt)]
        (rx/push! move-stream pt)))))
 
-(defn on-mouse-wheel [viewport-ref zoom]
+(defn on-mouse-wheel [viewport-ref overlays-ref zoom]
   (mf/use-callback
    (mf/deps zoom)
    (fn [event]
      (let [viewport (mf/ref-val viewport-ref)
+           overlays (mf/ref-val overlays-ref)
            event  (.getBrowserEvent ^js event)
-           target (dom/get-target event)]
-       (when (.contains ^js viewport target)
+           target (dom/get-target event)
+           mod? (kbd/mod? event)]
+
+       (when (or (dom/is-child? viewport target)
+                 (dom/is-child? overlays target))
          (dom/prevent-default event)
          (dom/stop-propagation event)
          (let [pt     (->> (dom/get-client-position event)
                            (utils/translate-point-to-viewport viewport zoom))
-
-               mod? (kbd/mod? event)
 
                delta-mode (.-deltaMode ^js event)
 

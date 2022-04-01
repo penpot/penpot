@@ -1,6 +1,7 @@
 {:paths ["src" "vendor" "resources" "test"]
  :deps
  {penpot/common       {:local/root "../common"}
+  org.clojure/clojure {:mvn/version "1.10.3"}
   binaryage/devtools  {:mvn/version "RELEASE"}
   metosin/reitit-core {:mvn/version "0.5.16"}
   funcool/beicon      {:mvn/version "2021.07.05-1"}

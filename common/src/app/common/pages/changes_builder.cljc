@@ -8,8 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bool :as gshb]
+   [app.common.geom.shapes.rect :as gshr]
+   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]))
@@ -379,8 +383,24 @@
         generate-operation
         (fn [operations attr old new]
           (let [old-val (get old attr)
-                new-val (get new attr)]
-            (if (= old-val new-val)
+                new-val (get new attr)
+
+                equal?  (cond
+                          (and (number? old-val) (number? new-val))
+                          (mth/close? old-val new-val)
+
+                          (and (gmt/matrix? old-val) (gmt/matrix? new-val))
+                          (gmt/close? old-val new-val)
+
+                          (= attr :points)
+                          (every? #(apply gpt/close? %) (d/zip old-val new-val))
+
+                          (= attr :selrect)
+                          (gshr/close-selrect? old-val new-val)
+
+                          :else
+                          (= old-val new-val))]
+            (if equal?
               operations
               (-> operations
                   (update :rops conj {:type :set :attr attr :val new-val :ignore-touched true})
@@ -390,8 +410,8 @@
         (fn [changes parent]
           (let [children (->> parent :shapes (map (d/getf objects)))
                 resized-parent (cond
-                                 (empty? children)
-                                 changes
+                                 (empty? children) ;; a parent with no children will be deleted,
+                                 nil               ;; so it does not need resize
 
                                  (= (:type parent) :bool)
                                  (gshb/update-bool-selrect parent children objects)
@@ -399,21 +419,22 @@
                                  (= (:type parent) :group)
                                  (if (:masked-group? parent)
                                    (gsh/update-mask-selrect parent children)
-                                   (gsh/update-group-selrect parent children)))
+                                   (gsh/update-group-selrect parent children)))]
+            (if resized-parent
+              (let [{rops :rops uops :uops}
+                    (reduce #(generate-operation %1 %2 parent resized-parent)
+                            {:rops [] :uops []}
+                            (keys parent))
 
-                {rops :rops uops :uops}
-                (reduce #(generate-operation %1 %2 parent resized-parent)
-                        {:rops [] :uops []}
-                        (keys parent))
+                    change {:type :mod-obj
+                            :page-id page-id
+                            :id (:id parent)}]
 
-                change {:type :mod-obj
-                        :page-id page-id
-                        :id (:id parent)}]
-
-            (if (seq rops)
-              (-> changes
-                  (update :redo-changes conj (assoc change :operations rops))
-                  (update :undo-changes conj (assoc change :operations uops)))
+                (if (seq rops)
+                  (-> changes
+                      (update :redo-changes conj (assoc change :operations rops))
+                      (update :undo-changes d/preconj (assoc change :operations uops)))
+                  changes))
               changes)))]
 
     (-> (reduce resize-parent changes all-parents)

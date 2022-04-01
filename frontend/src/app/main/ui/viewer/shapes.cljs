@@ -403,9 +403,9 @@
         modifier-ids (into [frame-id] (cph/get-children-ids objects frame-id))
         objects      (reduce update-fn objects modifier-ids)
         frame        (assoc-in frame [:modifiers :displacement] modifier)
-
         width        (* (:width frame) zoom)
         height       (* (:height frame) zoom)
+
         vbox         (str "0 0 " (:width frame 0)
                           " "    (:height frame 0))
         wrapper      (mf/use-memo

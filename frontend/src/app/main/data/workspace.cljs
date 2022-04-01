@@ -194,7 +194,8 @@
   (ptk/reify ::initialize-page
     ptk/WatchEvent
     (watch [_ state _]
-      (when-not (contains? (get-in state [:workspace-data :pages-index]) page-id)
+      (if (contains? (get-in state [:workspace-data :pages-index]) page-id)
+        (rx/of (dwp/preload-data-uris))
         (let [default-page-id (get-in state [:workspace-data :pages 0])]
           (rx/of (go-to-page default-page-id)))))
 
@@ -1356,26 +1357,28 @@
               edit-id (get-in state [:workspace-local :edition])
               is-editing-text? (and edit-id (= :text (get-in objects [edit-id :type])))]
 
-          (cond
-            (and (string? text-data)
-                 (str/includes? text-data "<svg"))
-            (rx/of (paste-svg text-data))
+          ;; Some paste events can be fired while we're editing a text
+          ;; we forbid that scenario so the default behaviour is executed
+          (when-not is-editing-text?
+            (cond
+              (and (string? text-data)
+                   (str/includes? text-data "<svg"))
+              (rx/of (paste-svg text-data))
 
-            (seq image-data)
-            (rx/from (map paste-image image-data))
+              (seq image-data)
+              (rx/from (map paste-image image-data))
 
-            (coll? decoded-data)
-            (->> (rx/of decoded-data)
-                 (rx/filter #(= :copied-shapes (:type %)))
-                 (rx/map #(paste-shape % in-viewport?)))
+              (coll? decoded-data)
+              (->> (rx/of decoded-data)
+                   (rx/filter #(= :copied-shapes (:type %)))
+                   (rx/map #(paste-shape % in-viewport?)))
 
-            ;; Some paste events can be fired while we're editing a text
-            ;; we forbid that scenario so the default behaviour is executed
-            (and (string? text-data) (not is-editing-text?))
-            (rx/of (paste-text text-data))
+              (string? text-data)
+              (rx/of (paste-text text-data))
 
-            :else
-            (rx/empty)))
+              :else
+              (rx/empty))))
+
         (catch :default err
           (js/console.error "Clipboard error:" err))))))
 

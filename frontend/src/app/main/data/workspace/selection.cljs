@@ -110,7 +110,10 @@
                (rx/dedupe)
                (rx/map #(select-shapes-by-current-selrect preserve? ignore-groups?))))
 
-         (rx/of (update-selrect nil)))))))
+         (->> (rx/of (update-selrect nil))
+              ;; We need the async so the current event finishes before updating the selrect
+              ;; otherwise the `on-click` event will trigger with a `nil` selrect
+              (rx/observe-on :async)))))))
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
@@ -123,13 +126,7 @@
    (ptk/reify ::select-shape
      ptk/UpdateEvent
      (update [_ state]
-       (update-in state [:workspace-local :selected]
-                  (fn [selected]
-                    (if-not toggle?
-                      (conj (d/ordered-set) id)
-                      (if (contains? selected id)
-                        (disj selected id)
-                        (conj selected id))))))
+       (update-in state [:workspace-local :selected] d/toggle-selection id toggle?))
 
      ptk/WatchEvent
      (watch [_ state _]
@@ -506,6 +503,7 @@
 
               id-duplicated (when (= (count selected) 1) (first selected))]
 
+          ;; Warning: This order is important for the focus mode.
           (rx/of (dch/commit-changes changes)
                  (select-shapes selected)
                  (memorize-duplicated id-original id-duplicated)))))))

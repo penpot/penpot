@@ -13,6 +13,7 @@
    [app.main.store :as st]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
+   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.image :as image]
@@ -190,9 +191,18 @@
         frame   (get objects (:id frame))
 
         zoom    (:zoom local 1)
-        width   (* (:width frame) zoom)
-        height  (* (:height frame) zoom)
-        vbox    (str "0 0 " (:width frame 0) " " (:height frame 0))
+
+        {:keys [_ _ width height]} (filters/get-filters-bounds frame)
+        padding (filters/calculate-padding frame)
+        x (- (:horizontal padding))
+        y (- (:vertical padding))
+        width (+ width (* 2 (:horizontal padding)))
+        height (+ height (* 2 (:vertical padding)))
+
+        vbox    (str x " " y " " width " " height)
+
+        width   (* width zoom)
+        height  (* height zoom)
 
         render  (mf/use-memo
                  (mf/deps objects)

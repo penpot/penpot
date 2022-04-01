@@ -34,6 +34,24 @@
        :width width
        :height height})))
 
+(defn close-rect?
+  [rect1 rect2]
+  (and (mth/close? (:x rect1) (:x rect2))
+       (mth/close? (:y rect1) (:y rect2))
+       (mth/close? (:width rect1) (:width rect2))
+       (mth/close? (:height rect1) (:height rect2))))
+
+(defn close-selrect?
+  [selrect1 selrect2]
+  (and (mth/close? (:x selrect1) (:x selrect2))
+       (mth/close? (:y selrect1) (:y selrect2))
+       (mth/close? (:x1 selrect1) (:x1 selrect2))
+       (mth/close? (:y1 selrect1) (:y1 selrect2))
+       (mth/close? (:x2 selrect1) (:x2 selrect2))
+       (mth/close? (:y2 selrect1) (:y2 selrect2))
+       (mth/close? (:width selrect1) (:width selrect2))
+       (mth/close? (:height selrect1) (:height selrect2))))
+
 (defn rect->points [{:keys [x y width height]}]
   (when (d/num? x y)
     (let [width  (max width 0.01)

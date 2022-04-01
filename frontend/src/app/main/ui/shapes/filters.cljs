@@ -170,7 +170,6 @@
   ([shape filters blur-value]
 
    (let [svg-root? (and (= :svg-raw (:type shape)) (not= :svg (get-in shape [:content :tag])))
-         frame? (= :frame (:type shape))
          {:keys [x y width height]} (:selrect shape)]
      (if svg-root?
        ;; When is a raw-svg but not the root we use the whole svg as bound for the filter. Is the maximum
@@ -183,6 +182,7 @@
                                 (map (partial filter-bounds shape)))
              ;; We add the selrect so the minimum size will be the selrect
              filter-bounds (conj filter-bounds (-> shape :points gsh/points->selrect))
+
              x1 (apply min (map :x1 filter-bounds))
              y1 (apply min (map :y1 filter-bounds))
              x2 (apply max (map :x2 filter-bounds))
@@ -195,18 +195,30 @@
 
          ;; We should move the frame filter coordinates because they should be
          ;; relative with the frame. By default they come as absolute
-         {:x (if frame? (- x1 x) x1)
-          :y (if frame? (- y1 y) y1)
+         {:x x1
+          :y y1
           :width (- x2 x1)
           :height (- y2 y1)})))))
 
 (defn calculate-padding [shape]
   (let [stroke-width (apply max 0 (map #(case (:stroke-alignment % :center)
-                                        :center (/ (:stroke-width % 0) 2)
-                                        :outer (:stroke-width % 0)
-                                        0) (:strokes shape)))
-        margin (apply max 0 (map #(gsh/shape-stroke-margin % stroke-width) (:strokes shape)))]
-    (+ stroke-width margin)))
+                                          :center (/ (:stroke-width % 0) 2)
+                                          :outer (:stroke-width % 0)
+                                          0) (:strokes shape)))
+
+        margin (apply max 0 (map #(gsh/shape-stroke-margin % stroke-width) (:strokes shape)))
+
+
+        shadow-width (apply max 0 (map #(case (:style % :drop-shadow)
+                                          :drop-shadow (+ (mth/abs (:offset-x %)) (* (:spread %) 2) (* (:blur %) 2) 10)
+                                          0) (:shadow shape)))
+
+        shadow-height (apply max 0 (map #(case (:style % :drop-shadow)
+                                           :drop-shadow (+ (mth/abs (:offset-y %)) (* (:spread %) 2) (* (:blur %) 2) 10)
+                                           0) (:shadow shape)))]
+
+    {:horizontal (+ stroke-width margin shadow-width)
+     :vertical (+ stroke-width margin shadow-height)}))
 
 (defn change-filter-in
   "Adds the previous filter as `filter-in` parameter"
@@ -220,10 +232,10 @@
         bounds        (get-filters-bounds shape filters (or (-> shape :blur :value) 0))
         padding       (calculate-padding shape)
         selrect       (:selrect shape)
-        filter-x      (/ (- (:x bounds) (:x selrect) padding) (:width selrect))
-        filter-y      (/ (- (:y bounds) (:y selrect) padding) (:height selrect))
-        filter-width  (/ (+ (:width bounds) (* 2 padding)) (:width selrect))
-        filter-height (/ (+ (:height bounds) (* 2 padding)) (:height selrect))]
+        filter-x      (/ (- (:x bounds) (:x selrect) (:horizontal padding)) (:width selrect))
+        filter-y      (/ (- (:y bounds) (:y selrect) (:vertical padding)) (:height selrect))
+        filter-width  (/ (+ (:width bounds) (* 2 (:horizontal padding))) (:width selrect))
+        filter-height (/ (+ (:height bounds) (* 2 (:vertical padding))) (:height selrect))]
     (when (> (count filters) 2)
       [:filter {:id          filter-id
                 :x           filter-x

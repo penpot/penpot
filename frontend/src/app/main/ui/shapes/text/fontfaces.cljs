@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.text.fontfaces
   (:require
    [app.common.data :as d]
+   [app.common.pages.helpers :as cph]
    [app.main.fonts :as fonts]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.embed :as embed]
@@ -76,14 +77,10 @@
   {::mf/wrap-props false
    ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
   [props]
-  (let [shapes  (->> (obj/get props "shapes")
-                     (filterv #(= :text (:type %))))
-
-        content (->> shapes (mapv :content))
-
-        ;; Retrieve the fonts ids used by the text shapes
-        fonts (->> content
-                   (mapv fonts/get-content-fonts)
+  (let [;; Retrieve the fonts ids used by the text shapes
+        fonts (->> (obj/get props "shapes")
+                   (filterv cph/text-shape?)
+                   (mapv (comp fonts/get-content-fonts :content))
                    (reduce set/union #{})
                    (hooks/use-equal-memo))]
 

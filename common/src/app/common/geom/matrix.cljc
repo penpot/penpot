@@ -26,7 +26,7 @@
   (toString [_]
     (str "matrix(" a "," b "," c "," d "," e "," f ")")))
 
-(defn ^boolean matrix?
+(defn matrix?
   "Return true if `v` is Matrix instance."
   [v]
   (instance? Matrix v))
@@ -56,6 +56,15 @@
                     (filter #(-> % first seq))
                     (map (comp d/parse-double first)))]
     (apply matrix params)))
+
+(defn close?
+  [m1 m2]
+  (and (mth/close? (.-a m1) (.-a m2))
+       (mth/close? (.-b m1) (.-b m2))
+       (mth/close? (.-c m1) (.-c m2))
+       (mth/close? (.-d m1) (.-d m2))
+       (mth/close? (.-e m1) (.-e m2))
+       (mth/close? (.-f m1) (.-f m2))))
 
 (defn multiply
   ([^Matrix m1 ^Matrix m2]
@@ -111,7 +120,7 @@
   ([{x :x y :y :as pt}]
    (assert (gpt/point? pt))
    (Matrix. 1 0 0 1 x y))
-  
+
   ([x y]
    (translate-matrix (gpt/point x y))))
 

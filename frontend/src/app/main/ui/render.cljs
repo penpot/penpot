@@ -33,10 +33,10 @@
   (let [xf-get-bounds (comp (map #(get objects %)) (map #(calc-bounds % objects)))
         padding       (filters/calculate-padding object)
         obj-bounds    (-> (filters/get-filters-bounds object)
-                          (update :x - padding)
-                          (update :y - padding)
-                          (update :width + (* 2 padding))
-                          (update :height + (* 2 padding)))]
+                          (update :x - (:horizontal padding))
+                          (update :y - (:vertical padding))
+                          (update :width + (* 2 (:horizontal padding)))
+                          (update :height + (* 2 (:vertical padding))))]
 
     (cond
       (and (= :group (:type object))
