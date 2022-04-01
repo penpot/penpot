@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.config :as cfg]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
@@ -50,9 +51,16 @@
 
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
-        (let [props (-> #js {:x (mth/round (:x data))
-                             :y (mth/round (- (:y data) (:height data)))
-                             :alignmentBaseline "text-before-edge"
+        (let [y (if (cfg/check-browser? :safari)
+                  (mth/round (- (:y data) (:height data)))
+                  (mth/round (:y data)))
+
+              alignment-bl (when (cfg/check-browser? :safari) "text-before-edge")
+              dominant-bl (when-not (cfg/check-browser? :safari) "ideographic")
+              props (-> #js {:x (mth/round (:x data))
+                             :y y
+                             :alignmentBaseline alignment-bl
+                             :dominantBaseline dominant-bl
                              :style (-> #js {:fontFamily (:font-family data)
                                              :fontSize (:font-size data)
                                              :fontWeight (:font-weight data)
