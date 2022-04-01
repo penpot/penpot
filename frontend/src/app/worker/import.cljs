@@ -300,8 +300,9 @@
   (if (and (not (cip/close? node))
            (cip/has-image? node))
     (let [name     (cip/get-image-name node)
-          data-uri (cip/get-image-data node)]
-      (->> (upload-media-files context file-id name data-uri)
+          image-data (cip/get-image-data node)
+          image-fill (cip/get-image-fill node)]
+      (->> (upload-media-files context file-id name image-data)
            (rx/catch #(do (.error js/console "Error uploading media: " name)
                           (rx/of node)))
            (rx/map
@@ -310,7 +311,13 @@
                   (assoc-in [:attrs :penpot:media-id]     (:id media))
                   (assoc-in [:attrs :penpot:media-width]  (:width media))
                   (assoc-in [:attrs :penpot:media-height] (:height media))
-                  (assoc-in [:attrs :penpot:media-mtype]  (:mtype media)))))))
+                  (assoc-in [:attrs :penpot:media-mtype]  (:mtype media))
+
+                  (assoc-in [:attrs :penpot:fill-color]  (:fill image-fill))
+                  (assoc-in [:attrs :penpot:fill-color-ref-file]  (:fill-color-ref-file image-fill))
+                  (assoc-in [:attrs :penpot:fill-color-ref-id]  (:fill-color-ref-id image-fill))
+                  (assoc-in [:attrs :penpot:fill-opacity]  (:fill-opacity image-fill))
+                  (assoc-in [:attrs :penpot:fill-color-gradient]  (:fill-color-gradient image-fill)))))))
 
     ;; If the node is not an image just return the node
     (->> (rx/of node)
