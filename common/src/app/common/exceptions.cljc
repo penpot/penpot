@@ -57,3 +57,31 @@
 (defn exception?
   [v]
   (instance? #?(:clj java.lang.Throwable :cljs js/Error) v))
+
+
+#?(:cljs
+   (deftype WrappedException [cause meta]
+     cljs.core/IMeta
+     (-meta [_] meta)
+
+     cljs.core/IDeref
+     (-deref [_] cause))
+   :clj
+   (deftype WrappedException [cause meta]
+     clojure.lang.IMeta
+     (meta [_] meta)
+
+     clojure.lang.IDeref
+     (deref [_] cause)))
+
+
+(ns-unmap 'app.common.exceptions '->WrappedException)
+(ns-unmap 'app.common.exceptions 'map->WrappedException)
+
+(defn wrapped?
+  [o]
+  (instance? WrappedException o))
+
+(defn wrap-with-context
+  [cause context]
+  (WrappedException. cause context))
