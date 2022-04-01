@@ -20,9 +20,9 @@
     :read-only  (cf/get :database-readonly false)
     :metrics    (ig/ref :app.metrics/metrics)
     :migrations (ig/ref :app.migrations/all)
-    :name :main
-    :min-size (cf/get :database-min-pool-size 0)
-    :max-size (cf/get :database-max-pool-size 30)}
+    :name       :main
+    :min-size   (cf/get :database-min-pool-size 0)
+    :max-size   (cf/get :database-max-pool-size 30)}
 
    ;; Default thread pool for IO operations
    [::default :app.worker/executor]

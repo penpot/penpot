@@ -16,7 +16,10 @@
    [yetti.middleware :as ymw]
    [yetti.request :as yrq]
    [yetti.response :as yrs])
-  (:import java.io.OutputStream))
+  (:import
+   com.fasterxml.jackson.core.io.JsonEOFException
+   io.undertow.server.RequestTooBigException
+   java.io.OutputStream))
 
 (def server-timing
   {:name ::server-timing
@@ -46,16 +49,29 @@
                         (update :params merge params))))
 
                 :else
-                request)))]
+                request)))
+
+          (handle-error [raise cause]
+            (cond
+              (instance? RequestTooBigException cause)
+              (raise (ex/error :type :validation
+                               :code :request-body-too-large
+                               :hint (ex-message cause)))
+
+              (instance? JsonEOFException cause)
+              (raise (ex/error :type :validation
+                               :code :malformed-json
+                               :hint (ex-message cause)))
+              :else
+              (raise cause)))]
 
     (fn [request respond raise]
       (when-let [request (try
                            (process-request request)
-                           (catch Exception cause
-                             (raise (ex/error :type :validation
-                                              :code :malformed-params
-                                              :hint (ex-message cause)
-                                              :cause cause))))]
+                           (catch RuntimeException cause
+                             (handle-error raise (or (.getCause cause) cause)))
+                           (catch Throwable cause
+                             (handle-error raise cause)))]
         (handler request respond raise)))))
 
 (def parse-request

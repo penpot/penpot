@@ -31,6 +31,10 @@
     (= 200 status)
     (rx/of body)
 
+    (= 413 status)
+    (rx/throw {:type :validation
+               :code :request-body-too-large})
+
     (and (>= status 400)
          (map? body))
     (rx/throw body)
