@@ -88,6 +88,7 @@
 
         ;; REFS
         viewport-ref      (mf/use-ref nil)
+        overlays-ref      (mf/use-ref nil)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -169,7 +170,7 @@
 
         disabled-guides?         (or drawing-tool transform)]
 
-    (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
+    (hooks/setup-dom-events viewport-ref overlays-ref zoom disable-paste in-viewport?)
     (hooks/setup-viewport-size viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing?)
     (hooks/setup-keyboard alt? mod? space?)
@@ -179,7 +180,7 @@
     (hooks/setup-active-frames base-objects vbox hover active-frames)
 
     [:div.viewport
-     [:div.viewport-overlays
+     [:div.viewport-overlays {:ref overlays-ref}
 
       [:& wtr/frame-renderer {:objects base-objects
                               :background background}]

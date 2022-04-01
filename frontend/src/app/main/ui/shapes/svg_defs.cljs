@@ -43,24 +43,24 @@
           transform-mask?     (and (= :mask tag)
                                    (= "userSpaceOnUse" (get attrs :maskUnits "objectBoundingBox")))
 
-          attrs (-> attrs
-                    (usvg/update-attr-ids prefix-id)
-                    (usvg/clean-attrs)
-                    ;; This clasname will be used to change the transform on the viewport
-                    ;; only necessary for groups because shapes have their own transform
-                    (cond-> (and (or transform-gradient?
-                                     transform-pattern?
-                                     transform-clippath?
-                                     transform-filter?
-                                     transform-mask?)
-                             (= :group type))
-                      (update :className #(if % (dm/str % " svg-def") "svg-def")))
-                    (cond->
-                        transform-gradient?   (add-matrix :gradientTransform transform)
-                        transform-pattern?    (add-matrix :patternTransform transform)
-                        transform-clippath?   (add-matrix :transform transform)
-                        (or transform-filter?
-                            transform-mask?)  (merge attrs bounds)))
+          attrs
+          (-> attrs
+              (usvg/update-attr-ids prefix-id)
+              (usvg/clean-attrs)
+              ;; This clasname will be used to change the transform on the viewport
+              ;; only necessary for groups because shapes have their own transform
+              (cond-> (and (or transform-gradient?
+                               transform-pattern?
+                               transform-clippath?
+                               transform-filter?
+                               transform-mask?)
+                           (= :group type))
+                (update :className #(if % (dm/str % " svg-def") "svg-def")))
+              (cond->
+                  transform-gradient?   (add-matrix :gradientTransform transform)
+                  transform-pattern?    (add-matrix :patternTransform transform)
+                  transform-clippath?   (add-matrix :transform transform)
+                  (or transform-filter? transform-mask?) (merge bounds)))
 
           [wrapper wrapper-props] (if (= tag :mask)
                                     ["g" #js {:className "svg-mask-wrapper"
