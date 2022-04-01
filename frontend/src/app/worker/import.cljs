@@ -31,6 +31,8 @@
 ;; Upload changes batches size
 (def ^:const change-batch-size 100)
 
+(def conjv (fnil conj []))
+
 (defn get-file
   "Resolves the file inside the context given its id and the data"
   ([context type]
@@ -261,25 +263,29 @@
                              (cond-> (some? old-id)
                                (assoc :id (resolve old-id)))
                              (cond-> (< (:version context 1) 2)
-                               (translate-frame type file)))
+                               (translate-frame type file)))]
+        (try
+          (let [file (case type
+                       :frame    (fb/add-artboard   file data)
+                       :group    (fb/add-group      file data)
+                       :bool     (fb/add-bool       file data)
+                       :rect     (fb/create-rect    file data)
+                       :circle   (fb/create-circle  file data)
+                       :path     (fb/create-path    file data)
+                       :text     (fb/create-text    file data)
+                       :image    (fb/create-image   file data)
+                       :svg-raw  (fb/create-svg-raw file data)
+                       #_default file)]
 
-            file (case type
-                   :frame    (fb/add-artboard   file data)
-                   :group    (fb/add-group      file data)
-                   :bool     (fb/add-bool       file data)
-                   :rect     (fb/create-rect    file data)
-                   :circle   (fb/create-circle  file data)
-                   :path     (fb/create-path    file data)
-                   :text     (fb/create-text    file data)
-                   :image    (fb/create-image   file data)
-                   :svg-raw  (fb/create-svg-raw file data)
-                   #_default file)]
+            ;; We store this data for post-processing after every shape has been
+            ;; added
+            (cond-> file
+              (d/not-empty? interactions)
+              (assoc-in [:interactions (:id data)] interactions)))
 
-        ;; We store this data for post-processing after every shape has been
-        ;; added
-        (cond-> file
-          (d/not-empty? interactions)
-          (assoc-in [:interactions (:id data)] interactions))))))
+          (catch :default err
+            (log/error :hint (ex-message err) :cause err :js/data data)
+            (update file :errors conjv data)))))))
 
 (defn setup-interactions
   [file]

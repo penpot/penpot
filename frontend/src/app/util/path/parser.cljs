@@ -302,16 +302,17 @@
          (reduce simplify-command [[start] start-pos start-pos start-pos start-pos])
          (first))))
 
-
 (defn parse-path [path-str]
-  (let [clean-path-str
-        (-> path-str
-            (str/trim)
-            ;; Change "commas" for spaces
-            (str/replace #"," " ")
-            ;; Remove all consecutive spaces
-            (str/replace #"\s+" " "))
-        commands (re-seq commands-regex clean-path-str)]
-    (-> (mapcat parse-command commands)
-        (simplify-commands))))
+  (if (empty? path-str)
+    path-str
+    (let [clean-path-str
+          (-> path-str
+              (str/trim)
+              ;; Change "commas" for spaces
+              (str/replace #"," " ")
+              ;; Remove all consecutive spaces
+              (str/replace #"\s+" " "))
+          commands (re-seq commands-regex clean-path-str)]
+      (-> (mapcat parse-command commands)
+          (simplify-commands)))))
 
