@@ -99,7 +99,10 @@
             (let [body (yrs/body response)]
               (if (coll? body)
                 (let [qs   (yrq/query request)
-                      opts {:type (if (str/includes? qs "verbose") :json-verbose :json)}]
+                      opts (if (or (contains? cf/flags :transit-readable-response)
+                                   (str/includes? qs "transit_verbose"))
+                             {:type :json-verbose}
+                             {:type :json})]
                   (-> response
                       (update :headers assoc "content-type" "application/transit+json")
                       (assoc :body (transit-streamable-body body opts))))
