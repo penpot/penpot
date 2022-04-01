@@ -59,7 +59,9 @@
       (-> (method data)
           (p/then handle-response)
           (p/then respond)
-          (p/catch raise)))))
+          (p/catch (fn [cause]
+                     (let [context {:profile-id profile-id}]
+                       (raise (ex/wrap-with-context cause context)))))))))
 
 (defn- rpc-mutation-handler
   "Ring handler that dispatches mutation requests and convert between
@@ -81,7 +83,9 @@
       (-> (method data)
           (p/then handle-response)
           (p/then respond)
-          (p/catch raise)))))
+          (p/catch (fn [cause]
+                     (let [context {:profile-id profile-id}]
+                       (raise (ex/wrap-with-context cause context)))))))))
 
 (defn- wrap-metrics
   "Wrap service method with metrics measurement."

@@ -15,6 +15,8 @@
    [yetti.request :as yrq]
    [yetti.response :as yrs]))
 
+(def ^:dynamic *context* {})
+
 (defn- parse-client-ip
   [request]
   (or (some-> (yrq/get-header request "x-forwarded-for") (str/split ",") first)
@@ -24,6 +26,7 @@
 (defn get-context
   [request]
   (merge
+   *context*
    {:path          (:path request)
     :method        (:method request)
     :params        (:params request)
@@ -137,9 +140,21 @@
                            :code :unhandled
                            :hint (ex-message error)
                            :data edata})))))
+
 (defn handle
-  [error request]
-  (if (or (instance? java.util.concurrent.CompletionException error)
-          (instance? java.util.concurrent.ExecutionException error))
-    (handle-exception (.getCause ^Throwable error) request)
-    (handle-exception error request)))
+  [cause request]
+
+  (cond
+    (or (instance? java.util.concurrent.CompletionException cause)
+        (instance? java.util.concurrent.ExecutionException cause))
+    (handle-exception (.getCause ^Throwable cause) request)
+
+
+    (ex/wrapped? cause)
+    (let [context (meta cause)
+          cause   (deref cause)]
+      (binding [*context* context]
+        (handle-exception cause request)))
+
+    :else
+    (handle-exception cause request)))
