@@ -44,7 +44,7 @@
   (merge {:name "http"
           :port 6060
           :host "0.0.0.0"
-          :max-body-size (* 1024 1024 24)             ; 24 MiB
+          :max-body-size (* 1024 1024 30)             ; 30 MiB
           :max-multipart-body-size (* 1024 1024 120)} ; 120 MiB
          (d/without-nils cfg)))
 
