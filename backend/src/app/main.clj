@@ -115,7 +115,9 @@
     :router      (ig/ref :app.http/router)
     :metrics     (ig/ref :app.metrics/metrics)
     :executor    (ig/ref [::default :app.worker/executor])
-    :io-threads  (cf/get :http-server-io-threads)}
+    :io-threads  (cf/get :http-server-io-threads)
+    :max-body-size           (cf/get :http-server-max-body-size)
+    :max-multipart-body-size (cf/get :http-server-max-multipart-body-size)}
 
    :app.http/router
    {:assets        (ig/ref :app.http.assets/handlers)
