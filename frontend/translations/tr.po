@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-04-01 07:09+0000\n"
+"PO-Revision-Date: 2022-04-04 11:11+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
@@ -3715,3 +3715,9 @@ msgstr "Şekiller"
 
 msgid "workspace.sidebar.layers.texts"
 msgstr "Metinler"
+
+msgid "viewer.header.handoff-section"
+msgstr "Teslim (%s)"
+
+msgid "onboarding.slide.3.alt"
+msgstr "Teslim ve kod özellikleri"
