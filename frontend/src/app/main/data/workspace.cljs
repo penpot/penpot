@@ -578,19 +578,20 @@
     (watch [it state _]
       (let [page-id         (:current-page-id state)
             objects         (wsh/lookup-page-objects state page-id)
-            selected-shapes (->> (wsh/lookup-selected state)
-                                 (map (d/getf objects)))
+            selected-ids    (wsh/lookup-selected state)
+            selected-shapes (map (d/getf objects) selected-ids)
 
             move-shape
             (fn [changes shape]
               (let [parent        (get objects (:parent-id shape))
                     sibling-ids   (:shapes parent)
                     current-index (d/index-of sibling-ids (:id shape))
+                    index-in-selection (d/index-of selected-ids (:id shape))
                     new-index     (case loc
                                     :top (count sibling-ids)
                                     :down (max 0 (- current-index 1))
                                     :up (min (count sibling-ids) (+ (inc current-index) 1))
-                                    :bottom 0)]
+                                    :bottom index-in-selection)]
                 (pcb/change-parent changes
                                    (:id parent)
                                    [shape]
@@ -631,11 +632,11 @@
         (pcb/update-shapes shapes-to-detach
                            (fn [shape]
                              (assoc shape :component-id nil
-                                          :component-file nil
-                                          :component-root? nil
-                                          :remote-synced? nil
-                                          :shape-ref nil
-                                          :touched nil)))
+                                    :component-file nil
+                                    :component-root? nil
+                                    :remote-synced? nil
+                                    :shape-ref nil
+                                    :touched nil)))
 
         ; Make non root a component moved inside another one
         (pcb/update-shapes shapes-to-deroot
