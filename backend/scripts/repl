@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+export PENPOT_HOST=devenv
+export PENPOT_TENANT=dev
+export PENPOT_FLAGS="$PENPOT_FLAGS enable-backend-asserts enable-secure-session-cookies enable-audit-log enable-cors enable-transit-readable-response enable-demo-users"
+
 # export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot"
 # export PENPOT_DATABASE_USERNAME="penpot"
 # export PENPOT_DATABASE_PASSWORD="penpot"
@@ -8,7 +12,6 @@
 # export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot_pre"
 # export PENPOT_DATABASE_USERNAME="penpot_pre"
 # export PENPOT_DATABASE_PASSWORD="penpot_pre"
-export PENPOT_FLAGS="enable-asserts enable-audit-log $PENPOT_FLAGS"
 
 # Initialize MINIO config
 # mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin
