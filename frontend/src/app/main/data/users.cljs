@@ -303,7 +303,7 @@
     (watch [_ _ stream]
       (let [mdata      (meta data)
             on-success (:on-success mdata identity)
-            on-error   (:on-error mdata #(rx/throw %))]
+            on-error   (:on-error mdata rx/throw)]
         (->> (rp/mutation :update-profile (dissoc data :props))
              (rx/catch on-error)
              (rx/mapcat

@@ -17,7 +17,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
@@ -40,12 +40,12 @@
 ;; --- Profile Form
 
 (mf/defc profile-form
-  [{:keys [locale] :as props}]
+  []
   (let [profile (mf/deref refs/profile)
-        form    (fm/use-form :spec ::profile-form
-                             :initial profile)
-        disabled-button (mf/use-state true)
-        activate-btn #(reset! disabled-button false)]
+        initial (mf/with-memo [profile]
+                  (let [subscribed? (-> profile :props :newsletter-subscribed)]
+                    (assoc profile :newsletter-subscribed subscribed?)))
+        form    (fm/use-form :spec ::profile-form :initial initial)]
 
     [:& fm/form {:on-submit on-submit
                  :form form
@@ -53,9 +53,8 @@
      [:div.fields-row
       [:& fm/input
        {:type "text"
-        :on-key-down activate-btn
         :name :fullname
-        :label (t locale "dashboard.your-name")}]]
+        :label (tr "dashboard.your-name")}]]
 
      [:div.fields-row
       [:& fm/input
@@ -63,40 +62,39 @@
         :name :email
         :disabled true
         :help-icon i/at
-        :label (t locale "dashboard.your-email")}]
+        :label (tr "dashboard.your-email")}]
 
       [:div.options
        [:div.change-email
         [:a {:on-click #(modal/show! :change-email {})}
-         (t locale "dashboard.change-email")]]]]
+         (tr "dashboard.change-email")]]]]
 
      [:div.newsletter-subs
       [:p.newsletter-title (tr "dashboard.newsletter-title")]
       [:& fm/input {:name :newsletter-subscribed
                     :class "check-primary"
                     :type "checkbox"
-                    :label  (tr "dashboard.newsletter-msg")
-                    :on-click activate-btn}]
-      [:p.info (tr "onboarding.newsletter.privacy1")  [:a {:target "_blank" :href "https://penpot.app/privacy.html"} (tr "onboarding.newsletter.policy")]]
+                    :label  (tr "dashboard.newsletter-msg")}]
+      [:p.info (tr "onboarding.newsletter.privacy1")
+       [:a {:target "_blank" :href "https://penpot.app/privacy.html"} (tr "onboarding.newsletter.policy")]]
       [:p.info (tr "onboarding.newsletter.privacy2")]]
 
      [:& fm/submit-button
-      {:label (t locale "dashboard.save-settings")
-       :disabled @disabled-button}]
+      {:label (tr "dashboard.save-settings")
+       :disabled (empty? (:touched @form))}]
 
      [:div.links
       [:div.link-item
        [:a {:on-click #(modal/show! :delete-account {})
             :data-test "remove-acount-btn"}
-        (t locale "dashboard.remove-account")]]]]))
+        (tr "dashboard.remove-account")]]]]))
 
 ;; --- Profile Photo Form
 
-(mf/defc profile-photo-form
-  [{:keys [locale] :as props}]
-  (let [file-input (mf/use-ref nil)
-        profile (mf/deref refs/profile)
-        photo   (cfg/resolve-profile-photo-url profile)
+(mf/defc profile-photo-form []
+  (let [file-input     (mf/use-ref nil)
+        profile        (mf/deref refs/profile)
+        photo          (cfg/resolve-profile-photo-url profile)
         on-image-click #(dom/click (mf/ref-val file-input))
 
         on-file-selected
@@ -105,7 +103,7 @@
 
     [:form.avatar-form
      [:div.image-change-field
-      [:span.update-overlay {:on-click on-image-click} (t locale "labels.update")]
+      [:span.update-overlay {:on-click on-image-click} (tr "labels.update")]
       [:img {:src photo}]
       [:& file-uploader {:accept "image/jpeg,image/png"
                          :multi false
@@ -115,14 +113,11 @@
 
 ;; --- Profile Page
 
-(mf/defc profile-page
-  [{:keys [locale]}]
-
-  (mf/use-effect
-    #(dom/set-html-title (tr "title.settings.profile")))
-
+(mf/defc profile-page []
+  (mf/with-effect []
+    (dom/set-html-title (tr "title.settings.profile")))
   [:div.dashboard-settings
    [:div.form-container.two-columns
-    [:& profile-photo-form {:locale locale}]
-    [:& profile-form {:locale locale}]]])
+    [:& profile-photo-form]
+    [:& profile-form]]])
 
