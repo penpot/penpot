@@ -54,11 +54,14 @@
     :browser
     :webworker))
 
+(def default-flags
+  [:enable-newsletter-subscription])
+
 (defn- parse-flags
   [global]
   (let [flags (obj/get global "penpotFlags" "")
         flags (sequence (map keyword) (str/words flags))]
-    (flags/parse flags/default flags)))
+    (flags/parse flags/default default-flags flags)))
 
 (defn- parse-version
   [global]

@@ -7,7 +7,7 @@
 (ns app.main.ui.settings.profile
   (:require
    [app.common.spec :as us]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
@@ -69,15 +69,16 @@
         [:a {:on-click #(modal/show! :change-email {})}
          (tr "dashboard.change-email")]]]]
 
-     [:div.newsletter-subs
-      [:p.newsletter-title (tr "dashboard.newsletter-title")]
-      [:& fm/input {:name :newsletter-subscribed
-                    :class "check-primary"
-                    :type "checkbox"
-                    :label  (tr "dashboard.newsletter-msg")}]
-      [:p.info (tr "onboarding.newsletter.privacy1")
-       [:a {:target "_blank" :href "https://penpot.app/privacy.html"} (tr "onboarding.newsletter.policy")]]
-      [:p.info (tr "onboarding.newsletter.privacy2")]]
+     (when (contains? @cf/flags :newsletter-subscription)
+       [:div.newsletter-subs
+        [:p.newsletter-title (tr "dashboard.newsletter-title")]
+        [:& fm/input {:name :newsletter-subscribed
+                      :class "check-primary"
+                      :type "checkbox"
+                      :label  (tr "dashboard.newsletter-msg")}]
+        [:p.info (tr "onboarding.newsletter.privacy1")
+         [:a {:target "_blank" :href "https://penpot.app/privacy.html"} (tr "onboarding.newsletter.policy")]]
+        [:p.info (tr "onboarding.newsletter.privacy2")]])
 
      [:& fm/submit-button
       {:label (tr "dashboard.save-settings")
@@ -94,7 +95,7 @@
 (mf/defc profile-photo-form []
   (let [file-input     (mf/use-ref nil)
         profile        (mf/deref refs/profile)
-        photo          (cfg/resolve-profile-photo-url profile)
+        photo          (cf/resolve-profile-photo-url profile)
         on-image-click #(dom/click (mf/ref-val file-input))
 
         on-file-selected
