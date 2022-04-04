@@ -12,7 +12,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.db :as db]
    [app.util.async :refer [thread-sleep]]
    [app.util.json :as json]
@@ -25,6 +25,7 @@
 
 (declare get-stats)
 (declare send!)
+(declare get-subscriptions)
 
 (s/def ::http-client fn?)
 (s/def ::version ::us/string)
@@ -38,18 +39,39 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool sprops version] :as cfg}]
-  (fn [{:keys [send?] :or {send? true}}]
-    ;; Sleep randomly between 0 to 10s
-    (when send?
-      (thread-sleep (rand-int 10000)))
+  (fn [{:keys [send? enabled?] :or {send? true enabled? false}}]
+    (let [subs     (get-subscriptions pool)
+          enabled? (or enabled?
+                       (contains? cf/flags :telemetry)
+                       (cf/get :telemetry-enabled))
 
-    (let [instance-id (:instance-id sprops)
-          stats       (-> (get-stats pool version)
-                          (assoc :instance-id instance-id))]
-      (when send?
-        (send! cfg stats))
+          data     {:subscriptions subs
+                    :version version
+                    :instance-id (:instance-id sprops)}]
+      (cond
+        ;; If we have telemetry enabled, then proceed the normal
+        ;; operation.
+        enabled?
+        (let [data (merge data (get-stats pool))]
+          (when send?
+            (thread-sleep (rand-int 10000))
+            (send! cfg data))
+          data)
 
-      stats)))
+        ;; If we have telemetry disabled, but there are users that are
+        ;; explicitly checked the newsletter subscription on the
+        ;; onboarding dialog or the profile section, then proceed to
+        ;; send a limited telemetry data, that consists in the list of
+        ;; subscribed emails and the running penpot version.
+        (seq subs)
+        (do
+          (when send?
+            (thread-sleep (rand-int 10000))
+            (send! cfg data))
+          data)
+
+        :else
+        data))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPL
@@ -67,6 +89,12 @@
                 :code :invalid-response
                 :response-status (:status response)
                 :response-body (:body response)))))
+
+(defn- get-subscriptions
+  [conn]
+  (let [sql "select email from profile where props->>'~:newsletter-subscribed' = 'true'"]
+    (->> (db/exec! conn [sql])
+         (mapv :email))))
 
 (defn- retrieve-num-teams
   [conn]
@@ -166,12 +194,11 @@
      :user-tz          (System/getProperty "user.timezone")}))
 
 (defn get-stats
-  [conn version]
-  (let [referer (if (cfg/get :telemetry-with-taiga)
+  [conn]
+  (let [referer (if (cf/get :telemetry-with-taiga)
                   "taiga"
-                  (cfg/get :telemetry-referer))]
-    (-> {:version        version
-         :referer        referer
+                  (cf/get :telemetry-referer))]
+    (-> {:referer        referer
          :total-teams    (retrieve-num-teams conn)
          :total-projects (retrieve-num-projects conn)
          :total-files    (retrieve-num-files conn)

@@ -209,6 +209,9 @@
      {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :tasks-gc}
 
+     {:cron #app/cron "0 30 */3,23 * * ?"
+      :task :telemetry}
+
      (when (cf/get :fdata-storage-backed)
        {:cron #app/cron "0 0 * * * ?"  ;; hourly
         :task :file-offload})
@@ -219,12 +222,7 @@
 
      (when (contains? cf/flags :audit-log-gc)
        {:cron #app/cron "0 0 0 * * ?" ;; daily
-        :task :audit-log-gc})
-
-     (when (or (contains? cf/flags :telemetry)
-               (cf/get :telemetry-enabled))
-       {:cron #app/cron "0 30 */3,23 * * ?"
-        :task :telemetry})]}
+        :task :audit-log-gc})]}
 
    :app.worker/registry
    {:metrics (ig/ref :app.metrics/metrics)
