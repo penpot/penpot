@@ -78,6 +78,7 @@
 - Fix drag guides to delete target area [#1679](https://github.com/penpot/penpot/issues/1679)
 - Fix undo when rotating groups [Taiga #3136](https://tree.taiga.io/project/penpot/issue/3136)
 - Fix component name in sidebar widget [Taiga #3144](https://tree.taiga.io/project/penpot/issue/3144)
+- Fix resize rotated shape with top&down constraints [Taiga #3167](https://tree.taiga.io/project/penpot/issue/3167)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

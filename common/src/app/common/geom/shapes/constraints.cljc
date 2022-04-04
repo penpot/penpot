@@ -9,7 +9,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
-   [app.common.geom.shapes.transforms :as gtr]
+   [app.common.geom.shapes.rect :as gre]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]))
 
@@ -77,18 +77,16 @@
 (defmethod constraint-modifier :fixed
   [_ axis parent child _ transformed-parent-rect]
   (let [parent-rect (:selrect parent)
-        child-rect (:selrect child)
+        child-rect (gre/points->rect (:points child))
 
         delta-start  (get-delta-start axis parent-rect transformed-parent-rect)
         delta-size   (get-delta-size axis parent-rect transformed-parent-rect)
-        child-size   (get-size axis child-rect)
-        child-center (gco/center-rect child-rect)]
+        child-size   (get-size axis child-rect)]
     (if (or (not (mth/almost-zero? delta-start))
             (not (mth/almost-zero? delta-size)))
 
       {:displacement (get-displacement axis delta-start)
-       :resize-origin (-> (get-displacement axis delta-start (:x1 child-rect) (:y1 child-rect))
-                          (gtr/transform-point-center child-center (:transform child (gmt/matrix))))
+       :resize-origin (get-displacement axis delta-start (:x child-rect) (:y child-rect))
        :resize-vector (get-scale axis (/ (+ child-size delta-size) child-size))}
       {})))
 
