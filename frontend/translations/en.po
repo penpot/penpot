@@ -581,7 +581,19 @@ msgstr "Search results"
 msgid "dashboard.type-something"
 msgstr "Type to search results"
 
-#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Save settings"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Newsletter subscription"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr "Send me news, product updates and recommendations about Penpot."
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Update settings"
 
@@ -1854,6 +1866,30 @@ msgstr ""
 
 msgid "onboarding.welcome.title"
 msgstr "Welcome to Penpot"
+
+msgid "onboarding.newsletter.title"
+msgstr "Want to receive Penpot news?"
+
+msgid "onboarding.newsletter.desc"
+msgstr "Subscribe to our newsletter to stay up to date with product development progress and news."
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "Because we care about privacy, here's our "
+
+msgid "onboarding.newsletter.policy"
+msgstr "Privacy Policy."
+
+msgid "onboarding.newsletter.privacy2"
+msgstr "We will only send relevant emails to you. You can unsubscribe at any time in your user profile or via the unsubscribe link in any of our newsletters."
+
+msgid "onboarding.newsletter.accept"
+msgstr "Yes, subscribe"
+
+msgid "onboarding.newsletter.decline"
+msgstr "No, thanks"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr "Your subscription request has been sent, we will send you an email to confirm it."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"

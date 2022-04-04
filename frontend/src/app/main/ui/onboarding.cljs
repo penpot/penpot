@@ -10,6 +10,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
+   [app.main.ui.onboarding.newsletter]
    [app.main.ui.onboarding.questions]
    [app.main.ui.onboarding.team-choice]
    [app.main.ui.onboarding.templates]
@@ -134,8 +135,10 @@
       [:p (tr "onboarding.slide.3.desc1")]
       [:p (tr "onboarding.slide.3.desc2")]]
      [:div.modal-navigation
-      [:button.btn-secondary {:on-click skip
-                              :data-test "slide-3-btn"} (tr "labels.start")]
+      [:button.btn-secondary
+       {:on-click skip
+        :data-test "slide-3-btn"}
+       (tr "labels.start")]
       [:& rc/navigation-bullets
        {:slide slide
         :navigate navigate
@@ -149,23 +152,23 @@
         klass (mf/use-state "fadeInDown")
 
         navigate
-        (mf/use-callback #(reset! slide %))
+        (mf/use-fn #(reset! slide %))
 
         skip
-        (mf/use-callback
-         (st/emitf (modal/hide)
-                   (modal/show {:type :onboarding-choice})
-                   (du/mark-onboarding-as-viewed)))]
+        (mf/use-fn
+         #(st/emit! (modal/hide)
+                    (if (contains? @cf/flags :newsletter-subscription)
+                      (modal/show {:type :onboarding-newsletter-modal})
+                      (modal/show {:type :onboarding-choice}))
+                    (du/mark-onboarding-as-viewed)))]
 
-    (mf/use-layout-effect
-     (mf/deps @slide)
-     (fn []
-       (when (not= :start @slide)
-         (reset! klass "fadeIn"))
-       (let [sem (tm/schedule 300 #(reset! klass nil))]
-         (fn []
-           (reset! klass nil)
-           (tm/dispose! sem)))))
+    (mf/with-effect [@slide]
+      (when (not= :start @slide)
+        (reset! klass "fadeIn"))
+      (let [sem (tm/schedule 300 #(reset! klass nil))]
+        (fn []
+          (reset! klass nil)
+          (tm/dispose! sem))))
 
     [:div.modal-overlay
      [:div.animated {:class @klass}
