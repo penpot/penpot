@@ -6,6 +6,7 @@
 
 (ns app.rpc.mutations.profile
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -30,7 +31,7 @@
 
 (s/def ::email ::us/email)
 (s/def ::fullname ::us/not-empty-string)
-(s/def ::lang (s/nilable ::us/not-empty-string))
+(s/def ::lang ::us/string)
 (s/def ::path ::us/string)
 (s/def ::profile-id ::us/uuid)
 (s/def ::password ::us/not-empty-string)
@@ -342,27 +343,41 @@
 
 ;; --- MUTATION: Update Profile (own)
 
-(defn- update-profile
-  [conn {:keys [id fullname lang theme] :as params}]
-  (let [profile (db/update! conn :profile
-                            {:fullname fullname
-                             :lang lang
-                             :theme theme}
-                            {:id id})]
-    (-> profile
-        (profile/decode-profile-row)
-        (profile/strip-private-attrs))))
-
-
+(s/def ::newsletter-subscribed ::us/boolean)
 (s/def ::update-profile
-  (s/keys :req-un [::id ::fullname]
-          :opt-un [::lang ::theme]))
+  (s/keys :req-un [::fullname ::profile-id]
+          :opt-un [::lang ::theme ::newsletter-subscribed]))
 
 (sv/defmethod ::update-profile
-  [{:keys [pool] :as cfg} params]
+  [{:keys [pool] :as cfg} {:keys [profile-id fullname lang theme newsletter-subscribed] :as params}]
   (db/with-atomic [conn pool]
-    (let [profile (update-profile conn params)]
-      (with-meta profile
+    ;; NOTE: we need to retrieve the profile independently if we use
+    ;; it or not for explicit locking and avoid concurrent updates of
+    ;; the same row/object.
+    (let [profile (-> (db/get-by-id conn :profile profile-id {:for-update true})
+                      (profile/decode-profile-row))
+
+          ;; Update the profile map with direct params
+          profile (-> profile
+                      (assoc :fullname fullname)
+                      (assoc :lang lang)
+                      (assoc :theme theme))
+
+          ;; Update profile props if the indirect prop is coming in
+          ;; the params map and update the profile props data
+          ;; acordingly.
+          profile (cond-> profile
+                    (some? newsletter-subscribed)
+                    (update :props assoc :newsletter-subscribed newsletter-subscribed))]
+
+      (db/update! conn :profile
+                  {:fullname fullname
+                   :lang lang
+                   :theme theme
+                   :props (db/tjson (:props profile))}
+                  {:id profile-id})
+
+      (with-meta (-> profile profile/strip-private-attrs d/without-nils)
         {::audit/props (audit/profile->props profile)}))))
 
 ;; --- MUTATION: Update Password

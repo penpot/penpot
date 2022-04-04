@@ -13,7 +13,6 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
-   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -40,12 +39,9 @@
 ;; --- Components
 (mf/defc palette-item
   [{:keys [color]}]
-  (let [ids-with-children (map :id (mf/deref refs/selected-shapes-with-children))
-        select-color
+  (let [select-color
         (fn [event]
-          (if (kbd/alt? event)
-              (st/emit! (mdc/change-stroke ids-with-children (merge uc/empty-color color) 0))
-              (st/emit! (mdc/change-fill ids-with-children (merge uc/empty-color color) 0))))]
+          (st/emit! (mdc/apply-color-from-palette color (kbd/alt? event))))]
 
     [:div.color-cell {:on-click select-color}
      [:& cb/color-bullet {:color color}]

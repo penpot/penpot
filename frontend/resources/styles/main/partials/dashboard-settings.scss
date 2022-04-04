@@ -109,6 +109,38 @@
     flex-direction: column;
     max-width: 368px;
     width: 100%;
+
+    .newsletter-subs {
+      border-bottom: 1px solid $color-gray-20;
+      border-top: 1px solid $color-gray-20;
+      padding: 30px 0;
+      margin-bottom: 31px;
+
+      .newsletter-title {
+        font-family: "worksans", sans-serif;
+        color: $color-gray-30;
+        font-size: $fs14;
+      }
+
+      label {
+        font-family: "worksans", sans-serif;
+        color: $color-gray-60;
+        font-size: $fs12;
+        margin-right: -17px;
+        margin-bottom: 13px;
+      }
+
+      .info {
+        font-family: "worksans", sans-serif;
+        color: $color-gray-30;
+        font-size: $fs12;
+        margin-bottom: 8px;
+      }
+
+      .input-checkbox label {
+        align-items: flex-start;
+      }
+    }
   }
 
   .options-form,

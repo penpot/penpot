@@ -124,35 +124,35 @@
   [changes id name]
   (-> changes
       (update :redo-changes conj {:type :add-page :id id :name name})
-      (update :undo-changes conj {:type :del-page :id id})
+      (update :undo-changes d/preconj {:type :del-page :id id})
       (apply-changes-local)))
 
 (defn add-page
   [changes id page]
   (-> changes
       (update :redo-changes conj {:type :add-page :id id :page page})
-      (update :undo-changes conj {:type :del-page :id id})
+      (update :undo-changes d/preconj {:type :del-page :id id})
       (apply-changes-local)))
 
 (defn mod-page
   [changes page new-name]
   (-> changes
       (update :redo-changes conj {:type :mod-page :id (:id page) :name new-name})
-      (update :undo-changes conj {:type :mod-page :id (:id page) :name (:name page)})
+      (update :undo-changes d/preconj {:type :mod-page :id (:id page) :name (:name page)})
       (apply-changes-local)))
 
 (defn del-page
   [changes page]
   (-> changes
       (update :redo-changes conj {:type :del-page :id (:id page)})
-      (update :undo-changes conj {:type :add-page :id (:id page) :page page})
+      (update :undo-changes d/preconj {:type :add-page :id (:id page) :page page})
       (apply-changes-local)))
 
 (defn move-page
   [changes page-id index prev-index]
   (-> changes
       (update :redo-changes conj {:type :mov-page :id page-id :index index})
-      (update :undo-changes conj {:type :mov-page :id page-id :index prev-index})
+      (update :undo-changes d/preconj {:type :mov-page :id page-id :index prev-index})
       (apply-changes-local)))
 
 (defn set-page-option
@@ -167,10 +167,10 @@
                                     :page-id page-id
                                     :option option-key
                                     :value option-val})
-        (update :undo-changes conj {:type :set-option
-                                    :page-id page-id
-                                    :option option-key
-                                    :value old-val})
+        (update :undo-changes d/preconj {:type :set-option
+                                         :page-id page-id
+                                         :option option-key
+                                         :value old-val})
         (apply-changes-local))))
 
 (defn update-page-option
@@ -186,10 +186,10 @@
                                     :page-id page-id
                                     :option option-key
                                     :value new-val})
-        (update :undo-changes conj {:type :set-option
-                                    :page-id page-id
-                                    :option option-key
-                                    :value old-val})
+        (update :undo-changes d/preconj {:type :set-option
+                                         :page-id page-id
+                                         :option option-key
+                                         :value old-val})
         (apply-changes-local))))
 
 ;; Shape tree changes
@@ -280,8 +280,8 @@
                    (update :rops conj {:type :set :attr attr :val new-val
                                        :ignore-geometry ignore-geometry?
                                        :ignore-touched ignore-touched})
-                   (update :uops conj {:type :set :attr attr :val old-val
-                                       :ignore-touched true})))))
+                   (update :uops d/preconj {:type :set :attr attr :val old-val
+                                            :ignore-touched true})))))
 
          update-shape
          (fn [changes id]
@@ -297,7 +297,7 @@
 
                  uops (cond-> uops
                         (seq uops)
-                        (conj {:type :set-touched :touched (:touched old-obj)}))
+                        (d/preconj {:type :set-touched :touched (:touched old-obj)}))
 
                  change (cond-> {:type :mod-obj
                                  :id id}
@@ -404,7 +404,7 @@
               operations
               (-> operations
                   (update :rops conj {:type :set :attr attr :val new-val :ignore-touched true})
-                  (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
+                  (update :uops d/preconj {:type :set :attr attr :val old-val :ignore-touched true})))))
 
         resize-parent
         (fn [changes parent]
@@ -452,7 +452,7 @@
   [changes color]
   (-> changes
       (update :redo-changes conj {:type :add-color :color color})
-      (update :undo-changes conj {:type :del-color :id (:id color)})
+      (update :undo-changes d/preconj {:type :del-color :id (:id color)})
       (apply-changes-local)))
 
 (defn update-color
@@ -462,7 +462,7 @@
         prev-color (get-in library-data [:colors (:id color)])]
     (-> changes
         (update :redo-changes conj {:type :mod-color :color color})
-        (update :undo-changes conj {:type :mod-color :color prev-color})
+        (update :undo-changes d/preconj {:type :mod-color :color prev-color})
         (apply-changes-local))))
 
 (defn delete-color
@@ -472,14 +472,14 @@
         prev-color (get-in library-data [:colors color-id])]
     (-> changes
         (update :redo-changes conj {:type :del-color :id color-id})
-        (update :undo-changes conj {:type :add-color :color prev-color})
+        (update :undo-changes d/preconj {:type :add-color :color prev-color})
         (apply-changes-local))))
 
 (defn add-media
   [changes object]
   (-> changes
       (update :redo-changes conj {:type :add-media :object object})
-      (update :undo-changes conj {:type :del-media :id (:id object)})
+      (update :undo-changes d/preconj {:type :del-media :id (:id object)})
       (apply-changes-local)))
 
 (defn update-media
@@ -489,7 +489,7 @@
         prev-object (get-in library-data [:media (:id object)])]
     (-> changes
         (update :redo-changes conj {:type :mod-media :object object})
-        (update :undo-changes conj {:type :mod-media :object prev-object})
+        (update :undo-changes d/preconj {:type :mod-media :object prev-object})
         (apply-changes-local))))
 
 (defn delete-media
@@ -499,14 +499,14 @@
         prev-object (get-in library-data [:media id])]
     (-> changes
         (update :redo-changes conj {:type :del-media :id id})
-        (update :undo-changes conj {:type :add-media :object prev-object})
+        (update :undo-changes d/preconj {:type :add-media :object prev-object})
         (apply-changes-local))))
 
 (defn add-typography
   [changes typography]
   (-> changes
       (update :redo-changes conj {:type :add-typography :typography typography})
-      (update :undo-changes conj {:type :del-typography :id (:id typography)})
+      (update :undo-changes d/preconj {:type :del-typography :id (:id typography)})
       (apply-changes-local)))
 
 (defn update-typography
@@ -516,7 +516,7 @@
         prev-typography (get-in library-data [:typographies (:id typography)])]
     (-> changes
         (update :redo-changes conj {:type :mod-typography :typography typography})
-        (update :undo-changes conj {:type :mod-typography :typography prev-typography})
+        (update :undo-changes d/preconj {:type :mod-typography :typography prev-typography})
         (apply-changes-local))))
 
 (defn delete-typography
@@ -526,7 +526,7 @@
         prev-typography (get-in library-data [:typographies typography-id])]
     (-> changes
         (update :redo-changes conj {:type :del-typography :id typography-id})
-        (update :undo-changes conj {:type :add-typography :typography prev-typography})
+        (update :undo-changes d/preconj {:type :add-typography :typography prev-typography})
         (apply-changes-local))))
 
 (defn add-component
@@ -569,8 +569,8 @@
         (update :undo-changes 
                 (fn [undo-changes]
                   (-> undo-changes
-                      (conj {:type :del-component
-                             :id id})
+                      (d/preconj {:type :del-component
+                                  :id id})
                       (into (comp (map :id)
                                   (map lookupf)
                                   (map mk-change))
@@ -590,11 +590,11 @@
                                       :name (:name new-component)
                                       :path (:path new-component)
                                       :objects (:objects new-component)})
-          (update :undo-changes conj {:type :mod-component
-                                      :id id
-                                      :name (:name prev-component)
-                                      :path (:path prev-component)
-                                      :objects (:objects prev-component)}))
+          (update :undo-changes d/preconj {:type :mod-component
+                                           :id id
+                                           :name (:name prev-component)
+                                           :path (:path prev-component)
+                                           :objects (:objects prev-component)}))
       changes)))
 
 (defn delete-component
@@ -605,9 +605,9 @@
     (-> changes
         (update :redo-changes conj {:type :del-component
                                     :id id})
-        (update :undo-changes conj {:type :add-component
-                                    :id id
-                                    :name (:name prev-component)
-                                    :path (:path prev-component)
-                                    :shapes (vals (:objects prev-component))}))))
+        (update :undo-changes d/preconj {:type :add-component
+                                         :id id
+                                         :name (:name prev-component)
+                                         :path (:path prev-component)
+                                         :shapes (vals (:objects prev-component))}))))
 

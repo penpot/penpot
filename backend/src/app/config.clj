@@ -312,8 +312,7 @@
                    ::tenant]))
 
 (def default-flags
-  [:enable-backend-asserts
-   :enable-backend-api-doc
+  [:enable-backend-api-doc
    :enable-secure-session-cookies])
 
 (defn- parse-flags
