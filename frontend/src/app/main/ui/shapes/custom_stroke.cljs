@@ -330,9 +330,10 @@
         props        (cond-> props
                        (or
                         ;; There are any shadows
-                        (and (d/not-empty? (:shadow shape)) (not (cph/frame-shape? shape)))
+                        (and (seq (->> (:shadow shape) (remove :hidden))) (not (cph/frame-shape? shape)))
+
                         ;; There are no strokes  and a blur
-                        (and (some? (:blur shape)) (not (cph/frame-shape? shape)) (empty? (:strokes shape))))
+                        (and (:blur shape) (-> shape :blur :hidden not) (not (cph/frame-shape? shape)) (empty? (:strokes shape))))
                         (obj/set! "filter" (dm/fmt "url(#filter_%)" render-id)))
 
         svg-defs  (:svg-defs shape {})
@@ -415,7 +416,7 @@
         stroke-props (-> (obj/new)
                          (obj/set! "id" (dm/fmt "strokes-%" (:id shape)))
                          (cond->
-                          (and (some? (:blur shape)) (not (cph/frame-shape? shape)))
+                          (and (and (:blur shape) (-> shape :blur :hidden not)) (not (cph/frame-shape? shape)))
                            (obj/set! "filter" (dm/fmt "url(#filter_blur_%)" render-id))))]
     [:*
      (when
