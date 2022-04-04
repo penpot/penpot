@@ -101,7 +101,7 @@
 
 (defn preconj
   [coll elem]
-  (assert (vector? coll))
+  (assert (or (vector? coll) (nil? coll)))
   (into [elem] coll))
 
 (defn enumerate

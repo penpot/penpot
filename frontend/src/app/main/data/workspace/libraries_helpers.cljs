@@ -357,13 +357,13 @@
                                                    :operations [{:type :set
                                                                  :attr :content
                                                                  :val new-content}]}))
-                     (update :undo-changes conj (make-change
-                                                  container
-                                                  {:type :mod-obj
-                                                   :id (:id shape)
-                                                   :operations [{:type :set
-                                                                 :attr :content
-                                                                 :val old-content}]})))]
+                     (update :undo-changes d/preconj (make-change
+                                                       container
+                                                       {:type :mod-obj
+                                                        :id (:id shape)
+                                                        :operations [{:type :set
+                                                                      :attr :content
+                                                                      :val old-content}]})))]
     (if (= new-content old-content)
       changes
       changes')))
@@ -915,7 +915,7 @@
                                        (assoc :frame-id (:frame-id shape')))))))
 
         del-obj-change (fn [changes shape']
-                         (update changes :undo-changes conj
+                         (update changes :undo-changes d/preconj
                                  (make-change
                                    container
                                    {:type :del-obj
@@ -994,7 +994,7 @@
                                                 :val (:touched shape')}]}))
 
         del-obj-change (fn [changes shape']
-                         (update changes :undo-changes conj
+                         (update changes :undo-changes d/preconj
                                  {:type :del-obj
                                   :id (:id shape')
                                   :page-id (:id page)
@@ -1021,7 +1021,7 @@
 
         add-undo-change (fn [changes id]
                           (let [shape' (get objects id)]
-                            (update changes :undo-changes conj
+                            (update changes :undo-changes d/preconj
                                     (make-change
                                       container
                                       (as-> {:type :add-obj
@@ -1073,13 +1073,13 @@
                                                    :shapes [(:id shape)]
                                                    :index index-after
                                                    :ignore-touched true}))
-                     (update :undo-changes conj (make-change
-                                                  container
-                                                  {:type :mov-objects
-                                                   :parent-id (:parent-id shape)
-                                                   :shapes [(:id shape)]
-                                                   :index index-before
-                                                   :ignore-touched true})))]
+                     (update :undo-changes d/preconj (make-change
+                                                       container
+                                                       {:type :mov-objects
+                                                        :parent-id (:parent-id shape)
+                                                        :shapes [(:id shape)]
+                                                        :index index-before
+                                                        :ignore-touched true})))]
 
     (if (and (cph/touched-group? parent :shapes-group) omit-touched?)
       changes
@@ -1114,13 +1114,13 @@
                                           :operations
                                           [{:type :set-touched
                                             :touched new-touched}]}))
-            (update :undo-changes conj (make-change
-                                         container
-                                         {:type :mod-obj
-                                          :id (:id dest-shape)
-                                          :operations
-                                          [{:type :set-touched
-                                            :touched (:touched dest-shape)}]})))))))
+            (update :undo-changes d/preconj (make-change
+                                              container
+                                              {:type :mod-obj
+                                               :id (:id dest-shape)
+                                               :operations
+                                               [{:type :set-touched
+                                                 :touched (:touched dest-shape)}]})))))))
 
 (defn- change-remote-synced
   [changes shape container remote-synced?]
@@ -1139,13 +1139,13 @@
                                         :operations
                                         [{:type :set-remote-synced
                                           :remote-synced? remote-synced?}]}))
-          (update :undo-changes conj (make-change
-                                       container
-                                       {:type :mod-obj
-                                        :id (:id shape)
-                                        :operations
-                                        [{:type :set-remote-synced
-                                          :remote-synced? (:remote-synced? shape)}]}))))))
+          (update :undo-changes d/preconj (make-change
+                                            container
+                                            {:type :mod-obj
+                                             :id (:id shape)
+                                             :operations
+                                             [{:type :set-remote-synced
+                                               :remote-synced? (:remote-synced? shape)}]}))))))
 
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
@@ -1191,11 +1191,11 @@
                                                container
                                                {:type :reg-objects
                                                 :shapes all-parents}))
-                  (update :undo-changes conj (make-change
-                                               container
-                                               {:type :mod-obj
-                                                :id (:id dest-shape)
-                                                :operations uoperations}))
+                  (update :undo-changes d/preconj (make-change
+                                                    container
+                                                    {:type :mod-obj
+                                                     :id (:id dest-shape)
+                                                     :operations uoperations}))
                   (update :undo-changes conj (make-change
                                                container
                                                {:type :reg-objects
@@ -1222,7 +1222,7 @@
                      uoperations)
               (recur (next attrs)
                      (conj roperations roperation)
-                     (conj uoperations uoperation)))))))))
+                     (d/preconj uoperations uoperation)))))))))
 
 (defn- reposition-shape
   [shape origin-root dest-root]
