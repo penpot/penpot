@@ -7,6 +7,7 @@
 (ns debug
   (:require
    [app.common.data :as d]
+   [app.common.logging :as l]
    [app.common.pages.helpers :as cph]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
@@ -24,6 +25,12 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [promesa.core :as p]))
+
+(defn ^:export set-logging
+  ([level]
+   (l/set-level! :app (keyword level)))
+  ([ns level]
+   (l/set-level! (keyword ns) (keyword level))))
 
 (def debug-options
   #{;; Displays the bounding box for the shapes
