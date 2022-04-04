@@ -78,7 +78,7 @@
 
         on-focus  #(reset! focus? true)
         on-change (fn [event]
-                    (let [value  (-> event dom/get-target dom/get-input-value)]
+                    (let [value (-> event dom/get-target dom/get-input-value)]
                       (fm/on-input-change form input-name value trim)))
 
         on-blur
@@ -87,11 +87,17 @@
           (when-not (get-in @form [:touched input-name])
             (swap! form assoc-in [:touched input-name] true)))
 
+        on-click
+        (fn [_]
+          (when-not (get-in @form [:touched input-name])
+            (swap! form assoc-in [:touched input-name] true)))
+
         props (-> props
                   (dissoc :help-icon :form :trim :children)
                   (assoc :id (name input-name)
                          :value value
                          :auto-focus auto-focus?
+                         :on-click (when (or is-radio? is-checkbox?) on-click)
                          :on-focus on-focus
                          :on-blur on-blur
                          :placeholder label
