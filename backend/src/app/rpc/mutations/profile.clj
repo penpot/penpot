@@ -130,6 +130,7 @@
               :hint "you can't use your email as password"))
 
   (let [params {:email (:email params)
+                :password (:password params)
                 :invitation-token (:invitation-token params)
                 :backend "penpot"
                 :iss :prepared-register
@@ -156,7 +157,6 @@
   (let [claims    (tokens :verify {:token token :iss :prepared-register})
         params    (merge params claims)]
     (check-profile-existence! conn params)
-
     (let [is-active  (or (:is-active params)
                          (contains? cf/flags :insecure-register))
           profile    (->> (assoc params :is-active is-active)
