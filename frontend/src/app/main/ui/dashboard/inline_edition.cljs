@@ -44,6 +44,7 @@
         on-keyup
         (mf/use-callback
          (fn [event]
+           (dom/stop-propagation event)
            (cond
              (kbd/esc? event)
              (on-cancel)
