@@ -330,6 +330,10 @@
               (p/let [xmldata (extract-svg page object)
                       txtdata (extract-txt-nodes page object)
                       result  (replace-text-nodes xmldata txtdata)
+
+                      ;; SVG standard don't allow the entity
+                      ;; nbsp. &#160; is equivalent but compatible
+                      ;; with SVG.
                       result  (str/replace result "&nbsp;" "&#160;")]
 
                 ;; (println "------- ORIGIN:")

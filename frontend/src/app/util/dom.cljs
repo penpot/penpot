@@ -467,7 +467,7 @@
   (let [link      (create-element "a")
         extension (mtype->extension mtype)
         filename  (if (and extension (not (str/ends-with? filename extension)))
-                    (str/concat filename "." extension)
+                    (str/concat filename extension)
                     filename)]
     (obj/set! link "href" uri)
     (obj/set! link "download" filename)
