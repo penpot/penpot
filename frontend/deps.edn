@@ -8,9 +8,9 @@
   metosin/reitit-core {:mvn/version "0.5.17"}
 
   funcool/beicon {:mvn/version "2021.07.05-1"}
-  funcool/okulary {:mvn/version "2020.04.14-0"}
+  funcool/okulary {:mvn/version "2022.04.01-10"}
   funcool/potok {:mvn/version "2021.09.20-0"}
-  funcool/rumext {:mvn/version "2022.03.28-131"}
+  funcool/rumext {:mvn/version "2022.03.31-133"}
   funcool/tubax {:mvn/version "2021.05.20-0"}
 
   instaparse/instaparse {:mvn/version "1.4.10"}

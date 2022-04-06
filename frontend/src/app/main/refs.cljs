@@ -102,8 +102,22 @@
   (l/derived :workspace-drawing st/state))
 
 ;; TODO: rename to workspace-selected (?)
+;; Don't use directly from components, this is a proxy to improve performance of selected-shapes
+(def ^:private selected-shapes-data
+  (l/derived
+   (fn [state]
+     (let [objects  (wsh/lookup-page-objects state)
+           selected (dm/get-in state [:workspace-local :selected])]
+       {:objects objects :selected selected}))
+   st/state (fn [v1 v2]
+              (and (identical? (:objects v1) (:objects v2))
+                   (= (:selected v1) (:selected v2))))))
+
 (def selected-shapes
-  (l/derived wsh/lookup-selected st/state =))
+  (l/derived
+   (fn [{:keys [objects selected]}]
+     (wsh/process-selected-shapes objects selected))
+   selected-shapes-data))
 
 (defn make-selected-ref
   [id]
@@ -258,7 +272,7 @@
 
 (defn objects-by-id
   [ids]
-  (l/derived #(wsh/lookup-shapes % ids) st/state =))
+  (l/derived #(into [] (keep (d/getf %)) ids) workspace-page-objects))
 
 (defn- set-content-modifiers [state]
   (fn [id shape]

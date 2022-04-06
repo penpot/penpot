@@ -18,6 +18,7 @@
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
+   [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [beicon.core :as rx]
@@ -340,3 +341,9 @@
       (.log js/console "%c Viewer" style)
       (print-shortcuts app.main.data.viewer.shortcuts/shortcuts)))
   nil)
+
+(defn ^:export nodeStats
+  []
+  (let [root-node (dom/query ".viewport .render-shapes")
+        num-nodes (->> (dom/seq-nodes root-node) count)]
+    #js {:number num-nodes}))

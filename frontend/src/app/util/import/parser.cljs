@@ -214,11 +214,13 @@
 
       (= type :frame)
       (let [;; The nodes with the "frame-background" class can have some anidation depending on the strokes they have
-            g-nodes (find-all-nodes node :g)
+            g-nodes    (find-all-nodes node :g)
             defs-nodes (flatten (map #(find-all-nodes % :defs) g-nodes))
+            gg-nodes   (flatten (map #(find-all-nodes % :g) g-nodes))
             rect-nodes (flatten [[(find-all-nodes node :rect)]
                                  (map #(find-all-nodes % #{:rect :path}) defs-nodes)
-                                 (map #(find-all-nodes % #{:rect :path}) g-nodes)])
+                                 (map #(find-all-nodes % #{:rect :path}) g-nodes)
+                                 (map #(find-all-nodes % #{:rect :path}) gg-nodes)])
             svg-node (d/seek #(= "frame-background" (get-in % [:attrs :class])) rect-nodes)]
         (merge (add-attrs {} (:attrs svg-node)) node-attrs))
 
