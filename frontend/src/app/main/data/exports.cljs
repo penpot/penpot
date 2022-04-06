@@ -137,7 +137,7 @@
           (update :export assoc :progress done :last-update (dt/now) :healthy? healthy?)
 
           (= status "error")
-          (update :export assoc :error (:cause data) :last-update (dt/now) :healthy? healthy?)
+          (update :export assoc :in-progress false :error (:cause data) :last-update (dt/now) :healthy? healthy?)
 
           (= status "ended")
           (update :export assoc :in-progress false :last-update (dt/now) :healthy? healthy?))))
