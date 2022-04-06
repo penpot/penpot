@@ -92,14 +92,14 @@
   "Extract the target from event instance."
   [^js event]
   (when (some? event)
-    (.-target event)))
+    (.-target ^js event)))
 
 (defn get-current-target
   "Extract the current target from event instance (different from target
    when event triggered in a child of the subscribing element)."
   [^js event]
   (when (some? event)
-    (.-currentTarget event)))
+    (.-currentTarget ^js event)))
 
 (defn get-parent
   [^js node]
@@ -126,6 +126,12 @@
   [^js node ^string attr-name]
   (when (some? node)
     (.getAttribute ^js node attr-name)))
+
+(defn get-dataset-attr
+  [^js node k]
+  (when node
+    (let [dset (unchecked-get node "dataset")]
+      (unchecked-get dset k))))
 
 (def get-target-val (comp get-value get-target))
 

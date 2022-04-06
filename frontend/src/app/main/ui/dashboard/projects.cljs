@@ -58,11 +58,14 @@
          (st/emitf (dd/toggle-project-pin project)))
 
         on-menu-click
-        (mf/use-callback (fn [event]
-                           (let [position (dom/get-client-position event)]
-                             (dom/prevent-default event)
-                             (swap! local assoc :menu-open true
-                                                :menu-pos position))))
+        (mf/use-fn
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (let [position (dom/get-client-position event)]
+             (swap! local assoc
+                    :menu-open true
+                    :menu-pos position))))
 
         on-menu-close
         (mf/use-callback #(swap! local assoc :menu-open false))

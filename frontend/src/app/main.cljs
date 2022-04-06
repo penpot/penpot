@@ -40,10 +40,16 @@
 
 (declare reinit)
 
+(defonce app-root
+  (mf/create-root (dom/get-element "app")))
+
+(defonce modal-root
+  (mf/create-root (dom/get-element "modal")))
+
 (defn init-ui
   []
-  (mf/mount (mf/element ui/app) (dom/get-element "app"))
-  (mf/mount (mf/element modal)  (dom/get-element "modal")))
+  (mf/mount app-root (mf/element ui/app))
+  (mf/mount modal-root (mf/element modal)))
 
 (defn initialize
   []
@@ -80,8 +86,10 @@
 
 (defn reinit
   []
-  (mf/unmount (dom/get-element "app"))
-  (mf/unmount (dom/get-element "modal"))
+  (mf/unmount app-root)
+  (mf/unmount modal-root)
+  (set! app-root (mf/create-root (dom/get-element "app")))
+  (set! modal-root (mf/create-root (dom/get-element "modal")))
   (st/emit! (ev/initialize))
   (init-ui))
 

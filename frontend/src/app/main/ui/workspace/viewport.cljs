@@ -256,7 +256,7 @@
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-outlines?
          [:& outline/shape-outlines
-          {:objects base-objects
+          {:objects objects-modified
            :selected selected
            :hover (cond
                     (and @hover (or @mod? (not= :frame (:type @hover))))
@@ -314,8 +314,7 @@
          [:& drawarea/draw-area
           {:shape drawing-obj
            :zoom zoom
-           :tool drawing-tool
-           :modifiers modifiers}])
+           :tool drawing-tool}])
 
        (when show-grids?
          [:& frame-grid/frame-grid

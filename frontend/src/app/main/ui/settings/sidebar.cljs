@@ -27,32 +27,32 @@
         feedback?  (= section :settings-feedback)
 
         go-dashboard
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps profile)
          (st/emitf (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)})))
 
         go-settings-profile
-        (mf/use-callback
-         (mf/deps profile)
-         (st/emitf (rt/nav :settings-profile)))
+        (mf/use-fn
+         (fn []
+           (st/emit! (rt/nav :settings-profile))))
+
+        go-settings-password
+        (mf/use-fn
+         (fn []
+           (st/emit! (rt/nav :settings-password))))
 
         go-settings-feedback
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps profile)
          (st/emitf (rt/nav :settings-feedback)))
 
-        go-settings-password
-        (mf/use-callback
-         (mf/deps profile)
-         (st/emitf (rt/nav :settings-password)))
-
         go-settings-options
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps profile)
          (st/emitf (rt/nav :settings-options)))
 
         show-release-notes
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [version (:main @cf/version)]
              (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))

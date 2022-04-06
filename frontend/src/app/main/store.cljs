@@ -50,10 +50,10 @@
 (defn emit!
   ([] nil)
   ([event]
-   (ptk/emit! state event)
+   (js/queueMicrotask #(ptk/emit! state event))
    nil)
   ([event & events]
-   (apply ptk/emit! state (cons event events))
+   (run! emit! (cons event events))
    nil))
 
 (defn emitf

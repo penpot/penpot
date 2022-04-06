@@ -52,11 +52,10 @@
         sessions (->> (vals sessions)
                       (filter #(= page-id (:page-id %)))
                       (filter #(>= 5000 (- (inst-ms (dt/now)) (inst-ms (:updated-at %))))))]
-    (mf/use-effect
-     nil
-     (fn []
-       (let [sem (ts/schedule 1000 #(swap! counter inc))]
-         (fn [] (rx/dispose! sem)))))
+
+    (mf/with-effect []
+      (let [sem (ts/schedule 1000 #(swap! counter inc))]
+        (fn [] (rx/dispose! sem))))
 
     (for [session sessions]
       (when (:point session)

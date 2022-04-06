@@ -57,6 +57,7 @@
              (st/emit! (dw/update-viewport-size resize-type size)))))
 
         node-ref (use-resize-observer on-resize)]
+
     [:*
      (when (and colorpalette? (not hide-ui?))
        [:& colorpalette])
@@ -91,19 +92,20 @@
 (mf/defc workspace-page
   [{:keys [file layout page-id wglobal] :as props}]
 
- (mf/with-effect [page-id]
-   (if (nil? page-id)
-     (st/emit! (dw/go-to-page))
-     (st/emit! (dw/initialize-page page-id)))
-   (fn []
-     (when page-id
-       (st/emit! (dw/finalize-page page-id)))))
+  (let [page (mf/deref trimmed-page-ref)]
+    (mf/with-effect [page-id]
+      (if (nil? page-id)
+        (st/emit! (dw/go-to-page))
+        (st/emit! (dw/initialize-page page-id)))
+      (fn []
+        (when page-id
+          (st/emit! (dw/finalize-page page-id)))))
 
-  (when (mf/deref trimmed-page-ref)
-    [:& workspace-content {:key (dm/str page-id)
-                           :file file
-                           :wglobal wglobal
-                           :layout layout}]))
+    (when page
+      [:& workspace-content {:key (dm/str page-id)
+                             :file file
+                             :wglobal wglobal
+                             :layout layout}])))
 
 (mf/defc workspace-loader
   []
@@ -152,7 +154,7 @@
 
          [:& context-menu]
 
-         (if (and (and file project)
+         (if (and file project
                   (:initialized file))
            [:& workspace-page {:key (dm/str "page-" page-id)
                                :page-id page-id

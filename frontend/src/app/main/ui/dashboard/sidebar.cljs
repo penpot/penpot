@@ -56,8 +56,9 @@
         on-menu-click
         (mf/use-callback
          (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
            (let [position (dom/get-client-position event)]
-             (dom/prevent-default event)
              (swap! local assoc
                     :menu-open true
                     :menu-pos position))))
@@ -171,7 +172,7 @@
              (dom/clean-value! search-input)
              (dom/focus! search-input)
              (emit! (dd/go-to-search)))))
-        
+
         on-key-press
         (mf/use-callback
          (fn [e]
@@ -341,12 +342,29 @@
 
 (mf/defc sidebar-team-switch
   [{:keys [team profile] :as props}]
-  (let [show-team-opts-ddwn? (mf/use-state false)
-        show-teams-ddwn?     (mf/use-state false)]
+  (let [show (mf/use-state {})
+
+        show-teams-dropdown-fn
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show :teams)))
+
+        show-options-dropdown-fn
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show :options)))
+
+        close-dropdown-fn
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show nil)))]
 
     [:div.sidebar-team-switch
      [:div.switch-content
-      [:div.current-team {:on-click #(reset! show-teams-ddwn? true)}
+      [:div.current-team {:on-click show-teams-dropdown-fn}
        (if (:is-default team)
          [:div.team-name
           [:span.team-icon i/logo-icon]
@@ -360,19 +378,20 @@
         i/arrow-down]]
 
       (when-not (:is-default team)
-        [:div.switch-options {:on-click #(reset! show-team-opts-ddwn? true)}
-         i/actions])]
+        [:div.switch-options {:on-click show-options-dropdown-fn} i/actions])]
 
      ;; Teams Dropdown
-     [:& dropdown {:show @show-teams-ddwn?
-                   :on-close #(reset! show-teams-ddwn? false)}
-      [:& teams-selector-dropdown {:team team
-                                   :profile profile}]]
+     [:& dropdown {:show (= :teams @show)
+                   :on-close close-dropdown-fn}
+      [:& teams-selector-dropdown
+       {:team team
+        :profile profile}]]
 
-     [:& dropdown {:show @show-team-opts-ddwn?
-                   :on-close #(reset! show-team-opts-ddwn? false)}
-      [:& team-options-dropdown {:team team
-                                 :profile profile}]]]))
+     [:& dropdown {:show (= :options @show)
+                   :on-close close-dropdown-fn}
+      [:& team-options-dropdown
+       {:team team
+        :profile profile}]]]))
 
 (mf/defc sidebar-content
   [{:keys [projects profile section team project search-term] :as props}]
@@ -472,10 +491,17 @@
            (dom/stop-propagation event)
            (if (keyword? section)
              (st/emit! (rt/nav section))
-             (st/emit! section))))]
+             (st/emit! section))))
+
+        on-show-dropdown
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (dom/prevent-default event)
+           (reset! show true)))]
 
     [:div.profile-section
-     [:div.profile {:on-click #(reset! show true)
+     [:div.profile {:on-click on-show-dropdown
                     :data-test "profile-btn"}
       [:img {:src photo}]
       [:span (:fullname profile)]]

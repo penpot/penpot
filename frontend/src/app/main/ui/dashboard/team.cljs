@@ -198,17 +198,30 @@
          [:li {:on-click (partial set-owner member)} (tr "labels.owner")])]]]))
 
 (mf/defc member-actions [{:keys [member team delete leave profile] :as props}]
-  (let [is-owner? (:is-owner member)
-        owner? (get-in team [:permissions :is-owner])
-        admin? (get-in team [:permissions :is-admin])
-        show?     (mf/use-state false)
-        is-you? (= (:id profile) (:id member))
-        can-delete? (or owner? admin?)]
+  (let [is-owner?   (:is-owner member)
+        owner?      (get-in team [:permissions :is-owner])
+        admin?      (get-in team [:permissions :is-admin])
+        show?       (mf/use-state false)
+        is-you?     (= (:id profile) (:id member))
+        can-delete? (or owner? admin?)
+
+        on-open-dropdown
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show? true)))
+
+        on-close-dropdown
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show? false)))]
+
     [:*
      (when (or is-you? (and can-delete? (not (and is-owner? (not owner?)))))
-       [:span.icon {:on-click #(reset! show? true)} [i/actions]])
+       [:span.icon {:on-click on-open-dropdown} [i/actions]])
      [:& dropdown {:show @show?
-                   :on-close #(reset! show? false)}
+                   :on-close on-close-dropdown}
       [:ul.dropdown.actions-dropdown
        (when is-you?
          [:li {:on-click leave} (tr "dashboard.leave-team")])

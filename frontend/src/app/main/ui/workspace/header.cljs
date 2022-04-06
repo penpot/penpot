@@ -196,25 +196,31 @@
              (reset! show-sub-menu? item))))
 
         on-item-click
-        (mf/use-callback
-         (fn [item]
-           (fn [event]
-             (dom/stop-propagation event)
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [node (dom/get-target event)
+                 item (dom/get-dataset-attr node "name")]
              (reset! show-sub-menu? item))))
 
         toggle-flag
         (mf/use-callback
          (fn [flag]
            (-> (dw/toggle-layout-flag flag)
-               (vary-meta assoc ::ev/origin "workspace-menu"))))]
+               (vary-meta assoc ::ev/origin "workspace-menu"))))
 
-    (mf/use-effect
-     (mf/deps @editing?)
-     #(when @editing?
+        show-menu-fn
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu? true)))]
+
+    (mf/with-effect [@editing?]
+      (when @editing?
         (dom/select-text! (mf/ref-val edit-input-ref))))
 
     [:div.menu-section
-     [:div.btn-icon-dark.btn-small {:on-click #(reset! show-menu? true)} i/actions]
+     [:div.btn-icon-dark.btn-small {:on-click show-menu-fn} i/actions]
      [:div.project-tree {:alt (tr "workspace.sitemap")}
       [:span.project-name
        {:on-click #(st/emit! (rt/navigate :dashboard-files {:team-id team-id
@@ -237,17 +243,20 @@
      [:& dropdown {:show @show-menu?
                    :on-close #(reset! show-menu? false)}
       [:ul.menu
-       [:li {:on-click (on-item-click :file)
+       [:li {:data-name (pr-str :file)
+             :on-click on-item-click
              :on-pointer-enter (on-item-hover :file)}
         [:span (tr "workspace.header.menu.option.file")]
         [:span i/arrow-slide]]
-       [:li {:on-click (on-item-click :edit)
+       [:li {:data-name (pr-str :edit)
+             :on-click on-item-click
              :on-pointer-enter (on-item-hover :edit)}
         [:span (tr "workspace.header.menu.option.edit")] [:span i/arrow-slide]]
-       [:li {:on-click (on-item-click :view)
+       [:li {:on-click on-item-click
              :on-pointer-enter (on-item-hover :view)}
         [:span (tr "workspace.header.menu.option.view")] [:span i/arrow-slide]]
-       [:li {:on-click (on-item-click :preferences)
+       [:li {:data-name (pr-str :preferences)
+             :on-click on-item-click
              :on-pointer-enter (on-item-hover :preferences)}
         [:span (tr "workspace.header.menu.option.preferences")] [:span i/arrow-slide]]
        (when (contains? @cf/flags :user-feedback)
@@ -278,6 +287,7 @@
        [:li {:on-click #(st/emit! (dw/select-all))}
         [:span (tr "workspace.header.menu.select-all")]
         [:span.shortcut (sc/get-tooltip :select-all)]]
+
        [:li {:on-click #(st/emit! (toggle-flag :scale-text))}
         [:span
          (if (contains? layout :scale-text)

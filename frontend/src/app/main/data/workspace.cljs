@@ -196,7 +196,7 @@
     (watch [_ state _]
       (if (contains? (get-in state [:workspace-data :pages-index]) page-id)
         (rx/of (dwp/preload-data-uris))
-        (let [default-page-id (get-in state [:workspace-data :pages 0])]
+        (when-let [default-page-id (get-in state [:workspace-data :pages 0])]
           (rx/of (go-to-page default-page-id)))))
 
     ptk/UpdateEvent
@@ -208,6 +208,7 @@
         (let [local (-> state
                         (get-in [:workspace-cache id] default-workspace-local)
                         (assoc :selected (d/ordered-set)))]
+
           (-> state
               (assoc :current-page-id id)
               (assoc :trimmed-page (dm/select-keys page [:id :name]))
@@ -229,6 +230,7 @@
                               :edit-path
                               :selected))
             exit-workspace? (not= :workspace (get-in state [:route :data :name]))]
+
         (cond-> (assoc-in state [:workspace-cache page-id] local)
           :always
           (dissoc :current-page-id :workspace-local :trimmed-page :workspace-focus-selected)

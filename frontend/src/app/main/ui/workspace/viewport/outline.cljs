@@ -6,62 +6,64 @@
 
 (ns app.main.ui.workspace.viewport.outline
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.main.refs :as refs]
+   [app.main.ui.hooks :as hooks]
    [app.util.object :as obj]
    [app.util.path.format :as upf]
    [clojure.set :as set]
-   [rumext.alpha :as mf]
-   [rumext.util :refer [map->obj]]))
+   [rumext.alpha :as mf]))
 
 (mf/defc outline
   {::mf/wrap-props false}
   [props]
   (let [shape (obj/get props "shape")
-        zoom (obj/get props "zoom" 1)
+        zoom  (obj/get props "zoom" 1)
+        color (obj/get props "color")
 
-        color (unchecked-get props "color")
-        transform (gsh/transform-matrix shape)
-        path? (= :path (:type shape))
+        {:keys [x y width height selrect type content]} shape
+
         path-data
-        (mf/use-memo
-         (mf/deps shape)
-         #(when path?
-            (or (ex/ignoring (upf/format-path (:content shape)))
-                "")))
+        (mf/with-memo [shape]
+          (when ^boolean (cph/path-shape? shape)
+            (or (ex/ignoring (upf/format-path content)) "")))
 
-        {:keys [x y width height selrect]} shape
+        outline-type
+        (case type
+          :circle "ellipse"
+          :path "path"
+          "rect")
 
-        outline-type (case (:type shape)
-                       :circle "ellipse"
-                       :path "path"
-                       "rect")
+        props
+        (mf/with-memo [shape]
+          (let [transform (gsh/transform-matrix shape)
+                props #js {:fill "none"
+                           :stroke color
+                           :strokeWidth (/ 1 zoom)
+                           :pointerEvents "none"
+                           :transform transform}]
+            (case type
+              :circle
+              (obj/merge! props
+                          #js {:cx (+ x (/ width 2))
+                               :cy (+ y (/ height 2))
+                               :rx (/ width 2)
+                               :ry (/ height 2)})
+              :path
+              (obj/merge! props
+                          #js {:d path-data
+                               :transform nil})
 
-        common {:fill "none"
-                :stroke color
-                :strokeWidth (/ 1 zoom)
-                :pointerEvents "none"
-                :transform transform}
+              (obj/merge! props
+                          #js {:x (:x selrect)
+                               :y (:y selrect)
+                               :width (:width selrect)
+                               :height (:height selrect)}))))]
 
-        props (case (:type shape)
-                :circle
-                {:cx (+ x (/ width 2))
-                 :cy (+ y (/ height 2))
-                 :rx (/ width 2)
-                 :ry (/ height 2)}
-
-                :path
-                {:d path-data
-                 :transform nil}
-
-                {:x (:x selrect)
-                 :y (:y selrect)
-                 :width (:width selrect)
-                 :height (:height selrect)})]
-
-    [:> outline-type (map->obj (merge common props))]))
+    [:> outline-type props]))
 
 (mf/defc shape-outlines-render
   {::mf/wrap-props false
@@ -69,8 +71,10 @@
   [props]
   (let [shapes (obj/get props "shapes")
         zoom   (obj/get props "zoom")
-        color  (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
-                 "var(--color-primary)" "var(--color-component-highlight)")]
+        color  (if (or (> (count shapes) 1)
+                       (nil? (:shape-ref (first shapes))))
+                 "var(--color-primary)"
+                 "var(--color-component-highlight)")]
     (for [shape shapes]
       [:& outline {:key (str "outline-" (:id shape))
                    :shape (gsh/transform-shape shape)
@@ -80,26 +84,35 @@
 (mf/defc shape-outlines
   {::mf/wrap-props false}
   [props]
-  (let [selected  (or (obj/get props "selected") #{})
-        hover     (or (obj/get props "hover") #{})
-        objects   (obj/get props "objects")
-        edition   (obj/get props "edition")
-        zoom      (obj/get props "zoom")
+  (let [selected     (or (obj/get props "selected") #{})
+        hover        (or (obj/get props "hover") #{})
+        objects      (obj/get props "objects")
+        edition      (obj/get props "edition")
+        zoom         (obj/get props "zoom")
 
-        transform (mf/deref refs/current-transform)
+        transform    (mf/deref refs/current-transform)
 
-        outlines-ids  (->> (set/union selected hover)
-                           (cph/clean-loops objects))
+        selected     (hooks/use-equal-memo selected)
+        hover        (hooks/use-equal-memo hover)
 
-        show-outline? (fn [shape] (and (not (:hidden shape))
-                                       (not (:blocked shape))))
+        outline-ids  (mf/with-memo [selected hover]
+                       (->> (set/union selected hover)
+                            (cph/clean-loops objects)))
 
-        shapes (->> outlines-ids
-                    (filter #(not= edition %))
-                    (map #(get objects %))
-                    (filterv show-outline?)
-                    (filter some?))]
+        show-outline?
+        (mf/use-fn
+         (fn [shape]
+           (and (not (:hidden shape))
+                (not (:blocked shape)))))
+
+        shapes (into []
+                     (comp
+                      (filter #(not= edition %))
+                      (keep (d/getf objects))
+                      (filter show-outline?))
+                     outline-ids)]
 
     [:g.outlines {:display (when (some? transform) "none")}
-     [:& shape-outlines-render {:shapes shapes
-                                :zoom zoom}]]))
+     [:& shape-outlines-render
+      {:shapes shapes
+       :zoom zoom}]]))

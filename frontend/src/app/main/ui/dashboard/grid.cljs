@@ -148,6 +148,7 @@
          (mf/deps file selected?)
          (fn [event]
            (dom/prevent-default event)
+           (dom/stop-propagation event)
            (when-not selected?
              (let [shift? (kbd/shift? event)]
                (when-not shift?
