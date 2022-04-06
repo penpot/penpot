@@ -22,8 +22,11 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
+   [emoji.core :as emj]
    [fipp.edn :as fpp]
    [integrant.core :as ig]
+   [markdown.core :as md]
+   [markdown.transformers :as mdt]
    [promesa.core :as p]
    [promesa.exec :as px]
    [yetti.request :as yrq]
@@ -213,6 +216,18 @@
     (db/exec-one! conn ["select count(*) as count from server_prop;"])
     (yrs/response 200 "OK")))
 
+(defn changelog
+  [_ _]
+  (letfn [(transform-emoji [text state]
+            [(emj/emojify text) state])
+          (md->html [text]
+            (md/md-to-html-string text :replacement-transformers (into [transform-emoji] mdt/transformer-vector)))]
+    (if-let [clog (io/resource "changelog.md")]
+      (yrs/response :status 200
+                    :headers {"content-type" "text/html; charset=utf-8"}
+                    :body (-> clog slurp md->html))
+      (yrs/response :status 404 :body "NOT FOUND"))))
+
 (defn- wrap-async
   [{:keys [executor] :as cfg} f]
   (fn [request respond raise]
@@ -230,4 +245,5 @@
    :retrieve-file-changes (wrap-async cfg retrieve-file-changes)
    :retrieve-error (wrap-async cfg retrieve-error)
    :retrieve-error-list (wrap-async cfg retrieve-error-list)
-   :file-data (wrap-async cfg file-data)})
+   :file-data (wrap-async cfg file-data)
+   :changelog (wrap-async cfg changelog)})
