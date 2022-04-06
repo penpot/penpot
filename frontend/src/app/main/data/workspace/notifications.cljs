@@ -55,8 +55,8 @@
                           (->> stream
                                (rx/filter (ptk/type? ::dws/message))
                                (rx/map deref)
-                               (rx/map process-message)
-                               (rx/filter #(= subs-id (:subs-id %))))
+                               (rx/filter #(= subs-id (:subs-id %)))
+                               (rx/map process-message))
 
                           ;; On reconnect, send again the subscription messages
                           (->> stream
@@ -158,9 +158,7 @@
           (update-presence [presence]
             (-> presence
                 (update session-id update-session presence)
-                (d/without-nils)))
-
-          ]
+                (d/without-nils)))]
 
     (ptk/reify ::handle-presence
       ptk/UpdateEvent
