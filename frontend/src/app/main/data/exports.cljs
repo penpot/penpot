@@ -165,7 +165,7 @@
                         :wait true}]
         (rx/concat
          (rx/of ::dwp/force-persist)
-         (->> (rp/query! :export-shapes params)
+         (->> (rp/query! :exporter params)
               (rx/mapcat (fn [{:keys [id filename]}]
                            (->> (rp/query! :exporter {:cmd :get-resource :blob? true :id id})
                                 (rx/map (fn [data]
