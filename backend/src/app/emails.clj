@@ -173,7 +173,7 @@
         (send-console! cfg props)))))
 
 (defn- send-console!
-  [cfg email]
+  [_ email]
   (let [body (:body email)
         out  (with-out-str
                (println "email console dump:")
