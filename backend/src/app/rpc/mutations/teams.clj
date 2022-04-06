@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -411,6 +412,9 @@
         ptoken    (tokens :generate-predefined
                           {:iss :profile-identity
                            :profile-id (:id profile)})]
+
+    (when (contains? cf/flags :log-invitation-tokens)
+      (l/trace :hint "invitation token" :token itoken))
 
     (when (and member (not (eml/allow-send-emails? conn member)))
       (ex/raise :type :validation
