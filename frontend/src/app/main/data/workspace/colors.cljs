@@ -281,6 +281,15 @@
                                                           (d/without-nils))]
                                           (assoc-in shape [:strokes index] new-attrs)))))))))
 
+(defn change-shadow
+  [ids attrs index]
+  (ptk/reify ::change-shadow
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dch/update-shapes ids (fn [shape]
+                                      (let [new-attrs (merge (get-in shape [:shadow index :color]) attrs)]
+                                        (assoc-in shape [:shadow index :color] new-attrs))))))))
+
 (defn add-stroke
   [ids stroke]
   (ptk/reify ::add-stroke
@@ -420,6 +429,7 @@
            (rx/map (fn [shape] (case (:prop shape)
                                  :fill (change-fill [(:shape-id shape)] new-color (:index shape))
                                  :stroke (change-stroke [(:shape-id shape)] new-color (:index shape))
+                                 :shadow (change-shadow [(:shape-id shape)] new-color (:index shape))
                                  :content (dwt/update-text-with-function (:shape-id shape) (partial change-text-color old-color new-color (:index shape))))))))))
 
 (defn apply-color-from-palette

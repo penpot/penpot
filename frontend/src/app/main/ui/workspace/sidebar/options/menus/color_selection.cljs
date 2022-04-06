@@ -41,6 +41,18 @@
      :shape-id (:shape-id stroke)
      :index (:index stroke)}))
 
+(defn shadow->color-att
+  [shadow]
+  (let [attrs (d/without-nils {:color    (get-in shadow [:color :color])
+                               :opacity  (get-in shadow [:color :opacity])
+                               :id       (get-in shadow [:color :id])
+                               :file-id  (get-in shadow [:color :file-id])
+                               :gradient (get-in shadow [:color :gradient])})]
+    {:attrs attrs
+     :prop :shadow
+     :shape-id (:shape-id shadow)
+     :index (:index shadow)}))
+
 (defn text->color-att
   [fill]
   (let [attrs (d/without-nils {:color    (:fill-color fill)
@@ -69,15 +81,18 @@
   (reduce
    (fn [list shape]
      (let [fill-obj   (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:fills shape))
-           stroke-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:strokes shape))]
+           stroke-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:strokes shape))
+           shadow-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:shadow shape))]
        (if (= :text (:type shape))
          (-> list
              (into (map stroke->color-att) stroke-obj)
+             (into (map shadow->color-att) shadow-obj)
              (into (extract-text-colors shape)))
 
          (-> list
              (into (map fill->color-att)  fill-obj)
-             (into (map stroke->color-att) stroke-obj)))))
+             (into (map stroke->color-att) stroke-obj)
+             (into (map shadow->color-att) shadow-obj)))))
    []
    shapes))
 
@@ -117,7 +132,7 @@
                  shapes-by-color (get @grouped-colors* old-color)]
              (reset! prev-color* new-color)
              (st/emit! (dc/change-color-in-selected new-color shapes-by-color old-color)))))
-        
+
         on-open (mf/use-fn
                  (fn [color]
                    (reset! prev-color* color)))

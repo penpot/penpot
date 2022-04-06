@@ -15,17 +15,30 @@
 
 (s/def ::id uuid?)
 (s/def ::style #{:drop-shadow :inner-shadow})
-(s/def ::color ::color/color)
 (s/def ::offset-x ::us/safe-number)
 (s/def ::offset-y ::us/safe-number)
 (s/def ::blur ::us/safe-number)
 (s/def ::spread ::us/safe-number)
 (s/def ::hidden boolean?)
 
+
+(s/def ::color string?)
+(s/def ::opacity ::us/safe-number)
+(s/def ::gradient (s/nilable ::color/gradient))
+(s/def ::file-id (s/nilable uuid?))
+(s/def ::ref-id (s/nilable uuid?))
+
+(s/def ::shadow-color
+  (s/keys :opt-un [::color
+                   ::opacity
+                   ::gradient
+                   ::file-id
+                   ::id]))
+
 (s/def ::shadow-props
   (s/keys :req-un [:internal.shadow/id
                    :internal.shadow/style
-                   :internal.shadow/color
+                   ::shadow-color
                    :internal.shadow/offset-x
                    :internal.shadow/offset-y
                    :internal.shadow/blur
