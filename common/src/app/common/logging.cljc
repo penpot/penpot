@@ -6,14 +6,13 @@
 
 (ns app.common.logging
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.common.spec :as us]
-   [clojure.pprint :refer [pprint]]
    [cuerdas.core :as str]
    [clojure.spec.alpha :as s]
    [fipp.edn :as fpp]
-   #?(:clj [io.aviso.exception :as ie])
    #?(:cljs [goog.log :as glog]))
   #?(:cljs (:require-macros [app.common.logging])
      :clj  (:import
@@ -22,7 +21,6 @@
             org.apache.logging.log4j.Logger
             org.apache.logging.log4j.ThreadContext
             org.apache.logging.log4j.CloseableThreadContext
-            org.apache.logging.log4j.message.MapMessage
             org.apache.logging.log4j.spi.LoggerContext)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -31,11 +29,22 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
-#?(:clj
-   (defn build-map-message
-     [m]
-     (let [message (MapMessage. (count m))]
-       (reduce-kv #(.with ^MapMessage %1 (name %2) %3) message m))))
+(def ^:private reserved-props
+  #{:level :cause ::logger ::async ::raw ::context})
+
+(def ^:private props-xform
+  (comp (partition-all 2)
+        (remove (fn [[k]] (contains? reserved-props k)))
+        (map vec)))
+
+(defn build-message
+  [props]
+  (loop [pairs  (sequence props-xform props)
+         result []]
+    (if-let [[k v] (first pairs)]
+      (recur (rest pairs)
+             (conj result (str/concat (d/name k) "=" (pr-str v))))
+      result)))
 
 #?(:clj
    (def logger-context
@@ -44,13 +53,6 @@
 #?(:clj
    (def logging-agent
      (agent nil :error-mode :continue)))
-
-(defn- simple-prune
-  ([s] (simple-prune s (* 1024 1024)))
-  ([s max-length]
-   (if (> (count s) max-length)
-     (str (subs s 0 max-length) " [...]")
-     s)))
 
 #?(:clj
    (defn stringify-data
@@ -132,22 +134,25 @@
 
 (defn write-log!
   [logger level exception message]
-  #?(:clj
-     (if exception
-       (.log ^Logger    logger
-             ^Level     level
-             ^Object    message
-             ^Throwable exception)
-       (.log ^Logger logger
-             ^Level  level
-             ^Object message))
-     :cljs
-     (when glog/ENABLED
-       (when-let [l (get-logger logger)]
-         (let [level (get-level level)
-               record (glog/LogRecord. level message (.getName ^js l))]
-           (when exception (.setException record exception))
-           (glog/publishLogRecord l record))))))
+  (let [message (if (string? message)
+                  message
+                  (str/join ", " message))]
+    #?(:clj
+       (if exception
+         (.log ^Logger    logger
+               ^Level     level
+               ^Object    message
+               ^Throwable exception)
+         (.log ^Logger logger
+               ^Level  level
+               ^Object message))
+       :cljs
+       (when glog/ENABLED
+         (when-let [l (get-logger logger)]
+           (let [level (get-level level)
+                 record (glog/LogRecord. level message (.getName ^js l))]
+             (when exception (.setException record exception))
+             (glog/publishLogRecord l record)))))))
 
 #?(:clj
    (defn enabled?
@@ -167,13 +172,13 @@
           {:spec-explain (us/pretty-explain data)})))))
 
 (defmacro log
-  [& {:keys [level cause ::logger ::async ::raw ::context] :or {async true} :as props}]
+  [& props]
   (if (:ns &env) ; CLJS
-    `(write-log! ~(or logger (str *ns*))
-                 ~level
-                 ~cause
-                 (or ~raw ~(dissoc props :level :cause ::logger ::raw ::context)))
-    (let [props      (dissoc props :level :cause ::logger ::async ::raw ::context)
+    (let [{:keys [level cause ::logger ::raw]} props
+          message (or raw (build-message props))]
+      `(write-log! ~(or logger (str *ns*)) ~level ~cause (or ~raw (build-message ~(vec props)))))
+
+    (let [{:keys [level cause ::logger ::async ::raw ::context] :or {async true}} props
           logger     (or logger (str *ns*))
           logger-sym (gensym "log")
           level-sym  (gensym "log")]
@@ -184,17 +189,17 @@
               `(do
                  (send-off logging-agent
                            (fn [_#]
-                             (try
+                             (let [message# (or ~raw (build-message ~(vec props)))]
                                (with-context (-> {:id (uuid/next)}
                                                  (into ~context)
                                                  (into (get-error-context ~cause)))
-                                 (->> (or ~raw (build-map-message ~props))
-                                      (write-log! ~logger-sym ~level-sym ~cause)))
-                               (catch Throwable cause#
-                                 (write-log! ~logger-sym (get-level :error) cause#
-                                             "unexpected error on writting log")))))
+                                 (try
+                                   (write-log! ~logger-sym ~level-sym ~cause message#)
+                                   (catch Throwable cause#
+                                     (write-log! ~logger-sym (get-level :error) cause#
+                                                 "unexpected error on writting log")))))))
                  nil)
-              `(let [message# (or ~raw (build-map-message ~props))]
+              `(let [message# (or ~raw (build-message ~(vec props)))]
                  (write-log! ~logger-sym ~level-sym ~cause message#)
                  nil)))))))
 
@@ -284,8 +289,8 @@
 #?(:cljs
    (defn- prepare-message
      [message]
-     (loop [kvpairs (seq message)
-            message (array-map)
+     (loop [kvpairs  (seq message)
+            message  []
             specials []]
        (if (nil? kvpairs)
          [message specials]
@@ -304,7 +309,7 @@
 
              :else
              (recur (next kvpairs)
-                    (assoc message k v)
+                    (conj message (str/concat (d/name k) "=" (pr-str v)))
                     specials)))))))
 
 #?(:cljs
@@ -320,7 +325,7 @@
            (js/console.log message header-styles normal-styles))
          (let [[message specials] (prepare-message message)]
            (if (seq specials)
-             (let [message (str header "%c" (pr-str message))]
+             (let [message (str header "%c" message)]
                (js/console.group message header-styles normal-styles)
                (doseq [[type n v] specials]
                  (case type
@@ -329,7 +334,7 @@
                             (js/console.error (pr-str v))
                             (js/console.error v))))
                (js/console.groupEnd message))
-             (let [message (str header "%c" (pr-str message))]
+             (let [message (str header "%c" message)]
                (js/console.log message header-styles normal-styles)))))
 
        (when exception

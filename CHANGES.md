@@ -47,6 +47,11 @@
 
 ### :bug: Bugs fixed
 
+- "Show in exports" is showing in multiselections [Taiga 3194](https://tree.taiga.io/project/penpot/issue/3194)
+- Fix line gap between shapes [Taiga #3181](https://tree.taiga.io/project/penpot/issue/3181)
+- Edit file name navigates to the file workspace [Taiga #3183](https://tree.taiga.io/project/penpot/issue/3183)
+- Fix scroll into view behind fixed element [Taiga #3170](https://tree.taiga.io/project/penpot/issue/3170)
+- Fix sidebar icon in viewer mode [Taiga #3184](https://tree.taiga.io/project/penpot/issue/3184)
 - Fix send to back several shapes at a time [Taiga #3077](https://tree.taiga.io/project/penpot/issue/3077)
 - Fix duplicate multi selected elements [Taiga #3155](https://tree.taiga.io/project/penpot/issue/3155)
 - Fix add fills to artboard modify children [Taiga #3151](https://tree.taiga.io/project/penpot/issue/3151)
@@ -81,6 +86,8 @@
 - Fix drag guides to delete target area [#1679](https://github.com/penpot/penpot/issues/1679)
 - Fix undo when rotating groups [Taiga #3136](https://tree.taiga.io/project/penpot/issue/3136)
 - Fix component name in sidebar widget [Taiga #3144](https://tree.taiga.io/project/penpot/issue/3144)
+- Fix resize rotated shape with top&down constraints [Taiga #3167](https://tree.taiga.io/project/penpot/issue/3167)
+- Fix multi user not working [Taiga #3195](https://tree.taiga.io/project/penpot/issue/3195)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

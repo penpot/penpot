@@ -20,9 +20,9 @@
     :read-only  (cf/get :database-readonly false)
     :metrics    (ig/ref :app.metrics/metrics)
     :migrations (ig/ref :app.migrations/all)
-    :name :main
-    :min-size (cf/get :database-min-pool-size 0)
-    :max-size (cf/get :database-max-pool-size 30)}
+    :name       :main
+    :min-size   (cf/get :database-min-pool-size 0)
+    :max-size   (cf/get :database-max-pool-size 30)}
 
    ;; Default thread pool for IO operations
    [::default :app.worker/executor]
@@ -115,7 +115,9 @@
     :router      (ig/ref :app.http/router)
     :metrics     (ig/ref :app.metrics/metrics)
     :executor    (ig/ref [::default :app.worker/executor])
-    :io-threads  (cf/get :http-server-io-threads)}
+    :io-threads  (cf/get :http-server-io-threads)
+    :max-body-size           (cf/get :http-server-max-body-size)
+    :max-multipart-body-size (cf/get :http-server-max-multipart-body-size)}
 
    :app.http/router
    {:assets        (ig/ref :app.http.assets/handlers)

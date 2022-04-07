@@ -14,6 +14,7 @@ yarn install
 popd
 pushd ~/penpot/exporter/
 yarn install
+npx playwright install chromium
 popd
 
 tmux -2 new-session -d -s penpot

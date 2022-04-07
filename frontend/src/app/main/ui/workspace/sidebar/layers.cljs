@@ -189,7 +189,7 @@
              (when (and single? selected?)
                (ts/schedule
                 100
-                #(dom/scroll-into-view! node #js {:block "nearest", :behavior "smooth"})))]
+                #(dom/scroll-into-view! node #js {:block "center", :behavior "smooth"})))]
 
          #(when (some? subid)
             (rx/dispose! subid)))))

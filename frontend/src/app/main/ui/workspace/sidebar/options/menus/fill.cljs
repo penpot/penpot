@@ -155,7 +155,7 @@
                             :on-blur on-blur}])])
 
         (when (or (= type :frame)
-                  (and (= type :multiple) (some? hide-fill-on-export?)))
+                  (and (= type :multiple) (some? (:hide-fill-on-export values))))
           [:div.input-checkbox
            [:input {:type "checkbox"
                     :id "show-fill-on-export"

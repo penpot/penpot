@@ -6,7 +6,7 @@
 
 (ns app.handlers
   (:require
-   [app.common.data.macros :as dm]
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
@@ -32,6 +32,7 @@
       (let [explain (us/pretty-explain data)
             data    (-> data
                         (assoc :explain explain)
+                        (assoc :type :validation)
                         (dissoc ::s/problems ::s/value ::s/spec))]
         (-> exchange
             (assoc :response/status 400)
@@ -46,19 +47,24 @@
 
       (and (= :internal type)
            (= :browser-not-ready code))
-      (-> exchange
-          (assoc :response/status 503)
-          (assoc :response/body (t/encode data))
-          (assoc :response/headers {"content-type" "application/transit+json"}))
+      (let [data {:type :server-error
+                  :code :internal
+                  :hint (ex-message error)
+                  :data data}]
+        (-> exchange
+            (assoc :response/status 503)
+            (assoc :response/body (t/encode data))
+            (assoc :response/headers {"content-type" "application/transit+json"})))
 
       :else
       (let [data {:type :server-error
+                  :code type
                   :hint (ex-message error)
                   :data data}]
         (l/error :hint "unexpected internal error" :cause error)
         (-> exchange
             (assoc :response/status 500)
-            (assoc :response/body (t/encode data))
+            (assoc :response/body (t/encode (d/without-nils data)))
             (assoc :response/headers {"content-type" "application/transit+json"}))))))
 
 (defmulti command-spec :cmd)
@@ -98,4 +104,4 @@
       :export-frames (export-frames/handler exchange params)
       (ex/raise :type :internal
                 :code :method-not-implemented
-                :hint (dm/fmt "method % not implemented" cmd)))))
+                :hint (str/istr "method ~{cmd} not implemented")))))

@@ -6,6 +6,7 @@
 
 (ns app.util.dom
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
@@ -231,20 +232,20 @@
     (.-innerText el)))
 
 (defn query
-  ([^string query]
-   (query globals/document query))
+  ([^string selector]
+   (query globals/document selector))
 
-  ([^js el ^string query]
+  ([^js el ^string selector]
    (when (some? el)
-     (.querySelector el query))))
+     (.querySelector el selector))))
 
 (defn query-all
-  ([^string query]
-   (query-all globals/document query))
+  ([^string selector]
+   (query-all globals/document selector))
 
-  ([^js el ^string query]
+  ([^js el ^string selector]
    (when (some? el)
-     (.querySelectorAll el query))))
+     (.querySelectorAll el selector))))
 
 (defn get-client-position
   [^js event]
@@ -403,16 +404,16 @@
 (defn mtype->extension [mtype]
   ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
   (case mtype
-    "image/apng"         "apng"
-    "image/avif"         "avif"
-    "image/gif"          "gif"
-    "image/jpeg"         "jpg"
-    "image/png"          "png"
-    "image/svg+xml"      "svg"
-    "image/webp"         "webp"
-    "application/zip"    "zip"
-    "application/penpot" "penpot"
-    "application/pdf"    "pdf"
+    "image/apng"         ".apng"
+    "image/avif"         ".avif"
+    "image/gif"          ".gif"
+    "image/jpeg"         ".jpg"
+    "image/png"          ".png"
+    "image/svg+xml"      ".svg"
+    "image/webp"         ".webp"
+    "application/zip"    ".zip"
+    "application/penpot" ".penpot"
+    "application/pdf"    ".pdf"
     nil))
 
 (defn set-attribute! [^js node ^string attr value]
@@ -464,11 +465,11 @@
 
 (defn trigger-download-uri
   [filename mtype uri]
-  (let [link (create-element "a")
+  (let [link      (create-element "a")
         extension (mtype->extension mtype)
-        filename (if extension
-                   (str filename "." extension)
-                   filename)]
+        filename  (if (and extension (not (str/ends-with? filename extension)))
+                    (str/concat filename extension)
+                    filename)]
     (obj/set! link "href" uri)
     (obj/set! link "download" filename)
     (obj/set! (.-style ^js link) "display" "none")
@@ -535,3 +536,13 @@
   (and (some? node)
        (some? candidate)
        (.contains node candidate)))
+
+(defn seq-nodes
+  [root-node]
+  (letfn [(branch? [node]
+            (d/not-empty? (get-children node)))
+
+          (get-children [node]
+            (seq (.-children node)))]
+    (->> root-node
+         (tree-seq branch? get-children))))

@@ -214,11 +214,13 @@
 
       (= type :frame)
       (let [;; The nodes with the "frame-background" class can have some anidation depending on the strokes they have
-            g-nodes (find-all-nodes node :g)
+            g-nodes    (find-all-nodes node :g)
             defs-nodes (flatten (map #(find-all-nodes % :defs) g-nodes))
+            gg-nodes   (flatten (map #(find-all-nodes % :g) g-nodes))
             rect-nodes (flatten [[(find-all-nodes node :rect)]
                                  (map #(find-all-nodes % #{:rect :path}) defs-nodes)
-                                 (map #(find-all-nodes % #{:rect :path}) g-nodes)])
+                                 (map #(find-all-nodes % #{:rect :path}) g-nodes)
+                                 (map #(find-all-nodes % #{:rect :path}) gg-nodes)])
             svg-node (d/seek #(= "frame-background" (get-in % [:attrs :class])) rect-nodes)]
         (merge (add-attrs {} (:attrs svg-node)) node-attrs))
 
@@ -405,15 +407,29 @@
   [props node svg-data]
 
   (let [fill (:fill svg-data)
-        hide-fill-on-export (get-meta node :hide-fill-on-export str->bool)
-        fill-color-ref-id     (get-meta node :fill-color-ref-id uuid/uuid)
-        fill-color-ref-file   (get-meta node :fill-color-ref-file uuid/uuid)
-        gradient (when (str/starts-with? fill "url")
-                   (parse-gradient node fill))]
+        hide-fill-on-export      (get-meta node :hide-fill-on-export str->bool)
+        fill-color-ref-id        (get-meta node :fill-color-ref-id uuid/uuid)
+        fill-color-ref-file      (get-meta node :fill-color-ref-file uuid/uuid)
+        meta-fill-color          (get-meta node :fill-color)
+        meta-fill-opacity        (get-meta node :fill-opacity)
+        meta-fill-color-gradient (if (str/starts-with? meta-fill-color "url")
+                                   (parse-gradient node meta-fill-color)
+                                   (get-meta node :fill-color-gradient))
+        gradient                 (when (str/starts-with? fill "url")
+                                   (parse-gradient node fill))]
 
     (cond-> props
       :always
       (assoc :fill-color nil
+             :fill-opacity nil)
+
+      (some? meta-fill-color)
+      (assoc :fill-color meta-fill-color
+             :fill-opacity (d/parse-double meta-fill-opacity))
+
+      (some? meta-fill-color-gradient)
+      (assoc :fill-color-gradient meta-fill-color-gradient
+             :fill-color nil
              :fill-opacity nil)
 
       (some? gradient)
@@ -775,6 +791,7 @@
         (-> node
             (find-node :defs)
             (find-node :pattern)
+            (find-node :g)
             (find-node :image))]
     (or (= type :image)
         (some? pattern-image))))
@@ -789,11 +806,50 @@
         (-> node
             (find-node :defs)
             (find-node :pattern)
+            (find-node :g)
             (find-node :image)
             :attrs)
         image-data (get-svg-data :image node)
         svg-data (or image-data pattern-data)]
     (:xlink:href svg-data)))
+
+(defn get-image-fill
+  [node]
+  (let [linear-gradient-node (-> node
+                                 (find-node :defs)
+                                 (find-node :linearGradient))
+        radial-gradient-node (-> node
+                                 (find-node :defs)
+                                 (find-node :radialGradient))
+        gradient-node (or linear-gradient-node radial-gradient-node)
+        stops (parse-stops gradient-node)
+        gradient (cond-> {:stops stops}
+                   (some? linear-gradient-node)
+                   (assoc :type :linear
+                          :start-x (-> linear-gradient-node :attrs :x1 d/parse-double)
+                          :start-y (-> linear-gradient-node :attrs :y1 d/parse-double)
+                          :end-x   (-> linear-gradient-node :attrs :x2 d/parse-double)
+                          :end-y   (-> linear-gradient-node :attrs :y2 d/parse-double)
+                          :width   1)
+
+                   (some? radial-gradient-node)
+                   (assoc :type :linear
+                          :start-x (get-meta radial-gradient-node :start-x d/parse-double)
+                          :start-y (get-meta radial-gradient-node :start-y d/parse-double)
+                          :end-x   (get-meta radial-gradient-node :end-x   d/parse-double)
+                          :end-y   (get-meta radial-gradient-node :end-y   d/parse-double)
+                          :width   (get-meta radial-gradient-node :width   d/parse-double)))]
+
+    (if (some? (or linear-gradient-node radial-gradient-node))
+      {:fill-color-gradient gradient}
+      (-> node
+          (find-node :defs)
+          (find-node :pattern)
+          (find-node :g)
+          (find-node :rect)
+          :attrs
+          :style
+          parse-style))))
 
 (defn parse-data
   [type node]

@@ -23,9 +23,9 @@
   #?(:clj
      (:import linked.set.LinkedSet)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Structures
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn ordered-set
   ([] lks/empty-linked-set)
@@ -49,9 +49,14 @@
   ([a] (into (queue) [a]))
   ([a & more] (into (queue) (cons a more))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Structures Manipulation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn editable-collection?
+  [m]
+  #?(:clj (instance? clojure.lang.IEditableCollection m)
+     :cljs (implements? core/IEditableCollection m)))
 
 (defn deep-merge
   ([a b]
@@ -101,7 +106,6 @@
 
 (defn preconj
   [coll elem]
-  (assert (or (vector? coll) (nil? coll)))
   (into [elem] coll))
 
 (defn enumerate
@@ -174,9 +178,12 @@
   "Return a map without the keys provided
   in the `keys` parameter."
   [data keys]
-  (when (map? data)
-    (persistent!
-     (reduce #(dissoc! %1 %2) (transient data) keys))))
+  (persistent!
+   (reduce dissoc!
+           (if (editable-collection? data)
+             (transient data)
+             (transient {}))
+           keys)))
 
 (defn remove-at-index
   "Takes a vector and returns a vector with an element in the
@@ -209,8 +216,7 @@
   (with-meta
     (persistent!
      (reduce-kv (fn [acc k v] (assoc! acc k (f v)))
-                (if #?(:clj (instance? clojure.lang.IEditableCollection m)
-                       :cljs (implements? core/IEditableCollection m))
+                (if (editable-collection? m)
                   (transient m)
                   (transient {}))
                 m))
@@ -344,13 +350,14 @@
              (do (vswap! seen conj input*)
                  (rf result input)))))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn nan?
   [v]
-  (not= v v))
+  #?(:cljs (js/isNaN v)
+     :clj  (not= v v)))
 
 (defn- impl-parse-integer
   [v]
@@ -408,9 +415,9 @@
   [val default]
   (or val default))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn nilf
   "Returns a new function that if you pass nil as any argument will
   return nil"

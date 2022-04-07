@@ -41,8 +41,7 @@
     data))
 
 (def defaults
-  {:host "devenv"
-   :tenant "dev"
+  {
    :database-uri "postgresql://postgres/penpot"
    :database-username "penpot"
    :database-password "penpot"
@@ -54,8 +53,10 @@
    :file-change-snapshot-timeout "3h"
 
    :public-uri "http://localhost:3449"
-   :redis-uri "redis://redis/0"
+   :host "localhost"
+   :tenant "main"
 
+   :redis-uri "redis://redis/0"
    :srepl-host "127.0.0.1"
    :srepl-port 6062
 

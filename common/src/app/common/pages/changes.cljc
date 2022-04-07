@@ -96,6 +96,7 @@
                   (-> (update :touched cph/set-touched-group :shapes-group)
                       (dissoc :remote-synced?)))))
 
+          ;; TODO: this looks wrong, why we allow nil values?
           (update-objects [objects parent-id]
             (if (and (or (nil? parent-id) (contains? objects parent-id))
                      (or (nil? frame-id) (contains? objects frame-id)))

@@ -7,6 +7,7 @@
 (ns debug
   (:require
    [app.common.data :as d]
+   [app.common.logging :as l]
    [app.common.pages.helpers :as cph]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
@@ -17,6 +18,7 @@
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
+   [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [beicon.core :as rx]
@@ -24,6 +26,12 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [promesa.core :as p]))
+
+(defn ^:export set-logging
+  ([level]
+   (l/set-level! :app (keyword level)))
+  ([ns level]
+   (l/set-level! (keyword ns) (keyword level))))
 
 (def debug-options
   #{;; Displays the bounding box for the shapes
@@ -333,3 +341,9 @@
       (.log js/console "%c Viewer" style)
       (print-shortcuts app.main.data.viewer.shortcuts/shortcuts)))
   nil)
+
+(defn ^:export nodeStats
+  []
+  (let [root-node (dom/query ".viewport .render-shapes")
+        num-nodes (->> (dom/seq-nodes root-node) count)]
+    #js {:number num-nodes}))

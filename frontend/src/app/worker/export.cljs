@@ -135,7 +135,7 @@
         (rx/map #(assoc % :file-id file-id))
         (rx/flat-map
          (fn [media]
-           (let [file-path (str file-id "/media/" (:id media) "." (dom/mtype->extension (:mtype media)))]
+           (let [file-path (str/concat file-id "/media/" (:id media) (dom/mtype->extension (:mtype media)))]
              (->> (http/send!
                    {:uri (cfg/resolve-file-media media)
                     :response-type :blob

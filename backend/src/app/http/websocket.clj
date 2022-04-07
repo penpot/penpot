@@ -166,11 +166,9 @@
   (a/go
     ;; Only allow receive pointer updates when active subscription
     (when-let [{:keys [topic]} (get-in @wsp [::subscriptions subs-id])]
-      (l/trace :fn "handle-message" :event :pointer-update :message message)
       (let [msgbus-fn  (:msgbus @wsp)
             profile-id (::profile-id @wsp)
             session-id (::session-id @wsp)
-
             message    (-> message
                            (dissoc :subs-id)
                            (assoc :profile-id profile-id)

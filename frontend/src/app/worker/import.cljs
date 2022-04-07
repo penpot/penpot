@@ -31,6 +31,8 @@
 ;; Upload changes batches size
 (def ^:const change-batch-size 100)
 
+(def conjv (fnil conj []))
+
 (defn get-file
   "Resolves the file inside the context given its id and the data"
   ([context type]
@@ -48,7 +50,7 @@
                 :typographies (str file-id "/typographies.json")
                 :media-list   (str file-id "/media.json")
                 :media        (let [ext (dom/mtype->extension (:mtype media))]
-                                (str file-id "/media/" id "." ext))
+                                (str/concat file-id "/media/" id ext))
                 :components   (str file-id "/components.svg"))
 
          parse-svg?  (and (not= type :media) (str/ends-with? path "svg"))
@@ -261,25 +263,29 @@
                              (cond-> (some? old-id)
                                (assoc :id (resolve old-id)))
                              (cond-> (< (:version context 1) 2)
-                               (translate-frame type file)))
+                               (translate-frame type file)))]
+        (try
+          (let [file (case type
+                       :frame    (fb/add-artboard   file data)
+                       :group    (fb/add-group      file data)
+                       :bool     (fb/add-bool       file data)
+                       :rect     (fb/create-rect    file data)
+                       :circle   (fb/create-circle  file data)
+                       :path     (fb/create-path    file data)
+                       :text     (fb/create-text    file data)
+                       :image    (fb/create-image   file data)
+                       :svg-raw  (fb/create-svg-raw file data)
+                       #_default file)]
 
-            file (case type
-                   :frame    (fb/add-artboard   file data)
-                   :group    (fb/add-group      file data)
-                   :bool     (fb/add-bool       file data)
-                   :rect     (fb/create-rect    file data)
-                   :circle   (fb/create-circle  file data)
-                   :path     (fb/create-path    file data)
-                   :text     (fb/create-text    file data)
-                   :image    (fb/create-image   file data)
-                   :svg-raw  (fb/create-svg-raw file data)
-                   #_default file)]
+            ;; We store this data for post-processing after every shape has been
+            ;; added
+            (cond-> file
+              (d/not-empty? interactions)
+              (assoc-in [:interactions (:id data)] interactions)))
 
-        ;; We store this data for post-processing after every shape has been
-        ;; added
-        (cond-> file
-          (d/not-empty? interactions)
-          (assoc-in [:interactions (:id data)] interactions))))))
+          (catch :default err
+            (log/error :hint (ex-message err) :cause err :js/data data)
+            (update file :errors conjv data)))))))
 
 (defn setup-interactions
   [file]
@@ -300,8 +306,9 @@
   (if (and (not (cip/close? node))
            (cip/has-image? node))
     (let [name     (cip/get-image-name node)
-          data-uri (cip/get-image-data node)]
-      (->> (upload-media-files context file-id name data-uri)
+          image-data (cip/get-image-data node)
+          image-fill (cip/get-image-fill node)]
+      (->> (upload-media-files context file-id name image-data)
            (rx/catch #(do (.error js/console "Error uploading media: " name)
                           (rx/of node)))
            (rx/map
@@ -310,7 +317,13 @@
                   (assoc-in [:attrs :penpot:media-id]     (:id media))
                   (assoc-in [:attrs :penpot:media-width]  (:width media))
                   (assoc-in [:attrs :penpot:media-height] (:height media))
-                  (assoc-in [:attrs :penpot:media-mtype]  (:mtype media)))))))
+                  (assoc-in [:attrs :penpot:media-mtype]  (:mtype media))
+
+                  (assoc-in [:attrs :penpot:fill-color]  (:fill image-fill))
+                  (assoc-in [:attrs :penpot:fill-color-ref-file]  (:fill-color-ref-file image-fill))
+                  (assoc-in [:attrs :penpot:fill-color-ref-id]  (:fill-color-ref-id image-fill))
+                  (assoc-in [:attrs :penpot:fill-opacity]  (:fill-opacity image-fill))
+                  (assoc-in [:attrs :penpot:fill-color-gradient]  (:fill-color-gradient image-fill)))))))
 
     ;; If the node is not an image just return the node
     (->> (rx/of node)

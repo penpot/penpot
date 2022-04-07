@@ -32,10 +32,9 @@
 (def commit-changes? (ptk/type? ::commit-changes))
 
 (defn update-shapes
-  ([ids update-fn] (update-shapes ids update-fn nil nil))
-  ([ids update-fn keys] (update-shapes ids update-fn nil keys))
-  ([ids update-fn page-id {:keys [reg-objects? save-undo? attrs ignore-tree]
-                           :or {reg-objects? false save-undo? true attrs nil}}]
+  ([ids update-fn] (update-shapes ids update-fn nil))
+  ([ids update-fn {:keys [reg-objects? save-undo? attrs ignore-tree page-id]
+                   :or {reg-objects? false save-undo? true}}]
 
    (us/assert ::coll-of-uuid ids)
    (us/assert fn? update-fn)
@@ -49,20 +48,15 @@
 
              changes   (reduce
                          (fn [changes id]
-                           (pcb/update-shapes changes
-                                              [id]
-                                              update-fn
-                                              {:attrs attrs
-                                               :ignore-geometry? (get ignore-tree id)}))
+                           (let [opts {:attrs attrs :ignore-geometry? (get ignore-tree id)}]
+                             (pcb/update-shapes changes [id] update-fn opts)))
                          (-> (pcb/empty-changes it page-id)
                              (pcb/set-save-undo? save-undo?)
                              (pcb/with-objects objects))
                          ids)]
 
          (when (seq (:redo-changes changes))
-           (let [changes  (cond-> changes
-                            reg-objects?
-                            (pcb/resize-parents ids))]
+           (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))]
              (rx/of (commit-changes changes)))))))))
 
 (defn update-indices

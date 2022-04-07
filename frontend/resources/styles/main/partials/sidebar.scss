@@ -82,7 +82,10 @@
         }
 
         .tool-window-bar-icon {
-          height: 15px;
+          height: 21px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
 
           svg {
             width: 15px;

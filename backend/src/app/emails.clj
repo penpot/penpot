@@ -8,6 +8,7 @@
   "Main api for send emails."
   (:require
    [app.common.logging :as l]
+   [app.common.pprint :as pp]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
@@ -165,19 +166,25 @@
     (let [enabled? (or (contains? cf/flags :smtp)
                        (cf/get :smtp-enabled)
                        (:enabled task))]
-      (if enabled?
-        (emails/send! cfg props)
+      (when enabled?
+        (emails/send! cfg props))
+
+      (when (contains? cf/flags :log-emails)
         (send-console! cfg props)))))
 
 (defn- send-console!
-  [cfg email]
-  (let [baos (java.io.ByteArrayOutputStream.)
-        mesg (emails/smtp-message cfg email)]
-    (.writeTo mesg baos)
-    (let [out (with-out-str
-                (println "email console dump:")
-                (println "******** start email" (:id email) "**********")
-                (println (.toString baos))
-                (println "******** end email "(:id email) "**********"))]
-      (l/info :email out))))
+  [_ email]
+  (let [body (:body email)
+        out  (with-out-str
+               (println "email console dump:")
+               (println "******** start email" (:id email) "**********")
+               (pp/pprint (dissoc email :body))
+               (if (string? body)
+                 (println body)
+                 (println (->> body
+                               (filter #(= "text/plain" (:type %)))
+                               (map :content)
+                               first)))
+               (println "******** end email" (:id email) "**********"))]
+    (l/info ::l/raw out)))
 

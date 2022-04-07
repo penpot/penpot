@@ -6,7 +6,6 @@
 
 (ns app.main.data.exports
   (:require
-   [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.persistence :as dwp]
@@ -47,6 +46,7 @@
           state
           (dissoc state :export))))))
 
+
 (defn show-workspace-export-dialog
   ([] (show-workspace-export-dialog nil))
   ([{:keys [selected]}]
@@ -55,8 +55,6 @@
      (watch [_ state _]
        (let [file-id  (:current-file-id state)
              page-id  (:current-page-id state)
-
-             filename (-> (wsh/lookup-page state page-id) :name)
              selected (or selected (wsh/lookup-selected state page-id {}))
 
              shapes   (if (seq selected)
@@ -74,11 +72,10 @@
                             (assoc :name (:name shape))))]
 
          (rx/of (modal/show :export-shapes
-                            {:exports (vec exports)
-                             :filename filename})))))))
+                            {:exports (vec exports)})))))))
 
 (defn show-viewer-export-dialog
-  [{:keys [shapes filename page-id file-id exports]}]
+  [{:keys [shapes page-id file-id exports]}]
   (ptk/reify ::show-viewer-export-dialog
     ptk/WatchEvent
     (watch [_ _ _]
@@ -91,51 +88,44 @@
                           (assoc :object-id (:id shape))
                           (assoc :shape (dissoc shape :exports))
                           (assoc :name (:name shape))))]
-        (rx/of (modal/show :export-shapes {:exports (vec exports)
-                                           :filename filename}))))))
+        (rx/of (modal/show :export-shapes {:exports (vec exports)}))))))
 
 (defn show-workspace-export-frames-dialog
-  ([frames]
-   (ptk/reify ::show-workspace-export-frames-dialog
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [file-id  (:current-file-id state)
-             page-id  (:current-page-id state)
-             filename (-> (wsh/lookup-page state page-id)
-                          :name
-                          (dm/str ".pdf"))
+  [frames]
+  (ptk/reify ::show-workspace-export-frames-dialog
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id  (:current-file-id state)
+            page-id  (:current-page-id state)
+            exports  (for [frame  frames]
+                       {:enabled true
+                        :page-id page-id
+                        :file-id file-id
+                         :object-id (:id frame)
+                        :shape frame
+                        :name (:name frame)})]
 
-             exports  (for [frame  frames]
-                        {:enabled true
-                         :page-id page-id
-                         :file-id file-id
-                         :frame-id (:id frame)
-                         :shape frame
-                         :name (:name frame)})]
-
-         (rx/of (modal/show :export-frames
-                            {:exports (vec exports)
-                             :filename filename})))))))
+        (rx/of (modal/show :export-frames
+                           {:exports (vec exports)}))))))
 
 (defn- initialize-export-status
-  [exports filename resource-id query-name]
+  [exports cmd resource]
   (ptk/reify ::initialize-export-status
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :export {:in-progress true
-                            :resource-id resource-id
+                            :resource-id (:id resource)
                             :healthy? true
                             :error false
                             :progress 0
                             :widget-visible true
                             :detail-visible true
                             :exports exports
-                            :filename filename
                             :last-update (dt/now)
-                            :query-name query-name}))))
+                            :cmd cmd}))))
 
 (defn- update-export-status
-  [{:keys [progress status resource-id name] :as data}]
+  [{:keys [done status resource-id filename] :as data}]
   (ptk/reify ::update-export-status
     ptk/UpdateEvent
     (update [_ state]
@@ -144,10 +134,10 @@
             healthy? (< time-diff (dt/duration {:seconds 6}))]
         (cond-> state
           (= status "running")
-          (update :export assoc :progress (:done progress) :last-update (dt/now) :healthy? healthy?)
+          (update :export assoc :progress done :last-update (dt/now) :healthy? healthy?)
 
           (= status "error")
-          (update :export assoc :error (:cause data) :last-update (dt/now) :healthy? healthy?)
+          (update :export assoc :in-progress false :error (:cause data) :last-update (dt/now) :healthy? healthy?)
 
           (= status "ended")
           (update :export assoc :in-progress false :last-update (dt/now) :healthy? healthy?))))
@@ -155,12 +145,12 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (when (= status "ended")
-        (->> (rp/query! :download-export-resource resource-id)
+        (->> (rp/query! :exporter {:cmd :get-resource :blob? true :id resource-id})
              (rx/delay 500)
-             (rx/map #(dom/trigger-download name %)))))))
+             (rx/map #(dom/trigger-download filename %)))))))
 
 (defn request-simple-export
-  [{:keys [export filename]}]
+  [{:keys [export]}]
   (ptk/reify ::request-simple-export
     ptk/UpdateEvent
     (update [_ state]
@@ -170,22 +160,26 @@
     (watch [_ state _]
       (let [profile-id (:profile-id state)
             params     {:exports [export]
-                        :profile-id profile-id}]
+                        :profile-id profile-id
+                        :cmd :export-shapes
+                        :wait true}]
         (rx/concat
          (rx/of ::dwp/force-persist)
-         (->> (rp/query! :export-shapes-simple params)
-              (rx/map (fn [data]
-                        (dom/trigger-download filename data)
-                        (clear-export-state uuid/zero)))
+         (->> (rp/query! :exporter params)
+              (rx/mapcat (fn [{:keys [id filename]}]
+                           (->> (rp/query! :exporter {:cmd :get-resource :blob? true :id id})
+                                (rx/map (fn [data]
+                                          (dom/trigger-download filename data)
+                                          (clear-export-state uuid/zero))))))
               (rx/catch (fn [cause]
-                          (prn "KKKK" cause)
                           (rx/concat
                            (rx/of (clear-export-state uuid/zero))
                            (rx/throw cause))))))))))
 
+
 (defn request-multiple-export
-  [{:keys [filename exports query-name]
-    :or {query-name :export-shapes-multiple}
+  [{:keys [exports cmd]
+    :or {cmd :export-shapes}
     :as params}]
   (ptk/reify ::request-multiple-export
     ptk/WatchEvent
@@ -194,7 +188,7 @@
             profile-id  (:profile-id state)
             ws-conn     (:ws-conn state)
             params      {:exports exports
-                         :name filename
+                         :cmd cmd
                          :profile-id profile-id
                          :wait false}
 
@@ -219,11 +213,10 @@
 
          ;; Launch the exportation process and stores the resource id
          ;; locally.
-         (->> (rp/query! query-name params)
-              (rx/tap (fn [{:keys [id]}]
-                        (vreset! resource-id id)))
-              (rx/map (fn [{:keys [id]}]
-                        (initialize-export-status exports filename id query-name))))
+         (->> (rp/query! :exporter params)
+              (rx/map (fn [{:keys [id] :as resource}]
+                        (vreset! resource-id id)
+                        (initialize-export-status exports cmd resource))))
 
          ;; We proceed to update the export state with incoming
          ;; progress updates. We delay the stoper for give some time
@@ -246,13 +239,12 @@
               (rx/map #(clear-export-state @resource-id))
               (rx/take-until (rx/delay 6000 stoper))))))))
 
-
 (defn retry-last-export
   []
   (ptk/reify ::retry-last-export
     ptk/WatchEvent
     (watch [_ state _]
-      (let [params (select-keys (:export state) [:filename :exports :query-name])]
+      (let [params (select-keys (:export state) [:exports :cmd])]
         (when (seq params)
           (rx/of (request-multiple-export params)))))))
 

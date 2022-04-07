@@ -11,6 +11,7 @@
    [app.util.code-gen :as cg]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (defn has-image? [shape]
@@ -34,12 +35,10 @@
         [:div.attributes-value (-> shape :metadata :height) "px"]
         [:& copy-button {:data (cg/generate-css-props shape :height)}]]
 
-       (let [mtype (-> shape :metadata :mtype)
-             name (:name shape)
+       (let [mtype     (-> shape :metadata :mtype)
+             name      (:name shape)
              extension (dom/mtype->extension mtype)]
          [:a.download-button {:target "_blank"
-                              :download (if extension
-                                          (str name "." extension)
-                                          name)
+                              :download (cond-> name extension (str/concat extension))
                               :href (cfg/resolve-file-media (-> shape :metadata))}
           (tr "handoff.attributes.image.download")])])))

@@ -2,7 +2,7 @@
 
 export PENPOT_HOST=devenv
 export PENPOT_TENANT=dev
-export PENPOT_FLAGS="$PENPOT_FLAGS enable-backend-asserts enable-secure-session-cookies enable-audit-log enable-cors enable-transit-readable-response enable-demo-users"
+export PENPOT_FLAGS="$PENPOT_FLAGS enable-backend-asserts enable-audit-log enable-cors enable-transit-readable-response enable-demo-users"
 
 # export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot"
 # export PENPOT_DATABASE_USERNAME="penpot"
@@ -13,11 +13,15 @@ export PENPOT_FLAGS="$PENPOT_FLAGS enable-backend-asserts enable-secure-session-
 # export PENPOT_DATABASE_USERNAME="penpot_pre"
 # export PENPOT_DATABASE_PASSWORD="penpot_pre"
 
+# export PENPOT_LOGGERS_LOKI_URI="http://172.17.0.1:3100/loki/api/v1/push"
+# export PENPOT_AUDIT_LOG_ARCHIVE_URI="http://localhost:6070/api/audit"
+
 # Initialize MINIO config
-# mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin
-# mc admin user add penpot-s3 penpot-devenv penpot-devenv
-# mc admin policy set penpot-s3 readwrite user=penpot-devenv
-# mc mb penpot-s3/penpot -p
+mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin
+mc admin user add penpot-s3 penpot-devenv penpot-devenv
+mc admin policy set penpot-s3 readwrite user=penpot-devenv
+mc mb penpot-s3/penpot -p
+
 export AWS_ACCESS_KEY_ID=penpot-devenv
 export AWS_SECRET_ACCESS_KEY=penpot-devenv
 export PENPOT_ASSETS_STORAGE_BACKEND=assets-fs

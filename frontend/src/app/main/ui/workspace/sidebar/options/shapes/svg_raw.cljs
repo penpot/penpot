@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.svg-raw
   (:require
    [app.common.colors :as clr]
+   [app.common.data :as d]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
@@ -15,7 +16,6 @@
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
    [app.util.color :as uc]
-   [app.util.data :as d]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
@@ -75,7 +75,7 @@
         stroke-width (-> (or (get-in shape [:content :attrs :stroke-width])
                              (get-in shape [:content :attrs :style :stroke-width])
                              "1")
-                         (d/parse-int))
+                         (d/parse-integer))
 
         stroke-values (if (empty? stroke-values)
                         {:stroke-color stroke-color

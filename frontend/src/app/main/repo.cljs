@@ -31,6 +31,10 @@
     (= 200 status)
     (rx/of body)
 
+    (= 413 status)
+    (rx/throw {:type :validation
+               :code :request-body-too-large})
+
     (and (>= status 400)
          (map? body))
     (rx/throw body)
@@ -105,34 +109,22 @@
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
 
-(defn- send-export-command
-  [& {:keys [cmd params blob?]}]
+(defn- send-export
+  [{:keys [blob?] :as params}]
   (->> (http/send! {:method :post
                     :uri (u/join base-uri "api/export")
-                    :body (http/transit-data (assoc params :cmd cmd))
+                    :body (http/transit-data (dissoc params :blob?))
                     :credentials "include"
                     :response-type (if blob? :blob :text)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
 
-(defmethod query :export-shapes-simple
+(defmethod query :exporter
   [_ params]
-  (let [params (merge {:wait true} params)]
-    (->> (rx/of params)
-         (rx/mapcat #(send-export-command :cmd :export-shapes :params % :blob? false))
-         (rx/mapcat #(send-export-command :cmd :get-resource :params % :blob? true)))))
-
-(defmethod query :export-shapes-multiple
-  [_ params]
-  (send-export-command :cmd :export-shapes :params params :blob? false))
-
-(defmethod query :export-frames-multiple
-  [_ params]
-  (send-export-command :cmd :export-frames :params (assoc params :uri (str base-uri)) :blob? false))
-
-(defmethod query :download-export-resource
-  [_ id]
-  (send-export-command :cmd :get-resource :params {:id id} :blob? true))
+  (let [default {:wait false
+                 :blob? false
+                 :uri (str base-uri)}]
+    (send-export (merge default params))))
 
 (derive :upload-file-media-object ::multipart-upload)
 (derive :update-profile-photo ::multipart-upload)

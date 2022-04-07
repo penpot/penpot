@@ -30,7 +30,7 @@
         state        (mf/deref refs/export)
         in-progress? (:in-progress state)
 
-        filename     (when (seqable? exports)
+        sname        (when (seqable? exports)
                        (let [shapes (wsh/lookup-shapes @st/state ids)
                              sname  (-> shapes first :name)
                              suffix (-> exports first :suffix)]
@@ -56,13 +56,13 @@
              ;; separatelly by the export-modal.
              (let [defaults {:page-id page-id
                              :file-id file-id
-                             :name filename
+                             :name sname
                              :object-id (first ids)}
                    exports  (mapv #(merge % defaults) exports)]
                (if (= 1 (count exports))
                  (let [export (first exports)]
-                   (st/emit! (de/request-simple-export {:export export :filename (:name export)})))
-                 (st/emit! (de/request-multiple-export {:exports exports :filename filename})))))))
+                   (st/emit! (de/request-simple-export {:export export})))
+                 (st/emit! (de/request-multiple-export {:exports exports})))))))
 
         ;; TODO: maybe move to specific events for avoid to have this logic here?
         add-export

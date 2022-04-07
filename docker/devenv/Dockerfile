@@ -3,10 +3,10 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v16.14.0 \
-    CLOJURE_VERSION=1.10.3.1075 \
-    CLJKONDO_VERSION=2022.02.09 \
-    BABASHKA_VERSION=0.7.6 \
+ENV NODE_VERSION=v16.14.2 \
+    CLOJURE_VERSION=1.11.0.1100 \
+    CLJKONDO_VERSION=2022.03.09 \
+    BABASHKA_VERSION=0.8.0 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -30,6 +30,7 @@ RUN set -ex; \
         rsync \
         fakeroot \
         netcat \
+        file \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
@@ -102,22 +103,14 @@ RUN set -ex; \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
-RUN set -x; \
-    apt-get -qq update; \
-    curl -LfsSo /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb; \
-    dpkg -i /tmp/chrome.deb; \
-    apt-get -fy install; \
-    rm -rf /var/lib/apt/lists/*; \
-    rm -rf /tmp/chrome.deb;
-
 RUN set -ex; \
-    curl -LfsSo /tmp/openjdk.tar.gz https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2%2B8/OpenJDK17U-jdk_x64_linux_hotspot_17.0.2_8.tar.gz; \
-    mkdir -p /usr/lib/jvm/openjdk17; \
-    cd /usr/lib/jvm/openjdk17; \
+    curl -LfsSo /tmp/openjdk.tar.gz https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18%2B36/OpenJDK18U-jdk_x64_linux_hotspot_18_36.tar.gz; \
+    mkdir -p /usr/lib/jvm/openjdk; \
+    cd /usr/lib/jvm/openjdk; \
     tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
     rm -rf /tmp/openjdk.tar.gz;
 
-ENV PATH="/usr/lib/jvm/openjdk17/bin:/usr/local/nodejs/bin:$PATH" JAVA_HOME=/usr/lib/jvm/openjdk17
+ENV PATH="/usr/lib/jvm/openjdk/bin:/usr/local/nodejs/bin:$PATH" JAVA_HOME=/usr/lib/jvm/openjdk
 
 RUN set -ex; \
     curl -LfsSo /tmp/clojure.sh https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh; \

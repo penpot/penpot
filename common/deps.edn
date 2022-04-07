@@ -22,7 +22,7 @@
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/promesa {:mvn/version "8.0.450"}
-  funcool/cuerdas {:mvn/version "2022.01.14-391"}
+  funcool/cuerdas {:mvn/version "2022.03.27-397"}
 
   lambdaisland/uri {:mvn/version "1.13.95"
                     :exclusions [org.clojure/data.json]}
@@ -42,7 +42,7 @@
   {:extra-deps
    {org.clojure/tools.namespace {:mvn/version "RELEASE"}
     org.clojure/test.check {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.17.5"}
+    thheller/shadow-cljs {:mvn/version "2.17.8"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}

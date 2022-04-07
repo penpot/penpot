@@ -16,22 +16,35 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
-(defn- not-found?
-  [{:keys [type]}]
-  (= :not-found type))
-
 (defn- handle-response
-  [response]
+  [{:keys [body status] :as response}]
   (cond
     (http/success? response)
     (rx/of (:body response))
 
-    (http/client-error? response)
-    (rx/throw (:body response))
+    (= status 413)
+    (rx/throw {:type :validation
+               :code :request-body-too-large
+               :hint "request body too large"})
+
+    (and (http/client-error? response)
+         (map? body))
+    (rx/throw body)
 
     :else
-    (rx/throw {:type :unexpected
-               :code (:error response)})))
+    (rx/throw {:type :unexpected-error
+               :code :unhandled-http-response
+               :http-status status
+               :http-body body})))
+
+(defn- not-found?
+  [{:keys [type]}]
+  (= :not-found type))
+
+(defn- body-too-large?
+  [{:keys [type code]}]
+  (and (= :validation type)
+       (= :request-body-too-large code)))
 
 (defn- request-data-for-thumbnail
   [file-id revn]
@@ -56,16 +69,19 @@
                  :uri (u/join (cfg/get-public-uri) path)
                  :credentials "include"
                  :query params}]
+
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
 (defn- render-thumbnail
-  [{:keys [data file-id revn] :as params}]
-  (let [elem (if-let [frame (:thumbnail-frame data)]
-               (mf/element render/frame-svg #js {:objects (:objects data) :frame frame})
-               (mf/element render/page-svg #js {:data data :width "290" :height "150" :thumbnails? true}))]
-    {:data (rds/renderToStaticMarkup elem)
+  [{:keys [page file-id revn] :as params}]
+  (let [objects (:objects page)
+        frame   (some->> page :thumbnail-frame-id (get objects))
+        element (if frame
+                  (mf/element render/frame-svg #js {:objects objects :frame frame})
+                  (mf/element render/page-svg #js {:data page :thumbnails? true}))]
+    {:data (rds/renderToStaticMarkup element)
      :fonts @fonts/loaded
      :file-id file-id
      :revn revn}))
@@ -81,9 +97,11 @@
                  :uri (u/join (cfg/get-public-uri) path)
                  :credentials "include"
                  :body (http/transit-data params)}]
+
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response)
+         (rx/catch body-too-large? (constantly nil))
          (rx/map (constantly params)))))
 
 (defmethod impl/handler :thumbnails/generate

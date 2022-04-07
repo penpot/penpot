@@ -18,7 +18,6 @@
    [app.main.ui.shapes.rect :as rect]
    [app.main.ui.shapes.text.fontfaces :as ff]
    [app.main.ui.workspace.shapes.bool :as bool]
-   [app.main.ui.workspace.shapes.bounding-box :refer [bounding-box]]
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.workspace.shapes.frame :as frame]
    [app.main.ui.workspace.shapes.group :as group]
@@ -26,7 +25,6 @@
    [app.main.ui.workspace.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.shapes.text :as text]
    [app.util.object :as obj]
-   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
 (declare shape-wrapper)
@@ -87,10 +85,7 @@
          ;; Only used when drawing a new frame.
          :frame [:> frame-wrapper opts]
 
-         nil)
-
-       (when (debug? :bounding-boxes)
-         [:> bounding-box opts])])))
+         nil)])))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))
