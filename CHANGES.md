@@ -45,7 +45,6 @@
 ### :bug: Bugs fixed
 
 - "Show in exports" is showing in multiselections [Taiga 3194](https://tree.taiga.io/project/penpot/issue/3194)
-- Fix line gap between shapes [Taiga #3181](https://tree.taiga.io/project/penpot/issue/3181)
 - Edit file name navigates to the file workspace [Taiga #3183](https://tree.taiga.io/project/penpot/issue/3183)
 - Fix scroll into view behind fixed element [Taiga #3170](https://tree.taiga.io/project/penpot/issue/3170)
 - Fix sidebar icon in viewer mode [Taiga #3184](https://tree.taiga.io/project/penpot/issue/3184)

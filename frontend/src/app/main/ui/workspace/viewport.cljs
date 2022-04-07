@@ -212,7 +212,6 @@
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :xmlns:penpot "https://penpot.app/xmlns"
        :preserveAspectRatio "xMidYMid meet"
-       :shape-rendering "crispEdges"
        :key (str "render" page-id)
        :width (:width vport 0)
        :height (:height vport 0)
