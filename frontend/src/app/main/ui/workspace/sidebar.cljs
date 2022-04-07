@@ -27,7 +27,7 @@
 
 (mf/defc left-sidebar
   {:wrap [mf/memo]}
-  [{:keys [layout ] :as props}]
+  [{:keys [layout] :as props}]
   (let [section (cond (contains? layout :layers) :layers
                       (contains? layout :assets) :assets)
 
