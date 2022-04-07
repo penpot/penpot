@@ -33,7 +33,10 @@
 (log/set-level! :app :info)
 
 (when (= :browser @cf/target)
-  (log/info :message "Welcome to penpot" :version (:full @cf/version) :public-uri (str cf/public-uri)))
+  (log/info :message "Welcome to penpot"
+            :version (:full @cf/version)
+            :build-date cf/build-date
+            :public-uri (str cf/public-uri)))
 
 (declare reinit)
 

@@ -3,6 +3,7 @@
 set -ex
 
 CURRENT_VERSION=$1;
+BUILD_DATE=$(date -R);
 CURRENT_HASH=${CURRENT_HASH:-$(git rev-parse --short HEAD)};
 EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS;
 
@@ -14,4 +15,4 @@ npx gulp dist:clean || exit 1;
 npx gulp dist:copy || exit 1;
 
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/index.html;
-
+sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/index.html;

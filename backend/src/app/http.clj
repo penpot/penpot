@@ -145,6 +145,7 @@
 
      ["/dbg" {:middleware [(:middleware session)]}
       ["" {:handler (:index debug)}]
+      ["/changelog" {:handler (:changelog debug)}]
       ["/error-by-id/:id" {:handler (:retrieve-error debug)}]
       ["/error/:id" {:handler (:retrieve-error debug)}]
       ["/error" {:handler (:retrieve-error-list debug)}]

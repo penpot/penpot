@@ -8,6 +8,7 @@ rm -rf target;
 mkdir -p target/classes;
 mkdir -p target/dist;
 echo "$CURRENT_VERSION" > target/classes/version.txt;
+cp ../CHANGES.md target/classes/changelog.md;
 
 clojure -T:build jar;
 mv target/penpot.jar target/dist/penpot.jar

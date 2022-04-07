@@ -68,6 +68,13 @@
   (-> (obj/get global "penpotVersion")
       (v/parse)))
 
+(defn parse-build-date
+  [global]
+  (let [date (obj/get global "penpotBuildDate")]
+    (if (= date "%buildDate%")
+      "unknown"
+      date)))
+
 ;; --- Globar Config Vars
 
 (def default-theme  "default")
@@ -83,6 +90,7 @@
 (def sentry-dsn           (obj/get global "penpotSentryDsn"))
 (def onboarding-form-id   (obj/get global "penpotOnboardingQuestionsFormId"))
 
+(def build-date           (parse-build-date global))
 (def flags                (atom (parse-flags global)))
 (def version              (atom (parse-version global)))
 (def target               (atom (parse-target global)))
