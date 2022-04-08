@@ -234,7 +234,8 @@
              :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
              :style {:width "100%"
                      :height "100%"
-                     :background bgcolor}}
+                     :background bgcolor}
+             :fill "none"}
 
        (when include-metadata?
          [:& export/export-page {:options (:options data)}])
@@ -300,7 +301,8 @@
            :version "1.1"
            :xmlns "http://www.w3.org/2000/svg"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")}
+           :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+           :fill "none"}
      (if (or (not show-thumbnails?) (nil? (:thumbnail frame)))
        [:& wrapper {:shape frame :view-box vbox}]
 
@@ -352,7 +354,8 @@
            :version "1.1"
            :xmlns "http://www.w3.org/2000/svg"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")}
+           :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+           :fill "none"}
 
      [:> shape-container {:shape group}
       [:& group-wrapper {:shape group :view-box vbox}]]]))
@@ -399,7 +402,8 @@
             :xmlnsXlink "http://www.w3.org/1999/xlink"
             ;; Fix Chromium bug about color of html texts
             ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
-            :style {:-webkit-print-color-adjust :exact}}
+            :style {:-webkit-print-color-adjust :exact}
+            :fill "none"}
 
       (let [shapes (cph/get-children objects obj-id)]
         [:& ff/fontfaces-style {:shapes shapes}])
@@ -421,7 +425,8 @@
             :height (:height object)
             :version "1.1"
             :xmlns "http://www.w3.org/2000/svg"
-            :xmlnsXlink "http://www.w3.org/1999/xlink"}
+            :xmlnsXlink "http://www.w3.org/1999/xlink"
+            :fill "none"}
            [:& shape-wrapper {:shape (assoc object :x 0 :y 0)}]]]))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -464,7 +469,8 @@
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"
              :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
-             :style {:display (when-not (some? children) "none")}}
+             :style {:display (when-not (some? children) "none")}
+             :fill "none"}
        [:defs
         (for [[id data] (:components data)]
           [:& component-symbol {:id id :key (dm/str id) :data data}])]
