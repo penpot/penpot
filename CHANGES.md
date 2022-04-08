@@ -44,6 +44,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix hidden file name on import [Taiga #3172](https://tree.taiga.io/project/penpot/issue/3172)
 - Fix unneccessary scrollbars at the color list [Taiga #3211](https://tree.taiga.io/project/penpot/issue/3211)
 - "Show in exports" is showing in multiselections [Taiga #3194](https://tree.taiga.io/project/penpot/issue/3194)
 - Edit file name navigates to the file workspace [Taiga #3183](https://tree.taiga.io/project/penpot/issue/3183)
