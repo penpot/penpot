@@ -217,7 +217,8 @@
        :height (:height vport 0)
        :view-box (utils/format-viewbox vbox)
        :style {:background-color background
-               :pointer-events "none"}}
+               :pointer-events "none"}
+       :fill "none"}
 
       (when (debug? :show-export-metadata)
         [:& use/export-page {:options options}])
