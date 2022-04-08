@@ -332,8 +332,8 @@
                         ;; There are any shadows
                         (and (seq (->> (:shadow shape) (remove :hidden))) (not (cph/frame-shape? shape)))
 
-                        ;; There are no strokes  and a blur
-                        (and (:blur shape) (-> shape :blur :hidden not) (not (cph/frame-shape? shape)) (empty? (:strokes shape))))
+                        ;; There is a blur
+                        (and (:blur shape) (-> shape :blur :hidden not) (not (cph/frame-shape? shape))))
                        (obj/set! "filter" (dm/fmt "url(#filter_%)" render-id)))
 
         svg-defs  (:svg-defs shape {})

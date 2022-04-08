@@ -201,9 +201,7 @@
 
         content (cond-> content
                   plain-colors?
-                  (remap-colors color-mapping))
-
-        ]
+                  (remap-colors color-mapping))]
 
     [:foreignObject
      {:x x
