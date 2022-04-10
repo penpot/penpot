@@ -394,7 +394,6 @@
              (obj/set! "fillOpacity" "none")))
         (add-style (obj/get (attrs/extract-stroke-attrs value position render-id) "style")))))
 
-
 (mf/defc shape-fills
   {::mf/wrap-props false}
   [props]

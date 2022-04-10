@@ -28,11 +28,10 @@
         pointer-events (obj/get props "pointer-events")
 
         type           (:type shape)
-        render-id      (mf/use-memo #(str (uuid/next)))
+        render-id      (mf/use-memo #(dm/str (uuid/next)))
         filter-id      (str "filter_" render-id)
         styles         (-> (obj/new)
                            (obj/set! "pointerEvents" pointer-events)
-
                            (cond-> (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
                              (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
 

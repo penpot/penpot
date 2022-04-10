@@ -14,6 +14,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.export :as ed]
    [app.util.object :as obj]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 (defn add-metadata [props gradient]
@@ -38,8 +39,8 @@
         include-metadata? (mf/use-ctx ed/include-metadata-ctx)
 
         props (cond-> base-props
-          include-metadata?
-          (add-metadata gradient))]
+                include-metadata?
+                (add-metadata gradient))]
 
     [:> :linearGradient props
      (for [{:keys [offset color opacity]} (:stops gradient)]

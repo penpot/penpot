@@ -10,7 +10,7 @@
   funcool/beicon {:mvn/version "2021.07.05-1"}
   funcool/okulary {:mvn/version "2022.04.07-12"}
   funcool/potok {:mvn/version "2021.09.20-0"}
-  funcool/rumext {:mvn/version "2022.04.08-135"}
+  funcool/rumext {:mvn/version "2022.04.10-141"}
   funcool/tubax {:mvn/version "2021.05.20-0"}
 
   instaparse/instaparse {:mvn/version "1.4.10"}
