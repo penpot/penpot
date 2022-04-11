@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-02-18 17:56+0000\n"
-"Last-Translator: Oğuz Ersen <oguzersen@protonmail.com>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"PO-Revision-Date: 2022-04-04 11:11+0000\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.11-dev\n"
+"X-Generator: Weblate 4.12-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -65,15 +65,15 @@ msgstr "Seni tekrar görmek süper!"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "GitHub ile oturum aç"
+msgstr "GitHub"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "GitLab ile oturum aç"
+msgstr "GitLab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "Google ile oturum aç"
+msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
@@ -81,7 +81,7 @@ msgstr "LDAP ile oturum aç"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "OpenID (SSO) ile oturum aç"
+msgstr "OpenID ile Bağlan"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -255,9 +255,8 @@ msgstr "Burada hiç dosyan yok"
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"Burada henüz dosya yok. Bazı şablonları denemek isterseniz [Kütüphaneler ve "
-"şablonlar bölümüne](https://penpot.app/libraries-templates.html) "
-"gidebilirsiniz"
+"Olamaz! Henüz dosyanız yok! Bazı şablonları denemek isterseniz [Kütüphaneler "
+"ve şablonlar](https://penpot.app/libraries-templates.html) sayfasına gidin"
 
 msgid "dashboard.export-frames"
 msgstr "Çalışma yüzeylerini PDF olarak dışarı aktar..."
@@ -1087,7 +1086,7 @@ msgid "labels.email"
 msgstr "E-posta"
 
 msgid "labels.export"
-msgstr "Dışarı aktar"
+msgstr "Dışa aktar"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
@@ -1529,7 +1528,9 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
-msgstr "%s sahibisiniz."
+msgstr ""
+"Bu takımın sahibi sizsiniz. Lütfen ayrılmadan önce sahibi olarak belirlemek "
+"için başka bir üye seçin."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint2"
@@ -1545,7 +1546,7 @@ msgstr "Terfi ettirmek için bir üye seçin"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.title"
-msgstr "Terfi ettirmek için bir üye seçin"
+msgstr "Ayrılmadan önce"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.accept"
@@ -1565,15 +1566,17 @@ msgstr "Dürtme miktarı"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
-msgstr "Terfi ettir"
+msgstr "Sahipliği aktar"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
-msgstr "Bu kullanıcıyı sahip olarak terfi ettirmek istediğinden emin misin?"
+msgstr ""
+"Bu takımın şu anki sahibi sizsiniz. %s kişisini takımın yeni sahibi yapmak "
+"istediğinizden emin misiniz?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
-msgstr "Sahip olarak terfi ettir"
+msgstr "Yeni takım sahibi"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
@@ -2235,7 +2238,7 @@ msgstr "Sığdır - Sığdırmak için küçült"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fit-all"
-msgstr "Tümünü doldurmak için yakınlaştır"
+msgstr "Tümüne uydurmak için yakınlaştır"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-full-screen"
@@ -2437,11 +2440,13 @@ msgstr "Tasarım"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export"
-msgstr "Dışarı Aktar"
+msgstr "Dışa aktar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "Dışa aktar"
+msgid_plural ""
+msgstr[0] "1 ögeyi dışa aktar"
+msgstr[1] "%s ögeyi dışa aktar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -2449,7 +2454,7 @@ msgstr "Son ek"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.exporting-object"
-msgstr "Dışarı aktarılıyor…"
+msgstr "Dışa aktarılıyor…"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"
@@ -3529,3 +3534,190 @@ msgstr "Güncelle"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Dışa aktarma ayarlarına sahip hiçbir öge yok."
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "«%s» e-postasının spam veya kalıcı olarak geri döndüğü bildirildi."
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Davetler"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "%s takımından ayrılmak istediğinizden emin misiniz?"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Penpot'ta dışa aktarmaların nasıl ayarlandırılacağı hakkında bilgi."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Daveti sil"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Süresi doldu"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"Bu takımın sahibi sizsiniz. Lütfen ayrılmadan önce sahibi olarak belirlemek "
+"için başka bir üye seçin."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "Üyeyi kaldır"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "Davetler - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "Daveti yeniden gönder"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(siz)"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Piksele tutturmayı devre dışı bırak"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Piksel ızgarasını göster"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-error"
+msgstr "Dışa aktarılamadı"
+
+msgid "workspace.focus.focus-mode"
+msgstr "Odaklanma modu"
+
+msgid "workspace.focus.focus-on"
+msgstr "Odaklanma açık"
+
+msgid "workspace.focus.selection"
+msgstr "Seçim"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Piksele tutturmayı etkinleştir"
+
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Piksel ızgarasını gizle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "Yeniden dene"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Küçük resmi kaldır"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "Dışa aktarma beklenmedik şekilde yavaş"
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Küçük resim olarak ayarla"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "Bileşenler"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "Çalışma yüzeyleri"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "PDF'ye aktar"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s / %s öge seçildi"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Dışa aktar"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Tasarım özelliklerinden (sağ kenar çubuğunun alt kısmında) ögelere dışa "
+"aktarma ayarları ekleyebilirsiniz."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Seçimi dışa aktar"
+
+msgid "labels.continue-with"
+msgstr "İle devam et"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Üye"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "Davet yok."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr ""
+"Bu takıma daha fazla üye davet etmek için \"Takıma davet et\" düğmesine "
+"basın."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "Bekliyor"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Durum"
+
+msgid "modals.invite-member.emails"
+msgstr "E-posta adresleri, virgülle ayrılmış"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Tek üyesi siz olduğunuz için takım, projeleri ve dosyaları ile birlikte "
+"silinecektir."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Sahipliği aktarırsanız, rolünüzü Yönetici olarak değiştireceksiniz ve bu "
+"takım üzerindeki bazı izinleri kaybedeceksiniz. "
+
+msgid "workspace.focus.focus-off"
+msgstr "Odaklanma kapalı"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "Seçimi dışa aktar"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "Gruplar"
+
+msgid "workspace.sidebar.layers.images"
+msgstr "Görseller"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "Maskeler"
+
+msgid "workspace.sidebar.layers.search"
+msgstr "Katmanları ara"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Şekiller"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "Metinler"
+
+msgid "viewer.header.handoff-section"
+msgstr "Teslim (%s)"
+
+msgid "onboarding.slide.3.alt"
+msgstr "Teslim ve kod özellikleri"
