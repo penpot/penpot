@@ -22,7 +22,7 @@
    {:label "Català" :value "ca"}
    {:label "Français (community)" :value "fr"}
    {:label "Deutsch (community)" :value "de"}
-   {:label "Italiano (community)" :value "it"}
+   ;; {:label "Italiano (community)" :value "it"}
    {:label "Русский (community)" :value "ru"}
    {:label "Türkçe (community)" :value "tr"}
    {:label "Rumanian (communit)" :value "ro"}
