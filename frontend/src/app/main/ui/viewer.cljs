@@ -6,6 +6,7 @@
 
 (ns app.main.ui.viewer
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
@@ -142,6 +143,7 @@
 
     (mf/use-effect
      (fn []
+       (dom/set-html-theme-color clr/gray-50 "dark")
        (let [key1 (events/listen js/window "click" on-click)]
          (fn []
            (events/unlistenByKey key1)))))

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.dashboard
   (:require
+   [app.common.colors :as clr]
    [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
    [app.main.data.dashboard.shortcuts :as sc]
@@ -22,6 +23,7 @@
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
    [app.main.ui.dashboard.team :refer [team-settings-page team-members-page team-invitations-page]]
    [app.main.ui.hooks :as hooks]
+   [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [goog.events :as events]
    [rumext.alpha :as mf])
@@ -103,6 +105,7 @@
 
     (mf/use-effect
      (fn []
+       (dom/set-html-theme-color clr/white "light")
        (let [events [(events/listen goog/global EventType.KEYDOWN
                                     (fn [event]
                                       (when (kbd/enter? event)

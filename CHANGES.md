@@ -41,6 +41,7 @@
 - Add the ability to disable standard, password login [Taiga #2999](https://tree.taiga.io/project/penpot/us/2999)
 - Don't stop SVG import when an image cannot be imported [#1531](https://github.com/penpot/penpot/issues/1531)
 - Fix paste shapes while editing text [Taiga #2396](https://tree.taiga.io/project/penpot/issue/2396)
+- Show Penpot color in Safari tab bar [#1803](https://github.com/penpot/penpot/issues/1803)
 
 ### :bug: Bugs fixed
 
