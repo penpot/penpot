@@ -456,6 +456,16 @@ msgstr "+ Nuevo proyecto"
 msgid "dashboard.new-project-prefix"
 msgstr "Nuevo Proyecto"
 
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr ""
+"Envíame noticias, actualizaciones de producto y recomendaciones sobre "
+"Penpot."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Suscripción a newsletter"
+
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "No se encuentra “%s“"
@@ -510,6 +520,10 @@ msgstr "¿Quieres borrar tu cuenta?"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
 msgstr "Eliminar como Biblioteca Compartida"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Guardar opciones"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.search-placeholder"
@@ -586,19 +600,6 @@ msgstr "Resultados de búsqueda"
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.type-something"
 msgstr "Escribe algo para buscar"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.save-settings"
-msgstr "Guardar opciones"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Suscripción a newsletter"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-msg"
-msgstr "Envíame noticias, actualizaciones de producto y recomendaciones sobre Penpot."
-
 
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
@@ -1782,6 +1783,37 @@ msgstr "proyecto en github"
 msgid "onboarding.contrib.title"
 msgstr "Contribuyes en Open Source?"
 
+msgid "onboarding.newsletter.accept"
+msgstr "Si, suscribirme"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"Tu solicitud de suscripción ha sido enviada, te haremos una confirmación a "
+"tu email"
+
+msgid "onboarding.newsletter.decline"
+msgstr "No, gracias"
+
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"Suscríbete a nuestra newsletter para estar al día de los progresos del "
+"producto y noticias."
+
+msgid "onboarding.newsletter.policy"
+msgstr "Política de Privacidad."
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "Porque nos importa la privacidad, aquí puedes ver nuestra "
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"Sólo te enviaremos emails relevantes para ti. Puedes desuscribirte en "
+"cualquier momento desde tu perfil o usando el vínculo de desuscripción en "
+"cualquiera de nuestras newsletters."
+
+msgid "onboarding.newsletter.title"
+msgstr "¿Quieres recibir noticias sobre Penpot?"
+
 msgid "onboarding.slide.0.alt"
 msgstr "Crea diseños"
 
@@ -1888,31 +1920,6 @@ msgstr ""
 
 msgid "onboarding.welcome.title"
 msgstr "Te damos la bienvenida a Penpot"
-
-msgid "onboarding.newsletter.title"
-msgstr "¿Quieres recibir noticias sobre Penpot?"
-
-msgid "onboarding.newsletter.desc"
-msgstr "Suscríbete a nuestra newsletter para estar al día de los progresos del producto y noticias."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Porque nos importa la privacidad, aquí puedes ver nuestra "
-
-msgid "onboarding.newsletter.policy"
-msgstr "Política de Privacidad."
-
-msgid "onboarding.newsletter.privacy2"
-msgstr "Sólo te enviaremos emails relevantes para ti. Puedes desuscribirte en cualquier momento desde tu perfil o usando el vínculo de desuscripción en cualquiera de nuestras newsletters."
-
-msgid "onboarding.newsletter.accept"
-msgstr "Si, suscribirme"
-
-msgid "onboarding.newsletter.decline"
-msgstr "No, gracias"
-
-msgid "onboarding.newsletter.acceptance-message"
-msgstr "Tu solicitud de suscripción ha sido enviada, te haremos una confirmación a tu email"
-
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
@@ -2599,12 +2606,12 @@ msgid "workspace.options.export.suffix"
 msgstr "Sufijo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
-msgid "workspace.options.exporting-object"
-msgstr "Exportando..."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-complete"
 msgstr "Exportación completa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object"
+msgstr "Exportando..."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
@@ -3008,6 +3015,14 @@ msgstr "Capas de grupo"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Capas seleccionadas"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "Más colores"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "Más colores de la biblioteca"
+
 msgid "workspace.options.opacity"
 msgstr "Opacidad"
 
@@ -3054,6 +3069,10 @@ msgstr ""
 msgid "workspace.options.select-artboard"
 msgstr "Selecciona un tablero"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "Colores seleccionados"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.selection-fill"
 msgstr "Relleno de selección"
@@ -3061,18 +3080,6 @@ msgstr "Relleno de selección"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.selection-stroke"
 msgstr "Borde de selección"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
-msgid "workspace.options.selection-color"
-msgstr "Colores seleccionados"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
-msgid "workspace.options.more-colors"
-msgstr "Más colores"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
-msgid "workspace.options.more-lib-colors"
-msgstr "Más colores de la biblioteca"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.blur"
