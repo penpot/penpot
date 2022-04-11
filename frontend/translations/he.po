@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-27 23:09+0000\n"
+"PO-Revision-Date: 2022-04-13 16:08+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -2540,7 +2540,11 @@ msgstr "ייצוא הבחירה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "ייצוא רכיב"
+msgid_plural ""
+msgstr[0] "ייצוא רכיב"
+msgstr[1] "ייצוא %s רכיבים"
+msgstr[2] "ייצוא %s רכיבים"
+msgstr[3] "ייצוא %s רכיבים"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3668,3 +3672,66 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+msgid "labels.and"
+msgstr "וגם"
+
+msgid "onboarding.newsletter.policy"
+msgstr "מדיניות פרטיות."
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"נשלח אליך הודעות שתואמות לבחירה שלך בלבד. אפשר לבטל את המינוי דרך פרופיל "
+"המשתמש או דרך כפתור ביטול המינוי בכל אחת מההודעות מרשימת הדיוור."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "מינוי לרשימת הדיוור"
+
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"ניתן להירשם לרשימת הדיוור שלנו כדי לשמור על קשר עם תהליך פיתוח המוצר והחדשות "
+"העדכניות."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr "לשלוח לי חדשות, עדכונים על המוצר והמלצות על Penpot."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "שמירת ההגדרות"
+
+msgid "onboarding.newsletter.accept"
+msgstr "כן, להירשם"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr "בקשת המינוי שלך נשלחה, נשלח לך הודעה בדוא״ל כדי לאשר אותה."
+
+msgid "onboarding.newsletter.decline"
+msgstr "לא, תודה"
+
+msgid "onboarding.newsletter.title"
+msgstr "מעניין אותך לקבל חדשות על Penpot?"
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "בגלל שאכפת לנו מפרטיות, הנה "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-complete"
+msgstr "הייצוא הושלם"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "צבעים נוספים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "צבעי ספרייה נוספים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "צבעים נבחרים"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "ייצוא"
