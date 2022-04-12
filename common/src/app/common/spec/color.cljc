@@ -70,6 +70,3 @@
                    :internal.color/opacity
                    :internal.color/gradient]))
 
-
-
-
