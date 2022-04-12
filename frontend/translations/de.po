@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-02 18:54+0000\n"
+"PO-Revision-Date: 2022-04-13 16:08+0000\n"
 "Last-Translator: nautilusx <translate@disroot.org>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.11.1-dev\n"
+"X-Generator: Weblate 4.12-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -3477,3 +3477,260 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Einstellungen speichern"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "Die E-Mail \"%s\" wurde als Spam oder dauerhaft abgelehnt gemeldet."
+
+msgid "labels.and"
+msgstr "und"
+
+msgid "labels.continue-with"
+msgstr "Weiter mit"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Abgelaufen"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "Ausstehend"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "Einladung erneut senden"
+
+msgid "modals.invite-member.emails"
+msgstr "E-Mails, durch Komma getrennt"
+
+msgid "onboarding.newsletter.accept"
+msgstr "Ja, abonnieren"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"Ihre Abonnementanfrage wurde gesendet, wir senden Ihnen eine E-Mail zur "
+"Bestätigung."
+
+msgid "onboarding.newsletter.decline"
+msgstr "Nein, danke"
+
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"Abonnieren Sie unseren Newsletter, um über Fortschritte in der "
+"Produktentwicklung und Neuigkeiten auf dem Laufenden zu bleiben."
+
+msgid "onboarding.newsletter.policy"
+msgstr "Datenschutzbestimmungen."
+
+msgid "onboarding.newsletter.title"
+msgstr "Möchten Sie die Penpot-Nachrichten erhalten?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "Einladungen - %s - Penpot"
+
+msgid "workspace.focus.focus-off"
+msgstr "Fokus aus"
+
+msgid "workspace.focus.selection"
+msgstr "Auswahl"
+
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Pixelraster ausblenden"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Präferenzen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "Auswahl exportieren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "Weitere Bibliotheksfarben"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "Wiederholen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "Ausgewählte Farben"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Vorschaubild entfernen"
+
+msgid "workspace.sidebar.layers.images"
+msgstr "Bilder"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "Masken"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "Texte"
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr ""
+"Der Besitzer kann das Team nicht verlassen, Sie müssen die Besitzerrolle neu "
+"zuweisen."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Einladung löschen"
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "Weil uns die Privatsphäre wichtig ist, hier ist unsere "
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exportieren"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr ""
+"Senden Sie mir Neuigkeiten, Produktaktualisierungen und Empfehlungen zu "
+"Penpot."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Anmeldung zum Newsletter"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "Sind Sie sicher, dass Sie das %s-Team verlassen wollen?"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Einladungen"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "Es gibt keine Einladungen."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr ""
+"Drücken Sie die Schaltfläche \"Zum Team einladen\", um weitere Mitglieder in "
+"dieses Team einzuladen."
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(Sie)"
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"Wir werden Ihnen nur relevante E-Mails schicken. Sie können sich jederzeit "
+"in Ihrem Benutzerprofil oder über den Abmeldelink in jedem unserer "
+"Newsletter abmelden."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "Mitglied entfernen"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Status"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"Sie sind der Besitzer dieses Teams. Bitte wählen Sie ein anderes Mitglied "
+"aus, das Sie zum Besitzer ernennen möchten, bevor Sie gehen."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Da Sie das einzige Mitglied dieses Teams sind, wird das Team zusammen mit "
+"seinen Projekten und Dateien gelöscht."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Wenn Sie die Eigentümerschaft übertragen, ändern Sie Ihre Rolle in Admin und "
+"verlieren einige Berechtigungen für dieses Team. "
+
+msgid "onboarding.welcome.desc2"
+msgstr ""
+"Penpot ist in seiner ersten Beta-Version dank der Kombination von "
+"Kernfunktionen, Reife, Stabilität und der erstaunlichen Validierung durch "
+"die gesamte Community, zu der Sie mehr als willkommen sind."
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Als Vorschaubild festlegen"
+
+msgid "workspace.focus.focus-mode"
+msgstr "Fokus-Modus"
+
+msgid "workspace.focus.focus-on"
+msgstr "Fokus an"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Ausrichten am Pixel deaktivieren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-error"
+msgstr "Export fehlgeschlagen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-complete"
+msgstr "Export abgeschlossen"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Ausrichten am Pixel aktivieren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "Export unerwartet langsam"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "Gruppen"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Pixelraster einblenden"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "Weitere Farben"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "Komponenten"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "Zeichenflächen"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Formen"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Als PDF exportieren"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s von %s Elementen ausgewählt"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Sie können den Elementen über die Designeigenschaften (unten in der rechten "
+"Seitenleiste) Exporteinstellungen hinzufügen."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Informationen zum Festlegen von Exporten bei Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Es gibt keine Elemente mit Exporteinstellungen."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Auswahl exportieren"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Mitglied"
