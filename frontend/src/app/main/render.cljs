@@ -243,8 +243,9 @@
 
        (let [shapes (->> shapes
                          (remove cph/frame-shape?)
-                         (mapcat #(cph/get-children-with-self objects (:id %))))]
-         [:& ff/fontfaces-style {:shapes shapes}])
+                         (mapcat #(cph/get-children-with-self objects (:id %))))
+             fonts (ff/shapes->fonts shapes)]
+         [:& ff/fontfaces-style {:fonts fonts}])
 
        (for [item shapes]
          (let [frame? (= (:type item) :frame)]
@@ -401,8 +402,8 @@
             :style {:-webkit-print-color-adjust :exact}
             :fill "none"}
 
-      (let [shapes (cph/get-children objects object-id)]
-        [:& ff/fontfaces-style {:shapes shapes}])
+      (let [fonts (ff/frame->fonts obj-id objects)]
+        [:& ff/fontfaces-style {:fonts fonts}])
 
       (case (:type object)
         :frame [:& frame-wrapper {:shape object :view-box vbox}]

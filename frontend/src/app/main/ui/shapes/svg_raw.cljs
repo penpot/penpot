@@ -47,7 +47,6 @@
 
   (let [shape    (unchecked-get props "shape")
         children (unchecked-get props "children")
-
         {:keys [x y width height]} shape
         {:keys [attrs] :as content} (:content shape)
 
@@ -61,7 +60,7 @@
                   (obj/set! "preserveAspectRatio" "none"))]
 
     [:& (mf/provider svg-ids-ctx) {:value ids-mapping}
-     [:g.svg-raw {:transform (gsh/transform-matrix shape)}
+     [:g.svg-raw {:transform (str (gsh/transform-matrix shape))}
       [:> "svg" attrs children]]]))
 
 (mf/defc svg-element

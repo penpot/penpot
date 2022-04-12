@@ -21,6 +21,7 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.worker :as uw]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.timers :as timers]
    [beicon.core :as rx]
    [goog.events :as events]
@@ -225,15 +226,15 @@
      (fn []
        (when (and (nil? @prev-transforms)
                   (some? transforms))
-         (utils/start-transform! shapes))
+         (utils/start-transform! globals/document shapes))
 
        (when (some? modifiers)
-         (utils/update-transform! shapes transforms modifiers))
+         (utils/update-transform! globals/document shapes transforms modifiers))
 
        
        (when (and (some? @prev-modifiers)
                   (not (some? modifiers)))
-         (utils/remove-transform! @prev-shapes))
+         (utils/remove-transform! globals/document @prev-shapes))
 
        (reset! prev-modifiers modifiers)
        (reset! prev-transforms transforms)
@@ -246,7 +247,7 @@
          (gsh/overlaps? frame vbox))))
 
 (defn setup-active-frames
-  [objects vbox hover active-frames]
+  [objects vbox hover active-frames zoom]
 
   (mf/use-effect
    (mf/deps vbox)
@@ -262,13 +263,16 @@
                 (reduce-kv set-active-frames {} active-frames))))))
 
   (mf/use-effect
-   (mf/deps @hover @active-frames)
+   (mf/deps @hover @active-frames zoom)
    (fn []
      (let [frame-id (if (= :frame (:type @hover))
                       (:id @hover)
                       (:frame-id @hover))]
-       (when (not (contains? @active-frames frame-id))
-         (swap! active-frames assoc frame-id true))))))
+       (if (< zoom 0.25)
+         (when (some? @active-frames)
+           (reset! active-frames nil))
+         (when (and (some? frame-id)(not (contains? @active-frames frame-id)))
+           (reset! active-frames {frame-id true})))))))
 
 ;; NOTE: this is executed on each page change, maybe we need to move
 ;; this shortcuts outside the viewport?

@@ -77,8 +77,8 @@
 
 (defn get-nodes
   "Retrieve the DOM nodes to apply the matrix transformation"
-  [{:keys [id type masked-group?]}]
-  (let [shape-node (dom/get-element (str "shape-" id))
+  [base-node {:keys [id type masked-group?]}]
+  (let [shape-node (dom/query base-node (str "#shape-" id))
 
         frame? (= :frame type)
         group? (= :group type)
@@ -86,7 +86,7 @@
         mask?  (and group? masked-group?)
 
         ;; When the shape is a frame we maybe need to move its thumbnail
-        thumb-node (when frame? (dom/get-element (str "thumbnail-" id)))]
+        thumb-node (when frame? (dom/query base-node (str "#thumbnail-" id)))]
 
     (cond
       frame?
@@ -132,9 +132,9 @@
     (dom/set-attribute! node "height" height)))
 
 (defn start-transform!
-  [shapes]
+  [base-node shapes]
   (doseq [shape shapes]
-    (when-let [nodes (get-nodes shape)]
+    (when-let [nodes (get-nodes base-node shape)]
       (doseq [node nodes]
         (let [old-transform (dom/get-attribute node "transform")]
           (when (some? old-transform)
@@ -168,9 +168,9 @@
     (dom/set-attribute! node att (str new-value))))
 
 (defn update-transform!
-  [shapes transforms modifiers]
+  [base-node shapes transforms modifiers]
   (doseq [{:keys [id type] :as shape} shapes]
-    (when-let [nodes (get-nodes shape)]
+    (when-let [nodes (get-nodes base-node shape)]
       (let [transform (get transforms id)
             modifiers (get-in modifiers [id :modifiers])
 
@@ -214,9 +214,9 @@
             (set-transform-att! node "transform" transform)))))))
 
 (defn remove-transform!
-  [shapes]
+  [base-node shapes]
   (doseq [shape shapes]
-    (when-let [nodes (get-nodes shape)]
+    (when-let [nodes (get-nodes base-node shape)]
       (doseq [node nodes]
         (when (some? node)
           (cond

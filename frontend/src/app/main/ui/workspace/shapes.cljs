@@ -67,9 +67,8 @@
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
    ::mf/wrap-props false}
   [props]
-  (let [shape  (obj/get props "shape")
+  (let [shape (obj/get props "shape")
         opts  #js {:shape shape}]
-
     (when (and (some? shape) (not (:hidden shape)))
       [:*
        (case (:type shape)

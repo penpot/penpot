@@ -63,13 +63,14 @@
           (let [childs     (unchecked-get props "childs")
                 shape      (unchecked-get props "shape")
                 {:keys [x y width height]} shape
+
                 transform (gsh/transform-matrix shape)
 
                 props (-> (attrs/extract-style-attrs shape)
                           (obj/merge!
                            #js {:x x
                                 :y y
-                                :transform transform
+                                :transform (str transform)
                                 :width width
                                 :height height
                                 :className "frame-background"}))

@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
@@ -17,6 +18,7 @@
    [app.main.ui.shapes.export :as use]
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.text.editor :as editor]
+   [app.main.ui.workspace.shapes.text.viewport-texts :as stv]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.drawarea :as drawarea]
@@ -33,7 +35,6 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.thumbnail-renderer :as wtr]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [beicon.core :as rx]
@@ -67,9 +68,13 @@
         drawing           (mf/deref refs/workspace-drawing)
         options           (mf/deref refs/workspace-page-options)
         focus             (mf/deref refs/workspace-focus-selected)
-        base-objects      (-> (mf/deref refs/workspace-page-objects)
+
+        objects-ref       (mf/use-memo #(refs/workspace-page-objects-by-id page-id))
+        base-objects      (-> (mf/deref objects-ref)
                               (ui-hooks/with-focus-objects focus))
+
         modifiers         (mf/deref refs/workspace-modifiers)
+
         objects-modified  (mf/with-memo [base-objects modifiers]
                             (gsh/merge-modifiers base-objects modifiers))
 
@@ -176,15 +181,12 @@
     (hooks/setup-keyboard alt? mod? space?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids @hover-disabled? focus zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)
+
     (hooks/setup-shortcuts node-editing? drawing-path?)
-    (hooks/setup-active-frames base-objects vbox hover active-frames)
+    (hooks/setup-active-frames base-objects vbox hover active-frames zoom)
 
     [:div.viewport
      [:div.viewport-overlays {:ref overlays-ref}
-
-      [:& wtr/frame-renderer {:objects base-objects
-                              :background background}]
-
       (when show-text-editor?
         [:& editor/text-editor-viewport {:shape editing-shape
                                          :viewport-ref viewport-ref
@@ -229,6 +231,22 @@
         [:& shapes/root-shape {:key page-id
                                :objects base-objects
                                :active-frames @active-frames}]]]]
+
+     [:svg.render-shapes
+      {:id "text-position-layer"
+       :xmlns "http://www.w3.org/2000/svg"
+       :xmlnsXlink "http://www.w3.org/1999/xlink"
+       :preserveAspectRatio "xMidYMid meet"
+       :key (str "text-position-layer" page-id)
+       :width (:width vport 0)
+       :height (:height vport 0)
+       :view-box (utils/format-viewbox vbox)}
+
+      [:g {:pointer-events "none" :opacity 0}
+       [:& stv/viewport-texts {:key (dm/str "texts-" page-id)
+                               :page-id page-id
+                               :objects base-objects
+                               :edition edition}]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
