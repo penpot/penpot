@@ -286,37 +286,38 @@
          update-shape
          (fn [changes id]
            (let [old-obj (get objects id)
-                 new-obj (update-fn old-obj)
+                 new-obj (update-fn old-obj)]
+             (if (= old-obj new-obj)
+               changes
+               (let [attrs (or attrs (d/concat-set (keys old-obj) (keys new-obj)))
 
-                 attrs (or attrs (d/concat-set (keys old-obj) (keys new-obj)))
+                     {rops :rops uops :uops}
+                     (reduce #(generate-operation %1 %2 old-obj new-obj ignore-geometry?)
+                             {:rops [] :uops []}
+                             attrs)
 
-                 {rops :rops uops :uops}
-                 (reduce #(generate-operation %1 %2 old-obj new-obj ignore-geometry?)
-                         {:rops [] :uops []}
-                         attrs)
+                     uops (cond-> uops
+                            (seq uops)
+                            (d/preconj {:type :set-touched :touched (:touched old-obj)}))
 
-                 uops (cond-> uops
-                        (seq uops)
-                        (d/preconj {:type :set-touched :touched (:touched old-obj)}))
+                     change (cond-> {:type :mod-obj
+                                     :id id}
 
-                 change (cond-> {:type :mod-obj
-                                 :id id}
+                              (some? page-id)
+                              (assoc :page-id page-id)
 
-                          (some? page-id)
-                          (assoc :page-id page-id)
+                              (some? component-id)
+                              (assoc :component-id component-id))]
 
-                          (some? component-id)
-                          (assoc :component-id component-id))]
+                 (cond-> changes
+                   (seq rops)
+                   (update :redo-changes conj (assoc change :operations rops))
 
-             (cond-> changes
-               (seq rops)
-               (update :redo-changes conj (assoc change :operations rops))
+                   (seq uops)
+                   (update :undo-changes d/preconj (assoc change :operations uops)))))))]
 
-               (seq uops)
-               (update :undo-changes d/preconj (assoc change :operations uops)))))]
-
-     (-> (reduce update-shape changes ids)
-         (apply-changes-local)))))
+             (-> (reduce update-shape changes ids)
+                 (apply-changes-local)))))
 
 (defn remove-objects
   [changes ids]

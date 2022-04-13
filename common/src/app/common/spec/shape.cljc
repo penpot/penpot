@@ -166,11 +166,11 @@
                    ::blocked
                    ::collapsed
                    ::fills
-                   ::fill-color
-                   ::fill-opacity
-                   ::fill-color-gradient
-                   ::fill-color-ref-file
-                   ::fill-color-ref-id
+                   ::fill-color            ;; TODO: remove these attributes
+                   ::fill-opacity          ;;       when backward compatibility
+                   ::fill-color-gradient   ;;       is no longer needed
+                   ::fill-color-ref-file   ;;
+                   ::fill-color-ref-id     ;;
                    ::hide-fill-on-export
                    ::font-family
                    ::font-size
@@ -196,10 +196,10 @@
                    ::exports
                    ::shapes
                    ::strokes
-                   ::stroke-color
-                   ::stroke-color-ref-file
-                   ::stroke-color-ref-id
-                   ::stroke-opacity
+                   ::stroke-color           ;; TODO: same thing
+                   ::stroke-color-ref-file  ;;
+                   ::stroke-color-ref-i     ;;
+                   ::stroke-opacity         ;;
                    ::stroke-style
                    ::stroke-width
                    ::stroke-alignment

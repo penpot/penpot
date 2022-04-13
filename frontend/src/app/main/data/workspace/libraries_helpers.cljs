@@ -14,6 +14,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.spec.color :as color]
    [app.common.text :as txt]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.groups :as dwg]
@@ -23,15 +24,6 @@
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
-
-(defonce color-sync-attrs
-  [[:fill-color-ref-id   :fill-color-ref-file   :color    :fill-color]
-   [:fill-color-ref-id   :fill-color-ref-file   :gradient :fill-color-gradient]
-   [:fill-color-ref-id   :fill-color-ref-file   :opacity  :fill-opacity]
-
-   [:stroke-color-ref-id :stroke-color-ref-file :color    :stroke-color]
-   [:stroke-color-ref-id :stroke-color-ref-file :gradient :stroke-color-gradient]
-   [:stroke-color-ref-id :stroke-color-ref-file :opacity  :stroke-opacity]])
 
 (declare generate-sync-container)
 (declare generate-sync-shape)
@@ -297,7 +289,7 @@
 
 (defmulti uses-assets?
   "Checks if a shape uses some asset of the given type in the given library."
-  (fn [asset-type shape library-id page?] asset-type))
+  (fn [asset-type _ _ _] asset-type))
 
 (defmethod uses-assets? :components
   [_ shape library-id page?]
@@ -307,22 +299,7 @@
 
 (defmethod uses-assets? :colors
   [_ shape library-id _]
-  (if (= (:type shape) :text)
-    (->> shape
-         :content
-         ;; Check if any node in the content has a reference for the library
-         (txt/node-seq
-           #(or (and (some? (:stroke-color-ref-id %))
-                     (= (:stroke-color-ref-file %) library-id))
-                (and (some? (:fill-color-ref-id %))
-                     (= (:fill-color-ref-file %) library-id)))))
-    (some
-      #(let [attr (name %)
-             attr-ref-id (keyword (str attr "-ref-id"))
-             attr-ref-file (keyword (str attr "-ref-file"))]
-         (and (get shape attr-ref-id)
-              (= library-id (get shape attr-ref-file))))
-      (map #(nth % 3) color-sync-attrs))))
+  (color/uses-library-colors? shape library-id))
 
 (defmethod uses-assets? :typographies
   [_ shape library-id _]
@@ -346,77 +323,15 @@
     (generate-sync-shape-direct changes libraries container shape-id false)))
 
 (defmethod generate-sync-shape :colors
-  [_ changes library-id state container shape]
+  [_ changes library-id state _ shape]
   (log/debug :msg "Sync colors of shape" :shape (:name shape))
 
   ;; Synchronize a shape that uses some colors of the library. The value of the
   ;; color in the library is copied to the shape.
-  (let [colors (get-assets library-id :colors state)]
-    (if (= :text (:type shape))
-      (let [update-node (fn [node]
-                          (if-let [color (get colors (:fill-color-ref-id node))]
-                            (assoc node
-                                   :fill-color (:color color)
-                                   :fill-opacity (:opacity color)
-                                   :fill-color-gradient (:gradient color))
-                            (assoc node
-                                   :fill-color-ref-id nil
-                                   :fill-color-ref-file nil)))]
-        (generate-sync-text-shape changes shape container update-node))
-      (loop [attrs   (seq color-sync-attrs)
-             roperations []
-             uoperations []]
-        (let [[attr-ref-id attr-ref-file color-attr attr] (first attrs)]
-          (if (nil? attr)
-            (if (empty? roperations)
-              changes
-              (-> changes
-                  (update :redo-changes (make-change
-                                          container
-                                          {:type :mod-obj
-                                           :id (:id shape)
-                                           :operations roperations}))
-                  (update :undo-changes (make-change
-                                          container
-                                          {:type :mod-obj
-                                           :id (:id shape)
-                                           :operations uoperations}))))
-            (if-not (contains? shape attr-ref-id)
-              (recur (next attrs)
-                     roperations
-                     uoperations)
-              (let [color (get colors (get shape attr-ref-id))
-                    roperations' (if color
-                                   [{:type :set
-                                     :attr attr
-                                     :val (color-attr color)
-                                     :ignore-touched true}]
-                                   ;; If the referenced color does no longer exist in the library,
-                                   ;; we must unlink the color in the shape
-                                   [{:type :set
-                                     :attr attr-ref-id
-                                     :val nil
-                                     :ignore-touched true}
-                                    {:type :set
-                                     :attr attr-ref-file
-                                     :val nil
-                                     :ignore-touched true}])
-                    uoperations' (if color
-                                   [{:type :set
-                                     :attr attr
-                                     :val (get shape attr)
-                                     :ignore-touched true}]
-                                   [{:type :set
-                                     :attr attr-ref-id
-                                     :val (get shape attr-ref-id)
-                                     :ignore-touched true}
-                                    {:type :set
-                                     :attr attr-ref-file
-                                     :val (get shape attr-ref-file)
-                                     :ignore-touched true}])]
-                (recur (next attrs)
-                       (into roperations roperations')
-                       (into uoperations uoperations'))))))))))
+  (let [library-colors (get-assets library-id :colors state)]
+    (pcb/update-shapes changes
+                       [(:id shape)]
+                       #(color/sync-shape-colors % library-id library-colors))))
 
 (defmethod generate-sync-shape :typographies
   [_ changes library-id state container shape]
