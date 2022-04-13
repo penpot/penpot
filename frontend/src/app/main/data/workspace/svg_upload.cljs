@@ -74,6 +74,7 @@
     ;; Color present as attribute
     (uc/color? (str/trim (get-in shape [:svg-attrs :fill])))
     (-> (update :svg-attrs dissoc :fill)
+        (update-in [:svg-attrs :style] dissoc :fill)
         (assoc-in [:fills 0 :fill-color] (-> (get-in shape [:svg-attrs :fill])
                                              (str/trim)
                                              (uc/parse-color))))
@@ -81,17 +82,20 @@
     ;; Color present as style
     (uc/color? (str/trim (get-in shape [:svg-attrs :style :fill])))
     (-> (update-in [:svg-attrs :style] dissoc :fill)
+        (update :svg-attrs dissoc :fill)
         (assoc-in [:fills 0 :fill-color] (-> (get-in shape [:svg-attrs :style :fill])
                                              (str/trim)
                                              (uc/parse-color))))
 
     (get-in shape [:svg-attrs :fill-opacity])
     (-> (update :svg-attrs dissoc :fill-opacity)
+        (update-in [:svg-attrs :style] dissoc :fill-opacity)
         (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :fill-opacity])
                                                (d/parse-double))))
 
     (get-in shape [:svg-attrs :style :fill-opacity])
     (-> (update-in [:svg-attrs :style] dissoc :fill-opacity)
+        (update :svg-attrs dissoc :fill-opacity)
         (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :style :fill-opacity])
                                                (d/parse-double))))))
 

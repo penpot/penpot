@@ -362,19 +362,15 @@
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects object zoom render-texts? render-embed?]
-    :or {zoom 1 render-embed? false}
+  [{:keys [objects object-id render-texts? render-embed?]
+    :or {render-embed? false}
     :as props}]
-  (let [object (cond-> object
+  (let [object  (get objects object-id)
+        object (cond-> object
                  (:hide-fill-on-export object)
                  (assoc :fills []))
 
-        obj-id (:id object)
-        x      (* (:x object) zoom)
-        y      (* (:y object) zoom)
-        width  (* (:width object) zoom)
-        height (* (:height object) zoom)
-
+        {:keys [x y width height]}  (get-object-bounds objects object-id)
         vbox   (dm/str x " " y " " width " " height)
 
         frame-wrapper
@@ -393,7 +389,7 @@
         render-texts? (and render-texts? (d/seek (comp nil? :position-data) text-shapes))]
 
     [:& (mf/provider embed/context) {:value render-embed?}
-     [:svg {:id (dm/str "screenshot-" obj-id)
+     [:svg {:id (dm/str "screenshot-" object-id)
             :view-box vbox
             :width width
             :height height
@@ -405,7 +401,7 @@
             :style {:-webkit-print-color-adjust :exact}
             :fill "none"}
 
-      (let [shapes (cph/get-children objects obj-id)]
+      (let [shapes (cph/get-children objects object-id)]
         [:& ff/fontfaces-style {:shapes shapes}])
 
       (case (:type object)

@@ -6,8 +6,10 @@
 
 (ns app.main.ui.shapes.svg-defs
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.shapes :as gsh]
    [app.main.ui.shapes.filters :as f]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
@@ -60,7 +62,8 @@
                   transform-gradient?   (add-matrix :gradientTransform transform)
                   transform-pattern?    (add-matrix :patternTransform transform)
                   transform-clippath?   (add-matrix :transform transform)
-                  (or transform-filter? transform-mask?) (merge bounds)))
+                  (or transform-filter?
+                      transform-mask?)  (merge bounds)))
 
           [wrapper wrapper-props] (if (= tag :mask)
                                     ["g" #js {:className "svg-mask-wrapper"
@@ -74,6 +77,16 @@
                                           :prefix-id prefix-id
                                           :transform transform
                                           :bounds bounds}])]])))
+
+(defn svg-def-bounds [svg-def shape transform]
+  (let [{:keys [tag]} svg-def]
+    (if (or (= tag :mask) (contains? usvg/filter-tags tag))
+      (-> (gsh/make-rect (d/parse-double (get-in svg-def [:attrs :x]))
+                         (d/parse-double (get-in svg-def [:attrs :y]))
+                         (d/parse-double (get-in svg-def [:attrs :width]))
+                         (d/parse-double (get-in svg-def [:attrs :height])))
+          (gsh/transform-rect transform))
+      (f/get-filters-bounds shape))))
 
 (mf/defc svg-defs [{:keys [shape render-id]}]
   (let [svg-defs (:svg-defs shape)
@@ -101,5 +114,4 @@
                       :node svg-def
                       :prefix-id prefix-id
                       :transform transform
-                      :bounds (f/get-filters-bounds shape)}]))))
-
+                      :bounds (svg-def-bounds svg-def shape transform)}]))))

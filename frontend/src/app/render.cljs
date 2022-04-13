@@ -112,11 +112,9 @@
                                         (st/emit! (df/fonts-fetched fonts)))))
                             (rx/map (comp :objects second))
                             (rx/map (fn [objects]
-                                      (let [objects (render/adapt-objects-for-shape objects object-id)
-                                            bounds  (render/get-object-bounds objects object-id)
-                                            object  (get objects object-id)]
+                                      (let [objects (render/adapt-objects-for-shape objects object-id)]
                                         {:objects objects
-                                         :object (merge object bounds)}))))))
+                                         :object object-id}))))))
 
         {:keys [objects object]} (use-resource fetch-state)]
 
@@ -132,10 +130,9 @@
     (when objects
       [:& render/object-svg
        {:objects objects
-        :object object
+        :object-id object-id
         :render-embed? render-embed?
-        :render-texts? render-texts?
-        :zoom 1}])))
+        :render-texts? render-texts?}])))
 
 (mf/defc objects-svg
   [{:keys [page-id file-id object-ids render-embed? render-texts?]}]
@@ -155,16 +152,13 @@
 
     (when objects
       (for [object-id object-ids]
-        (let [objects (render/adapt-objects-for-shape objects object-id)
-              bounds  (render/get-object-bounds objects object-id)
-              object  (merge (get objects object-id) bounds)]
+        (let [objects (render/adapt-objects-for-shape objects object-id)]
           [:& render/object-svg
            {:objects objects
             :key (str object-id)
-            :object object
+            :object-id object-id
             :render-embed? render-embed?
-            :render-texts? render-texts?
-            :zoom 1}])))))
+            :render-texts? render-texts?}])))))
 
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
