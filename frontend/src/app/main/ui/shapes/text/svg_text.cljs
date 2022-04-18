@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.config :as cfg]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
@@ -52,12 +51,12 @@
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
         (let [y (if (cfg/check-browser? :safari)
-                  (mth/round (- (:y data) (:height data)))
-                  (mth/round (:y data)))
+                  (- (:y data) (:height data))
+                  (:y data))
 
               alignment-bl (when (cfg/check-browser? :safari) "text-before-edge")
               dominant-bl (when-not (cfg/check-browser? :safari) "ideographic")
-              props (-> #js {:x (mth/round (:x data))
+              props (-> #js {:x (:x data)
                              :y y
                              :alignmentBaseline alignment-bl
                              :dominantBaseline dominant-bl
