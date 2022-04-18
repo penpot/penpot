@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.layers
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -304,7 +305,7 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo #(mf/throttle % 200)]}
   [props]
-  (let [search (obj/get props "search")
+  (let [search  (obj/get props "search")
         filters (obj/get props "filters")
         filters (if (some #{:shape} filters)
                   (conj filters :rect :circle :path :bool)
@@ -463,7 +464,7 @@
           [:span {:on-click toggle-search} i/search]]))
 
      [:div.tool-window-content {:on-scroll on-scroll}
-      [:& layers-tree-wrapper {:key (:id page)
-                               :objects objects
+      [:& layers-tree-wrapper {:objects objects
+                               :key (dm/str (:id page))
                                :search (:search-text @filter-state)
                                :filters (keys (:active-filters @filter-state))}]]]))

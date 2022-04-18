@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.fills
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.config :as cfg]
    [app.main.ui.shapes.attrs :as attrs]
@@ -55,10 +56,11 @@
                             (obj/set! "patternTransform" transform))]
 
         (for [[shape-index shape] (d/enumerate (or (:position-data shape) [shape]))]
-          [:*
+          [:* {:key (dm/str shape-index)}
            (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
              (when (some? (:fill-color-gradient value))
-               (let [props #js {:id (str "fill-color-gradient_" render-id "_" fill-index)
+               (let [props #js {:id (dm/str "fill-color-gradient_" render-id "_" fill-index)
+                                :key (dm/str fill-index)
                                 :gradient (:fill-color-gradient value)
                                 :shape shape}]
                  (case (d/name (:type (:fill-color-gradient value)))
@@ -66,12 +68,13 @@
                    "radial" [:> grad/radial-gradient props]))))
 
 
-           (let [fill-id (str "fill-" shape-index "-" render-id)]
+           (let [fill-id (dm/str "fill-" shape-index "-" render-id)]
              [:> :pattern (-> (obj/clone pattern-attrs)
                               (obj/set! "id" fill-id))
               [:g
                (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
                  [:> :rect (-> (attrs/extract-fill-attrs value render-id fill-index)
+                               (obj/set! "key" (dm/str fill-index))
                                (obj/set! "width" width)
                                (obj/set! "height" height))])
 
