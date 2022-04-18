@@ -6,7 +6,9 @@
 
 (ns app.main.ui.components.dropdown
   (:require
+   [app.config :as cfg]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [goog.events :as events]
    [goog.object :as gobj]
@@ -22,8 +24,13 @@
 
         on-click
         (fn [event]
-          (let [target (dom/get-target event)]
-            (when-not (.-data-no-close ^js target)
+          (let [target (dom/get-target event)
+
+                ;; MacOS ctrl+click sends two events: context-menu and click.
+                ;; In order to not have two handlings we ignore ctrl+click for this platform
+                mac-ctrl-click? (and (cfg/check-platform? :macos) (kbd/ctrl? event))]
+            (when (and (not mac-ctrl-click?)
+                       (not (.-data-no-close ^js target)))
               (if ref
                 (let [parent (mf/ref-val ref)]
                   (when-not (or (not parent) (.contains parent target))
@@ -37,9 +44,9 @@
 
         on-mount
         (fn []
-          (let [keys [(events/listen js/document EventType.CLICK on-click)
-                      (events/listen js/document EventType.CONTEXTMENU on-click)
-                      (events/listen js/document EventType.KEYUP on-keyup)]]
+          (let [keys [(events/listen globals/document EventType.CLICK on-click)
+                      (events/listen globals/document EventType.CONTEXTMENU on-click)
+                      (events/listen globals/document EventType.KEYUP on-keyup)]]
             #(doseq [key keys]
                (events/unlistenByKey key))))]
 
