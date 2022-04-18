@@ -45,6 +45,7 @@
         (for [[index data] (d/enumerate position-data)]
           (when (some? (:fill-color-gradient data))
             [:& grad/gradient {:id (str "fill-color-gradient_" (get-gradient-id index))
+                               :key index
                                :attr :fill-color-gradient
                                :shape data}]))])
 
@@ -71,5 +72,5 @@
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
               shape (assoc shape :fills (:fills data))]
 
-          [:& shape-custom-strokes {:shape shape}
+          [:& shape-custom-strokes {:shape shape :key index}
            [:> :text props (:text data)]]))]]))

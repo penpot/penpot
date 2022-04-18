@@ -405,7 +405,6 @@
         shape     (obj/get props "shape")
         elem-name (obj/get child "type")
         render-id (mf/use-ctx muc/render-ctx)]
-
     [:g {:id (dm/fmt "fills-%" (:id shape))}
      [:> elem-name (build-fill-props shape child render-id)]]))
 
@@ -434,12 +433,8 @@
 (mf/defc shape-custom-strokes
   {::mf/wrap-props false}
   [props]
-  (let [child     (obj/get props "children")
-        shape     (obj/get props "shape")]
-
+  (let [children (obj/get props "children")
+        shape    (obj/get props "shape")]
     [:*
-     [:& shape-fills {:shape shape}
-      child]
-
-     [:& shape-strokes {:shape shape}
-      child]]))
+     [:& shape-fills {:shape shape} children]
+     [:& shape-strokes {:shape shape} children]]))

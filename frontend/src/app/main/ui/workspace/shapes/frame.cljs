@@ -72,8 +72,8 @@
              #(rx/dispose! sem)))))
 
       (if (and render? (= shape (mf/ref-val prev-shape-ref)))
-        (mf/create-element component props)
-        (mf/create-element frame-placeholder props)))))
+        (mf/jsx component props mf/undefined)
+        (mf/jsx frame-placeholder props mf/undefined)))))
 
 ;; Draw the frame proper as a deferred component
 (defn deferred-frame-shape-factory
