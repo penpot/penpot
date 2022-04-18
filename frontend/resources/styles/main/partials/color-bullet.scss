@@ -64,6 +64,7 @@ ul.palette-menu .color-bullet {
   height: 20px;
   border: 1px solid $color-gray-10;
   background-size: 8px;
+  overflow: hidden;
 }
 
 .asset-section .asset-list-item .color-bullet {

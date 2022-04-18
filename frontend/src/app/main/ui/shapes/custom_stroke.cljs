@@ -332,9 +332,9 @@
                         ;; There are any shadows
                         (and (seq (->> (:shadow shape) (remove :hidden))) (not (cph/frame-shape? shape)))
 
-                        ;; There are no strokes  and a blur
-                        (and (:blur shape) (-> shape :blur :hidden not) (not (cph/frame-shape? shape)) (empty? (:strokes shape))))
-                        (obj/set! "filter" (dm/fmt "url(#filter_%)" render-id)))
+                        ;; There is a blur
+                        (and (:blur shape) (-> shape :blur :hidden not) (not (cph/frame-shape? shape))))
+                       (obj/set! "filter" (dm/fmt "url(#filter_%)" render-id)))
 
         svg-defs  (:svg-defs shape {})
         svg-attrs (:svg-attrs shape {})
@@ -380,7 +380,10 @@
 
         (cond-> (obj/merge! props fill-props)
           (some? style)
-          (obj/set! "style" style))))))
+          (obj/set! "style" style)))
+
+      :else
+      props)))
 
 (defn build-stroke-props [position child value render-id]
   (let [props (-> (obj/get child "props")

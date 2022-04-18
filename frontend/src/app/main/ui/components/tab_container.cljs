@@ -5,29 +5,47 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.components.tab-container
-  (:require [rumext.alpha :as mf]))
+  (:require
+   [app.common.data :as d]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (mf/defc tab-element
-  [{:keys [children]}]
-  [:div.tab-element
-   [:div.tab-element-content children]])
+  {::mf/wrap-props false}
+  [props]
+  (let [children (unchecked-get props "children")]
+    [:div.tab-element
+     [:div.tab-element-content children]]))
 
 (mf/defc tab-container
-  [{:keys [children selected on-change-tab]}]
-  (let [first-id (-> children first .-props .-id)
-        state (mf/use-state {:selected first-id})
-        selected (or selected (:selected @state))
-        handle-select (fn [tab]
-                        (let [id (-> tab .-props .-id)]
-                          (swap! state assoc :selected id)
-                          (when on-change-tab (on-change-tab id))))]
+  {::mf/wrap-props false}
+  [props]
+  (let [children  (unchecked-get props "children")
+        selected  (unchecked-get props "selected")
+        on-change (unchecked-get props "on-change-tab")
+
+        state     (mf/use-state #(or selected (-> children first .-props .-id)))
+        selected  (or selected @state)
+
+        select-fn
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [event]
+           (let [id (d/read-string (.. event -target -dataset -id))]
+             (reset! state id)
+             (when (fn? on-change) (on-change id)))))]
+
     [:div.tab-container
      [:div.tab-container-tabs
       (for [tab children]
-        [:div.tab-container-tab-title
-         {:key (str "tab-" (-> tab .-props .-id))
-          :on-click (partial handle-select tab)
-          :class (when (= selected (-> tab .-props .-id)) "current")}
-         (-> tab .-props .-title)])]
+        (let [props (.-props tab)
+              id    (.-id props)
+              title (.-title props)]
+          [:div.tab-container-tab-title
+           {:key (str/concat "tab-" (d/name id))
+            :data-id (pr-str id)
+            :on-click select-fn
+            :class (when (= selected id) "current")}
+           title]))]
      [:div.tab-container-content
-      (filter #(= selected (-> % .-props .-id)) children)]]))
+      (d/seek #(= selected (-> % .-props .-id)) children)]]))

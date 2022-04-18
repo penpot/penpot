@@ -104,7 +104,8 @@
                            :xmlnsXlink "http://www.w3.org/1999/xlink"
                            ;; Fix Chromium bug about color of html texts
                            ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
-                           :style {:-webkit-print-color-adjust :exact}}
+                           :style {:-webkit-print-color-adjust :exact}
+                           :fill "none"}
 
                      [:& shape-wrapper {:shape shape}]])]
 

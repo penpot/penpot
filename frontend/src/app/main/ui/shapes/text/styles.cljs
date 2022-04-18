@@ -15,10 +15,11 @@
    [cuerdas.core :as str]))
 
 (defn generate-root-styles
-  [_shape node]
+  [shape node]
   (let [valign (:vertical-align node "top")
-        base   #js {:height "100%"
-                    :width  "100%"
+        {:keys [width height]} shape
+        base   #js {:height height
+                    :width  width
                     :fontFamily "sourcesanspro"
                     :display "flex"}]
     (cond-> base
