@@ -379,6 +379,7 @@
                            (utils/translate-point-to-viewport viewport zoom))
 
                mod? (kbd/mod? event)
+               ctrl?  (kbd/ctrl? event)
 
                delta-mode (.-deltaMode ^js event)
 
@@ -394,7 +395,7 @@
                delta-x (-> (.-deltaX ^js event)
                            (* unit)
                            (/ zoom))]
-           (if mod?
+           (if (or ctrl? mod?)
              (let [delta (* -1 (+ (.-deltaY ^js event) (.-deltaX ^js event)))
                    scale (-> (+ 1 (/ delta 100)) (mth/clamp 0.77 1.3))]
                (st/emit! (dw/set-zoom pt scale)))
