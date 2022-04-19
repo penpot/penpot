@@ -323,12 +323,41 @@
       border: 2px solid $color-primary;
     }
 
+    .grid-placeholder {
+      border: 2px solid $color-gray-20;
+      border-radius: 4px;
+    }
+
+    .drop-space {
+      height: 10px;
+    }
+
+    .typography-container {
+      position: relative;
+    }
+
+    .drag-counter {
+      position: absolute;
+      top: 5px;
+      left: 4px;
+      width: 16px;
+      height: 16px;
+      background-color: $color-primary;
+      border-radius: 50%;
+      color: $color-black;
+      font-size: $fs12;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
     .asset-title + .asset-enum {
       margin-top: $size-2;
     }
 
     .asset-enum {
       .enum-item {
+        position: relative;
         display: flex;
         align-items: center;
         margin-bottom: $size-2;
@@ -370,6 +399,10 @@
       .enum-item.selected {
         color: $color-primary;
       }
+
+      .grid-placeholder {
+        margin-bottom: 5px;
+      }
     }
 
     /* TODO: see if this is useful, or is better to leave only
@@ -390,6 +423,7 @@
       font-size: $fs12;
       color: $color-white;
       cursor: pointer;
+      position: relative;
 
       & span {
         margin-left: $size-1;
@@ -417,6 +451,15 @@
       .adv-typography-name {
         background-color: $color-gray-60;
       }
+    }
+
+    .dragging {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: color.adjust($color-primary, $alpha: -0.5);
     }
   }
 }
