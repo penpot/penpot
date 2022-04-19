@@ -21,6 +21,7 @@
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as utp]
+   [app.util.timers :as ts]
    [rumext.alpha :as mf]))
 
 (defn- update-with-editor-state
@@ -39,7 +40,8 @@
 
 (mf/defc text-container
   {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
+   ::mf/wrap [mf/memo
+              #(mf/deferred % ts/idle-then-raf)]}
   [props]
   (let [shape (obj/get props "shape")
 
@@ -97,9 +99,11 @@
                     (dissoc :position-data))))
 
         changed-texts
-        (->> (keys text-shapes)
-             (filter text-change?)
-             (map (d/getf text-shapes)))]
+        (mf/use-memo
+         (mf/deps text-shapes)
+         #(->> (keys text-shapes)
+               (filter text-change?)
+               (map (d/getf text-shapes))))]
 
     (for [{:keys [id] :as shape} changed-texts]
       [:& text-container {:shape (dissoc shape :transform :transform-inverse)

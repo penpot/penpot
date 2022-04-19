@@ -263,6 +263,14 @@
   [ids]
   (l/derived #(into [] (keep (d/getf %)) ids) workspace-page-objects =))
 
+(defn children-objects
+  [id]
+  (l/derived
+   (fn [objects]
+     (let [children-ids (get-in objects [id :shapes])]
+       (into [] (keep (d/getf objects)) children-ids)))
+   workspace-page-objects =))
+
 (def workspace-page-options
   (l/derived :options workspace-page))
 
@@ -386,3 +394,10 @@
   (l/derived (fn [state]
                (dm/get-in state [:viewer-local :fullscreen?]))
              st/state))
+
+(def thumbnail-data
+  (l/derived #(get-in % [:workspace-file :thumbnails] {}) st/state))
+
+(defn thumbnail-frame-data
+  [frame-id]
+  (l/derived #(get % frame-id) thumbnail-data))

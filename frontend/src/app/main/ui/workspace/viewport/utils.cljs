@@ -86,7 +86,7 @@
         mask?  (and group? masked-group?)
 
         ;; When the shape is a frame we maybe need to move its thumbnail
-        thumb-node (when frame? (dom/query base-node (str "#thumbnail-" id)))]
+        thumb-node (when frame? (dom/query (str "#thumbnail-" id)))]
 
     (cond
       frame?

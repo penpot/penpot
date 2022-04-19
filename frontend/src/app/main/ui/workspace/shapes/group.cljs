@@ -31,7 +31,7 @@
        ::mf/wrap-props false}
       [props]
       (let [shape         (unchecked-get props "shape")
-            childs-ref    (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
+            childs-ref    (mf/use-memo (mf/deps (:id shape)) #(refs/children-objects (:id shape)))
             childs        (mf/deref childs-ref)]
 
         [:> shape-container {:shape shape}

@@ -10,6 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.uuid :as uuid]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.path.shortcuts :as psc]
@@ -198,7 +199,22 @@
 
 (defn setup-viewport-modifiers
   [modifiers objects]
-  (let [transforms
+
+  (let [root-frame-ids
+        (mf/use-memo
+         (mf/deps objects)
+         #(->> objects
+               (vals)
+               (filter (fn [{:keys [type frame-id]}]
+                         (and
+                          (not= :frame type)
+                          (= uuid/zero frame-id))))
+               (map :id)))
+
+        objects (select-keys objects root-frame-ids)
+        modifiers (select-keys modifiers root-frame-ids)
+
+        transforms
         (mf/use-memo
          (mf/deps modifiers)
          (fn []
@@ -231,7 +247,7 @@
        (when (some? modifiers)
          (utils/update-transform! globals/document shapes transforms modifiers))
 
-       
+
        (when (and (some? @prev-modifiers)
                   (not (some? modifiers)))
          (utils/remove-transform! globals/document @prev-shapes))

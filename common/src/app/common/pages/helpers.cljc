@@ -468,3 +468,9 @@
   (let [path-split (split-path path)]
     (merge-path-item (first path-split) name)))
 
+
+(defn get-frame-objects
+  "Retrieves a new objects map only with the objects under frame-id (with frame-id)"
+  [objects frame-id]
+  (let [ids (concat [frame-id] (get-children-ids objects frame-id))]
+    (select-keys objects ids)))

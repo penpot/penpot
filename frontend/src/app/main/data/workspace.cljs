@@ -43,6 +43,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.svg-upload :as svg]
+   [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
@@ -195,7 +196,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (if (contains? (get-in state [:workspace-data :pages-index]) page-id)
-        (rx/of (dwp/preload-data-uris))
+        (rx/of (dwp/preload-data-uris)
+               (dwth/watch-state-changes))
         (let [default-page-id (get-in state [:workspace-data :pages 0])]
           (rx/of (go-to-page default-page-id)))))
 
@@ -1767,3 +1769,7 @@
 (dm/export dwz/decrease-zoom)
 (dm/export dwz/increase-zoom)
 (dm/export dwz/set-zoom)
+
+;; Thumbnails
+(dm/export dwth/update-thumbnail)
+
