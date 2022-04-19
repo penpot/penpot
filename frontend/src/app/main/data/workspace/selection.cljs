@@ -511,14 +511,14 @@
                                        (map #(vector (:old-id %) (get-in % [:obj :id]))))
 
                   id-duplicated   (first new-selected)]
-               ;; Warning: This order is important for the focus mode.
+
+              ;; Warning: This order is important for the focus mode.
               (rx/merge
                (->> (rx/from dup-frames)
                     (rx/map (fn [[old-id new-id]] (dwt/duplicate-thumbnail old-id new-id))))
                (rx/of (dch/commit-changes changes)
                       (select-shapes new-selected)
-                      (memorize-duplicated id-original id-duplicated))
-               ))))))))
+                      (memorize-duplicated id-original id-duplicated))))))))))
 
 (defn change-hover-state
   [id value]

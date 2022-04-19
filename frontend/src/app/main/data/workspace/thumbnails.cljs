@@ -15,7 +15,9 @@
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(defn force-render-stream [id]
+(defn force-render-stream
+  "Stream that will inform the frame-wrapper to mount into memory"
+  [id]
   (->> st/stream
        (rx/filter (ptk/type? ::force-render))
        (rx/map deref)
@@ -23,6 +25,7 @@
        (rx/take 1)))
 
 (defn update-thumbnail
+  "Updates the thumbnail information for the given frame `id`"
   [id data]
   (let [lock (uuid/next)]
     (ptk/reify ::update-thumbnail
@@ -42,6 +45,8 @@
           (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))
                 params {:file-id (:current-file-id state)
                         :object-id id}]
+            ;; Sends the first event and debounce the rest. Will only make one update once
+            ;; the 2 second debounce is finished
             (rx/merge
              (->> stream
                   (rx/take-until stopper)
@@ -123,7 +128,10 @@
 
     (->> changes (every? is-thumbnail-change?))))
 
-(defn watch-state-changes []
+(defn watch-state-changes
+  "Watch the state for changes inside frames. If a change is detected will force a rendering
+  of the frame data so the thumbnail can be updated."
+  []
   (ptk/reify ::watch-state-changes
     ptk/WatchEvent
     (watch [_ _ stream]
