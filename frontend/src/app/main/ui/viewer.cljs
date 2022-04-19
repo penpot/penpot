@@ -152,7 +152,7 @@
      (mf/deps fullscreen?)
      (fn []
        ;; Trigger dom fullscreen depending on our state
-       (let [wrapper     (dom/get-element "viewer-layout")
+       (let [wrapper         (dom/get-element "viewer-layout")
              fullscreen-dom? (dom/fullscreen?)]
          (when (not= fullscreen? fullscreen-dom?)
            (if fullscreen?

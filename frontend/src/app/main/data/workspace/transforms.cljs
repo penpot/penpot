@@ -434,13 +434,13 @@
             group           (gsh/selection-rect shapes)
             group-center    (gsh/center-selrect group)
             initial-angle   (gpt/angle @ms/mouse-position group-center)
-            calculate-angle (fn [pos ctrl? shift?]
+            calculate-angle (fn [pos mod? shift?]
                               (let [angle (- (gpt/angle pos group-center) initial-angle)
                                     angle (if (neg? angle) (+ 360 angle) angle)
                                     angle (if (= angle 360)
                                             0
                                             angle)
-                                    angle (if ctrl?
+                                    angle (if mod?
                                             (* (mth/floor (/ angle 45)) 45)
                                             angle)
                                     angle (if shift?
@@ -449,10 +449,10 @@
                                 angle))]
         (rx/concat
          (->> ms/mouse-position
-              (rx/with-latest vector ms/mouse-position-ctrl)
+              (rx/with-latest vector ms/mouse-position-mod)
               (rx/with-latest vector ms/mouse-position-shift)
-              (rx/map (fn [[[pos ctrl?] shift?]]
-                        (let [delta-angle (calculate-angle pos ctrl? shift?)]
+              (rx/map (fn [[[pos mod?] shift?]]
+                        (let [delta-angle (calculate-angle pos mod? shift?)]
                           (set-rotation-modifiers delta-angle shapes group-center))))
               (rx/take-until stoper))
          (rx/of (apply-modifiers (map :id shapes))

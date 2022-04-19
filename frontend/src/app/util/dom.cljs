@@ -6,13 +6,15 @@
 
 (ns app.util.dom
   (:require
-    [app.common.exceptions :as ex]
-    [app.common.geom.point :as gpt]
-    [app.util.globals :as globals]
-    [app.util.object :as obj]
-    [cuerdas.core :as str]
-    [goog.dom :as dom]
-    [promesa.core :as p]))
+   [app.common.geom.point :as gpt]
+   [app.common.logging :as log]
+   [app.util.globals :as globals]
+   [app.util.object :as obj]
+   [cuerdas.core :as str]
+   [goog.dom :as dom]
+   [promesa.core :as p]))
+
+(log/set-level! :warn)
 
 ;; --- Deprecated methods
 
@@ -289,8 +291,9 @@
     (boolean (.-fullscreenElement globals/document))
 
     :else
-    (ex/raise :type :not-supported
-              :hint "seems like the current browser does not support fullscreen api.")))
+    (do
+      (log/error :msg "Seems like the current browser does not support fullscreen api.")
+      false)))
 
 (defn ^boolean blob?
   [^js v]

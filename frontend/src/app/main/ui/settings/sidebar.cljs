@@ -14,6 +14,7 @@
    [app.main.ui.dashboard.sidebar :refer [profile-section]]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
@@ -55,8 +56,7 @@
          (fn [event]
            (let [version (:main @cf/version)]
              (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
-             (if (and (.-ctrlKey ^js event)
-                      (.-altKey ^js event))
+             (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
                (st/emit! (modal/show {:type :release-notes :version version}))))))]
 

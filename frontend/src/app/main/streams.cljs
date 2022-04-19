@@ -7,6 +7,7 @@
 (ns app.main.streams
   "User interaction events and streams."
   (:require
+   [app.config :as cfg]
    [app.main.store :as st]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
@@ -20,7 +21,7 @@
   [v]
   (instance? KeyboardEvent v))
 
-(defrecord MouseEvent [type ctrl shift alt])
+(defrecord MouseEvent [type ctrl shift alt meta])
 
 (defn mouse-event?
   [v]
@@ -46,7 +47,7 @@
   (and (mouse-event? v)
        (= :double-click (:type v))))
 
-(defrecord PointerEvent [source pt ctrl shift alt])
+(defrecord PointerEvent [source pt ctrl shift alt meta])
 
 (defn pointer-event?
   [v]
@@ -83,6 +84,20 @@
     (rx/subscribe-with ob sub)
     sub))
 
+(defonce mouse-position-meta
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter pointer-event?)
+                 (rx/map :meta)
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
+    sub))
+
+(defonce mouse-position-mod
+  (if (cfg/check-platform? :macos)
+    mouse-position-meta
+    mouse-position-ctrl))
+
 (defonce mouse-position-shift
   (let [sub (rx/behavior-subject nil)
         ob  (->> st/stream
@@ -111,7 +126,7 @@
         ob  (->> (rx/merge
                   (->> st/stream
                        (rx/filter keyboard-event?)
-                       (rx/filter kbd/altKey?)
+                       (rx/filter kbd/alt-key?)
                        (rx/map #(= :down (:type %))))
                   ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
                   ;; that makes keyboard-alt stream registering the key pressed but
@@ -119,15 +134,15 @@
                   (->> window-blur
                        (rx/map (constantly false))))
                  (rx/dedupe))]
-        (rx/subscribe-with ob sub)
-        sub))
+    (rx/subscribe-with ob sub)
+    sub))
 
 (defonce keyboard-ctrl
   (let [sub (rx/behavior-subject nil)
         ob  (->> (rx/merge
                   (->> st/stream
                        (rx/filter keyboard-event?)
-                       (rx/filter kbd/ctrlKey?)
+                       (rx/filter kbd/ctrl-key?)
                        (rx/map #(= :down (:type %))))
                   ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
                   ;; that makes keyboard-alt stream registering the key pressed but
@@ -135,8 +150,29 @@
                   (->> window-blur
                        (rx/map (constantly false))))
                  (rx/dedupe))]
-        (rx/subscribe-with ob sub)
+    (rx/subscribe-with ob sub)
     sub))
+
+(defonce keyboard-meta
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> (rx/merge
+                  (->> st/stream
+                       (rx/filter keyboard-event?)
+                       (rx/filter kbd/meta-key?)
+                       (rx/map #(= :down (:type %))))
+                  ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
+                  ;; that makes keyboard-alt stream registering the key pressed but
+                  ;; on blurring the window (unfocus) the key down is never arrived.
+                  (->> window-blur
+                       (rx/map (constantly false))))
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
+    sub))
+
+(defonce keyboard-mod
+  (if (cfg/check-platform? :macos)
+    keyboard-meta
+    keyboard-ctrl))
 
 (defonce keyboard-space
   (let [sub (rx/behavior-subject nil)
