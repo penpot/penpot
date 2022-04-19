@@ -10,6 +10,7 @@
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.util.code-gen :as cg]
    [app.util.i18n :refer [tr]]
+   [app.util.strings :as ust]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
@@ -38,46 +39,46 @@
     [:*
      [:div.attributes-unit-row
       [:div.attributes-label (tr "handoff.attributes.layout.width")]
-      [:div.attributes-value width "px"]
+      [:div.attributes-value (ust/format-precision width 2) "px"]
       [:& copy-button {:data (copy-data selrect :width)}]]
 
      [:div.attributes-unit-row
       [:div.attributes-label (tr "handoff.attributes.layout.height")]
-      [:div.attributes-value height "px"]
+      [:div.attributes-value (ust/format-precision height 2) "px"]
       [:& copy-button {:data (copy-data selrect :height)}]]
 
      (when (not= (:x shape) 0)
        [:div.attributes-unit-row
         [:div.attributes-label (tr "handoff.attributes.layout.left")]
-        [:div.attributes-value x "px"]
+        [:div.attributes-value (ust/format-precision x 2) "px"]
         [:& copy-button {:data (copy-data selrect :x)}]])
 
      (when (not= (:y shape) 0)
        [:div.attributes-unit-row
         [:div.attributes-label (tr "handoff.attributes.layout.top")]
-        [:div.attributes-value y "px"]
+        [:div.attributes-value (ust/format-precision y 2) "px"]
         [:& copy-button {:data (copy-data selrect :y)}]])
 
      (when (ctr/radius-1? shape)
        [:div.attributes-unit-row
         [:div.attributes-label (tr "handoff.attributes.layout.radius")]
-        [:div.attributes-value (:rx shape 0) "px"]
+        [:div.attributes-value (ust/format-precision (:rx shape 0) 2) "px"]
         [:& copy-button {:data (copy-data shape :rx)}]])
 
      (when (ctr/radius-4? shape)
        [:div.attributes-unit-row
         [:div.attributes-label (tr "handoff.attributes.layout.radius")]
         [:div.attributes-value
-         (:r1 shape) ", "
-         (:r2 shape) ", "
-         (:r3 shape) ", "
-         (:r4 shape) "px"]
+         (ust/format-precision (:r1 shape) 2) ", "
+         (ust/format-precision (:r2 shape) 2) ", "
+         (ust/format-precision (:r3 shape) 2) ", "
+         (ust/format-precision (:r4 shape) 2) "px"]
         [:& copy-button {:data (copy-data shape :r1)}]])
 
      (when (not= (:rotation shape 0) 0)
        [:div.attributes-unit-row
         [:div.attributes-label (tr "handoff.attributes.layout.rotation")]
-        [:div.attributes-value (:rotation shape) "deg"]
+        [:div.attributes-value (ust/format-precision (:rotation shape) 2) "deg"]
         [:& copy-button {:data (copy-data shape :rotation)}]])]))
 
 
