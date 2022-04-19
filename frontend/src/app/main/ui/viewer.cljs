@@ -17,6 +17,7 @@
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.shapes.filters :as filters]
@@ -69,6 +70,7 @@
         nav-scroll (:nav-scroll local)
         orig-viewport-ref (mf/use-ref nil)
         current-viewport-ref (mf/use-ref nil)
+        viewer-section-ref (mf/use-ref nil)
         current-animation (:current-animation local)
 
         page-id (or page-id (-> file :data :pages first))
@@ -89,6 +91,7 @@
         frame  (get frames index)
         fullscreen? (mf/deref refs/viewer-fullscreen?)
         overlays (:overlays local)
+        scroll (mf/use-state nil)
 
         orig-frame
         (when (:orig-frame-id current-animation)
@@ -126,7 +129,11 @@
          (fn [_]
            (let [viewer-section (dom/get-element "viewer-section")
                  size (dom/get-client-size viewer-section)]
-             (st/emit! (dv/set-viewport-size {:size size})))))]
+             (st/emit! (dv/set-viewport-size {:size size})))))
+
+        on-scroll
+        (fn [event]
+          (reset! scroll (dom/get-target-scroll event)))]
 
     (hooks/use-shortcuts ::viewer sc/shortcuts)
 
@@ -142,9 +149,11 @@
 
     (mf/use-effect
      (fn []
-       (let [key1 (events/listen js/window "click" on-click)]
+       (let [key1 (events/listen js/window "click" on-click)
+             key2 (events/listen (mf/ref-val viewer-section-ref) "scroll" on-scroll)]
          (fn []
-           (events/unlistenByKey key1)))))
+           (events/unlistenByKey key1)
+           (events/unlistenByKey key2)))))
 
     (mf/use-layout-effect
      (fn []
@@ -258,6 +267,7 @@
                             :page page
                             :index index}]
       [:section.viewer-section {:id "viewer-section"
+                                :ref viewer-section-ref
                                 :class (if fullscreen? "fullscreen" "")}
        (cond
          (empty? frames)
@@ -282,79 +292,79 @@
             [:div.viewer-wrapper
              {:style {:width (:width wrapper-size)
                       :height (:height wrapper-size)}}
+             [:& (mf/provider ctx/scroll-ctx) {:value @scroll}
+              [:div.viewer-clipper
+               [:*
+                (when orig-frame
+                  [:div.viewport-container
+                   {:ref orig-viewport-ref
+                    :style {:width (:width orig-size)
+                            :height (:height orig-size)
+                            :position "relative"}}
 
-             [:div.viewer-clipper
-              [:*
-               (when orig-frame
-                 [:div.viewport-container
-                  {:ref orig-viewport-ref
-                   :style {:width (:width orig-size)
-                           :height (:height orig-size)
-                           :position "relative"}}
+                   [:& interactions/viewport
+                    {:frame orig-frame
+                     :base-frame orig-frame
+                     :frame-offset (gpt/point 0 0)
+                     :size orig-size
+                     :page page
+                     :file file
+                     :users users
+                     :interactions-mode :hide}]])
 
-                  [:& interactions/viewport
-                   {:frame orig-frame
-                    :base-frame orig-frame
-                    :frame-offset (gpt/point 0 0)
-                    :size orig-size
-                    :page page
-                    :file file
-                    :users users
-                    :interactions-mode :hide}]])
+                [:div.viewport-container
+                 {:ref current-viewport-ref
+                  :style {:width (:width size)
+                          :height (:height size)
+                          :position "relative"}}
 
-               [:div.viewport-container
-                {:ref current-viewport-ref
-                 :style {:width (:width size)
-                         :height (:height size)
-                         :position "relative"}}
+                 [:& interactions/viewport
+                  {:frame frame
+                   :base-frame frame
+                   :frame-offset (gpt/point 0 0)
+                   :size size
+                   :page page
+                   :file file
+                   :users users
+                   :interactions-mode interactions-mode}]
 
-                [:& interactions/viewport
-                 {:frame frame
-                  :base-frame frame
-                  :frame-offset (gpt/point 0 0)
-                  :size size
-                  :page page
-                  :file file
-                  :users users
-                  :interactions-mode interactions-mode}]
+                 (for [overlay overlays]
+                   (let [size-over (calculate-size (:frame overlay) zoom)]
+                     [:*
+                      (when (or (:close-click-outside overlay)
+                                (:background-overlay  overlay))
+                        [:div.viewer-overlay-background
+                         {:class (dom/classnames
+                                  :visible (:background-overlay overlay))
+                          :style {:width (:width wrapper-size)
+                                  :height (:height wrapper-size)
+                                  :position "absolute"
+                                  :left 0
+                                  :top 0}
+                          :on-click #(when (:close-click-outside overlay)
+                                       (close-overlay (:frame overlay)))}])
+                      [:div.viewport-container.viewer-overlay
+                       {:id (str "overlay-" (str (:id (:frame overlay))))
+                        :style {:width (:width size-over)
+                                :height (:height size-over)
+                                :left (* (:x (:position overlay)) zoom)
+                                :top (* (:y (:position overlay)) zoom)}}
+                       [:& interactions/viewport
+                        {:frame (:frame overlay)
+                         :base-frame frame
+                         :frame-offset (:position overlay)
+                         :size size-over
+                         :page page
+                         :file file
+                         :users users
+                         :interactions-mode interactions-mode}]]]))]]
 
-                (for [overlay overlays]
-                  (let [size-over (calculate-size (:frame overlay) zoom)]
-                    [:*
-                     (when (or (:close-click-outside overlay)
-                               (:background-overlay  overlay))
-                       [:div.viewer-overlay-background
-                        {:class (dom/classnames
-                                 :visible (:background-overlay overlay))
-                         :style {:width (:width wrapper-size)
-                                 :height (:height wrapper-size)
-                                 :position "absolute"
-                                 :left 0
-                                 :top 0}
-                         :on-click #(when (:close-click-outside overlay)
-                                      (close-overlay (:frame overlay)))}])
-                     [:div.viewport-container.viewer-overlay
-                      {:id (str "overlay-" (str (:id (:frame overlay))))
-                       :style {:width (:width size-over)
-                               :height (:height size-over)
-                               :left (* (:x (:position overlay)) zoom)
-                               :top (* (:y (:position overlay)) zoom)}}
-                      [:& interactions/viewport
-                       {:frame (:frame overlay)
-                        :base-frame frame
-                        :frame-offset (:position overlay)
-                        :size size-over
-                        :page page
-                        :file file
-                        :users users
-                        :interactions-mode interactions-mode}]]]))]]
-
-              (when (= section :comments)
-                [:& comments-layer {:file file
-                                    :users users
-                                    :frame frame
-                                    :page page
-                                    :zoom zoom}])]]]))]]]))
+               (when (= section :comments)
+                 [:& comments-layer {:file file
+                                     :users users
+                                     :frame frame
+                                     :page page
+                                     :zoom zoom}])]]]]))]]]))
 
 ;; --- Component: Viewer Page
 

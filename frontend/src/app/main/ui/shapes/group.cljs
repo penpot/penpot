@@ -20,6 +20,7 @@
       [props]
       (let [shape          (unchecked-get props "shape")
             childs         (unchecked-get props "childs")
+            objects        (unchecked-get props "objects")
             render-id      (mf/use-ctx muc/render-ctx)
             masked-group?  (:masked-group? shape)
 
@@ -41,12 +42,21 @@
             (if masked-group?
               ["g" (-> (obj/new)
                        (obj/set! "mask"     (mask-url render-id mask)))]
-              [mf/Fragment nil])]
+              [mf/Fragment nil])
+
+            ;; This factory is generic, it's used for viewer, workspace and handoff.
+            ;; These props are generated in viewer wrappers only, in the rest of the 
+            ;; cases these props will be nil, not affecting the code.
+            delta          (unchecked-get props "delta")
+            fixed?         (unchecked-get props "fixed?")]
 
         [:> clip-wrapper clip-props
          [:> mask-wrapper mask-props
           (when masked-group?
-            [:> render-mask #js {:mask mask}])
+            [:> render-mask #js {:mask mask
+                                 :objects objects
+                                 :delta delta
+                                 :fixed? fixed?}])
 
           (for [item childs]
             [:& shape-wrapper {:shape item

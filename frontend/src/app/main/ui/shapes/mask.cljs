@@ -47,20 +47,23 @@
   (mf/fnc mask-shape
     {::mf/wrap-props false}
     [props]
-    (let [mask      (unchecked-get props "mask")
-          render-id (mf/use-ctx muc/render-ctx)
-          svg-text? (and (= :text (:type mask)) (some? (:position-data mask)))
+    (let [mask        (unchecked-get props "mask")
+          render-id   (mf/use-ctx muc/render-ctx)
+          svg-text?   (and (= :text (:type mask)) (some? (:position-data mask)))
+          mask        (cond-> mask svg-text? set-white-fill)
 
-          mask      (cond-> mask svg-text? set-white-fill)
+          ;; This factory is generic, it's used for viewer, workspace and handoff.
+          ;; These props are generated in viewer wrappers only, in the rest of the 
+          ;; cases these props will be nil, not affecting the code. 
+          fixed?      (unchecked-get props "fixed?")
+          delta       (unchecked-get props "delta")
 
-          mask-bb
-          (cond
-            svg-text?
-            (gst/position-data-points mask)
-
-            :else
-            (-> (gsh/transform-shape mask)
-                (:points)))]
+          mask-for-bb (-> (gsh/transform-shape mask)
+                          (cond-> fixed? (gsh/move delta)))
+          
+          mask-bb     (cond
+                        svg-text? (gst/position-data-points mask-for-bb)
+                        :else     (:points mask-for-bb))]
       [:*
        [:g {:opacity 0}
         [:g {:id (str "shape-" (mask-id render-id mask))}

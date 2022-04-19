@@ -46,9 +46,8 @@
         in-frame? (and (some? ids)
                        (not= (:parent-id values) uuid/zero))
 
-        ;; TODO: uncomment when fixed-scroll is fully implemented
-        ;; first-level? (and in-frame?
-        ;;                   (= (:parent-id values) (:frame-id values)))
+        first-level? (and in-frame?
+                          (= (:parent-id values) (:frame-id values)))
 
         constraints-h (or (get values :constraints-h) (gsh/default-constraints-h values))
         constraints-v (or (get values :constraints-v) (gsh/default-constraints-v values))
@@ -104,13 +103,11 @@
                             ids
                             #(assoc % constraint value))))))))
 
-        ;; TODO: uncomment when fixed-scroll is fully implemented
-        ;; on-fixed-scroll-clicked
-        ;; (mf/use-callback
-        ;;  (mf/deps [ids values])
-        ;;  (fn [_]
-        ;;    (st/emit! (dch/update-shapes ids #(update % :fixed-scroll not)))))
-        ]
+        on-fixed-scroll-clicked
+        (mf/use-callback
+         (mf/deps [ids values])
+         (fn [_]
+           (st/emit! (dch/update-shapes ids #(update % :fixed-scroll not)))))]
 
      ;; CONSTRAINTS
      (when in-frame?
@@ -168,12 +165,12 @@
              [:option {:value "bottom"} (tr "workspace.options.constraints.bottom")]
              [:option {:value "topbottom"} (tr "workspace.options.constraints.topbottom")]
              [:option {:value "center"} (tr "workspace.options.constraints.center")]
-             [:option {:value "scale"} (tr "workspace.options.constraints.scale")]
-             ;; TODO: uncomment when fixed-scroll is fully implemented
-             ;;  (when first-level?
-             ;;    [:div.row-flex
-             ;;     [:div.fix-when {:class (dom/classnames :active (:fixed-scroll values))
-             ;;                     :on-click on-fixed-scroll-clicked}
-             ;;      i/pin
-             ;;      [:span (tr "workspace.options.constraints.fix-when-scrolling")]]])
-             ]]]]]])))
+             [:option {:value "scale"} (tr "workspace.options.constraints.scale")]]]
+           (when first-level?
+             [:div.row-flex
+              [:div.fix-when {:class (dom/classnames :active (:fixed-scroll values))
+                              :on-click on-fixed-scroll-clicked}
+               (if (:fixed-scroll values)
+                 i/pin-fill
+                 i/pin)
+               [:span (tr "workspace.options.constraints.fix-when-scrolling")]]])]]]])))

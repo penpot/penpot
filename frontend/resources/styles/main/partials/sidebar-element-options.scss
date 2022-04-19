@@ -1450,7 +1450,8 @@
 
   .input-select {
     font-size: $fs12;
-    margin: 0 $size-1;
+    margin: 0 $size-1 $size-2 $size-1;
+    padding: 0 $size-1;
   }
 
   svg {
@@ -1471,6 +1472,7 @@
   .fix-when {
     font-size: $fs12;
     cursor: pointer;
+    display: flex;
 
     span {
       margin-left: $size-2;
