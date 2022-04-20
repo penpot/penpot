@@ -356,14 +356,6 @@
           {:zoom zoom
            :tooltip tooltip}])
 
-       (when show-prototypes?
-         [:& interactions/interactions
-          {:selected selected
-           :zoom zoom
-           :objects objects-modified
-           :current-transform transform
-           :hover-disabled? hover-disabled?}])
-
        (when show-selrect?
          [:& widgets/selection-rect {:data selrect
                                      :zoom zoom}])
@@ -410,4 +402,12 @@
             :shapes selected-shapes
             :zoom zoom
             :edition edition
-            :disable-handlers (or drawing-tool edition @space?)}]])]]]))
+            :disable-handlers (or drawing-tool edition @space?)}]])
+
+       (when show-prototypes?
+         [:& interactions/interactions
+          {:selected selected
+           :zoom zoom
+           :objects objects-modified
+           :current-transform transform
+           :hover-disabled? hover-disabled?}])]]]))
