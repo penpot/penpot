@@ -393,7 +393,7 @@
                            (* unit)
                            (/ zoom))]
            (if (or ctrl? mod?)
-             (let [delta (* -1 (+ (.-deltaY ^js event) (.-deltaX ^js event)))
+             (let [delta (* -1 (+ delta-y delta-x))
                    scale (-> (+ 1 (/ delta 100)) (mth/clamp 0.77 1.3))]
                (st/emit! (dw/set-zoom pt scale)))
              (if (and (not (cfg/check-platform? :macos))
