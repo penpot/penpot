@@ -112,10 +112,7 @@
        (when (and left-click?
                   (not mod?)
                   (not shift?)
-                  (not @space?)
-                  (or (not @hover)
-                      (= :frame (:type @hover))
-                      (some #(contains? selected %) @hover-ids)))
+                  (not @space?))
          (dom/prevent-default bevent)
          (dom/stop-propagation bevent)
          (st/emit! (dw/start-move-selected)))))))
@@ -258,7 +255,7 @@
          ;; We store this so in Firefox the middle button won't do a paste of the content
          (reset! disable-paste true)
          (timers/schedule #(reset! disable-paste false)))
-       
+
        (st/emit! (dw/finish-panning)
                  (dw/finish-zooming))))))
 
