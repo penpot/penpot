@@ -21,7 +21,8 @@
         base   #js {:height height
                     :width  width
                     :fontFamily "sourcesanspro"
-                    :display "flex"}]
+                    :display "flex"
+                    :whiteSpace "pre-wrap"}]
     (cond-> base
       (= valign "top")     (obj/set! "alignItems" "flex-start")
       (= valign "center")  (obj/set! "alignItems" "center")
@@ -45,18 +46,15 @@
          :verticalAlign "top"}))
 
 (defn generate-paragraph-styles
-  [shape data]
+  [_shape data]
   (let [line-height (:line-height data 1.2)
         text-align  (:text-align data "start")
-        grow-type   (:grow-type shape)
-
         base        #js {:fontSize (str (:font-size data (:font-size txt/default-text-attrs)) "px")
                          :lineHeight (:line-height data (:line-height txt/default-text-attrs))
                          :margin "inherit"}]
     (cond-> base
       (some? line-height)       (obj/set! "lineHeight" line-height)
-      (some? text-align)        (obj/set! "textAlign" text-align)
-      (= grow-type :auto-width) (obj/set! "whiteSpace" "pre"))))
+      (some? text-align)        (obj/set! "textAlign" text-align))))
 
 (defn generate-text-styles
   ([data]
