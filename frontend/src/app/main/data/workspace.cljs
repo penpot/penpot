@@ -163,7 +163,7 @@
 
 (defn finalize-file
   [_project-id file-id]
-  (ptk/reify ::finalize
+  (ptk/reify ::finalize-file
     ptk/UpdateEvent
     (update [_ state]
       (dissoc state
