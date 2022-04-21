@@ -13,7 +13,7 @@
    [app.common.spec.change :as spec.change]
    [app.common.spec.file :as spec.file]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
@@ -560,10 +560,10 @@
             (fn [{:keys [metadata fill-image]}]
               (cond
                 (some? metadata)
-                [(cfg/resolve-file-media metadata)]
+                [(cf/resolve-file-media metadata)]
 
                 (some? fill-image)
-                [(cfg/resolve-file-media fill-image)]))
+                [(cf/resolve-file-media fill-image)]))
 
             uris (into #{}
                        (comp (mapcat extract-urls)
