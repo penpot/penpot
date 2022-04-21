@@ -418,8 +418,13 @@
         stroke-props (-> (obj/new)
                          (obj/set! "id" (dm/fmt "strokes-%" (:id shape)))
                          (cond->
-                          (and (and (:blur shape) (-> shape :blur :hidden not)) (not (cph/frame-shape? shape)))
-                           (obj/set! "filter" (dm/fmt "url(#filter_blur_%)" render-id))))]
+                          ;; There is a blur
+                          (and (:blur shape) (not (cph/frame-shape? shape)) (-> shape :blur :hidden not))
+                          (obj/set! "filter" (dm/fmt "url(#filter_blur_%)" render-id))
+
+                          ;; There are any shadows and no fills
+                          (and (empty? (:fills shape)) (not (cph/frame-shape? shape)) (seq (->> (:shadow shape) (remove :hidden))))
+                          (obj/set! "filter" (dm/fmt "url(#filter_%)" render-id))))]
     [:*
      (when
       (d/not-empty? (:strokes shape))
