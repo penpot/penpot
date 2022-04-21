@@ -46,6 +46,7 @@
 ### :bug: Bugs fixed
 
 - Fix internal error when hoverin over shape [Taiga #3237](https://tree.taiga.io/project/penpot/issue/3237)
+- Fix mouse leave in handoff close overlay animation breaks [Taiga #3173](https://tree.taiga.io/project/penpot/issue/3173)
 - Fix different behaviour during image drag [Taiga #2279](https://tree.taiga.io/project/penpot/issue/2279)
 - Fix hidden file name on import [Taiga #3172](https://tree.taiga.io/project/penpot/issue/3172)
 - Fix unneccessary scrollbars at the color list [Taiga #3211](https://tree.taiga.io/project/penpot/issue/3211)
