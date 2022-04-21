@@ -482,22 +482,3 @@
                       (assoc :frame-id frame-id)
                       (cp/setup-rect-selrect))]
         (rx/of (add-shape shape))))))
-
-(defn image-uploaded
-  [image {:keys [x y]}]
-  (ptk/reify ::image-uploaded
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [{:keys [name width height id mtype]} image
-            shape {:name name
-                   :width width
-                   :height height
-                   :x (- x (/ width 2))
-                   :y (- y (/ height 2))
-                   :metadata {:width width
-                              :height height
-                              :mtype mtype
-                              :id id}}]
-        (rx/of (create-and-add-shape :image x y shape))))))
-
-

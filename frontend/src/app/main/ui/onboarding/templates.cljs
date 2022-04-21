@@ -12,9 +12,9 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
@@ -39,7 +39,7 @@
           (reset! downloading? true)
           (->> (http/send! {:method :get :uri link :response-type :blob :mode :no-cors})
                (rx/subs (fn [{:keys [body] :as response}]
-                          (open-import-modal {:name name :uri (dom/create-uri body)}))
+                          (open-import-modal {:name name :uri (wapi/create-uri body)}))
                         (fn [error]
                           (js/console.log "error" error))
                         (fn []

@@ -19,11 +19,9 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.repo :as rp]
    [app.util.color :as uc]
    [app.util.path.parser :as upp]
    [app.util.svg :as usvg]
-   [app.util.uri :as uu]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]))
@@ -428,37 +426,6 @@
         (reduce reducer-fn [unames changes] (d/enumerate children)))
 
       [unames changes])))
-
-(declare create-svg-shapes)
-
-(defn svg-uploaded
-  [svg-data file-id position]
-  (ptk/reify ::svg-uploaded
-    ptk/WatchEvent
-    (watch [_ _ _]
-      ;; Once the SVG is uploaded, we need to extract all the bitmap
-      ;; images and upload them separately, then proceed to create
-      ;; all shapes.
-      (->> (rx/from (usvg/collect-images svg-data))
-           (rx/map (fn [uri]
-                     (merge
-                      {:file-id file-id
-                       :is-local true}
-                      (if (str/starts-with? uri "data:")
-                        {:name "image"
-                         :content (uu/data-uri->blob uri)}
-                        {:name (uu/uri-name uri)
-                         :url uri}))))
-           (rx/mapcat (fn [uri-data]
-                        (->> (rp/mutation! (if (contains? uri-data :content)
-                                             :upload-file-media-object
-                                             :create-file-media-object-from-url) uri-data)
-                             ;; When the image uploaded fail we skip the shape
-                             ;; returning `nil` will afterward not create the shape.
-                             (rx/catch #(rx/of nil))
-                             (rx/map #(vector (:url uri-data) %)))))
-           (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})
-           (rx/map #(create-svg-shapes (assoc svg-data :image-data %) position))))))
 
 (defn create-svg-shapes
   [svg-data {:keys [x y] :as position}]

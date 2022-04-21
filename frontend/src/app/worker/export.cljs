@@ -7,13 +7,14 @@
 (ns app.worker.export
   (:require
    [app.common.data :as d]
+   [app.common.media :as cm]
    [app.common.text :as ct]
    [app.config :as cfg]
    [app.main.render :as r]
    [app.main.repo :as rp]
-   [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.json :as json]
+   [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
@@ -135,7 +136,7 @@
         (rx/map #(assoc % :file-id file-id))
         (rx/flat-map
          (fn [media]
-           (let [file-path (str/concat file-id "/media/" (:id media) (dom/mtype->extension (:mtype media)))]
+           (let [file-path (str/concat file-id "/media/" (:id media) (cm/mtype->extension (:mtype media)))]
              (->> (http/send!
                    {:uri (cfg/resolve-file-media media)
                     :response-type :blob
@@ -466,7 +467,7 @@
                        :filename (:name file)
                        :mtype "application/penpot"
                        :description "Penpot export (*.penpot)"
-                       :uri (dom/create-uri export-blob)}))))
+                       :uri (wapi/create-uri export-blob)}))))
                (rx/catch
                    (fn [err]
                      (rx/of {:type :error

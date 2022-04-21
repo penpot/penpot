@@ -12,6 +12,7 @@
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -111,10 +112,10 @@
         frames         (mf/deref refs/workspace-frames)
 
         add-shared-fn
-        (st/emitf (dw/set-file-shared (:id file) true))
+        (st/emitf (dwl/set-file-shared (:id file) true))
 
         del-shared-fn
-        (st/emitf (dw/set-file-shared (:id file) false))
+        (st/emitf (dwl/set-file-shared (:id file) false))
 
         on-add-shared
         (mf/use-fn

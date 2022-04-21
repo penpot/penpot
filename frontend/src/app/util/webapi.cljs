@@ -37,7 +37,7 @@
   [file]
   (file-reader #(.readAsDataURL ^js %1 file)))
 
-(defn ^boolean blob?
+(defn blob?
   [v]
   (instance? js/Blob v))
 

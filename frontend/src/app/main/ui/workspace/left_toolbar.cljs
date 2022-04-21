@@ -10,6 +10,7 @@
    [app.common.media :as cm]
    [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -44,7 +45,7 @@
                  params {:file-id (:id file)
                          :blobs (seq blobs)
                          :position (gpt/point x y)}]
-             (st/emit! (dw/upload-media-workspace params)))))]
+             (st/emit! (dwm/upload-media-workspace params)))))]
 
     [:li.tooltip.tooltip-right
      {:alt (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
