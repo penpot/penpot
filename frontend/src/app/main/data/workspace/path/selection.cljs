@@ -50,7 +50,7 @@
             id (get-in state [:workspace-local :edition])
             content (st/get-path state :content)
             selected-point? #(gsh/has-point-rect? selrect %)
-            selected-points (get-in state [:workspace-local :edit-path id :selected-points])
+            selected-points (or (get-in state [:workspace-local :edit-path id :selected-points]) #{})
             positions (into (if shift? selected-points #{})
                             (comp (filter #(not (= (:command %) :close-path)))
                                   (map (comp gpt/point :params))
