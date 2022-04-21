@@ -11,6 +11,7 @@
    [app.common.math :as mth]
    [app.main.ui.shapes.path :refer [path-shape]]
    [app.main.ui.workspace.shapes :as shapes]
+   [app.main.ui.workspace.shapes.path.common :as pc]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [rumext.alpha :as mf]))
 
@@ -22,7 +23,8 @@
 
   [:g.draw-area
    [:g {:style {:pointer-events "none"}}
-    [:& shapes/shape-wrapper {:shape (gsh/transform-shape shape)}]]
+    [:& shapes/shape-wrapper {:shape (-> (gsh/transform-shape shape)
+                                         (assoc :fills [{:fill-color pc/white-color :fill-opacity 0}]))}]]
 
    (case tool
      :path      [:& path-editor {:shape shape :zoom zoom}]
