@@ -160,8 +160,8 @@
          ;; This stream checks the consecutive mouse positions to do the dragging
          (->> points
               (streams/move-points-stream snap-toggled start-position selected-points)
-              (rx/take-until stopper)
-              (rx/map #(move-selected-path-point start-position %)))
+              (rx/map #(move-selected-path-point start-position %))
+              (rx/take-until stopper))
          (rx/of (apply-content-modifiers)))))))
 
 (defn- get-displacement
