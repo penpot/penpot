@@ -36,13 +36,13 @@
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.data.workspace.svg-upload :as svg]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -1606,6 +1606,7 @@
                (dwc/add-shape shape)
                (dwu/commit-undo-transaction))))))
 
+;; TODO: why not implement it in terms of upload-media-workspace?
 (defn- paste-svg
   [text]
   (us/assert string? text)
@@ -1614,8 +1615,8 @@
     (watch [_ state _]
       (let [position (deref ms/mouse-position)
             file-id  (:current-file-id state)]
-        (->> (dwp/parse-svg ["svg" text])
-             (rx/map #(svg/svg-uploaded % file-id position)))))))
+        (->> (dwm/svg->clj ["svg" text])
+             (rx/map #(dwm/svg-uploaded % file-id position)))))))
 
 (defn- paste-image
   [image]
@@ -1626,7 +1627,7 @@
             params  {:file-id file-id
                      :blobs [image]
                      :position @ms/mouse-position}]
-        (rx/of (dwp/upload-media-workspace params))))))
+        (rx/of (dwm/upload-media-workspace params))))))
 
 (defn toggle-distances-display [value]
   (ptk/reify ::toggle-distances-display
@@ -1707,17 +1708,6 @@
 (dm/export dwt/flip-horizontal-selected)
 (dm/export dwt/flip-vertical-selected)
 (dm/export dwly/set-opacity)
-
-;; Persistence
-
-(dm/export dwp/set-file-shared)
-(dm/export dwp/fetch-shared-files)
-(dm/export dwp/link-file-to-library)
-(dm/export dwp/unlink-file-from-library)
-(dm/export dwp/upload-media-asset)
-(dm/export dwp/upload-media-workspace)
-(dm/export dwp/clone-media-object)
-(dm/export dwc/image-uploaded)
 
 ;; Common
 (dm/export dwc/add-shape)

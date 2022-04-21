@@ -44,6 +44,21 @@
     "image/svg+xml" :svg
     nil))
 
+(defn mtype->extension [mtype]
+  ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+  (case mtype
+    "image/apng"         ".apng"
+    "image/avif"         ".avif"
+    "image/gif"          ".gif"
+    "image/jpeg"         ".jpg"
+    "image/png"          ".png"
+    "image/svg+xml"      ".svg"
+    "image/webp"         ".webp"
+    "application/zip"    ".zip"
+    "application/penpot" ".penpot"
+    "application/pdf"    ".pdf"
+    nil))
+
 (def max-file-size (* 5 1024 1024))
 
 (s/def ::id uuid?)

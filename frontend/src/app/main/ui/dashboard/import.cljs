@@ -17,6 +17,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
@@ -35,7 +36,7 @@
                         (mapv
                          (fn [file]
                            {:name (.-name file)
-                            :uri  (dom/create-uri file)})))]
+                            :uri  (wapi/create-uri file)})))]
          (st/emit! (modal/show
                     {:type :import
                      :project-id project-id
@@ -310,7 +311,7 @@
      (fn []
        ;; dispose uris when the component is umount
        #(doseq [file files]
-          (dom/revoke-uri (:uri file)))))
+          (wapi/revoke-uri (:uri file)))))
 
     [:div.modal-overlay
      [:div.modal-container.import-dialog
