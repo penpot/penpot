@@ -382,6 +382,14 @@
           (some? style)
           (obj/set! "style" style)))
 
+      (and (= :path (:type shape)) (empty? (:fills shape)))
+      (let [style
+            (-> (obj/get props "style")
+                (obj/clone)
+                (obj/set! "fill" "none"))]
+        (-> props
+            (obj/set! "style" style)))
+
       :else
       props)))
 
