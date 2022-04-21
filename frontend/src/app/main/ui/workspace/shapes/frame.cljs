@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.shapes.frame
   (:require
    [app.common.data :as d]
-   [app.common.pages.helpers :as cph]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
@@ -40,12 +39,19 @@
           [:& ff/fontfaces-style {:fonts fonts}]
           [:> frame-shape {:shape shape :childs childs} ]]]))))
 
+(defn check-props
+  [new-props old-props]
+  (and
+       (= (unchecked-get new-props "thumbnail?") (unchecked-get old-props "thumbnail?"))
+       (= (unchecked-get new-props "shape") (unchecked-get old-props "shape"))
+       (= (unchecked-get new-props "objects") (unchecked-get old-props "objects"))))
+
 (defn frame-wrapper-factory
   [shape-wrapper]
 
   (let [frame-shape (frame-shape-factory shape-wrapper)]
     (mf/fnc frame-wrapper
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "thumbnail?" "objects"]))]
+      {::mf/wrap [#(mf/memo' % check-props)]
        ::mf/wrap-props false}
       [props]
 
@@ -53,16 +59,10 @@
             thumbnail?         (unchecked-get props "thumbnail?")
             objects            (unchecked-get props "objects")
 
-            objects            (mf/use-memo
-                                (mf/deps objects)
-                                #(cph/get-frame-objects objects (:id shape)))
-
-            objects            (hooks/use-equal-memo objects)
-
             fonts              (mf/use-memo (mf/deps shape objects) #(ff/frame->fonts shape objects))
             fonts              (-> fonts (hooks/use-equal-memo))
 
-            force-render (mf/use-state false)
+            force-render       (mf/use-state false)
 
             ;; Thumbnail data
             frame-id           (:id shape)
@@ -76,23 +76,30 @@
             ;; when `true` we've called the mount for the frame
             rendered?          (mf/use-var false)
 
-            modifiers          (fdm/use-dynamic-modifiers shape objects node-ref)
+            ;; Modifiers
+            modifiers-ref      (mf/use-memo (mf/deps frame-id) #(refs/workspace-modifiers-by-frame-id frame-id))
+            modifiers          (mf/deref modifiers-ref)
 
-            disable?           (d/not-empty? (get-in modifiers [(:id shape) :modifiers]))
+            disable-thumbnail? (d/not-empty? (get-in modifiers [(:id shape) :modifiers]))
 
             [on-load-frame-dom thumb-renderer]
-            (ftr/use-render-thumbnail shape node-ref rendered? thumbnail? disable?)
+            (ftr/use-render-thumbnail shape node-ref rendered? thumbnail? disable-thumbnail?)
 
             on-frame-load
             (fns/use-node-store thumbnail? node-ref rendered?)]
+
+        (fdm/use-dynamic-modifiers objects @node-ref modifiers)
 
         (mf/use-effect
          (fn []
            ;; When a change in the data is received a "force-render" event is emited
            ;; that will force the component to be mounted in memory
-           (->> (dwt/force-render-stream (:id shape))
-                (rx/take-while #(not @rendered?))
-                (rx/subs #(reset! force-render true)))))
+           (let [sub
+                 (->> (dwt/force-render-stream (:id shape))
+                      (rx/take-while #(not @rendered?))
+                      (rx/subs #(reset! force-render true)))]
+             #(when sub
+                (rx/dispose! sub)))))
 
         (mf/use-effect
          (mf/deps shape fonts thumbnail? on-load-frame-dom @force-render)
@@ -105,8 +112,7 @@
               @node-ref)
              (when (not @rendered?) (reset! rendered? true)))))
 
-        [:g.frame-container {:key "frame-container"
-                             :ref on-frame-load}
+        [:g.frame-container {:key "frame-container" :ref on-frame-load}
          thumb-renderer
 
          [:g.frame-thumbnail

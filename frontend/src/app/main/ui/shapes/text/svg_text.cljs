@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.text.svg-text
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.config :as cfg]
    [app.main.ui.context :as muc]
@@ -57,7 +58,8 @@
 
               alignment-bl (when (cfg/check-browser? :safari) "text-before-edge")
               dominant-bl (when-not (cfg/check-browser? :safari) "ideographic")
-              props (-> #js {:x (:x data)
+              props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
+                             :x (:x data)
                              :y y
                              :alignmentBaseline alignment-bl
                              :dominantBaseline dominant-bl

@@ -245,7 +245,7 @@
 
 (mf/defc frame-wrapper
   {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % (mf/check-props ["selected" "item" "index" "objects"]))
+   ::mf/wrap [mf/memo
               #(mf/deferred % ts/idle-then-raf)]}
   [props]
   [:> layer-item props])
@@ -274,33 +274,6 @@
                :objects objects
                :key id}])))]]))
 
-(defn- strip-obj-data [obj]
-  (dm/select-keys obj [:id
-                       :name
-                       :blocked
-                       :hidden
-                       :shapes
-                       :type
-                       :content
-                       :parent-id
-                       :component-id
-                       :component-file
-                       :shape-ref
-                       :touched
-                       :metadata
-                       :masked-group?
-                       :bool-type]))
-
-(defn- strip-objects
-  "Remove unnecesary data from objects map"
-  [objects]
-  (persistent!
-   (->> objects
-        (reduce-kv
-         (fn [res id obj]
-           (assoc! res id (strip-obj-data obj)))
-         (transient {})))))
-
 (mf/defc layers-tree-wrapper
   {::mf/wrap-props false
    ::mf/wrap [mf/memo #(mf/throttle % 200)]}
@@ -312,10 +285,8 @@
                   filters)
         objects (-> (obj/get props "objects")
                     (hooks/use-equal-memo))
-        objects (mf/use-memo
-                 (mf/deps objects)
-                 #(strip-objects objects))
 
+        ;; TODO: Fix performance
         reparented-objects (d/mapm (fn [_ val]
                                      (assoc val :parent-id uuid/zero :shapes nil))
                                    objects)

@@ -44,7 +44,14 @@
   [props]
   (let [objects       (obj/get props "objects")
         active-frames (obj/get props "active-frames")
-        shapes        (cph/get-immediate-children objects)]
+        shapes        (cph/get-immediate-children objects)
+
+        ;; We group the objects together per frame-id so if an object of a different
+        ;; frame changes won't affect the rendering frame
+        frame-objects
+        (mf/use-memo
+         (mf/deps objects)
+         #(cph/objects-by-frame objects))]
     [:*
      ;; Render font faces only for shapes that are part of the root
      ;; frame but don't belongs to any other frame.
@@ -57,7 +64,7 @@
        (if (cph/frame-shape? item)
          [:& frame-wrapper {:shape item
                             :key (:id item)
-                            :objects objects
+                            :objects (get frame-objects (:id item))
                             :thumbnail? (not (get active-frames (:id item) false))}]
 
          [:& shape-wrapper {:shape item

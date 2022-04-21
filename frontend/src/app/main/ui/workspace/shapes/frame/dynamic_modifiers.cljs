@@ -8,21 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.main.refs :as refs]
    [app.main.ui.workspace.viewport.utils :as utils]
    [rumext.alpha :as mf]))
 
 (defn use-dynamic-modifiers
-  [shape objects node-ref]
+  [objects node modifiers]
 
-  (let [frame-modifiers-ref
-        (mf/use-memo
-         (mf/deps (:id shape))
-         #(refs/workspace-modifiers-by-frame-id (:id shape)))
-
-        modifiers (mf/deref frame-modifiers-ref)
-
-        transforms
+  (let [transforms
         (mf/use-memo
          (mf/deps modifiers)
          (fn []
@@ -48,16 +40,15 @@
      (fn []
        (when (and (nil? @prev-transforms)
                   (some? transforms))
-         (utils/start-transform! @node-ref shapes))
+         (utils/start-transform! node shapes))
 
        (when (some? modifiers)
-         (utils/update-transform! @node-ref shapes transforms modifiers))
+         (utils/update-transform! node shapes transforms modifiers))
 
        (when (and (some? @prev-modifiers)
                   (empty? modifiers))
-         (utils/remove-transform! @node-ref @prev-shapes))
+         (utils/remove-transform! node @prev-shapes))
 
        (reset! prev-modifiers modifiers)
        (reset! prev-transforms transforms)
-       (reset! prev-shapes shapes)))
-    modifiers))
+       (reset! prev-shapes shapes)))))

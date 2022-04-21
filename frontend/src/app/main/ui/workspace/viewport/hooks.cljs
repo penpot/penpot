@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.viewport.hooks
   (:require
-   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
@@ -18,6 +17,7 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as sfd]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.worker :as uw]
@@ -199,62 +199,18 @@
 
 (defn setup-viewport-modifiers
   [modifiers objects]
-
   (let [root-frame-ids
         (mf/use-memo
          (mf/deps objects)
-         #(->> objects
-               (vals)
-               (filter (fn [{:keys [type frame-id]}]
-                         (and
-                          (not= :frame type)
-                          (= uuid/zero frame-id))))
-               (map :id)))
-
-        objects (select-keys objects root-frame-ids)
-        modifiers (select-keys modifiers root-frame-ids)
-
-        transforms
-        (mf/use-memo
-         (mf/deps modifiers)
          (fn []
-           (when (some? modifiers)
-             (d/mapm (fn [id {modifiers :modifiers}]
-                       (let [center (gsh/center-shape (get objects id))]
-                         (gsh/modifiers->transform center modifiers)))
-                     modifiers))))
-
-        shapes
-        (mf/use-memo
-         (mf/deps transforms)
-         (fn []
-           (->> (keys transforms)
-                (mapv (d/getf objects)))))
-
-        prev-shapes (mf/use-var nil)
-        prev-modifiers (mf/use-var nil)
-        prev-transforms (mf/use-var nil)]
-
-    ;; Layout effect is important so the code is executed before the modifiers
-    ;; are applied to the shape
-    (mf/use-layout-effect
-     (mf/deps transforms)
-     (fn []
-       (when (and (nil? @prev-transforms)
-                  (some? transforms))
-         (utils/start-transform! globals/document shapes))
-
-       (when (some? modifiers)
-         (utils/update-transform! globals/document shapes transforms modifiers))
-
-
-       (when (and (some? @prev-modifiers)
-                  (not (some? modifiers)))
-         (utils/remove-transform! globals/document @prev-shapes))
-
-       (reset! prev-modifiers modifiers)
-       (reset! prev-transforms transforms)
-       (reset! prev-shapes shapes)))))
+           (let [frame? (into #{} (cph/get-frames-ids objects))
+                 ;; Removes from zero/shapes attribute all the frames so we can ask only for
+                 ;; the non-frame children
+                 objects (-> objects
+                             (update-in [uuid/zero :shapes] #(filterv (comp not frame?) %)))]
+             (cph/get-children-ids objects uuid/zero))))
+        modifiers (select-keys modifiers root-frame-ids)]
+    (sfd/use-dynamic-modifiers objects globals/document modifiers)))
 
 (defn inside-vbox [vbox objects frame-id]
   (let [frame (get objects frame-id)]

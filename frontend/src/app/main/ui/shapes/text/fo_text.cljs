@@ -20,9 +20,13 @@
 (mf/defc render-text
   {::mf/wrap-props false}
   [props]
-  (let [node  (obj/get props "node")
-        text  (:text node)
-        style (sts/generate-text-styles node)]
+  (let [node   (obj/get props "node")
+        parent (obj/get props "parent")
+        shape  (obj/get props "shape")
+        text   (:text node)
+        style  (if (= text "")
+                 (sts/generate-text-styles shape parent)
+                 (sts/generate-text-styles shape node))]
     [:span.text-node {:style style}
      (if (= text "") "\u00A0" text)]))
 
@@ -60,7 +64,7 @@
 (mf/defc render-node
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [type text children] :as node} (obj/get props "node")]
+  (let [{:keys [type text children]} (obj/get props "node")]
     (if (string? text)
       [:> render-text props]
       (let [component (case type

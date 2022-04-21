@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.shapes.text.editor
   (:require
    ["draft-js" :as draft]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.text :as txt]
@@ -57,14 +58,13 @@
                        :shape shape}}
       nil)))
 
-(defn styles-fn [styles content]
-  (if (= (.getText content) "")
-    (-> (.getData content)
-        (.toJS)
-        (js->clj :keywordize-keys true)
-        (sts/generate-text-styles {:show-text? false}))
-    (-> (txt/styles-to-attrs styles)
-        (sts/generate-text-styles {:show-text? false}))))
+(defn styles-fn [shape styles content]
+  (let [data (if (= (.getText content) "")
+               (-> (.getData content)
+                   (.toJS)
+                   (js->clj :keywordize-keys true))
+               (txt/styles-to-attrs styles))]
+    (sts/generate-text-styles shape data {:show-text? false})))
 
 (def default-decorator
   (ted/create-decorator "PENPOT_SELECTION" selection-component))
@@ -95,6 +95,16 @@
         state-map     (mf/deref refs/workspace-editor-state)
         state         (get state-map id empty-editor-state)
         self-ref      (mf/use-ref)
+
+        text-modifier-ref
+        (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
+
+        text-modifier
+        (mf/deref text-modifier-ref)
+
+        shape (cond-> shape
+                (some? text-modifier)
+                (dwt/apply-text-modifier text-modifier))
 
         blurred        (mf/use-var false)
 
@@ -227,7 +237,7 @@
        :handle-return handle-return
        :strip-pasted-styles true
        :handle-pasted-text handle-pasted-text
-       :custom-style-fn styles-fn
+       :custom-style-fn (partial styles-fn shape)
        :block-renderer-fn #(render-block % shape)
        :ref on-editor
        :editor-state state}]]))
@@ -252,15 +262,20 @@
         position
         (-> (gpt/point (-> shape :selrect :x)
                        (-> shape :selrect :y))
-            (translate-point-from-viewport (mf/ref-val viewport-ref) zoom))]
+            (translate-point-from-viewport (mf/ref-val viewport-ref) zoom))
+
+        top-left-corner (gpt/point (/ (:width shape) 2) (/ (:height shape) 2))
+
+        transform
+        (-> (gmt/matrix)
+            (gmt/scale (gpt/point zoom))
+            (gmt/multiply (gsh/transform-matrix shape nil top-left-corner)))]
 
     [:div {:style {:position "absolute"
                    :left (str (:x position) "px")
                    :top  (str (:y position) "px")
                    :pointer-events "all"
-                   :transform (str (gsh/transform-matrix shape nil (gpt/point 0 0)))
-                   :transform-origin "center center"}}
+                   :transform (str transform)
+                   :transform-origin "left top"}}
 
-     [:div  {:style {:transform (str "scale(" zoom ")")
-                     :transform-origin "top left"}}
-      [:& text-shape-edit-html {:shape shape :key (str (:id shape))}]]]))
+     [:& text-shape-edit-html {:shape shape :key (str (:id shape))}]]))

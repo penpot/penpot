@@ -423,8 +423,9 @@
         shape     (obj/get props "shape")
         elem-name (obj/get child "type")
         render-id (mf/use-ctx muc/render-ctx)
+        stroke-id (dm/fmt "strokes-%" (:id shape))
         stroke-props (-> (obj/new)
-                         (obj/set! "id" (dm/fmt "strokes-%" (:id shape)))
+                         (obj/set! "id" stroke-id)
                          (cond->
                           ;; There is a blur
                           (and (:blur shape) (not (cph/frame-shape? shape)) (-> shape :blur :hidden not))
@@ -440,7 +441,7 @@
         (for [[index value] (-> (d/enumerate (:strokes shape)) reverse)]
           (let [props (build-stroke-props index child value render-id)
                 shape (assoc value :points (:points shape))]
-            [:& shape-custom-stroke {:shape shape :index index}
+            [:& shape-custom-stroke {:shape shape :index index :key (dm/str index "-" stroke-id)}
              [:> elem-name props]]))])]))
 
 (mf/defc shape-custom-strokes

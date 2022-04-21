@@ -8,6 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.math :as mth]
+   [app.main.data.workspace.texts :as dwt]
+   [app.main.refs :as refs]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text :as text]
    [debug :refer [debug?]]
@@ -17,10 +19,22 @@
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [shape (unchecked-get props "shape")]
+  (let [shape (unchecked-get props "shape")
+
+        text-modifier-ref
+        (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
+
+        text-modifier
+        (mf/deref text-modifier-ref)
+
+        shape (cond-> shape
+                (some? text-modifier)
+                (dwt/apply-text-modifier text-modifier))]
+
     [:> shape-container {:shape shape}
      [:*
-      [:& text/text-shape {:shape shape}]
+      [:g.text-shape
+       [:& text/text-shape {:shape shape}]]
 
       (when (and (debug? :text-outline) (d/not-empty? (:position-data shape)))
         (for [data (:position-data shape)]

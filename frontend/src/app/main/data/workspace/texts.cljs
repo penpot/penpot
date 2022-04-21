@@ -8,6 +8,7 @@
   (:require
    [app.common.attrs :as attrs]
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
@@ -303,83 +304,27 @@
 (defn not-changed? [old-dim new-dim]
   (> (mth/abs (- old-dim new-dim)) 0.1))
 
-(defn resize-text-batch [changes]
-  (ptk/reify ::resize-text-batch
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [page-id  (:current-page-id state)
-            objects (get-in state [:workspace-data :pages-index page-id :objects])]
-        (if-not (every? #(contains? objects(first %)) changes)
-          (rx/empty)
-
-          (let [changes-map (->> changes (into {}))
-                ids (keys changes-map)
-                update-fn
-                (fn [shape]
-                  (let [[new-width new-height] (get changes-map (:id shape))
-                        {:keys [selrect grow-type]} (gsh/transform-shape shape)
-                        {shape-width :width shape-height :height} selrect
-
-                        modifier-width (gsh/resize-modifiers shape :width new-width)
-                        modifier-height (gsh/resize-modifiers shape :height new-height)]
-
-                    (cond-> shape
-                      (and (not-changed? shape-width new-width) (= grow-type :auto-width))
-                      (-> (assoc :modifiers modifier-width)
-                          (gsh/transform-shape))
-
-                      (and (not-changed? shape-height new-height)
-                           (or (= grow-type :auto-height) (= grow-type :auto-width)))
-                      (-> (assoc :modifiers modifier-height)
-                          (gsh/transform-shape)))))]
-
-            (rx/of (dch/update-shapes ids update-fn {:reg-objects? true}))))))))
-
-;; When a resize-event arrives we start "buffering" for a time
-;; after that time we invoke `resize-text-batch` with all the changes
-;; together. This improves the performance because we only re-render the
-;; resized components once even if there are changes that applies to
-;; lots of texts like changing a font
 (defn resize-text
   [id new-width new-height]
   (ptk/reify ::resize-text
-    IDeref
-    (-deref [_]
-      {:id id :width new-width :height new-height})
-
     ptk/WatchEvent
-    (watch [_ state stream]
-      (let [;; This stream aggregates the events of "resizing"
-            resize-events
-            (rx/merge
-             (->> (rx/of (resize-text id new-width new-height)))
-             (->> stream (rx/filter (ptk/type? ::resize-text))))
+    (watch [_ _ _]
+      (letfn [(update-fn [shape]
+                (let [{:keys [selrect grow-type]} shape
+                      {shape-width :width shape-height :height} selrect
+                      modifier-width (gsh/resize-modifiers shape :width new-width)
+                      modifier-height (gsh/resize-modifiers shape :height new-height)]
+                  (cond-> shape
+                    (and (not-changed? shape-width new-width) (= grow-type :auto-width))
+                    (-> (assoc :modifiers modifier-width)
+                        (gsh/transform-shape))
 
-            ;; Stop buffering after time without resizes
-            stop-buffer (->> resize-events (rx/debounce 100))
+                    (and (not-changed? shape-height new-height)
+                         (or (= grow-type :auto-height) (= grow-type :auto-width)))
+                    (-> (assoc :modifiers modifier-height)
+                        (gsh/transform-shape)))))]
 
-            ;; Aggregates the resizes so only send the resize when the sizes are stable
-            resize-batch
-            (->> resize-events
-                 (rx/take-until stop-buffer)
-                 (rx/reduce (fn [acc event]
-                              (assoc acc (:id @event) [(:width @event) (:height @event)]))
-                            {id [new-width new-height]})
-                 (rx/map #(resize-text-batch %)))
-
-            ;; This stream retrieves the changes of page so we cancel the agregation
-            change-page
-            (->> stream
-                 (rx/filter (ptk/type? :app.main.data.workspace/finalize-page))
-                 (rx/take 1)
-                 (rx/ignore))]
-
-        (if-not (::handling-texts state)
-          (->> (rx/concat
-                (rx/of #(assoc % ::handling-texts true))
-                (rx/race resize-batch change-page)
-                (rx/of #(dissoc % ::handling-texts))))
-          (rx/empty))))))
+        (rx/of (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? false}))))))
 
 (defn save-font
   [data]
@@ -391,3 +336,46 @@
           (not multiple?)
           (assoc-in [:workspace-global :default-font] data))))))
 
+(defn apply-text-modifier
+  [shape {:keys [width height position-data]}]
+
+  (let [modifier-width (when width (gsh/resize-modifiers shape :width width))
+        modifier-height (when height (gsh/resize-modifiers shape :height height))
+
+        new-shape
+        (cond-> shape
+          (some? modifier-width)
+          (-> (assoc :modifiers modifier-width)
+              (gsh/transform-shape))
+
+          (some? modifier-height)
+          (-> (assoc :modifiers modifier-height)
+              (gsh/transform-shape))
+
+          (some? position-data)
+          (assoc :position-data position-data))
+
+        delta-move
+        (gpt/subtract (gpt/point (:selrect new-shape))
+                      (gpt/point (:selrect shape)))
+
+
+        new-shape
+        (update new-shape :position-data gsh/move-position-data (:x delta-move) (:y delta-move))]
+
+
+    new-shape))
+
+(defn update-text-modifier
+  [id props]
+  (ptk/reify ::update-text-modifier
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-text-modifier id] (fnil merge {}) props))))
+
+(defn remove-text-modifier
+  [id]
+  (ptk/reify ::remove-text-modifier
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/dissoc-in state [:workspace-text-modifier id]))))

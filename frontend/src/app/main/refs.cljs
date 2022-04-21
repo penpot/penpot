@@ -401,3 +401,9 @@
 (defn thumbnail-frame-data
   [frame-id]
   (l/derived #(get % frame-id) thumbnail-data))
+
+(def workspace-text-modifier
+  (l/derived :workspace-text-modifier st/state))
+
+(defn workspace-text-modifier-by-id [id]
+  (l/derived #(get % id) workspace-text-modifier))

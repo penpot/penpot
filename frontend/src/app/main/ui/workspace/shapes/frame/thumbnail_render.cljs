@@ -23,7 +23,7 @@
         canvas-height  (.-height canvas-node)]
     (.clearRect canvas-context 0 0 canvas-width canvas-height)
     (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
-    (.toDataURL canvas-node "image/webp" 0.75)))
+    (.toDataURL canvas-node "image/jpeg" 0.8)))
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
@@ -48,10 +48,11 @@
         (mf/use-callback
          (fn []
            (let [canvas-node (mf/ref-val frame-canvas-ref)
-                 img-node    (mf/ref-val frame-image-ref)
-                 thumb-data  (draw-thumbnail-canvas canvas-node img-node)]
-             (st/emit! (dw/update-thumbnail id thumb-data))
-             (reset! image-url nil))))
+                 img-node    (mf/ref-val frame-image-ref)]
+             (ts/raf
+              #(let [thumb-data  (draw-thumbnail-canvas canvas-node img-node)]
+                 (st/emit! (dw/update-thumbnail id thumb-data))
+                 (reset! image-url nil))))))
 
         on-change
         (mf/use-callback
@@ -67,6 +68,7 @@
                            (dom/set-property! "viewBox" (dm/str x " " y " " width " " height))
                            (dom/set-property! "width" width)
                            (dom/set-property! "height" height)
+                           (dom/set-property! "fill" "none")
                            (obj/set! "innerHTML" frame-html))
 
                        img-src  (-> svg-node dom/node->xml dom/svg->data-uri)]

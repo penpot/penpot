@@ -68,7 +68,7 @@
   #{:app.main.data.workspace.notifications/handle-pointer-update
     :app.main.data.workspace.selection/change-hover-state})
 
-(defonce ^:dynamic *debug* (atom #{#_:events}))
+(defonce ^:dynamic *debug* (atom #{#_:events :thumbnails}))
 
 (defn debug-all! [] (reset! *debug* debug-options))
 (defn debug-none! [] (reset! *debug* #{}))
