@@ -253,7 +253,7 @@
   "select * from audit_log
     where archived_at is null
     order by created_at asc
-    limit 1000
+    limit 256
       for update skip locked;")
 
 (defn archive-events
