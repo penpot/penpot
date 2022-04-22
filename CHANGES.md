@@ -45,6 +45,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix group looks blurry when setting transparency [#1584](https://github.com/penpot/penpot/issues/1584)
 - Fix internal error when hoverin over shape [Taiga #3237](https://tree.taiga.io/project/penpot/issue/3237)
 - Fix different behaviour during image drag [Taiga #2279](https://tree.taiga.io/project/penpot/issue/2279)
 - Fix hidden file name on import [Taiga #3172](https://tree.taiga.io/project/penpot/issue/3172)
