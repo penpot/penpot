@@ -1,2 +1,1276 @@
 msgid ""
-msgstr "X-Generator: Weblate\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit"
+msgstr ""
+"PO-Revision-Date: 2022-04-23 19:14+0000\n"
+"Last-Translator: Radek Sawicki <radek@sqrc.pl>\n"
+"Language-Team: Polish <https://hosted.weblate.org/projects/penpot/frontend/"
+"pl/>\n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 4.12.1-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Posiadasz już konto?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Utwórz konto demo"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Chcesz tylko spróbować?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"To jest usługa DEMO, NIE UŻYWAJ jej do prawdziwej pracy, projekty będą "
+"okresowo usuwane."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Email"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Zapomniałeś hasła?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Zaloguj się tutaj"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Zaloguj się"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Miło Cię znowu widzieć!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "Gitlab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "Zaloguj się przez LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID Connect"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Wpisz nowe hasło"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Wyrażam zgodę na zapisanie się do listy mailingowej Penpot."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Token odzyskiwania jest nieprawidłowy."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Hasło zmienione pomyślnie"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Pomyślnie dołączyłeś do zespołu"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Hasło"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Conajmniej 8 znaków"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Odzyskaj hasło"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Wyślemy Ci email z instrukcją"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Zapomniałeś hasła?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Zmień hasło"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Nie masz jeszcze konta?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Utwórz konto"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "Rozwiązanie typu Open Source do projektowania i prototypowania."
+
+msgid "auth.terms-of-service"
+msgstr "Warunki świadczenia usług"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Tworząc nowe konto, zgadzasz się na nasze warunki świadczenia usług i "
+"politykę prywatności."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Wysłaliśmy email weryfikacyjny na adres"
+
+msgid "common.share-link.get-link"
+msgstr "Uzyskaj link"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Link skopiowano pomyślnie"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Link usunięto pomyślnie"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "Można uzyskać dostęp"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Można zobaczyć"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Każdy, kto ma link, będzie miał dostęp"
+
+msgid "common.share-link.placeholder"
+msgstr "Tutaj pojawi się link do udostępniania"
+
+msgid "common.share-link.remove-link"
+msgstr "Usuń link"
+
+msgid "common.share-link.title"
+msgstr "Udostępnij prototypy"
+
+msgid "common.share-link.view-current-page"
+msgstr "Tylko ta strona"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Wybrane strony"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "Zmień email"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Zduplikuj %s pliki"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.empty-files"
+msgstr "Nadal nie masz tu żadnych plików"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"O nie! Nie masz jeszcze plików! Jeśli chcesz wypróbować niektóre szablony, "
+"przejdź do [Biblioteki i szablony](https://penpot.app/libraries-templates."
+"html)"
+
+msgid "dashboard.export-frames"
+msgstr "Eksportuj obszary kompozycji do PDF..."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Eksportuj do PDF"
+
+msgid "dashboard.export-multi"
+msgstr "Eksportuj %s pliki Penpot"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s z %s elementów wybranych"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Eksportuj"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Informacje jak ustawić eksport w Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Nie ma elementów z ustawieniami eksportu."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Eksportuj wybrane"
+
+msgid "dashboard.export-single"
+msgstr "Eksportuj plik Penpot"
+
+msgid "dashboard.export.options.all.title"
+msgstr "Eksportuj biblioteki udostępnione"
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Co najmniej jeden plik, który chcesz wyeksportować, korzysta z bibliotek "
+"udostępnionych. Co chcesz zrobić z ich zasobami*?"
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Traktuj zasoby biblioteki współdzielonej jako podstawowe obiekty"
+
+msgid "dashboard.export.title"
+msgstr "Eksportuj pliki"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Font usunięty"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Odrzuć wszystko"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Nadal nie masz zainstalowanych fontów niestandardowych."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 font dodany"
+msgstr[1] "%s fonty dodane"
+msgstr[2] "%s fontów dodanych"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Prześlij wszystko"
+
+msgid "dashboard.import"
+msgstr "Importuj pliki Penpot"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Kurza stopa! Nie udało się zaimportować tego pliku"
+
+msgid "dashboard.import.import-error"
+msgstr ""
+"Podczas importowania pliku wystąpił problem. Plik nie został zaimportowany."
+
+msgid "dashboard.import.import-message"
+msgstr "%s plików zostało pomyślnie zaimportowanych."
+
+msgid "dashboard.import.import-warning"
+msgstr "Niektóre pliki zawierały nieprawidłowe obiekty, które zostały usunięte."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Przetwarzanie kolorów"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Przetwarzanie mediów"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Przetwarzanie komponentów"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Przetwarzanie strony: %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Przetwarzanie typografii"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Przesyłanie danych na serwer (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Przesyłanie pliku: %s"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Biblioteki współdzielone"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "ładowanie Twoich plików…"
+
+msgid "dashboard.loading-fonts"
+msgstr "ładowanie Twoich fontów…"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Przenieś do"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Przenieś %s pliki do"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Przenieś do innego zespołu"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Nowy projekt"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Nowy projekt"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ Nowy plik"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Nowy plik"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr ""
+"Wysyłaj mi wiadomości, aktualizacje produktów i rekomendacje dotyczące "
+"Penpot."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Subskrypcja newslettera"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "Nie znaleziono dopasowań dla “%s“"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Tutaj pojawią się przypięte projekty"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Twój adres email został pomyślnie zweryfikowany"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "Hasło zostało pomyślnie zapisane!"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s członków"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Otwórz plik w nowej zakładce"
+
+msgid "dashboard.options"
+msgstr "Opcje"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "Czy chesz usunąć swoje konto?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "Usuń jako Bibliotekę Udostępnioną"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Zapisz ustawienia"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "Wyszukiwanie “%s“…"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.show-all-files"
+msgstr "Pokaż wszystkie pliki"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "Twój plik został pomyślnie usunięty"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "Twój projekt został pomyślnie usunięty"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "Twój plik został pomyślnie zduplikowany"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "Twój projekt został pomyślnie przeniesiony"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-members"
+msgstr "Członkowie zespołu"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-projects"
+msgstr "Projekty zespołu"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.title-search"
+msgstr "Wyniki wyszukiwania"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.type-something"
+msgstr "Wpisz, aby wyszukać wyniki"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "Email"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-cancel"
+msgstr "Anuluj"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-already-exists"
+msgstr "Email jest już używany"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.email-already-validated"
+msgstr "E-mail został już zweryfikowany."
+
+msgid "errors.email-as-password"
+msgstr "Nie możesz użyć swojego adresu email jako hasła"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.email-has-permanent-bounces"
+msgstr "Email «%s» zawiera wiele stałych raportów o odrzuceniu."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-invalid-confirmation"
+msgstr "E-mail potwierdzający musi być zgodny"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "Email «%s» został zgłoszony jako spam lub trwale odrzucony."
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.generic"
+msgstr "Coś poszło nie tak."
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Nieprawidłowy kolor"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "Uwierzytelnianie LDAP jest wyłączone."
+
+msgid "errors.media-format-unsupported"
+msgstr "Format obrazu nie jest obsługiwany (musi to być svg, jpg lub png)."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.media-too-large"
+msgstr "Obraz jest zbyt duży (musi mieć mniej niż 5 MB)."
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-mismatch"
+msgstr "Wygląda na to, że zawartość obrazu nie pasuje do rozszerzenia pliku."
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-not-allowed"
+msgstr "Wygląda, że to nie jest prawidłowy obraz."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "errors.member-is-muted"
+msgstr ""
+"W zapraszanym profilu powiadomienia email są wyciszone (zgłoszenia spamu lub "
+"wysokie odrzucenia)."
+
+msgid "errors.network"
+msgstr "Nie można połączyć się z serwerem zaplecza."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.google-auth-not-enabled"
+msgstr "Uwierzytelnianie z Google wyłączone po stronie zaplecza"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-too-short"
+msgstr "Hasło powinno zawierać co najmniej 8 znaków"
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "Członek, którego próbujesz przypisać, nie istnieje."
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr ""
+"Musisz zaakceptować nasze warunki świadcznia usług oraz politykę prywatności."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.token-expired"
+msgstr "Token wygasł"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "Nieznany token"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.wrong-credentials"
+msgstr "Wygląda na to, że nazwa użytkownika lub hasło jest nieprawidłowe."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.wrong-old-password"
+msgstr "Stare hasło jest nieprawidłowe"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-start"
+msgstr "Dołącz do czatu"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-subtitle"
+msgstr "Masz ochotę porozmawiać? Dołącz do nas na Gitter"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "Opis"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle1"
+msgstr "Dołącz do forum komunikacji zespołowej Penpot."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-subtitle2"
+msgstr ""
+"Możesz zadawać pytania i odpowiadać na nie, prowadzić otwarte rozmowy i "
+"śledzić decyzje mające wpływ na projekt."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-title"
+msgstr "Dyskusje zespołowe"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "Temat"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "Email"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "generic.error"
+msgstr "Wystąpił błąd"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur"
+msgstr "Rozmycie"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur.value"
+msgstr "Wartość"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "Wysokość"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "Szerokość"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout"
+msgstr "Układ"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "Wysokość"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "Lewo"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "Obrót"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "Góra"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "Szerokość"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-x"
+msgstr "X"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-y"
+msgstr "Y"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.spread"
+msgstr "S"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke"
+msgstr "Obrys"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "Środek"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.inner"
+msgstr "Wewnątrz"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "Zewnątrz"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "Kropkowany"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "Mieszany"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Ciągły"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "Szerokość"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "Typografia"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "Rodzina fontów"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "Rozmiar fontu"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.letter-spacing"
+msgstr "Rozstaw liter"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "Wysokość linii"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "Dekoracja tekstu"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "Przekreślenie"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "Podkreślenie"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-transform"
+msgstr "Przekształcenie tekstu"
+
+msgid "handoff.attributes.typography.text-transform.lowercase"
+msgstr "małe litery"
+
+msgid "handoff.attributes.typography.text-transform.none"
+msgstr "Brak"
+
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "Kapitaliki"
+
+msgid "handoff.attributes.typography.text-transform.uppercase"
+msgstr "DUŻE LITERY"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Kod"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "Okrąg"
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "Komponent"
+
+msgid "handoff.tabs.code.selected.curve"
+msgstr "Krzywa"
+
+msgid "handoff.tabs.code.selected.group"
+msgstr "Grupa"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "Obraz"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Maska"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code.selected.multiple"
+msgstr "%s wybrano"
+
+msgid "handoff.tabs.code.selected.path"
+msgstr "Ścieżka"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "Prostokąt"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "Tekst"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "Informacje"
+
+msgid "history.alert-message"
+msgstr "Widzisz wersję %s"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "O Penpot"
+
+msgid "labels.accept"
+msgstr "Akceptuj"
+
+msgid "labels.add-custom-font"
+msgstr "Dodaj niestandardowy font"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "Admin"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "Wszystko"
+
+msgid "labels.and"
+msgstr "i"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.desc-message"
+msgstr ""
+"Wygląda na to, że musisz trochę poczekać i spróbować ponownie; wykonujemy "
+"drobne prace konserwacyjne naszych serwerów."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.main-message"
+msgstr "Bad Gateway"
+
+msgid "labels.centered"
+msgstr "Środek"
+
+msgid "labels.close"
+msgstr "Zamknij"
+
+msgid "labels.continue"
+msgstr "Kontynuuj"
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "Stwórz nowy zespół"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "Wprowadź nazwę nowego zespołu"
+
+msgid "labels.custom-fonts"
+msgstr "Niestandardowe fonty"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "Kokpit"
+
+msgid "labels.default"
+msgstr "domyślne"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete"
+msgstr "Usuń"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment"
+msgstr "Usuń komentarz"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment-thread"
+msgstr "Usuń wątek"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Usuń zaproszenie"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "Usuń %s plików"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.drafts"
+msgstr "Szkice"
+
+msgid "labels.edit-file"
+msgstr "Edytuj plik"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.editor"
+msgstr "Edytor"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.email"
+msgstr "Email"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Wygasły"
+
+msgid "labels.export"
+msgstr "Eksportuj"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-disabled"
+msgstr "Opinie wyłączone"
+
+msgid "labels.fonts"
+msgstr "Fonty"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.give-feedback"
+msgstr "Dodaj opinię"
+
+msgid "labels.go-back"
+msgstr "Wróć"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Centrum Pomocy"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.hide-resolved-comments"
+msgstr "Ukryj rozwiązane komentarze"
+
+msgid "labels.icons"
+msgstr "Ikony"
+
+msgid "labels.images"
+msgstr "Obrazy"
+
+msgid "labels.installed-fonts"
+msgstr "Zainstalowane fonty"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.desc-message"
+msgstr ""
+"Stało się coś złego. Spróbuj ponownie wykonać operację, a jeśli problem "
+"będzie się powtarzał, skontaktuj się z pomocą techniczną."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.main-message"
+msgstr "Błąd wewnętrzny"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Zaproszenia"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "labels.language"
+msgstr "Język"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "Biblioteki i szablony"
+
+msgid "labels.link"
+msgstr "Link"
+
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.logout"
+msgstr "Wyloguj"
+
+msgid "labels.manage-fonts"
+msgstr "Zarządzaj fontami"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Członek"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.new-password"
+msgstr "Nowe hasło"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+msgid "labels.no-comments-available"
+msgstr "Nie masz żadnych oczekujących powiadomień o komentarzach"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "Brak zaproszeń."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.auth-info"
+msgstr "Jesteś zalogowany jako"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.desc-message"
+msgstr "Ta strona może nie istnieć lub nie masz do niej uprawnień dostępu."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.main-message"
+msgstr "Kurza stopa!"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Potwierdź hasło"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Sprawdź swój email i kliknij w link, aby zweryfikować i zacząć korzystać z "
+"Penpot."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Imię i nazwisko"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+msgid "dashboard.draft-title"
+msgstr "Szkic"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "Profil nie został zweryfikowany, zweryfikuj profil przed kontynuacją."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "To nic nie kosztuje, to Open Source"
+
+msgid "common.share-link.view-all-pages"
+msgstr "Wszystkie strony"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Link do odzyskiwania hasła został wysłany na Twój email."
+
+msgid "auth.privacy-policy"
+msgstr "Polityka prywatności"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Twój Penpot"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Twój plik zostanie wyeksportowany ze wszystkimi zasobami zewnętrznymi "
+"połączonymi z biblioteką plików."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Utwórz konto"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Duplikuj"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Czy na pewno chcesz usunąć ten link? Jeśli to zrobisz, nie będzie już "
+"dostępny dla nikogo"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Dodaj jako Udostępnioną Bibliotekę"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(skopiuj)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ Utwórz nowy zespół"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Usuń zespół"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Możesz dodać ustawienia eksportu do elementów z właściwości projektu (na "
+"dole prawego paska bocznego)."
+
+msgid "dashboard.export.detail"
+msgstr "* Może zawierać komponenty, grafikę, kolory i/lub typografię."
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"pliki z bibliotekami współdzielonymi zostaną uwzględnione w eksporcie, z "
+"zachowaniem ich powiązania."
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Biblioteki udostępnione nie zostaną uwzględnione w eksporcie i żadne zasoby "
+"nie zostaną dodane do biblioteki. "
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Uwzględnij zasoby bibliotek współdzielonych w bibliotekach plików"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Każdy przesłany tutaj web font zostanie dodany do listy rodzin fontów "
+"dostępnych we właściwościach tekstowych plików tego zespołu. Fonty o tej "
+"samej nazwie rodziny zostaną zgrupowane jako **pojedyncza rodzina fontów**. "
+"Możesz przesyłać fonty w następujących formatach: **TTF, OTF i WOFF** ("
+"potrzebny będzie tylko jeden)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Powinieneś przesyłać tylko fonty, których jesteś właścicielem lub posiadasz "
+"licencję na używanie w Penpot. Dowiedz się więcej w sekcji dotyczącej praw "
+"do treści w [Warunkach świadczenia usług Penpot] (https://penpot.app/terms."
+"html). Możesz też przeczytać o [licencjonowaniu fontów](https://www."
+"typography.com/faq)."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "Twoje pliki został pomyślnie przeniesione"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Projekty"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Zaproś do zespołu"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Opuść zespół"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "Zmień hasło"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.theme-change"
+msgstr "Temat interfejsu"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-language"
+msgstr "Wybierz język interfejsu"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "ds.updated-at"
+msgstr "Zaktualizowano: %s"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Twój adres email został pomyślnie zaktualizowany"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Przypnij/Odepnij"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.promote-to-owner"
+msgstr "Awansuj na właściciela"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "Szukaj…"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "Twój projekt został pomyślnie zduplikowany"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "Twój plik został pomyślnie przeniesiony"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.switch-team"
+msgstr "Zmień zespół"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-theme"
+msgstr "Wybierz temat"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-info"
+msgstr "Informacje o zespole"
+
+msgid "errors.team-leave.insufficient-members"
+msgstr ""
+"Niewystarczająca liczba członków, aby opuścić zespół, prawdopodobnie chcesz "
+"go usunąć."
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+msgid "dashboard.update-settings"
+msgstr "Aktualizuj ustawienia"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-name"
+msgstr "Twoje imię"
+
+#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+msgid "ds.confirm-title"
+msgstr "Jesteś pewien?"
+
+msgid "errors.auth.unable-to-login"
+msgstr "Wygląda na to, że nie jesteś uwierzytelniony lub sesja wygasła."
+
+#: src/app/main/data/workspace.cljs
+msgid "errors.clipboard-not-implemented"
+msgstr "Twoja przeglądarka nie może wykonać tej operacji"
+
+#: src/app/main/ui/settings.cljs
+msgid "dashboard.your-account-title"
+msgstr "Twoje konto"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Komponenty do aktualizacji:"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.profile-is-muted"
+msgstr ""
+"Twój profil ma wyciszone powiadomienia email (zgłoszenia spamu lub wysokie "
+"odrzucenia)."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "errors.registration-disabled"
+msgstr "Rejestracja jest obecnie wyłączona."
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "Twój Penpot"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "Promień"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-invalid-confirmation"
+msgstr "Hasło potwierdzające musi być zgodne"
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr ""
+"Właściciel nie może opuścić zespołu, musisz ponownie przypisać rolę "
+"właściciela."
+
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "errors.unexpected-error"
+msgstr "Wystąpił nieoczekiwany błąd."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-go-to"
+msgstr "Przejdź do dyskusji"
+
+#: src/app/main/ui/handoff/attributes/fill.cljs
+msgid "handoff.attributes.fill"
+msgstr "Wypełnienie"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "Cień"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subtitle"
+msgstr ""
+"Opisz powód swojego e-maila, określając, czy jest to problem, pomysł czy "
+"wątpliwość. Członek naszego zespołu odpowie tak szybko, jak to możliwe."
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "Pobierz obraz źródłowy"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.blur"
+msgstr "B"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "Styl fontu"
+
+msgid "handoff.attributes.typography.text-decoration.none"
+msgstr "Brak"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "Brak"
+
+msgid "labels.content"
+msgstr "Treść"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.cancel"
+msgstr "Anuluj"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.confirm-password"
+msgstr "Potwierdź hasło"
+
+msgid "labels.continue-with"
+msgstr "Kontynuuj z"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "labels.comments"
+msgstr "Komentarze"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Stwórz"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "Edytuj"
+
+msgid "labels.font-variants"
+msgstr "Style"
+
+msgid "labels.next"
+msgstr "Następny"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-sent"
+msgstr "Opinia wysłana"
+
+msgid "labels.font-family"
+msgstr "Rodzina fontów"
+
+msgid "labels.font-providers"
+msgstr "Dostawcy fontów"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.name"
+msgstr "Imię"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "Członkowie"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr ""
+"Naciśnij przycisk „Zaproś do zespołu”, aby zaprosić więcej członków do tego "
+"zespołu."
