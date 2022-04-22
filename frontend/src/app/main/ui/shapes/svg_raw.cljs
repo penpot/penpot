@@ -34,9 +34,9 @@
         (obj/set! "style" style))))
 
 (defn translate-shape [attrs shape]
-  (let [transform (str (usvg/svg-transform-matrix shape)
-                       " "
-                       (:transform attrs ""))]
+  (let [transform (dm/str (usvg/svg-transform-matrix shape)
+                          " "
+                          (:transform attrs ""))]
     (cond-> attrs
       (and (:svg-viewbox shape) (graphic-element? (-> shape :content :tag)))
       (assoc :transform transform))))
@@ -60,7 +60,7 @@
                   (obj/set! "preserveAspectRatio" "none"))]
 
     [:& (mf/provider svg-ids-ctx) {:value ids-mapping}
-     [:g.svg-raw {:transform (str (gsh/transform-matrix shape))}
+     [:g.svg-raw {:transform (dm/str (gsh/transform-matrix shape))}
       [:> "svg" attrs children]]]))
 
 (mf/defc svg-element

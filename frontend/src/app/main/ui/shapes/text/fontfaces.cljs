@@ -76,15 +76,15 @@
 (defn frame->fonts
   [frame objects]
   (->> (cph/get-children objects (:id frame))
-       (filterv cph/text-shape?)
-       (mapv (comp fonts/get-content-fonts :content))
+       (filter cph/text-shape?)
+       (map (comp fonts/get-content-fonts :content))
        (reduce set/union #{})))
 
 (defn shapes->fonts
   [shapes]
   (->> shapes
-       (filterv cph/text-shape?)
-       (mapv (comp fonts/get-content-fonts :content))
+       (filter cph/text-shape?)
+       (map (comp fonts/get-content-fonts :content))
        (reduce set/union #{})))
 
 (mf/defc fontfaces-style

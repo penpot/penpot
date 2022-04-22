@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.shapes.frame
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
@@ -35,9 +36,9 @@
             childs        (mf/deref childs-ref)]
 
         [:& (mf/provider embed/context) {:value true}
-         [:> shape-container #js {:shape shape :ref ref}
+         [:& shape-container {:shape shape :ref ref}
           [:& ff/fontfaces-style {:fonts fonts}]
-          [:> frame-shape {:shape shape :childs childs} ]]]))))
+          [:& frame-shape {:shape shape :childs childs} ]]]))))
 
 (defn check-props
   [new-props old-props]
@@ -80,7 +81,7 @@
             modifiers-ref      (mf/use-memo (mf/deps frame-id) #(refs/workspace-modifiers-by-frame-id frame-id))
             modifiers          (mf/deref modifiers-ref)
 
-            disable-thumbnail? (d/not-empty? (get-in modifiers [(:id shape) :modifiers]))
+            disable-thumbnail? (d/not-empty? (dm/get-in modifiers [(:id shape) :modifiers]))
 
             [on-load-frame-dom thumb-renderer]
             (ftr/use-render-thumbnail shape node-ref rendered? thumbnail? disable-thumbnail?)

@@ -396,7 +396,7 @@
              st/state))
 
 (def thumbnail-data
-  (l/derived #(get-in % [:workspace-file :thumbnails] {}) st/state))
+  (l/derived #(dm/get-in % [:workspace-file :thumbnails] {}) st/state))
 
 (defn thumbnail-frame-data
   [frame-id]

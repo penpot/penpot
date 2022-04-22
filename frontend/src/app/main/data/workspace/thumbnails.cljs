@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.thumbnails
   (:require
    [app.common.data :as d]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.refs :as refs]
@@ -49,17 +50,15 @@
             ;; the 2 second debounce is finished
             (rx/merge
              (->> stream
-                  (rx/take-until stopper)
                   (rx/filter (ptk/type? ::update-thumbnail))
-                  (rx/filter #(= id (:id (deref %))))
+                  (rx/map deref)
+                  (rx/filter #(= id (:id %)))
                   (rx/debounce 2000)
-                  (rx/first)
-                  (rx/flat-map
-                   (fn [event]
-                     (let [data (:data @event)]
-                       (rp/mutation! :upsert-file-object-thumbnail (assoc params :data data)))))
-
-                  (rx/map #(fn [state] (d/dissoc-in state [::update-thumbnail-lock id]))))
+                  (rx/take 1)
+                  (rx/map :data)
+                  (rx/flat-map #(rp/mutation! :upsert-file-object-thumbnail (assoc params :data %)))
+                  (rx/map #(fn [state] (d/dissoc-in state [::update-thumbnail-lock id])))
+                  (rx/take-until stopper))
 
              (->> (rx/of (update-thumbnail id data))
                   (rx/observe-on :async)))))))))
@@ -98,9 +97,7 @@
         (fn [id]
           (let [shape (or (get new-objects id)
                           (get old-objects id))]
-
-            (or (and (= :frame (:type shape)) id)
-                (:frame-id shape))))
+            (or (and (cph/frame-shape? shape) id) (:frame-id shape))))
 
         ;; Extracts the frames and then removes nils and the root frame
         xform (comp (mapcat extract-ids)
@@ -151,17 +148,17 @@
 
                                ;; Async so we wait for additional side-effects of commit-changes
                                (rx/observe-on :async)
-                               (rx/filter (comp not thumbnail-change?))
+                               (rx/filter (complement thumbnail-change?))
                                (rx/with-latest-from objects-stream)
                                (rx/map extract-frame-changes)
                                (rx/share))]
 
         (->> frame-changes
-             (rx/take-until stopper)
              (rx/flat-map
               (fn [ids]
                 (->> (rx/from ids)
-                     (rx/map #(ptk/data-event ::force-render %))))))))))
+                     (rx/map #(ptk/data-event ::force-render %)))))
+             (rx/take-until stopper))))))
 
 (defn duplicate-thumbnail
   [old-id new-id]

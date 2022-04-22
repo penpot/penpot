@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.text :as gst]
    [app.main.ui.context :as muc]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))

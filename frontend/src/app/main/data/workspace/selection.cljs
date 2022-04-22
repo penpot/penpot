@@ -512,10 +512,11 @@
 
                   id-duplicated   (first new-selected)]
 
-              ;; Warning: This order is important for the focus mode.
-              (rx/merge
+              (rx/concat
                (->> (rx/from dup-frames)
                     (rx/map (fn [[old-id new-id]] (dwt/duplicate-thumbnail old-id new-id))))
+
+               ;; Warning: This order is important for the focus mode.
                (rx/of (dch/commit-changes changes)
                       (select-shapes new-selected)
                       (memorize-duplicated id-original id-duplicated))))))))))
