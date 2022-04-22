@@ -393,6 +393,11 @@
                               interactions)))
                     (vals objects))
 
+            ;; If any of the deleted shapes is a frame with guides
+            guides (into {} (map (juxt :id identity) (->> (get-in page [:options :guides])
+                                                          (vals)
+                                                          (filter #(not (contains? ids (:frame-id %)))))))
+
             starting-flows
             (filter (fn [flow]
                       ;; If any of the deleted is a frame that starts a flow,
@@ -432,6 +437,7 @@
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-page page)
                         (pcb/with-objects objects)
+                        (pcb/set-page-option :guides guides)
                         (pcb/remove-objects all-children)
                         (pcb/remove-objects ids)
                         (pcb/remove-objects empty-parents)
