@@ -502,3 +502,20 @@
           (reduce process-shape (transient {}))
           (persistent!))
      persistent!)))
+
+(defn selected-subtree
+  "Given a set of shapes, returns an objects subtree with the parents
+  of the selected items up to the root. Useful to calculate a partial z-index"
+  [objects selected]
+
+  (let [selected+parents
+        (into selected
+              (mapcat #(get-parent-ids objects %))
+              selected)
+
+        remove-children
+        (fn [shape]
+          (update shape :shapes #(filterv selected+parents %)))]
+
+    (-> (select-keys objects selected+parents)
+        (d/update-vals remove-children))))
