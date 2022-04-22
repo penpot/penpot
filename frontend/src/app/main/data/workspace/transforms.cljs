@@ -632,6 +632,7 @@
                       ;; Otherwise just plain old move
                       (rx/of (start-move initial selected))))))
                 (rx/take-until stopper))))))))
+
 (defn- start-move-duplicate
   [from-position]
   (ptk/reify ::start-move-duplicate

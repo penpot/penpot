@@ -1740,7 +1740,6 @@
 (dm/export dws/shift-select-shapes)
 
 ;; Groups
-
 (dm/export dwg/mask-group)
 (dm/export dwg/unmask-group)
 (dm/export dwg/group-selected)
@@ -1772,4 +1771,3 @@
 
 ;; Thumbnails
 (dm/export dwth/update-thumbnail)
-
