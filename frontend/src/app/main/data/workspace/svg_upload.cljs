@@ -431,15 +431,14 @@
       ;; all shapes.
       (->> (rx/from (usvg/collect-images svg-data))
            (rx/map (fn [uri]
-                     (d/merge
+                     (merge
                       {:file-id file-id
-                       :is-local true
-                       :url uri}
-
+                       :is-local true}
                       (if (str/starts-with? uri "data:")
                         {:name "image"
                          :content (uu/data-uri->blob uri)}
-                        {:name (uu/uri-name uri)}))))
+                        {:name (uu/uri-name uri)
+                         :url uri}))))
            (rx/mapcat (fn [uri-data]
                         (->> (rp/mutation! (if (contains? uri-data :content)
                                              :upload-file-media-object
