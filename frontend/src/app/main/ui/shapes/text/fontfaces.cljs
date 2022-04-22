@@ -73,16 +73,25 @@
     (when (d/not-empty? style)
       [:style style])))
 
+(defn frame->fonts
+  [frame objects]
+  (->> (cph/get-children objects (:id frame))
+       (filter cph/text-shape?)
+       (map (comp fonts/get-content-fonts :content))
+       (reduce set/union #{})))
+
+(defn shapes->fonts
+  [shapes]
+  (->> shapes
+       (filter cph/text-shape?)
+       (map (comp fonts/get-content-fonts :content))
+       (reduce set/union #{})))
+
 (mf/defc fontfaces-style
   {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
+   ::mf/wrap [#(mf/memo' % (mf/check-props ["fonts"]))]}
   [props]
   (let [;; Retrieve the fonts ids used by the text shapes
-        fonts (->> (obj/get props "shapes")
-                   (filterv cph/text-shape?)
-                   (mapv (comp fonts/get-content-fonts :content))
-                   (reduce set/union #{})
-                   (hooks/use-equal-memo))]
-
+        fonts (obj/get props "fonts")]
     (when (d/not-empty? fonts)
       [:> fontfaces-style-render {:fonts fonts}])))

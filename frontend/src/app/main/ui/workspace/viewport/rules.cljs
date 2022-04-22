@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as colors]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.main.ui.formats :as fmt]
@@ -117,19 +118,16 @@
         step (calculate-step-size zoom)
         clip-id (str "clip-rule-" (d/name axis))]
 
-    
     [:*
      (let [{:keys [x y width height]} (get-background-area vbox zoom axis)]
        [:rect {:x x :y y :width width :height height :style {:fill rules-background}}])
 
-     [:g.rules {:clipPath (str "url(#" clip-id ")")} 
+     [:g.rules {:clipPath (str "url(#" clip-id ")")}
 
       [:defs
        [:clipPath {:id clip-id}
         (let [{:keys [x y width height]} (get-clip-area vbox zoom axis)]
           [:rect {:x x :y y :width width :height height}])]]
-
-      
 
       (let [{:keys [start end]} (get-rule-params vbox axis)
             minv (max start -100000)
@@ -140,9 +138,8 @@
         (for [step-val (range minv (inc maxv) step)]
           (let [{:keys [text-x text-y line-x1 line-y1 line-x2 line-y2]}
                 (get-rule-axis step-val vbox zoom axis)]
-            [:* 
-             [:text {:key (str "text-" (d/name axis) "-" step-val)
-                     :x text-x
+            [:* {:key (dm/str "text-" (d/name axis) "-" step-val)}
+             [:text {:x text-x
                      :y text-y
                      :text-anchor "middle"
                      :dominant-baseline "middle"
@@ -177,7 +174,7 @@
             :height (/ rule-area-size zoom)
             :style {:fill rules-background
                     :fill-opacity over-number-opacity}}]
-    
+
     [:text {:x (- (:x1 selection-rect) (/ 4 zoom))
             :y (+ (:y vbox) (/ 12 zoom))
             :text-anchor "end"
@@ -205,7 +202,7 @@
 
    (let [center-x (+ (:x vbox) (/ rule-area-half-size zoom))
          center-y (- (+ (:y selection-rect) (/ (:height selection-rect) 2)) (/ rule-area-half-size zoom))]
-     
+
      [:g {:transform (str "rotate(-90 " center-x "," center-y ")")}
       [:rect {:x (- center-x (/ (:height selection-rect) 2) (/ rule-area-half-size zoom))
               :y (- center-y (/ rule-area-half-size zoom))
@@ -227,7 +224,7 @@
               :height (/ rule-area-size zoom)
               :style {:fill rules-background
                       :fill-opacity over-number-opacity}}]
-      
+
       [:text {:x (- center-x (/ (:height selection-rect) 2) (/ 15 zoom))
               :y center-y
               :text-anchor "end"

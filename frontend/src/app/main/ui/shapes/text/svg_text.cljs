@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.text.svg-text
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.config :as cfg]
    [app.main.ui.context :as muc]
@@ -18,13 +19,27 @@
 
 (def fill-attrs [:fill-color :fill-color-gradient :fill-opacity])
 
+(defn set-white-fill
+  [shape]
+  (let [update-color
+        (fn [data]
+          (-> data
+              (dissoc :fill-color :fill-opacity :fill-color-gradient)
+              (assoc :fills [{:fill-color "#FFFFFF" :fill-opacity 1}])))]
+    (-> shape
+        (d/update-when :position-data #(mapv update-color %))
+        (assoc :stroke-color "#FFFFFF" :stroke-opacity 1))))
+
 (mf/defc text-shape
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
 
   (let [render-id (mf/use-ctx muc/render-ctx)
-        {:keys [x y width height position-data] :as shape} (obj/get props "shape")
+        shape (obj/get props "shape")
+        shape (cond-> shape (:is-mask? shape) set-white-fill)
+
+        {:keys [x y width height position-data]} shape
 
         transform (str (gsh/transform-matrix shape))
 
@@ -45,6 +60,7 @@
         (for [[index data] (d/enumerate position-data)]
           (when (some? (:fill-color-gradient data))
             [:& grad/gradient {:id (str "fill-color-gradient_" (get-gradient-id index))
+                               :key index
                                :attr :fill-color-gradient
                                :shape data}]))])
 
@@ -56,7 +72,8 @@
 
               alignment-bl (when (cfg/check-browser? :safari) "text-before-edge")
               dominant-bl (when-not (cfg/check-browser? :safari) "ideographic")
-              props (-> #js {:x (:x data)
+              props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
+                             :x (:x data)
                              :y y
                              :alignmentBaseline alignment-bl
                              :dominantBaseline dominant-bl
@@ -71,5 +88,5 @@
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
               shape (assoc shape :fills (:fills data))]
 
-          [:& shape-custom-strokes {:shape shape}
+          [:& shape-custom-strokes {:shape shape :key index}
            [:> :text props (:text data)]]))]]))

@@ -43,6 +43,12 @@
   [^string title]
   (set! (.-title globals/document) title))
 
+(defn set-html-theme-color
+  [^string color scheme]
+  (let [meta-node (.querySelector js/document "meta[name='theme-color']")]
+    (.setAttribute meta-node "content" color)
+    (.setAttribute meta-node "media" (str/format "(prefers-color-scheme: %s)" scheme))))
+
 (defn set-page-style!
   [styles]
   (let [node  (first (get-elements-by-tag globals/document "head"))
@@ -345,17 +351,41 @@
   {:pre [(blob? b)]}
   (js/URL.createObjectURL b))
 
+(defn make-node
+  ([namespace name]
+   (.createElementNS globals/document namespace name))
+
+  ([name]
+   (.createElement globals/document name)))
+
+(defn node->xml
+  [node]
+  (->  (js/XMLSerializer.)
+       (.serializeToString node)))
+
+(defn svg->data-uri
+  [svg]
+  (assert (string? svg))
+  (let [b64 (-> svg
+                js/encodeURIComponent
+                js/unescape
+                js/btoa)]
+    (dm/str "data:image/svg+xml;base64," b64)))
+
 (defn set-property! [^js node property value]
   (when (some? node)
-    (.setAttribute node property value)))
+    (.setAttribute node property value))
+  node)
 
 (defn set-text! [^js node text]
   (when (some? node)
-    (set! (.-textContent node) text)))
+    (set! (.-textContent node) text))
+  node)
 
 (defn set-css-property! [^js node property value]
   (when (some? node)
-    (.setProperty (.-style ^js node) property value)))
+    (.setProperty (.-style ^js node) property value))
+  node)
 
 (defn capture-pointer [^js event]
   (when (some? event)
@@ -386,7 +416,8 @@
 (defn add-class! [^js node class-name]
   (when (some? node)
     (let [class-list (.-classList ^js node)]
-      (.add ^js class-list class-name))))
+      (.add ^js class-list class-name)))
+  node)
 
 (defn remove-class! [^js node class-name]
   (when (some? node)

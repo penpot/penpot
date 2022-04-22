@@ -134,10 +134,8 @@
 
 (defn write-log!
   [logger level exception message]
-  (let [message (if (string? message)
-                  message
-                  (str/join ", " message))]
-    #?(:clj
+  #?(:clj
+     (let [message (if (string? message) message (str/join ", " message))]
        (if exception
          (.log ^Logger    logger
                ^Level     level
@@ -145,14 +143,17 @@
                ^Throwable exception)
          (.log ^Logger logger
                ^Level  level
-               ^Object message))
-       :cljs
-       (when glog/ENABLED
-         (when-let [l (get-logger logger)]
-           (let [level (get-level level)
-                 record (glog/LogRecord. level message (.getName ^js l))]
+               ^Object message)))
+     :cljs
+     (when glog/ENABLED
+       (let [logger (get-logger logger)
+             level  (get-level level)]
+         (when (and logger (glog/isLoggable logger level))
+           (let [message (if (fn? message) (message) message)
+                 message (if (string? message) message (str/join ", " message))
+                 record  (glog/LogRecord. level message (.getName ^js logger))]
              (when exception (.setException record exception))
-             (glog/publishLogRecord l record)))))))
+               (glog/publishLogRecord logger record)))))))
 
 #?(:clj
    (defn enabled?
@@ -174,9 +175,8 @@
 (defmacro log
   [& props]
   (if (:ns &env) ; CLJS
-    (let [{:keys [level cause ::logger ::raw]} props
-          message (or raw (build-message props))]
-      `(write-log! ~(or logger (str *ns*)) ~level ~cause (or ~raw (build-message ~(vec props)))))
+    (let [{:keys [level cause ::logger ::raw]} props]
+      `(write-log! ~(or logger (str *ns*)) ~level ~cause (or ~raw (fn [] (build-message ~(vec props))))))
 
     (let [{:keys [level cause ::logger ::async ::raw ::context] :or {async true}} props
           logger     (or logger (str *ns*))

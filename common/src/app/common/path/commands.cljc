@@ -98,7 +98,6 @@
     (let [content (if (vector? content) content (into [] content))]
       (reduce apply-to-index content modifiers))))
 
-
 (defn get-handler [{:keys [params] :as command} prefix]
   (let [cx (d/prefix-keyword prefix :x)
         cy (d/prefix-keyword prefix :y)]

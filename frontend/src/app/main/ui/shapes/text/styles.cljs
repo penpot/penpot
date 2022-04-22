@@ -15,13 +15,13 @@
    [cuerdas.core :as str]))
 
 (defn generate-root-styles
-  [shape node]
+  [{:keys [width height]} node]
   (let [valign (:vertical-align node "top")
-        {:keys [width height]} shape
         base   #js {:height height
                     :width  width
                     :fontFamily "sourcesanspro"
-                    :display "flex"}]
+                    :display "flex"
+                    :whiteSpace "pre-wrap"}]
     (cond-> base
       (= valign "top")     (obj/set! "alignItems" "flex-start")
       (= valign "center")  (obj/set! "alignItems" "center")
@@ -45,24 +45,21 @@
          :verticalAlign "top"}))
 
 (defn generate-paragraph-styles
-  [shape data]
+  [_shape data]
   (let [line-height (:line-height data 1.2)
         text-align  (:text-align data "start")
-        grow-type   (:grow-type shape)
-
         base        #js {:fontSize (str (:font-size data (:font-size txt/default-text-attrs)) "px")
                          :lineHeight (:line-height data (:line-height txt/default-text-attrs))
                          :margin "inherit"}]
     (cond-> base
       (some? line-height)       (obj/set! "lineHeight" line-height)
-      (some? text-align)        (obj/set! "textAlign" text-align)
-      (= grow-type :auto-width) (obj/set! "whiteSpace" "pre"))))
+      (some? text-align)        (obj/set! "textAlign" text-align))))
 
 (defn generate-text-styles
-  ([data]
-   (generate-text-styles data nil))
+  ([shape data]
+   (generate-text-styles shape data nil))
 
-  ([data {:keys [show-text?] :or {show-text? true}}]
+  ([{:keys [grow-type] :as shape} data {:keys [show-text?] :or {show-text? true}}]
    (let [letter-spacing  (:letter-spacing data 0)
          text-decoration (:text-decoration data)
          text-transform  (:text-transform data)
@@ -83,7 +80,7 @@
 
          base            #js {:textDecoration text-decoration
                               :textTransform text-transform
-                              :lineHeight (or line-height "inherit")
+                              :lineHeight (or line-height "1.2")
                               :color (if show-text? text-color "transparent")
                               :caretColor (or text-color "black")
                               :overflowWrap "initial"}
@@ -101,33 +98,35 @@
            (nil? (:fills data))
            [{:fill-color "#000000" :fill-opacity 1}])
 
-         base (cond-> base
-                (some? fills)
-                (obj/set! "--fills" (transit/encode-str fills)))]
 
-     (when (and (string? letter-spacing)
-                (pos? (alength letter-spacing)))
-       (obj/set! base "letterSpacing" (str letter-spacing "px")))
+         font (when (and (string? font-id) (pos? (alength font-id)))
+                (get fontsdb font-id))
 
-     (when (and (string? font-size)
-                (pos? (alength font-size)))
-       (obj/set! base "fontSize" (str font-size "px")))
+         [font-family font-style font-weight]
+         (when (some? font)
+           (fonts/ensure-loaded! font-id)
+           (let [font-variant (d/seek #(= font-variant-id (:id %)) (:variants font))]
+             [(str/quote (or (:family font) (:font-family data)))
+              (or (:style font-variant) (:font-style data))
+              (or (:weight font-variant) (:font-weight data))]))]
 
-     (when (and (string? font-id)
-                (pos? (alength font-id)))
-       (fonts/ensure-loaded! font-id)
-       (let [font         (get fontsdb font-id)
-             font-family  (str/quote
-                           (or (:family font)
-                               (:font-family data)))
-             font-variant (d/seek #(= font-variant-id (:id %))
-                                  (:variants font))
-             font-style   (or (:style font-variant)
-                              (:font-style data))
-             font-weight  (or (:weight font-variant)
-                              (:font-weight data))]
-         (obj/set! base "fontFamily" font-family)
-         (obj/set! base "fontStyle" font-style)
-         (obj/set! base "fontWeight" font-weight)))
+     (cond-> base
+       (some? fills)
+       (obj/set! "--fills" (transit/encode-str fills))
 
-     base)))
+       (and (string? letter-spacing) (pos? (alength letter-spacing)))
+       (obj/set! "letterSpacing" (str letter-spacing "px"))
+
+       (and (string? font-size) (pos? (alength font-size)))
+       (obj/set! "fontSize" (str font-size "px"))
+
+       (some? font)
+       (-> (obj/set! "fontFamily" font-family)
+           (obj/set! "fontStyle" font-style)
+           (obj/set! "fontWeight" font-weight))
+
+       (= grow-type :auto-width)
+       (obj/set! "whiteSpace" "pre")
+
+       (not= grow-type :auto-width)
+       (obj/set! "whiteSpace" "pre-wrap")))))

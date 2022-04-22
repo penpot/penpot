@@ -14,6 +14,7 @@
 (def gray-20 "#B1B2B5")
 (def gray-30 "#7B7D85")
 (def gray-40 "#64666A")
+(def gray-50 "#303236")
 (def info "#59B9E2")
 (def test "#fabada")
 (def white "#FFFFFF")

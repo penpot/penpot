@@ -46,7 +46,10 @@
                                   :characterData true}
                      mutation-obs (js/MutationObserver. on-mutation)]
                  (mf/set-ref-val! prev-obs-ref mutation-obs)
-                 (.observe mutation-obs node options))))))]
+                 (.observe mutation-obs node options))))
+
+           ;; Return node so it's more composable
+           node))]
 
     (mf/with-effect
       (fn []

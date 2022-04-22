@@ -144,6 +144,7 @@
                                     :id (:fill-color-ref-id value)
                                     :file-id (:fill-color-ref-file value)
                                     :gradient (:fill-color-gradient value)}
+                            :key index
                             :index index
                             :title (tr "workspace.options.fill")
                             :on-change (on-change index)

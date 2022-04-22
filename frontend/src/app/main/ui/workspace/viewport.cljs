@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
@@ -17,6 +18,8 @@
    [app.main.ui.shapes.export :as use]
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.text.editor :as editor]
+   [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
+   [app.main.ui.workspace.shapes.text.viewport-texts :as stv]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.drawarea :as drawarea]
@@ -33,7 +36,6 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.thumbnail-renderer :as wtr]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [beicon.core :as rx]
@@ -67,9 +69,13 @@
         drawing           (mf/deref refs/workspace-drawing)
         options           (mf/deref refs/workspace-page-options)
         focus             (mf/deref refs/workspace-focus-selected)
-        base-objects      (-> (mf/deref refs/workspace-page-objects)
+
+        objects-ref       (mf/use-memo #(refs/workspace-page-objects-by-id page-id))
+        base-objects      (-> (mf/deref objects-ref)
                               (ui-hooks/with-focus-objects focus))
+
         modifiers         (mf/deref refs/workspace-modifiers)
+
         objects-modified  (mf/with-memo [base-objects modifiers]
                             (gsh/merge-modifiers base-objects modifiers))
 
@@ -154,14 +160,14 @@
                                       (>= zoom 8))
         show-presence?           page-id
         show-prototypes?         (= options-mode :prototype)
-        show-selection-handlers? (seq selected)
+        show-selection-handlers? (and (seq selected) (not edition))
         show-snap-distance?      (and (contains? layout :dynamic-alignment)
                                       (= transform :move)
                                       (seq selected))
         show-snap-points?        (and (or (contains? layout :dynamic-alignment)
                                           (contains? layout :snap-grid))
                                       (or drawing-obj transform))
-        show-selrect?            (and selrect (empty? drawing))
+        show-selrect?            (and selrect (empty? drawing) (not edition))
         show-measures?           (and (not transform) (not node-editing?) show-distances?)
         show-artboard-names?     (contains? layout :display-artboard-names)
         show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
@@ -177,14 +183,10 @@
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids @hover-disabled? focus zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path?)
-    (hooks/setup-active-frames base-objects vbox hover active-frames)
+    (hooks/setup-active-frames base-objects vbox hover active-frames zoom)
 
     [:div.viewport
      [:div.viewport-overlays {:ref overlays-ref}
-
-      [:& wtr/frame-renderer {:objects base-objects
-                              :background background}]
-
       (when show-text-editor?
         [:& editor/text-editor-viewport {:shape editing-shape
                                          :viewport-ref viewport-ref
@@ -229,6 +231,22 @@
         [:& shapes/root-shape {:key page-id
                                :objects base-objects
                                :active-frames @active-frames}]]]]
+
+     [:svg.render-shapes
+      {:id "text-position-layer"
+       :xmlns "http://www.w3.org/2000/svg"
+       :xmlnsXlink "http://www.w3.org/1999/xlink"
+       :preserveAspectRatio "xMidYMid meet"
+       :key (str "text-position-layer" page-id)
+       :width (:width vport 0)
+       :height (:height vport 0)
+       :view-box (utils/format-viewbox vbox)}
+
+      [:g {:pointer-events "none" :opacity 0}
+       [:& stv/viewport-texts {:key (dm/str "texts-" page-id)
+                               :page-id page-id
+                               :objects base-objects
+                               :edition edition}]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
@@ -276,6 +294,10 @@
            :disable-handlers (or drawing-tool edition @space? @mod?)
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
+
+       (when show-text-editor?
+         [:& text-edition-outline
+          {:shape (get base-objects edition)}])
 
        (when show-measures?
          [:& msr/measurement
@@ -356,14 +378,6 @@
           {:zoom zoom
            :tooltip tooltip}])
 
-       (when show-prototypes?
-         [:& interactions/interactions
-          {:selected selected
-           :zoom zoom
-           :objects objects-modified
-           :current-transform transform
-           :hover-disabled? hover-disabled?}])
-
        (when show-selrect?
          [:& widgets/selection-rect {:data selrect
                                      :zoom zoom}])
@@ -410,4 +424,12 @@
             :shapes selected-shapes
             :zoom zoom
             :edition edition
-            :disable-handlers (or drawing-tool edition @space?)}]])]]]))
+            :disable-handlers (or drawing-tool edition @space?)}]])
+
+       (when show-prototypes?
+         [:& interactions/interactions
+          {:selected selected
+           :zoom zoom
+           :objects objects-modified
+           :current-transform transform
+           :hover-disabled? hover-disabled?}])]]]))

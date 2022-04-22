@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
-   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.change :as spec.change]
    [app.common.spec.file :as spec.file]
@@ -26,7 +25,6 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.svg-upload :as svg]
-   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.http :as http]
@@ -35,7 +33,6 @@
    [app.util.uri :as uu]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [promesa.core :as p]
@@ -552,136 +549,6 @@
       (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
       (update :workspace-pages dissoc id)))
 
-(def update-frame-thumbnail? (ptk/type? ::update-frame-thumbnail))
-
-(defn remove-thumbnails
-  [ids]
-  (ptk/reify ::remove-thumbnails
-    ptk/WatchEvent
-    (watch [_ state _]
-      ;; Removes the thumbnail while it's regenerated
-      (let [moving? (= :move (get-in state [:workspace-local :transform]))
-            selected? (wsh/lookup-selected state)
-            ;; When we're moving the current frame it's safe to keep the thumbnail
-            ;; if it's resize we need to remove it immeditely
-            ids (cond->> ids moving? (remove selected?))]
-
-        (if (empty? ids)
-          (rx/empty)
-          (rx/of (dch/update-shapes ids #(dissoc % :thumbnail) {:save-undo? false})))))))
-
-(defn update-frame-thumbnail
-  [frame-id]
-  (ptk/event ::update-frame-thumbnail {:frame-id frame-id}))
-
-(defn update-shape-thumbnail
-  "An event that is succeptible to be executed out of the main flow, so
-  it need to correctly handle the situation that there are no page-id
-  or file-is loaded."
-  [shape-id thumbnail-data]
-  (ptk/reify ::update-shape-thumbnail
-    ptk/WatchEvent
-    (watch [_ state _]
-      (when (and (dwc/initialized? state)
-                 (uuid? shape-id))
-        (rx/of (dch/update-shapes [shape-id]
-                                  #(assoc % :thumbnail thumbnail-data)
-                                  {:save-undo? false}))))))
-
-(defn- extract-frame-changes
-  "Process a changes set in a commit to extract the frames that are changing"
-  [[event [old-objects new-objects]]]
-  (let [changes (-> event deref :changes)
-
-        extract-ids
-        (fn [{type :type :as change}]
-          (case type
-            :add-obj [(:id change)]
-            :mod-obj [(:id change)]
-            :del-obj [(:id change)]
-            :reg-objects (:shapes change)
-            :mov-objects (:shapes change)
-            []))
-
-        get-frame-id
-        (fn [id]
-          (let [shape (or (get new-objects id)
-                          (get old-objects id))]
-
-            (or (and (= :frame (:type shape)) id)
-                (:frame-id shape))))
-
-        ;; Extracts the frames and then removes nils and the root frame
-        xform (comp (mapcat extract-ids)
-                    (map get-frame-id)
-                    (remove nil?)
-                    (filter #(not= uuid/zero %))
-                    (filter #(contains? new-objects %)))]
-
-    (into #{} xform changes)))
-
-(defn thumbnail-change?
-  "Checks if a event is only updating thumbnails to ignore in the thumbnail generation process"
-  [event]
-  (let [changes (-> event deref :changes)
-
-        is-thumbnail-op?
-        (fn [{type :type attr :attr}]
-          (and (= type :set)
-               (= attr :thumbnail)))
-
-        is-thumbnail-change?
-        (fn [change]
-          (and (= (:type change) :mod-obj)
-               (->> change :operations (every? is-thumbnail-op?))))]
-
-    (->> changes (every? is-thumbnail-change?))))
-
-(defn watch-state-changes []
-  (ptk/reify ::watch-state-changes
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [stopper (->> stream
-                         (rx/filter #(or (= :app.main.data.workspace/finalize-page (ptk/type %))
-                                         (= ::watch-state-changes (ptk/type %)))))
-
-            objects-stream (->> (rx/concat
-                                 (rx/of nil)
-                                 (rx/from-atom refs/workspace-page-objects {:emit-current-value? true}))
-                                ;; We need to keep the old-objects so we can check the frame for the
-                                ;; deleted objects
-                                (rx/buffer 2 1))
-
-            frame-changes (->> stream
-                               (rx/filter dch/commit-changes?)
-
-                               ;; Async so we wait for additional side-effects of commit-changes
-                               (rx/observe-on :async)
-                               (rx/filter (comp not thumbnail-change?))
-                               (rx/with-latest-from objects-stream)
-                               (rx/map extract-frame-changes)
-                               (rx/share))
-
-            frames (-> state wsh/lookup-page-objects cph/get-frames)
-            no-thumb-frames (->> frames
-                                 (filter (comp nil? :thumbnail))
-                                 (mapv :id))]
-
-        (rx/concat
-         (->> (rx/from no-thumb-frames)
-              (rx/map #(update-frame-thumbnail %)))
-
-         ;; We remove the thumbnails immediately but defer their generation
-         (rx/merge
-          (->> frame-changes
-               (rx/take-until stopper)
-               (rx/map #(remove-thumbnails %)))
-
-          (->> frame-changes
-               (rx/take-until stopper)
-               (rx/buffer-until (->> frame-changes (rx/debounce 1000)))
-               (rx/flat-map #(reduce set/union %))
-               (rx/map #(update-frame-thumbnail %)))))))))
 
 (defn preload-data-uris
   "Preloads the image data so it's ready when necesary"

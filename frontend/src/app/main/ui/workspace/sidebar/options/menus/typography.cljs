@@ -8,6 +8,7 @@
   (:require
    ["react-virtualized" :as rvt]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
@@ -193,8 +194,8 @@
          [:hr]
          [*
           [:p.title (tr "workspace.options.recent-fonts")]
-          (for [font recent-fonts]
-            [:& font-item {:key (:id font)
+          (for [[idx font] (d/enumerate recent-fonts)]
+            [:& font-item {:key (dm/str "font-" idx)
                            :font font
                            :style {}
                            :on-click on-select-and-close

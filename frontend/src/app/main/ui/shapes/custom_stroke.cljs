@@ -382,6 +382,14 @@
           (some? style)
           (obj/set! "style" style)))
 
+      (and (= :path (:type shape)) (empty? (:fills shape)))
+      (let [style
+            (-> (obj/get props "style")
+                (obj/clone)
+                (obj/set! "fill" "none"))]
+        (-> props
+            (obj/set! "style" style)))
+
       :else
       props)))
 
@@ -405,7 +413,6 @@
         shape     (obj/get props "shape")
         elem-name (obj/get child "type")
         render-id (mf/use-ctx muc/render-ctx)]
-
     [:g {:id (dm/fmt "fills-%" (:id shape))}
      [:> elem-name (build-fill-props shape child render-id)]]))
 
@@ -416,11 +423,17 @@
         shape     (obj/get props "shape")
         elem-name (obj/get child "type")
         render-id (mf/use-ctx muc/render-ctx)
+        stroke-id (dm/fmt "strokes-%" (:id shape))
         stroke-props (-> (obj/new)
-                         (obj/set! "id" (dm/fmt "strokes-%" (:id shape)))
+                         (obj/set! "id" stroke-id)
                          (cond->
-                          (and (and (:blur shape) (-> shape :blur :hidden not)) (not (cph/frame-shape? shape)))
-                           (obj/set! "filter" (dm/fmt "url(#filter_blur_%)" render-id))))]
+                          ;; There is a blur
+                          (and (:blur shape) (not (cph/frame-shape? shape)) (-> shape :blur :hidden not))
+                          (obj/set! "filter" (dm/fmt "url(#filter_blur_%)" render-id))
+
+                          ;; There are any shadows and no fills
+                          (and (empty? (:fills shape)) (not (cph/frame-shape? shape)) (seq (->> (:shadow shape) (remove :hidden))))
+                          (obj/set! "filter" (dm/fmt "url(#filter_%)" render-id))))]
     [:*
      (when
       (d/not-empty? (:strokes shape))
@@ -428,18 +441,14 @@
         (for [[index value] (-> (d/enumerate (:strokes shape)) reverse)]
           (let [props (build-stroke-props index child value render-id)
                 shape (assoc value :points (:points shape))]
-            [:& shape-custom-stroke {:shape shape :index index}
+            [:& shape-custom-stroke {:shape shape :index index :key (dm/str index "-" stroke-id)}
              [:> elem-name props]]))])]))
 
 (mf/defc shape-custom-strokes
   {::mf/wrap-props false}
   [props]
-  (let [child     (obj/get props "children")
-        shape     (obj/get props "shape")]
-
+  (let [children (obj/get props "children")
+        shape    (obj/get props "shape")]
     [:*
-     [:& shape-fills {:shape shape}
-      child]
-
-     [:& shape-strokes {:shape shape}
-      child]]))
+     [:& shape-fills {:shape shape} children]
+     [:& shape-strokes {:shape shape} children]]))

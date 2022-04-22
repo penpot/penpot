@@ -220,8 +220,9 @@
 
 (mf/defc selection-guides [{:keys [bounds selrect zoom]}]
   [:g.selection-guides
-   (for [[x1 y1 x2 y2] (calculate-guides bounds selrect)]
-     [:line {:x1 x1
+   (for [[idx [x1 y1 x2 y2]] (d/enumerate (calculate-guides bounds selrect))]
+     [:line {:key (dm/str "guide-" idx)
+             :x1 x1
              :y1 y1
              :x2 x2
              :y2 y2

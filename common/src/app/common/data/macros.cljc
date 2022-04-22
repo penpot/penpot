@@ -34,8 +34,12 @@
    `(-> ~target ~@(map (fn [key] (list `c/get key)) keys)))
   ([target keys default]
    (assert (vector? keys) "keys expected to be a vector")
-   `(let [v# (-> ~target ~@(map (fn [key] (list `c/get key)) keys))]
-      (if (some? v#) v# ~default))))
+   (let [last-index (dec (count keys))]
+     `(-> ~target ~@(map-indexed (fn [index key]
+                                   (if (= last-index index)
+                                     (list `c/get key default)
+                                     (list `c/get key)))
+                                 keys)))))
 
 (defmacro str
   [& params]

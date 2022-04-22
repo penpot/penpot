@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.shapes.path
   (:require
    [app.common.path.commands :as upc]
+   [app.main.data.workspace.path.helpers :as helpers]
    [app.main.refs :as refs]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.shape :refer [shape-container]]
@@ -21,7 +22,11 @@
         content-modifiers (mf/deref content-modifiers-ref)
         editing-id (mf/deref refs/selected-edition)
         editing? (= editing-id (:id shape))
-        shape (update shape :content upc/apply-content-modifiers content-modifiers)]
+        shape (update shape :content upc/apply-content-modifiers content-modifiers)
+
+        [_ new-selrect]
+        (helpers/content->points+selrect shape (:content shape))
+        shape (assoc shape :selrect new-selrect)]
 
     [:> shape-container {:shape shape
                          :pointer-events (when editing? "none")}

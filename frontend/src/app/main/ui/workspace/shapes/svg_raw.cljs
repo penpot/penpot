@@ -20,9 +20,9 @@
        ::mf/wrap-props false}
       [props]
       (let [shape      (unchecked-get props "shape")
-            childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
+            childs-ref (mf/use-memo (mf/deps (:id shape)) #(refs/children-objects (:id shape)))
             childs     (mf/deref childs-ref)
-            svg-tag (get-in shape [:content :tag])]
+            svg-tag    (get-in shape [:content :tag])]
         (if (contains? usvg/svg-group-safe-tags svg-tag)
           [:> shape-container {:shape shape}
            [:& svg-raw-shape {:shape shape

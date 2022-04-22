@@ -69,11 +69,11 @@
         shared-libs     (mf/deref refs/workspace-libraries)
         hover-detach    (mf/use-state false)
 
-        get-color-name (fn [{:keys [id file-id]}]
-                         (let [src-colors (if (= file-id current-file-id)
-                                            file-colors
-                                            (get-in shared-libs [file-id :data :colors]))]
-                           (get-in src-colors [id :name])))
+        src-colors (if (= (:file-id color) current-file-id)
+                     file-colors
+                     (get-in shared-libs [(:file-id color) :data :colors]))
+
+        color-name (get-in src-colors [(:id color) :name])
 
         parse-color (fn [color]
                       (-> color
@@ -147,15 +147,18 @@
                                        :dnd-over-top (= (:over dprops) :top)
                                        :dnd-over-bot (= (:over dprops) :bot))
                                :ref dref}
-     [:& cb/color-bullet {:color color
+     [:& cb/color-bullet {:color (cond-> color
+                                   (nil? color-name) (assoc
+                                                      :id nil
+                                                      :file-id nil))
                           :on-click handle-click-color}]
 
      (cond
        ;; Rendering a color with ID
-       (and (:id color) (not (uc/multiple? color)))
+       (and (:id color) color-name (not (uc/multiple? color)))
        [:*
         [:div.color-info
-         [:div.color-name (str (get-color-name color))]]
+         [:div.color-name (str color-name)]]
         (when on-detach
           [:div.element-set-actions-button
            {:on-mouse-enter #(reset! hover-detach true)

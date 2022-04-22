@@ -21,6 +21,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.streams :as ms]
@@ -495,18 +496,30 @@
 
                   id-original     (first selected)
 
-                  selected        (->> changes
+                  new-selected    (->> changes
                                        :redo-changes
                                        (filter #(= (:type %) :add-obj))
                                        (filter #(selected (:old-id %)))
                                        (map #(get-in % [:obj :id]))
                                        (into (d/ordered-set)))
 
-                  id-duplicated   (first selected)]
+                  dup-frames      (->> changes
+                                       :redo-changes
+                                       (filter #(= (:type %) :add-obj))
+                                       (filter #(selected (:old-id %)))
+                                       (filter #(= :frame (get-in % [:obj :type])))
+                                       (map #(vector (:old-id %) (get-in % [:obj :id]))))
+
+                  id-duplicated   (first new-selected)]
+
+              (rx/concat
+               (->> (rx/from dup-frames)
+                    (rx/map (fn [[old-id new-id]] (dwt/duplicate-thumbnail old-id new-id))))
+
                ;; Warning: This order is important for the focus mode.
-              (rx/of (dch/commit-changes changes)
-                     (select-shapes selected)
-                     (memorize-duplicated id-original id-duplicated)))))))))
+               (rx/of (dch/commit-changes changes)
+                      (select-shapes new-selected)
+                      (memorize-duplicated id-original id-duplicated))))))))))
 
 (defn change-hover-state
   [id value]

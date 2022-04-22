@@ -133,6 +133,7 @@
 (dm/export gtr/transform-bounds)
 (dm/export gtr/modifiers->transform)
 (dm/export gtr/empty-modifiers?)
+(dm/export gtr/move-position-data)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)
