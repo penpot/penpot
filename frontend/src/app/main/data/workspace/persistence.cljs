@@ -50,7 +50,7 @@
   (ptk/reify ::initialize-persistence
     ptk/EffectEvent
     (effect [_ _ stream]
-      (let [stoper   (rx/filter #(= :app.main.data.workspace/finalize %) stream)
+      (let [stoper   (rx/filter #(= ::finalize %) stream)
             forcer   (rx/filter #(= ::force-persist %) stream)
             notifier (->> stream
                           (rx/filter dch/commit-changes?)

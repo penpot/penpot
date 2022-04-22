@@ -19,13 +19,27 @@
 
 (def fill-attrs [:fill-color :fill-color-gradient :fill-opacity])
 
+(defn set-white-fill
+  [shape]
+  (let [update-color
+        (fn [data]
+          (-> data
+              (dissoc :fill-color :fill-opacity :fill-color-gradient)
+              (assoc :fills [{:fill-color "#FFFFFF" :fill-opacity 1}])))]
+    (-> shape
+        (d/update-when :position-data #(mapv update-color %))
+        (assoc :stroke-color "#FFFFFF" :stroke-opacity 1))))
+
 (mf/defc text-shape
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
 
   (let [render-id (mf/use-ctx muc/render-ctx)
-        {:keys [x y width height position-data] :as shape} (obj/get props "shape")
+        shape (obj/get props "shape")
+        shape (cond-> shape (:is-mask? shape) set-white-fill)
+
+        {:keys [x y width height position-data]} shape
 
         transform (str (gsh/transform-matrix shape))
 
