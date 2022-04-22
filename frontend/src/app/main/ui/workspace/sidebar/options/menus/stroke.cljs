@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.hooks :as h]
@@ -171,7 +172,8 @@
         (seq (:strokes values))
         [:& h/sortable-container {}
          (for [[index value] (d/enumerate (:strokes values []))]
-           [:& stroke-row {:stroke value
+           [:& stroke-row {:key (dm/str "stroke-" index)
+                           :stroke value
                            :title (tr "workspace.options.stroke-color")
                            :index index
                            :show-caps show-caps

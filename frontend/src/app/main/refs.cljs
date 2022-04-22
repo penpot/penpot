@@ -248,11 +248,28 @@
                  (dm/get-in data [:pages-index page-id])))
              st/state))
 
+(defn workspace-page-objects-by-id
+  [page-id]
+  (l/derived #(wsh/lookup-page-objects % page-id) st/state =))
+
 (def workspace-page-objects
   (l/derived wsh/lookup-page-objects st/state =))
 
-(def workspace-modifiers
-  (l/derived :workspace-modifiers st/state))
+(defn object-by-id
+  [id]
+  (l/derived #(get % id) workspace-page-objects))
+
+(defn objects-by-id
+  [ids]
+  (l/derived #(into [] (keep (d/getf %)) ids) workspace-page-objects =))
+
+(defn children-objects
+  [id]
+  (l/derived
+   (fn [objects]
+     (let [children-ids (get-in objects [id :shapes])]
+       (into [] (keep (d/getf objects)) children-ids)))
+   workspace-page-objects =))
 
 (def workspace-page-options
   (l/derived :options workspace-page))
@@ -266,13 +283,35 @@
 (def workspace-editor-state
   (l/derived :workspace-editor-state st/state))
 
-(defn object-by-id
-  [id]
-  (l/derived #(get % id) workspace-page-objects))
+(def workspace-modifiers
+  (l/derived :workspace-modifiers st/state))
 
-(defn objects-by-id
+(defn workspace-modifiers-by-id
   [ids]
-  (l/derived #(into [] (keep (d/getf %)) ids) workspace-page-objects))
+  (l/derived #(select-keys % ids) workspace-modifiers))
+
+
+(def workspace-modifiers-with-objects
+  (l/derived
+   (fn [state]
+     {:modifiers (:workspace-modifiers state)
+      :objects   (wsh/lookup-page-objects state)})
+   st/state
+   (fn [a b]
+     (and (= (:modifiers a) (:modifiers b))
+          (identical? (:objects a) (:objects b))))))
+
+(defn workspace-modifiers-by-frame-id
+  [frame-id]
+  (l/derived
+   (fn [{:keys [modifiers objects]}]
+     (let [keys (->> modifiers
+                     (keys)
+                     (filter #(or (= frame-id %)
+                                  (= frame-id (get-in objects [% :frame-id])))))]
+       (select-keys modifiers keys)))
+   workspace-modifiers-with-objects
+   =))
 
 (defn- set-content-modifiers [state]
   (fn [id shape]
@@ -355,3 +394,16 @@
   (l/derived (fn [state]
                (dm/get-in state [:viewer-local :fullscreen?]))
              st/state))
+
+(def thumbnail-data
+  (l/derived #(dm/get-in % [:workspace-file :thumbnails] {}) st/state))
+
+(defn thumbnail-frame-data
+  [frame-id]
+  (l/derived #(get % frame-id) thumbnail-data))
+
+(def workspace-text-modifier
+  (l/derived :workspace-text-modifier st/state))
+
+(defn workspace-text-modifier-by-id [id]
+  (l/derived #(get % id) workspace-text-modifier))

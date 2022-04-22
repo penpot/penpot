@@ -213,6 +213,15 @@
        (mf/set-ref-val! ref value)))
     (mf/ref-val ref)))
 
+(defn use-update-var
+  [value]
+  (let [ref (mf/use-var value)]
+    (mf/use-effect
+     (mf/deps value)
+     (fn []
+       (reset! ref value)))
+    ref))
+
 (defn use-equal-memo
   [val]
   (let [ref (mf/use-ref nil)]
@@ -248,3 +257,5 @@
                   (mf/deps focus objects)
                   #(cp/focus-objects objects focus))]
      objects)))
+
+

@@ -139,6 +139,18 @@
           (:shapes)
           (keep lookup)))))
 
+(defn get-frames-ids
+  "Retrieves all frame objects as vector. It is not implemented in
+  function of `get-immediate-children` for performance reasons. This
+  function is executed in the render hot path."
+  [objects]
+  (let [lookup (d/getf objects)
+        xform  (comp (keep lookup)
+                     (filter frame-shape?)
+                     (map :id))]
+    (->> (:shapes (lookup uuid/zero))
+         (into [] xform))))
+
 (defn get-frames
   "Retrieves all frame objects as vector. It is not implemented in
   function of `get-immediate-children` for performance reasons. This
@@ -468,3 +480,25 @@
   (let [path-split (split-path path)]
     (merge-path-item (first path-split) name)))
 
+
+(defn get-frame-objects
+  "Retrieves a new objects map only with the objects under frame-id (with frame-id)"
+  [objects frame-id]
+  (let [ids (concat [frame-id] (get-children-ids objects frame-id))]
+    (select-keys objects ids)))
+
+(defn objects-by-frame
+  "Returns a map of the `objects` grouped by frame. Every value of the map has
+  the same format as objects id->shape-data"
+  [objects]
+  ;; Implemented with transients for performance. 30~50% better
+  (letfn [(process-shape [objects [id shape]]
+            (let [frame-id (if (= :frame (:type shape)) id (:frame-id shape))
+                  cur (-> (or (get objects frame-id) (transient {}))
+                          (assoc! id shape))]
+              (assoc! objects frame-id cur)))]
+    (d/update-vals
+     (->> objects
+          (reduce process-shape (transient {}))
+          (persistent!))
+     persistent!)))
