@@ -678,6 +678,7 @@
                    (recur acc (step k))
                    acc)))
              acc))))))
+
 (defn toggle-selection
   ([set value]
    (toggle-selection set value false))
