@@ -20,7 +20,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -251,85 +250,203 @@
   [:> layer-item props])
 
 (mf/defc layers-tree
-  {::mf/wrap [#(mf/memo % =)]}
+  {::mf/wrap [#(mf/memo % =)
+              #(mf/throttle % 200)]}
   [{:keys [objects] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected (hooks/use-equal-memo selected)
         root (get objects uuid/zero)]
     [:ul.element-list
      [:& hooks/sortable-container {}
-       (for [[index id] (reverse (d/enumerate (:shapes root)))]
-         (when-let [obj (get objects id)]
-           (if (= (:type obj) :frame)
-             [:& frame-wrapper
-              {:item obj
-               :selected selected
-               :index index
-               :objects objects
-               :key id}]
-             [:& layer-item
-              {:item obj
-               :selected selected
-               :index index
-               :objects objects
-               :key id}])))]]))
+      (for [[index id] (reverse (d/enumerate (:shapes root)))]
+        (when-let [obj (get objects id)]
+          (if (= (:type obj) :frame)
+            [:& frame-wrapper
+             {:item obj
+              :selected selected
+              :index index
+              :objects objects
+              :key id}]
+            [:& layer-item
+             {:item obj
+              :selected selected
+              :index index
+              :objects objects
+              :key id}])))]]))
 
-(mf/defc layers-tree-wrapper
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo #(mf/throttle % 200)]}
-  [props]
-  (let [search  (obj/get props "search")
-        filters (obj/get props "filters")
-        filters (if (some #{:shape} filters)
-                  (conj filters :rect :circle :path :bool)
-                  filters)
-        objects (-> (obj/get props "objects")
-                    (hooks/use-equal-memo))
+(mf/defc filters-tree
+  {::mf/wrap [#(mf/memo % =)
+              #(mf/throttle % 200)]}
+  [{:keys [objects] :as props}]
+  (let [selected (mf/deref refs/selected-shapes)
+        selected (hooks/use-equal-memo selected)
+        root (get objects uuid/zero)]
+    [:ul.element-list
+     (for [[index id] (d/enumerate (:shapes root))]
+       (when-let [obj (get objects id)]
+         [:& layer-item
+          {:item obj
+           :selected selected
+           :index index
+           :objects objects
+           :key id}]))]))
 
-        ;; TODO: Fix performance
-        reparented-objects (d/mapm (fn [_ val]
-                                     (assoc val :parent-id uuid/zero :shapes nil))
-                                   objects)
 
-        reparented-shapes (->> reparented-objects
-                               keys
-                               (filter #(not= uuid/zero %))
-                               vec)
+(defn calc-reparented-objects
+  [objects]
 
-        reparented-objects (update reparented-objects uuid/zero assoc :shapes reparented-shapes)
+  (let [reparented-objects
+        (d/mapm (fn [_ val]
+                  (assoc val :parent-id uuid/zero :shapes nil))
+                objects)
 
-        search-and-filters (mf/use-callback
-                            (mf/deps search filters)
-                             (fn [[id shape]]
-                             (or
-                              (= uuid/zero id)
-                              (and
-                               (str/includes? (str/lower (:name shape)) (str/lower search))
-                               (or
-                                (empty? filters)
-                                (and
-                                 (some #{:component} filters)
-                                 (contains? shape :component-id))
-                                (let [direct_filters (filter #{:frame :rect :circle :path :bool :image :text} filters)]
-                                  (some #{(:type shape)} direct_filters))
-                                (and
-                                 (some #{:group} filters)
-                                 (and (= :group (:type shape))
-                                      (not (contains? shape :component-id))
-                                      (or (not (contains? shape :masked-group?)) (false? (:masked-group? shape)))))
-                                (and
-                                 (some #{:mask} filters)
-                                 (true? (:masked-group? shape))))))))
-
-        objects (if (and (= "" search) (empty? filters))
-                  objects
-                  (into {} (filter search-and-filters
-                                   reparented-objects)))]
-
-    [:& layers-tree {:objects objects}]))
-
+        reparented-shapes
+        (->> reparented-objects
+             keys
+             (filter #(not= uuid/zero %))
+             vec)]
+    (update reparented-objects uuid/zero assoc :shapes reparented-shapes)))
 
 ;; --- Layers Toolbox
+
+(defn use-search
+  [page objects]
+  (let [filter-state (mf/use-state {:show-search-box false
+                                    :show-filters-menu false
+                                    :search-text ""
+                                    :active-filters #{}
+                                    :num-items 100})
+
+        clear-search-text
+        (mf/use-callback
+         (fn []
+           (swap! filter-state assoc :search-text "" :num-items 100)))
+
+        update-search-text
+        (mf/use-callback
+         (fn [event]
+           (let [value (-> event dom/get-target dom/get-value)]
+             (swap! filter-state assoc :search-text value :num-items 100))))
+
+        toggle-search
+        (mf/use-callback
+         (fn []
+           (swap! filter-state assoc :search-text "")
+           (swap! filter-state assoc :active-filters #{})
+           (swap! filter-state assoc :show-filters-menu false)
+           (swap! filter-state assoc :num-items 100)
+           (swap! filter-state update :show-search-box not)))
+
+        toggle-filters
+        (mf/use-callback
+         (fn []
+           (swap! filter-state update :show-filters-menu not)))
+
+        remove-filter
+        (mf/use-callback
+         (mf/deps @filter-state)
+         (fn [key]
+           (fn [_]
+             (swap! filter-state update :active-filters disj key)
+             (swap! filter-state assoc :num-items 100))))
+
+        add-filter
+        (mf/use-callback
+         (mf/deps @filter-state (:show-filters-menu @filter-state))
+         (fn [key]
+           (fn [_]
+             (swap! filter-state update :active-filters conj key)
+             (swap! filter-state assoc :num-items 100)
+             (toggle-filters))))
+
+        active?
+        (and
+         (:show-search-box @filter-state)
+         (or (d/not-empty? (:search-text @filter-state))
+             (d/not-empty? (:active-filters @filter-state))))        
+
+        search-and-filters
+        (fn [[id shape]]
+          (let [search (:search-text @filter-state)
+                filters (:active-filters @filter-state)]
+            (or
+             (= uuid/zero id)
+             (and
+              (str/includes? (str/lower (:name shape)) (str/lower search))
+              (or
+               (empty? filters)
+               (and
+                (some #{:component} filters)
+                (contains? shape :component-id))
+               (let [direct_filters (filter #{:frame :rect :circle :path :bool :image :text} filters)]
+                 (some #{(:type shape)} direct_filters))
+               (and
+                (some #{:group} filters)
+                (and (= :group (:type shape))
+                     (not (contains? shape :component-id))
+                     (or (not (contains? shape :masked-group?)) (false? (:masked-group? shape)))))
+               (and
+                (some #{:mask} filters)
+                (true? (:masked-group? shape))))))))
+
+        filtered-objects-total
+        (mf/use-memo
+         (mf/deps objects active? @filter-state)
+         #(when active?
+            ;; filterv so count is constant time
+            (filterv search-and-filters objects)))
+
+        filtered-objects
+        (mf/use-memo
+         (mf/deps filtered-objects-total)
+         #(when active?
+            (calc-reparented-objects
+             (into {}
+                   (take (:num-items @filter-state))
+                   filtered-objects-total))))
+
+
+        handle-show-more
+        (fn []
+          (when (<= (:num-items @filter-state) (count filtered-objects-total))
+            (swap! filter-state update :num-items + 100)))]
+
+    [filtered-objects
+     handle-show-more
+     
+     (mf/html
+      (if (:show-search-box @filter-state)
+        [:*
+         [:div.tool-window-bar.search
+          [:span.search-box
+           [:span.filter {:on-click toggle-filters :class (dom/classnames :active active?)} i/icon-filter]
+           [:span
+            [:input {:on-change update-search-text
+                     :value (:search-text @filter-state)
+                     :auto-focus (:show-search-box @filter-state)
+                     :placeholder (tr "workspace.sidebar.layers.search")}]]
+           (when (not (= "" (:search-text @filter-state)))
+             [:span.clear {:on-click clear-search-text} i/exclude])]
+          [:span {:on-click toggle-search} i/cross]]
+
+         [:div.active-filters
+          (for [f (:active-filters @filter-state)]
+            [:span {:on-click (remove-filter f)}
+             (tr f) i/cross])]
+
+         (when (:show-filters-menu @filter-state)
+           [:div.filters-container
+            [:span{:on-click (add-filter :frame)} i/artboard (tr "workspace.sidebar.layers.frames")]
+            [:span{:on-click (add-filter :group)} i/folder (tr "workspace.sidebar.layers.groups")]
+            [:span{:on-click (add-filter :mask)} i/mask (tr "workspace.sidebar.layers.masks")]
+            [:span{:on-click (add-filter :component)} i/component (tr "workspace.sidebar.layers.components")]
+            [:span{:on-click (add-filter :text)} i/text (tr "workspace.sidebar.layers.texts")]
+            [:span{:on-click (add-filter :image)} i/image (tr "workspace.sidebar.layers.images")]
+            [:span{:on-click (add-filter :shape)} i/curve (tr "workspace.sidebar.layers.shapes")]])]
+
+        [:div.tool-window-bar
+         [:span (:name page)]
+         [:span {:on-click toggle-search} i/search]]))]))
 
 (mf/defc layers-toolbox
   {:wrap [mf/memo]}
@@ -338,10 +455,30 @@
         focus (mf/deref refs/workspace-focus-selected)
         objects (hooks/with-focus-objects (:objects page) focus)
         title (when (= 1 (count focus)) (get-in objects [(first focus) :name]))
-        filter-state (mf/use-state {:show-search-box false
-                                    :show-filters-menu false
-                                    :search-text ""
-                                    :active-filters {}})
+
+        observer-var (mf/use-var nil)
+        lazy-load-ref (mf/use-ref nil)
+
+        [filtered-objects show-more filter-component] (use-search page objects)
+
+        intersection-callback
+        (fn [entries]
+          (when (and (.-isIntersecting (first entries)) (some? show-more))
+            (show-more)))
+        
+        on-render-container
+        (fn [element]
+          (let [options #js {:root element}
+                lazy-el (mf/ref-val lazy-load-ref)]
+            (cond
+              (and (some? element) (not (some? @observer-var)))
+              (let [observer (js/IntersectionObserver. intersection-callback options)]
+                (.observe observer lazy-el)
+                (reset! observer-var observer))
+
+              (and (nil? element) (some? @observer-var))
+              (do (.disconnect @observer-var)
+                  (reset! observer-var nil)))))
 
         on-scroll
         (fn [event]
@@ -355,33 +492,7 @@
               (dom/remove-class! frame "sticky"))
 
             (when last-hidden-frame
-              (dom/add-class! last-hidden-frame "sticky"))))
-        clear-search-text #(swap! filter-state assoc :search-text "")
-        update-search-text (fn [event]
-                             (let [value (-> event dom/get-target dom/get-value)]
-                               (swap! filter-state assoc :search-text value)))
-        toggle-search (fn []
-                        (swap! filter-state assoc :search-text "")
-                        (swap! filter-state assoc :active-filters {})
-                        (swap! filter-state assoc :show-filters-menu false)
-                        (swap! filter-state update :show-search-box not))
-        toggle-filters #(swap! filter-state update :show-filters-menu not)
-
-
-        remove-filter
-        (mf/use-callback
-         (mf/deps @filter-state)
-         (fn [key]
-           (fn [_]
-             (swap! filter-state update :active-filters dissoc key))))
-
-        add-filter
-        (mf/use-callback
-         (mf/deps @filter-state (:show-filters-menu @filter-state))
-         (fn [key value]
-           (fn [_]
-             (swap! filter-state update :active-filters assoc key value)
-             (toggle-filters))))]
+              (dom/add-class! last-hidden-frame "sticky"))))]
 
 
     [:div#layers.tool-window
@@ -394,48 +505,17 @@
          [:span (or title (tr "workspace.focus.selection"))]
          [:div.focus-mode (tr "workspace.focus.focus-mode")]]]
 
+       filter-component)
 
-       (if (:show-search-box @filter-state)
-         [:*
-          [:div.tool-window-bar.search
-           [:span.search-box
-            [:span.filter {:on-click toggle-filters
-                           :class (dom/classnames :active (or
-                                                           (:show-filters-menu @filter-state)
-                                                           (not-empty (:active-filters @filter-state))))}
-             i/icon-filter]
-            [:span
-             [:input {:on-change update-search-text
-                      :value (:search-text @filter-state)
-                      :auto-focus (:show-search-box @filter-state)
-                      :placeholder (tr "workspace.sidebar.layers.search")}]]
-            (when (not (= "" (:search-text @filter-state)))
-              [:span.clear {:on-click clear-search-text} i/exclude])]
-           [:span {:on-click toggle-search} i/cross]
-           ]
-          [:div.active-filters
-           (for [f (:active-filters @filter-state)]
-             [:span {:on-click (remove-filter (key f))}
-              (tr (val f)) i/cross])
-           ]
+     (when (some? filtered-objects)
+       [:div.tool-window-content {:ref on-render-container  :key "filters"}
+        [:& filters-tree {:objects filtered-objects
+                         :key (dm/str (:id page))}]
+        [:div.lazy {:ref lazy-load-ref
+                    :key "lazy-load"
+                    :style {:min-height 16}}]])
 
-
-          (when (:show-filters-menu @filter-state)
-            [:div.filters-container
-             [:span{:on-click (add-filter :frame "workspace.sidebar.layers.frames")} i/artboard (tr "workspace.sidebar.layers.frames")]
-             [:span{:on-click (add-filter :group "workspace.sidebar.layers.groups")} i/folder (tr "workspace.sidebar.layers.groups")]
-             [:span{:on-click (add-filter :mask "workspace.sidebar.layers.masks")} i/mask (tr "workspace.sidebar.layers.masks")]
-             [:span{:on-click (add-filter :component "workspace.sidebar.layers.components")} i/component (tr "workspace.sidebar.layers.components")]
-             [:span{:on-click (add-filter :text "workspace.sidebar.layers.texts")} i/text (tr "workspace.sidebar.layers.texts")]
-             [:span{:on-click (add-filter :image "workspace.sidebar.layers.images")} i/image (tr "workspace.sidebar.layers.images")]
-             [:span{:on-click (add-filter :shape "workspace.sidebar.layers.shapes")} i/curve (tr "workspace.sidebar.layers.shapes")]])]
-
-         [:div.tool-window-bar
-          [:span (:name page)]
-          [:span {:on-click toggle-search} i/search]]))
-
-     [:div.tool-window-content {:on-scroll on-scroll}
-      [:& layers-tree-wrapper {:objects objects
-                               :key (dm/str (:id page))
-                               :search (:search-text @filter-state)
-                               :filters (keys (:active-filters @filter-state))}]]]))
+     [:div.tool-window-content {:on-scroll on-scroll
+                                :style {:display (when (some? filtered-objects) "none")}}
+      [:& layers-tree {:objects objects
+                       :key (dm/str (:id page))}]]]))
