@@ -6,11 +6,13 @@
 
 (ns app.main.data.workspace.changes
   (:require
+   [app.common.data :as d]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.spec :as us]
    [app.common.spec.change :as spec.change]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
@@ -59,14 +61,52 @@
            (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))]
              (rx/of (commit-changes changes)))))))))
 
+(defn send-update-indices
+  []
+  (ptk/reify ::send-update-indices
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rx/of
+            (fn [state]
+              (-> state
+                  (dissoc ::update-indices-debounce)
+                  (dissoc ::update-changes))))
+           (rx/observe-on :async)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (doseq [[page-id changes] (::update-changes state)]
+        (uw/ask! {:cmd :update-page-indices
+                  :page-id page-id
+                  :changes changes})))))
+
+;; Update indices will debounce operations so we don't have to update
+;; the index several times (which is an expensive operation)
 (defn update-indices
   [page-id changes]
-  (ptk/reify ::update-indices
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (uw/ask! {:cmd :update-page-indices
-                :page-id page-id
-                :changes changes}))))
+
+  (let [start (uuid/next)]
+    (ptk/reify ::update-indices
+      ptk/UpdateEvent
+      (update [_ state]
+        (if (nil? (::update-indices-debounce state))
+          (assoc state ::update-indices-debounce start)
+          (update-in state [::update-changes page-id] (fnil d/concat-vec []) changes)))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (if (= (::update-indices-debounce state) start)
+          (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
+            (rx/merge
+             (->> stream
+                  (rx/filter (ptk/type? ::update-indices))
+                  (rx/debounce 50)
+                  (rx/take 1)
+                  (rx/map #(send-update-indices))
+                  (rx/take-until stopper))
+             (rx/of (update-indices page-id changes))))
+          (rx/empty))))))
+
 
 (defn commit-changes
   [{:keys [redo-changes undo-changes

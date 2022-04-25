@@ -12,7 +12,6 @@
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -54,12 +53,7 @@
 
   ;; Update the position-data of every text fragment
   (let [position-data (utp/calc-position-data node)]
-    (st/emit! (dch/update-shapes
-               [id]
-               (fn [shape]
-                 (-> shape
-                     (assoc :position-data position-data)))
-               {:save-undo? false}))))
+    (st/emit! (dwt/update-position-data id position-data))))
 
 (defn- update-text-modifier
   [{:keys [grow-type id]} node]
