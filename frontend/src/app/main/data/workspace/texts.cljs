@@ -392,8 +392,7 @@
                  (keys position-data)
                  (fn [shape]
                    (-> shape
-                       (assoc :position-data (get position-data (:id shape))))
-                   )
+                       (assoc :position-data (get position-data (:id shape)))))
                  {:save-undo? false :reg-objects? false}))
          (rx/of (fn [state]
                   (dissoc state ::update-position-data-debounce ::update-position-data))))))))

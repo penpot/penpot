@@ -40,7 +40,7 @@
       (assoc :content (attrs/merge content editor-content)))))
 
 (defn- update-text-shape
-  [{:keys [grow-type id] :as shape} node]
+  [{:keys [grow-type id]} node]
   ;; Check if we need to update the size because it's auto-width or auto-height
   (when (contains? #{:auto-height :auto-width} grow-type)
     (let [{:keys [width height]}
