@@ -6,37 +6,28 @@
 
 (ns app.main.data.workspace.persistence
   (:require
-   [app.common.data :as d]
-   [app.common.exceptions :as ex]
+   [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.spec.change :as spec.change]
    [app.common.spec.file :as spec.file]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
-   [app.main.data.media :as di]
-   [app.main.data.messages :as dm]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.data.workspace.svg-upload :as svg]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.http :as http]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.router :as rt]
    [app.util.time :as dt]
-   [app.util.uri :as uu]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [potok.core :as ptk]
-   [promesa.core :as p]
-   [tubax.core :as tubax]))
+   [okulary.core :as l]
+   [potok.core :as ptk]))
+
+(log/set-level! :info)
 
 (declare persist-changes)
 (declare persist-synchronous-changes)
@@ -48,18 +39,17 @@
 (defn initialize-file-persistence
   [file-id]
   (ptk/reify ::initialize-persistence
-    ptk/EffectEvent
-    (effect [_ _ stream]
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (log/debug :hint "initialize persistence")
       (let [stoper   (rx/filter #(= ::finalize %) stream)
-            forcer   (rx/filter #(= ::force-persist %) stream)
-            notifier (->> stream
-                          (rx/filter dch/commit-changes?)
-                          (rx/debounce 2000)
-                          (rx/merge stoper forcer))
+            commits  (l/atom [])
+
             local-file?
             #(as-> (:file-id %) event-file-id
                (or (nil? event-file-id)
                    (= event-file-id file-id)))
+
             library-file?
             #(as-> (:file-id %) event-file-id
                (and (some? event-file-id)
@@ -80,93 +70,89 @@
               ;; Disable reload stoper
               (swap! st/ongoing-tasks disj :workspace-change)
               (st/emit! (update-persistence-status {:status :saved})))]
-        (->> (rx/merge
-              (->> stream
-                   (rx/filter dch/commit-changes?)
-                   (rx/map deref)
-                   (rx/filter local-file?)
-                   (rx/tap on-dirty)
-                   (rx/buffer-until notifier)
-                   (rx/filter (complement empty?))
-                   (rx/map (fn [buf]
-                             (->> (into [] (comp (map #(assoc % :id (uuid/next)))
-                                                 (map #(assoc % :file-id file-id)))
-                                        buf)
-                                  (persist-changes file-id))))
-                   (rx/tap on-saving)
-                   (rx/take-until (rx/delay 100 stoper)))
-              (->> stream
-                   (rx/filter dch/commit-changes?)
-                   (rx/map deref)
-                   (rx/filter library-file?)
-                   (rx/filter (complement #(empty? (:changes %))))
-                   (rx/map persist-synchronous-changes)
-                   (rx/take-until (rx/delay 100 stoper)))
-              (->> stream
-                   (rx/filter (ptk/type? ::changes-persisted))
-                   (rx/tap on-saved)
-                   (rx/ignore)
-                   (rx/take-until stoper)))
-             (rx/subs #(st/emit! %)
-                      (constantly nil)
-                      (fn []
-                        (on-saved))))))))
+
+        (rx/merge
+         (->> stream
+              (rx/filter dch/commit-changes?)
+              (rx/map deref)
+              (rx/filter local-file?)
+              (rx/tap on-dirty)
+              (rx/filter (complement empty?))
+              (rx/map (fn [commit]
+                        (-> commit
+                            (assoc :id (uuid/next))
+                            (assoc :file-id file-id))))
+              (rx/observe-on :async)
+              (rx/tap #(swap! commits conj %))
+              (rx/take-until (rx/delay 100 stoper))
+              (rx/finalize (fn []
+                             (log/debug :hint "finalize persistence: changes watcher"))))
+
+         (->> (rx/from-atom commits)
+              (rx/filter (complement empty?))
+              (rx/sample-when (rx/merge
+                               (rx/interval 5000)
+                               (rx/filter #(= ::force-persist %) stream)
+                               (->> (rx/from-atom commits)
+                                    (rx/filter (complement empty?))
+                                    (rx/debounce 2000))))
+              (rx/tap #(reset! commits []))
+              (rx/tap on-saving)
+              (rx/mapcat (fn [changes]
+                           ;; NOTE: this is needed for don't start the
+                           ;; next persistence before this one is
+                           ;; finished.
+                           (rx/merge
+                            (rx/of (persist-changes file-id changes))
+                            (->> stream
+                                 (rx/filter (ptk/type? ::changes-persisted))
+                                 (rx/take 1)
+                                 (rx/tap on-saved)
+                                 (rx/ignore)))))
+              (rx/take-until (rx/delay 100 stoper))
+              (rx/finalize (fn []
+                             (log/debug :hint "finalize persistence: save loop"))))
+
+         ;; Synchronous changes
+         (->> stream
+              (rx/filter dch/commit-changes?)
+              (rx/map deref)
+              (rx/filter library-file?)
+              (rx/filter (complement #(empty? (:changes %))))
+              (rx/map persist-synchronous-changes)
+              (rx/take-until (rx/delay 100 stoper))
+              (rx/finalize (fn []
+                             (log/debug :hint "finalize persistence: synchronous save loop"))))
+         )))))
 
 (defn persist-changes
   [file-id changes]
+  (log/debug :hint "persist changes" :changes (count changes))
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-changes
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [into* (fnil into [])]
-        (update-in state [:workspace-persistence :queue] into* changes)))
-
     ptk/WatchEvent
     (watch [_ state _]
       (let [sid     (:session-id state)
             file    (get state :workspace-file)
-            queue   (get-in state [:workspace-persistence :queue] [])
-
             params  {:id (:id file)
                      :revn (:revn file)
                      :session-id sid
-                     :changes-with-metadata (into [] queue)}
-
-            ids     (into #{} (map :id) queue)
-
-            update-persistence-queue
-            (fn [state]
-              (update-in state [:workspace-persistence :queue]
-                         (fn [items] (into [] (remove #(ids (:id %))) items))))
-
-            handle-response
-            (fn [lagged]
-              (let [lagged (cond->> lagged
-                             (= #{sid} (into #{} (map :session-id) lagged))
-                             (map #(assoc % :changes [])))]
-                (rx/concat
-                 (rx/of update-persistence-queue)
-                 (->> (rx/of lagged)
-                      (rx/mapcat seq)
-                      (rx/map #(shapes-changes-persisted file-id %))))))
-
-            on-error
-            (fn [{:keys [type] :as error}]
-              (if (or (= :bad-gateway type)
-                      (= :service-unavailable type))
-                (rx/of (update-persistence-status {:status :error :reason type}))
-                (rx/concat
-                 (rx/of update-persistence-queue)
-                 (rx/of (update-persistence-status {:status :error :reason type}))
-                 (rx/of (dws/deselect-all))
-                 (->> (rx/of nil)
-                      (rx/delay 200)
-                      (rx/mapcat #(rx/throw error))))))]
-
+                     :changes-with-metadata (into [] changes)}]
         (when (= file-id (:id params))
           (->> (rp/mutation :update-file params)
-               (rx/mapcat handle-response)
-               (rx/catch on-error)))))))
+               (rx/mapcat (fn [lagged]
+                            (log/debug :hint "changes persisted" :lagged (count lagged))
+                            (let [lagged (cond->> lagged
+                                           (= #{sid} (into #{} (map :session-id) lagged))
+                                           (map #(assoc % :changes [])))]
+                              (->> (rx/of lagged)
+                                   (rx/mapcat seq)
+                                   (rx/map #(shapes-changes-persisted file-id %))))))
+               (rx/catch (fn [cause]
+                           (rx/concat
+                            (rx/of (rt/assign-exception cause))
+                            (rx/throw cause))))))))))
+
 
 (defn persist-synchronous-changes
   [{:keys [file-id changes]}]
@@ -274,271 +260,6 @@
                         (rx/of (ptk/data-event ::bundle-fetched bundle)
                                (df/load-team-fonts (:team-id project)))))))))
 
-;; --- Set File shared
-
-(defn set-file-shared
-  [id is-shared]
-  {:pre [(uuid? id) (boolean? is-shared)]}
-  (ptk/reify ::set-file-shared
-    IDeref
-    (-deref [_]
-      {::ev/origin "workspace" :id id :shared is-shared})
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-file :is-shared] is-shared))
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [params {:id id :is-shared is-shared}]
-        (->> (rp/mutation :set-file-shared params)
-             (rx/ignore))))))
-
-
-;; --- Fetch Shared Files
-
-(declare shared-files-fetched)
-
-(defn fetch-shared-files
-  [{:keys [team-id] :as params}]
-  (us/assert ::us/uuid team-id)
-  (ptk/reify ::fetch-shared-files
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/query :team-shared-files {:team-id team-id})
-           (rx/map shared-files-fetched)))))
-
-(defn shared-files-fetched
-  [files]
-  (us/verify (s/every ::file) files)
-  (ptk/reify ::shared-files-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [state (dissoc state :files)]
-        (assoc state :workspace-shared-files files)))))
-
-
-;; --- Link and unlink Files
-
-(defn link-file-to-library
-  [file-id library-id]
-  (ptk/reify ::attach-library
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [fetched #(assoc-in %2 [:workspace-libraries (:id %1)] %1)
-            params  {:file-id file-id
-                     :library-id library-id}]
-        (->> (rp/mutation :link-file-to-library params)
-             (rx/mapcat #(rp/query :file {:id library-id}))
-             (rx/map #(partial fetched %)))))))
-
-(defn unlink-file-from-library
-  [file-id library-id]
-  (ptk/reify ::detach-library
-    ptk/UpdateEvent
-    (update [_ state]
-      (d/dissoc-in state [:workspace-libraries library-id]))
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [params {:file-id file-id
-                    :library-id library-id}]
-        (->> (rp/mutation :unlink-file-from-library params)
-             (rx/ignore))))))
-
-
-;; --- Upload File Media objects
-
-(defn parse-svg
-  [[name text]]
-  (try
-    (->> (rx/of (-> (tubax/xml->clj text)
-                    (assoc :name name))))
-
-    (catch :default _err
-      (rx/throw {:type :svg-parser}))))
-
-(defn fetch-svg [name uri]
-  (->> (http/send! {:method :get :uri uri :mode :no-cors})
-       (rx/map #(vector
-                 (or name (uu/uri-name uri))
-                 (:body %)))))
-
-(defn- handle-upload-error
-  "Generic error handler for all upload methods."
-  [on-error stream]
-  (letfn [(on-error* [error]
-            (if (ex/ex-info? error)
-              (on-error* (ex-data error))
-              (cond
-                (= (:code error) :invalid-svg-file)
-                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
-
-                (= (:code error) :media-type-not-allowed)
-                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
-
-                (= (:code error) :unable-to-access-to-url)
-                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
-
-                (= (:code error) :invalid-image)
-                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
-
-                (= (:code error) :media-too-large)
-                (rx/of (dm/error (tr "errors.media-too-large")))
-
-                (= (:code error) :media-type-mismatch)
-                (rx/of (dm/error (tr "errors.media-type-mismatch")))
-
-                (= (:code error) :unable-to-optimize)
-                (rx/of (dm/error (:hint error)))
-
-                (fn? on-error)
-                (on-error error)
-
-                :else
-                (rx/throw error))))]
-    (rx/catch on-error* stream)))
-
-(defn- process-uris
-  [{:keys [file-id local? name uris mtype on-image on-svg]}]
-  (letfn [(svg-url? [url]
-            (or (and mtype (= mtype "image/svg+xml"))
-                (str/ends-with? url ".svg")))
-
-          (prepare [uri]
-            {:file-id file-id
-             :is-local local?
-             :name (or name (uu/uri-name uri))
-             :url uri})]
-    (rx/merge
-     (->> (rx/from uris)
-          (rx/filter (comp not svg-url?))
-          (rx/map prepare)
-          (rx/mapcat #(rp/mutation! :create-file-media-object-from-url %))
-          (rx/do on-image))
-
-     (->> (rx/from uris)
-          (rx/filter svg-url?)
-          (rx/merge-map (partial fetch-svg name))
-          (rx/merge-map parse-svg)
-          (rx/do on-svg)))))
-
-(defn- process-blobs
-  [{:keys [file-id local? name blobs force-media on-image on-svg]}]
-  (letfn [(svg-blob? [blob]
-            (and (not force-media)
-                 (= (.-type blob) "image/svg+xml")))
-
-          (prepare-blob [blob]
-            (let [name (or name (if (di/file? blob) (.-name blob) "blob"))]
-              {:file-id file-id
-               :name name
-               :is-local local?
-               :content blob}))
-
-          (extract-content [blob]
-            (let [name (or name (.-name blob))]
-              (-> (.text ^js blob)
-                  (p/then #(vector name %)))))]
-
-    (rx/merge
-     (->> (rx/from blobs)
-          (rx/map di/validate-file)
-          (rx/filter (comp not svg-blob?))
-          (rx/map prepare-blob)
-          (rx/mapcat #(rp/mutation! :upload-file-media-object %))
-          (rx/do on-image))
-
-     (->> (rx/from blobs)
-          (rx/map di/validate-file)
-          (rx/filter svg-blob?)
-          (rx/merge-map extract-content)
-          (rx/merge-map parse-svg)
-          (rx/do on-svg)))))
-
-(s/def ::local? ::us/boolean)
-(s/def ::blobs ::di/blobs)
-(s/def ::name ::us/string)
-(s/def ::uris (s/coll-of ::us/string))
-(s/def ::mtype ::us/string)
-
-(s/def ::process-media-objects
-  (s/and
-   (s/keys :req-un [::file-id ::local?]
-           :opt-un [::name ::data ::uris ::mtype])
-   (fn [props]
-     (or (contains? props :blobs)
-         (contains? props :uris)))))
-
-(defn- process-media-objects
-  [{:keys [uris on-error] :as params}]
-  (us/assert ::process-media-objects params)
-  (ptk/reify ::process-media-objects
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/concat
-       (rx/of (dm/show {:content (tr "media.loading")
-                        :type :info
-                        :timeout nil
-                        :tag :media-loading}))
-       (->> (if (seq uris)
-              ;; Media objects is a list of URL's pointing to the path
-              (process-uris params)
-              ;; Media objects are blob of data to be upload
-              (process-blobs params))
-
-            ;; Every stream has its own sideeffect. We need to ignore the result
-            (rx/ignore)
-            (handle-upload-error on-error)
-            (rx/finalize (st/emitf (dm/hide-tag :media-loading))))))))
-
-(defn upload-media-asset
-  [params]
-  (let [params (assoc params
-                      :force-media true
-                      :local? false
-                      :on-image #(st/emit! (dwl/add-media %)))]
-    (process-media-objects params)))
-
-(defn upload-media-workspace
-  [{:keys [position file-id] :as params}]
-  (let [params (assoc params
-                      :local? true
-                      :on-image #(st/emit! (dwc/image-uploaded % position))
-                      :on-svg   #(st/emit! (svg/svg-uploaded % file-id position)))]
-
-    (process-media-objects params)))
-
-
-;; --- Upload File Media objects
-
-(s/def ::object-id ::us/uuid)
-
-(s/def ::clone-media-objects-params
-  (s/keys :req-un [::file-id ::object-id]))
-
-(defn clone-media-object
-  [{:keys [file-id object-id] :as params}]
-  (us/assert ::clone-media-objects-params params)
-  (ptk/reify ::clone-media-objects
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error identity}} (meta params)
-            params {:is-local true
-                    :file-id file-id
-                    :id object-id}]
-
-        (rx/concat
-         (rx/of (dm/show {:content (tr "media.loading")
-                          :type :info
-                          :timeout nil
-                          :tag :media-loading}))
-         (->> (rp/mutation! :clone-file-media-object params)
-              (rx/do on-success)
-              (rx/catch on-error)
-              (rx/finalize #(st/emit! (dm/hide-tag :media-loading)))))))))
 
 ;; --- Helpers
 
@@ -548,7 +269,6 @@
   (-> state
       (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
       (update :workspace-pages dissoc id)))
-
 
 (defn preload-data-uris
   "Preloads the image data so it's ready when necesary"
@@ -560,10 +280,10 @@
             (fn [{:keys [metadata fill-image]}]
               (cond
                 (some? metadata)
-                [(cfg/resolve-file-media metadata)]
+                [(cf/resolve-file-media metadata)]
 
                 (some? fill-image)
-                [(cfg/resolve-file-media fill-image)]))
+                [(cf/resolve-file-media fill-image)]))
 
             uris (into #{}
                        (comp (mapcat extract-urls)

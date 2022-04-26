@@ -52,6 +52,7 @@
 
 - Round the size values on handoff to two decimals [Taiga #3227](https://tree.taiga.io/project/penpot/issue/3227)
 - Fix internal error when hoverin over shape [Taiga #3237](https://tree.taiga.io/project/penpot/issue/3237)
+- Fix mouse leave in handoff close overlay animation breaks [Taiga #3173](https://tree.taiga.io/project/penpot/issue/3173)
 - Fix different behaviour during image drag [Taiga #2279](https://tree.taiga.io/project/penpot/issue/2279)
 - Fix hidden file name on import [Taiga #3172](https://tree.taiga.io/project/penpot/issue/3172)
 - Fix unneccessary scrollbars at the color list [Taiga #3211](https://tree.taiga.io/project/penpot/issue/3211)
@@ -95,6 +96,7 @@
 - Fix component name in sidebar widget [Taiga #3144](https://tree.taiga.io/project/penpot/issue/3144)
 - Fix resize rotated shape with top&down constraints [Taiga #3167](https://tree.taiga.io/project/penpot/issue/3167)
 - Fix multi user not working [Taiga #3195](https://tree.taiga.io/project/penpot/issue/3195)
+- Fix guides are not duplicated with the artboard [Taiga #3072](https://tree.taiga.io/project/penpot/issue/3072)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

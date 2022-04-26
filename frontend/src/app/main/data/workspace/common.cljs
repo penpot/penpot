@@ -393,6 +393,11 @@
                               interactions)))
                     (vals objects))
 
+            ;; If any of the deleted shapes is a frame with guides
+            guides (into {} (map (juxt :id identity) (->> (get-in page [:options :guides])
+                                                          (vals)
+                                                          (filter #(not (contains? ids (:frame-id %)))))))
+
             starting-flows
             (filter (fn [flow]
                       ;; If any of the deleted is a frame that starts a flow,
@@ -432,6 +437,7 @@
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-page page)
                         (pcb/with-objects objects)
+                        (pcb/set-page-option :guides guides)
                         (pcb/remove-objects all-children)
                         (pcb/remove-objects ids)
                         (pcb/remove-objects empty-parents)
@@ -482,22 +488,3 @@
                       (assoc :frame-id frame-id)
                       (cp/setup-rect-selrect))]
         (rx/of (add-shape shape))))))
-
-(defn image-uploaded
-  [image {:keys [x y]}]
-  (ptk/reify ::image-uploaded
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [{:keys [name width height id mtype]} image
-            shape {:name name
-                   :width width
-                   :height height
-                   :x (- x (/ width 2))
-                   :y (- y (/ height 2))
-                   :metadata {:width width
-                              :height height
-                              :mtype mtype
-                              :id id}}]
-        (rx/of (create-and-add-shape :image x y shape))))))
-
-

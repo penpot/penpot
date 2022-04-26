@@ -18,6 +18,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -912,7 +913,7 @@
          (fn [blobs]
            (let [params {:file-id file-id
                          :blobs (seq blobs)}]
-             (st/emit! (dw/upload-media-asset params)
+             (st/emit! (dwm/upload-media-asset params)
                        (ptk/event ::ev/event {::ev/name "add-asset-to-library"
                                               :asset-type "graphics"})))))
 

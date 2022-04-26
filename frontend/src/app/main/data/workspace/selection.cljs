@@ -274,6 +274,7 @@
 (declare prepare-duplicate-frame-change)
 (declare prepare-duplicate-shape-change)
 (declare prepare-duplicate-flows)
+(declare prepare-duplicate-guides)
 
 (defn prepare-duplicate-changes
   "Prepare objects to duplicate: generate new id, give them unique names,
@@ -302,7 +303,9 @@
                                                 delta)
                      init-changes))]
 
-    (prepare-duplicate-flows changes shapes page ids-map)))
+    (-> changes
+        (prepare-duplicate-flows shapes page ids-map)
+        (prepare-duplicate-guides shapes page ids-map delta))))
 
 (defn- prepare-duplicate-change
   [changes objects page unames update-unames! ids-map shape delta]
@@ -362,20 +365,20 @@
           changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))]
 
-          (reduce (fn [changes child]
-                    (prepare-duplicate-shape-change changes
-                                                    objects
-                                                    page
-                                                    unames
-                                                    update-unames!
-                                                    ids-map
-                                                    child
-                                                    delta
-                                                    frame-id
-                                                    new-id))
-                  changes
-                  (map (d/getf objects) (:shapes obj))))
-      changes))
+      (reduce (fn [changes child]
+                (prepare-duplicate-shape-change changes
+                                                objects
+                                                page
+                                                unames
+                                                update-unames!
+                                                ids-map
+                                                child
+                                                delta
+                                                frame-id
+                                                new-id))
+              changes
+              (map (d/getf objects) (:shapes obj))))
+    changes))
 
 (defn- prepare-duplicate-flows
   [changes shapes page ids-map]
@@ -398,6 +401,32 @@
                              frames-with-flow))]
         (pcb/update-page-option changes :flows update-flows))
       changes)))
+
+(defn- prepare-duplicate-guides
+  [changes shapes page ids-map delta]
+  (let [guides (get-in page [:options :guides])
+        frames (->> shapes
+                    (filter #(= (:type %) :frame)))
+        new-guides (reduce
+                    (fn [g frame]
+                      (let [new-id     (ids-map (:id frame))
+                            new-frame  (-> frame
+                                           (geom/move delta))
+                            new-guides (->> guides
+                                            (vals)
+                                            (filter #(= (:frame-id %) (:id frame)))
+                                            (map #(-> %
+                                                      (assoc :id (uuid/next))
+                                                      (assoc :frame-id new-id)
+                                                      (assoc :position (if (= (:axis %) :x)
+                                                                         (+ (:position %) (- (:x new-frame) (:x frame)))
+                                                                         (+ (:position %) (- (:y new-frame) (:y frame))))))))]
+                        (conj g
+                              (into {} (map (juxt :id identity) new-guides)))))
+                    guides
+                    frames)]
+    (-> (pcb/with-page changes page)
+        (pcb/set-page-option :guides new-guides))))
 
 (defn duplicate-changes-update-indices
   "Updates the changes to correctly set the indexes of the duplicated objects,

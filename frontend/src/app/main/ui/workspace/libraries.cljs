@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.main.data.modal :as modal]
-   [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -72,13 +71,13 @@
            (reset! search-term "")))
 
         link-library
-        (mf/use-callback (mf/deps file) #(st/emit! (dw/link-file-to-library (:id file) %)))
+        (mf/use-callback (mf/deps file) #(st/emit! (dwl/link-file-to-library (:id file) %)))
 
         unlink-library
         (mf/use-callback
           (mf/deps file)
           (fn [library-id]
-            (st/emit! (dw/unlink-file-from-library (:id file) library-id)
+            (st/emit! (dwl/unlink-file-from-library (:id file) library-id)
                       (dwl/sync-file (:id file) library-id))))]
     [:*
      [:div.section
@@ -164,7 +163,7 @@
      (mf/deps project)
      (fn []
        (when (:team-id project)
-         (st/emit! (dw/fetch-shared-files {:team-id (:team-id project)})))))
+         (st/emit! (dwl/fetch-shared-files {:team-id (:team-id project)})))))
 
     [:div.modal-overlay
      [:div.modal.libraries-dialog

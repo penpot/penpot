@@ -18,6 +18,7 @@
    [app.common.spec.file :as spec.file]
    [app.common.spec.typography :as spec.typography]
    [app.common.uuid :as uuid]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -31,6 +32,7 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
@@ -327,7 +329,7 @@
                 (-> component
                     (assoc :path path)
                     (assoc :name name)
-                    (update :objects 
+                    (update :objects
                             ;; Give the same name to the root shape
                             #(assoc-in % [id :name] name)))))
 
@@ -710,3 +712,70 @@
                   :callback do-dismiss}]
                 :sync-dialog))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Backend interactions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-file-shared
+  [id is-shared]
+  {:pre [(uuid? id) (boolean? is-shared)]}
+  (ptk/reify ::set-file-shared
+    IDeref
+    (-deref [_]
+      {::ev/origin "workspace" :id id :shared is-shared})
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-file :is-shared] is-shared))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [params {:id id :is-shared is-shared}]
+        (->> (rp/mutation :set-file-shared params)
+             (rx/ignore))))))
+
+(defn- shared-files-fetched
+  [files]
+  (us/verify (s/every ::file) files)
+  (ptk/reify ::shared-files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [state (dissoc state :files)]
+        (assoc state :workspace-shared-files files)))))
+
+(defn fetch-shared-files
+  [{:keys [team-id] :as params}]
+  (us/assert ::us/uuid team-id)
+  (ptk/reify ::fetch-shared-files
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/query :team-shared-files {:team-id team-id})
+           (rx/map shared-files-fetched)))))
+
+;; --- Link and unlink Files
+
+(defn link-file-to-library
+  [file-id library-id]
+  (ptk/reify ::attach-library
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [fetched #(assoc-in %2 [:workspace-libraries (:id %1)] %1)
+            params  {:file-id file-id
+                     :library-id library-id}]
+        (->> (rp/mutation :link-file-to-library params)
+             (rx/mapcat #(rp/query :file {:id library-id}))
+             (rx/map #(partial fetched %)))))))
+
+(defn unlink-file-from-library
+  [file-id library-id]
+  (ptk/reify ::detach-library
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/dissoc-in state [:workspace-libraries library-id]))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [params {:file-id file-id
+                    :library-id library-id}]
+        (->> (rp/mutation :unlink-file-from-library params)
+             (rx/ignore))))))

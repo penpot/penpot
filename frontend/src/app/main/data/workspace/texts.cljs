@@ -13,6 +13,7 @@
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
@@ -379,3 +380,44 @@
     ptk/UpdateEvent
     (update [_ state]
       (d/dissoc-in state [:workspace-text-modifier id]))))
+
+(defn commit-position-data
+  []
+  (ptk/reify ::commit-position-data
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [position-data (::update-position-data state)]
+        (rx/concat
+         (rx/of (dch/update-shapes
+                 (keys position-data)
+                 (fn [shape]
+                   (-> shape
+                       (assoc :position-data (get position-data (:id shape)))))
+                 {:save-undo? false :reg-objects? false}))
+         (rx/of (fn [state]
+                  (dissoc state ::update-position-data-debounce ::update-position-data))))))))
+
+(defn update-position-data
+  [id position-data]
+
+  (let [start (uuid/next)]
+    (ptk/reify ::update-position-data
+      ptk/UpdateEvent
+      (update [_ state]
+        (if (nil? (::update-position-data-debounce state))
+          (assoc state ::update-position-data-debounce start)
+          (assoc-in state [::update-position-data id] position-data)))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (if (= (::update-position-data-debounce state) start)
+          (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
+            (rx/merge
+             (->> stream
+                  (rx/filter (ptk/type? ::update-position-data))
+                  (rx/debounce 50)
+                  (rx/take 1)
+                  (rx/map #(commit-position-data))
+                  (rx/take-until stopper))
+             (rx/of (update-position-data id position-data))))
+          (rx/empty))))))

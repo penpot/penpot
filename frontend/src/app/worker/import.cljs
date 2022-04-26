@@ -12,11 +12,11 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gpa]
    [app.common.logging :as log]
+   [app.common.media :as cm]
    [app.common.pages :as cp]
    [app.common.text :as ct]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
-   [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.import.parser :as cip]
    [app.util.json :as json]
@@ -49,7 +49,7 @@
                 :colors       (str file-id "/colors.json")
                 :typographies (str file-id "/typographies.json")
                 :media-list   (str file-id "/media.json")
-                :media        (let [ext (dom/mtype->extension (:mtype media))]
+                :media        (let [ext (cm/mtype->extension (:mtype media))]
                                 (str/concat file-id "/media/" id ext))
                 :components   (str file-id "/components.svg"))
 

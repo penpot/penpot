@@ -17,14 +17,13 @@
 
 ;; --- Predicates
 
-(defn ^boolean file?
+(defn file?
   [o]
   (instance? js/File o))
 
-(defn ^boolean blob?
+(defn blob?
   [o]
   (instance? js/Blob o))
-
 
 ;; --- Specs
 
@@ -36,8 +35,7 @@
 
 ;; --- Utility functions
 
-(defn validate-file
-  ;; Check that a file obtained with the file javascript API is valid.
+(defn validate-file  ;; Check that a file obtained with the file javascript API is valid.
   [file]
   (when (> (.-size file) cm/max-file-size)
     (ex/raise :type :validation
@@ -74,4 +72,3 @@
               :else
               (tr "errors.unexpected-error"))]
     (rx/of (dm/error msg))))
-

@@ -10,8 +10,10 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
+   [app.common.media :as cm]
    [app.util.globals :as globals]
    [app.util.object :as obj]
+   [app.util.webapi :as wapi]
    [cuerdas.core :as str]
    [goog.dom :as dom]
    [promesa.core :as p]))
@@ -329,27 +331,10 @@
       (log/error :msg "Seems like the current browser does not support fullscreen api.")
       false)))
 
-(defn ^boolean blob?
+(defn blob?
   [^js v]
   (when (some? v)
     (instance? js/Blob v)))
-
-(defn create-blob
-  "Create a blob from content."
-  ([content]
-   (create-blob content "application/octet-stream"))
-  ([content mimetype]
-   (js/Blob. #js [content] #js {:type mimetype})))
-
-(defn revoke-uri
-  [url]
-  (js/URL.revokeObjectURL url))
-
-(defn create-uri
-  "Create a url from blob."
-  [b]
-  {:pre [(blob? b)]}
-  (js/URL.createObjectURL b))
 
 (defn make-node
   ([namespace name]
@@ -442,21 +427,6 @@
   (when (some? node)
     (.getAttribute node (str "data-" attr))))
 
-(defn mtype->extension [mtype]
-  ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
-  (case mtype
-    "image/apng"         ".apng"
-    "image/avif"         ".avif"
-    "image/gif"          ".gif"
-    "image/jpeg"         ".jpg"
-    "image/png"          ".png"
-    "image/svg+xml"      ".svg"
-    "image/webp"         ".webp"
-    "application/zip"    ".zip"
-    "application/penpot" ".penpot"
-    "application/pdf"    ".pdf"
-    nil))
-
 (defn set-attribute! [^js node ^string attr value]
   (when (some? node)
     (.setAttribute node attr value)))
@@ -507,7 +477,7 @@
 (defn trigger-download-uri
   [filename mtype uri]
   (let [link      (create-element "a")
-        extension (mtype->extension mtype)
+        extension (cm/mtype->extension mtype)
         filename  (if (and extension (not (str/ends-with? filename extension)))
                     (str/concat filename extension)
                     filename)]
@@ -520,14 +490,14 @@
 
 (defn trigger-download
   [filename blob]
-  (trigger-download-uri filename (.-type ^js blob) (create-uri blob)))
+  (trigger-download-uri filename (.-type ^js blob) (wapi/create-uri blob)))
 
 (defn save-as
   [uri filename mtype description]
 
   ;; Only chrome supports the save dialog
   (if (obj/contains? globals/window "showSaveFilePicker")
-    (let [extension (mtype->extension mtype)
+    (let [extension (cm/mtype->extension mtype)
           opts {:suggestedName (str filename "." extension)
                 :types [{:description description
                          :accept { mtype [(str "." extension)]}}]}]
