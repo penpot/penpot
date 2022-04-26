@@ -50,9 +50,8 @@
           render-id (mf/use-ctx muc/render-ctx)
           svg-text? (and (= :text (:type mask)) (some? (:position-data mask)))
 
-          mask-bb
-          (-> (gsh/transform-shape mask)
-              (:points))]
+          mask-bb      (-> (gsh/transform-shape mask) (:points))
+          mask-bb-rect (gsh/points->rect mask-bb)]
       [:defs
        [:filter {:id (filter-id render-id mask)}
         [:feFlood {:flood-color "white"
@@ -73,7 +72,12 @@
        ;; When te shape is a text we pass to the shape the info and disable the filter.
        ;; There is a bug in Firefox with filters and texts. We change the text to white at shape level
        [:mask {:class "mask-shape"
-               :id (mask-id render-id mask)}
+               :id (mask-id render-id mask)
+               :x (:x mask-bb-rect)
+               :y (:y mask-bb-rect)
+               :width (:width mask-bb-rect)
+               :height (:height mask-bb-rect)
+               :mask-units "userSpaceOnUse"}
         [:g {:filter (when-not svg-text? (filter-url render-id mask))}
          [:& shape-wrapper {:shape (-> mask (dissoc :shadow :blur) (assoc :is-mask? true))}]]]])))
 
