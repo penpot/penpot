@@ -60,6 +60,8 @@
    :height                :geometry-group
    :transform             :geometry-group
    :transform-inverse     :geometry-group
+   :opacity               :layer-effects-group
+   :blend-mode            :layer-effects-group
    :shadow                :shadow-group
    :blur                  :blur-group
    :masked-group?         :mask-group
