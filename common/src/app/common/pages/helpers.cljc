@@ -92,7 +92,7 @@
   "Returns a vector of parents of the specified shape."
   [objects shape-id]
   (loop [result [] id shape-id]
-    (if-let [parent-id (->> id (get objects) :parent-id)]
+    (if-let [parent-id (get-in objects [id :parent-id])]
       (recur (conj result parent-id) parent-id)
       result)))
 

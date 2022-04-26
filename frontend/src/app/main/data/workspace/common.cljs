@@ -48,13 +48,12 @@
 ;; --- Selection Index Handling
 
 (defn initialize-indices
-  [{:keys [file] :as bundle}]
+  [{:keys [file-raw] :as bundle}]
   (ptk/reify ::setup-selection-index
     ptk/WatchEvent
     (watch [_ _ _]
       (let [msg {:cmd :initialize-indices
-                 :file-id (:id file)
-                 :data (:data file)}]
+                 :file-raw file-raw}]
         (->> (uw/ask! msg)
              (rx/map (constantly ::index-initialized)))))))
 

@@ -35,8 +35,7 @@
     (rx/throw {:type :validation
                :code :request-body-too-large})
 
-    (and (>= status 400)
-         (map? body))
+    (and (>= status 400) (map? body))
     (rx/throw body)
 
     :else
@@ -49,13 +48,19 @@
 (defn- send-query!
   "A simple helper for send and receive transit data on the penpot
   query api."
-  [id params]
-  (->> (http/send! {:method :get
-                    :uri (u/join base-uri "api/rpc/query/" (name id))
-                    :credentials "include"
-                    :query params})
-       (rx/map http/conditional-decode-transit)
-       (rx/mapcat handle-response)))
+  ([id params]
+   (send-query! id params nil))
+
+  ([id params {:keys [raw-transit?]}]
+   (let [decode-transit (if raw-transit?
+                          identity
+                          (partial rx/map http/conditional-decode-transit))]
+     (->> (http/send! {:method :get
+                       :uri (u/join base-uri "api/rpc/query/" (name id))
+                       :credentials "include"
+                       :query params})
+          (decode-transit)
+          (rx/mapcat handle-response)))))
 
 (defn- send-mutation!
   "A simple helper for a common case of sending and receiving transit
@@ -76,6 +81,10 @@
 (defmethod query :default
   [id params]
   (send-query! id params))
+
+(defmethod query :file
+  [id params]
+  (send-query! id params {:raw-transit? true}))
 
 (defmethod mutation :default
   [id params]

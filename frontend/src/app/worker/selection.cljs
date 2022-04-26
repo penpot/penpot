@@ -21,7 +21,7 @@
 
 (defonce state (l/atom {}))
 
-(defn index-shape
+(defn make-index-shape
   [objects parents-index clip-parents-index]
   (fn [index shape]
     (let [{:keys [x y width height]}
@@ -77,13 +77,16 @@
   (let [shapes             (-> objects (dissoc uuid/zero) vals)
         parents-index      (cp/generate-child-all-parents-index objects)
         clip-parents-index (cp/create-clip-index objects parents-index)
-        bounds             (-> objects objects-bounds add-padding-bounds)
 
-        index (reduce (index-shape objects parents-index clip-parents-index)
-                      (qdt/create (clj->js bounds))
-                      shapes)
+        root-shapes        (cph/get-immediate-children objects uuid/zero)
+        bounds             (-> root-shapes gsh/selection-rect add-padding-bounds)
 
-        z-index (cp/calculate-z-index objects)]
+        index-shape        (make-index-shape objects parents-index clip-parents-index)
+        initial-quadtree   (qdt/create (clj->js bounds))
+
+        index              (reduce index-shape initial-quadtree shapes)
+
+        z-index            (cp/calculate-z-index objects)]
 
     {:index index :z-index z-index :bounds bounds}))
 
@@ -106,9 +109,8 @@
 
         new-index (qdt/remove-all index changed-ids)
 
-        index (reduce (index-shape new-objects parents-index clip-parents-index)
-                      new-index
-                      shapes)
+        index-shape (make-index-shape new-objects parents-index clip-parents-index)
+        index (reduce index-shape new-index shapes)
 
         z-index (cp/update-z-index z-index changed-ids old-objects new-objects)]
 
