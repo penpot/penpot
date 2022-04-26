@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
+   [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
@@ -131,6 +132,7 @@
                         (:name error)
                         (dm/str cf/public-uri "js/cljs-runtime/" (:file error))
                         (:line error))]
+
     (ts/schedule
      #(st/emit! (msg/show {:content "Internal error: assertion."
                            :type :error
@@ -139,6 +141,7 @@
     ;; Print to the console some debugging info
     (js/console.group message)
     (js/console.info context)
+    (js/console.log (us/pretty-explain error))
     (js/console.groupEnd message)))
 
 ;; That are special case server-errors that should be treated

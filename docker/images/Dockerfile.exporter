@@ -1,12 +1,11 @@
-FROM debian:bullseye
+FROM ubuntu:20.04
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v16.13.1 \
-    PENPOT_BROWSER_EXECUTABLE_PATH=/usr/bin/chromium
+    NODE_VERSION=v16.14.2
 
 RUN set -ex; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
@@ -60,7 +59,6 @@ RUN set -ex; \
         fonts-liberation \
         libnss3 \
         libgbm1 \
-        chromium \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
@@ -95,6 +93,8 @@ WORKDIR /opt/app
 
 ADD ./bundle-exporter/ /opt/app/
 
-RUN set -ex; yarn install;
+RUN set -ex; \
+    yarn install; \
+    npx playwright install chromium;
 
 CMD ["/usr/local/nodejs/bin/node", "app.js"]

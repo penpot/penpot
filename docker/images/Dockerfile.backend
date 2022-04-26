@@ -45,12 +45,12 @@ RUN set -eux; \
     esac; \
     curl -LfsSo /tmp/openjdk.tar.gz ${BINARY_URL}; \
     echo "${ESUM} */tmp/openjdk.tar.gz" | sha256sum -c -; \
-    mkdir -p /usr/lib/jvm/openjdk16; \
-    cd /usr/lib/jvm/openjdk16; \
+    mkdir -p /usr/lib/jvm/openjdk; \
+    cd /usr/lib/jvm/openjdk; \
     tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
     rm -rf /tmp/openjdk.tar.gz;
 
-ENV JAVA_HOME=/usr/lib/jvm/openjdk16 PATH="/usr/lib/jvm/openjdk16/bin:$PATH"
+ENV JAVA_HOME=/usr/lib/jvm/openjdk PATH="/usr/lib/jvm/openjdk/bin:$PATH"
 ADD ./bundle-backend/ /opt/penpot/backend/
 WORKDIR /opt/penpot/backend
 CMD ["/bin/bash", "run.sh"]

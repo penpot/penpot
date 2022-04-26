@@ -18,6 +18,7 @@
    [app.common.spec.file :as spec.file]
    [app.common.spec.typography :as spec.typography]
    [app.common.uuid :as uuid]
+   [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.changes :as dch]
@@ -37,6 +38,8 @@
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
+
+(s/def ::file ::dd/file)
 
 (defn- log-changes
   [changes file]
