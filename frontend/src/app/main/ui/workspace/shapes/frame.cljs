@@ -117,6 +117,7 @@
          thumb-renderer
 
          [:g.frame-thumbnail
-          [:> frame/frame-thumbnail {:shape (cond-> shape
+          [:> frame/frame-thumbnail {:key (dm/str (:id shape))
+                                     :shape (cond-> shape
                                               (some? thumbnail-data)
                                               (assoc :thumbnail thumbnail-data))}]]]))))

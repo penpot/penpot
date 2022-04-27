@@ -48,11 +48,10 @@
         (mf/use-callback
          (fn []
            (let [canvas-node (mf/ref-val frame-canvas-ref)
-                 img-node    (mf/ref-val frame-image-ref)]
-             (ts/raf
-              #(let [thumb-data  (draw-thumbnail-canvas canvas-node img-node)]
-                 (st/emit! (dw/update-thumbnail id thumb-data))
-                 (reset! image-url nil))))))
+                 img-node    (mf/ref-val frame-image-ref)
+                 thumb-data  (draw-thumbnail-canvas canvas-node img-node)]
+             (st/emit! (dw/update-thumbnail id thumb-data))
+             (reset! image-url nil))))
 
         on-change
         (mf/use-callback
@@ -70,7 +69,6 @@
                            (dom/set-property! "height" height)
                            (dom/set-property! "fill" "none")
                            (obj/set! "innerHTML" frame-html))
-
                        img-src  (-> svg-node dom/node->xml dom/svg->data-uri)]
                    (reset! image-url img-src)))))))
 
