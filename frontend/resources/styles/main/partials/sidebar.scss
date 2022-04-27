@@ -125,25 +125,34 @@
         width: 100%;
         height: 100%;
         display: grid;
+        align-items: center;
         grid-template-columns: auto 1fr auto;
         grid-column-gap: 8px;
+        cursor: pointer;
 
         & .back-button {
-          cursor: pointer;
           background: none;
           border: none;
-          transform: rotate(180deg);
           padding: 0;
+          margin: 0;
+
+          & svg {
+            fill: $color-white;
+            transform: rotate(180deg);
+            margin-top: 3px;
+          }
 
           &:hover {
             svg {
               fill: $color-primary;
             }
           }
+        }
 
-          & svg {
-            fill: $color-white;
-          }
+        & .focus-name {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         & .focus-mode {

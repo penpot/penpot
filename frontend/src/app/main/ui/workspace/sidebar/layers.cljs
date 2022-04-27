@@ -498,11 +498,9 @@
     [:div#layers.tool-window
      (if (d/not-empty? focus)
        [:div.tool-window-bar
-        [:div.focus-title
-         [:button.back-button
-          {:on-click #(st/emit! (dw/toggle-focus-mode))}
-          i/arrow-slide]
-         [:span (or title (tr "workspace.focus.selection"))]
+        [:div.focus-title {:on-click #(st/emit! (dw/toggle-focus-mode))}
+         [:button.back-button i/arrow-slide]
+         [:div.focus-name (or title (tr "workspace.focus.selection"))]
          [:div.focus-mode (tr "workspace.focus.focus-mode")]]]
 
        filter-component)
