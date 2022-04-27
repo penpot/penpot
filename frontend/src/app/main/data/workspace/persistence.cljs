@@ -251,8 +251,8 @@
                    (rp/query :project {:id project-id})
                    (rp/query :file-libraries {:file-id file-id}))
            (rx/take 1)
-           (rx/map (fn [[file users project libraries]]
-                     {:file file
+           (rx/map (fn [[file-raw users project libraries]]
+                     {:file-raw file-raw
                       :users users
                       :project project
                       :libraries libraries}))

@@ -8,10 +8,10 @@
   (:require
    [app.common.logging :as log]
    [app.common.spec :as us]
-   [app.common.transit :as t]
    [app.worker.export]
    [app.worker.impl :as impl]
    [app.worker.import]
+   [app.worker.messages :as wm]
    [app.worker.selection]
    [app.worker.snaps]
    [app.worker.thumbnails]
@@ -46,7 +46,7 @@
   [{:keys [sender-id payload] :as message}]
   (us/assert ::message message)
   (letfn [(post [msg]
-            (let [msg (-> msg (assoc :reply-to sender-id) (t/encode-str))]
+            (let [msg (-> msg (assoc :reply-to sender-id) (wm/encode))]
               (.postMessage js/self msg)))
 
           (reply [result]
@@ -91,8 +91,8 @@
   "Sends to the client a notification that its messages have been dropped"
   [{:keys [sender-id] :as message}]
   (us/assert ::message message)
-  (.postMessage js/self (t/encode-str {:reply-to sender-id
-                                       :dropped true})))
+  (.postMessage js/self (wm/encode {:reply-to sender-id
+                                    :dropped true})))
 
 (defn subscribe-buffer-messages
   "Creates a subscription to process the buffer messages"
@@ -150,7 +150,7 @@
   [event]
   (when (nil? (.-source event))
     (let [message (.-data event)
-          message (t/decode-str message)]
+          message (wm/decode message)]
       (if (:buffer? message)
         (rx/push! buffer message)
         (handle-message message)))))

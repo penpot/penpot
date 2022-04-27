@@ -115,17 +115,24 @@
             (rx/filter (ptk/type? ::dwp/bundle-fetched))
             (rx/take 1)
             (rx/map deref)
-            (rx/mapcat (fn [bundle]
-                         (let [team-id (-> bundle :project :team-id)]
-                           (rx/merge
-                            (rx/of (dwn/initialize team-id file-id)
-                                   (dwp/initialize-file-persistence file-id)
-                                   (dwc/initialize-indices bundle))
+            (rx/mapcat
+             (fn [bundle]
+               (rx/merge
+                (rx/of (dwc/initialize-indices bundle))
 
-                            (->> stream
-                                 (rx/filter #(= ::dwc/index-initialized %))
-                                 (rx/take 1)
-                                 (rx/map #(file-initialized bundle))))))))))
+                (->> (rx/of bundle)
+                     (rx/mapcat
+                      (fn [bundle]
+                        (let [bundle (assoc bundle :file (t/decode-str (:file-raw bundle)))
+                              team-id (dm/get-in bundle [:project :team-id])]
+                          (rx/merge
+                           (rx/of (dwn/initialize team-id file-id)
+                                  (dwp/initialize-file-persistence file-id))
+
+                           (->> stream
+                                (rx/filter #(= ::dwc/index-initialized %))
+                                (rx/take 1)
+                                (rx/map #(file-initialized bundle))))))))))))))
 
     ptk/EffectEvent
     (effect [_ _ _]
