@@ -72,11 +72,13 @@
 
       [:> (name tag) (clj->js attrs)
        [:> wrapper wrapper-props
-        (for [node content] [:& svg-node {:type type
-                                          :node node
-                                          :prefix-id prefix-id
-                                          :transform transform
-                                          :bounds bounds}])]])))
+        (for [[index node] (d/enumerate content)]
+          [:& svg-node {:key (dm/str "node-" index)
+                        :type type
+                        :node node
+                        :prefix-id prefix-id
+                        :transform transform
+                        :bounds bounds}])]])))
 
 (defn svg-def-bounds [svg-def shape transform]
   (let [{:keys [tag]} svg-def]
@@ -107,10 +109,10 @@
           (cond->> id
             (contains? svg-defs id) (str render-id "-")))]
 
-    ;; TODO: no key?
     (when (seq svg-defs)
-      (for [svg-def (vals svg-defs)]
-        [:& svg-node {:type (:type shape)
+      (for [[key svg-def] svg-defs]
+        [:& svg-node {:key (dm/str key)
+                      :type (:type shape)
                       :node svg-def
                       :prefix-id prefix-id
                       :transform transform
