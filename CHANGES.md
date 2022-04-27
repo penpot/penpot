@@ -93,6 +93,7 @@
 - Fix resize rotated shape with top&down constraints [Taiga #3167](https://tree.taiga.io/project/penpot/issue/3167)
 - Fix multi user not working [Taiga #3195](https://tree.taiga.io/project/penpot/issue/3195)
 - Fix guides are not duplicated with the artboard [Taiga #3072](https://tree.taiga.io/project/penpot/issue/3072)
+- Fix problem when changing group size with decimal values [Taiga #3203](https://tree.taiga.io/project/penpot/issue/3203)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

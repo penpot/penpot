@@ -110,7 +110,7 @@
 ;; geometric attributes of the shapes.
 
 (declare clear-local-transform)
-(declare set-modifiers-recursive)
+(declare set-objects-modifiers)
 (declare get-ignore-tree)
 
 (defn- set-modifiers
@@ -139,7 +139,7 @@
              (fn [state id]
                (let [shape (get objects id)]
                  (update state :workspace-modifiers
-                         #(set-modifiers-recursive % objects shape modifiers ignore-constraints snap-pixel?))))]
+                         #(set-objects-modifiers % objects shape modifiers ignore-constraints snap-pixel?))))]
 
          (reduce setup-modifiers state ids))))))
 
@@ -330,25 +330,28 @@
                 (assoc :displacement (gmt/translate-matrix delta-v))))]
       modifiers)))
 
-(defn- set-modifiers-recursive
+(defn- set-objects-modifiers
   [modif-tree objects shape modifiers ignore-constraints snap-pixel?]
+  (letfn [(set-modifiers-rec
+            [modif-tree shape modifiers]
 
-  (let [children (map (d/getf objects) (:shapes shape))
-        modifiers (cond-> modifiers snap-pixel? (set-pixel-precision shape))
-        transformed-rect (gsh/transform-selrect (:selrect shape) modifiers)
+            (let [children (map (d/getf objects) (:shapes shape))
+                  modifiers (cond-> modifiers snap-pixel? (set-pixel-precision shape))
+                  transformed-rect (gsh/transform-selrect (:selrect shape) modifiers)
 
-        set-child
-        (fn [modif-tree child]
-          (let [child-modifiers (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)]
-            (cond-> modif-tree
-              (not (gsh/empty-modifiers? child-modifiers))
-              (set-modifiers-recursive objects child child-modifiers ignore-constraints snap-pixel?))))
+                  set-child
+                  (fn [modif-tree child]
+                    (let [child-modifiers (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)]
+                      (cond-> modif-tree
+                        (not (gsh/empty-modifiers? child-modifiers))
+                        (set-modifiers-rec child child-modifiers))))
 
-        modif-tree
-        (-> modif-tree
-            (assoc-in [(:id shape) :modifiers] modifiers))]
+                  modif-tree
+                  (-> modif-tree
+                      (assoc-in [(:id shape) :modifiers] modifiers))]
 
-    (reduce set-child modif-tree children)))
+              (reduce set-child modif-tree children)))]
+    (set-modifiers-rec modif-tree shape modifiers)))
 
 (defn- get-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
@@ -507,15 +510,17 @@
   (ptk/reify ::update-dimensions
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data :pages-index page-id :objects])
+      (let [objects     (wsh/lookup-page-objects state)
+            layout      (get state :workspace-layout)
+            snap-pixel? (contains? layout :snap-pixel-grid)
 
             update-modifiers
             (fn [state id]
-              (let [shape (get objects id)
+              (let [shape     (get objects id)
                     modifiers (gsh/resize-modifiers shape attr value)]
-                (update state :workspace-modifiers
-                        #(set-modifiers-recursive % objects shape modifiers false false))))]
+                (-> state
+                    (update :workspace-modifiers
+                            #(set-objects-modifiers % objects shape modifiers false (and snap-pixel? (int? value)))))))]
         (reduce update-modifiers state ids)))
 
     ptk/WatchEvent
