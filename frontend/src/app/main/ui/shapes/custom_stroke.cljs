@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.custom-stroke
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
@@ -381,6 +382,14 @@
         (cond-> (obj/merge! props fill-props)
           (some? style)
           (obj/set! "style" style)))
+
+      (some? (:svg-attrs shape))
+      (let [style
+            (-> (obj/get props "style")
+                (obj/clone)
+                (obj/set! "fill" clr/black))]
+        (-> props
+            (obj/set! "style" style)))
 
       (and (= :path (:type shape)) (empty? (:fills shape)))
       (let [style
