@@ -7,10 +7,10 @@
 (ns app.util.worker
   "A lightweight layer on top of webworkers api."
   (:require
-   [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.util.globals :refer [global]]
    [app.util.object :as obj]
+   [app.worker.messages :as wm]
    [beicon.core :as rx]))
 
 (declare handle-response)
@@ -27,7 +27,7 @@
              (rx/take-while #(not (:completed %)) ob)
              (rx/take 1 ob)))
 
-         data (t/encode-str message)
+         data (wm/encode message)
          instance (:instance worker)]
 
      (if (some? instance)
@@ -71,11 +71,10 @@
 
         handle-message
         (fn [event]
-          (let [data (.-data event)
-                data (t/decode-str data)]
-            (if (:error data)
-              (on-error (:error data))
-              (rx/push! bus data))))
+          (let [message (wm/decode (.-data event))]
+            (if (:error message)
+              (on-error (:error message))
+              (rx/push! bus message))))
 
         handle-error
         (fn [error]

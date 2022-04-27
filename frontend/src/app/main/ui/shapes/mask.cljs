@@ -50,17 +50,17 @@
     (let [mask        (unchecked-get props "mask")
           render-id   (mf/use-ctx muc/render-ctx)
           svg-text?   (and (= :text (:type mask)) (some? (:position-data mask)))
+
           ;; This factory is generic, it's used for viewer, workspace and handoff.
           ;; These props are generated in viewer wrappers only, in the rest of the 
           ;; cases these props will be nil, not affecting the code. 
           fixed?      (unchecked-get props "fixed?")
           delta       (unchecked-get props "delta")
-          mask-for-bb (-> (gsh/transform-shape mask)
-                          (cond-> fixed? (gsh/move delta)))
+          mask-bb (-> (gsh/transform-shape mask)
+                      (cond-> fixed? (gsh/move delta))
+                      (:points))
           
-          mask-bb     (cond
-                        svg-text? (gst/position-data-points mask-for-bb)
-                        :else     (:points mask-for-bb))]
+          mask-bb-rect (gsh/points->rect mask-bb)]
       [:defs
        [:filter {:id (filter-id render-id mask)}
         [:feFlood {:flood-color "white"
@@ -81,7 +81,12 @@
        ;; When te shape is a text we pass to the shape the info and disable the filter.
        ;; There is a bug in Firefox with filters and texts. We change the text to white at shape level
        [:mask {:class "mask-shape"
-               :id (mask-id render-id mask)}
+               :id (mask-id render-id mask)
+               :x (:x mask-bb-rect)
+               :y (:y mask-bb-rect)
+               :width (:width mask-bb-rect)
+               :height (:height mask-bb-rect)
+               :mask-units "userSpaceOnUse"}
         [:g {:filter (when-not svg-text? (filter-url render-id mask))}
          [:& shape-wrapper {:shape (-> mask (dissoc :shadow :blur) (assoc :is-mask? true))}]]]])))
 

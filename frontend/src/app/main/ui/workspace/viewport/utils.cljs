@@ -150,10 +150,14 @@
 
           (when (or (= (dom/get-tag-name node) "mask")
                     (= (dom/get-tag-name node) "filter"))
-            (dom/set-attribute! node "data-old-x" (dom/get-attribute node "x"))
-            (dom/set-attribute! node "data-old-y" (dom/get-attribute node "y"))
-            (dom/set-attribute! node "data-old-width" (dom/get-attribute node "width"))
-            (dom/set-attribute! node "data-old-height" (dom/get-attribute node "height"))))))))
+            (let [old-x (dom/get-attribute node "x")
+                  old-y (dom/get-attribute node "y")
+                  old-width (dom/get-attribute node "width")
+                  old-height (dom/get-attribute node "height")]
+              (dom/set-attribute! node "data-old-x" old-x)
+              (dom/set-attribute! node "data-old-y" old-y)
+              (dom/set-attribute! node "data-old-width" old-width)
+              (dom/set-attribute! node "data-old-height" old-height))))))))
 
 (defn set-transform-att!
   [node att value]
@@ -208,10 +212,19 @@
             ;; The shape width/height will be automaticaly setup when the modifiers are applied
             nil
 
+            (or (= (dom/get-tag-name node) "mask")
+                (= (dom/get-tag-name node) "filter"))
+            (do
+              (dom/remove-attribute! node "data-old-x")
+              (dom/remove-attribute! node "data-old-y")
+              (dom/remove-attribute! node "data-old-width")
+              (dom/remove-attribute! node "data-old-height"))
+
             :else
             (let [old-transform (dom/get-attribute node "data-old-transform")]
-              (when-not (some? old-transform)
-                (dom/remove-attribute! node "data-old-transform")
+              (if (some? old-transform)
+                (do (dom/remove-attribute! node "data-old-transform")
+                    (dom/set-attribute! node "transform" old-transform))
                 (dom/remove-attribute! node "transform")))))))))
 
 (defn format-viewbox [vbox]

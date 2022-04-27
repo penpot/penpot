@@ -7,6 +7,7 @@
 (ns app.common.pages.helpers
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.spec :as us]
    [app.common.spec.page :as spec.page]
@@ -92,7 +93,7 @@
   "Returns a vector of parents of the specified shape."
   [objects shape-id]
   (loop [result [] id shape-id]
-    (if-let [parent-id (->> id (get objects) :parent-id)]
+    (if-let [parent-id (dm/get-in objects [id :parent-id])]
       (recur (conj result parent-id) parent-id)
       result)))
 

@@ -7,6 +7,7 @@
 (ns app.worker.impl
   (:require
    [app.common.pages.changes :as ch]
+   [app.common.transit :as t]
    [app.util.globals :refer [global]]
    [app.util.object :as obj]
    [okulary.core :as l]))
@@ -28,14 +29,15 @@
   message)
 
 (defmethod handler :initialize-indices
-  [{:keys [data] :as message}]
+  [{:keys [file-raw] :as message}]
 
-  (reset! state data)
-
-  (handler (-> message
-               (assoc :cmd :selection/initialize-index)))
-  (handler (-> message
-               (assoc :cmd :snaps/initialize-index))))
+  (let [data (-> (t/decode-str file-raw) :data)
+        message (assoc message :data data)]
+    (reset! state data)
+    (handler (-> message
+                 (assoc :cmd :selection/initialize-index)))
+    (handler (-> message
+                 (assoc :cmd :snaps/initialize-index)))))
 
 (defmethod handler :update-page-indices
   [{:keys [page-id changes] :as message}]

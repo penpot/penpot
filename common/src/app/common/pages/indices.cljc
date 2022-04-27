@@ -11,16 +11,17 @@
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
-(defn calculate-frame-z-index [z-index frame-id objects]
+(defn calculate-frame-z-index
+  [z-index frame-id base-idx objects]
+
   (let [is-frame?    (fn [id] (= :frame (get-in objects [id :type])))
-        frame-shapes (->> objects (vals) (filterv #(= (:frame-id %) frame-id)))
         children     (or (get-in objects [frame-id :shapes]) [])]
 
     (if (empty? children)
       z-index
       (loop [current (peek children)
              pending (pop children)
-             current-idx (count frame-shapes)
+             current-idx base-idx
              z-index z-index]
 
         (let [children  (get-in objects [current :shapes])
@@ -46,10 +47,15 @@
   [objects]
 
   (let [frames  (cph/get-frames objects)
-        z-index (calculate-frame-z-index {} uuid/zero objects)]
+
+        by-frame (cph/objects-by-frame objects)
+        frame-base-idx (d/update-vals by-frame count)
+
+        z-index (calculate-frame-z-index {} uuid/zero (get frame-base-idx uuid/zero) objects)]
     (->> frames
-         (map :id)
-         (reduce #(calculate-frame-z-index %1 %2 objects) z-index))))
+         (reduce
+          (fn [z-index {:keys [id]}]
+            (calculate-frame-z-index z-index id (get frame-base-idx id) objects)) z-index))))
 
 (defn update-z-index
   "Updates the z-index given a set of ids to change and the old and new objects
@@ -65,10 +71,13 @@
                     (map :id)
                     (filter #(contains? changed-frames %)))
 
-        z-index (calculate-frame-z-index z-index uuid/zero new-objects)]
+        by-frame       (cph/objects-by-frame new-objects)
+        frame-base-idx (d/update-vals by-frame count)
+        z-index (calculate-frame-z-index z-index uuid/zero (get frame-base-idx uuid/zero) new-objects)]
 
     (->> frames
-         (reduce #(calculate-frame-z-index %1 %2 new-objects) z-index))))
+         (reduce (fn [z-index id]
+                   (calculate-frame-z-index z-index id (get frame-base-idx id) new-objects)) z-index))))
 
 (defn generate-child-parent-index
   [objects]
@@ -84,10 +93,10 @@
    (generate-child-all-parents-index objects (vals objects)))
 
   ([objects shapes]
-   (let [xf-parents (comp
-                     (map :id)
-                     (map #(vector % (cph/get-parent-ids objects %))))]
-     (into {} xf-parents shapes))))
+   (let [shape->entry
+         (fn [shape]
+           [(:id shape) (cph/get-parent-ids objects (:id shape))])]
+     (into {} (map shape->entry) shapes))))
 
 (defn create-clip-index
   "Retrieves the mask information for an object"

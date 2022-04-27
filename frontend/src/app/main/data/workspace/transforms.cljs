@@ -378,7 +378,7 @@
     (update [_ state]
       (-> state
           (dissoc :workspace-modifiers)
-          (update :workspace-local dissoc :current-move-selected)))))
+          (dissoc ::current-move-selected)))))
 
 ;; -- Resize --------------------------------------------------------
 
@@ -721,15 +721,15 @@
 
       ptk/UpdateEvent
       (update [_ state]
-        (if (nil? (get-in state [:workspace-local :current-move-selected]))
+        (if (nil? (get state ::current-move-selected))
           (-> state
               (assoc-in [:workspace-local :transform] :move)
-              (assoc-in [:workspace-local :current-move-selected] same-event))
+              (assoc ::current-move-selected same-event))
           state))
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (if (= same-event (get-in state [:workspace-local :current-move-selected]))
+        (if (= same-event (get state ::current-move-selected))
           (let [selected (wsh/lookup-selected state {:omit-blocked? true})
                 nudge (get-in state [:profile :props :nudge] {:big 10 :small 1})
                 move-events (->> stream
@@ -744,10 +744,10 @@
             (rx/concat
              (rx/merge
               (->> move-events
-                   (rx/take-until stopper)
                    (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
                    (rx/map #(hash-map :displacement (gmt/translate-matrix %)))
-                   (rx/map (partial set-modifiers selected)))
+                   (rx/map (partial set-modifiers selected))
+                   (rx/take-until stopper))
               (rx/of (move-selected direction shift?)))
 
              (rx/of (apply-modifiers selected)
