@@ -37,29 +37,29 @@
 
      ptk/WatchEvent
      (watch [_ _ stream]
-       (let [stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
-         (rx/merge
-          (when (= tool :path)
-            (rx/of (start-drawing :path)))
+       (rx/merge
+        (when (= tool :path)
+          (rx/of (start-drawing :path)))
 
-          (when (= tool :curve)
-            (let [stopper (->> stream (rx/filter dwc/interrupt?))]
-              (->> stream
-                   (rx/filter (ptk/type? ::common/handle-finish-drawing))
-                   (rx/take 1)
-                   (rx/observe-on :async)
-                   (rx/map #(select-for-drawing tool data))
-                   (rx/take-until stopper))))
+        (when (= tool :curve)
+          (let [stopper (->> stream (rx/filter dwc/interrupt?))]
+            (->> stream
+                 (rx/filter (ptk/type? ::common/handle-finish-drawing))
+                 (rx/take 1)
+                 (rx/observe-on :async)
+                 (rx/map #(select-for-drawing tool data))
+                 (rx/take-until stopper))))
 
-          ;; NOTE: comments are a special case and they manage they
-          ;; own interrupt cycle.q
-          (when (and (not= tool :comments)
-                     (not= tool :path))
+        ;; NOTE: comments are a special case and they manage they
+        ;; own interrupt cycle.q
+        (when (and (not= tool :comments)
+                   (not= tool :path))
+          (let [stopper (rx/filter (ptk/type? ::clear-drawing) stream)]
             (->> stream
                  (rx/filter dwc/interrupt?)
                  (rx/take 1)
-                 (rx/map (constantly common/clear-drawing))
-                 (rx/take-until stoper)))))))))
+                 (rx/map common/clear-drawing)
+                 (rx/take-until stopper)))))))))
 
 
 ;; NOTE/TODO: when an exception is raised in some point of drawing the

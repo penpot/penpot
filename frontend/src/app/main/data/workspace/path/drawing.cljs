@@ -275,7 +275,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (setup-frame-path)
-             dwdc/handle-finish-drawing
+             (dwdc/handle-finish-drawing)
              (dwc/start-edition-mode shape-id)
              (change-edit-mode :draw)))))
 

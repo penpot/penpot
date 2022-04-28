@@ -94,6 +94,7 @@
 - Fix multi user not working [Taiga #3195](https://tree.taiga.io/project/penpot/issue/3195)
 - Fix guides are not duplicated with the artboard [Taiga #3072](https://tree.taiga.io/project/penpot/issue/3072)
 - Fix problem when changing group size with decimal values [Taiga #3203](https://tree.taiga.io/project/penpot/issue/3203)
+- Fix error when drawing curves with only one point [Taiga #3282](https://tree.taiga.io/project/penpot/issue/3282)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

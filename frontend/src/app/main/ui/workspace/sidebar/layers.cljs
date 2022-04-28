@@ -108,7 +108,7 @@
         (fn [event]
           (dom/stop-propagation event)
           (if (and expanded? (kbd/shift? event))
-            (st/emit! dwc/collapse-all)
+            (st/emit! (dwc/collapse-all))
             (st/emit! (dwc/toggle-collapse id))))
 
         toggle-blocking

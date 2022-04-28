@@ -101,4 +101,4 @@
                  #(update-drawing % (cond-> point snap-pixel? gpt/round) shift?)))
 
               (rx/take-until stoper))
-         (rx/of common/handle-finish-drawing))))))
+         (rx/of (common/handle-finish-drawing)))))))
