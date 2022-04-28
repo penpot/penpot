@@ -124,7 +124,7 @@
 
         on-mouse-move
         (mf/use-callback
-         (mf/deps zoom v-scrolling?)
+         (mf/deps zoom @v-scrolling? @h-scrolling?)
          (fn [event axis]
            (when-let [_ (or @v-scrolling? @h-scrolling?)]
              (let [viewport            (mf/ref-val viewport-ref)
