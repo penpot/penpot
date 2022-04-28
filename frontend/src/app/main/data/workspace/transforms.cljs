@@ -166,6 +166,20 @@
 
          (update state :workspace-modifiers #(reduce update-shape % shapes)))))))
 
+(defn- update-grow-type
+  [shape old-shape]
+  (let [auto-width? (= :auto-width (:grow-type shape))
+        auto-height? (= :auto-height (:grow-type shape))
+
+        changed-width? (not (mth/close? (:width shape) (:width old-shape)))
+        changed-height? (not (mth/close? (:height shape) (:height old-shape)))
+
+        change-to-fixed? (or (and auto-width? (or changed-height? changed-width?))
+                             (and auto-height? changed-height?))]
+    (cond-> shape
+      change-to-fixed?
+      (assoc :grow-type :fixed))))
+
 (defn- apply-modifiers
   [ids]
   (us/verify (s/coll-of uuid?) ids)
@@ -182,27 +196,33 @@
         (rx/of (dwu/start-undo-transaction)
                (dwg/move-frame-guides ids-with-children)
                (dch/update-shapes
-                 ids-with-children
-                 (fn [shape]
-                   (let [modif (get object-modifiers (:id shape))]
-                     (gsh/transform-shape (merge shape modif))))
-                 {:reg-objects? true
-                  :ignore-tree ignore-tree
-                  ;; Attributes that can change in the transform. This way we don't have to check
-                  ;; all the attributes
-                  :attrs [:selrect
-                          :points
-                          :x
-                          :y
-                          :width
-                          :height
-                          :content
-                          :transform
-                          :transform-inverse
-                          :rotation
-                          :position-data
-                          :flip-x
-                          :flip-y]})
+                ids-with-children
+                (fn [shape]
+                  (let [modif (get object-modifiers (:id shape))
+                        text-shape? (cph/text-shape? shape)]
+                    (-> shape
+                        (merge modif)
+                        (gsh/transform-shape)
+                        (cond-> text-shape?
+                          (update-grow-type shape)))))
+                {:reg-objects? true
+                 :ignore-tree ignore-tree
+                 ;; Attributes that can change in the transform. This way we don't have to check
+                 ;; all the attributes
+                 :attrs [:selrect
+                         :points
+                         :x
+                         :y
+                         :width
+                         :height
+                         :content
+                         :transform
+                         :transform-inverse
+                         :rotation
+                         :position-data
+                         :flip-x
+                         :flip-y
+                         :grow-type]})
                (clear-local-transform)
                (dwu/commit-undo-transaction))))))
 
@@ -483,12 +503,8 @@
               focus   (:workspace-focus-selected state)
               zoom    (get-in state [:workspace-local :zoom] 1)
               objects (wsh/lookup-page-objects state page-id)
-              resizing-shapes (map #(get objects %) ids)
-              text-shapes-ids (->> resizing-shapes
-                                   (filter #(= :text (:type %)))
-                                   (map :id))]
+              resizing-shapes (map #(get objects %) ids)]
           (rx/concat
-           (rx/of (dch/update-shapes text-shapes-ids #(assoc % :grow-type :fixed)))
            (->> ms/mouse-position
                 (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
                 (rx/map normalize-proportion-lock)

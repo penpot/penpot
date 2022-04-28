@@ -384,6 +384,11 @@
 (defn commit-position-data
   []
   (ptk/reify ::commit-position-data
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [ids (keys (::update-position-data state))]
+        (update state :workspace-text-modifiers #(apply dissoc % ids))))
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [position-data (::update-position-data state)]
@@ -404,9 +409,10 @@
     (ptk/reify ::update-position-data
       ptk/UpdateEvent
       (update [_ state]
-        (if (nil? (::update-position-data-debounce state))
-          (assoc state ::update-position-data-debounce start)
-          (assoc-in state [::update-position-data id] position-data)))
+        (let [state (assoc-in state [:workspace-text-modifier id :position-data] position-data)]
+          (if (nil? (::update-position-data-debounce state))
+            (assoc state ::update-position-data-debounce start)
+            (assoc-in state [::update-position-data id] position-data))))
 
       ptk/WatchEvent
       (watch [_ state stream]

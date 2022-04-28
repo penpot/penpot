@@ -97,6 +97,7 @@
 - Fix error when drawing curves with only one point [Taiga #3282](https://tree.taiga.io/project/penpot/issue/3282)
 - Fix issue with paste ordering sometimes not being respected [Taiga #3268](https://tree.taiga.io/project/penpot/issue/3268)
 - Fix problem when export/importing guides attached to frame [#1838](https://github.com/penpot/penpot/issues/1838)
+- Fix problem when resizing a group with texts with auto-width/height [#3171](https://tree.taiga.io/project/penpot/issue/3171)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
