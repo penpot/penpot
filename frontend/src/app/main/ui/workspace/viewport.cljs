@@ -158,9 +158,10 @@
         show-outlines?           (and (nil? transform) (not edition) (not drawing-obj) (not (#{:comments :path :curve} drawing-tool)))
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
                                       (>= zoom 8))
+        show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
         show-presence?           page-id
         show-prototypes?         (= options-mode :prototype)
-        show-selection-handlers? (and (seq selected) (not edition))
+        show-selection-handlers? (and (seq selected) (not show-text-editor?))
         show-snap-distance?      (and (contains? layout :dynamic-alignment)
                                       (= transform :move)
                                       (seq selected))
@@ -172,7 +173,6 @@
         show-artboard-names?     (contains? layout :display-artboard-names)
         show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
 
-        show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
 
         disabled-guides?         (or drawing-tool transform)]
 
