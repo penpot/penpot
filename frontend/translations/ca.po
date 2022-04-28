@@ -1745,12 +1745,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Una font compartida de veritat"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "Introduïu el nom de l'equip nou"
-
-msgid "onboarding.team.create.button"
-msgstr "Crea un equip"
-
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "Esteu treballant amb algú? Creeu un equip per a treballar junts en "
@@ -1762,9 +1756,6 @@ msgstr "Introduïu el nom de l'equip nou"
 #, fuzzy
 msgid "onboarding.team.create.title"
 msgstr "Creeu un equip"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Omet i convida més tard"
 
 msgid "onboarding.team.start.button"
 msgstr "Comenceu de seguida"

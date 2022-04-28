@@ -1800,12 +1800,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "מקור משותף יחיד לאמת"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "נא למלא שם חדש לצוות"
-
-msgid "onboarding.team.create.button"
-msgstr "יצירת צוות"
-
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "יש לך עבודה בשיתוף עם גורם נוסף? ניתן ליצור צוות כדי לעבוד יחד על מיזמים "
@@ -1816,9 +1810,6 @@ msgstr "נא למלא שם לצוות"
 
 msgid "onboarding.team.create.title"
 msgstr "יצירת צוות"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "לדלג ולהזמין מאוחר יותר"
 
 msgid "onboarding.team.start.button"
 msgstr "להתחיל כבר עכשיו"

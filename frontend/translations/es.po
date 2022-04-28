@@ -1023,6 +1023,9 @@ msgstr "Acerca de Penpot"
 msgid "labels.accept"
 msgstr "Aceptar"
 
+msgid "labels.back"
+msgstr "Volver"
+
 msgid "labels.add-custom-font"
 msgstr "Añadir fuente personalizada"
 
@@ -1768,6 +1771,27 @@ msgstr ""
 "¿Estás trabajando con alguien? Crea un equipo e invita a la gente a "
 "trabajar juntos en proyectos y a compartir recursos de diseño."
 
+msgid "onboarding.choice.team-up.create-team"
+msgstr "El nombre de tu equipo"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "Tras nombrar tu equipo podrás invitar a personas para que se unan."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Introduce el nombre del equipo"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Invitar integrantes"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr "También podrás invitar integrantes y cambiar roles más tarde desde la sección del equipo."
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr " Crear equipo y enviar invitaciones"
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr " Crear equipo e invitar después"
+
 msgid "onboarding.choice.title"
 msgstr "Te damos la bienvenida a Penpot"
 
@@ -1878,12 +1902,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Una \"fuente de la verdad\" compartida"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "Introduce el nuevo nombre del equipo"
-
-msgid "onboarding.team.create.button"
-msgstr "Crea un equipo"
-
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "¿Trabajando con alguien más? Crea un equipo donde compartir proyectos y "
@@ -1894,9 +1912,6 @@ msgstr "Introduce el nombre del equipo"
 
 msgid "onboarding.team.create.title"
 msgstr "Crear equipo"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Saltar e invitar más tarde"
 
 msgid "onboarding.team.start.button"
 msgstr "Comenzar directamente"
