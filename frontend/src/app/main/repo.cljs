@@ -82,9 +82,9 @@
   [id params]
   (send-query! id params))
 
-(defmethod query :file
-  [id params]
-  (send-query! id params {:raw-transit? true}))
+(defmethod query :file-raw
+  [_id params]
+  (send-query! :file params {:raw-transit? true}))
 
 (defmethod mutation :default
   [id params]

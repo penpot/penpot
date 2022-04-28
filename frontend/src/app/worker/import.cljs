@@ -344,7 +344,13 @@
                       (assoc :id (resolve page-id)))
         flows     (->> (get-in page-data [:options :flows])
                        (mapv #(update % :starting-frame resolve)))
-        page-data (d/assoc-in-when page-data [:options :flows] flows)
+
+        guides    (-> (get-in page-data [:options :guides])
+                      (d/update-vals #(update % :frame-id resolve)))
+
+        page-data (-> page-data
+                      (d/assoc-in-when [:options :flows] flows)
+                      (d/assoc-in-when [:options :guides] guides))
         file      (-> file (fb/add-page page-data))
 
         ;; Preprocess nodes to parallel upload the images. Store the result in a table
