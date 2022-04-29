@@ -93,6 +93,11 @@
 - Fix resize rotated shape with top&down constraints [Taiga #3167](https://tree.taiga.io/project/penpot/issue/3167)
 - Fix multi user not working [Taiga #3195](https://tree.taiga.io/project/penpot/issue/3195)
 - Fix guides are not duplicated with the artboard [Taiga #3072](https://tree.taiga.io/project/penpot/issue/3072)
+- Fix problem when changing group size with decimal values [Taiga #3203](https://tree.taiga.io/project/penpot/issue/3203)
+- Fix error when drawing curves with only one point [Taiga #3282](https://tree.taiga.io/project/penpot/issue/3282)
+- Fix issue with paste ordering sometimes not being respected [Taiga #3268](https://tree.taiga.io/project/penpot/issue/3268)
+- Fix problem when export/importing guides attached to frame [#1838](https://github.com/penpot/penpot/issues/1838)
+- Fix problem when resizing a group with texts with auto-width/height [#3171](https://tree.taiga.io/project/penpot/issue/3171)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

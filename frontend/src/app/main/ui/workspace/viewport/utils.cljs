@@ -91,7 +91,7 @@
     (cond
       frame?
       [thumb-node
-       (dom/query shape-node ".frame-background")
+       (dom/get-parent (dom/query shape-node ".frame-background"))
        (dom/query shape-node ".frame-clip")]
 
       ;; For groups we don't want to transform the whole group but only
@@ -223,8 +223,7 @@
             :else
             (let [old-transform (dom/get-attribute node "data-old-transform")]
               (if (some? old-transform)
-                (do (dom/remove-attribute! node "data-old-transform")
-                    (dom/set-attribute! node "transform" old-transform))
+                (dom/remove-attribute! node "data-old-transform")
                 (dom/remove-attribute! node "transform")))))))))
 
 (defn format-viewbox [vbox]

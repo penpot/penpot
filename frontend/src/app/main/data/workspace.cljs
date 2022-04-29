@@ -1482,12 +1482,11 @@
             (let [set-index (fn [[result index] id]
                               [(assoc result id index) (inc index)])
 
-                  map-ids (when index
-                            (->> (vals paste-objects)
-                                 (filter #(not (selected (:parent-id %))))
-                                 (map :id)
-                                 (reduce set-index [{} (inc index)])
-                                 first))]
+                  map-ids
+                  (->> selected
+                       (map #(get-in paste-objects [% :id]))
+                       (reduce set-index [{} (inc index)])
+                       first)]
               (if (and (= :add-obj (:type change))
                        (contains? map-ids (:old-id change)))
                 (assoc change :index (get map-ids (:old-id change)))
