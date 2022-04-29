@@ -91,7 +91,6 @@
 (defn ^:export tap
   "Transducer function that can execute a side-effect `effect-fn` per input"
   [effect-fn]
-
   (fn [rf]
     (fn
       ([] (rf))
@@ -154,13 +153,14 @@
   nil)
 
 (defn ^:export dump-buffer []
-  (logjs "state" @st/last-events)
+  (logjs "last-events" @st/last-events)
   nil)
 
 (defn ^:export get-state [str-path]
   (let [path (->> (str/split str-path " ")
-                  (map d/read-string))]
-    (clj->js (get-in @st/state path)))
+                  (map d/read-string)
+                  vec)]
+    (js/console.log (clj->js (get-in @st/state path))))
   nil)
 
 (defn dump-objects'
