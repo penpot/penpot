@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-04-28 09:14+0000\n"
+"PO-Revision-Date: 2022-05-02 17:14+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.12.1-dev\n"
+"X-Generator: Weblate 4.12.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -791,3 +791,7 @@ msgstr "اشتراک‌گذاری پروتوتایپ‌ها"
 
 msgid "dashboard.export-frames"
 msgstr "خروجی آرت‌بوردها به پی‌دی‌اف..."
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur"
+msgstr "محو"
