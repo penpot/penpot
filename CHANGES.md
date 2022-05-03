@@ -14,38 +14,43 @@
 ### :boom: Breaking changes
 
 - We've changed the behaviour of the border-radius so it works as CSS that [has some limits](https://www.w3.org/TR/css-backgrounds-3/#corner-overlap).
+- Now exported text are SVG's native `text` tag instead of paths. This could break when opening the file depending on your engine. Some SVG's may require fonts to be installed at system level.
 
 ### :sparkles: New features
 
 - Search and filter layers [Taiga #2564](https://tree.taiga.io/project/penpot/us/2564)
-- Constraints are not well assigned when default and multiselection [Taiga #3069](https://tree.taiga.io/project/penpot/issue/3069)
 - Exporting big files flow [Taiga #2218](https://tree.taiga.io/project/penpot/us/2218)
 - Multiexport from main menu [Taiga #520](https://tree.taiga.io/project/penpot/us/28541)
 - Multiexport assets (aka bulk export) [Taiga #520](https://tree.taiga.io/project/penpot/us/520)
 - Set the artboard layer fixed at the top side of the layers [Taiga #2636](https://tree.taiga.io/project/penpot/us/2636)
 - Set an artboard as the file thumbnail [Taiga #1526](https://tree.taiga.io/project/penpot/us/1526)
 - Social login redesign [Taiga #2974](https://tree.taiga.io/project/penpot/task/2974)
-- Add border radius to our artboards [Taiga #2056](https://tree.taiga.io/project/penpot/us/2056)
+- Add border radius to artboards [Taiga #2056](https://tree.taiga.io/project/penpot/us/2056)
 - Allow send multiple team invitations at once [Taiga #2798](https://tree.taiga.io/project/penpot/us/2798)
 - Persist color palette and color picker across refresh [Taiga #1660](https://tree.taiga.io/project/penpot/issue/1660)
 - Ability to add multiple strokes to a shape [Taiga #2778](https://tree.taiga.io/project/penpot/us/2778)
 - Scroll to selected size in font size selector [Taiga #2825](https://tree.taiga.io/project/penpot/us/2825)
-- Duplicate artboards create new flows if needed [Taiga #2221](https://tree.taiga.io/project/penpot/issue/2221)
 - Add new invitations section [Taiga #2797](https://tree.taiga.io/project/penpot/us/2797)
 - Ability to add multiple fills to a shape [Taiga #1394](https://tree.taiga.io/project/penpot/us/1394)
 - Team members redesign [Taiga #2283](https://tree.taiga.io/project/penpot/us/2283)
 - New focus mode in workspace [Taiga #2748](https://tree.taiga.io/project/penpot/us/2748)
 - Changed text shapes to be displayed as natives SVG text elements [Taiga #2759](https://tree.taiga.io/project/penpot/us/2759)
 - Texts now can have strokes, multiple fills and can be used as masks
-- Add the ability to specify the attr for retrieve the email on OIDC integration [#1460](https://github.com/penpot/penpot/issues/1460)
+- Add the ability to specify the attribute for retrieve the email on OIDC integration [#1460](https://github.com/penpot/penpot/issues/1460)
 - Allow registration with invitation token when registration is disabled
 - Add the ability to disable standard, password login [Taiga #2999](https://tree.taiga.io/project/penpot/us/2999)
 - Don't stop SVG import when an image cannot be imported [#1531](https://github.com/penpot/penpot/issues/1531)
-- Fix paste shapes while editing text [Taiga #2396](https://tree.taiga.io/project/penpot/issue/2396)
 - Show Penpot color in Safari tab bar [#1803](https://github.com/penpot/penpot/issues/1803)
+- Added option to disable snap to pixel and improved behaviour for sub-pixel drawing [#2552](https://tree.taiga.io/project/penpot/us/2552)
+- Delete guides while supr on hover [#2823](https://tree.taiga.io/project/penpot/us/2823)
+- Opt-in subscription on on-premise instances [#2772](https://tree.taiga.io/project/penpot/us/2772)
+- Optimizations in frame thumbnails [#3147](https://tree.taiga.io/project/penpot/us/3147)
 
 ### :bug: Bugs fixed
 
+- Constraints are not well assigned when default and multiselection [Taiga #3069](https://tree.taiga.io/project/penpot/issue/3069)
+- Duplicate artboards create new flows if needed [Taiga #2221](https://tree.taiga.io/project/penpot/issue/2221)
+- Fix paste shapes while editing text [Taiga #2396](https://tree.taiga.io/project/penpot/issue/2396)
 - Fix blend modes ignored in component updates [Taiga #2626](https://tree.taiga.io/project/penpot/issue/2626)
 - Fix internal error when hoverin over shape [Taiga #3237](https://tree.taiga.io/project/penpot/issue/3237)
 - Fix mouse leave in handoff close overlay animation breaks [Taiga #3173](https://tree.taiga.io/project/penpot/issue/3173)
