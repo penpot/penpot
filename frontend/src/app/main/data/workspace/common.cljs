@@ -107,7 +107,8 @@
     (update [_ state]
       (assoc-in state [:workspace-local :expanded id] true))))
 
-(def collapse-all
+(defn collapse-all
+  []
   (ptk/reify ::collapse-all
     ptk/UpdateEvent
     (update [_ state]

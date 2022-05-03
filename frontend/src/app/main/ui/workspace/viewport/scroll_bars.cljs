@@ -123,81 +123,75 @@
                                    h-scrollbar-x)
 
         on-mouse-move
-        (mf/use-callback
-         (mf/deps zoom v-scrolling?)
-         (fn [event axis]
-           (when-let [_ (or @v-scrolling? @h-scrolling?)]
-             (let [viewport            (mf/ref-val viewport-ref)
-                   start-pt            (mf/ref-val start-ref)
-                   current-pt          (dom/get-client-position event)
-                   current-pt-viewport (utils/translate-point-to-viewport viewport zoom current-pt)
-                   y-delta               (/ (* (mf/ref-val height-factor-ref) (- (:y current-pt) (:y start-pt))) zoom)
-                   x-delta               (/ (* (mf/ref-val width-factor-ref) (- (:x current-pt) (:x start-pt))) zoom)
-                   new-v-scrollbar-y   (-> current-pt-viewport
-                                           (:y)
-                                           (+ (mf/ref-val v-scrollbar-y-padding-ref)))
-                   new-h-scrollbar-x (-> current-pt-viewport
-                                         (:x)
-                                         (+ (mf/ref-val h-scrollbar-x-padding-ref)))
-                   viewport-update            (-> {}
-                                                  (cond-> (= axis :y) (assoc :y #(+ % y-delta)))
-                                                  (cond-> (= axis :x) (assoc :x #(+ % x-delta))))]
-               (mf/set-ref-val! vbox-y-ref vbox-y)
-               (mf/set-ref-val! vbox-x-ref vbox-x)
-               (st/emit! (dw/update-viewport-position viewport-update))
-               (mf/set-ref-val! v-scrollbar-y-ref new-v-scrollbar-y)
-               (mf/set-ref-val! h-scrollbar-x-ref new-h-scrollbar-x)
-               (mf/set-ref-val! start-ref current-pt)))))
+        (fn [event axis]
+          (when-let [_ (or @v-scrolling? @h-scrolling?)]
+            (let [viewport            (mf/ref-val viewport-ref)
+                  start-pt            (mf/ref-val start-ref)
+                  current-pt          (dom/get-client-position event)
+                  current-pt-viewport (utils/translate-point-to-viewport viewport zoom current-pt)
+                  y-delta               (/ (* (mf/ref-val height-factor-ref) (- (:y current-pt) (:y start-pt))) zoom)
+                  x-delta               (/ (* (mf/ref-val width-factor-ref) (- (:x current-pt) (:x start-pt))) zoom)
+                  new-v-scrollbar-y   (-> current-pt-viewport
+                                          (:y)
+                                          (+ (mf/ref-val v-scrollbar-y-padding-ref)))
+                  new-h-scrollbar-x (-> current-pt-viewport
+                                        (:x)
+                                        (+ (mf/ref-val h-scrollbar-x-padding-ref)))
+                  viewport-update            (-> {}
+                                                 (cond-> (= axis :y) (assoc :y #(+ % y-delta)))
+                                                 (cond-> (= axis :x) (assoc :x #(+ % x-delta))))]
+              (mf/set-ref-val! vbox-y-ref vbox-y)
+              (mf/set-ref-val! vbox-x-ref vbox-x)
+              (st/emit! (dw/update-viewport-position viewport-update))
+              (mf/set-ref-val! v-scrollbar-y-ref new-v-scrollbar-y)
+              (mf/set-ref-val! h-scrollbar-x-ref new-h-scrollbar-x)
+              (mf/set-ref-val! start-ref current-pt))))
 
         on-mouse-down
-        (mf/use-callback
-         (mf/deps v-scrollbar-y scrollbar-height)
-         (fn [event axis]
-           (let [viewport              (mf/ref-val viewport-ref)
-                 start-pt              (dom/get-client-position event)
-                 viewport-point        (utils/translate-point-to-viewport viewport zoom start-pt)
-                 new-h-scrollbar-x     (:x viewport-point)
-                 new-v-scrollbar-y     (:y viewport-point)
-                 v-scrollbar-y-padding (- v-scrollbar-y new-v-scrollbar-y)
-                 h-scrollbar-x-padding (- h-scrollbar-x new-h-scrollbar-x)
-                 vbox-rect             {:x vbox-x
-                                        :y vbox-y
-                                        :x1 vbox-x
-                                        :y1 vbox-y
-                                        :x2 (+ vbox-x (:width vbox))
-                                        :y2 (+ vbox-y (:height vbox))
-                                        :width (:width vbox)
-                                        :height (:height vbox)}
-                 containing-rect               (gsh/join-selrects [base-objects-rect vbox-rect])
-                 height-factor                 (/ (:height containing-rect) vbox-height)
-                 width-factor                  (/ (:width containing-rect) vbox-width)]
-             (mf/set-ref-val! start-ref start-pt)
-             (mf/set-ref-val! v-scrollbar-y-padding-ref v-scrollbar-y-padding)
-             (mf/set-ref-val! h-scrollbar-x-padding v-scrollbar-y-padding)
-             (mf/set-ref-val! v-scrollbar-y-ref (+ new-v-scrollbar-y v-scrollbar-y-padding))
-             (mf/set-ref-val! h-scrollbar-x-ref (+ new-h-scrollbar-x h-scrollbar-x-padding))
-             (mf/set-ref-val! vbox-y-ref vbox-y)
-             (mf/set-ref-val! vbox-x-ref vbox-x)
-             (mf/set-ref-val! scrollbar-height-ref scrollbar-height)
-             (mf/set-ref-val! scrollbar-width-ref scrollbar-width)
-             (mf/set-ref-val! height-factor-ref height-factor)
-             (mf/set-ref-val! width-factor-ref width-factor)
-             (reset! v-scrolling? (= axis :y))
-             (reset! h-scrolling? (= axis :x)))))
+        (fn [event axis]
+          (let [viewport              (mf/ref-val viewport-ref)
+                start-pt              (dom/get-client-position event)
+                viewport-point        (utils/translate-point-to-viewport viewport zoom start-pt)
+                new-h-scrollbar-x     (:x viewport-point)
+                new-v-scrollbar-y     (:y viewport-point)
+                v-scrollbar-y-padding (- v-scrollbar-y new-v-scrollbar-y)
+                h-scrollbar-x-padding (- h-scrollbar-x new-h-scrollbar-x)
+                vbox-rect             {:x vbox-x
+                                       :y vbox-y
+                                       :x1 vbox-x
+                                       :y1 vbox-y
+                                       :x2 (+ vbox-x (:width vbox))
+                                       :y2 (+ vbox-y (:height vbox))
+                                       :width (:width vbox)
+                                       :height (:height vbox)}
+                containing-rect               (gsh/join-selrects [base-objects-rect vbox-rect])
+                height-factor                 (/ (:height containing-rect) vbox-height)
+                width-factor                  (/ (:width containing-rect) vbox-width)]
+            (mf/set-ref-val! start-ref start-pt)
+            (mf/set-ref-val! v-scrollbar-y-padding-ref v-scrollbar-y-padding)
+            (mf/set-ref-val! h-scrollbar-x-padding-ref h-scrollbar-x-padding)
+            (mf/set-ref-val! v-scrollbar-y-ref (+ new-v-scrollbar-y v-scrollbar-y-padding))
+            (mf/set-ref-val! h-scrollbar-x-ref (+ new-h-scrollbar-x h-scrollbar-x-padding))
+            (mf/set-ref-val! vbox-y-ref vbox-y)
+            (mf/set-ref-val! vbox-x-ref vbox-x)
+            (mf/set-ref-val! scrollbar-height-ref scrollbar-height)
+            (mf/set-ref-val! scrollbar-width-ref scrollbar-width)
+            (mf/set-ref-val! height-factor-ref height-factor)
+            (mf/set-ref-val! width-factor-ref width-factor)
+            (reset! v-scrolling? (= axis :y))
+            (reset! h-scrolling? (= axis :x))))
 
         on-mouse-up
-        (mf/use-callback
-         (mf/deps)
-         (fn [_]
-           (reset! v-scrolling? false)
-           (reset! h-scrolling? false)))]
+        (fn []
+          (reset! v-scrolling? false)
+          (reset! h-scrolling? false))]
 
     [:*
      (when show-v-scroll?
        [:g.v-scroll
         [:rect {:on-mouse-move #(on-mouse-move % :y)
                 :on-mouse-down #(on-mouse-down % :y)
-                :on-mouse-up   #(on-mouse-up % :y)
+                :on-mouse-up   on-mouse-up
                 :width (* inv-zoom 7)
                 :rx (* inv-zoom 3)
                 :ry (* inv-zoom 3)
@@ -211,7 +205,7 @@
        [:g.h-scroll
         [:rect {:on-mouse-move #(on-mouse-move % :x)
                 :on-mouse-down #(on-mouse-down % :x)
-                :on-mouse-up   #(on-mouse-up % :x)
+                :on-mouse-up  on-mouse-up
                 :width scrollbar-width
                 :rx (* inv-zoom 3)
                 :ry (* inv-zoom 3)

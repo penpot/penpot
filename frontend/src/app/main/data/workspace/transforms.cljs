@@ -110,7 +110,7 @@
 ;; geometric attributes of the shapes.
 
 (declare clear-local-transform)
-(declare set-modifiers-recursive)
+(declare set-objects-modifiers)
 (declare get-ignore-tree)
 
 (defn- set-modifiers
@@ -139,7 +139,7 @@
              (fn [state id]
                (let [shape (get objects id)]
                  (update state :workspace-modifiers
-                         #(set-modifiers-recursive % objects shape modifiers ignore-constraints snap-pixel?))))]
+                         #(set-objects-modifiers % objects shape modifiers ignore-constraints snap-pixel?))))]
 
          (reduce setup-modifiers state ids))))))
 
@@ -166,6 +166,20 @@
 
          (update state :workspace-modifiers #(reduce update-shape % shapes)))))))
 
+(defn- update-grow-type
+  [shape old-shape]
+  (let [auto-width? (= :auto-width (:grow-type shape))
+        auto-height? (= :auto-height (:grow-type shape))
+
+        changed-width? (not (mth/close? (:width shape) (:width old-shape)))
+        changed-height? (not (mth/close? (:height shape) (:height old-shape)))
+
+        change-to-fixed? (or (and auto-width? (or changed-height? changed-width?))
+                             (and auto-height? changed-height?))]
+    (cond-> shape
+      change-to-fixed?
+      (assoc :grow-type :fixed))))
+
 (defn- apply-modifiers
   [ids]
   (us/verify (s/coll-of uuid?) ids)
@@ -182,27 +196,33 @@
         (rx/of (dwu/start-undo-transaction)
                (dwg/move-frame-guides ids-with-children)
                (dch/update-shapes
-                 ids-with-children
-                 (fn [shape]
-                   (let [modif (get object-modifiers (:id shape))]
-                     (gsh/transform-shape (merge shape modif))))
-                 {:reg-objects? true
-                  :ignore-tree ignore-tree
-                  ;; Attributes that can change in the transform. This way we don't have to check
-                  ;; all the attributes
-                  :attrs [:selrect
-                          :points
-                          :x
-                          :y
-                          :width
-                          :height
-                          :content
-                          :transform
-                          :transform-inverse
-                          :rotation
-                          :position-data
-                          :flip-x
-                          :flip-y]})
+                ids-with-children
+                (fn [shape]
+                  (let [modif (get object-modifiers (:id shape))
+                        text-shape? (cph/text-shape? shape)]
+                    (-> shape
+                        (merge modif)
+                        (gsh/transform-shape)
+                        (cond-> text-shape?
+                          (update-grow-type shape)))))
+                {:reg-objects? true
+                 :ignore-tree ignore-tree
+                 ;; Attributes that can change in the transform. This way we don't have to check
+                 ;; all the attributes
+                 :attrs [:selrect
+                         :points
+                         :x
+                         :y
+                         :width
+                         :height
+                         :content
+                         :transform
+                         :transform-inverse
+                         :rotation
+                         :position-data
+                         :flip-x
+                         :flip-y
+                         :grow-type]})
                (clear-local-transform)
                (dwu/commit-undo-transaction))))))
 
@@ -330,25 +350,28 @@
                 (assoc :displacement (gmt/translate-matrix delta-v))))]
       modifiers)))
 
-(defn- set-modifiers-recursive
+(defn- set-objects-modifiers
   [modif-tree objects shape modifiers ignore-constraints snap-pixel?]
+  (letfn [(set-modifiers-rec
+            [modif-tree shape modifiers]
 
-  (let [children (map (d/getf objects) (:shapes shape))
-        modifiers (cond-> modifiers snap-pixel? (set-pixel-precision shape))
-        transformed-rect (gsh/transform-selrect (:selrect shape) modifiers)
+            (let [children (map (d/getf objects) (:shapes shape))
+                  modifiers (cond-> modifiers snap-pixel? (set-pixel-precision shape))
+                  transformed-rect (gsh/transform-selrect (:selrect shape) modifiers)
 
-        set-child
-        (fn [modif-tree child]
-          (let [child-modifiers (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)]
-            (cond-> modif-tree
-              (not (gsh/empty-modifiers? child-modifiers))
-              (set-modifiers-recursive objects child child-modifiers ignore-constraints snap-pixel?))))
+                  set-child
+                  (fn [modif-tree child]
+                    (let [child-modifiers (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)]
+                      (cond-> modif-tree
+                        (not (gsh/empty-modifiers? child-modifiers))
+                        (set-modifiers-rec child child-modifiers))))
 
-        modif-tree
-        (-> modif-tree
-            (assoc-in [(:id shape) :modifiers] modifiers))]
+                  modif-tree
+                  (-> modif-tree
+                      (assoc-in [(:id shape) :modifiers] modifiers))]
 
-    (reduce set-child modif-tree children)))
+              (reduce set-child modif-tree children)))]
+    (set-modifiers-rec modif-tree shape modifiers)))
 
 (defn- get-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
@@ -480,12 +503,8 @@
               focus   (:workspace-focus-selected state)
               zoom    (get-in state [:workspace-local :zoom] 1)
               objects (wsh/lookup-page-objects state page-id)
-              resizing-shapes (map #(get objects %) ids)
-              text-shapes-ids (->> resizing-shapes
-                                   (filter #(= :text (:type %)))
-                                   (map :id))]
+              resizing-shapes (map #(get objects %) ids)]
           (rx/concat
-           (rx/of (dch/update-shapes text-shapes-ids #(assoc % :grow-type :fixed)))
            (->> ms/mouse-position
                 (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
                 (rx/map normalize-proportion-lock)
@@ -507,15 +526,17 @@
   (ptk/reify ::update-dimensions
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data :pages-index page-id :objects])
+      (let [objects     (wsh/lookup-page-objects state)
+            layout      (get state :workspace-layout)
+            snap-pixel? (contains? layout :snap-pixel-grid)
 
             update-modifiers
             (fn [state id]
-              (let [shape (get objects id)
+              (let [shape     (get objects id)
                     modifiers (gsh/resize-modifiers shape attr value)]
-                (update state :workspace-modifiers
-                        #(set-modifiers-recursive % objects shape modifiers false false))))]
+                (-> state
+                    (update :workspace-modifiers
+                            #(set-objects-modifiers % objects shape modifiers false (and snap-pixel? (int? value)))))))]
         (reduce update-modifiers state ids)))
 
     ptk/WatchEvent

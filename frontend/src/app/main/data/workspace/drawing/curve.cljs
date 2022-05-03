@@ -59,15 +59,22 @@
         (dissoc :segments)
         (assoc :content content)
         (assoc :selrect selrect)
-        (assoc :points points))))
+        (assoc :points points)
 
-(defn finish-drawing-curve [state]
-  (update-in
-   state [:workspace-drawing :object]
-   (fn [shape]
-     (-> shape
-         (update :segments #(ups/simplify % simplify-tolerance))
-         (curve-to-path)))))
+        (cond-> (or (empty? points) (nil? selrect) (<= (count content) 1))
+          (assoc :initialized? false)))))
+
+(defn finish-drawing-curve
+  []
+  (ptk/reify ::finish-drawing-curve
+    ptk/UpdateEvent
+    (update [_ state]
+      (letfn [(update-curve [shape]
+                (-> shape
+                    (update :segments #(ups/simplify % simplify-tolerance))
+                    (curve-to-path)))]
+        (-> state
+            (update-in [:workspace-drawing :object] update-curve))))))
 
 (defn handle-drawing-curve []
   (ptk/reify ::handle-drawing-curve
@@ -81,6 +88,6 @@
               (rx/map (fn [pt] #(insert-point-segment % pt)))
               (rx/take-until stoper))
          (rx/of (setup-frame-curve)
-                finish-drawing-curve
-                common/handle-finish-drawing))))))
+                (finish-drawing-curve)
+                (common/handle-finish-drawing)))))))
 

@@ -124,7 +124,7 @@
 
           (get-in shape [:svg-attrs :style :stroke-opacity])
           (-> (update-in [:svg-attrs :style] dissoc :stroke-opacity)
-              (assoc-in [:fills 0 :stroke-opacity] (-> (get-in shape [:svg-attrs :style :stroke-opacity])
+              (assoc-in [:strokes 0 :stroke-opacity] (-> (get-in shape [:svg-attrs :style :stroke-opacity])
                                                        (d/parse-double))))
 
           (get-in shape [:svg-attrs :stroke-width])
@@ -395,14 +395,12 @@
                         :image       (create-image-shape name frame-id svg-data element-data)
                         #_other      (create-raw-svg name frame-id svg-data element-data)))]
         (when (some? shape)
-          (let [shape (assoc shape :fills [])
-                shape (assoc shape :strokes [])
-
-                shape (when (some? shape)
-                        (-> shape
-                            (assoc :svg-defs (select-keys (:defs svg-data) references))
-                            (setup-fill)
-                            (setup-stroke)))
+          (let [shape (-> shape
+                          (assoc :fills [])
+                          (assoc :strokes [])
+                          (assoc :svg-defs (select-keys (:defs svg-data) references))
+                          (setup-fill)
+                          (setup-stroke))
 
                 children (cond->> (:content element-data)
                            (or (= tag :g) (= tag :svg))

@@ -103,25 +103,25 @@
 (defmethod constraint-modifier :scale
   [_ axis _ _ modifiers _]
   (let [{:keys [resize-vector resize-vector-2 displacement]} modifiers]
-      (cond-> {}
-        (and (some? resize-vector)
-             (not (mth/close? (axis resize-vector) 1)))
-        (assoc :resize-origin (:resize-origin modifiers)
-               :resize-vector (if (= :x axis)
-                                (gpt/point (:x resize-vector) 1)
-                                (gpt/point 1 (:y resize-vector))))
+    (cond-> {}
+      (and (some? resize-vector)
+           (not= (axis resize-vector) 1))
+      (assoc :resize-origin (:resize-origin modifiers)
+             :resize-vector (if (= :x axis)
+                              (gpt/point (:x resize-vector) 1)
+                              (gpt/point 1 (:y resize-vector))))
 
-        (and (= :y axis) (some? resize-vector-2)
-             (not (mth/close? (:y resize-vector-2) 1)))
-        (assoc :resize-origin (:resize-origin-2 modifiers)
-               :resize-vector (gpt/point 1 (:y resize-vector-2)))
+      (and (= :y axis) (some? resize-vector-2)
+           (not (mth/close? (:y resize-vector-2) 1)))
+      (assoc :resize-origin (:resize-origin-2 modifiers)
+             :resize-vector (gpt/point 1 (:y resize-vector-2)))
 
-        (some? displacement)
-        (assoc :displacement
-               (get-displacement axis (-> (gpt/point 0 0)
-                                          (gpt/transform displacement)
-                                          (gpt/transform (:resize-transform-inverse modifiers (gmt/matrix)))
-                                          axis))))))
+      (some? displacement)
+      (assoc :displacement
+             (get-displacement axis (-> (gpt/point 0 0)
+                                        (gpt/transform displacement)
+                                        (gpt/transform (:resize-transform-inverse modifiers (gmt/matrix)))
+                                        axis))))))
 
 (defmethod constraint-modifier :default [_ _ _ _ _]
   {})

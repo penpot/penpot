@@ -246,7 +246,7 @@
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rx/zip (rp/query :file {:id file-id})
+      (->> (rx/zip (rp/query :file-raw {:id file-id})
                    (rp/query :team-users {:file-id file-id})
                    (rp/query :project {:id project-id})
                    (rp/query :file-libraries {:file-id file-id}))

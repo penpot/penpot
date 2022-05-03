@@ -16,13 +16,15 @@
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(def clear-drawing
+(defn clear-drawing
+  []
   (ptk/reify ::clear-drawing
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-drawing dissoc :tool :object))))
 
-(def handle-finish-drawing
+(defn handle-finish-drawing
+  []
   (ptk/reify ::handle-finish-drawing
     ptk/WatchEvent
     (watch [_ state _]
@@ -71,5 +73,6 @@
                 (rx/empty)))))
 
          ;; Delay so the mouse event can read the drawing state
-         (->> (rx/of clear-drawing)
+         (->> (rx/of (clear-drawing))
               (rx/delay 0)))))))
+
