@@ -32,6 +32,7 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [goog.functions :as f]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 (mf/defc sidebar-project
@@ -472,7 +473,16 @@
            (dom/stop-propagation event)
            (if (keyword? section)
              (st/emit! (rt/nav section))
-             (st/emit! section))))]
+             (st/emit! section))))
+
+        show-release-notes
+        (mf/use-callback
+         (fn [event]
+           (let [version (:main @cf/version)]
+             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
+             (if (and (kbd/alt? event) (kbd/mod? event))
+               (st/emit! (modal/show {:type :onboarding}))
+               (st/emit! (modal/show {:type :release-notes :version version}))))))]
 
     [:div.profile-section
      [:div.profile {:on-click #(reset! show true)
@@ -485,26 +495,26 @@
       [:ul.dropdown
        [:li {:on-click (partial on-click :settings-profile)
              :data-test "profile-profile-opt"}
-        [:span.icon i/user]
         [:span.text (tr "labels.your-account")]]
        [:li.separator {:on-click #(dom/open-new-window "https://help.penpot.app")
                        :data-test "help-center-profile-opt"}
-        [:span.icon i/help]
         [:span.text (tr "labels.help-center")]]
-       [:li {:on-click #(dom/open-new-window "https://penpot.app/libraries-templates.html")
-             :data-test "libraries-templates-profile-opt"}
-        [:span.icon i/download]
+       [:li {:on-click #(dom/open-new-window "https://www.youtube.com/c/Penpot")}
+        [:span.text (tr "labels.tutorials")]]
+       [:li {:on-click show-release-notes}
+        [:span (tr "labels.release-notes")]]
+
+       [:li.separator {:on-click #(dom/open-new-window "https://penpot.app/libraries-templates.html")
+                       :data-test "libraries-templates-profile-opt"}
         [:span.text (tr "labels.libraries-and-templates")]]
-       ;;[:li {:on-click #(dom/open-new-window "https://penpot.app?no-redirect=1")
-       [:li {:on-click #(dom/open-new-window "https://landing-next.penpot.app?no-redirect=1")
-             :data-test "about-penpot-profile-opt"} ;; Parameter ?no-redirect is to force stay in landing page
-        [:span.icon i/logo-icon]                    ;; instead of redirecting to app
-        [:span.text (tr "labels.about-penpot")]]
+       [:li {:on-click #(dom/open-new-window "https://github.com/penpot/penpot")}
+        [:span (tr "labels.github-repo")]]
+       [:li  {:on-click #(dom/open-new-window "https://penpot.app/terms.html")}
+        [:span (tr "auth.terms-of-service")]]
 
        (when (contains? @cf/flags :user-feedback)
          [:li.separator {:on-click (partial on-click :settings-feedback)
                          :data-test "feedback-profile-opt"}
-          [:span.icon i/msg-info]
           [:span.text (tr "labels.give-feedback")]])
 
        [:li.separator {:on-click #(on-click (du/logout) %)

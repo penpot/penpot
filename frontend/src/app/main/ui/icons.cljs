@@ -146,6 +146,7 @@
 (def shape-valign-center (icon-xref :shape-valign-center))
 (def shape-valign-top (icon-xref :shape-valign-top))
 (def shape-vdistribute (icon-xref :shape-vdistribute))
+(def shortcut (icon-xref :shortcut))
 (def size-horiz (icon-xref :size-horiz))
 (def size-vert (icon-xref :size-vert))
 (def sort-ascending (icon-xref :sort-ascending))

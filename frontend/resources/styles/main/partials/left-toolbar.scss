@@ -60,6 +60,10 @@
         fill: $color-primary;
       }
     }
+
+    &.separator {
+      border-top: 1px solid $color-gray-60;
+    }
   }
 
   &.panels {

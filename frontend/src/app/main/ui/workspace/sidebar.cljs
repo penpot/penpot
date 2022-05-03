@@ -17,6 +17,7 @@
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
+   [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -28,8 +29,9 @@
 (mf/defc left-sidebar
   {:wrap [mf/memo]}
   [{:keys [layout] :as props}]
-  (let [section (cond (contains? layout :layers) :layers
-                      (contains? layout :assets) :assets)
+  (let [section    (cond (contains? layout :layers) :layers
+                         (contains? layout :assets) :assets)
+        shortcuts? (contains? layout :shortcuts)
 
         {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
         (use-resize-hook :left-sidebar 255 255 500 :x false :left)
@@ -49,19 +51,24 @@
                         :on-mouse-move on-mouse-move}]
 
      [:div.settings-bar-inside
-      [:button.collapse-sidebar
-       {:on-click handle-collapse}
-       i/arrow-slide]
-      [:& tab-container {:on-change-tab #(st/emit! (dw/go-to-layout %))
-                         :selected section}
 
-       [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
-        [:div.layers-tab
-         [:& sitemap {:layout layout}]
-         [:& layers-toolbox]]]
+      [:* (if shortcuts?
+            [:& shortcuts-container]
+            [:*
+             [:button.collapse-sidebar
+              {:on-click handle-collapse}
+              i/arrow-slide]
+             [:& tab-container {:on-change-tab #(st/emit! (dw/go-to-layout %))
+                                :selected section
+                                :shortcuts? shortcuts?}
 
-       [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
-        [:& assets-toolbox]]]]]))
+              [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
+               [:div.layers-tab
+                [:& sitemap {:layout layout}]
+                [:& layers-toolbox]]]
+
+              [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
+               [:& assets-toolbox]]]])]]]))
 
 ;; --- Right Sidebar (Component)
 

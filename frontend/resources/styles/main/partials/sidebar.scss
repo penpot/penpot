@@ -292,3 +292,153 @@ button.collapse-sidebar {
   height: 100%;
   overflow: hidden;
 }
+
+.shortcuts {
+  .shortcuts-header {
+    display: flex;
+    height: 40px;
+    background-color: $color-gray-60;
+    .shortcuts-title {
+      color: $color-white;
+      font-size: $fs12;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-grow: 1;
+    }
+    .shortcuts-close-button {
+      display: flex;
+      justify-content: center;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 2px 0 2px 15px;
+      position: absolute;
+      top: 8px;
+      svg {
+        height: 18px;
+        width: 18px;
+        transform: rotate(45deg);
+        fill: $color-gray-20;
+      }
+    }
+  }
+
+  .search-field {
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 10px;
+    .search-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid $color-gray-30;
+      border-radius: 2px;
+      width: 100%;
+      .input-text {
+        margin: 0;
+        background: $color-gray-50;
+        width: 100%;
+        color: $color-white;
+        &:focus {
+          border-bottom: none;
+        }
+      }
+      .icon-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        &.close {
+          transform: rotate(45deg);
+        }
+      }
+      svg {
+        width: 16px;
+        height: 16px;
+        margin: 0 7px;
+        cursor: pointer;
+        fill: $color-gray-20;
+      }
+    }
+  }
+
+  .shortcut-list {
+    border-top: 1px solid $color-gray-60;
+    padding: 10px;
+    overflow-y: auto;
+    height: 90%;
+    margin-bottom: 15px;
+    .section-title {
+      background-color: $color-gray-60;
+      padding: 4px 0;
+    }
+    .section-title,
+    .subsection-title {
+      display: flex;
+      cursor: pointer;
+      margin-top: 4px;
+      font-size: $fs12;
+      .section-name {
+        color: $color-white;
+      }
+      .collapesed-shortcuts {
+        padding: 0 10px;
+        svg {
+          height: 8px;
+          width: 8px;
+          fill: $color-gray-20;
+        }
+        &.open {
+          svg {
+            transform: rotate(90deg);
+          }
+        }
+      }
+      .shortcut-count {
+        padding-left: 5px;
+        color: $color-white;
+      }
+    }
+    .subsection-title {
+      padding: 4px 0px;
+      .subsection-name {
+        color: $color-white;
+      }
+    }
+
+    .shortcut-name {
+      border: 1px solid $color-gray-60;
+      border-radius: 4px;
+      padding: 7px;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+      color: $color-white;
+      font-size: $fs12;
+      .keys {
+        flex-grow: 1;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+      }
+      .char-box {
+        min-width: 15px;
+        background-color: $color-white;
+        color: $color-black;
+        border-radius: 3px;
+        padding: 2px 5px;
+        font-size: $fs11;
+        font-weight: 600;
+        margin: 0 2px;
+        text-transform: capitalize;
+        display: inline-block;
+        text-align: center;
+      }
+      .space {
+        margin: 0 3px;
+      }
+    }
+  }
+}

@@ -34,42 +34,52 @@
 (def shortcuts
   {:move-nodes      {:tooltip "M"
                      :command "m"
+                     :subsections [:path-editor]
                      :fn #(st/emit! (drp/change-edit-mode :move))}
 
    :draw-nodes      {:tooltip "P"
                      :command "p"
+                     :subsections [:path-editor]
                      :fn #(st/emit! (drp/change-edit-mode :draw))}
 
    :add-node        {:tooltip (ds/shift "+")
                      :command "shift++"
+                     :subsections [:path-editor]
                      :fn #(st/emit! (drp/add-node))}
 
    :delete-node     {:tooltip (ds/supr)
                      :command ["del" "backspace"]
+                     :subsections [:path-editor]
                      :fn #(st/emit! (drp/remove-node))}
 
    :merge-nodes     {:tooltip (ds/meta "J")
                      :command (ds/c-mod "j")
+                     :subsections [:path-editor]
                      :fn #(st/emit! (drp/merge-nodes))}
 
    :join-nodes      {:tooltip "J"
                      :command "j"
+                     :subsections [:path-editor]
                      :fn #(st/emit! (drp/join-nodes))}
 
    :separate-nodes  {:tooltip "K"
                      :command "k"
+                     :subsections [:path-editor]
                      :fn #(st/emit! (drp/separate-nodes))}
 
    :make-corner     {:tooltip "X"
                      :command "x"
+                     :subsections [:path-editor]
                      :fn #(st/emit! (drp/make-corner))}
 
    :make-curve      {:tooltip "C"
                      :command "c"
+                     :subsections [:path-editor]
                      :fn #(st/emit! (drp/make-curve))}
 
    :snap-nodes      {:tooltip (ds/meta "'")
                      :command (ds/c-mod "'")
+                     :subsections [:path-editor]
                      :fn #(st/emit! (drp/toggle-snap))}
 
    :escape          {:tooltip (ds/esc)
