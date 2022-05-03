@@ -141,4 +141,13 @@
                      (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :textpalette)
                                                  (-> (dw/toggle-layout-flag :colorpalette)
                                                      (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))}
-        i/palette]]]]))
+        i/palette]
+       [:li.tooltip.tooltip-right.separator
+        {:alt (tr "workspace.toolbar.shortcuts" (sc/get-tooltip :show-shortcuts))
+         :class (when (contains? layout :shortcuts) "selected")
+         :on-click (fn []
+                     (let [is-sidebar-closed? (contains? layout :collapse-left-sidebar)]
+                       (ts/schedule 300 #(st/emit! (when is-sidebar-closed? (dw/toggle-layout-flag :collapse-left-sidebar))
+                                                   (-> (dw/toggle-layout-flag :shortcuts)
+                                                       (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))))}
+        i/shortcut]]]]))

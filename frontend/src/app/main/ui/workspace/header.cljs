@@ -207,7 +207,16 @@
         (mf/use-callback
          (fn [flag]
            (-> (dw/toggle-layout-flag flag)
-               (vary-meta assoc ::ev/origin "workspace-menu"))))]
+               (vary-meta assoc ::ev/origin "workspace-menu"))))
+
+        show-release-notes
+        (mf/use-callback
+         (fn [event]
+           (let [version (:main @cf/version)]
+             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
+             (if (and (kbd/alt? event) (kbd/mod? event))
+               (st/emit! (modal/show {:type :onboarding}))
+               (st/emit! (modal/show {:type :release-notes :version version}))))))]
 
     (mf/use-effect
      (mf/deps @editing?)
@@ -251,10 +260,9 @@
        [:li {:on-click (on-item-click :preferences)
              :on-pointer-enter (on-item-hover :preferences)}
         [:span (tr "workspace.header.menu.option.preferences")] [:span i/arrow-slide]]
-       (when (contains? @cf/flags :user-feedback)
-         [:*
-          [:li.feedback {:on-click (st/emitf (rt/nav-new-window* {:rname :settings-feedback}))}
-           [:span (tr "labels.give-feedback")]]])]]
+       [:li.info {:on-click (on-item-click :help-info)
+                  :on-pointer-enter (on-item-hover :help-info)}
+        [:span (tr "workspace.header.menu.option.help-info")] [:span i/arrow-slide]]]]
 
      [:& dropdown {:show (= @show-sub-menu? :file)
                    :on-close #(reset! show-sub-menu? false)}
@@ -389,7 +397,31 @@
         [:span.shortcut (sc/get-tooltip :snap-pixel-grid)]]
 
        [:li {:on-click #(st/emit! (modal/show {:type :nudge-option}))}
-        [:span (tr "modals.nudge-title")]]]]]))
+        [:span (tr "modals.nudge-title")]]]]
+
+     [:& dropdown {:show (= @show-sub-menu? :help-info)
+                   :on-close #(reset! show-sub-menu? false)}
+      [:ul.sub-menu.help-info
+       [:li {:on-click #(dom/open-new-window "https://help.penpot.app")}
+        [:span (tr "labels.help-center")]]
+       [:li {:on-click #(dom/open-new-window "https://www.youtube.com/c/Penpot")}
+        [:span (tr "labels.tutorials")]]
+       [:li {:on-click show-release-notes}
+        [:span (tr "labels.release-notes")]]
+       [:li.separator {:on-click #(dom/open-new-window "https://penpot.app/libraries-templates.html")}
+        [:span (tr "labels.libraries-and-templates")]]
+       [:li {:on-click #(dom/open-new-window "https://github.com/penpot/penpot")}
+        [:span (tr "labels.github-repo")]]
+       [:li  {:on-click #(dom/open-new-window "https://penpot.app/terms.html")}
+        [:span (tr "auth.terms-of-service")]]
+       [:li.separator {:on-click #(st/emit! (rt/nav-new-window* {:rname :settings-feedback}))}
+        [:span (tr "label.shortcuts")]
+        [:span.shortcut (sc/get-tooltip :show-shortcuts)]]
+
+       (when (contains? @cf/flags :user-feedback)
+         [:*
+          [:li.feedback {:on-click (st/emitf (rt/nav-new-window* {:rname :settings-feedback}))}
+           [:span (tr "labels.give-feedback")]]])]]]))
 
 ;; --- Header Component
 

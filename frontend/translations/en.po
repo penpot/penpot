@@ -1170,6 +1170,10 @@ msgstr "Go back"
 msgid "labels.help-center"
 msgstr "Help Center"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Tutorials"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Hide resolved comments"
@@ -1204,6 +1208,10 @@ msgstr "Language"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.libraries-and-templates"
 msgstr "Libraries & Templates"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Github repository"
 
 msgid "labels.link"
 msgstr "Link"
@@ -2295,6 +2303,10 @@ msgstr "File"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.preferences"
 msgstr "Preferences"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "Help & info"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.view"
@@ -3588,6 +3600,14 @@ msgstr "Text (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Typographies (%s)"
 
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Shortcuts (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Shortcuts"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
 msgstr "There are no history changes so far"
@@ -3717,3 +3737,417 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "Keyboard shortcuts" 
+
+msgid "shortcuts.search-placeholder"
+msgstr "Search shortcuts" 
+
+msgid "shortcuts.add-comment"
+msgstr "Comments"
+
+msgid "shortcuts.add-node"
+msgstr "Add node"
+
+msgid "shortcuts.align-bottom"
+msgstr "Align bottom"
+
+msgid "shortcuts.align-hcenter"
+msgstr "Align center horizontally"
+
+msgid "shortcuts.align-left"
+msgstr "Align left"
+
+msgid "shortcuts.align-right"
+msgstr "Align right"
+
+msgid "shortcuts.align-top"
+msgstr "Align top"
+
+msgid "shortcuts.align-vcenter"
+msgstr "Align center vertically"
+
+msgid "shortcuts.artboard-selection"
+msgstr "Create artboard from selection"
+
+msgid "shortcuts.bool-difference"
+msgstr "Boolean difference"
+
+msgid "shortcuts.bool-exclude"
+msgstr "Boolean exclude"
+
+msgid "shortcuts.bool-intersection"
+msgstr "Boolean intersection"
+
+msgid "shortcuts.bool-union"
+msgstr "Boolean union"
+
+msgid "shortcuts.bring-back"
+msgstr "Send to the back"
+
+msgid "shortcuts.bring-backward"
+msgstr "Send backward"
+
+msgid "shortcuts.bring-forward"
+msgstr "Bring forward"
+
+msgid "shortcuts.bring-front"
+msgstr "Bring to the front"
+
+msgid "shortcuts.clear-undo"
+msgstr "Clear undo"
+
+msgid "shortcuts.copy"
+msgstr "Copy"
+
+msgid "shortcuts.create-component"
+msgstr "Create component"
+
+msgid "shortcuts.create-new-project"
+msgstr "Create new"
+
+msgid "shortcuts.cut"
+msgstr "Cut"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "Zoom out"
+
+msgid "shortcuts.delete"
+msgstr "Delete"
+
+msgid "shortcuts.delete-node"
+msgstr "Delete node"
+
+msgid "shortcuts.detach-component"
+msgstr "Detach component"
+
+msgid "shortcuts.draw-curve"
+msgstr "Curve"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "Ellipse"
+
+msgid "shortcuts.draw-frame"
+msgstr "Artboard"
+
+msgid "shortcuts.draw-nodes"
+msgstr "Draw path"
+
+msgid "shortcuts.draw-path"
+msgstr "Path"
+
+msgid "shortcuts.draw-rect"
+msgstr "Rectangle"
+
+msgid "shortcuts.draw-text"
+msgstr "Text"
+
+msgid "shortcuts.duplicate"
+msgstr "Duplicate"
+
+msgid "shortcuts.escape"
+msgstr "Cancel"
+
+msgid "shortcuts.export-shapes"
+msgstr "Export shapes"
+
+msgid "shortcuts.fit-all"
+msgstr "Zoom to fit all"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Flip horizontally"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Flip vertically"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Go to drafts"
+
+msgid "shortcuts.go-to-libs"
+msgstr "Go to shared libraries"
+
+msgid "shortcuts.go-to-search"
+msgstr "Search"
+
+msgid "shortcuts.group"
+msgstr "Group"
+
+msgid "shortcuts.h-distribute"
+msgstr "Distribute horizontally"
+
+msgid "shortcuts.hide-ui"
+msgstr "Show/hide UI"
+
+msgid "shortcuts.increase-zoom"
+msgstr "Zoom in"
+
+msgid "shortcuts.insert-image"
+msgstr "Insert image"
+
+msgid "shortcuts.join-nodes"
+msgstr "Join nodes"
+
+msgid "shortcuts.make-corner"
+msgstr "Make corner"
+
+msgid "shortcuts.make-curve"
+msgstr "Make curve"
+
+msgid "shortcuts.mask"
+msgstr "Mask"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Merge nodes"
+
+msgid "shortcuts.move"
+msgstr "Move"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Move down fast"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Move left fast"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Move right fast"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Move up fast"
+
+msgid "shortcuts.move-nodes"
+msgstr "Move node"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Move down"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Move left"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Move right"
+
+msgid "shortcuts.move-unit-up"
+msgstr "Move up"
+
+msgid "shortcuts.next-frame"
+msgstr "Next artboard"
+
+msgid "shortcuts.opacity-0"
+msgstr "Set opacity to 100%"
+
+msgid "shortcuts.opacity-1"
+msgstr "Set opacity to 10%"
+
+msgid "shortcuts.opacity-2"
+msgstr "Set opacity to 20%"
+
+msgid "shortcuts.opacity-3"
+msgstr "Set opacity to 30%"
+
+msgid "shortcuts.opacity-4"
+msgstr "Set opacity to 40%"
+
+msgid "shortcuts.opacity-5"
+msgstr "Set opacity to 50%"
+
+msgid "shortcuts.opacity-6"
+msgstr "Set opacity to 60%"
+
+msgid "shortcuts.opacity-7"
+msgstr "Set opacity to 70%"
+
+msgid "shortcuts.opacity-8"
+msgstr "Set opacity to 80%"
+
+msgid "shortcuts.opacity-9"
+msgstr "Set opacity to 90%"
+
+msgid "shortcuts.open-color-picker"
+msgstr "Color picker"
+
+msgid "shortcuts.open-comments"
+msgstr "Go to viewer comment section"
+
+msgid "shortcuts.open-dashboard"
+msgstr "Go to dashboard"
+
+msgid "shortcuts.open-handoff"
+msgstr "Go to viewer handoff section"
+
+msgid "shortcuts.open-interactions"
+msgstr "Go to viewer intertactions section"
+
+msgid "shortcuts.open-viewer"
+msgstr "Go to viewer intertactions section"
+
+msgid "shortcuts.open-workspace"
+msgstr "Go to workspace"
+
+msgid "shortcuts.paste"
+msgstr "Paste"
+
+msgid "shortcuts.prev-frame"
+msgstr "Previous artboard"
+
+msgid "shortcuts.redo"
+msgstr "Redo"
+
+msgid "shortcuts.reset-zoom"
+msgstr "Reset zoom"
+
+msgid "shortcuts.select-all"
+msgstr "Select all"
+
+msgid "shortcuts.separate-nodes"
+msgstr "Separate nodes"
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "Show/hide pixel grid"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "Show/hide shortcuts"
+
+msgid "shortcuts.snap-nodes"
+msgstr "Snap to nodes"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Snap to pixel grid"
+
+msgid "shortcuts.start-editing"
+msgstr "Start editing"
+
+msgid "shortcuts.start-measure"
+msgstr "Start measurement"
+
+msgid "shortcuts.stop-measure"
+msgstr "Stop measurement"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "Set thumbnails"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Toggle dynamic alignment"
+
+msgid "shortcuts.toggle-assets"
+msgstr "Toggle assets"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Toggle color palette"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Toggle focus mode"
+
+msgid "shortcuts.toggle-grid"
+msgstr "Show/hide grid"
+
+msgid "shortcuts.toggle-history"
+msgstr "Toggle history"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Toggle layers"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Lock selected"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Lock proportions"
+
+msgid "shortcuts.toggle-rules"
+msgstr "Show/hide rules"
+
+msgid "shortcuts.toggle-scale-text"
+msgstr "Toggle scale text"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Snap to grid"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "Snap to guides"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Toggle text palette"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Toggle visibility"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Toggle zoom style"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "Toogle fullscreen"
+
+msgid "shortcuts.undo"
+msgstr "Undo"
+
+msgid "shortcuts.ungroup"
+msgstr "Ungroup"
+
+msgid "shortcuts.unmask"
+msgstr "Unmask"
+
+msgid "shortcuts.v-distribute"
+msgstr "Distribute vertically"
+
+msgid "shortcuts.zoom-selected"
+msgstr "Zoom to selected"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Basics"
+
+msgid "shortcut-section.workspace"
+msgstr "Workspace"
+
+msgid "shortcut-section.dashboard"
+msgstr "Dashboard"
+
+msgid "shortcut-section.viewer"
+msgstr "Viewer"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Alignment"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Zoom"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "Modify layers"
+
+msgid "shortcut-subsection.tools"
+msgstr "Tools"
+
+msgid "shortcut-subsection.edit"
+msgstr "Edit"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Paths"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Navigation"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Main menu"
+
+msgid "shortcut-subsection.shape"
+msgstr "Shapes"
+
+msgid "shortcut-subsection.panels"
+msgstr "Panels"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navigation"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Generic"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Navigation"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Generic"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoom"
