@@ -368,7 +368,10 @@
         search-and-filters
         (fn [[id shape]]
           (let [search (:search-text @filter-state)
-                filters (:active-filters @filter-state)]
+                filters (:active-filters @filter-state)
+                filters (cond-> filters
+                          (some #{:shape} filters)
+                          (conj :rect :circle :path :bool))]
             (or
              (= uuid/zero id)
              (and
