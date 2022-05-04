@@ -431,8 +431,17 @@
 
          [:div.active-filters
           (for [f (:active-filters @filter-state)]
-            [:span {:on-click (remove-filter f)}
-             (tr f) i/cross])]
+            (let [name (case f
+                         :frame (tr "workspace.sidebar.layers.frames")
+                         :group (tr "workspace.sidebar.layers.groups")
+                         :mask (tr "workspace.sidebar.layers.masks")
+                         :component (tr "workspace.sidebar.layers.components")
+                         :text (tr "workspace.sidebar.layers.texts")
+                         :image (tr "workspace.sidebar.layers.images")
+                         :shape (tr "workspace.sidebar.layers.shapes")
+                         (tr f))]
+              [:span {:on-click (remove-filter f)}
+               name i/cross]))]
 
          (when (:show-filters-menu @filter-state)
            [:div.filters-container
