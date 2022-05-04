@@ -7,6 +7,7 @@
 (ns app.http.feedback
   "A general purpose feedback module."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.config :as cf]
@@ -44,7 +45,8 @@
   [{:keys [pool] :as cfg} {:keys [profile-id] :as request}]
   (let [ftoken (cf/get :feedback-token ::no-token)
         token  (yrq/get-header request "x-feedback-token")
-        params (::yrq/params request)]
+        params (d/merge (:params request)
+                        (:body-params request))]
     (cond
       (uuid? profile-id)
       (let [profile (profile/retrieve-profile-data pool profile-id)
