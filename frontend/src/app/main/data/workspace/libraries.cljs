@@ -569,47 +569,48 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (log/info :msg "SYNC-FILE"
-                :file (dwlh/pretty-file file-id state)
-                :library (dwlh/pretty-file library-id state))
-      (let [file            (wsh/get-file state file-id)
+      (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
+        (log/info :msg "SYNC-FILE"
+                  :file (dwlh/pretty-file file-id state)
+                  :library (dwlh/pretty-file library-id state))
+        (let [file            (wsh/get-file state file-id)
 
-            library-changes (reduce
-                              pcb/concat-changes
-                              (pcb/empty-changes it)
-                              [(dwlh/generate-sync-library it file-id :components library-id state)
-                               (dwlh/generate-sync-library it file-id :colors library-id state)
-                               (dwlh/generate-sync-library it file-id :typographies library-id state)])
-            file-changes    (reduce
-                              pcb/concat-changes
-                              (pcb/empty-changes it)
-                              [(dwlh/generate-sync-file it file-id :components library-id state)
-                               (dwlh/generate-sync-file it file-id :colors library-id state)
-                               (dwlh/generate-sync-file it file-id :typographies library-id state)])
+              library-changes (reduce
+                                pcb/concat-changes
+                                (pcb/empty-changes it)
+                                [(dwlh/generate-sync-library it file-id :components library-id state)
+                                 (dwlh/generate-sync-library it file-id :colors library-id state)
+                                 (dwlh/generate-sync-library it file-id :typographies library-id state)])
+              file-changes    (reduce
+                                pcb/concat-changes
+                                (pcb/empty-changes it)
+                                [(dwlh/generate-sync-file it file-id :components library-id state)
+                                 (dwlh/generate-sync-file it file-id :colors library-id state)
+                                 (dwlh/generate-sync-file it file-id :typographies library-id state)])
 
-            changes         (pcb/concat-changes library-changes file-changes)]
+              changes         (pcb/concat-changes library-changes file-changes)]
 
-        (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
-                                                           (:redo-changes changes)
-                                                           file))
-        (rx/concat
-         (rx/of (dm/hide-tag :sync-dialog))
-         (when (seq (:redo-changes changes))
-           (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
-                                             :file-id file-id))))
-         (when (not= file-id library-id)
-            ;; When we have just updated the library file, give some time for the
-            ;; update to finish, before marking this file as synced.
-            ;; TODO: look for a more precise way of syncing this.
-            ;; Maybe by using the stream (second argument passed to watch)
-            ;; to wait for the corresponding changes-committed and then proceed
-            ;; with the :update-sync mutation.
-           (rx/concat (rx/timer 3000)
-                      (rp/mutation :update-sync
-                                   {:file-id file-id
-                                    :library-id library-id})))
-         (when (seq (:redo-changes library-changes))
-           (rx/of (sync-file-2nd-stage file-id library-id))))))))
+          (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
+                                                             (:redo-changes changes)
+                                                             file))
+          (rx/concat
+           (rx/of (dm/hide-tag :sync-dialog))
+           (when (seq (:redo-changes changes))
+             (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
+                                               :file-id file-id))))
+           (when (not= file-id library-id)
+              ;; When we have just updated the library file, give some time for the
+              ;; update to finish, before marking this file as synced.
+              ;; TODO: look for a more precise way of syncing this.
+              ;; Maybe by using the stream (second argument passed to watch)
+              ;; to wait for the corresponding changes-committed and then proceed
+              ;; with the :update-sync mutation.
+             (rx/concat (rx/timer 3000)
+                        (rp/mutation :update-sync
+                                     {:file-id file-id
+                                      :library-id library-id})))
+           (when (seq (:redo-changes library-changes))
+             (rx/of (sync-file-2nd-stage file-id library-id)))))))))
 
 (defn sync-file-2nd-stage
   "If some components have been modified, we need to launch another synchronization
