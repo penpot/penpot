@@ -14,6 +14,7 @@
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.timers :as ts]
+   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 (defn- draw-thumbnail-canvas
@@ -44,42 +45,50 @@
 
         thumbnail-ref? (mf/use-var thumbnail?)
 
+        updates-str (mf/use-memo #(rx/subject))
+
         on-image-load
         (mf/use-callback
          (fn []
-           (let [canvas-node (mf/ref-val frame-canvas-ref)
-                 img-node    (mf/ref-val frame-image-ref)
-                 thumb-data  (draw-thumbnail-canvas canvas-node img-node)]
-             (st/emit! (dw/update-thumbnail id thumb-data))
-             (reset! image-url nil))))
+           (ts/raf
+            #(let [canvas-node (mf/ref-val frame-canvas-ref)
+                   img-node    (mf/ref-val frame-image-ref)
+                   thumb-data  (draw-thumbnail-canvas canvas-node img-node)]
+               (st/emit! (dw/update-thumbnail id thumb-data))
+               (reset! image-url nil)))))
 
-        on-change
-        (mf/use-callback
-         (fn []
-           (when (and (some? @node-ref) (not @disable-ref?))
-             (let [node @node-ref]
-               (ts/schedule-on-idle
-                #(let [frame-html (dom/node->xml node)
-                       {:keys [x y width height]} @shape-ref
-                       svg-node
-                       (-> (dom/make-node "http://www.w3.org/2000/svg" "svg")
-                           (dom/set-property! "version" "1.1")
-                           (dom/set-property! "viewBox" (dm/str x " " y " " width " " height))
-                           (dom/set-property! "width" width)
-                           (dom/set-property! "height" height)
-                           (dom/set-property! "fill" "none")
-                           (obj/set! "innerHTML" frame-html))
-                       img-src  (-> svg-node dom/node->xml dom/svg->data-uri)]
-                   (reset! image-url img-src)))))))
+        on-update-frame
+        (fn []
+          (when (and (some? @node-ref) (not @disable-ref?))
+            (let [node @node-ref
+                  frame-html (dom/node->xml node)
+                  {:keys [x y width height]} @shape-ref
+                  svg-node
+                  (-> (dom/make-node "http://www.w3.org/2000/svg" "svg")
+                      (dom/set-property! "version" "1.1")
+                      (dom/set-property! "viewBox" (dm/str x " " y " " width " " height))
+                      (dom/set-property! "width" width)
+                      (dom/set-property! "height" height)
+                      (dom/set-property! "fill" "none")
+                      (obj/set! "innerHTML" frame-html))
+                  img-src  (-> svg-node dom/node->xml dom/svg->data-uri)]
+              (reset! image-url img-src))))
 
         on-load-frame-dom
         (mf/use-callback
          (fn [node]
            (when (and (some? node) (nil? @observer-ref))
-             (on-change [])
-             (let [observer (js/MutationObserver. on-change)]
+             (rx/push! updates-str :update)
+             (let [observer (js/MutationObserver. (partial rx/push! updates-str))]
                (.observe observer node #js {:childList true :attributes true :characterData true :subtree true})
                (reset! observer-ref observer)))))]
+
+    (mf/use-effect
+     (fn []
+       (let [subid (->> updates-str
+                        (rx/debounce 200)
+                        (rx/subs on-update-frame))]
+         #(rx/dispose! subid))))
 
     (mf/use-effect
      (mf/deps disable?)
@@ -104,7 +113,7 @@
     [on-load-frame-dom
      (when (some? @image-url)
        (mf/html
-        [:g.thumbnail-rendering {:opacity 0}
+        [:g.thumbnail-rendering
          [:foreignObject {:x x :y y :width width :height height}
           [:canvas {:ref frame-canvas-ref
                     :width fixed-width

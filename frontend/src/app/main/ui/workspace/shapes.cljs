@@ -65,7 +65,7 @@
          [:& frame-wrapper {:shape item
                             :key (:id item)
                             :objects (get frame-objects (:id item))
-                            :thumbnail? (not (get active-frames (:id item) false))}]
+                            :thumbnail? (not (contains? active-frames (:id item)))}]
 
          [:& shape-wrapper {:shape item
                             :key (:id item)}]))]))

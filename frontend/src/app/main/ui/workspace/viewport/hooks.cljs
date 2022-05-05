@@ -219,32 +219,21 @@
          (gsh/overlaps? frame vbox))))
 
 (defn setup-active-frames
-  [objects vbox hover active-frames zoom]
+  [objects hover-ids selected active-frames zoom]
 
   (mf/use-effect
-   (mf/deps vbox)
-
+   (mf/deps objects @hover-ids selected zoom)
    (fn []
-     (swap! active-frames
-            (fn [active-frames]
-              (let [set-active-frames
-                    (fn [active-frames id active?]
-                      (cond-> active-frames
-                        (and active? (inside-vbox vbox objects id))
-                        (assoc id true)))]
-                (reduce-kv set-active-frames {} active-frames))))))
-
-  (mf/use-effect
-   (mf/deps @hover @active-frames zoom)
-   (fn []
-     (let [frame-id (if (= :frame (:type @hover))
-                      (:id @hover)
-                      (:frame-id @hover))]
-       (if (< zoom 0.25)
-         (when (some? @active-frames)
-           (reset! active-frames nil))
-         (when (and (some? frame-id)(not (contains? @active-frames frame-id)))
-           (reset! active-frames {frame-id true})))))))
+     (when (some? @hover-ids)
+       (let [hover-frame (when (> zoom 0.25) (last @hover-ids))
+             new-active-frames (if (some? hover-frame) #{hover-frame} #{})
+             new-active-frames
+             (into new-active-frames
+                   (comp
+                    (filter #(not= :frame (get-in objects [% :type])))
+                    (map #(get-in objects [% :frame-id])))
+                   selected) ]
+         (reset! active-frames new-active-frames))))))
 
 ;; NOTE: this is executed on each page change, maybe we need to move
 ;; this shortcuts outside the viewport?

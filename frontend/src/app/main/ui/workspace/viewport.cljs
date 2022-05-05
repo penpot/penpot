@@ -90,7 +90,7 @@
         hover             (mf/use-state nil)
         hover-disabled?   (mf/use-state false)
         frame-hover       (mf/use-state nil)
-        active-frames     (mf/use-state {})
+        active-frames     (mf/use-state #{})
 
         ;; REFS
         viewport-ref      (mf/use-ref nil)
@@ -183,7 +183,7 @@
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids @hover-disabled? focus zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path?)
-    (hooks/setup-active-frames base-objects vbox hover active-frames zoom)
+    (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom)
 
     [:div.viewport
      [:div.viewport-overlays {:ref overlays-ref}
