@@ -79,6 +79,7 @@
         on-focus  #(reset! focus? true)
         on-change (fn [event]
                     (let [value (-> event dom/get-target dom/get-input-value)]
+                      (swap! form assoc-in [:touched input-name] true)
                       (fm/on-input-change form input-name value trim)))
 
         on-blur
