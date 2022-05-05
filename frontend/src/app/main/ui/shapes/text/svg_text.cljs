@@ -89,5 +89,6 @@
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
               shape (assoc shape :fills (:fills data))]
 
-          [:& shape-custom-strokes {:shape shape :key index}
-           [:> :text props (:text data)]]))]]))
+          [:& (mf/provider muc/render-ctx) {:value (str render-id "_" (:id shape) "_" index)}
+           [:& shape-custom-strokes {:shape shape :key index}
+            [:> :text props (:text data)]]]))]]))
