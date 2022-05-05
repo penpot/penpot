@@ -10,6 +10,7 @@
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -141,13 +142,19 @@
 
     [:div.editable-select {:class class
                            :ref on-node-load}
-     [:input.input-text {:value (or (some-> @state :current-value value->label) "")
-                         :on-change handle-change-input
-                         :on-key-down handle-key-down
-                         :on-focus handle-focus
-                         :on-blur handle-blur
-                         :placeholder placeholder
-                         :type type}]
+     (if (= type "number")
+       [:> numeric-input {:value (or (some-> @state :current-value value->label) "")
+                          :on-change set-value
+                          :on-focus handle-focus
+                          :on-blur handle-blur
+                          :placeholder placeholder}]
+       [:input.input-text {:value (or (some-> @state :current-value value->label) "")
+                           :on-change handle-change-input
+                           :on-key-down handle-key-down
+                           :on-focus handle-focus
+                           :on-blur handle-blur
+                           :placeholder placeholder
+                           :type type}])
      [:span.dropdown-button {:on-click open-dropdown} i/arrow-down]
 
      [:& dropdown {:show (get @state :is-open? false)
