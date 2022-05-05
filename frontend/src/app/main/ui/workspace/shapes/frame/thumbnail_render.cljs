@@ -23,7 +23,7 @@
         canvas-height  (.-height canvas-node)]
     (.clearRect canvas-context 0 0 canvas-width canvas-height)
     (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
-    (.toDataURL canvas-node "image/jpeg" 0.8)))
+    (.toDataURL canvas-node "image/png")))
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
