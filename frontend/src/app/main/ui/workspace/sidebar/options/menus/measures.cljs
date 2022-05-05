@@ -279,7 +279,6 @@
             {:no-validate true
              :min 0
              :max 359
-             :default 0
              :data-wrap true
              :placeholder "--"
              :on-click select-all
