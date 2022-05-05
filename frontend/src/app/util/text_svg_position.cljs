@@ -119,6 +119,7 @@
                            :font-weight         (str (get "font-weight"))
                            :text-transform      (str (get "text-transform"))
                            :text-decoration     (str (get "text-decoration"))
+                           :letter-spacing      (str (get "letter-spacing"))
                            :font-style          (str (get "font-style"))
                            :fills               (transit/decode-str (get "--fills"))
                            :text                text}))))))))))
