@@ -19,12 +19,17 @@
 
 (defn- draw-thumbnail-canvas
   [canvas-node img-node]
-  (let [canvas-context (.getContext canvas-node "2d")
-        canvas-width   (.-width canvas-node)
-        canvas-height  (.-height canvas-node)]
-    (.clearRect canvas-context 0 0 canvas-width canvas-height)
-    (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
-    (.toDataURL canvas-node "image/png")))
+  (try
+    (when (and (some? canvas-node) (some? img-node))
+      (let [canvas-context (.getContext canvas-node "2d")
+            canvas-width   (.-width canvas-node)
+            canvas-height  (.-height canvas-node)]
+        (.clearRect canvas-context 0 0 canvas-width canvas-height)
+        (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
+        (.toDataURL canvas-node "image/png")))
+    (catch :default err
+      (.error js/console err)
+      nil)))
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
@@ -54,8 +59,9 @@
             #(let [canvas-node (mf/ref-val frame-canvas-ref)
                    img-node    (mf/ref-val frame-image-ref)
                    thumb-data  (draw-thumbnail-canvas canvas-node img-node)]
-               (st/emit! (dw/update-thumbnail id thumb-data))
-               (reset! image-url nil)))))
+               (when (some? thumb-data)
+                 (st/emit! (dw/update-thumbnail id thumb-data))
+                 (reset! image-url nil))))))
 
         on-update-frame
         (fn []
