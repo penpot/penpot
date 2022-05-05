@@ -144,8 +144,9 @@
                                   :key (:seqn item)}]))
 
        (when-let [id (:open cstate)]
-         (when-let [thread (-> (get threads-map id)
-                               (update :position gpt/transform modifier1))]
+         (when-let [thread (as-> (get threads-map id) $
+                             (when (some? $)
+                               (update $ :position gpt/transform modifier1)))]
            [:& cmt/thread-comments {:thread thread
                                     :users users
                                     :zoom zoom}]))
