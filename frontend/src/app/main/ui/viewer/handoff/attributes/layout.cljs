@@ -35,7 +35,6 @@
 (mf/defc layout-block
   [{:keys [shape]}]
   (let [selrect (:selrect shape)
-        _ (prn shape)
         {:keys [width height x y]} selrect]
     [:*
      [:div.attributes-unit-row
