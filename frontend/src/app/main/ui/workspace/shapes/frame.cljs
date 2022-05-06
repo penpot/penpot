@@ -114,10 +114,10 @@
              (when (not @rendered?) (reset! rendered? true)))))
 
         [:g.frame-container {:key "frame-container" :ref on-frame-load}
-         thumb-renderer
-
-         [:g.frame-thumbnail
+         [:g.frame-thumbnail {:id (dm/str "thumbnail-container-" (:id shape))}
           [:> frame/frame-thumbnail {:key (dm/str (:id shape))
                                      :shape (cond-> shape
                                               (some? thumbnail-data)
-                                              (assoc :thumbnail thumbnail-data))}]]]))))
+                                              (assoc :thumbnail thumbnail-data))}]
+
+          thumb-renderer]]))))
