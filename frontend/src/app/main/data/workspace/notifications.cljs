@@ -54,8 +54,8 @@
                           ;; Subscribe to notifications of the subscription
                           (->> stream
                                (rx/filter (ptk/type? ::dws/message))
-                               (rx/map deref)
-                               (rx/filter #(= subs-id (:subs-id %)))
+                               (rx/map deref) ;; :library-change events occur in a different file, but need to be processed anyway
+                               (rx/filter #(or (= subs-id (:subs-id %)) (= (:type %) :library-change)))
                                (rx/map process-message))
 
                           ;; On reconnect, send again the subscription messages

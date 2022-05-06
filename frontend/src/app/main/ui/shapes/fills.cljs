@@ -80,5 +80,6 @@
 
                (when has-image?
                  [:image {:xlinkHref (get embed uri uri)
+                          :preserveAspectRatio "none"
                           :width width
                           :height height}])]])])))))

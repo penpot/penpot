@@ -221,6 +221,8 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (get state :workspace-data)
+            [path name] (cph/parse-path-name (:name typography))
+            typography  (assoc typography :path path :name name)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/update-typography typography))]
