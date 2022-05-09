@@ -25,6 +25,9 @@
    [app.util.timers :as ts]
    [rumext.alpha :as mf]))
 
+(defn strip-position-data [shape]
+  (dissoc shape :position-data :transform :transform-inverse))
+
 (defn- update-with-editor-state
   "Updates the shape with the current state in the editor"
   [shape editor-state]
@@ -78,26 +81,13 @@
   [props]
   (let [shape       (obj/get props "shape")
         on-update   (obj/get props "on-update")
-        watch-edits (obj/get props "watch-edits")
 
         handle-update
         (mf/use-callback
          (mf/deps shape on-update)
          (fn [node]
            (when (some? node)
-             (on-update shape node))))
-
-        text-modifier-ref
-        (mf/use-memo
-         (mf/deps (:id shape))
-         #(refs/workspace-text-modifier-by-id (:id shape)))
-
-        text-modifier
-        (when watch-edits (mf/deref text-modifier-ref))
-
-        shape (cond-> shape
-                (some? text-modifier)
-                (dwt/apply-text-modifier text-modifier))]
+             (on-update shape node))))]
 
     [:& fo/text-shape {:key (str "shape-" (:id shape))
                        :ref handle-update
@@ -134,11 +124,6 @@
                            :on-update handle-update-shape
                            :key (str (dm/str "text-container-" id))}])]))
 
-(defn strip-position-data [[id shape]]
-  (let [shape (dissoc shape :position-data :transform :transform-inverse)]
-    [id shape]))
-
-
 (mf/defc viewport-text-editing
   {::mf/wrap-props false}
   [props]
@@ -162,7 +147,6 @@
        #(st/emit! (dwt/remove-text-modifier (:id shape)))))
 
     [:& text-container {:shape shape
-                        :watch-edits true
                         :on-update handle-update-shape}]))
 
 (defn check-props
@@ -178,7 +162,8 @@
         edition (obj/get props "edition")
 
         xf-texts (comp (filter (comp cph/text-shape? second))
-                       (map strip-position-data))
+                       (map (fn [[id shape]]
+                              [id (strip-position-data shape)])))
 
         text-shapes
         (mf/use-memo
@@ -198,4 +183,4 @@
     [:*
      (when editing-shape
        [:& viewport-text-editing {:shape editing-shape}])
-     [:& viewport-texts-wrapper {:text-shapes text-shapes}]]))
+     [:& viewport-texts-wrapper {:text-shapes (dissoc text-shapes edition)}]]))
