@@ -1231,7 +1231,7 @@
       }
 
       .btn-primary {
-        width: 117px;
+        min-width: 117px;
       }
     }
 
@@ -1254,7 +1254,18 @@
       }
 
       .custom-select {
-        width: 118px;
+        width: 180px;
+        overflow: hidden;
+        justify-content: normal;
+        select {
+          height: auto;
+        }
+      }
+
+      svg {
+        width: 12px;
+        height: 12px;
+        fill: $color-gray-20;
       }
     }
 

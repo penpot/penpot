@@ -1726,12 +1726,6 @@ msgstr "获取并提供代码规范，如标记（SVG、HTML）或样式（CSS�
 msgid "onboarding.slide.3.title"
 msgstr "一个共享的事实来源"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "输入新团队名称"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "跳过并稍后邀请"
-
 msgid "onboarding.templates.subtitle"
 msgstr "这里有一些模板。"
 

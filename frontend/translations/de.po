@@ -1738,12 +1738,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Eine zentrale Anlaufstelle für alle"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "Neuen Teamnamen eingeben"
-
-msgid "onboarding.team.create.button"
-msgstr "Team erstellen"
-
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "Arbeiten Sie mit jemandem zusammen? Erstellen Sie ein Team, um gemeinsam an "
@@ -1755,8 +1749,6 @@ msgstr "Neuen Teamnamen eingeben"
 msgid "onboarding.team.create.title"
 msgstr "Team erstellen"
 
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Überspringen und später einladen"
 
 msgid "onboarding.team.start.button"
 msgstr "Gleich loslegen"

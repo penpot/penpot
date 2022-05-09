@@ -1020,6 +1020,9 @@ msgstr "About Penpot"
 msgid "labels.accept"
 msgstr "Accept"
 
+msgid "labels.back"
+msgstr "Back"
+
 msgid "labels.add-custom-font"
 msgstr "Add custom font"
 
@@ -1767,8 +1770,30 @@ msgstr ""
 "Are you working with someone? Create a team and invite people to work "
 "together on projects and share design assets."
 
+msgid "onboarding.choice.team-up.create-team"
+msgstr "Your team name"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "After naming your team, you will be able to invite people to join."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Enter the name of the team"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Invite members"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr "You will be also able to invite members and change roles later at the team section."
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "Create team and send invites"
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "Create team and invite later"
+
 msgid "onboarding.choice.title"
 msgstr "Welcome to Penpot"
+
 
 msgid "onboarding.contrib.alt"
 msgstr "Open Source"
@@ -1872,12 +1897,6 @@ msgstr ""
 
 msgid "onboarding.slide.3.title"
 msgstr "One shared source of truth"
-
-msgid "onboarding.team-input-placeholder"
-msgstr "Enter new team name"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Skip and invite later"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Here are some templates."

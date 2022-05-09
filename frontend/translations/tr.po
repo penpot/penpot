@@ -1843,12 +1843,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Paylaşılan bir doğruluk kaynağı"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "Yeni takım adı gir"
-
-msgid "onboarding.team.create.button"
-msgstr "Takım oluştur"
-
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "Biriyle mi çalışıyorsunuz? Projelerde birlikte çalışmak ve tasarım "
@@ -1859,9 +1853,6 @@ msgstr "Yeni takım adı gir"
 
 msgid "onboarding.team.create.title"
 msgstr "Takım oluştur"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Atla ve daha sonra davet et"
 
 msgid "onboarding.team.start.button"
 msgstr "Hemen başla"
