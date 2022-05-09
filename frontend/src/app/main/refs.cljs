@@ -399,8 +399,11 @@
   (l/derived #(dm/get-in % [:workspace-file :thumbnails] {}) st/state))
 
 (defn thumbnail-frame-data
-  [frame-id]
-  (l/derived #(get % frame-id) thumbnail-data))
+  [page-id frame-id]
+  (l/derived
+   (fn [thumbnails]
+     (get thumbnails (dm/str page-id frame-id)))
+   thumbnail-data))
 
 (def workspace-text-modifier
   (l/derived :workspace-text-modifier st/state))

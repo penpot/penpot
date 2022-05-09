@@ -12,6 +12,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.db :as db]
    [app.util.blob :as blob]
@@ -125,10 +126,14 @@
                               {:columns [:object-id]})
                     (into #{} (map :object-id)))
 
-        using  (->> (concat (vals (:pages-index data))
-                            (vals (:components data)))
-                    (into #{} (comp (map :objects)
-                                    (mapcat keys))))
+        get-objects-ids
+        (fn [{:keys [id objects]}]
+          (->> (cph/get-frames objects)
+               (map #(str id (:id %)))))
+
+        using (into #{}
+                    (mapcat get-objects-ids)
+                    (vals (:pages-index data)))
 
         unused (set/difference stored using)]
 
@@ -136,7 +141,7 @@
       (let [sql (str/concat
                  "delete from file_object_thumbnail "
                  " where file_id=? and object_id=ANY(?)")
-            res (db/exec-one! conn [sql file-id (db/create-array conn "uuid" unused)])]
+            res (db/exec-one! conn [sql file-id (db/create-array conn "text" unused)])]
         (l/debug :hint "delete object thumbnails" :total (:next.jdbc/update-count res))))))
 
 (defn- clean-file-thumbnails!

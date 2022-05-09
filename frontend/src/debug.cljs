@@ -61,6 +61,9 @@
 
     ;; Show text fragments outlines
     :text-outline
+
+    ;; Disable thumbnail cache
+    :disable-thumbnail-cachee
     })
 
 ;; These events are excluded when we activate the :events flag

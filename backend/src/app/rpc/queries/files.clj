@@ -197,13 +197,13 @@
      (->> (db/exec! pool [sql file-id])
           (d/index-by :object-id :data))))
 
-  ([{:keys [pool]} file-id frame-ids]
+  ([{:keys [pool]} file-id object-ids]
    (with-open [conn (db/open pool)]
      (let [sql (str/concat
                 "select object_id, data "
                 "  from file_object_thumbnail"
                 " where file_id=? and object_id = ANY(?)")
-           ids (db/create-array conn "uuid" (seq frame-ids))]
+           ids (db/create-array conn "text" (seq object-ids))]
        (->> (db/exec! conn [sql file-id ids])
             (d/index-by :object-id :data))))))
 
@@ -298,19 +298,21 @@
           ;; function responsible of assoc available thumbnails
           ;; to frames and remove all children shapes from objects if
           ;; thumbnails is available
-          (assoc-thumbnails [objects thumbnails]
+          (assoc-thumbnails [objects page-id thumbnails]
             (loop [objects objects
                    frames  (filter cph/frame-shape? (vals objects))]
 
-              (if-let [{:keys [id] :as frame} (first frames)]
-                (let [frame (if-let [thumb (get thumbnails id)]
+              (if-let [frame  (-> frames first)]
+                (let [frame-id (:id frame)
+                      object-id (str page-id frame-id)
+                      frame (if-let [thumb (get thumbnails object-id)]
                               (assoc frame :thumbnail thumb :shapes [])
                               (dissoc frame :thumbnail))]
                   (if (:thumbnail frame)
-                    (recur (-> (assoc objects id frame)
-                               (d/without-keys (cph/get-children-ids objects id)))
+                    (recur (-> (assoc objects frame-id frame)
+                               (d/without-keys (cph/get-children-ids objects frame-id)))
                            (rest frames))
-                    (recur (assoc objects id frame)
+                    (recur (assoc objects frame-id frame)
                            (rest frames))))
 
                 objects)))]
@@ -319,10 +321,11 @@
           frame-id  (:id frame)
           page-id   (or (:page-id frame)
                         (-> data :pages first))
-          page      (dm/get-in data [:pages-index page-id])
 
-          obj-ids   (or (some-> frame-id list)
-                        (map :id (cph/get-frames page)))
+          page      (dm/get-in data [:pages-index page-id])
+          frame-ids (if (some? frame) (list frame-id) (map :id (cph/get-frames (:objects page))))
+
+          obj-ids   (map #(str page-id %) frame-ids)
           thumbs    (retrieve-object-thumbnails cfg id obj-ids)]
 
       (cond-> page
@@ -335,7 +338,7 @@
         ;; Assoc the available thumbnails and prune not visible shapes
         ;; for avoid transfer unnecesary data.
         :always
-        (update :objects assoc-thumbnails thumbs)))))
+        (update :objects assoc-thumbnails page-id thumbs)))))
 
 (s/def ::file-data-for-thumbnail
   (s/keys :req-un [::profile-id ::file-id]))

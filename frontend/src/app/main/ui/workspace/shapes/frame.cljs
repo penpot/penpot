@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.frame :as frame]
@@ -67,8 +68,11 @@
 
             ;; Thumbnail data
             frame-id           (:id shape)
-            thumbnail-data-ref (mf/use-memo (mf/deps frame-id) #(refs/thumbnail-frame-data frame-id))
+            page-id            (mf/use-ctx ctx/current-page-id)
+
+            thumbnail-data-ref (mf/use-memo (mf/deps page-id frame-id) #(refs/thumbnail-frame-data page-id frame-id))
             thumbnail-data     (mf/deref thumbnail-data-ref)
+
             thumbnail?         (and thumbnail? (or (some? (:thumbnail shape)) (some? thumbnail-data)))
 
             ;; References to the current rendered node and the its parentn
@@ -84,7 +88,7 @@
             disable-thumbnail? (d/not-empty? (dm/get-in modifiers [(:id shape) :modifiers]))
 
             [on-load-frame-dom thumb-renderer]
-            (ftr/use-render-thumbnail shape node-ref rendered? thumbnail? disable-thumbnail?)
+            (ftr/use-render-thumbnail page-id shape node-ref rendered? thumbnail? disable-thumbnail?)
 
             on-frame-load
             (fns/use-node-store thumbnail? node-ref rendered?)]

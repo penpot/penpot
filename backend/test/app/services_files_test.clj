@@ -527,7 +527,7 @@
       (let [data {::th/type :upsert-file-object-thumbnail
                   :profile-id (:id prof)
                   :file-id (:id file)
-                  :object-id frame1-id
+                  :object-id (str page-id frame1-id)
                   :data "random-data-1"}
 
             {:keys [error result] :as out} (th/mutation! data)]
@@ -553,7 +553,7 @@
       (let [data {::th/type :upsert-file-object-thumbnail
                   :profile-id (:id prof)
                   :file-id (:id file)
-                  :object-id frame1-id
+                  :object-id (str page-id frame1-id)
                   :data nil}
             {:keys [error result] :as out} (th/mutation! data)]
         (t/is (nil? error))
@@ -579,7 +579,7 @@
       (let [data {::th/type :upsert-file-object-thumbnail
                   :profile-id (:id prof)
                   :file-id (:id file)
-                  :object-id frame1-id
+                  :object-id (str page-id frame1-id)
                   :data "new-data"}
             {:keys [error result] :as out} (th/mutation! data)]
         (t/is (nil? error))
@@ -602,7 +602,7 @@
       (let [data {::th/type :upsert-file-object-thumbnail
                   :profile-id (:id prof)
                   :file-id (:id file)
-                  :object-id (uuid/next)
+                  :object-id (str page-id (uuid/next))
                   :data "new-data-2"}
             {:keys [error result] :as out} (th/mutation! data)]
         (t/is (nil? error))
