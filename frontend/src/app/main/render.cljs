@@ -189,7 +189,7 @@
 (defn get-object-bounds
   [objects object-id]
   (let [object  (get objects object-id)
-        padding (filters/calculate-padding object)
+        padding (filters/calculate-padding object true)
         bounds  (-> (filters/get-filters-bounds object)
                     (update :x - (:horizontal padding))
                     (update :y - (:vertical padding))
