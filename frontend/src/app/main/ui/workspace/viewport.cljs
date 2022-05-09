@@ -168,7 +168,7 @@
         show-snap-points?        (and (or (contains? layout :dynamic-alignment)
                                           (contains? layout :snap-grid))
                                       (or drawing-obj transform))
-        show-selrect?            (and selrect (empty? drawing) (not edition))
+        show-selrect?            (and selrect (empty? drawing) (not text-editing?))
         show-measures?           (and (not transform) (not node-editing?) show-distances?)
         show-artboard-names?     (contains? layout :display-artboard-names)
         show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
