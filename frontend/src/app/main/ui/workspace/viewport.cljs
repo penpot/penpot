@@ -297,7 +297,8 @@
 
        (when show-text-editor?
          [:& text-edition-outline
-          {:shape (get base-objects edition)}])
+          {:shape (get base-objects edition)
+           :zoom zoom}])
 
        (when show-measures?
          [:& msr/measurement
