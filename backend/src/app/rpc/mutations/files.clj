@@ -487,7 +487,7 @@
           update set data = ?;")
 
 (s/def ::data (s/nilable ::us/string))
-(s/def ::object-id ::us/uuid)
+(s/def ::object-id ::us/string)
 (s/def ::upsert-file-object-thumbnail
   (s/keys :req-un [::profile-id ::file-id ::object-id ::data]))
 

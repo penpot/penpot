@@ -33,7 +33,7 @@
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
-  [{:keys [id x y width height] :as shape} node-ref rendered? thumbnail? disable?]
+  [page-id {:keys [id x y width height] :as shape} node-ref rendered? thumbnail? disable?]
 
   (let [frame-canvas-ref (mf/use-ref nil)
         frame-image-ref (mf/use-ref nil)
@@ -60,7 +60,7 @@
                    img-node    (mf/ref-val frame-image-ref)
                    thumb-data  (draw-thumbnail-canvas canvas-node img-node)]
                (when (some? thumb-data)
-                 (st/emit! (dw/update-thumbnail id thumb-data))
+                 (st/emit! (dw/update-thumbnail page-id id thumb-data))
                  (reset! image-url nil))))))
 
         on-update-frame
