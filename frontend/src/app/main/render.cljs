@@ -402,7 +402,7 @@
             :style {:-webkit-print-color-adjust :exact}
             :fill "none"}
 
-      (let [fonts (ff/frame->fonts object objects)]
+      (let [fonts (ff/shape->fonts object objects)]
         [:& ff/fontfaces-style {:fonts fonts}])
 
       (case (:type object)

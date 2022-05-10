@@ -61,7 +61,7 @@
             thumbnail?         (unchecked-get props "thumbnail?")
             objects            (unchecked-get props "objects")
 
-            fonts              (mf/use-memo (mf/deps shape objects) #(ff/frame->fonts shape objects))
+            fonts              (mf/use-memo (mf/deps shape objects) #(ff/shape->fonts shape objects))
             fonts              (-> fonts (hooks/use-equal-memo))
 
             force-render       (mf/use-state false)
