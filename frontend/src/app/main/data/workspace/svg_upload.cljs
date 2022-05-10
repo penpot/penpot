@@ -414,7 +414,6 @@
 
             new-shape (dwc/make-new-shape shape objects selected)
             changes   (-> changes
-                          (pcb/with-objects objects)
                           (pcb/add-object new-shape)
                           (pcb/change-parent parent-id [new-shape] index))
 
@@ -467,6 +466,7 @@
               ;; Creates the root shape
               new-shape (dwc/make-new-shape root-shape objects selected)
               changes   (-> (pcb/empty-changes it page-id)
+                            (pcb/with-objects objects)
                             (pcb/add-object new-shape))
 
               root-attrs (-> (:attrs svg-data)
