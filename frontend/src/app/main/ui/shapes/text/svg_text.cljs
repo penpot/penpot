@@ -8,6 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.config :as cfg]
    [app.main.ui.context :as muc]
@@ -30,6 +32,23 @@
         (d/update-when :position-data #(mapv update-color %))
         (assoc :stroke-color "#FFFFFF" :stroke-opacity 1))))
 
+(defn position-data-transform
+  [shape {:keys [x y width height]}]
+  (let [rect (gsh/make-rect x (- y height) width height)
+        center (gsh/center-rect rect)]
+    (when (or (:flip-x shape) (:flip-y shape))
+      (-> (gmt/matrix)
+          (gmt/translate center)
+
+          (cond-> (:flip-x shape)
+            (gmt/scale (gpt/point -1 1))
+
+            (:flip-y shape)
+            (gmt/scale (gpt/point 1 -1)))
+
+          (gmt/translate (gpt/negate center))
+          (dm/str)))))
+
 (mf/defc text-shape
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
@@ -41,7 +60,7 @@
 
         {:keys [x y width height position-data]} shape
 
-        transform (str (gsh/transform-matrix shape))
+        transform (str (gsh/transform-matrix shape {:no-flip true}))
 
         ;; These position attributes are not really necesary but they are convenient for for the export
         group-props (-> #js {:transform transform
@@ -75,6 +94,7 @@
               props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
                              :x (:x data)
                              :y y
+                             :transform (position-data-transform shape data)
                              :alignmentBaseline alignment-bl
                              :dominantBaseline dominant-bl
                              :style (-> #js {:fontFamily (:font-family data)
