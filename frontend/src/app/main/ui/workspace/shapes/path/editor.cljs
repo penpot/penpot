@@ -25,6 +25,17 @@
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
+(def point-radius 5)
+(def point-radius-selected 4)
+(def point-radius-active-area 15)
+(def point-radius-stroke-width 1)
+
+(def handler-side 6)
+(def handler-stroke-width 1)
+
+(def path-preview-dasharray 4)
+(def path-snap-stroke-width 1)
+
 (mf/defc path-point [{:keys [position zoom edit-mode hover? selected? preview? start-path? last-p? new-point? curve?]}]
   (let [{:keys [x y]} position
 
@@ -72,8 +83,8 @@
      [:circle.path-point
       {:cx x
        :cy y
-       :r (if (or selected? hover?) (/ 3.5 zoom) (/ 3 zoom))
-       :style {:stroke-width (/ 1 zoom)
+       :r (if (or selected? hover?) (/ point-radius zoom) (/ point-radius-selected zoom))
+       :style {:stroke-width (/ point-radius-stroke-width zoom)
                :stroke (cond (or selected? hover?) pc/black-color
                              preview? pc/secondary-color
                              :else pc/primary-color)
@@ -81,7 +92,7 @@
                            :else pc/white-color)}}]
      [:circle {:cx x
                :cy y
-               :r (/ 10 zoom)
+               :r (/ point-radius-active-area zoom)
                :on-mouse-down on-mouse-down
                :on-mouse-enter on-enter
                :on-mouse-leave on-leave
@@ -119,7 +130,7 @@
          :x2 x
          :y2 y
          :style {:stroke (if hover? pc/black-color pc/gray-color)
-                 :stroke-width (/ 1 zoom)}}]
+                 :stroke-width (/ point-radius-stroke-width zoom)}}]
 
        (when snap-angle?
          [:line
@@ -128,22 +139,22 @@
            :x2 x
            :y2 y
            :style {:stroke pc/secondary-color
-                   :stroke-width (/ 1 zoom)}}])
+                   :stroke-width (/ point-radius-stroke-width zoom)}}])
 
        [:rect
-        {:x (- x (/ 3 zoom))
-         :y (- y (/ 3 zoom))
-         :width (/ 6 zoom)
-         :height (/ 6 zoom)
+        {:x (- x (/ handler-side 2 zoom))
+         :y (- y (/ handler-side 2 zoom))
+         :width (/ handler-side zoom)
+         :height (/ handler-side zoom)
 
-         :style {:stroke-width (/ 1 zoom)
+         :style {:stroke-width (/ handler-stroke-width zoom)
                  :stroke (cond (or selected? hover?) pc/black-color
                                :else pc/primary-color)
                  :fill (cond selected? pc/primary-color
                              :else pc/white-color)}}]
        [:circle {:cx x
                  :cy y
-                 :r (/ 10 zoom)
+                 :r (/ point-radius-active-area zoom)
                  :on-mouse-down on-mouse-down
                  :on-mouse-enter on-enter
                  :on-mouse-leave on-leave
@@ -156,8 +167,8 @@
    (when (not= :move-to (:command command))
      [:path {:style {:fill "none"
                      :stroke pc/black-color
-                     :stroke-width (/ 1 zoom)
-                     :stroke-dasharray (/ 4 zoom)}
+                     :stroke-width (/ handler-stroke-width zoom)
+                     :stroke-dasharray (/ path-preview-dasharray zoom)}
              :d (upf/format-path [{:command :move-to
                                    :params {:x (:x from)
                                             :y (:y from)}}
@@ -178,7 +189,7 @@
                :x2 (:x to)
                :y2 (:y to)
                :style {:stroke pc/secondary-color
-                       :stroke-width (/ 1 zoom)}}])]))
+                       :stroke-width (/ path-snap-stroke-width zoom)}}])]))
 
 (defn matching-handler? [content node handlers]
   (when (= 2 (count handlers))
