@@ -73,12 +73,15 @@
     (when (d/not-empty? style)
       [:style style])))
 
-(defn frame->fonts
-  [frame objects]
-  (->> (cph/get-children objects (:id frame))
-       (filter cph/text-shape?)
-       (map (comp fonts/get-content-fonts :content))
-       (reduce set/union #{})))
+(defn shape->fonts
+  [shape objects]
+  (let [initial (cond-> #{}
+                  (cph/text-shape? shape)
+                  (into (fonts/get-content-fonts (:content shape))))]
+    (->> (cph/get-children objects (:id shape))
+         (filter cph/text-shape?)
+         (map (comp fonts/get-content-fonts :content))
+         (reduce set/union initial))))
 
 (defn shapes->fonts
   [shapes]

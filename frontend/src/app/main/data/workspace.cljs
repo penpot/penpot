@@ -1428,7 +1428,12 @@
                   wrapper       (gsh/selection-rect selected-objs)
                   orig-pos      (gpt/point (:x1 wrapper) (:y1 wrapper))]
               (cond
-                (and (selected-frame? state) (not has-frame?))
+                has-frame?
+                (let [index     (cph/get-position-on-parent page-objects uuid/zero)
+                      delta     (gpt/subtract mouse-pos orig-pos)]
+                  [uuid/zero uuid/zero delta index])
+
+                (selected-frame? state)
                 (let [frame-id (first page-selected)
                       frame-object (get page-objects frame-id)
 
