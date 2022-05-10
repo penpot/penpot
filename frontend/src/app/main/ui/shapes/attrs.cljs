@@ -6,6 +6,7 @@
 
 (ns app.main.ui.shapes.attrs
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
@@ -186,11 +187,12 @@
                           (obj/set! "fillOpacity" (obj/get svg-attrs "fillOpacity")))
 
                       ;; If contains svg-attrs the origin is svg. If it's not svg origin
-                      ;; we setup the default fill as transparent (instead of black)
+                      ;; we setup the default fill as black
                       (and (contains? shape :svg-attrs)
                            (#{:svg-raw :group} (:type shape))
                            (empty? (:fills shape)))
-                      styles
+                      (-> styles
+                          (obj/set! "fill" clr/black))
 
                       (d/not-empty? (:fills shape))
                       (add-fill styles (d/without-nils (get-in shape [:fills 0])) render-id 0)
