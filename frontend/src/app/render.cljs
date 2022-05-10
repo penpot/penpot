@@ -114,7 +114,7 @@
                             (rx/map (fn [objects]
                                       (let [objects (render/adapt-objects-for-shape objects object-id)]
                                         {:objects objects
-                                         :object object-id}))))))
+                                         :object (get objects object-id)}))))))
 
         {:keys [objects object]} (use-resource fetch-state)]
 
