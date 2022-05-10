@@ -43,7 +43,10 @@
   []
   (let [profile (mf/deref refs/profile)
         initial (mf/with-memo [profile]
-                  (let [subscribed? (-> profile :props :newsletter-subscribed)]
+                  (let [subscribed? (-> profile
+                                        :props
+                                        :newsletter-subscribed
+                                        boolean)]
                     (assoc profile :newsletter-subscribed subscribed?)))
         form    (fm/use-form :spec ::profile-form :initial initial)]
 
