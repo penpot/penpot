@@ -324,6 +324,7 @@
                               :name frame-name
                               :frame-id uuid/zero
                               :shapes [])
+                       (dissoc :use-for-thumbnail?)
                        (geom/move delta)
                        (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 

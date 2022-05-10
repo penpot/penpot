@@ -277,7 +277,10 @@
             page    (get-in state [:workspace-data :pages-index page-id])
             name    (dwc/generate-unique-name unames (:name page))
 
-            page (-> page (assoc :name name :id id))
+            no_thumbnails_objects (->> (:objects page)
+                                      (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
+
+            page (-> page (assoc :name name :id id :objects no_thumbnails_objects))
 
             changes (-> (pcb/empty-changes it)
                         (pcb/add-page id page))]
