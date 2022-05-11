@@ -219,20 +219,29 @@
          (gsh/overlaps? frame vbox))))
 
 (defn setup-active-frames
-  [objects hover-ids selected active-frames zoom]
+  [objects hover-ids selected active-frames zoom transform]
 
   (mf/use-effect
-   (mf/deps objects @hover-ids selected zoom)
+   (mf/deps objects @hover-ids selected zoom transform)
    (fn []
      (when (some? @hover-ids)
        (let [hover-frame (when (> zoom 0.25) (last @hover-ids))
              new-active-frames (if (some? hover-frame) #{hover-frame} #{})
+
+             frame? #(= :frame (get-in objects [% :type]))
+
+             selected-frames (->> selected (filter frame?))
+             new-active-frames
+             (cond-> new-active-frames
+               (and (not= transform :move) (= (count selected-frames) 1))
+               (conj new-active-frames (first selected-frames)))
+
              new-active-frames
              (into new-active-frames
                    (comp
-                    (filter #(not= :frame (get-in objects [% :type])))
+                    (remove frame?)
                     (map #(get-in objects [% :frame-id])))
-                   selected) ]
+                   selected)]
          (reset! active-frames new-active-frames))))))
 
 ;; NOTE: this is executed on each page change, maybe we need to move

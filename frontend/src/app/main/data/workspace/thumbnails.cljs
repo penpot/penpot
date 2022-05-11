@@ -153,7 +153,8 @@
   (ptk/reify ::duplicate-thumbnail
     ptk/UpdateEvent
     (update [_ state]
-      (let [old-shape-thumbnail (get-in state [:workspace-file :thumbnails old-id])]
-        (-> state (assoc-in [:workspace-file :thumbnails new-id] old-shape-thumbnail))))))
+      (let [page-id (get state :current-page-id)
+            old-shape-thumbnail (get-in state [:workspace-file :thumbnails (dm/str page-id old-id)])]
+        (-> state (assoc-in [:workspace-file :thumbnails (dm/str page-id new-id)] old-shape-thumbnail))))))
 
 
