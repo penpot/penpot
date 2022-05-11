@@ -200,25 +200,30 @@
           :width (- x2 x1)
           :height (- y2 y1)})))))
 
-(defn calculate-padding [shape]
-  (let [stroke-width (apply max 0 (map #(case (:stroke-alignment % :center)
-                                          :center (/ (:stroke-width % 0) 2)
-                                          :outer (:stroke-width % 0)
-                                          0) (:strokes shape)))
+(defn calculate-padding
+  ([shape]
+   (calculate-padding shape false))
 
-        margin (apply max 0 (map #(gsh/shape-stroke-margin % stroke-width) (:strokes shape)))
+  ([shape ignore-margin?]
+   (let [stroke-width (apply max 0 (map #(case (:stroke-alignment % :center)
+                                           :center (/ (:stroke-width % 0) 2)
+                                           :outer (:stroke-width % 0)
+                                           0) (:strokes shape)))
 
+         margin (if ignore-margin?
+                  0
+                  (apply max 0 (map #(gsh/shape-stroke-margin % stroke-width) (:strokes shape))))
 
-        shadow-width (apply max 0 (map #(case (:style % :drop-shadow)
-                                          :drop-shadow (+ (mth/abs (:offset-x %)) (* (:spread %) 2) (* (:blur %) 2) 10)
-                                          0) (:shadow shape)))
+         shadow-width (apply max 0 (map #(case (:style % :drop-shadow)
+                                           :drop-shadow (+ (mth/abs (:offset-x %)) (* (:spread %) 2) (* (:blur %) 2) 10)
+                                           0) (:shadow shape)))
 
-        shadow-height (apply max 0 (map #(case (:style % :drop-shadow)
-                                           :drop-shadow (+ (mth/abs (:offset-y %)) (* (:spread %) 2) (* (:blur %) 2) 10)
-                                           0) (:shadow shape)))]
+         shadow-height (apply max 0 (map #(case (:style % :drop-shadow)
+                                            :drop-shadow (+ (mth/abs (:offset-y %)) (* (:spread %) 2) (* (:blur %) 2) 10)
+                                            0) (:shadow shape)))]
 
-    {:horizontal (+ stroke-width margin shadow-width)
-     :vertical (+ stroke-width margin shadow-height)}))
+     {:horizontal (+ stroke-width margin shadow-width)
+      :vertical (+ stroke-width margin shadow-height)})))
 
 (defn change-filter-in
   "Adds the previous filter as `filter-in` parameter"
