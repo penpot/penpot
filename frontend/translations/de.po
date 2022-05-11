@@ -700,10 +700,6 @@ msgstr ""
 "Sie müssen unsere Nutzungsbedingungen und Datenschutzrichtlinien "
 "akzeptieren."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Token abgelaufen"
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Ein unerwarteter Fehler ist aufgetreten."

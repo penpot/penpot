@@ -518,10 +518,6 @@ msgstr "O registro de contas está desativado no momento."
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Você deve aceitar nossos termos de serviço e política de privacidade."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Token expirado"
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Um erro inesperado ocorreu."

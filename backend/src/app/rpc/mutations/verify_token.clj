@@ -12,7 +12,7 @@
    [app.loggers.audit :as audit]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
-   [app.util.services :as sv]   
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
@@ -114,15 +114,25 @@
                   {:is-active true}
                   {:id member-id}))
     (assoc member :is-active true)
-    
+
     ;; Delete the invitation
     (db/delete! conn :team-invitation
                 {:team-id team-id :email-to (str/lower member-email)})))
-    
+
 
 (defmethod process-token :team-invitation
   [cfg {:keys [profile-id token]} {:keys [member-id] :as claims}]
   (us/assert ::team-invitation-claims claims)
+  #_(let [conn (:conn cfg)
+        team-id (:team-id claims)
+        member-email (:member-email claims)
+        invitation (db/get-by-params conn :team-invitation
+                                     {:team-id team-id :email-to (str/lower member-email)}
+                                     {:check-not-found false})]
+    (when (nil? invitation)
+      (ex/raise :type :validation
+                :code :invalid-token)))
+
   (cond
     ;; This happens when token is filled with member-id and current
     ;; user is already logged in with exactly invited account.
