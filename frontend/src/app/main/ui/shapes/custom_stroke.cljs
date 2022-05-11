@@ -318,7 +318,7 @@
         [:& stroke-defs {:shape shape :render-id render-id :index index}]]
        child])))
 
-(defn build-fill-props [shape child render-id]
+(defn build-fill-props [shape child position render-id]
   (let [url-fill?    (or (some? (:fill-image shape))
                          (= :image (:type shape))
                          (> (count (:fills shape)) 1)
@@ -349,7 +349,7 @@
                             (-> (obj/get props "style")
                                 (obj/clone)
                                 (obj/without ["fill" "fillOpacity"])))]
-        (obj/set! props "fill" (dm/fmt "url(#fill-0-%)" render-id)))
+        (obj/set! props "fill" (dm/fmt "url(#fill-%-%)" position render-id)))
 
       (and (some? svg-styles) (obj/contains? svg-styles "fill"))
       (let [style
@@ -415,9 +415,10 @@
   (let [child     (obj/get props "children")
         shape     (obj/get props "shape")
         elem-name (obj/get child "type")
-        render-id (mf/use-ctx muc/render-ctx)]
+        position  (or (obj/get props "position") 0)
+        render-id (or (obj/get props "render-id") (mf/use-ctx muc/render-ctx))]
     [:g {:id (dm/fmt "fills-%" (:id shape))}
-     [:> elem-name (build-fill-props shape child render-id)]]))
+     [:> elem-name (build-fill-props shape child position render-id)]]))
 
 (mf/defc shape-strokes
   {::mf/wrap-props false}
@@ -425,7 +426,7 @@
   (let [child     (obj/get props "children")
         shape     (obj/get props "shape")
         elem-name (obj/get child "type")
-        render-id (mf/use-ctx muc/render-ctx)
+        render-id (or (obj/get props "render-id") (mf/use-ctx muc/render-ctx))
         stroke-id (dm/fmt "strokes-%" (:id shape))
         stroke-props (-> (obj/new)
                          (obj/set! "id" stroke-id)
@@ -450,8 +451,10 @@
 (mf/defc shape-custom-strokes
   {::mf/wrap-props false}
   [props]
-  (let [children (obj/get props "children")
-        shape    (obj/get props "shape")]
+  (let [children  (obj/get props "children")
+        shape     (obj/get props "shape")
+        position  (obj/get props "position")
+        render-id (obj/get props "render-id")]
     [:*
-     [:& shape-fills {:shape shape} children]
-     [:& shape-strokes {:shape shape} children]]))
+     [:& shape-fills {:shape shape :position position :render-id render-id} children]
+     [:& shape-strokes {:shape shape :position position :render-id render-id} children]]))
