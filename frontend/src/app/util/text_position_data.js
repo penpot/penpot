@@ -21,27 +21,21 @@ goog.scope(function () {
     return range.getClientRects();
   }
 
-  self.parse_text_nodes = function(parent, direction, textNode) {
+  self.parse_text_nodes = function(parent, textNode) {
     const content = textNode.textContent;
     const textSize = content.length;
-    const rtl = direction === "rtl";
 
     let from = 0;
     let to = 0;
     let current = "";
     let result = [];
+    let prevRect = null;
 
     while (to < textSize) {
       const rects = getRangeRects(textNode, from, to + 1);
 
       if (rects.length > 1) {
-        let position;
-
-        if (rtl) {
-          position = rects[1];
-        } else {
-          position = rects[0];
-        }
+        const position = prevRect;
 
         result.push({
           node: parent,
@@ -53,6 +47,7 @@ goog.scope(function () {
         current = "";
 
       } else {
+        prevRect = rects[0];
         current += content[to];
         to = to + 1;
       }

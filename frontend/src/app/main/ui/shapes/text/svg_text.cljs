@@ -91,8 +91,9 @@
 
               alignment-bl (when (cfg/check-browser? :safari) "text-before-edge")
               dominant-bl (when-not (cfg/check-browser? :safari) "ideographic")
+              rtl? (= "rtl"(:direction data))
               props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
-                             :x (:x data)
+                             :x (if rtl? (+ (:x data) (:width data)) (:x data))
                              :y y
                              :transform (position-data-transform shape data)
                              :alignmentBaseline alignment-bl
@@ -104,7 +105,7 @@
                                              :textDecoration (:text-decoration data)
                                              :letterSpacing (:letter-spacing data)
                                              :fontStyle (:font-style data)
-                                             :direction (if (:rtl data) "rtl" "ltr")
+                                             :direction (:direction data)
                                              :whiteSpace "pre"}
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
               shape (assoc shape :fills (:fills data))]
@@ -112,3 +113,4 @@
           [:& (mf/provider muc/render-ctx) {:value (str render-id "_" (:id shape) "_" index)}
            [:& shape-custom-strokes {:shape shape :key index}
             [:> :text props (:text data)]]]))]]))
+

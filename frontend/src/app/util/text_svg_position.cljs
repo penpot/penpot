@@ -18,13 +18,14 @@
   [parent-node direction text-node]
 
   (letfn [(parse-entry [^js entry]
-            {:node     (.-node entry)
-             :position (dom/bounding-rect->rect (.-position entry))
-             :text     (.-text entry)})]
+            {:node      (.-node entry)
+             :position  (dom/bounding-rect->rect (.-position entry))
+             :text      (.-text entry)
+             :direction direction})]
     (into
      []
      (map parse-entry)
-     (tpd/parse-text-nodes parent-node direction text-node))))
+     (tpd/parse-text-nodes parent-node text-node))))
 
 
 (defn calc-text-node-positions
@@ -75,7 +76,7 @@
       (let [text-data     (calc-text-node-positions base-node viewport zoom)]
         (when (d/not-empty? text-data)
           (->> text-data
-               (mapv (fn [{:keys [node position text]}]
+               (mapv (fn [{:keys [node position text direction]}]
                        (let [{:keys [x y width height]} position
                              styles (js/getComputedStyle ^js node)
                              get    (fn [prop]
@@ -87,6 +88,7 @@
                            :y                   (+ y height)
                            :width               width
                            :height              height
+                           :direction           direction
                            :font-family         (str (get "font-family"))
                            :font-size           (str (get "font-size"))
                            :font-weight         (str (get "font-weight"))
