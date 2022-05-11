@@ -183,7 +183,7 @@
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids @hover-disabled? focus zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path?)
-    (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom)
+    (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform)
 
     [:div.viewport
      [:div.viewport-overlays {:ref overlays-ref}

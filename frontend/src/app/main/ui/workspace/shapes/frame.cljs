@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
@@ -61,6 +62,7 @@
             thumbnail?         (unchecked-get props "thumbnail?")
             objects            (unchecked-get props "objects")
 
+            render-id          (mf/use-memo #(str (uuid/next)))
             fonts              (mf/use-memo (mf/deps shape objects) #(ff/shape->fonts shape objects))
             fonts              (-> fonts (hooks/use-equal-memo))
 
@@ -73,7 +75,7 @@
             thumbnail-data-ref (mf/use-memo (mf/deps page-id frame-id) #(refs/thumbnail-frame-data page-id frame-id))
             thumbnail-data     (mf/deref thumbnail-data-ref)
 
-            thumbnail?         (and thumbnail? (or (some? (:thumbnail shape)) (some? thumbnail-data)))
+            thumbnail?         (and thumbnail? (some? thumbnail-data))
 
             ;; References to the current rendered node and the its parentn
             node-ref           (mf/use-var nil)
@@ -117,11 +119,12 @@
               @node-ref)
              (when (not @rendered?) (reset! rendered? true)))))
 
-        [:g.frame-container {:key "frame-container" :ref on-frame-load}
-         [:g.frame-thumbnail {:id (dm/str "thumbnail-container-" (:id shape))}
-          [:> frame/frame-thumbnail {:key (dm/str (:id shape))
-                                     :shape (cond-> shape
-                                              (some? thumbnail-data)
-                                              (assoc :thumbnail thumbnail-data))}]
+        [:& (mf/provider ctx/render-ctx) {:value render-id}
+         [:g.frame-container {:key "frame-container" :ref on-frame-load}
+          [:g.frame-thumbnail-wrapper {:id (dm/str "thumbnail-container-" (:id shape))}
+           [:> frame/frame-thumbnail {:key (dm/str (:id shape))
+                                      :shape (cond-> shape
+                                               (some? thumbnail-data)
+                                               (assoc :thumbnail thumbnail-data))}]
 
-          thumb-renderer]]))))
+           thumb-renderer]]]))))
