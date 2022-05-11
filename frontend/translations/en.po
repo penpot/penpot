@@ -729,8 +729,12 @@ msgid "errors.terms-privacy-agreement-invalid"
 msgstr "You must accept our terms of service and privacy policy."
 
 #: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Token expired"
+msgid "errors.invite-invalid"
+msgstr "Invite invalid"
+
+msgid "errors.invite-invalid.info"
+msgstr "This invite might be canceled or may be expired."
+
 
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"

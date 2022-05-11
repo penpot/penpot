@@ -596,10 +596,6 @@ msgstr ""
 "Vous devez accepter nos conditions générales d'utilisation et notre "
 "politique de confidentialité."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Jeton expiré"
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Une erreur inattendue s’est produite"

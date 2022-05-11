@@ -583,10 +583,6 @@ msgstr "目前並不開放註冊。"
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "您必須接受我們的服務條款和隱私權政策。"
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "權杖過期"
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "發生了預料之外的錯誤。"
