@@ -257,6 +257,7 @@
        :ref viewport-ref
        :class (when drawing-tool "drawing")
        :style {:cursor @cursor}
+       :fill "none"
 
        :on-click         on-click
        :on-context-menu  on-context-menu
