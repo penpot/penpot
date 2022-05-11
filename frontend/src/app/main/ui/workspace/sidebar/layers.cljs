@@ -96,7 +96,8 @@
         container? (or (cph/frame-shape? item)
                        (cph/group-shape? item))
 
-        disable-drag (mf/use-state false)
+        disable-drag      (mf/use-state false)
+        scroll-to-middle? (mf/use-var true)
 
         expanded-iref (mf/use-memo
                        (mf/deps id)
@@ -129,6 +130,7 @@
         select-shape
         (fn [event]
           (dom/prevent-default event)
+          (reset! scroll-to-middle? false)
           (let [id (:id item)]
             (cond
               (kbd/shift? event)
@@ -187,9 +189,14 @@
 
              subid
              (when (and single? selected?)
-               (ts/schedule
-                100
-                #(dom/scroll-into-view-if-needed! node #js {:block "center", :behavior "smooth"})))]
+               (let [scroll-to @scroll-to-middle?]
+                 (ts/schedule
+                  100
+                  #(if scroll-to
+                     (dom/scroll-into-view! node #js {:block "center", :behavior "smooth"})
+                     (do
+                       (dom/scroll-into-view-if-needed! node #js {:block "center", :behavior "smooth"})
+                       (reset! scroll-to-middle? true))))))]
 
          #(when (some? subid)
             (rx/dispose! subid)))))
