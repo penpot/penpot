@@ -82,7 +82,6 @@
 
         frame? (= :frame type)
         group? (= :group type)
-        text?  (= :text type)
         mask?  (and group? masked-group?)]
 
     (cond
@@ -103,10 +102,6 @@
         (d/concat-vec
          (dom/query-all shape-defs ".svg-def")
          (dom/query-all shape-defs ".svg-mask-wrapper")))
-
-      text?
-      [shape-node
-       (dom/query shape-node ".text-shape")]
 
       :else
       [shape-node])))
@@ -177,8 +172,7 @@
           (cond
             ;; Text shapes need special treatment because their resize only change
             ;; the text area, not the change size/position
-            (or (dom/class? node "text-shape")
-                (dom/class? node "frame-thumbnail"))
+            (dom/class? node "frame-thumbnail")
             (let [[transform] (transform-no-resize shape transform modifiers)]
               (set-transform-att! node "transform" transform))
 
@@ -233,7 +227,13 @@
          (fn []
            (when (some? modifiers)
              (d/mapm (fn [id {modifiers :modifiers}]
-                       (let [center (gsh/center-shape (get objects id))]
+                       (let [shape (get objects id)
+                             center (gsh/center-shape shape)
+                             modifiers (cond-> modifiers
+                                         ;; For texts we only use the displacement because
+                                         ;; resize needs to recalculate the text layout
+                                         (= :text (:type shape))
+                                         (select-keys [:displacement :rotation]))]
                          (gsh/modifiers->transform center modifiers)))
                      modifiers))))
 

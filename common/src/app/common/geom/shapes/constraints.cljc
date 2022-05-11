@@ -152,6 +152,28 @@
       :top
       :scale)))
 
+(defn clean-modifiers
+  "Remove redundant modifiers"
+  [{:keys [displacement resize-vector resize-vector-2] :as modifiers}]
+
+  (cond-> modifiers
+    ;; Displacement with value 0. We don't move in any direction
+    (and (some? displacement)
+         (mth/almost-zero? (:e displacement))
+         (mth/almost-zero? (:f displacement)))
+    (dissoc :displacement)
+
+    ;; Resize with value very close to 1 means no resize
+    (and (some? resize-vector)
+         (mth/almost-zero? (- 1.0 (:x resize-vector)))
+         (mth/almost-zero? (- 1.0 (:y resize-vector))))
+    (dissoc :resize-origin :resize-vector)
+
+    (and (some? resize-vector)
+         (mth/almost-zero? (- 1.0 (:x resize-vector-2)))
+         (mth/almost-zero? (- 1.0 (:y resize-vector-2))))
+    (dissoc :resize-origin-2 :resize-vector-2)))
+
 (defn calc-child-modifiers
   [parent child modifiers ignore-constraints transformed-parent-rect]
   (let [constraints-h
@@ -192,5 +214,7 @@
 
       (:resize-transform modifiers)
       (assoc :resize-transform (:resize-transform modifiers)
-             :resize-transform-inverse (:resize-transform-inverse modifiers)))))
+             :resize-transform-inverse (:resize-transform-inverse modifiers))
 
+      :always
+      (clean-modifiers))))

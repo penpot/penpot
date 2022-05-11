@@ -78,10 +78,11 @@
        [:defs
         (for [[index data] (d/enumerate position-data)]
           (when (some? (:fill-color-gradient data))
-            [:& grad/gradient {:id (str "fill-color-gradient_" (get-gradient-id index))
-                               :key index
-                               :attr :fill-color-gradient
-                               :shape data}]))])
+            (let [id (dm/str "fill-color-gradient_" (get-gradient-id index))]
+              [:& grad/gradient {:id id
+                                 :key id
+                                 :attr :fill-color-gradient
+                                 :shape data}])))])
 
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
@@ -91,7 +92,7 @@
 
               alignment-bl (when (cfg/check-browser? :safari) "text-before-edge")
               dominant-bl (when-not (cfg/check-browser? :safari) "ideographic")
-              rtl? (= "rtl"(:direction data))
+              rtl? (= "rtl" (:direction data))
               props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
                              :x (if rtl? (+ (:x data) (:width data)) (:x data))
                              :y y
@@ -110,7 +111,7 @@
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
               shape (assoc shape :fills (:fills data))]
 
-          [:& (mf/provider muc/render-ctx) {:value (str render-id "_" (:id shape) "_" index)}
+          [:& (mf/provider muc/render-ctx) {:key index :value (str render-id "_" (:id shape) "_" index)}
            [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
             [:> :text props (:text data)]]]))]]))
 
