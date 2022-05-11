@@ -305,6 +305,12 @@ button.collapse-sidebar {
       justify-content: center;
       align-items: center;
       flex-grow: 1;
+      svg {
+        height: 18px;
+        width: 18px;
+        transform: rotate(45deg);
+        fill: $color-gray-20;
+      }
     }
     .shortcuts-close-button {
       display: flex;
@@ -380,6 +386,7 @@ button.collapse-sidebar {
       cursor: pointer;
       margin-top: 4px;
       font-size: $fs12;
+
       .section-name {
         color: $color-white;
       }
@@ -405,6 +412,20 @@ button.collapse-sidebar {
       padding: 4px 0px;
       .subsection-name {
         color: $color-white;
+      }
+    }
+
+    .section-title,
+    .subsection-title {
+      &:hover {
+        background-color: $color-primary;
+        .subsection-name,
+        .section-name {
+          color: $color-gray-60;
+        }
+        svg {
+          fill: $color-gray-60;
+        }
       }
     }
 
@@ -440,5 +461,14 @@ button.collapse-sidebar {
         margin: 0 3px;
       }
     }
+  }
+  .not-found {
+    background-color: $color-gray-60;
+    padding: 4px 0;
+    color: $color-white;
+    display: flex;
+    justify-content: center;
+    margin-top: 4px;
+    font-size: $fs12;
   }
 }

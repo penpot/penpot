@@ -4152,3 +4152,12 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoom"
+
+msgid "shortcuts.or"
+msgstr " or "
+
+msgid "shortcuts.not-found"
+msgstr "No shortcuts found"

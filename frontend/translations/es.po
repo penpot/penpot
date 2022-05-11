@@ -4335,3 +4335,12 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoom"
+
+msgid "shortcuts.or"
+msgstr " o "
+
+msgid "shortcuts.not-found"
+msgstr "No hay resultados"
