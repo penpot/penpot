@@ -111,6 +111,6 @@
               shape (assoc shape :fills (:fills data))]
 
           [:& (mf/provider muc/render-ctx) {:value (str render-id "_" (:id shape) "_" index)}
-           [:& shape-custom-strokes {:shape shape :key index}
+           [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
             [:> :text props (:text data)]]]))]]))
 
