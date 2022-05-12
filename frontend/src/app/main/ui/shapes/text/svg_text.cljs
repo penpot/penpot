@@ -64,6 +64,7 @@
 
         ;; These position attributes are not really necesary but they are convenient for for the export
         group-props (-> #js {:transform transform
+                             :className "text-container"
                              :x x
                              :y y
                              :width width

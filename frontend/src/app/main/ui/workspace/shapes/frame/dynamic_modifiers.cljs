@@ -81,6 +81,7 @@
   (let [shape-node (dom/query base-node (str "#shape-" id))
 
         frame? (= :frame type)
+        text?  (= :text type)
         group? (= :group type)
         mask?  (and group? masked-group?)]
 
@@ -102,6 +103,10 @@
         (d/concat-vec
          (dom/query-all shape-defs ".svg-def")
          (dom/query-all shape-defs ".svg-mask-wrapper")))
+
+      text?
+      [shape-node
+       (dom/query shape-node ".text-container")]
 
       :else
       [shape-node])))
@@ -161,6 +166,10 @@
                     (str value))]
     (dom/set-attribute! node att (str new-value))))
 
+(defn override-transform-att!
+  [node att value]
+  (dom/set-attribute! node att (str value)))
+
 (defn update-transform!
   [base-node shapes transforms modifiers]
   (doseq [{:keys [id] :as shape} shapes]
@@ -178,6 +187,17 @@
 
             (dom/class? node "frame-children")
             (set-transform-att! node "transform" (gmt/inverse transform))
+
+            ;; We need to update the shape transform matrix when there is a resize
+            ;; we do it dinamicaly here
+            (dom/class? node "text-container")
+            (let [modifiers (dissoc modifiers :displacement :rotation)]
+              (when (not (gsh/empty-modifiers? modifiers))
+                (let [mtx (-> shape
+                              (assoc :modifiers modifiers)
+                              (gsh/transform-shape)
+                              (gsh/transform-matrix {:no-flip true}))]
+                  (override-transform-att! node "transform" mtx))))
 
             (or (= (dom/get-tag-name node) "mask")
                 (= (dom/get-tag-name node) "filter"))

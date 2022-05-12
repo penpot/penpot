@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.filters
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
@@ -249,6 +250,7 @@
                 :height      filter-height
                 :filterUnits "objectBoundingBox"
                 :color-interpolation-filters "sRGB"}
-       (for [entry filters]
-         [:& filter-entry {:entry entry}])])))
+       (for [[index entry] (d/enumerate filters)]
+         [:& filter-entry {:key (dm/str filter-id "-" index)
+                           :entry entry}])])))
 
