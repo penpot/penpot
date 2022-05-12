@@ -166,7 +166,8 @@
       (:name frame)]]))
 
 (mf/defc frame-titles
-  {::mf/wrap-props false}
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
   [props]
   (let [objects         (unchecked-get props "objects")
         zoom            (unchecked-get props "zoom")

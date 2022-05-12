@@ -246,6 +246,7 @@
        [:& stv/viewport-texts {:key (dm/str "texts-" page-id)
                                :page-id page-id
                                :objects base-objects
+                               :modifiers modifiers
                                :edition edition}]]]
 
      [:svg.viewport-controls

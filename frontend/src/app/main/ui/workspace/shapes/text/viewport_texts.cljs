@@ -9,6 +9,7 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
@@ -27,6 +28,15 @@
 
 (defn strip-position-data [shape]
   (dissoc shape :position-data :transform :transform-inverse))
+
+(defn process-shape [modifiers {:keys [id] :as shape}]
+  (let [modifier (get modifiers id)
+        modifier (d/update-when modifier :modifiers dissoc :displacement :rotation)
+        shape (cond-> shape
+                (not (gsh/empty-modifiers? modifier))
+                (-> (assoc :grow-type :fixed)
+                    (merge modifier) gsh/transform-shape))]
+    (strip-position-data shape)))
 
 (defn- update-with-editor-state
   "Updates the shape with the current state in the editor"
@@ -88,7 +98,6 @@
          (fn [node]
            (when (some? node)
              (on-update shape node))))]
-
     [:& fo/text-shape {:key (str "shape-" (:id shape))
                        :ref handle-update
                        :shape shape
@@ -120,7 +129,7 @@
 
     [:*
      (for [{:keys [id] :as shape} changed-texts]
-       [:& text-container {:shape shape
+       [:& text-container {:shape (gsh/transform-shape shape)
                            :on-update handle-update-shape
                            :key (str (dm/str "text-container-" id))}])]))
 
@@ -151,24 +160,30 @@
 
 (defn check-props
   [new-props old-props]
-  (and (identical? (unchecked-get new-props "objects") (unchecked-get old-props "objects"))
-       (= (unchecked-get new-props "edition") (unchecked-get old-props "edition"))))
+  (and (identical? (unchecked-get new-props "objects")
+                   (unchecked-get old-props "objects"))
+       (identical? (unchecked-get new-props "modifiers")
+                   (unchecked-get old-props "modifiers"))
+       (= (unchecked-get new-props "edition")
+          (unchecked-get old-props "edition"))))
 
 (mf/defc viewport-texts
   {::mf/wrap-props false
    ::mf/wrap [#(mf/memo' % check-props)]}
   [props]
-  (let [objects (obj/get props "objects")
-        edition (obj/get props "edition")
-
-        xf-texts (comp (filter (comp cph/text-shape? second))
-                       (map (fn [[id shape]]
-                              [id (strip-position-data shape)])))
+  (let [objects   (obj/get props "objects")
+        edition   (obj/get props "edition")
+        modifiers (obj/get props "modifiers")
 
         text-shapes
         (mf/use-memo
          (mf/deps objects)
-         #(into {} xf-texts objects))
+         #(into {} (filter (comp cph/text-shape? second)) objects))
+
+        text-shapes
+        (mf/use-memo
+         (mf/deps text-shapes modifiers)
+         #(d/update-vals text-shapes (partial process-shape modifiers)))
 
         editing-shape (get text-shapes edition)]
 
@@ -183,4 +198,6 @@
     [:*
      (when editing-shape
        [:& viewport-text-editing {:shape editing-shape}])
-     [:& viewport-texts-wrapper {:text-shapes (dissoc text-shapes edition)}]]))
+
+     [:& viewport-texts-wrapper {:text-shapes (dissoc text-shapes edition)
+                                 :modifiers modifiers}]]))

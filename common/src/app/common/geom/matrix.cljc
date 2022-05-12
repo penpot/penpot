@@ -219,3 +219,13 @@
         e' (/ (- (* c f) (* d e)) det)
         f' (/ (- (* b e) (* a f)) det)]
     (Matrix. a' b' c' d' e' f')))
+
+(defn round
+  [mtx]
+  (-> mtx
+      (update :a mth/precision 4)
+      (update :b mth/precision 4)
+      (update :c mth/precision 4)
+      (update :d mth/precision 4)
+      (update :e mth/precision 4)
+      (update :f mth/precision 4)))

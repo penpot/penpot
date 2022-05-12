@@ -8,7 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]))
+   [app.common.geom.shapes :as gsh]
+   [app.common.pages.helpers :as cph]
+   [app.common.path.commands :as upc]))
 
 (defn lookup-page
   ([state]
@@ -49,6 +51,10 @@
        (into (d/ordered-set)
              (filter selectable?)
              selected)))))
+
+(defn lookup-selected-raw
+  [state]
+  (dm/get-in state [:workspace-local :selected]))
 
 (defn lookup-selected
   ([state]
@@ -94,3 +100,26 @@
     (-> (:workspace-libraries state)
         (assoc id {:id id
                    :data local}))))
+
+(defn- set-content-modifiers [state]
+  (fn [id shape]
+    (let [content-modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers])]
+      (if (some? content-modifiers)
+        (update shape :content upc/apply-content-modifiers content-modifiers)
+        shape))))
+
+(defn select-bool-children
+  [parent-id state]
+  (let [objects   (lookup-page-objects state)
+        selected  (lookup-selected-raw state)
+        modifiers (:workspace-modifiers state)
+
+        children-ids (cph/get-children-ids objects parent-id)
+        selected-children (into [] (filter selected) children-ids)
+
+        modifiers    (select-keys modifiers selected-children)
+        children     (select-keys objects children-ids)]
+
+    (as-> children $
+      (gsh/merge-modifiers $ modifiers)
+      (d/mapm (set-content-modifiers state) $))))

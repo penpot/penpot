@@ -50,7 +50,7 @@
         text-align  (:text-align data "start")
         base        #js {:fontSize (str (:font-size data (:font-size txt/default-text-attrs)) "px")
                          :lineHeight (:line-height data (:line-height txt/default-text-attrs))
-                         :margin "inherit"}]
+                         :margin 0}]
     (cond-> base
       (some? line-height)       (obj/set! "lineHeight" line-height)
       (some? text-align)        (obj/set! "textAlign" text-align))))

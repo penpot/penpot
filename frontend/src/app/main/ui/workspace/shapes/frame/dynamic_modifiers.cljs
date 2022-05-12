@@ -81,8 +81,8 @@
   (let [shape-node (dom/query base-node (str "#shape-" id))
 
         frame? (= :frame type)
-        group? (= :group type)
         text?  (= :text type)
+        group? (= :group type)
         mask?  (and group? masked-group?)]
 
     (cond
@@ -106,7 +106,7 @@
 
       text?
       [shape-node
-       (dom/query shape-node ".text-shape")]
+       (dom/query shape-node ".text-container")]
 
       :else
       [shape-node])))
@@ -166,6 +166,10 @@
                     (str value))]
     (dom/set-attribute! node att (str new-value))))
 
+(defn override-transform-att!
+  [node att value]
+  (dom/set-attribute! node att (str value)))
+
 (defn update-transform!
   [base-node shapes transforms modifiers]
   (doseq [{:keys [id] :as shape} shapes]
@@ -177,13 +181,23 @@
           (cond
             ;; Text shapes need special treatment because their resize only change
             ;; the text area, not the change size/position
-            (or (dom/class? node "text-shape")
-                (dom/class? node "frame-thumbnail"))
+            (dom/class? node "frame-thumbnail")
             (let [[transform] (transform-no-resize shape transform modifiers)]
               (set-transform-att! node "transform" transform))
 
             (dom/class? node "frame-children")
             (set-transform-att! node "transform" (gmt/inverse transform))
+
+            ;; We need to update the shape transform matrix when there is a resize
+            ;; we do it dinamicaly here
+            (dom/class? node "text-container")
+            (let [modifiers (dissoc modifiers :displacement :rotation)]
+              (when (not (gsh/empty-modifiers? modifiers))
+                (let [mtx (-> shape
+                              (assoc :modifiers modifiers)
+                              (gsh/transform-shape)
+                              (gsh/transform-matrix {:no-flip true}))]
+                  (override-transform-att! node "transform" mtx))))
 
             (or (= (dom/get-tag-name node) "mask")
                 (= (dom/get-tag-name node) "filter"))
@@ -233,7 +247,13 @@
          (fn []
            (when (some? modifiers)
              (d/mapm (fn [id {modifiers :modifiers}]
-                       (let [center (gsh/center-shape (get objects id))]
+                       (let [shape (get objects id)
+                             center (gsh/center-shape shape)
+                             modifiers (cond-> modifiers
+                                         ;; For texts we only use the displacement because
+                                         ;; resize needs to recalculate the text layout
+                                         (= :text (:type shape))
+                                         (select-keys [:displacement :rotation]))]
                          (gsh/modifiers->transform center modifiers)))
                      modifiers))))
 
