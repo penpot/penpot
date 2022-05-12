@@ -214,35 +214,65 @@
 
 (defn inside-vbox [vbox objects frame-id]
   (let [frame (get objects frame-id)]
-
-    (and (some? frame)
-         (gsh/overlaps? frame vbox))))
+    (and (some? frame) (gsh/overlaps? frame vbox))))
 
 (defn setup-active-frames
-  [objects hover-ids selected active-frames zoom transform]
+  [objects hover-ids selected active-frames zoom transform vbox]
 
-  (mf/use-effect
-   (mf/deps objects @hover-ids selected zoom transform)
-   (fn []
-     (when (some? @hover-ids)
-       (let [hover-frame (when (> zoom 0.25) (last @hover-ids))
-             new-active-frames (if (some? hover-frame) #{hover-frame} #{})
+  (let [frame?                 #(= :frame (get-in objects [% :type]))
+        all-frames             (mf/use-memo (mf/deps objects) #(cph/get-frames-ids objects))
+        selected-frames        (mf/use-memo (mf/deps selected) #(->> all-frames (filter selected)))
+        xf-selected-frame      (comp (remove frame?) (map #(get-in objects [% :frame-id])))
+        selected-shapes-frames (mf/use-memo (mf/deps selected) #(into #{} xf-selected-frame selected))
 
-             frame? #(= :frame (get-in objects [% :type]))
+        active-selection       (when (and (not= transform :move) (= (count selected-frames) 1)) (first selected-frames))
+        hover-frame            (last @hover-ids)
+        last-hover-frame       (mf/use-var nil)]
 
-             selected-frames (->> selected (filter frame?))
+    (mf/use-effect
+     (mf/deps hover-frame)
+     (fn []
+       (when (some? hover-frame)
+         (reset! last-hover-frame hover-frame))))
+
+    (mf/use-effect
+     (mf/deps objects @hover-ids selected zoom transform vbox)
+     (fn []
+
+       ;; Rules for active frame:
+       ;; - If zoom < 25% displays thumbnail except when selecting a single frame or a child
+       ;; - We always active the current hovering frame for zoom > 25%
+       ;; - When zoom > 150% we activate the frames that are inside the vbox
+       ;; - If no hovering over any frames we keep the previous active one
+       ;; - Check always that the active frames are inside the vbox
+
+       (let [is-active-frame?
+             (fn [id]
+               (or
+                ;; Zoom > 150% shows every frame
+                (> zoom 1.5)
+
+                ;; Zoom >= 30% will show frames hovering
+                (and
+                 (>= zoom 0.3)
+                 (or (= id hover-frame) (= id @last-hover-frame)))
+
+                ;; Otherwise, if it's a selected frame
+                (= id active-selection)
+
+                ;; Or contains a selected shape
+                (contains? selected-shapes-frames id)))
+
              new-active-frames
-             (cond-> new-active-frames
-               (and (not= transform :move) (= (count selected-frames) 1))
-               (conj new-active-frames (first selected-frames)))
+             (into #{}
+                   (comp (filter is-active-frame?)
 
-             new-active-frames
-             (into new-active-frames
-                   (comp
-                    (remove frame?)
-                    (map #(get-in objects [% :frame-id])))
-                   selected)]
-         (reset! active-frames new-active-frames))))))
+                         ;; We only allow active frames that are contained in the vbox
+                         (filter (partial inside-vbox vbox objects)))
+                   all-frames)]
+
+         (when (not= @active-frames new-active-frames)
+           (reset! active-frames new-active-frames)))))))
 
 ;; NOTE: this is executed on each page change, maybe we need to move
 ;; this shortcuts outside the viewport?
