@@ -5,7 +5,49 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.attrs
-  (:refer-clojure :exclude [merge]))
+  (:require
+    [app.common.geom.shapes.transforms :as gst]
+    [app.common.math :as mth]))
+
+(defn- get-attr
+  [obj attr]
+  (if (= (get obj attr) :multiple)
+    :multiple
+    (cond
+      ;; For rotated or stretched shapes, the origin point we show in the menu
+      ;; is not the (:x :y) shape attribute, but the top left coordinate of the
+      ;; wrapping recangle (see measures.cljs). As the :points attribute cannot
+      ;; be merged for several objects, we calculate the origin point in two fake
+      ;; attributes to be used in the measures menu.
+      (#{:ox :oy} attr)
+      (if-let [value (get obj attr)]
+        value
+        (if-let [points (:points obj)]
+          (if (not= points :multiple)
+            (let [rect (gst/selection-rect [obj])]
+              (if (= attr :ox) (:x rect) (:y rect)))
+            :multiple)
+          (get obj attr ::unset)))
+
+      ;; Not all shapes have width and height (e.g. paths), so we extract
+      ;; them from the :selrect attribute.
+      (#{:width :height} attr)
+      (if-let [value (get obj attr)]
+        value
+        (if-let [selrect (:selrect obj)]
+          (if (not= selrect :multiple)
+            (get (:selrect obj) attr)
+            :multiple)
+          (get obj attr ::unset)))
+
+      :else
+      (get obj attr ::unset))))
+
+(defn- default-equal
+  [val1 val2]
+  (if (and (number? val1) (number? val2))
+    (mth/close? val1 val2)
+    (= val1 val2)))
 
 ;; Extract some attributes of a list of shapes.
 ;; For each attribute, if the value is the same in all shapes,
@@ -36,13 +78,11 @@
 ;;        :rx nil
 ;;        :ry nil}
 ;;
-
 (defn get-attrs-multi
   ([objs attrs]
-   (get-attrs-multi objs attrs = identity))
+   (get-attrs-multi objs attrs default-equal identity))
 
   ([objs attrs eqfn sel]
-
    (loop [attr (first attrs)
           attrs (rest attrs)
           result (transient {})]
@@ -50,34 +90,25 @@
        (let [value
              (loop [curr (first objs)
                     objs (rest objs)
-                    value ::undefined]
+                    value ::unset]
 
                (if (and curr (not= value :multiple))
-                 ;;
-                 (let [new-val (get curr attr ::undefined)
+                 (let [new-val (get-attr curr attr)
                        value (cond
-                               (= new-val ::undefined) value
-                               (= new-val :multiple)   :multiple
-                               (= value ::undefined)   (sel new-val)
-                               (eqfn new-val value)    value
-                               :else                   :multiple)]
+                               (= new-val ::unset)   value
+                               (= new-val :multiple) :multiple
+                               (= value ::unset)     (sel new-val)
+                               (eqfn new-val value)  value
+                               :else                 :multiple)]
                    (recur (first objs) (rest objs) value))
-                 ;;
+
                  value))]
+
          (recur (first attrs)
                 (rest attrs)
                 (cond-> result
-                  (not= value ::undefined)
+                  (not= value ::unset)
                   (assoc! attr value))))
 
        (persistent! result)))))
 
-(defn merge
-  "Attrs specific merge function."
-  [obj attrs]
-  (reduce-kv (fn [obj k v]
-               (if (nil? v)
-                 (dissoc obj k)
-                 (assoc obj k v)))
-             obj
-             attrs))

@@ -79,6 +79,7 @@
             :rx :ry
             :r1 :r2 :r3 :r4
             :selrect
+            :points
 
             :opacity
             :blend-mode
@@ -112,6 +113,7 @@
            :x :y
            :rotation
            :selrect
+           :points
 
            :constraints-h
            :constraints-v
@@ -137,6 +139,7 @@
            :rx :ry
            :r1 :r2 :r3 :r4
            :selrect
+           :points
 
            :constraints-h
            :constraints-v
@@ -179,6 +182,7 @@
              :x :y
              :rotation
              :selrect
+             :points
 
              :constraints-h
              :constraints-v
@@ -221,6 +225,7 @@
           :x :y
           :rotation
           :selrect
+          :points
 
           :constraints-h
           :constraints-v
@@ -263,6 +268,7 @@
           :x :y
           :rotation
           :selrect
+          :points
 
           :constraints-h
           :constraints-v
@@ -330,6 +336,7 @@
            :rx :ry
            :r1 :r2 :r3 :r4
            :selrect
+           :points
 
            :constraints-h
            :constraints-v
@@ -355,6 +362,7 @@
              :rx :ry
              :r1 :r2 :r3 :r4
              :selrect
+             :points
 
              :constraints-h
              :constraints-v
@@ -399,6 +407,7 @@
           :rx :ry
           :r1 :r2 :r3 :r4
           :selrect
+          :points
 
           :constraints-h
           :constraints-v

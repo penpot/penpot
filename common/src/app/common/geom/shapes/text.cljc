@@ -28,4 +28,3 @@
   [shape]
   (gpr/points->selrect (position-data-points shape)))
 
-
