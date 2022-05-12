@@ -192,7 +192,7 @@
                            (#{:svg-raw :group} (:type shape))
                            (empty? (:fills shape)))
                       (-> styles
-                          (obj/set! "fill" clr/black))
+                          (obj/set! "fill" (or (obj/get (:wrapper-styles shape) "fill") clr/black)))
 
                       (d/not-empty? (:fills shape))
                       (add-fill styles (d/without-nils (get-in shape [:fills 0])) render-id 0)

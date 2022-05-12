@@ -19,6 +19,21 @@
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
+(defn propagate-wrapper-styles
+  ([children wrapper-props]
+   (let [children-props-childs (-> (obj/get children "props")
+                                   (obj/clone)
+                                   (-> (obj/get "childs")))
+
+         children-props-childs (map #(assoc % :wrapper-styles (obj/get wrapper-props "style")) children-props-childs)
+
+         children-props (-> (obj/get children "props")
+                            (obj/clone)
+                            (obj/set! "childs" children-props-childs))]
+
+     (-> (obj/clone children)
+         (obj/set! "props" children-props)))))
+
 (mf/defc shape-container
   {::mf/forward-ref true
    ::mf/wrap-props false}
@@ -56,7 +71,13 @@
         wrapper-props
         (cond-> wrapper-props
           (= :group type)
-          (attrs/add-style-attrs shape render-id))]
+          (attrs/add-style-attrs shape render-id))
+
+        svg-group? (and (contains? shape :svg-attrs) (= :group type))
+
+        children (cond-> children
+                   svg-group?
+                   (propagate-wrapper-styles wrapper-props))]
 
     [:& (mf/provider muc/render-ctx) {:value render-id}
      [:> :g wrapper-props
