@@ -19,20 +19,30 @@
    [app.util.object :as obj]
    [rumext.alpha :as mf]))
 
+(defn propagate-wrapper-styles-child
+  [child wrapper-props]
+  (let [child-props-childs
+        (-> (obj/get child "props")
+            (obj/clone)
+            (-> (obj/get "childs")))
+
+        child-props-childs
+        (->> child-props-childs
+             (map #(assoc % :wrapper-styles (obj/get wrapper-props "style"))))
+
+        child-props
+        (-> (obj/get child "props")
+            (obj/clone)
+            (obj/set! "childs" child-props-childs))]
+
+    (-> (obj/clone child)
+        (obj/set! "props" child-props))))
+
 (defn propagate-wrapper-styles
   ([children wrapper-props]
-   (let [children-props-childs (-> (obj/get children "props")
-                                   (obj/clone)
-                                   (-> (obj/get "childs")))
-
-         children-props-childs (map #(assoc % :wrapper-styles (obj/get wrapper-props "style")) children-props-childs)
-
-         children-props (-> (obj/get children "props")
-                            (obj/clone)
-                            (obj/set! "childs" children-props-childs))]
-
-     (-> (obj/clone children)
-         (obj/set! "props" children-props)))))
+   (if (.isArray js/Array children)
+     (->> children (map propagate-wrapper-styles-child))
+     (-> children (propagate-wrapper-styles-child wrapper-props)))))
 
 (mf/defc shape-container
   {::mf/forward-ref true
