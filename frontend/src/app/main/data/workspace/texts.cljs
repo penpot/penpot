@@ -187,8 +187,8 @@
             update-fn
             (fn [shape]
               (if (some? (:content shape))
-                (update-text-content shape txt/is-root-node? attrs/merge attrs)
-                (assoc shape :content (attrs/merge {:type "root"} attrs))))
+                (update-text-content shape txt/is-root-node? d/txt-merge attrs)
+                (assoc shape :content (d/txt-merge {:type "root"} attrs))))
 
             shape-ids (cond (cph/text-shape? shape)  [id]
                             (cph/group-shape? shape) (cph/get-children-ids objects id))]
@@ -240,7 +240,7 @@
               shape-ids (cond
                           (cph/text-shape? shape)  [id]
                           (cph/group-shape? shape) (cph/get-children-ids objects id))]
-          (rx/of (dch/update-shapes shape-ids #(update-text-content % update-node? attrs/merge attrs))))))))
+          (rx/of (dch/update-shapes shape-ids #(update-text-content % update-node? d/txt-merge attrs))))))))
 
 (defn migrate-node
   [node]

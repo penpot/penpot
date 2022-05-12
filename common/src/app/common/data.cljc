@@ -336,6 +336,16 @@
   [& maps]
   (reduce conj (or (first maps) {}) (rest maps)))
 
+(defn txt-merge
+  "Text attrs specific merge function."
+  [obj attrs]
+  (reduce-kv (fn [obj k v]
+               (if (nil? v)
+                 (dissoc obj k)
+                 (assoc obj k v)))
+             obj
+             attrs))
+
 (defn distinct-xf
   [f]
   (fn [rf]

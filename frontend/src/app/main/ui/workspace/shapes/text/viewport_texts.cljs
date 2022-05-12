@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.shapes.text.viewport-texts
   (:require
-   [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
@@ -50,7 +49,7 @@
 
     (cond-> shape
       (and (some? shape) (some? editor-content))
-      (assoc :content (attrs/merge content editor-content)))))
+      (assoc :content (d/txt-merge content editor-content)))))
 
 (defn- update-text-shape
   [{:keys [grow-type id]} node]
