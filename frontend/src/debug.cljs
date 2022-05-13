@@ -63,7 +63,7 @@
     :text-outline
 
     ;; Disable thumbnail cache
-    :disable-thumbnail-cachee
+    :disable-thumbnail-cache
     })
 
 ;; These events are excluded when we activate the :events flag
