@@ -272,7 +272,7 @@
                    all-frames)]
 
          (when (not= @active-frames new-active-frames)
-           (reset! active-frames #{} #_new-active-frames)))))))
+           (reset! active-frames new-active-frames)))))))
 
 ;; NOTE: this is executed on each page change, maybe we need to move
 ;; this shortcuts outside the viewport?
