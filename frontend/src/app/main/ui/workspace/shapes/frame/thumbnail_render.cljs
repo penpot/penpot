@@ -21,24 +21,24 @@
 
 (defn- draw-thumbnail-canvas
   [canvas-node img-node]
-  (time (try
-          (when (and (some? canvas-node) (some? img-node))
-            (let [canvas-context (.getContext canvas-node "2d")
-                  canvas-width   (.-width canvas-node)
-                  canvas-height  (.-height canvas-node)]
+  (try
+    (when (and (some? canvas-node) (some? img-node))
+      (let [canvas-context (.getContext canvas-node "2d")
+            canvas-width   (.-width canvas-node)
+            canvas-height  (.-height canvas-node)]
 
-              (set! (.-width canvas-node) (* thumbnail-scale-factor canvas-width))
-              (set! (.-height canvas-node) (* thumbnail-scale-factor canvas-height))
-              (.setTransform canvas-context thumbnail-scale-factor 0 0 thumbnail-scale-factor 0 0)
-              (set! (.-imageSmoothingEnabled canvas-context) true)
-              (set! (.-imageSmoothingQuality canvas-context) "high")
+        (set! (.-width canvas-node) (* thumbnail-scale-factor canvas-width))
+        (set! (.-height canvas-node) (* thumbnail-scale-factor canvas-height))
+        (.setTransform canvas-context thumbnail-scale-factor 0 0 thumbnail-scale-factor 0 0)
+        (set! (.-imageSmoothingEnabled canvas-context) true)
+        (set! (.-imageSmoothingQuality canvas-context) "high")
 
-              (.clearRect canvas-context 0 0 canvas-width canvas-height)
-              (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
-              (.toDataURL canvas-node "image/png" 1.0)))
-          (catch :default err
-            (.error js/console err)
-            nil))))
+        (.clearRect canvas-context 0 0 canvas-width canvas-height)
+        (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
+        (.toDataURL canvas-node "image/png" 1.0)))
+    (catch :default err
+      (.error js/console err)
+      nil)))
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
