@@ -110,6 +110,8 @@
    ::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
   [props]
   (let [text-shapes (obj/get props "text-shapes")
+        modifiers (obj/get props "modifiers")
+        prev-modifiers (hooks/use-previous modifiers)
         prev-text-shapes (hooks/use-previous text-shapes)
 
         ;; A change in position-data won't be a "real" change
@@ -117,8 +119,10 @@
         (fn [id]
           (let [old-shape (get prev-text-shapes id)
                 new-shape (get text-shapes id)]
-            (and (not (identical? old-shape new-shape))
-                 (not= old-shape new-shape))))
+            (or (and (not (identical? old-shape new-shape))
+                     (not= old-shape new-shape))
+                (not= (get modifiers id)
+                      (get prev-modifiers id)))))
 
         changed-texts
         (mf/use-memo
@@ -127,12 +131,15 @@
                (filter text-change?)
                (map (d/getf text-shapes))))
 
+        handle-update-modifier (mf/use-callback update-text-modifier)
         handle-update-shape (mf/use-callback update-text-shape)]
 
     [:*
      (for [{:keys [id] :as shape} changed-texts]
        [:& text-container {:shape (gsh/transform-shape shape)
-                           :on-update handle-update-shape
+                           :on-update (if (some? (get modifiers (:id shape)))
+                                        handle-update-modifier
+                                        handle-update-shape)
                            :key (str (dm/str "text-container-" id))}])]))
 
 (mf/defc viewport-text-editing
