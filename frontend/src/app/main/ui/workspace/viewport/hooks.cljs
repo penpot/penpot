@@ -242,19 +242,19 @@
        ;; Rules for active frame:
        ;; - If zoom < 25% displays thumbnail except when selecting a single frame or a child
        ;; - We always active the current hovering frame for zoom > 25%
-       ;; - When zoom > 150% we activate the frames that are inside the vbox
+       ;; - When zoom > 130% we activate the frames that are inside the vbox
        ;; - If no hovering over any frames we keep the previous active one
        ;; - Check always that the active frames are inside the vbox
 
        (let [is-active-frame?
              (fn [id]
                (or
-                ;; Zoom > 150% shows every frame
-                (> zoom 1.5)
+                ;; Zoom > 130% shows every frame
+                (> zoom 1.3)
 
-                ;; Zoom >= 30% will show frames hovering
+                ;; Zoom >= 25% will show frames hovering
                 (and
-                 (>= zoom 0.3)
+                 (>= zoom 0.25)
                  (or (= id hover-frame) (= id @last-hover-frame)))
 
                 ;; Otherwise, if it's a selected frame
@@ -272,7 +272,7 @@
                    all-frames)]
 
          (when (not= @active-frames new-active-frames)
-           (reset! active-frames new-active-frames)))))))
+           (reset! active-frames #{} #_new-active-frames)))))))
 
 ;; NOTE: this is executed on each page change, maybe we need to move
 ;; this shortcuts outside the viewport?

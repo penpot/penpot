@@ -17,7 +17,7 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
-(def thumbnail-scale-factor 2)
+;; (def thumbnail-scale-factor 2)
 
 (defn- draw-thumbnail-canvas
   [canvas-node img-node]
@@ -27,11 +27,12 @@
             canvas-width   (.-width canvas-node)
             canvas-height  (.-height canvas-node)]
 
-        (set! (.-width canvas-node) (* thumbnail-scale-factor canvas-width))
-        (set! (.-height canvas-node) (* thumbnail-scale-factor canvas-height))
-        (.setTransform canvas-context thumbnail-scale-factor 0 0 thumbnail-scale-factor 0 0)
-        (set! (.-imageSmoothingEnabled canvas-context) true)
-        (set! (.-imageSmoothingQuality canvas-context) "high")
+        ;; TODO: Expermient with different scale factors
+        ;; (set! (.-width canvas-node) (* thumbnail-scale-factor canvas-width))
+        ;; (set! (.-height canvas-node) (* thumbnail-scale-factor canvas-height))
+        ;; (.setTransform canvas-context thumbnail-scale-factor 0 0 thumbnail-scale-factor 0 0)
+        ;; (set! (.-imageSmoothingEnabled canvas-context) true)
+        ;; (set! (.-imageSmoothingQuality canvas-context) "high")
 
         (.clearRect canvas-context 0 0 canvas-width canvas-height)
         (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
