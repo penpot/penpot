@@ -84,7 +84,7 @@
        (for [shape shapes]
          (if (seq (:strokes shape))
            (for [value (:strokes shape [])]
-             [:& stroke-block {:key (str "stroke-color-" (:id shape))
+             [:& stroke-block {:key (str "stroke-color-" (:id shape) value)
                                :shape value}])
-           [:& stroke-block {:key (str "stroke-color-" (:id shape))
+           [:& stroke-block {:key (str "stroke-color-only" (:id shape))
                              :shape shape}]))])))
