@@ -66,7 +66,7 @@
            (let [fill-image-id (str "fill-image-" render-id)]
              {:fill (str "url(#" fill-image-id ")")})
 
-           (contains? shape :fill-color-gradient)
+           (and (contains? shape :fill-color-gradient) (some? (:fill-color-gradient shape)))
            (let [fill-color-gradient-id (str "fill-color-gradient_" render-id (if index (str "_" index) ""))]
              {:fill (str "url(#" fill-color-gradient-id ")")})
 

@@ -246,12 +246,13 @@
   [node]
   (let [color-attrs (select-keys node [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient])]
     (cond-> node
-      (d/not-empty? color-attrs)
-      (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
-          (assoc :fills [color-attrs]))
-
       (nil? (:fills node))
-      (assoc :fills (:fills txt/default-text-attrs)))))
+      (assoc :fills (:fills txt/default-text-attrs))
+
+      (and (d/not-empty? color-attrs) (nil? (:fills node)))
+      (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
+          (assoc :fills [color-attrs])))
+    ))
 
 (defn migrate-content
   [content]
