@@ -152,7 +152,10 @@
            (let [old-state (mf/ref-val prev-value)]
              (if (and (some? state) (some? old-state))
                (let [block-changes (ted/get-content-changes old-state state)
-                     prev-data (ted/get-editor-current-inline-styles old-state)
+
+                     prev-data (-> (ted/get-editor-current-inline-styles old-state)
+                                   (dissoc :text-align :text-direction))
+
                      block-to-setup (get-blocks-to-setup block-changes)
                      block-to-add-styles (get-blocks-to-add-styles block-changes)]
                  (-> state
