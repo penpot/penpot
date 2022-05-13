@@ -87,7 +87,8 @@
     (st/emit! (dwt/update-text-modifier id props))))
 
 (mf/defc text-container
-  {::mf/wrap-props false}
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
   [props]
   (let [shape       (obj/get props "shape")
         on-update   (obj/get props "on-update")
@@ -98,6 +99,7 @@
          (fn [node]
            (when (some? node)
              (on-update shape node))))]
+
     [:& fo/text-shape {:key (str "shape-" (:id shape))
                        :ref handle-update
                        :shape shape
@@ -144,9 +146,28 @@
         (-> (mf/deref refs/workspace-editor-state)
             (get (:id shape)))
 
+        text-modifier-ref
+        (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
+
+        text-modifier
+        (mf/deref text-modifier-ref)
+
         shape (cond-> shape
                 (some? editor-state)
                 (update-with-editor-state editor-state))
+
+        ;; When we have a text with grow-type :auto-height we need to check the correct height
+        ;; otherwise the center alignment will break
+        shape
+        (if (or (not= :auto-height (:grow-type shape)) (empty? text-modifier))
+          shape
+          (let [tr-shape (dwt/apply-text-modifier shape text-modifier)]
+            (cond-> shape
+              ;; we only change the height otherwise could cause problems with the other fields
+              (some? text-modifier)
+              (assoc  :height (:height tr-shape)))))
+
+        shape (hooks/use-equal-memo shape)
 
         handle-update-shape (mf/use-callback update-text-modifier)]
 

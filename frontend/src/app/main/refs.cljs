@@ -392,4 +392,4 @@
   (l/derived :workspace-text-modifier st/state))
 
 (defn workspace-text-modifier-by-id [id]
-  (l/derived #(get % id) workspace-text-modifier))
+  (l/derived #(get % id) workspace-text-modifier =))
