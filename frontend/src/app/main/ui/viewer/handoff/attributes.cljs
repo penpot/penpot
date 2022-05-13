@@ -27,7 +27,7 @@
    :circle   [:layout :fill :stroke :shadow :blur :svg]
    :path     [:layout :fill :stroke :shadow :blur :svg]
    :image    [:image :layout :fill :stroke :shadow :blur :svg]
-   :text     [:layout :text :shadow :blur]})
+   :text     [:layout :text :shadow :blur :stroke]})
 
 (mf/defc attributes
   [{:keys [page-id file-id shapes frame]}]

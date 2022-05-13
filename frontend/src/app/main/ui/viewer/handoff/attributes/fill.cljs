@@ -58,7 +58,7 @@
        (for [shape shapes]
          (if (seq (:fills shape))
            (for [value (:fills shape [])]
-             [:& fill-block {:key (str "fill-block-" (:id shape))
+             [:& fill-block {:key (str "fill-block-" (:id shape) value)
                              :shape value}])
-           [:& fill-block {:key (str "fill-block-" (:id shape))
+           [:& fill-block {:key (str "fill-block-only" (:id shape))
                            :shape shape}]))])))
