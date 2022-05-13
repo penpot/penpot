@@ -463,8 +463,23 @@
               root-shape (create-svg-root frame-id svg-data)
               root-id (:id root-shape)
 
+              ;; In penpot groups have the size of their children. To respect the imported svg size and empty space let's create a transparent shape as background to respect the imported size
+              base-background-shape {:tag :rect
+                                     :attrs {:x "0"
+                                             :y "0"
+                                             :width (str (:width root-shape))
+                                             :height (str (:height root-shape))
+                                             :fill "none"
+                                             :id "base-background"}
+                                     :content []}
+
+              svg-data (-> svg-data
+                           (assoc :defs def-nodes)
+                           (assoc :content (into [base-background-shape] (:content svg-data))))
+
               ;; Creates the root shape
               new-shape (dwc/make-new-shape root-shape objects selected)
+
               changes   (-> (pcb/empty-changes it page-id)
                             (pcb/with-objects objects)
                             (pcb/add-object new-shape))
@@ -478,7 +493,6 @@
                       [unames changes]
                       (d/enumerate (->> (:content svg-data)
                                         (mapv #(usvg/inherit-attributes root-attrs %)))))
-
               changes (pcb/resize-parents changes
                                           (->> changes
                                                :redo-changes
