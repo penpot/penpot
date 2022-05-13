@@ -240,6 +240,8 @@
         type :multiple
         all-types (into #{} (map :type shapes))
 
+        has-text? (contains? all-types :text)
+
         [measure-ids    measure-values]    (get-attrs shapes objects :measure)
 
         [layer-ids      layer-values
@@ -279,7 +281,8 @@
        [:& fill-menu {:type type :ids fill-ids :values fill-values}])
 
      (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type :ids stroke-ids :show-caps show-caps :values stroke-values}])
+       [:& stroke-menu {:type type :ids stroke-ids :show-caps show-caps :values stroke-values
+                        :disable-stroke-style has-text?}])
 
      (when-not (empty? shadow-ids)
        [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])
