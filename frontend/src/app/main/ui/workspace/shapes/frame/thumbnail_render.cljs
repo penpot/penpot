@@ -137,7 +137,7 @@
          [:image {:ref frame-image-ref
                   :x (:x shape)
                   :y (:y shape)
-                  :xlinkHref @image-url
+                  :href @image-url
                   :width (:width shape)
                   :height (:height shape)
                   :on-load on-image-load}]]))]))

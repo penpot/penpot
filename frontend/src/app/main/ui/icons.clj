@@ -13,5 +13,5 @@
         class (str "icon-" (name id))]
     `(rumext.alpha/html
       [:svg {:width 500 :height 500 :class ~class}
-       [:use {:xlinkHref ~href}]])))
+       [:use {:href ~href}]])))
 

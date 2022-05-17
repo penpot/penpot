@@ -68,7 +68,7 @@
 
           [:image.frame-thumbnail
            {:id (dm/str "thumbnail-" (:id shape))
-            :xlinkHref (:thumbnail shape)
+            :href (:thumbnail shape)
             :x (:x shape)
             :y (:y shape)
             :width (:width shape)

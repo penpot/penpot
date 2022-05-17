@@ -34,7 +34,7 @@
         clip-id (str "inner-stroke-" render-id "-" (:id shape) suffix)
         shape-id (str "stroke-shape-" render-id "-" (:id shape) suffix)]
     [:> "clipPath" #js {:id clip-id}
-     [:use {:xlinkHref (str "#" shape-id)}]]))
+     [:use {:href (str "#" shape-id)}]]))
 
 (mf/defc outer-stroke-mask
   [{:keys [shape render-id index]}]
@@ -58,10 +58,10 @@
             :width (:width bounding-box)
             :height (:height bounding-box)
             :maskUnits "userSpaceOnUse"}
-     [:use {:xlinkHref (str "#" shape-id)
+     [:use {:href (str "#" shape-id)
             :style #js {:fill "none" :stroke "white" :strokeWidth (* stroke-width 2)}}]
 
-     [:use {:xlinkHref (str "#" shape-id)
+     [:use {:href (str "#" shape-id)
             :style #js {:fill "black"
                         :stroke "none"}}]]))
 
@@ -233,7 +233,7 @@
                              (obj/clone)
                              (obj/without ["fill" "fillOpacity" "stroke" "strokeWidth" "strokeOpacity" "strokeStyle" "strokeDasharray"]))))]]
 
-     [:use {:xlinkHref (str "#" shape-id)
+     [:use {:href (str "#" shape-id)
             :mask (str "url(#" stroke-mask-id ")")
             :style (-> (obj/get base-props "style")
                        (obj/clone)
@@ -241,7 +241,7 @@
                        (obj/without ["fill" "fillOpacity"])
                        (obj/set! "fill" "none"))}]
 
-     [:use {:xlinkHref (str "#" shape-id)
+     [:use {:href (str "#" shape-id)
             :style (-> (obj/get base-props "style")
                        (obj/clone)
                        (obj/set! "stroke" "none"))}]]))
@@ -277,7 +277,7 @@
       [:& stroke-defs {:shape shape :render-id render-id :index index}]
       [:> elem-name shape-props]]
 
-     [:use {:xlinkHref (str "#" shape-id)
+     [:use {:href (str "#" shape-id)
             :clipPath clip-path}]]))
 
 ; The SVG standard does not implement yet the 'stroke-alignment'
