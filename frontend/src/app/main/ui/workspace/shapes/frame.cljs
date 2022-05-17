@@ -126,7 +126,9 @@
              (when (not @rendered?) (reset! rendered? true)))))
 
         [:& (mf/provider ctx/render-ctx) {:value render-id}
-         [:g.frame-container {:key "frame-container" :ref on-frame-load}
+         [:g.frame-container {:id (dm/str "frame-container-" (:id shape))
+                              :key "frame-container"
+                              :ref on-frame-load}
           [:& ff/fontfaces-style {:fonts fonts}]
           [:g.frame-thumbnail-wrapper {:id (dm/str "thumbnail-container-" (:id shape))}
            [:> frame/frame-thumbnail {:key (dm/str (:id shape))

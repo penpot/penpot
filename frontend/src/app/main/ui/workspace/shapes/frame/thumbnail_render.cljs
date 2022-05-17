@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.shapes.frame.thumbnail-render
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.main.data.workspace :as dw]
@@ -15,6 +16,7 @@
    [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
 ;; (def thumbnail-scale-factor 2)
@@ -40,6 +42,16 @@
     (catch :default err
       (.error js/console err)
       nil)))
+
+(defn- remove-embed-images-changes
+  "Remove the changes related to change a url for its embed value. This is necessary
+  so we don't have to recalculate the thumbnail when the image loads."
+  [changes]
+  (->> changes
+       (remove (fn [change]
+                 (and (= "attributes" (.-type change))
+                      (= "href" (.-attributeName change))
+                      (str/starts-with? (.-oldValue change) "http"))))))
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
@@ -75,11 +87,11 @@
         (fn []
           (when (and (some? @node-ref) (not @disable-ref?))
             (let [node @node-ref
-
                   frame-html (dom/node->xml node)
                   {:keys [x y width height]} @shape-ref
 
-                  style-str (or (-> node dom/get-parent (dom/query "style") dom/node->xml) "")
+                  style-node (dom/query (dm/str "#frame-container-" (:id shape) " style"))
+                  style-str (or (-> style-node dom/node->xml) "")
 
                   svg-node
                   (-> (dom/make-node "http://www.w3.org/2000/svg" "svg")
@@ -100,12 +112,14 @@
                (rx/push! updates-str :update))
 
              (let [observer (js/MutationObserver. (partial rx/push! updates-str))]
-               (.observe observer node #js {:childList true :attributes true :characterData true :subtree true})
+               (.observe observer node #js {:childList true :attributes true :attributeOldValue true :characterData true :subtree true})
                (reset! observer-ref observer)))))]
 
     (mf/use-effect
      (fn []
        (let [subid (->> updates-str
+                        (rx/map remove-embed-images-changes)
+                        (rx/filter d/not-empty?)
                         (rx/debounce 400)
                         (rx/subs on-update-frame))]
          #(rx/dispose! subid))))
