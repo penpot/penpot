@@ -59,8 +59,10 @@
    :y                     :geometry-group
    :width                 :geometry-group
    :height                :geometry-group
+   :rotation              :geometry-group
    :transform             :geometry-group
    :transform-inverse     :geometry-group
+   :position-data         :geometry-group
    :opacity               :layer-effects-group
    :blend-mode            :layer-effects-group
    :shadow                :shadow-group
