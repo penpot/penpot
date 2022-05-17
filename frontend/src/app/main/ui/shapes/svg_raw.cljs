@@ -94,9 +94,10 @@
           {:keys [content]} shape
           {:keys [tag]} content
 
-          svg-root? (and (map? content) (= tag :svg))
-          svg-tag?  (map? content)
-          svg-leaf? (string? content)]
+          svg-root?  (and (map? content) (= tag :svg))
+          svg-tag?   (map? content)
+          svg-leaf?  (string? content)
+          valid-tag? (contains? usvg/svg-tags-list tag)]
 
       (cond
         svg-root?
@@ -104,12 +105,12 @@
          (for [item childs]
            [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 
-        svg-tag?
+        (and svg-tag? valid-tag?)
         [:& svg-element {:shape shape}
          (for [item childs]
            [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 
-        svg-leaf?
+        (and svg-leaf? valid-tag?)
         content
 
         :else nil))))
