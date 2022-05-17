@@ -32,10 +32,9 @@
   (l/derived (l/in [:workspace-local :shape-for-rename]) st/state))
 
 (mf/defc layer-name
-  [{:keys [shape on-start-edit on-stop-edit] :as props}]
+  [{:keys [shape on-start-edit on-stop-edit name-ref] :as props}]
   (let [local            (mf/use-state {})
         shape-for-rename (mf/deref shape-for-rename-ref)
-        name-ref         (mf/use-ref)
 
         start-edit (fn []
                      (on-start-edit)
@@ -179,13 +178,15 @@
                        :detect-center? container?
                        :data {:id (:id item)
                               :index index
-                              :name (:name item)})]
+                              :name (:name item)})
+
+        ref         (mf/use-ref)]
 
     (mf/use-effect
      (mf/deps selected? selected)
      (fn []
        (let [single? (= (count selected) 1)
-             node (mf/ref-val dref)
+             node (mf/ref-val ref)
 
              subid
              (when (and single? selected?)
@@ -218,6 +219,7 @@
                               :on-double-click #(dom/stop-propagation %)}
       [:& si/element-icon {:shape item}]
       [:& layer-name {:shape item
+                      :name-ref ref
                       :on-start-edit #(reset! disable-drag true)
                       :on-stop-edit #(reset! disable-drag false)}]
 
