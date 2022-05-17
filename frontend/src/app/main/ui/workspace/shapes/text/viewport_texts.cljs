@@ -69,7 +69,6 @@
 
 (defn- update-text-modifier
   [{:keys [grow-type id]} node]
-
   (let [position-data (utp/calc-position-data node)
         props {:position-data position-data}
 

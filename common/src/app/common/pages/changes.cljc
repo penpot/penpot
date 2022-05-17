@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bool :as gshb]
+   [app.common.math :as mth]
    [app.common.pages.common :refer [component-sync-attrs]]
    [app.common.pages.helpers :as cph]
    [app.common.pages.init :as init]
@@ -433,25 +434,35 @@
 
 (defmethod process-operation :set
   [shape op]
-  (let [attr       (:attr op)
-        val        (:val op)
-        ignore     (:ignore-touched op)
+  (let [attr            (:attr op)
+        group           (get component-sync-attrs attr)
+        val             (:val op)
+        shape-val       (get shape attr)
+        ignore          (:ignore-touched op)
         ignore-geometry (:ignore-geometry op)
-        shape-ref  (:shape-ref shape)
-        group      (get component-sync-attrs attr)
-        root-name? (and (= group :name-group)
-                        (:component-root? shape))]
+        is-geometry?    (and (or (= group :geometry-group)
+                                 (and (= group :content-group) (= (:type shape) :path)))
+                             (not (#{:width :height} attr))) ;; :content in paths are also considered geometric
+        shape-ref       (:shape-ref shape)
+        root-name?      (and (= group :name-group)
+                             (:component-root? shape))
+
+        ;; For geometric attributes, there are cases in that the value changes
+        ;; slightly (e.g. when rounding to pixel, or when recalculating text
+        ;; positions in different zoom levels). To take this into account, we
+        ;; ignore geometric changes smaller than 1 pixel.
+        equal? (if is-geometry?
+                 (gsh/close-attrs? attr val shape-val 1)
+                 (gsh/close-attrs? attr val shape-val))]
 
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.
       ;; In some cases we need to ignore touched only if the attribute is
       ;; geometric (position, width or transformation).
-      (and shape-ref group (not ignore) (not= val (get shape attr))
+      (and shape-ref group (not ignore) (not equal?)
            (not root-name?)
-           (not (and ignore-geometry
-                     (and (= group :geometry-group)
-                          (not (#{:width :height} attr))))))
+           (not (and ignore-geometry is-geometry?)))
       (->
         (update :touched cph/set-touched-group group)
         (dissoc :remote-synced?))
