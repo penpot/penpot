@@ -1388,7 +1388,7 @@ msgstr "Show all comments"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
-msgstr "Show only yours comments"
+msgstr "Show only your comments"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.sign-out"
