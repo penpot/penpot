@@ -90,7 +90,6 @@
     :polyline
     :radialGradient
     :rect
-    :script
     :set
     :stop
     :style
@@ -495,7 +494,6 @@
     :marker
     :mask
     :pattern
-    :script
     :style
     :switch
     :text
