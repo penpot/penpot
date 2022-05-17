@@ -116,7 +116,7 @@
                  (rx/map render-thumbnail)
                  (rx/mapcat persist-thumbnail)))]
 
-    (if (debug? :disable-thumbnail-cachee)
+    (if (debug? :disable-thumbnail-cache)
       (->> (request-data-for-thumbnail file-id revn)
            (rx/map render-thumbnail))
       (->> (request-thumbnail file-id revn)

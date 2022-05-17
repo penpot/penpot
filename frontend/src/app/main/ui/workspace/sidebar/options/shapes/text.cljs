@@ -80,7 +80,8 @@
 
      [:& stroke-menu {:ids ids
                       :type type
-                      :values stroke-values}]
+                      :values stroke-values
+                      :disable-stroke-style true}]
 
      [:& shadow-menu
       {:ids ids
