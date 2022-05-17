@@ -33,7 +33,7 @@
   (let [modifier (get modifiers id)
         modifier (d/update-when modifier :modifiers dissoc :displacement :rotation)
         shape (cond-> shape
-                (not (gsh/empty-modifiers? modifier))
+                (not (gsh/empty-modifiers? (:modifiers modifier)))
                 (-> (assoc :grow-type :fixed)
                     (merge modifier) gsh/transform-shape))]
     (strip-position-data shape)))
