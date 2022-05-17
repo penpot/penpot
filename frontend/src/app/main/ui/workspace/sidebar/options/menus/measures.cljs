@@ -72,7 +72,7 @@
                    (not= (:width values) :multiple) (assoc :width width)
                    (not= (:height values) :multiple) (assoc :height height)))
 
-        values (let [{:keys [rotation]} (-> shapes first)]
+        values (let [{:keys [rotation] :or {rotation 0}} (-> shapes first)]
                  (cond-> values
                    (not= (:rotation values) :multiple) (assoc :rotation rotation)))
 
