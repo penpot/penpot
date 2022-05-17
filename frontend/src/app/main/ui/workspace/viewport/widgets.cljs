@@ -147,7 +147,7 @@
                :class "workspace-frame-icon"
                :style {:fill (when selected? "var(--color-primary-dark)")}
                :visibility (if show-artboard-names? "visible" "hidden")}
-         [:use {:xlinkHref "#icon-set-thumbnail"}]]])
+         [:use {:href "#icon-set-thumbnail"}]]])
      [:text {:x text-pos-x
              :y 0
              :width width

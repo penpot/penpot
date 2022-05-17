@@ -264,7 +264,7 @@
           :embed embed}
 
          (when-let [component-id (:component-id @state)]
-           [:use {:x 0 :y 0 :xlinkHref (str "#" component-id)}])]]
+           [:use {:x 0 :y 0 :href (str "#" component-id)}])]]
 
        ])))
 

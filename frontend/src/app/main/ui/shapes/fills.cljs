@@ -43,15 +43,11 @@
             embed (embed/use-data-uris [uri])
             transform (gsh/transform-matrix shape)
 
-            ;; When true the image has not loaded yet
-            loading? (and (some? uri) (not (contains? embed uri)))
-
             pattern-attrs (cond-> #js {:patternUnits "userSpaceOnUse"
                                        :x x
                                        :y y
                                        :height height
-                                       :width width
-                                       :data-loading loading?}
+                                       :width width}
                             (= :path (:type shape))
                             (obj/set! "patternTransform" transform))]
 
@@ -79,7 +75,7 @@
                                (obj/set! "height" height))])
 
                (when has-image?
-                 [:image {:xlinkHref (get embed uri uri)
+                 [:image {:href (get embed uri uri)
                           :preserveAspectRatio "none"
                           :width width
                           :height height}])]])])))))

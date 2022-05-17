@@ -326,7 +326,7 @@
         transform (->> svg-transform
                        (gmt/transform-in (gpt/point svg-data)))
 
-        image-url (:xlink:href attrs)
+        image-url (or (:href attrs) (:xlink:href attrs))
         image-data (get-in svg-data [:image-data image-url])
 
         rect (->> (select-keys attrs [:x :y :width :height])
@@ -352,7 +352,7 @@
 
           (merge rect-metadata)
           (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))
-          (assoc :svg-attrs (dissoc attrs :x :y :width :height :xlink:href))))))
+          (assoc :svg-attrs (dissoc attrs :x :y :width :height :href :xlink:href))))))
 
 (defn parse-svg-element [frame-id svg-data element-data unames]
   (let [{:keys [tag attrs]} element-data
