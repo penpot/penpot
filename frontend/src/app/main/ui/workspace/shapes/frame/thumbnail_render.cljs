@@ -43,7 +43,7 @@
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
-  [page-id {:keys [id x y width height] :as shape} node-ref rendered? thumbnail? disable?]
+  [page-id {:keys [id x y width height] :as shape} node-ref rendered? thumbnail-data-ref disable?]
 
   (let [frame-canvas-ref (mf/use-ref nil)
         frame-image-ref (mf/use-ref nil)
@@ -57,8 +57,6 @@
         observer-ref (mf/use-var nil)
 
         shape-ref (hooks/use-update-var shape)
-
-        thumbnail-ref? (mf/use-var thumbnail?)
 
         updates-str (mf/use-memo #(rx/subject))
 
@@ -77,8 +75,12 @@
         (fn []
           (when (and (some? @node-ref) (not @disable-ref?))
             (let [node @node-ref
+
                   frame-html (dom/node->xml node)
                   {:keys [x y width height]} @shape-ref
+
+                  style-str (or (-> node dom/get-parent (dom/query "style") dom/node->xml) "")
+
                   svg-node
                   (-> (dom/make-node "http://www.w3.org/2000/svg" "svg")
                       (dom/set-property! "version" "1.1")
@@ -86,7 +88,7 @@
                       (dom/set-property! "width" width)
                       (dom/set-property! "height" height)
                       (dom/set-property! "fill" "none")
-                      (obj/set! "innerHTML" frame-html))
+                      (obj/set! "innerHTML" (dm/str style-str frame-html)))
                   img-src  (-> svg-node dom/node->xml dom/svg->data-uri)]
               (reset! image-url img-src))))
 
@@ -94,7 +96,9 @@
         (mf/use-callback
          (fn [node]
            (when (and (some? node) (nil? @observer-ref))
-             (rx/push! updates-str :update)
+             (when-not (some? @thumbnail-data-ref)
+               (rx/push! updates-str :update))
+
              (let [observer (js/MutationObserver. (partial rx/push! updates-str))]
                (.observe observer node #js {:childList true :attributes true :characterData true :subtree true})
                (reset! observer-ref observer)))))]
@@ -102,7 +106,7 @@
     (mf/use-effect
      (fn []
        (let [subid (->> updates-str
-                        (rx/debounce 200)
+                        (rx/debounce 400)
                         (rx/subs on-update-frame))]
          #(rx/dispose! subid))))
 
@@ -110,11 +114,6 @@
      (mf/deps disable?)
      (fn []
        (reset! disable-ref? disable?)))
-
-    (mf/use-effect
-     (mf/deps thumbnail?)
-     (fn []
-       (reset! thumbnail-ref? thumbnail?)))
 
     (mf/use-effect
      (fn []
