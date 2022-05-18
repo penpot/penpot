@@ -46,12 +46,14 @@
 (defn- remove-embed-images-changes
   "Remove the changes related to change a url for its embed value. This is necessary
   so we don't have to recalculate the thumbnail when the image loads."
-  [changes]
-  (->> changes
-       (remove (fn [change]
-                 (and (= "attributes" (.-type change))
-                      (= "href" (.-attributeName change))
-                      (str/starts-with? (.-oldValue change) "http"))))))
+  [value]
+  (if (.isArray js/Array value)
+    (->> value
+         (remove (fn [change]
+                   (and (= "attributes" (.-type change))
+                        (= "href" (.-attributeName change))
+                        (str/starts-with? (.-oldValue change) "http")))))
+    [value]))
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
@@ -121,6 +123,7 @@
                         (rx/map remove-embed-images-changes)
                         (rx/filter d/not-empty?)
                         (rx/debounce 400)
+                        (rx/catch (fn [err] (.error js/console err)))
                         (rx/subs on-update-frame))]
          #(rx/dispose! subid))))
 
