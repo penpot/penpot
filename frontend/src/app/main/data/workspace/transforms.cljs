@@ -356,22 +356,27 @@
             [modif-tree shape modifiers]
 
             (let [children (map (d/getf objects) (:shapes shape))
-                  modifiers (cond-> modifiers snap-pixel? (set-pixel-precision shape))
                   transformed-rect (gsh/transform-selrect (:selrect shape) modifiers)
 
                   set-child
-                  (fn [modif-tree child]
-                    (let [child-modifiers (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)]
+                  (fn [snap-pixel? modif-tree child]
+                    (let [child-modifiers (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)
+                          child-modifiers (cond-> child-modifiers snap-pixel? (set-pixel-precision child))]
                       (cond-> modif-tree
                         (not (gsh/empty-modifiers? child-modifiers))
                         (set-modifiers-rec child child-modifiers))))
 
                   modif-tree
                   (-> modif-tree
-                      (assoc-in [(:id shape) :modifiers] modifiers))]
+                      (assoc-in [(:id shape) :modifiers] modifiers))
 
-              (reduce set-child modif-tree children)))]
-    (set-modifiers-rec modif-tree shape modifiers)))
+                  resize-modif?
+                  (or (:resize-vector modifiers) (:resize-vector-2 modifiers))]
+
+              (reduce (partial set-child (and snap-pixel? resize-modif?)) modif-tree children)))]
+
+    (let [modifiers (cond-> modifiers snap-pixel? (set-pixel-precision shape))]
+      (set-modifiers-rec modif-tree shape modifiers))))
 
 (defn- get-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"

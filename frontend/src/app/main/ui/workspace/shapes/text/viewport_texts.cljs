@@ -28,9 +28,12 @@
 (defn strip-position-data [shape]
   (dissoc shape :position-data :transform :transform-inverse))
 
+(defn strip-modifier
+  [modifier]
+  (d/update-when modifier :modifiers dissoc :displacement :rotation))
+
 (defn process-shape [modifiers {:keys [id] :as shape}]
-  (let [modifier (get modifiers id)
-        modifier (d/update-when modifier :modifiers dissoc :displacement :rotation)
+  (let [modifier (-> (get modifiers id) strip-modifier)
         shape (cond-> shape
                 (not (gsh/empty-modifiers? (:modifiers modifier)))
                 (-> (assoc :grow-type :fixed)
@@ -117,11 +120,16 @@
         text-change?
         (fn [id]
           (let [old-shape (get prev-text-shapes id)
-                new-shape (get text-shapes id)]
+                new-shape (get text-shapes id)
+                old-modifiers (-> (get prev-modifiers id) strip-modifier)
+                new-modifiers (-> (get modifiers id) strip-modifier)]
             (or (and (not (identical? old-shape new-shape))
                      (not= old-shape new-shape))
-                (not= (get modifiers id)
-                      (get prev-modifiers id)))))
+
+                ;; The shape has changed only if its modifier is not empty and it's different
+                (and (not= new-modifiers old-modifiers)
+                     (or (not (gsh/empty-modifiers? (:modifiers old-modifiers)))
+                         (not (gsh/empty-modifiers? (:modifiers new-modifiers))))))))
 
         changed-texts
         (mf/use-memo
