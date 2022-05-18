@@ -811,7 +811,7 @@
             :attrs)
         image-data (get-svg-data :image node)
         svg-data (or image-data pattern-data)]
-    (:xlink:href svg-data)))
+    (or (:href svg-data) (:xlink:href svg-data))))
 
 (defn get-image-fill
   [node]
