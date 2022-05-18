@@ -18,7 +18,7 @@ goog.scope(function () {
     const range = document.createRange();
     range.setStart(node, start);
     range.setEnd(node, end);
-    return range.getClientRects();
+    return [...range.getClientRects()].filter((r) => r.width > 0);
   }
 
   self.parse_text_nodes = function(parent, textNode) {
@@ -31,10 +31,20 @@ goog.scope(function () {
     let result = [];
     let prevRect = null;
 
+    // This variable is to make sure there are not infinite loops
+    // when we don't advance `to` we store true and then force to
+    // advance `to` on the next iteration if the condition is true again
+    let safeguard = false;
+
     while (to < textSize) {
       const rects = getRangeRects(textNode, from, to + 1);
 
-      if (rects.length > 1) {
+      if (rects.length > 1 && safeguard) {
+        from++;
+        to++;
+        safeguard = false;
+
+      } else if (rects.length > 1) {
         const position = prevRect;
 
         result.push({
@@ -45,11 +55,12 @@ goog.scope(function () {
 
         from = to;
         current = "";
-
+        safeguard = true;
       } else {
         prevRect = rects[0];
         current += content[to];
         to = to + 1;
+        safeguard = false;
       }
     }
 
