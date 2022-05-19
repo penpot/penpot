@@ -68,7 +68,9 @@
 
   ;; Update the position-data of every text fragment
   (let [position-data (utp/calc-position-data node)]
-    (st/emit! (dwt/update-position-data id position-data))))
+    (st/emit! (dwt/update-position-data id position-data)))
+
+  (st/emit! (dwt/clean-text-modifier id)))
 
 (defn- update-text-modifier
   [{:keys [grow-type id]} node]
