@@ -375,6 +375,15 @@
     (update [_ state]
       (update-in state [:workspace-text-modifier id] (fnil merge {}) props))))
 
+(defn clean-text-modifier
+  [id]
+  (ptk/reify ::clean-text-modifier
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rx/of #(update % :workspace-text-modifier dissoc id))
+           ;; We delay a bit the change so there is no weird transition to the user
+           (rx/delay 50)))))
+
 (defn remove-text-modifier
   [id]
   (ptk/reify ::remove-text-modifier
