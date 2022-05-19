@@ -113,7 +113,9 @@
    (close-attrs? attr val1 val2 mth/float-equal-precision))
 
   ([attr val1 val2 precision]
-   (let [close-val? (fn [num1 num2] (< (mth/abs (- num1 num2)) precision))]
+   (let [close-val? (fn [num1 num2]
+                     (when (and (number? num1) (number? num2))
+                       (< (mth/abs (- num1 num2)) precision)))]
      (cond
        (and (number? val1) (number? val2))
        (close-val? val1 val2)
