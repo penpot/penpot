@@ -43,16 +43,18 @@
       (.error js/console err)
       nil)))
 
-(defn- remove-embed-images-changes
+(defn- remove-image-loading
   "Remove the changes related to change a url for its embed value. This is necessary
   so we don't have to recalculate the thumbnail when the image loads."
   [value]
   (if (.isArray js/Array value)
     (->> value
          (remove (fn [change]
-                   (and (= "attributes" (.-type change))
-                        (= "href" (.-attributeName change))
-                        (str/starts-with? (.-oldValue change) "http")))))
+                   (or
+                    (= "data-loading" (.-attributeName change))
+                    (and (= "attributes" (.-type change))
+                         (= "href" (.-attributeName change))
+                         (str/starts-with? (.-oldValue change) "http"))))))
     [value]))
 
 (defn use-render-thumbnail
@@ -63,6 +65,8 @@
         frame-image-ref (mf/use-ref nil)
 
         disable-ref? (mf/use-var disable?)
+
+        regenerate-thumbnail (mf/use-var false)
 
         fixed-width (mth/clamp (:width shape) 250 2000)
         fixed-height (/ (* (:height shape) fixed-width) (:width shape))
@@ -85,26 +89,42 @@
                  (st/emit! (dw/update-thumbnail page-id id thumb-data))
                  (reset! image-url nil))))))
 
+        generate-thumbnail
+        (mf/use-callback
+         (fn []
+           (let [node @node-ref
+                 frame-html (dom/node->xml node)
+                 {:keys [x y width height]} @shape-ref
+
+                 style-node (dom/query (dm/str "#frame-container-" (:id shape) " style"))
+                 style-str (or (-> style-node dom/node->xml) "")
+
+                 svg-node
+                 (-> (dom/make-node "http://www.w3.org/2000/svg" "svg")
+                     (dom/set-property! "version" "1.1")
+                     (dom/set-property! "viewBox" (dm/str x " " y " " width " " height))
+                     (dom/set-property! "width" width)
+                     (dom/set-property! "height" height)
+                     (dom/set-property! "fill" "none")
+                     (obj/set! "innerHTML" (dm/str style-str frame-html)))
+                 img-src  (-> svg-node dom/node->xml dom/svg->data-uri)]
+             (reset! image-url img-src))))
+
+        on-change-frame
+        (mf/use-callback
+         (fn []
+           (when (and (some? @node-ref) @regenerate-thumbnail)
+             (let [loading-images? (some? (dom/query @node-ref "[data-loading='true']"))
+                   loading-fonts? (some? (dom/query (dm/str "#frame-container-" (:id shape) " style[data-loading='true']")))]
+               (when (and (not loading-images?) (not loading-fonts?))
+                 (generate-thumbnail)
+                 (reset! regenerate-thumbnail false))))))
+
         on-update-frame
-        (fn []
-          (when (and (some? @node-ref) (not @disable-ref?))
-            (let [node @node-ref
-                  frame-html (dom/node->xml node)
-                  {:keys [x y width height]} @shape-ref
-
-                  style-node (dom/query (dm/str "#frame-container-" (:id shape) " style"))
-                  style-str (or (-> style-node dom/node->xml) "")
-
-                  svg-node
-                  (-> (dom/make-node "http://www.w3.org/2000/svg" "svg")
-                      (dom/set-property! "version" "1.1")
-                      (dom/set-property! "viewBox" (dm/str x " " y " " width " " height))
-                      (dom/set-property! "width" width)
-                      (dom/set-property! "height" height)
-                      (dom/set-property! "fill" "none")
-                      (obj/set! "innerHTML" (dm/str style-str frame-html)))
-                  img-src  (-> svg-node dom/node->xml dom/svg->data-uri)]
-              (reset! image-url img-src))))
+        (mf/use-callback
+         (fn []
+           (when (not @disable-ref?)
+             (reset! regenerate-thumbnail true))))
 
         on-load-frame-dom
         (mf/use-callback
@@ -120,11 +140,20 @@
     (mf/use-effect
      (fn []
        (let [subid (->> updates-str
-                        (rx/map remove-embed-images-changes)
+                        (rx/map remove-image-loading)
                         (rx/filter d/not-empty?)
-                        (rx/debounce 400)
                         (rx/catch (fn [err] (.error js/console err)))
                         (rx/subs on-update-frame))]
+         #(rx/dispose! subid))))
+
+    ;; on-change-frame will get every change in the frame
+    (mf/use-effect
+     (fn []
+       (let [subid (->> updates-str
+                        (rx/debounce 400)
+                        (rx/observe-on :af)
+                        (rx/catch (fn [err] (.error js/console err)))
+                        (rx/subs on-change-frame))]
          #(rx/dispose! subid))))
 
     (mf/use-effect
