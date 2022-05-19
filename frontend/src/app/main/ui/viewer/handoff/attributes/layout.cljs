@@ -11,7 +11,6 @@
    [app.main.ui.formats :as fmt]
    [app.util.code-gen :as cg]
    [app.util.i18n :refer [tr]]
-   [app.util.strings :as ust]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 

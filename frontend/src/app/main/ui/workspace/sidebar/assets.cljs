@@ -2105,7 +2105,7 @@
                                   :on-assets-delete on-assets-delete
                                   :on-clear-selection unselect-all}])
 
-          (when (and (not show-components?) (not show-graphics?) (not show-colors?))
+          (when (and (not show-components?) (not show-graphics?) (not show-colors?) (not show-typography?))
             [:div.asset-section
              [:div.asset-title (tr "workspace.assets.not-found")]])]))]))
 
