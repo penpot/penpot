@@ -549,18 +549,19 @@
                                 (:shapes shape-main))
 
           only-inst (fn [changes child-inst]
-                      (when-not (and omit-touched?
-                                     (contains? (:touched shape-inst)
-                                                :shapes-group))
+                      (if-not (and omit-touched?
+                                   (contains? (:touched shape-inst)
+                                              :shapes-group))
                         (remove-shape changes
                                       child-inst
                                       container
-                                      omit-touched?)))
+                                      omit-touched?)
+                        changes))
 
           only-main (fn [changes child-main]
-                      (when-not (and omit-touched?
-                                     (contains? (:touched shape-inst)
-                                                :shapes-group))
+                      (if-not (and omit-touched?
+                                   (contains? (:touched shape-inst)
+                                              :shapes-group))
                         (add-shape-to-instance changes
                                                child-main
                                                (d/index-of children-main
@@ -570,7 +571,8 @@
                                                root-inst
                                                root-main
                                                omit-touched?
-                                               set-remote-synced?)))
+                                               set-remote-synced?)
+                        changes))
 
           both (fn [changes child-inst child-main]
                  (generate-sync-shape-direct-recursive changes
