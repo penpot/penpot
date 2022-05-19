@@ -126,15 +126,11 @@
                 new-modifiers (-> (get modifiers id) strip-modifier)]
             (or (and (not (identical? old-shape new-shape))
                      (not= old-shape new-shape))
-
-                ;; The shape has changed only if its modifier is not empty and it's different
-                (and (not= new-modifiers old-modifiers)
-                     (or (not (gsh/empty-modifiers? (:modifiers old-modifiers)))
-                         (not (gsh/empty-modifiers? (:modifiers new-modifiers))))))))
+                (not= new-modifiers old-modifiers))))
 
         changed-texts
         (mf/use-memo
-         (mf/deps text-shapes)
+         (mf/deps text-shapes modifiers)
          #(->> (keys text-shapes)
                (filter text-change?)
                (map (d/getf text-shapes))))
