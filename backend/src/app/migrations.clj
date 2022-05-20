@@ -223,6 +223,9 @@
 
    {:name "0071-add-file-object-thumbnail-table"
     :fn (mg/resource "app/migrations/sql/0071-add-file-object-thumbnail-table.sql")}
+
+   {:name "0072-mod-file-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0072-mod-file-object-thumbnail-table.sql")}
    ])
 
 

@@ -24,7 +24,7 @@
           [:h2 "What's new?"]]
          [:span.release "Beta version " version]
          [:div.modal-content
-          [:p "Penpot continues growing with new features that improve performance, user experience and visual design."]
+          [:p "Penpot continues to grow with new features that improve performance, user experience and visual design."]
           [:p "We are happy to show you a sneak peak of the most important stuff that the Beta 1.13 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
@@ -41,8 +41,8 @@
          [:div.modal-title
           [:h2 "Multiple exports"]]
          [:div.modal-content
-          [:p "Speed your workflow exporting multiple elements simultaneously."]
-          [:p "Use the export window to manage your multiple exports and be informed about the download progress. Big exports will happen in the background so you can continue designing in the meantime ;)"]]
+          [:p "Speed up your workflow exporting multiple elements simultaneously."]
+          [:p "Use the export window to manage your multiple exports and be informed about the download progress. Big exports will happen in the background so you can keep designing in the meantime ;)"]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
@@ -61,7 +61,7 @@
           [:h2 "Multiple fills and strokes"]]
          [:div.modal-content
           [:p "Now you can add multiple color fills and strokes to a single element, including shapes and texts."]
-          [:p "This opens endless graphic possibilities such as combining gradients and blending modes in the same element to create visual effects."]]
+          [:p "This opens endless graphic possibilities such as combining gradients and blending modes in the same element to create sophisticated visual effects."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
@@ -80,7 +80,7 @@
           [:h2 "Members area redesign"]]
          [:div.modal-content
           [:p "Penpot is meant for teams, that’s why we decided to give some love to the members area."]
-          [:p "A refreshed interface and two new features: the Invitations section where you can check the state of the team invites and the ability to invite multiple members at the same time."]]
+          [:p "A refreshed interface and two new features! The Invitations section allows you to check the status of current team invites plus you now have the ability to invite multiple members at the same time."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
@@ -98,8 +98,8 @@
          [:div.modal-title
           [:h2 "Focus mode"]]
          [:div.modal-content
-          [:p "Select the elements of a page you want to work with in a specific moment hiding the rest so they don’t get in the way of your attention."]
-          [:p "This option is also useful to improve the performance in cases where the page has a large number of elements."]]
+          [:p "Enjoy a distraction-less design mode by selecting the elements of a page that matter to you and temporarily hiding the rest."]
+          [:p "As a side effect, this can give you a performance boost in massive designs."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& c/navigation-bullets

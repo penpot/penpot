@@ -28,7 +28,6 @@
            (when (and (some? node) (nil? @node-ref))
              (let [content (-> (.createElementNS globals/document "http://www.w3.org/2000/svg" "g")
                                (dom/add-class! "frame-content"))]
-               ;;(.appendChild node content)
                (reset! node-ref content)
                (reset! parent-ref node)
                (swap! re-render inc)))))]

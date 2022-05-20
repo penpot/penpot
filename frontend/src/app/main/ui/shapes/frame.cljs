@@ -45,15 +45,41 @@
   [props]
   (let [shape (obj/get props "shape")]
     (when (:thumbnail shape)
-      [:image.frame-thumbnail
-       {:id (dm/str "thumbnail-" (:id shape))
-        :xlinkHref (:thumbnail shape)
-        :x (:x shape)
-        :y (:y shape)
-        :width (:width shape)
-        :height (:height shape)
-        ;; DEBUG
-        :style {:filter (when (debug? :thumbnails) "sepia(1)")}}])))
+      (let [{:keys [x y width height]} shape
+            transform (gsh/transform-matrix shape)
+            props (-> (attrs/extract-style-attrs shape)
+                      (obj/merge!
+                       #js {:x x
+                            :y y
+                            :transform (str transform)
+                            :width width
+                            :height height
+                            :className "frame-background"}))
+            path? (some? (.-d props))
+            render-id (mf/use-ctx muc/render-ctx)]
+
+        [:*
+         [:g {:clip-path (frame-clip-url shape render-id)}
+          [:& frame-clip-def {:shape shape :render-id render-id}]
+          [:& shape-fills {:shape shape}
+           (if path?
+             [:> :path props]
+             [:> :rect props])]
+
+          [:image.frame-thumbnail
+           {:id (dm/str "thumbnail-" (:id shape))
+            :href (:thumbnail shape)
+            :x (:x shape)
+            :y (:y shape)
+            :width (:width shape)
+            :height (:height shape)
+            ;; DEBUG
+            :style {:filter (when (debug? :thumbnails) "sepia(1)")}}]]
+
+         [:& shape-strokes {:shape shape}
+          (if path?
+            [:> :path props]
+            [:> :rect props])]]))))
 
 (defn frame-shape
   [shape-wrapper]
@@ -79,17 +105,18 @@
 
       [:*
        [:g {:clip-path (frame-clip-url shape render-id)}
-        [:*
-         [:& shape-fills {:shape shape}
-          (if path?
-            [:> :path props]
-            [:> :rect props])]
+        [:& shape-fills {:shape shape}
+         (if path?
+           [:> :path props]
+           [:> :rect props])]
 
+        [:g.frame-children
          (for [item childs]
            [:& shape-wrapper {:shape item
-                              :key (dm/str (:id item))}])
-         [:& shape-strokes {:shape shape}
-          (if path?
-            [:> :path props]
-            [:> :rect props])]]]])))
+                              :key (dm/str (:id item))}])]]
+
+       [:& shape-strokes {:shape shape}
+        (if path?
+          [:> :path props]
+          [:> :rect props])]])))
 

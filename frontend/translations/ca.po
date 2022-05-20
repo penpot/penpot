@@ -701,10 +701,6 @@ msgstr ""
 "Heu d'acceptar les nostres condicions del servei i la política de "
 "privacitat."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "El codi ha caducat"
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "S'ha produït un error inesperat."

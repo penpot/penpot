@@ -23,8 +23,21 @@
   (us/verify ::spec/content new-content)
   (let [shape-id (:id shape)
 
+        [old-points old-selrect]
+        (helpers/content->points+selrect shape old-content)
+
         [new-points new-selrect]
         (helpers/content->points+selrect shape new-content)
+
+        ;; We set the old values so the update-shapes works
+        objects
+        (-> objects
+            (update
+             shape-id
+             assoc
+             :content old-content
+             :selrect old-selrect
+             :points old-points))
 
         changes (-> (pcb/empty-changes it page-id)
                     (pcb/with-objects objects))]

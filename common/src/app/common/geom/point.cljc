@@ -100,7 +100,6 @@
   (assert (point? other))
   (Point. (/ x ox) (/ y oy)))
 
-
 (defn min
   ([] (min nil nil))
   ([p1] (min p1 nil))
@@ -138,6 +137,15 @@
         dy (- y oy)]
     (mth/sqrt (+ (mth/pow dx 2)
                  (mth/pow dy 2)))))
+
+(defn distance-vector
+  "Calculate the distance, separated x and y."
+  [{x :x y :y :as p} {ox :x oy :y :as other}]
+  (assert (point? p))
+  (assert (point? other))
+  (let [dx (mth/abs (- x ox))
+        dy (mth/abs (- y oy))]
+    (Point. dx dy)))
 
 (defn length
   [{x :x y :y :as p}]

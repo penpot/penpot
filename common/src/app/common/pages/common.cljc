@@ -25,6 +25,7 @@
    :content               :content-group
    :hidden                :visibility-group
    :blocked               :modifiable-group
+   :grow-type             :text-font-group
    :font-family           :text-font-group
    :font-size             :text-font-group
    :font-style            :text-font-group
@@ -58,8 +59,10 @@
    :y                     :geometry-group
    :width                 :geometry-group
    :height                :geometry-group
+   :rotation              :geometry-group
    :transform             :geometry-group
    :transform-inverse     :geometry-group
+   :position-data         :geometry-group
    :opacity               :layer-effects-group
    :blend-mode            :layer-effects-group
    :shadow                :shadow-group
@@ -78,6 +81,7 @@
             :rx :ry
             :r1 :r2 :r3 :r4
             :selrect
+            :points
 
             :opacity
             :blend-mode
@@ -111,6 +115,7 @@
            :x :y
            :rotation
            :selrect
+           :points
 
            :constraints-h
            :constraints-v
@@ -136,6 +141,7 @@
            :rx :ry
            :r1 :r2 :r3 :r4
            :selrect
+           :points
 
            :constraints-h
            :constraints-v
@@ -178,6 +184,7 @@
              :x :y
              :rotation
              :selrect
+             :points
 
              :constraints-h
              :constraints-v
@@ -220,6 +227,7 @@
           :x :y
           :rotation
           :selrect
+          :points
 
           :constraints-h
           :constraints-v
@@ -262,6 +270,7 @@
           :x :y
           :rotation
           :selrect
+          :points
 
           :constraints-h
           :constraints-v
@@ -329,6 +338,7 @@
            :rx :ry
            :r1 :r2 :r3 :r4
            :selrect
+           :points
 
            :constraints-h
            :constraints-v
@@ -354,6 +364,7 @@
              :rx :ry
              :r1 :r2 :r3 :r4
              :selrect
+             :points
 
              :constraints-h
              :constraints-v
@@ -398,6 +409,7 @@
           :rx :ry
           :r1 :r2 :r3 :r4
           :selrect
+          :points
 
           :constraints-h
           :constraints-v

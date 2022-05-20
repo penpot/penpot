@@ -90,7 +90,7 @@
         hover             (mf/use-state nil)
         hover-disabled?   (mf/use-state false)
         frame-hover       (mf/use-state nil)
-        active-frames     (mf/use-state {})
+        active-frames     (mf/use-state #{})
 
         ;; REFS
         viewport-ref      (mf/use-ref nil)
@@ -168,7 +168,7 @@
         show-snap-points?        (and (or (contains? layout :dynamic-alignment)
                                           (contains? layout :snap-grid))
                                       (or drawing-obj transform))
-        show-selrect?            (and selrect (empty? drawing) (not edition))
+        show-selrect?            (and selrect (empty? drawing) (not text-editing?))
         show-measures?           (and (not transform) (not node-editing?) show-distances?)
         show-artboard-names?     (contains? layout :display-artboard-names)
         show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
@@ -183,7 +183,7 @@
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids @hover-disabled? focus zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path?)
-    (hooks/setup-active-frames base-objects vbox hover active-frames zoom)
+    (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
     [:div.viewport
      [:div.viewport-overlays {:ref overlays-ref}
@@ -246,6 +246,7 @@
        [:& stv/viewport-texts {:key (dm/str "texts-" page-id)
                                :page-id page-id
                                :objects base-objects
+                               :modifiers modifiers
                                :edition edition}]]]
 
      [:svg.viewport-controls
@@ -257,6 +258,7 @@
        :ref viewport-ref
        :class (when drawing-tool "drawing")
        :style {:cursor @cursor}
+       :fill "none"
 
        :on-click         on-click
        :on-context-menu  on-context-menu
@@ -297,7 +299,8 @@
 
        (when show-text-editor?
          [:& text-edition-outline
-          {:shape (get base-objects edition)}])
+          {:shape (get base-objects edition)
+           :zoom zoom}])
 
        (when show-measures?
          [:& msr/measurement

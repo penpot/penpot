@@ -345,8 +345,9 @@
 
 (defn node->xml
   [node]
-  (->  (js/XMLSerializer.)
-       (.serializeToString node)))
+  (when (some? node)
+    (->  (js/XMLSerializer.)
+         (.serializeToString node))))
 
 (defn svg->data-uri
   [svg]

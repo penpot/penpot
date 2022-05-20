@@ -539,9 +539,6 @@ msgstr "التسجيل معطل حاليا."
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "يجب أن تقبل شروط الخدمة وسياسة الخصوصية الخاصة بنا."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "انتهت صلاحية الرمز"
 
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"

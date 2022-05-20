@@ -14,6 +14,7 @@
    [app.util.http :as http]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
 (defn- handle-response
@@ -115,6 +116,9 @@
                  (rx/map render-thumbnail)
                  (rx/mapcat persist-thumbnail)))]
 
-    (->> (request-thumbnail file-id revn)
-         (rx/catch not-found? on-cache-miss)
-         (rx/map on-result))))
+    (if (debug? :disable-thumbnail-cache)
+      (->> (request-data-for-thumbnail file-id revn)
+           (rx/map render-thumbnail))
+      (->> (request-thumbnail file-id revn)
+           (rx/catch not-found? on-cache-miss)
+           (rx/map on-result)))))

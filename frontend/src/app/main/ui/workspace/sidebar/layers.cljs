@@ -32,10 +32,9 @@
   (l/derived (l/in [:workspace-local :shape-for-rename]) st/state))
 
 (mf/defc layer-name
-  [{:keys [shape on-start-edit on-stop-edit] :as props}]
+  [{:keys [shape on-start-edit on-stop-edit name-ref] :as props}]
   (let [local            (mf/use-state {})
         shape-for-rename (mf/deref shape-for-rename-ref)
-        name-ref         (mf/use-ref)
 
         start-edit (fn []
                      (on-start-edit)
@@ -96,7 +95,8 @@
         container? (or (cph/frame-shape? item)
                        (cph/group-shape? item))
 
-        disable-drag (mf/use-state false)
+        disable-drag      (mf/use-state false)
+        scroll-to-middle? (mf/use-var true)
 
         expanded-iref (mf/use-memo
                        (mf/deps id)
@@ -129,6 +129,7 @@
         select-shape
         (fn [event]
           (dom/prevent-default event)
+          (reset! scroll-to-middle? false)
           (let [id (:id item)]
             (cond
               (kbd/shift? event)
@@ -177,19 +178,26 @@
                        :detect-center? container?
                        :data {:id (:id item)
                               :index index
-                              :name (:name item)})]
+                              :name (:name item)})
+
+        ref         (mf/use-ref)]
 
     (mf/use-effect
      (mf/deps selected? selected)
      (fn []
        (let [single? (= (count selected) 1)
-             node (mf/ref-val dref)
+             node (mf/ref-val ref)
 
              subid
              (when (and single? selected?)
-               (ts/schedule
-                100
-                #(dom/scroll-into-view! node #js {:block "center", :behavior "smooth"})))]
+               (let [scroll-to @scroll-to-middle?]
+                 (ts/schedule
+                  100
+                  #(if scroll-to
+                     (dom/scroll-into-view! node #js {:block "center", :behavior "smooth"})
+                     (do
+                       (dom/scroll-into-view-if-needed! node #js {:block "center", :behavior "smooth"})
+                       (reset! scroll-to-middle? true))))))]
 
          #(when (some? subid)
             (rx/dispose! subid)))))
@@ -211,6 +219,7 @@
                               :on-double-click #(dom/stop-propagation %)}
       [:& si/element-icon {:shape item}]
       [:& layer-name {:shape item
+                      :name-ref ref
                       :on-start-edit #(reset! disable-drag true)
                       :on-stop-edit #(reset! disable-drag false)}]
 
@@ -368,7 +377,10 @@
         search-and-filters
         (fn [[id shape]]
           (let [search (:search-text @filter-state)
-                filters (:active-filters @filter-state)]
+                filters (:active-filters @filter-state)
+                filters (cond-> filters
+                          (some #{:shape} filters)
+                          (conj :rect :circle :path :bool))]
             (or
              (= uuid/zero id)
              (and
@@ -431,8 +443,17 @@
 
          [:div.active-filters
           (for [f (:active-filters @filter-state)]
-            [:span {:on-click (remove-filter f)}
-             (tr f) i/cross])]
+            (let [name (case f
+                         :frame (tr "workspace.sidebar.layers.frames")
+                         :group (tr "workspace.sidebar.layers.groups")
+                         :mask (tr "workspace.sidebar.layers.masks")
+                         :component (tr "workspace.sidebar.layers.components")
+                         :text (tr "workspace.sidebar.layers.texts")
+                         :image (tr "workspace.sidebar.layers.images")
+                         :shape (tr "workspace.sidebar.layers.shapes")
+                         (tr f))]
+              [:span {:on-click (remove-filter f)}
+               name i/cross]))]
 
          (when (:show-filters-menu @filter-state)
            [:div.filters-container

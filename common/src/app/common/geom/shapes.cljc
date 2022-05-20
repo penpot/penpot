@@ -6,6 +6,7 @@
 
 (ns app.common.geom.shapes
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bool :as gsb]
@@ -37,6 +38,14 @@
   (gtr/move shape (gpt/point x y))  )
 
 ;; --- Helpers
+
+(defn left-bound
+  [shape]
+  (get shape :x (:x (:selrect shape)))) ; Paths don't have :x attribute
+
+(defn top-bound
+  [shape]
+  (get shape :y (:y (:selrect shape)))) ; Paths don't have :y attribute
 
 (defn fully-contained?
   "Checks if one rect is fully inside the other"
@@ -96,6 +105,37 @@
     (mth/sqrt (* 2 stroke-width stroke-width))
     (- (mth/sqrt (* 2 stroke-width stroke-width)) stroke-width)))
 
+(defn close-attrs?
+  "Compares two shapes attributes to see if they are equal or almost
+  equal (in case of numeric). Takes into account attributes that are
+  data structures with numbers inside."
+  ([attr val1 val2]
+   (close-attrs? attr val1 val2 mth/float-equal-precision))
+
+  ([attr val1 val2 precision]
+   (let [close-val? (fn [num1 num2]
+                     (when (and (number? num1) (number? num2))
+                       (< (mth/abs (- num1 num2)) precision)))]
+     (cond
+       (and (number? val1) (number? val2))
+       (close-val? val1 val2)
+
+       (= attr :selrect)
+       (every? #(close-val? (get val1 %) (get val2 %))
+               [:x :y :x1 :y1 :x2 :y2 :width :height])
+
+       (= attr :points)
+       (every? #(and (close-val? (:x (first %)) (:x (second %)))
+                     (close-val? (:y (first %)) (:y (second %))))
+               (d/zip val1 val2))
+
+       (= attr :position-data)
+       (every? #(and (close-val? (:x (first %)) (:x (second %)))
+                     (close-val? (:y (first %)) (:y (second %))))
+               (d/zip val1 val2))
+
+       :else
+       (= val1 val2)))))
 
 ;; EXPORTS
 (dm/export gco/center-shape)

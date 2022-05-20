@@ -33,6 +33,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
+   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
@@ -1089,10 +1090,21 @@
         ;; TODO: looks like the first argument is not necessary
         apply-color
         (fn [_ event]
-          (let [ids (wsh/lookup-selected @st/state)]
+          (let [objects  (wsh/lookup-page-objects @st/state)
+                selected (->> (wsh/lookup-selected @st/state)
+                              (cph/clean-loops objects))
+                selected-obj (keep (d/getf objects) selected)
+                select-shapes-for-color (fn [shape objects]
+                                          (let [shapes (case (:type shape)
+                                                         :group (cph/get-children objects (:id shape))
+                                                         [shape])]
+                                            (->> shapes
+                                                 (remove cph/group-shape?)
+                                                 (map :id))))
+                ids (mapcat #(select-shapes-for-color % objects) selected-obj)]
             (if (kbd/alt? event)
-              (st/emit! (dc/change-stroke ids color 0))
-              (st/emit! (dc/change-fill ids color 0)))))
+              (st/emit! (dc/change-stroke ids (merge uc/empty-color color) 0))
+              (st/emit! (dc/change-fill ids (merge uc/empty-color color) 0)))))
 
         rename-color
         (fn [name]

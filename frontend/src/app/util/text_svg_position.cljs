@@ -11,45 +11,21 @@
    [app.common.transit :as transit]
    [app.main.store :as st]
    [app.util.dom :as dom]
-   [app.util.globals :as global]))
+   [app.util.text-position-data :as tpd]))
 
-(defn get-range-rects
-  "Retrieve the rectangles that cover the selection given by a `node` adn
-  the start and end index `start-i`, `end-i`"
-  [^js node start-i end-i]
-  (let [^js range (.createRange global/document)]
-    (.setStart range node start-i)
-    (.setEnd range node end-i)
-    (.getClientRects range)))
-
-;; TODO: Evaluate to change this function to Javascript
 (defn parse-text-nodes
   "Given a text node retrieves the rectangles for everyone of its paragraphs and its text."
-  [parent-node rtl text-node]
+  [parent-node direction text-node]
 
-  (let [content (.-textContent text-node)
-        text-size (.-length content)]
-
-    (loop [from-i  0
-           to-i    0
-           current ""
-           result  []]
-      (if (>= to-i text-size)
-        (let [rects (get-range-rects text-node from-i to-i)
-              entry {:node parent-node
-                     :position (dom/bounding-rect->rect (first rects))
-                     :text current}]
-          ;; We need to add the last element not closed yet
-          (conj result entry))
-        
-        (let [rects (get-range-rects text-node from-i (inc to-i))]
-          ;; If the rects increase means we're in a new paragraph
-          (if (> (.-length rects) 1)
-            (let [entry {:node parent-node
-                         :position (dom/bounding-rect->rect (if rtl (second rects) (first rects)))
-                         :text current}]
-              (recur to-i to-i "" (conj result entry)))
-            (recur from-i (inc to-i) (str current (nth content to-i)) result)))))))
+  (letfn [(parse-entry [^js entry]
+            {:node      (.-node entry)
+             :position  (dom/bounding-rect->rect (.-position entry))
+             :text      (.-text entry)
+             :direction direction})]
+    (into
+     []
+     (map parse-entry)
+     (tpd/parse-text-nodes parent-node text-node))))
 
 
 (defn calc-text-node-positions
@@ -87,9 +63,9 @@
       (->> text-nodes
            (mapcat
             (fn [parent-node]
-              (let [rtl (= "rtl" (.-dir (.-parentElement parent-node)))]
+              (let [direction (.-direction (js/getComputedStyle parent-node))]
                 (->> (.-childNodes parent-node)
-                     (mapcat #(parse-text-nodes parent-node rtl %))))))
+                     (mapcat #(parse-text-nodes parent-node direction %))))))
            (mapv #(update % :position translate-rect))))))
 
 (defn calc-position-data
@@ -100,25 +76,27 @@
       (let [text-data     (calc-text-node-positions base-node viewport zoom)]
         (when (d/not-empty? text-data)
           (->> text-data
-               (mapv (fn [{:keys [node position text]}]
+               (mapv (fn [{:keys [node position text direction]}]
                        (let [{:keys [x y width height]} position
-                             rtl   (= "rtl" (.-dir (.-parentElement ^js node)))
                              styles (js/getComputedStyle ^js node)
                              get    (fn [prop]
                                       (let [value (.getPropertyValue styles prop)]
                                         (when (and value (not= value ""))
                                           value)))]
                          (d/without-nils
-                          {:rtl                 rtl
-                           :x                   (if rtl (+ x width) x)
+                          {:x                   x
                            :y                   (+ y height)
                            :width               width
                            :height              height
+                           :direction           direction
                            :font-family         (str (get "font-family"))
                            :font-size           (str (get "font-size"))
                            :font-weight         (str (get "font-weight"))
                            :text-transform      (str (get "text-transform"))
                            :text-decoration     (str (get "text-decoration"))
+                           :letter-spacing      (str (get "letter-spacing"))
                            :font-style          (str (get "font-style"))
                            :fills               (transit/decode-str (get "--fills"))
                            :text                text}))))))))))
+
+

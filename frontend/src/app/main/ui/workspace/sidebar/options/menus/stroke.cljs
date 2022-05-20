@@ -34,7 +34,7 @@
 
 (mf/defc stroke-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "show-caps"]))]}
-  [{:keys [ids type values show-caps] :as props}]
+  [{:keys [ids type values show-caps disable-stroke-style] :as props}]
   (let [label (case type
                 :multiple (tr "workspace.options.selection-stroke")
                 :group (tr "workspace.options.group-stroke")
@@ -191,4 +191,5 @@
                            :on-reorder (handle-reorder index)
                            :disable-drag disable-drag
                            :select-all select-all
-                           :on-blur on-blur}])])]]))
+                           :on-blur on-blur
+                           :disable-stroke-style disable-stroke-style}])])]]))

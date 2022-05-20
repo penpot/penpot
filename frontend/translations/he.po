@@ -700,10 +700,6 @@ msgstr "הבעלים לא יכולים לעזוב את הקבוצה, עליך ל
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "עליך לקבל את תנאי השירות ואת מדיניות הפרטיות."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "תוקף האסימון פג"
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "אירעה שגיאה בלתי צפויה."

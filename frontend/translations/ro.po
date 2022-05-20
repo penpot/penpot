@@ -509,10 +509,6 @@ msgstr "Înregistrarea este dezactivată în prezent."
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Trebuie să acceptați termenii serviciului și politica de confidențialitate."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Codul este expirat"
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "A apărut o eroare neașteptată."

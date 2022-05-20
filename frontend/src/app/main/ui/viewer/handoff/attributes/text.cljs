@@ -101,12 +101,13 @@
      [:div.attributes-content-row
       [:pre.attributes-content (str/trim text)]
       [:& copy-button {:data (str/trim text)}]]
+     (when (:fills style)
+       (for [fill (:fills style)]
 
-     (when (or (:fill-color style) (:fill-color-gradient style))
-       [:& color-row {:format @color-format
-                      :color (shape->color style)
-                      :copy-data (copy-style-data style :fill-color :fill-color-gradient)
-                      :on-change-format #(reset! color-format %)}])
+         [:& color-row {:format @color-format
+                        :color (shape->color fill)
+                        :copy-data (copy-style-data fill :fill-color :fill-color-gradient)
+                        :on-change-format #(reset! color-format %)}]))
 
      (when (:font-id style)
        [:div.attributes-unit-row
@@ -186,4 +187,5 @@
       [:div.attributes-block-title-text (tr "handoff.attributes.typography")]]
 
      (for [shape shapes]
-       [:& text-block {:shape shape}])]))
+       [:& text-block {:shape shape
+                       :key (str "text-block" (:id shape))}])]))

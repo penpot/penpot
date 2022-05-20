@@ -114,7 +114,7 @@
                             (rx/map (fn [objects]
                                       (let [objects (render/adapt-objects-for-shape objects object-id)]
                                         {:objects objects
-                                         :object object-id}))))))
+                                         :object (get objects object-id)}))))))
 
         {:keys [objects object]} (use-resource fetch-state)]
 
@@ -264,7 +264,7 @@
           :embed embed}
 
          (when-let [component-id (:component-id @state)]
-           [:use {:x 0 :y 0 :xlinkHref (str "#" component-id)}])]]
+           [:use {:x 0 :y 0 :href (str "#" component-id)}])]]
 
        ])))
 

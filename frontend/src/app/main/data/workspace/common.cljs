@@ -124,7 +124,7 @@
       (let [edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
         ;; Editors handle their own undo's
-        (when-not (or (some? edition) (not-empty drawing))
+        (when-not (or (some? edition) (and (not-empty drawing) (nil? (:object drawing))))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]

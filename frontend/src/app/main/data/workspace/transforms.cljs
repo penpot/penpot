@@ -252,15 +252,23 @@
 
         shape-delta
         (when root
-          (gpt/point (- (:x shape) (:x root))
-                     (- (:y shape) (:y root))))
+          (gpt/point (- (gsh/left-bound shape) (gsh/left-bound root))
+                     (- (gsh/top-bound shape) (gsh/top-bound root))))
 
         transformed-shape-delta
         (when transformed-root
-          (gpt/point (- (:x transformed-shape) (:x transformed-root))
-                     (- (:y transformed-shape) (:y transformed-root))))
+          (gpt/point (- (gsh/left-bound transformed-shape) (gsh/left-bound transformed-root))
+                     (- (gsh/top-bound transformed-shape) (gsh/top-bound transformed-root))))
 
-        ignore-geometry? (= shape-delta transformed-shape-delta)]
+        ;; There are cases in that the coordinates change slightly (e.g. when
+        ;; rounding to pixel, or when recalculating text positions in different
+        ;; zoom levels). To take this into account, we ignore movements smaller
+        ;; than 1 pixel.
+        distance (if (and shape-delta transformed-shape-delta)
+                   (gpt/distance-vector shape-delta transformed-shape-delta)
+                   (gpt/point 0 0))
+
+        ignore-geometry? (and (< (:x distance) 1) (< (:y distance) 1))]
 
     [root transformed-root ignore-geometry?]))
 
@@ -356,22 +364,27 @@
             [modif-tree shape modifiers]
 
             (let [children (map (d/getf objects) (:shapes shape))
-                  modifiers (cond-> modifiers snap-pixel? (set-pixel-precision shape))
                   transformed-rect (gsh/transform-selrect (:selrect shape) modifiers)
 
                   set-child
-                  (fn [modif-tree child]
-                    (let [child-modifiers (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)]
+                  (fn [snap-pixel? modif-tree child]
+                    (let [child-modifiers (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)
+                          child-modifiers (cond-> child-modifiers snap-pixel? (set-pixel-precision child))]
                       (cond-> modif-tree
                         (not (gsh/empty-modifiers? child-modifiers))
                         (set-modifiers-rec child child-modifiers))))
 
                   modif-tree
                   (-> modif-tree
-                      (assoc-in [(:id shape) :modifiers] modifiers))]
+                      (assoc-in [(:id shape) :modifiers] modifiers))
 
-              (reduce set-child modif-tree children)))]
-    (set-modifiers-rec modif-tree shape modifiers)))
+                  resize-modif?
+                  (or (:resize-vector modifiers) (:resize-vector-2 modifiers))]
+
+              (reduce (partial set-child (and snap-pixel? resize-modif?)) modif-tree children)))]
+
+    (let [modifiers (cond-> modifiers snap-pixel? (set-pixel-precision shape))]
+      (set-modifiers-rec modif-tree shape modifiers))))
 
 (defn- get-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"

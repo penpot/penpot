@@ -187,8 +187,8 @@
             update-fn
             (fn [shape]
               (if (some? (:content shape))
-                (update-text-content shape txt/is-root-node? attrs/merge attrs)
-                (assoc shape :content (attrs/merge {:type "root"} attrs))))
+                (update-text-content shape txt/is-root-node? d/txt-merge attrs)
+                (assoc shape :content (d/txt-merge {:type "root"} attrs))))
 
             shape-ids (cond (cph/text-shape? shape)  [id]
                             (cph/group-shape? shape) (cph/get-children-ids objects id))]
@@ -240,18 +240,19 @@
               shape-ids (cond
                           (cph/text-shape? shape)  [id]
                           (cph/group-shape? shape) (cph/get-children-ids objects id))]
-          (rx/of (dch/update-shapes shape-ids #(update-text-content % update-node? attrs/merge attrs))))))))
+          (rx/of (dch/update-shapes shape-ids #(update-text-content % update-node? d/txt-merge attrs))))))))
 
 (defn migrate-node
   [node]
   (let [color-attrs (select-keys node [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient])]
     (cond-> node
-      (d/not-empty? color-attrs)
-      (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
-          (assoc :fills [color-attrs]))
-
       (nil? (:fills node))
-      (assoc :fills (:fills txt/default-text-attrs)))))
+      (assoc :fills (:fills txt/default-text-attrs))
+
+      (and (d/not-empty? color-attrs) (nil? (:fills node)))
+      (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
+          (assoc :fills [color-attrs])))
+    ))
 
 (defn migrate-content
   [content]
@@ -373,6 +374,15 @@
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-text-modifier id] (fnil merge {}) props))))
+
+(defn clean-text-modifier
+  [id]
+  (ptk/reify ::clean-text-modifier
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rx/of #(update % :workspace-text-modifier dissoc id))
+           ;; We delay a bit the change so there is no weird transition to the user
+           (rx/delay 50)))))
 
 (defn remove-text-modifier
   [id]

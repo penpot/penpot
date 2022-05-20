@@ -108,19 +108,19 @@
 
         on-double-click
         (mf/use-callback
-          (mf/deps (:id frame))
-          (st/emitf (dw/go-to-layout :layers)
-                    (dw/start-rename-shape (:id frame))))
+         (mf/deps (:id frame))
+         (st/emitf (dw/go-to-layout :layers)
+                   (dw/start-rename-shape (:id frame))))
 
         on-context-menu
         (mf/use-callback
-          (mf/deps frame)
-          (fn [bevent]
-            (let [event    (.-nativeEvent bevent)
-                  position (dom/get-client-position event)]
-              (dom/prevent-default event)
-              (dom/stop-propagation event)
-              (st/emit! (dw/show-shape-context-menu {:position position :shape frame})))))
+         (mf/deps frame)
+         (fn [bevent]
+           (let [event    (.-nativeEvent bevent)
+                 position (dom/get-client-position event)]
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (st/emit! (dw/show-shape-context-menu {:position position :shape frame})))))
 
         on-pointer-enter
         (mf/use-callback
@@ -132,27 +132,42 @@
         (mf/use-callback
          (mf/deps (:id frame) on-frame-leave)
          (fn [_]
-           (on-frame-leave (:id frame))))]
+           (on-frame-leave (:id frame))))
+        text-pos-x (if (:use-for-thumbnail? frame) 15 0)]
 
-    [:text {:x 0
-            :y 0
-            :width width
-            :height 20
-            :class "workspace-frame-label"
-            :transform (str (when (and selected? modifiers)
-                              (str (:displacement modifiers) " " ))
-                            (text-transform label-pos zoom))
-            :style {:fill (when selected? "var(--color-primary-dark)")}
-            :visibility (if show-artboard-names? "visible" "hidden")
-            :on-mouse-down on-mouse-down
-            :on-double-click on-double-click
-            :on-context-menu on-context-menu
-            :on-pointer-enter on-pointer-enter
-            :on-pointer-leave on-pointer-leave}
-     (:name frame)]))
+    [:*
+     (when (:use-for-thumbnail? frame)
+       [:g {:transform (str (when (and selected? modifiers)
+                              (str (:displacement modifiers) " "))
+                            (text-transform label-pos zoom))}
+        [:svg {:x 0
+               :y -9
+               :width 12
+               :height 12
+               :class "workspace-frame-icon"
+               :style {:fill (when selected? "var(--color-primary-dark)")}
+               :visibility (if show-artboard-names? "visible" "hidden")}
+         [:use {:href "#icon-set-thumbnail"}]]])
+     [:text {:x text-pos-x
+             :y 0
+             :width width
+             :height 20
+             :class "workspace-frame-label"
+             :transform (str (when (and selected? modifiers)
+                               (str (:displacement modifiers) " "))
+                             (text-transform label-pos zoom))
+             :style {:fill (when selected? "var(--color-primary-dark)")}
+             :visibility (if show-artboard-names? "visible" "hidden")
+             :on-mouse-down on-mouse-down
+             :on-double-click on-double-click
+             :on-context-menu on-context-menu
+             :on-pointer-enter on-pointer-enter
+             :on-pointer-leave on-pointer-leave}
+      (:name frame)]]))
 
 (mf/defc frame-titles
-  {::mf/wrap-props false}
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
   [props]
   (let [objects         (unchecked-get props "objects")
         zoom            (unchecked-get props "zoom")

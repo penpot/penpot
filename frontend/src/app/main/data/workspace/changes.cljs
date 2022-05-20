@@ -45,7 +45,7 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id   (or page-id (:current-page-id state))
-             objects   (wsh/lookup-page-objects state)
+             objects   (wsh/lookup-page-objects state page-id)
              ids       (into [] (filter some?) ids)
 
              changes   (reduce

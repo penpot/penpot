@@ -25,10 +25,12 @@
   [:proportion-lock
    :width :height
    :x :y
+   :ox :oy
    :rotation
    :rx :ry
    :r1 :r2 :r3 :r4
-   :selrect])
+   :selrect
+   :points])
 
 (def ^:private type->options
   {:bool    #{:size :position :rotation}
@@ -46,7 +48,7 @@
 ;; -- User/drawing coords
 (mf/defc measures-menu
   [{:keys [ids ids-with-children values type all-types shape] :as props}]
-         
+
   (let [options (if (= type :multiple)
                   (reduce #(union %1 %2) (map #(get type->options %) all-types))
                   (get type->options type))
@@ -58,21 +60,37 @@
                      [shape])
         frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
 
+        ;; To show interactively the measures while the user is manipulating
+        ;; the shape with the mouse, generate a copy of the shapes applying
+        ;; the transient tranformations.
         shapes (as-> old-shapes $
                  (map gsh/transform-shape $)
                  (map gsh/translate-to-frame $ frames))
 
-        values (let [{:keys [x y]} (-> shapes first :points gsh/points->selrect)]
+        ;; For rotated or stretched shapes, the origin point we show in the menu
+        ;; is not the (:x :y) shape attribute, but the top left coordinate of the
+        ;; wrapping rectangle.
+        values (let [{:keys [x y]} (gsh/selection-rect [(first shapes)])]
                  (cond-> values
                    (not= (:x values) :multiple) (assoc :x x)
-                   (not= (:y values) :multiple) (assoc :y y)))
+                   (not= (:y values) :multiple) (assoc :y y)
+                   ;; In case of multiple selection, the origin point has been already
+                   ;; calculated and given in the fake :ox and :oy attributes. See
+                   ;; common/src/app/common/attrs.cljc
+                   (some? (:ox values)) (assoc :x (:ox values))
+                   (some? (:oy values)) (assoc :y (:oy values))))
 
+        ;; For :height and :width we take those in the :selrect attribute, because
+        ;; not all shapes have an own :width and :height (e. g. paths). Here the
+        ;; rotation is ignored (selrect always has the original size excluding
+        ;; transforms).
         values (let [{:keys [width height]} (-> shapes first :selrect)]
                  (cond-> values
                    (not= (:width values) :multiple) (assoc :width width)
                    (not= (:height values) :multiple) (assoc :height height)))
 
-        values (let [{:keys [rotation]} (-> shapes first)]
+        ;; The :rotation, however, does use the transforms.
+        values (let [{:keys [rotation] :or {rotation 0}} (-> shapes first)]
                  (cond-> values
                    (not= (:rotation values) :multiple) (assoc :rotation rotation)))
 
@@ -84,7 +102,6 @@
         all-equal?       (ctr/all-equal? values)
         radius-multi?    (mf/use-state nil)
         radius-input-ref (mf/use-ref nil)
-
 
         on-preset-selected
         (fn [width height]
@@ -279,7 +296,6 @@
             {:no-validate true
              :min 0
              :max 359
-             :default 0
              :data-wrap true
              :placeholder "--"
              :on-click select-all

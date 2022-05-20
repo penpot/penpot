@@ -687,10 +687,6 @@ msgstr "所有者不能离开团队，您必须转让所有者角色。"
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "你必须接受我们的使用条例和隐私政策。"
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "令牌已过期"
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "发生了意料之外的错误。"

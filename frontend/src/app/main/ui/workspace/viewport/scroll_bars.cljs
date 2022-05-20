@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.scroll-bars
   (:require
+   [app.common.colors :as clr]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as dw]
@@ -188,7 +189,7 @@
 
     [:*
      (when show-v-scroll?
-       [:g.v-scroll
+       [:g.v-scroll {:fill clr/black}
         [:rect {:on-mouse-move #(on-mouse-move % :y)
                 :on-mouse-down #(on-mouse-down % :y)
                 :on-mouse-up   on-mouse-up
@@ -202,7 +203,7 @@
                 :style {:stroke "white"
                         :stroke-width (/ 0.15 zoom)}}]])
      (when show-h-scroll?
-       [:g.h-scroll
+       [:g.h-scroll {:fill clr/black}
         [:rect {:on-mouse-move #(on-mouse-move % :x)
                 :on-mouse-down #(on-mouse-down % :x)
                 :on-mouse-up  on-mouse-up

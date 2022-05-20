@@ -462,21 +462,13 @@
         name-input-ref (mf/use-ref)
         on-change-ref  (mf/use-ref nil)
 
-        name-ref       (mf/use-ref (:name typography))
-
         on-name-blur
         (mf/use-callback
          (mf/deps on-change)
          (fn [event]
-           (let [content (dom/get-target-val event)]
-             (when-not (str/blank? content)
-               (let [[path name] (cph/parse-path-name content)]
-                 (on-change {:name name :path path}))))))
-
-        on-name-change
-        (mf/use-callback
-         (fn [event]
-           (mf/set-ref-val! name-ref (dom/get-target-val event))))]
+           (let [name (dom/get-target-val event)]
+             (when-not (str/blank? name)
+               (on-change {:name name })))))]
 
     (mf/use-effect
      (mf/deps editing?)
@@ -497,16 +489,6 @@
      (mf/deps on-change)
      (fn []
        (mf/set-ref-val! on-change-ref {:on-change on-change})))
-
-    (mf/use-effect
-     (fn []
-       (fn []
-         (let [content (mf/ref-val name-ref)]
-           ;; On destroy we check if it changed
-           (when (and (some? content) (not= content (:name typography)))
-             (let [{:keys [on-change]} (mf/ref-val on-change-ref)
-                 [path name] (cph/parse-path-name content)]
-             (on-change {:name name :path path})))))))
 
     [:*
      [:div.element-set-options-group.typography-entry
@@ -582,8 +564,7 @@
             {:type "text"
              :ref name-input-ref
              :default-value (cph/merge-path-item (:path typography) (:name typography))
-             :on-blur on-name-blur
-             :on-change on-name-change}]
+             :on-blur on-name-blur}]
 
              [:div.element-set-actions-button
               {:on-click #(reset! open? false)}

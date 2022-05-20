@@ -21,12 +21,14 @@
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.keyboard :as kbd]
+   [app.util.normalize-wheel :as nw]
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf])
-  (:import goog.events.WheelEvent))
+   [rumext.alpha :as mf]))
+
+(def scale-per-pixel -0.0057)
 
 (defn on-mouse-down
   [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
@@ -377,32 +379,24 @@
          (dom/stop-propagation event)
          (let [pt     (->> (dom/get-client-position event)
                            (utils/translate-point-to-viewport viewport zoom))
+
+               norm-event ^js (nw/normalize-wheel event)
                ctrl?  (kbd/ctrl? event)
+               delta-y (.-pixelY norm-event)
+               delta-x (.-pixelX norm-event)]
 
-               delta-mode (.-deltaMode ^js event)
-
-               unit (cond
-                      (= delta-mode WheelEvent.DeltaMode.PIXEL) 1
-                      (= delta-mode WheelEvent.DeltaMode.LINE) 16
-                      (= delta-mode WheelEvent.DeltaMode.PAGE) 100)
-
-               delta-y (-> (.-deltaY ^js event)
-                           (* unit)
-                           (/ zoom))
-
-               delta-x (-> (.-deltaX ^js event)
-                           (* unit)
-                           (/ zoom))]
            (if (or ctrl? mod?)
-             (let [delta (* -1 (+ delta-y delta-x))
-                   scale (-> (+ 1 (/ delta 100)) (mth/clamp 0.77 1.3))]
+             (let [delta-zoom (+ delta-y delta-x)
+                   scale (+ 1 (mth/abs (* scale-per-pixel delta-zoom)))
+                   scale (if (pos? delta-zoom) (/ 1 scale) scale)]
                (st/emit! (dw/set-zoom pt scale)))
+
              (if (and (not (cfg/check-platform? :macos))
                       ;; macos sends delta-x automatically, don't need to do it
                       (kbd/shift? event))
-               (st/emit! (dw/update-viewport-position {:x #(+ % delta-y)}))
-               (st/emit! (dw/update-viewport-position {:x #(+ % delta-x)
-                                                       :y #(+ % delta-y)}))))))))))
+               (st/emit! (dw/update-viewport-position {:x #(+ % (/ delta-y zoom))}))
+               (st/emit! (dw/update-viewport-position {:x #(+ % (/ delta-x zoom))
+                                                       :y #(+ % (/ delta-y zoom))}))))))))))
 
 (defn on-drag-enter []
   (mf/use-callback

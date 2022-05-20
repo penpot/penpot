@@ -80,7 +80,8 @@
 
      [:& stroke-menu {:ids ids
                       :type type
-                      :values stroke-values}]
+                      :values stroke-values
+                      :disable-stroke-style true}]
 
      (when (= :multiple (:fills fill-values))
        [:& color-selection-menu {:type type :shapes [shape]}])

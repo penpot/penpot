@@ -79,6 +79,7 @@
                                (obj/set! "height" height))])
 
                (when has-image?
-                 [:image {:xlinkHref (get embed uri uri)
+                 [:image {:href (get embed uri uri)
+                          :preserveAspectRatio "none"
                           :width width
                           :height height}])]])])))))

@@ -55,8 +55,11 @@
 
 ### :bug: Bugs fixed
 
+- Fix typo in viewer comment section [Taiga #3401](https://tree.taiga.io/project/penpot/issue/3401)
+- Do not show team-up modal for users already on a team [Taiga #3311](https://tree.taiga.io/project/penpot/issue/3311)
 - Constraints are not well assigned when default and multiselection [Taiga #3069](https://tree.taiga.io/project/penpot/issue/3069)
 - Duplicate artboards create new flows if needed [Taiga #2221](https://tree.taiga.io/project/penpot/issue/2221)
+- Round the size values on handoff to two decimals [Taiga #3227](https://tree.taiga.io/project/penpot/issue/3227)
 - Fix paste shapes while editing text [Taiga #2396](https://tree.taiga.io/project/penpot/issue/2396)
 - Round the size values on handoff to two decimals [Taiga #3227](https://tree.taiga.io/project/penpot/issue/3227)
 - Fix blend modes ignored in component updates [Taiga #2626](https://tree.taiga.io/project/penpot/issue/2626)

@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.thumbnails
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -27,56 +28,43 @@
 
 (defn update-thumbnail
   "Updates the thumbnail information for the given frame `id`"
-  [id data]
-  (let [lock (uuid/next)]
+  [page-id frame-id data]
+  (let [lock (uuid/next)
+        object-id (dm/str page-id frame-id)]
+
     (ptk/reify ::update-thumbnail
       IDeref
-      (-deref [_] {:id id :data data})
+      (-deref [_] {:object-id object-id :data data})
       
       ptk/UpdateEvent
       (update [_ state]
         (-> state
-            (assoc-in [:workspace-file :thumbnails id] data)
-            (cond-> (nil? (get-in state [::update-thumbnail-lock id]))
-              (assoc-in [::update-thumbnail-lock id] lock))))
+            (assoc-in [:workspace-file :thumbnails object-id] data)
+            (cond-> (nil? (get-in state [::update-thumbnail-lock object-id]))
+              (assoc-in [::update-thumbnail-lock object-id] lock))))
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (when (= lock (get-in state [::update-thumbnail-lock id]))
+        (when (= lock (get-in state [::update-thumbnail-lock object-id]))
           (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))
                 params {:file-id (:current-file-id state)
-                        :object-id id}]
+                        :object-id object-id}]
             ;; Sends the first event and debounce the rest. Will only make one update once
             ;; the 2 second debounce is finished
             (rx/merge
              (->> stream
                   (rx/filter (ptk/type? ::update-thumbnail))
                   (rx/map deref)
-                  (rx/filter #(= id (:id %)))
+                  (rx/filter #(= object-id (:object-id %)))
                   (rx/debounce 2000)
                   (rx/take 1)
                   (rx/map :data)
                   (rx/flat-map #(rp/mutation! :upsert-file-object-thumbnail (assoc params :data %)))
-                  (rx/map #(fn [state] (d/dissoc-in state [::update-thumbnail-lock id])))
+                  (rx/map #(fn [state] (d/dissoc-in state [::update-thumbnail-lock object-id])))
                   (rx/take-until stopper))
 
-             (->> (rx/of (update-thumbnail id data))
+             (->> (rx/of (update-thumbnail page-id frame-id data))
                   (rx/observe-on :async)))))))))
-
-(defn remove-thumbnail
-  [id]
-  (ptk/reify ::remove-thumbnail
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state (d/dissoc-in [:workspace-file :thumbnails id])))
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [params {:file-id (:current-file-id state)
-                    :object-id id
-                    :data nil}]
-        (->> (rp/mutation! :upsert-file-object-thumbnail params)
-             (rx/ignore))))))
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"
@@ -165,7 +153,8 @@
   (ptk/reify ::duplicate-thumbnail
     ptk/UpdateEvent
     (update [_ state]
-      (let [old-shape-thumbnail (get-in state [:workspace-file :thumbnails old-id])]
-        (-> state (assoc-in [:workspace-file :thumbnails new-id] old-shape-thumbnail))))))
+      (let [page-id (get state :current-page-id)
+            old-shape-thumbnail (get-in state [:workspace-file :thumbnails (dm/str page-id old-id)])]
+        (-> state (assoc-in [:workspace-file :thumbnails (dm/str page-id new-id)] old-shape-thumbnail))))))
 
 

@@ -8,8 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.frame :as frame]
@@ -25,19 +28,17 @@
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-shape-inner
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "fonts"]))]
+      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
        ::mf/wrap-props false
        ::mf/forward-ref true}
       [props ref]
 
       (let [shape         (unchecked-get props "shape")
-            fonts         (unchecked-get props "fonts")
             childs-ref    (mf/use-memo (mf/deps (:id shape)) #(refs/children-objects (:id shape)))
             childs        (mf/deref childs-ref)]
 
         [:& (mf/provider embed/context) {:value true}
          [:& shape-container {:shape shape :ref ref}
-          [:& ff/fontfaces-style {:fonts fonts}]
           [:& frame-shape {:shape shape :childs childs} ]]]))))
 
 (defn check-props
@@ -60,16 +61,20 @@
             thumbnail?         (unchecked-get props "thumbnail?")
             objects            (unchecked-get props "objects")
 
-            fonts              (mf/use-memo (mf/deps shape objects) #(ff/frame->fonts shape objects))
+            render-id          (mf/use-memo #(str (uuid/next)))
+            fonts              (mf/use-memo (mf/deps shape objects) #(ff/shape->fonts shape objects))
             fonts              (-> fonts (hooks/use-equal-memo))
 
             force-render       (mf/use-state false)
 
             ;; Thumbnail data
             frame-id           (:id shape)
-            thumbnail-data-ref (mf/use-memo (mf/deps frame-id) #(refs/thumbnail-frame-data frame-id))
+            page-id            (mf/use-ctx ctx/current-page-id)
+
+            thumbnail-data-ref (mf/use-memo (mf/deps page-id frame-id) #(refs/thumbnail-frame-data page-id frame-id))
             thumbnail-data     (mf/deref thumbnail-data-ref)
-            thumbnail?         (and thumbnail? (or (some? (:thumbnail shape)) (some? thumbnail-data)))
+
+            thumbnail?         (and thumbnail? (some? thumbnail-data))
 
             ;; References to the current rendered node and the its parentn
             node-ref           (mf/use-var nil)
@@ -84,12 +89,19 @@
             disable-thumbnail? (d/not-empty? (dm/get-in modifiers [(:id shape) :modifiers]))
 
             [on-load-frame-dom thumb-renderer]
-            (ftr/use-render-thumbnail shape node-ref rendered? thumbnail? disable-thumbnail?)
+            (ftr/use-render-thumbnail page-id shape node-ref rendered? thumbnail-data-ref disable-thumbnail?)
 
             on-frame-load
             (fns/use-node-store thumbnail? node-ref rendered?)]
 
         (fdm/use-dynamic-modifiers objects @node-ref modifiers)
+
+        (mf/use-effect
+         (mf/deps fonts)
+         (fn []
+           (->> (rx/from fonts)
+                (rx/merge-map fonts/fetch-font-css)
+                (rx/ignore))))
 
         (mf/use-effect
          (fn []
@@ -113,11 +125,15 @@
               @node-ref)
              (when (not @rendered?) (reset! rendered? true)))))
 
-        [:g.frame-container {:key "frame-container" :ref on-frame-load}
-         thumb-renderer
+        [:& (mf/provider ctx/render-ctx) {:value render-id}
+         [:g.frame-container {:id (dm/str "frame-container-" (:id shape))
+                              :key "frame-container"
+                              :ref on-frame-load}
+          [:& ff/fontfaces-style {:fonts fonts}]
+          [:g.frame-thumbnail-wrapper {:id (dm/str "thumbnail-container-" (:id shape))}
+           [:> frame/frame-thumbnail {:key (dm/str (:id shape))
+                                      :shape (cond-> shape
+                                               (some? thumbnail-data)
+                                               (assoc :thumbnail thumbnail-data))}]
 
-         [:g.frame-thumbnail
-          [:> frame/frame-thumbnail {:key (dm/str (:id shape))
-                                     :shape (cond-> shape
-                                              (some? thumbnail-data)
-                                              (assoc :thumbnail thumbnail-data))}]]]))))
+           thumb-renderer]]]))))

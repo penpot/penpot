@@ -90,7 +90,6 @@
     :polyline
     :radialGradient
     :rect
-    :script
     :set
     :stop
     :style
@@ -495,7 +494,6 @@
     :marker
     :mask
     :pattern
-    :script
     :style
     :switch
     :text
@@ -963,5 +961,5 @@
   (let [redfn (fn [acc {:keys [tag attrs]}]
                 (cond-> acc
                   (= :image tag)
-                  (conj (:xlink:href attrs))))]
+                  (conj (or (:href attrs) (:xlink:href attrs)))))]
     (reduce-nodes redfn [] svg-data )))

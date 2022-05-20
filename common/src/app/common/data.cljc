@@ -336,6 +336,16 @@
   [& maps]
   (reduce conj (or (first maps) {}) (rest maps)))
 
+(defn txt-merge
+  "Text attrs specific merge function."
+  [obj attrs]
+  (reduce-kv (fn [obj k v]
+               (if (nil? v)
+                 (dissoc obj k)
+                 (assoc obj k v)))
+             obj
+             attrs))
+
 (defn distinct-xf
   [f]
   (fn [rf]
@@ -574,17 +584,20 @@
    (assert (string? basename))
    (assert (set? used))
 
-   (let [[prefix initial] (extract-numeric-suffix basename)]
-     (if (and (not prefix-first?)
-              (not (contains? used basename)))
-       basename
-       (loop [counter initial]
-         (let [candidate (if (and (= 1 counter) prefix-first?)
-                           (str prefix)
-                           (str prefix "-" counter))]
-           (if (contains? used candidate)
-             (recur (inc counter))
-             candidate)))))))
+   (if (> (count basename) 1000)
+     ;; We skip generating names for long strings. If the name is too long the regex can hang
+     basename
+     (let [[prefix initial] (extract-numeric-suffix basename)]
+       (if (and (not prefix-first?)
+                (not (contains? used basename)))
+         basename
+         (loop [counter initial]
+           (let [candidate (if (and (= 1 counter) prefix-first?)
+                             (str prefix)
+                             (str prefix "-" counter))]
+             (if (contains? used candidate)
+               (recur (inc counter))
+               candidate))))))))
 
 (defn deep-mapm
   "Applies a map function to an associative map and recurses over its children

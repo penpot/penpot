@@ -11,6 +11,7 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.util.i18n :as i18n :refer [tr]]
@@ -38,25 +39,27 @@
         on-team-up
         (fn []
           (st/emit! (modal/show {:type :onboarding-team})))
-        ]
+        teams (mf/deref refs/teams)]
 
-    [:div.modal-overlay
-     [:div.modal-container.onboarding.final.animated.fadeInUp
-      [:div.modal-top
-       [:h1 {:data-test "onboarding-welcome-title"} (tr "onboarding.welcome.title")]
-       [:p (tr "onboarding.welcome.desc3")]]
-      [:div.modal-columns
-       [:div.modal-left
-        [:div.content-button {:on-click on-fly-solo
-                              :data-test "fly-solo-op"}
-         [:h2 (tr "onboarding.choice.fly-solo")]
-         [:p (tr "onboarding.choice.fly-solo-desc")]]]
-       [:div.modal-right
-        [:div.content-button {:on-click on-team-up :data-test "team-up-button"}
-         [:h2 (tr "onboarding.choice.team-up")]
-         [:p (tr "onboarding.choice.team-up-desc")]]]]
-      [:img.deco {:src "images/deco-left.png" :border "0"}]
-      [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]))
+    (if (< (count teams) 2)
+      [:div.modal-overlay
+       [:div.modal-container.onboarding.final.animated.fadeInUp
+        [:div.modal-top
+         [:h1 {:data-test "onboarding-welcome-title"} (tr "onboarding.welcome.title")]
+         [:p (tr "onboarding.welcome.desc3")]]
+        [:div.modal-columns
+         [:div.modal-left
+          [:div.content-button {:on-click on-fly-solo
+                                :data-test "fly-solo-op"}
+           [:h2 (tr "onboarding.choice.fly-solo")]
+           [:p (tr "onboarding.choice.fly-solo-desc")]]]
+         [:div.modal-right
+          [:div.content-button {:on-click on-team-up :data-test "team-up-button"}
+           [:h2 (tr "onboarding.choice.team-up")]
+           [:p (tr "onboarding.choice.team-up-desc")]]]]
+        [:img.deco {:src "images/deco-left.png" :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]
+      [:div {:on-load on-fly-solo}])))
 
 (mf/defc onboarding-team-modal
   {::mf/register modal/components

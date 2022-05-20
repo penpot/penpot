@@ -6,7 +6,6 @@
 
 (ns app.common.geom.shapes.transforms
   (:require
-   [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -533,7 +532,7 @@
                                             (* (get-in modifiers [:resize-vector :x] 1))
                                             (* (get-in modifiers [:resize-vector-2 :x] 1))
                                             (str))]
-                          (attrs/merge attrs {:font-size font-size})))]
+                          (d/txt-merge attrs {:font-size font-size})))]
       (update shape :content #(txt/transform-nodes
                                 txt/is-text-node?
                                 merge-attrs

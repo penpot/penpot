@@ -138,6 +138,7 @@
 (def ruler (icon-xref :ruler))
 (def ruler-tool (icon-xref :ruler-tool))
 (def search (icon-xref :search))
+(def set-thumbnail (icon-xref :set-thumbnail))
 (def shape-halign-center (icon-xref :shape-halign-center))
 (def shape-halign-left (icon-xref :shape-halign-left))
 (def shape-halign-right (icon-xref :shape-halign-right))

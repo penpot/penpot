@@ -21,7 +21,7 @@
                     :width  width
                     :fontFamily "sourcesanspro"
                     :display "flex"
-                    :whiteSpace "pre-wrap"}]
+                    :whiteSpace "break-spaces"}]
     (cond-> base
       (= valign "top")     (obj/set! "alignItems" "flex-start")
       (= valign "center")  (obj/set! "alignItems" "center")
@@ -50,7 +50,7 @@
         text-align  (:text-align data "start")
         base        #js {:fontSize (str (:font-size data (:font-size txt/default-text-attrs)) "px")
                          :lineHeight (:line-height data (:line-height txt/default-text-attrs))
-                         :margin "inherit"}]
+                         :margin 0}]
     (cond-> base
       (some? line-height)       (obj/set! "lineHeight" line-height)
       (some? text-align)        (obj/set! "textAlign" text-align))))
@@ -83,7 +83,9 @@
                               :lineHeight (or line-height "1.2")
                               :color (if show-text? text-color "transparent")
                               :caretColor (or text-color "black")
-                              :overflowWrap "initial"}
+                              :overflowWrap "initial"
+                              :lineBreak "auto"
+                              :whiteSpace "break-spaces"}
 
          fills
          (cond
@@ -126,7 +128,4 @@
            (obj/set! "fontWeight" font-weight))
 
        (= grow-type :auto-width)
-       (obj/set! "whiteSpace" "pre")
-
-       (not= grow-type :auto-width)
-       (obj/set! "whiteSpace" "pre-wrap")))))
+       (obj/set! "whiteSpace" "pre")))))

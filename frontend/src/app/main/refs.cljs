@@ -9,9 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.path.commands :as upc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [okulary.core :as l]))
@@ -193,28 +191,29 @@
                      (assoc :pages (:pages data)))))
              st/state =))
 
+(def workspace-data
+  (l/derived :workspace-data st/state))
+
 (def workspace-file-colors
-  (l/derived (fn [state]
-               (when-let [file (:workspace-data state)]
-                 (->> (:colors file)
-                      (d/mapm #(assoc %2 :file-id (:id file))))))
-             st/state))
+  (l/derived (fn [data]
+               (when data
+                 (->> (:colors data)
+                      (d/mapm #(assoc %2 :file-id (:id data))))))
+             workspace-data
+             =))
 
 (def workspace-recent-colors
-  (l/derived (fn [state]
-               (dm/get-in state [:workspace-data :recent-colors] []))
-             st/state))
+  (l/derived (fn [data]
+               (get data :recent-colors []))
+             workspace-data))
 
 (def workspace-recent-fonts
-  (l/derived (fn [state]
-               (dm/get-in state [:workspace-data :recent-fonts] []))
-             st/state))
+  (l/derived (fn [data]
+               (get data :workspace-data []))
+             workspace-data))
 
 (def workspace-file-typography
-  (l/derived (fn [state]
-               (when-let [file (:workspace-data state)]
-                 (:typographies file)))
-             st/state))
+  (l/derived :typographies workspace-data))
 
 (def workspace-project
   (l/derived :workspace-project st/state))
@@ -313,24 +312,8 @@
    workspace-modifiers-with-objects
    =))
 
-(defn- set-content-modifiers [state]
-  (fn [id shape]
-    (let [content-modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers])]
-      (if (some? content-modifiers)
-        (update shape :content upc/apply-content-modifiers content-modifiers)
-        shape))))
-
 (defn select-bool-children [id]
-  (let [selector
-        (fn [state]
-          (let [objects   (wsh/lookup-page-objects state)
-                modifiers (:workspace-modifiers state)
-                children  (->> (cph/get-children-ids objects id)
-                               (select-keys objects))]
-            (as-> children $
-              (gsh/merge-modifiers $ modifiers)
-              (d/mapm (set-content-modifiers state) $))))]
-    (l/derived selector st/state =)))
+  (l/derived (partial wsh/select-bool-children id) st/state =))
 
 (def selected-data
   (l/derived #(let [selected (wsh/lookup-selected %)
@@ -399,11 +382,14 @@
   (l/derived #(dm/get-in % [:workspace-file :thumbnails] {}) st/state))
 
 (defn thumbnail-frame-data
-  [frame-id]
-  (l/derived #(get % frame-id) thumbnail-data))
+  [page-id frame-id]
+  (l/derived
+   (fn [thumbnails]
+     (get thumbnails (dm/str page-id frame-id)))
+   thumbnail-data))
 
 (def workspace-text-modifier
   (l/derived :workspace-text-modifier st/state))
 
 (defn workspace-text-modifier-by-id [id]
-  (l/derived #(get % id) workspace-text-modifier))
+  (l/derived #(get % id) workspace-text-modifier =))

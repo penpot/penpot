@@ -725,10 +725,6 @@ msgstr "Sahip takımdan ayrılamaz, sahip rolünü yeniden atamanız gerekir."
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Hizmet şartlarımızı ve gizlilik politikamızı kabul etmelisin."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Jetonun süresi geçti"
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Beklenmedik bir hata oluştu."

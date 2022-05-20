@@ -67,6 +67,38 @@
           (db/insert! conn :file params)
           (:id file))))))
 
+(defn repair-orphaned-components
+  "We have detected some cases of component instances that are not nested, but
+  however they have not the :component-root? attribute (so the system considers
+  them nested). This script fixes this adding them the attribute.
+
+  Use it with the update-file function above."
+  [data]
+  (let [update-page
+        (fn [page]
+          (prn "================= Page:" (:name page))
+          (letfn [(is-nested? [object]
+                    (and (some? (:component-id object))
+                         (nil? (:component-root? object))))
+
+                  (is-instance? [object]
+                    (some? (:shape-ref object)))
+
+                  (get-parent [object]
+                    (get (:objects page) (:parent-id object)))
+
+                  (update-object [object]
+                    (if (and (is-nested? object)
+                             (not (is-instance? (get-parent object))))
+                      (do
+                        (prn "Orphan:" (:name object))
+                        (assoc object :component-root? true))
+                      object))]
+
+            (update page :objects d/update-vals update-object)))]
+
+    (update data :pages-index d/update-vals update-page)))
+
 ;; (defn check-image-shapes
 ;;   [{:keys [data] :as file} stats]
 ;;   (println "=> analizing file:" (:name file) (:id file))
