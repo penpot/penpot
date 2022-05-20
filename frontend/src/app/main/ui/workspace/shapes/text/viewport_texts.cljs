@@ -30,7 +30,10 @@
 
 (defn strip-modifier
   [modifier]
-  (d/update-when modifier :modifiers dissoc :displacement :rotation))
+  (if (or (some? (get-in modifier [:modifiers :resize-vector]))
+          (some? (get-in modifier [:modifiers :resize-vector-2])))
+    modifier
+    (d/update-when modifier :modifiers dissoc :displacement :rotation)))
 
 (defn process-shape [modifiers {:keys [id] :as shape}]
   (let [modifier (-> (get modifiers id) strip-modifier)
