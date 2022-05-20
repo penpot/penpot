@@ -81,7 +81,6 @@
   (let [shape-node (dom/query base-node (str "#shape-" id))
 
         frame? (= :frame type)
-        text?  (= :text type)
         group? (= :group type)
         mask?  (and group? masked-group?)]
 
@@ -103,10 +102,6 @@
         (d/concat-vec
          (dom/query-all shape-defs ".svg-def")
          (dom/query-all shape-defs ".svg-mask-wrapper")))
-
-      text?
-      [shape-node
-       (dom/query shape-node ".text-container")]
 
       :else
       [shape-node])))
@@ -172,10 +167,12 @@
 
 (defn update-transform!
   [base-node shapes transforms modifiers]
-  (doseq [{:keys [id] :as shape} shapes]
+  (doseq [{:keys [id type] :as shape} shapes]
     (when-let [nodes (get-nodes base-node shape)]
       (let [transform (get transforms id)
-            modifiers (get-in modifiers [id :modifiers])]
+            modifiers (get-in modifiers [id :modifiers])
+            text? (= type :text)
+            transform-text? (and text? (and (nil? (:resize-vector modifiers)) (nil? (:resize-vector-2 modifiers))))]
 
         (doseq [node nodes]
           (cond
@@ -188,17 +185,6 @@
             (dom/class? node "frame-children")
             (set-transform-att! node "transform" (gmt/inverse transform))
 
-            ;; We need to update the shape transform matrix when there is a resize
-            ;; we do it dinamicaly here
-            (dom/class? node "text-container")
-            (let [modifiers (dissoc modifiers :displacement :rotation)]
-              (when (not (gsh/empty-modifiers? modifiers))
-                (let [mtx (-> shape
-                              (assoc :modifiers modifiers)
-                              (gsh/transform-shape)
-                              (gsh/transform-matrix {:no-flip true}))]
-                  (override-transform-att! node "transform" mtx))))
-
             (or (= (dom/get-tag-name node) "mask")
                 (= (dom/get-tag-name node) "filter"))
             (transform-region! node modifiers)
@@ -210,7 +196,7 @@
             (= (dom/get-tag-name node) "pattern")
             (set-transform-att! node "patternTransform" transform)
 
-            (and (some? transform) (some? node))
+            (and (some? transform) (some? node) (or (not text?) transform-text?))
             (set-transform-att! node "transform" transform)))))))
 
 (defn remove-transform!
