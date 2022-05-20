@@ -260,11 +260,9 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (get state :workspace-data)
-            [path name] (cph/parse-path-name (:name typography))
-            path (if (and (:path typography) (= "" path)) 
-                   (:path typography) 
-                   path)
-            typography  (assoc typography :path path :name name)]
+            [path name] (cph/parse-path-name new-name)
+            object  (get-in data [:typographies id])
+            new-object  (assoc object :path path :name name)]
         (do-update-tipography it state new-object file-id)))))
 
 (defn delete-typography
