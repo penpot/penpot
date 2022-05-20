@@ -53,13 +53,13 @@
 
   ([id params {:keys [raw-transit?]}]
    (let [decode-transit (if raw-transit?
-                          identity
-                          (partial rx/map http/conditional-decode-transit))]
+                          http/conditional-error-decode-transit
+                          http/conditional-decode-transit)]
      (->> (http/send! {:method :get
                        :uri (u/join base-uri "api/rpc/query/" (name id))
                        :credentials "include"
                        :query params})
-          (decode-transit)
+          (rx/map decode-transit)
           (rx/mapcat handle-response)))))
 
 (defn- send-mutation!
