@@ -73,7 +73,7 @@
         {:alt (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
          :class (when (and (nil? selected-drawtool)
                            (not edition)) "selected")
-         :on-click (st/emitf :interrupt)}
+         :on-click #(st/emit! :interrupt)}
         i/pointer-inner]
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))

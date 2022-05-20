@@ -122,7 +122,7 @@
         on-draft-cancel
         (mf/use-callback
          (mf/deps cstate)
-         (st/emitf (dcm/close-thread)))
+         #(st/emit! (dcm/close-thread)))
 
         on-draft-submit
         (mf/use-callback

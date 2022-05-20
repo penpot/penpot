@@ -29,27 +29,27 @@
         go-dashboard
         (mf/use-callback
          (mf/deps profile)
-         (st/emitf (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)})))
+         #(st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)})))
 
         go-settings-profile
         (mf/use-callback
          (mf/deps profile)
-         (st/emitf (rt/nav :settings-profile)))
+         #(st/emit! (rt/nav :settings-profile)))
 
         go-settings-feedback
         (mf/use-callback
          (mf/deps profile)
-         (st/emitf (rt/nav :settings-feedback)))
+         #(st/emit! (rt/nav :settings-feedback)))
 
         go-settings-password
         (mf/use-callback
          (mf/deps profile)
-         (st/emitf (rt/nav :settings-password)))
+         #(st/emit! (rt/nav :settings-password)))
 
         go-settings-options
         (mf/use-callback
          (mf/deps profile)
-         (st/emitf (rt/nav :settings-options)))
+         #(st/emit! (rt/nav :settings-options)))
 
         show-release-notes
         (mf/use-callback

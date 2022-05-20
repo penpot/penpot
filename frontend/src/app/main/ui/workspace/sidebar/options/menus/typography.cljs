@@ -552,9 +552,11 @@
           [:span (:text-transform typography)]]
 
          [:div.row-flex
-          [:a.go-to-lib-button {:on-click (st/emitf (rt/nav-new-window* {:rname :workspace
-                                                                         :path-params {:project-id (:project-id file) :file-id (:id file)}
-                                                                         :query-params {:page-id (get-in file [:data :pages 0])}}))}
+          [:a.go-to-lib-button
+           {:on-click #(st/emit! (rt/nav-new-window* {:rname :workspace
+                                                      :path-params {:project-id (:project-id file)
+                                                                    :file-id (:id file)}
+                                                      :query-params {:page-id (get-in file [:data :pages 0])}}))}
            (tr "workspace.assets.typography.go-to-edit")]]]
 
         [:*

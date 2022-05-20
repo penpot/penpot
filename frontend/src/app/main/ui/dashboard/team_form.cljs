@@ -82,7 +82,7 @@
            [:h2 (tr "labels.create-team")])]
 
         [:div.modal-close-button
-         {:on-click (st/emitf (modal/hide))} i/close]]
+         {:on-click #(st/emit! (modal/hide))} i/close]]
 
        [:div.modal-content.generic-form
         [:& fm/input {:type "text"

@@ -49,7 +49,7 @@
 (mf/defc notifications
   []
   (let [message  (mf/deref refs/message)
-        on-close (st/emitf dm/hide)]
+        on-close #(st/emit! dm/hide)]
     (when message
       [:& banner (assoc message
                         :position (or (:position message) :fixed)

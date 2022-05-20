@@ -41,12 +41,12 @@
   ;; (let [go-fonts
   ;;       (mf/use-callback
   ;;        (mf/deps team)
-  ;;        (st/emitf (rt/nav :dashboard-fonts {:team-id (:id team)})))
+  ;;        #(st/emit! (rt/nav :dashboard-fonts {:team-id (:id team)})))
 
   ;;       go-providers
   ;;       (mf/use-callback
   ;;        (mf/deps team)
-  ;;        (st/emitf (rt/nav :dashboard-font-providers {:team-id (:id team)})))]
+  ;;        #(st/emit! (rt/nav :dashboard-font-providers {:team-id (:id team)})))]
 
   (use-set-page-title team section)
 

@@ -33,8 +33,8 @@
            (dom/set-html-title (tr "title.dashboard.shared-libraries" tname))))))
 
     (mf/use-effect
-     (st/emitf (dd/fetch-shared-files)
-               (dd/clear-selected-files)))
+     #(st/emit! (dd/fetch-shared-files)
+                (dd/clear-selected-files)))
 
     [:*
      [:header.dashboard-header

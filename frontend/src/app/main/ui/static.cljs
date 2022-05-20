@@ -41,7 +41,7 @@
    [:div.desc-message (tr "labels.bad-gateway.desc-message")]
    [:div.sign-info
     [:a.btn-primary.btn-small
-     {:on-click (st/emitf #(dissoc % :exception))}
+     {:on-click (fn [] (st/emit! #(dissoc % :exception)))}
      (tr "labels.retry")]]])
 
 (mf/defc service-unavailable
@@ -52,7 +52,7 @@
    [:div.desc-message (tr "labels.service-unavailable.desc-message")]
    [:div.sign-info
     [:a.btn-primary.btn-small
-     {:on-click (st/emitf #(dissoc % :exception))}
+     {:on-click (fn [] (st/emit! #(dissoc % :exception)))}
      (tr "labels.retry")]]])
 
 (mf/defc internal-error
@@ -63,7 +63,7 @@
    [:div.desc-message (tr "labels.internal-error.desc-message")]
    [:div.sign-info
     [:a.btn-primary.btn-small
-     {:on-click (st/emitf (rt/assign-exception nil))}
+     {:on-click (fn [] (st/emit! (rt/assign-exception nil)))}
      (tr "labels.retry")]]])
 
 (mf/defc exception-page

@@ -44,14 +44,13 @@
 
         finish
         (mf/use-callback
-         (st/emitf (modal/hide)
-                   (du/mark-onboarding-as-viewed {:version version})))
-        ]
+         #(st/emit! (modal/hide)
+                    (du/mark-onboarding-as-viewed {:version version})))]
 
     (mf/use-effect
      (mf/deps)
      (fn []
-       (st/emitf (du/mark-onboarding-as-viewed {:version version}))))
+       #(st/emit! (du/mark-onboarding-as-viewed {:version version}))))
 
     (mf/use-layout-effect
      (mf/deps @slide)

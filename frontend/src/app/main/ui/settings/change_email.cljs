@@ -77,7 +77,7 @@
                              :validators [email-equality]
                              :initial profile)
         on-close
-        (mf/use-callback (st/emitf (modal/hide)))]
+        (mf/use-callback #(st/emit! (modal/hide)))]
 
     [:div.modal-overlay
      [:div.modal-container.change-email-modal.form-container

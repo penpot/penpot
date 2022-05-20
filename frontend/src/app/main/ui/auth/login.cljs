@@ -211,6 +211,6 @@
       [:div.links.demo
        [:div.link-entry
         [:span (tr "auth.create-demo-profile") " "]
-        [:a {:on-click (st/emitf (du/create-demo-profile))
+        [:a {:on-click #(st/emit! (du/create-demo-profile))
              :data-test "demo-account-link"}
          (tr "auth.create-demo-account")]]])]])

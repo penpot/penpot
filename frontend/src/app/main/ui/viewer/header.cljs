@@ -92,11 +92,11 @@
      [:& export-progress-widget]
      [:& zoom-widget
       {:zoom zoom
-       :on-increase (st/emitf dv/increase-zoom)
-       :on-decrease (st/emitf dv/decrease-zoom)
-       :on-zoom-reset (st/emitf dv/reset-zoom)
-       :on-zoom-fill (st/emitf dv/zoom-to-fill)
-       :on-zoom-fit (st/emitf dv/zoom-to-fit)
+       :on-increase #(st/emit! dv/increase-zoom)
+       :on-decrease #(st/emit! dv/decrease-zoom)
+       :on-zoom-reset #(st/emit! dv/reset-zoom)
+       :on-zoom-fill #(st/emit! dv/zoom-to-fill)
+       :on-zoom-fit #(st/emit! dv/zoom-to-fit)
        :on-fullscreen toggle-fullscreen}]
 
      [:span.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
@@ -172,7 +172,7 @@
 (mf/defc header
   [{:keys [project file page frame zoom section permissions index]}]
   (let [go-to-dashboard
-        (st/emitf (dv/go-to-dashboard))
+        #(st/emit! (dv/go-to-dashboard))
 
         go-to-handoff
         (fn []

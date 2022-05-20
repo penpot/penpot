@@ -5,7 +5,6 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.store
-  (:require-macros [app.main.store])
   (:require
    [app.util.object :as obj]
    [beicon.core :as rx]
@@ -55,10 +54,6 @@
   ([event & events]
    (apply ptk/emit! state (cons event events))
    nil))
-
-(defn emitf
-  [& events]
-  #(apply ptk/emit! state events))
 
 (defonce ongoing-tasks (l/atom #{}))
 

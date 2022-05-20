@@ -592,8 +592,8 @@
 
 
     (mf/use-effect
-     (st/emitf (dd/fetch-team-members)
-               (dd/fetch-team-stats)))
+     #(st/emit! (dd/fetch-team-members)
+                (dd/fetch-team-stats)))
 
     [:*
      [:& header {:section :dashboard-team-settings

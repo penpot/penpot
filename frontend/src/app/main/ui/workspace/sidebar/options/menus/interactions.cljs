@@ -137,7 +137,7 @@
          nil))
 
     [:div.flow-element
-     [:div.flow-button {:on-click (st/emitf (dw/select-shape (:starting-frame flow)))}
+     [:div.flow-button {:on-click #(st/emit! (dw/select-shape (:starting-frame flow)))}
       i/play]
      (if @editing?
        [:input.element-name
@@ -148,9 +148,9 @@
          :auto-focus true
          :default-value (:name flow "")}]
        [:span.element-label.flow-name
-        {:on-double-click (st/emitf (dwi/start-rename-flow (:id flow)))}
+        {:on-double-click #(st/emit! (dwi/start-rename-flow (:id flow)))}
         (:name flow)])
-     [:div.add-page {:on-click (st/emitf (dwi/remove-flow (:id flow)))}
+     [:div.add-page {:on-click #(st/emit! (dwi/remove-flow (:id flow)))}
       i/minus]]))
 
 (mf/defc page-flows
@@ -172,7 +172,7 @@
        (if (nil? flow)
          [:div.flow-element
           [:span.element-label (tr "workspace.options.flows.add-flow-start")]
-          [:div.add-page {:on-click (st/emitf (dwi/add-flow-selected-frame))}
+          [:div.add-page {:on-click #(st/emit! (dwi/add-flow-selected-frame))}
            i/plus]]
          [:& flow-item {:flow flow :key (str (:id flow))}])])))
 

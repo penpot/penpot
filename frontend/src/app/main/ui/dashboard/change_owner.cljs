@@ -33,7 +33,7 @@
                           (filter #(not= (:label %) (:fullname profile))
                                   (map #(hash-map :label (:name %) :value (str (:id %))) members)))
 
-        on-cancel   (st/emitf (modal/hide))
+        on-cancel   #(st/emit! (modal/hide))
         on-accept
         (fn [_]
           (let [member-id (get-in @form [:clean-data :member-id])]
