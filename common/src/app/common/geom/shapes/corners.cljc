@@ -4,7 +4,15 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.geom.shapes.corners)
+(ns app.common.geom.shapes.corners
+  (:require
+   [app.common.math :as mth]))
+
+(defn- zero-div
+  [a b]
+  (if (mth/almost-zero? b)
+    ##Inf
+    (/ a b)))
 
 (defn fix-radius
   ;; https://www.w3.org/TR/css-backgrounds-3/#corner-overlap
@@ -16,17 +24,19 @@
   ;; > the sum of the two corresponding radii of the corners on side i, and Ltop = Lbottom = the width of the box, and
   ;; > Lleft = Lright = the height of the box. If f < 1, then all corner radii are reduced by multiplying them by f.
   ([width height r]
-   (let [f (min (/ width  (* 2 r))
-                (/ height (* 2 r)))]
+   (let [f (min 1
+                (zero-div width  (* 2 r))
+                (zero-div height (* 2 r)))]
      (if (< f 1)
        (* r f)
        r)))
 
   ([width height r1 r2 r3 r4]
-   (let [f (min (/ width  (+ r1 r2))
-                (/ height (+ r2 r3))
-                (/ width  (+ r3 r4))
-                (/ height (+ r4 r1)))]
+   (let [f (min 1
+                (zero-div width  (+ r1 r2))
+                (zero-div height (+ r2 r3))
+                (zero-div width  (+ r3 r4))
+                (zero-div height (+ r4 r1)))]
      (if (< f 1)
        [(* r1 f) (* r2 f) (* r3 f) (* r4 f)]
        [r1 r2 r3 r4]))))
@@ -34,7 +44,7 @@
 (defn shape-corners-1
   "Retrieve the effective value for the corner given a single value for corner."
   [{:keys [width height rx] :as shape}]
-  (if (some? rx)
+  (if (and (some? rx) (not (mth/almost-zero? rx)))
     (fix-radius width height rx)
     0))
 
