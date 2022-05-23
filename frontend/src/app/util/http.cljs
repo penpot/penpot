@@ -143,6 +143,12 @@
       (assoc response :body (t/decode-str body))
       response)))
 
+(defn conditional-error-decode-transit
+  [{:keys [body status] :as response}]
+    (if (and (>= status 400) (string? body))
+      (assoc response :body (t/decode-str body))
+      response))
+
 (defn success?
   [{:keys [status]}]
   (<= 200 status 299))
