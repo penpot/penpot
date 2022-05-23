@@ -68,7 +68,7 @@
         ;; Calculate the data-uris for these fonts
         fonts-embed (embed/use-data-uris fonts-urls)
 
-        loading? (d/seek #(not (contains? fonts-embed %)) fonts-urls)
+        loading? (some? (d/seek #(not (contains? fonts-embed %)) fonts-urls))
 
         ;; Creates a style tag by replacing the urls with the data uri
         style (replace-embeds fonts-css fonts-urls fonts-embed)]
