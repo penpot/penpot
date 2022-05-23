@@ -41,7 +41,10 @@
                 (not (gsh/empty-modifiers? (:modifiers modifier)))
                 (-> (assoc :grow-type :fixed)
                     (merge modifier) gsh/transform-shape))]
-    (strip-position-data shape)))
+    (-> shape
+        (cond-> (nil? (:position-data shape))
+          (assoc :migrate true))
+        strip-position-data)))
 
 (defn- update-with-editor-state
   "Updates the shape with the current state in the editor"
@@ -127,9 +130,14 @@
                 new-shape (get text-shapes id)
                 old-modifiers (-> (get prev-modifiers id) strip-modifier)
                 new-modifiers (-> (get modifiers id) strip-modifier)]
+
             (or (and (not (identical? old-shape new-shape))
-                     (not= old-shape new-shape))
-                (not= new-modifiers old-modifiers))))
+                     (not= (dissoc old-shape :migrate :position-data)
+                           (dissoc new-shape :migrate :position-data)))
+                (not= new-modifiers old-modifiers)
+
+                ;; When the position data is nil we force to recalculate
+                (:migrate new-shape))))
 
         changed-texts
         (mf/use-memo
