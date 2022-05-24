@@ -310,14 +310,6 @@
            (tr "workspace.header.menu.show-grid"))]
         [:span.shortcut (sc/get-tooltip :toggle-grid)]]
 
-       [:li {:on-click #(st/emit! (toggle-flag :sitemap)
-                                  (toggle-flag :layers))}
-        [:span
-         (if (or (contains? layout :sitemap) (contains? layout :layers))
-           (tr "workspace.header.menu.hide-layers")
-           (tr "workspace.header.menu.show-layers"))]
-        [:span.shortcut (sc/get-tooltip :toggle-layers)]]
-
        [:li {:on-click (fn []
                          (r/set-resize-type! :bottom)
                          (st/emit! (dw/remove-layout-flag :textpalette)
@@ -336,14 +328,7 @@
          (if (contains? layout :textpalette)
            (tr "workspace.header.menu.hide-textpalette")
            (tr "workspace.header.menu.show-textpalette"))]
-        [:span.shortcut (sc/get-tooltip :toggle-textpalette)]]
-
-       [:li {:on-click #(st/emit! (toggle-flag :assets))}
-        [:span
-         (if (contains? layout :assets)
-           (tr "workspace.header.menu.hide-assets")
-           (tr "workspace.header.menu.show-assets"))]
-        [:span.shortcut (sc/get-tooltip :toggle-assets)]]
+        [:span.shortcut (sc/get-tooltip :toggle-textpalette)]]       
 
        [:li {:on-click #(st/emit! (toggle-flag :display-artboard-names))}
         [:span
