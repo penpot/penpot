@@ -13,6 +13,7 @@
 ### :bug: Bugs fixed
 - Fix menu file not accessible in certain conditions [Taiga #3385](https://tree.taiga.io/project/penpot/issue/3385)
 - Remove deprecated menu options [Taiga #3333](https://tree.taiga.io/project/penpot/issue/3333)
+- Prototype connection should be under the rules [Taiga #3384](https://tree.taiga.io/project/penpot/issue/3384)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
