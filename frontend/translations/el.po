@@ -481,24 +481,6 @@ msgid "feedback.description"
 msgstr "Περιγραφή"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Μετάβαση στις συζητήσεις"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Μπείτε στο συνεργατικό φόρουμ του Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Μπορείτε να κάνετε και να απαντήσετε σε ερωτήσεις, να έχετε συνομιλίες "
-"ανοιχτού τύπου και να συνεχίσετε να επηρεάζετε το έργο"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "Ομαδικές συζητήσεις "
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Επιχείρηση"
 

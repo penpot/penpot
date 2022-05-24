@@ -547,24 +547,6 @@ msgid "feedback.description"
 msgstr "Descrição"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Ir para discussões"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Junte-se ao fórum de comunicação colaborativa da equipe da Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Você pode fazer e responder perguntas, ter conversas abertas e acompanhar "
-"as decisões que afetam o projeto."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "Discussões da equipe"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Assunto"
 

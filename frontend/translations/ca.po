@@ -730,24 +730,6 @@ msgid "feedback.description"
 msgstr "Descripció"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Ves als debats"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Uniu-vos al fòrum col·laboratiu del Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Podeu fer i respondre preguntes, tenir converses obertes i seguir les "
-"decisions que afecten el projecte."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "Debats de l'equip"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Tema"
 

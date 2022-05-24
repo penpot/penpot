@@ -608,18 +608,6 @@ msgid "feedback.description"
 msgstr "狀況描述"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "前往討論"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "加入 Penpot 團隊的協作溝通論壇。"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "團隊討論"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "電子郵件"
 
