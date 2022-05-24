@@ -36,7 +36,7 @@
 
         on-draft-cancel
         (mf/use-callback
-         (st/emitf :interrupt))
+         #(st/emit! :interrupt))
 
         on-draft-submit
         (mf/use-callback

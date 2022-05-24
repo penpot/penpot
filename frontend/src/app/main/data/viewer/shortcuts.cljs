@@ -14,42 +14,42 @@
   {:increase-zoom      {:tooltip "+"
                         :command "+"
                         :subsections [:zoom-viewer]
-                        :fn (st/emitf dv/increase-zoom)}
+                        :fn #(st/emit! dv/increase-zoom)}
 
    :decrease-zoom      {:tooltip "-"
                         :command "-"
                         :subsections [:zoom-viewer]
-                        :fn (st/emitf dv/decrease-zoom)}
+                        :fn #(st/emit! dv/decrease-zoom)}
 
    :select-all         {:tooltip (ds/meta "A")
                         :command (ds/c-mod "a")
                         :subsections [:general-viewer]
-                        :fn (st/emitf (dv/select-all))}
+                        :fn #(st/emit! (dv/select-all))}
 
    :reset-zoom         {:tooltip (ds/shift "0")
                         :command "shift+0"
                         :subsections [:zoom-viewer]
-                        :fn (st/emitf dv/reset-zoom)}
+                        :fn #(st/emit! dv/reset-zoom)}
 
    :toggle-zoom-style  {:tooltip "F"
                         :command "f"
                         :subsections [:zoom-viewer]
-                        :fn (st/emitf dv/toggle-zoom-style)}
+                        :fn #(st/emit! dv/toggle-zoom-style)}
 
    :toogle-fullscreen  {:tooltip (ds/shift "F")
                         :command "shift+f"
                         :subsections [:zoom-viewer]
-                        :fn (st/emitf dv/toggle-fullscreen)}
+                        :fn #(st/emit! dv/toggle-fullscreen)}
 
    :next-frame         {:tooltip ds/left-arrow
                         :command "left"
                         :subsections [:general-viewer]
-                        :fn (st/emitf dv/select-prev-frame)}
+                        :fn #(st/emit! dv/select-prev-frame)}
 
    :prev-frame         {:tooltip ds/right-arrow
                         :command "right"
                         :subsections [:general-viewer]
-                        :fn (st/emitf dv/select-next-frame)}
+                        :fn #(st/emit! dv/select-next-frame)}
 
    :open-handoff       {:tooltip "G H"
                         :command "g h"

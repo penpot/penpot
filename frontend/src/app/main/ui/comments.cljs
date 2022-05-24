@@ -204,19 +204,19 @@
         on-delete-comment
         (mf/use-callback
          (mf/deps comment)
-         (st/emitf (dcm/delete-comment comment)))
+         #(st/emit! (dcm/delete-comment comment)))
 
         delete-thread
         (mf/use-callback
          (mf/deps thread)
-         (st/emitf (dcm/close-thread)
-                   (dcm/delete-comment-thread thread)))
+         #(st/emit! (dcm/close-thread)
+                    (dcm/delete-comment-thread thread)))
 
 
         on-delete-thread
         (mf/use-callback
          (mf/deps thread)
-         (st/emitf (modal/show
+         #(st/emit! (modal/show
                       {:type :confirm
                        :title (tr "modals.delete-comment-thread.title")
                        :message (tr "modals.delete-comment-thread.message")
@@ -292,11 +292,11 @@
 
     (mf/use-layout-effect
      (mf/deps thread)
-     (st/emitf (dcm/retrieve-comments (:id thread))))
+     #(st/emit! (dcm/retrieve-comments (:id thread))))
 
     (mf/use-effect
      (mf/deps thread)
-     (st/emitf (dcm/update-comment-thread-status thread)))
+     #(st/emit! (dcm/update-comment-thread-status thread)))
 
     (mf/use-layout-effect
      (mf/deps thread comments-map)

@@ -112,36 +112,35 @@
         frames         (mf/deref refs/workspace-frames)
 
         add-shared-fn
-        (st/emitf (dwl/set-file-shared (:id file) true))
+        #(st/emit! (dwl/set-file-shared (:id file) true))
 
         del-shared-fn
-        (st/emitf (dwl/set-file-shared (:id file) false))
+        #(st/emit! (dwl/set-file-shared (:id file) false))
 
         on-add-shared
         (mf/use-fn
          (mf/deps file)
-         (st/emitf (modal/show
-                    {:type :confirm
-                     :message ""
-                     :title (tr "modals.add-shared-confirm.message" (:name file))
-                     :hint (tr "modals.add-shared-confirm.hint")
-                     :cancel-label :omit
-                     :accept-label (tr "modals.add-shared-confirm.accept")
-                     :accept-style :primary
-                     :on-accept add-shared-fn})))
+         #(st/emit! (modal/show
+                      {:type :confirm
+                       :message ""
+                       :title (tr "modals.add-shared-confirm.message" (:name file))
+                       :hint (tr "modals.add-shared-confirm.hint")
+                       :cancel-label :omit
+                       :accept-label (tr "modals.add-shared-confirm.accept")
+                       :accept-style :primary
+                       :on-accept add-shared-fn})))
 
         on-remove-shared
         (mf/use-fn
          (mf/deps file)
-         (st/emitf (modal/show
-                    {:type :confirm
-                     :message ""
-                     :title (tr "modals.remove-shared-confirm.message" (:name file))
-                     :hint (tr "modals.remove-shared-confirm.hint")
-                     :cancel-label :omit
-                     :accept-label (tr "modals.remove-shared-confirm.accept")
-                     :on-accept del-shared-fn})))
-
+         #(st/emit! (modal/show
+                      {:type :confirm
+                       :message ""
+                       :title (tr "modals.remove-shared-confirm.message" (:name file))
+                       :hint (tr "modals.remove-shared-confirm.hint")
+                       :cancel-label :omit
+                       :accept-label (tr "modals.remove-shared-confirm.accept")
+                       :on-accept del-shared-fn})))
 
         handle-blur (fn [_]
                       (let [value (-> edit-input-ref mf/ref-val dom/get-value)]
@@ -420,7 +419,7 @@
 
        (when (contains? @cf/flags :user-feedback)
          [:*
-          [:li.feedback {:on-click (st/emitf (rt/nav-new-window* {:rname :settings-feedback}))}
+          [:li.feedback {:on-click #(st/emit! (rt/nav-new-window* {:rname :settings-feedback}))}
            [:span (tr "labels.give-feedback")]]])]]]))
 
 ;; --- Header Component
@@ -434,12 +433,12 @@
         go-back
         (mf/use-callback
          (mf/deps project)
-         (st/emitf (dw/go-to-dashboard project)))
+         #(st/emit! (dw/go-to-dashboard project)))
 
         go-viewer
         (mf/use-callback
          (mf/deps file page-id)
-         (st/emitf (dw/go-to-viewer params)))]
+         #(st/emit! (dw/go-to-viewer params)))]
 
     [:header.workspace-header
      [:div.left-area

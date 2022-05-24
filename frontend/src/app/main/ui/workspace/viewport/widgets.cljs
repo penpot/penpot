@@ -109,8 +109,8 @@
         on-double-click
         (mf/use-callback
          (mf/deps (:id frame))
-         (st/emitf (dw/go-to-layout :layers)
-                   (dw/start-rename-shape (:id frame))))
+         #(st/emit! (dw/go-to-layout :layers)
+                    (dw/start-rename-shape (:id frame))))
 
         on-context-menu
         (mf/use-callback
@@ -209,7 +209,7 @@
         on-double-click
         (mf/use-callback
           (mf/deps (:id frame))
-          (st/emitf (dwi/start-rename-flow (:id flow))))
+          #(st/emit! (dwi/start-rename-flow (:id flow))))
 
         on-pointer-enter
         (mf/use-callback

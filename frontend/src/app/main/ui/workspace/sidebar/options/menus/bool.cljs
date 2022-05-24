@@ -83,6 +83,6 @@
       [:div.align-button.tooltip.tooltip-bottom
        {:alt (tr "workspace.shape.menu.flatten")
         :class (dom/classnames :disabled disabled-flatten)
-        :on-click (st/emitf (dw/convert-selected-to-path))}
+        :on-click #(st/emit! (dw/convert-selected-to-path))}
        i/bool-flatten]]]))
 

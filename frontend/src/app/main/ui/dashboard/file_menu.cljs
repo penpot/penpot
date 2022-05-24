@@ -126,10 +126,10 @@
                            {:on-success #(on-move-success team-id project-id)}))))))
 
         add-shared
-        (st/emitf (dd/set-file-shared (assoc file :is-shared true)))
+        #(st/emit! (dd/set-file-shared (assoc file :is-shared true)))
 
         del-shared
-        (st/emitf (dd/set-file-shared (assoc file :is-shared false)))
+        #(st/emit! (dd/set-file-shared (assoc file :is-shared false)))
 
         on-add-shared
         (fn [event]

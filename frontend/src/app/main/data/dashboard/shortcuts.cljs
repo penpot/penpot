@@ -14,22 +14,22 @@
   {:go-to-search       {:tooltip (ds/meta "F")
                         :command (ds/c-mod "f")
                         :subsections [:navigation-dashboard]
-                        :fn (st/emitf (dd/go-to-search))}
+                        :fn #(st/emit! (dd/go-to-search))}
 
    :go-to-drafts       {:tooltip "G D"
                         :command "g d"
                         :subsections [:navigation-dashboard]
-                        :fn (st/emitf (dd/go-to-drafts))}
+                        :fn #(st/emit! (dd/go-to-drafts))}
 
    :go-to-libs         {:tooltip "G L"
                         :command "g l"
                         :subsections [:navigation-dashboard]
-                        :fn (st/emitf (dd/go-to-libs))}
+                        :fn #(st/emit! (dd/go-to-libs))}
    
    :create-new-project {:tooltip "+"
                         :command "+"
                         :subsections [:general-dashboard]
-                        :fn (st/emitf (dd/create-element))}})
+                        :fn #(st/emit! (dd/create-element))}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

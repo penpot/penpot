@@ -35,7 +35,7 @@
     :else
     (let [hint (ex-message error)
           msg  (dm/str "Internal Error: " hint)]
-      (ts/schedule (st/emitf (rt/assign-exception error)))
+      (ts/schedule #(st/emit! (rt/assign-exception error)))
 
       (js/console.group msg)
       (ex/ignoring (js/console.error error))
@@ -51,7 +51,7 @@
   [_]
   (let [msg (tr "errors.auth.unable-to-login")]
     (st/emit! (du/logout {:capture-redirect true}))
-    (ts/schedule 500 (st/emitf (msg/warn msg)))))
+    (ts/schedule 500 #(st/emit! (msg/warn msg)))))
 
 ;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From
@@ -154,7 +154,7 @@
 (defmethod ptk/handle-error ::exceptional-state
   [error]
   (ts/schedule
-   (st/emitf (rt/assign-exception error))))
+   #(st/emit! (rt/assign-exception error))))
 
 ;; This happens when the backed server fails to process the
 ;; request. This can be caused by an internal assertion or any other
@@ -188,7 +188,7 @@
     (-> error ex-data ptk/handle-error)
     (let [hint (ex-message error)
           msg  (dm/str "Unhandled Internal Error: " hint)]
-      (ts/schedule (st/emitf (rt/assign-exception error)))
+      (ts/schedule #(st/emit! (rt/assign-exception error)))
       (js/console.group msg)
       (ex/ignoring (js/console.error error))
       (js/console.groupEnd msg))))

@@ -28,13 +28,13 @@
    ::mf/register-as :delete-account}
   []
   (let [on-close
-        (mf/use-callback (st/emitf (modal/hide)))
+        (mf/use-callback #(st/emit! (modal/hide)))
 
         on-accept
         (mf/use-callback
-         (st/emitf (modal/hide)
-                   (du/request-account-deletion
-                    (with-meta {} {:on-error on-error}))))]
+         #(st/emit! (modal/hide)
+                    (du/request-account-deletion
+                      (with-meta {} {:on-error on-error}))))]
 
     [:div.modal-overlay
      [:div.modal-container.change-email-modal

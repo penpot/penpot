@@ -25,7 +25,7 @@
 (mf/defc header
   {::mf/wrap [mf/memo]}
   []
-  (let [create (st/emitf (dd/create-project))]
+  (let [create #(st/emit! (dd/create-project))]
     [:header.dashboard-header
      [:div.dashboard-title
       [:h1 (tr "dashboard.projects-title")]]
@@ -49,13 +49,13 @@
         on-nav
         (mf/use-callback
          (mf/deps project)
-         (st/emitf (rt/nav :dashboard-files {:team-id (:team-id project)
-                                             :project-id (:id project)})))
+         #(st/emit! (rt/nav :dashboard-files {:team-id (:team-id project)
+                                              :project-id (:id project)})))
 
         toggle-pin
         (mf/use-callback
          (mf/deps project)
-         (st/emitf (dd/toggle-project-pin project)))
+         #(st/emit! (dd/toggle-project-pin project)))
 
         on-menu-click
         (mf/use-callback (fn [event]

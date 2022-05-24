@@ -39,7 +39,7 @@
         toggle-pin
         (mf/use-callback
          (mf/deps project)
-         (st/emitf (dd/toggle-project-pin project)))
+         #(st/emit! (dd/toggle-project-pin project)))
 
         on-create-clicked
         (mf/use-callback

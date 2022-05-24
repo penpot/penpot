@@ -50,11 +50,11 @@
         on-delete
         (mf/use-callback
          (mf/deps id)
-         (st/emitf (modal/show
-                    {:type :confirm
-                     :title (tr "modals.delete-page.title")
-                     :message (tr "modals.delete-page.body")
-                     :on-accept delete-fn})))
+         #(st/emit! (modal/show
+                      {:type :confirm
+                       :title (tr "modals.delete-page.title")
+                       :message (tr "modals.delete-page.body")
+                       :on-accept delete-fn})))
 
         on-double-click
         (mf/use-callback

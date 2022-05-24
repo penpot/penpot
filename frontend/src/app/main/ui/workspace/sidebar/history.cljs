@@ -260,7 +260,7 @@
                                  :show-detail @show-detail?)
                          :on-mouse-enter #(reset! hover? true)
                          :on-mouse-leave #(reset! hover? false)
-                         :on-click (st/emitf (dwc/undo-to-index idx-entry))}
+                         :on-click #(st/emit! (dwc/undo-to-index idx-entry))}
      [:div.history-entry-summary
       [:div.history-entry-summary-icon (entry->icon entry)]
       [:div.history-entry-summary-text  (entry->message locale entry)]

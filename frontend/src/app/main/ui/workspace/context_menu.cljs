@@ -101,11 +101,11 @@
 
 (mf/defc context-menu-edit
   []
-  (let [do-copy      (st/emitf (dw/copy-selected))
-        do-cut       (st/emitf (dw/copy-selected)
-                               (dw/delete-selected))
-        do-paste     (st/emitf dw/paste)
-        do-duplicate (st/emitf (dw/duplicate-selected false))]
+  (let [do-copy      #(st/emit! (dw/copy-selected))
+        do-cut       #(st/emit! (dw/copy-selected)
+                                (dw/delete-selected))
+        do-paste     #(st/emit! dw/paste)
+        do-duplicate #(st/emit! (dw/duplicate-selected false))]
     [:*
      [:& menu-entry {:title (tr "workspace.shape.menu.copy")
                      :shortcut (sc/get-tooltip :copy)
@@ -124,11 +124,11 @@
 
 (mf/defc context-menu-layer-position
   [{:keys [hover-objs shapes]}]
-  (let [do-bring-forward  (st/emitf (dw/vertical-order-selected :up))
-        do-bring-to-front (st/emitf (dw/vertical-order-selected :top))
-        do-send-backward  (st/emitf (dw/vertical-order-selected :down))
-        do-send-to-back   (st/emitf (dw/vertical-order-selected :bottom))
-        select-shapes     (fn [id] (st/emitf (dws/select-shape id)))]
+  (let [do-bring-forward  #(st/emit! (dw/vertical-order-selected :up))
+        do-bring-to-front #(st/emit! (dw/vertical-order-selected :top))
+        do-send-backward  #(st/emit! (dw/vertical-order-selected :down))
+        do-send-to-back   #(st/emit! (dw/vertical-order-selected :bottom))
+        select-shapes     (fn [id] #(st/emit! (dws/select-shape id)))]
     [:*
      (when (> (count hover-objs) 1)
        [:& menu-entry {:title (tr "workspace.shape.menu.select-layer")}
@@ -154,8 +154,8 @@
 
 (mf/defc context-menu-flip
   []
-  (let [do-flip-vertical (st/emitf (dw/flip-vertical-selected))
-        do-flip-horizontal (st/emitf (dw/flip-horizontal-selected))]
+  (let [do-flip-vertical #(st/emit! (dw/flip-vertical-selected))
+        do-flip-horizontal #(st/emit! (dw/flip-horizontal-selected))]
     [:*
      [:& menu-entry {:title (tr "workspace.shape.menu.flip-vertical")
                      :shortcut (sc/get-tooltip :flip-vertical)
@@ -170,7 +170,7 @@
   [{:keys [shapes]}]
   (let [single?    (= (count shapes) 1)
         has-frame? (some cph/frame-shape? shapes)
-        do-toggle-thumbnail (st/emitf (dw/toggle-file-thumbnail-selected))]
+        do-toggle-thumbnail #(st/emit! (dw/toggle-file-thumbnail-selected))]
     (when (and single? has-frame?)
       [:*
        (if (every? :use-for-thumbnail? shapes)
@@ -186,7 +186,7 @@
 
   (let [multiple? (> (count shapes) 1)
         single?   (= (count shapes) 1)
-        do-create-artboard-from-selection (st/emitf (dw/create-artboard-from-selection))
+        do-create-artboard-from-selection #(st/emit! (dw/create-artboard-from-selection))
 
         has-group? (->> shapes (d/seek #(= :group (:type %))))
         has-bool? (->> shapes (d/seek #(= :bool (:type %))))
@@ -196,10 +196,10 @@
         is-group? (and single? has-group?)
         is-bool? (and single? has-bool?)
 
-        do-create-group (st/emitf dw/group-selected)
-        do-mask-group   (st/emitf dw/mask-group)
-        do-remove-group (st/emitf dw/ungroup-selected)
-        do-unmask-group (st/emitf dw/unmask-group)]
+        do-create-group #(st/emit! dw/group-selected)
+        do-mask-group   #(st/emit! dw/mask-group)
+        do-remove-group #(st/emit! dw/ungroup-selected)
+        do-unmask-group #(st/emit! dw/unmask-group)]
 
     [:*
      (when (or has-bool? has-group? has-mask?)
@@ -253,8 +253,8 @@
         is-bool? (and single? has-bool?)
         is-frame? (and single? has-frame?)
 
-        do-start-editing #(timers/schedule (st/emitf (dw/start-editing-selected)))
-        do-transform-to-path (st/emitf (dw/convert-selected-to-path))
+        do-start-editing (fn [] (timers/schedule #(st/emit! (dw/start-editing-selected))))
+        do-transform-to-path #(st/emit! (dw/convert-selected-to-path))
 
         make-do-bool
         (fn [bool-type]
@@ -302,10 +302,10 @@
 (mf/defc context-menu-layer-options
   [{:keys [shapes]}]
   (let [ids (mapv :id shapes)
-        do-show-shape (st/emitf (dw/update-shape-flags ids {:hidden false}))
-        do-hide-shape (st/emitf (dw/update-shape-flags ids {:hidden true}))
-        do-lock-shape (st/emitf (dw/update-shape-flags ids {:blocked true}))
-        do-unlock-shape (st/emitf (dw/update-shape-flags ids {:blocked false}))]
+        do-show-shape #(st/emit! (dw/update-shape-flags ids {:hidden false}))
+        do-hide-shape #(st/emit! (dw/update-shape-flags ids {:hidden true}))
+        do-lock-shape #(st/emit! (dw/update-shape-flags ids {:blocked true}))
+        do-unlock-shape #(st/emit! (dw/update-shape-flags ids {:blocked false}))]
     [:*
      (if (every? :hidden shapes)
        [:& menu-entry {:title (tr "workspace.shape.menu.show")
@@ -323,8 +323,8 @@
   [{:keys [shapes]}]
   (let [options         (mf/deref refs/workspace-page-options)
         options-mode    (mf/deref refs/options-mode)
-        do-add-flow     (st/emitf (dwi/add-flow-selected-frame))
-        do-remove-flow  #(st/emitf (dwi/remove-flow (:id %)))
+        do-add-flow     #(st/emit! (dwi/add-flow-selected-frame))
+        do-remove-flow  #(st/emit! (dwi/remove-flow (:id %)))
         flows           (:flows options)
 
         prototype?      (= options-mode :prototype)
@@ -357,36 +357,36 @@
         current-file-id (mf/use-ctx ctx/current-file-id)
         local-component? (= component-file current-file-id)
 
-        do-add-component (st/emitf (dwl/add-component))
-        do-detach-component (st/emitf (dwl/detach-component shape-id))
-        do-detach-component-in-bulk (st/emitf dwl/detach-selected-components)
-        do-reset-component (st/emitf (dwl/reset-component shape-id))
-        do-show-component (st/emitf (dw/go-to-component component-id))
-        do-navigate-component-file (st/emitf (dwl/nav-to-component-file component-file))
-        do-update-component (st/emitf (dwl/update-component-sync shape-id component-file))
-        do-update-component-in-bulk (st/emitf (dwl/update-component-in-bulk component-shapes component-file))
+        do-add-component #(st/emit! (dwl/add-component))
+        do-detach-component #(st/emit! (dwl/detach-component shape-id))
+        do-detach-component-in-bulk #(st/emit! dwl/detach-selected-components)
+        do-reset-component #(st/emit! (dwl/reset-component shape-id))
+        do-show-component #(st/emit! (dw/go-to-component component-id))
+        do-navigate-component-file #(st/emit! (dwl/nav-to-component-file component-file))
+        do-update-component #(st/emit! (dwl/update-component-sync shape-id component-file))
+        do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk component-shapes component-file))
 
         do-update-remote-component
-        (st/emitf (modal/show
-                   {:type :confirm
-                    :message ""
-                    :title (tr "modals.update-remote-component.message")
-                    :hint (tr "modals.update-remote-component.hint")
-                    :cancel-label (tr "modals.update-remote-component.cancel")
-                    :accept-label (tr "modals.update-remote-component.accept")
-                    :accept-style :primary
-                    :on-accept do-update-component}))
+        #(st/emit! (modal/show
+                     {:type :confirm
+                      :message ""
+                      :title (tr "modals.update-remote-component.message")
+                      :hint (tr "modals.update-remote-component.hint")
+                      :cancel-label (tr "modals.update-remote-component.cancel")
+                      :accept-label (tr "modals.update-remote-component.accept")
+                      :accept-style :primary
+                      :on-accept do-update-component}))
 
-        do-update-in-bulk (st/emitf (modal/show
-                                     {:type :confirm
-                                      :message ""
-                                      :title (tr "modals.update-remote-component-in-bulk.message")
-                                      :hint (tr "modals.update-remote-component-in-bulk.hint")
-                                      :items component-shapes
-                                      :cancel-label (tr "modals.update-remote-component.cancel")
-                                      :accept-label (tr "modals.update-remote-component.accept")
-                                      :accept-style :primary
-                                      :on-accept do-update-component-in-bulk}))]
+        do-update-in-bulk #(st/emit! (modal/show
+                                       {:type :confirm
+                                        :message ""
+                                        :title (tr "modals.update-remote-component-in-bulk.message")
+                                        :hint (tr "modals.update-remote-component-in-bulk.hint")
+                                        :items component-shapes
+                                        :cancel-label (tr "modals.update-remote-component.cancel")
+                                        :accept-label (tr "modals.update-remote-component.accept")
+                                        :accept-style :primary
+                                        :on-accept do-update-component-in-bulk}))]
     [:*
      (when (and (not has-frame?) (not is-component?))
        [:*
@@ -433,7 +433,7 @@
 
 (mf/defc context-menu-delete
   []
-  (let [do-delete (st/emitf (dw/delete-selected))]
+  (let [do-delete #(st/emit! (dw/delete-selected))]
     [:& menu-entry {:title (tr "workspace.shape.menu.delete")
                     :shortcut (sc/get-tooltip :delete)
                     :on-click do-delete}]))
@@ -504,7 +504,7 @@
               (.setAttribute ^js dropdown "style" new-style))))))
 
     [:& dropdown {:show (boolean mdata)
-                  :on-close (st/emitf dw/hide-context-menu)}
+                  :on-close #(st/emit! dw/hide-context-menu)}
      [:ul.workspace-context-menu
       {:ref dropdown-ref
        :style {:top top :left left}

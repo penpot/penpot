@@ -285,4 +285,4 @@
    (fn []
      (when (or drawing-path? path-editing?)
        (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
-       (st/emitf (dsc/pop-shortcuts ::path))))))
+       #(st/emit! (dsc/pop-shortcuts ::path))))))

@@ -102,8 +102,8 @@
         on-drop-success
         (mf/use-callback
          (mf/deps (:id item))
-         (st/emitf (msg/success (tr "dashboard.success-move-file"))
-                   (dd/go-to-files (:id item))))
+         #(st/emit! (msg/success (tr "dashboard.success-move-file"))
+                    (dd/go-to-files (:id item))))
 
         on-drop
         (mf/use-callback
@@ -209,7 +209,7 @@
 
         on-create-clicked
         (mf/use-callback
-         (st/emitf (modal/show :team-form {})))
+         #(st/emit! (modal/show :team-form {})))
 
         team-selected
         (mf/use-callback
@@ -240,9 +240,9 @@
 
 (mf/defc team-options-dropdown
   [{:keys [team profile] :as props}]
-  (let [go-members     (st/emitf (dd/go-to-team-members))
-        go-invitations (st/emitf (dd/go-to-team-invitations))
-        go-settings    (st/emitf (dd/go-to-team-settings))
+  (let [go-members     #(st/emit! (dd/go-to-team-members))
+        go-invitations #(st/emit! (dd/go-to-team-invitations))
+        go-settings    #(st/emit! (dd/go-to-team-settings))
 
         members-map    (mf/deref refs/dashboard-team-members)
         members        (vals members-map)
@@ -283,12 +283,12 @@
           (st/emit! (modal/show :team-form {:team team})))
 
         on-leave-clicked
-        (st/emitf (modal/show
-                   {:type :confirm
-                    :title (tr "modals.leave-confirm.title")
-                    :message (tr "modals.leave-confirm.message")
-                    :accept-label (tr "modals.leave-confirm.accept")
-                    :on-accept leave-fn}))
+        #(st/emit! (modal/show
+                     {:type :confirm
+                      :title (tr "modals.leave-confirm.title")
+                      :message (tr "modals.leave-confirm.message")
+                      :accept-label (tr "modals.leave-confirm.accept")
+                      :on-accept leave-fn}))
 
         on-leave-as-owner-clicked
         (fn []
@@ -300,22 +300,22 @@
                       :accept leave-fn})))
 
         leave-and-close
-        (st/emitf (modal/show
-                   {:type :confirm
-                    :title (tr "modals.leave-confirm.title")
-                    :message  (tr "modals.leave-and-close-confirm.message" (:name team))
-                    :scd-message (tr "modals.leave-and-close-confirm.hint")
-                    :accept-label (tr "modals.leave-confirm.accept")
-                    :on-accept delete-fn}))
+        #(st/emit! (modal/show
+                     {:type :confirm
+                      :title (tr "modals.leave-confirm.title")
+                      :message  (tr "modals.leave-and-close-confirm.message" (:name team))
+                      :scd-message (tr "modals.leave-and-close-confirm.hint")
+                      :accept-label (tr "modals.leave-confirm.accept")
+                      :on-accept delete-fn}))
 
         on-delete-clicked
-        (st/emitf
-         (modal/show
-          {:type :confirm
-           :title (tr "modals.delete-team-confirm.title")
-           :message (tr "modals.delete-team-confirm.message")
-           :accept-label (tr "modals.delete-team-confirm.accept")
-           :on-accept delete-fn}))]
+        #(st/emit!
+           (modal/show
+             {:type :confirm
+              :title (tr "modals.delete-team-confirm.title")
+              :message (tr "modals.delete-team-confirm.message")
+              :accept-label (tr "modals.delete-team-confirm.accept")
+              :on-accept delete-fn}))]
 
     [:ul.dropdown.options-dropdown
      [:li {:on-click go-members :data-test "team-members"} (tr "labels.members")]
@@ -391,12 +391,12 @@
         go-projects
         (mf/use-callback
          (mf/deps team)
-         (st/emitf (rt/nav :dashboard-projects {:team-id (:id team)})))
+         #(st/emit! (rt/nav :dashboard-projects {:team-id (:id team)})))
 
         go-fonts
         (mf/use-callback
          (mf/deps team)
-         (st/emitf (rt/nav :dashboard-fonts {:team-id (:id team)})))
+         #(st/emit! (rt/nav :dashboard-fonts {:team-id (:id team)})))
 
         go-drafts
         (mf/use-callback
@@ -408,7 +408,7 @@
         go-libs
         (mf/use-callback
          (mf/deps team)
-         (st/emitf (rt/nav :dashboard-libraries {:team-id (:id team)})))
+         #(st/emit! (rt/nav :dashboard-libraries {:team-id (:id team)})))
 
         pinned-projects
         (->> (vals projects)

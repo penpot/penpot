@@ -50,7 +50,7 @@
 
 (mf/defc dashboard-content
   [{:keys [team projects project section search-term profile] :as props}]
-  [:div.dashboard-content {:on-click (st/emitf (dd/clear-selected-files))}
+  [:div.dashboard-content {:on-click #(st/emit! (dd/clear-selected-files))}
    (case section
      :dashboard-projects
      [:& projects-section {:team team :projects projects}]

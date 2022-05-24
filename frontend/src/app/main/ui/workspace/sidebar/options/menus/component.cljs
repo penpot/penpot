@@ -53,27 +53,27 @@
          #(swap! local assoc :menu-open false))
 
         do-detach-component
-        (st/emitf (dwl/detach-component id))
+        #(st/emit! (dwl/detach-component id))
 
         do-reset-component
-        (st/emitf (dwl/reset-component id))
+        #(st/emit! (dwl/reset-component id))
 
         do-update-component
-        (st/emitf (dwl/update-component-sync id library-id))
+        #(st/emit! (dwl/update-component-sync id library-id))
 
         do-update-remote-component
-        (st/emitf (modal/show
-                   {:type :confirm
-                    :message ""
-                    :title (tr "modals.update-remote-component.message")
-                    :hint (tr "modals.update-remote-component.hint")
-                    :cancel-label (tr "modals.update-remote-component.cancel")
-                    :accept-label (tr "modals.update-remote-component.accept")
-                    :accept-style :primary
-                    :on-accept do-update-component}))
+        #(st/emit! (modal/show
+                         {:type :confirm
+                          :message ""
+                          :title (tr "modals.update-remote-component.message")
+                          :hint (tr "modals.update-remote-component.hint")
+                          :cancel-label (tr "modals.update-remote-component.cancel")
+                          :accept-label (tr "modals.update-remote-component.accept")
+                          :accept-style :primary
+                          :on-accept do-update-component}))
 
-        do-show-component (st/emitf (dw/go-to-component component-id))
-        do-navigate-component-file (st/emitf (dwl/nav-to-component-file library-id))]
+        do-show-component #(st/emit! (dw/go-to-component component-id))
+        do-navigate-component-file #(st/emit! (dwl/nav-to-component-file library-id))]
     (when show?
       [:div.element-set
        [:div.element-set-title
