@@ -123,7 +123,7 @@
 (defmethod process-token :team-invitation
   [cfg {:keys [profile-id token]} {:keys [member-id] :as claims}]
   (us/assert ::team-invitation-claims claims)
-  #_(let [conn (:conn cfg)
+  (let [conn (:conn cfg)
         team-id (:team-id claims)
         member-email (:member-email claims)
         invitation (db/get-by-params conn :team-invitation
