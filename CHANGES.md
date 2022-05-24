@@ -11,6 +11,8 @@
 - Multiple team invitations on onboarding [Taiga #3084](https://tree.taiga.io/project/penpot/us/3084)
 
 ### :bug: Bugs fixed
+- Fix menu file not accessible in certain conditions [Taiga #3385](https://tree.taiga.io/project/penpot/issue/3385)
+
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 

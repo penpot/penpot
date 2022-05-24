@@ -35,39 +35,45 @@
         route         (mf/deref refs/route)
         in-dashboard? (= :dashboard-projects (:name (:data route)))
 
-        local         (mf/use-state {:offset 0
+        local         (mf/use-state {:offset-y 0
+                                     :offset-x 0
                                      :levels nil})
 
         on-local-close
         (mf/use-callback
-          (fn []
-            (swap! local assoc :levels [{:parent-option nil
-                                         :options options}])
-            (on-close)))
+         (fn []
+           (swap! local assoc :levels [{:parent-option nil
+                                        :options options}])
+           (on-close)))
 
         check-menu-offscreen
         (mf/use-callback
-         (mf/deps top (:offset @local))
+         (mf/deps top (:offset-y @local) left (:offset-x @local))
          (fn [node]
            (when (some? node)
-             (let [{node-height :height}   (dom/get-bounding-rect node)
-                   {window-height :height} (dom/get-window-size)
-                   target-offset (if (> (+ top node-height) window-height)
+             (let [bounding_rect (dom/get-bounding-rect node)
+                   window_size (dom/get-window-size)
+                   {node-height :height node-width :width} bounding_rect
+                   {window-height :height window-width :width} window_size
+                   target-offset-y (if (> (+ top node-height) window-height)
                                    (- node-height)
-                                   0)]
+                                   0)
+                   target-offset-x (if (> (+ left node-width) window-width)
+                                     (- node-width)
+                                     0)]
 
-               (when (not= target-offset (:offset @local))
-                 (swap! local assoc :offset target-offset))))))
+               (when (or (not= target-offset-y (:offset-y @local)) (not= target-offset-x (:offset-x @local)))
+                 (swap! local assoc :offset-y target-offset-y :offset-x target-offset-x))))))
 
         enter-submenu
         (mf/use-callback
-          (mf/deps options)
-          (fn [option-name sub-options]
-            (fn [event]
-              (dom/stop-propagation event)
-              (swap! local update :levels
-                     conj {:parent-option option-name
-                           :options sub-options}))))
+         (mf/deps options)
+         (fn [option-name sub-options]
+           (fn [event]
+             (dom/stop-propagation event)
+             (swap! local update :levels
+                    conj {:parent-option option-name
+                          :options sub-options}))))
 
         exit-submenu
         (mf/use-callback
@@ -87,8 +93,8 @@
        [:div.context-menu {:class (dom/classnames :is-open open?
                                                   :fixed fixed?
                                                   :is-selectable is-selectable)
-                           :style {:top (+ top (:offset @local))
-                                   :left left}}
+                           :style {:top (+ top (:offset-y @local))
+                                   :left (+ left (:offset-x @local))}}
         (let [level (-> @local :levels peek)]
           [:ul.context-menu-items {:class (dom/classnames :min-width min-width?)
                                    :ref check-menu-offscreen}
