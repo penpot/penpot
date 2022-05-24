@@ -1443,16 +1443,8 @@ msgid "workspace.header.menu.enable-snap-grid"
 msgstr "Σύνδεση στο πλέγμα"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Απόκρυψη στοιχείων"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Απόκρυψη πλεγμάτων"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Απόκρυψη στρώματα"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -1467,16 +1459,8 @@ msgid "workspace.header.menu.select-all"
 msgstr "Επιλογή όλων"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Εμφάνιση στοιχείων"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Εμφάνιση πλέγματος"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Εμφάνιση στρώματα"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

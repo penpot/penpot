@@ -2122,16 +2122,8 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Namen von Zeichenflächen ausblenden"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Assets ausblenden"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Raster ausblenden"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Ebenen ausblenden"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2166,16 +2158,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Namen der Zeichenflächen anzeigen"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Assets einblenden"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Raster einblenden"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Ebenen einblenden"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
