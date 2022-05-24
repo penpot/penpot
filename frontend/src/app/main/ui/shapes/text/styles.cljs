@@ -110,7 +110,10 @@
            (let [font-variant (d/seek #(= font-variant-id (:id %)) (:variants font))]
              [(str/quote (or (:family font) (:font-family data)))
               (or (:style font-variant) (:font-style data))
-              (or (:weight font-variant) (:font-weight data))]))]
+              (or (:weight font-variant) (:font-weight data))]))
+
+         base (-> base
+                  (obj/set! "--font-id" font-id))]
 
      (cond-> base
        (some? fills)

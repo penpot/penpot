@@ -82,6 +82,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce loaded (l/atom #{}))
+(defonce loading (l/atom {}))
 
 (defn- create-link-element
   [uri]
@@ -199,11 +200,34 @@
    (p/create (fn [resolve]
                (ensure-loaded! id resolve))))
   ([id on-loaded]
-   (if (contains? @loaded id)
-     (on-loaded id)
-     (when-let [font (get @fontsdb id)]
-       (load-font (assoc font ::on-loaded on-loaded))
-       (swap! loaded conj id)))))
+   (let [font (get @fontsdb id)]
+     (cond
+       ;; Font already loaded, we just continue
+       (contains? @loaded id)
+       (on-loaded id)
+
+       ;; Font is currently downloading. We attach the caller to the promise
+       (contains? @loading id)
+       (-> (get @loading id)
+           (p/then #(on-loaded id)))
+
+       ;; First caller, we create the promise and then wait
+       :else
+       (let [on-load (fn [resolve]
+                       (swap! loaded conj id)
+                       (swap! loading dissoc id)
+                       (on-loaded id)
+                       (resolve id))
+
+             load-p (p/create
+                     (fn [resolve _]
+                       (-> font
+                           (assoc ::on-loaded (partial on-load resolve))
+                           (load-font))))]
+
+         (swap! loading assoc id load-p)
+
+         nil)))))
 
 (defn ready
   [cb]

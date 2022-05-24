@@ -23,6 +23,7 @@
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as utp]
    [app.util.timers :as ts]
+   [promesa.core :as p]
    [rumext.alpha :as mf]))
 
 (defn strip-position-data [shape]
@@ -73,25 +74,25 @@
         (st/emit! (dwt/resize-text id width height)))))
 
   ;; Update the position-data of every text fragment
-  (let [position-data (utp/calc-position-data node)]
+  (p/let [position-data (utp/calc-position-data node)]
     (st/emit! (dwt/update-position-data id position-data)))
 
   (st/emit! (dwt/clean-text-modifier id)))
 
 (defn- update-text-modifier
   [{:keys [grow-type id]} node]
-  (let [position-data (utp/calc-position-data node)
-        props {:position-data position-data}
+  (p/let [position-data (utp/calc-position-data node)
+          props {:position-data position-data}
 
-        props
-        (if (contains? #{:auto-height :auto-width} grow-type)
-          (let [{:keys [width height]} (-> (dom/query node ".paragraph-set") (dom/get-client-size))
-                width (mth/ceil width)
-                height (mth/ceil height)]
-            (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
-              (assoc props :width width :height height)
-              props))
-          props)]
+          props
+          (if (contains? #{:auto-height :auto-width} grow-type)
+            (let [{:keys [width height]} (-> (dom/query node ".paragraph-set") (dom/get-client-size))
+                  width (mth/ceil width)
+                  height (mth/ceil height)]
+              (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
+                (assoc props :width width :height height)
+                props))
+            props)]
 
     (st/emit! (dwt/update-text-modifier id props))))
 
