@@ -766,22 +766,16 @@ msgid "feedback.description"
 msgstr "Descripción"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Ir a las discusiones"
+msgid "feedback.twitter-go-to"
+msgstr "Ir a Twitter"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Entra al foro colaborativo de Penpot"
+msgid "feedback.twitter-subtitle1"
+msgstr "Cuenta habilitada para responder todas tus dudas técnicas."
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Puedes hacer preguntas y dar respuestas, participar en conversaciones "
-"abiertas y hacer seguimiento de decisones que afectan al proyecto."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "Debates de equipo"
+msgid "feedback.twitter-title"
+msgstr "Cuenta de Twitter para soporte"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"

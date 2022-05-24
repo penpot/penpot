@@ -721,24 +721,6 @@ msgid "feedback.description"
 msgstr "Açıklama"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Tartışmalar bölümüne git"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Penpot takımı ortak iletişim forumuna katıl."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Soru sorabilir ve soruları cevaplayabilir, açık uçlu tartışmalar yapabilir "
-"ve projeyi etkileyen kararları takip edebilirsin."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "Takım tartışmaları"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Konu"
 

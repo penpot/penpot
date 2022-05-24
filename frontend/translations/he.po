@@ -702,24 +702,6 @@ msgid "feedback.description"
 msgstr "תיאור"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "מעבר לדיונים"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "מזמינים אותך להצטרף לפורום התקשורת של Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"ניתן לשאול ולענות על שאלות, לנהל דיונים פתוחים ולעקוב אחר החלטות שמשפיעות "
-"על המיזם."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "דיונים צוותיים"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "נושא"
 

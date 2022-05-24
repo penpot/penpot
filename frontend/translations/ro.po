@@ -538,24 +538,6 @@ msgid "feedback.description"
 msgstr "Descriere"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Du-te la discuții"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Alătură-te forumului de comunicare al echipei Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Poți pune întrebări, iei parte la discuții deschise și poți contribui la "
-"dezvoltarea proiectului."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "Discuțiile echipei"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Subiect"
 
