@@ -360,7 +360,7 @@
         (-> props
             (obj/set! "style" style)))
 
-      (some? svg-attrs)
+      (and (some? svg-attrs) (empty? (:fills shape)))
       (let [style
             (-> (obj/get props "style")
                 (obj/clone))
