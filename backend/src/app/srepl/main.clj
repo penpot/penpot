@@ -99,6 +99,27 @@
 
     (update data :pages-index d/update-vals update-page)))
 
+(defn repair-idless-components
+  "There are some files that contains components with no :id attribute.
+  This function detects them and repairs it.
+
+  Use it with the update-file function above."
+  [data]
+  (letfn [(update-component [id component]
+            (if (nil? (:id component))
+              (do
+                (prn (:id data) "Broken component" (:name component) id)
+                (assoc component :id id))
+              component))]
+
+    (update data :components #(d/mapm update-component %))))
+
+(defn analyze-idless-components
+  "Scan all files to check if there are any one with idless components.
+  (Does not save the changes, only used to detect affected files)."
+  [file _]
+  (repair-idless-components (:data file)))
+
 ;; (defn check-image-shapes
 ;;   [{:keys [data] :as file} stats]
 ;;   (println "=> analizing file:" (:name file) (:id file))
@@ -138,9 +159,11 @@
         (loop [cursor (dt/now)
                chunks 0]
           (when (< chunks max-chunks)
-            (when-let [chunk (retrieve-chunk conn cursor)]
-              (let [cursor (-> chunk last :modified-at)]
-                (process-chunk chunk)
-                (Thread/sleep (inst-ms (dt/duration sleep)))
-                (recur cursor (inc chunks))))))
+            (let [chunk (retrieve-chunk conn cursor)]
+              (when-not (empty? chunk)
+                (let [cursor (-> chunk last :modified-at)]
+                  (process-chunk chunk)
+                  (Thread/sleep (inst-ms (dt/duration sleep)))
+                  (recur cursor (inc chunks)))))))
         @stats))))
+
