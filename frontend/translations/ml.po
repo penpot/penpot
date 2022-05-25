@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-05 20:57+0000\n"
+"PO-Revision-Date: 2022-05-16 21:16+0000\n"
 "Last-Translator: Joseph V M <shibinjose991@gmail.com>\n"
 "Language-Team: Malayalam "
 "<https://hosted.weblate.org/projects/penpot/frontend/ml/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.12-dev\n"
+"X-Generator: Weblate 4.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -266,8 +266,16 @@ msgstr ""
 msgid "dashboard.export-frames"
 msgstr "ആർട്ട്ബോർഡുകൾ പിഡിഎഫായി എക്സ്പോർട്ട് ചെയ്യുക...."
 
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "പിഡിഎഫായി എക്സ്പോർട്ട് ചെയ്യുക"
+
 msgid "dashboard.export-multi"
 msgstr "പെൻപോട്ട് %s ഫയലുകൾ എക്സ്പോർട്ട് ചെയ്യുക"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "എക്സ്പോർട്ട്"
 
 msgid "dashboard.export-single"
 msgstr "പെൻപോട്ട് ഫയൽ എക്സ്പോർട്ട് ചെയ്യുക"
