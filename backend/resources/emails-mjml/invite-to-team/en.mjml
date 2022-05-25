@@ -30,7 +30,7 @@
     <mj-section padding="24px 0 0 0">
       <mj-column width="425px">
         <mj-text align="center" font-size="14px" color="#64666A">
-          Penpot is the first Open Source prototyping platform that will be embraced by multidisciplinary teams.
+          Penpot is the first Open Source design and prototyping platform meant for cross-domain teams.
         </mj-text>
       </mj-column>
     </mj-section>
