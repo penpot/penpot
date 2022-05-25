@@ -100,7 +100,10 @@
 
     (if (and data project-id)
       (let [fname (str "imported-file-" (dt/now))
-            file-id (uuid/uuid (-> params :file :filename))
+            file-id (try
+                      (uuid/uuid (-> params :file :filename))
+                      (catch Exception err
+                        (uuid/next)))
             file (db/exec-one! pool (sql/select :file {:id file-id}))]
         (if file
           (db/update! pool :file
