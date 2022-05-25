@@ -173,32 +173,34 @@
    (fetch-data-uri uri false))
 
   ([uri throw-err?]
-   (c/with-cache {:key uri :max-age (dt/duration {:hours 4})}
-     (let [request-stream
-           (send! {:method :get
-                   :uri uri
-                   :response-type :blob
-                   :omit-default-headers true})
+   (let [request-str
+         (->> (send! {:method :get
+                      :uri uri
+                      :response-type :blob
+                      :omit-default-headers true})
+              (rx/tap
+               (fn [resp]
+                 (when (or (< (:status resp) 200) (>= (:status resp) 300))
+                   (rx/throw (js/Error. "Error fetching data uri" #js {:cause (clj->js resp)})))))
 
-           request-stream
-           (if throw-err?
-             (rx/tap #(when-not (and (>= (:status %) 200) (< (:status %) 300))
-                        ;; HTTP ERRROR
-                        (throw (js/Error. "Error fetching data uri" #js {:cause (clj->js %)})))
-                     request-stream)
-             (rx/filter #(= 200 (:status %))
-                        request-stream))]
-       (->> request-stream
-            (rx/map :body)
-            (rx/mapcat wapi/read-file-as-data-url)
-            (rx/map #(hash-map uri %)))))))
+              (rx/map :body)
+              (rx/mapcat wapi/read-file-as-data-url)
+              (rx/map #(hash-map uri %))
+              (c/with-cache {:key uri :max-age (dt/duration {:hours 4})}))]
+
+     ;; We need to check `throw-err?` after the cache is resolved otherwise we cannot cache request
+     ;; with different values of throw-err. By default we throw always the exception and then we just
+     ;; ignore when `throw-err?` is `true`
+     (if (not throw-err?)
+       (->> request-str (rx/catch #(rx/empty)))
+       request-str))))
 
 (defn fetch-text [url]
-  (c/with-cache {:key url :max-age (dt/duration {:hours 4})}
-    (->> (send!
-          {:method :get
-           :mode :cors
-           :omit-default-headers true
-           :uri url
-           :response-type :text})
-         (rx/map :body))))
+  (->> (send!
+        {:method :get
+         :mode :cors
+         :omit-default-headers true
+         :uri url
+         :response-type :text})
+       (rx/map :body)
+       (c/with-cache {:key url :max-age (dt/duration {:hours 4})})))
