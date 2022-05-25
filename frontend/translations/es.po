@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-12-09 04:50+0000\n"
-"Last-Translator: Rubén <rubenx@mail.com>\n"
+"PO-Revision-Date: 2022-05-25 15:16+0000\n"
+"Last-Translator: Andrés Moya <andres.moya@kaleidos.net>\n"
 "Language-Team: Spanish "
 "<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.10-dev\n"
+"X-Generator: Weblate 4.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -159,7 +159,7 @@ msgstr "Crear una cuenta"
 
 #: src/app/main/ui/auth.cljs
 msgid "auth.sidebar-tagline"
-msgstr "La solución de código abierto para diseñar y prototipar"
+msgstr "La solución de código abierto para diseñar y prototipar."
 
 msgid "auth.terms-of-service"
 msgstr "Términos de servicio"
@@ -337,7 +337,7 @@ msgid "dashboard.export.title"
 msgstr "Exportar ficheros"
 
 msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Fuente eliminada."
+msgstr "Fuente eliminada"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.dismiss-all"
@@ -651,6 +651,9 @@ msgstr "¿Seguro?"
 msgid "ds.updated-at"
 msgstr "Actualizado: %s"
 
+msgid "errors.auth.unable-to-login"
+msgstr "Parece que no has iniciado sesión, o la sesión ha expirado."
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Tu navegador no puede realizar esta operación"
@@ -751,6 +754,19 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "El registro está actualmente desactivado."
 
+msgid "errors.team-leave.insufficient-members"
+msgstr ""
+"No hay miembros suficientes para salir del equipo, probablemente quieras "
+"borrarlo."
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "El integrante que intentas designar no existe."
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr ""
+"El propietario no puede salir del equipo, tienes que asignar la propiedad a "
+"otra persona."
+
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Debes aceptar nuestros términos de servicio y política de privacidad."
 
@@ -794,7 +810,7 @@ msgstr "Ir a las discusiones"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-subtitle1"
-msgstr "Entra al foro colaborativo de Penpot"
+msgstr "Entra al foro colaborativo de Penpot."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-subtitle2"
@@ -1076,7 +1092,7 @@ msgstr ""
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.main-message"
-msgstr "Bad Gateway"
+msgstr "Error del servidor (Bad Gateway)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.cancel"
@@ -1180,7 +1196,7 @@ msgstr "Exportar"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
-msgstr "El modulo de recepción de opiniones esta deshabilitado."
+msgstr "El modulo de recepción de opiniones esta deshabilitado"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-sent"
@@ -1287,7 +1303,7 @@ msgstr "No tienes notificaciones de comentarios pendientes"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
-msgstr "No hay invitaciones"
+msgstr "No hay invitaciones."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
@@ -1679,7 +1695,7 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
-msgstr " ¿Seguro que quieres abandonar el equipo %s?"
+msgstr "¿Seguro que quieres abandonar el equipo %s?"
 
 msgid "modals.leave-and-reassign.forbiden"
 msgstr ""
@@ -1728,7 +1744,7 @@ msgstr "Transferir propiedad"
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
 "Si transfieres la propiedad, tu rol cambiará a Administración, perdiendo "
-"algunos permisos sobre este equipo."
+"algunos permisos sobre este equipo. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
@@ -1814,6 +1830,9 @@ msgstr "Verificación de email enviada a %s. Comprueba tu correo."
 msgid "onboarding.choice.desc"
 msgstr "¿Cómo quieres empezar?"
 
+msgid "onboarding.choice.fly-solo"
+msgstr "Volar en solitario"
+
 msgid "onboarding.choice.fly-solo-desc"
 msgstr "Entra en Penpot y empieza a diseñar por tu cuenta."
 
@@ -1843,10 +1862,10 @@ msgstr ""
 "sección del equipo."
 
 msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr " Crear equipo e invitar después"
+msgstr "Crear equipo e invitar después"
 
 msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr " Crear equipo y enviar invitaciones"
+msgstr "Crear equipo y enviar invitaciones"
 
 msgid "onboarding.choice.title"
 msgstr "Te damos la bienvenida a Penpot"
@@ -1877,7 +1896,7 @@ msgstr "Si, suscribirme"
 msgid "onboarding.newsletter.acceptance-message"
 msgstr ""
 "Tu solicitud de suscripción ha sido enviada, te haremos una confirmación a "
-"tu email"
+"tu email."
 
 msgid "onboarding.newsletter.decline"
 msgstr "No, gracias"
@@ -1991,6 +2010,12 @@ msgstr "Comienza a diseñar"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Aquí tienes algunas plantillas."
+
+msgid "onboarding.templates.title"
+msgstr "Empezar a diseñar"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
 
 msgid "onboarding.welcome.desc1"
 msgstr "¡Hurra! Ya tienes tu cuenta en Penpot :)"
@@ -2436,6 +2461,10 @@ msgstr "Distribuir verticalmente"
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom a selección"
 
+#: src/app/main/ui/dashboard/files.cljs
+msgid "title.dashboard.files"
+msgstr "%s - Penpot"
+
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.font-providers"
 msgstr "Proveedores de fuentes - %s - Penpot"
@@ -2491,6 +2520,10 @@ msgstr "Configuración - %s - Penpot"
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
 msgstr "%s - Modo de visualización - Penpot"
+
+#: src/app/main/ui/workspace.cljs
+msgid "title.workspace"
+msgstr "%s - Penpot"
 
 msgid "viewer.breaking-change.description"
 msgstr ""
@@ -3143,7 +3176,7 @@ msgstr "Exportación completa"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object"
-msgstr "Exportando..."
+msgstr "Exportando…"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
@@ -3284,6 +3317,10 @@ msgstr "Animación"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Disolver"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "Ninguno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-push"
@@ -4007,7 +4044,7 @@ msgid "workspace.shape.menu.paste"
 msgstr "Pegar"
 
 msgid "workspace.shape.menu.path"
-msgstr "Path"
+msgstr "Ruta"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
