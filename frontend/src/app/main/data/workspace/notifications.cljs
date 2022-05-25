@@ -195,13 +195,26 @@
   (ptk/reify ::handle-file-change
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [changes-by-pages (group-by :page-id changes)
+      (let [position-data-operation?
+            (fn [{:keys [type attr]}]
+              (and (= :set type) (= attr :position-data)))
+
+            remove-update-position-data
+            (fn [change]
+              (cond-> change
+                (= :mod-obj (:type change))
+                (update :operations #(filterv (comp not position-data-operation?) %))))
+
             process-page-changes
             (fn [[page-id changes]]
-              (dch/update-indices page-id changes))]
+              (dch/update-indices page-id changes))
+
+            ;; We remove `position-data` from the incomming message
+            changes (->> changes (mapv remove-update-position-data))
+            changes-by-pages (group-by :page-id changes)]
 
         (rx/merge
-         (rx/of (dwp/shapes-changes-persisted file-id msg))
+         (rx/of (dwp/shapes-changes-persisted file-id (assoc msg :changes changes)))
 
          (when-not (empty? changes-by-pages)
            (rx/from (map process-page-changes changes-by-pages))))))))

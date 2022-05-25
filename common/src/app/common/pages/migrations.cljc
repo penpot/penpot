@@ -400,5 +400,20 @@
         (update :pages-index d/update-vals update-container)
         (update :components d/update-vals update-container))))
 
+;;Remove position-data to solve a bug with the text positioning
+(defmethod migrate 18
+  [data]
+  (letfn [(update-object [object]
+            (cond-> object
+              (cph/text-shape? object)
+              (dissoc :position-data)))
+
+          (update-container [container]
+            (update container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (update :components d/update-vals update-container))))
+
 ;; TODO: pending to do a migration for delete already not used fill
 ;; and stroke props. This should be done for >1.14.x version.

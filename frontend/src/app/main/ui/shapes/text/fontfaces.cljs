@@ -73,8 +73,12 @@
         ;; Creates a style tag by replacing the urls with the data uri
         style (replace-embeds fonts-css fonts-urls fonts-embed)]
 
-    (when (d/not-empty? style)
-      [:style {:data-loading loading?} style])))
+    (cond
+      (d/not-empty? style)
+      [:style {:data-loading loading?} style]
+
+      (d/not-empty? fonts)
+      [:style {:data-loading true}])))
 
 (defn shape->fonts
   [shape objects]

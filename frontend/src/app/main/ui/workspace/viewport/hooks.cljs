@@ -25,6 +25,7 @@
    [app.util.globals :as globals]
    [app.util.timers :as timers]
    [beicon.core :as rx]
+   [debug :refer [debug?]]
    [goog.events :as events]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
@@ -269,7 +270,11 @@
 
                          ;; We only allow active frames that are contained in the vbox
                          (filter (partial inside-vbox vbox objects)))
-                   all-frames)]
+                   all-frames)
+
+             ;; Debug only: Disable the thumbnails
+             new-active-frames
+             (if (debug? :disable-frame-thumbnails) (into #{} all-frames) new-active-frames)]
 
          (when (not= @active-frames new-active-frames)
            (reset! active-frames new-active-frames)))))))

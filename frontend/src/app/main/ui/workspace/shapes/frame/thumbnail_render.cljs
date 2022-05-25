@@ -115,7 +115,7 @@
          (fn []
            (when (and (some? @node-ref) @regenerate-thumbnail)
              (let [loading-images? (some? (dom/query @node-ref "[data-loading='true']"))
-                   loading-fonts? (some? (dom/query (dm/str "#frame-container-" (:id shape) " style[data-loading='true']")))]
+                   loading-fonts? (some? (dom/query (dm/str "#frame-container-" (:id shape) " > style[data-loading='true']")))]
                (when (and (not loading-images?) (not loading-fonts?))
                  (generate-thumbnail)
                  (reset! regenerate-thumbnail false))))))
