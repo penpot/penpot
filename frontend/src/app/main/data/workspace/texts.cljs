@@ -63,13 +63,17 @@
                           (ted/get-editor-current-content))]
           (if (ted/content-has-text? content)
             (let [content (d/merge (ted/export-content content)
-                                   (dissoc (:content shape) :children))]
+                                   (dissoc (:content shape) :children))
+                  modifiers (get-in state [:workspace-text-modifier id])]
               (rx/merge
                (rx/of (update-editor-state shape nil))
                (when (and (not= content (:content shape))
                           (some? (:current-page-id state)))
                  (rx/of
-                  (dch/update-shapes [id] #(assoc % :content content))
+                  (dch/update-shapes [id] (fn [shape]
+                                            (-> shape
+                                                (assoc :content content)
+                                                (merge modifiers))))
                   (dwu/commit-undo-transaction)))))
 
             (when (some? id)
